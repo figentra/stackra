@@ -61,7 +61,8 @@ for (const path of ROUTES)
   for (const scheme of SCHEMES)
     for (const { locale, dir } of LOCALES)
       test(`${path} in ${scheme}, ${dir}`, async ({ page }) => {
-        await page.emulateMedia({ colorScheme: scheme });
+        // Reduced motion: axe measures each page at rest, never a row or a value mid-fade (ADR 0329).
+        await page.emulateMedia({ colorScheme: scheme, reducedMotion: "reduce" });
         await page.goto(`${path}?scheme=${scheme}&locale=${locale}`);
 
         const heading = page.getByRole("heading", { level: 1 });

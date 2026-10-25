@@ -15,7 +15,7 @@
  */
 // @vitest-environment jsdom
 // @covers sta-350:FR-123
-import { act, render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 
 import type { SortDescriptor } from "#contracts/types/sort-descriptor.type";
 import type { TableColumn } from "#contracts/types/table-column.type";
@@ -296,6 +296,26 @@ describe("Table (web)", () => {
     expect(screen.getByRole("rowheader", { name: "Ada" }).classList.contains("text-start")).toBe(
       true,
     );
+  });
+
+  it("walks the cells with the arrow keys and lands on a cell's button", () => {
+    render(
+      <Table
+        {...baseProps}
+        renderCell={(item, column) =>
+          column.id === "total" ? (
+            <button type="button">{`Open ${item.customer}`}</button>
+          ) : (
+            item.customer
+          )
+        }
+      />,
+    );
+    const ada = screen.getByRole("rowheader", { name: "Ada" });
+    act(() => ada.focus());
+    fireEvent.keyDown(document.activeElement as Element, { key: "ArrowRight" });
+    // React Aria's "arrow" behaviour: the cell hands focus to its button, so the button is reached from the keyboard.
+    expect(document.activeElement).toBe(screen.getByRole("button", { name: "Open Ada" }));
   });
 
   it("passes the root's other props through", () => {

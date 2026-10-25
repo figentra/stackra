@@ -12,15 +12,12 @@
  */
 import { LinkButton, type LinkButtonProps } from "heroui-native";
 import { use } from "react";
-import { Linking } from "react-native";
 
 import type { LinkContractProps } from "#contracts/types/link-contract-props.type";
 import { TONE_CLASS_NAME } from "#core/constants/tone-class-name.constant";
 import { Icon } from "#native/icon/icon";
+import { followHref } from "#native/router-provider/follow-href.function";
 import { RouterContext } from "#native/router-provider/router-context";
-
-/** An absolute URL: it starts with a scheme (`https:`, `mailto:`, `tel:`, the app's own). */
-const HAS_SCHEME = /^[a-z][a-z\d+.-]*:/i;
 
 // shortcut: English until @stackra/i18n ships; then the key `ui::link.opens-in-browser`.
 const STRINGS = {
@@ -64,13 +61,7 @@ export function Link({
   const navigate = use(RouterContext);
   const follow = () => {
     onPress?.();
-    if (!href) return;
-    if (navigate && !isExternal && !HAS_SCHEME.test(href)) {
-      navigate(href);
-      return;
-    }
-    // The URL stays out of the warning: it may hold a token.
-    Linking.openURL(href).catch(() => console.warn(STRINGS.couldNotOpen));
+    if (href) followHref(href, navigate, STRINGS.couldNotOpen, isExternal);
   };
   // Written out in full: Uniwind finds `text-link` and `underline` here, and `default` has no entry in the map.
   const toneClass = tone === "default" ? "text-link" : TONE_CLASS_NAME[tone];
