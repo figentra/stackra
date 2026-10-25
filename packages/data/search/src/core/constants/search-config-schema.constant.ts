@@ -15,4 +15,16 @@ import { SEARCH_DRIVERS } from "#core/constants/search-drivers.constant";
 /** The shipped `SearchConfig$`. */
 export const SEARCH_CONFIG_SCHEMA = z.object({
   driver: z.enum(SEARCH_DRIVERS).default("postgres"),
+  embedder: z
+    .object({
+      url: z.url().nullable().default(null),
+      model: z.string().default(""),
+      dimensions: z.number().int().min(1).max(16_000).default(1024),
+      tokenEnv: z
+        .string()
+        .regex(/^[A-Z][A-Z0-9_]*$/)
+        .nullable()
+        .default(null),
+    })
+    .default(() => ({ url: null, model: "", dimensions: 1024, tokenEnv: null })),
 });

@@ -5,7 +5,8 @@
  *          word as a prefix, `ts_rank_cd` over the weighted vectors, the best locale counting) and trigram (word
  *          similarity of the phrase to the folded `search_text`).
  * Boundary: raw SQL on the running context's entity manager, so it joins the caller's transaction and scope session:
- *           row-level security decides the rows, and no filter of its own is added. Every value is a bound parameter;
+ *           row-level security decides the rows, and the request's record-visibility subquery narrows both lanes
+ *           before they rank. An Arabizi word's alternatives join its prefix as an OR group. Every value is a bound parameter;
  *           identifiers are quoted and come from the ORM metadata and the catalogue; configuration names come from
  *           `TEXT_SEARCH_CONFIGS` only. A table's vector columns are read once from the catalogue and kept, so a
  *           table's locales need no configuration. Each lane ranks at most `CANDIDATES` rows, so a page past that window
@@ -91,22 +92,34 @@ export class PostgresSearchDriver extends Driver(SearchDriver) {
       filters.length === 0
         ? []
         : [JSON.stringify(Object.fromEntries(filters.map(([path, value]) => [path, [value]])))];
+    const { visible } = request;
+    // Record visibility bounds both lanes before they rank (ADR 0333); its subquery is the ORM's, parameterised.
+    const restrict =
+      visible === undefined ? "" : ` and t.${quote(table.primaryKey)} in (${visible.sql})`;
+    const laneParams = [...filterParams, ...(visible?.params ?? [])];
     const key = `t.${quote(table.primaryKey)}`;
     const phrase = request.words.join(" ");
-    const prefixes = request.words.map((word) => `${word}:*`).join(" & ");
+    const prefixes = request.words
+      .map((word) => {
+        const spellings = [word, ...(request.alternatives?.[word] ?? [])].map(
+          (spelling) => `${spelling}:*`,
+        );
+        return spellings.length === 1 ? spellings[0] : `(${spellings.join(" | ")})`;
+      })
+      .join(" & ");
     // raw-sql: hybrid ranking (tsvector and trigram lanes fused by reciprocal rank) has no ORM form (ADR 0221 d1)
     const rows = (await this.database.em().execute(
       `with q as (select ${vectors.map((vector, index) => `to_tsquery('${vector.config}', ?) as q${index}`).join(", ")}),
 fts as (
   select ${key} as id, row_number() over (order by greatest(${vectors.map((vector, index) => `ts_rank_cd(t.${quote(vector.name)}, q.q${index})`).join(", ")}) desc, ${key}) as rank
   from ${qualified(table)} t cross join q
-  where (${vectors.map((vector, index) => `t.${quote(vector.name)} @@ q.q${index}`).join(" or ")})${filter}
+  where (${vectors.map((vector, index) => `t.${quote(vector.name)} @@ q.q${index}`).join(" or ")})${filter}${restrict}
   order by rank limit ${CANDIDATES}
 ),
 trigram as (
   select ${key} as id, row_number() over (order by word_similarity(?, ${FOLD}(t."search_text")) desc, ${key}) as rank
   from ${qualified(table)} t
-  where ${FOLD}(t."search_text") %> ?${filter}
+  where ${FOLD}(t."search_text") %> ?${filter}${restrict}
   order by rank limit ${CANDIDATES}
 )
 select id from (
@@ -118,10 +131,10 @@ order by score desc, id
 limit ? offset ?`,
       [
         ...vectors.map(() => prefixes),
-        ...filterParams,
+        ...laneParams,
         phrase,
         phrase,
-        ...filterParams,
+        ...laneParams,
         request.limit,
         request.offset,
       ],

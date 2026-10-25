@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `PostgresSearchDriver`: it reads a table's vector columns from the catalogue once (locale and
+ * Purpose: unit tests of `PostgresSearchDriver`, Arabizi alternatives and the visibility subquery included: it reads a table's vector columns from the catalogue once (locale and
  *          configuration from the column name), writes each document as weighted vectors per locale with the folded
  *          text and filter values, clears removed documents, and ranks with the two fused lanes, every value bound as a
  *          parameter in placeholder order.
@@ -133,6 +133,33 @@ describe(PostgresSearchDriver, () => {
     });
     expect(statements.at(-1)?.sql).not.toContain("search_filters");
     expect(statements.at(-1)?.params).toEqual(["mug:*", "mug", "mug", 5, 0]);
+  });
+
+  it("ORs an Arabizi word's alternatives and narrows both lanes by the visibility subquery", async () => {
+    const { database, statements } = databaseWith(["search_vector"]);
+    await new PostgresSearchDriver(database).search(PRODUCTS, {
+      words: ["7abibi", "mug"],
+      filters: {},
+      offset: 0,
+      limit: 5,
+      alternatives: { "7abibi": ["حبيبي"] },
+      visible: {
+        sql: 'select "visible"."id" from "catalogue"."products" as "visible" where "wall" = ?',
+        params: [1],
+      },
+    });
+    const search = statements.at(-1);
+    expect(search?.params).toEqual([
+      "(7abibi:* | حبيبي:*) & mug:*",
+      1,
+      "7abibi mug",
+      "7abibi mug",
+      1,
+      5,
+      0,
+    ]);
+    expect(search?.sql.match(/ and t\."id" in \(select "visible"\."id"/g)).toHaveLength(2);
+    expect(search?.sql.match(/\?/g)).toHaveLength(search?.params.length ?? -1);
   });
 
   it("refuses a table without search columns", async () => {

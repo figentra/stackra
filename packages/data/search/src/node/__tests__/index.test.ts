@@ -16,6 +16,7 @@ import type { SearchableColumns } from "#node/index";
 describe("@stackra/search/node", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(node).sort()).toEqual([
+      "HttpEmbedderDriver",
       "PgvectorVectorIndexDriver",
       "PostgresSearchDriver",
       "SearchableChangeService",

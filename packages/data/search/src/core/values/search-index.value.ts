@@ -1,24 +1,32 @@
 /**
  * Stackra file contract:
  * Purpose: `SearchIndex<M>`, one model's search index as `search.in(Model)` returns it: ranked `find` and cursor
- *          `page` reads that return loaded rows, and `index`, `remove` and `reindex`, which keep the documents current.
+ *          `page` reads that return loaded rows, `snippets` for a result list, and `index`, `remove` and `reindex`, which
+ *          keep the documents current.
  * Boundary: a value built by `Search`, never injected. It reads the model's `@Searchable` facet and its ORM metadata,
  *           builds documents and phrase words (the one normalisation, ADR 0221 d3) and leaves ranking and storage to the
  *           driver. Every read and write runs on the running context's entity manager, so it joins the caller's
- *           transaction and scope session: row-level security decides which rows a search sees, and nothing here adds
- *           a filter of its own. A cursor is the next page's offset; a page past the driver's candidate window is empty.
+ *           transaction and scope session: row-level security isolates, and record visibility is the only
+ *           narrowing added. A cursor is the next page's offset; a page past the driver's candidate window is empty.
+ *           Record visibility (ADR 0333) is handed to the driver as a key subquery, so it bounds the rows before
+ *           they are ranked; an Arabizi word also matches its Arabic spelling; a snippet never shows a `no_snippet`
+ *           field outside the record's team.
  * Runtime: node
  * Governing contract: ADR 0221 (decisions 1, 2, 3 and 7); ADR 0294 (decision 6: `@Searchable` is a class facet);
- *                     cursor pagination in the HTTP conventions; ADR 0327 (decision 9: isolation in the database).
+ *                     cursor pagination in the HTTP conventions; ADR 0327 (decision 9: isolation in the database); ADR 0333
+ *                     (amendment); ADR 0341 (decision 2); OS-173.
  */
 import type { AnyClass } from "@stackra/container";
+import { visibleKeysQuery } from "@stackra/database";
 import type { Database, TablePage } from "@stackra/database";
-import { Searchable } from "@stackra/model";
+import { Classify, Searchable, SearchSnippet, Translated } from "@stackra/model";
 import type { SearchableOptions } from "@stackra/model";
 
 import type { SearchDriver, SearchTable } from "#contracts/index";
 import { SearchCursorInvalidError } from "#core/errors/search-cursor-invalid.error";
+import { arabiziOf } from "#core/functions/arabizi-of.function";
 import { searchDocumentOf } from "#core/functions/search-document-of.function";
+import { searchSnippetOf } from "#core/functions/search-snippet-of.function";
 import { searchWordsOf } from "#core/functions/search-words-of.function";
 import type { SearchFindOptions } from "#core/types/search-find-options.type";
 import type { SearchPageOptions } from "#core/types/search-page-options.type";
@@ -114,6 +122,44 @@ export class SearchIndex<M extends object> {
     return this.read(phrase, offsetOf(options.cursor), options);
   }
 
+  /**
+   * The excerpt of each row's own text fields around the phrase, by primary key, for a result list. A field whose data
+   * class says `no_snippet` (`privileged`) is excerpted only for a member of the record's own team, which
+   * `isTeamMember` answers (IAM's decision, never this index's); a row with nothing to show has no entry.
+   *
+   * @param locale - the locale a translated field is read in.
+   */
+  snippets(
+    rows: readonly M[],
+    phrase: string,
+    options: { readonly locale?: string; readonly isTeamMember?: (row: M) => boolean } = {},
+  ): ReadonlyMap<string, string> {
+    const words = [...new Set(searchWordsOf(phrase))].slice(0, MAX_WORDS);
+    const classes = Classify.members(this.model);
+    const { key } = this.shape();
+    const snippets = new Map<string, string>();
+    for (const row of rows) {
+      const isTeam = options.isTeamMember?.(row) ?? false;
+      for (const path of this.facet.text) {
+        if (path.includes(".")) continue;
+        const restricted = classes.get(path)?.dataClass.search === SearchSnippet.NoSnippet;
+        if (restricted && !isTeam) continue;
+        const value = (row as Readonly<Record<string, unknown>>)[path];
+        const text =
+          value instanceof Translated
+            ? value.in(options.locale ?? "")
+            : typeof value === "string"
+              ? value
+              : "";
+        const snippet = searchSnippetOf(text, words);
+        if (snippet === undefined) continue;
+        snippets.set(String(this.keyOf(row, key)), snippet);
+        break;
+      }
+    }
+    return snippets;
+  }
+
   /** Stores the current document of each row, loading the relations the facet's paths walk first. */
   async index(rows: readonly M[]): Promise<void> {
     if (rows.length === 0) return;
@@ -178,8 +224,22 @@ export class SearchIndex<M extends object> {
         );
     const words = [...new Set(searchWordsOf(phrase))].slice(0, MAX_WORDS);
     if (words.length === 0) return { items: [], hasMore: false };
+    const alternatives = Object.fromEntries(
+      words.flatMap((word) => {
+        const arabic = arabiziOf(word);
+        return arabic === undefined ? [] : [[word, [arabic]]];
+      }),
+    );
+    const visible = await visibleKeysQuery(this.model);
     const { table, key } = this.shape();
-    const ids = await this.driver.search(table, { words, filters, offset, limit: limit + 1 });
+    const ids = await this.driver.search(table, {
+      words,
+      filters,
+      offset,
+      limit: limit + 1,
+      ...(Object.keys(alternatives).length === 0 ? {} : { alternatives }),
+      ...(visible === undefined ? {} : { visible }),
+    });
     const items = await this.load(ids.slice(0, limit), key, options.populate);
     return ids.length > limit
       ? { items, hasMore: true, nextCursor: String(offset + limit) }

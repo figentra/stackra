@@ -91,3 +91,23 @@ describe(MemorySearchDriver, () => {
     await driver.remove(ORDERS, ["ord_1"]);
   });
 });
+
+describe("MemorySearchDriver alternatives and visibility", () => {
+  it("matches a word by any of its alternatives", async () => {
+    const driver = new MemorySearchDriver();
+    await driver.index(PRODUCTS, [{ id: "prd_1", fields: ["حبيبي"], filters: {} }]);
+    await expect(driver.search(PRODUCTS, request(["7abibi"]))).resolves.toEqual([]);
+    await expect(
+      driver.search(PRODUCTS, request(["7abibi"], { alternatives: { "7abibi": ["حبيبي"] } })),
+    ).resolves.toEqual(["prd_1"]);
+  });
+
+  it("refuses a request that carries record visibility", async () => {
+    await expect(
+      new MemorySearchDriver().search(
+        PRODUCTS,
+        request(["x"], { visible: { sql: "select 1", params: [] } }),
+      ),
+    ).rejects.toThrow(/record visibility/);
+  });
+});

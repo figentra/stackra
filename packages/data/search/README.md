@@ -121,12 +121,25 @@ const hits = await index.query(query ?? [], { topK: 5, scope, filter: { source: 
 session (`Database.withScope`), so row-level security limits every read and write to the granted scopes; a query also
 narrows to the rows at or below its `scope`. The embedding column has no fixed dimension, so a query scans the scope's
 rows exactly (no HNSW index yet); every passage of one deployment comes from one embedder. `MemoryVectorIndexDriver`
-does the same in memory. No `Embedder` driver ships here: the provider drivers live with the AI integrations.
+does the same in memory. `HttpEmbedderDriver` (`./node`) calls an OpenAI-compatible `/embeddings` endpoint in the
+tenant's region (`search.embedder: { url, model, dimensions, tokenEnv }`), so the text never leaves it; it checks
+every vector's size against `dimensions`. Provider-specific drivers live with the AI integrations.
+
+## Visibility, Arabizi, snippets and global search
+
+- Record visibility (ADR 0333) bounds a search before it ranks: `SearchIndex` hands the driver the subquery of the
+  visible keys (`visibleKeysQuery` of `@stackra/database`), which the Postgres driver ANDs into both lanes. The memory
+  driver refuses a request that carries one.
+- An Arabizi word (`7abibi`) also matches its Arabic spelling (`حبيبي`), as a prefix alternative.
+- `index.snippets(rows, phrase, { isTeamMember })` excerpts each row's own text fields; a field whose data class says
+  `no_snippet` (`PrivilegedDataClass`) is excerpted only for the record's team, which IAM answers.
+- `search.across([Customer, Matter], phrase, { limit })` fuses several models' results by reciprocal rank (the
+  palette's global search).
 
 ## Not here
 
 - Re-indexing a parent when a related row its facet reads changes: the writer calls `index` for it; `reindex`
   backfills.
-- The vector lane in the hybrid `Search` ranking (the `VectorIndex` stands alone for now); the versioned index swap, the palette, the public search API
-  and the IAM predicate of ADR 0221 are later work.
+- The vector lane in the hybrid `Search` ranking (the `VectorIndex` stands alone for now); the versioned index swap,
+  the palette UI and the public search API of ADR 0221 are later work.
 - An OpenSearch driver: built behind the same port when ADR 0221 d9's trigger is met.

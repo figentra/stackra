@@ -17,5 +17,6 @@ export { SearchCursorInvalidError } from "#core/errors/search-cursor-invalid.err
 export { SearchOptions } from "#core/schemas/search-options.schema";
 export { Search } from "#core/services/search.service";
 export type { SearchFindOptions } from "#core/types/search-find-options.type";
+export type { SearchHit } from "#core/types/search-hit.type";
 export type { SearchPageOptions } from "#core/types/search-page-options.type";
 export { SearchIndex } from "#core/values/search-index.value";

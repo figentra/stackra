@@ -12,6 +12,7 @@
  *                     the STA-347 stand-in barrel decision.
  */
 export { SearchableMacro } from "#node/database/macros/searchable.macro";
+export { HttpEmbedderDriver } from "#node/drivers/http-embedder.driver";
 export { PgvectorVectorIndexDriver } from "#node/drivers/pgvector-vector-index.driver";
 export { PostgresSearchDriver } from "#node/drivers/postgres-search.driver";
 export { registerSearchableModels } from "#node/functions/register-searchable-models.function";

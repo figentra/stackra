@@ -12,7 +12,10 @@ import { SEARCH_CONFIG_SCHEMA } from "#core/constants/search-config-schema.const
 
 describe("SEARCH_CONFIG_SCHEMA", () => {
   it("parses {} to the default", () => {
-    expect(SEARCH_CONFIG_SCHEMA.parse({})).toEqual({ driver: "postgres" });
+    expect(SEARCH_CONFIG_SCHEMA.parse({})).toEqual({
+      driver: "postgres",
+      embedder: { url: null, model: "", dimensions: 1024, tokenEnv: null },
+    });
   });
 
   it("takes the shipped drivers and refuses others", () => {
@@ -24,6 +27,6 @@ describe("SEARCH_CONFIG_SCHEMA", () => {
     const Host$ = SEARCH_CONFIG_SCHEMA.extend({
       driver: SEARCH_CONFIG_SCHEMA.shape.driver.unwrap().default("memory"),
     });
-    expect(Host$.parse({})).toEqual({ driver: "memory" });
+    expect(Host$.parse({}).driver).toBe("memory");
   });
 });

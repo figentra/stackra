@@ -2,16 +2,20 @@
  * Stackra file contract:
  * Purpose: unit tests of `SearchIndex`: indexing loads the facet's relations and stores normalised documents under the
  *          model's table; `find` and `page` return loaded rows in rank order with the next cursor; filters, limits and
- *          cursors are checked; a phrase with no word reads nothing; `remove` and `reindex` reach the driver.
+ *          cursors are checked; a phrase with no word reads nothing; `remove` and `reindex` reach the driver; an Arabizi word
+ *          carries its Arabic alternative, record visibility reaches the driver before ranking, and a privileged field
+ *          is excerpted only for the record's team.
  * Boundary: test only; the memory driver ranks and a stand-in entity manager answers metadata, populate and find from
  *           a fixed list, so no database runs.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0221 (decisions 1 to 3 and 7).
  */
+import { connectVisibilityFilter, Database as DatabasePort } from "@stackra/database";
 import type { Database } from "@stackra/database";
+import { VisibilityFilter } from "@stackra/database/contracts";
 import { isRefusal } from "@stackra/errors";
-import { Model, Searchable } from "@stackra/model";
-import { describe, expect, it } from "@stackra/testing";
+import { Classify, Model, PrivilegedDataClass, Searchable } from "@stackra/model";
+import { afterEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 
 import { MemorySearchDriver } from "#core/drivers/memory-search.driver";
@@ -145,5 +149,84 @@ describe(SearchIndex, () => {
     const products = new SearchIndex(driver, database, Product);
     await expect(products.reindex()).resolves.toBe(3);
     expect(await products.find("shirt")).toHaveLength(3);
+  });
+});
+
+describe("SearchIndex Arabizi, visibility and snippets", () => {
+  @Searchable({ text: ["title", "advice"] })
+  class Memo extends Model.with() {
+    id = "";
+
+    title = "";
+
+    @Classify(PrivilegedDataClass)
+    advice = "";
+  }
+
+  const MEMOS = [
+    Object.assign(new Memo(), { id: "mem_1", title: "حبيبي مذكرة", advice: "" }),
+    Object.assign(new Memo(), {
+      id: "mem_2",
+      title: "Lease review",
+      advice: "The lease clause is void.",
+    }),
+  ];
+
+  /** A memo index over MEMOS with the memory driver. */
+  async function memos() {
+    const driver = new MemorySearchDriver();
+    const em = {
+      getMetadata: () => ({ ...META, tableName: "memos" }),
+      populate: async () => undefined,
+      find: async (_model: unknown, where: KeyFilter) =>
+        MEMOS.filter((memo) => where.id?.$in?.includes(memo.id) ?? true),
+    };
+    const index = new SearchIndex(driver, { em: () => em } as unknown as Database, Memo);
+    await index.index(MEMOS);
+    return { driver, index };
+  }
+
+  afterEach(() => {
+    connectVisibilityFilter(undefined);
+    vi.restoreAllMocks();
+  });
+
+  it("finds Arabic text for an Arabizi word", async () => {
+    const { driver, index } = await memos();
+    const search = vi.spyOn(driver, "search");
+    expect(await index.find("7abibi")).toEqual([MEMOS[0]]);
+    expect(search.mock.calls[0]?.[1].alternatives).toEqual({ "7abibi": ["حبيبي"] });
+  });
+
+  it("hands the driver the visibility subquery before it ranks", async () => {
+    const { driver, index } = await memos();
+    const search = vi.spyOn(driver, "search").mockResolvedValue([]);
+    const builder = {
+      select: () => builder,
+      where: () => builder,
+      toQuery: () => ({ sql: "select id from memos where wall = ?", params: [1] }),
+    };
+    vi.spyOn(DatabasePort, "current").mockReturnValue({
+      em: () => ({ getMetadata: () => META, createQueryBuilder: () => builder }),
+    } as unknown as DatabasePort);
+    const filter = { conditionsFor: async () => ({ wall: 1 }) } as unknown as VisibilityFilter;
+    connectVisibilityFilter({
+      has: (token) => token === VisibilityFilter,
+      get: () => filter as never,
+    });
+    await index.find("lease");
+    expect(search.mock.calls[0]?.[1].visible).toEqual({
+      sql: "select id from memos where wall = ?",
+      params: [1],
+    });
+  });
+
+  it("excerpts a privileged field only for the record's team", async () => {
+    const { index } = await memos();
+    expect([...index.snippets(MEMOS, "clause")]).toEqual([]);
+    expect([...index.snippets(MEMOS, "clause", { isTeamMember: () => true })]).toEqual([
+      ["mem_2", "The lease clause is void."],
+    ]);
+    expect([...index.snippets(MEMOS, "lease")]).toEqual([["mem_2", "Lease review"]]);
   });
 });
