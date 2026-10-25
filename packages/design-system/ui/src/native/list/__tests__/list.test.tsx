@@ -15,7 +15,7 @@
  */
 // @vitest-environment jsdom
 // @covers sta-350:FR-121 sta-350:FR-122 sta-350:FR-128 sta-350:FR-129 sta-350:P-064
-// @covers sta-430:FR-008
+// @covers sta-430:FR-008 sta-430:P-002
 import { fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 

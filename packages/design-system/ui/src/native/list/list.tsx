@@ -5,7 +5,7 @@
  *          checkbox (several) with its checked state and a checkmark, and reports the selection as a list of ids in the
  *          items' order. An empty list shows `emptyState`, a loading one a named spinner, and a list with `hasMore`
  *          calls `onLoadMore` from the `FlatList`'s end-reached callback, which is the contract's `onLoadMore`. The rows
- *          fade in and rise into place when they arrive (`Reveal`, unless `isAnimated` is off), inside the `ListGroup`,
+ *          fade in and rise into place as one block when the list mounts (`Reveal`, unless `isAnimated` is off), inside the `ListGroup`,
  *          so a glass group never has an animated ancestor (ADR 0329).
  * Boundary: no styling of its own; the look is HeroUI Native's. It never sorts, filters or fetches. While the list
  *           selects, a row's `onPress` is not called: a row selects or acts, never both. Not built here, and not in the

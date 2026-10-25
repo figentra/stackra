@@ -24,8 +24,9 @@
 
 ## Impact
 
-- **Apps touched**: the playground's NumberValue page test only (it reads the rolling number through a NumberFlow
-  stand-in). The playground and the mobile app pick up the defaults through the packages.
+- **Apps touched**: `apps/playground`, its NumberValue page test only (it reads the rolling number through a
+  NumberFlow stand-in); `apps/docs`, ADR 0329, the index and the navigation. The playground and the mobile app pick up
+  the defaults through the packages.
 - **Services touched**: none
 - **Packages touched**: `packages/design-system/tokens`, `packages/design-system/ui`, `packages/design-system/ui-pro`
 - **Public contract change**: `@stackra/tokens` gains the `reveal` and `stagger` motion steps and `motionTiming`;

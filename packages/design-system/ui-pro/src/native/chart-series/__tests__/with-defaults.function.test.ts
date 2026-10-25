@@ -6,7 +6,7 @@
  * Runtime: node
  * Governing contract: ADR 0329 (motion layer); ADR 0022 (test placement).
  */
-// @covers sta-430:FR-006
+// @covers sta-430:FR-006 sta-430:P-002
 import type { ReactElement } from "react";
 
 import { withDefaults } from "#native/chart-series/with-defaults.function";

@@ -5,7 +5,7 @@
  *          `ListBox` with one `ListBox.Item` per row, which brings the option roles, arrow keys, type-ahead and the
  *          selected checkmark. The selection is reported as a list of ids in the items' order. An empty list shows
  *          `emptyState`, a loading one a named spinner, and a list with `hasMore` calls `onLoadMore` when its end is
- *          scrolled into view. The rows fade in and rise into place when they arrive (`Reveal`, unless `isAnimated` is
+ *          scrolled into view. The rows fade in and rise into place as one block when the list mounts (`Reveal`, unless `isAnimated` is
  *          off); the Reveal sits inside the surface, so a glass surface never has an animated ancestor (ADR 0329).
  * Boundary: no styling layer of its own beyond the divider and corner utilities of the surface; the look is HeroUI's,
  *           themed by `@stackra/tokens`. It never sorts, filters or fetches. While the list selects, a row's `onPress`

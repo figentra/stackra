@@ -11,7 +11,7 @@
  */
 // @vitest-environment jsdom
 // @covers sta-416:FR-005
-// @covers sta-430:FR-007
+// @covers sta-430:FR-007 sta-430:P-002
 import { NumberValue as HeroNumberValue } from "@heroui-pro/react/number-value";
 import { render, screen } from "@testing-library/react";
 
