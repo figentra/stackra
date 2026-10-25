@@ -20,6 +20,7 @@ record's values live in a side table and are checked against those definitions o
 | `./node` | `CustomField`, `CustomFieldValueSet`                                                     | the definition table and the side table of values                   |
 | `./node` | `CustomFieldService`                                                                     | define, list, write and read                                        |
 | `./node` | `CustomFieldLimitEntitlement`                                                            | the plan limit on how many fields a scope defines (declared only)   |
+| `./node` | `HasRevisions`, `Revision`                                                               | the trait of a model that keeps numbered revisions, and their table |
 
 `.` is isomorphic: a browser that imports `ContentEntryType` pulls no ORM.
 
@@ -61,17 +62,32 @@ await fields.read("catalogue.product", product.id); // { shoeSize: "42" }
 - The number of fields a scope may define is `CustomFieldLimitEntitlement` (`content.custom_field_limit`), a limit
   counting `CustomField`; the host's defining action is the gated call.
 
+## Revisions
+
+```ts
+export class RuleSet extends Model.with(HasPublicId("rset"), Timestamps, HasRevisions) {}
+```
+
+`HasRevisions` adds no column: a record's revisions are rows of `content.revisions`, keyed by the record's model key
+and public id, numbered from 1. A revision's `data` is a frozen snapshot written once; a change is a new revision. A
+revision without `publishedAt` is a draft; publishing sets it, and publishing an older revision again rolls back to it
+(the current revision is the one published last). The owning package writes revisions through
+`Repository<Revision>`, as `@stackra/rules` does for its rule sets; a shared revision service, `Publishable` and
+`Schedulable` come later.
+
 ## Tables
 
 `content.custom_fields` holds `id` (`cfd_…`), the scope (`scope_id`, `scope_path`), `model`, `key`, `type`, `label`
 (jsonb per locale), `required` and `rules` (choices and bounds, jsonb), unique on scope, model and key.
 `content.custom_field_value_sets` holds `id` (`cfv_…`), the scope, `model`, `record_id` and `values` (jsonb by field
-key), unique on model and record id. Both force row-level security matching `scope_path` at or below the session's
-`app.scope_paths` (`Database.withScope`); no application code adds an isolation filter.
+key), unique on model and record id. `content.revisions` holds `id` (`rev_…`), the scope, `model`, `record_id`,
+`number`, `data` (jsonb) and `published_at` (nullable), unique on model, record id and number. All three force
+row-level security matching `scope_path` at or below the session's `app.scope_paths` (`Database.withScope`); no
+application code adds an isolation filter.
 
 ## Not here
 
-- The content traits `HasRevisions`, `Publishable`, `Sluggable` and `Schedulable`, the built-in content type models,
-  tenant-defined content types at runtime and headless delivery: later, each with its model design.
+- The content traits `Publishable`, `Sluggable` and `Schedulable`, a shared revision service, the built-in content
+  type models, tenant-defined content types at runtime and headless delivery: later, each with its model design.
 - Removing a definition: `CrudService` has no delete; its policy is a data-wave decision.
 - The collaborative-editing `SnapshotStore` driver: the content service owns it (ADR 0270).

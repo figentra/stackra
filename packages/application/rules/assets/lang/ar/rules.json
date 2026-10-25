@@ -1,0 +1,65 @@
+{
+  "builder": {
+    "match": "المطابقة",
+    "all": "كل ما يلي",
+    "any": "أيٌّ مما يلي",
+    "not": "نفي",
+    "field": "الحقل",
+    "operator": "الاختبار",
+    "remove": "إزالة",
+    "addCondition": "إضافة شرط",
+    "addGroup": "إضافة مجموعة"
+  },
+  "operators": {
+    "equals": "يساوي",
+    "not_equals": "لا يساوي",
+    "one_of": "أحد",
+    "not_one_of": "ليس أيًّا من",
+    "less_than": "أقل من",
+    "at_most": "على الأكثر",
+    "greater_than": "أكبر من",
+    "at_least": "على الأقل",
+    "between": "بين",
+    "contains": "يحتوي على",
+    "starts_with": "يبدأ بـ",
+    "ends_with": "ينتهي بـ",
+    "before": "قبل",
+    "after": "بعد",
+    "within_last": "خلال آخر",
+    "not_within_last": "ليس خلال آخر",
+    "includes": "يتضمن",
+    "includes_any": "يتضمن أيًّا من",
+    "includes_all": "يتضمن كلًّا من",
+    "includes_none": "لا يتضمن أيًّا من",
+    "is_empty": "فارغ",
+    "is_not_empty": "غير فارغ",
+    "within_radius": "ضمن",
+    "outside_radius": "خارج",
+    "is_set": "له قيمة",
+    "is_not_set": "ليس له قيمة"
+  },
+  "operands": {
+    "value": "القيمة",
+    "values": "القيم",
+    "from": "من",
+    "to": "إلى",
+    "duration": "المدة",
+    "latitude": "خط العرض",
+    "longitude": "خط الطول",
+    "radius": "نصف القطر بالكيلومترات"
+  },
+  "hints": {
+    "money": "مبلغ وعملته، مثل 12.50 USD.",
+    "date": "تاريخ مثل 2026-10-01، أو وقت مع فرق التوقيت.",
+    "many": "افصل بين القيم بفواصل.",
+    "duration": "رقم ووحدة، مثل 30d أو 12h أو 15m."
+  },
+  "problems": {
+    "node_invalid": "هذا الجزء من القاعدة ليس شرطًا ولا مجموعة.",
+    "too_deep": "المجموعات متداخلة بعمق كبير.",
+    "too_many_nodes": "تحتوي هذه القاعدة على عدد كبير جدًّا من الشروط.",
+    "field_unknown": "اختر حقلًا من القائمة.",
+    "operator_not_allowed": "اختر اختبارًا من القائمة.",
+    "value_invalid": "أدخل قيمة يقبلها هذا الاختبار."
+  }
+}

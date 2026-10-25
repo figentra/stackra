@@ -1,0 +1,65 @@
+{
+  "builder": {
+    "match": "Match",
+    "all": "All of these",
+    "any": "Any of these",
+    "not": "Not",
+    "field": "Field",
+    "operator": "Test",
+    "remove": "Remove",
+    "addCondition": "Add condition",
+    "addGroup": "Add group"
+  },
+  "operators": {
+    "equals": "is",
+    "not_equals": "is not",
+    "one_of": "is one of",
+    "not_one_of": "is none of",
+    "less_than": "is less than",
+    "at_most": "is at most",
+    "greater_than": "is greater than",
+    "at_least": "is at least",
+    "between": "is between",
+    "contains": "contains",
+    "starts_with": "starts with",
+    "ends_with": "ends with",
+    "before": "is before",
+    "after": "is after",
+    "within_last": "is within the last",
+    "not_within_last": "is not within the last",
+    "includes": "includes",
+    "includes_any": "includes any of",
+    "includes_all": "includes all of",
+    "includes_none": "includes none of",
+    "is_empty": "is empty",
+    "is_not_empty": "is not empty",
+    "within_radius": "is within",
+    "outside_radius": "is outside",
+    "is_set": "has a value",
+    "is_not_set": "has no value"
+  },
+  "operands": {
+    "value": "Value",
+    "values": "Values",
+    "from": "From",
+    "to": "To",
+    "duration": "Length of time",
+    "latitude": "Latitude",
+    "longitude": "Longitude",
+    "radius": "Radius in kilometres"
+  },
+  "hints": {
+    "money": "An amount and its currency, such as 12.50 USD.",
+    "date": "A date such as 2026-10-01, or a time with its offset.",
+    "many": "Separate the values with commas.",
+    "duration": "A number and a unit, such as 30d, 12h or 15m."
+  },
+  "problems": {
+    "node_invalid": "This part of the rule is not a condition or a group.",
+    "too_deep": "Groups are nested too deeply.",
+    "too_many_nodes": "This rule has too many conditions.",
+    "field_unknown": "Choose a field from the list.",
+    "operator_not_allowed": "Choose a test from the list.",
+    "value_invalid": "Enter a value this test accepts."
+  }
+}

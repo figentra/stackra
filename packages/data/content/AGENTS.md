@@ -31,7 +31,8 @@ at `packages/data/content` (`tier:lib`), in the programming model v3.1 shape (AD
 - Data only (ADR 0154): a definition never holds an expression, a function or a template. The definition schema is
   strict; a new field type is a case of `CustomFieldType` plus a branch of `checkCustomFields`, never stored data.
 - Field error codes are snake_case (zod's issue code or the refinement's message) and never echo a refused value.
-- No tenant vocabulary (R-59, ADR 0323): both tables are keyed by the contracts `ScopeRef`.
+- No tenant vocabulary (R-59, ADR 0323): every table is keyed by the contracts `ScopeRef`.
+- A revision's `data` is written once; a change is a new revision, never an update of `data`.
 - Isolation is the database's: never add an application-level `WHERE` filter for isolation; selecting `scopeId` picks
   the node whose definitions apply.
 - Migrations are frozen literal snapshots that import only @stackra/database.
@@ -50,3 +51,4 @@ at `packages/data/content` (`tier:lib`), in the programming model v3.1 shape (AD
 | Field labels  | `content.custom_fields.label`               | Configuration text, not personal data.                                           |
 | Custom values | `content.custom_field_value_sets.values`    | A scope's data of any kind, possibly personal; never logged, never in a refusal. |
 | Record id     | `content.custom_field_value_sets.record_id` | A public id; not personal on its own.                                            |
+| Revision data | `content.revisions.data`                    | A snapshot of the owning package's record, possibly personal; never logged.      |
