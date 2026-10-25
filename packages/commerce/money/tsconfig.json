@@ -1,5 +1,5 @@
 // TypeScript project for this member: extends exactly one @stackra/typescript-config preset and sets nothing else
 // (pnpm validate checks the preset). tsc reads tsconfig.json as JSONC, so the name stays .json.
-// `library`: a value class, an enum, constants and functions; no decorators and no TSX.
+// `library`: value classes, an enum, constants, functions, a port and its memory driver; no decorators and no TSX.
 // Owner: release-operations · Secrets: forbidden
 { "extends": "@stackra/typescript-config/library" }

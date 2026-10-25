@@ -236,6 +236,18 @@ describe("Money#times", () => {
     expect(() => Money.ofMinor(MAX, "USD").times(2)).toThrow(RangeError);
     expect(() => Money.ofMinor(1, "USD").times(1e21)).toThrow(RangeError);
   });
+
+  it("takes a decimal string digit for digit", () => {
+    expect(Money.ofMinor(100, "USD").times("0.145", Rounding.HalfUp).minor).toBe(15);
+    expect(Money.ofMinor(1, "USD").times("12345.678901", Rounding.Down).minor).toBe(12_345);
+    expect(Money.ofMinor(-100, "USD").times("1.5").minor).toBe(-150);
+    expect(() => Money.ofMinor(1, "USD").times("1e3")).toThrow(RangeError);
+  });
+
+  it("divides by a decimal string digit for digit", () => {
+    expect(Money.ofMinor(11_500, "SAR").divide("1.15").minor).toBe(10_000);
+    expect(() => Money.ofMinor(1, "USD").divide("0")).toThrow(RangeError);
+  });
 });
 
 describe("Money#divide", () => {

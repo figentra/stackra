@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: the consumer contract of the `.` entry: every value the template imports from `@stackra/money` (with the
- *          codec move of the 2026-10-24 decisions) is exported, nothing else is, and `CurrencyCode` resolves.
+ *          codec move of the 2026-10-24 decisions), and the rate, cash-rounding and unit-price values pricing and
+ *          billing import, are exported, nothing else is, and `CurrencyCode` resolves.
  * Boundary: test only; imports the stand-in barrel through its `#core` alias and the runner through @stackra/testing.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0127 2026-10-24 note.
@@ -13,7 +14,17 @@ import type { CurrencyCode } from "#core/index";
 
 describe("@stackra/money", () => {
   it("exports exactly the runtime surface", () => {
-    expect(Object.keys(entry).sort()).toEqual(["Money", "Rounding", "currencyCode", "money"]);
+    expect(Object.keys(entry).sort()).toEqual([
+      "CashRounding",
+      "ExchangeRate",
+      "MemoryRateSourceDriver",
+      "Money",
+      "Rounding",
+      "UnitPrice",
+      "currencyCode",
+      "decimalProduct",
+      "money",
+    ]);
   });
 
   it("supports the template's uses", () => {

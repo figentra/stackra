@@ -1,7 +1,7 @@
 # AGENTS — @stackra/money
 
 Money in minor units and its codecs. Member at `packages/commerce/money` (`tier:lib`), in the programming model v3.1
-shape (ADR 0294, 0305). Entry `.` only.
+shape (ADR 0294, 0305). Entries `.` and `./contracts` (the `RateSource` port).
 
 ## Where code goes
 
@@ -12,17 +12,24 @@ shape (ADR 0294, 0305). Entry `.` only.
 | A codec (`money()`)     | `src/core/functions/<name>.function.ts`     |
 | A table (`CURRENCIES`)  | `src/core/constants/<name>.constant.ts`     |
 | A type (`CurrencyCode`) | `src/core/types/<name>.type.ts`             |
+| A port or its types     | `src/contracts/{ports,types}/`              |
+| A memory driver         | `src/core/drivers/<name>.driver.ts`         |
 | A test                  | `__tests__/<name>.<kind>.test.ts` beside it |
 
 ## Entries and barrels
 
-- `src/core/index.ts` is a stand-in barrel until gen writes the entry barrels (STA-339); add every new public file to
-  it and to the export list in `src/core/__tests__/index.test.ts`.
+- `src/core/index.ts` and `src/contracts/index.ts` are stand-in barrels until gen writes the entry barrels (STA-339);
+  add every new public file to its barrel and to that entry's `__tests__/index.test.ts`. `./contracts` imports no
+  other entry.
 
 ## This package
 
-- Runtime dependencies are `@stackra/contracts` and `zod` only. No `@stackra/errors` (a later wave): refusals are
-  `RangeError`s.
+- Runtime dependencies are `@stackra/contracts`, `@stackra/container` (the memory driver's `Driver` base) and `zod`
+  only. No `@stackra/errors` (a later wave): refusals are `RangeError`s.
+- Configuration, not code: no currency's cash step, no rate source and no rate lives here. Cash rounding rows, the
+  rate-source key and the metal-rate feed are market-pack data; this package holds the arithmetic only.
+- A rate is a decimal string end to end (`RateSnapshot.rate`) and every product goes through `decimalProduct` and
+  `Money#times(string)`, so no float touches a price.
 - `minor` is always a safe integer. Every new operation computes in BigInt and passes the result through the
   safe-integer check; nothing rounds silently, and a rounding mode is chosen once per operation.
 - `Money` is an ORM embeddable: no `#private` fields, no frozen instances, no state beyond `minor` and `currency`

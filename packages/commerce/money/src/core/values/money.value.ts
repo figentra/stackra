@@ -6,7 +6,7 @@
  * Boundary: a value class. `minor` is a JavaScript `number` that is always a safe integer: a value or a result beyond
  *           `Number.MAX_SAFE_INTEGER` is refused, never rounded. Every operation returns a new `Money`; mixing
  *           currencies is refused. Arithmetic runs on BigInt, and a JavaScript factor or divisor is read as the decimal
- *           it prints as, so `0.145` is exactly 145/1000. Instances are not frozen and the constructor is private: the
+ *           it prints as, so `0.145` is exactly 145/1000; `times` and `divide` also take a decimal string, read as written. Instances are not frozen and the constructor is private: the
  *           ORM maps `Money` as an embeddable (two columns) and builds loaded values without the constructor (ADR 0294
  *           decision 27), so code builds one with `Money.ofMinor` or `Money.of`. Refusals are `RangeError`s.
  * Runtime: isomorphic
@@ -47,10 +47,22 @@ function assertSameCurrency(left: Money, right: Money, operation: string): void 
 }
 
 /**
- * A finite number as the exact ratio of the decimal it prints as: `numerator / denominator`, the denominator a
- * positive power of ten (`0.145` is 145/1000, `1e21` is 10^21/1).
+ * A finite number, or a plain decimal string, as the exact ratio of the decimal it prints as: `numerator /
+ * denominator`, the denominator a positive power of ten (`0.145` is 145/1000, `1e21` is 10^21/1, `"0.000123"` is
+ * 123/1000000). A string is read as written, so a rate or a 6-decimal unit price keeps every digit.
  */
-function toRatio(value: number, name: string): { numerator: bigint; denominator: bigint } {
+function toRatio(value: number | string, name: string): { numerator: bigint; denominator: bigint } {
+  if (typeof value === "string") {
+    const match = DECIMAL.exec(value);
+    if (match === null)
+      throw new RangeError(`Money: the ${name} "${value}" is not a decimal such as "0.145"`);
+    const [, sign, whole = "0", fraction = ""] = match;
+    const digits = BigInt(whole + fraction);
+    return {
+      numerator: sign === undefined ? digits : -digits,
+      denominator: 10n ** BigInt(fraction.length),
+    };
+  }
   if (!Number.isFinite(value))
     throw new RangeError(`Money: the ${name} must be finite, got ${value}`);
   const [mantissa = "0", exponentText = "0"] = String(value).split("e");
@@ -184,11 +196,12 @@ export class Money {
   /**
    * This amount times `factor` (a rate, a quantity), rounded once to whole minor units.
    *
-   * @param factor - any finite number, read as the decimal it prints as.
+   * @param factor - any finite number, read as the decimal it prints as, or a plain decimal string (`"3.672500"`, an
+   *   exchange rate or a 6-decimal unit price), read digit for digit.
    * @param rounding - the rounding mode; half-even by default.
-   * @throws RangeError when `factor` is not finite or the product is beyond the safe-integer limit.
+   * @throws RangeError when `factor` is not finite or not a decimal, or the product is beyond the safe-integer limit.
    */
-  times(factor: number, rounding: Rounding = Rounding.HalfEven): Money {
+  times(factor: number | string, rounding: Rounding = Rounding.HalfEven): Money {
     const { numerator, denominator } = toRatio(factor, "factor");
     const product = roundQuotient(BigInt(this.minor) * numerator, denominator, rounding);
     return new Money(toSafeMinor(product), this.currency);
@@ -198,11 +211,13 @@ export class Money {
    * This amount divided by `divisor` (months, people), rounded once to whole minor units. To split an amount with
    * nothing lost, use `allocate`.
    *
-   * @param divisor - a finite non-zero number, read as the decimal it prints as.
+   * @param divisor - a finite non-zero number, read as the decimal it prints as, or a plain decimal string (`"1.15"`,
+   *   one plus a tax rate), read digit for digit.
    * @param rounding - the rounding mode; half-even by default.
-   * @throws RangeError when `divisor` is zero or not finite, or the quotient is beyond the safe-integer limit.
+   * @throws RangeError when `divisor` is zero, not finite or not a decimal, or the quotient is beyond the safe-integer
+   *   limit.
    */
-  divide(divisor: number, rounding: Rounding = Rounding.HalfEven): Money {
+  divide(divisor: number | string, rounding: Rounding = Rounding.HalfEven): Money {
     const { numerator, denominator } = toRatio(divisor, "divisor");
     if (numerator === 0n) throw new RangeError("Money.divide: the divisor is zero");
     const quotient = roundQuotient(BigInt(this.minor) * denominator, numerator, rounding);
