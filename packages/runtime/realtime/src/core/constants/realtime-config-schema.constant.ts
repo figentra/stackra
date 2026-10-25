@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `REALTIME_CONFIG_SCHEMA`, the zod schema this package ships for `RealtimeConfig` (exported as
  *          `RealtimeConfig$`): the server driver, the realtime origin, the realms allowed on tenant channels, the
- *          subscribe token's lifetime, and the client's background and reconnect behaviour.
+ *          subscribe token's lifetime, the client's background and reconnect behaviour, the fan-out between instances
+ *          and the room caps.
  * Boundary: the stand-in for what gen writes for this package. Every field has a default, so `.parse({})` gives the
  *           full defaults and a host's generated `RealtimeConfig$` extends it (`shape.x.unwrap().default(...)`). The
  *           defaults equal `RealtimeOptions`' initializers (tested). No object-level refinement, so `.extend(...)`
@@ -35,4 +36,20 @@ export const REALTIME_CONFIG_SCHEMA = z.object({
   reconnectOnForeground: z.boolean().default(false),
   backgroundGraceSeconds: z.number().int().min(0).default(60),
   maxBackoffSeconds: z.number().int().min(1).default(30),
+  fanout: z.enum(["local", "valkey"]).default("local"),
+  fanoutValkeyUrl: z.string().default(""),
+  fanoutChannel: z.string().min(1).default("realtime:fanout"),
+  rooms: z
+    .object({
+      maxMembers: z.number().int().min(1).default(50),
+      maxMessageBytes: z.number().int().min(1).default(65_536),
+      maxMessagesPerSecond: z.number().int().min(1).default(20),
+      idleCloseSeconds: z.number().int().min(1).default(60),
+    })
+    .default(() => ({
+      maxMembers: 50,
+      maxMessageBytes: 65_536,
+      maxMessagesPerSecond: 20,
+      idleCloseSeconds: 60,
+    })),
 });

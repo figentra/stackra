@@ -121,7 +121,26 @@ await act(() => realtime.emit(OrderPaid, { orderId }));
 The fake is a real `RealtimeConnection`, live by default. `emit` delivers the same data-free refresh the server
 would and drops the payload. `fakeRealtime({ status })` starts it at another status, and `stop()` signs it out.
 
+## More than one instance
+
+`RealtimeFanout` (`./contracts`) carries broadcasts and room frames between the instances of one service. Config
+`realtime.fanout` picks `local` (one instance, the default) or `valkey` (`ValkeyRealtimeFanoutDriver` in `./node`, over
+Valkey pub/sub on `fanoutChannel`, with the `REALTIME_VALKEY_URL` secret). `RealtimeRelay.start()` delivers what any
+instance fanned out to this instance's sessions and room members; gen wires `RealtimeRelay.broadcast` in place of the
+broadcaster when the fanout is not `local`.
+
+## Rooms (ADR 0346)
+
+A room is a two-way channel per document, in the session's tenant. The room-token endpoint checks the document's view
+permission, visibility and the live-collaboration entitlement, then calls `RealtimeRooms.issueToken({ session,
+document, mayEdit })`; the raw endpoint at `REALTIME_ROOM_PATH` calls `rooms.accept(socket, request.url)`. Members send
+`{ t: "presence" | "awareness" | "update", data }`; the server stamps the sender, relays to the others (and through the
+fanout), answers a viewer's `update` with `{ t: "refused", code: "forbidden" }`, and drops a member over a cap with
+`room_limit_reached` (`RoomLimitReachedError`, close code 4429). The caps are `realtime.rooms` (members, message bytes,
+messages per second, idle seconds).
+
 ## Limits today
 
-Tokens and connections live in one process. A service that runs more than one instance needs a shared pub/sub
-driver (Valkey or Postgres, ADR 0225 decision 1), which is not built yet.
+- The member cap is per instance. Rooms ride the WebSocket only: the server-sent-events fallback and the
+  `collaboration.room.publish` action path of ADR 0346 decision 5 are not built.
+- Pub/sub is at most once: a refresh or room frame published while an instance reconnects is lost to it.

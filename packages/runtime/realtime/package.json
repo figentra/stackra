@@ -2,7 +2,7 @@
   "name": "@stackra/realtime",
   "version": "0.0.0",
   "private": true,
-  "description": "Stackra realtime: the channel hub that delivers data-free broadcast refreshes by audience and permission, the RealtimeDriver (server) and RealtimeTransport (client) ports with their memory, SSE and WebSocket drivers, the reconnecting client connection, RealtimeConfig with its shipped schema, useRealtimeConnection, useSubscription and fakeRealtime",
+  "description": "Stackra realtime: the channel hub that delivers data-free broadcast refreshes by audience and permission, the RealtimeDriver (server) and RealtimeTransport (client) ports with their memory, SSE and WebSocket drivers, the reconnecting client connection, RealtimeConfig with its shipped schema, useRealtimeConnection, useSubscription and fakeRealtime, the RealtimeFanout port with the local and Valkey pub/sub drivers and the RealtimeRelay across instances, and the collaboration rooms of ADR 0346 (RealtimeRooms with its caps and room_limit_reached)",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -33,6 +33,11 @@
       "./src/core/*.ts",
       "./src/core/*/index.ts"
     ],
+    "#node/*": [
+      "./src/node/*",
+      "./src/node/*.ts",
+      "./src/node/*/index.ts"
+    ],
     "#react/*": [
       "./src/react/*",
       "./src/react/*.ts",
@@ -55,6 +60,11 @@
       "@stackra/source": "./src/contracts/index.ts",
       "types": "./dist/contracts.d.mts",
       "default": "./dist/contracts.mjs"
+    },
+    "./node": {
+      "@stackra/source": "./src/node/index.ts",
+      "types": "./dist/node.d.mts",
+      "default": "./dist/node.mjs"
     },
     "./react": {
       "@stackra/source": "./src/react/index.ts",
@@ -86,9 +96,11 @@
     "@stackra/config": "workspace:*",
     "@stackra/container": "workspace:*",
     "@stackra/contracts": "workspace:*",
+    "@stackra/errors": "workspace:*",
     "@stackra/events": "workspace:*",
     "@stackra/transport": "workspace:*",
     "@stackra/validation": "workspace:*",
+    "iovalkey": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {

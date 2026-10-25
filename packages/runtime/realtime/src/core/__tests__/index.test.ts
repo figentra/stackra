@@ -30,16 +30,21 @@ import type {
 describe("@stackra/realtime", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(realtime).sort()).toEqual([
+      "LocalRealtimeFanoutDriver",
       "MemoryRealtimeDriver",
       "MemoryRealtimeTransportDriver",
       "REALTIME_PATH",
+      "REALTIME_ROOM_PATH",
       "RealtimeBroadcaster",
       "RealtimeConfig",
       "RealtimeConfig$",
       "RealtimeConnection",
       "RealtimeHub",
       "RealtimeOptions",
+      "RealtimeRelay",
+      "RealtimeRooms",
       "RealtimeStatus",
+      "RoomLimitReachedError",
       "SseRealtimeDriver",
       "WebSocketRealtimeDriver",
       "WebsocketRealtimeTransportDriver",

@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `RealtimeConfig`, a member's realtime configuration (key `realtime`): the server driver, the realms allowed
- *          on tenant channels, the subscribe token lifetime, the origin, and the client's background and reconnect
- *          behaviour.
+ *          on tenant channels, the subscribe token lifetime, the origin, the client's background and reconnect
+ *          behaviour, the fan-out between instances (with its `REALTIME_VALKEY_URL` secret) and the room caps.
  * Boundary: a configuration class over `RealtimeOptions` with no env map: the origin's variable differs per target
  *           (`VITE_`, `EXPO_PUBLIC_`), so the host feeds it from its own env configuration. Its presence in an app's
  *           module graph mounts the realtime context; a service's selects the driver gen binds.

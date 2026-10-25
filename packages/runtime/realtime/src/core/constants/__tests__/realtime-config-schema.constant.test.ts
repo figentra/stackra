@@ -22,6 +22,15 @@ describe("REALTIME_CONFIG_SCHEMA", () => {
       reconnectOnForeground: false,
       backgroundGraceSeconds: 60,
       maxBackoffSeconds: 30,
+      fanout: "local",
+      fanoutValkeyUrl: "",
+      fanoutChannel: "realtime:fanout",
+      rooms: {
+        maxMembers: 50,
+        maxMessageBytes: 65_536,
+        maxMessagesPerSecond: 20,
+        idleCloseSeconds: 60,
+      },
     });
   });
 
@@ -47,6 +56,8 @@ describe("REALTIME_CONFIG_SCHEMA", () => {
       { backgroundGraceSeconds: -1 },
       { backgroundGraceSeconds: 1.5 },
       { maxBackoffSeconds: 0 },
+      { fanout: "redis" },
+      { rooms: { maxMembers: 0 } },
     ])
       expect(REALTIME_CONFIG_SCHEMA.safeParse(values).success).toBe(false);
   });

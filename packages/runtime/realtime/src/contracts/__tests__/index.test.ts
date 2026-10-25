@@ -21,7 +21,11 @@ import type {
 
 describe("@stackra/realtime/contracts", () => {
   it("exports exactly its values", () => {
-    expect(Object.keys(contracts).sort()).toEqual(["RealtimeDriver", "RealtimeTransport"]);
+    expect(Object.keys(contracts).sort()).toEqual([
+      "RealtimeDriver",
+      "RealtimeFanout",
+      "RealtimeTransport",
+    ]);
   });
 
   it("resolves its public types", () => {

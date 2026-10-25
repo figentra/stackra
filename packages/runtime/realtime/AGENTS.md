@@ -27,6 +27,10 @@ The realtime hub, the broadcaster, the client connection and the drivers of both
   module comes from the event's wire name, never from a written string.
 - Subscribe tokens are one-time and short-lived; a connection closes at the token's expiry.
 - `./contracts` imports no other entry; `src/*/index.ts` are stand-in barrels until gen writes them (STA-339).
+- Anything that imports `iovalkey` (or another server library) goes in `src/node/`; `.` stays web-standard.
+- Rooms take their grant from the server's checks, never from the client; the sender of every relayed frame is the
+  server's stamp. A cap is enforced with `room_limit_reached`, never silently. Room payloads are relayed, never stored.
+- A fanned-out room frame carries its origin instance; never deliver an instance's own frame twice.
 
 ## Rules that fail the build
 

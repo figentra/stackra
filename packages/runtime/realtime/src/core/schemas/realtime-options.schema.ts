@@ -8,15 +8,18 @@
  *           module loads. One configuration serves both sides, so a service and an app override the fields they use.
  *           The origin comes from the host's env configuration (`realtimeOrigin`), so this shape has no env map. The
  *           defaults are dev-safe: the memory driver, every realm, fifteen-minute tokens, a connection that stays
- *           open in the background (a browser tab), and backoff capped at thirty seconds.
+ *           open in the background (a browser tab), backoff capped at thirty seconds, the in-process fan-out and the
+ *           room caps of ADR 0346. The Valkey URL carries its password, so it is the `REALTIME_VALKEY_URL` secret.
  * Runtime: isomorphic
  * Governing contract: ADR 0225 (decision 1); ADR 0294 (decisions 4, 19 and 26); ADR 0295 (decision 10).
  */
+import { Secret } from "@stackra/config";
 import type { DriverName } from "@stackra/container";
 import { Duration, Realm } from "@stackra/contracts";
 import { Int, registerSchemas, Schema } from "@stackra/validation";
 
 import type { RealtimeDriver } from "#contracts/ports/realtime-driver.port";
+import type { RealtimeFanout } from "#contracts/ports/realtime-fanout.port";
 import { REALTIME_CONFIG_SCHEMA } from "#core/constants/realtime-config-schema.constant";
 
 /**
@@ -51,6 +54,28 @@ export class RealtimeOptions extends Schema {
   /** The longest wait between reconnect attempts, in seconds. */
   @Int({ min: 1 })
   maxBackoffSeconds = 30;
+
+  /** The fan-out between a service's instances: `local` for one instance, `valkey` for Valkey pub/sub. */
+  fanout: DriverName<RealtimeFanout> = "local";
+
+  /** The `valkey` fan-out's server (`redis://` or `rediss://`, with its password); empty until the secret is set. */
+  @Secret("REALTIME_VALKEY_URL")
+  fanoutValkeyUrl = "";
+
+  /** The Valkey pub/sub channel the instances of one service share. */
+  fanoutChannel = "realtime:fanout";
+
+  /** The caps of collaboration rooms (ADR 0346 decision 6); a member over one is dropped with `room_limit_reached`. */
+  rooms: {
+    /** Members per room on one instance. */
+    maxMembers: number;
+    /** The largest message payload, in bytes. */
+    maxMessageBytes: number;
+    /** Messages one member may send per second. */
+    maxMessagesPerSecond: number;
+    /** Seconds a member may stay silent before it is closed. */
+    idleCloseSeconds: number;
+  } = { maxMembers: 50, maxMessageBytes: 65_536, maxMessagesPerSecond: 20, idleCloseSeconds: 60 };
 }
 
 registerSchemas([[RealtimeOptions, REALTIME_CONFIG_SCHEMA]]);
