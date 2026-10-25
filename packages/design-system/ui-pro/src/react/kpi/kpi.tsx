@@ -6,8 +6,9 @@
  * Boundary: no styling or behaviour of its own; the look needs `@heroui-pro/react/css`. HeroUI Pro draws Title as a
  *          `dt` and Value as a `dd` with no `dl` around them (axe `dlitem`), so Header and Content wrap their children
  *          in a `dl` that is neither announced (`role="none"`) nor laid out (`display: contents`). `Kpi.Chart` draws with
- *          `recharts`, an optional peer, and draws in on mount (ADR 0329), where HeroUI Pro keeps it still. The compound exposes the documented parts: HeroUI Pro's `KPI.Root` is left
- *          out. Imports the `kpi` subpath, the only way to reach it.
+ *          `recharts`, an optional peer, and draws in on mount (ADR 0329), where HeroUI Pro keeps it still. The
+ *          compound exposes the documented parts: HeroUI Pro's `KPI.Root` is left out. Imports the `kpi` subpath, the
+ *          only way to reach it.
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 4); ADR 0303 (decision 7); ADR 0231 (acronyms cased as words); STA-403 FR-007.
  */
