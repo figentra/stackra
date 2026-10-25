@@ -12,29 +12,64 @@ import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
 import * as entry from "#core/index";
 import type {
+  ApprovalDecision,
+  ApprovalFloor,
+  ApprovalPolicy,
+  ApprovalPreferences,
+  ApprovalRequest,
+  ApprovalRules,
+  ApprovalStep,
+  BudgetCheck,
   ContextFacts,
+  DataClassRule,
   DecideOptions,
+  EvalCase,
+  EvalReport,
   FactsContext,
+  FieldAllowList,
+  Guardrail,
+  GuardrailResult,
+  GuardrailVerdict,
+  Intent,
+  ModelProviderDriver,
+  ModelRoute,
   PromptClass,
   PromptOptions,
+  RedactionRule,
+  RegionRule,
   RetrieveOptions,
   RetrievedPassage,
+  RouteChoice,
+  RouteIntentOptions,
+  RouteRequest,
+  RouteTable,
   SkillClass,
   SkillExample,
   SkillOptions,
+  TokenBudget,
 } from "#core/index";
 
 describe("@stackra/ai", () => {
   it("exports exactly the runtime surface", () => {
     expect(Object.keys(entry).sort()).toEqual([
       "Approval",
+      "ApprovalMode",
       "Facts",
       "Prompt",
       "Skill",
       "ToolSource",
+      "allowFields",
       "approvalFor",
+      "checkBudget",
       "decide",
+      "redact",
+      "resolveApproval",
+      "resolveModel",
       "retrieve",
+      "routeIntent",
+      "routeModel",
+      "runEvals",
+      "runGuardrails",
     ]);
   });
 
@@ -59,6 +94,35 @@ describe("@stackra/ai", () => {
     }>();
     expectTypeOf<RetrieveOptions["topK"]>().toEqualTypeOf<number>();
     expectTypeOf(entry.retrieve).returns.resolves.toEqualTypeOf<readonly RetrievedPassage[]>();
+  });
+
+  it("types the approval resolver and the model router", () => {
+    expectTypeOf(entry.resolveApproval).returns.toEqualTypeOf<ApprovalDecision>();
+    expectTypeOf<ApprovalDecision["step"]>().toEqualTypeOf<ApprovalStep>();
+    expectTypeOf<ApprovalRules["floor"]>().toEqualTypeOf<ApprovalFloor>();
+    expectTypeOf<ApprovalRules["policy"]>().toEqualTypeOf<ApprovalPolicy>();
+    expectTypeOf<ApprovalRules["preferences"]>().toEqualTypeOf<ApprovalPreferences>();
+    expectTypeOf(entry.resolveApproval).parameter(0).toEqualTypeOf<ApprovalRequest>();
+    expectTypeOf(entry.routeModel).parameters.toEqualTypeOf<[RouteRequest, RouteTable]>();
+    expectTypeOf(entry.routeModel).returns.toEqualTypeOf<RouteChoice>();
+    expectTypeOf<RouteTable["routes"][number]>().toEqualTypeOf<ModelRoute>();
+    expectTypeOf<RouteTable["regions"][number]>().toEqualTypeOf<RegionRule>();
+    expectTypeOf<RouteTable["dataClasses"][number]>().toEqualTypeOf<DataClassRule>();
+    expectTypeOf<ModelProviderDriver["provider"]>().toEqualTypeOf<string>();
+  });
+
+  it("types the context, budget, guardrail, eval and intent helpers", () => {
+    expectTypeOf<FieldAllowList>().toEqualTypeOf<Readonly<Record<string, readonly string[]>>>();
+    expectTypeOf<RedactionRule["pattern"]>().toEqualTypeOf<string>();
+    expectTypeOf(entry.checkBudget).returns.toEqualTypeOf<BudgetCheck>();
+    expectTypeOf<TokenBudget["warnAt"]>().toEqualTypeOf<number>();
+    expectTypeOf(entry.runGuardrails).returns.resolves.toEqualTypeOf<GuardrailResult>();
+    expectTypeOf<Guardrail["name"]>().toEqualTypeOf<string>();
+    expectTypeOf<GuardrailVerdict>().toExtend<{ readonly pass: boolean }>();
+    expectTypeOf(entry.runEvals<number, number>).returns.resolves.toEqualTypeOf<EvalReport>();
+    expectTypeOf<EvalCase<string, boolean>["input"]>().toEqualTypeOf<string>();
+    expectTypeOf<Intent["phrases"]>().toEqualTypeOf<readonly string[]>();
+    expectTypeOf<RouteIntentOptions["instructions"]>().toEqualTypeOf<string | undefined>();
   });
 
   it("resolves the type exports", () => {

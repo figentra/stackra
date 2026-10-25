@@ -29,6 +29,9 @@ programming model v3.1 shape (ADR 0294, 0305). Entry `.` only (plus `retrieve`, 
 - Import `@stackra/actions` for types only; the runtime check reads the kind registry through `@stackra/container`.
 - A provider key is a secret name resolved at run time; no key, value or `.env` read here (ADR 0100 decision 14).
 - No `tenant` vocabulary (R-59); no `enum`, no `#private` fields, no parameter properties.
+- Configuration, not code: a floor tag, a recipient limit, a provider, a region, a warning share or a redaction pattern
+  is data the caller passes (platform floor, market pack, product and tenant settings). The resolver, the router and
+  the checks hold only mechanism.
 - Only add a symbol a consumer imports today (the template, a package, or the registry row).
 
 ## Rules that fail the build
