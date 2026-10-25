@@ -35,8 +35,9 @@ model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./node`, `./reac
   check and the write one step per member. `expire` is cut at zero in every driver; never add an expiry or debit path
   that skips the floor. In the Postgres driver every journal call states its floor (`null` for `append`, `0` for
   `debit` and `expire`).
-- `AccountService.earn` is the one earn path (enroll, `earnAdjust`, append, `points.earned`); never credit points
-  another way.
+- `AccountService.earn` is the one spend-based earn path (enroll, `earnAdjust`, append, `points.earned`) and
+  `AccountService.earnVisit` the one visit-based (stamp card) path; never credit points another way.
+- Stamp counts and card sizes are settings; which visits earn is the host's rule set. Never fix either in code.
 - The tables are owned through tenancy's `BelongsToTenant` and `t.belongsToTenant()` (ADR 0323 d1 allows the use);
   declare no `tenant` identifier here (R-59). Migrations are frozen snapshots: literals only, every column
   `.notNull()` or `.nullable()` with a `.comment()` equal to the model field's docblock.

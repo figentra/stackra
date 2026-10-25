@@ -27,6 +27,7 @@ describe("LoyaltyKitSettings", () => {
     const settings = await fakeSettings().get(LoyaltyKitSettings);
     expect(settings.expiryMonths).toBe(12);
     expect(settings.tiers).toEqual({ silverFrom: 1_000, goldFrom: 5_000 });
+    expect([settings.stampsPerVisit, settings.stampsPerCard]).toEqual([1, 10]);
   });
 
   it("locks the window, approves the tiers and keeps silver below gold", () => {

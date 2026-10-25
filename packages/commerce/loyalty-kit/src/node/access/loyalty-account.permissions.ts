@@ -32,4 +32,7 @@ export class LoyaltyAccountPermissions extends Permissions {
 
   /** Expire stale points in bulk; held only by the platform, so no role may grant it. */
   static readonly expire = Permission.L2.system();
+
+  /** Stamp a member's card for a visit; staff and services only, never a customer role. */
+  static readonly stamp = Permission.L1;
 }

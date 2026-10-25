@@ -51,6 +51,14 @@
       "gold_from": {
         "label": "Gold from (points)"
       }
+    },
+    "stamps_per_visit": {
+      "label": "Stamps per visit",
+      "help": "How many stamps one visit adds to a member's stamp card."
+    },
+    "stamps_per_card": {
+      "label": "Stamps per card",
+      "help": "How many stamps fill a card; a full card is one reward."
     }
   },
   "permissions": {
@@ -59,7 +67,8 @@
       "enroll": "Enroll members",
       "freeze": "Freeze accounts",
       "redeem": "Redeem points",
-      "expire": "Expire points"
+      "expire": "Expire points",
+      "stamp": "Stamp visits"
     }
   },
   "actions": {
@@ -76,6 +85,9 @@
     "points": {
       "balance": {
         "intents": ["how many points do I have", "show my loyalty balance"]
+      },
+      "earn_visit": {
+        "success": "Visit stamped"
       }
     }
   },

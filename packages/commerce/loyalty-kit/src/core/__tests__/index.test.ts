@@ -34,6 +34,7 @@ describe("@stackra/loyalty-kit", () => {
       "SETTLE_REFERENCE_PREFIX",
       "isExpiringSoon",
       "memberId",
+      "stampCardProgress",
     ]);
   });
 

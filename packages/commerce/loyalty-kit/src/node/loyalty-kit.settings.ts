@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
- * Purpose: `LoyaltyKitSettings`, the runtime loyalty settings an admin tunes without a deploy: the expiry window and the
- *          tier thresholds, resolved through the settings cascade (platform, then the scope level tenancy contributes).
+ * Purpose: `LoyaltyKitSettings`, the runtime loyalty settings an admin tunes without a deploy: the expiry window, the
+ *          tier thresholds and the stamp card (stamps per visit, stamps per card), resolved through the settings
+ *          cascade (platform, then the scope level tenancy contributes).
  * Boundary: the module's one settings group; its key is the package key (`loyalty_kit`) and each field is a setting
  *           named by its path (`loyalty_kit.expiryMonths`, `loyalty_kit.tiers.goldFrom`). A field typed by a schema
  *           class is a section, one level deep, whose defaults are the section class's initializers. `@Setting`
@@ -39,6 +40,16 @@ export class LoyaltyKitSettings extends Settings({
   @Setting({ approval: true })
   tiers!: LoyaltyTierSettings;
 
+  /** Stamps one visit earns on a stamp card (earning by visit count). */
+  @Int({ min: 1, max: 100 })
+  @Setting()
+  stampsPerVisit = 1;
+
+  /** Stamps one card holds; a full card is one reward. */
+  @Int({ min: 1, max: 1000 })
+  @Setting()
+  stampsPerCard = 10;
+
   /** Silver must start below gold, or no account could ever be silver. */
   override rules(r: SettingsRules<LoyaltyKitSettings>) {
     return [r.lessThan("tiers.silverFrom", "tiers.goldFrom")];
@@ -53,6 +64,8 @@ registerSchemas([
     z
       .object({
         expiryMonths: z.number().int().min(1).max(60).default(12),
+        stampsPerVisit: z.number().int().min(1).max(100).default(1),
+        stampsPerCard: z.number().int().min(1).max(1000).default(10),
         tiers: LOYALTY_TIER_SETTINGS_SCHEMA.default(() => LOYALTY_TIER_SETTINGS_SCHEMA.parse({})),
       })
       .refine((group) => group.tiers.silverFrom < group.tiers.goldFrom, {

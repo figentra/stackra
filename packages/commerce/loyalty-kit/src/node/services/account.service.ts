@@ -4,7 +4,8 @@
  *          extension chain, appends to the ledger and records the event. The only code that writes
  *          `LoyaltyAccount.tier` at enrolment and `isFrozen`.
  * Boundary: exported by the module for hosts; runs inside the caller's transaction. `CrudService<LoyaltyAccount>`
- *           supplies every standard read and write; this class adds only `enroll`, `setFrozen` and `earn`. Events are
+ *           supplies every standard read and write; this class adds only `enroll`, `setFrozen`, `earn` and `earnVisit`
+ *           (the stamp card: earning by visit count). Events are
  *           recorded on the aggregate and reach the outbox when the unit of work flushes, so a rolled-back change emits
  *           nothing. The extension point is injected as a class and its `earnAdjust` slot called as a method. This is
  *           the one earn path: the pure maths is `LoyaltyService.quoteEarn`, which writes nothing.
@@ -21,6 +22,7 @@ import { LoyaltyTier } from "#contracts/enums/loyalty-tier.enum";
 import type { LoyaltyLedger } from "#contracts/ports/loyalty-ledger.port";
 import type { EarnRequest } from "#contracts/types/earn-request.type";
 import type { MemberId } from "#contracts/types/member-id.type";
+import type { VisitRequest } from "#contracts/types/visit-request.type";
 import { AccountFrozenError } from "#core/errors/account-frozen.error";
 import type { LoyaltyService } from "#core/services/loyalty.service";
 import { AccountEnrolled } from "#node/events/account-enrolled.event";
@@ -145,5 +147,39 @@ export class AccountService extends CrudService<LoyaltyAccount> {
       }),
     );
     return points;
+  }
+
+  /**
+   * Stamps a visit (earning by visit count): enrolls the member at bronze on their first visit, appends one ledger
+   * entry of `request.stamps` points under the visit's reference and records `points.earned`. No spend rate and no
+   * extension applies: a stamp card counts visits, not money.
+   *
+   * @returns the stamps credited; zero for a repeated reference.
+   * @throws AccountFrozenError when the account is frozen.
+   * @throws RangeError when `request.stamps` is not a positive integer.
+   */
+  async earnVisit(member: MemberId, request: VisitRequest): Promise<number> {
+    if (!Number.isInteger(request.stamps) || request.stamps < 1)
+      throw new RangeError(`earnVisit: stamps must be a positive integer, got ${request.stamps}`);
+    const account = await this.enroll(member, LoyaltyTier.Bronze);
+    if (!account.canTransact) throw AccountFrozenError.create({ accountId: account.id });
+    const written = await this.ledger.append({
+      memberId: member,
+      points: request.stamps,
+      kind: EntryKind.Earn,
+      reference: request.reference,
+      at: this.clock.now(),
+    });
+    if (!written) return 0;
+    account.record(
+      PointsEarned.create({
+        memberId: member,
+        points: request.stamps,
+        reference: request.reference,
+        tier: account.tier,
+        balanceAfter: await this.ledger.balance(member),
+      }),
+    );
+    return request.stamps;
   }
 }

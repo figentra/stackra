@@ -16,3 +16,4 @@ export type { EarnRequest } from "#contracts/types/earn-request.type";
 export type { MemberId } from "#contracts/types/member-id.type";
 export type { PointsEntry } from "#contracts/types/points-entry.type";
 export type { RedemptionQuote } from "#contracts/types/redemption-quote.type";
+export type { VisitRequest } from "#contracts/types/visit-request.type";

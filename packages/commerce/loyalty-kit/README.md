@@ -72,6 +72,27 @@ The Postgres driver keeps the points in `Journal<LedgerEntry>` (`@stackra/ledger
 
 The memory driver keeps the same contract in one turn of the event loop.
 
+## Stamp cards: earning by visit count
+
+A stamp card counts visits, not money. `EarnVisitAction` (`loyalty_kit.points.earn_visit@1`, `POST /loyalty/visits`,
+permission `LoyaltyAccountPermissions.stamp`, staff and services only) stamps a member's card for one visit through
+`AccountService.earnVisit`: one ledger entry per visit reference, no spend rate and no tier multiplier.
+
+```ts
+await pipeline.execute(
+  EarnVisitAction,
+  { principalId, reference: appointment.id },
+  { actor: service },
+);
+// { stamps: 1, onCard: 4, perCard: 10, fullCards: 0 }
+stampCardProgress(balance, settings.stampsPerCard); // the renderers' card
+```
+
+- The stamp count and the card size are settings (`loyalty_kit.stampsPerVisit`, `loyalty_kit.stampsPerCard`), and
+  which visits earn a stamp is the host's earn rule set (`rule-set:commerce:loyalty-earn`); nothing is fixed in code.
+- A full card is a reward redeemed through the ordinary redemption path.
+- Loyalty points stay on this kit, not on a payments-ledger account kind (conflict 6 of the package-needs table).
+
 ## Access, redemption and the panel
 
 - **Access:** `LoyaltyAccountPermissions` declares `read` (L0), `enroll` (L1), `freeze` (L2), `redeem` (L1) and

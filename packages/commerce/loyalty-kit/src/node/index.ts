@@ -14,6 +14,7 @@
 export { LoyaltyAccountPermissions } from "#node/access/loyalty-account.permissions";
 export { LoyaltyAccountPolicy } from "#node/access/loyalty-account.policy";
 export { ConfirmRedemptionAction } from "#node/actions/confirm-redemption.action";
+export { EarnVisitAction } from "#node/actions/earn-visit.action";
 export { EnrollMemberAction } from "#node/actions/enroll-member.action";
 export { ExpirePointsAction } from "#node/actions/expire-points.action";
 export { FreezeAccountAction } from "#node/actions/freeze-account.action";
@@ -42,6 +43,8 @@ export { PointsIssuedWidget } from "#node/resources/loyalty-account/points-issue
 export { AccountNotes } from "#node/schemas/account-notes.schema";
 export { ConfirmRedemptionInput } from "#node/schemas/confirm-redemption-input.schema";
 export { ConfirmRedemptionOutput } from "#node/schemas/confirm-redemption-output.schema";
+export { EarnVisitInput } from "#node/schemas/earn-visit-input.schema";
+export { EarnVisitOutput } from "#node/schemas/earn-visit-output.schema";
 export { EnrollMemberInput } from "#node/schemas/enroll-member-input.schema";
 export { EnrollMemberOutput } from "#node/schemas/enroll-member-output.schema";
 export { ExpirePointsInput } from "#node/schemas/expire-points-input.schema";

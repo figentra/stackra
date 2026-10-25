@@ -3,7 +3,8 @@
  * Purpose: unit tests of `AccountService`, the one earn path: the first earn enrolls the member at bronze, the
  *          `earnAdjust` chain applies (gold earns double), the credit is idempotent per reference and records one
  *          `points.earned` with the balance after; a frozen account is refused before anything is appended; enrolment
- *          is idempotent and records `account.enrolled` once; freezing records `account.frozen` only on a change.
+ *          is idempotent and records `account.enrolled` once; freezing records `account.frozen` only on a change; a
+ *          visit stamps the card once per reference, at the stamp count given.
  * Boundary: test only; the service runs over the memory ledger, a real `LoyaltyService`, an extension point whose slot
  *           calls the tier extension, and an in-memory stand-in for the two repository calls it makes, so no database
  *           runs. Recorded events are read with `takeRecordedEvents`.
@@ -146,5 +147,31 @@ describe("AccountService", () => {
       true,
       false,
     ]);
+  });
+
+  it("stamps a visit once per reference, with no spend rate or tier multiplier", async () => {
+    const member = memberId("usr_stamps");
+    await accounts.enroll(member, LoyaltyTier.Gold);
+
+    expect(await accounts.earnVisit(member, { reference: "apt_1", stamps: 1 })).toBe(1);
+    expect(await accounts.earnVisit(member, { reference: "apt_1", stamps: 1 })).toBe(0);
+    expect(await accounts.earnVisit(member, { reference: "apt_2", stamps: 2 })).toBe(2);
+
+    expect(await ledger.balance(member)).toBe(3);
+    const events = takeRecordedEvents(stored[0] as LoyaltyAccount);
+    expect(events.filter((event) => event instanceof PointsEarned)).toHaveLength(2);
+  });
+
+  it("refuses a frozen account and a non-positive stamp count", async () => {
+    const member = memberId("usr_1");
+    const account = await accounts.enroll(member, LoyaltyTier.Bronze);
+    await expect(accounts.earnVisit(member, { reference: "apt_1", stamps: 0 })).rejects.toThrow(
+      RangeError,
+    );
+    await accounts.setFrozen(account, true, NOW);
+    await expect(
+      accounts.earnVisit(member, { reference: "apt_1", stamps: 1 }),
+    ).rejects.toRefuseWith(refusal(AccountFrozenError, { accountId: account.id }));
+    expect(await ledger.balance(member)).toBe(0);
   });
 });
