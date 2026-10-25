@@ -1,0 +1,71 @@
+---
+title: "0366 — @stackra/calendar: Umm al-Qura, business days, recurrence and slots over market-pack data"
+description: "Proposed · 2026-10-25"
+---
+
+<Note>
+  Proposed. It places the package approved by owner questionnaire #18 and reads with
+  [0363](/adr/0363-configuration-over-code-business-behaviour-is-data-rules-workflows-and-studios)
+  (configuration over code, market packs),
+  [0192](/adr/0192-translation-workflow-and-arabic-defaults) (the `gregory` and `islamic-umalqura`
+  calendars, display in `@stackra/i18n`) and
+  [0127](/adr/0127-package-categories-including-infrastructure) (package categories).
+</Note>
+
+## Context
+
+OS scheduling-calendar, geography and workforce, Commerce (delivery promise, Hijri promotions), Muslin (seasons),
+Beautilon (recurring appointments, processing gaps), Juristra (deadlines, court calendars) and Academorix (recurring
+sessions, age cut-offs) all need the same date mechanism, and nothing is on disk. Each country's working week, public
+holidays, Hijri adjustments and court recesses differ and change by announcement, and moon-sighted holidays are not
+known in advance. [0363](/adr/0363-configuration-over-code-business-behaviour-is-data-rules-workflows-and-studios) forbids any of that in code. The same arithmetic must run offline on a till and on the server.
+Alternatives weighed: a third-party RRULE and time-zone stack (`rrule`, `luxon`), and a Hijri table shipped in the
+package; both add dependencies or data the runtime's ICU already provides.
+
+## Decision
+
+1. **Package.** `@stackra/calendar` in `packages/foundation/calendar`, `tier:lib`, entry `.` only, depending on
+   `@stackra/contracts` and `zod`. It is pure mechanism with no persistence, so it sits in `foundation`, not `data`.
+2. **One storage form.** Dates are stored and passed as Gregorian `YYYY-MM-DD`; instants as ISO 8601 with an offset.
+   Hijri is computed with the runtime's `islamic-umalqura` calendar (`hijriOf`, `gregorianOf`). A runtime without it
+   throws; the package never falls back to the arithmetic Hijri calendar.
+3. **Calendar data, not code.** A `BusinessCalendar` holds a time zone, a working week (weekdays with hours; a span
+   whose end is not after its start runs past midnight), holiday rules and `uncertainDays`. A holiday rule is a dated
+   span, a yearly Gregorian date or a yearly Hijri date with `sighted`, `since` and `until`. Market packs supply the
+   base; tenants, branches and courts add closures and recesses as more rules. A court working week is the same data.
+   `BusinessCalendar$` checks the shape; the package ships no values.
+4. **Uncertain, never guessed.** A sighted Hijri occurrence is `uncertain` until a dated rule with the same key in that
+   Hijri year confirms or moves it. Business-day results list every uncertain day crossed. Whether an uncertain day
+   counts as working or closed is the calendar's `uncertainDays` value.
+5. **Time zones and working hours** come from the runtime's IANA data through `Intl`: `instantOf`, `localDateOf`,
+   `openIntervals` and `addWorkingMinutes`. Local wall times survive clock changes.
+6. **Recurrence** is RFC 5545 RRULE with FREQ (daily to yearly), INTERVAL, COUNT, UNTIL, BYDAY (with month positions),
+   BYMONTHDAY, BYMONTH and WKST, expanded in a time zone through a required window. Other parts are refused, not
+   ignored. Holidays of a given calendar are skipped; excepted and skipped dates still count toward COUNT.
+7. **Slots** are start times where every segment that holds the resource lies in open time and overlaps no busy
+   block; processing-gap segments may overlap anything.
+8. **Age on a date** is whole years; the 29 February rule is a parameter from the pack (`LeapBirthday`).
+9. **Not here.** Legal counting rules (trigger day, roll-forward, extensions) stay in the product's rules or deadline
+   engine; display formatting stays in `@stackra/i18n`; calendar sync stays with connectors; the market-pack loader
+   stays an open question of [0363](/adr/0363-configuration-over-code-business-behaviour-is-data-rules-workflows-and-studios).
+
+## Consequences
+
+- A new market's weekend or holidays is a pack edit; a late Hijri announcement is one dated rule.
+- Deadline and delivery promises can warn on uncertainty instead of silently moving a date.
+- Hermes and other engines must ship full ICU for Hijri and time zones; a missing calendar fails loudly.
+- Callers merge pack and tenant rules themselves until the pack loader exists.
+- RRULE parts outside the list need an amendment of this ADR before use.
+
+## Enforcement
+
+planned — the package's tests (`packages/foundation/calendar/src/**/__tests__/`) fix the behaviour and use made-up
+fixtures only; the lint rule of [0363](/adr/0363-configuration-over-code-business-behaviour-is-data-rules-workflows-and-studios) will flag country or holiday literals in the source. Nothing checks it in CI
+yet.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: `notes/handover/stackra-package-needs.md` (`@stackra/calendar` row);
+`notes/handover/owner-questionnaire-2026-10-25.md` #18; `notes/handover/config-model.md` (Calendar part of a pack);
+`notes/handover/answers-as-config.md` (CAP-calendar; OS-179, OS-245, COM-150, COM-178, COM-342, PUT-46, PUT-67,
+JUR-115, JUR-121, JUR-284, ACA-82, ACA-87); `notes/handover/product-capability-map-2026-10-25.md`.
