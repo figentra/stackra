@@ -1,0 +1,46 @@
+---
+title: "0426 — The form document kind and the structured document editor for automations and forms"
+description: "Proposed · 2026-10-26"
+---
+
+<Note>
+  Proposed (STA-843, STA-773). It gives [0115](/adr/0115-form-builder) and decisions 6 and 13 of
+  [0270](/adr/0270-builder-architecture-one-editor-kernel-document-kinds-and-collaboration-levels)
+  their kind in `@stackra/builder`.
+</Note>
+
+## Context
+
+Onboarding is a form document (0279 decision 2), but `@stackra/builder` had no form kind, so onboarding answers were a
+typed input. Automations had no editor kernel: the block editor edits trees, and automations and forms are a step list
+and a field list.
+
+## Decision
+
+1. **The form kind.** `FormDocument$`: a key `<module>.<name>`, a version, a lang-key label, the action key it submits
+   to (`forms.submit@1` by default) and 1 to 20 steps of 1 to 50 fields. A field type is one of `FormFieldType` (text,
+   long text, email, phone, number, money, date, yes or no, choice, multiple choice); the registry of types is code,
+   the forms are documents. `checkForm` is the write-time check; `formAnswersSchema(form, now)` is the answers' zod
+   schema for submit (and, `partial`, for save and resume), shared by server and client.
+2. **Conditions are rule-engine nodes.** A step or field may carry a `@stackra/rules` condition over `answers.<field>`:
+   a step's over earlier steps, a field's over its own and earlier steps. Money fields are not testable. Hidden answers
+   are dropped.
+3. **One kernel for structured kinds.** `DocumentEditor` holds a structured document, takes each change as the whole
+   next document, keeps undo and redo, and runs the kind's check (`automationProblems`, `formProblems`) without
+   throwing; `useDocumentEditor` opens it. The automation editor is this kernel over `@stackra/workflow`'s check and
+   building blocks; the host saves through the kind's service, which refuses what the check reports.
+
+## Consequences
+
+- Each product seeds its forms (onboarding first) as documents; the renderer, the submit action and the submission
+  model are the experience service's.
+- `@stackra/builder` depends on `@stackra/rules` and `@stackra/workflow`.
+
+## Enforcement
+
+`packages/experience/builder/src/core/{functions,values}/__tests__/` and
+`src/react/document-editor/__tests__/use-document-editor.test.tsx`.
+
+## Supersedes and sources
+
+`Supersedes: none`. Sources: STA-843 (tenancy SPEC G4), STA-773; ADR 0115, 0270, 0279.

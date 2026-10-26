@@ -8,6 +8,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision.
  */
+export { useDocumentEditor } from "#react/document-editor/use-document-editor";
 export { useEditor } from "#react/editor/use-editor";
 export { useInspector } from "#react/inspector/use-inspector";
 export { useSelection } from "#react/selection/use-selection";

@@ -23,7 +23,11 @@ import type {
 
 describe("@stackra/builder/contracts", () => {
   it("exports exactly its values", () => {
-    expect(Object.keys(contracts).sort()).toEqual(["EditorChangeKind", "InspectorFieldKind"]);
+    expect(Object.keys(contracts).sort()).toEqual([
+      "EditorChangeKind",
+      "FormFieldType",
+      "InspectorFieldKind",
+    ]);
   });
 
   it("keeps the kernel out of the leaf entry", () => {

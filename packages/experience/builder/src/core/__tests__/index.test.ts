@@ -19,13 +19,21 @@ describe("@stackra/builder", () => {
       "BlockNotAllowedError",
       "BlockNotFoundError",
       "BlockNotRegisteredError",
+      "DocumentEditor",
       "DocumentInvalidError",
       "Editor",
+      "FormDocument$",
+      "FormInvalidError",
       "MAX_DOCUMENT_BLOCKS",
       "MAX_DOCUMENT_DEPTH",
       "RootBlockLockedError",
+      "automationProblems",
+      "checkForm",
+      "formAnswersSchema",
+      "formProblems",
       "inspectorFieldsOf",
       "parseDocumentNode",
+      "visibleFields",
     ]);
   });
 

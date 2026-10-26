@@ -10,6 +10,7 @@ The editor kernel for every builder document kind (ADR 0270 decision 4). Member 
 | A type or the change-kind enum          | `src/contracts/{types,enums}/`                 |
 | The editor                              | `src/core/values/editor.value.ts`              |
 | A tree function (parse, apply a change) | `src/core/functions/`                          |
+| A form or automation check, a schema    | `src/core/{functions,constants,types}/`        |
 | A refusal                               | `src/core/errors/`                             |
 | A bound or a format                     | `src/core/constants/`                          |
 | A hook or the Yjs binding               | `src/react/<name>/`                            |
@@ -25,6 +26,9 @@ The editor kernel for every builder document kind (ADR 0270 decision 4). Member 
 - Yjs is imported only in `src/react/shared-editor/`. `.` and `./contracts` load no CRDT and no React.
 - The shared reader keeps to what `parseDocumentNode` accepts, so a peer's bad block is hidden, never fatal.
 - No UI chrome: surfaces, drag and drop, the inspector and publish live in the apps and the content type.
+- Structured kinds (automations, forms) use `DocumentEditor`; their checks never throw (`automationProblems`,
+  `formProblems`), and a save refuses what they report. A form condition is a `@stackra/rules` condition, never a
+  second evaluator; a form holds no expression or markup (ADR 0426).
 - `src/*/index.ts` are stand-in barrels until gen writes them (STA-339).
 
 ## Rules that fail the build

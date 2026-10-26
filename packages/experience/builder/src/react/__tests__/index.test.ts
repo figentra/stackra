@@ -14,6 +14,7 @@ describe("@stackra/builder/react", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(react).sort()).toEqual([
       "bindSharedDocument",
+      "useDocumentEditor",
       "useEditor",
       "useInspector",
       "useSelection",

@@ -8,8 +8,11 @@
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision.
  */
 export { EditorChangeKind } from "#contracts/enums/editor-change-kind.enum";
+export { FormFieldType } from "#contracts/enums/form-field-type.enum";
 export { InspectorFieldKind } from "#contracts/enums/inspector-field-kind.enum";
 export type { BlockKit } from "#contracts/types/block-kit.type";
+export type { DocumentEditorOptions } from "#contracts/types/document-editor-options.type";
+export type { DocumentEditorState } from "#contracts/types/document-editor-state.type";
 export type { EditorChange } from "#contracts/types/editor-change.type";
 export type { EditorNode } from "#contracts/types/editor-node.type";
 export type { EditorOptions } from "#contracts/types/editor-options.type";
