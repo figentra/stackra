@@ -106,8 +106,23 @@ notifications service. The notifications service owns delivery, preferences, the
 by 0270). Its `MailTransport` drivers (`memory`, `resend`) implement the port from `./contracts`; the SMS, in-app and
 chat ports are there for the same split, and provider drivers stay with their integrations (ADR 0308).
 
-The `notifications` driver renders the subject and the `.mail.tsx` body, then queues `messages.message.send@1`
-(`{ mail, to: { principalId }, subject, html, text }`) through `@stackra/clients` once per principal. It needs the body
+The `notifications` driver renders the subject and the `.mail.tsx` body, then queues its target action through
+`@stackra/clients` once per principal. The default target (`MESSAGES_NOTIFIER_TARGET`) is `messages.message.send@1`
+(`{ mail, to: { principalId }, subject, html, text }`). A host whose service has another module or input passes its own
+`NotifierTarget`: any action ref and a payload mapper that receives a `NotifierMessage` (template key, category,
+principal, market from the bound `MarketContext`, the data and each rendered channel) and answers the action's input, or
+`null` to skip that principal (ADR 0422):
+
+````ts
+export class CrmNotifierDriver extends NotificationsNotifierDriver {
+  constructor(transport: ClientTransport, i18n: I18nConfig, assets: AssetLibrary, market: MarketContext) {
+    super(transport, i18n, assets, {
+      action: SEND_NOTICE_ACTION,
+      payload: ({ template, principalId, category, market, channels }) => ({ template, principalId, category, market, mail: channels.mail }),
+    }, market);
+  }
+}
+``` It needs the body
 of each notification and the member's lang loaders, which gen registers at startup:
 
 ```ts
@@ -118,10 +133,13 @@ registerNotificationMails({
   bodies: [[OrderReceiptNotification, OrderReceiptMail]],
   catalogues: loaders,
 });
-```
+````
 
-Only the mail channel is sent, only to principals (a scope recipient is refused), and in the member's default locale
-until identity answers a principal's language. The action takes no category.
+Only the mail channel is rendered, only principals are addressed (a scope recipient is refused), and in the member's
+default locale until identity answers a principal's language.
+
+An in-app entry carries its product (`InAppMessage.product`), and `InAppStore.list(recipient, { product })` answers one
+product's entries, for a per-product inbox and the ethical wall between products.
 
 ## Channels and providers
 

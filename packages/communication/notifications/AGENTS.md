@@ -46,6 +46,9 @@ Messages to people (ADR 0086, 0223 as amended by 0294; R-26). Member at `package
   one Connection implementing both interfaces.
 - A provider driver lives in `src/core/providers/<provider>/` as `<provider>.integration.ts` and
   `<provider>.connection.ts`, and is added to its channel's `*_CONNECTIONS` map.
+- `NotificationsNotifierDriver` never names a service: the target action and its payload come from a `NotifierTarget`
+  (default `MESSAGES_NOTIFIER_TARGET`); add a field to `NotifierMessage`, never a branch on the target.
+- An in-app entry always names its product; a store driver filters `list` by it.
 - A restricted record never falls back from the content-free template to the full one.
 
 ## PII

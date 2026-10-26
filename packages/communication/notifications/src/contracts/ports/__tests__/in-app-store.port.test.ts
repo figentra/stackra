@@ -33,7 +33,7 @@ describe("InAppStore", () => {
     const driver = new EmptyInAppStoreDriver();
     expect(driver).toBeInstanceOf(InAppStore);
     expect(driver).toBeInstanceOf(Port);
-    const entry = await driver.append("usr_1", { kind: "order_paid", data: {} });
+    const entry = await driver.append("usr_1", { product: "pos", kind: "order_paid", data: {} });
     expect(entry.readAt).toBeNull();
   });
 
@@ -41,6 +41,8 @@ describe("InAppStore", () => {
     expectTypeOf<Parameters<InAppStore["append"]>[0]>().toEqualTypeOf<PublicId<"usr">>();
     expectTypeOf<Parameters<InAppStore["list"]>[0]>().toEqualTypeOf<PublicId<"usr">>();
     expectTypeOf<Parameters<InAppStore["markRead"]>[0]>().toEqualTypeOf<PublicId<"usr">>();
+    expectTypeOf<NonNullable<Parameters<InAppStore["list"]>[1]>>().toHaveProperty("product");
+    expectTypeOf<InAppMessage>().toHaveProperty("product").toEqualTypeOf<string>();
     expectTypeOf<InAppStore["markRead"]>().returns.toEqualTypeOf<Promise<boolean>>();
     // @ts-expect-error a driver must implement append, list and markRead
     class Empty extends Driver(InAppStore) {}

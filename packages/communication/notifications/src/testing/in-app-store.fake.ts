@@ -1,14 +1,14 @@
 /**
  * Stackra file contract:
  * Purpose: `InAppStoreFake`, the test double of the `InAppStore` port: inboxes in memory, one per recipient, with the
- *          port's rules: a repeated idempotency key appends nothing, `list` is newest first, and `markRead` touches the
- *          named recipient's entries only.
+ *          port's rules: a repeated idempotency key appends nothing, `list` is newest first and filters by product,
+ *          and `markRead` touches the named recipient's entries only.
  * Boundary: a plain subclass of the port, so it binds in place of `InAppStore` (`.override(InAppStore, new
  *           InAppStoreFake())`) and `instanceof InAppStore` holds; not a driver, so gen never offers it as a
  *           candidate. Ids are `inm_<n>` across every inbox; `createdAt` and `readAt` read `Date` when called, so
  *           `freezeClock` pins them.
  * Runtime: node
- * Governing contract: ADR 0266 (decision 2: a fake per capability); ADR 0269 (decision 3).
+ * Governing contract: ADR 0266 (decision 2: a fake per capability); ADR 0269 (decision 3); ADR 0422 (decision 2).
  */
 import type { PublicId } from "@stackra/contracts";
 
@@ -20,7 +20,7 @@ import type { InAppEntry, InAppMessage } from "#contracts/index";
  *
  * @example
  * const inbox = new InAppStoreFake();
- * const entry = await inbox.append(principalId, { kind: "order_paid", data: { orderId } }, "k1");
+ * const entry = await inbox.append(principalId, { product: "pos", kind: "order_paid", data: { orderId } }, "k1");
  * await inbox.markRead(principalId, entry.id);
  */
 export class InAppStoreFake extends InAppStore {
@@ -43,6 +43,7 @@ export class InAppStoreFake extends InAppStore {
     if (existing !== undefined) return Promise.resolve(existing);
     this.count += 1;
     const entry: InAppEntry = Object.freeze({
+      product: message.product,
       kind: message.kind,
       data: Object.freeze({ ...message.data }),
       id: `inm_${this.count}`,
@@ -56,10 +57,15 @@ export class InAppStoreFake extends InAppStore {
 
   list(
     recipient: PublicId<"usr">,
-    options: { readonly unreadOnly?: boolean; readonly limit?: number } = {},
+    options: {
+      readonly unreadOnly?: boolean;
+      readonly limit?: number;
+      readonly product?: string;
+    } = {},
   ): Promise<readonly InAppEntry[]> {
     const entries = (this.inboxes.get(recipient) ?? [])
       .filter((entry) => options.unreadOnly !== true || entry.readAt === null)
+      .filter((entry) => options.product === undefined || entry.product === options.product)
       .reverse();
     return Promise.resolve(options.limit === undefined ? entries : entries.slice(0, options.limit));
   }

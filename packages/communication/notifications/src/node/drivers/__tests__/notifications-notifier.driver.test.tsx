@@ -3,17 +3,22 @@
  * Purpose: unit tests of `NotificationsNotifierDriver`: one queued `messages.message.send@1` per distinct principal
  *          with the snake_case template key and the rendered subject, HTML and text (catalogues merged along the
  *          fallback chain, assets resolved by the library); nothing queued without a mail channel or a recipient; and
- *          a TypeError, with nothing queued, for a scope recipient or a notification without a registered body.
+ *          a TypeError, with nothing queued, for a scope recipient or a notification without a registered body; and a
+ *          configured target: its own action key, the mapper given the template, category, market and channels, a
+ *          `null` answer skipping the principal.
  * Boundary: test only; a fake `ClientTransport` records the queued requests and a fake `AssetLibrary` answers URLs.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0223; ADR 0260 (decision 4: queued calls).
+ * Governing contract: ADR 0022 (test placement); ADR 0223; ADR 0260 (decision 4: queued calls); ADR 0422 (decision 1).
  */
 import type { AssetEntry, AssetLibrary } from "@stackra/assets";
+import { remoteAction } from "@stackra/clients";
 import { ClientTransport } from "@stackra/clients/contracts";
 import type { ClientRequest } from "@stackra/clients/contracts";
 import type { PublicId, ScopeRef } from "@stackra/contracts";
 import { I18nConfig, keys, Locale } from "@stackra/i18n";
+import { MarketContext } from "@stackra/integrations/contracts";
 import { describe, expect, it } from "@stackra/testing";
+import { z } from "zod";
 
 import { Notification } from "#core/bases/notification.base";
 import { NotificationCategory } from "#core/enums/notification-category.enum";
@@ -22,6 +27,8 @@ import type { MailMessage } from "#core/values/mail-message.value";
 import { Recipient } from "#core/values/recipient.value";
 import { NotificationsNotifierDriver } from "#node/drivers/notifications-notifier.driver";
 import { registerNotificationMails } from "#node/functions/register-notification-mails.function";
+import type { NotifierMessage } from "#node/types/notifier-message.type";
+import type { NotifierTarget } from "#node/types/notifier-target.type";
 import { useMail } from "#react/mail/use-mail";
 
 const I18n = keys({ orders: { order_receipt: { mail: ["subject", "intro"] } } });
@@ -122,8 +129,30 @@ class SaudiI18nConfig extends I18nConfig {
   override fallbacks: Record<string, Locale[]> = { "ar-SA": [Locale.Ar] };
 }
 
+/** Saudi Arabia. */
+class SaudiMarketContext extends MarketContext {
+  market(): string {
+    return "sa";
+  }
+}
+
+/** Another service's action, which takes the category, the market and any channel. */
+const SEND_NOTICE_ACTION = remoteAction("crm.notice.send@1", {
+  input: z.object({
+    template: z.string(),
+    principalId: z.string(),
+    category: z.string(),
+    market: z.string().optional(),
+    subject: z.string().optional(),
+  }),
+  output: z.object({}),
+});
+
 /** A driver over a recording transport and a CDN asset library. */
-function driver(): { notifier: NotificationsNotifierDriver; transport: RecordingClientTransport } {
+function driver(
+  // oxlint-disable-next-line typescript/no-explicit-any -- reason: the test's target is its own action's
+  target?: NotifierTarget<any>,
+): { notifier: NotificationsNotifierDriver; transport: RecordingClientTransport } {
   const transport = new RecordingClientTransport();
   const assets = {
     resolve: (entry: AssetEntry) => ({ ...entry, url: `https://cdn.example/${entry.file}` }),
@@ -132,6 +161,8 @@ function driver(): { notifier: NotificationsNotifierDriver; transport: Recording
     transport,
     new SaudiI18nConfig(),
     assets as unknown as AssetLibrary,
+    target,
+    new SaudiMarketContext(),
   );
   return { notifier, transport };
 }
@@ -188,5 +219,63 @@ describe("NotificationsNotifierDriver", () => {
       notifier.notify(new OrderLateNotification(), new OrderPaid([Recipient.principal(ADA)])),
     ).rejects.toThrow(/no mail body/);
     expect(transport.queued).toEqual([]);
+  });
+
+  it("queues the configured target's action with the mapper's payload", async () => {
+    const seen: NotifierMessage[] = [];
+    const { notifier, transport } = driver({
+      action: SEND_NOTICE_ACTION,
+      payload: (message: NotifierMessage) => {
+        seen.push(message);
+        return message.principalId === BEN
+          ? null
+          : {
+              template: message.template,
+              principalId: message.principalId,
+              category: message.category,
+              market: message.market,
+              subject: message.channels.mail?.subject,
+            };
+      },
+    });
+    await notifier.notify(
+      new OrderReceiptNotification(),
+      new OrderPaid([Recipient.principal(ADA), Recipient.principal(BEN)]),
+    );
+    expect(seen).toHaveLength(2);
+    expect(seen[0]).toMatchObject({
+      template: "order_receipt",
+      category: NotificationCategory.Transactional,
+      market: "sa",
+      data: { id: "ord_1" },
+    });
+    expect(transport.queued.map((request) => request.key)).toEqual(["crm.notice.send@1"]);
+    expect(transport.queued[0]?.input).toEqual({
+      template: "order_receipt",
+      principalId: ADA,
+      category: "transactional",
+      market: "sa",
+      subject: "إيصالك ord_1",
+    });
+  });
+
+  it("hands a mail-less notification to the target with no channel", async () => {
+    const { notifier, transport } = driver({
+      action: SEND_NOTICE_ACTION,
+      payload: ({ template, principalId, category, channels }: NotifierMessage) => ({
+        template,
+        principalId,
+        category: Object.keys(channels).length === 0 ? category : "unexpected",
+      }),
+    });
+    await notifier.notify(
+      new OrderShippedNotification(),
+      new OrderPaid([Recipient.principal(ADA)]),
+    );
+    expect(transport.queued[0]?.input).toEqual({
+      template: "order_shipped",
+      principalId: ADA,
+      category: "activity",
+    });
   });
 });
