@@ -34,8 +34,8 @@ describe("CreateStoredSettingsMigration", () => {
     expect(sql).toContain('"scope_id" varchar(33)');
     expect(sql).toContain('"scope_path" ltree');
     expect(sql).toContain('"user_id" varchar(33)');
-    expect(sql).toContain('"values" jsonb not null');
-    expect(sql).toContain('"locked" jsonb not null');
+    expect(sql).toContain(`"values" jsonb default '{}'::jsonb not null`);
+    expect(sql).toContain(`"locked" jsonb default '[]'::jsonb not null`);
   });
 
   it("indexes the path with GiST and each holder kind uniquely, with no policy", () => {

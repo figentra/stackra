@@ -24,9 +24,9 @@ describe("CreateStoredSettingRevisionsMigration", () => {
   it("creates the table with its columns and indexes", () => {
     expect(sql).toContain('create table "settings"."stored_setting_revisions"');
     expect(sql).toContain('"group_key" varchar(63) not null');
-    expect(sql).toContain('"values" jsonb not null');
+    expect(sql).toContain(`"values" jsonb default '{}'::jsonb not null`);
     expect(sql).toContain('"locked" jsonb');
-    expect(sql).toContain('"break_glass" boolean not null');
+    expect(sql).toContain('"break_glass" boolean default false not null');
     expect(sql).toContain('"status" varchar(16) not null');
     expect(sql).toContain('"effective_at"');
     expect(sql).toContain('"status", "effective_at"');
