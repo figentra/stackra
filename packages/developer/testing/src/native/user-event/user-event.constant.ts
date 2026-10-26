@@ -5,7 +5,7 @@
  *          `userEvent.setup()`, and never in another test's.
  * Boundary: before any render (or outside a test) an interaction gets a fresh session of its own, as the library's
  *           direct calls do. `setup(options)` is the library's own, for a test that wants a configured session.
- * Runtime: react-native (vitest)
+ * Runtime: react-native
  * Governing contract: ADR 0269 (decision 6).
  */
 import { userEvent as library } from "@testing-library/react-native/pure";

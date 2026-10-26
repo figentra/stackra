@@ -30,7 +30,7 @@ export class MemoryQueueDriver extends Driver(QueueDriver) {
   /** Job id to its slot, in the order the jobs were queued. */
   private readonly slots = new Map<string, Slot>();
 
-  /** See `QueueDriver.push`. */
+  /** Stores `job` as waiting; `false` when a live job holds its `uniqueKey`. */
   push(job: QueuedJob): Promise<boolean> {
     if (job.uniqueKey !== undefined && this.holds(job.uniqueKey, job.id))
       return Promise.resolve(false);
@@ -39,7 +39,7 @@ export class MemoryQueueDriver extends Driver(QueueDriver) {
     return Promise.resolve(true);
   }
 
-  /** See `QueueDriver.reserve`. */
+  /** Reserves the next due job of `queue`, as `QueueDriver.reserve` describes. */
   reserve(queue: string | undefined, now: Date): Promise<QueuedJob | undefined> {
     const at = now.getTime();
     let next: QueuedJob | undefined;
@@ -64,25 +64,25 @@ export class MemoryQueueDriver extends Driver(QueueDriver) {
     return Promise.resolve(reserved);
   }
 
-  /** See `QueueDriver.retry`. */
+  /** Makes job `id` wait again until `runAt`, keeping `error`. */
   retry(id: PublicId<"job">, runAt: Date, error: JobError): Promise<void> {
     this.update(id, { status: JobStatus.Waiting, runAt, lastError: error });
     return Promise.resolve();
   }
 
-  /** See `QueueDriver.deadLetter`. */
+  /** Moves job `id` to the dead letters, keeping `error`. */
   deadLetter(id: PublicId<"job">, error: JobError): Promise<void> {
     this.update(id, { status: JobStatus.Dead, lastError: error });
     return Promise.resolve();
   }
 
-  /** See `QueueDriver.remove`. */
+  /** Deletes job `id` once it is done. */
   remove(id: PublicId<"job">): Promise<void> {
     this.slots.delete(id);
     return Promise.resolve();
   }
 
-  /** See `QueueDriver.deadLetters`. */
+  /** Lists up to `limit` dead-lettered jobs of `queue`, oldest first. */
   deadLetters(queue: string | undefined, limit: number): Promise<readonly QueuedJob[]> {
     const dead = [...this.slots.values()]
       .map((slot) => slot.job)
@@ -92,7 +92,7 @@ export class MemoryQueueDriver extends Driver(QueueDriver) {
     return Promise.resolve(dead.slice(0, limit));
   }
 
-  /** See `QueueDriver.redrive`. */
+  /** Makes dead job `id` wait again from `now`; `false` when it cannot. */
   redrive(id: PublicId<"job">, now: Date): Promise<boolean> {
     const job = this.slots.get(id)?.job;
     if (job?.status !== JobStatus.Dead) return Promise.resolve(false);

@@ -116,6 +116,34 @@ export class ProviderResolver extends Service {
   }
 
   /**
+   * The Connection `connectionId` of `provider`: the one that served an earlier call, so a follow-up (a refund, a
+   * status check, a hang-up) reaches the same account.
+   *
+   * @throws NoProviderError when `provider` has no driver in `drivers`.
+   */
+  async byConnection<T>(
+    drivers: ProviderDrivers<T>,
+    provider: string,
+    connectionId: string,
+  ): Promise<Connection & T> {
+    const type: ConnectionClass<Connection & T> | undefined = Object.hasOwn(drivers, provider)
+      ? drivers[provider]
+      : undefined;
+    if (type === undefined) throw NoProviderError.create({ provider });
+    return this.store.byId(type, connectionId);
+  }
+
+  /**
+   * The Connection a stored `CredentialRef` names (a credential held in the integrations vault).
+   *
+   * @throws TypeError when `ref` is malformed; NoProviderError when its provider has no driver in `drivers`.
+   */
+  async byRef<T>(drivers: ProviderDrivers<T>, ref: CredentialRef): Promise<Connection & T> {
+    const { provider, connectionId } = credentialRef.parse(ref);
+    return this.byConnection(drivers, provider, connectionId);
+  }
+
+  /**
    * Yields the accepted candidates in order: own first, then managed, each in the Market's order.
    *
    * @yields Each accepted candidate, own drivers first.
@@ -149,33 +177,5 @@ export class ProviderResolver extends Service {
       if (accepts(platform))
         yield { provider: choice.provider, connection: platform, mode: ProviderMode.Managed };
     }
-  }
-
-  /**
-   * The Connection `connectionId` of `provider`: the one that served an earlier call, so a follow-up (a refund, a
-   * status check, a hang-up) reaches the same account.
-   *
-   * @throws NoProviderError when `provider` has no driver in `drivers`.
-   */
-  async byConnection<T>(
-    drivers: ProviderDrivers<T>,
-    provider: string,
-    connectionId: string,
-  ): Promise<Connection & T> {
-    const type: ConnectionClass<Connection & T> | undefined = Object.hasOwn(drivers, provider)
-      ? drivers[provider]
-      : undefined;
-    if (type === undefined) throw NoProviderError.create({ provider });
-    return this.store.byId(type, connectionId);
-  }
-
-  /**
-   * The Connection a stored `CredentialRef` names (a credential held in the integrations vault).
-   *
-   * @throws TypeError when `ref` is malformed; NoProviderError when its provider has no driver in `drivers`.
-   */
-  async byRef<T>(drivers: ProviderDrivers<T>, ref: CredentialRef): Promise<Connection & T> {
-    const { provider, connectionId } = credentialRef.parse(ref);
-    return this.byConnection(drivers, provider, connectionId);
   }
 }

@@ -3,7 +3,7 @@
  * Purpose: `E2eProject`, one Playwright project as `e2ePreset` takes it when a runner name is not enough: an RTL locale
  *          over a runner, the `pwa` project with service workers on, or the `desktop` project of Electron journeys.
  * Boundary: a type only. A project with `match` owns those files; every project without one skips them.
- * Runtime: node (Playwright)
+ * Runtime: node
  * Governing contract: ADR 0269 (decision 6); ADR 0182 (the e2e tier); ADR 0080 (both locales).
  */
 

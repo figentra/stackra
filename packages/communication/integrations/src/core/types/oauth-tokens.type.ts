@@ -10,7 +10,7 @@
  */
 
 /**
- * OAuth tokens.
+ * The tokens an OAuth exchange returns.
  *
  * @example
  * await store.connect(GoogleCalendarConnection, { level: ConnectionLevel.User, fields, tokens });

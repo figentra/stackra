@@ -7,7 +7,7 @@
  * Boundary: declares Pulumi resources only. Every threshold is the tenant's campaign setting (`parseStorefront`); the
  *           toggle is `waitingRoom.enabled`, so turning a room off or on is a settings change, not a code change.
  *           Waiting rooms need a plan that includes them (an owner step).
- * Runtime: node (Pulumi program)
+ * Runtime: node
  * Governing contract: ADR 0402 (storefront waiting room and per-shopper limits), ADR 0217 (decision 2).
  */
 import * as cloudflare from "@pulumi/cloudflare";

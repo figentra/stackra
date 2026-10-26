@@ -6,7 +6,7 @@
  * Boundary: declares Pulumi resources only; the rules come from `parseEdge` and `rateLimitFor`. Each ruleset is the
  *           zone's entry point for its phase, so a zone whose phase entry point was made by hand imports it first.
  *           Per-area and per-plan application limits are the service pipeline's (ADR 0217 decision 2).
- * Runtime: node (Pulumi program)
+ * Runtime: node
  * Governing contract: ADR 0175 (decision 1), ADR 0217 (decisions 2 and 3), ADR 0237 (layer 1), ADR 0290 (decision 13),
  *                     ADR 0325 (rule 24: a Cloudflare Cache Rule bypasses the cache on API hosts), ADR 0402 (per-shopper
  *                     limits share the zone's rate-limit entry point).

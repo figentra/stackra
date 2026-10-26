@@ -11,12 +11,13 @@
  *                     product).
  */
 import { Service } from "@stackra/container";
-import { Clock, Duration, type PublicId } from "@stackra/contracts";
+import type { Clock } from "@stackra/contracts";
+import { Duration, type PublicId } from "@stackra/contracts";
 import { EntitlementRequiredError } from "@stackra/errors";
-import { Locks } from "@stackra/locking";
+import type { Locks } from "@stackra/locking";
 
-import { PlanSnapshots } from "#contracts/ports/plan-snapshots.port";
-import { SeatLedger } from "#contracts/ports/seat-ledger.port";
+import type { PlanSnapshots } from "#contracts/ports/plan-snapshots.port";
+import type { SeatLedger } from "#contracts/ports/seat-ledger.port";
 import { SeatLimitReachedError } from "#core/errors/seat-limit-reached.error";
 import { isLimitGrant } from "#core/functions/is-limit-grant.function";
 import { limitAllows } from "#core/functions/limit-allows.function";

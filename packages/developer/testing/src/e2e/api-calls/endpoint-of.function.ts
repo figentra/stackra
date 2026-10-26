@@ -4,7 +4,7 @@
  *          read from the app's `stackra.manifest.json` `consumes` list and the manifest of the service behind it.
  * Boundary: internal to `./e2e` (not exported). Reads files only. A consumed manifest path is relative to the
  *           repository root, which is the nearest folder above `root` where that path exists.
- * Runtime: node (Playwright)
+ * Runtime: node
  * Governing contract: ADR 0269 (decision 6); the manifest contract (`consumes`, `actions[].endpoint`).
  */
 import { existsSync, readFileSync } from "node:fs";

@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `TestActor`, who `loginAs` signs in: a seeded role in an active tenant, with the tenants they belong to.
  * Boundary: a type only; the role and tenant ids are the seed's.
- * Runtime: node (Playwright)
+ * Runtime: node
  * Governing contract: ADR 0269 (decision 6).
  */
 

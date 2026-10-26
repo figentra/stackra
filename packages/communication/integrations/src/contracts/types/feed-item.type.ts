@@ -35,7 +35,7 @@ export interface FeedItem {
   /** The GTIN, when the product has one. */
   readonly gtin?: string;
 
-  /** The brand. */
+  /** The brand the item is sold under. */
   readonly brand?: string;
 
   /** Feed-specific attributes, by the feed's names. */

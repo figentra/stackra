@@ -84,13 +84,15 @@ export class PostgresQueueDriver extends Driver(QueueDriver) {
   /** The connected database. */
   private readonly database: Database;
 
-  /** @param database - the connected database whose running transaction each statement joins. */
+  /**
+   * @param database - the connected database whose running transaction each statement joins.
+   */
   constructor(database: Database) {
     super();
     this.database = database;
   }
 
-  /** See `QueueDriver.push`. */
+  /** Stores `job` as waiting; `false` when a live job holds its `uniqueKey`. */
   async push(job: QueuedJob): Promise<boolean> {
     // raw-sql: a unique job's conflict is decided by the partial unique index, which the ORM's insert cannot target
     const rows = await this.database
@@ -119,7 +121,7 @@ export class PostgresQueueDriver extends Driver(QueueDriver) {
     return IDS.parse(rows).length > 0;
   }
 
-  /** See `QueueDriver.reserve`. */
+  /** Reserves the next due job of `queue`, as `QueueDriver.reserve` describes. */
   async reserve(queue: string | undefined, now: Date): Promise<QueuedJob | undefined> {
     const filter = queue === undefined ? "" : "queue = ? and ";
     const params = queue === undefined ? [now, now, now] : [now, queue, now, now];
@@ -138,7 +140,7 @@ export class PostgresQueueDriver extends Driver(QueueDriver) {
     return row === undefined ? undefined : jobOf(row);
   }
 
-  /** See `QueueDriver.retry`. */
+  /** Makes job `id` wait again until `runAt`, keeping `error`. */
   async retry(id: PublicId<"job">, runAt: Date, error: JobError): Promise<void> {
     // raw-sql: the job table has no model; one parameterised update per outcome
     await this.database
@@ -150,7 +152,7 @@ export class PostgresQueueDriver extends Driver(QueueDriver) {
       );
   }
 
-  /** See `QueueDriver.deadLetter`. */
+  /** Moves job `id` to the dead letters, keeping `error`. */
   async deadLetter(id: PublicId<"job">, error: JobError): Promise<void> {
     // raw-sql: the job table has no model; one parameterised update per outcome
     await this.database
@@ -162,13 +164,13 @@ export class PostgresQueueDriver extends Driver(QueueDriver) {
       );
   }
 
-  /** See `QueueDriver.remove`. */
+  /** Deletes job `id` once it is done. */
   async remove(id: PublicId<"job">): Promise<void> {
     // raw-sql: the job table has no model; one parameterised delete
     await this.database.em().execute(`delete from ${TABLE} where id = ?`, [id]);
   }
 
-  /** See `QueueDriver.deadLetters`. */
+  /** Lists up to `limit` dead-lettered jobs of `queue`, oldest first. */
   async deadLetters(queue: string | undefined, limit: number): Promise<readonly QueuedJob[]> {
     const filter = queue === undefined ? "" : " and queue = ?";
     const params = queue === undefined ? [limit] : [queue, limit];
@@ -182,7 +184,7 @@ export class PostgresQueueDriver extends Driver(QueueDriver) {
     return ROWS.parse(rows).map(jobOf);
   }
 
-  /** See `QueueDriver.redrive`. */
+  /** Makes dead job `id` wait again from `now`; `false` when it cannot. */
   async redrive(id: PublicId<"job">, now: Date): Promise<boolean> {
     // raw-sql: the unique-key guard is a correlated NOT EXISTS, which a typed filter cannot express
     const rows = await this.database

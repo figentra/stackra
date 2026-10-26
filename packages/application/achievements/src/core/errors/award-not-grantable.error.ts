@@ -25,6 +25,6 @@ export class AwardNotGrantableError extends Refusal({
   /** The kind refused. */
   kindId!: PublicId<"awk">;
 
-  /** Why. */
+  /** Why the award cannot be granted. */
   reason!: GrantRefusal;
 }

@@ -17,7 +17,7 @@ import { type CallDescriptor, LimitReservation } from "@stackra/actions/contract
 import { Driver, kindOf } from "@stackra/container";
 
 import { ENTITLEMENT_REGISTRY } from "#core/constants/entitlement-registry.constant";
-import { LimitReservationService } from "#core/services/limit-reservation.service";
+import type { LimitReservationService } from "#core/services/limit-reservation.service";
 import type { EntitlementClass } from "#core/types/entitlement-class.type";
 import type { EntitlementOptions } from "#core/types/entitlement-options.type";
 
@@ -31,7 +31,9 @@ export class PlanLimitReservationDriver extends Driver(LimitReservation) {
   /** The reserve-then-commit service. */
   private readonly reservations: LimitReservationService;
 
-  /** @param reservations - the service that locks, checks and commits. */
+  /**
+   * @param reservations - the service that locks, checks and commits.
+   */
   constructor(reservations: LimitReservationService) {
     super();
     this.reservations = reservations;

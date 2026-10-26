@@ -33,7 +33,10 @@ class ExpirePointsAction extends Action({
   }
 }
 
-class ListEntriesQuery extends Query({ key: "entry.list", actors: [ActorKind.User] }) {
+class ListEntriesQuery extends Query({
+  key: "entry.list",
+  actors: [ActorKind.User],
+}) {
   async handle(): Promise<readonly string[]> {
     return [];
   }

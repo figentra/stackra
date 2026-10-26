@@ -24,7 +24,7 @@ export interface ConnectionRegistration {
   /** The connection class. */
   readonly connection: ConnectionClass;
 
-  /** Its Integration. */
+  /** The Integration the connection belongs to. */
   readonly integration: IntegrationClass;
 
   /** The integration's key from the manifest (`messages.resend`), which the store host stores it under. */

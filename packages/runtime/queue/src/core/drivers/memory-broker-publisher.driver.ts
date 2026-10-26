@@ -27,7 +27,7 @@ export class MemoryBrokerPublisherDriver extends Driver(BrokerPublisher) {
 
   private readonly handlers = new Map<string, Set<(message: BrokerMessage) => unknown>>();
 
-  /** See `BrokerPublisher.publish`. */
+  /** Hands `message` to `topic`, resolving once it is held. */
   publish(topic: string, message: BrokerMessage): Promise<void> {
     const copy: BrokerMessage = Object.freeze({
       id: message.id,

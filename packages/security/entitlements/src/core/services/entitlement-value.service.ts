@@ -13,7 +13,7 @@
 import { kindOf, Service } from "@stackra/container";
 import type { PublicId } from "@stackra/contracts";
 
-import { EntitlementSource } from "#contracts/ports/entitlement-source.port";
+import type { EntitlementSource } from "#contracts/ports/entitlement-source.port";
 import { EntitlementKind } from "#core/enums/entitlement-kind.enum";
 import { entitlementKey } from "#core/functions/entitlement-key.function";
 import { isValueGrant } from "#core/functions/is-value-grant.function";
@@ -30,7 +30,9 @@ export class EntitlementValueService extends Service {
   /** Where grants come from. */
   private readonly source: EntitlementSource;
 
-  /** @param source - the plan's grants (the plan snapshot in SaaS, the licence on-prem). */
+  /**
+   * @param source - the plan's grants (the plan snapshot in SaaS, the licence on-prem).
+   */
   constructor(source: EntitlementSource) {
     super();
     this.source = source;
@@ -44,7 +46,7 @@ export class EntitlementValueService extends Service {
    *         number of zero or more.
    * @throws Error when the source cannot be reached.
    */
-  async valueOf(
+  override async valueOf(
     entitlement: EntitlementClass,
     scope: PublicId | undefined,
   ): Promise<number | undefined> {

@@ -28,17 +28,21 @@ import { ConnectedAccount } from "#core/values/connected-account.value";
 /** A sender connection whose id says whose it is. */
 abstract class Sender extends Connection {
   abstract readonly label: string;
+
   abstract readonly fast: boolean;
+
   async check(): Promise<ConnectedAccount> {
     return ConnectedAccount.create({ id: this.label });
   }
 }
 class AlphaConnection extends Sender {
   label = "alpha";
+
   fast = true;
 }
 class BetaConnection extends Sender {
   label = "beta";
+
   fast = true;
 }
 
@@ -47,36 +51,46 @@ const DRIVERS = { alpha: AlphaConnection, beta: BetaConnection } as const;
 /** A store holding the tenant's own connections and the platform's by id. */
 class Store extends ConnectionStore {
   private readonly own: Map<ConnectionClass, Connection>;
+
   private readonly platform: Map<string, Connection>;
+
   constructor(own: Map<ConnectionClass, Connection>, platform: Map<string, Connection>) {
     super();
     this.own = own;
     this.platform = platform;
   }
+
   async find<C extends Connection>(type: ConnectionClass<C>): Promise<C | null> {
     return (this.own.get(type as ConnectionClass) as C | undefined) ?? null;
   }
+
   async byId<C extends Connection>(_type: ConnectionClass<C>, id: string): Promise<C> {
     const found = this.platform.get(id);
     if (found === undefined) throw new Error(`no ${id}`);
     return found as C;
   }
+
   async list<C extends Connection>(): Promise<C[]> {
     return [];
   }
+
   async connect<C extends Connection>(): Promise<C> {
     throw new Error("unused");
   }
+
   async disconnect(): Promise<void> {}
 }
 
 class Defaults extends ProviderDefaults {
-  private readonly choices: readonly ProviderChoice[];
   readonly asked: string[] = [];
+
+  private readonly choices: readonly ProviderChoice[];
+
   constructor(choices: readonly ProviderChoice[]) {
     super();
     this.choices = choices;
   }
+
   async providers(_capability: string, market: string): Promise<readonly ProviderChoice[]> {
     this.asked.push(market);
     return this.choices;
@@ -85,10 +99,12 @@ class Defaults extends ProviderDefaults {
 
 class Market extends MarketContext {
   private readonly code: string | undefined;
+
   constructor(code: string | undefined) {
     super();
     this.code = code;
   }
+
   market(): string | undefined {
     return this.code;
   }

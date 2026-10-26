@@ -8,7 +8,7 @@
  * Boundary: the program body only. The stacks repository (`figentra/infra`) owns `Pulumi.yaml`, the stack config and
  *           the state; the owner runs `pulumi up` there, and agents only preview (ADR 0171). The account and zone ids
  *           come from the root runway (`providers.cloudflare`), resolved through `ref:`; nothing here reads a secret.
- * Runtime: node (Pulumi program)
+ * Runtime: node
  * Governing contract: ADR 0171 (decisions 2, 6 and 7), ADR 0175, ADR 0290 (decisions 1 to 6, 11, 13 and 15), ADR 0026,
  *                     ADR 0284 (decision 9), ADR 0217 (decision 3), ADR 0325 (rule 24), ADR 0402 (storefront edge).
  */

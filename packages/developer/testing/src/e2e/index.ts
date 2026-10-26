@@ -5,7 +5,7 @@
  *          `launchDesktop`, and the config preset `e2ePreset`) until `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. Runs in the Playwright runner only, never under vitest or in a
  *           bundle; `@playwright/test` and `@axe-core/playwright` are optional peers. No workspace import.
- * Runtime: node (Playwright)
+ * Runtime: node
  * Governing contract: ADR 0294 (decision 15); ADR 0269 (decision 6); ADR 0183 (decision 2); the STA-347 stand-in barrel
  *                     decision.
  */

@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 /**
  * Stackra file contract:
  * Purpose: unit tests of the `./react` `render`: the providers wrap the subject first-outermost with the wrapper
@@ -8,6 +7,7 @@
  * Runtime: node (vitest, jsdom)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (decision 6).
  */
+// @vitest-environment jsdom
 import { describe, expect, it } from "@stackra/testing";
 import { screen } from "@testing-library/react";
 import { createElement, type ReactNode } from "react";

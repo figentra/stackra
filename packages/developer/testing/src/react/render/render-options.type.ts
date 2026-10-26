@@ -4,7 +4,7 @@
  *          around the subject, and a `providers` list composed into one wrapper outside it.
  * Boundary: a type only. Provider-agnostic: this package knows no house provider; a framework package passes its own
  *           (the container, i18n, the router stub) through `providers` or `wrapper`.
- * Runtime: browser (vitest, jsdom)
+ * Runtime: browser
  * Governing contract: ADR 0269 (decisions 2 and 6).
  */
 import type { RenderOptions as LibraryRenderOptions } from "@testing-library/react";

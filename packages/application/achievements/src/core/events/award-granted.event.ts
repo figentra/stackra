@@ -23,10 +23,10 @@ import { AWARD_GRANTED_SCHEMA } from "#core/constants/award-granted-schema.const
  * }
  */
 export class AwardGranted extends IntegrationEvent({ name: "award.granted" }) {
-  /** The award. */
+  /** The id of the award. */
   awardId!: PublicId<"awd">;
 
-  /** Its kind. */
+  /** The kind of the award. */
   kindId!: PublicId<"awk">;
 
   /** The recipient model's key (`workforce.member`). */

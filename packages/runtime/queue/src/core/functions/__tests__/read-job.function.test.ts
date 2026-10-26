@@ -46,7 +46,10 @@ class ExpireUnpaidOrdersAction extends Action({
   async handle(): Promise<void> {}
 }
 
-class VoidPaymentAction extends Action({ key: "payment.void", actors: [ActorKind.Service] }) {
+class VoidPaymentAction extends Action({
+  key: "payment.void",
+  actors: [ActorKind.Service],
+}) {
   async handle(): Promise<void> {}
 }
 
@@ -66,7 +69,10 @@ class SlowBackoffAction extends Action({
   async handle(): Promise<void> {}
 }
 
-class ListOrdersQuery extends Query({ key: "order.list", actors: [ActorKind.User] }) {
+class ListOrdersQuery extends Query({
+  key: "order.list",
+  actors: [ActorKind.User],
+}) {
   async handle(): Promise<readonly string[]> {
     return [];
   }

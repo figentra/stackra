@@ -14,7 +14,7 @@ import { AWARD_RECIPIENTS } from "#node/constants/award-recipients.constant";
 const MODEL_KEY = /^[a-z][a-z0-9_]*\.[a-z][a-z0-9_]*$/;
 
 /**
- * Registers `rows`.
+ * Registers the award rules of each recipient model in `rows`.
  *
  * @example
  * registerAwardRecipients([{ model: "workforce.member", rules: MEMBER_AWARD_RULES }]);

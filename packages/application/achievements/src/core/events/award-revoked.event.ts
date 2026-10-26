@@ -22,10 +22,10 @@ import { AWARD_REVOKED_SCHEMA } from "#core/constants/award-revoked-schema.const
  * }
  */
 export class AwardRevoked extends IntegrationEvent({ name: "award.revoked" }) {
-  /** The award. */
+  /** The id of the award. */
   awardId!: PublicId<"awd">;
 
-  /** Its kind. */
+  /** The kind of the award. */
   kindId!: PublicId<"awk">;
 
   /** The recipient model's key (`workforce.member`). */

@@ -6,7 +6,7 @@
  * Boundary: pure apart from reading `CI`. The stack reads its inputs from the server's environment: `STACKRA_E2E=1`
  *           (serve the control routes of `E2E_CONTROL`), `STACKRA_E2E_SERVICES` and `STACKRA_E2E_SEEDS` (comma
  *           lists), `STACKRA_E2E_TURNSTILE`. A project with `match` owns its files; the others skip them.
- * Runtime: node (Playwright)
+ * Runtime: node
  * Governing contract: ADR 0269 (decision 6); ADR 0182 (the e2e tier); ADR 0295 (decision 5); ADR 0255 (PWA).
  */
 import { devices, type PlaywrightTestConfig } from "@playwright/test";

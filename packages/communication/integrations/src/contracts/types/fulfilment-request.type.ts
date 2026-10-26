@@ -15,7 +15,7 @@ export interface FulfilmentRequest {
   /** What to ship. */
   readonly lines: readonly { readonly sku: string; readonly quantity: number }[];
 
-  /** Where to. */
+  /** The address to ship to. */
   readonly shipTo: Address;
 
   /** The recipient's name. */

@@ -33,7 +33,10 @@ class DeliverMessageAction extends Action({
   async handle(_input: { messageId: string }): Promise<void> {}
 }
 
-class SendMessageAction extends Action({ key: "message.send", actors: [ActorKind.Service] }) {
+class SendMessageAction extends Action({
+  key: "message.send",
+  actors: [ActorKind.Service],
+}) {
   async handle(): Promise<void> {}
 }
 

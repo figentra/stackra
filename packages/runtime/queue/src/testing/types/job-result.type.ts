@@ -19,7 +19,7 @@ export interface JobResult<O> {
   /** How its last attempt ended: never `retried`. */
   readonly outcome: JobOutcome;
 
-  /** Attempts made. */
+  /** The number of attempts made. */
   readonly attempts: number;
 
   /** The action's output when the job is done; `undefined` otherwise. */

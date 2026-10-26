@@ -4,7 +4,7 @@
  *          `wrapper`: the first provider outermost, the wrapper innermost.
  * Boundary: internal to `./native` (not exported); the same rule as the `./react` helper, kept per entry because the
  *           entries never import each other. `undefined` when there is neither.
- * Runtime: react-native (vitest)
+ * Runtime: react-native
  * Governing contract: ADR 0269 (decisions 2 and 6).
  */
 import { createElement, type ComponentType, type ReactNode } from "react";

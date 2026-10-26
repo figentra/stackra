@@ -28,13 +28,13 @@ import type { FakeConstructor } from "#core/types/fake-constructor.type";
  */
 export abstract class Fake {
   /** Recorded values per instance, kept off the instance so equality checks and printing ignore them. */
-  static readonly #recorded = new WeakMap<object, Map<string, unknown[]>>();
+  private static readonly recorded = new WeakMap<object, Map<string, unknown[]>>();
 
   /** The shape of a port method name, and of nothing a runtime probes for (`$$typeof`, `@@iterator`). */
-  static readonly #methodName = /^[a-z][A-Za-z0-9]*$/;
+  private static readonly methodName = /^[a-z][A-Za-z0-9]*$/;
 
   /** Method-shaped names that promises, JSON, matchers and printers probe for; spying them would break those. */
-  static readonly #probed: ReadonlySet<string> = new Set([
+  private static readonly probed: ReadonlySet<string> = new Set([
     "then",
     "toJSON",
     "asymmetricMatch",
@@ -57,8 +57,8 @@ export abstract class Fake {
       if (
         typeof property === "string" &&
         !(property in target) &&
-        Fake.#methodName.test(property) &&
-        !Fake.#probed.has(property)
+        Fake.methodName.test(property) &&
+        !Fake.probed.has(property)
       )
         Object.defineProperty(target, property, {
           value: vi.fn().mockName(`${port.name}.${property}`),
@@ -76,15 +76,29 @@ export abstract class Fake {
       }
 
       record(name: string, value: unknown): void {
-        Fake.#record(this, name, value);
+        Fake.recordOn(this, name, value);
       }
 
       calls(name: string): readonly unknown[] {
-        return Fake.#calls(this, name);
+        return Fake.callsOn(this, name);
       }
     };
     Object.defineProperty(PortFake, "name", { value: `${port.name}Fake` });
     return PortFake as unknown as FakeConstructor<T>;
+  }
+
+  /** Appends `value` to the record of `name` on `fake`. */
+  private static recordOn(fake: object, name: string, value: unknown): void {
+    let byName = Fake.recorded.get(fake);
+    if (!byName) Fake.recorded.set(fake, (byName = new Map()));
+    const values = byName.get(name);
+    if (values) values.push(value);
+    else byName.set(name, [value]);
+  }
+
+  /** A copy of the record of `name` on `fake`, so a caller cannot rewrite history. */
+  private static callsOn(fake: object, name: string): readonly unknown[] {
+    return [...(Fake.recorded.get(fake)?.get(name) ?? [])];
   }
 
   /**
@@ -94,7 +108,7 @@ export abstract class Fake {
    * @param value - its first argument.
    */
   record(name: string, value: unknown): void {
-    Fake.#record(this, name, value);
+    Fake.recordOn(this, name, value);
   }
 
   /**
@@ -103,20 +117,6 @@ export abstract class Fake {
    * @param name - the method to read.
    */
   calls(name: string): readonly unknown[] {
-    return Fake.#calls(this, name);
-  }
-
-  /** Appends `value` to the record of `name` on `fake`. */
-  static #record(fake: object, name: string, value: unknown): void {
-    let byName = Fake.#recorded.get(fake);
-    if (!byName) Fake.#recorded.set(fake, (byName = new Map()));
-    const values = byName.get(name);
-    if (values) values.push(value);
-    else byName.set(name, [value]);
-  }
-
-  /** A copy of the record of `name` on `fake`, so a caller cannot rewrite history. */
-  static #calls(fake: object, name: string): readonly unknown[] {
-    return [...(Fake.#recorded.get(fake)?.get(name) ?? [])];
+    return Fake.callsOn(this, name);
   }
 }

@@ -3,7 +3,7 @@
  * Purpose: `expect`, Playwright's `expect` with the house matcher `toHaveNoViolations` for `axe(page)`'s report.
  * Boundary: a new `expect` from Playwright's `expect.extend`; Playwright's own matchers (web-first assertions
  *           included) are unchanged.
- * Runtime: node (Playwright)
+ * Runtime: node
  * Governing contract: ADR 0183 (decision 2); ADR 0269 (decision 6).
  */
 import { expect as base } from "@playwright/test";

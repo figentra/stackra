@@ -26,14 +26,19 @@ export class ConnectionHostClient
   extends ServiceClient
   implements Record<keyof ConnectionHostCalls, HostCall>
 {
+  /** Calls the service query that lists the connections of an integration. */
   readonly resolve: HostCall;
 
+  /** Calls the service query that loads one connection. */
   readonly load: HostCall;
 
+  /** Calls the service action that stores a connection and its tokens. */
   readonly store: HostCall;
 
+  /** Calls the service action that disconnects a connection. */
   readonly disconnect: HostCall;
 
+  /** Calls the service action that issues a fresh access token. */
   readonly token: HostCall;
 
   /**

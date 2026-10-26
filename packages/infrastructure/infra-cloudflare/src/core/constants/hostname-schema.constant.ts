@@ -8,7 +8,7 @@
  */
 import { z } from "zod";
 
-/** `figentra.cloud`, `static.stackra.figentra.com`. */
+/** A DNS hostname such as `figentra.cloud` or `static.stackra.figentra.com`. */
 export const HOSTNAME_SCHEMA = z
   .string()
   .max(253)

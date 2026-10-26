@@ -4,7 +4,7 @@
  *          worker's caches, the one state in which the worker answers a navigation with the offline page.
  * Boundary: runs in the page; touches only cache entries whose path ends in `/index.html` (Workbox's revision query
  *           included), so the offline pages and assets stay cached.
- * Runtime: node (Playwright)
+ * Runtime: node
  * Governing contract: ADR 0255 (the offline page); ADR 0269 (decision 6).
  */
 import type { Page } from "@playwright/test";

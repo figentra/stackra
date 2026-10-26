@@ -7,7 +7,7 @@
  * Governing contract: ADR 0391 (decision 1); ADR 0215 (decision 1: module entitlements).
  */
 
-/** A module. */
+/** A paid module of the plan catalogue. */
 export interface CatalogueModule {
   /** The module entitlement's key (`payroll`). */
   readonly key: string;

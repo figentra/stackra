@@ -9,9 +9,13 @@
 
 /** One per-shopper rule. */
 export type ShopperLimitRule = {
+  /** What Cloudflare does once the limit is hit. */
   readonly action: "block";
+  /** The host-and-path filter the rule applies to. */
   readonly expression: string;
+  /** The label the dashboard shows for the rule. */
   readonly description: string;
+  /** The per-shopper rate limit, in Cloudflare's field names. */
   readonly ratelimit: {
     readonly characteristics: string[];
     readonly period: number;

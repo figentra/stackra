@@ -28,7 +28,7 @@ import type { Actor, Clock } from "@stackra/contracts";
 import { Database } from "@stackra/database";
 import { isRefusal } from "@stackra/errors";
 
-import { QueueDriver } from "#contracts/index";
+import type { QueueDriver } from "#contracts/index";
 import type { JobError, QueuedJob } from "#contracts/index";
 import { JOB_DEFAULTS } from "#core/constants/job-defaults.constant";
 import { JOB_TYPES } from "#core/constants/job-types.constant";
@@ -48,7 +48,7 @@ interface Connection {
 }
 
 /**
- * Runs jobs.
+ * Reserves and runs queued jobs through the action pipeline.
  *
  * @example
  * worker.connect(container);

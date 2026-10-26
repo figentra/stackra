@@ -8,7 +8,7 @@
  * Boundary: reads Pulumi config only, at program time, never a file or the environment. Ids and names only: a secret
  *           never goes through a `ref:` (ADR 0173), so the value is read as plain config. The project namespace is
  *           not a provider's, so `cloudflare.*` never collides with the Cloudflare provider's own `cloudflare:*` keys.
- * Runtime: node (Pulumi program)
+ * Runtime: node
  * Governing contract: ADR 0171 (decision 4, amended by ADR 0289 decision 9: stacks in `figentra/infra`), ADR 0296
  *                     (root runway `ref:` values), ADR 0173.
  */

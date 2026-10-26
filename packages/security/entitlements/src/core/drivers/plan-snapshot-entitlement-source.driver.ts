@@ -14,7 +14,7 @@ import { Driver } from "@stackra/container";
 import type { PublicId } from "@stackra/contracts";
 
 import { EntitlementSource } from "#contracts/ports/entitlement-source.port";
-import { PlanSnapshots } from "#contracts/ports/plan-snapshots.port";
+import type { PlanSnapshots } from "#contracts/ports/plan-snapshots.port";
 import type { EntitlementKey } from "#contracts/types/entitlement-key.type";
 import type { EntitlementRef } from "#contracts/types/entitlement-ref.type";
 import { entitlementKey } from "#core/functions/entitlement-key.function";
@@ -32,7 +32,9 @@ export class PlanSnapshotEntitlementSourceDriver extends Driver(EntitlementSourc
   /** Where plans come from. */
   private readonly snapshots: PlanSnapshots;
 
-  /** @param snapshots - the event-fed plan of each scope. */
+  /**
+   * @param snapshots - the event-fed plan of each scope.
+   */
   constructor(snapshots: PlanSnapshots) {
     super();
     this.snapshots = snapshots;

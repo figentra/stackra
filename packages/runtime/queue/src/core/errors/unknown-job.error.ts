@@ -17,7 +17,10 @@ import { ErrorKind, Refusal } from "@stackra/errors";
  * @example
  * throw UnknownJobError.create({ key: "messages.message.deliver@1" });
  */
-export class UnknownJobError extends Refusal({ kind: ErrorKind.Internal, retryable: false }) {
+export class UnknownJobError extends Refusal({
+  kind: ErrorKind.Internal,
+  retryable: false,
+}) {
   /** The action key the job was stored with. */
   key!: string;
 }

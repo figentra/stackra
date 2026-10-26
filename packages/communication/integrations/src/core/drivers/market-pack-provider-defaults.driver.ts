@@ -44,7 +44,7 @@ export class MarketPackProviderDefaultsDriver extends Driver(ProviderDefaults) {
     this.clock = clock;
   }
 
-  /** See `ProviderDefaults.providers`. */
+  /** The live providers the Market pack lists for `capability` in `market`, in its order. */
   async providers(capability: string, market: string): Promise<readonly ProviderChoice[]> {
     const resolved = await this.packs.resolve(market);
     const today = this.clock.now().toISOString().slice(0, 10);

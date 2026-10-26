@@ -4,7 +4,7 @@
  *          `session` control route answers with the session cookie, which lands in the page's browser context.
  * Boundary: posts through `page.request`, whose cookie jar is the page's context, so every page of that context (an
  *           Electron window included) is signed in. Only inside a test or a hook.
- * Runtime: node (Playwright)
+ * Runtime: node
  * Governing contract: ADR 0269 (decision 6).
  */
 import type { Page } from "@playwright/test";

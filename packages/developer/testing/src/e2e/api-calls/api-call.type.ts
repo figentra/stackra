@@ -3,7 +3,7 @@
  * Purpose: `ApiCall`, one request the browser context sent and the server answered during the current test, as
  *          `apiCalls(key)` returns it.
  * Boundary: a type only. Header names are lower case, as Playwright reports them.
- * Runtime: node (Playwright)
+ * Runtime: node
  * Governing contract: ADR 0269 (decision 6).
  */
 

@@ -42,9 +42,9 @@ class DeliverMessageAction extends Action({
     onDeadLetter: "markFailed",
   },
 }) {
-  isDown = false;
-
   readonly failed: string[] = [];
+
+  isDown = false;
 
   async handle(input: { messageId: string }): Promise<{ messageId: string }> {
     if (this.isDown) throw ProviderUnavailableError.create();

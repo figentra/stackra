@@ -3,7 +3,7 @@
  * Purpose: `AxeReport`, the part of an axe-core result that `axe(page)` returns and `toHaveNoViolations` reads: each
  *          violated rule with its impact, its help text and the nodes that break it.
  * Boundary: a type only, structural, so the entry names no axe-core type and axe-core's own result fits it.
- * Runtime: node (Playwright)
+ * Runtime: node
  * Governing contract: ADR 0183 (decision 2); ADR 0269 (decision 6).
  */
 

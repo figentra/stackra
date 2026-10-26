@@ -3,7 +3,7 @@
  * Purpose: `RenderHookOptions<Props>`, what `renderHook(hook, options)` of `./react` takes: Testing Library's options
  *          (`initialProps` among them), a `wrapper`, and a `providers` list composed into one wrapper outside it.
  * Boundary: a type only; provider-agnostic, like `RenderOptions`.
- * Runtime: browser (vitest, jsdom)
+ * Runtime: browser
  * Governing contract: ADR 0269 (decisions 2 and 6).
  */
 import type { RenderHookOptions as LibraryRenderHookOptions } from "@testing-library/react";

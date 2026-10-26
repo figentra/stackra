@@ -11,12 +11,13 @@
  * Governing contract: ADR 0215 (decisions 3 and 4); owner round 3 #18 (fix the race: reserve-then-commit).
  */
 import { kindOf, Service } from "@stackra/container";
-import { Clock, Duration, type PublicId } from "@stackra/contracts";
+import type { Clock } from "@stackra/contracts";
+import { Duration, type PublicId } from "@stackra/contracts";
 import { EntitlementRequiredError } from "@stackra/errors";
-import { Locks } from "@stackra/locking";
+import type { Locks } from "@stackra/locking";
 
-import { EntitlementSource } from "#contracts/ports/entitlement-source.port";
-import { EntitlementUsage } from "#contracts/ports/entitlement-usage.port";
+import type { EntitlementSource } from "#contracts/ports/entitlement-source.port";
+import type { EntitlementUsage } from "#contracts/ports/entitlement-usage.port";
 import { LimitReachedError } from "#core/errors/limit-reached.error";
 import { entitlementKey } from "#core/functions/entitlement-key.function";
 import { isLimitGrant } from "#core/functions/is-limit-grant.function";

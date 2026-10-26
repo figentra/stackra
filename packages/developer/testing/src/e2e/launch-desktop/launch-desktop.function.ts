@@ -4,7 +4,7 @@
  *          `desktop` project journey, with the faked bridges in `STACKRA_E2E_FAKES` and `STACKRA_E2E=1`.
  * Boundary: launches the main bundle the desktop build writes (`dist/desktop/main.js` under the member root, the
  *           project's `testDir`); build it first. The caller closes the app. Only inside a test or a hook.
- * Runtime: node (Playwright)
+ * Runtime: node
  * Governing contract: ADR 0251 (hardening, bridges); ADR 0254 (desktop build); ADR 0269 (decision 6).
  */
 import { join } from "node:path";

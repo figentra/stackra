@@ -47,19 +47,28 @@ class ProductLimitEntitlement extends Entitlement({
 
 class ReportsEntitlement extends Entitlement({ kind: EntitlementKind.Feature }) {}
 
-class CreateProductAction extends Action({ key: "product.create", actors: [ActorKind.User] }) {
+class CreateProductAction extends Action({
+  key: "product.create",
+  actors: [ActorKind.User],
+}) {
   async handle(): Promise<string> {
     return "created";
   }
 }
 
-class ListReportsQuery extends Query({ key: "report.list", actors: [ActorKind.User] }) {
+class ListReportsQuery extends Query({
+  key: "report.list",
+  actors: [ActorKind.User],
+}) {
   async handle(): Promise<readonly string[]> {
     return [];
   }
 }
 
-class ListProductsQuery extends Query({ key: "product.list", actors: [ActorKind.User] }) {
+class ListProductsQuery extends Query({
+  key: "product.list",
+  actors: [ActorKind.User],
+}) {
   async handle(): Promise<readonly string[]> {
     return [];
   }

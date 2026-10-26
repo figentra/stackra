@@ -3,7 +3,7 @@
  * Purpose: `controlUrl(path)`, one control route of the e2e stack on the running project's `baseURL`.
  * Boundary: internal to `./e2e` (not exported). Reads the current test's project, so it works only inside a test or a
  *           hook.
- * Runtime: node (Playwright)
+ * Runtime: node
  * Governing contract: ADR 0269 (decision 6).
  */
 import { test } from "@playwright/test";

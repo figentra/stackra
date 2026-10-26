@@ -5,7 +5,7 @@
  *          `cacheMaxAge`.
  * Boundary: declares Pulumi resources only. The cache Worker that serves Turborepo's API from the bucket deploys from
  *           CI with wrangler (ADR 0289 decisions 1 and 2), and its token and signature key live in Infisical `/ci`.
- * Runtime: node (Pulumi program)
+ * Runtime: node
  * Governing contract: ADR 0026 (decisions 1 and 2, and the expiry rule of its consequences), ADR 0171 (decisions 6
  *                     and 7).
  */

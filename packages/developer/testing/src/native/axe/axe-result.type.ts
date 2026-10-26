@@ -3,7 +3,7 @@
  * Purpose: `AxeResult`, what `axe(view)` resolves to: the violations it found, each with its rule, a message naming
  *          the node, and the node itself; `toHaveNoViolations` reads it.
  * Boundary: a type only.
- * Runtime: react-native (vitest)
+ * Runtime: react-native
  * Governing contract: ADR 0269 (decision 6).
  */
 import type { AxeNode } from "#native/axe/axe-node.type";

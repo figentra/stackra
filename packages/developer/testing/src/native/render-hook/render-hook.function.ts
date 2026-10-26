@@ -4,7 +4,7 @@
  *          the `providers` and the `wrapper` composed into one wrapper, and `cleanup` when the test finishes.
  *          Asynchronous, as the library's is from version 14.
  * Boundary: provider-agnostic; no workspace import.
- * Runtime: react-native (vitest)
+ * Runtime: react-native
  * Governing contract: ADR 0269 (decisions 2 and 6).
  */
 import {

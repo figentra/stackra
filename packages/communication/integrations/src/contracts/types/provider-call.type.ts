@@ -13,7 +13,7 @@ export interface ProviderCall {
   /** The provider's call id. */
   readonly providerRef: string;
 
-  /** Its state. */
+  /** The state of the call. */
   readonly status: CallStatus;
 
   /** Seconds connected, once over. */

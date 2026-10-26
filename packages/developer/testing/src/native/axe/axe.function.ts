@@ -6,7 +6,7 @@
  *           assistive technology (`aria-hidden`, `accessibilityElementsHidden`, `importantForAccessibility:
  *           "no-hide-descendants"`) is skipped; an image marked `accessible={false}` is decorative. Resolves, like the
  *           web check, so a test reads the same on both targets.
- * Runtime: react-native (vitest)
+ * Runtime: react-native
  * Governing contract: ADR 0269 (decision 6).
  */
 import type { AxeNode } from "#native/axe/axe-node.type";

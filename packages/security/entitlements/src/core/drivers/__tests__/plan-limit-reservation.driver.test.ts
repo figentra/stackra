@@ -65,14 +65,20 @@ class AllowAllDriver extends Driver(AccessControl) {
 
 const usage = new RowsUsageDriver();
 
-class CreateProductAction extends Action({ key: "product.create", actors: [ActorKind.User] }) {
+class CreateProductAction extends Action({
+  key: "product.create",
+  actors: [ActorKind.User],
+}) {
   async handle(): Promise<string> {
     usage.rows.push(ACME.id);
     return "created";
   }
 }
 
-class RenameProductAction extends Action({ key: "product.rename", actors: [ActorKind.User] }) {
+class RenameProductAction extends Action({
+  key: "product.rename",
+  actors: [ActorKind.User],
+}) {
   async handle(): Promise<string> {
     return "renamed";
   }

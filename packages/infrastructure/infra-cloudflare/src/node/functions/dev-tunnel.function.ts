@@ -6,7 +6,7 @@
  * Boundary: declares Pulumi resources only; the ingress comes from `tunnelIngress`. The tunnel token is never an output
  *           here: it reaches the machine from Infisical `/agents` through `infisical run` and never touches disk.
  *           Access in front of the hosts is `accessGate`'s.
- * Runtime: node (Pulumi program)
+ * Runtime: node
  * Governing contract: ADR 0290 (decisions 2, 4, 5 and 6).
  */
 import * as cloudflare from "@pulumi/cloudflare";

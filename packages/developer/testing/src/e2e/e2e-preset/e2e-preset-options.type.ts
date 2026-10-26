@@ -4,7 +4,7 @@
  *          origin and target the stack serves, the consumed services and seeds the stack starts with, the Turnstile
  *          mode and the projects.
  * Boundary: a type only; every value comes from the member's config and runway, never typed by hand.
- * Runtime: node (Playwright)
+ * Runtime: node
  * Governing contract: ADR 0269 (decision 6); ADR 0295 (decision 5: generated tool configs); ADR 0296 (runway).
  */
 import type { E2eProject } from "#e2e/e2e-preset/e2e-project.type";

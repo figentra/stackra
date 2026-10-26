@@ -23,7 +23,7 @@ import type { ProviderCall } from "#contracts/types/provider-call.type";
  * const placed = await voice.call(request);
  */
 export interface VoiceGateway {
-  /** Places `call`. */
+  /** Places the outbound `call`. */
   call(call: OutboundCall): Promise<ProviderCall>;
 
   /** The call `providerRef` as it is now. */

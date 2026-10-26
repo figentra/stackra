@@ -4,7 +4,7 @@
  *          A and AA rules; `expect(await axe(page)).toHaveNoViolations()`.
  * Boundary: checks and returns; asserts nothing itself. The gate (serious or critical fails) is the matcher's. Works on
  *           a browser page and on an Electron window alike.
- * Runtime: node (Playwright)
+ * Runtime: node
  * Governing contract: ADR 0183 (decision 2: axe on every journey); ADR 0269 (decision 6).
  */
 import { AxeBuilder } from "@axe-core/playwright";

@@ -55,7 +55,9 @@ export class AwardKind extends Model.with(HasPublicId("awk"), Timestamps) {
 
 // shortcut: the `[OptionalProps]` augmentation is written by hand so a create may leave the trait timestamps out;
 // remove it once gen writes the entity files (STA-339).
+/** The props a create of `AwardKind` may leave out. */
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: the generated `[OptionalProps]` augmentation merges into the model, as gen's entity files do
 export interface AwardKind {
+  /** The trait timestamps, which the database fills in. */
   [OptionalProps]?: "createdAt" | "updatedAt";
 }

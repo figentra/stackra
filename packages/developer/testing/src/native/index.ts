@@ -7,7 +7,7 @@
  * Boundary: names each re-export and declares nothing. Provider-agnostic and free of workspace imports (ADR 0269
  *           decision 2). Importing it registers `toHaveNoViolations`. The native `renderRoute` needs navigation, so it
  *           does not live here.
- * Runtime: react-native (vitest)
+ * Runtime: react-native
  * Governing contract: ADR 0294 (decision 15); ADR 0269 (decisions 2 and 6); the STA-347 stand-in barrel decision.
  */
 export { act, screen } from "@testing-library/react-native/pure";

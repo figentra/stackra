@@ -5,7 +5,7 @@
  *          in and answers with the session cookie.
  * Boundary: paths only, spelled once for `seed` and `loginAs`. Both take a JSON `POST`; any answer other than 2xx is a
  *           failed setup. Never served outside the e2e stack.
- * Runtime: node (Playwright)
+ * Runtime: node
  * Governing contract: ADR 0269 (decision 6); ADR 0182 (the ephemeral end-to-end stack).
  */
 

@@ -5,7 +5,7 @@
  *          finishes. Asynchronous, as the library's render is from version 14: `await render(...)`.
  * Boundary: provider-agnostic: it adds no provider of its own, so it depends on no workspace package. Imports the
  *           library's `pure` entry, which installs no global hooks and no jest matchers.
- * Runtime: react-native (vitest)
+ * Runtime: react-native
  * Governing contract: ADR 0269 (decisions 2 and 6).
  */
 import { render as renderWithLibrary, type RenderResult } from "@testing-library/react-native/pure";

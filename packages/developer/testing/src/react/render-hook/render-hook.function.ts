@@ -3,7 +3,7 @@
  * Purpose: `renderHook(hook, options)`, Testing Library's hook render with the house defaults of `render`: the
  *          `providers` and the `wrapper` composed into one wrapper, and `cleanup` when the test finishes.
  * Boundary: provider-agnostic; no workspace import.
- * Runtime: browser (vitest, jsdom)
+ * Runtime: browser
  * Governing contract: ADR 0269 (decisions 2 and 6).
  */
 import { renderHook as renderHookWithLibrary, type RenderHookResult } from "@testing-library/react";

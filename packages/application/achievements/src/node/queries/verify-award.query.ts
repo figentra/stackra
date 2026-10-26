@@ -28,12 +28,15 @@ export class VerifyAwardQuery extends Query({
   actors: [ActorKind.Anonymous, ActorKind.User, ActorKind.Service],
   area: ApiArea.Public,
   endpoint: { method: HttpMethod.Get, path: "/awards/verify" },
+  // reason: an agent reads awards through the scoped queries of the consumer, not the public check
   tool: false,
 }) {
   /** Resolves tokens and codes. */
   private readonly awards: AwardService;
 
-  /** @param awards - the award service. */
+  /**
+   * @param awards - the award service.
+   */
   constructor(awards: AwardService) {
     super();
     this.awards = awards;

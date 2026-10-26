@@ -13,11 +13,12 @@
  *                     config-model section 2.
  */
 import { Service } from "@stackra/container";
-import { Clock, Duration } from "@stackra/contracts";
-import { Locks } from "@stackra/locking";
+import type { Clock } from "@stackra/contracts";
+import { Duration } from "@stackra/contracts";
+import type { Locks } from "@stackra/locking";
 
 import { CatalogueVersionState } from "#contracts/enums/catalogue-version-state.enum";
-import { CatalogueVersions } from "#contracts/ports/catalogue-versions.port";
+import type { CatalogueVersions } from "#contracts/ports/catalogue-versions.port";
 import type { CatalogueVersion } from "#contracts/types/catalogue-version.type";
 import { CatalogueChangeBackdatedError } from "#core/errors/catalogue-change-backdated.error";
 import { CatalogueVersionNotPendingError } from "#core/errors/catalogue-version-not-pending.error";

@@ -6,7 +6,7 @@
  * Governing contract: ADR 0391 (decision 1); config-model section 2 (C8, C9).
  */
 
-/** A trial. */
+/** The terms of one trial. */
 export interface TrialTerms {
   /** The tier the trial runs on. */
   readonly tier: string;

@@ -34,7 +34,9 @@ export interface Integration {
 class IntegrationBase {
   declare readonly "~kind": "integration";
 
-  /** @param runtime - the runtime the container injects; a test may leave it out and give a fake client. */
+  /**
+   * @param runtime - the runtime the container injects; a test may leave it out and give a fake client.
+   */
   constructor(runtime?: IntegrationRuntime) {
     INTEGRATION_STATE.set(this, runtime === undefined ? {} : { runtime });
   }

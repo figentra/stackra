@@ -35,12 +35,15 @@ export class MemoryManagedProvisioningDriver extends Driver(ManagedProvisioning)
   /** Recorded cost events, oldest first. */
   private readonly events: ManagedCostEvent[] = [];
 
-  /** @param clock - the container's clock. */
+  /**
+   * @param clock - the container's clock.
+   */
   constructor(clock: Clock) {
     super();
     this.clock = clock;
   }
 
+  /** Creates a pending resource, or returns the one already made for the same `reference`. */
   async create(request: ProvisioningRequest): Promise<ManagedResource> {
     for (const known of this.resources.values())
       if (known.reference === request.reference) return known;
@@ -57,22 +60,27 @@ export class MemoryManagedProvisioningDriver extends Driver(ManagedProvisioning)
     });
   }
 
+  /** The resource `resourceId` as it stands; this memory provider has nothing to check. */
   async verify(resourceId: string): Promise<ManagedResource> {
     return this.load(resourceId);
   }
 
+  /** Marks the resource `resourceId` suspended. */
   async suspend(resourceId: string): Promise<ManagedResource> {
     return this.settle(resourceId, ProvisioningStatus.Suspended);
   }
 
+  /** Marks the resource `resourceId` removed. */
   async remove(resourceId: string): Promise<ManagedResource> {
     return this.settle(resourceId, ProvisioningStatus.Removed);
   }
 
+  /** The resource `resourceId`, or `null` when it is unknown. */
   async status(resourceId: string): Promise<ManagedResource | null> {
     return this.resources.get(resourceId) ?? null;
   }
 
+  /** The cost events of `resourceId` that occurred at or after `since`. */
   async costs(resourceId: string, since: Date): Promise<readonly ManagedCostEvent[]> {
     return this.events.filter(
       (event) => event.resourceId === resourceId && event.occurredAt >= since,

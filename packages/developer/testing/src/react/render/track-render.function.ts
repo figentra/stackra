@@ -4,7 +4,7 @@
  *          render, and Testing Library's `cleanup` (unmount and session reset) when the current test finishes.
  * Boundary: internal to `./react` (not exported); used by `render` and `renderHook`. Outside a test (a `beforeAll`)
  *           nothing is registered, as with `freezeClock`.
- * Runtime: browser (vitest, jsdom)
+ * Runtime: browser
  * Governing contract: ADR 0269 (decision 6).
  */
 import { cleanup } from "@testing-library/react";

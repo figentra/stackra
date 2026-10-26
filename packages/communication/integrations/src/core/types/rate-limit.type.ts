@@ -20,7 +20,7 @@ export interface RateLimit {
   /** How many calls the provider allows per window; a whole number from 1. */
   readonly requests: number;
 
-  /** The window. */
+  /** The window the requests are counted over. */
   readonly per: Interval;
 
   /** What the limit counts against. */

@@ -23,7 +23,7 @@ export interface ChannelOrder {
   /** The channel's state, as the channel spells it; the importer maps it. */
   readonly status: string;
 
-  /** The lines. */
+  /** The lines of the order. */
   readonly lines: readonly ChannelOrderLine[];
 
   /** The order total the channel charged. */

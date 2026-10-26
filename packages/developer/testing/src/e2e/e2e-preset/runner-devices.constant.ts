@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `RUNNER_DEVICES`, the runner names an e2e config may use and the Playwright device each one emulates.
  * Boundary: internal to `./e2e` (not exported); data only. A name outside it is refused by `e2ePreset`.
- * Runtime: node (Playwright)
+ * Runtime: node
  * Governing contract: ADR 0269 (decision 6); ADR 0182 (the device matrix).
  */
 

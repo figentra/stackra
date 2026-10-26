@@ -4,7 +4,7 @@
  *          method, and a path that ends with the endpoint's path, each `:param` matching one segment.
  * Boundary: internal to `./e2e` (not exported); pure. The path is matched as a suffix because the API base URL may
  *           carry a prefix of its own.
- * Runtime: node (Playwright)
+ * Runtime: node
  * Governing contract: ADR 0269 (decision 6); ADR 0140 (endpoints).
  */
 import type { ApiCall } from "#e2e/api-calls/api-call.type";

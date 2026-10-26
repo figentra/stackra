@@ -4,7 +4,7 @@
  *          journey cannot reach.
  * Boundary: a type only. Keys are bridge keys (`peripherals.receipt.print`); main answers a faked bridge with its value
  *           as `data` instead of calling the driver.
- * Runtime: node (Playwright)
+ * Runtime: node
  * Governing contract: ADR 0251 (bridges); ADR 0269 (decision 6).
  */
 

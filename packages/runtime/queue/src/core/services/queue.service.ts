@@ -17,8 +17,8 @@ import type { AnyClass } from "@stackra/container";
 import { Duration } from "@stackra/contracts";
 import type { Clock, PublicId } from "@stackra/contracts";
 
-import { JobStatus, QueueDriver } from "#contracts/index";
-import type { QueuedJob } from "#contracts/index";
+import { JobStatus } from "#contracts/index";
+import type { QueuedJob, QueueDriver } from "#contracts/index";
 import { JOB_DEFAULTS } from "#core/constants/job-defaults.constant";
 import { mintJobId } from "#core/functions/mint-job-id.function";
 import { readJob } from "#core/functions/read-job.function";

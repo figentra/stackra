@@ -18,13 +18,13 @@ export interface PlanCatalogue {
   /** Tiers, lowest rank first. */
   readonly tiers: readonly PlanTier[];
 
-  /** Seat kinds. */
+  /** The kinds of seat a plan sells. */
   readonly seatKinds: readonly SeatKind[];
 
-  /** Paid modules. */
+  /** The modules sold on top of a tier. */
   readonly modules: readonly CatalogueModule[];
 
-  /** Trials. */
+  /** The trials a scope can start. */
   readonly trials: readonly TrialTerms[];
 
   /** Rows of every other record kind (`limit_policy`), by that kind, in row order; empty when there are none. */

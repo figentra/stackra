@@ -9,7 +9,7 @@
  *           route tests import one entry (registry v3.1: `./react` depends on navigation); navigation is an optional
  *           peer and a dev dependency (so the module resolves); navigation's tests import vitest directly, so there is
  *           no turbo cycle.
- * Runtime: browser (vitest, jsdom)
+ * Runtime: browser
  * Governing contract: ADR 0294 (decision 15); ADR 0269 (decisions 2 and 6); the STA-347 stand-in barrel decision.
  */
 export {

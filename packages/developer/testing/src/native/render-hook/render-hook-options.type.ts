@@ -3,7 +3,7 @@
  * Purpose: `RenderHookOptions<Props>`, what `renderHook(hook, options)` of `./native` takes: the hook's
  *          `initialProps`, a `wrapper`, and a `providers` list composed into one wrapper outside it.
  * Boundary: a type only; provider-agnostic, like `RenderOptions`.
- * Runtime: react-native (vitest)
+ * Runtime: react-native
  * Governing contract: ADR 0269 (decisions 2 and 6).
  */
 import type { ComponentType, ReactNode } from "react";

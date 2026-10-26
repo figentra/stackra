@@ -4,7 +4,7 @@
  *          composed into one wrapper, a `userEvent.setup()` session per render, and `cleanup` when the test finishes.
  * Boundary: provider-agnostic: it adds no provider of its own, so it depends on no workspace package; framework
  *           packages (navigation's route helpers, a package's `./testing`) compose theirs through the options.
- * Runtime: browser (vitest, jsdom)
+ * Runtime: browser
  * Governing contract: ADR 0269 (decisions 2 and 6).
  */
 import { render as renderWithLibrary, type RenderResult } from "@testing-library/react";

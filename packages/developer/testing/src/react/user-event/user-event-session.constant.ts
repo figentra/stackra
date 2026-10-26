@@ -4,7 +4,7 @@
  *          to.
  * Boundary: internal test-process state of `./react` (not exported); set by each render, cleared when its test
  *           finishes.
- * Runtime: browser (vitest, jsdom)
+ * Runtime: browser
  * Governing contract: ADR 0269 (decision 6).
  */
 import type { UserEvent } from "@testing-library/user-event";

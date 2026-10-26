@@ -7,7 +7,7 @@
  * Governing contract: ADR 0391 (decision 1); ADR 0215 (decisions 1 and 3); config-model section 2.
  */
 
-/** A tier. */
+/** One tier of the plan catalogue. */
 export interface PlanTier {
   /** The tier's key (`pro`). */
   readonly key: string;

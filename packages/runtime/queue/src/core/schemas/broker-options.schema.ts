@@ -27,12 +27,12 @@ import { BROKER_CONFIG_SCHEMA } from "#core/constants/broker-config-schema.const
  * }
  */
 export class BrokerOptions extends Schema {
-  /** `memory` delivers in process; `topic` publishes to the generated broker topics; `valkey` to Valkey streams. */
-  driver: DriverName<BrokerPublisher> = "memory";
-
   /** The `valkey` driver's server (`redis://` or `rediss://`, with its password); empty until the secret is set. */
   @Secret("QUEUE_BROKER_VALKEY_URL")
   valkeyUrl = "";
+
+  /** `memory` delivers in process; `topic` publishes to the generated broker topics; `valkey` to Valkey streams. */
+  driver: DriverName<BrokerPublisher> = "memory";
 
   /** The `valkey` driver's streams. */
   valkey: {

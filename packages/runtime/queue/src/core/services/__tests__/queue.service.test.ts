@@ -32,7 +32,10 @@ class ExpireUnpaidOrdersAction extends Action({
   async handle(_input: { batchSize: number }): Promise<void> {}
 }
 
-class VoidPaymentAction extends Action({ key: "payment.void", actors: [ActorKind.Service] }) {
+class VoidPaymentAction extends Action({
+  key: "payment.void",
+  actors: [ActorKind.Service],
+}) {
   async handle(_input: { paymentId: string }): Promise<void> {}
 }
 

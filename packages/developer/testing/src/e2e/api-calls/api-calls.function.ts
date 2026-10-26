@@ -5,7 +5,7 @@
  *          server and with which headers.
  * Boundary: synchronous; reads what `test`'s recorder logged in this test and the manifests under the project's
  *           `testDir` (the member root `e2ePreset` sets). A context the test opened itself is not recorded.
- * Runtime: node (Playwright)
+ * Runtime: node
  * Governing contract: ADR 0269 (decision 6); ADR 0252 (a queued write replays once).
  */
 import { test } from "@playwright/test";

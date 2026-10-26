@@ -23,6 +23,7 @@ vi.mock("iovalkey", () => ({
     constructor(...args: unknown[]) {
       server.urls.push(args[0]);
     }
+
     async xadd(...args: unknown[]) {
       server.calls.push(args);
       return "1-0";

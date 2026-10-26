@@ -5,7 +5,7 @@
  *          and a test adds its own around the subject.
  * Boundary: internal to `./react` (not exported). React only, no DOM; `undefined` when there is neither, so Testing
  *           Library renders the subject bare.
- * Runtime: browser (vitest, jsdom)
+ * Runtime: browser
  * Governing contract: ADR 0269 (decisions 2 and 6).
  */
 import { createElement, type ComponentType, type ReactNode } from "react";

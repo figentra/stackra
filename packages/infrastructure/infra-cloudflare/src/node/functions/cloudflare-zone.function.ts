@@ -6,7 +6,7 @@
  * Boundary: declares Pulumi resources only; the edge (settings, rulesets, bots) is `zoneEdge`'s. Tenant custom
  *           hostnames are created and deleted by the tenancy service at runtime (ADR 0276 decision 8), never here.
  *           Worker scripts and assets deploy from CI with wrangler (ADR 0284 decision 6); only their domains are here.
- * Runtime: node (Pulumi program)
+ * Runtime: node
  * Governing contract: ADR 0171 (decision 6), ADR 0175 (decision 1), ADR 0290 (decisions 3, 15 and 19), ADR 0284
  *                     (decision 9), ADR 0276 (decision 4).
  */

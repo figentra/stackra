@@ -5,7 +5,7 @@
  * Boundary: a plain subclass of the port (no container dependency here). The target is runway data passed in by the
  *           wiring; no credential is sent and none is read. A failure reports `down` with the host only, never a
  *           response body, and never throws.
- * Runtime: isomorphic (global `fetch`)
+ * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 16 and 17: each infra package ships its dependency's driver), ADR 0175,
  *                     registry gaps R-27 and R-36.
  */
@@ -13,13 +13,14 @@ import { Duration, HealthIndicator, HealthStatus } from "@stackra/contracts";
 import type { HealthReport } from "@stackra/contracts";
 
 /**
- * Checks cloudflare.
+ * Checks that the Cloudflare edge answers for a host.
  *
  * @example
  * const indicator = new CloudflareHealthIndicatorDriver({ host: "api.acme.example" });
  * await indicator.check(); // { status: "up", latency: "PT0.12S" }
  */
 export class CloudflareHealthIndicatorDriver extends HealthIndicator {
+  /** The dependency name the health report shows. */
   override readonly name = "cloudflare";
 
   private readonly url: string;

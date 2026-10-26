@@ -4,7 +4,7 @@
  *          `userEvent` calls go to.
  * Boundary: internal test-process state of `./native` (not exported); set by each render, cleared when its test
  *           finishes.
- * Runtime: react-native (vitest)
+ * Runtime: react-native
  * Governing contract: ADR 0269 (decision 6).
  */
 import type { userEvent } from "@testing-library/react-native/pure";

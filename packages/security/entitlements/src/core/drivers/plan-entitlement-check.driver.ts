@@ -18,7 +18,7 @@
  */
 import { type CallDescriptor, EntitlementCheck } from "@stackra/actions/contracts";
 import { Driver, kindOf } from "@stackra/container";
-import { Clock } from "@stackra/contracts";
+import type { Clock } from "@stackra/contracts";
 import { EntitlementRequiredError } from "@stackra/errors";
 
 import { ENTITLEMENT_REGISTRY } from "#core/constants/entitlement-registry.constant";
@@ -28,8 +28,8 @@ import { isLimitGrant } from "#core/functions/is-limit-grant.function";
 import { limitAllows } from "#core/functions/limit-allows.function";
 import { isValueGrant } from "#core/functions/is-value-grant.function";
 import { limitOf } from "#core/functions/limit-of.function";
-import { EntitlementSource } from "#core/ports/entitlement-source.port";
-import { EntitlementUsage } from "#contracts/ports/entitlement-usage.port";
+import type { EntitlementSource } from "#core/ports/entitlement-source.port";
+import type { EntitlementUsage } from "#contracts/ports/entitlement-usage.port";
 import type { EntitlementOptions } from "#core/types/entitlement-options.type";
 
 /**

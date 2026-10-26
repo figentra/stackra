@@ -10,10 +10,10 @@ import type { Money } from "@stackra/money";
 
 /** An imported order line. */
 export interface ChannelOrderLine {
-  /** Our SKU. */
+  /** The SKU in our catalogue. */
   readonly sku: string;
 
-  /** How many. */
+  /** How many units were ordered. */
   readonly quantity: number;
 
   /** What the channel charged for one, tax as the channel reports it. */

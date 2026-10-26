@@ -65,6 +65,7 @@ export class LocalConnectionStoreDriver extends Driver(ConnectionStore) {
     LOCAL_CONNECTIONS.set(this, this.records);
   }
 
+  /** The one connection of `type` the running call reaches first; `null` when there is none. */
   async find<C extends Connection>(type: ConnectionClass<C>): Promise<C | null> {
     const { integration, key } = registrationOf(type);
     const [first] = reachableConnections(
@@ -79,10 +80,12 @@ export class LocalConnectionStoreDriver extends Driver(ConnectionStore) {
     return this.load(type, record);
   }
 
+  /** The connection `id` of `type`; throws NotFoundError when it does not exist. */
   async byId<C extends Connection>(type: ConnectionClass<C>, id: string): Promise<C> {
     return this.load(type, this.recordOf(type, id));
   }
 
+  /** Every connection of `type` the running call reaches, nearest owner first. */
   async list<C extends Connection>(type: ConnectionClass<C>): Promise<C[]> {
     const { integration } = registrationOf(type);
     return reachableConnections(
@@ -92,6 +95,7 @@ export class LocalConnectionStoreDriver extends Driver(ConnectionStore) {
     ).flatMap((tier) => tier.records.map((record) => this.load(type, record)));
   }
 
+  /** Checks and stores a new connection of `type` from `input`, replacing the old one when only one is held. */
   async connect<C extends Connection>(
     type: ConnectionClass<C>,
     input: ConnectInput<C>,
@@ -126,6 +130,7 @@ export class LocalConnectionStoreDriver extends Driver(ConnectionStore) {
     return connection;
   }
 
+  /** Unsubscribes and removes the connection `id` of `type`. */
   async disconnect(type: ConnectionClass, id: string): Promise<void> {
     const connection = this.load(type, this.recordOf(type, id));
     const webhooks = connection as Connection & ConnectionWebhooks;

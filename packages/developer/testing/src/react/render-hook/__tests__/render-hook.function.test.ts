@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 /**
  * Stackra file contract:
  * Purpose: unit tests of the `./react` `renderHook`: the hook reads what the providers give it, `initialProps` and
@@ -7,6 +6,7 @@
  * Runtime: node (vitest, jsdom)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (decision 6).
  */
+// @vitest-environment jsdom
 import { describe, expect, it } from "@stackra/testing";
 import { createContext, createElement, use, useEffect, type ReactNode } from "react";
 

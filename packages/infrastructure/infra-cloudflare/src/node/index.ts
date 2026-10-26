@@ -4,7 +4,7 @@
  *          barrels (STA-339): the Pulumi programs of the Cloudflare core stack (the whole stack in one call, and each
  *          part for a stack that composes its own) and the `ref:` resolver.
  * Boundary: names each re-export and declares nothing. Pulumi runs under Node only, so these never reach `.`.
- * Runtime: node (Pulumi program)
+ * Runtime: node
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision; ADR 0171 (decisions 2 and 6).
  */
 export { accessGate } from "#node/functions/access-gate.function";

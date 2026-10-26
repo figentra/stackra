@@ -9,5 +9,5 @@
  * Governing contract: ADR 0308 (rules 2 and 12); round 3 #10; JUR-97.
  */
 
-/** `<provider>:<connection id>`. */
+/** Names a stored credential as `<provider>:<connection id>`. */
 export type CredentialRef = `${string}:conn_${string}`;

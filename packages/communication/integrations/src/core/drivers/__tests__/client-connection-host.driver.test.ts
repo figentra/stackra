@@ -16,10 +16,15 @@ import { z } from "zod";
 import { ClientConnectionHostDriver } from "#core/drivers/client-connection-host.driver";
 import type { ConnectionRecord } from "#core/types/connection-record.type";
 
+/** The scope node the record belongs to. */
+const SCOPE = { id: "scp_00000000000000000000000002", path: "root.shop" } as unknown as NonNullable<
+  ConnectionRecord["scope"]
+>;
+
 const RECORD = {
   id: "conn_00000000000000000000000001",
   level: "scope",
-  scope: { id: "scp_00000000000000000000000002", path: "root.shop" },
+  scope: SCOPE,
   fields: {},
   secrets: {},
   account: { id: "p-1" },
@@ -62,7 +67,7 @@ function setup(answers: Readonly<Record<string, unknown>> = {}) {
 describe("ClientConnectionHostDriver", () => {
   it("lists through resolve with the owners", async () => {
     const { transport, host } = setup({ "connections.connection.resolve@1": { items: [RECORD] } });
-    await expect(host.list("sales.crm", { scope: RECORD.scope })).resolves.toEqual([RECORD]);
+    await expect(host.list("sales.crm", { scope: SCOPE })).resolves.toEqual([RECORD]);
     expect(transport.sent[0]).toMatchObject({
       kind: "query",
       input: { integrationKey: "sales.crm", scope: RECORD.scope },

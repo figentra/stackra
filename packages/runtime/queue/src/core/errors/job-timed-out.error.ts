@@ -17,7 +17,10 @@ import { ErrorKind, Refusal } from "@stackra/errors";
  * @example
  * throw JobTimedOutError.create({ timeout: "PT5M" });
  */
-export class JobTimedOutError extends Refusal({ kind: ErrorKind.Unavailable, retryable: true }) {
+export class JobTimedOutError extends Refusal({
+  kind: ErrorKind.Unavailable,
+  retryable: true,
+}) {
   /** The timeout the attempt ran past, as an ISO 8601 duration (`PT5M`). */
   timeout!: string;
 }

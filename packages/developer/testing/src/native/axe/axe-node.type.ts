@@ -3,7 +3,7 @@
  * Purpose: `AxeNode`, one host node of a rendered React Native tree as `axe` reads it: its host type, its props and its
  *          children, matching the test renderer's instances that `render` returns as `container`.
  * Boundary: a type only, structural, so `axe` imports no renderer and a test may hand it a plain tree.
- * Runtime: react-native (vitest)
+ * Runtime: react-native
  * Governing contract: ADR 0269 (decision 6).
  */
 

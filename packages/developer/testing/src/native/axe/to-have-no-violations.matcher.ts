@@ -4,7 +4,7 @@
  *          violation's rule and message when it found some.
  * Boundary: registered with `expect` when the `./native` entry is imported (`createMatcher`), and typed by augmenting
  *           `Matchers` of `@stackra/testing`.
- * Runtime: react-native (vitest)
+ * Runtime: react-native
  * Governing contract: ADR 0269 (decisions 3 and 6).
  */
 import { createMatcher } from "#core/functions/create-matcher.function";
@@ -18,7 +18,7 @@ declare module "@stackra/testing" {
 }
 
 /**
- * The matcher.
+ * Passes when an axe result has no violations.
  *
  * @example
  * expect(await axe(view)).toHaveNoViolations();

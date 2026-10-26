@@ -11,7 +11,7 @@
 import { Enum } from "@stackra/contracts";
 
 /**
- * The roles.
+ * The roles an integration can play.
  *
  * @example
  * Integration({ provider: "slack", roles: [IntegrationRole.Channel, IntegrationRole.Surface, IntegrationRole.Connector], ... });

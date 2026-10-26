@@ -18,7 +18,7 @@ import type { CallDescriptor } from "@stackra/actions/contracts";
 import { Driver } from "@stackra/container";
 import type { AnyClass } from "@stackra/container";
 
-import { QueueService } from "#core/services/queue.service";
+import type { QueueService } from "#core/services/queue.service";
 
 /**
  * Queues `ctx.dispatch` calls.
@@ -30,13 +30,15 @@ export class QueueJobDispatcherDriver extends Driver(JobDispatcher) {
   /** Stores the jobs. */
   private readonly queue: QueueService;
 
-  /** @param queue - the queue service. */
+  /**
+   * @param queue - the queue service.
+   */
   constructor(queue: QueueService) {
     super();
     this.queue = queue;
   }
 
-  /** See `JobDispatcher.dispatch`. */
+  /** Queues `action` with `input`, caused by `call`. */
   async dispatch(action: AnyClass, input: unknown, call: CallDescriptor): Promise<void> {
     await this.queue.push(action as AnyClass<Action>, input as never, {
       origin: call.actor,

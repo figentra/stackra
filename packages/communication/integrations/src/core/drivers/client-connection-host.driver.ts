@@ -51,6 +51,7 @@ export class ClientConnectionHostDriver extends Driver(ConnectionHost) {
     this.client = new ConnectionHostClient(transport, calls);
   }
 
+  /** The connections of integration `key` that the scope or user in `owners` holds. */
   async list(
     key: string,
     owners: { readonly scope?: ScopeRef; readonly userId?: PublicId<"usr"> },
@@ -63,6 +64,7 @@ export class ClientConnectionHostDriver extends Driver(ConnectionHost) {
     return answer.items;
   }
 
+  /** The connection `id` of integration `key`, or `null` when there is none. */
   async get(key: string, id: string): Promise<ConnectionRecord | null> {
     const answer = (await this.client.load({ integrationKey: key, id })) as {
       readonly record?: ConnectionRecord;
@@ -70,6 +72,7 @@ export class ClientConnectionHostDriver extends Driver(ConnectionHost) {
     return answer.record ?? null;
   }
 
+  /** Stores `record` with its OAuth `tokens` in the integrations service. */
   async store(
     key: string,
     record: ConnectionRecord,
@@ -84,10 +87,12 @@ export class ClientConnectionHostDriver extends Driver(ConnectionHost) {
     });
   }
 
+  /** Disconnects the connection `id` of integration `key`. */
   async disconnect(key: string, id: string): Promise<void> {
     await this.client.disconnect({ id, integrationKey: key });
   }
 
+  /** A current access token of the connection `id`, refreshed by the service when due. */
   async accessToken(key: string, id: string): Promise<string> {
     const answer = (await this.client.token({ integrationKey: key, id })) as {
       readonly accessToken: string;

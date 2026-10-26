@@ -30,12 +30,14 @@ export class MemoryPayrollConnector implements PayrollConnector {
   /** Employee ids the provider refuses. */
   private readonly unknown: ReadonlySet<string>;
 
-  /** @param options - `unknownEmployees`, the employee ids this provider refuses. */
+  /**
+   * @param options - `unknownEmployees`, the employee ids this provider refuses.
+   */
   constructor(options: { readonly unknownEmployees?: readonly string[] } = {}) {
     this.unknown = new Set(options.unknownEmployees ?? []);
   }
 
-  /** See `PayrollConnector.pushPayInputs`. */
+  /** Accepts `batch` once per `idempotencyKey`, refusing an unknown employee. */
   async pushPayInputs(batch: PayInputBatch, idempotencyKey: string): Promise<PayInputReceipt> {
     const existing = this.receipts.get(idempotencyKey);
     if (existing !== undefined) return existing;
@@ -55,7 +57,7 @@ export class MemoryPayrollConnector implements PayrollConnector {
     return receipt;
   }
 
-  /** See `PayrollConnector.findPayInputs`. */
+  /** The receipt stored for `idempotencyKey`, or `null`. */
   async findPayInputs(idempotencyKey: string): Promise<PayInputReceipt | null> {
     return this.receipts.get(idempotencyKey) ?? null;
   }

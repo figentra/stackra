@@ -8,7 +8,7 @@
  *           client secret is the owner's to place. A service token's client secret stays in the encrypted stack state
  *           and is never exported. Tenant admin stays behind the identity provider alone (ADR 0290 decision 11), so no
  *           tenant host is listed here. Signed webhooks are still verified behind a bypass (ADR 0224).
- * Runtime: node (Pulumi program)
+ * Runtime: node
  * Governing contract: ADR 0290 (decisions 2, 6 and 11; amends ADR 0237 layer 1).
  */
 import * as cloudflare from "@pulumi/cloudflare";

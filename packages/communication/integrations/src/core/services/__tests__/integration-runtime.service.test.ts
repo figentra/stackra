@@ -139,6 +139,10 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
+/** The JSON of one base64url JWT segment. */
+const decode = (part: string) =>
+  JSON.parse(atob(part.replaceAll("-", "+").replaceAll("_", "/"))) as Record<string, unknown>;
+
 describe("IntegrationRuntime", () => {
   it("fetches a client credentials token once for concurrent calls and reuses it", async () => {
     const { runtime, clock } = setup();
@@ -233,8 +237,6 @@ describe("IntegrationRuntime", () => {
     expect(form.get("grant_type")).toBe("urn:ietf:params:oauth:grant-type:jwt-bearer");
     expect(form.has("client_id")).toBe(false);
     const [header = "", claims = ""] = (form.get("assertion") ?? "").split(".");
-    const decode = (part: string) =>
-      JSON.parse(atob(part.replaceAll("-", "+").replaceAll("_", "/"))) as Record<string, unknown>;
     expect(decode(header)).toMatchObject({ alg: "RS256", kid: "kid-1" });
     expect(decode(claims)).toMatchObject({
       iss: "svc@project.example",

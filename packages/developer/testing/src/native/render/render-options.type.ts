@@ -4,7 +4,7 @@
  *          `providers` list composed into one wrapper outside it (React Native Testing Library's only option is the
  *          wrapper).
  * Boundary: a type only. Provider-agnostic: a framework package passes its own providers.
- * Runtime: react-native (vitest)
+ * Runtime: react-native
  * Governing contract: ADR 0269 (decisions 2 and 6).
  */
 import type { ComponentType, ReactNode } from "react";

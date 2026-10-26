@@ -6,7 +6,7 @@
  * Boundary: internal to `./native` (not exported); used by `render` and `renderHook`. The library's own auto-cleanup
  *           needs global test hooks, which this repository's vitest does not install, so the cleanup is registered
  *           here; outside a test (a `beforeAll`) nothing is registered.
- * Runtime: react-native (vitest)
+ * Runtime: react-native
  * Governing contract: ADR 0269 (decision 6).
  */
 import { cleanup, userEvent as library } from "@testing-library/react-native/pure";

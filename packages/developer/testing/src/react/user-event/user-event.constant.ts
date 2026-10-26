@@ -5,7 +5,7 @@
  *          so pointer and keyboard state carry across one test's steps and never into the next test.
  * Boundary: before any render (or outside a test) an interaction gets a fresh session of its own, as user-event's
  *           direct calls do. `setup(options)` is user-event's own, for a test that wants a configured session.
- * Runtime: browser (vitest, jsdom)
+ * Runtime: browser
  * Governing contract: ADR 0269 (decision 6).
  */
 import { userEvent as library, type UserEvent } from "@testing-library/user-event";

@@ -35,9 +35,9 @@ class DeliverMessageAction extends Action({
   actors: [ActorKind.System],
   job: { queue: "delivery", retries: 1 },
 }) {
-  isDown = false;
-
   readonly delivered: string[] = [];
+
+  isDown = false;
 
   async handle(input: { messageId: string }): Promise<void> {
     if (this.isDown) throw ProviderDownError.create();
@@ -45,7 +45,10 @@ class DeliverMessageAction extends Action({
   }
 }
 
-class SendMessageAction extends Action({ key: "message.send", actors: [ActorKind.User] }) {
+class SendMessageAction extends Action({
+  key: "message.send",
+  actors: [ActorKind.User],
+}) {
   async handle(input: { messageId: string }, ctx: ActionContext): Promise<void> {
     await ctx.dispatch(DeliverMessageAction, { messageId: input.messageId });
   }

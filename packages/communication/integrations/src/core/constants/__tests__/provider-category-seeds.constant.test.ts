@@ -51,12 +51,14 @@ describe("MANAGED_PROVISIONING_TEMPLATES", () => {
   });
 });
 
+/** The `provider:status` rows seeded for one Market pack. */
+const of = (pack: string) =>
+  PROVIDER_CATALOGUE_SEEDS.filter((row) => row.pack === pack).map(
+    (row) => `${row.provider}:${row.status}`,
+  );
+
 describe("PROVIDER_CATALOGUE_SEEDS", () => {
   it("lists Stripe live and the planned gateways in us and eu", () => {
-    const of = (pack: string) =>
-      PROVIDER_CATALOGUE_SEEDS.filter((row) => row.pack === pack).map(
-        (row) => `${row.provider}:${row.status}`,
-      );
     expect(of("us")).toEqual(["stripe:live", "square:planned", "adyen:planned", "paypal:planned"]);
     expect(of("eu")).toEqual(["stripe:live", "adyen:planned", "mollie:planned"]);
   });

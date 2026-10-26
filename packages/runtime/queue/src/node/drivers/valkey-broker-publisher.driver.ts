@@ -13,7 +13,7 @@
 import { Driver } from "@stackra/container";
 import Valkey from "iovalkey";
 
-import { BrokerConfig } from "#config/broker.config";
+import type { BrokerConfig } from "#config/broker.config";
 import { BrokerPublisher } from "#contracts/index";
 import type { BrokerMessage } from "#contracts/index";
 
@@ -44,7 +44,7 @@ export class ValkeyBrokerPublisherDriver extends Driver(BrokerPublisher) {
     this.client = new Valkey(config.valkeyUrl, { maxRetriesPerRequest: 1 });
   }
 
-  /** See `BrokerPublisher.publish`. */
+  /** Hands `message` to `topic`, resolving once it is held. */
   async publish(topic: string, message: BrokerMessage): Promise<void> {
     const { keyPrefix, maxLength } = this.config.valkey;
     await this.client.xadd(

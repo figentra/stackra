@@ -79,11 +79,11 @@ class DeliverMessageAction extends Action({
     onDeadLetter: "markFailed",
   },
 }) {
-  outcome: "sent" | "down" | "gone" = "sent";
-
   readonly contexts: ActionContext[] = [];
 
   readonly failed: unknown[] = [];
+
+  outcome: "sent" | "down" | "gone" = "sent";
 
   async handle(input: { messageId: string }, ctx: ActionContext): Promise<{ sent: string }> {
     this.contexts.push(ctx);
@@ -120,7 +120,10 @@ class HangAction extends Action({
   }
 }
 
-class VoidPaymentAction extends Action({ key: "payment.void", actors: [ActorKind.User] }) {
+class VoidPaymentAction extends Action({
+  key: "payment.void",
+  actors: [ActorKind.User],
+}) {
   readonly contexts: ActionContext[] = [];
 
   async handle(_input: { paymentId: string }, ctx: ActionContext): Promise<void> {

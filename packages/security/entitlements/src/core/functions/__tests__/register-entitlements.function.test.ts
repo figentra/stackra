@@ -20,11 +20,17 @@ import type { EntitlementClass } from "#core/types/entitlement-class.type";
 
 class ReportsEntitlement extends Entitlement({ kind: EntitlementKind.Feature }) {}
 
-class ExportReportAction extends Action({ key: "report.export", actors: [ActorKind.User] }) {
+class ExportReportAction extends Action({
+  key: "report.export",
+  actors: [ActorKind.User],
+}) {
   async handle(): Promise<void> {}
 }
 
-class ListReportsQuery extends Query({ key: "report.list", actors: [ActorKind.User] }) {
+class ListReportsQuery extends Query({
+  key: "report.list",
+  actors: [ActorKind.User],
+}) {
   async handle(): Promise<readonly string[]> {
     return [];
   }

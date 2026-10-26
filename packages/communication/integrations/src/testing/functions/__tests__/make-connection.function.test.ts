@@ -41,10 +41,10 @@ class ResendConnection extends Connection<ResendIntegration> {
   @Secret("RESEND_TENANT_API_KEY")
   apiKey!: string;
 
-  fromAddress!: Email;
-
   @Secret("RESEND_TENANT_WEBHOOK_SECRET")
   webhookSecret!: string;
+
+  fromAddress!: Email;
 
   async check(): Promise<ConnectedAccount> {
     const domain = this.fromAddress.slice(this.fromAddress.lastIndexOf("@") + 1);

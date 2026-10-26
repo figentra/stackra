@@ -27,16 +27,20 @@ export class RequestConnectionContextDriver extends Driver(ConnectionContext) {
   /** Answers which call is running. */
   private readonly request: RequestContext;
 
-  /** @param request - the running call's context. */
+  /**
+   * @param request - the running call's context.
+   */
   constructor(request: RequestContext) {
     super();
     this.request = request;
   }
 
+  /** The scope of the running call, or undefined outside every call. */
   scope(): ScopeRef | undefined {
     return this.call()?.scope;
   }
 
+  /** The user the running call acts for, or undefined when no user is behind it. */
   user(): PublicId<"usr"> | undefined {
     const actor = this.call()?.actor;
     if (actor === undefined) return undefined;

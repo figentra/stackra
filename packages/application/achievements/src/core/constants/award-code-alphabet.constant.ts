@@ -7,5 +7,5 @@
  * Governing contract: ADR 0432 (decision 2).
  */
 
-/** Crockford base32. */
+/** The Crockford base32 alphabet award codes are written in. */
 export const AWARD_CODE_ALPHABET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";

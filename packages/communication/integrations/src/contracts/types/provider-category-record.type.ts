@@ -18,7 +18,7 @@ import type { ProviderSource } from "#contracts/enums/provider-source.enum";
  * const payments = PROVIDER_CATEGORY_SEEDS.find((record) => record.key === "provider-category:payments");
  */
 export interface ProviderCategoryRecord {
-  /** `provider-category:<name>`. */
+  /** The record key, `provider-category:<name>`. */
   readonly key: `provider-category:${string}`;
 
   /** The category's name (`payments`, `tenant-verification`). */

@@ -23,7 +23,7 @@ import { BROKER_TOPICS } from "#core/constants/broker-topics.constant";
  * await new TopicBrokerPublisherDriver().publish("orders.order.paid.v1", { id, body });
  */
 export class TopicBrokerPublisherDriver extends Driver(BrokerPublisher) {
-  /** See `BrokerPublisher.publish`. */
+  /** Hands `message` to `topic`, resolving once it is held. */
   async publish(topic: string, message: BrokerMessage): Promise<void> {
     const target = BROKER_TOPICS.get(topic);
     if (target === undefined)
