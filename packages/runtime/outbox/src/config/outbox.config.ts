@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `OutboxConfig`, the outbox configuration (key `outbox`): the `driver` choice runway sets per environment
  *          (`postgres` by default, `memory` for a test or a single process), which picks both the message store and the
- *          inbox.
+ *          inbox, and `batchWindowSeconds`, how long the relay lets due messages gather (`0`, none, by default).
  * Boundary: a configuration class over `OutboxOptions` with no env map; runway's `config.outbox` layer sets it. A host
  *           overrides it as `class OutboxConfig extends BaseOutboxConfig` with `override` members only.
  * Runtime: isomorphic

@@ -1,6 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `OutboxRelayService`: a tick publishes a due event as its envelope and deletes it; hands a row
+ * Purpose: unit tests of `OutboxRelayService`: a tick publishes a due event as its envelope and deletes it; holds a
+ *          part batch inside the batch window; hands a row
  *          change to each bound consumer of its model in the row's scope (or none) and skips an unbound one; retries a
  *          failed delivery after its backoff and dead-letters (and logs) it after the last attempt; does nothing while
  *          another relay holds the lock; refuses to run before `connect`; `work` ticks until aborted.
@@ -10,12 +11,14 @@
  * Governing contract: ADR 0022; ADR 0269; ADR 0078 (decision 4); ADR 0221 (decision 5); ADR 0327 (decision 9).
  */
 import type { Resolver } from "@stackra/actions";
+import { buildConfig } from "@stackra/config";
 import { type AnyClass, Driver } from "@stackra/container";
 import { type Clock, Duration, Logger, type PublicId, type ScopeRef } from "@stackra/contracts";
 import type { Database } from "@stackra/database";
 import { Locks, MemoryLockDriver } from "@stackra/locking";
 import { describe, expect, it } from "@stackra/testing";
 
+import { OutboxConfig } from "#config/outbox.config";
 import { EventPublisher, MessageKind, RowChangeKind } from "#contracts/index";
 import type { EventEnvelope, OutboxMessage, RowChange } from "#contracts/index";
 import { MemoryOutboxDriver } from "#core/drivers/memory-outbox.driver";
@@ -90,7 +93,7 @@ function eventMessage(fields: Partial<OutboxMessage> = {}): OutboxMessage {
 }
 
 /** A relay over memory stores, connected to a resolver that binds the logger and the index consumer. */
-function relayOf(lockDriver = new MemoryLockDriver(clock)) {
+function relayOf(lockDriver = new MemoryLockDriver(clock), batchWindowSeconds = 0) {
   const store = new MemoryOutboxDriver();
   const publisher = new RecordingPublisher();
   const logger = new RecordingLogger();
@@ -116,6 +119,7 @@ function relayOf(lockDriver = new MemoryLockDriver(clock)) {
     new Locks(lockDriver, clock),
     database,
     clock,
+    buildConfig(OutboxConfig, { values: { batchWindowSeconds } }),
   );
   relay.connect(resolver);
   return { relay, store, publisher, logger, consumer, scopes };
@@ -195,6 +199,18 @@ describe(OutboxRelayService, () => {
     expect(publisher.published).toEqual([]);
   });
 
+  it("holds a part batch until its oldest message has been due for the batch window", async () => {
+    const { relay, store, publisher } = relayOf(undefined, 5);
+    await store.write([eventMessage({ availableAt: new Date(NOON.getTime() - 4000) })]);
+    await expect(relay.relay()).resolves.toBe(0);
+    expect(publisher.published).toEqual([]);
+    await store.write([
+      eventMessage({ id: "evt_B", availableAt: new Date(NOON.getTime() - 5000) }),
+    ]);
+    await expect(relay.relay()).resolves.toBe(2);
+    expect(store.stored()).toEqual([]);
+  });
+
   it("refuses to run before connect", async () => {
     const relay = new OutboxRelayService(
       new MemoryOutboxDriver(),
@@ -202,6 +218,7 @@ describe(OutboxRelayService, () => {
       new Locks(new MemoryLockDriver(clock), clock),
       {} as Database,
       clock,
+      buildConfig(OutboxConfig),
     );
     await expect(relay.relay()).rejects.toThrow(/not connected/);
   });

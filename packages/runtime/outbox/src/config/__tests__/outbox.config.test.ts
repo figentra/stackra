@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `OutboxConfig`: a configuration keyed `outbox` whose `driver` defaults to `postgres`, takes a
- *          runway value and a host override, and refuses a driver no one ships.
+ *          runway value and a host override, and refuses a driver no one ships; `batchWindowSeconds`
+ *          defaults to 0 and takes whole seconds up to 60.
  * Boundary: test only; builds the configuration through @stackra/config.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0294 (decisions 4 and 19); ADR 0146 as amended.
@@ -33,11 +34,24 @@ describe("OutboxConfig", () => {
     expectTypeOf(config.driver).toEqualTypeOf<DriverName<OutboxDriver>>();
     expect({ ...config }).toEqual(OUTBOX_CONFIG_SCHEMA.parse({}));
     expect(config.driver).toBe("postgres");
+    expect(config.batchWindowSeconds).toBe(0);
   });
 
   it("takes a runway value and a host override", () => {
     expect(buildConfig(OutboxConfig, { values: { driver: "memory" } }).driver).toBe("memory");
     expect(buildConfig(HostOutboxConfig).driver).toBe("memory");
+  });
+
+  it("takes a batch window of 0 to 60 whole seconds", () => {
+    expect(
+      buildConfig(OutboxConfig, { values: { batchWindowSeconds: 5 } }).batchWindowSeconds,
+    ).toBe(5);
+    expect(() => buildConfig(OutboxConfig, { values: { batchWindowSeconds: 61 } })).toThrow(
+      ConfigInvalidError,
+    );
+    expect(() => buildConfig(OutboxConfig, { values: { batchWindowSeconds: 1.5 } })).toThrow(
+      ConfigInvalidError,
+    );
   });
 
   it("refuses a driver no one ships", () => {

@@ -25,7 +25,7 @@ backoff retries and dead letters; the inbox runs each received event once.
 | `registerChangeConsumers`                                              | `.`           | watch a model's rows: `[[Product, ProductIndexConsumer]]`                      |
 | `UnknownEventError`                                                    | `.`           | `unknown_event` (retryable): a received wire name this process does not know   |
 | `MemoryOutboxDriver`, `MemoryInboxDriver`                              | `.`           | the stores of a test or a single process                                       |
-| `OutboxConfig`, `OutboxConfig$`, `OutboxOptions`                       | `.`           | key `outbox`: `driver` (`postgres` default, `memory`) picks both stores        |
+| `OutboxConfig`, `OutboxConfig$`, `OutboxOptions`                       | `.`           | key `outbox`: `driver` picks both stores; `batchWindowSeconds` (0 to 60)       |
 | `OutboxDriver`, `InboxDriver`, `EventPublisher`                        | `./contracts` | the ports                                                                      |
 | `OutboxMessage`, `EventEnvelope`, `RowChange`, `ChangeConsumer`, enums | `./contracts` | the stored message, the wire form, a row change and what a consumer implements |
 
@@ -59,6 +59,10 @@ an event is published through the `EventPublisher` as an `EventEnvelope`, a row 
 consumer of its model the container binds, in the row's scope. A delivered message is deleted; a failed one waits an
 exponential backoff (from ten seconds, capped at an hour) and is dead-lettered after its tenth attempt
 (`outbox.message_dead` is logged). An idle relay polls every second. Delivery is at least once.
+
+`outbox.batchWindowSeconds` (default `0`, at most `60`) lets due messages gather: a tick that finds fewer than a full
+batch holds them until the oldest has been due that long, then delivers them together. A service that sends in batches
+sets it in runway (the audit read trail uses `5`); every other service keeps `0` and ADR 0221's one-second lag.
 
 ## Receiving once
 

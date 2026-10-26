@@ -38,6 +38,8 @@ model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./node`.
   decision 4). A relay is never keyed by wire name. The generated boot calls `connect` and, on shutdown, `disconnect`.
 - A driver stores and lists; it never delivers, computes a backoff or reads a clock. The relay passes `now` and the
   retry time.
+- The batch window (`outbox.batchWindowSeconds`) is the relay's only setting; the rest of `OUTBOX_DEFAULTS` is fixed.
+  A held tick returns `0`, so `work` pauses the poll interval and checks again.
 - One relay runs a tick at a time (`Locks.tryWith`), so `due` reserves nothing. Every delivery that opens a scope runs
   in `withScope(scope ?? [])`: with the Postgres lock driver a tick is one transaction, and a scope set for one message
   must not reach the next.

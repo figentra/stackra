@@ -3,7 +3,9 @@
  * Purpose: `OutboxRelayService`, the relay: on every tick one relay of the service, holding a lock, takes the due
  *          messages oldest first and delivers each: an event through the `EventPublisher`, a row change to every
  *          change consumer registered for its model, in the row's scope. A delivered message is deleted; a failed one
- *          is retried after an exponential backoff and dead-lettered (and logged) after its last attempt.
+ *          is retried after an exponential backoff and dead-lettered (and logged) after its last attempt. With a batch
+ *          window (`outbox.batchWindowSeconds`), a tick holds a part batch until its oldest message has been due that
+ *          long, so a service that sends in batches gets fewer, fuller ticks.
  * Boundary: a platform service over the `OutboxDriver` and `EventPublisher` ports, @stackra/locking's `Locks`, the
  *           `Database` and the `Clock`; `connect(container)` gives it the container its change consumers and logger are
  *           resolved from (the runtime and a test call it, as they call `EventBus.connect`). Delivery is at least once:
@@ -13,7 +15,8 @@
  *           the next delivery. A consumer class the container does not bind is skipped, as unbooted listeners are.
  * Runtime: node
  * Governing contract: ADR 0078 (decision 4: the relay); ADR 0221 (decision 5: under five seconds of lag); ADR 0142
- *                     (decision 1); ADR 0149 (one runner under a lock); ADR 0327 (decision 9: the scope session).
+ *                     (decision 1); ADR 0149 (one runner under a lock); ADR 0327 (decision 9: the scope session);
+ *                     OS-289 (the audit read trail's five-second batch).
  */
 import type { Resolver } from "@stackra/actions";
 import { Service } from "@stackra/container";
@@ -24,6 +27,7 @@ import { isRefusal } from "@stackra/errors";
 import type { Locks } from "@stackra/locking";
 import { backoffDelay } from "@stackra/queue";
 
+import { OutboxConfig } from "#config/outbox.config";
 import { MessageKind } from "#contracts/index";
 import type {
   EventEnvelope,
@@ -60,6 +64,9 @@ export class OutboxRelayService extends Service {
   /** Reads "now" for a tick and a retry. */
   private readonly clock: Clock;
 
+  /** The batch window. */
+  private readonly config: OutboxConfig;
+
   /** Set by `connect`. */
   private resolver: Resolver | undefined;
 
@@ -69,6 +76,7 @@ export class OutboxRelayService extends Service {
    * @param locks - the locks one tick holds.
    * @param database - the connected database each change delivery runs a scope of.
    * @param clock - the time source of ticks and retries.
+   * @param config - the batch window.
    */
   constructor(
     driver: OutboxDriver,
@@ -76,6 +84,7 @@ export class OutboxRelayService extends Service {
     locks: Locks,
     database: Database,
     clock: Clock,
+    config: OutboxConfig,
   ) {
     super();
     this.driver = driver;
@@ -83,6 +92,7 @@ export class OutboxRelayService extends Service {
     this.locks = locks;
     this.database = database;
     this.clock = clock;
+    this.config = config;
   }
 
   /** Resolves change consumers and the logger from `resolver` (a booted container or a testing app). */
@@ -92,9 +102,10 @@ export class OutboxRelayService extends Service {
 
   /**
    * One tick: when no other relay holds the lock, delivers up to a batch of due messages, each recorded as delivered,
-   * retried or dead.
+   * retried or dead. Inside the batch window a part batch is held for a later tick.
    *
-   * @returns how many messages the tick handled; `0` when none was due or another relay held the lock.
+   * @returns how many messages the tick handled; `0` when none was due, the batch was held or another relay held the
+   *          lock.
    * @throws Error before `connect`; a store's or the lock's error.
    */
   async relay(): Promise<number> {
@@ -102,7 +113,9 @@ export class OutboxRelayService extends Service {
     let handled = 0;
     await this.locks.tryWith(OUTBOX_DEFAULTS.lockKey, OUTBOX_DEFAULTS.lockTtl, async () => {
       const now = this.clock.now();
-      for (const message of await this.driver.due(now, OUTBOX_DEFAULTS.batchSize)) {
+      const due = await this.driver.due(now, OUTBOX_DEFAULTS.batchSize);
+      if (this.holds(due, now)) return;
+      for (const message of due) {
         // oxlint-disable-next-line no-await-in-loop -- in order, each recorded before the next is delivered
         await this.deliver(message, now, resolver);
         handled += 1;
@@ -129,6 +142,14 @@ export class OutboxRelayService extends Service {
         await this.pause(options.signal);
       }
     }
+  }
+
+  /** Whether a part batch waits: the oldest of `due` became due less than the batch window before `now`. */
+  private holds(due: readonly OutboxMessage[], now: Date): boolean {
+    const window = this.config.batchWindowSeconds * 1000;
+    if (window === 0 || due.length === 0 || due.length >= OUTBOX_DEFAULTS.batchSize) return false;
+    const oldest = Math.min(...due.map((message) => message.availableAt.getTime()));
+    return now.getTime() - oldest < window;
   }
 
   /** Delivers one message and records how it went. */
