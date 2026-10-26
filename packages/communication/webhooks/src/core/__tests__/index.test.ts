@@ -19,11 +19,13 @@ describe("@stackra/webhooks", () => {
       "SignatureScheme",
       "WebhookDeliveryFailedError",
       "WebhookReceiver",
+      "attemptWebhook",
       "registerWebhookEvents",
       "s3TargetOf",
       "signWebhook",
       "verifyHmacWebhook",
       "verifyWebhook",
+      "webhookBody",
       "webhookObjectKey",
     ]);
   });

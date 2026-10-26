@@ -1,19 +1,18 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `DeliverWebhookAction`: a job of the job actor retried for about three days into the
- *          dead-letter queue; a 2xx delivery is signed with the endpoint's secret (both during a rotation), posted with
- *          the exact body and logged as delivered; a failure status or no answer is logged and refused as retryable;
- *          a removed or disabled endpoint is skipped; a secret with no value posts nothing; a dead letter disables the
- *          endpoint; an `s3:` endpoint gets one object keyed by the event's day and id with the signed headers as
- *          metadata, and a refused write is logged and retried.
- * Boundary: test only; the services, the sender, the secret store and the clock are in-test fakes, and Web Crypto runs
- *           for real, so the posted signature is verified as a receiver would.
+ *          dead-letter queue; a 2xx delivery is signed with the receiver's secrets (both during a rotation), posted
+ *          with the exact body and logged as delivered; a failure status or no answer is logged and refused as
+ *          retryable; a removed or disabled receiver is skipped; a store that cannot resolve a secret posts nothing; a
+ *          dead letter disables the receiver; an `s3:` receiver gets one signed object, and a refused write is logged
+ *          and retried; a host store's receiver (a partner lead target) runs through the same job.
+ * Boundary: test only; the endpoint store, the delivery log, the sender and the clock are in-test fakes, and Web
+ *           Crypto runs for real, so the posted signature is verified as a receiver would.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0224 (decisions 2 and 3); ADR 0305 (rules 28 and 30); ADR 0173; ADR 0422
  *                     (decision 4).
  */
 import type { ActionContext } from "@stackra/actions";
-import type { SecretStore } from "@stackra/config/contracts";
 import { kindOf } from "@stackra/container";
 import { ActorKind } from "@stackra/contracts";
 import type { Clock } from "@stackra/contracts";
@@ -21,45 +20,44 @@ import { Backoff } from "@stackra/queue";
 import { describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 
-import type { WebhookRequest, WebhookSender } from "#contracts/index";
+import type {
+  WebhookDeliveryLog,
+  WebhookDeliveryTarget,
+  WebhookEndpointStore,
+  WebhookRequest,
+  WebhookSender,
+} from "#contracts/index";
 import { verifyWebhook, WebhookDeliveryFailedError } from "#core/index";
 import { DeliverWebhookAction } from "#node/actions/deliver-webhook.action";
-import { WebhookEndpoint } from "#node/models/webhook-endpoint.model";
 import { DeliverWebhookInput } from "#node/schemas/deliver-webhook-input.schema";
-import type { WebhookDeliveryService } from "#node/services/webhook-delivery.service";
-import type { WebhookEndpointService } from "#node/services/webhook-endpoint.service";
 import { WebhookObjectSinkFake } from "#testing/fakes/webhook-object-sink.fake";
 
 const AT = new Date("2026-10-25T09:00:00Z");
 const BODY = '{"type":"orders.order.paid.v1","timestamp":"2026-10-25T08:59:00.000Z","data":{}}';
-const SECRETS: Readonly<Record<string, string>> = {
-  ACME_WEBHOOK_SECRET_1: "test-old-signing-secret",
-  ACME_WEBHOOK_SECRET_2: "whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw", // gitleaks:allow -- reason: the published Standard Webhooks test vector, not a secret
-};
+const OLD_SECRET = "test-old-signing-secret";
+const SECRET = "whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw"; // gitleaks:allow -- reason: the published Standard Webhooks test vector, not a secret
 
-/** A stored endpoint with `data`. */
-const endpointOf = (data: Partial<WebhookEndpoint> = {}): WebhookEndpoint =>
-  Object.assign(new WebhookEndpoint(), {
-    scopeId: "scp_00000000000000000000000001",
-    scopePath: "platform.acme",
-    url: "https://hooks.acme.example/in",
-    events: ["orders.order.paid.v1"],
-    secretName: "ACME_WEBHOOK_SECRET_2",
-    previousSecretName: null,
-    rotatedAt: null,
-    disabledAt: null,
-    ...data,
-  });
+/** A receiver with `data`. */
+const targetOf = (data: Partial<WebhookDeliveryTarget> = {}): WebhookDeliveryTarget => ({
+  id: "whe_01j9z3k4m5n6p7q8r9s0t1v2w1",
+  scope: { id: "scp_00000000000000000000000001", path: "platform.acme" },
+  url: "https://hooks.acme.example/in",
+  secrets: [SECRET],
+  ...data,
+});
 
-/** An action over fakes: `endpoint` is stored and the sender answers `answer`. */
+/** An action over fakes: the store answers `target` and the sender answers `answer`. */
 function setup(
-  endpoint: WebhookEndpoint | null,
+  target: WebhookDeliveryTarget | null | Error,
   answer: number | Error = 204,
   objects = new WebhookObjectSinkFake(),
 ) {
   const sent: WebhookRequest[] = [];
   const endpoints = {
-    findOne: vi.fn(async () => endpoint),
+    target: vi.fn(async () => {
+      if (target instanceof Error) throw target;
+      return target;
+    }),
     disable: vi.fn(async () => undefined),
   };
   const deliveries = { record: vi.fn(async () => undefined) };
@@ -70,22 +68,20 @@ function setup(
       return answer;
     }),
   };
-  const secrets = { get: (name: string) => SECRETS[name] };
   const action = new DeliverWebhookAction(
-    endpoints as unknown as WebhookEndpointService,
-    deliveries as unknown as WebhookDeliveryService,
+    endpoints as unknown as WebhookEndpointStore,
+    deliveries as unknown as WebhookDeliveryLog,
     sender as unknown as WebhookSender,
-    secrets as unknown as SecretStore,
     { now: () => AT } as unknown as Clock,
     objects,
   );
   return { action, endpoints, deliveries, sent, objects };
 }
 
-/** The input of one delivery to `endpoint`. */
-const inputFor = (endpoint: WebhookEndpoint) =>
+/** The input of one delivery to receiver `id`. */
+const inputFor = (id = targetOf().id) =>
   DeliverWebhookInput.create({
-    endpointId: endpoint.id,
+    endpointId: id,
     eventId: "evt_1",
     type: "orders.order.paid.v1",
     body: BODY,
@@ -109,23 +105,21 @@ describe(DeliverWebhookAction, () => {
   });
 
   it("signs, posts the exact body and logs a delivered attempt", async () => {
-    const endpoint = endpointOf();
-    const { action, deliveries, sent } = setup(endpoint);
-    await expect(action.handle(inputFor(endpoint), ctx)).resolves.toBeUndefined();
+    const target = targetOf();
+    const { action, endpoints, deliveries, sent } = setup(target);
+    await expect(action.handle(inputFor(), ctx)).resolves.toBeUndefined();
+    expect(endpoints.target).toHaveBeenCalledWith(target.id, AT);
     expect(sent).toHaveLength(1);
-    expect(sent[0]).toMatchObject({ url: endpoint.url, body: BODY, signal: ctx.abortSignal });
+    expect(sent[0]).toMatchObject({ url: target.url, body: BODY, signal: ctx.abortSignal });
     expect(sent[0]?.headers).toMatchObject({
       "content-type": "application/json",
       "webhook-id": "evt_1",
       "webhook-timestamp": String(AT.getTime() / 1000),
     });
-    await expect(
-      verifyWebhook(sent[0]?.headers ?? {}, BODY, [SECRETS["ACME_WEBHOOK_SECRET_2"] ?? ""], AT),
-    ).resolves.toBe(true);
+    await expect(verifyWebhook(sent[0]?.headers ?? {}, BODY, [SECRET], AT)).resolves.toBe(true);
     expect(deliveries.record).toHaveBeenCalledWith({
-      endpointId: endpoint.id,
-      scopeId: endpoint.scopeId,
-      scopePath: endpoint.scopePath,
+      endpointId: target.id,
+      scope: target.scope,
       eventId: "evt_1",
       eventType: "orders.order.paid.v1",
       responseStatus: 204,
@@ -134,22 +128,15 @@ describe(DeliverWebhookAction, () => {
   });
 
   it("signs with both secrets during a rotation", async () => {
-    const endpoint = endpointOf({
-      previousSecretName: "ACME_WEBHOOK_SECRET_1",
-      rotatedAt: new Date(AT.getTime() - 3_600_000),
-    });
-    const { action, sent } = setup(endpoint);
-    await action.handle(inputFor(endpoint), ctx);
+    const { action, sent } = setup(targetOf({ secrets: [SECRET, OLD_SECRET] }));
+    await action.handle(inputFor(), ctx);
     expect(sent[0]?.headers["webhook-signature"]?.split(" ")).toHaveLength(2);
-    await expect(
-      verifyWebhook(sent[0]?.headers ?? {}, BODY, [SECRETS["ACME_WEBHOOK_SECRET_1"] ?? ""], AT),
-    ).resolves.toBe(true);
+    await expect(verifyWebhook(sent[0]?.headers ?? {}, BODY, [OLD_SECRET], AT)).resolves.toBe(true);
   });
 
   it("logs and refuses a failure status as retryable", async () => {
-    const endpoint = endpointOf();
-    const { action, deliveries } = setup(endpoint, 500);
-    const failure = await action.handle(inputFor(endpoint), ctx).catch((error: unknown) => error);
+    const { action, deliveries } = setup(targetOf(), 500);
+    const failure = await action.handle(inputFor(), ctx).catch((error: unknown) => error);
     expect(failure).toBeInstanceOf(WebhookDeliveryFailedError);
     expect(failure).toMatchObject({ status: 500, retryable: true });
     expect(deliveries.record).toHaveBeenCalledWith(
@@ -157,52 +144,44 @@ describe(DeliverWebhookAction, () => {
     );
   });
 
-  it("logs and refuses an endpoint that does not answer, or answers with a redirect", async () => {
-    const endpoint = endpointOf();
-    const down = setup(endpoint, new TypeError("fetch failed"));
-    await expect(down.action.handle(inputFor(endpoint), ctx)).rejects.toMatchObject({
-      status: null,
-    });
+  it("logs and refuses a receiver that does not answer, or answers with a redirect", async () => {
+    const down = setup(targetOf(), new TypeError("fetch failed"));
+    await expect(down.action.handle(inputFor(), ctx)).rejects.toMatchObject({ status: null });
     expect(down.deliveries.record).toHaveBeenCalledWith(
       expect.objectContaining({ responseStatus: null, isDelivered: false }),
     );
-    const moved = setup(endpoint, 301);
-    await expect(moved.action.handle(inputFor(endpoint), ctx)).rejects.toBeInstanceOf(
+    const moved = setup(targetOf(), 301);
+    await expect(moved.action.handle(inputFor(), ctx)).rejects.toBeInstanceOf(
       WebhookDeliveryFailedError,
     );
   });
 
-  it("skips an endpoint removed or disabled since the job was queued", async () => {
-    const removed = setup(null);
-    await removed.action.handle(inputFor(endpointOf()), ctx);
-    expect(removed.sent).toEqual([]);
-    const disabled = endpointOf({ disabledAt: AT });
-    const off = setup(disabled);
-    await off.action.handle(inputFor(disabled), ctx);
-    expect(off.sent).toEqual([]);
-    expect(off.deliveries.record).not.toHaveBeenCalled();
+  it("skips a receiver removed or disabled since the job was queued", async () => {
+    const { action, sent, deliveries } = setup(null);
+    await action.handle(inputFor(), ctx);
+    expect(sent).toEqual([]);
+    expect(deliveries.record).not.toHaveBeenCalled();
   });
 
-  it("posts nothing when a signing secret has no value", async () => {
-    const endpoint = endpointOf({ secretName: "ACME_WEBHOOK_SECRET_MISSING" });
-    const { action, sent } = setup(endpoint);
-    await expect(action.handle(inputFor(endpoint), ctx)).rejects.toThrow(
+  it("posts nothing when the store cannot resolve a signing secret", async () => {
+    const { action, sent } = setup(new TypeError("ACME_WEBHOOK_SECRET_MISSING has no value"));
+    await expect(action.handle(inputFor(), ctx)).rejects.toThrow(
       "ACME_WEBHOOK_SECRET_MISSING has no value",
     );
     expect(sent).toEqual([]);
   });
 
-  it("disables the endpoint after a dead letter", async () => {
-    const endpoint = endpointOf();
-    const { action, endpoints } = setup(endpoint);
-    await action.disableEndpoint(inputFor(endpoint));
-    expect(endpoints.disable).toHaveBeenCalledWith(endpoint.id, AT);
+  it("disables the receiver after a dead letter", async () => {
+    const { action, endpoints } = setup(targetOf());
+    await action.disableEndpoint(inputFor());
+    expect(endpoints.disable).toHaveBeenCalledWith(targetOf().id, AT);
   });
 
-  it("writes an s3 endpoint's delivery as one signed object", async () => {
-    const endpoint = endpointOf({ url: "s3://acme-siem/stackra?region=me-central-1" });
-    const { action, deliveries, sent, objects } = setup(endpoint);
-    await action.handle(inputFor(endpoint), ctx);
+  it("writes an s3 receiver's delivery as one signed object", async () => {
+    const { action, deliveries, sent, objects } = setup(
+      targetOf({ url: "s3://acme-siem/stackra?region=me-central-1" }),
+    );
+    await action.handle(inputFor(), ctx);
     expect(sent).toEqual([]);
     const object = objects.object(
       "acme-siem",
@@ -210,26 +189,31 @@ describe(DeliverWebhookAction, () => {
     );
     expect(object).toMatchObject({ region: "me-central-1", body: BODY });
     expect(object?.metadata).toMatchObject({ "webhook-id": "evt_1" });
-    await expect(
-      verifyWebhook(object?.metadata ?? {}, BODY, [SECRETS["ACME_WEBHOOK_SECRET_2"] ?? ""], AT),
-    ).resolves.toBe(true);
+    await expect(verifyWebhook(object?.metadata ?? {}, BODY, [SECRET], AT)).resolves.toBe(true);
     expect(deliveries.record).toHaveBeenCalledWith(
       expect.objectContaining({ responseStatus: null, isDelivered: true }),
     );
   });
 
   it("logs and refuses a refused object write, so the queue retries it", async () => {
-    const endpoint = endpointOf({ url: "s3://acme-siem/stackra" });
     const { action, deliveries } = setup(
-      endpoint,
+      targetOf({ url: "s3://acme-siem/stackra" }),
       204,
       new WebhookObjectSinkFake().failWith(new Error("AccessDenied")),
     );
-    await expect(action.handle(inputFor(endpoint), ctx)).rejects.toBeInstanceOf(
-      WebhookDeliveryFailedError,
-    );
+    await expect(action.handle(inputFor(), ctx)).rejects.toBeInstanceOf(WebhookDeliveryFailedError);
     expect(deliveries.record).toHaveBeenCalledWith(
       expect.objectContaining({ responseStatus: null, isDelivered: false }),
+    );
+  });
+
+  it("delivers to a host store's receiver by its own id", async () => {
+    const partner = targetOf({ id: "ple_1", url: "https://partner.example/leads" });
+    const { action, sent, deliveries } = setup(partner);
+    await action.handle(inputFor("ple_1"), ctx);
+    expect(sent[0]?.url).toBe("https://partner.example/leads");
+    expect(deliveries.record).toHaveBeenCalledWith(
+      expect.objectContaining({ endpointId: "ple_1" }),
     );
   });
 });

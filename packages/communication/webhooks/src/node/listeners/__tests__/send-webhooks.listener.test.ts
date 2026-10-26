@@ -4,7 +4,7 @@
  *          subscribed endpoint, with the `{ type, timestamp, data }` body, the endpoint's scope and an Idempotency-Key of
  *          the event and the endpoint; an event with no scope, an event that is not outbound and a scope with no
  *          subscribed endpoint queue nothing.
- * Boundary: test only; the endpoint service and the queue are in-test fakes.
+ * Boundary: test only; the endpoint store and the queue are in-test fakes.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0224 (decisions 1 and 3); ADR 0078 (decision 4).
  */
@@ -15,11 +15,10 @@ import { registerSchemas } from "@stackra/validation";
 import { vi } from "vitest";
 import { z } from "zod";
 
+import type { WebhookEndpointStore, WebhookTarget } from "#contracts/index";
 import { DeliverWebhookAction } from "#node/actions/deliver-webhook.action";
 import { OUTBOUND_EVENTS } from "#node/constants/outbound-events.constant";
 import { SendWebhooksListener } from "#node/listeners/send-webhooks.listener";
-import { WebhookEndpoint } from "#node/models/webhook-endpoint.model";
-import type { WebhookEndpointService } from "#node/services/webhook-endpoint.service";
 
 class InvoicePaid extends IntegrationEvent({ name: "invoice.paid", webhook: true }) {
   invoiceId!: string;
@@ -38,21 +37,21 @@ OUTBOUND_EVENTS.set(InvoicePaid, "billing.invoice.paid.v1");
 const SCOPE = { id: "scp_00000000000000000000000001", path: "platform.acme" } as const;
 const OCCURRED = new Date("2026-10-25T09:00:00Z");
 
-/** A stored endpoint of the test scope. */
-const endpointOf = (): WebhookEndpoint =>
-  Object.assign(new WebhookEndpoint(), {
-    scopeId: SCOPE.id,
-    scopePath: SCOPE.path,
-    url: "https://hooks.acme.example/in",
-    events: ["billing.invoice.paid.v1"],
-  });
+let next = 0;
 
-/** A listener whose endpoint service answers `endpoints`. */
-function setup(endpoints: WebhookEndpoint[]) {
+/** A receiver of the test scope. */
+const endpointOf = (): WebhookTarget => ({
+  id: `whe_${String((next += 1)).padStart(26, "0")}`,
+  scope: SCOPE,
+  url: "https://hooks.acme.example/in",
+});
+
+/** A listener whose endpoint store answers `endpoints`. */
+function setup(endpoints: WebhookTarget[]) {
   const service = { subscribedTo: vi.fn(async () => endpoints) };
   const queue = { push: vi.fn(async () => "job_00000000000000000000000001") };
   const listener = new SendWebhooksListener(
-    service as unknown as WebhookEndpointService,
+    service as unknown as WebhookEndpointStore,
     queue as unknown as QueueService,
   );
   return { listener, service, queue };

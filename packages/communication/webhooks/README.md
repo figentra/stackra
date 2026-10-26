@@ -11,21 +11,24 @@ on `@stackra/actions`, `@stackra/config`, `@stackra/container`, `@stackra/contra
 
 ## What is here
 
-| Symbol                                              | Entry         | Use                                                                                         |
-| --------------------------------------------------- | ------------- | ------------------------------------------------------------------------------------------- |
-| `SignatureScheme`                                   | `.`           | an Integration's `webhooks.scheme`: `SignatureScheme.StandardWebhooks`                      |
-| `signWebhook`, `WebhookMessage`, `WebhookHeaders`   | `.`           | the `webhook-id`, `webhook-timestamp` and `webhook-signature` headers of a message          |
-| `verifyWebhook`                                     | `.`           | whether a received webhook is signed by one of the secrets, within five minutes             |
-| `registerWebhookEvents`, `WebhookEventRegistration` | `.`           | gen's entry routes each `WebhookEvent<I>` class by its Integration and event type           |
-| `WebhookReceiver`, `InboundWebhook`                 | `.`           | verifies, routes and writes one inbound webhook to the outbox; the generated route calls it |
-| `HttpWebhookSenderDriver`                           | `.`           | the `http` `WebhookSender`: one `POST` with `fetch`, no redirect followed                   |
-| `WebhookDeliveryFailedError`                        | `.`           | `webhook_delivery_failed` (retryable): the endpoint did not answer 2xx                      |
-| `WebhookSender`, `WebhookRequest`                   | `./contracts` | the port an outbound transport implements                                                   |
-| `WebhookEndpoint`, `WebhookEndpointService`         | `./node`      | a scope's receiver: `register`, `subscribedTo`, `rotate`, `disable`                         |
-| `WebhookDelivery`, `WebhookDeliveryService`         | `./node`      | the delivery log, one row per attempt                                                       |
-| `DeliverWebhookAction`, `DeliverWebhookInput`       | `./node`      | the delivery job: sign, post, log; retried for about three days                             |
-| `SendWebhooksListener`, `registerOutboundWebhooks`  | `./node`      | the fan-out of each `webhook: true` event to the subscribed endpoints                       |
-| `deliverWebhook`, `WebhookResult`                   | `./testing`   | sign a provider payload with a test secret and deliver it to the testing app                |
+| Symbol                                                             | Entry         | Use                                                                                            |
+| ------------------------------------------------------------------ | ------------- | ---------------------------------------------------------------------------------------------- |
+| `SignatureScheme`                                                  | `.`           | an Integration's `webhooks.scheme`: `SignatureScheme.StandardWebhooks`                         |
+| `signWebhook`, `WebhookMessage`, `WebhookHeaders`                  | `.`           | the `webhook-id`, `webhook-timestamp` and `webhook-signature` headers of a message             |
+| `verifyWebhook`                                                    | `.`           | whether a received webhook is signed by one of the secrets, within five minutes                |
+| `registerWebhookEvents`, `WebhookEventRegistration`                | `.`           | gen's entry routes each `WebhookEvent<I>` class by its Integration and event type              |
+| `WebhookReceiver`, `InboundWebhook`                                | `.`           | verifies, routes and writes one inbound webhook to the outbox; the generated route calls it    |
+| `attemptWebhook`, `webhookBody`                                    | `.`           | one signed delivery attempt (https post or S3 object) and the `{ type, timestamp, data }` body |
+| `HttpWebhookSenderDriver`                                          | `.`           | the `http` `WebhookSender`: one `POST` with `fetch`, no redirect followed                      |
+| `WebhookDeliveryFailedError`                                       | `.`           | `webhook_delivery_failed` (retryable): the endpoint did not answer 2xx                         |
+| `WebhookSender`, `WebhookRequest`                                  | `./contracts` | the port an outbound transport implements                                                      |
+| `WebhookEndpointStore`, `WebhookDeliveryLog`                       | `./contracts` | where the job and the fan-out find receivers and log attempts; a host binds its own tables     |
+| `WebhookEndpoint`, `WebhookEndpointService`                        | `./node`      | a scope's receiver: `register`, `subscribedTo`, `rotate`, `disable`                            |
+| `WebhookDelivery`, `WebhookDeliveryService`                        | `./node`      | the delivery log, one row per attempt                                                          |
+| `ModelWebhookEndpointStoreDriver`, `ModelWebhookDeliveryLogDriver` | `./node`      | the default store and log over the two tables above                                            |
+| `DeliverWebhookAction`, `DeliverWebhookInput`                      | `./node`      | the delivery job: sign, post, log; retried for about three days                                |
+| `SendWebhooksListener`, `registerOutboundWebhooks`                 | `./node`      | the fan-out of each `webhook: true` event to the subscribed endpoints                          |
+| `deliverWebhook`, `WebhookResult`                                  | `./testing`   | sign a provider payload with a test secret and deliver it to the testing app                   |
 
 ## Inbound: a provider webhook is a `WebhookEvent<I>`
 
@@ -76,6 +79,39 @@ await endpoints.register({ scope, url: "https://hooks.acme.example/in", events: 
 - `rotate(id, secretName, at)` keeps the replaced secret signing for 24 hours, so a receiver holding either verifies.
 - An endpoint stores secret names, never values. `register` accepts an https URL or an S3 target; blocking private
   hosts is the runtime's egress policy.
+
+### Your own tables
+
+The job and the fan-out read receivers through `WebhookEndpointStore` and log through `WebhookDeliveryLog`. The `model`
+drivers answer from `webhooks.webhook_endpoints` and `webhooks.webhook_deliveries`. A service that keeps its own
+endpoint and attempt tables (encrypted secret columns, thin payloads, its own module keys) binds its own drivers with
+`@Replaces` and keeps `SendWebhooksListener`, `DeliverWebhookAction`, the retries and the dead-letter disable:
+
+```ts
+export class EndpointWebhookEndpointStoreDriver extends Driver(WebhookEndpointStore) {
+  async subscribedTo(scopeId: string, type: string): Promise<readonly WebhookTarget[]> { ... }
+  async target(id: string, now: Date): Promise<WebhookDeliveryTarget | null> { ... } // secrets resolved here, at the attempt
+  async disable(id: string, at: Date): Promise<void> { ... }
+}
+```
+
+A receiver that is not a scope's subscription, a partner's lead endpoint for one, is queued directly: the host's store
+answers `target` for the partner's id, and the host pushes the job with the `webhookBody` of the lead.
+
+```ts
+await queue.push(
+  DeliverWebhookAction,
+  {
+    endpointId: partner.id,
+    eventId,
+    type: "registry.lead.submitted.v1",
+    body: webhookBody(type, now, lead),
+  },
+  { scope, idempotencyKey: `${eventId}:${partner.id}` },
+);
+```
+
+A host with its own job (another retry policy) calls `attemptWebhook` for one attempt and records the outcome itself.
 
 ### S3 targets (ADR 0422)
 

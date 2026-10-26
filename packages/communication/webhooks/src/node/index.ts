@@ -2,6 +2,7 @@
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `./node` entry of @stackra/webhooks (outbound delivery: the endpoint and delivery-log
  *          models with their services, the delivery job with its input, the `s3` object sink of S3 endpoints, the
+ *          `model` endpoint store and delivery log over those tables, the
  *          fan-out listener and the outbound registration) until `stackra gen` writes the entry barrels and the generated `WebhooksModule` (STA-339).
  * Boundary: names each re-export and declares nothing. Server only: it reads and writes Postgres through
  *           @stackra/database. The migrations are found by their path, as every migration is, so they are not
@@ -11,6 +12,8 @@
  *                     the STA-347 stand-in barrel decision.
  */
 export { DeliverWebhookAction } from "#node/actions/deliver-webhook.action";
+export { ModelWebhookDeliveryLogDriver } from "#node/drivers/model-webhook-delivery-log.driver";
+export { ModelWebhookEndpointStoreDriver } from "#node/drivers/model-webhook-endpoint-store.driver";
 export { S3WebhookObjectSinkDriver } from "#node/drivers/s3-webhook-object-sink.driver";
 export { registerOutboundWebhooks } from "#node/functions/register-outbound-webhooks.function";
 export { SendWebhooksListener } from "#node/listeners/send-webhooks.listener";

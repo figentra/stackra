@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: `DeliverWebhookInput`, the input of the `webhook_delivery.send` job: which endpoint, which event (its id and
+ * Purpose: `DeliverWebhookInput`, the input of the `webhook_delivery.send` job: which receiver, which event (its id and
  *          wire name) and the exact JSON body to sign and post.
  * Boundary: a shape class in schemas/, one declaration per file; it registers this package's own schema
  *           (`DELIVER_WEBHOOK_INPUT_SCHEMA`) when the module loads. The body is fixed when the job is queued, so every
@@ -9,15 +9,14 @@
  * Governing contract: ADR 0294 (decisions 4 and 26); ADR 0305 (Input and Output in their own files); ADR 0224
  *                     (decision 3).
  */
-import type { PublicId } from "@stackra/contracts";
 import { registerSchemas, Schema } from "@stackra/validation";
 
 import { DELIVER_WEBHOOK_INPUT_SCHEMA } from "#node/constants/deliver-webhook-input-schema.constant";
 
 /** One event for one endpoint. */
 export class DeliverWebhookInput extends Schema {
-  /** The endpoint to post to. */
-  endpointId!: PublicId<"whe">;
+  /** The receiver's id in the bound `WebhookEndpointStore` (`whe_…` for this package's own endpoints). */
+  endpointId!: string;
 
   /** The event's id, sent as `webhook-id` on every attempt. */
   eventId!: string;

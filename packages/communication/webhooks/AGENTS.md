@@ -7,16 +7,17 @@ Standard Webhooks signing and verification, the inbound receiver of `WebhookEven
 
 ## Where code goes
 
-| You are writing…                            | It goes in…                                                         |
-| ------------------------------------------- | ------------------------------------------------------------------- |
-| The sender port or a type it uses           | `src/contracts/{ports,types}/`                                      |
-| A scheme, a signer, a verifier, a registry  | `src/core/{enums,functions,constants}/`                             |
-| An isomorphic driver, refusal or service    | `src/core/{drivers,errors,services}/`                               |
-| A model, its service, the job, the listener | `src/node/{models,services,actions,listeners}/`                     |
-| The job's input and its shipped schema      | `src/node/schemas/`, `src/node/constants/<name>-schema.constant.ts` |
-| A migration                                 | `src/node/database/migrations/<NNNN>-<name>.migration.ts`           |
-| A test helper                               | `src/testing/{functions,constants,types}/`                          |
-| A test                                      | `__tests__/<name>.<kind>.test.ts` beside it                         |
+| You are writing…                                 | It goes in…                                                         |
+| ------------------------------------------------ | ------------------------------------------------------------------- |
+| The sender port or a type it uses                | `src/contracts/{ports,types}/`                                      |
+| A scheme, a signer, a verifier, a registry       | `src/core/{enums,functions,constants}/`                             |
+| An isomorphic driver, refusal or service         | `src/core/{drivers,errors,services}/`                               |
+| A model, its service, the job, the listener      | `src/node/{models,services,actions,listeners}/`                     |
+| A store or log driver over this package's tables | `src/node/drivers/`                                                 |
+| The job's input and its shipped schema           | `src/node/schemas/`, `src/node/constants/<name>-schema.constant.ts` |
+| A migration                                      | `src/node/database/migrations/<NNNN>-<name>.migration.ts`           |
+| A test helper                                    | `src/testing/{functions,constants,types}/`                          |
+| A test                                           | `__tests__/<name>.<kind>.test.ts` beside it                         |
 
 ## Entries and barrels
 
@@ -43,10 +44,17 @@ Standard Webhooks signing and verification, the inbound receiver of `WebhookEven
   kept nowhere: not in a job input, the delivery log, an event, a log line or an error (ADR 0173, ADR 0308 rule 20).
 - A delivery attempt is logged in its own transaction (`WebhookDeliveryService.record`) before the refusal that makes
   the queue retry it; the job's `webhook-id` is the event id on every attempt.
-- `DeliverWebhookAction` routes by the endpoint URL: `s3:` through `WebhookObjectSink`, anything else through
+- `DeliverWebhookAction` and `SendWebhooksListener` depend on the `WebhookEndpointStore` and `WebhookDeliveryLog` ports,
+  never on the models or their services: a service with its own tables binds its drivers (the `model` drivers are the
+  defaults). A store resolves secret values only in `target`, at the attempt; the job input carries a store's receiver
+  id (any prefix), never a secret.
+- One attempt is `attemptWebhook` (sign, post or write, outcome); the job adds only the log, the refusal and the
+  disable. Change delivery behaviour there, not in the job. Every body is `webhookBody`.
+- `attemptWebhook` routes by the receiver URL: `s3:` through `WebhookObjectSink`, anything else through
   `WebhookSender`; an object key is derived from the event id and its day, never the attempt's time.
-- A gated event's entitlement is registration data (`OUTBOUND_EVENT_ENTITLEMENTS`); every read of subscribers goes
-  through `WebhookEndpointService.subscribedTo`, which rechecks the grant.
+- A gated event's entitlement is registration data (`OUTBOUND_EVENT_ENTITLEMENTS`); the `model` store reads
+  subscribers only through `WebhookEndpointService.subscribedTo`, which rechecks the grant; a host store applies its own
+  gate.
 - No tenant word is declared here (R-59, ADR 0323): a scope is a `ScopeRef`; the listener reads the event envelope's
   `tenantId` field only because @stackra/events names it so.
 - No parameter properties and no `#private` fields: services typecheck this source under `erasableSyntaxOnly`.
