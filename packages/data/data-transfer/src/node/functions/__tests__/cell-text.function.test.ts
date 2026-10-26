@@ -8,7 +8,7 @@
 import { describe, expect, it } from "@stackra/testing";
 import type { CellValue } from "exceljs";
 
-import { cellText } from "#core/functions/cell-text.function";
+import { cellText } from "#node/functions/cell-text.function";
 
 describe("cellText", () => {
   it("reads every value kind as text", () => {

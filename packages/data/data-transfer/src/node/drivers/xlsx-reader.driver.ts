@@ -11,15 +11,15 @@
 import { Readable } from "node:stream";
 
 import { Driver } from "@stackra/container";
-import ExcelJS from "exceljs";
 
 import { TabularReader } from "#contracts/ports/tabular-reader.port";
 import type { TabularReadOptions } from "#contracts/types/tabular-read-options.type";
 import type { TabularRow } from "#contracts/types/tabular-row.type";
 import type { TabularSource } from "#contracts/types/tabular-source.type";
 import { TransferLimitExceededError } from "#core/errors/transfer-limit-exceeded.error";
-import { cellText } from "#core/functions/cell-text.function";
 import { limitBytes } from "#core/functions/limit-bytes.function";
+import { EXCELJS } from "#node/constants/exceljs.constant";
+import { cellText } from "#node/functions/cell-text.function";
 
 /**
  * Reads XLSX workbooks.
@@ -36,7 +36,7 @@ export class XlsxReaderDriver extends Driver(TabularReader) {
   async *read(source: TabularSource, options: TabularReadOptions = {}): AsyncGenerator<TabularRow> {
     const { limits, sheets } = options;
     const bytes = limits?.bytes === undefined ? source : limitBytes(source, limits.bytes);
-    const workbook = new ExcelJS.stream.xlsx.WorkbookReader(Readable.from(bytes), {
+    const workbook = new EXCELJS.stream.xlsx.WorkbookReader(Readable.from(bytes), {
       entries: "emit",
       sharedStrings: "cache",
       hyperlinks: "ignore",
@@ -45,8 +45,8 @@ export class XlsxReaderDriver extends Driver(TabularReader) {
     });
     let count = 0;
     for await (const worksheet of workbook) {
-      // exceljs sets the sheet's name from the workbook part at runtime; its typings omit it
-      const name = (worksheet as unknown as { name?: string }).name ?? "";
+      // exceljs sets the sheet's name from the workbook part at runtime; `WorksheetReader`'s typings omit it
+      const name = (worksheet as typeof worksheet & { readonly name?: string }).name ?? "";
       const isWanted = sheets === undefined || sheets.includes(name);
       let isHeader = true;
       for await (const row of worksheet) {

@@ -10,8 +10,8 @@ import { describe, expect, it } from "@stackra/testing";
 
 import type { TabularReadOptions } from "#contracts/types/tabular-read-options.type";
 import type { TabularRow } from "#contracts/types/tabular-row.type";
-import { XlsxReaderDriver } from "#core/drivers/xlsx-reader.driver";
-import { XlsxWriterDriver } from "#core/drivers/xlsx-writer.driver";
+import { XlsxReaderDriver } from "#node/drivers/xlsx-reader.driver";
+import { XlsxWriterDriver } from "#node/drivers/xlsx-writer.driver";
 import { TransferLimitExceededError } from "#core/errors/transfer-limit-exceeded.error";
 
 async function workbook(): Promise<Uint8Array> {

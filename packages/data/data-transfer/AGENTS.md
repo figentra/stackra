@@ -1,7 +1,7 @@
 # AGENTS — @stackra/data-transfer
 
 Tabular import and export (ADR 0367, ADR 0163 decisions 3 and 4). Member at `packages/data/data-transfer`
-(`tier:lib`), in the programming model v3.1 shape (ADR 0294, 0305). Entries `.` and `./contracts`.
+(`tier:lib`), in the programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts` and `./node` (XLSX only; ADR 0431).
 
 ## Where code goes
 
@@ -10,6 +10,8 @@ Tabular import and export (ADR 0367, ADR 0163 decisions 3 and 4). Member at `pac
 | A port                  | `src/contracts/ports/<name>.port.ts`           |
 | A contract type or enum | `src/contracts/{types,enums}/<name>.<kind>.ts` |
 | A format or ledger      | `src/core/drivers/<name>.driver.ts`            |
+| An exceljs format       | `src/node/drivers/<name>.driver.ts`            |
+| Seed data (profiles)    | `assets/data/<kind>/<name>.yaml`               |
 | The import engine       | `src/core/services/import-runner.service.ts`   |
 | A function              | `src/core/functions/<name>.function.ts`        |
 | A refusal               | `src/core/errors/<name>.error.ts`              |
@@ -18,7 +20,7 @@ Tabular import and export (ADR 0367, ADR 0163 decisions 3 and 4). Member at `pac
 
 ## Entries and barrels
 
-- `src/contracts/index.ts` and `src/core/index.ts` are stand-in barrels until gen writes the entry barrels (STA-339);
+- `src/contracts/index.ts`, `src/core/index.ts` and `src/node/index.ts` are stand-in barrels until gen writes the entry barrels (STA-339);
   add every new public file to one of them and to the export list in that entry's `__tests__/index.test.ts`.
 - Ports, `ImportRunState` and contract types are exported from `./contracts` only. The CSV parser, the decoder, the
   byte limiter, cell conversions and constants stay internal.
@@ -53,3 +55,4 @@ Tabular import and export (ADR 0367, ADR 0163 decisions 3 and 4). Member at `pac
 | Row errors    | `RowError`                            | Sheet, row number, field path, code and the schema's message; never the row's cells.                                                       |
 | Before-images | `ImportChange.before`, `ImportLedger` | The target's record before the import; the durable driver keeps it under the record's data class and drops it when the undo window closes. |
 | Exports       | writers                               | Whatever rows the caller passes; filtering by permission is the caller's.                                                                  |
+| Pay inputs    | `PayInput`, `payrollSheet`            | An employee's pay; streamed to the writer, never logged.                                                                                   |

@@ -2,10 +2,12 @@
  * Stackra file contract:
  * Purpose: unit tests of `ImportRunner`: mapped rows validated per row with refused rows reported, batches written and
  *          recorded, a failed batch failing the run and the next call resuming after the cursor without repeating
- *          committed rows, closed runs refused, one sheet only, and the whole-run revert inside and past its window.
+ *          committed rows, closed runs refused, one sheet only, the whole-run revert inside and past its window and
+ *          after a purge, and a workbook import feeding two targets from two sheets, resumed per sheet, refused out of
+ *          order, and reverted through each sheet's target.
  * Boundary: test only. The target is an in-memory store keyed by SKU; the batch size and window are test data.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0367 (decisions 6 to 8).
+ * Governing contract: ADR 0022 (test placement); ADR 0367 (decisions 6 to 8); ADR 0431 (decisions 1 and 3).
  */
 import { Clock, Duration, type Json } from "@stackra/contracts";
 import { Driver } from "@stackra/container";
@@ -185,5 +187,158 @@ describe("ImportRunner", () => {
     await expect(runner.revert("imp_0", store, { window: Duration.days(1) })).rejects.toThrow(
       ImportRunNotFoundError,
     );
+  });
+
+  it("refuses a revert once the before-images are purged", async () => {
+    const { runner, store, ledger, clock } = setup();
+    await runner.run({
+      runId: "imp_7",
+      rows: sheet(FILE),
+      mapping: MAPPING,
+      target: store,
+      batchSize: 2,
+    });
+    await ledger.purge(new Date("2026-10-26T00:00:00.000Z"), clock.now());
+    await expect(runner.revert("imp_7", store, { window: Duration.days(7) })).rejects.toThrow(
+      ImportUndoExpiredError,
+    );
+  });
+
+  describe("runSheets", () => {
+    const VARIANT = z.object({ sku: z.string(), size: z.string().min(1) });
+    type Variant = z.infer<typeof VARIANT>;
+
+    class VariantStore implements ImportTarget<Variant> {
+      readonly schema = VARIANT;
+
+      readonly variants = new Map<string, Variant>();
+
+      async upsert(records: readonly Variant[]): Promise<readonly ImportChange[]> {
+        return records.map((record) => {
+          const key = `${record.sku}/${record.size}`;
+          this.variants.set(key, record);
+          return { key, before: null };
+        });
+      }
+
+      async revert(changes: readonly ImportChange[]): Promise<void> {
+        for (const change of changes) this.variants.delete(change.key);
+      }
+    }
+
+    const PRODUCTS = [
+      ["رمز المنتج", "السعر"],
+      ["a", "5"],
+      ["b", "6"],
+    ];
+    const VARIANTS = [
+      ["SKU", "Size"],
+      ["a", "S"],
+      ["a", ""],
+      ["b", "M"],
+    ];
+
+    async function* workbook(order: readonly string[]): AsyncGenerator<TabularRow> {
+      for (const name of order) {
+        if (name === "Products") yield* sheet(PRODUCTS, "Products");
+        if (name === "Variants") yield* sheet(VARIANTS, "Variants");
+        if (name === "Notes") yield* sheet([["note"], ["ignored"]], "Notes");
+      }
+    }
+
+    function plans(products: ProductStore, variants: VariantStore) {
+      return [
+        { sheet: "Products", mapping: MAPPING, target: products },
+        { sheet: "Variants", mapping: { sku: "SKU", size: "Size" }, target: variants },
+      ];
+    }
+
+    it("imports two sheets into two targets, never mixing them in a batch", async () => {
+      const { runner, store, ledger } = setup();
+      const variants = new VariantStore();
+      const report = await runner.runSheets({
+        runId: "imp_w1",
+        rows: workbook(["Products", "Notes", "Variants"]),
+        sheets: plans(store, variants),
+        batchSize: 5,
+      });
+      expect(report.written).toBe(4);
+      expect(report.errors).toEqual([
+        { sheet: "Variants", row: 3, issues: [expect.objectContaining({ field: "size" })] },
+      ]);
+      expect([...store.products.keys()]).toEqual(["a", "b"]);
+      expect([...variants.variants.keys()]).toEqual(["a/S", "b/M"]);
+      expect((await ledger.batches("imp_w1")).map((batch) => [batch.sheet, batch.lastRow])).toEqual(
+        [
+          ["Products", 3],
+          ["Variants", 4],
+        ],
+      );
+    });
+
+    it("resumes each sheet after its own cursor", async () => {
+      const { runner, store } = setup();
+      const variants = new VariantStore();
+      const options = { runId: "imp_w2", sheets: plans(store, variants), batchSize: 1 };
+      store.failOn = "b";
+      await expect(
+        runner.runSheets({ ...options, rows: workbook(["Products", "Variants"]) }),
+      ).rejects.toThrow("batch failed");
+      store.failOn = undefined;
+      const report = await runner.runSheets({
+        ...options,
+        rows: workbook(["Products", "Variants"]),
+      });
+      expect(store.upserted).toEqual(["a", "b"]);
+      expect(report.written).toBe(4);
+    });
+
+    it("refuses sheets out of dependency order, a duplicate and an empty list", async () => {
+      const { runner, store } = setup();
+      const variants = new VariantStore();
+      await expect(
+        runner.runSheets({
+          runId: "imp_w3",
+          rows: workbook(["Variants", "Products"]),
+          sheets: plans(store, variants),
+          batchSize: 5,
+        }),
+      ).rejects.toThrow(TypeError);
+      expect(store.products.size).toBe(0);
+      await expect(
+        runner.runSheets({ runId: "imp_w4", rows: workbook([]), sheets: [], batchSize: 5 }),
+      ).rejects.toThrow(TypeError);
+      const products = { sheet: "Products", mapping: MAPPING, target: store };
+      await expect(
+        runner.runSheets({
+          runId: "imp_w5",
+          rows: workbook([]),
+          sheets: [products, products],
+          batchSize: 5,
+        }),
+      ).rejects.toThrow(TypeError);
+    });
+
+    it("reverts every sheet through its own target, and refuses a missing one first", async () => {
+      const { runner, store } = setup();
+      const variants = new VariantStore();
+      await runner.runSheets({
+        runId: "imp_w6",
+        rows: workbook(["Products", "Variants"]),
+        sheets: plans(store, variants),
+        batchSize: 5,
+      });
+      await expect(
+        runner.revert("imp_w6", { Products: store }, { window: Duration.days(7) }),
+      ).rejects.toThrow(TypeError);
+      expect(variants.variants.size).toBe(2);
+      await runner.revert(
+        "imp_w6",
+        { Products: store, Variants: variants },
+        { window: Duration.days(7) },
+      );
+      expect(store.products.size).toBe(0);
+      expect(variants.variants.size).toBe(0);
+    });
   });
 });

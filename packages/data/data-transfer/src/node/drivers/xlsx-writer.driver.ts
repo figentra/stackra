@@ -10,10 +10,10 @@
 import { PassThrough } from "node:stream";
 
 import { Driver } from "@stackra/container";
-import ExcelJS from "exceljs";
 
 import { TabularWriter } from "#contracts/ports/tabular-writer.port";
 import type { TabularSheet } from "#contracts/types/tabular-sheet.type";
+import { EXCELJS } from "#node/constants/exceljs.constant";
 
 /**
  * Writes XLSX workbooks.
@@ -32,7 +32,7 @@ export class XlsxWriterDriver extends Driver(TabularWriter) {
    */
   async *write(sheets: readonly TabularSheet[]): AsyncGenerator<Uint8Array> {
     const output = new PassThrough();
-    const workbook = new ExcelJS.stream.xlsx.WorkbookWriter({
+    const workbook = new EXCELJS.stream.xlsx.WorkbookWriter({
       stream: output,
       useSharedStrings: false,
       useStyles: true,

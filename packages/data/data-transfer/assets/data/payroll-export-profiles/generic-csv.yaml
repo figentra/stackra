@@ -1,0 +1,37 @@
+# Pay-input export for any payroll provider without a write API: one line per employee, pay item and period.
+# Tenants edit the codes and columns from the dashboard; this is the default (ADR 0431 decision 4).
+kind: settings
+key: settings:os:payroll-export-profile:generic-csv
+rows:
+  - id: profile
+    answer: R3-SO-05
+    value:
+      key: generic-csv
+      provider: generic
+      format: csv
+      sheet: Pay inputs
+      decimalSeparator: "."
+      dateFormat: iso
+      delimiter: ","
+      columns:
+        - header: Employee number
+          field: employee
+        - header: Pay code
+          field: code
+        - header: Period start
+          field: periodStart
+        - header: Period end
+          field: periodEnd
+        - header: Quantity
+          field: quantity
+        - header: Amount
+          field: amount
+        - header: Currency
+          field: currency
+      codes:
+        hours.regular: hours.regular
+        hours.overtime: hours.overtime
+        sessions: sessions
+        tips: tips
+        commission: commission
+        bonus: bonus

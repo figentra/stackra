@@ -7,9 +7,9 @@
  * Governing contract: ADR 0022 (test placement); ADR 0367 (decision 2).
  */
 import { describe, expect, it } from "@stackra/testing";
-import ExcelJS from "exceljs";
 
-import { XlsxWriterDriver } from "#core/drivers/xlsx-writer.driver";
+import { EXCELJS } from "#node/constants/exceljs.constant";
+import { XlsxWriterDriver } from "#node/drivers/xlsx-writer.driver";
 
 describe("XlsxWriterDriver", () => {
   it("writes a multi-sheet workbook", async () => {
@@ -32,7 +32,7 @@ describe("XlsxWriterDriver", () => {
       },
     ]))
       chunks.push(chunk);
-    const workbook = new ExcelJS.Workbook();
+    const workbook = new EXCELJS.Workbook();
     await workbook.xlsx.load(Buffer.concat(chunks));
     expect(workbook.worksheets.map((sheet) => sheet.name)).toEqual(["المنتجات", "Dates"]);
     expect(workbook.getWorksheet("المنتجات")?.getRow(2).values).toEqual([undefined, "قلم", 5]);

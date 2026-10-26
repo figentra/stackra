@@ -1,0 +1,26 @@
+# ZenHR bulk upload of employee financial transactions (UAE, KSA, Egypt), for tenants not using the ZenHR connector.
+# Transaction types are set up per company in ZenHR, so the codes ship empty (ADR 0431 decision 4).
+kind: settings
+key: settings:os:payroll-export-profile:zenhr-xlsx
+rows:
+  - id: profile
+    answer: R3-SO-05
+    value:
+      key: zenhr-xlsx
+      provider: zenhr
+      format: xlsx
+      sheet: Financial Transactions
+      decimalSeparator: "."
+      dateFormat: dd/mm/yyyy
+      columns:
+        - header: Employee Number
+          field: employee
+        - header: Transaction Type
+          field: code
+        - header: Amount
+          field: amount
+        - header: Currency
+          field: currency
+        - header: Date
+          field: periodEnd
+      codes: {}

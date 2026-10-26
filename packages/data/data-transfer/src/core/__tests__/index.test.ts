@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: the consumer contract of the `.` entry: the drivers, refusals, functions and `ImportRunner` are exported
- *          and nothing else is (no port, no internal parser or constant), the public types resolve, and a CSV upload
+ *          and nothing else is (no port, no XLSX driver, no internal parser or constant), the public types resolve, and a CSV upload
  *          runs end to end through preview, column matching and import.
  * Boundary: test only; imports the stand-in barrel through its `#core` alias.
  * Runtime: node (vitest)
@@ -25,9 +25,13 @@ import type {
   ColumnMapping,
   ImportOptions,
   ImportReport,
+  PayInput,
   PreviewOptions,
   RevertOptions,
+  RevertTargets,
+  SheetImport,
   TabularPreview,
+  WorkbookImportOptions,
 } from "#core/index";
 
 class SystemClock extends Driver(Clock) {
@@ -41,21 +45,28 @@ describe("@stackra/data-transfer", () => {
     expect(Object.keys(dataTransfer).sort()).toEqual([
       "CsvReaderDriver",
       "CsvWriterDriver",
+      "DatevAsciiWriterDriver",
+      "IMPORT_MAPPING_PROFILE_SCHEMA",
       "ImportRunClosedError",
       "ImportRunNotFoundError",
       "ImportRunner",
       "ImportUndoExpiredError",
+      "JsonLinesReaderDriver",
+      "JsonLinesWriterDriver",
       "MemoryImportLedgerDriver",
+      "PAYROLL_EXPORT_PROFILE_SCHEMA",
       "TransferLimitExceededError",
       "UnreadableEncodingError",
-      "XlsxReaderDriver",
-      "XlsxWriterDriver",
       "compileMapping",
+      "datevWriteOptionsOf",
       "detectEncoding",
       "matchColumns",
       "normalizeHeader",
+      "payrollSheet",
       "previewTabular",
+      "sheetImportsOf",
     ]);
+    expect("XlsxReaderDriver" in dataTransfer).toBe(false);
     expect("TabularReader" in dataTransfer).toBe(false);
     expect("parseCsv" in dataTransfer).toBe(false);
   });
@@ -68,6 +79,11 @@ describe("@stackra/data-transfer", () => {
     expectTypeOf<ImportReport["written"]>().toEqualTypeOf<number>();
     expectTypeOf<RevertOptions["window"]>().not.toBeAny();
     expectTypeOf<TabularPreview["sheets"][number]["header"]>().toEqualTypeOf<readonly string[]>();
+    expectTypeOf<WorkbookImportOptions["sheets"]>().toEqualTypeOf<
+      readonly SheetImport<unknown>[]
+    >();
+    expectTypeOf<RevertTargets>().not.toBeAny();
+    expectTypeOf<PayInput["employee"]>().toEqualTypeOf<string>();
   });
 
   it("runs an upload through preview, matching and import", async () => {

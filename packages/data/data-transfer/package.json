@@ -2,7 +2,7 @@
   "name": "@stackra/data-transfer",
   "version": "0.0.0",
   "private": true,
-  "description": "Stackra data transfer: streaming CSV and XLSX readers and writers, encoding detection with a market-pack fallback, Arabic header normalisation, column mapping, preview, per-row errors and resumable import batches with a ledger and a whole-run revert",
+  "description": "Stackra data transfer: streaming CSV, JSON Lines and (in ./node) XLSX readers and writers, encoding detection with a market-pack fallback, Arabic header normalisation, column mapping and mapping profiles, preview, per-row errors, resumable single- and multi-sheet imports with a ledger, a whole-run revert and before-image purge, and payroll pay-input exports (CSV, XLSX, DATEV ASCII) from per-provider profiles",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -12,6 +12,7 @@
   "files": [
     "dist",
     "src",
+    "assets",
     "README.md",
     "CHANGELOG.md",
     "LICENSE"
@@ -28,6 +29,11 @@
       "./src/core/*",
       "./src/core/*.ts",
       "./src/core/*/index.ts"
+    ],
+    "#node/*": [
+      "./src/node/*",
+      "./src/node/*.ts",
+      "./src/node/*/index.ts"
     ]
   },
   "exports": {
@@ -40,6 +46,11 @@
       "@stackra/source": "./src/contracts/index.ts",
       "types": "./dist/contracts.d.mts",
       "default": "./dist/contracts.mjs"
+    },
+    "./node": {
+      "@stackra/source": "./src/node/index.ts",
+      "types": "./dist/node.d.mts",
+      "default": "./dist/node.mjs"
     }
   },
   "publishConfig": {
@@ -75,6 +86,7 @@
     "oxlint": "catalog:quality",
     "tsdown": "catalog:build",
     "typescript": "catalog:build",
-    "vitest": "catalog:quality"
+    "vitest": "catalog:quality",
+    "yaml": "catalog:"
   }
 }

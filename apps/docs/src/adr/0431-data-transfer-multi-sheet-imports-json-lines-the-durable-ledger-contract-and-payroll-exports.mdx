@@ -1,0 +1,63 @@
+---
+title: "0431 — Data transfer: multi-sheet imports, JSON Lines, the durable ledger contract and payroll exports"
+description: "Proposed · 2026-10-26"
+---
+
+<Note>
+  Proposed. It answers the open questions of
+  [0367](/adr/0367-data-transfer-streaming-tabular-files-mapping-and-resumable-imports-with-a-batch-ledger)
+  (OQ1 and the multi-sheet question) and adds the payroll export of STA-714. Linear STA-711,
+  STA-714.
+</Note>
+
+## Context
+
+ADR 0367 shipped one-sheet imports, CSV and XLSX, and only the memory ledger. Products import workbooks whose sheets
+feed several models that depend on each other (products and variants; grocery items, PLU, barcodes and scale layouts,
+R3-SO-19, GRO-207). OQ1 asked whether JSON and JSON Lines are formats here or only the full-tenant export's. The OS
+data-exchange service needs a ledger contract it can implement durably, with the before-images gone when the undo
+window closes. Figentra runs no payroll (RV-50), so pay inputs leave as files for every provider without a write API.
+
+## Decision
+
+1. **One run, several sheets, several targets.** `ImportRunner.runSheets` imports the sheets a workbook import names,
+   in the order their targets depend on each other; a sheet not named is read past. A batch never spans two sheets and
+   records its sheet, so each sheet resumes after its own last batch and each batch reverts through its own target,
+   newest first (children before parents). A file with the named sheets out of order is refused before any write. A
+   mapping profile (`IMPORT_MAPPING_PROFILE_SCHEMA`: sheet, target name, column mapping) is seed data per product, and
+   `sheetImportsOf` turns it into the run's sheets.
+2. **JSON Lines yes, plain JSON no.** A JSON Lines reader and writer are `TabularReader` and `TabularWriter` drivers:
+   the first object's keys are the header, each line is its own row number, and a later key the header lacks is
+   refused. Plain JSON (one array) cannot be streamed and stays on the full-tenant export path.
+3. **The durable ledger contract.** Every `ImportLedger` driver returns copies; `append` is atomic and refuses an
+   out-of-order batch; batches come back in append order; before-images are stored under the data class of the records
+   they copy and are never logged; `purge(settledBefore, at)` empties the before-images of every run settled before the
+   cutoff, keeps each batch's index, sheet, cursor and errors, and stamps `purgedAt`. A purged run cannot be reverted.
+   The caller runs `purge` on a schedule with `settledBefore = now − undo window` (a setting).
+4. **Payroll exports from profiles.** A `PayrollExportProfile` names the provider, the format (`csv`, `xlsx`,
+   `datev-ascii`), the columns and what fills each, the pay-item-to-wage-code map, the number and date formats and, for
+   DATEV, the `[Allgemein]` entries and the record description. `payrollSheet` turns pay inputs into the sheet; an input
+   whose pay item has no code is refused, never dropped. `DatevAsciiWriterDriver` writes the LODAS movement-data file
+   in ISO 8859-1 and refuses a character it cannot hold. The launch profiles (generic CSV, DATEV LODAS, ZenHR XLSX)
+   ship as settings records in `assets/data/payroll-export-profiles/`; the tenant's DATEV numbers and wage codes are
+   tenant settings.
+5. **XLSX behind `./node`.** The exceljs drivers move to the `./node` entry, loaded through `createRequire` because
+   exceljs is CommonJS with named-export typings only, so `.` stays browser-safe.
+
+## Consequences
+
+- A grocery or catalogue workbook imports in one run and reverts as one.
+- The OS data-exchange service implements one written contract; the memory driver is its reference.
+- Payroll providers are data: a new provider is a profile, not a release.
+
+## Enforcement
+
+`import-runner.service.test.ts` (sheet order, per-sheet resume, revert targets),
+`memory-import-ledger.driver.test.ts` (purge), `json-lines-*.driver.test.ts`, `payroll-sheet.function.test.ts`,
+`datev-ascii-writer.driver.test.ts` and `payroll-export-profiles.test.ts` in `packages/data/data-transfer`. Planned —
+the OS data-exchange durable driver runs the same contract tests.
+
+## Supersedes and sources
+
+Supersedes: none. Answers 0367 OQ1. Sources: owner questionnaire item 22; R3-SO-05, R3-SO-19, GRO-207; RV-50;
+`notes/handover/payroll-providers-2026-10-26.md`.

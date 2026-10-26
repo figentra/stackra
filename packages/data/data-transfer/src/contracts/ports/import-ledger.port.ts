@@ -3,10 +3,15 @@
  * Purpose: the `ImportLedger` port: the durable record of import runs and their committed batches, which gives a
  *          resumed run its cursor and a revert its before-images.
  * Boundary: an abstract class that is its own token, keyed `data-transfer.ImportLedger`. The `memory` driver ships here;
- *           the durable driver and its table belong to the OS data-exchange service (ADR 0367 decision 9). A driver
- *           returns copies, never its own state.
+ *           the durable driver and its table belong to the OS data-exchange service (ADR 0367 decision 9). Every
+ *           driver keeps this contract (ADR 0431 decision 3): it returns copies, never its own state; `append` is
+ *           atomic and refuses an out-of-order batch; batches come back in append order; before-images are stored
+ *           under the data class of the records they copy and never logged; `purge` drops them for every run that
+ *           settled before the cutoff (the end of the caller's undo window), keeps the batch rows (index, sheet,
+ *           cursor, errors) and stamps `purgedAt`, so the report outlives the personal data.
  * Runtime: isomorphic
- * Governing contract: ADR 0367 (decisions 7 to 9); ADR 0266 (memory drivers first); ADR 0294 (decisions 15 and 16).
+ * Governing contract: ADR 0367 (decisions 7 to 9); ADR 0431 (decision 3); ADR 0266 (memory drivers first); ADR 0294
+ *                     (decisions 15 and 16).
  */
 import { Port } from "@stackra/contracts";
 
@@ -19,7 +24,7 @@ import type { ImportRunRecord } from "#contracts/types/import-run-record.type";
  *
  * @example
  * const run = await ledger.open("imp_01J...");
- * await ledger.append(run.id, { index: 0, lastRow: 501, changes, errors });
+ * await ledger.append(run.id, { index: 0, sheet: "", lastRow: 501, changes, errors });
  */
 export abstract class ImportLedger extends Port {
   /** Type-only port key, so `DriverName<ImportLedger>` narrows to this port's drivers. */
@@ -47,4 +52,13 @@ export abstract class ImportLedger extends Port {
    * @throws RangeError when the run is unknown.
    */
   abstract settle(runId: string, state: ImportRunState, at: Date): Promise<void>;
+
+  /**
+   * Drops the before-images of every run settled before `settledBefore` and not purged yet: each of its batches keeps
+   * its index, sheet, cursor and errors with empty `changes`, and the run gets `purgedAt = at`. A running run is never
+   * purged. The caller runs it on a schedule with `settledBefore = now - undo window`.
+   *
+   * @returns how many runs it purged.
+   */
+  abstract purge(settledBefore: Date, at: Date): Promise<number>;
 }

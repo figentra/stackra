@@ -1,0 +1,38 @@
+# DATEV Lohn ASCII movement data (LODAS import), for German payroll offices and Kombo's DATEV push.
+# BeraterNr and MandantenNr are the tenant's settings, merged in at export. Lohnarten (wage types) are the
+# client's own numbers in DATEV, so the codes ship empty and an unmapped pay item is refused (ADR 0431 decision 4).
+kind: settings
+key: settings:os:payroll-export-profile:datev-lodas
+rows:
+  - id: profile
+    answer: R3-SO-05
+    value:
+      key: datev-lodas
+      provider: datev
+      format: datev-ascii
+      sheet: Bewegungsdaten
+      decimalSeparator: ","
+      dateFormat: dd/mm/yyyy
+      columns:
+        - header: pnr#bwd
+          field: employee
+        - header: abrechnung_zeitraum#bwd
+          field: periodStart
+        - header: la_eigene#bwd
+          field: code
+        - header: bs_nr#bwd
+          field: literal
+          value: "1"
+        - header: bs_wert_butab#bwd
+          field: quantity
+      codes: {}
+      datev:
+        recordTable: u_lod_bwd_buchung_standard
+        recordNumber: 10
+        general:
+          Ziel: LODAS
+          Version_SST: "1.0"
+          Datumsformat: TT/MM/JJJJ
+          Feldtrennzeichen: ";"
+          Zahlenkomma: ","
+          Stringbegrenzer: '"'
