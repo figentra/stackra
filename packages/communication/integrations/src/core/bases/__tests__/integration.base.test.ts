@@ -136,6 +136,63 @@ describe("Integration", () => {
         webhooks: { scheme: "standard_webhooks", secret: "", eventType: { path: "type" } },
       }),
     ).toThrow(/webhooks/);
+    expect(refuse({ requestBody: "xml" as "json" })).toThrow(/requestBody/);
+    expect(
+      refuse({
+        auth: {
+          type: AuthType.OAuth2JwtBearer,
+          tokenUrl: "https://oauth2.provider.example/token",
+          key: "{privateKey}",
+          issuer: "",
+        },
+      }),
+    ).toThrow(/JWT bearer/);
+    const recipe = {
+      header: "stripe-signature",
+      algorithm: "SHA-256",
+      encoding: "hex",
+      payload: "{timestamp}.{body}",
+    } as const;
+    const hooks = (signature: object) => ({
+      webhooks: {
+        scheme: "hmac",
+        secret: "{webhookSecret}",
+        eventType: { path: "type" },
+        signature: signature as typeof recipe,
+      },
+    });
+    expect(refuse(hooks(recipe))).toThrow(/signature/);
+    expect(refuse(hooks({ ...recipe, payload: "{timestamp}" }))).toThrow(/signature/);
+    expect(refuse(hooks({ ...recipe, algorithm: "MD5" }))).toThrow(/signature/);
+  });
+
+  it("accepts a JWT bearer grant, a form body and an HMAC signature recipe", () => {
+    expect(
+      refuse({
+        requestBody: "form",
+        auth: {
+          type: AuthType.OAuth2JwtBearer,
+          tokenUrl: "https://oauth2.provider.example/token",
+          key: "{privateKey}",
+          issuer: "{clientEmail}",
+          scopes: ["read"],
+        },
+        webhooks: {
+          scheme: "hmac",
+          secret: "{webhookSecret}",
+          eventType: { path: "type" },
+          eventId: { path: "id" },
+          signature: {
+            header: "stripe-signature",
+            parts: { separator: ",", assign: "=", signature: "v1", timestamp: "t" },
+            algorithm: "SHA-256",
+            encoding: "hex",
+            payload: "{timestamp}.{body}",
+            tolerance: "5m",
+          },
+        },
+      }),
+    ).not.toThrow();
   });
 
   it("accepts roles, connector kinds and a per-region base URL", () => {

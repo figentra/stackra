@@ -2,8 +2,9 @@
  * Stackra file contract:
  * Purpose: unit tests of `IntegrationRuntime`: a client credentials token is fetched once for concurrent calls and
  *          reused until it nears expiry; an authorization code connection's expired token is refreshed once and an
- *          unrotated refresh token kept; revocation posts the refresh token and forgets the tokens; one integration
- *          instance is built per class with this runtime.
+ *          unrotated refresh token kept; revocation posts the refresh token and forgets the tokens; a JWT bearer
+ *          integration trades a signed assertion (scope, audience, no client credentials) for a cached token; one
+ *          integration instance is built per class with this runtime.
  * Boundary: test only; `fetch` is stubbed per URL, the clock is a mutable stand-in and the buckets are the memory driver
  *           of `@stackra/actions`.
  * Runtime: node (vitest)
@@ -21,6 +22,7 @@ import { AuthType } from "#core/enums/auth-type.enum";
 import { ConnectionLevel } from "#core/enums/connection-level.enum";
 import { IntegrationCategory } from "#core/enums/integration-category.enum";
 import { ProviderRefusedError } from "#core/errors/provider-refused.error";
+import { encodeBase64 } from "#core/functions/encode-base64.function";
 import { hydrateConnection } from "#core/functions/hydrate-connection.function";
 import { IntegrationRuntime } from "#core/services/integration-runtime.service";
 import type { OAuthTokens } from "#core/types/oauth-tokens.type";
@@ -75,6 +77,30 @@ class CalendarIntegration extends Integration({
   baseUrl: "https://api.calendar.example",
 }) {
   clientId = "public-client";
+}
+
+/** The service account's PEM key, made before the integration is built. */
+let serviceAccountKey = "";
+
+class GoogleIntegration extends Integration({
+  provider: "google",
+  category: IntegrationCategory.Other,
+  levels: [],
+  auth: {
+    type: AuthType.OAuth2JwtBearer,
+    tokenUrl: "https://oauth2.google.example/token",
+    key: "{privateKey}",
+    keyId: "{privateKeyId}",
+    issuer: "{clientEmail}",
+    scopes: ["wallet.issuer"],
+  },
+  baseUrl: "https://api.google.example",
+}) {
+  privateKey = serviceAccountKey;
+
+  privateKeyId = "kid-1";
+
+  clientEmail = "svc@project.example";
 }
 
 class CalendarConnection extends Connection<CalendarIntegration> {
@@ -183,5 +209,40 @@ describe("IntegrationRuntime", () => {
     expect(runtime.integration(ServiceIntegration)).toBe(first);
     expect(first).toBeInstanceOf(ServiceIntegration);
     expect(first.api).toBe(first.api);
+  });
+
+  it("trades a signed JWT bearer assertion for a token and caches it", async () => {
+    const pair = await crypto.subtle.generateKey(
+      {
+        name: "RSASSA-PKCS1-v1_5",
+        modulusLength: 2048,
+        publicExponent: new Uint8Array([1, 0, 1]),
+        hash: "SHA-256",
+      },
+      true,
+      ["sign", "verify"],
+    );
+    const der = new Uint8Array(await crypto.subtle.exportKey("pkcs8", pair.privateKey));
+    serviceAccountKey = `-----BEGIN PRIVATE KEY-----\n${encodeBase64(der)}\n-----END PRIVATE KEY-----\n`;
+    const { runtime } = setup();
+    const { callsTo } = stubProvider(() => ({ access_token: "ya29", expires_in: 3600 }));
+    const api = runtime.client(runtime.integration(GoogleIntegration));
+    await Promise.all([api.get("/a"), api.get("/b")]);
+    expect(callsTo("/token")).toHaveLength(1);
+    const form = new URLSearchParams(String(callsTo("/token")[0]?.[1].body));
+    expect(form.get("grant_type")).toBe("urn:ietf:params:oauth:grant-type:jwt-bearer");
+    expect(form.has("client_id")).toBe(false);
+    const [header = "", claims = ""] = (form.get("assertion") ?? "").split(".");
+    const decode = (part: string) =>
+      JSON.parse(atob(part.replaceAll("-", "+").replaceAll("_", "/"))) as Record<string, unknown>;
+    expect(decode(header)).toMatchObject({ alg: "RS256", kid: "kid-1" });
+    expect(decode(claims)).toMatchObject({
+      iss: "svc@project.example",
+      aud: "https://oauth2.google.example/token",
+      scope: "wallet.issuer",
+    });
+    expect(new Headers(callsTo("api.google")[1]?.[1].headers).get("authorization")).toBe(
+      "Bearer ya29",
+    );
   });
 });

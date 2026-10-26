@@ -41,6 +41,11 @@ Provider integrations, connections and their store (ADR 0308). Member at `packag
 - No parameter properties and no `#private` fields; the source keeps to erasable syntax.
 - Configuration, not code (ADR 0356): a provider is chosen through `ProviderResolver` from the tenant's Connection and
   the Market's data (`ProviderDefaults`); never branch on a Market, a country or a tenant in code.
+- Managed or bring your own: a Connection's `source` says which (`ProviderSource`, `byo` by default); a managed one
+  holds the platform key and a `resourceId` of a `ManagedProvisioning` resource. Which sources a category offers is the
+  `provider-category` seed data; the provisioning steps are the `os.managed_provisioning` template pack, never code.
+- A provider that takes form bodies sets `requestBody: "form"` on its Integration; never put POST parameters in the
+  query string.
 - One provider, one Integration (ADR 0355): a provider's roles are listed in `roles`; never add a second Integration or
   webhook route for the same provider.
 - A provider interface a Connection implements (`AccountingProvider`, `VoiceGateway`, the connectors) lives in

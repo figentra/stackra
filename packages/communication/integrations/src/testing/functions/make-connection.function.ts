@@ -25,7 +25,12 @@ export function makeConnection<C extends Connection>(
 ): C {
   return hydrateConnection(
     type,
-    { id: options.id ?? "conn_00000000000000000000000000", ...splitFields(type, options.fields) },
+    {
+      id: options.id ?? "conn_00000000000000000000000000",
+      ...splitFields(type, options.fields),
+      ...(options.source === undefined ? {} : { source: options.source }),
+      ...(options.resourceId === undefined ? {} : { resourceId: options.resourceId }),
+    },
     () => options.api,
   );
 }

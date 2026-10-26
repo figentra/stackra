@@ -23,6 +23,7 @@ import { newConnectionId } from "#core/functions/new-connection-id.function";
 import { ownerOf } from "#core/functions/owner-of.function";
 import { prepareConnection } from "#core/functions/prepare-connection.function";
 import { reachableConnections } from "#core/functions/reachable-connections.function";
+import { sourceOf } from "#core/functions/source-of.function";
 import { registrationOf } from "#core/functions/registration-of.function";
 import { sameOwner } from "#core/functions/same-owner.function";
 import { splitFields } from "#core/functions/split-fields.function";
@@ -99,7 +100,13 @@ export class HostedConnectionStoreDriver extends Driver(ConnectionStore) {
       );
     const integration = this.runtime.integration(registration.integration);
     const owner = ownerOf(level, this.context);
-    const draft = { id: newConnectionId(), level, ...owner, ...splitFields(type, input.fields) };
+    const draft = {
+      id: newConnectionId(),
+      level,
+      ...owner,
+      ...splitFields(type, input.fields),
+      ...sourceOf(input),
+    };
     const { tokens } = input;
     const { record } = await prepareConnection(
       type,

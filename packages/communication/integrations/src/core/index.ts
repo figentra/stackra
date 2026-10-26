@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `.` entry of @stackra/integrations, which has several public files, until `stackra gen`
  *          writes the entry barrels (STA-339).
- * Boundary: names each re-export and declares nothing. The managed client's internals (`managedClient`, the placeholder
+ * Boundary: names each re-export and declares nothing. The provider-category, catalogue and managed-provisioning
+ *           template seeds are exported for the registry and the seeders. The managed client's internals (`managedClient`, the placeholder
  *           lookup, the token calls, the JWT signer) and the registries stay internal. The `ConnectionContext` port is
  *           exported from `./contracts` only (ADR 0294 decision 15).
  * Runtime: isomorphic
@@ -11,8 +12,12 @@
 export { Connection } from "#core/bases/connection.base";
 export { Integration } from "#core/bases/integration.base";
 export { Pass } from "#core/bases/pass.base";
+export { MANAGED_PROVISIONING_TEMPLATES } from "#core/constants/managed-provisioning-templates.constant";
+export { PROVIDER_CATALOGUE_SEEDS } from "#core/constants/provider-catalogue-seeds.constant";
+export { PROVIDER_CATEGORY_SEEDS } from "#core/constants/provider-category-seeds.constant";
 export { HostedConnectionStoreDriver } from "#core/drivers/hosted-connection-store.driver";
 export { LocalConnectionStoreDriver } from "#core/drivers/local-connection-store.driver";
+export { MemoryManagedProvisioningDriver } from "#core/drivers/memory-managed-provisioning.driver";
 export { RequestConnectionContextDriver } from "#core/drivers/request-connection-context.driver";
 export { AuthType } from "#core/enums/auth-type.enum";
 export { ConnectionLevel } from "#core/enums/connection-level.enum";
@@ -62,3 +67,4 @@ export type { ProviderDrivers } from "#core/types/provider-drivers.type";
 export type { RateLimit } from "#core/types/rate-limit.type";
 export type { RequestOptions } from "#core/types/request-options.type";
 export type { RetryPolicy } from "#core/types/retry-policy.type";
+export type { WebhookSignature } from "#core/types/webhook-signature.type";

@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `IntegrationRuntime`, the platform service every Integration is built with (gen wires it as the one
  *          constructor dependency of an integration binding): it makes the managed clients, keeps each credential's
- *          OAuth tokens in memory and renews them single-flight, and revokes them at disconnect.
+ *          OAuth tokens in memory and renews them single-flight (a refresh, a client credentials grant or a signed JWT
+ *          bearer assertion), and revokes them at disconnect.
  * Boundary: a service with three dependencies: the `SecretStore` (the Integration's `@Secret` fields, read blind by
  *           name at call time), the `RateLimitStore` of `@stackra/actions` (the providers' buckets) and the `Clock`.
  *           Tokens are kept per `<integration>:<connection id | platform>`, never logged; an access token is renewed
@@ -27,16 +28,25 @@ import { managedClient } from "#core/functions/managed-client.function";
 import { placeholderLookup } from "#core/functions/placeholder-lookup.function";
 import { requestToken } from "#core/functions/request-token.function";
 import { resolvePlaceholders } from "#core/functions/resolve-placeholders.function";
+import { signJwt } from "#core/functions/sign-jwt.function";
 import { tokenEndpointInit } from "#core/functions/token-endpoint-init.function";
 import type { IntegrationApi } from "#core/types/integration-api.type";
 import type { IntegrationClass } from "#core/types/integration-class.type";
 import type { OAuthTokens } from "#core/types/oauth-tokens.type";
 
-/** The `auth` options of the two OAuth types. */
+/** The `auth` options of the three OAuth types. */
 type OAuthOptions = Extract<
   ReturnType<typeof integrationOptionsOf>["auth"],
-  { readonly type: typeof AuthType.OAuth2Code | typeof AuthType.OAuth2ClientCredentials }
+  {
+    readonly type:
+      | typeof AuthType.OAuth2Code
+      | typeof AuthType.OAuth2ClientCredentials
+      | typeof AuthType.OAuth2JwtBearer;
+  }
 >;
+
+/** The grant type of a JWT bearer assertion (RFC 7523 section 2.1). */
+const JWT_BEARER_GRANT = "urn:ietf:params:oauth:grant-type:jwt-bearer";
 
 /**
  * Makes managed clients and holds their tokens.
@@ -88,6 +98,7 @@ export class IntegrationRuntime extends Service {
     if (typeof tokens === "function") accessToken = tokens;
     else if (
       auth.type === AuthType.OAuth2ClientCredentials ||
+      auth.type === AuthType.OAuth2JwtBearer ||
       (auth.type === AuthType.OAuth2Code && connection !== undefined)
     ) {
       const key = this.keyOf(integration, connection);
@@ -198,7 +209,10 @@ export class IntegrationRuntime extends Service {
     }
   }
 
-  /** One call to the token endpoint: a client credentials grant, or a refresh that keeps an unrotated refresh token. */
+  /**
+   * One call to the token endpoint: a signed JWT bearer assertion, a client credentials grant, or a refresh that keeps
+   * an unrotated refresh token.
+   */
   private async renew(
     integration: Integration,
     auth: OAuthOptions,
@@ -207,6 +221,29 @@ export class IntegrationRuntime extends Service {
   ): Promise<OAuthTokens> {
     const { provider } = integrationOptionsOf(integration.constructor);
     const resolve = this.resolverOf(integration, connection);
+    if (auth.type === AuthType.OAuth2JwtBearer) {
+      const now = this.clock.now();
+      const assertion = await signJwt(
+        {
+          algorithm: auth.algorithm ?? "RS256",
+          key: auth.key,
+          issuer: auth.issuer,
+          audience: auth.audience ?? auth.tokenUrl,
+          expiresIn: auth.expiresIn ?? "1h",
+          ...(auth.keyId === undefined ? {} : { keyId: auth.keyId }),
+          ...(auth.subject === undefined ? {} : { subject: auth.subject }),
+        },
+        resolve,
+        now,
+        auth.scopes === undefined ? {} : { scope: auth.scopes.join(" ") },
+      );
+      return requestToken({
+        url: auth.tokenUrl,
+        form: { grant_type: JWT_BEARER_GRANT, assertion },
+        provider,
+        now,
+      });
+    }
     const client = {
       url: auth.tokenUrl,
       clientId: resolve(auth.clientId),

@@ -1,13 +1,14 @@
 /**
  * Stackra file contract:
- * Purpose: `AuthOptions`, an Integration's `auth` option: a discriminated union over the six `AuthType`s, each with
+ * Purpose: `AuthOptions`, an Integration's `auth` option: a discriminated union over the seven `AuthType`s, each with
  *          the options that type needs, so an OAuth integration names its endpoints and scopes and an API key
  *          integration names its header.
  * Boundary: a type only; the members are not exported (read one with `Extract<AuthOptions, { type: ... }>`). Every
  *           string that carries a credential is a `{field}` placeholder resolved on the Connection first, then on the
  *           Integration (ADR 0308 rule 4), never a value. The word scope means an OAuth scope only here (rule 5).
  * Runtime: isomorphic
- * Governing contract: ADR 0308 (rules 4 to 8); RFC 6749 (OAuth 2.0); RFC 7636 (PKCE); RFC 7519 (JWT).
+ * Governing contract: ADR 0308 (rules 4 to 8); RFC 6749 (OAuth 2.0); RFC 7636 (PKCE); RFC 7519 (JWT); RFC 7523 (JWT
+ *                     bearer grant).
  */
 import type { AuthType } from "#core/enums/auth-type.enum";
 import type { Interval } from "#core/types/interval.type";
@@ -55,6 +56,34 @@ interface OAuth2ClientCredentialsAuth {
   readonly scopes?: readonly string[];
   /** How the client authenticates at the token endpoint; `"basic"` when left out. */
   readonly clientAuthentication?: ClientAuthentication;
+  /** When the cached token is renewed. */
+  readonly refresh?: RefreshPolicy;
+}
+
+/**
+ * Service-account JWT bearer (RFC 7523 section 2.1): the client signs an assertion with its private key and trades it
+ * at the token endpoint for a short-lived access token, cached until it expires (Google service accounts).
+ */
+interface OAuth2JwtBearerAuth {
+  readonly type: typeof AuthType.OAuth2JwtBearer;
+  /** The token endpoint; also the assertion's `aud` unless `audience` says otherwise. */
+  readonly tokenUrl: string;
+  /** The signing algorithm of the assertion; `"RS256"` when left out. */
+  readonly algorithm?: "RS256" | "ES256";
+  /** The PKCS #8 PEM private key, usually `"{privateKey}"`. */
+  readonly key: string;
+  /** The `kid` header, usually `"{privateKeyId}"`. */
+  readonly keyId?: string;
+  /** The `iss` claim: the service account, usually `"{clientEmail}"`. */
+  readonly issuer: string;
+  /** The `sub` claim: the user the service account acts as, when it may act for one. */
+  readonly subject?: string;
+  /** The `aud` claim; the token endpoint when left out. */
+  readonly audience?: string;
+  /** The OAuth scopes the token is asked for, sent as the `scope` claim. */
+  readonly scopes?: readonly string[];
+  /** How long an assertion lives; `"1h"` when left out (Google's longest). */
+  readonly expiresIn?: Interval;
   /** When the cached token is renewed. */
   readonly refresh?: RefreshPolicy;
 }
@@ -114,6 +143,7 @@ interface NoAuth {
 export type AuthOptions =
   | OAuth2CodeAuth
   | OAuth2ClientCredentialsAuth
+  | OAuth2JwtBearerAuth
   | ApiKeyAuth
   | BasicAuth
   | JwtAuth

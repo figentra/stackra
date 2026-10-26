@@ -63,6 +63,12 @@ export interface IntegrationOptions {
   /** How a failed call is retried. */
   readonly retry?: RetryPolicy;
 
+  /**
+   * How the managed client encodes a request body: JSON when left out, a form (`application/x-www-form-urlencoded`)
+   * for a provider whose API takes only forms (Stripe, OPPWA). A call's own `form` option wins over it.
+   */
+  readonly requestBody?: "json" | "form";
+
   /** The scheduled health check of each connection. */
   readonly health?: HealthCheck;
 

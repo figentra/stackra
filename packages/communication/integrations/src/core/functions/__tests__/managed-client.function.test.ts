@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: unit tests of `managedClient`: it joins paths to the base URL and refuses another origin, authenticates by
  *          each auth type (an API key from the connection before the platform's secret, Basic, a signed JWT, an OAuth
- *          bearer), retries only what is safe, honours the idempotency header, keeps to the rate limits, and turns a
+ *          bearer), sends a form body when the call or the Integration asks, retries only what is safe, honours the idempotency header, keeps to the rate limits, and turns a
  *          4xx into `ProviderRefusedError` and spent retries into `ProviderUnavailableError` without a credential in
  *          either.
  * Boundary: test only; `fetch` is stubbed, the secret store answers from a map, the clock is frozen and the buckets
@@ -57,6 +57,16 @@ const BASE = {
 
 class MailIntegration extends Integration({
   ...BASE,
+  auth: { type: AuthType.ApiKey, header: "Authorization", format: "Bearer {apiKey}" },
+}) {
+  @Secret("MAIL_API_KEY")
+  apiKey!: string;
+}
+
+class FormIntegration extends Integration({
+  ...BASE,
+  provider: "forms",
+  requestBody: "form",
   auth: { type: AuthType.ApiKey, header: "Authorization", format: "Bearer {apiKey}" },
 }) {
   @Secret("MAIL_API_KEY")
@@ -298,6 +308,16 @@ describe("managedClient", () => {
     await expect(
       clientOf(new MailIntegration()).post("/messages", { nested: { a: 1 } }, { form: true }),
     ).rejects.toThrow(/string, a number or a boolean/);
+  });
+
+  it("sends a form body when the Integration asks, unless the call says JSON", async () => {
+    const fetchMock = stubFetch(() => json({}));
+    const api = clientOf(new FormIntegration());
+    await api.post("/charges", { amount: 100, "metadata[reference]": "ord_1" });
+    expect(fetchMock.mock.calls[0]?.[1].body).toBe("amount=100&metadata%5Breference%5D=ord_1");
+    expect(headerOf(fetchMock, 0, "content-type")).toBe("application/x-www-form-urlencoded");
+    await api.post("/json", { a: 1 }, { form: false });
+    expect(fetchMock.mock.calls[1]?.[1].body).toBe('{"a":1}');
   });
 
   it("fills a per-region host from the credential set", async () => {

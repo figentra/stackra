@@ -12,6 +12,7 @@ import { kindOf } from "@stackra/container";
 import type { Email } from "@stackra/contracts";
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
+import { ProviderSource } from "#contracts/enums/provider-source.enum";
 import { Connection } from "#core/bases/connection.base";
 import { Integration } from "#core/bases/integration.base";
 import { AuthType } from "#core/enums/auth-type.enum";
@@ -64,6 +65,30 @@ describe("Connection", () => {
     expect(Object.keys(connection)).not.toContain("apiKey");
     expect(JSON.stringify(connection)).not.toContain("mk_test");
     await expect(connection.check()).resolves.toMatchObject({ id: "orders@acme.example" });
+  });
+
+  it("is bring-your-own unless its record says managed, with the resource it points at", () => {
+    const api = {} as IntegrationApi;
+    const own = hydrateConnection(
+      MailConnection,
+      { id: "conn_00000000000000000000000002", fields: {}, secrets: {} },
+      () => api,
+    );
+    expect(own.source).toBe(ProviderSource.Byo);
+    expect(own.resourceId).toBeUndefined();
+    const managed = hydrateConnection(
+      MailConnection,
+      {
+        id: "conn_00000000000000000000000003",
+        fields: {},
+        secrets: {},
+        source: ProviderSource.Managed,
+        resourceId: "res_1",
+      },
+      () => api,
+    );
+    expect(managed.source).toBe(ProviderSource.Managed);
+    expect(managed.resourceId).toBe("res_1");
   });
 
   it("explains an instance no store loaded", () => {

@@ -25,6 +25,7 @@ import { prepareConnection } from "#core/functions/prepare-connection.function";
 import { reachableConnections } from "#core/functions/reachable-connections.function";
 import { registrationOf } from "#core/functions/registration-of.function";
 import { sameOwner } from "#core/functions/same-owner.function";
+import { sourceOf } from "#core/functions/source-of.function";
 import { splitFields } from "#core/functions/split-fields.function";
 import { ConnectionStore } from "#core/ports/connection-store.port";
 import type { IntegrationRuntime } from "#core/services/integration-runtime.service";
@@ -108,6 +109,7 @@ export class LocalConnectionStoreDriver extends Driver(ConnectionStore) {
       level,
       ...ownerOf(level, this.context),
       ...splitFields(type, input.fields),
+      ...sourceOf(input),
     };
     const { connection, record } = await prepareConnection(
       type,

@@ -10,6 +10,7 @@
  */
 import type { PublicId, ScopeRef } from "@stackra/contracts";
 
+import type { ProviderSource } from "#contracts/enums/provider-source.enum";
 import type { ConnectionLevel } from "#core/enums/connection-level.enum";
 import type { ConnectedAccount } from "#core/values/connected-account.value";
 
@@ -40,4 +41,10 @@ export interface ConnectionRecord {
 
   /** The account `check()` returned. */
   readonly account: ConnectedAccount;
+
+  /** Whose account it acts on; `byo` when absent. */
+  readonly source?: ProviderSource;
+
+  /** The managed resource on the platform account it points at; only on a `managed` connection. */
+  readonly resourceId?: string;
 }

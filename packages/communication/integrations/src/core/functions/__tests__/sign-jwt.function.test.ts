@@ -8,7 +8,6 @@
  */
 import { describe, expect, it } from "@stackra/testing";
 
-import { AuthType } from "#core/enums/auth-type.enum";
 import { encodeBase64 } from "#core/functions/encode-base64.function";
 import { signJwt } from "#core/functions/sign-jwt.function";
 
@@ -41,7 +40,6 @@ describe("signJwt", () => {
   it("signs HS256 with the declared claims and the expiry", async () => {
     const token = await signJwt(
       {
-        type: AuthType.Jwt,
         algorithm: "HS256",
         key: "{key}",
         keyId: "k1",
@@ -88,12 +86,8 @@ describe("signJwt", () => {
     const rsaPem = await pemOf(rsa.privateKey);
     const ecPem = await pemOf(ec.privateKey);
 
-    const rs = partsOf(
-      await signJwt({ type: AuthType.Jwt, algorithm: "RS256", key: rsaPem }, (t) => t, NOW),
-    );
-    const es = partsOf(
-      await signJwt({ type: AuthType.Jwt, algorithm: "ES256", key: ecPem }, (t) => t, NOW),
-    );
+    const rs = partsOf(await signJwt({ algorithm: "RS256", key: rsaPem }, (t) => t, NOW));
+    const es = partsOf(await signJwt({ algorithm: "ES256", key: ecPem }, (t) => t, NOW));
 
     await expect(
       crypto.subtle.verify("RSASSA-PKCS1-v1_5", rsa.publicKey, rs.signature, rs.input),
@@ -107,5 +101,15 @@ describe("signJwt", () => {
       ),
     ).resolves.toBe(true);
     expect(es.claims).toEqual({ iat: 1_792_832_400, exp: 1_792_832_700 });
+  });
+
+  it("adds extra claims, the declared ones winning", async () => {
+    const token = await signJwt(
+      { algorithm: "HS256", key: "secret", issuer: "svc@example" },
+      (template) => template,
+      NOW,
+      { scope: "a b", iss: "ignored" },
+    );
+    expect(partsOf(token).claims).toMatchObject({ scope: "a b", iss: "svc@example" });
   });
 });

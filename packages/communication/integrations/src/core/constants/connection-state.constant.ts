@@ -8,10 +8,16 @@
  */
 import type { PublicId } from "@stackra/contracts";
 
+import type { ProviderSource } from "#contracts/enums/provider-source.enum";
 import type { IntegrationApi } from "#core/types/integration-api.type";
 
-/** Connection instance to its id and client. */
+/** Connection instance to its id, its source, its managed resource and its client. */
 export const CONNECTION_STATE = new WeakMap<
   object,
-  { readonly id: PublicId<"conn">; api?: IntegrationApi }
+  {
+    readonly id: PublicId<"conn">;
+    readonly source?: ProviderSource;
+    readonly resourceId?: string;
+    api?: IntegrationApi;
+  }
 >();

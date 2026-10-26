@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
- * Purpose: `signJwt`, the bearer token of a `Jwt` integration: a compact JWS with `iat`, `exp` and the declared `iss`,
- *          `sub` and `aud`, signed with HS256 (a shared secret), RS256 or ES256 (a PKCS #8 PEM private key).
+ * Purpose: `signJwt`, the bearer token of a `Jwt` integration and the assertion of an `OAuth2JwtBearer` one: a compact
+ *          JWS with `iat`, `exp`, the declared `iss`, `sub` and `aud` and any extra claims (`scope`), signed with HS256
+ *          (a shared secret), RS256 or ES256 (a PKCS #8 PEM private key).
  * Boundary: internal; the managed client calls it per request with the key resolved from its placeholder. Web Crypto
  *           only (`crypto.subtle`), so it runs in Node, Workers and the browser alike. The key is imported as
  *           non-extractable and never logged.
@@ -13,8 +14,11 @@ import { encodeBase64 } from "#core/functions/encode-base64.function";
 import { intervalMs } from "#core/functions/interval-ms.function";
 import type { AuthOptions } from "#core/types/auth-options.type";
 
-/** The `auth` options of a JWT integration. */
-type JwtOptions = Extract<AuthOptions, { readonly type: typeof AuthType.Jwt }>;
+/** What a JWT is signed from: the `auth` options of a JWT integration, or the same fields of a JWT bearer one. */
+type JwtOptions = Pick<
+  Extract<AuthOptions, { readonly type: typeof AuthType.Jwt }>,
+  "algorithm" | "key" | "keyId" | "issuer" | "subject" | "audience" | "expiresIn"
+>;
 
 /** The Web Crypto import and sign parameters of each algorithm. */
 const ALGORITHMS = {
@@ -42,6 +46,7 @@ function derOf(pem: string): Uint8Array<ArrayBuffer> {
  *
  * @param resolve - fills the placeholders of the key and the claims.
  * @param now - the issue time; the token expires `expiresIn` (5 minutes by default) after it.
+ * @param extra - claims added as they are (`{ scope: "a b" }`); the declared ones win.
  * @example
  * headers.set("authorization", `Bearer ${await signJwt(auth, resolve, clock.now())}`);
  */
@@ -49,6 +54,7 @@ export async function signJwt(
   auth: JwtOptions,
   resolve: (template: string) => string,
   now: Date,
+  extra: Readonly<Record<string, string>> = {},
 ): Promise<string> {
   const algorithm = ALGORITHMS[auth.algorithm];
   const issuedAt = Math.floor(now.getTime() / 1000);
@@ -58,6 +64,7 @@ export async function signJwt(
     ...(auth.keyId === undefined ? {} : { kid: resolve(auth.keyId) }),
   };
   const claims = {
+    ...extra,
     ...(auth.issuer === undefined ? {} : { iss: resolve(auth.issuer) }),
     ...(auth.subject === undefined ? {} : { sub: resolve(auth.subject) }),
     ...(auth.audience === undefined ? {} : { aud: resolve(auth.audience) }),

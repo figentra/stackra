@@ -7,6 +7,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0308 (rules 2, 9, 14 and 17).
  */
+import type { ProviderSource } from "#contracts/enums/provider-source.enum";
 import type { Connection } from "#core/bases/connection.base";
 import type { ConnectionLevel } from "#core/enums/connection-level.enum";
 import type { ConnectionFields } from "#core/types/connection-fields.type";
@@ -30,4 +31,10 @@ export interface ConnectInput<C extends Connection> {
 
   /** The connection's webhook URL, subscribed at the provider when the connection has `subscribe()`. */
   readonly webhookUrl?: string;
+
+  /** Whose account it acts on; `byo` when left out. A `managed` one uses the platform's key. */
+  readonly source?: ProviderSource;
+
+  /** The `ManagedResource` a `managed` connection points at; refused on a `byo` one. */
+  readonly resourceId?: string;
 }

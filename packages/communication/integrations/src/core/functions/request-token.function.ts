@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: `requestToken`, one call to an OAuth token endpoint (a client credentials grant, a refresh), answered as
- *          `OAuthTokens`.
+ * Purpose: `requestToken`, one call to an OAuth token endpoint (a client credentials grant, a refresh, a JWT bearer
+ *          assertion), answered as `OAuthTokens`.
  * Boundary: internal. A 4xx answer is a `ProviderRefusedError` carrying the OAuth error code (`invalid_grant`); no
  *           answer, a 408, a 429, a 5xx or an answer without an access token is a retryable `ProviderUnavailableError`.
  *           The answer body, which holds the tokens, is never put in an error.
@@ -20,12 +20,12 @@ interface TokenRequest {
   readonly url: string;
   /** The grant's form fields (`grant_type`, `refresh_token`, `scope`). */
   readonly form: Readonly<Record<string, string>>;
-  /** The client id. */
-  readonly clientId: string;
+  /** The client id; none for a grant whose assertion names the client (JWT bearer). */
+  readonly clientId?: string | undefined;
   /** The client secret; none for a public client. */
-  readonly clientSecret: string | undefined;
-  /** How the client authenticates. */
-  readonly authentication: "basic" | "body";
+  readonly clientSecret?: string | undefined;
+  /** How the client authenticates; `"basic"` when left out. */
+  readonly authentication?: "basic" | "body";
   /** The provider's code, for the refusals. */
   readonly provider: string;
   /** When the request is sent, so `expires_in` becomes an instant. */
@@ -62,7 +62,7 @@ export async function requestToken(request: TokenRequest): Promise<OAuthTokens> 
         request.form,
         request.clientId,
         request.clientSecret,
-        request.authentication,
+        request.authentication ?? "basic",
       ),
     );
   } catch (error) {

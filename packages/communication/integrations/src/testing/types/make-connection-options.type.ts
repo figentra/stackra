@@ -8,6 +8,7 @@
  */
 import type { PublicId } from "@stackra/contracts";
 
+import type { ProviderSource } from "#contracts/index";
 import type { Connection, ConnectionFields, IntegrationApi } from "#core/index";
 
 /**
@@ -25,4 +26,10 @@ export interface MakeConnectionOptions<C extends Connection> {
 
   /** The connection's id; `conn_00000000000000000000000000` when left out. */
   readonly id?: PublicId<"conn">;
+
+  /** Whose account it acts on; `byo` when left out. */
+  readonly source?: ProviderSource;
+
+  /** The managed resource it points at. */
+  readonly resourceId?: string;
 }

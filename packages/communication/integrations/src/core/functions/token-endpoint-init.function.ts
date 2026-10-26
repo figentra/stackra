@@ -3,7 +3,7 @@
  * Purpose: `tokenEndpointInit`, the `fetch` init of a form `POST` to an OAuth endpoint (token, revocation), with the
  *          client authenticated by an HTTP Basic header or by form fields, as the Integration declares.
  * Boundary: internal; `requestToken` and `IntegrationRuntime#revoke` call it. A public client (no secret) always sends
- *           its id as a form field.
+ *           its id as a form field; a grant with no client (the JWT bearer grant, RFC 7523) sends neither.
  * Runtime: isomorphic
  * Governing contract: RFC 6749 (section 2.3.1); RFC 7009 (section 2.1).
  */
@@ -17,7 +17,7 @@ import { encodeBase64 } from "#core/functions/encode-base64.function";
  */
 export function tokenEndpointInit(
   form: Readonly<Record<string, string>>,
-  clientId: string,
+  clientId: string | undefined,
   clientSecret: string | undefined,
   authentication: "basic" | "body",
 ): RequestInit {
@@ -26,6 +26,7 @@ export function tokenEndpointInit(
     accept: "application/json",
     "content-type": "application/x-www-form-urlencoded",
   });
+  if (clientId === undefined) return { method: "POST", headers, body };
   if (authentication === "basic" && clientSecret !== undefined)
     headers.set(
       "authorization",

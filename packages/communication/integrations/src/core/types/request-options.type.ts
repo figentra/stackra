@@ -27,8 +27,9 @@ export interface RequestOptions {
   readonly signal?: AbortSignal;
 
   /**
-   * Sends the body as `application/x-www-form-urlencoded` (Twilio, Unifonic) instead of JSON. The body must then be a
-   * flat record of strings, numbers and booleans; an array value repeats its key.
+   * Sends the body as `application/x-www-form-urlencoded` (Twilio, Unifonic) instead of JSON, or as JSON when false.
+   * Left out, the Integration's `requestBody` decides. A form body must be a flat record of strings, numbers and
+   * booleans; an array value repeats its key.
    */
   readonly form?: boolean;
 }

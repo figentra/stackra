@@ -24,7 +24,7 @@ import type { IntegrationApi } from "#core/types/integration-api.type";
  */
 export function hydrateConnection<C extends Connection>(
   type: ConnectionClass<C>,
-  record: Pick<ConnectionRecord, "id" | "fields" | "secrets">,
+  record: Pick<ConnectionRecord, "id" | "fields" | "secrets" | "source" | "resourceId">,
   apiFor: (connection: C) => IntegrationApi,
 ): C {
   const connection = Reflect.construct(type, []) as C;
@@ -36,7 +36,11 @@ export function hydrateConnection<C extends Connection>(
       writable: false,
       configurable: true,
     });
-  const state: { readonly id: ConnectionRecord["id"]; api?: IntegrationApi } = { id: record.id };
+  const state: NonNullable<ReturnType<typeof CONNECTION_STATE.get>> = {
+    id: record.id,
+    ...(record.source === undefined ? {} : { source: record.source }),
+    ...(record.resourceId === undefined ? {} : { resourceId: record.resourceId }),
+  };
   CONNECTION_STATE.set(connection, state);
   state.api = apiFor(connection);
   return connection;

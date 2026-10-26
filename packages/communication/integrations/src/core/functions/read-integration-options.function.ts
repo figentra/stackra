@@ -28,6 +28,12 @@ const PROVIDER = /^[a-z0-9]+(?:[-_][a-z0-9]+)*$/;
 /** The JWT algorithms the managed client signs with. */
 const JWT_ALGORITHMS: readonly string[] = ["HS256", "RS256", "ES256"];
 
+/** The algorithms a JWT bearer assertion is signed with: a private key, never a shared secret. */
+const ASSERTION_ALGORITHMS: readonly string[] = ["RS256", "ES256"];
+
+/** The HMAC hashes a webhook signature recipe may name. */
+const HMAC_HASHES: readonly string[] = ["SHA-1", "SHA-256", "SHA-512"];
+
 /** Throws a `TypeError` naming the option unless `ok`. */
 function ensure(ok: boolean, option: string, needs: string): void {
   if (!ok) throw new TypeError(`Integration({ ${option} }) ${needs}`);
@@ -140,9 +146,26 @@ export function readIntegrationOptions(
       );
       checkInterval(auth.refresh?.buffer);
       break;
+    case AuthType.OAuth2JwtBearer:
+      ensure(
+        isHttpUrl(auth.tokenUrl) &&
+          isText(auth.key) &&
+          isText(auth.issuer) &&
+          (auth.algorithm === undefined || ASSERTION_ALGORITHMS.includes(auth.algorithm)),
+        "auth",
+        "of a JWT bearer grant needs tokenUrl, key, issuer and an RS256 or ES256 algorithm",
+      );
+      checkInterval(auth.expiresIn, true);
+      checkInterval(auth.refresh?.buffer);
+      break;
     case AuthType.None:
       break;
   }
+  ensure(
+    options.requestBody === undefined || ["json", "form"].includes(options.requestBody),
+    "requestBody",
+    'needs "json" or "form"',
+  );
   ensure(
     options.baseUrl === undefined ||
       isHttpUrl(options.baseUrl) ||
@@ -190,13 +213,38 @@ export function readIntegrationOptions(
       "needs failAfter from 1",
     );
   }
-  if (options.webhooks !== undefined)
+  if (options.webhooks !== undefined) {
     ensure(
       isText(options.webhooks.scheme) &&
         isText(options.webhooks.secret) &&
-        isText(options.webhooks.eventType?.path),
+        isText(options.webhooks.eventType?.path) &&
+        (options.webhooks.eventId === undefined || isText(options.webhooks.eventId.path)),
       "webhooks",
       "need a scheme, a secret placeholder and an eventType path",
     );
+    const signature = options.webhooks.signature;
+    if (signature !== undefined) {
+      const timestamped = isText(signature.timestampHeader) || isText(signature.parts?.timestamp);
+      ensure(
+        isText(signature.header) &&
+          HMAC_HASHES.includes(signature.algorithm) &&
+          ["hex", "base64"].includes(signature.encoding) &&
+          (signature.secretEncoding === undefined ||
+            ["utf8", "base64"].includes(signature.secretEncoding)) &&
+          isText(signature.payload) &&
+          signature.payload.includes("{body}") &&
+          (!signature.payload.includes("{timestamp}") || timestamped) &&
+          (!signature.payload.includes("{id}") || isText(signature.idHeader)) &&
+          (signature.parts === undefined ||
+            (isText(signature.parts.separator) &&
+              isText(signature.parts.assign) &&
+              isText(signature.parts.signature))) &&
+          (signature.tolerance === undefined || timestamped),
+        "webhooks",
+        "signature needs a header, an HMAC hash, an encoding, a payload with {body}, and a timestamp for {timestamp} or a tolerance",
+      );
+      checkInterval(signature.tolerance, true);
+    }
+  }
   return { ...options, roles: options.roles ?? [], multiple: options.multiple ?? false };
 }

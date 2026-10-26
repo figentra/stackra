@@ -4,7 +4,8 @@
  *          Integration's `baseUrl`, so a call never leaves its origin (the egress allowlist), adds the credentials
  *          of the Integration's `auth` type, keeps to its rate limits, retries what is safe to retry, and turns every
  *          provider outcome into a value or a typed refusal.
- * Boundary: internal; `IntegrationRuntime#client` builds it. JSON in and out, or a form body when the call asks. A
+ * Boundary: internal; `IntegrationRuntime#client` builds it. JSON in and out, or a form body when the call or the
+ *           Integration's `requestBody` asks. A
  *           `{field}` placeholder in the base URL (a per-region host) is filled from the credential set and must
  *           resolve to an https origin. A `GET`, `HEAD`, `PUT` or `DELETE`
  *           retries on no answer, 408, 429 or 5xx; a `POST` or `PATCH` only with an idempotency key the provider
@@ -137,7 +138,8 @@ export function managedClient(options: ManagedClientOptions): IntegrationApi {
         );
         return;
       case AuthType.OAuth2Code:
-      case AuthType.OAuth2ClientCredentials: {
+      case AuthType.OAuth2ClientCredentials:
+      case AuthType.OAuth2JwtBearer: {
         if (options.accessToken === undefined)
           throw new TypeError(
             `${name} authenticates with OAuth, so it calls only through a connection that holds its tokens`,
@@ -175,13 +177,11 @@ export function managedClient(options: ManagedClientOptions): IntegrationApi {
     request: RequestOptions = {},
   ): Promise<unknown> {
     const url = urlOf(path, request.query);
+    const form = request.form ?? declared.requestBody === "form";
     const headers = new Headers(request.headers);
     if (!headers.has("accept")) headers.set("accept", "application/json");
     if (body !== undefined)
-      headers.set(
-        "content-type",
-        request.form === true ? "application/x-www-form-urlencoded" : "application/json",
-      );
+      headers.set("content-type", form ? "application/x-www-form-urlencoded" : "application/json");
     const key = request.idempotencyKey;
     if (key !== undefined && idempotencyHeader !== undefined) headers.set(idempotencyHeader, key);
     const retryable =
@@ -190,9 +190,7 @@ export function managedClient(options: ManagedClientOptions): IntegrationApi {
     const init: RequestInit = {
       method,
       headers,
-      ...(body === undefined
-        ? {}
-        : { body: request.form === true ? formOf(body) : JSON.stringify(body) }),
+      ...(body === undefined ? {} : { body: form ? formOf(body) : JSON.stringify(body) }),
       ...(request.signal === undefined ? {} : { signal: request.signal }),
     };
     for (let attempt = 1; ; attempt += 1) {

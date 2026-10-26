@@ -16,8 +16,11 @@ describe("@stackra/integrations/contracts", () => {
     expect(Object.keys(contracts).sort()).toEqual([
       "CallStatus",
       "ConnectionContext",
+      "ManagedProvisioning",
       "MarketContext",
       "ProviderDefaults",
+      "ProviderSource",
+      "ProvisioningStatus",
       "RecordingConsent",
     ]);
   });
