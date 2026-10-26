@@ -22,7 +22,7 @@ export class NoTemplateError extends Refusal({
   /** The notification's key. */
   key!: string;
 
-  /** The channel. */
+  /** The channel that has no template. */
   channel!: string;
 
   /** The variant asked for. */

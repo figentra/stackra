@@ -25,7 +25,7 @@ import { PromotionBaseStaleError } from "#core/errors/promotion-base-stale.error
 import { PromotionReleaseTooOldError } from "#core/errors/promotion-release-too-old.error";
 import { compareReleases } from "#core/functions/compare-releases.function";
 import { diffSettingsPacks } from "#core/functions/diff-settings-packs.function";
-import { SettingsPackService } from "#core/services/settings-pack.service";
+import type { SettingsPackService } from "#core/services/settings-pack.service";
 
 /**
  * The settings kind of a promotion.
@@ -35,25 +35,27 @@ import { SettingsPackService } from "#core/services/settings-pack.service";
  * await settings.apply(live, diff, approver);
  */
 export class SettingsPromotableDriver extends Driver(Promotable) {
-  /** See `Promotable.kind`. */
+  /** The kind's key, as the promotion record names it. */
   readonly kind = "settings";
 
   /** The packs over the store. */
   private readonly packs: SettingsPackService;
 
-  /** @param packs - the settings pack service. */
+  /**
+   * @param packs - the settings pack service.
+   */
   constructor(packs: SettingsPackService) {
     super();
     this.packs = packs;
   }
 
-  /** See `Promotable.export`. */
+  /** The settings snapshot the holder at `scope` itself holds. */
   async export(scope: ScopeRef): Promise<SettingsPack> {
     return this.packs.exportPack({ scope }, [...SETTING_KEY_REGISTRY.keys()]);
   }
 
   /**
-   * See `Promotable.diff`.
+   * The settings change from live at `live` to `next`.
    *
    * @throws TypeError when `release` is not a release.
    */
@@ -74,7 +76,7 @@ export class SettingsPromotableDriver extends Driver(Promotable) {
     };
   }
 
-  /** See `Promotable.apply`. */
+  /** Applies `diff` to live at `live`, recorded as made by `approver`. */
   async apply(
     live: ScopeRef,
     diff: PromotionDiff,
@@ -105,7 +107,7 @@ export class SettingsPromotableDriver extends Driver(Promotable) {
     });
   }
 
-  /** See `Promotable.rollbackOf`. */
+  /** The change set that rolls back `applied` on live at `live`. */
   async rollbackOf(
     live: ScopeRef,
     applied: PromotionDiff,

@@ -43,7 +43,7 @@ export class MarketPackSettingFloorSourceDriver extends Driver(SettingFloorSourc
   }
 
   /**
-   * See `SettingFloorSource.floors`.
+   * The floors the market pack sets on `group`.
    *
    * @throws TypeError when `group` is not registered in this process, or a matched floor cannot bound a setting.
    */

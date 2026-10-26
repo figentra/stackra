@@ -28,6 +28,42 @@ function issuesOf(run: () => unknown): readonly RunwayIssue[] {
   throw new Error("Expected an ObservabilityConfigInvalidError");
 }
 
+/** The heartbeats the plan derives for `environment`. */
+const beats = (environment: string) => [
+  {
+    environment,
+    service: "commerce",
+    kind: "cron",
+    name: "nightly-export",
+    periodSeconds: 86_400,
+    graceSeconds: 17_280,
+  },
+  {
+    environment,
+    service: "notifications",
+    kind: "relay",
+    name: "outbox",
+    periodSeconds: 60,
+    graceSeconds: 12,
+  },
+];
+
+/** The default indicators the plan derives for `service`. */
+const indicators = (service: string) => [
+  {
+    service,
+    kind: SliKind.Availability,
+    metric: "http.server.request.duration",
+    goodWhen: "http.response.status_code < 500",
+  },
+  {
+    service,
+    kind: SliKind.Latency,
+    metric: "http.server.request.duration",
+    quantiles: [0.95, 0.99],
+  },
+];
+
 describe("observabilityPlan", () => {
   it("plans the template's telemetry", () => {
     const plan = observabilityPlan(rootRunway(TEMPLATE_ROOT), {
@@ -44,38 +80,6 @@ describe("observabilityPlan", () => {
       ],
     });
 
-    const beats = (environment: string) => [
-      {
-        environment,
-        service: "commerce",
-        kind: "cron",
-        name: "nightly-export",
-        periodSeconds: 86_400,
-        graceSeconds: 17_280,
-      },
-      {
-        environment,
-        service: "notifications",
-        kind: "relay",
-        name: "outbox",
-        periodSeconds: 60,
-        graceSeconds: 12,
-      },
-    ];
-    const indicators = (service: string) => [
-      {
-        service,
-        kind: SliKind.Availability,
-        metric: "http.server.request.duration",
-        goodWhen: "http.response.status_code < 500",
-      },
-      {
-        service,
-        kind: SliKind.Latency,
-        metric: "http.server.request.duration",
-        quantiles: [0.95, 0.99],
-      },
-    ];
     expect(plan).toEqual({
       project: "acme-platform",
       environments: ["staging", "production"],
@@ -164,26 +168,28 @@ describe("observabilityPlan", () => {
   });
 
   it("refuses heartbeats or retention without Better Stack", () => {
-    const run = () =>
-      observabilityPlan(rootRunway({ environments: { staging: {} } }), {
-        apps: {},
-        services: ["commerce"],
-        heartbeats: [
-          { service: "commerce", kind: HeartbeatKind.Cron, name: "sweep", periodSeconds: 60 },
-        ],
-      });
-
-    expect(issuesOf(run).map((issue) => issue.path)).toEqual(["root.providers.betterstack"]);
+    expect(
+      issuesOf(() =>
+        observabilityPlan(rootRunway({ environments: { staging: {} } }), {
+          apps: {},
+          services: ["commerce"],
+          heartbeats: [
+            { service: "commerce", kind: HeartbeatKind.Cron, name: "sweep", periodSeconds: 60 },
+          ],
+        }),
+      ).map((issue) => issue.path),
+    ).toEqual(["root.providers.betterstack"]);
   });
 
   it("refuses an organization given as a ref", () => {
-    const run = () =>
-      observabilityPlan(rootRunway({ providers: { sentry: { org: "ref:sentry.org" } } }), {
-        apps: { web: appRunway("acme-web") },
-        services: [],
-      });
-
-    expect(issuesOf(run)).toEqual([
+    expect(
+      issuesOf(() =>
+        observabilityPlan(rootRunway({ providers: { sentry: { org: "ref:sentry.org" } } }), {
+          apps: { web: appRunway("acme-web") },
+          services: [],
+        }),
+      ),
+    ).toEqual([
       {
         path: "root.providers.sentry.org",
         message: "Expected the organization slug (public, never a ref:)",
@@ -192,30 +198,29 @@ describe("observabilityPlan", () => {
   });
 
   it("reports every failure at once", () => {
-    const run = () =>
-      observabilityPlan(
-        rootRunway({
-          providers: { betterstack: {} },
-          observability: { logs: { hotDays: 0, hotDay: 3 }, slos: { startAt: "now" } },
-        }),
-        {
-          apps: {
-            web: appRunway("acme-web"),
-            admin: appRunway("acme-web"),
-            shop: appRunway("Bad Slug"),
-          },
-          services: ["commerce"],
-          heartbeats: [
-            { service: "ledger", kind: HeartbeatKind.Cron, name: "nightly", periodSeconds: 60 },
-            { service: "commerce", kind: HeartbeatKind.Cron, name: "Nightly", periodSeconds: 60 },
-            { service: "commerce", kind: HeartbeatKind.Cron, name: "sweep", periodSeconds: 10 },
-            { service: "commerce", kind: HeartbeatKind.Cron, name: "sweep", periodSeconds: 60 },
-          ],
-        },
-      );
-
     expect(
-      issuesOf(run)
+      issuesOf(() =>
+        observabilityPlan(
+          rootRunway({
+            providers: { betterstack: {} },
+            observability: { logs: { hotDays: 0, hotDay: 3 }, slos: { startAt: "now" } },
+          }),
+          {
+            apps: {
+              web: appRunway("acme-web"),
+              admin: appRunway("acme-web"),
+              shop: appRunway("Bad Slug"),
+            },
+            services: ["commerce"],
+            heartbeats: [
+              { service: "ledger", kind: HeartbeatKind.Cron, name: "nightly", periodSeconds: 60 },
+              { service: "commerce", kind: HeartbeatKind.Cron, name: "Nightly", periodSeconds: 60 },
+              { service: "commerce", kind: HeartbeatKind.Cron, name: "sweep", periodSeconds: 10 },
+              { service: "commerce", kind: HeartbeatKind.Cron, name: "sweep", periodSeconds: 60 },
+            ],
+          },
+        ),
+      )
         .map((issue) => issue.path)
         .sort(),
     ).toEqual([

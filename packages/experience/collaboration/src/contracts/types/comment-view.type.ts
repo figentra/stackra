@@ -15,7 +15,7 @@ export interface CommentView {
   /** The comment's public id. */
   readonly id: PublicId<"cmt">;
 
-  /** Its thread. */
+  /** The thread it belongs to. */
   readonly threadId: PublicId<"cth">;
 
   /** Who wrote it. */

@@ -44,10 +44,10 @@ export function listenCustomerDisplay(
   if (typeof BroadcastChannel === "undefined")
     throw new TypeError("listenCustomerDisplay needs BroadcastChannel");
   const channel = new BroadcastChannel(CUSTOMER_DISPLAY_CHANNEL);
-  channel.onmessage = (event: MessageEvent<unknown>) => {
+  channel.addEventListener("message", (event: MessageEvent<unknown>) => {
     const data = event.data as { type?: unknown; view?: unknown } | null;
     if (data?.type === "clear") listener(null);
     else if (data?.type === "show" && isView(data.view)) listener(data.view);
-  };
+  });
   return () => channel.close();
 }

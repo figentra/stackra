@@ -24,16 +24,17 @@ import type { Clock } from "@stackra/contracts";
 import { LiveReadOnlyError } from "@stackra/errors";
 import { validate } from "@stackra/validation";
 
-import {
+import { SettingEnvironment, SettingRevisionStatus, SettingSource } from "#contracts/index";
+import type {
+  SettingLayer,
+  SettingRevision,
+  SettingTarget,
+  SettingValue,
   SettingEntitlementSource,
-  SettingEnvironment,
   SettingFloorSource,
-  SettingRevisionStatus,
   SettingRevisionStore,
-  SettingSource,
   SettingValueStore,
 } from "#contracts/index";
-import type { SettingLayer, SettingRevision, SettingTarget, SettingValue } from "#contracts/index";
 import type { Settings } from "#core/bases/settings.base";
 import { SETTING_KEY_REGISTRY } from "#core/constants/setting-key-registry.constant";
 import { SettingFourEyesError } from "#core/errors/setting-four-eyes.error";

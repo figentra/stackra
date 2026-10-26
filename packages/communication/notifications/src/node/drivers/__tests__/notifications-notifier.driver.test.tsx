@@ -49,6 +49,7 @@ const LOGO = {
 /** The trigger: who paid. */
 class OrderPaid {
   readonly orderId = "ord_1";
+
   readonly recipients: readonly Recipient[];
 
   constructor(recipients: readonly Recipient[]) {

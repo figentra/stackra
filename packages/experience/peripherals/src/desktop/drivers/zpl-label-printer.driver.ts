@@ -14,7 +14,7 @@ import { Driver } from "@stackra/container";
 import { Capability } from "@stackra/platform";
 import type { CapabilityResult } from "@stackra/platform/contracts";
 
-import { PeripheralsConfig } from "#config/peripherals.config";
+import type { PeripheralsConfig } from "#config/peripherals.config";
 import { LabelFormat } from "#contracts/enums/label-format.enum";
 import { LabelPrinter } from "#contracts/ports/label-printer.port";
 import type { Label } from "#contracts/types/label.type";
@@ -41,7 +41,9 @@ export class ZplLabelPrinterDriver extends Driver(LabelPrinter) {
   /** The peripherals configuration, for the label printer's address. */
   private readonly config: PeripheralsConfig;
 
-  /** @param config - the peripherals configuration. */
+  /**
+   * @param config - the peripherals configuration.
+   */
   constructor(config: PeripheralsConfig) {
     super();
     this.config = config;

@@ -15,7 +15,7 @@ import { publicId } from "@stackra/validation";
 import { z } from "zod";
 
 /**
- * `delivery.message.send@1`.
+ * The remote action `delivery.message.send@1`.
  *
  * @example
  * new NotificationsClient(transport, SEND_DELIVERY_MESSAGE_ACTION).send.queue(input);

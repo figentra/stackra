@@ -31,7 +31,7 @@ describe(fakeResolver, () => {
     expect(fake.resolver).toBeInstanceOf(SettingsResolver);
     const [root] = await fake.values.layers("returns", {});
     expect(root?.values).toEqual({ windowDays: 7 });
-    await expect(fake.floors.floors("returns")).resolves.toEqual([FLOOR]);
+    await expect(fake.floors.floors("returns", {})).resolves.toEqual([FLOOR]);
     expect(fake.clock.now().toISOString()).toBe("2026-10-26T09:00:00.000Z");
     fake.clock.at = new Date("2026-10-27T09:00:00.000Z");
     expect(fake.clock.now().toISOString()).toBe("2026-10-27T09:00:00.000Z");

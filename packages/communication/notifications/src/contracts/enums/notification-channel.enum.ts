@@ -11,7 +11,7 @@
 import { Enum } from "@stackra/contracts";
 
 /**
- * The channels.
+ * The channels a notification can be delivered through.
  *
  * @example
  * const order = settings.notifications.channelOrder; // ["whatsapp", "sms", "mail"], from data

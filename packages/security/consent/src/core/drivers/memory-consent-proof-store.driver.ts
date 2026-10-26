@@ -21,7 +21,7 @@ export class MemoryConsentProofStoreDriver extends Driver(ConsentProofStore) {
   /** Every proof, in the order appended. */
   private proofs: readonly ConsentProof[] = [];
 
-  /** Appends `proof`. */
+  /** Appends `proof` to the in-memory list. */
   append(proof: ConsentProof): Promise<void> {
     this.proofs = [...this.proofs, Object.freeze({ ...proof })];
     return Promise.resolve();
@@ -30,7 +30,9 @@ export class MemoryConsentProofStoreDriver extends Driver(ConsentProofStore) {
   /** The latest proof of `subject` for `document`. */
   latest(subject: PublicId, document: string): Promise<ConsentProof | undefined> {
     return Promise.resolve(
-      this.proofs.findLast((proof) => proof.subject === subject && proof.document === document),
+      this.proofs
+        .filter((proof) => proof.subject === subject && proof.document === document)
+        .at(-1),
     );
   }
 

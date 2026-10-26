@@ -23,15 +23,24 @@ import { COLLABORATION_CONFIG_SCHEMA } from "#core/constants/collaboration-confi
  */
 export class CollaborationOptions extends Schema {
   /** The shortest wait between two cursor messages from this client, in milliseconds (16 to 1,000). */
-  @Int({ min: 16, max: 1000 })
+  @Int({
+    min: 16,
+    max: 1000,
+  })
   cursorIntervalMilliseconds = 50;
 
   /** The longest wait before local changes are saved as a snapshot, in seconds (1 to 3,600). */
-  @Int({ min: 1, max: 3600 })
+  @Int({
+    min: 1,
+    max: 3600,
+  })
   snapshotIntervalSeconds = 30;
 
   /** How often the realtime presence driver re-announces presence, in seconds (1 to 3,600), under the idle close. */
-  @Int({ min: 1, max: 3600 })
+  @Int({
+    min: 1,
+    max: 3600,
+  })
   presenceHeartbeatSeconds = 20;
 }
 

@@ -8,7 +8,7 @@
  * Boundary: declares Pulumi resources only. The provider's auth token (`sentry:token`, org and project write) is the
  *           owner's stack config; the release job's `SENTRY_AUTH_TOKEN` uploads source maps and is not this one. A
  *           DSN is public, so it is no secret output.
- * Runtime: node (Pulumi program)
+ * Runtime: node
  * Governing contract: ADR 0184 (decision 6: Sentry handles crash reports), ADR 0171 (decision 6: Sentry in the core
  *                     stack), ADR 0296 (decision 1: the project is a member fact).
  */

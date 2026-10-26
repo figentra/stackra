@@ -10,9 +10,9 @@
  */
 import { Driver } from "@stackra/container";
 import { Duration } from "@stackra/contracts";
-import { Storage } from "@stackra/storage/contracts";
+import type { Storage } from "@stackra/storage/contracts";
 
-import { ConsentConfig } from "#config/consent.config";
+import type { ConsentConfig } from "#config/consent.config";
 import { ConsentStore } from "#contracts/ports/consent-store.port";
 import type { ConsentRecord } from "#contracts/types/consent-record.type";
 import { CONSENT_STORAGE_KEY } from "#core/constants/consent-storage-key.constant";

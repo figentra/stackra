@@ -13,7 +13,7 @@ import type { OutboundPush } from "#contracts/types/outbound-push.type";
 import type { PushOutcome } from "#contracts/types/push-outcome.type";
 
 /**
- * Sends pushes.
+ * Sends pushes to Expo and Web Push devices.
  *
  * @example
  * const outcome = await push.send(message, delivery.commandKey);

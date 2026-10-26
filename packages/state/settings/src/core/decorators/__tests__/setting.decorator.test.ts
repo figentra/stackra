@@ -17,11 +17,17 @@ import { Setting } from "#core/decorators/setting.decorator";
 import { SettingScope } from "#core/enums/setting-scope.enum";
 
 class OrderCancellationSettings extends Schema {
-  @Int({ min: 5, max: 1440 })
+  @Int({
+    min: 5,
+    max: 1440,
+  })
   @Setting({ scopes: [SettingScope.Platform] })
   maxAutoCancelAfterMinutes = 60;
 
-  @Setting({ lockable: true, client: true })
+  @Setting({
+    lockable: true,
+    client: true,
+  })
   customersMayCancel = true;
 }
 
@@ -30,7 +36,10 @@ class OrdersSettings extends Settings({ scopes: [SettingScope.Platform, SettingS
   acceptingOrders = true;
 
   @Int({ min: 0 })
-  @Setting({ scopes: [SettingScope.Product], approval: true })
+  @Setting({
+    scopes: [SettingScope.Product],
+    approval: true,
+  })
   dailyRevenueTargetMinor: number | null = null;
 
   @Setting({ approval: true })

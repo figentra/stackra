@@ -279,7 +279,7 @@ export class CommentService extends CrudService<Comment> {
     const people = mentions.filter((target) => target.kind !== MentionKind.Assistant);
     if (people.length === 0) return mentions;
     const [unknown] = await this.directory.unknownAmong(scope, record, people);
-    if (unknown !== undefined) throw MentionNotAllowedError.create({ kind: unknown.kind });
+    if (unknown !== undefined) throw MentionNotAllowedError.create({ mentionKind: unknown.kind });
     return mentions;
   }
 
@@ -327,7 +327,9 @@ export class CommentService extends CrudService<Comment> {
     }
   }
 
-  /** @throws RecordHeldError when a legal hold covers the comment. */
+  /**
+   * @throws RecordHeldError when a legal hold covers the comment.
+   */
   private async assertNotHeld(comment: Comment): Promise<void> {
     const [free] = await disposableIds(Comment, [comment.id], Disposal.Delete);
     if (free === undefined)

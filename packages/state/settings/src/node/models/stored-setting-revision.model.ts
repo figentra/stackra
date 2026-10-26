@@ -55,7 +55,7 @@ export class StoredSettingRevision extends Model.with(HasPublicId("ssr"), Timest
   /** Whether it changed live configuration outside promotion. */
   breakGlass!: boolean;
 
-  /** Its state. */
+  /** Where the revision stands. */
   status!: SettingRevisionStatus;
 
   /** When it takes effect. */
@@ -68,9 +68,11 @@ export class StoredSettingRevision extends Model.with(HasPublicId("ssr"), Timest
   appliedAt!: Date | null;
 }
 
+/** Lets an insert of `StoredSettingRevision` leave out the trait timestamps. */
 // shortcut: the `[OptionalProps]` augmentation is written by hand so `CrudService.insert` may leave the trait timestamps
 // out; remove it once gen writes the entity files (STA-339).
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: the generated `[OptionalProps]` augmentation merges into the model, as gen's entity files do
 export interface StoredSettingRevision {
+  /** The trait timestamps an insert may leave out. */
   [OptionalProps]?: "createdAt" | "updatedAt";
 }

@@ -13,13 +13,13 @@
  *                     (entitlement-gated free code); ADR 0227 (no sync engine); ADR 0294 (decisions 16 and 17).
  */
 import { Service } from "@stackra/container";
-import { EntitlementSource } from "@stackra/entitlements";
+import type { EntitlementSource } from "@stackra/entitlements";
 import { EntitlementRequiredError } from "@stackra/errors";
 import { RealtimeStatus } from "@stackra/realtime";
 
-import { CollaborationConfig } from "#config/collaboration.config";
-import { PresenceChannel } from "#contracts/ports/presence-channel.port";
-import { SyncTransport } from "#contracts/ports/sync-transport.port";
+import type { CollaborationConfig } from "#config/collaboration.config";
+import type { PresenceChannel } from "#contracts/ports/presence-channel.port";
+import type { SyncTransport } from "#contracts/ports/sync-transport.port";
 import type { CollaborationCursor } from "#contracts/types/collaboration-cursor.type";
 import type { CollaborationRoom } from "#contracts/types/collaboration-room.type";
 import type { DocumentReplica } from "#contracts/types/document-replica.type";
@@ -53,6 +53,18 @@ interface Membership {
  * leave();
  */
 export class CollaborationSession extends Service {
+  /**
+   * Calls `listener` whenever any room's state changes; the shape `useSyncExternalStore` takes.
+   *
+   * @returns removes the listener.
+   */
+  readonly subscribe = (listener: () => void): (() => void) => {
+    this.listeners.add(listener);
+    return () => {
+      this.listeners.delete(listener);
+    };
+  };
+
   private readonly config: CollaborationConfig;
 
   private readonly presence: PresenceChannel;
@@ -83,18 +95,6 @@ export class CollaborationSession extends Service {
     this.sync = sync;
     this.entitlements = entitlements;
   }
-
-  /**
-   * Calls `listener` whenever any room's state changes; the shape `useSyncExternalStore` takes.
-   *
-   * @returns removes the listener.
-   */
-  readonly subscribe = (listener: () => void): (() => void) => {
-    this.listeners.add(listener);
-    return () => {
-      this.listeners.delete(listener);
-    };
-  };
 
   /** `room`'s state, or `null` while nobody holds it. Replaced, never mutated, on each change. */
   state(room: CollaborationRoom): CollaborationRoomState | null {

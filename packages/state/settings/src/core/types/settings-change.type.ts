@@ -16,7 +16,7 @@ import type { SettingValue } from "#contracts/index";
  * const row: SettingsChange = { group: "orders", path: "refundWindowDays", before: 14, after: 30, lockedBefore: false, lockedAfter: false };
  */
 export interface SettingsChange {
-  /** The group. */
+  /** The settings group that changed. */
   readonly group: string;
 
   /** The path, relative to the group. */

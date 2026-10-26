@@ -20,13 +20,15 @@ import type { MentionTarget } from "#contracts/index";
 export class MemoryMentionDirectoryDriver extends Driver(MentionDirectory) {
   private readonly known: Set<string>;
 
-  /** @param known - the targets that exist. */
+  /**
+   * @param known - the targets that exist.
+   */
   constructor(known: readonly MentionTarget[] = []) {
     super();
     this.known = new Set(known.map((target) => `${target.kind}:${target.id ?? ""}`));
   }
 
-  /** See `MentionDirectory.unknownAmong`. */
+  /** The targets among `targets` that this directory does not know. */
   unknownAmong(
     _scope: unknown,
     _record: unknown,

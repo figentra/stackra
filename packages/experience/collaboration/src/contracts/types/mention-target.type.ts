@@ -7,7 +7,7 @@
  */
 import type { MentionKind } from "#contracts/enums/mention-kind.enum";
 
-/** A mention. */
+/** Who or what a comment mentions. */
 export interface MentionTarget {
   /** What it points at. */
   readonly kind: MentionKind;

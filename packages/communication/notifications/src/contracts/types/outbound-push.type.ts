@@ -10,13 +10,13 @@ import type { PushTarget } from "#contracts/types/push-target.type";
 
 /** A push ready to send. */
 export interface OutboundPush {
-  /** The device. */
+  /** The device to push to. */
   readonly target: PushTarget;
 
-  /** The title. */
+  /** The push's title. */
   readonly title: string;
 
-  /** The body. */
+  /** The push's body text. */
   readonly body: string;
 
   /** Data the app reads (a route to open); no personal data. */

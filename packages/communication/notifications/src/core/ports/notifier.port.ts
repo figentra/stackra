@@ -14,7 +14,7 @@ import { Port } from "@stackra/contracts";
 import type { Notification } from "#core/bases/notification.base";
 
 /**
- * Sends notifications.
+ * Sends a notification to its recipients.
  *
  * @example
  * // what gen's listener for OrderPaid does

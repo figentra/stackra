@@ -8,6 +8,9 @@
  */
 import type { RasterImage } from "#contracts/types/raster-image.type";
 
+/** True when `value` is a positive whole number. */
+const isWhole = (value: number) => Number.isInteger(value) && value > 0;
+
 /**
  * The ZPL document of `image`, printed `copies` times.
  *
@@ -18,7 +21,6 @@ import type { RasterImage } from "#contracts/types/raster-image.type";
 export function zplRaster(image: RasterImage, copies: number): string {
   const rowBytes = Math.ceil(image.width / 8);
   const total = rowBytes * image.height;
-  const isWhole = (value: number) => Number.isInteger(value) && value > 0;
   if (!isWhole(image.width) || !isWhole(image.height))
     throw new RangeError("zplRaster: the image needs a positive whole width and height");
   if (image.data.length !== total)

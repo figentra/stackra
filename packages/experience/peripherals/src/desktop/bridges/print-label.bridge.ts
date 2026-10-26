@@ -15,7 +15,7 @@ import { Capability } from "@stackra/platform";
 import { Bridge } from "@stackra/platform/desktop";
 
 import { LabelFormat } from "#contracts/enums/label-format.enum";
-import { LabelPrinter } from "#contracts/ports/label-printer.port";
+import type { LabelPrinter } from "#contracts/ports/label-printer.port";
 import type { Label } from "#contracts/types/label.type";
 import type { PrintedLabel } from "#contracts/types/printed-label.type";
 import { LabelPrinterUnavailableError } from "#core/errors/label-printer-unavailable.error";
@@ -49,7 +49,9 @@ export class PrintLabelBridge extends Bridge({
   /** The label printer the wiring binds (`peripherals.labelPrinter`). */
   private readonly printer: LabelPrinter;
 
-  /** @param printer - the bound label printer. */
+  /**
+   * @param printer - the bound label printer.
+   */
   constructor(printer: LabelPrinter) {
     super();
     this.printer = printer;

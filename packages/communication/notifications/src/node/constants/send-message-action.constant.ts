@@ -14,7 +14,7 @@ import { publicId } from "@stackra/validation";
 import { z } from "zod";
 
 /**
- * `messages.message.send@1`.
+ * The remote action `messages.message.send@1`.
  *
  * @example
  * readonly message = { send: this.member(SEND_MESSAGE_ACTION) };

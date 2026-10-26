@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 /**
  * Stackra file contract:
  * Purpose: unit and type tests of `useConsent`: the category form gives the banner's `isLoaded`, `status`, `grant`,
@@ -9,6 +8,7 @@
  * Runtime: browser (vitest, jsdom)
  * Governing contract: ADR 0022; ADR 0269; ADR 0298 (decisions 1 to 3 and 6); ADR 0295 (decision 10).
  */
+// @vitest-environment jsdom
 import { Container } from "@stackra/container";
 import { ContainerProvider } from "@stackra/container/react";
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";

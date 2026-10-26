@@ -43,7 +43,9 @@ export class MemoryPresenceChannelDriver extends Driver(PresenceChannel) {
   // Shared with every driver made by `peer`.
   private rooms = new Map<string, Set<Member>>();
 
-  /** @param principalId - the principal this driver's links are stamped with. */
+  /**
+   * @param principalId - the principal this driver's links are stamped with.
+   */
   constructor(principalId: PublicId = "usr_00000000000000000000000000") {
     super();
     this.principalId = principalId;

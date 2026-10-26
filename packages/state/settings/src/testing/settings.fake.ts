@@ -44,7 +44,9 @@ export class SettingsFake extends SettingsReader {
   /** The memory store the fake reads, kept so `set` can seed it mid-test. */
   private readonly memory: MemorySettingValueStoreDriver;
 
-  /** @param entries - each settings class with the values the test gives it. */
+  /**
+   * @param entries - each settings class with the values the test gives it.
+   */
   constructor(entries: readonly (readonly [AnyClass<Settings>, object])[] = []) {
     const store = new MemorySettingValueStoreDriver();
     for (const [type, patch] of entries) store.seed(settingsKeyOf(type), flatten(patch));

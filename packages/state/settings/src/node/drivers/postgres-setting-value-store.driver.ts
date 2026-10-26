@@ -15,7 +15,7 @@ import { SettingValueStore } from "#contracts/index";
 import type { SettingLayer, SettingTarget, SettingValue } from "#contracts/index";
 import { refuseLockedPaths } from "#core/functions/refuse-locked-paths.function";
 import type { StoredSetting } from "#node/models/stored-setting.model";
-import { StoredSettingService } from "#node/services/stored-setting.service";
+import type { StoredSettingService } from "#node/services/stored-setting.service";
 
 /** The layer of one row, named by its node path or `user:<id>`. */
 const layerOf = (row: StoredSetting): SettingLayer => ({
@@ -40,18 +40,20 @@ export class PostgresSettingValueStoreDriver extends Driver(SettingValueStore) {
   /** The table's service. */
   private readonly settings: StoredSettingService;
 
-  /** @param settings - the table's service. */
+  /**
+   * @param settings - the table's service.
+   */
   constructor(settings: StoredSettingService) {
     super();
     this.settings = settings;
   }
 
-  /** See `SettingValueStore.layers`. */
+  /** The layers of `group` that apply at `target`, outermost first. */
   async layers(group: string, target: SettingTarget): Promise<readonly SettingLayer[]> {
     return (await this.settings.chainOf(group, target)).map(layerOf);
   }
 
-  /** See `SettingValueStore.write`. */
+  /** Sets each path of `values` in the target's own layer. */
   async write(
     group: string,
     target: SettingTarget,
@@ -63,7 +65,7 @@ export class PostgresSettingValueStoreDriver extends Driver(SettingValueStore) {
     await this.settings.store(group, target, values, locked);
   }
 
-  /** See `SettingValueStore.remove`. */
+  /** Removes each of `paths` from the target's own layer, so it inherits again. */
   async remove(group: string, target: SettingTarget, paths: readonly string[]): Promise<void> {
     await this.settings.drop(group, target, paths);
   }

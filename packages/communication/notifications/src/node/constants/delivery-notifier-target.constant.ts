@@ -11,6 +11,7 @@
  * Governing contract: ADR 0422 (decision 1, as amended by STA-1235); ADR 0223; ADR 0260 (decision 4).
  */
 import { SEND_DELIVERY_MESSAGE_ACTION } from "#node/constants/send-delivery-message-action.constant";
+import type { NotifierAddressMessage } from "#node/types/notifier-address-message.type";
 import type { NotifierMessage } from "#node/types/notifier-message.type";
 import type { NotifierTarget } from "#node/types/notifier-target.type";
 
@@ -24,8 +25,8 @@ import type { NotifierTarget } from "#node/types/notifier-target.type";
 export const DELIVERY_NOTIFIER_TARGET: NotifierTarget<typeof SEND_DELIVERY_MESSAGE_ACTION> =
   Object.freeze({
     action: SEND_DELIVERY_MESSAGE_ACTION,
-    payload: (message) => inputOf(message, { principalId: message.principalId }),
-    addressPayload: (message) => inputOf(message, { email: message.email }),
+    payload: (message: NotifierMessage) => inputOf(message, { principalId: message.principalId }),
+    addressPayload: (message: NotifierAddressMessage) => inputOf(message, { email: message.email }),
   });
 
 /** The action's input of `message` for `to`. */

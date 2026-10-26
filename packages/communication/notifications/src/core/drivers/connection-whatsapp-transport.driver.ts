@@ -45,6 +45,7 @@ export class ConnectionWhatsAppTransportDriver extends Driver(WhatsAppTransport)
     this.drivers = drivers;
   }
 
+  /** Sends `message` through the resolved connection once per `idempotencyKey`; a repeated key returns the first id. */
   async send(message: OutboundWhatsApp, idempotencyKey: string): Promise<string> {
     const known = await this.log.get(idempotencyKey);
     if (known !== undefined) return known;

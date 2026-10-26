@@ -13,7 +13,7 @@ import { Port } from "@stackra/contracts";
 import type { OutboundMail } from "#contracts/types/outbound-mail.type";
 
 /**
- * Sends mail.
+ * Sends outbound mail through a provider.
  *
  * @example
  * export class MemoryMailTransportDriver extends Driver(MailTransport) {

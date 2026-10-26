@@ -24,14 +24,14 @@ import { refuse } from "#core/functions/refuse.function";
  * display.current?.message; // "Welcome"
  */
 export class MemoryCustomerDisplayDriver extends Driver(CustomerDisplay) {
+  /** Every view shown, in order. */
+  readonly shown: CustomerDisplayView[] = [];
+
   /** Whether a display is there; false makes every call refuse with `unavailable`. */
   isPresent = true;
 
   /** What the display shows now; null when cleared. */
   current: CustomerDisplayView | null = null;
-
-  /** Every view shown, in order. */
-  readonly shown: CustomerDisplayView[] = [];
 
   /** Answers while present. */
   async probe(): Promise<CapabilityResult> {
@@ -39,7 +39,7 @@ export class MemoryCustomerDisplayDriver extends Driver(CustomerDisplay) {
     return { ok: true, data: undefined };
   }
 
-  /** Shows `view`. */
+  /** Shows `view` and records it. */
   async show(view: CustomerDisplayView): Promise<CapabilityResult> {
     if (!this.isPresent) return refuse(Capability.Window, "unavailable");
     this.current = view;

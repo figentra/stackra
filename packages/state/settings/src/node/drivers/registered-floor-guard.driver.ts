@@ -23,7 +23,7 @@ import { SETTING_KEY_REGISTRY } from "#core/constants/setting-key-registry.const
  */
 export class RegisteredFloorGuardDriver extends Driver(SettingFloorSource) {
   /**
-   * See `SettingFloorSource.floors`.
+   * The floors registered for `group` in this process.
    *
    * @throws TypeError when `group` is not registered in this process, or one of its keys declares a legal floor.
    */

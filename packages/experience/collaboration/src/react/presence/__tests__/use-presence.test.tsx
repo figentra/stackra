@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 /**
  * Stackra file contract:
  * Purpose: unit and type tests of `usePresence(room)`: `null` on the server, the room's state while mounted with the
@@ -9,6 +8,7 @@
  * Runtime: node (vitest, jsdom)
  * Governing contract: ADR 0022; ADR 0269; ADR 0225 (decision 2); ADR 0270 (decision 5).
  */
+// @vitest-environment jsdom
 import { buildConfig } from "@stackra/config";
 import { Container } from "@stackra/container";
 import { ContainerProvider } from "@stackra/container/react";

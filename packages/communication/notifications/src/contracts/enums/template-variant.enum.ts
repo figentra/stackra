@@ -11,7 +11,7 @@
  */
 import { Enum } from "@stackra/contracts";
 
-/** The variants. */
+/** The variants a notification template is written in. */
 export const TemplateVariant = Enum.of({
   /** The template with the record's content. */
   Full: "full",

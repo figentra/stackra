@@ -25,11 +25,11 @@ import { refuse } from "#core/functions/refuse.function";
  * labels.printed; // [the label]
  */
 export class MemoryLabelPrinterDriver extends Driver(LabelPrinter) {
-  /** Whether the printer answers; false makes every call refuse with `unavailable`. */
-  isPresent = true;
-
   /** Every label printed, in order. */
   readonly printed: Label[] = [];
+
+  /** Whether the printer answers; false makes every call refuse with `unavailable`. */
+  isPresent = true;
 
   /** Answers while present. */
   async probe(): Promise<CapabilityResult> {

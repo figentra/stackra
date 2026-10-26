@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 /**
  * Stackra file contract:
  * Purpose: unit and type tests of `useSharedDocument(room)`: one `Y.Doc` per document (guid = the document id),
@@ -9,6 +8,7 @@
  * Runtime: node (vitest, jsdom)
  * Governing contract: ADR 0022; ADR 0269; ADR 0225 (decision 2); ADR 0270 (decisions 5 and 6).
  */
+// @vitest-environment jsdom
 import { buildConfig } from "@stackra/config";
 import { Container, type Token } from "@stackra/container";
 import { ContainerProvider } from "@stackra/container/react";

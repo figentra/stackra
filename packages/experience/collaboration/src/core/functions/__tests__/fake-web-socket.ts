@@ -14,9 +14,9 @@ export class FakeWebSocket {
 
   readonly url: string;
 
-  readyState = 1;
-
   readonly sent: unknown[] = [];
+
+  readyState = 1;
 
   private readonly listeners = new Map<string, ((event: { data?: unknown }) => void)[]>();
 

@@ -90,6 +90,6 @@ describe("sentryProjects", () => {
       ],
     });
     expect(Object.keys(sentry.dsn)).toEqual(["web", "mobile"]);
-    expect(await valueOf(sentry.dsn["web"]!)).toBe("https://sentry-acme-web-key@sentry.test/1");
+    expect(await valueOf(sentry.dsn["web"])).toBe("https://sentry-acme-web-key@sentry.test/1");
   });
 });

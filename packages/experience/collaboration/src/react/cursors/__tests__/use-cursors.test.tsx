@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 /**
  * Stackra file contract:
  * Purpose: unit and type tests of `useCursors(room)`: only peers with a cursor are listed, the move function shows this
@@ -8,6 +7,7 @@
  * Runtime: node (vitest, jsdom)
  * Governing contract: ADR 0022; ADR 0269; ADR 0225 (decision 2: cursors); ADR 0270 (decision 6).
  */
+// @vitest-environment jsdom
 import { buildConfig } from "@stackra/config";
 import { Container } from "@stackra/container";
 import { ContainerProvider } from "@stackra/container/react";

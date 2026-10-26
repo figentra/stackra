@@ -32,13 +32,15 @@ const ROWS = z.array(z.object({ state: z.instanceof(Uint8Array), saved_at: z.coe
 export class PostgresSnapshotStoreDriver extends Driver(SnapshotStore) {
   private readonly database: Database;
 
-  /** @param database - the connected database whose running transaction each statement joins. */
+  /**
+   * @param database - the connected database whose running transaction each statement joins.
+   */
   constructor(database: Database) {
     super();
     this.database = database;
   }
 
-  /** See `SnapshotStore.save`. */
+  /** Saves `snapshot` as the latest state of `room`'s document. */
   async save(room: CollaborationRoom, snapshot: DocumentSnapshot): Promise<void> {
     // raw-sql: an upsert that only replaces the row of the room's own scope, which the ORM cannot express
     await this.database
@@ -51,7 +53,7 @@ export class PostgresSnapshotStoreDriver extends Driver(SnapshotStore) {
       );
   }
 
-  /** See `SnapshotStore.latest`. */
+  /** The latest saved state of `room`'s document, or `undefined` when none was saved. */
   async latest(room: CollaborationRoom): Promise<DocumentSnapshot | undefined> {
     // raw-sql: the table has no model; one read by key and scope
     const rows = await this.database

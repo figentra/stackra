@@ -14,7 +14,7 @@ import type { SettingTarget } from "#contracts/types/setting-target.type";
 import type { SettingValue } from "#contracts/types/setting-value.type";
 
 /**
- * One revision.
+ * One revision of a settings group.
  *
  * @example
  * const pending = (await revisions.list("orders", { scope })).filter((r) => r.status === SettingRevisionStatus.Pending);
@@ -53,7 +53,7 @@ export interface SettingRevision {
   /** Whether it changed live configuration outside promotion (ADR 0359 decision 9). */
   readonly breakGlass: boolean;
 
-  /** Its state. */
+  /** Where the revision stands. */
   readonly status: SettingRevisionStatus;
 
   /** When it takes effect. */

@@ -21,9 +21,9 @@ describe("comment refusals", () => {
       code: "comment_tombstoned",
       commentId,
     });
-    expect(MentionNotAllowedError.create({ kind: MentionKind.Assistant })).toMatchObject({
+    expect(MentionNotAllowedError.create({ mentionKind: MentionKind.Assistant })).toMatchObject({
       code: "mention_not_allowed",
-      kind: "assistant",
+      mentionKind: "assistant",
     });
     expect(
       CommentVisibilityNotAllowedError.create({ visibility: CommentVisibility.Shared }),

@@ -6,7 +6,7 @@
  *          delete in that bucket and nothing else.
  * Boundary: internal; `logPipeline` hands the bucket and key to the Better Stack source. The key's secret stays in the
  *           encrypted Pulumi state and Better Stack.
- * Runtime: node (Pulumi program)
+ * Runtime: node
  * Governing contract: ADR 0184 (decision 5: 13 months in S3), ADR 0171 (decisions 4 and 6), ADR 0173.
  */
 import * as aws from "@pulumi/aws";

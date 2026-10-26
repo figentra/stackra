@@ -25,10 +25,10 @@ import { MENTION_CREATED_SCHEMA } from "#core/constants/mention-created-schema.c
  * }
  */
 export class MentionCreated extends IntegrationEvent({ name: "mention.created" }) {
-  /** The comment. */
+  /** The comment holding the mention. */
   commentId!: PublicId<"cmt">;
 
-  /** Its thread. */
+  /** The thread it belongs to. */
   threadId!: PublicId<"cth">;
 
   /** The commented record's model key. */
@@ -37,7 +37,7 @@ export class MentionCreated extends IntegrationEvent({ name: "mention.created" }
   /** The commented record's public id. */
   recordId!: string;
 
-  /** Who mentioned. */
+  /** Who wrote the mention. */
   mentionedBy!: string;
 
   /** What the mention points at. */

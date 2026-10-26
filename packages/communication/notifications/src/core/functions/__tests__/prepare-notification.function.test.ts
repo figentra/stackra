@@ -28,6 +28,7 @@ const BEN: PublicId<"usr"> = "usr_01j9z3k4m5n6p7q8r9s0t1v2w4";
 
 class OrderPaid {
   readonly orderId = "ord_1";
+
   readonly customers: readonly PublicId<"usr">[];
 
   constructor(customers: readonly PublicId<"usr">[]) {

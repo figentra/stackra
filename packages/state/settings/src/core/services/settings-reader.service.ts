@@ -22,7 +22,11 @@ import { Service } from "@stackra/container";
 import type { AnyClass } from "@stackra/container";
 import { validate } from "@stackra/validation";
 
-import { SettingEntitlementSource, SettingFloorSource, SettingValueStore } from "#contracts/index";
+import type {
+  SettingEntitlementSource,
+  SettingFloorSource,
+  SettingValueStore,
+} from "#contracts/index";
 import type { SettingTarget, SettingValue } from "#contracts/index";
 import type { Settings } from "#core/bases/settings.base";
 import { SETTING_KEY_REGISTRY } from "#core/constants/setting-key-registry.constant";

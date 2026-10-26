@@ -12,7 +12,7 @@
  */
 import { Driver } from "@stackra/container";
 
-import { ConsentConfig } from "#config/consent.config";
+import type { ConsentConfig } from "#config/consent.config";
 import { ConsentStore } from "#contracts/ports/consent-store.port";
 import type { ConsentRecord } from "#contracts/types/consent-record.type";
 import { parseConsentRecord } from "#core/functions/parse-consent-record.function";
@@ -30,7 +30,9 @@ const DAY_SECONDS = 86_400;
 export class CookieConsentStoreDriver extends Driver(ConsentStore) {
   private readonly config: ConsentConfig;
 
-  /** @param config - the cookie's name and lifetime. */
+  /**
+   * @param config - the cookie's name and lifetime.
+   */
   constructor(config: ConsentConfig) {
     super();
     this.config = config;

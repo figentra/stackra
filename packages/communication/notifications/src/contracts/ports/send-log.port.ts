@@ -11,7 +11,7 @@
 import { Port } from "@stackra/contracts";
 
 /**
- * Sent keys.
+ * Remembers the provider id each idempotency key was sent with.
  *
  * @example
  * const known = await log.get(key);

@@ -13,10 +13,11 @@
  *                     another); ADR 0298 (decision 3).
  */
 import { Service } from "@stackra/container";
-import { Clock, type PublicId } from "@stackra/contracts";
+import type { Clock } from "@stackra/contracts";
+import { type PublicId } from "@stackra/contracts";
 
-import { ConsentAuthority } from "#contracts/ports/consent-authority.port";
-import { ConsentProofStore } from "#contracts/ports/consent-proof-store.port";
+import type { ConsentAuthority } from "#contracts/ports/consent-authority.port";
+import type { ConsentProofStore } from "#contracts/ports/consent-proof-store.port";
 import type { ConsentProof } from "#contracts/types/consent-proof.type";
 import { ConsentAuthorityMissingError } from "#core/errors/consent-authority-missing.error";
 import type { TermsDocument } from "#core/types/terms-document.type";

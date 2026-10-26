@@ -6,7 +6,7 @@
  *          `betterstack.source`, `sentry.dsn.<member>`), plus the OTLP token and heartbeat URLs as secrets and the
  *          indicators, for the program to export and the stacks repository to copy into each stack's config.
  * Boundary: declares Pulumi resources only. Agents run `pulumi preview` at most; `up` is the owner's.
- * Runtime: node (Pulumi program)
+ * Runtime: node
  * Governing contract: ADR 0184, ADR 0185 (decision 3), ADR 0171 (decisions 3, 4 and 6, as amended by 0289 decision 9),
  *                     ADR 0173.
  *                     STA-1220 (the return type is written out, so the declaration emit names the provider classes

@@ -10,9 +10,9 @@
 import { Driver } from "@stackra/container";
 import type { CapabilityResult } from "@stackra/platform/contracts";
 
-import { PeripheralsConfig } from "#config/peripherals.config";
+import type { PeripheralsConfig } from "#config/peripherals.config";
 import { CashDrawer } from "#contracts/ports/cash-drawer.port";
-import { ReceiptPrinter } from "#contracts/ports/receipt-printer.port";
+import type { ReceiptPrinter } from "#contracts/ports/receipt-printer.port";
 
 /**
  * A cash drawer on the printer's drawer connector.

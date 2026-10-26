@@ -80,6 +80,7 @@ export class DevicePushTransportDriver extends Driver(PushTransport) {
     this.clock = clock;
   }
 
+  /** Sends `push` once per `idempotencyKey` and revokes the token of a device that is gone. */
   async send(push: OutboundPush, idempotencyKey: string): Promise<PushOutcome> {
     const known = await this.log.get(idempotencyKey);
     if (known !== undefined)

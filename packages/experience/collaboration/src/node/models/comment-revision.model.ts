@@ -30,9 +30,11 @@ export class CommentRevision extends Model.with(HasPublicId("cmr"), Timestamps) 
   editedBy!: string;
 }
 
+/** Lets an insert of `CommentRevision` leave out the trait timestamps. */
 // shortcut: the `[OptionalProps]` augmentation is written by hand so a create may leave the trait timestamps out;
 // remove it once gen writes the entity files (STA-339).
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: the generated `[OptionalProps]` augmentation merges into the model, as gen's entity files do
 export interface CommentRevision {
+  /** The trait timestamps an insert may leave out. */
   [OptionalProps]?: "createdAt" | "updatedAt";
 }

@@ -25,9 +25,11 @@ const WHATSAPP_CONNECTIONS = {} as ProviderDrivers<WhatsAppSender>;
 
 class MemorySendLog extends SendLog {
   readonly sent = new Map<string, string>();
+
   async get(key: string): Promise<string | undefined> {
     return this.sent.get(key);
   }
+
   async record(key: string, providerId: string): Promise<void> {
     this.sent.set(key, providerId);
   }

@@ -9,6 +9,7 @@
  * Governing contract: ADR 0223; ADR 0260 (decision 4); ADR 0422 (decision 1).
  */
 import { SEND_MESSAGE_ACTION } from "#node/constants/send-message-action.constant";
+import type { NotifierMessage } from "#node/types/notifier-message.type";
 import type { NotifierTarget } from "#node/types/notifier-target.type";
 
 /**
@@ -19,7 +20,7 @@ import type { NotifierTarget } from "#node/types/notifier-target.type";
  */
 export const MESSAGES_NOTIFIER_TARGET: NotifierTarget<typeof SEND_MESSAGE_ACTION> = Object.freeze({
   action: SEND_MESSAGE_ACTION,
-  payload: ({ template, principalId, channels }) =>
+  payload: ({ template, principalId, channels }: NotifierMessage) =>
     channels.mail === undefined
       ? null
       : {

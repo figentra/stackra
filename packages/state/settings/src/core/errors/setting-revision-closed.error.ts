@@ -21,7 +21,7 @@ export class SettingRevisionClosedError extends Refusal({
   kind: ErrorKind.Conflict,
   retryable: false,
 }) {
-  /** The revision. */
+  /** The id of the closed revision. */
   revision!: string;
 
   /** Its status when the move was refused. */

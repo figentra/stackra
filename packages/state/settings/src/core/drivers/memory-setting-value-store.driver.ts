@@ -69,12 +69,12 @@ export class MemorySettingValueStoreDriver extends Driver(SettingValueStore) {
     return this;
   }
 
-  /** See `SettingValueStore.layers`. */
+  /** The layers of `group` that apply at `target`, outermost first. */
   async layers(group: string, target: SettingTarget): Promise<readonly SettingLayer[]> {
     return this.chainOf(group, target).map(layerOf);
   }
 
-  /** See `SettingValueStore.write`. */
+  /** Sets each path of `values` in the target's own layer. */
   async write(
     group: string,
     target: SettingTarget,
@@ -91,7 +91,7 @@ export class MemorySettingValueStoreDriver extends Driver(SettingValueStore) {
         else holder.locked.delete(path);
   }
 
-  /** See `SettingValueStore.remove`. */
+  /** Removes each of `paths` from the target's own layer, so it inherits again. */
   async remove(group: string, target: SettingTarget, paths: readonly string[]): Promise<void> {
     const holder = this.holderOf(group, target);
     for (const path of paths) {

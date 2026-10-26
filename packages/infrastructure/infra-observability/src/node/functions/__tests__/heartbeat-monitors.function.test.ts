@@ -61,11 +61,11 @@ describe("heartbeatMonitors", () => {
       },
     });
     const url = monitors.urls["production"]?.["commerce"]?.["nightly-export"];
-    expect(url).toBeDefined();
-    expect(await valueOf(url!)).toBe(
+    if (url === undefined) throw new Error("no nightly-export heartbeat url");
+    expect(await valueOf(url)).toBe(
       "https://uptime.betterstack.test/heartbeat-production.commerce.nightly-export",
     );
-    expect(await pulumi.isSecret(url!)).toBe(true);
+    expect(await pulumi.isSecret(url)).toBe(true);
   });
 
   it("declares nothing without heartbeats", async () => {

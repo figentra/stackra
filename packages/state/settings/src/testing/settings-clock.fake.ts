@@ -20,13 +20,15 @@ export class SettingsClockFake extends Clock {
   /** The instant `now()` answers. */
   at: Date;
 
-  /** @param at - the starting instant. */
+  /**
+   * @param at - the starting instant.
+   */
   constructor(at: Date) {
     super();
     this.at = at;
   }
 
-  /** See `Clock.now`. */
+  /** A copy of the instant `at` holds. */
   now(): Date {
     return new Date(this.at);
   }

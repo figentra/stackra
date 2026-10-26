@@ -23,6 +23,7 @@ const I18n = keys({ orders: { order_receipt: { mail: ["subject"] } } });
 
 class OrderPaid {
   readonly orderId = "ord_01j9z3k4m5n6p7q8r9s0t1v2w3";
+
   readonly customerId: PublicId<"usr"> = "usr_01j9z3k4m5n6p7q8r9s0t1v2w3";
 }
 

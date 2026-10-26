@@ -15,7 +15,7 @@ import { Driver } from "@stackra/container";
 import { Capability } from "@stackra/platform";
 import type { CapabilityResult } from "@stackra/platform/contracts";
 
-import { PeripheralsConfig } from "#config/peripherals.config";
+import type { PeripheralsConfig } from "#config/peripherals.config";
 import { ReceiptPrinter } from "#contracts/ports/receipt-printer.port";
 import type { DrawerPin } from "#contracts/types/drawer-pin.type";
 import type { PrintedReceipt } from "#contracts/types/printed-receipt.type";
@@ -36,7 +36,9 @@ export class EscposReceiptPrinterDriver extends Driver(ReceiptPrinter) {
   /** The peripherals configuration, for the printer's address. */
   private readonly config: PeripheralsConfig;
 
-  /** @param config - the peripherals configuration. */
+  /**
+   * @param config - the peripherals configuration.
+   */
   constructor(config: PeripheralsConfig) {
     super();
     this.config = config;

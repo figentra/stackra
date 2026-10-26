@@ -17,6 +17,7 @@ class OrderPlaced {
 
 class OrderPlacedData {
   order!: { id: string };
+
   url!: string;
 }
 

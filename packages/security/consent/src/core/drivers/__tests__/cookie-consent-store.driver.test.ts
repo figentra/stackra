@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 /**
  * Stackra file contract:
  * Purpose: unit tests of `CookieConsentStoreDriver`: it writes the decision as the one named cookie and reads it back,
@@ -8,6 +7,7 @@
  * Runtime: browser (vitest, jsdom)
  * Governing contract: ADR 0022; ADR 0298 (decisions 3 and 6).
  */
+// @vitest-environment jsdom
 import { buildConfig } from "@stackra/config";
 import { afterEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";

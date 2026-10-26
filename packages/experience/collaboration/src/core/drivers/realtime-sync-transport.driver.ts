@@ -10,9 +10,9 @@
  * Governing contract: ADR 0346 (decisions 4, 5 and 7); ADR 0225 (decision 2); ADR 0270 (decisions 5 and 6).
  */
 import { Driver } from "@stackra/container";
-import { RealtimeConfig } from "@stackra/realtime";
+import type { RealtimeConfig } from "@stackra/realtime";
 
-import { RoomTokens } from "#contracts/ports/room-tokens.port";
+import type { RoomTokens } from "#contracts/ports/room-tokens.port";
 import { SyncTransport } from "#contracts/ports/sync-transport.port";
 import type { CollaborationRoom } from "#contracts/types/collaboration-room.type";
 import type { SyncLink } from "#contracts/types/sync-link.type";
@@ -42,7 +42,7 @@ export class RealtimeSyncTransportDriver extends Driver(SyncTransport) {
     this.config = config;
   }
 
-  /** See `SyncTransport.open`. */
+  /** Opens the stream of `room`'s document (`SyncTransport.open`). */
   open(room: CollaborationRoom, handlers: SyncLinkHandlers): SyncLink {
     const link = openRoom(
       this.tokens,

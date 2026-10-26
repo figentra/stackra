@@ -18,6 +18,6 @@ import type { PushTarget } from "#contracts/types/push-target.type";
  * await tokens.revoke({ kind: "expo", token });
  */
 export abstract class PushTokenStore extends Port {
-  /** Forgets `target`. */
+  /** Forgets the push token of `target`. */
   abstract revoke(target: PushTarget): Promise<void>;
 }

@@ -19,7 +19,7 @@ import type { ConsentProof } from "#contracts/types/consent-proof.type";
  * const latest = await proofs.latest(user.id, "terms");
  */
 export abstract class ConsentProofStore extends Port {
-  /** Appends `proof`. */
+  /** Appends `proof` to the append-only store. */
   abstract append(proof: ConsentProof): Promise<void>;
 
   /** The latest proof of `subject` for `document`, any version; `undefined` when none. */

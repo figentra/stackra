@@ -12,7 +12,7 @@
 import { Capability } from "@stackra/platform";
 import { Bridge } from "@stackra/platform/desktop";
 
-import { ReceiptPrinter } from "#contracts/ports/receipt-printer.port";
+import type { ReceiptPrinter } from "#contracts/ports/receipt-printer.port";
 import type { PrintedReceipt } from "#contracts/types/printed-receipt.type";
 import type { Receipt } from "#contracts/types/receipt.type";
 import { PrinterUnavailableError } from "#core/errors/printer-unavailable.error";
@@ -41,7 +41,9 @@ export class PrintReceiptBridge extends Bridge({
   /** The printer the wiring binds (`peripherals.printer`). */
   private readonly printer: ReceiptPrinter;
 
-  /** @param printer - the bound receipt printer. */
+  /**
+   * @param printer - the bound receipt printer.
+   */
   constructor(printer: ReceiptPrinter) {
     super();
     this.printer = printer;

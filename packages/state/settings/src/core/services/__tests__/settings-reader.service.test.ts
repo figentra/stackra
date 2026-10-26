@@ -30,7 +30,10 @@ import { settingsPage } from "#core/functions/settings-page.function";
 import { SettingsReader } from "#core/services/settings-reader.service";
 
 class OrderCancellationSettings extends Schema {
-  @Int({ min: 5, max: 1440 })
+  @Int({
+    min: 5,
+    max: 1440,
+  })
   autoCancelAfterMinutes = 30;
 
   @Setting({ lockable: true })
@@ -38,10 +41,10 @@ class OrderCancellationSettings extends Schema {
 }
 
 class OrdersSettings extends Settings({ scopes: [SettingScope.Platform, SettingScope.Product] }) {
-  acceptingOrders = true;
-
   @Int({ min: 0 })
   dailyRevenueTargetMinor: number | null = null;
+
+  acceptingOrders = true;
 
   cancellation!: OrderCancellationSettings;
 }

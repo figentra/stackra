@@ -33,7 +33,7 @@ export function checkMentions(
       (!isAssistant && (target.id === null || target.id === "")) ||
       (target.kind === MentionKind.ExternalParticipant &&
         visibility === CommentVisibility.Internal);
-    if (isRefused) throw MentionNotAllowedError.create({ kind: target.kind });
+    if (isRefused) throw MentionNotAllowedError.create({ mentionKind: target.kind });
     const clean = { kind: target.kind, id: isAssistant ? null : target.id };
     kept.set(`${clean.kind}:${clean.id ?? ""}`, clean);
   }

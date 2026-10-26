@@ -13,7 +13,7 @@ import type { NotificationChannel } from "#contracts/enums/notification-channel.
 import type { NotificationTemplate } from "#contracts/types/notification-template.type";
 
 /**
- * Template candidates.
+ * Answers the template candidates that override a notification's default template.
  *
  * @example
  * const candidates = await overrides.candidates("orders.order_receipt", NotificationChannel.Sms);

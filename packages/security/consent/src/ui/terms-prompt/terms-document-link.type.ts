@@ -15,7 +15,7 @@ export interface TermsDocumentLink {
   /** The version being accepted. */
   readonly version: string;
 
-  /** Its title. */
+  /** The document's title. */
   readonly title: string;
 
   /** Its page (`LegalPage`). */

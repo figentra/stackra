@@ -73,8 +73,13 @@ export async function settled(value: unknown): Promise<void> {
   await Promise.all(registrations);
 }
 
-/** The value of `output` once known. */
-export function valueOf<T>(output: pulumi.Output<T>): Promise<T> {
+/**
+ * The value of `output` once known.
+ *
+ * @throws Error when `output` is undefined, so a missing output fails the test.
+ */
+export function valueOf<T>(output: pulumi.Output<T> | undefined): Promise<T> {
+  if (output === undefined) throw new Error("the output is not declared");
   return new Promise((resolve) => output.apply(resolve));
 }
 

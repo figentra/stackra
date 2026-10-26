@@ -12,11 +12,12 @@
  *                     (decision 3: the renderer keeps no Node).
  */
 import { Driver } from "@stackra/container";
-import { Clock, Duration } from "@stackra/contracts";
+import type { Clock } from "@stackra/contracts";
+import { Duration } from "@stackra/contracts";
 import type { CapabilityResult } from "@stackra/platform/contracts";
 import type { Input, WebContents } from "electron";
 
-import { PeripheralsConfig } from "#config/peripherals.config";
+import type { PeripheralsConfig } from "#config/peripherals.config";
 import { BarcodeScanner } from "#contracts/ports/barcode-scanner.port";
 
 /** The shortest code a burst must type to count as a scan. */

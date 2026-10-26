@@ -26,9 +26,11 @@ function WelcomeMail(): null {
   return null;
 }
 
+/** A catalogue loader of the `accounts` namespace. */
+const load = async () => ({ default: { welcome: { mail: { subject: "Welcome" } } } });
+
 describe("registerNotificationMails", () => {
   it("records each body and each namespace's loaders", () => {
-    const load = async () => ({ default: { welcome: { mail: { subject: "Welcome" } } } });
     registerNotificationMails({
       bodies: [[WelcomeNotification, WelcomeMail]],
       catalogues: { accounts: { en: load } },

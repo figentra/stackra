@@ -11,10 +11,11 @@
  * Governing contract: ADR 0429 (decisions 1 and 2); config-model (gate rules are rule sets).
  */
 import { Service } from "@stackra/container";
-import { Clock, Duration } from "@stackra/contracts";
+import type { Clock } from "@stackra/contracts";
+import { Duration } from "@stackra/contracts";
 
-import { PeripheralsConfig } from "#config/peripherals.config";
-import { AccessController } from "#contracts/ports/access-controller.port";
+import type { PeripheralsConfig } from "#config/peripherals.config";
+import type { AccessController } from "#contracts/ports/access-controller.port";
 import type { ExitDecision } from "#contracts/types/exit-decision.type";
 import { importReceiptPublicKey } from "#core/functions/import-receipt-public-key.function";
 import { verifyReceiptToken } from "#core/functions/verify-receipt-token.function";

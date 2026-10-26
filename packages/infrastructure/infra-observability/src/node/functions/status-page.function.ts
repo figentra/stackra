@@ -7,7 +7,7 @@
  * Boundary: declares Pulumi resources only. Every value is the runway's `observability.statusPage`; nothing is typed
  *           here. The provider's API token is the owner's stack config. Incidents and their wording are the on-call's,
  *           not this program's.
- * Runtime: node (Pulumi program)
+ * Runtime: node
  * Governing contract: ADR 0185 (decision 3), ADR 0184 (decision 4: heartbeats), ADR 0402.
  *                     STA-1220 (the return type is written out, so the declaration emit names the provider classes
  *                     through the package entry, not their `bin/` files).
@@ -37,7 +37,7 @@ export function statusPage(args: {
   }[];
 } {
   const { project, page } = args;
-  const statusPage = new betterstack.StatusPage(`status-${project}`, {
+  const created = new betterstack.StatusPage(`status-${project}`, {
     companyName: page.companyName,
     companyUrl: page.companyUrl,
     subdomain: page.subdomain,
@@ -47,7 +47,7 @@ export function statusPage(args: {
   });
   const sections = page.environments.map((environment, position) => {
     const section = new betterstack.StatusPageSection(`status-${project}-${environment}`, {
-      statusPageId: statusPage.id,
+      statusPageId: created.id,
       name: environment,
       position,
     });
@@ -58,7 +58,7 @@ export function statusPage(args: {
         new betterstack.StatusPageResource(
           `status-${heartbeat.environment}.${heartbeat.service}.${heartbeat.name}`,
           {
-            statusPageId: statusPage.id,
+            statusPageId: created.id,
             statusPageSectionId: section.id.apply(Number),
             resourceType: "Heartbeat",
             resourceId: monitor.id.apply(Number),
@@ -69,5 +69,5 @@ export function statusPage(args: {
     });
     return { section, resources };
   });
-  return { statusPage, sections };
+  return { statusPage: created, sections };
 }

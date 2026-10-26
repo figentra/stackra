@@ -60,14 +60,14 @@ describe("observabilityStack", () => {
     await settled(stack);
 
     const { outputs } = stack;
-    expect(await valueOf(outputs.otlp!.endpoint)).toBe(
+    expect(await valueOf(outputs.otlp?.endpoint)).toBe(
       "https://telemetry-acme-platform.ingest.test",
     );
-    expect(await valueOf(outputs.betterstack!.source)).toBe("telemetry-acme-platform-id");
-    expect(await valueOf(outputs.sentry!.dsn["web"]!)).toBe(
+    expect(await valueOf(outputs.betterstack?.source)).toBe("telemetry-acme-platform-id");
+    expect(await valueOf(outputs.sentry?.dsn["web"])).toBe(
       "https://sentry-acme-web-key@sentry.test/1",
     );
-    expect(await valueOf(outputs.heartbeats["production"]!["commerce"]!["outbox"]!)).toBe(
+    expect(await valueOf(outputs.heartbeats["production"]?.["commerce"]?.["outbox"])).toBe(
       "https://uptime.betterstack.test/heartbeat-production.commerce.outbox",
     );
     expect(outputs.slis).toBe(PLAN.slis);

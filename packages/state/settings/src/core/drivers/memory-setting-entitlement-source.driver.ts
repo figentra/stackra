@@ -10,6 +10,7 @@
 import { Driver } from "@stackra/container";
 
 import { SettingEntitlementSource } from "#contracts/index";
+import type { SettingTarget } from "#contracts/index";
 
 /**
  * Grants in memory.
@@ -41,8 +42,11 @@ export class MemorySettingEntitlementSourceDriver extends Driver(SettingEntitlem
     return this;
   }
 
-  /** See `SettingEntitlementSource.granted`. */
-  async granted(entitlements: readonly string[]): Promise<ReadonlySet<string>> {
+  /** The keys of `entitlements` this source grants. */
+  async granted(
+    entitlements: readonly string[],
+    _target: SettingTarget,
+  ): Promise<ReadonlySet<string>> {
     return new Set(entitlements.filter((entitlement) => this.keys.has(entitlement)));
   }
 }

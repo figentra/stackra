@@ -12,12 +12,12 @@
  */
 import { Driver } from "@stackra/container";
 import type { PublicId } from "@stackra/contracts";
-import { RealtimeConfig } from "@stackra/realtime";
+import type { RealtimeConfig } from "@stackra/realtime";
 import type { RoomPeerRef } from "@stackra/realtime/contracts";
 
-import { CollaborationConfig } from "#config/collaboration.config";
+import type { CollaborationConfig } from "#config/collaboration.config";
 import { PresenceChannel } from "#contracts/ports/presence-channel.port";
-import { RoomTokens } from "#contracts/ports/room-tokens.port";
+import type { RoomTokens } from "#contracts/ports/room-tokens.port";
 import type { CollaborationCursor } from "#contracts/types/collaboration-cursor.type";
 import type { CollaborationRoom } from "#contracts/types/collaboration-room.type";
 import type { PresenceLink } from "#contracts/types/presence-link.type";
@@ -59,7 +59,7 @@ export class RealtimePresenceChannelDriver extends Driver(PresenceChannel) {
     this.realtime = realtime;
   }
 
-  /** See `PresenceChannel.join`. */
+  /** Joins `room` and reports it through `handlers` (`PresenceChannel.join`). */
   join(room: CollaborationRoom, handlers: PresenceLinkHandlers): PresenceLink {
     const peers = new Map<string, PresencePeer>();
     let heartbeat: ReturnType<typeof setInterval> | undefined;

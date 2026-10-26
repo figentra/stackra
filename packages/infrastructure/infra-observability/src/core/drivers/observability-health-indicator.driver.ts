@@ -5,7 +5,7 @@
  * Boundary: a plain subclass of the port (no container dependency here). The target is runway data passed in by the
  *           wiring; no credential is sent and none is read. A failure reports `down` with the host only, never a
  *           response body, and never throws.
- * Runtime: isomorphic (global `fetch`)
+ * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 16 and 17: each infra package ships its dependency's driver), ADR 0184,
  *                     registry gaps R-27 and R-36.
  */
@@ -13,13 +13,14 @@ import { Duration, HealthIndicator, HealthStatus } from "@stackra/contracts";
 import type { HealthReport } from "@stackra/contracts";
 
 /**
- * Checks telemetry.
+ * Checks that the telemetry endpoint answers.
  *
  * @example
  * const indicator = new ObservabilityHealthIndicatorDriver({ url: "https://in-otel.logs.betterstack.com/" });
  * await indicator.check(); // { status: "up", latency: "PT0.12S" }
  */
 export class ObservabilityHealthIndicatorDriver extends HealthIndicator {
+  /** The dependency this indicator reports on. */
   override readonly name = "telemetry";
 
   private readonly url: string;

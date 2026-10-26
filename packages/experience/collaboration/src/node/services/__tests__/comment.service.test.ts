@@ -23,6 +23,7 @@ import { afterEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 
 import { CommentVisibility, MentionKind, ThreadStatus } from "#contracts/index";
+import type { MentionTarget } from "#contracts/index";
 import {
   CommentCreated,
   CommentTombstonedError,
@@ -110,7 +111,10 @@ function setup() {
 }
 
 /** A post by `usr_lead` with `mentions`. */
-const draft = (mentions = [MONA], visibility: CommentVisibility = CommentVisibility.Internal) => ({
+const draft = (
+  mentions: readonly MentionTarget[] = [MONA],
+  visibility: CommentVisibility = CommentVisibility.Internal,
+) => ({
   record: MATTER,
   body: "Please review clause 4",
   visibility,

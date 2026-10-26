@@ -12,7 +12,7 @@ import { Driver } from "@stackra/container";
 import { SettingRevisionStore } from "#contracts/index";
 import type { SettingRevision, SettingTarget } from "#contracts/index";
 import type { StoredSettingRevision } from "#node/models/stored-setting-revision.model";
-import { StoredSettingRevisionService } from "#node/services/stored-setting-revision.service";
+import type { StoredSettingRevisionService } from "#node/services/stored-setting-revision.service";
 
 /** The revision of one row. */
 function revisionOf(row: StoredSettingRevision): SettingRevision {
@@ -52,34 +52,36 @@ export class PostgresSettingRevisionStoreDriver extends Driver(SettingRevisionSt
   /** The table's service. */
   private readonly rows: StoredSettingRevisionService;
 
-  /** @param rows - the table's service. */
+  /**
+   * @param rows - the table's service.
+   */
   constructor(rows: StoredSettingRevisionService) {
     super();
     this.rows = rows;
   }
 
-  /** See `SettingRevisionStore.append`. */
+  /** Stores `revision` and returns it with its new id. */
   async append(revision: Omit<SettingRevision, "id">): Promise<SettingRevision> {
     return revisionOf(await this.rows.append(revision));
   }
 
-  /** See `SettingRevisionStore.find`. */
+  /** The revision `id`, or `null` when there is none. */
   async find(id: string): Promise<SettingRevision | null> {
     const row = await this.rows.findOne({ id: id as StoredSettingRevision["id"] });
     return row === null ? null : revisionOf(row);
   }
 
-  /** See `SettingRevisionStore.list`. */
+  /** The revisions of `group` at exactly `target`'s holder, newest first. */
   async list(group: string, target: SettingTarget): Promise<readonly SettingRevision[]> {
     return (await this.rows.listOf(group, target)).map(revisionOf);
   }
 
-  /** See `SettingRevisionStore.due`. */
+  /** The scheduled revisions due at or before `at`, oldest first. */
   async due(at: string): Promise<readonly SettingRevision[]> {
     return (await this.rows.dueAt(new Date(at))).map(revisionOf);
   }
 
-  /** See `SettingRevisionStore.update`. */
+  /** Moves revision `id` to `patch` and returns it. */
   async update(
     id: string,
     patch: Pick<SettingRevision, "status"> &

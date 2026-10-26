@@ -23,10 +23,10 @@ import { COMMENT_CREATED_SCHEMA } from "#core/constants/comment-created-schema.c
  * }
  */
 export class CommentCreated extends IntegrationEvent({ name: "comment.created" }) {
-  /** The comment. */
+  /** The comment that was created. */
   commentId!: PublicId<"cmt">;
 
-  /** Its thread. */
+  /** The thread it belongs to. */
   threadId!: PublicId<"cth">;
 
   /** The commented record's model key. */

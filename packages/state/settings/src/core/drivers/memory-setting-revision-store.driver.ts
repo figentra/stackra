@@ -24,19 +24,19 @@ export class MemorySettingRevisionStoreDriver extends Driver(SettingRevisionStor
   /** Every revision, in append order. */
   private readonly revisions: SettingRevision[] = [];
 
-  /** See `SettingRevisionStore.append`. */
+  /** Stores `revision` and returns it with its new id. */
   async append(revision: Omit<SettingRevision, "id">): Promise<SettingRevision> {
     const stored = Object.freeze({ ...revision, id: `rev_${this.revisions.length + 1}` });
     this.revisions.push(stored);
     return stored;
   }
 
-  /** See `SettingRevisionStore.find`. */
+  /** The revision `id`, or `null` when there is none. */
   async find(id: string): Promise<SettingRevision | null> {
     return this.revisions.find((revision) => revision.id === id) ?? null;
   }
 
-  /** See `SettingRevisionStore.list`. */
+  /** The revisions of `group` at exactly `target`'s holder, newest first. */
   async list(group: string, target: SettingTarget): Promise<readonly SettingRevision[]> {
     const holder = settingHolderOf(target);
     return this.revisions
@@ -44,7 +44,7 @@ export class MemorySettingRevisionStoreDriver extends Driver(SettingRevisionStor
       .reverse();
   }
 
-  /** See `SettingRevisionStore.due`. */
+  /** The scheduled revisions due at or before `at`, oldest first. */
   async due(at: string): Promise<readonly SettingRevision[]> {
     return this.revisions
       .filter(
@@ -55,7 +55,7 @@ export class MemorySettingRevisionStoreDriver extends Driver(SettingRevisionStor
       .sort((a, b) => Date.parse(a.effectiveAt) - Date.parse(b.effectiveAt));
   }
 
-  /** See `SettingRevisionStore.update`. */
+  /** Moves revision `id` to `patch` and returns it. */
   async update(
     id: string,
     patch: Pick<SettingRevision, "status"> &

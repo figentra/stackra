@@ -45,6 +45,7 @@ export class ConnectionSmsTransportDriver extends Driver(SmsTransport) {
     this.drivers = drivers;
   }
 
+  /** Sends `sms` through the resolved connection once per `idempotencyKey`; a repeated key returns the first id. */
   async send(sms: OutboundSms, idempotencyKey: string): Promise<string> {
     const known = await this.log.get(idempotencyKey);
     if (known !== undefined) return known;

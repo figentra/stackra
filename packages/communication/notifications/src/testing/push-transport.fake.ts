@@ -27,7 +27,9 @@ export class PushTransportFake extends PushTransport {
   /** Expo tokens or Web Push endpoints the fake reports gone. */
   private readonly gone: ReadonlySet<string>;
 
-  /** @param gone - the devices to answer `revoked` for. */
+  /**
+   * @param gone - the devices to answer `revoked` for.
+   */
   constructor(gone: readonly string[] = []) {
     super();
     this.gone = new Set(gone);

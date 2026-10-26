@@ -10,6 +10,9 @@
  */
 import { base64url } from "#core/functions/base64url.function";
 
+/** `value` as JSON, base64url-encoded: one JWT segment. */
+const encode = (value: object) => base64url(new TextEncoder().encode(JSON.stringify(value)));
+
 /**
  * The VAPID header for `endpoint`.
  *
@@ -39,7 +42,6 @@ export async function vapidAuthorization(input: {
     false,
     ["sign"],
   );
-  const encode = (value: object) => base64url(new TextEncoder().encode(JSON.stringify(value)));
   const claims = {
     aud: new URL(input.endpoint).origin,
     exp: Math.floor(input.now.getTime() / 1000) + 12 * 3600,

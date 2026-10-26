@@ -33,6 +33,7 @@ class ExpoIntegration extends Integration({
 
 class Tokens extends PushTokenStore {
   readonly revoked: PushTarget[] = [];
+
   async revoke(target: PushTarget): Promise<void> {
     this.revoked.push(target);
   }
@@ -40,9 +41,11 @@ class Tokens extends PushTokenStore {
 
 class Log extends SendLog {
   readonly sent = new Map<string, string>();
+
   async get(key: string): Promise<string | undefined> {
     return this.sent.get(key);
   }
+
   async record(key: string, providerId: string): Promise<void> {
     this.sent.set(key, providerId);
   }

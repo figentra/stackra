@@ -10,7 +10,7 @@
  *           user that may only list, read, write and delete in that bucket; the secret lives in the encrypted
  *           Pulumi state and Better Stack, never in git or a file. The provider's API token (`logtail:apiToken`) is
  *           the owner's stack config.
- * Runtime: node (Pulumi program)
+ * Runtime: node
  * Governing contract: ADR 0184 (decisions 1, 2 and 5: OTLP everywhere, 30 days hot and 13 months in S3), ADR 0171
  *                     (decisions 4 and 6), ADR 0173 (no secret value in git).
  *                     STA-1220 (the return type is written out, so the declaration emit names the provider classes

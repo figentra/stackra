@@ -20,7 +20,7 @@ import type { MentionTarget } from "#contracts/types/mention-target.type";
 /** A comment. Traits add `id` and the timestamps; the indexes are the migration's. */
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: merged with the [OptionalProps] augmentation below
 export class Comment extends Model.with(HasPublicId("cmt"), Timestamps) {
-  /** Its thread. */
+  /** The thread it belongs to. */
   threadId!: PublicId<"cth">;
 
   /** The thread's scope node. */
@@ -51,9 +51,11 @@ export class Comment extends Model.with(HasPublicId("cmt"), Timestamps) {
   tombstonedBy!: string | null;
 }
 
+/** Lets an insert of `Comment` leave out the trait timestamps. */
 // shortcut: the `[OptionalProps]` augmentation is written by hand so a create may leave the trait timestamps out;
 // remove it once gen writes the entity files (STA-339).
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: the generated `[OptionalProps]` augmentation merges into the model, as gen's entity files do
 export interface Comment {
+  /** The trait timestamps an insert may leave out. */
   [OptionalProps]?: "createdAt" | "updatedAt";
 }

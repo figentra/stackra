@@ -10,6 +10,7 @@
  */
 import { kindOf } from "@stackra/container";
 import type { I18nKey } from "@stackra/i18n";
+import type { IconName } from "@stackra/icons/contracts";
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 import { Int, Schema } from "@stackra/validation";
 import type { Fields } from "@stackra/validation";
@@ -21,6 +22,7 @@ import type { SettingsRule } from "#core/types/settings-rule.type";
 import type { SettingsRules } from "#core/types/settings-rules.type";
 
 const SALES = "orders::nav.sales" as I18nKey;
+const RECEIPT: IconName = "receipt";
 
 class LoyaltyTierSettings extends Schema {
   @Int({ min: 0 })
@@ -33,7 +35,10 @@ class LoyaltyTierSettings extends Schema {
 class LoyaltyKitSettings extends Settings({
   scopes: [SettingScope.Platform, SettingScope.Product],
 }) {
-  @Int({ min: 1, max: 60 })
+  @Int({
+    min: 1,
+    max: 60,
+  })
   expiryMonths = 12;
 
   tiers!: LoyaltyTierSettings;
@@ -45,12 +50,12 @@ class LoyaltyKitSettings extends Settings({
 
 class OrdersSettings extends Settings({
   scopes: [SettingScope.Platform, SettingScope.Product],
-  navigation: { group: SALES, icon: "receipt", order: 20 },
+  navigation: { group: SALES, icon: RECEIPT, order: 20 },
 }) {
-  acceptingOrders = true;
-
   @Int({ min: 0 })
   dailyRevenueTargetMinor: number | null = null;
+
+  acceptingOrders = true;
 }
 
 describe("Settings", () => {
@@ -59,7 +64,7 @@ describe("Settings", () => {
       kind: "settings",
       options: {
         scopes: ["platform", "product"],
-        navigation: { group: SALES, icon: "receipt", order: 20 },
+        navigation: { group: SALES, icon: RECEIPT, order: 20 },
       },
     });
     expect(kindOf(LoyaltyKitSettings)?.options).toEqual({

@@ -10,7 +10,7 @@
 import type { SettingLayer } from "#contracts/types/setting-layer.type";
 
 /**
- * A pack.
+ * A pack of settings values and locks per group.
  *
  * @example
  * const pack: SettingsPack = { groups: { orders: { values: { refundWindowDays: 30 }, locked: [] } } };

@@ -45,6 +45,7 @@ export class ConnectionMailTransportDriver extends Driver(MailTransport) {
     this.drivers = drivers;
   }
 
+  /** Sends `mail` through the resolved connection once per `idempotencyKey`; a repeated key returns the first id. */
   async send(mail: OutboundMail, idempotencyKey: string): Promise<string> {
     const known = await this.log.get(idempotencyKey);
     if (known !== undefined) return known;

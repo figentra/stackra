@@ -33,6 +33,7 @@ export class InAppStoreFake extends InAppStore {
   /** The number of entries appended, for the next id. */
   private count = 0;
 
+  /** Appends `message` to `recipient`'s inbox once per `idempotencyKey`. */
   append(
     recipient: PublicId<"usr">,
     message: InAppMessage,
@@ -55,6 +56,7 @@ export class InAppStoreFake extends InAppStore {
     return Promise.resolve(entry);
   }
 
+  /** `recipient`'s entries, newest first, filtered by `options`. */
   list(
     recipient: PublicId<"usr">,
     options: {
@@ -70,6 +72,7 @@ export class InAppStoreFake extends InAppStore {
     return Promise.resolve(options.limit === undefined ? entries : entries.slice(0, options.limit));
   }
 
+  /** Marks `recipient`'s entry `id` read; false when there is no such entry. */
   markRead(recipient: PublicId<"usr">, id: PublicId): Promise<boolean> {
     const entries = this.inboxes.get(recipient) ?? [];
     const index = entries.findIndex((entry) => entry.id === id);

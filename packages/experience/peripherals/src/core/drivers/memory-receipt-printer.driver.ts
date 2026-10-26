@@ -26,14 +26,14 @@ import { refuse } from "#core/functions/refuse.function";
  * printer.printed; // [{ orderId: "ord_1", lines: ["Total 12.00"] }]
  */
 export class MemoryReceiptPrinterDriver extends Driver(ReceiptPrinter) {
-  /** Whether the printer answers; false makes every call refuse with `unavailable`. */
-  isPresent = true;
-
   /** Every receipt printed, in order. */
   readonly printed: Receipt[] = [];
 
   /** Every drawer pulse, by pin, in order. */
   readonly kicks: DrawerPin[] = [];
+
+  /** Whether the printer answers; false makes every call refuse with `unavailable`. */
+  isPresent = true;
 
   /** Answers while present. */
   async probe(): Promise<CapabilityResult> {

@@ -12,8 +12,8 @@
  */
 import { Service } from "@stackra/container";
 
-import { ConsentConfig } from "#config/consent.config";
-import { ConsentStore } from "#contracts/ports/consent-store.port";
+import type { ConsentConfig } from "#config/consent.config";
+import type { ConsentStore } from "#contracts/ports/consent-store.port";
 import type { ConsentRecord } from "#contracts/types/consent-record.type";
 import type { ConsentCategory } from "#core/enums/consent-category.enum";
 import { ConsentRegime } from "#core/enums/consent-regime.enum";
@@ -32,6 +32,17 @@ const DAY_MS = 86_400_000;
  * ledger.isGranted(ConsentCategory.Analytics); // true, unless the browser sends Global Privacy Control
  */
 export class ConsentLedger extends Service {
+  /**
+   * Calls `listener` after every change; returns the function that stops it.
+   *
+   * @example
+   * const stop = ledger.subscribe(() => render(ledger.isGranted(ConsentCategory.Analytics)));
+   */
+  readonly subscribe = (listener: () => void): (() => void) => {
+    this.listeners.add(listener);
+    return () => this.listeners.delete(listener);
+  };
+
   private readonly config: ConsentConfig;
 
   private readonly store: ConsentStore;
@@ -120,17 +131,6 @@ export class ConsentLedger extends Service {
     this.region = region;
     this.notify();
   }
-
-  /**
-   * Calls `listener` after every change; returns the function that stops it.
-   *
-   * @example
-   * const stop = ledger.subscribe(() => render(ledger.isGranted(ConsentCategory.Analytics)));
-   */
-  readonly subscribe = (listener: () => void): (() => void) => {
-    this.listeners.add(listener);
-    return () => this.listeners.delete(listener);
-  };
 
   /** The stored decision when it answers the current policy version and has not expired, else `null`. */
   private current(): ConsentRecord | null {

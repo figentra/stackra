@@ -20,6 +20,7 @@ describe("@stackra/notifications/react", () => {
   it("exports MailProps as a type", () => {
     abstract class Silent implements Notification {
       declare readonly "~kind": "notification";
+
       abstract recipients(event: { id: string }): [];
     }
     expectTypeOf<MailProps<typeof Silent>>().toEqualTypeOf<Readonly<{ id: string }>>();

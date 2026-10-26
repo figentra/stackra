@@ -10,7 +10,7 @@
 import { Driver } from "@stackra/container";
 
 import { SettingFloorSource } from "#contracts/index";
-import type { SettingFloor } from "#contracts/index";
+import type { SettingFloor, SettingTarget } from "#contracts/index";
 
 /**
  * Floors in memory.
@@ -32,8 +32,8 @@ export class MemorySettingFloorSourceDriver extends Driver(SettingFloorSource) {
     return this;
   }
 
-  /** See `SettingFloorSource.floors`. */
-  async floors(group: string): Promise<readonly SettingFloor[]> {
+  /** The floors seeded for `group`. */
+  async floors(group: string, _target: SettingTarget): Promise<readonly SettingFloor[]> {
     return [...(this.byGroup.get(group) ?? [])];
   }
 }

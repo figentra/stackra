@@ -14,7 +14,7 @@ import { Config } from "@stackra/config";
 import { CollaborationOptions } from "#core/schemas/collaboration-options.schema";
 
 /**
- * Collaboration settings.
+ * The live collaboration settings.
  *
  * @example
  * import { CollaborationConfig as BaseCollaborationConfig } from "@stackra/collaboration";

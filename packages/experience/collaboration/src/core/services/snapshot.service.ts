@@ -13,8 +13,8 @@
  */
 import { Service } from "@stackra/container";
 
-import { CollaborationConfig } from "#config/collaboration.config";
-import { SnapshotStore } from "#contracts/ports/snapshot-store.port";
+import type { CollaborationConfig } from "#config/collaboration.config";
+import type { SnapshotStore } from "#contracts/ports/snapshot-store.port";
 import type { CollaborationRoom } from "#contracts/types/collaboration-room.type";
 import type { DocumentReplica } from "#contracts/types/document-replica.type";
 
