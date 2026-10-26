@@ -4,7 +4,8 @@
  *          id, the edge lands on edge zones only (a runway zone missing from the stack config gets the defaults), the
  *          tunnel exposes the members' dev ports on the dev zone under `<project>-<dev>`, Access guards the dev zone
  *          with the resolved identity provider, and the Turborepo cache bucket expires; a runway without a Cloudflare
- *          account, and a stack zone the runway does not name, fail before any resource is declared.
+ *          account, and a stack zone the runway does not name, fail before any resource is declared; a storefront on an
+ *          edge zone gets its waiting rooms and hot-item limits, one on a non-edge zone or naming a foreign host fails.
  * Boundary: test only; Pulumi under mocks with an in-memory stack config, so no provider or cloud call.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0171 (decisions 6 and 7), ADR 0290 (decisions 1 to 6 and 15),
@@ -13,7 +14,9 @@
 import { beforeEach, describe, expect, it } from "@stackra/testing";
 
 import { rootRunway, TEMPLATE_EDGE } from "#core/__tests__/fixtures/root-runway.fixture";
+import { STOREFRONT_SETTINGS } from "#core/__tests__/fixtures/storefront.fixture";
 import { thrownIssues } from "#core/__tests__/fixtures/thrown-issues.fixture";
+import { parseStorefront } from "#core/functions/parse-storefront.function";
 import { parseCloudflareStack } from "#core/functions/parse-cloudflare-stack.function";
 import { cloudflareCoreStack } from "#node/functions/cloudflare-core-stack.function";
 import {
@@ -120,5 +123,36 @@ describe("cloudflareCoreStack", () => {
       ).map((issue) => issue.path),
     ).toEqual(["providers.cloudflare.accountId", "providers.cloudflare.zones.example.org"]);
     expect(declared).toEqual([]);
+  });
+
+  it("puts a storefront's waiting rooms and hot-item limits on its edge zone", async () => {
+    const core = cloudflareCoreStack({
+      root,
+      stack,
+      storefront: { "figentra.com": parseStorefront(STOREFRONT_SETTINGS) },
+    });
+    await settled(core);
+
+    expect(Object.keys(core.zones["figentra.com"]?.storefront ?? {})).toEqual([
+      "spring-drop",
+      "quiet",
+    ]);
+    const rules = inputsByName(declared, "cloudflare:index/ruleset:Ruleset")[
+      "figentra.com-rate-limit"
+    ]?.["rules"] as unknown[];
+    expect(rules).toHaveLength(3);
+  });
+
+  it("refuses a storefront on a zone without the edge or with a host outside it", () => {
+    const policy = parseStorefront(STOREFRONT_SETTINGS);
+    expect(
+      thrownIssues(() =>
+        cloudflareCoreStack({ root, stack, storefront: { "figentra.cloud": policy } }),
+      ).map((issue) => issue.path),
+    ).toEqual([
+      "storefront.figentra.cloud",
+      "storefront.figentra.cloud.campaigns.spring-drop.host",
+      "storefront.figentra.cloud.campaigns.quiet.host",
+    ]);
   });
 });

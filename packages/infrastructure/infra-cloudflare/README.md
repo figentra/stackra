@@ -22,6 +22,8 @@ Agents never run `pulumi` and never call Cloudflare. The programs run in the pri
 | `.`      | `tunnelIngress(tunnel)`                                             | a tunnel's ingress: `<member>-<dev>.<dev zone>` to each dev port   |
 | `.`      | `devPortsOf(runways)`                                               | each member runway's `environments.dev.port`                       |
 | `.`      | `rateLimitFor(edge, plan)`                                          | the per-IP rule a plan can hold for the runway's limit             |
+| `.`      | `parseStorefront(settings)`, `shopperLimitRules(policy)`            | a tenant's campaign settings checked; the per-shopper edge rules   |
+| `.`      | `CloudflareHealthIndicatorDriver`                                   | the health driver: an edge host answers                            |
 | `.`      | `ZonePlan`, `WafMode`, `BotMode`                                    | enums                                                              |
 | `.`      | `CloudflareConfigInvalidError`                                      | every input failure, with each path                                |
 | `.`      | `EdgePolicy`, `CloudflareStack`, `ZoneOptions`, `TunnelIngressRule` | types                                                              |
@@ -137,6 +139,33 @@ The edge by plan:
 | free | Cloudflare Free Managed Ruleset | Bot Fight Mode                          | 10 s (the runway's rate kept: 600/60 s → 100/10 s) |
 | pro  | Cloudflare Managed Ruleset      | Super Bot Fight Mode, managed challenge | 10 s or 60 s                                       |
 
+## Storefront waiting room and per-shopper limits
+
+A storefront's drops and campaigns are tenant settings the storefront exports for the edge stack (ADR 0402); nothing is
+typed in code. `parseStorefront` checks them and `cloudflareCoreStack({ …, storefront: { "<zone>": policy } })` puts
+them on that edge zone: a waiting room and event per campaign over its window, suspended while `enabled` is false, and
+per-shopper rate-limit rules on the hot items after the per-IP rule in the zone's one rate-limit entry point.
+
+```json
+{
+  "shopper": { "by": "cookie", "name": "shopper_id" },
+  "campaigns": {
+    "spring-drop": {
+      "host": "shop.acme.example",
+      "path": "/drops/spring",
+      "waitingRoom": {
+        "enabled": true,
+        "totalActiveUsers": 500,
+        "newUsersPerMinute": 200,
+        "startsAt": "2026-11-01T09:00:00+03:00",
+        "endsAt": "2026-11-01T21:00:00+03:00"
+      },
+      "limits": [{ "path": "/cart/add/sneaker-1", "requests": 2, "periodSeconds": 60 }]
+    }
+  }
+}
+```
+
 ## Owner steps
 
 These touch accounts, purchases or secrets, so the owner does them; nothing here does.
@@ -148,6 +177,7 @@ These touch accounts, purchases or secrets, so the owner does them; nothing here
   through the secrets inbox (ADR 0257). Neither is a stack output.
 - Import a phase entry-point ruleset made by hand before the first `up` on that zone (a zone holds one per phase).
 - Move a zone to Pro (a purchase) before setting `plan: pro`.
+- Buy the plan that includes waiting rooms and cookie or header rate-limit keys before a storefront uses them.
 
 ## Not built
 

@@ -13,4 +13,5 @@ export { cloudflareZone } from "#node/functions/cloudflare-zone.function";
 export { devTunnel } from "#node/functions/dev-tunnel.function";
 export { r2Bucket } from "#node/functions/r2-bucket.function";
 export { resolveRef } from "#node/functions/resolve-ref.function";
+export { storefrontEdge } from "#node/functions/storefront-edge.function";
 export { zoneEdge } from "#node/functions/zone-edge.function";

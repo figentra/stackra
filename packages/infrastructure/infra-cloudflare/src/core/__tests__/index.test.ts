@@ -17,12 +17,15 @@ describe("@stackra/infra-cloudflare", () => {
     expect(Object.keys(infraCloudflare).sort()).toEqual([
       "BotMode",
       "CloudflareConfigInvalidError",
+      "CloudflareHealthIndicatorDriver",
       "WafMode",
       "ZonePlan",
       "devPortsOf",
       "parseCloudflareStack",
       "parseEdge",
+      "parseStorefront",
       "rateLimitFor",
+      "shopperLimitRules",
       "tunnelIngress",
     ]);
   });

@@ -19,6 +19,7 @@ describe("@stackra/infra-cloudflare/node", () => {
       "devTunnel",
       "r2Bucket",
       "resolveRef",
+      "storefrontEdge",
       "zoneEdge",
     ]);
   });

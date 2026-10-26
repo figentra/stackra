@@ -2,14 +2,15 @@
  * Stackra file contract:
  * Purpose: `cloudflareCoreStack(args)`, the Cloudflare half of the core Pulumi stack in one call: every zone the root
  *          runway names (imported, with its records, Worker domains and SaaS fallback origin), the runway edge on each
- *          edge zone, a named tunnel per machine on the dev zone, the Access gate and the R2 buckets. Returns every
+ *          edge zone with any storefront's waiting rooms and per-shopper limits, a named tunnel per machine on the dev
+ *          zone, the Access gate and the R2 buckets. Returns every
  *          resource it declared, so the stacks repository exports the ids it needs.
  * Boundary: the program body only. The stacks repository (`figentra/infra`) owns `Pulumi.yaml`, the stack config and
  *           the state; the owner runs `pulumi up` there, and agents only preview (ADR 0171). The account and zone ids
  *           come from the root runway (`providers.cloudflare`), resolved through `ref:`; nothing here reads a secret.
  * Runtime: node (Pulumi program)
  * Governing contract: ADR 0171 (decisions 2, 6 and 7), ADR 0175, ADR 0290 (decisions 1 to 6, 11, 13 and 15), ADR 0026,
- *                     ADR 0284 (decision 9), ADR 0217 (decision 3), ADR 0325 (rule 24).
+ *                     ADR 0284 (decision 9), ADR 0217 (decision 3), ADR 0325 (rule 24), ADR 0402 (storefront edge).
  */
 import type { RootRunway, RunwayIssue } from "@stackra/runway";
 
@@ -18,20 +19,23 @@ import { CloudflareConfigInvalidError } from "#core/errors/cloudflare-config-inv
 import { parseEdge } from "#core/functions/parse-edge.function";
 import { tunnelIngress } from "#core/functions/tunnel-ingress.function";
 import type { CloudflareStack } from "#core/types/cloudflare-stack.type";
+import type { StorefrontPolicy } from "#core/types/storefront-policy.type";
 import { accessGate } from "#node/functions/access-gate.function";
 import { cloudflareZone } from "#node/functions/cloudflare-zone.function";
 import { devTunnel } from "#node/functions/dev-tunnel.function";
 import { r2Bucket } from "#node/functions/r2-bucket.function";
 import { resolveRef } from "#node/functions/resolve-ref.function";
+import { storefrontEdge } from "#node/functions/storefront-edge.function";
 import { zoneEdge } from "#node/functions/zone-edge.function";
 
 /**
  * The Cloudflare resources of the core stack.
  *
- * @param args - the parsed root runway, the parsed stack config and the members' dev ports (`devPortsOf`), which the
- *               tunnels expose.
+ * @param args - the parsed root runway, the parsed stack config, the members' dev ports (`devPortsOf`), which the
+ *               tunnels expose, and each storefront's policy (`parseStorefront`) by the edge zone it is served on.
  * @throws CloudflareConfigInvalidError when the runway names no Cloudflare account, the stack config lists a zone the
- *         runway does not, a `ref:` is unset, the edge block is invalid or a tunnel host breaks the one-label rule.
+ *         runway does not, a storefront is on a zone that is not an edge zone or names a host outside it, a `ref:` is
+ *         unset, the edge block is invalid or a tunnel host breaks the one-label rule.
  * @example
  * // figentra/infra, cloudflare/index.ts
  * const root = readRunway("runway.yaml", "root");
@@ -43,8 +47,9 @@ export function cloudflareCoreStack(args: {
   readonly root: RootRunway;
   readonly stack: CloudflareStack;
   readonly ports?: Readonly<Record<string, number>> | undefined;
+  readonly storefront?: Readonly<Record<string, StorefrontPolicy>> | undefined;
 }) {
-  const { root, stack, ports = {} } = args;
+  const { root, stack, ports = {}, storefront = {} } = args;
   const provider = root.providers?.cloudflare;
   const runwayZones = provider?.zones ?? {};
   const issues: RunwayIssue[] = [];
@@ -62,6 +67,19 @@ export function cloudflareCoreStack(args: {
         path: `providers.cloudflare.zones.${zone}`,
         message: `${zone} is in the stack config but the root runway does not name it`,
       });
+  for (const [zone, policy] of Object.entries(storefront)) {
+    if (!(zone in runwayZones) || stack.zones[zone]?.edge === false)
+      issues.push({
+        path: `storefront.${zone}`,
+        message: `${zone} is not an edge zone of the runway: a storefront's limits ride its edge`,
+      });
+    for (const [key, campaign] of Object.entries(policy.campaigns))
+      if (campaign.host !== zone && !campaign.host.endsWith(`.${zone}`))
+        issues.push({
+          path: `storefront.${zone}.campaigns.${key}.host`,
+          message: `${campaign.host} is not under ${zone}`,
+        });
+  }
   if (provider?.accountId === undefined || issues.length > 0)
     throw new CloudflareConfigInvalidError("runway.yaml", issues);
 
@@ -72,10 +90,21 @@ export function cloudflareCoreStack(args: {
       const options = stack.zones[name] ?? ZONE_OPTIONS_SCHEMA.parse({});
       const zoneId = resolveRef(id, `providers.cloudflare.zones.${name}`);
       const zone = cloudflareZone({ accountId, name, zoneId, options, proxy: edge.proxy });
+      const policy = storefront[name];
+      const shop =
+        options.edge && policy !== undefined
+          ? storefrontEdge({ name, zoneId: zone.zone.id, policy })
+          : undefined;
       const edgeResources = options.edge
-        ? zoneEdge({ name, zoneId: zone.zone.id, plan: options.plan, edge })
+        ? zoneEdge({
+            name,
+            zoneId: zone.zone.id,
+            plan: options.plan,
+            edge,
+            shopperRules: shop?.rules,
+          })
         : undefined;
-      return [name, { ...zone, edge: edgeResources }] as const;
+      return [name, { ...zone, edge: edgeResources, storefront: shop?.rooms }] as const;
     }),
   );
 
