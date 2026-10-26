@@ -50,7 +50,7 @@ describe("env", () => {
     expect(() => env.url().parse("/relative", "EXPO_PUBLIC_APP_ORIGIN")).toThrow(
       /EXPO_PUBLIC_APP_ORIGIN/,
     );
-    expectTypeOf(env.url().parse("x")).toEqualTypeOf<Url>();
+    expectTypeOf(env.url().parse("https://example.test")).toEqualTypeOf<Url>();
   });
 
   it("never prints the value in an error", () => {

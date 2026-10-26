@@ -378,6 +378,7 @@ describe("MutationQueue", () => {
       version: 2,
       items: [],
       conflicts: [],
+      spent: [],
     });
   });
 

@@ -134,11 +134,11 @@ function setup(values: Partial<ConfigValues<IdentityConfig>> = {}) {
   return { storage, browser, driver, tokens };
 }
 
-/** A kept session whose access token expires within the renewal window. */
-function expiring(refreshToken: string | undefined = "refresh-0") {
+/** A kept session whose access token expires within the renewal window; `null` keeps no refresh token. */
+function expiring(refreshToken: string | null = "refresh-0") {
   return {
     accessToken: "access-0",
-    ...(refreshToken === undefined ? {} : { refreshToken }),
+    ...(refreshToken === null ? {} : { refreshToken }),
     idToken: jwt({ iss: ISSUER }),
     expiresAt: Date.now() + 1000,
     user: USER,
@@ -262,7 +262,7 @@ describe("PkceSessionStoreDriver", () => {
 
   it("refuses session_revoked when an expiring session has no refresh token", async () => {
     const { storage, driver } = setup();
-    storage.secrets.set("identity.session", expiring(undefined));
+    storage.secrets.set("identity.session", expiring(null));
     stubProvider(() => new Response(null, { status: 500 }));
     await expect(driver.accessToken()).rejects.toBeInstanceOf(SessionRevokedError);
   });

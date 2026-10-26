@@ -11,7 +11,7 @@ import type { Condition } from "@stackra/rules";
  * The fields `condition` tests.
  *
  * @example
- * conditionFields({ all: [{ field: "record.channel_id", operator: Operator.Equals, value: "chn_1" }] }); // Set {"record.channel_id"}
+ * conditionFields({ all: [{ field: "record.channelId", operator: Operator.Equals, value: "chn_1" }] }); // Set {"record.channelId"}
  */
 export function conditionFields(condition: Condition): ReadonlySet<string> {
   const fields = new Set<string>();

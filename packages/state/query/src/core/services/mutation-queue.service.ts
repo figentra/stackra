@@ -460,10 +460,12 @@ export class MutationQueue extends Service {
     if (partition === undefined || !this.mayReplay(partition)) return;
     this.publish({ ...this.state, isDraining: true });
     try {
+      let reachedAll: boolean;
       do {
         this.rerun = false;
-        await this.pass(partition);
-      } while (this.rerun && this.mayReplay(partition));
+        reachedAll = await this.pass(partition);
+        // A head that did not reach the server waits for the next drain; asking again mid-pass is no reason to resend.
+      } while (reachedAll && this.rerun && this.mayReplay(partition));
     } finally {
       if (this.partition === partition) this.publish({ ...this.state, isDraining: false });
     }
@@ -471,28 +473,30 @@ export class MutationQueue extends Service {
 
   /**
    * Sends the waiting calls one at a time in queue order, skipping the aggregates a conflict blocks, until none is
-   * left, one did not reach the server (nothing later may go before it), or the replay is no longer allowed.
+   * left, one did not reach the server (nothing later may go before it), or the replay is no longer allowed. Resolves
+   * `false` when it stopped at a call that did not reach the server.
    */
-  private async pass(partition: string): Promise<void> {
+  private async pass(partition: string): Promise<boolean> {
     const blocked = new Set(this.state.conflicts.map((record) => record.aggregate));
     while (this.mayReplay(partition)) {
       const next = this.state.items.find((item) => !blocked.has(item.aggregate));
-      if (next === undefined) return;
+      if (next === undefined) return true;
       if (Date.parse(next.expiresAt) <= this.clock.now().getTime()) {
         await this.settle(partition, next, { code: STALE_CODE, server: null });
         blocked.add(next.aggregate);
         continue;
       }
       const head = next.sequence === null ? await this.stamp(partition, next) : next;
-      if (head === undefined) return;
+      if (head === undefined) return true;
       const outcome = await this.send(head);
       if (outcome.ok) await this.settle(partition, head, null);
-      else if (outcome.code === null) return;
+      else if (outcome.code === null) return false;
       else {
         await this.settle(partition, head, { code: outcome.code, server: outcome.server });
         blocked.add(head.aggregate);
       }
     }
+    return true;
   }
 
   /**

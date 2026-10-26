@@ -35,8 +35,12 @@ describe("StackraManifest", () => {
     }
   });
 
-  it("reads event wire names as <module>.<name>.v<n>", () => {
-    for (const event of manifest.events ?? []) expect(event.name).toMatch(/\.v\d+$/);
+  it("reads versioned event wire names as <module>.<name>.v<n>, domain ones without a version", () => {
+    const events = manifest.events ?? [];
+    expect(events.some((event) => event.version === undefined)).toBe(true);
+    for (const event of events)
+      if (event.version === undefined) expect(event.name).not.toMatch(/\.v\d+$/);
+      else expect(event.name.endsWith(`.v${event.version}`)).toBe(true);
   });
 
   it("reads model public id prefixes of 2 to 6 letters and snake_case refusal codes", () => {

@@ -20,9 +20,9 @@ describe("registerDimensions", () => {
 
   it("stores rows per model, a later row replacing its field", () => {
     registerDimensions([
-      { model: "orders.order", field: "record.channel_id", dimension: "sales.channel" },
-      { model: "orders.order", field: "record.location_id", dimension: "inventory.location" },
-      { model: "orders.order", field: "record.channel_id", dimension: "sales.storefront" },
+      { model: "orders.order", field: "record.channelId", dimension: "sales.channel" },
+      { model: "orders.order", field: "record.locationId", dimension: "inventory.location" },
+      { model: "orders.order", field: "record.channelId", dimension: "sales.storefront" },
     ]);
     expect(DIMENSION_REGISTRY.get("orders.order")?.map((row) => row.dimension)).toEqual([
       "inventory.location",
@@ -31,9 +31,10 @@ describe("registerDimensions", () => {
   });
 
   it.each([
-    [{ model: "Orders", field: "record.channel_id", dimension: "sales.channel" }],
-    [{ model: "orders.order", field: "channel_id", dimension: "sales.channel" }],
-    [{ model: "orders.order", field: "record.channel_id", dimension: "channel" }],
+    [{ model: "Orders", field: "record.channelId", dimension: "sales.channel" }],
+    [{ model: "orders.order", field: "channelId", dimension: "sales.channel" }],
+    [{ model: "orders.order", field: "record.channel_id", dimension: "sales.channel" }],
+    [{ model: "orders.order", field: "record.channelId", dimension: "channel" }],
   ])("refuses %j", (row) => {
     expect(() => registerDimensions([row])).toThrow(TypeError);
   });
@@ -43,10 +44,10 @@ describe("conditionFields", () => {
   it("finds every tested field", () => {
     const fields = conditionFields({
       all: [
-        { field: "record.channel_id", operator: Operator.Equals, value: "chn_1" },
+        { field: "record.channelId", operator: Operator.Equals, value: "chn_1" },
         { not: { any: [{ field: "record.region", operator: Operator.IsSet }] } },
       ],
     });
-    expect([...fields].sort()).toEqual(["record.channel_id", "record.region"]);
+    expect([...fields].sort()).toEqual(["record.channelId", "record.region"]);
   });
 });

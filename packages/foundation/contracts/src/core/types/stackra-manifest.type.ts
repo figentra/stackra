@@ -52,7 +52,7 @@ export type StackraManifest = {
   }[];
   /** The locked events, by wire name. */
   readonly events?: readonly {
-    /** The wire name, `<module>.<name>.v<n>`. */
+    /** The wire name, `<module>.<name>.v<n>`; a domain event, which carries no `version`, has no `.v<n>`. */
     readonly name: string;
     readonly module: string;
     readonly class: string;

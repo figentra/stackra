@@ -28,8 +28,12 @@ export function refusalCode(className: string): string {
     throw new RangeError(
       `"${className}" is not a refusal class name: write PascalCase ending in "Error", such as OrderNotPayableError`,
     );
-  return className
-    .slice(0, -"Error".length)
-    .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
-    .toLowerCase();
+  return (
+    className
+      .slice(0, -"Error".length)
+      .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
+      // A one-letter word before the next one: NotAMember is not_a_member, not not_amember.
+      .replace(/([A-Z])([A-Z][a-z])/g, "$1_$2")
+      .toLowerCase()
+  );
 }

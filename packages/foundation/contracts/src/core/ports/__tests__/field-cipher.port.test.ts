@@ -11,16 +11,16 @@ import { describe, expect, it } from "@stackra/testing";
 import { Port } from "#core/bases/port.base";
 import { FieldCipher } from "#core/ports/field-cipher.port";
 
-/** Seals as `k1.<context>.<plain reversed>`: the key id is in the sealed form, as the port requires. */
+/** Seals as `k1.<context>|<plain reversed>`: the key id is in the sealed form, as the port requires; `|` because a context holds dots. */
 class ReversingCipher extends FieldCipher {
   override async seal(plain: string, context: string): Promise<string> {
-    return `k1.${context}.${[...plain].reverse().join("")}`;
+    return `k1.${context}|${[...plain].reverse().join("")}`;
   }
 
   override async open(sealed: string, context: string): Promise<string> {
-    const [keyId, sealedContext, ...rest] = sealed.split(".");
-    if (keyId !== "k1" || sealedContext !== context) throw new Error("Cannot open");
-    return [...rest.join(".")].reverse().join("");
+    const [head, ...rest] = sealed.split("|");
+    if (head !== `k1.${context}`) throw new Error("Cannot open");
+    return [...rest.join("|")].reverse().join("");
   }
 }
 

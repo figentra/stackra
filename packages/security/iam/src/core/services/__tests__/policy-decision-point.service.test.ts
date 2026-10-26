@@ -491,7 +491,7 @@ const CHANNEL_FACTS = Rules.create({
     {
       key: "record",
       fields: {
-        channel_id: {
+        channelId: {
           type: FieldType.String,
           label: "orders::fields.channel" as FactField["label"],
         },
@@ -503,12 +503,12 @@ const CHANNEL_FACTS = Rules.create({
 /** An order sold on `channel`, naming its model so its dimensions are checked. */
 const onChannel = (channel: string): RecordFacts => ({
   rules: CHANNEL_FACTS,
-  facts: { record: { channel_id: channel } },
+  facts: { record: { channelId: channel } },
   model: "orders.order",
 });
 
 const ONLINE: Condition = {
-  field: "record.channel_id",
+  field: "record.channelId",
   operator: Operator.Equals,
   value: "chn_online",
 };
@@ -590,7 +590,7 @@ describe("PolicyDecisionPointService (restricted, break-glass, dimensions, field
 
   it("denies on a dimension value that is not live, and pushes the live values into a query", async () => {
     registerDimensions([
-      { model: "orders.order", field: "record.channel_id", dimension: "sales.channel" },
+      { model: "orders.order", field: "record.channelId", dimension: "sales.channel" },
     ]);
     const source = new MemoryPolicySourceDriver();
     source.load({

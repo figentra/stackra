@@ -62,6 +62,8 @@ class StoreBase {
    */
   protected set(patch: StorePatch<this>): void {
     const internals = internalsOf(this);
+    // Hydrate first, so the whole-state write below never replaces saved fields the patch does not name.
+    void hydrateStore(this);
     const fields = this as unknown as Record<string, unknown>;
     let changed = false;
     for (const [field, value] of Object.entries(

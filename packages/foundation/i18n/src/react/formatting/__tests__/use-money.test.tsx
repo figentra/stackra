@@ -63,18 +63,19 @@ async function formatter(
 describe("useMoney", () => {
   it("formats minor units in a currency, as the pricing table shows them", async () => {
     const money = await formatter(Locale.En);
-    expect(money(9_900, "SAR")).toBe("SAR 99.00");
+    // Intl joins a currency code to the amount with a no-break space, so the two never wrap apart.
+    expect(money(9_900, "SAR")).toBe("SAR\u00A099.00");
     expect(money(1_250, "USD")).toBe("$12.50");
   });
 
   it("formats a Money, the per-month equivalent rounded down by the caller", async () => {
     const money = await formatter(Locale.En);
-    expect(money(Money.ofMinor(100_000, "SAR").divide(12, Rounding.Down))).toBe("SAR 83.33");
+    expect(money(Money.ofMinor(100_000, "SAR").divide(12, Rounding.Down))).toBe("SAR\u00A083.33");
   });
 
   it("shows exactly the currency's exponent of fraction digits", async () => {
     const money = await formatter(Locale.En);
-    expect(money(1_250, "KWD")).toBe("KWD 1.250");
+    expect(money(1_250, "KWD")).toBe("KWD\u00A01.250");
     expect(money(1_000, "JPY")).toBe("¥1,000");
   });
 

@@ -12,13 +12,14 @@ import { describe, expect, it } from "@stackra/testing";
 import { AccessReason } from "#core/enums/access-reason.enum";
 
 describe("AccessReason", () => {
-  it("holds the five reasons", () => {
+  it("holds the six reasons", () => {
     expect(Enum.values(AccessReason)).toEqual([
       "granted",
       "platform",
       "not_granted",
       "denied",
       "system_only",
+      "break_glass",
     ]);
   });
 });

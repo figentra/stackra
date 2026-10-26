@@ -12,6 +12,7 @@
  * Governing contract: ADR 0022; RFC 8628; ADR 0410 (STA-834); STA-1264; STA-1263.
  */
 import { buildConfig } from "@stackra/config";
+import { SecretStore } from "@stackra/config/contracts";
 import { describe, expect, it } from "@stackra/testing";
 
 import { IdpAdminConfig } from "#config/idp-admin.config";
@@ -48,10 +49,18 @@ function scripted(answers: readonly (readonly [number, object | string] | Error)
   return { fetcher, sent };
 }
 
+/** Holds the admin token, a `@Secret` the config reads from the store only. */
+class AdminTokenSecrets extends SecretStore {
+  get(name: string): string | undefined {
+    return name === "IDENTITY_IDP_ADMIN_TOKEN" ? "pat_1" : undefined;
+  }
+}
+
 /** The driver over `answers`, against https://id.acme.example. */
 function driverWith(answers: readonly (readonly [number, object | string] | Error)[]) {
   const config = buildConfig(IdpAdminConfig, {
-    values: { url: "https://id.acme.example/", token: "pat_1" },
+    values: { url: "https://id.acme.example/" },
+    secrets: new AdminTokenSecrets(),
   });
   const { fetcher, sent } = scripted(answers);
   return { idp: new ZitadelIdpAdminDriver(config, fetcher), sent };

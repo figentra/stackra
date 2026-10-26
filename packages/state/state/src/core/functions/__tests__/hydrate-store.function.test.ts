@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `hydrateStore`: synchronous areas hydrate at once and asynchronous ones through the returned
  *          promise; it runs once; unknown fields, fields of another type and corrupt values are ignored; listeners are
- *          notified only when a field changed; nothing is written back; a session-only store is hydrated trivially.
+ *          notified only when a field changed; nothing is written back; a change made during an asynchronous read is
+ *          written after it; a session-only store is hydrated trivially.
  * Boundary: test only; areas are hand-written stubs and the in-memory test storage.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0079; ADR 0256.
@@ -22,6 +23,10 @@ class PreferencesStore extends Store({ persist: "prefs" }) {
   tenantByUser: Record<string, string> = {};
 
   lastTab = "home";
+
+  setLastTab(lastTab: string): void {
+    this.set({ lastTab });
+  }
 }
 
 class DraftStore extends Store {
@@ -56,6 +61,19 @@ describe("hydrateStore", () => {
     await running;
     expect(store.lastTab).toBe("profile");
     expect(hydrateStore(store)).toBeUndefined();
+  });
+
+  it("writes a change made during an asynchronous read only after it, keeping the saved fields", async () => {
+    const { storage, set } = stubStorage(Promise.resolve({ tenantByUser: { usr_1: "ten_2" } }));
+    const store = new PreferencesStore(storage);
+    store.setLastTab("orders");
+    expect(set).not.toHaveBeenCalled();
+    await hydrateStore(store);
+    await Promise.resolve();
+    expect(set).toHaveBeenCalledWith("mobile.preferences", {
+      tenantByUser: { usr_1: "ten_2" },
+      lastTab: "orders",
+    });
   });
 
   it("reads storage once however often it is called", () => {

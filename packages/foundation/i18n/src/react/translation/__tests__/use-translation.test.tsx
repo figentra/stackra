@@ -35,18 +35,23 @@ class SiteI18nConfig extends I18nConfig {
 }
 
 class UserDigitsConfig extends SiteI18nConfig {
+  override locales: Locale[] = [Locale.En, Locale.Ar, Locale.ArEg];
   override numerals: NumberingSystem = NumberingSystem.User;
 }
 
-/** Renders `ui` under a container binding `type` and a provider for Arabic. */
-async function render(ui: ReactNode, type: typeof I18nConfig = SiteI18nConfig): Promise<string> {
+/** Renders `ui` under a container binding `type` and a provider for `locale` (Arabic by default). */
+async function render(
+  ui: ReactNode,
+  type: typeof I18nConfig = SiteI18nConfig,
+  locale: Locale = Locale.Ar,
+): Promise<string> {
   const container = await Container.create(
     [{ member: "web", config: [{ key: "i18n", provide: I18nConfig, override: type }] }],
     { overrides: new Map([[I18nConfig, buildConfig(type)]]) },
   );
   return renderToString(
     <ContainerProvider container={container}>
-      <I18nProvider locale={Locale.Ar} messages={MESSAGES}>
+      <I18nProvider locale={locale} messages={MESSAGES}>
         {ui}
       </I18nProvider>
     </ContainerProvider>,
@@ -70,7 +75,8 @@ describe("useTranslation", () => {
   });
 
   it("leaves the digits to the locale when numerals are the user's", async () => {
-    expect(await render(<Labels />, UserDigitsConfig)).toContain("١٢ منتج");
+    // ar-EG: plain `ar` defaults to Latin digits since CLDR 42, so it could not show the locale's own digits.
+    expect(await render(<Labels />, UserDigitsConfig, Locale.ArEg)).toContain("١٢ منتج");
   });
 
   it("throws outside a provider", () => {
