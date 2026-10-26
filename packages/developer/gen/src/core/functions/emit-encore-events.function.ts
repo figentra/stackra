@@ -4,24 +4,31 @@
  *          `Topic` per integration event its manifest publishes, registered with `registerBrokerTopics` under the
  *          event's `<module>.<name>.v<n>` wire name so the outbox's broker publisher reaches it; and, for a service with
  *          a relay listener, `.stackra/encore/<member>/relay.ts`, one `Subscription` per integration topic of the
- *          product (its own and every publishing sibling's) that hands the envelope to its `InboxService`.
+ *          product (its own and every publishing sibling's) that hands the envelope to its `InboxService`; and, for a
+ *          service whose listeners take a `#stackra/clients/<service>` event, `.stackra/encore/<member>/subscriptions.ts`,
+ *          one `Subscription` per consumed event on the producer's generated topic, into the same inbox, which runs the
+ *          typed listeners.
  * Boundary: pure; reads the manifest's integration events (hosted packages' included, as the outbox publishes them)
  *           and `ir.publishers`. No producer is edited to add a subscriber: the relay service imports each producer's
  *           generated topic, so a new publishing service is heard on the relay's next gen run. A wire name two
  *           publishers share is subscribed once (the first, by service key). Delivery is at least once; the inbox
  *           claims the envelope id, so a redelivery runs nothing twice. Which `EventPublisher` driver runs is runtime
- *           configuration; the topics cost nothing while the in-process driver is used.
+ *           configuration; the topics cost nothing while the in-process driver is used. A relay service gets no typed
+ *           subscription for a wire name its relay already hears (the inbox runs the typed listeners from either).
+ *           The cross-service topic imports are not yet checked by an Encore build (STA-597).
  * Runtime: isomorphic
- * Governing contract: ADR 0260 (decision 4: the relay hears every event); ADR 0141 (decision 2: the envelope, wire
+ * Governing contract: ADR 0260 (decision 4: the relay hears every event; typed consumers by the event class); ADR 0141 (decision 2: the envelope, wire
  *                     names); ADR 0148 (decisions 3 and 6: Encore Pub/Sub in SaaS); ADR 0142 (decision 1: transports
  *                     are drivers); ADR 0078 (decisions 2 to 4: inbox deduplication).
  */
 import type { StackraManifest } from "@stackra/contracts";
 
+import { CLIENTS_SPECIFIER } from "#core/constants/clients-specifier.constant";
 import { ENCORE_APP_IMPORT } from "#core/constants/encore-app-import.constant";
 import { camelCase } from "#core/functions/camel-case.function";
 import { generatedHeader } from "#core/functions/generated-header.function";
 import { kebabCase } from "#core/functions/kebab-case.function";
+import { serviceManifest } from "#core/functions/service-manifest.function";
 import type { GeneratedFile } from "#core/types/generated-file.type";
 import type { MemberIR } from "#core/types/member-ir.type";
 
@@ -46,8 +53,30 @@ function topicConst(wire: string): string {
   return camelCase(`event_${stem(wire)}`);
 }
 
+/** The imports and the `receive` handler of a subscriptions file, into the service's inbox. */
+function inboxPreamble(imports: readonly string[]): string[] {
+  return [
+    'import type { EventEnvelope } from "@stackra/outbox/contracts";',
+    'import { InboxService } from "@stackra/outbox/node";',
+    'import type { BrokerMessage } from "@stackra/queue/contracts";',
+    'import { Subscription } from "encore.dev/pubsub";',
+    "",
+    ENCORE_APP_IMPORT,
+    ...imports,
+    "",
+    "/** Hands one delivered envelope to this service's inbox. */",
+    "function receive(message: BrokerMessage): Promise<void> {",
+    "  return app.handlers.run(async (container) => {",
+    "    await container.get(InboxService).receive(message.body as EventEnvelope);",
+    "  });",
+    "}",
+    "",
+  ];
+}
+
 /**
- * The events and relay files of a service; none for a package, an app, or a service that neither publishes nor relays.
+ * The events, relay and subscriptions files of a service; none for a package, an app, or a service that neither
+ * publishes, relays nor consumes another service's event.
  *
  * @example
  * emitEncoreEvents(ir, manifest).map((file) => file.path); // [".stackra/encore/orders/events.ts"]
@@ -88,10 +117,18 @@ export function emitEncoreEvents(ir: MemberIR, manifest: StackraManifest): Gener
     });
   }
 
+  const relaySubscribed = emitRelay(ir, own, files);
+  emitSubscriptions(ir, relaySubscribed, files);
+  return files;
+}
+
+/** Writes `relay.ts` for a service with a relay listener; returns the wire names it subscribes to. */
+function emitRelay(ir: MemberIR, own: readonly string[], files: GeneratedFile[]): Set<string> {
+  const seen = new Set<string>();
   if (
     !ir.classes.some((declared) => declared.kind === "listener" && declared.handle?.relay === true)
   )
-    return files;
+    return seen;
   // Own topics from `./events`, each sibling's from its generated events file; first publisher of a wire name wins.
   const sources = [
     ...(own.length > 0 ? [{ from: "./events", wires: own }] : []),
@@ -102,7 +139,6 @@ export function emitEncoreEvents(ir: MemberIR, manifest: StackraManifest): Gener
         wires: wireNames(publisher.manifest),
       })),
   ];
-  const seen = new Set<string>();
   const imports: string[] = [];
   const subscribed: string[] = [];
   for (const { from, wires } of sources) {
@@ -112,7 +148,7 @@ export function emitEncoreEvents(ir: MemberIR, manifest: StackraManifest): Gener
     imports.push(`import { ${fresh.map(topicConst).join(", ")} } from ${JSON.stringify(from)};`);
     subscribed.push(...fresh);
   }
-  if (subscribed.length === 0) return files;
+  if (subscribed.length === 0) return seen;
   const subscription = `${kebabCase(ir.member)}-relay`;
   const header = generatedHeader({
     from: "stackra.manifest.json of this service and of every publishing service beside it",
@@ -126,21 +162,7 @@ export function emitEncoreEvents(ir: MemberIR, manifest: StackraManifest): Gener
     path: `.stackra/encore/${ir.member}/relay.ts`,
     content: [
       header,
-      'import type { EventEnvelope } from "@stackra/outbox/contracts";',
-      'import { InboxService } from "@stackra/outbox/node";',
-      'import type { BrokerMessage } from "@stackra/queue/contracts";',
-      'import { Subscription } from "encore.dev/pubsub";',
-      "",
-      ENCORE_APP_IMPORT,
-      ...imports,
-      "",
-      "/** Hands one delivered envelope to this service's inbox. */",
-      "function receive(message: BrokerMessage): Promise<void> {",
-      "  return app.handlers.run(async (container) => {",
-      "    await container.get(InboxService).receive(message.body as EventEnvelope);",
-      "  });",
-      "}",
-      "",
+      ...inboxPreamble(imports),
       ...subscribed.flatMap((wire) => [
         `/** Relays \`${wire}\`. */`,
         `export const ${topicConst(wire)}Relay = new Subscription(${topicConst(wire)}, ${JSON.stringify(subscription)}, {`,
@@ -150,5 +172,66 @@ export function emitEncoreEvents(ir: MemberIR, manifest: StackraManifest): Gener
       ]),
     ].join("\n"),
   });
-  return files;
+  return seen;
+}
+
+/**
+ * Writes `subscriptions.ts` for a service whose listeners take a `#stackra/clients/<service>` event: one
+ * `Subscription` per consumed wire name on the producer's generated topic, into the inbox, which runs the typed
+ * listeners. A wire name the relay already hears, or one the producer's manifest does not publish (a
+ * `client_event_unknown` refusal of the clients target), is left out.
+ */
+function emitSubscriptions(ir: MemberIR, skip: ReadonlySet<string>, files: GeneratedFile[]): void {
+  const byService = new Map<string, Set<string>>();
+  for (const declared of ir.classes) {
+    const event = declared.kind === "listener" ? declared.handle?.event : undefined;
+    if (event === undefined || !event.from.startsWith(CLIENTS_SPECIFIER)) continue;
+    const service = event.from.slice(CLIENTS_SPECIFIER.length);
+    if (service === ir.member) continue;
+    const entry = (serviceManifest(ir, service)?.events ?? []).find(
+      (candidate) => candidate.kind === "integration" && candidate["class"] === event.name,
+    );
+    const wire = entry?.["name"];
+    if (typeof wire !== "string" || skip.has(wire)) continue;
+    byService.set(service, (byService.get(service) ?? new Set()).add(wire));
+  }
+  if (byService.size === 0) return;
+  const services = [...byService].sort(([left], [right]) => (left < right ? -1 : 1));
+  // First consuming import of a wire name wins, as in the relay.
+  const seen = new Set<string>();
+  const imports: string[] = [];
+  const subscribed: string[] = [];
+  for (const [service, wires] of services) {
+    const fresh = [...wires].filter((wire) => !seen.has(wire)).sort();
+    if (fresh.length === 0) continue;
+    for (const wire of fresh) seen.add(wire);
+    const folder =
+      ir.services?.find((candidate) => candidate.member === service)?.folder ?? service;
+    imports.push(
+      `import { ${fresh.map(topicConst).join(", ")} } from ${JSON.stringify(`../../../../${folder}/.stackra/encore/${service}/events`)};`,
+    );
+    subscribed.push(...fresh);
+  }
+  const header = generatedHeader({
+    from: "the listeners of #stackra/clients/<service> events and those services' stackra.manifest.json",
+    purpose: `the typed event subscriptions of ${ir.package}: one per consumed integration event, into its inbox.`,
+    boundary:
+      "each delivery runs InboxService#receive in the server app, so the inbox claims the event id once and runs the " +
+      "typed listeners of it; the producer is never edited, and a new consumed event is subscribed on the next gen run.",
+    runtime: "node",
+  });
+  files.push({
+    path: `.stackra/encore/${ir.member}/subscriptions.ts`,
+    content: [
+      header,
+      ...inboxPreamble(imports),
+      ...subscribed.flatMap((wire) => [
+        `/** Delivers \`${wire}\` to this service's typed listeners. */`,
+        `export const ${topicConst(wire)}Subscription = new Subscription(${topicConst(wire)}, ${JSON.stringify(`${kebabCase(ir.member)}-${kebabCase(stem(wire))}`)}, {`,
+        "  handler: receive,",
+        "});",
+        "",
+      ]),
+    ].join("\n"),
+  });
 }

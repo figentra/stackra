@@ -73,10 +73,12 @@ export interface MemberIR {
 
   /**
    * The committed manifests of the services the member injects a generated client of (`#stackra/clients/<service>`),
-   * found beside the member. Absent in an IR built by hand; the clients target also looks in `dependencies`.
+   * found beside the member, with the folder each sits in (absent in an IR built by hand: the service key is used).
+   * Absent in an IR built by hand; the clients target also looks in `dependencies`.
    */
   readonly services?: readonly {
     readonly member: string;
+    readonly folder?: string;
     readonly manifest: StackraManifest;
   }[];
 

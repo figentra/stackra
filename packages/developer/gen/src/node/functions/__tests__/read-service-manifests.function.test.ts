@@ -33,8 +33,8 @@ describe("readServiceManifests", () => {
     expect(
       readServiceManifests(root, ["gift_cards", "catalogue", "catalogue", "stock", "missing"]),
     ).toEqual([
-      { member: "catalogue", manifest: catalogue },
-      { member: "gift_cards", manifest: giftCards },
+      { member: "catalogue", folder: "catalogue", manifest: catalogue },
+      { member: "gift_cards", folder: "gift-cards", manifest: giftCards },
     ]);
   });
 

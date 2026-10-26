@@ -209,7 +209,12 @@ under its `<module>.<name>.v<n>` wire name for the outbox's `broker` publisher. 
 webhooks relay, ADR 0260 decision 4) also gets `.stackra/encore/<member>/relay.ts`: one `Subscription` per integration
 topic of the product, its own and every publishing service's beside it (`readPublisherManifests` fills
 `MemberIR.publishers`), each delivery handed to `InboxService#receive`. No producer is edited to add the relay; a new
-publishing service is heard on the relay service's next gen run. The manifest also locks each Integration's egress entry from its `baseUrl`: a fixed https
+publishing service is heard on the relay service's next gen run. A service whose listeners take a
+`#stackra/clients/<service>` event gets `.stackra/encore/<member>/subscriptions.ts`: one `Subscription` per consumed
+event (named `<member>-<wire name>`) on the producer's generated topic, imported from its `events.ts` like the relay's,
+each delivery handed to `InboxService#receive`, which runs the typed listeners; a wire name the service's relay already
+hears gets none. The cross-service topic imports of `relay.ts` and `subscriptions.ts` are not yet checked by an Encore
+build (STA-597). The manifest also locks each Integration's egress entry from its `baseUrl`: a fixed https
 origin, or a `{field}` host kept as data with the credential-set fields it is filled from (`egress_invalid` otherwise),
 and refuses a sequence outside `database/sequences/` (`sequence_misplaced`), a `@DocumentNumber` field whose sequence
 is declared neither in the member nor in a dependency (`document_number_unsequenced`), and two cron actions with one

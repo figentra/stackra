@@ -3,7 +3,7 @@
  * Purpose: `readServiceManifests`, the committed `stackra.manifest.json` of each service the member injects a
  *          generated client of, found in the folder beside the member (`services/<service>` next to
  *          `services/<member>`), by the service key or its kebab-case folder name: what the clients target writes
- *          `#stackra/clients/<service>` from.
+ *          `#stackra/clients/<service>` from, with the folder it sits in (where the events target imports its topics).
  * Boundary: reads files only. A service is matched by the manifest's `member`, never by importing its package
  *           (ADR 0010: services never import each other). A service with no manifest is left out, and the clients
  *           target refuses it with its fix. A manifest that is not valid JSON fails the run.
@@ -31,7 +31,7 @@ export function readServiceManifests(
   root: string,
   services: readonly string[],
 ): NonNullable<MemberIR["services"]> {
-  const found: { member: string; manifest: StackraManifest }[] = [];
+  const found: { member: string; folder: string; manifest: StackraManifest }[] = [];
   for (const service of [...new Set(services)].sort()) {
     for (const folder of new Set([service, kebabCase(service)])) {
       const path = join(dirname(root), folder, "stackra.manifest.json");
@@ -43,7 +43,7 @@ export function readServiceManifests(
         throw new Error(`${path} is not valid JSON: ${(error as Error).message}`, { cause: error });
       }
       if (manifest.member !== service) continue;
-      found.push({ member: service, manifest });
+      found.push({ member: service, folder, manifest });
       break;
     }
   }

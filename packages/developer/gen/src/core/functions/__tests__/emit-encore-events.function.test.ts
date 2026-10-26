@@ -2,8 +2,9 @@
  * Stackra file contract:
  * Purpose: unit tests of `emitEncoreEvents`: a publishing service gets one Pub/Sub topic per integration event,
  *          registered under its wire name; a relay service also gets one subscription per integration topic of the
- *          product (its own and each publisher's, a shared wire name once) into its inbox; nothing for a package, an
- *          app, or a service that neither publishes nor relays.
+ *          product (its own and each publisher's, a shared wire name once) into its inbox; a typed consumer gets one
+ *          subscription per consumed event on the producer's topic (none for an event its relay hears or the producer
+ *          does not publish); nothing for a package, an app, or a service that neither publishes, relays nor consumes.
  * Boundary: test only; runs on the IR fixtures and the manifests built from them.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0260 (decision 4); ADR 0141; ADR 0148 (decisions 3 and 6).
@@ -57,6 +58,38 @@ const WEBHOOKS_IR: MemberIR = {
   ],
 };
 
+/** A listener of commerce's `OrderPaid`, imported from its generated client. */
+const TYPED: DeclaredClass = {
+  ...RELAY,
+  name: "SyncOnOrderPaidListener",
+  file: "src/modules/deliveries/listeners/sync-on-order-paid.listener.ts",
+  importPath: "#modules/deliveries/listeners/sync-on-order-paid.listener",
+  handle: { event: { name: "OrderPaid", from: "#stackra/clients/commerce" } },
+};
+
+/** Commerce beside the consumer, in a folder that is not its key. */
+const COMMERCE_SERVICE: NonNullable<MemberIR["services"]> = [
+  { member: "commerce", folder: "commerce-svc", manifest: buildManifest(COMMERCE_IR).manifest },
+];
+
+/** A service consuming commerce's `OrderPaid` (twice, and an event commerce does not publish). */
+const SHIPPING_IR: MemberIR = {
+  ...WEBHOOKS_IR,
+  member: "shipping",
+  package: "@acme/service-shipping",
+  classes: [
+    TYPED,
+    { ...TYPED, name: "AuditOnOrderPaidListener" },
+    {
+      ...TYPED,
+      name: "GhostListener",
+      handle: { event: { name: "Ghost", from: "#stackra/clients/commerce" } },
+    },
+  ],
+  publishers: [],
+  services: COMMERCE_SERVICE,
+};
+
 describe("emitEncoreEvents", () => {
   it("emits one topic per integration event, registered under its wire name", () => {
     const [file, ...rest] = emitEncoreEvents(COMMERCE_IR, buildManifest(COMMERCE_IR).manifest);
@@ -98,6 +131,28 @@ describe("emitEncoreEvents", () => {
       ".stackra/encore/commerce/relay.ts",
     ]);
     expect(files[1]?.content).toContain('import { eventOrdersOrderPaidV1 } from "./events";');
+  });
+
+  it("subscribes a typed consumer to each consumed event on the producer's topic, once", () => {
+    const files = emitEncoreEvents(SHIPPING_IR, buildManifest(SHIPPING_IR).manifest);
+    expect(files.map((file) => file.path)).toEqual([".stackra/encore/shipping/subscriptions.ts"]);
+    const content = files[0]?.content ?? "";
+    expect(content).toContain(
+      'import { eventOrdersOrderPaidV1 } from "../../../../commerce-svc/.stackra/encore/commerce/events";',
+    );
+    expect(content).toContain(
+      'export const eventOrdersOrderPaidV1Subscription = new Subscription(eventOrdersOrderPaidV1, "shipping-orders-order-paid-v1", {',
+    );
+    expect(content).toContain(
+      "    await container.get(InboxService).receive(message.body as EventEnvelope);",
+    );
+    expect(content.match(/new Subscription\(/g)).toHaveLength(1);
+  });
+
+  it("leaves a consumed event to the relay when the service relays", () => {
+    const ir: MemberIR = { ...WEBHOOKS_IR, classes: [RELAY, TYPED], services: COMMERCE_SERVICE };
+    const files = emitEncoreEvents(ir, buildManifest(ir).manifest);
+    expect(files.map((file) => file.path)).toEqual([".stackra/encore/webhooks/relay.ts"]);
   });
 
   it("writes nothing for a package, an app, a quiet service or a relay with no topic to hear", () => {
