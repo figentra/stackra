@@ -6,7 +6,7 @@
  *          public types resolve.
  * Boundary: test only; imports the stand-in barrel through its `#core` alias.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0269; ADR 0294 (decision 15).
+ * Governing contract: ADR 0022; ADR 0269; ADR 0294 (decision 15); STA-1225 (`isEntitled`).
  */
 import type { AnyClass } from "@stackra/container";
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
@@ -44,6 +44,7 @@ describe("@stackra/entitlements", () => {
       "SeatMeterService",
       "SecondApproverRequiredError",
       "entitlementKey",
+      "isEntitled",
       "limitAllows",
       "planCatalogueOf",
       "registerEntitlements",

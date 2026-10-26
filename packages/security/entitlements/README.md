@@ -1,3 +1,11 @@
+<!--
+Stackra file contract:
+Purpose: the reader guide of @stackra/entitlements: entries, declaring, the pipeline check, grant by class or key, sources, testing.
+Boundary: documentation of packages/security/entitlements only.
+Runtime: none
+Governing contract: ADR 0215; ADR 0294; STA-1225 (grant by key).
+-->
+
 # @stackra/entitlements
 
 Stackra entitlements: the `Entitlement` kind for plan rights (a feature, a limit, a module), the `EntitlementSource`
@@ -26,6 +34,8 @@ An entitlement is a commercial right. It is never a release switch (that is a fl
 | `.`           | `PlanEntitlementCheckDriver`                                                            | the driver of `EntitlementCheck`, the pipeline's entitlement step          |
 | `.`           | `LimitReachedError`                                                                     | `limit_reached`: the refusal of a create past the plan's limit             |
 | `.`           | `registerEntitlements`, `entitlementKey`                                                | what gen's entry calls at boot; the locked key a keyed source looks up     |
+| `.`           | `isEntitled`                                                                            | yes or no for one entitlement in one scope, by class or by key             |
+| `./contracts` | `EntitlementKey` (also re-exported from `.`)                                            | an entitlement named by its key: `billing` or `catalogue.product_limit`    |
 | `.`           | `EntitlementClass`, `EntitlementGrant`, `EntitlementOptions`, `EntitlementRegistration` | types                                                                      |
 | `./testing`   | `fakeEntitlements`                                                                      | an `EntitlementSource` with the grants a test lists                        |
 
@@ -75,6 +85,22 @@ For each entitlement that gates the call, the driver asks `EntitlementSource.gra
 A grant of the wrong shape (a count for a feature, `true` for a limit) is a source bug and throws a `TypeError`.
 Collaboration (ADR 0270) and any other gated surface is a feature or module entitlement checked the same way.
 
+## By class or by key
+
+Code that holds the class passes the class. A caller that only knows the key, such as the marketplace registry gating
+the install of a paid module it knows by its module key (ADR 0131), passes the key: a module entitlement's key is the
+module key (`billing`), a feature, limit or value is `<module>.<name>` (`catalogue.product_limit`). `entitlementKey`
+turns either into the key, so a source answers both from the same record:
+
+```ts
+await source.grant(ProductLimitEntitlement, scope.id); // { limit: 2 }
+await source.grant("catalogue.product_limit", scope.id); // { limit: 2 }, the same record
+if (!(await isEntitled(source, module.key, scope.id))) throw EntitlementRequiredError.create();
+```
+
+A key that is not `<module>` or `<module>.<name>` in snake_case throws a `TypeError`. `isEntitled` counts no usage:
+it is true for any grant in the plan (`true`, a count, a soft limit, a value) and false for `false` or no grant.
+
 ## Sources
 
 | Mode       | What its `EntitlementSource` driver reads                                                             |
@@ -123,7 +149,8 @@ expect(await run(ProductOperations.Create, input, { as: actors.staff() })).toRef
 );
 ```
 
-Every scope gets the listed grants; an entitlement not listed is not in the plan. Counts come from the real
+Every scope gets the listed grants; an entitlement not listed is not in the plan. An entry may name a key
+(`["billing", true]`); a registered class and its key answer the same grant. Counts come from the real
 `EntitlementUsage`, so a test creates the records it needs.
 
 ## Not here

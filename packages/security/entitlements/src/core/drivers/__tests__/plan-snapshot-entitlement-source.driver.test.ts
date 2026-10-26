@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `PlanSnapshotEntitlementSourceDriver` over `MemoryPlanSnapshotsDriver`: it is an
  *          `EntitlementSource`; it answers a grant by the entitlement's locked key in the scope's plan; a scope with no
- *          plan or a plan without the key answers `undefined`; an unregistered class throws; loading raises the version.
+ *          plan or a plan without the key answers `undefined`; an unregistered class throws; loading raises the version;
+ *          a key answers the same record as its class, and a malformed key throws (STA-1225).
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0215 (decisions 1, 5 and 6); owner round 3 #18.
@@ -57,6 +58,22 @@ describe("PlanSnapshotEntitlementSourceDriver", () => {
 
   it("refuses an unregistered entitlement", async () => {
     await expect(source.grant(UnregisteredEntitlement, ACME)).rejects.toThrow(TypeError);
+  });
+
+  it("answers a key and its class from the same record", async () => {
+    snapshots.load(ACME, {
+      grants: { "catalogue.product_limit": { limit: 2 }, billing: true },
+      seats: {},
+    });
+    expect(await source.grant("catalogue.product_limit", ACME)).toEqual(
+      await source.grant(ProductLimitEntitlement, ACME),
+    );
+    expect(await source.grant("billing", ACME)).toBe(true);
+    expect(await source.grant("payroll", ACME)).toBeUndefined();
+  });
+
+  it("refuses a malformed key", async () => {
+    await expect(source.grant("Not A Key", ACME)).rejects.toThrow(TypeError);
   });
 
   it("raises the version on every load", async () => {

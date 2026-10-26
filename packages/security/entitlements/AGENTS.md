@@ -1,3 +1,11 @@
+<!--
+Stackra file contract:
+Purpose: the agent rules of @stackra/entitlements: where code goes, entries and barrels, package rules.
+Boundary: documentation of packages/security/entitlements only.
+Runtime: none
+Governing contract: ADR 0215; ADR 0294; STA-1225 (grant by key).
+-->
+
 # AGENTS — @stackra/entitlements
 
 The `Entitlement` kind, its ports and the plan driver of the pipeline's entitlement step. Member at
@@ -21,8 +29,10 @@ The `Entitlement` kind, its ports and the plan driver of the pipeline's entitlem
 - `src/{core,contracts,testing}/index.ts` are stand-in barrels until gen writes the entry barrels (STA-339); add every new
   public file to its barrel and to that entry's `index.test.ts`.
 - `EntitlementUsage` lives in `src/contracts/ports/` and is exported only from `./contracts`. `EntitlementSource`
-  stays in `src/core/ports/` and `.`: its signature uses `EntitlementClass`, which names the core `Entitlement` base,
-  and contracts cannot import core. `ENTITLEMENT_REGISTRY` stays internal.
+  lives in `src/contracts/ports/` (its signature names the structural `EntitlementRef` and `EntitlementKey`) and is
+  re-exported from `.` and `src/core/ports/` for old imports. `ENTITLEMENT_REGISTRY` stays internal.
+- `EntitlementSource#grant` takes a class or a key (STA-1225). A driver turns either into the key with
+  `entitlementKey`, never by its own lookup, so a class and its key always answer the same record.
 
 ## This package
 
