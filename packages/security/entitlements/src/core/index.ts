@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `.` entry of @stackra/entitlements (the `Entitlement` kind, its ports, the plan driver
- *          of the pipeline's entitlement step, the registration gen calls, `LimitReachedError`, and the plan-catalogue
- *          admin of ADR 0391) until `stackra gen` writes the entry barrels (STA-339).
+ *          of the pipeline's entitlement step and its limit reservation, the value-entitlement reader, the registration
+ *          gen calls, `LimitReachedError`, and the plan-catalogue admin of ADR 0391) until `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. The registry, `isLimitGrant` and `limitOf` stay internal.
  *           `EntitlementSource` now lives in `./contracts` and is still re-exported here so existing imports keep
  *           working; new code imports it from `./contracts`.
@@ -13,6 +13,7 @@ export { Entitlement } from "#core/bases/entitlement.base";
 export { MemoryCatalogueVersionsDriver } from "#core/drivers/memory-catalogue-versions.driver";
 export { MemoryPlanSnapshotsDriver } from "#core/drivers/memory-plan-snapshots.driver";
 export { MemorySeatLedgerDriver } from "#core/drivers/memory-seat-ledger.driver";
+export { PlanLimitReservationDriver } from "#core/drivers/plan-limit-reservation.driver";
 export { PlanEntitlementCheckDriver } from "#core/drivers/plan-entitlement-check.driver";
 export { PlanSnapshotEntitlementSourceDriver } from "#core/drivers/plan-snapshot-entitlement-source.driver";
 export { EntitlementKind } from "#core/enums/entitlement-kind.enum";
@@ -28,6 +29,7 @@ export { registerEntitlements } from "#core/functions/register-entitlements.func
 export { tierPlan } from "#core/functions/tier-plan.function";
 export { versionInForce } from "#core/functions/version-in-force.function";
 export { EntitlementSource } from "#core/ports/entitlement-source.port";
+export { EntitlementValueService } from "#core/services/entitlement-value.service";
 export { LimitReservationService } from "#core/services/limit-reservation.service";
 export { PlanCatalogueService } from "#core/services/plan-catalogue.service";
 export { SeatMeterService } from "#core/services/seat-meter.service";

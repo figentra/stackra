@@ -14,7 +14,7 @@ import type { EntitlementKind } from "#core/enums/entitlement-kind.enum";
 
 /** The options of an entitlement class. */
 export interface EntitlementOptions {
-  /** Feature, limit or module. */
+  /** Feature, limit, module or value (a plain number the plan sets, ADR 0408). */
   readonly kind: EntitlementKind;
 
   /**

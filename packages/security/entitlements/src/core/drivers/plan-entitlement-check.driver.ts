@@ -7,7 +7,8 @@
  * Boundary: plugs into the step `ActionPipeline` already runs after the preconditions and before the flag step; it adds
  *           no second gate. A right that is not granted refuses `entitlement_required`; a limit already reached
  *           refuses `limit_reached`, unless the grant is a soft limit whose grace period still runs (owner round 3
- *           #18). A grant of the wrong shape is a source bug and throws a `TypeError`. A call no entitlement gates
+ *           #18). A value entitlement (ADR 0408) gates only by being in the plan. A grant of the wrong shape is a source bug
+ *           and throws a `TypeError`. A call no entitlement gates
  *           passes without asking the source. The check reads a snapshot, so two creates racing at the limit may both
  *           pass; a create that must never pass the limit runs inside `LimitReservationService.reserve`.
  * Runtime: isomorphic
@@ -21,9 +22,11 @@ import { Clock } from "@stackra/contracts";
 import { EntitlementRequiredError } from "@stackra/errors";
 
 import { ENTITLEMENT_REGISTRY } from "#core/constants/entitlement-registry.constant";
+import { EntitlementKind } from "#core/enums/entitlement-kind.enum";
 import { LimitReachedError } from "#core/errors/limit-reached.error";
 import { isLimitGrant } from "#core/functions/is-limit-grant.function";
 import { limitAllows } from "#core/functions/limit-allows.function";
+import { isValueGrant } from "#core/functions/is-value-grant.function";
 import { limitOf } from "#core/functions/limit-of.function";
 import { EntitlementSource } from "#core/ports/entitlement-source.port";
 import { EntitlementUsage } from "#contracts/ports/entitlement-usage.port";
@@ -63,16 +66,25 @@ export class PlanEntitlementCheckDriver extends Driver(EntitlementCheck) {
    *
    * @throws EntitlementRequiredError when a gating right is not in the plan.
    * @throws LimitReachedError when a gating limit's count already equals or passes the grant and no grace period runs.
-   * @throws TypeError when the source answers a count for a feature or module, or a boolean `true` for a limit.
+   * @throws TypeError when the source answers a count for a feature or module, a boolean `true` for a limit, or
+   *         anything but a number for a value.
    */
   async check(call: CallDescriptor): Promise<void> {
     const scope = call.scope?.id;
     for (const { type, key, gates } of ENTITLEMENT_REGISTRY.values()) {
       if (!gates.includes(call.type)) continue;
       // `Entitlement` records `counts` for a limit and only for a limit.
-      const { counts } = (kindOf(type)?.options ?? {}) as unknown as EntitlementOptions;
+      const { kind, counts } = (kindOf(type)?.options ?? {}) as unknown as EntitlementOptions;
       const grant = await this.source.grant(type, scope);
       if (grant === undefined || grant === false) throw EntitlementRequiredError.create();
+      if (kind === EntitlementKind.Value) {
+        // A value gates a call only by being in the plan; the number is read where it is used.
+        if (!isValueGrant(grant))
+          throw new TypeError(
+            `${key} is a value, so its source answers a number, not ${JSON.stringify(grant)}`,
+          );
+        continue;
+      }
       if (counts === undefined) {
         if (grant !== true)
           throw new TypeError(

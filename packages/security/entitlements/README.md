@@ -18,6 +18,8 @@ An entitlement is a commercial right. It is never a release switch (that is a fl
 | `./contracts` | `PlanSnapshots`, `SeatLedger`, `PlanSnapshot`, `LimitGrant`, `SeatAssignment`           | the plan of a scope and the seats held                                     |
 | `.`           | `PlanSnapshotEntitlementSourceDriver`, `MemoryPlanSnapshotsDriver`                      | the SaaS source over the plan snapshot, and its memory store               |
 | `.`           | `LimitReservationService`                                                               | reserve-then-commit: a create at a limit runs under the limit's lock       |
+| `.`           | `PlanLimitReservationDriver`                                                            | the pipeline's `LimitReservation`: every create a limit gates is reserved  |
+| `.`           | `EntitlementValueService`                                                               | reads a value entitlement's number (`EntitlementKind.Value`) from the plan |
 | `.`           | `SeatMeterService`, `MemorySeatLedgerDriver`, `SeatLimitReachedError`                   | the seat-kind meter: assign, release, usage per kind                       |
 | `.`           | `limitAllows`                                                                           | whether one more fits a count or a soft limit at a time                    |
 | `./contracts` | `EntitlementUsage`                                                                      | the port a limit's current count comes from (the data layer implements it) |
@@ -92,7 +94,12 @@ A limit grant is a count (hard) or a `LimitGrant` `{ limit, graceEndsAt?, ceilin
 pass while the grace period runs and the count is below `ceiling`. The numbers and dates are plan-catalogue data. The
 pipeline step reads a snapshot, so two creates racing at the last slot may both pass; a create that must never pass
 runs inside `LimitReservationService.reserve(entitlement, scope, create)`, which holds the limit's lock from the count
-until the create returns.
+until the create returns. Bind `PlanLimitReservationDriver` as the pipeline's `LimitReservation` and every action a
+limit gates gets that reservation around its unit of work, with no code in the action.
+
+A value entitlement (`EntitlementKind.Value`, ADR 0408) is a plain number the plan sets that counts no model, such as
+the audit visible window in days: `await values.valueOf(AuditWindowDaysEntitlement, scope.id)` answers it from the
+effective plan, or `undefined` when the plan does not set it.
 
 ## Seat kinds
 

@@ -266,3 +266,38 @@ describe("PlanEntitlementCheckDriver", () => {
     );
   });
 });
+
+/** A value entitlement that gates a call (ADR 0408). */
+class ExportWindowDaysEntitlement extends Entitlement({ kind: EntitlementKind.Value }) {}
+
+describe("PlanEntitlementCheckDriver with a value entitlement (STA-824)", () => {
+  beforeEach(() => {
+    ENTITLEMENT_REGISTRY.clear();
+    registerEntitlements([
+      {
+        type: ExportWindowDaysEntitlement,
+        key: "reports.export_window_days",
+        gates: [ListReportsQuery],
+      },
+    ]);
+  });
+
+  it("passes when the plan sets the number, refuses when not, and throws on a boolean", async () => {
+    const usage = new RowsUsageDriver();
+    const set = new PlanEntitlementCheckDriver(
+      fakeEntitlements([[ExportWindowDaysEntitlement, 30]]),
+      usage,
+    );
+    await expect(set.check(callOf(ListReportsQuery))).resolves.toBeUndefined();
+    expect(usage.counted).toBe(0);
+    const unset = new PlanEntitlementCheckDriver(fakeEntitlements(), usage);
+    await expect(unset.check(callOf(ListReportsQuery))).rejects.toBeInstanceOf(
+      EntitlementRequiredError,
+    );
+    const wrong = new PlanEntitlementCheckDriver(
+      fakeEntitlements([[ExportWindowDaysEntitlement, true]]),
+      usage,
+    );
+    await expect(wrong.check(callOf(ListReportsQuery))).rejects.toThrow(TypeError);
+  });
+});
