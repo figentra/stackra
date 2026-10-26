@@ -1,6 +1,6 @@
 ---
 title: "0422 — Communication gaps: a notifier target, in-app product, provider failover lists, S3 webhooks, gated subscriptions and the payroll connector"
-description: "Proposed · 2026-10-26"
+description: "Proposed · 2026-10-26 · amended 2026-10-26 (STA-1235)"
 ---
 
 <Note>
@@ -8,6 +8,18 @@ description: "Proposed · 2026-10-26"
   [0223](/adr/0223-notifications-channels-cascading-templates-manual-sends-and-preferences),
   [0356](/adr/0356-choosing-a-provider-per-tenant-and-market-through-the-connection-with-a-market-default)
   and [0224](/adr/0224-stackra-webhooks).
+</Note>
+
+<Note>
+  Amended 2026-10-26 (STA-1235), decision 1: config `notifications.target` names the built-in target
+  when a host passes none, `messages` (the default, unchanged) or `delivery` (the OS notifications
+  service's `delivery.message.send@1`: the template key, a category code, the template values, the
+  rendered mail or `null`, and the Market). `Notification({ category, messageCategory })` may name
+  the delivery service's own category code beside the three-case category. `Recipient.address(email)`
+  addresses a person with no account yet (an invitation, a partner lead): a target takes it through
+  an optional `addressPayload`, and the driver refuses it before queueing anything when the target
+  has none. This is the one case where an address leaves the producer; a person with a principal is
+  always addressed by id. Scope recipients stay refused.
 </Note>
 
 ## Context

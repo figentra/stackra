@@ -72,6 +72,24 @@ describe("Notification", () => {
     expect(receipt.data(new OrderPaid()).order.id).toBe("ord_01j9z3k4m5n6p7q8r9s0t1v2w3");
   });
 
+  it("records a delivery service's message category beside the category", () => {
+    class SecurityAlertNotification extends Notification({
+      category: NotificationCategory.Transactional,
+      messageCategory: "security",
+    }) {
+      recipients(): Recipient[] {
+        return [];
+      }
+    }
+    expect(kindOf(SecurityAlertNotification)?.options).toEqual({
+      category: "transactional",
+      messageCategory: "security",
+    });
+    expect(() =>
+      Notification({ category: NotificationCategory.Activity, messageCategory: "Security!" }),
+    ).toThrow(RangeError);
+  });
+
   it("refuses a category that is not a NotificationCategory", () => {
     expect(() => Notification({ category: "urgent" as Category })).toThrow(RangeError);
   });

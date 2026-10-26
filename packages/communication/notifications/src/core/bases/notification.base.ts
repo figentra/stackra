@@ -8,7 +8,9 @@
  *           `recipients` is declared on the base: `data` and the channel methods are found by name, so a subclass
  *           writes them without `override`. The key, the trigger, the queue and the mail body are derived by gen.
  * Runtime: isomorphic
- * Governing contract: ADR 0294 (decisions 3, 16, 20 and 25); ADR 0223 (as amended by ADR 0294); ADR 0305 (rule 3).
+ *           An optional `messageCategory` (snake_case) is recorded beside the category for the delivery target.
+ * Governing contract: ADR 0294 (decisions 3, 16, 20 and 25); ADR 0223 (as amended by ADR 0294); ADR 0305 (rule 3);
+ *                     ADR 0422 (as amended by STA-1235).
  */
 import { createKind } from "@stackra/container";
 import { Enum } from "@stackra/contracts";
@@ -38,7 +40,13 @@ function read(options: NotificationOptions) {
     throw new RangeError(
       `Notification({ category }) takes a NotificationCategory, got ${JSON.stringify(options?.category)}`,
     );
-  return { category: options.category };
+  const { messageCategory } = options;
+  if (messageCategory === undefined) return { category: options.category };
+  if (typeof messageCategory !== "string" || !/^[a-z][a-z0-9_]{0,63}$/.test(messageCategory))
+    throw new RangeError(
+      `Notification({ messageCategory }) takes a snake_case code, got ${JSON.stringify(messageCategory)}`,
+    );
+  return { category: options.category, messageCategory };
 }
 
 /**

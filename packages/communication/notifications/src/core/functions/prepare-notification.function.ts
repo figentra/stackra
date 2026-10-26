@@ -2,8 +2,9 @@
  * Stackra file contract:
  * Purpose: `prepareNotification(notification, event)`, the step every `Notifier` driver shares: the recipients, then
  *          the data once for every channel, then each channel method's message, as one delivery per recipient.
- * Boundary: internal (the drivers call it). No recipient means no data read. A recipient named twice gets one
- *           delivery. Calls `data` and `mail` as methods, so `this` is the notification. Renders nothing.
+ * Boundary: internal (the drivers call it). No recipient means no data read. A recipient (principal, scope or
+ *           address) named twice gets one delivery. Calls `data` and `mail` as methods, so `this` is the
+ *           notification. Renders nothing.
  * Runtime: isomorphic
  * Governing contract: ADR 0223 (as amended by ADR 0294: channels are the methods present); ADR 0294 (decision 4).
  */
@@ -45,10 +46,11 @@ export async function prepareNotification(
   for (const recipient of await notification.recipients(event as never)) {
     if (!(recipient instanceof Recipient))
       throw new TypeError(
-        `${name}.recipients() returns Recipient.principal(id) or Recipient.scope(scope) values`,
+        `${name}.recipients() returns Recipient.principal(id), Recipient.scope(scope) or Recipient.address(email) values`,
       );
     const id =
-      recipient.principalId === null ? `scope:${recipient.scopeId}` : recipient.principalId;
+      recipient.principalId ??
+      (recipient.scopeId === null ? `mail:${recipient.email}` : `scope:${recipient.scopeId}`);
     if (!seen.has(id)) recipients.push(recipient);
     seen.add(id);
   }

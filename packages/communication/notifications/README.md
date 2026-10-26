@@ -15,25 +15,27 @@ optional peer, needed by `./node`, `./react` and `./testing` only.
 
 ## What is here
 
-| Entry         | Symbol                                                                         | Use                                                                         |
-| ------------- | ------------------------------------------------------------------------------ | --------------------------------------------------------------------------- |
-| `.`           | `Notification`                                                                 | the kind base: `Notification({ category })`, with `recipients(event)`       |
-| `.`           | `NotificationCategory`                                                         | `transactional`, `activity`, `marketing`; case data `mutable`, `optIn`      |
-| `.`           | `Recipient`                                                                    | `Recipient.principal(id)` or `Recipient.scope(scope)` (the scope's id only) |
-| `.`           | `MailMessage` (type)                                                           | what `mail(data, mail)` returns: `mail.subject(key, values)`                |
-| `.`           | `Notifier`                                                                     | the port gen's listener calls: `notify(notification, event)`                |
-| `.`           | `MemoryNotifierDriver`                                                         | the `memory` driver: keeps deliveries for tests and dev                     |
-| `.`           | `NotificationsConfig`, `NotificationsConfig$`, `NotificationsOptions`          | config key `notifications`; `driver` picks the `Notifier`                   |
-| `.`           | `NotificationDelivery`, `NotificationOptions`, `NotifierDriverName`            | types                                                                       |
-| `./contracts` | `MailTransport`, `OutboundMail` (type)                                         | the port a mail provider driver implements (`Driver(MailTransport)`)        |
-| `./contracts` | `SmsTransport`, `OutboundSms` (type)                                           | the port an SMS provider driver implements                                  |
-| `./contracts` | `InAppStore`, `InAppMessage`, `InAppEntry` (types)                             | a person's in-app inbox: `append`, `list`, `markRead`                       |
-| `./contracts` | `ChatTransport`, `OutboundChatMessage` (type)                                  | the port a chat app driver implements (Slack, Teams, Telegram)              |
-| `./node`      | `NotificationsNotifierDriver`                                                  | the `notifications` driver: queues rendered mail on the service             |
-| `./node`      | `registerNotificationMails`, `NotificationMails` (type)                        | gen's registration of the mail bodies and lang loaders                      |
-| `./react`     | `useMail`, `MailProps` (type)                                                  | what a `.mail.tsx` body imports                                             |
-| `./testing`   | `renderMail`, `MemoryNotifier` (type)                                          | render a body in a locale; read what was sent                               |
-| `./testing`   | `MailTransportFake`, `SmsTransportFake`, `InAppStoreFake`, `ChatTransportFake` | a double of each channel port                                               |
+| Entry         | Symbol                                                                         | Use                                                                    |
+| ------------- | ------------------------------------------------------------------------------ | ---------------------------------------------------------------------- |
+| `.`           | `Notification`                                                                 | the kind base: `Notification({ category })`, with `recipients(event)`  |
+| `.`           | `NotificationCategory`                                                         | `transactional`, `activity`, `marketing`; case data `mutable`, `optIn` |
+| `.`           | `Recipient`                                                                    | `Recipient.principal(id)`, `.scope(scope)`, `.address(email)`          |
+| `.`           | `MailMessage` (type)                                                           | what `mail(data, mail)` returns: `mail.subject(key, values)`           |
+| `.`           | `Notifier`                                                                     | the port gen's listener calls: `notify(notification, event)`           |
+| `.`           | `MemoryNotifierDriver`                                                         | the `memory` driver: keeps deliveries for tests and dev                |
+| `.`           | `NotificationsConfig`, `NotificationsConfig$`, `NotificationsOptions`          | key `notifications`: `driver`, `target` (`messages`, `delivery`)       |
+| `.`           | `NotificationDelivery`, `NotificationOptions`, `NotifierDriverName`            | types                                                                  |
+| `./contracts` | `MailTransport`, `OutboundMail` (type)                                         | the port a mail provider driver implements (`Driver(MailTransport)`)   |
+| `./contracts` | `SmsTransport`, `OutboundSms` (type)                                           | the port an SMS provider driver implements                             |
+| `./contracts` | `InAppStore`, `InAppMessage`, `InAppEntry` (types)                             | a person's in-app inbox: `append`, `list`, `markRead`                  |
+| `./contracts` | `ChatTransport`, `OutboundChatMessage` (type)                                  | the port a chat app driver implements (Slack, Teams, Telegram)         |
+| `./node`      | `NotificationsNotifierDriver`                                                  | the `notifications` driver: queues rendered mail on the service        |
+| `./node`      | `MESSAGES_NOTIFIER_TARGET`, `DELIVERY_NOTIFIER_TARGET`                         | the built-in targets config `notifications.target` names               |
+| `./node`      | `NotifierTarget`, `NotifierMessage`, `NotifierAddressMessage` (types)          | what a host's own target is written with                               |
+| `./node`      | `registerNotificationMails`, `NotificationMails` (type)                        | gen's registration of the mail bodies and lang loaders                 |
+| `./react`     | `useMail`, `MailProps` (type)                                                  | what a `.mail.tsx` body imports                                        |
+| `./testing`   | `renderMail`, `MemoryNotifier` (type)                                          | render a body in a locale; read what was sent                          |
+| `./testing`   | `MailTransportFake`, `SmsTransportFake`, `InAppStoreFake`, `ChatTransportFake` | a double of each channel port                                          |
 
 ## A notification
 
@@ -113,17 +115,58 @@ The `notifications` driver renders the subject and the `.mail.tsx` body, then qu
 principal, market from the bound `MarketContext`, the data and each rendered channel) and answers the action's input, or
 `null` to skip that principal (ADR 0422):
 
-````ts
+```ts
 export class CrmNotifierDriver extends NotificationsNotifierDriver {
-  constructor(transport: ClientTransport, i18n: I18nConfig, assets: AssetLibrary, market: MarketContext) {
-    super(transport, i18n, assets, {
-      action: SEND_NOTICE_ACTION,
-      payload: ({ template, principalId, category, market, channels }) => ({ template, principalId, category, market, mail: channels.mail }),
-    }, market);
+  constructor(
+    transport: ClientTransport,
+    i18n: I18nConfig,
+    assets: AssetLibrary,
+    market: MarketContext,
+  ) {
+    super(
+      transport,
+      i18n,
+      assets,
+      {
+        action: SEND_NOTICE_ACTION,
+        payload: ({ template, principalId, category, market, channels }) => ({
+          template,
+          principalId,
+          category,
+          market,
+          mail: channels.mail,
+        }),
+      },
+      market,
+    );
   }
 }
-``` It needs the body
-of each notification and the member's lang loaders, which gen registers at startup:
+```
+
+Without a host target, config `notifications.target` picks a built-in one (ADR 0422 as amended): `messages` (the
+default above) or `delivery` (`DELIVERY_NOTIFIER_TARGET`), the OS notifications service's `delivery.message.send@1`:
+`{ notification, category, to, data, mail, market }`. Its `category` is the notification's `messageCategory` (the
+service's own code, `security`) or else its `NotificationCategory`; `data` is the data's top-level strings and numbers;
+`mail` is the rendered mail or `null`, since the service picks the channels from the category's chain.
+
+```ts
+export class InvitationNotification extends Notification({
+  category: NotificationCategory.Transactional,
+  messageCategory: "security",
+}) {
+  recipients(event: InvitationCreated): Recipient[] {
+    return [Recipient.address(event.email)]; // a person with no account yet
+  }
+}
+```
+
+`Recipient.address(email)` is for a person with no principal yet (an invitation, a partner lead); the driver hands it to
+the target's `addressPayload` as a `NotifierAddressMessage` (`email` in place of `principalId`), and refuses it before
+anything is queued when the target has none (`MESSAGES_NOTIFIER_TARGET` takes principals only). Use
+`Recipient.principal(id)` whenever the person has an account, so the address stays with identity (ADR 0134).
+
+The `notifications` driver needs the body of each notification and the member's lang loaders, which gen registers at
+startup:
 
 ```ts
 import { registerNotificationMails } from "@stackra/notifications/node";
@@ -133,7 +176,7 @@ registerNotificationMails({
   bodies: [[OrderReceiptNotification, OrderReceiptMail]],
   catalogues: loaders,
 });
-````
+```
 
 Only the mail channel is rendered, only principals are addressed (a scope recipient is refused), and in the member's
 default locale until identity answers a principal's language.

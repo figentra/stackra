@@ -1,9 +1,9 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `prepareNotification`: one frozen delivery per distinct recipient with the category, the data
- *          read once and the mail message; no data read for no recipient; the event as data when there is no `data`
- *          method; no mail without a `mail` method; and a TypeError for a class of another kind, a value that is not
- *          a `Recipient` and a mail without a subject.
+ * Purpose: unit tests of `prepareNotification`: one frozen delivery per distinct recipient (an address included) with
+ *          the category, the data read once and the mail message; no data read for no recipient; the event as data
+ *          when there is no `data` method; no mail without a `mail` method; and a TypeError for a class of another
+ *          kind, a value that is not a `Recipient` and a mail without a subject.
  * Boundary: test only; `vi.fn` counts the data reads.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0223 (as amended by ADR 0294); ADR 0269 (vi from vitest).
@@ -76,6 +76,25 @@ describe("prepareNotification", () => {
     expect(first?.mail?.subjectKey).toBe(I18n.orders.order_receipt.mail.subject);
     expect(first?.mail?.subjectValues).toEqual({ id: "ord_1" });
     expect(Object.isFrozen(first)).toBe(true);
+  });
+
+  it("prepares one delivery per distinct address, beside a principal", async () => {
+    class InvitationNotification extends Notification({
+      category: NotificationCategory.Transactional,
+    }) {
+      recipients(): Recipient[] {
+        return [
+          Recipient.address("sara@example.com"),
+          Recipient.principal(ADA),
+          Recipient.address("SARA@example.com"),
+        ];
+      }
+    }
+    const deliveries = await prepareNotification(new InvitationNotification(), new OrderPaid([]));
+    expect(deliveries.map((delivery) => delivery.recipient)).toEqual([
+      Recipient.address("sara@example.com"),
+      Recipient.principal(ADA),
+    ]);
   });
 
   it("reads no data when there is no recipient", async () => {

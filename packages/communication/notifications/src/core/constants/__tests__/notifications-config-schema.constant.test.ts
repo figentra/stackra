@@ -12,13 +12,19 @@ import { NOTIFICATIONS_CONFIG_SCHEMA } from "#core/constants/notifications-confi
 
 describe("NOTIFICATIONS_CONFIG_SCHEMA", () => {
   it("defaults to the memory driver", () => {
-    expect(NOTIFICATIONS_CONFIG_SCHEMA.parse({})).toEqual({ driver: "memory" });
+    expect(NOTIFICATIONS_CONFIG_SCHEMA.parse({})).toEqual({ driver: "memory", target: "messages" });
   });
 
   it("accepts the notifications driver", () => {
     expect(NOTIFICATIONS_CONFIG_SCHEMA.parse({ driver: "notifications" })).toEqual({
       driver: "notifications",
+      target: "messages",
     });
+  });
+
+  it("accepts the delivery target and refuses another", () => {
+    expect(NOTIFICATIONS_CONFIG_SCHEMA.parse({ target: "delivery" }).target).toBe("delivery");
+    expect(NOTIFICATIONS_CONFIG_SCHEMA.safeParse({ target: "crm" }).success).toBe(false);
   });
 
   it("refuses a driver this package does not ship", () => {

@@ -5,13 +5,17 @@
  *          fallback chain, assets resolved by the library); nothing queued without a mail channel or a recipient; and
  *          a TypeError, with nothing queued, for a scope recipient or a notification without a registered body; and a
  *          configured target: its own action key, the mapper given the template, category, market and channels, a
- *          `null` answer skipping the principal.
+ *          `null` answer skipping the principal; config `notifications.target: delivery`: `delivery.message.send@1`
+ *          with the message category, template values, market and mail, to a principal or a mail address; and a
+ *          TypeError, with nothing queued, for a mail address the target cannot take.
  * Boundary: test only; a fake `ClientTransport` records the queued requests and a fake `AssetLibrary` answers URLs.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0223; ADR 0260 (decision 4: queued calls); ADR 0422 (decision 1).
+ * Governing contract: ADR 0022 (test placement); ADR 0223; ADR 0260 (decision 4: queued calls); ADR 0422 (decision 1);
+ *                     ADR 0422 (as amended by STA-1235).
  */
 import type { AssetEntry, AssetLibrary } from "@stackra/assets";
 import { remoteAction } from "@stackra/clients";
+import { buildConfig } from "@stackra/config";
 import { ClientTransport } from "@stackra/clients/contracts";
 import type { ClientRequest } from "@stackra/clients/contracts";
 import type { PublicId, ScopeRef } from "@stackra/contracts";
@@ -20,6 +24,7 @@ import { MarketContext } from "@stackra/integrations/contracts";
 import { describe, expect, it } from "@stackra/testing";
 import { z } from "zod";
 
+import { NotificationsConfig } from "#config/notifications.config";
 import { Notification } from "#core/bases/notification.base";
 import { NotificationCategory } from "#core/enums/notification-category.enum";
 import { Notifier } from "#core/ports/notifier.port";
@@ -64,6 +69,20 @@ class OrderReceiptNotification extends Notification({
 
   mail({ id }: { readonly id: string }, mail: MailMessage): MailMessage {
     return mail.subject(I18n.orders.order_receipt.mail.subject, { id });
+  }
+}
+
+/** An invitation: a principal and an address with no account, in the delivery service's `security` category. */
+class InvitationNotification extends Notification({
+  category: NotificationCategory.Transactional,
+  messageCategory: "security",
+}) {
+  recipients(event: OrderPaid): Recipient[] {
+    return [...event.recipients];
+  }
+
+  data(event: OrderPaid): { readonly id: string; readonly seats: number; readonly meta: object } {
+    return { id: event.orderId, seats: 3, meta: {} };
   }
 }
 
@@ -152,6 +171,7 @@ const SEND_NOTICE_ACTION = remoteAction("crm.notice.send@1", {
 function driver(
   // oxlint-disable-next-line typescript/no-explicit-any -- reason: the test's target is its own action's
   target?: NotifierTarget<any>,
+  config?: NotificationsConfig,
 ): { notifier: NotificationsNotifierDriver; transport: RecordingClientTransport } {
   const transport = new RecordingClientTransport();
   const assets = {
@@ -163,6 +183,7 @@ function driver(
     assets as unknown as AssetLibrary,
     target,
     new SaudiMarketContext(),
+    config,
   );
   return { notifier, transport };
 }
@@ -277,5 +298,48 @@ describe("NotificationsNotifierDriver", () => {
       principalId: ADA,
       category: "activity",
     });
+  });
+
+  it("queues delivery.message.send@1 when config names the delivery target", async () => {
+    const config = buildConfig(NotificationsConfig, { values: { target: "delivery" } });
+    const { notifier, transport } = driver(undefined, config);
+    await notifier.notify(
+      new InvitationNotification(),
+      new OrderPaid([Recipient.principal(ADA), Recipient.address("Sara@Example.com")]),
+    );
+    expect(transport.queued.map((request) => request.key)).toEqual([
+      "delivery.message.send@1",
+      "delivery.message.send@1",
+    ]);
+    const common = {
+      notification: "invitation",
+      category: "security",
+      data: { id: "ord_1", seats: 3 },
+      mail: null,
+      market: "sa",
+    };
+    expect(transport.queued[0]?.input).toEqual({ ...common, to: { principalId: ADA } });
+    expect(transport.queued[1]?.input).toEqual({ ...common, to: { email: "sara@example.com" } });
+  });
+
+  it("sends the rendered mail and the category code on the delivery target", async () => {
+    const config = buildConfig(NotificationsConfig, { values: { target: "delivery" } });
+    const { notifier, transport } = driver(undefined, config);
+    await notifier.notify(
+      new OrderReceiptNotification(),
+      new OrderPaid([Recipient.principal(ADA)]),
+    );
+    const input = transport.queued[0]?.input as Record<string, unknown>;
+    expect(input).toMatchObject({ notification: "order_receipt", category: "transactional" });
+    expect(input["mail"]).toMatchObject({ subject: "إيصالك ord_1" });
+  });
+
+  it("refuses a mail address the target cannot take before queueing anything", async () => {
+    const { notifier, transport } = driver();
+    const event = new OrderPaid([Recipient.principal(ADA), Recipient.address("sara@example.com")]);
+    await expect(notifier.notify(new OrderShippedNotification(), event)).rejects.toThrow(
+      /principals only/,
+    );
+    expect(transport.queued).toEqual([]);
   });
 });

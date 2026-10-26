@@ -47,17 +47,22 @@ Messages to people (ADR 0086, 0223 as amended by 0294; R-26). Member at `package
 - A provider driver lives in `src/core/providers/<provider>/` as `<provider>.integration.ts` and
   `<provider>.connection.ts`, and is added to its channel's `*_CONNECTIONS` map.
 - `NotificationsNotifierDriver` never names a service: the target action and its payload come from a `NotifierTarget`
-  (default `MESSAGES_NOTIFIER_TARGET`); add a field to `NotifierMessage`, never a branch on the target.
+  (a host's own, else the built-in one config `notifications.target` names: `messages` or `delivery`); add a field to
+  `NotifierMessage`, never a branch on the target. A new built-in target is a new `<name>-notifier-target.constant.ts`,
+  a case in the driver's `TARGETS` and in the `target` config enum (options and `NOTIFICATIONS_CONFIG_SCHEMA`).
+- An address recipient (`Recipient.address`) is only for a person with no principal; a target takes it through
+  `addressPayload`, and the driver refuses it, before queueing anything, when the target has none.
 - An in-app entry always names its product; a store driver filters `list` by it.
 - A restricted record never falls back from the content-free template to the full one.
 
 ## PII
 
-| Data                             | Where                                                        | Handling                                                                  |
-| -------------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------- |
-| Principal id                     | `Recipient`                                                  | A public id only; the address and language are resolved at send time.     |
-| Notification data                | `NotificationDelivery.data`                                  | Held in memory by the memory driver for the process's life; never logged. |
-| Recipient address, body          | `OutboundMail`                                               | Passed to the transport only; this package never stores or logs it.       |
-| Rendered mail                    | `renderMail`, the renderer                                   | Returned to the caller; never cached, logged or written here.             |
-| Phone numbers, push targets      | `OutboundSms`, `OutboundWhatsApp`, `PushTarget`, `CallEvent` | Passed to the provider only; never logged; a dead push target is revoked. |
-| Provider credentials, VAPID keys | connection `@Secret` fields, `SecretStore`                   | Read at call time; never logged or put in an error.                       |
+| Data                                | Where                                                        | Handling                                                                             |
+| ----------------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------ |
+| Principal id                        | `Recipient`                                                  | A public id only; the address and language are resolved at send time.                |
+| Address of a person with no account | `Recipient.address`, `NotifierAddressMessage`                | Passed to the target action only; never stored or logged here (ADR 0422 as amended). |
+| Notification data                   | `NotificationDelivery.data`                                  | Held in memory by the memory driver for the process's life; never logged.            |
+| Recipient address, body             | `OutboundMail`                                               | Passed to the transport only; this package never stores or logs it.                  |
+| Rendered mail                       | `renderMail`, the renderer                                   | Returned to the caller; never cached, logged or written here.                        |
+| Phone numbers, push targets         | `OutboundSms`, `OutboundWhatsApp`, `PushTarget`, `CallEvent` | Passed to the provider only; never logged; a dead push target is revoked.            |
+| Provider credentials, VAPID keys    | connection `@Secret` fields, `SecretStore`                   | Read at call time; never logged or put in an error.                                  |
