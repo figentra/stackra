@@ -37,11 +37,13 @@ interface Job {
 /** One process and the run it is on. */
 interface Slot {
   readonly child: ChildProcess;
-  running?: Job & {
-    readonly started: number;
-    readonly timer: NodeJS.Timeout;
-    readonly abort: AbortController;
-  };
+  running?:
+    | (Job & {
+        readonly started: number;
+        readonly timer: NodeJS.Timeout;
+        readonly abort: AbortController;
+      })
+    | undefined;
 }
 
 /**

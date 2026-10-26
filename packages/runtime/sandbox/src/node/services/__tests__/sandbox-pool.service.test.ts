@@ -3,8 +3,9 @@
  * Purpose: integration tests of `SandboxPool` over real child processes: a run returns its output, a guest `fetch` is
  *          relayed to the host's proxy, a run's own refusal comes back as the same refusal, a run waiting past its time
  *          is refused while the pool keeps serving, and a pool that is not open refuses runs.
- * Boundary: test only; the children load this package's source `./node` entry with the `@stackra/source` condition,
- *           so Node strips its types.
+ * Boundary: test only; the children load this package's source `./node` entry, so Node strips its types, with a
+ *           resolve hook for its extensionless `#` imports (ADR 0233); its dependencies load from their built dists
+ *           (`test` runs after `^build`), since Node cannot parse their decorated sources.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0434 (decision 2); ADR 0154 (decisions 5 and 6).
  */
@@ -29,11 +30,23 @@ class EchoProxy extends Driver(SandboxFetchProxy) {
 
 const LIMITS = { time: Duration.seconds(2), memoryBytes: 32 * 1024 * 1024, outputBytes: 10_000 };
 const SOURCE = new URL("../../index.ts", import.meta.url).href;
+/** Retries an unresolved `#` import with `.ts`, as the bundler resolves the source (ADR 0233). */
+const RESOLVE_TS = `import { registerHooks } from "node:module";
+registerHooks({
+  resolve(specifier, context, next) {
+    try {
+      return next(specifier, context);
+    } catch (error) {
+      if (!specifier.startsWith("#") || error?.code !== "ERR_MODULE_NOT_FOUND") throw error;
+      return next(specifier + ".ts", context);
+    }
+  },
+});`;
 const OPTIONS = {
   size: 1,
   graceMs: 500,
   module: SOURCE,
-  execArgv: ["--conditions=@stackra/source"],
+  execArgv: ["--import", `data:text/javascript,${encodeURIComponent(RESOLVE_TS)}`],
 };
 
 const pools: SandboxPool[] = [];

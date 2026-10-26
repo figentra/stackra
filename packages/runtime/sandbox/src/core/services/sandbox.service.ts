@@ -7,9 +7,10 @@
  *           filesystem, no process, no module loader and no timers. `fetch(url, init)` reaches only the run's
  *           allow-listed origins, through the `SandboxFetchProxy` port, and resolves to a plain `{ status, headers,
  *           body }`. Every limit is the caller's data (`SandboxLimits`, from the tenant's plan): wall time (an interrupt
- *           while code runs, a timer while it waits), heap (QuickJS's memory limit), output (result plus logs). The
- *           runtime is disposed after every run, so no state passes between runs. Each run is metered: a result carries
- *           `codeMs`, and so does each refusal. Not a Python runner (Pyodide is a later engine of ADR 0154).
+ *           while code runs, a timer while it waits), heap (QuickJS's memory limit, and the growth of the run's
+ *           WebAssembly memory while code runs), output (result plus logs). Each run gets a fresh engine module,
+ *           runtime and context, all dropped after it, so no state passes between runs. Each run is metered: a result
+ *           carries `codeMs`, and so does each refusal. Not a Python runner (Pyodide is a later engine of ADR 0154).
  * Runtime: isomorphic (needs WebAssembly)
  * Governing contract: ADR 0154 (decisions 1 to 8); ADR 0294 (decisions 16 and 17: dependencies by constructor type);
  *                     ADR 0263 (ports resolve by type).
@@ -19,12 +20,14 @@ import { Duration } from "@stackra/contracts";
 import type { Json } from "@stackra/contracts";
 import { isRefusal } from "@stackra/errors";
 import type { Refusal } from "@stackra/errors";
-import { getQuickJS } from "quickjs-emscripten";
+import { newQuickJSWASMModule, RELEASE_SYNC } from "quickjs-emscripten";
 import type {
   QuickJSContext,
+  QuickJSEmscriptenModule,
   QuickJSDeferredPromise,
   QuickJSHandle,
   QuickJSRuntime,
+  QuickJSWASMModule,
 } from "quickjs-emscripten";
 
 import type { SandboxFetchProxy, SandboxFetchRequest } from "#contracts/index";
@@ -36,9 +39,29 @@ import type { SandboxResult } from "#core/types/sandbox-result.type";
 
 /**
  * The guest stack, QuickJS's own default (256 KiB): deep recursion fails as `memory` inside it, far below the
- * WebAssembly stack, so a run can never crash the shared module. An engine bound, not a plan value.
+ * WebAssembly stack, so a run can never crash the engine module. An engine bound, not a plan value.
  */
 const STACK_BYTES = 256 * 1024;
+
+/**
+ * A fresh engine module and a reader of its WebAssembly memory size. The quickjs-emscripten builds (0.23 to 0.32)
+ * count each allocation as 8 bytes (QuickJS has no `malloc_usable_size` under Emscripten), so `setMemoryLimit` alone
+ * does not bound the heap; growth of the module's own memory does.
+ */
+async function freshEngine(): Promise<{ engine: QuickJSWASMModule; heapBytes: () => number }> {
+  let wasm: QuickJSEmscriptenModule | undefined;
+  const engine = await newQuickJSWASMModule({
+    ...RELEASE_SYNC,
+    importModuleLoader: async () => {
+      // The loader comes bare or as a (doubly) wrapped default export, as the bundling of the variant left it.
+      const imported = await RELEASE_SYNC.importModuleLoader();
+      const inner = typeof imported === "function" ? imported : imported.default;
+      const load = typeof inner === "function" ? inner : inner.default;
+      return async (options) => (wasm = await load(options));
+    },
+  });
+  return { engine, heapBytes: () => wasm?.HEAPU8.byteLength ?? 0 };
+}
 
 /** The result of a guest evaluation or call. */
 type Outcome = ReturnType<QuickJSContext["evalCode"]>;
@@ -61,10 +84,14 @@ interface RunState {
   /** The guest's own `JSON.parse` and `JSON.stringify`, taken before the code can replace them. */
   readonly parse: QuickJSHandle;
   readonly stringify: QuickJSHandle;
+  /** The engine's WebAssembly memory size now, and before the code ran. */
+  readonly heapBytes: () => number;
+  readonly heapBase: number;
   /** The settled value or error of the code, until it is read. */
   held?: QuickJSHandle;
   outputLeft: number;
   overflowed: boolean;
+  overMemory: boolean;
   closed: boolean;
   stop: (stop: Stop) => void;
 }
@@ -134,7 +161,8 @@ export class Sandbox extends Service {
         `A code step's time limit is longer than zero, not ${request.limits.time}`,
       );
     const origins = new Set(request.allowedOrigins.map(originOf));
-    const runtime = (await getQuickJS()).newRuntime();
+    const { engine, heapBytes } = await freshEngine();
+    const runtime = engine.newRuntime();
     const context = runtime.newContext();
     const json = context.getProp(context.global, "JSON");
     const parse = context.getProp(json, "parse");
@@ -151,6 +179,8 @@ export class Sandbox extends Service {
       request,
       parse,
       stringify,
+      heapBytes,
+      heapBase: heapBytes(),
       origins,
       started,
       deadline: started + milliseconds,
@@ -159,6 +189,7 @@ export class Sandbox extends Service {
       logs: [],
       outputLeft: request.limits.outputBytes,
       overflowed: false,
+      overMemory: false,
       closed: false,
       stop: (reason) => {
         // No guest job runs once a run stopped, so nothing settles into a runtime about to be disposed.
@@ -184,7 +215,13 @@ export class Sandbox extends Service {
     this.install(state);
     runtime.setMemoryLimit(request.limits.memoryBytes);
     runtime.setMaxStackSize(STACK_BYTES);
-    runtime.setInterruptHandler(() => performance.now() > state.deadline);
+    // shortcut: memory grows past the module's initial size before it shows, so a run may use that slack (about
+    // 16 MiB) on top of its limit, and one allocation between interrupts is not caught; the pool's process isolation
+    // contains both. Drop the heap check once an engine build counts allocation sizes.
+    runtime.setInterruptHandler(() => {
+      state.overMemory ||= state.heapBytes() - state.heapBase > request.limits.memoryBytes;
+      return state.overMemory || performance.now() > state.deadline;
+    });
 
     const promise = this.start(state);
     const settled = context.resolvePromise(promise).then((outcome) => {
@@ -399,6 +436,7 @@ export class Sandbox extends Service {
 
   /** The refusal for a run that failed with `failure`: a limit when one was passed, else the code's own error. */
   private failure(state: RunState, failure: string): Refusal {
+    if (state.overMemory) return this.limit(state, "memory");
     if (performance.now() > state.deadline) return this.limit(state, "time");
     if (state.overflowed) return this.limit(state, "output");
     if (/out of memory|stack overflow/i.test(failure)) return this.limit(state, "memory");
