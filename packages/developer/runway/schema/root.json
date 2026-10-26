@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://static.stackra.figentra.com/schemas/runway/root.json",
-  "$comment": "Stackra file contract: Purpose: the shape of the ROOT runway.yaml, the infrastructure itself. Boundary: shape only; `stackra infra`, `stackra gen`, `stackra dev` and the runway workflows read the file. Member facts live in member runways (runway/app.json, runway/service.json). Runtime: node (editors and validators). Governing contract: ADR 0168 (one schema-validated runway.yaml, its sections), ADR 0169 and ADR 0296 (topology groups), ADR 0170 (environments, release), ADR 0171 (ref: values), ADR 0173 (secrets), ADR 0175 (edge), ADR 0184 (observability), ADR 0238 (one database server per environment), ADR 0237 (gateway secret names), ADR 0299 (the docs destination).",
+  "$comment": "Stackra file contract: Purpose: the shape of the ROOT runway.yaml, the infrastructure itself. Boundary: shape only; `stackra infra`, `stackra gen`, `stackra dev` and the runway workflows read the file. Member facts live in member runways (runway/app.json, runway/service.json). Runtime: node (editors and validators). Governing contract: ADR 0168 (one schema-validated runway.yaml, its sections), ADR 0169 and ADR 0296 (topology groups), ADR 0170 (environments, release), ADR 0171 (ref: values), ADR 0173 (secrets), ADR 0175 (edge), ADR 0184 (observability), ADR 0238 (one database server per environment), ADR 0237 (gateway secret names), ADR 0299 (the docs destination), ADR 0335 (the product), ADR 0436, ADR 0439 and ADR 0441 (surfaces, mobile apps and the assets tree), STA-863 (the lanes repository index).",
   "title": "runway.yaml (root)",
   "description": "The root runway: destinations per environment, shared resources, provider target blocks, the edge, the secrets defaults, the release policy and the defaults members inherit and the topology of each environment (ADR 0168, 0170, 0173, 0296). Members state what they need in their own runway.yaml; the root says where they run and how they are packed. No secret value. `ref:<path>` resolves from the private stacks repo's Pulumi config at infra time (ADR 0171 d4).",
   "type": "object",
@@ -54,6 +54,56 @@
               "examples": ["^1.0.0"]
             }
           }
+        }
+      }
+    },
+    "surfaces": {
+      "type": "object",
+      "description": "The surfaces this product contributes to (ADR 0441 d3, ADR 0436). Each names the shell line its extension bundle targets, the packages the bundle is built from and its platform host; `ops` takes only `contributes`, and only `landing` takes `content`. A product's own app member serving a surface is named in `app` with the ADR that allows it.",
+      "propertyNames": {
+        "enum": ["console", "landing", "ops", "till", "shopper", "kiosk"]
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/surface"
+      },
+      "examples": [
+        {
+          "console": {
+            "shell": "os/console@3",
+            "packages": ["@mezzora/console-ui"],
+            "host": "console.mezzora"
+          },
+          "landing": {
+            "shell": "os/landing@1",
+            "content": "assets/landing",
+            "host": "mezzora"
+          },
+          "ops": {
+            "contributes": "@mezzora/ops-ui"
+          }
+        }
+      ]
+    },
+    "mobile": {
+      "type": "object",
+      "description": "The product's mobile apps, by app key (ADR 0439 d2, ADR 0441 d3). Runway generates each app's config from the template line and this entry, builds it on EAS, submits it with the listing in `store` and writes its app-link files to the edge.",
+      "propertyNames": {
+        "pattern": "^[a-z][a-z0-9-]*$"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/mobileApp"
+      }
+    },
+    "assets": {
+      "type": "object",
+      "description": "The product's assets tree (ADR 0441 d1). Only needed when the tree's root is not `assets`; every surface and mobile path must sit under it.",
+      "additionalProperties": false,
+      "required": ["root"],
+      "properties": {
+        "root": {
+          "$ref": "#/$defs/assetPath",
+          "description": "The assets tree's root folder.",
+          "examples": ["assets"]
         }
       }
     },
@@ -499,7 +549,7 @@
         },
         "lanes": {
           "type": "object",
-          "description": "Dev only: worktree N adds N × `portStep` to every dev port, member and infra.",
+          "description": "Dev only: lane N adds N × `portStep` to every dev port, member and infra. With `repoIndex`, lane = repository index × `worktrees` + worktree, and `stackra validate` fails on any two effective dev ports that collide across the lanes of every indexed repository (STA-863).",
           "properties": {
             "enabled": {
               "type": "boolean",
@@ -515,6 +565,30 @@
               "type": "string",
               "description": "Environment variable holding the lane number.",
               "examples": ["STACKRA_LANE"]
+            },
+            "repoIndex": {
+              "type": "object",
+              "description": "Repository key → its index, each index once: the one table every repository's lanes are counted from.",
+              "propertyNames": {
+                "pattern": "^[a-z][a-z0-9-]*$"
+              },
+              "additionalProperties": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "examples": [
+                {
+                  "os": 0,
+                  "commerce": 1,
+                  "organza": 2
+                }
+              ]
+            },
+            "worktrees": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Worktrees per repository: the lanes each index owns. Required with `repoIndex`.",
+              "examples": [10]
             }
           }
         },
@@ -736,6 +810,245 @@
         "encore": {
           "type": "object",
           "description": "Encore Cloud settings of its own app environment (the branch it deploys from)."
+        }
+      }
+    },
+    "shellLine": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*/[a-z][a-z0-9-]*@[0-9]+$",
+      "description": "`<owner>/<shell>@<line>`: the shell or template line a bundle or app targets (ADR 0436 d4 and d5, ADR 0439 d1).",
+      "examples": ["os/console@3", "commerce/till@1", "os/mobile@3"]
+    },
+    "packageName": {
+      "type": "string",
+      "pattern": "^@[a-z0-9][a-z0-9._-]*/[a-z0-9][a-z0-9._-]*$",
+      "description": "A scoped package name.",
+      "examples": ["@mezzora/console-ui"]
+    },
+    "packageList": {
+      "type": "array",
+      "description": "Packages, each once.",
+      "items": {
+        "$ref": "#/$defs/packageName"
+      },
+      "uniqueItems": true
+    },
+    "assetPath": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-][A-Za-z0-9._-]*(/[A-Za-z0-9_-][A-Za-z0-9._-]*)*$",
+      "description": "A repository-relative path with no `..` and no leading dot; it must sit under the assets root (ADR 0441 enforcement).",
+      "examples": ["assets/landing"]
+    },
+    "hostName": {
+      "type": "string",
+      "pattern": "^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*$",
+      "description": "A lower-case host name; a surface's `host` is relative to `environments.<env>.domains.zone`.",
+      "examples": ["console.mezzora"]
+    },
+    "appMember": {
+      "type": "object",
+      "description": "The product's own app member serving this entry and the ADR that allows it (ADR 0436 d3).",
+      "additionalProperties": false,
+      "required": ["member", "adr"],
+      "properties": {
+        "member": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*$",
+          "description": "The app member key (`apps/<member>`).",
+          "examples": ["till"]
+        },
+        "adr": {
+          "type": "string",
+          "pattern": "^[0-9]{4}$",
+          "description": "The four-digit ADR that allows the app.",
+          "examples": ["0442"]
+        }
+      }
+    },
+    "surface": {
+      "type": "object",
+      "description": "One surface (ADR 0441 d3).",
+      "additionalProperties": false,
+      "properties": {
+        "shell": {
+          "$ref": "#/$defs/shellLine",
+          "description": "The shell line the extension bundle targets (`targets: console@N`)."
+        },
+        "packages": {
+          "$ref": "#/$defs/packageList",
+          "description": "The packages the surface's extension bundle is built from; the shell's shared dependencies stay externals (ADR 0436 d4)."
+        },
+        "content": {
+          "$ref": "#/$defs/assetPath",
+          "description": "Landing only: the folder of seed experience documents Runway imports once (ADR 0440 d2)."
+        },
+        "host": {
+          "$ref": "#/$defs/hostName",
+          "description": "The platform host, relative to the environment's zone; Runway writes its `host:` row (ADR 0437 d6).",
+          "examples": ["console.mezzora", "mezzora"]
+        },
+        "contributes": {
+          "$ref": "#/$defs/packageName",
+          "description": "Ops only: the package of declarations (panels, resources, widgets) added to the OS ops release after a second review (ADR 0436 d9)."
+        },
+        "app": {
+          "$ref": "#/$defs/appMember"
+        }
+      }
+    },
+    "mobileApp": {
+      "type": "object",
+      "description": "One mobile app (ADR 0439, ADR 0441 d3).",
+      "additionalProperties": false,
+      "required": ["template", "assets", "store", "identity", "eas"],
+      "properties": {
+        "template": {
+          "$ref": "#/$defs/shellLine",
+          "description": "The template's native line; a native change starts a new line and rebuilds every app on it."
+        },
+        "packages": {
+          "$ref": "#/$defs/packageList",
+          "description": "The packages the app's bundle is built from."
+        },
+        "assets": {
+          "$ref": "#/$defs/assetPath",
+          "description": "Icon, adaptive icon, splash and notification icon sources.",
+          "examples": ["assets/mobile/staff"]
+        },
+        "store": {
+          "$ref": "#/$defs/assetPath",
+          "description": "The store listing folder, one sub-folder per locale.",
+          "examples": ["assets/store/staff"]
+        },
+        "identity": {
+          "type": "object",
+          "description": "Names, ids, URL scheme and app-link hosts.",
+          "additionalProperties": false,
+          "required": ["name"],
+          "properties": {
+            "name": {
+              "type": "object",
+              "description": "Display name per locale.",
+              "propertyNames": {
+                "pattern": "^[a-z]{2}(-[A-Z]{2})?$"
+              },
+              "additionalProperties": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "ios": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["bundleId", "team"],
+              "properties": {
+                "bundleId": {
+                  "type": "string",
+                  "pattern": "^[a-zA-Z][a-zA-Z0-9_]*(\\.[a-zA-Z][a-zA-Z0-9_]*)+$",
+                  "description": "A reverse-DNS app id, `<prefix>.<product>.<app>`, frozen at the first store upload (ADR 0439 d6).",
+                  "examples": ["com.figentra.mezzora.staff"]
+                },
+                "team": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "The Apple team's account key; the team id is resolved from the store account.",
+                  "examples": ["figentra"]
+                }
+              }
+            },
+            "android": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["package"],
+              "properties": {
+                "package": {
+                  "type": "string",
+                  "pattern": "^[a-zA-Z][a-zA-Z0-9_]*(\\.[a-zA-Z][a-zA-Z0-9_]*)+$",
+                  "description": "A reverse-DNS app id, `<prefix>.<product>.<app>`, frozen at the first store upload (ADR 0439 d6).",
+                  "examples": ["com.figentra.mezzora.staff"]
+                }
+              }
+            },
+            "scheme": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9+.-]*$",
+              "description": "The app's URL scheme.",
+              "examples": ["mezzora-staff"]
+            },
+            "links": {
+              "type": "array",
+              "description": "Full host names whose app-link files (`apple-app-site-association`, `assetlinks.json`) Runway writes to `wellknown:` rows.",
+              "items": {
+                "$ref": "#/$defs/hostName"
+              },
+              "uniqueItems": true
+            }
+          }
+        },
+        "capabilities": {
+          "type": "array",
+          "description": "The capability flags this build switches on; every other native module, permission string and entitlement is removed at build time (ADR 0439 d3, ADR 0442 d3).",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*(:[a-z][a-z0-9-]*)?$"
+          },
+          "uniqueItems": true,
+          "examples": [["scanner", "push", "printer"], ["device:sunmi"]]
+        },
+        "stores": {
+          "type": "object",
+          "description": "The store accounts the app publishes under (ADR 0439 d7 and d8).",
+          "additionalProperties": false,
+          "properties": {
+            "apple": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["account"],
+              "properties": {
+                "account": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9-]*$",
+                  "description": "The store account key: the platform's (`figentra`) or a merchant Connection's.",
+                  "examples": ["figentra"]
+                }
+              }
+            },
+            "google": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["account"],
+              "properties": {
+                "account": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9-]*$",
+                  "description": "The store account key: the platform's (`figentra`) or a merchant Connection's.",
+                  "examples": ["figentra"]
+                }
+              }
+            }
+          }
+        },
+        "eas": {
+          "type": "object",
+          "description": "The EAS project and the update channel.",
+          "additionalProperties": false,
+          "required": ["project"],
+          "properties": {
+            "project": {
+              "type": "string",
+              "minLength": 1,
+              "description": "The EAS project id."
+            },
+            "channel": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$",
+              "description": "The update channel and build profile.",
+              "examples": ["production"]
+            }
+          }
+        },
+        "app": {
+          "$ref": "#/$defs/appMember"
         }
       }
     }

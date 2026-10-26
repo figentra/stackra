@@ -1,6 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: `ROOT_RUNWAY_SCHEMA`, the repository's root `runway.yaml` at format version 3: the project, the product (an edition's base), the providers
+ * Purpose: `ROOT_RUNWAY_SCHEMA`, the repository's root `runway.yaml` at format version 3: the project, the product (an edition's base), the
+ *          surfaces it contributes to, its mobile apps and its assets tree, the providers
  *          and accounts (AWS and GCP among them), the regions (each with its cloud and cloud region), each environment (destinations, shared resources, defaults, topology), the deploy targets,
  *          the edge, the secret defaults with the CI and gateway secret names, the release policy and observability.
  * Boundary: internal; `parseRunway("root", …)` and `runwayJsonSchema("root")` read it, and it accepts what the
@@ -10,17 +11,22 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0296 (decision 2 and its 2026-10-24 note), ADR 0168 (decisions 1 to 3 and 6), ADR 0171
  *                     (`ref:` values), ADR 0173 (secret names only), ADR 0237 (gateway secret names), ADR 0335 (decision 2: product), ADR 0354
- *                     (decisions 4 and 5: the cloud dimension and GCP).
+ *                     (decisions 4 and 5: the cloud dimension and GCP), ADR 0441 (decision 3: `surfaces`, `mobile`, `assets`),
+ *                     ADR 0436, ADR 0439.
  */
 import { Enum } from "@stackra/contracts";
 import { z } from "zod";
 
+import { ASSETS_SCHEMA } from "#core/constants/assets-schema.constant";
+import { MOBILE_APP_SCHEMA } from "#core/constants/mobile-app-schema.constant";
 import { OPEN_OBJECT_SCHEMA } from "#core/constants/open-object-schema.constant";
 import { ROOT_ENVIRONMENT_SCHEMA } from "#core/constants/root-environment-schema.constant";
 import { PRODUCT_SCHEMA } from "#core/constants/product-schema.constant";
 import { REGION_SCHEMA } from "#core/constants/region-schema.constant";
 import { SECRET_NAMES_SCHEMA } from "#core/constants/secret-names-schema.constant";
+import { SURFACE_SCHEMA } from "#core/constants/surface-schema.constant";
 import { RunwayEnvironment } from "#core/enums/runway-environment.enum";
+import { SurfaceKind } from "#core/enums/surface-kind.enum";
 
 /** A runway environment name. */
 const ENVIRONMENT = z.enum(
@@ -36,6 +42,19 @@ export const ROOT_RUNWAY_SCHEMA = z.strictObject({
   version: z.literal(3),
   project: z.string().regex(/^[a-z][a-z0-9-]*$/, "Expected a lower-case project name"),
   product: PRODUCT_SCHEMA.optional(),
+  surfaces: z
+    .partialRecord(
+      z.enum(Enum.values(SurfaceKind) as [SurfaceKind, ...SurfaceKind[]]),
+      SURFACE_SCHEMA,
+    )
+    .optional(),
+  mobile: z
+    .record(
+      z.string().regex(/^[a-z][a-z0-9-]*$/, "Expected a lower-case app key"),
+      MOBILE_APP_SCHEMA,
+    )
+    .optional(),
+  assets: ASSETS_SCHEMA.optional(),
   providers: z
     .object({
       aws: z
