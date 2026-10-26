@@ -15,6 +15,7 @@ or the environment's deploy job.
 | ----------- | ----------------------------------------- | ----------------------------------------------------------------------- |
 | `.`         | `awsBaselineConfig(root, env, origins)`   | one environment's typed config, plain JSON (gen writes it to a file)    |
 | `.`         | `awsAccounts(root)`                       | the shared, backup and environment accounts for the account-wide stacks |
+| `.`         | `AwsHealthIndicatorDriver`                | the `HealthIndicator` driver: the region's STS endpoint answers         |
 | `./node`    | `awsBaseline(config)`                     | the environment stack                                                   |
 | `./node`    | `stateBackend(accounts)`                  | the Pulumi state bucket and key in the shared tooling account           |
 | `./node`    | `backupAccount(accounts)`                 | the vault and replica bucket in the backup account                      |
@@ -83,12 +84,23 @@ environments:
   production:
     encore:
       account: prod # the key above
+    regions: [uae] # optional; each AWS region must be providers.aws.region, so backups stay in its jurisdiction
     shared:
       database:
         backups:
           retentionDays: 35
           pitr: true
+      network:
+        egress:
+          staticIps: 2 # Elastic IPs partners allow-list (ADR 0402)
+regions:
+  uae: { cloud: aws, location: me-central-1, jurisdiction: ae }
 ```
+
+`awsBaselineConfig` refuses an environment with backups or replicated files whose AWS regions are not
+`providers.aws.region`: a region in another jurisdiction gets its own account and stack. The stack exports `egressIps`
+(for partner allow-lists) and `egressAllocationIds` (for the network's NAT gateways); the addresses are retained when the
+stack drops them.
 
 An account id is a quoted string or a `ref:`: YAML reads an unquoted one as a number and drops its leading zeros.
 `ref:aws.accounts.prod` reads the stack config key `aws` and walks `accounts.prod` (ADR 0171 decision 4).
@@ -102,6 +114,7 @@ An account id is a quoted string or a `ref:`: YAML reads an unquoted one as a nu
 - Encrypt each environment's database with its data key: an AWS-managed key cannot be shared, so the snapshot copy
   would fail.
 - Subscribe the budget topic (`budgetTopicArn`) to the alerting channel.
+- Send `egressIps` to each partner that allow-lists our calls, and attach `egressAllocationIds` to the NAT gateways.
 
 ## Not here
 

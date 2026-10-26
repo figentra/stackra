@@ -2,15 +2,15 @@
  * Stackra file contract:
  * Purpose: `INFRA_RUNWAY_SCHEMA`, the parts of an already parsed root runway that the AWS foundation reads, checked
  *          strictly: the project, `providers.aws` (region, accounts, required tags, budgets), the GitHub repository,
- *          the Encore Cloud account link, and per environment its services destination, Encore account, database
- *          backups, bucket defaults and file disks. Every other key passes through untouched.
+ *          the Encore Cloud account link, the regions, and per environment its regions, services destination, Encore
+ *          account, database backups, static egress addresses, bucket defaults and file disks. Every other key passes through untouched.
  * Boundary: internal; `parseInfraRunway` is its only reader. `@stackra/runway` owns the root schema, whose provider
  *           blocks stay open; this schema narrows only what infra-aws reads, so a misspelt budget or account fails
  *           here before any Pulumi program runs. An account id must be a quoted string: YAML would read an unquoted
  *           one as a number and drop its leading zeros.
  * Runtime: isomorphic
  * Governing contract: ADR 0171 (`ref:` values from the stacks repository), ADR 0172 (accounts, region, budgets, tags),
- *                     ADR 0186 (backups), ADR 0296 (root runway).
+ *                     ADR 0186 (backups), ADR 0296 (root runway), ADR 0353 (residency), ADR 0402 (egress, jurisdiction).
  */
 import { z } from "zod";
 
@@ -36,6 +36,7 @@ const DISK = z.looseObject({ disk: z.string().optional() }).optional();
 
 /** One environment, as far as the AWS foundation reads it. */
 const ENVIRONMENT = z.looseObject({
+  regions: z.array(z.string()).optional(),
   destinations: z.looseObject({ services: z.string().optional() }).optional(),
   encore: z.looseObject({ account: z.string().optional() }).optional(),
   shared: z
@@ -46,6 +47,18 @@ const ENVIRONMENT = z.looseObject({
             .looseObject({
               retentionDays: z.int().min(1).optional(),
               pitr: z.boolean().optional(),
+            })
+            .optional(),
+        })
+        .optional(),
+      network: z
+        .looseObject({
+          egress: z
+            .looseObject({
+              staticIps: z
+                .int()
+                .min(1)
+                .max(10, "Partners allow-list each address: keep to ten or fewer"),
             })
             .optional(),
         })
@@ -97,5 +110,15 @@ export const INFRA_RUNWAY_SCHEMA = z.looseObject({
       })
       .optional(),
   }),
+  regions: z
+    .record(
+      z.string(),
+      z.looseObject({
+        cloud: z.string(),
+        location: z.string(),
+        jurisdiction: z.string().optional(),
+      }),
+    )
+    .default({}),
   environments: z.record(z.string(), ENVIRONMENT).default({}),
 });

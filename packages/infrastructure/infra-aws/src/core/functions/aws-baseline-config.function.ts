@@ -4,13 +4,16 @@
  *          runway: its account and whether it owns the account's account-wide resources, the cost tags, the budget
  *          (stopping spend only where production does not run), the Postgres backups (point-in-time recovery and
  *          35-day snapshot copies in the backup account), the files bucket (when a service default puts files or
- *          media on the `s3` disk), the GitHub repository and the Encore Cloud account link.
+ *          media on the `s3` disk), the static egress addresses, the jurisdiction, the GitHub repository and the
+ *          Encore Cloud account link. Backups never leave the jurisdiction: an environment with backups whose AWS
+ *          regions are not the foundation's region, or sit in another jurisdiction, is refused.
  * Boundary: plain data in and out, so gen can write the result as `<env>.infra.config.json`; account ids, amounts and
  *           the Encore link stay `ref:<path>` until the Pulumi program resolves them. The app origins come from gen,
  *           which knows the app members' hosts; the root runway does not list them.
  * Runtime: isomorphic
  * Governing contract: ADR 0171 (decisions 1 to 4), ADR 0172 (decisions 1, 2 and 5), ADR 0186 (decisions 1 to 3 as
- *                     amended 2026-10-24), ADR 0289 (decision 5), ADR 0222 (media direct uploads).
+ *                     amended 2026-10-24), ADR 0289 (decision 5), ADR 0222 (media direct uploads), ADR 0353 (residency),
+ *                     ADR 0402 (backups stay in the jurisdiction; static egress addresses).
  */
 import { RunwayEnvironment, RunwayInvalidError } from "@stackra/runway";
 import type { RootRunway, RunwayIssue } from "@stackra/runway";
@@ -22,9 +25,16 @@ import { accountsFrom } from "#core/functions/accounts-from.function";
 import { costTags } from "#core/functions/cost-tags.function";
 import { parseInfraRunway } from "#core/functions/parse-infra-runway.function";
 import type { AwsBaselineConfig } from "#core/types/aws-baseline-config.type";
+import type { InfraRunway } from "#core/types/infra-runway.type";
 
 /** An origin a browser uploads from: https, a host, an optional port and nothing else. */
 const ORIGIN = /^https:\/\/[a-z0-9.-]+(:\d+)?$/;
+
+/** Whether a service default puts files or media on the `s3` disk, so the files bucket (and its replica) exists. */
+function onS3Of(settings: InfraRunway["environments"][string] | undefined): boolean {
+  const config = settings?.defaults?.service?.config;
+  return config?.filesystem?.disk === "s3" || config?.media?.disk === "s3";
+}
 
 /**
  * The AWS foundation config of `environment`.
@@ -33,7 +43,8 @@ const ORIGIN = /^https:\/\/[a-z0-9.-]+(:\d+)?$/;
  * @param environment - the environment the Pulumi stack deploys.
  * @param origins - the app origins that upload files straight to the bucket (`https://console.acme.example`).
  * @throws RunwayInvalidError when the environment names no account, a budget has no amount for its account, backups
- *         have no backup account, or an `encore-cloud` environment has no Encore account link.
+ *         have no backup account or would be copied out of an environment region's jurisdiction, or an `encore-cloud`
+ *         environment has no Encore account link.
  * @throws TypeError when an origin is not `https://<host>[:port]`.
  * @example
  * const config = awsBaselineConfig(root, "staging", ["https://console.staging.acme.example"]);
@@ -90,9 +101,25 @@ export function awsBaselineConfig(
       message: "Database backups are copied to a backup account (ADR 0186): name it",
     });
 
-  const config = settings?.defaults?.service?.config;
-  const onS3 = config?.filesystem?.disk === "s3" || config?.media?.disk === "s3";
+  // Backups and replicas land in `providers.aws.region`; each AWS region the environment serves must be that region.
+  const home = Object.values(runway.regions).find(
+    (region) => region.cloud === "aws" && region.location === aws.region,
+  );
+  if (backups !== undefined || onS3Of(settings))
+    for (const key of settings?.regions ?? []) {
+      const region = runway.regions[key];
+      if (region?.cloud !== "aws" || region.location === aws.region) continue;
+      const where = [region.location, region.jurisdiction].filter(Boolean).join(", ");
+      const to = [aws.region, home?.jurisdiction].filter(Boolean).join(", ");
+      issues.push({
+        path: `environments.${environment}.regions`,
+        message: `"${key}" (${where}) would back up to ${to}: give that region its own account and stack`,
+      });
+    }
+
+  const onS3 = onS3Of(settings);
   const buckets = settings?.shared?.buckets;
+  const egress = settings?.shared?.network?.egress;
 
   const onEncore = settings?.destinations?.services === "encore-cloud";
   if (onEncore && (encore?.awsAccountId === undefined || encore.externalId === undefined))
@@ -128,6 +155,8 @@ export function awsBaselineConfig(
           origins: [...origins],
         }
       : null,
+    egress: egress === undefined ? null : { staticIps: egress.staticIps },
+    jurisdiction: home?.jurisdiction ?? null,
     github:
       github?.org !== undefined && github.repo !== undefined
         ? { org: github.org, repo: github.repo }

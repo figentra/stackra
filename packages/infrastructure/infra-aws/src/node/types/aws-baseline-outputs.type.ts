@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `AwsBaselineOutputs`, what an environment's AWS foundation exports: the data key, the files bucket, the
- *          backup vault, the infra and Encore Cloud role ARNs and the budget topic; `null` where the runway asked for
+ *          backup vault, the infra and Encore Cloud role ARNs, the budget topic and the static egress addresses; `null` where the runway asked for
  *          none or another environment owns the account-wide resource.
  * Boundary: type only; the stack exports these, and the stacks repository turns the bucket name into the services'
  *           `filesystem.s3.bucket` and the Encore role ARN into Encore Cloud's AWS connection.
@@ -24,4 +24,8 @@ export type AwsBaselineOutputs = {
   readonly encoreRoleArn: pulumi.Output<string> | null;
   /** The topic the budget alerts go to. */
   readonly budgetTopicArn: pulumi.Output<string> | null;
+  /** The static egress addresses partners allow-list. */
+  readonly egressIps: pulumi.Output<string[]> | null;
+  /** Their allocation ids, which the network's NAT gateways take. */
+  readonly egressAllocationIds: pulumi.Output<string[]> | null;
 };

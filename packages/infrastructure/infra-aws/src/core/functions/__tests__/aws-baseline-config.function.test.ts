@@ -2,11 +2,12 @@
  * Stackra file contract:
  * Purpose: unit tests of `awsBaselineConfig`: the template-shaped root gives staging and production their accounts,
  *          tags, budgets (stopping only outside production), backups, files bucket, repository and Encore link;
- *          account ownership and sharing follow promotion order; every missing input is reported with its path; an
- *          upload origin that is not https fails.
+ *          account ownership and sharing follow promotion order; static egress addresses and the jurisdiction come
+ *          from the runway; backups that would leave an environment region's jurisdiction are refused; every missing
+ *          input is reported with its path; an upload origin that is not https fails.
  * Boundary: test only; roots are built through `parseRunway`, so each is a valid root runway.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0171, 0172, 0186, 0289.
+ * Governing contract: ADR 0022 (test placement); ADR 0171, 0172, 0186, 0289, 0353, 0402.
  */
 import { parseRunway, RunwayInvalidError } from "@stackra/runway";
 import type { RootRunway } from "@stackra/runway";
@@ -106,9 +107,42 @@ describe("awsBaselineConfig", () => {
         expireNoncurrentDays: 30,
         origins: ["https://console.staging.acme.example"],
       },
+      egress: null,
+      jurisdiction: null,
       github: { org: "acme", repo: "acme-platform" },
       encore: { accountId: "ref:encore.awsAccountId", externalId: "ref:encore.externalId" },
     });
+  });
+
+  it("holds the static egress addresses and names the jurisdiction from the runway regions", () => {
+    const root = templateRoot((draft) => {
+      draft["regions"] = { uae: { cloud: "aws", location: "me-central-1", jurisdiction: "ae" } };
+      at(draft, "environments", "production").regions = ["uae"];
+      at(draft, "environments", "production", "shared").network = { egress: { staticIps: 2 } };
+    });
+
+    const config = awsBaselineConfig(root, "production");
+
+    expect(config.egress).toEqual({ staticIps: 2 });
+    expect(config.jurisdiction).toBe("ae");
+  });
+
+  it("refuses backups that would leave an environment region's jurisdiction", () => {
+    const root = templateRoot((draft) => {
+      draft["regions"] = {
+        uae: { cloud: "aws", location: "me-central-1", jurisdiction: "ae" },
+        eu: { cloud: "aws", location: "eu-central-1", jurisdiction: "eu" },
+        ksa: { cloud: "gcp", location: "me-central2", jurisdiction: "sa" },
+      };
+      at(draft, "environments", "production").regions = ["uae", "ksa", "eu"];
+    });
+
+    expect(() => awsBaselineConfig(root, "production")).toThrow(
+      /"eu" \(eu-central-1, eu\) would back up to me-central-1, ae/,
+    );
+    expect(pathsOf(() => awsBaselineConfig(root, "production"))).toEqual([
+      "environments.production.regions",
+    ]);
   });
 
   it("gives production fourteen days of point-in-time recovery and never stops its spend", () => {

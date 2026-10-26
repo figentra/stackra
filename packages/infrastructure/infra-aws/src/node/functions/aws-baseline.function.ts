@@ -2,15 +2,16 @@
  * Stackra file contract:
  * Purpose: `awsBaseline(config, opts?)`, the Pulumi program of one environment's free AWS foundation: an AWS provider
  *          pinned to the environment's account and region with the cost tags as default tags, then the data key, the
- *          files bucket (with replication to the backup account), the Postgres backups, the GitHub OIDC infra role,
- *          and, from the account's first environment, the Encore Cloud role and the budget with its stop action.
+ *          files bucket (with replication to the backup account), the Postgres backups, the static egress addresses,
+ *          the GitHub OIDC infra role, and, from the account's first environment, the Encore Cloud role and the budget
+ *          with its stop action.
  * Boundary: creates resources only through Pulumi; agents run it under `stackra infra preview` or Pulumi's mocks and
  *           never apply it (`pulumi up` is the owner's or the deploy job's). The VPC, the database server, caches and
  *           queues are Encore Cloud's or the runtime stack's, not this program's. The provider refuses any account but
  *           the environment's, so stale credentials cannot touch another account.
  * Runtime: node
  * Governing contract: ADR 0171 (decisions 1 to 5), ADR 0172 (decisions 1, 2 and 5), ADR 0186, ADR 0289 (decision 5),
- *                     ADR 0222.
+ *                     ADR 0222, ADR 0402.
  */
 import * as pulumi from "@pulumi/pulumi";
 
@@ -22,6 +23,7 @@ import { ciAccess } from "#node/functions/ci-access.function";
 import { costControls } from "#node/functions/cost-controls.function";
 import { dataKey } from "#node/functions/data-key.function";
 import { databaseBackups } from "#node/functions/database-backups.function";
+import { egressAddresses } from "#node/functions/egress-addresses.function";
 import { encoreAccess } from "#node/functions/encore-access.function";
 import { filesBucket } from "#node/functions/files-bucket.function";
 import { resolveRef } from "#node/functions/resolve-ref.function";
@@ -102,6 +104,11 @@ export function awsBaseline(
           options,
         );
 
+  const egress =
+    config.egress === null
+      ? null
+      : egressAddresses(prefix, { count: config.egress.staticIps }, options);
+
   const infra =
     config.github === null
       ? null
@@ -153,5 +160,7 @@ export function awsBaseline(
     infraRoleArn: infra?.arn ?? null,
     encoreRoleArn: encore?.arn ?? null,
     budgetTopicArn: topic?.arn ?? null,
+    egressIps: egress?.publicIps ?? null,
+    egressAllocationIds: egress?.allocationIds ?? null,
   };
 }

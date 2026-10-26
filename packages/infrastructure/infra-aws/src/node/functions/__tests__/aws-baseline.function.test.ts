@@ -5,10 +5,11 @@
  *          rule, the upload expiry and replication to the backup account; Postgres gets point-in-time recovery and
  *          snapshot copies; the infra role trusts only the environment's GitHub deploy job; the Encore Cloud role
  *          needs the external id; the budget alerts and stops non-production spend; an environment that shares an
- *          account creates no account-wide resource and selects its database by tag; a bad account id fails.
+ *          account creates no account-wide resource and selects its database by tag; the static egress addresses are
+ *          held and exported only when asked for; a bad account id fails.
  * Boundary: test only; no engine and no cloud call (ADR 0171: agents never apply a stack).
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0171, 0172, 0186, 0222, 0289.
+ * Governing contract: ADR 0022 (test placement); ADR 0171, 0172, 0186, 0222, 0289, 0402.
  */
 import { describe, expect, it } from "@stackra/testing";
 
@@ -44,6 +45,8 @@ const STAGING: AwsBaselineConfig = {
     expireNoncurrentDays: 30,
     origins: ["https://console.staging.acme.example"],
   },
+  egress: null,
+  jurisdiction: "ae",
   github: { org: "acme", repo: "acme-platform" },
   encore: { accountId: "ref:encore.awsAccountId", externalId: "ref:encore.externalId" },
 };
@@ -280,5 +283,26 @@ describe("awsBaseline", () => {
     await mockPulumi({ ...STACK, aws: { ...STACK.aws, accounts: { nonprod: 12345 } } });
 
     expect(() => awsBaseline(STAGING)).toThrow(/not a 12-digit AWS account id/);
+  });
+
+  it("holds the static egress addresses and exports them for partner allow-lists", async () => {
+    const engine = await mockPulumi(STACK);
+    const foundation = awsBaseline({ ...STAGING, egress: { staticIps: 2 } });
+
+    for (const index of [1, 2])
+      expect((await engine.find("Eip", `acme-staging-egress-${index}`)).inputs).toMatchObject({
+        domain: "vpc",
+        tags: { Name: `acme-staging-egress-${index}`, purpose: "egress" },
+      });
+    expect(await outputOf(present(foundation.egressAllocationIds))).toHaveLength(2);
+    expect(foundation.egressIps).not.toBeNull();
+  });
+
+  it("holds no egress address when the runway asks for none", async () => {
+    const engine = await mockPulumi(STACK);
+    const foundation = awsBaseline(STAGING);
+    const types = (await engine.settled()).map((resource) => resource.type.split(":").at(-1));
+    expect(types).not.toContain("Eip");
+    expect([foundation.egressIps, foundation.egressAllocationIds]).toEqual([null, null]);
   });
 });
