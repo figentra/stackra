@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: the consumer contract of the `./testing` entry: every value the template imports from
- *          `@stackra/actions/testing` (`extension`, `fakeActionContext`, `fakeExtensionContext`, `run`, `toHaveAudited`) and the plugin are
+ *          `@stackra/actions/testing` (`extension`, `fakeActionContext`, `fakeExtensionContext`, `run`, `toHaveAudited`, `denyPermission`), the plugin and the memory AccessControl are
  *          exported, nothing else is, and its types resolve.
  * Boundary: test only; imports the stand-in barrel through its `#testing` alias.
  * Runtime: node (vitest)
@@ -26,6 +26,8 @@ describe("@stackra/actions/testing", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(testing).sort()).toEqual([
       "ACTIONS_TESTING_PLUGIN",
+      "MemoryAccessControlDriver",
+      "denyPermission",
       "extension",
       "fakeActionContext",
       "fakeExtensionContext",

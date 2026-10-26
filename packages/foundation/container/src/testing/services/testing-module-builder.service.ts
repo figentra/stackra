@@ -1,8 +1,9 @@
 /**
  * Stackra file contract:
  * Purpose: `TestingModuleBuilder`, the chain `createTestingModule` returns: `.override(Port, instance)` puts an
- *          instance in a token's place, `.useDrivers(name | map)` picks drivers ahead of config, and `.compile()` boots
- *          the registered wirings for the chosen roots and resolves to a `TestingApp`.
+ *          instance in a token's place, `.useDrivers(name | map)` picks drivers ahead of config (plugin test drivers
+ *          included), and `.compile()` loads the member's generated schemas, boots the registered wirings for the
+ *          chosen roots and resolves to a `TestingApp`.
  * Boundary: a replacement is always `.override`, never a provider list, and the real wiring is never edited (ADR 0263
  *           decision 12). Other packages add chain methods through `registerTestingPlugin`; container imports none.
  * Runtime: node
@@ -19,9 +20,11 @@ import {
   type NamedToken,
   type Token,
   type Wiring,
+  type WiringDriver,
 } from "#core/index";
 import { REGISTERED_WIRINGS } from "#testing/constants/registered-wirings.constant";
 import { TESTING_PLUGINS } from "#testing/constants/testing-plugins.constant";
+import { loadMemberSchemas } from "#testing/functions/load-member-schemas.function";
 import { TestingApp } from "#testing/services/testing-app.service";
 import type { ModuleRecord } from "#testing/types/module-record.type";
 
@@ -62,6 +65,32 @@ function recordsOf(roots: readonly ModuleClass[], wirings: readonly Wiring[]): M
       });
   }
   return [...records.values()];
+}
+
+/** The driver name the test picked for `driver`'s port, as the container matches it: port key, class, member, fallback. */
+function pickedFor(driver: WiringDriver, choice: DriverChoice): string | undefined {
+  const byPort = choice.byPort ?? {};
+  const member = driver.key?.split(".")[0];
+  return (
+    (driver.key === undefined ? undefined : byPort[driver.key]) ??
+    byPort[driver.port.name] ??
+    (member === undefined ? undefined : byPort[member]) ??
+    choice.fallback
+  );
+}
+
+/** The plugins' test drivers the test picked, each with only its picked candidate, as one wiring. */
+function pickedDrivers(choice: DriverChoice): Wiring[] {
+  const drivers = [...TESTING_PLUGINS.values()].flatMap((plugin) =>
+    (plugin.drivers ?? []).flatMap((driver) => {
+      const name = pickedFor(driver, choice);
+      const load = name === undefined ? undefined : driver.candidates[name];
+      return name === undefined || load === undefined
+        ? []
+        : [{ ...driver, candidates: { [name]: load } }];
+    }),
+  );
+  return drivers.length === 0 ? [] : [{ member: "@stackra/container/testing", drivers }];
 }
 
 /**
@@ -123,17 +152,20 @@ export class TestingModuleBuilder {
   }
 
   /**
-   * Boots every registered wiring for the roots, adds the plugins' app members and runs the `onCompile` steps.
+   * Loads the member's generated schemas, boots every registered wiring for the roots (after the plugins' picked test
+   * drivers, so a registered candidate of the same name wins), adds the plugins' app members and runs the `onCompile`
+   * steps.
    *
    * @throws UnresolvedPortError when a port has no driver and nothing overrides it.
    */
   async compile(): Promise<TestingApp> {
+    await loadMemberSchemas();
     const wirings = [...REGISTERED_WIRINGS.values()];
     const drivers: DriverChoice =
       this.fallback === undefined
         ? { byPort: { ...this.byPort } }
         : { fallback: this.fallback, byPort: { ...this.byPort } };
-    const container = await Container.create(wirings, {
+    const container = await Container.create([...pickedDrivers(drivers), ...wirings], {
       roots: this.roots,
       overrides: new Map(this.overrides),
       drivers,

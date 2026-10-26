@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `TestingModuleBuilder`: every chain method returns the builder, an override of a named
  *          instance is honoured, `onCompile` steps run in order on the compiled app, a class no wiring names lists as
- *          its own module, and `compile()` never edits the registered wiring.
+ *          its own module, `compile()` never edits the registered wiring, and a plugin's test driver joins its port
+ *          only when `.useDrivers(...)` picks it (a registered candidate of the same name wins).
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (decision 3); ADR 0263 (decision 12).
@@ -12,6 +13,7 @@ import { beforeEach, describe, expect, it } from "@stackra/testing";
 
 import { Driver, Module, named, Service, type Wiring } from "#core/index";
 import { REGISTERED_WIRINGS } from "#testing/constants/registered-wirings.constant";
+import { TESTING_PLUGINS } from "#testing/constants/testing-plugins.constant";
 import { registerWiring } from "#testing/functions/register-wiring.function";
 import { TestingModuleBuilder } from "#testing/services/testing-module-builder.service";
 
@@ -34,8 +36,25 @@ const wiring: Wiring = {
   drivers: [{ port: Ledger, candidates: { memory: () => Promise.resolve(MemoryLedgerDriver) } }],
 };
 
+abstract class Gate extends Port {
+  abstract open(): boolean;
+}
+
+class OpenGateDriver extends Driver(Gate) {
+  open(): boolean {
+    return true;
+  }
+}
+
+class ShutGateDriver extends Driver(Gate) {
+  open(): boolean {
+    return false;
+  }
+}
+
 beforeEach(() => {
   REGISTERED_WIRINGS.clear();
+  TESTING_PLUGINS.clear();
   registerWiring(wiring);
 });
 
@@ -80,5 +99,39 @@ describe("TestingModuleBuilder", () => {
       .compile();
     expect(REGISTERED_WIRINGS.get("ledger")).toBe(wiring);
     expect(Object.keys(wiring)).toEqual(["member", "drivers"]);
+  });
+
+  it("adds a plugin's test driver only when the test picks it", async () => {
+    TESTING_PLUGINS.set("gate", {
+      name: "gate",
+      drivers: [
+        {
+          port: Gate,
+          key: "gate.Gate",
+          candidates: { memory: () => Promise.resolve(OpenGateDriver) },
+        },
+      ],
+    });
+    const picked = await new TestingModuleBuilder([ReportingModule]).useDrivers("memory").compile();
+    expect(picked.get(Gate).open()).toBe(true);
+    const byMember = await new TestingModuleBuilder([ReportingModule])
+      .useDrivers({ gate: "memory" })
+      .compile();
+    expect(byMember.has(Gate)).toBe(true);
+    const unpicked = await new TestingModuleBuilder([ReportingModule]).compile();
+    expect(unpicked.has(Gate)).toBe(false);
+  });
+
+  it("lets a registered candidate of the same name win over a plugin's test driver", async () => {
+    TESTING_PLUGINS.set("gate", {
+      name: "gate",
+      drivers: [{ port: Gate, candidates: { memory: () => Promise.resolve(OpenGateDriver) } }],
+    });
+    registerWiring({
+      member: "gate",
+      drivers: [{ port: Gate, candidates: { memory: () => Promise.resolve(ShutGateDriver) } }],
+    });
+    const app = await new TestingModuleBuilder([ReportingModule]).useDrivers("memory").compile();
+    expect(app.get(Gate).open()).toBe(false);
   });
 });

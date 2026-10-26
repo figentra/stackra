@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: the consumer contract of the `./testing` entry: `createTestingModule` and the `TestingApp` type the
  *          template imports, plus the plugin and wiring registration gen's vitest setup and other packages' testing
- *          entries call, are exported and nothing else is.
+ *          entries call, and the member schema load a setup may await, are exported and nothing else is.
  * Boundary: test only; imports the stand-in barrel through its `#testing` alias.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (decision 3); ADR 0294 (decision 15).
@@ -18,6 +18,7 @@ describe("@stackra/container/testing", () => {
       "TestingApp",
       "TestingModuleBuilder",
       "createTestingModule",
+      "loadMemberSchemas",
       "registerTestingPlugin",
       "registerWiring",
     ]);

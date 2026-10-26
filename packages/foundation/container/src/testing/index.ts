@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `./testing` entry of @stackra/container (the testing module, its plugin extension
- *          point and wiring registration), which has several public files, until `stackra gen` writes the entry
+ *          point, wiring registration and the member schema load), which has several public files, until `stackra gen` writes the entry
  *          barrels (STA-339).
  * Boundary: names each re-export and declares nothing. Imports `.` only; no other package's `./testing` (ADR 0269
  *           decision 3).
@@ -9,6 +9,7 @@
  * Governing contract: ADR 0294 (decision 15); ADR 0269 (decision 3); the STA-347 stand-in barrel decision.
  */
 export { createTestingModule } from "#testing/functions/create-testing-module.function";
+export { loadMemberSchemas } from "#testing/functions/load-member-schemas.function";
 export { registerTestingPlugin } from "#testing/functions/register-testing-plugin.function";
 export { registerWiring } from "#testing/functions/register-wiring.function";
 export { TestingApp } from "#testing/services/testing-app.service";
