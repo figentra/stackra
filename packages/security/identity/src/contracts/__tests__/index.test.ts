@@ -17,7 +17,10 @@ import type { SessionUser } from "#contracts/index";
 describe("@stackra/identity/contracts", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(contracts).sort()).toEqual([
+      "ApiKeyStore",
+      "DeviceTokenStatus",
       "Guardianship",
+      "IdpAdmin",
       "SessionStore",
       "SignInBrowser",
       "StaffPinStore",

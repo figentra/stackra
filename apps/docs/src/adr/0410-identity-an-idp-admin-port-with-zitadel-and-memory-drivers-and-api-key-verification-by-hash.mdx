@@ -1,0 +1,48 @@
+---
+title: "0410 — Identity: an IdP admin port with ZITADEL and memory drivers, and API-key verification by hash"
+description: "Proposed · 2026-10-26"
+---
+
+<Note>
+  Proposed (STA-834, STA-835). It extends
+  [0206](/adr/0206-zitadel-is-the-identity-provider-and-stackra-identity-is-provider-neutral),
+  [0207](/adr/0207-authentication-assurance-and-machine-identities) and
+  [0278](/adr/0278-api-key-lifecycle). Linear STA-834, STA-835.
+</Note>
+
+## Context
+
+Nothing in Stackra created a ZITADEL user or machine user, ended a session, ran the OAuth device flow or set an
+organisation's login policy at run time, so device credentials, machine principals and revocations could not reach the
+provider. API keys were stored as hashes, but the gateway had no verification read.
+
+## Decision
+
+1. **`IdpAdmin` port** in `@stackra/identity/contracts`: `createUser`, `createMachineUser` (with its client secret,
+   shown once), `deactivateUser`, `removeUser`, `endSession` (a gone session is fine), `endSessions(user)`,
+   `startDeviceAuthorization` and `pollDeviceToken` (RFC 8628), and `setLoginPolicy`.
+2. **`ZitadelIdpAdminDriver`** uses the v2 user and session services, the management API for machine users, secrets
+   and the login policy, and the OAuth device endpoints. Managed or bring-your-own is configuration:
+   `IdpAdminConfig.url` is the platform's ZITADEL or the tenant's own, and the token is the `IDENTITY_IDP_ADMIN_TOKEN`
+   secret. A 409 is `idp_user_exists`; a timeout, network failure, 429 or 5xx is `idp_admin_unavailable` (retryable).
+   `MemoryIdpAdminDriver` serves tests.
+3. **API-key verification by hash.** `hashApiKey` is SHA-256 of the key (unsalted; the key holds 178 random bits).
+   `ApiKeyVerifierService.verify(key, origin)` refuses a malformed key with no lookup, reads the record through the
+   `ApiKeyStore` port by hash, compares in constant time, and refuses a revoked or expired key, a publishable key from
+   an unbound origin and a secret key from a browser, all as one `api_key_rejected`.
+4. **Login policies are data.** The values come from tenant settings and market-pack defaults and are pushed through
+   the port; nothing in code picks them.
+
+## Consequences
+
+- The identity service binds the ZITADEL driver and implements `ApiKeyStore` over its key table.
+- Devices get credentials through `createMachineUser` or the device flow (`device_credential.issued`).
+
+## Enforcement
+
+`packages/security/identity/src/core/drivers/__tests__/zitadel-idp-admin.driver.test.ts`,
+`packages/security/identity/src/core/services/__tests__/api-key-verifier.service.test.ts`.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: STA-834 (services/identity SPEC G2); STA-835 (G6); ADR 0235 decision 1.

@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `.` entry of @stackra/identity (the configuration with its shipped schema, the flows
  *          and statuses, the session service, the session drivers, the claims mapping, the `ClientSession`,
- *          `OfflineSession` and memory `IdentityResolver` drivers, step-up, external sign-in, staff PINs, API keys,
+ *          `OfflineSession` and memory `IdentityResolver` drivers, step-up, external sign-in, staff PINs, API keys and
+ *          their verification by hash, the identity provider admin drivers (ZITADEL, memory) with their configuration,
  *          guardians acting for minors, KYC and KYB verification, and the refusals) until `stackra gen` writes the
  *          entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. `SessionStore`, `SignInBrowser` and `SessionUser` are exported
@@ -13,10 +14,14 @@
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision; ADR 0127 2026-10-24 note.
  */
 export { IdentityConfig } from "#config/identity.config";
+export { IdpAdminConfig } from "#config/idp-admin.config";
 export { IDENTITY_CLAIMS } from "#core/constants/identity-claims.constant";
 export { IDENTITY_CONFIG_SCHEMA as IdentityConfig$ } from "#core/constants/identity-config-schema.constant";
+export { IDP_ADMIN_CONFIG_SCHEMA as IdpAdminConfig$ } from "#core/constants/idp-admin-config-schema.constant";
 export { BffSessionStoreDriver } from "#core/drivers/bff-session-store.driver";
+export { MemoryApiKeyStoreDriver } from "#core/drivers/memory-api-key-store.driver";
 export { MemoryGuardianshipDriver } from "#core/drivers/memory-guardianship.driver";
+export { MemoryIdpAdminDriver } from "#core/drivers/memory-idp-admin.driver";
 export { MemoryIdentityResolverDriver } from "#core/drivers/memory-identity-resolver.driver";
 export { MemorySessionStoreDriver } from "#core/drivers/memory-session-store.driver";
 export { MemoryStaffPinStoreDriver } from "#core/drivers/memory-staff-pin-store.driver";
@@ -25,12 +30,15 @@ export { PkceSessionStoreDriver } from "#core/drivers/pkce-session-store.driver"
 export { SessionClientSessionDriver } from "#core/drivers/session-client-session.driver";
 export { SessionOfflineSessionDriver } from "#core/drivers/session-offline-session.driver";
 export { StorageStaffPinStoreDriver } from "#core/drivers/storage-staff-pin-store.driver";
+export { ZitadelIdpAdminDriver } from "#core/drivers/zitadel-idp-admin.driver";
 export { ApiKeyKind } from "#core/enums/api-key-kind.enum";
 export { AssuranceLevel } from "#core/enums/assurance-level.enum";
 export { AuthFlow } from "#core/enums/auth-flow.enum";
 export { SessionStatus } from "#core/enums/session-status.enum";
 export { ApiKeyRejectedError } from "#core/errors/api-key-rejected.error";
 export { GuardianshipMissingError } from "#core/errors/guardianship-missing.error";
+export { IdpAdminUnavailableError } from "#core/errors/idp-admin-unavailable.error";
+export { IdpUserExistsError } from "#core/errors/idp-user-exists.error";
 export { SessionRevokedError } from "#core/errors/session-revoked.error";
 export { SignInCancelledError } from "#core/errors/sign-in-cancelled.error";
 export { StaffPinLockedError } from "#core/errors/staff-pin-locked.error";
@@ -39,6 +47,7 @@ export { StepUpRequiredError } from "#core/errors/step-up-required.error";
 export { VerificationUnavailableError } from "#core/errors/verification-unavailable.error";
 export { assuranceOf } from "#core/functions/assurance-of.function";
 export { checkPublishableKey } from "#core/functions/check-publishable-key.function";
+export { hashApiKey } from "#core/functions/hash-api-key.function";
 export { externalSignIn } from "#core/functions/external-sign-in.function";
 export { isOriginAllowed } from "#core/functions/is-origin-allowed.function";
 export { mintApiKey } from "#core/functions/mint-api-key.function";
@@ -48,6 +57,8 @@ export { sessionUserOf } from "#core/functions/session-user-of.function";
 export { signInProvidersOf } from "#core/functions/sign-in-providers-of.function";
 export { stepUpSignIn } from "#core/functions/step-up-sign-in.function";
 export { IdentityOptions } from "#core/schemas/identity-options.schema";
+export { IdpAdminOptions } from "#core/schemas/idp-admin-options.schema";
+export { ApiKeyVerifierService } from "#core/services/api-key-verifier.service";
 export { GuardianActingService } from "#core/services/guardian-acting.service";
 export { SessionService } from "#core/services/session.service";
 export { StaffPinService } from "#core/services/staff-pin.service";
@@ -59,3 +70,4 @@ export type { ManagerOverride } from "#core/types/manager-override.type";
 export type { ParsedApiKey } from "#core/types/parsed-api-key.type";
 export type { SessionState } from "#core/types/session-state.type";
 export type { StaffSwitch } from "#core/types/staff-switch.type";
+export type { VerifiedApiKey } from "#core/types/verified-api-key.type";

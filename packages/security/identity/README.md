@@ -34,6 +34,8 @@ screen reads, and the claims mapping that turns a provider's token into a Stackr
 | `.`           | `signInProvidersOf`, `externalSignIn`                                                                      | a market's external sign-in providers (pack data) and the hint that sends sign-in there |
 | `.`           | `StaffPinService`, `StorageStaffPinStoreDriver`, `MemoryStaffPinStoreDriver`                               | staff PIN quick-switch and manager override on a shared device                          |
 | `.`           | `ApiKeyKind`, `mintApiKey`, `parseApiKey`, `checkPublishableKey`, `isOriginAllowed`                        | secret and publishable keys; the origin-bound Storefront key                            |
+| `.`           | `ApiKeyVerifierService`, `hashApiKey`, `MemoryApiKeyStoreDriver`                                           | the gateway's verification of a key by its hash, over the `ApiKeyStore` port            |
+| `.`           | `ZitadelIdpAdminDriver`, `MemoryIdpAdminDriver`, `IdpAdminConfig`                                          | the `IdpAdmin` port: users, machine users, sessions, device flow, login policy          |
 | `.`           | `GuardianActingService`, `MemoryGuardianshipDriver`                                                        | a guardian acting for a minor, after the relationship check                             |
 | `.`           | `VerificationService`, `MemoryVerificationDriver`                                                          | KYC and KYB through the providers the market pack lists                                 |
 | `./contracts` | `Verification`, `VerificationKind`, `VerificationStatus`, `StaffPinStore`, `Guardianship`, `SignInOptions` | the verification, PIN and guardianship ports; sign-in extras                            |
@@ -118,7 +120,12 @@ WebCrypto. No `SignInBrowser` driver ships here yet: the Expo and Electron ones 
   member (in the `secrets` area on the till), lock out after `pinMaxAttempts`, and check the manager's permission
   through the IAM decision point.
 - **API keys.** `mintApiKey(ApiKeyKind.Publishable, identity)` makes a prefixed, checksummed key; the gateway calls
-  `checkPublishableKey(key, origin, record.origins, identity)` before the lookup.
+  `checkPublishableKey(key, origin, record.origins, identity)` before the lookup. The identity service stores
+  `hashApiKey(key)` only; the gateway calls `ApiKeyVerifierService.verify(key, origin)`, which refuses a malformed key
+  without a lookup, then reads the record by hash through `ApiKeyStore` and checks revocation, expiry and the origin.
+- **IdP admin.** `IdpAdmin` creates users and machine users, ends sessions, runs the device flow and sets login
+  policies. `ZitadelIdpAdminDriver` reads `IdpAdminConfig` (key `idp_admin`): the URL of the managed or the tenant's own
+  ZITADEL, and the `IDENTITY_IDP_ADMIN_TOKEN` secret.
 - **Guardians.** `GuardianActingService.actFor(actor, minor, { purpose, birthDate, ageOfMajority })` checks the link,
   its restrictions and the pack's age, and returns the delegated principal to record.
 - **Verification.** `VerificationService.register(key, driver)` wires providers; `verify(request, resolved, on)` tries
