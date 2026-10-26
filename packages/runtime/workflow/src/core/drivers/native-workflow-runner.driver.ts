@@ -5,7 +5,8 @@
  *          step's journal row; parks a run before a step that waits for a signal and resumes it when the signal or the
  *          timeout comes; retries a step with backoff; times out steps and runs; and on a failure undoes the completed
  *          steps last first. `startDocument` runs an automation document or an agent's plan the same way, each step an
- *          action call through the pipeline as the run's principal. `tick` advances what is due (resumed waits,
+ *          action call through the pipeline as the run's principal (a for-each step one call per item); `chained`
+ *          places a triggered run in its event chain and stops a chain past its depth or a cycle. `tick` advances what is due (resumed waits,
  *          timeouts, runs whose runner died), each run on the version it started on; `work` ticks until stopped.
  * Boundary: over the `WorkflowJournal` port (Postgres or memory), `Locks` (one runner per run, so a run never advances
  *           twice at once) and the `Clock`; `connect(resolver)` gives it the container that builds workflow instances
@@ -20,14 +21,19 @@
  *           0102 decision 3) waits for a staged state in @stackra/outbox. A document run keeps its document in its
  *           input, so it resumes on that version; a coded run resumes on the class registered for its key and
  *           version, and waits (not advanced here) while no such class is deployed in this process. A step may wait
- *           for an event as for a signal: the explorer holds each occurrence of a correlating trigger block.
+ *           for an event as for a signal: the explorer holds each occurrence of a correlating trigger block. A document
+ *           step's call id is its step key, so the events its block records name the run as their correlation; a
+ *           trigger that event fires reads the run's chain from it. A for-each step calls its block one item after
+ *           another in one attempt, each call keyed `<step key>:<index>` so a retried attempt replays the calls an
+ *           idempotent action already made.
  * Runtime: isomorphic
  * Governing contract: ADR 0102 (decisions 1, 2 and 7); ADR 0151 (decisions 2 and 3: the native driver behind the
  *                     engine port, which is @stackra/actions' `WorkflowRunner`); ADR 0292 (decision 2); ADR 0152 (0294
  *                     note: waits, timeouts, heartbeats, held signals; decisions 1, 2 and 5: event waits, the version
  *                     pin, one graph format); ADR 0101 (0294 note: `ctx.run`); ADR 0149 (locks); ADR 0122 (decision
  *                     3); ADR 0153 (decision 2: an automation runs as its principal); ADR 0245 (decision 8: a plan is
- *                     an ephemeral workflow).
+ *                     an ephemeral workflow); OS-232 (for-each and chain depth, both configured); ADR 0141
+ *                     (correlation).
  */
 import { ActionPipeline } from "@stackra/actions";
 import type { ExtensionContext, Resolver } from "@stackra/actions";
@@ -53,18 +59,23 @@ import { WORKFLOW_DEFAULTS } from "#core/constants/workflow-defaults.constant";
 import { WORKFLOW_KEYS } from "#core/constants/workflow-keys.constant";
 import { StepStatus } from "#core/enums/step-status.enum";
 import { WorkflowRunStatus } from "#core/enums/workflow-run-status.enum";
+import { ForEachItemsInvalidError } from "#core/errors/for-each-items-invalid.error";
 import { checkAutomation } from "#core/functions/check-automation.function";
 import { correlationKey } from "#core/functions/correlation-key.function";
 import { documentPlan } from "#core/functions/document-plan.function";
+import { lookupRef } from "#core/functions/lookup-ref.function";
 import { mintId } from "#core/functions/mint-id.function";
 import { planOf } from "#core/functions/plan-of.function";
 import { resolveRefs } from "#core/functions/resolve-refs.function";
+import { runOfCall } from "#core/functions/run-of-call.function";
 import { workflowKey } from "#core/functions/workflow-key.function";
 import type { WorkflowJournal } from "#core/ports/workflow-journal.port";
 import type { AutomationDocument } from "#core/types/automation-document.type";
 import type { AutomationStep } from "#core/types/automation-step.type";
 import type { DocumentInput } from "#core/types/document-input.type";
+import type { DocumentRoots } from "#core/types/document-roots.type";
 import type { DocumentView } from "#core/types/document-view.type";
+import type { RunChain } from "#core/types/run-chain.type";
 import type { RunOrigin } from "#core/types/run-origin.type";
 import type { StepContext } from "#core/types/step-context.type";
 import type { StepPlan } from "#core/types/step-plan.type";
@@ -256,6 +267,12 @@ export class NativeWorkflowRunnerDriver extends Driver(WorkflowRunner) {
   /** How long an untaken signal is held, in milliseconds (config `workflow.signalRetention`). */
   private readonly signalRetention: number;
 
+  /** The most items a for-each step takes (config `workflow.forEachLimit`). */
+  private readonly forEachLimit: number;
+
+  /** How deep an event chain of triggered runs may grow (config `workflow.maxChainDepth`). */
+  private readonly maxChainDepth: number;
+
   /** Set by `connect`. */
   private resolver: Resolver | undefined;
 
@@ -263,7 +280,8 @@ export class NativeWorkflowRunnerDriver extends Driver(WorkflowRunner) {
    * @param journal - the store config `workflow.journal` picks.
    * @param locks - the run locks.
    * @param clock - the time source.
-   * @param config - the bound configuration; without one a signal is held for the default seven days.
+   * @param config - the bound configuration; without one a signal is held for the default seven days, a for-each
+   *                 step takes 1,000 items and a chain grows 3 runs deep.
    */
   constructor(journal: WorkflowJournal, locks: Locks, clock: Clock, config?: WorkflowConfig) {
     super();
@@ -274,6 +292,8 @@ export class NativeWorkflowRunnerDriver extends Driver(WorkflowRunner) {
       config === undefined
         ? WORKFLOW_DEFAULTS.signalHoldMilliseconds
         : Duration.toMilliseconds(duration(config.signalRetention));
+    this.forEachLimit = config?.forEachLimit ?? WORKFLOW_DEFAULTS.forEachLimit;
+    this.maxChainDepth = config?.maxChainDepth ?? WORKFLOW_DEFAULTS.maxChainDepth;
   }
 
   /** Builds workflows and reads the event and context ports from `resolver`; a later call replaces it. */
@@ -325,7 +345,8 @@ export class NativeWorkflowRunnerDriver extends Driver(WorkflowRunner) {
    * or the user who approved the plan) and advances it until it completes, parks or compensates. Each step calls its
    * action block through the action pipeline as that caller, so access, approval and audit apply to every step. The
    * run keeps the document, so it resumes on this version. Given `options.key`, a second start of the same key starts
-   * nothing (a redelivered trigger).
+   * nothing (a redelivered trigger); `options.chain` (from `chained`) is kept with the run, so the runs its events
+   * trigger continue the chain.
    *
    * @returns the run's id; `undefined` for a key that already has a run.
    * @throws AutomationInvalidError when the document does not check; the failing step's error, or
@@ -335,11 +356,15 @@ export class NativeWorkflowRunnerDriver extends Driver(WorkflowRunner) {
     document: unknown,
     input: unknown,
     origin: RunOrigin,
-    options: { readonly key?: string } = {},
+    options: { readonly key?: string; readonly chain?: RunChain } = {},
   ): Promise<PublicId<"wfr"> | undefined> {
     const checked = checkAutomation(document);
     this.connected();
-    const run: DocumentInput = { document: checked, input: toJson(input) };
+    const run: DocumentInput = {
+      document: checked,
+      input: toJson(input),
+      ...(options.chain === undefined ? {} : { chain: options.chain }),
+    };
     const outcome = await this.launch(
       documentPlan(checked),
       this.documentInstance(checked),
@@ -412,6 +437,38 @@ export class NativeWorkflowRunnerDriver extends Driver(WorkflowRunner) {
       receivedAt,
       expiresAt: later(receivedAt, this.signalRetention),
     });
+  }
+
+  /**
+   * The chain a run of automation `automationId` joins when an event with `correlationId` triggers it: depth 1 for an
+   * event no document run caused, else the causing run's chain plus this automation. A chain past
+   * `workflow.maxChainDepth`, or one this automation is already in (a loop), is stopped and logged.
+   *
+   * @returns the chain to start with (`startDocument`'s `options.chain`); `undefined` when the run must not start.
+   */
+  async chained(
+    correlationId: string | undefined,
+    automationId: string,
+  ): Promise<RunChain | undefined> {
+    const cause = runOfCall(correlationId);
+    const parent = cause === undefined ? undefined : await this.journal.find(cause);
+    const before =
+      parent?.workflow === DOCUMENT_WORKFLOW
+        ? ((parent.input as DocumentInput).chain ?? { depth: 1, automations: [] })
+        : undefined;
+    const chain: RunChain = Object.freeze({
+      depth: (before?.depth ?? 0) + 1,
+      automations: Object.freeze([...(before?.automations ?? []), automationId]),
+    });
+    if (chain.depth <= this.maxChainDepth && before?.automations.includes(automationId) !== true)
+      return chain;
+    this.optional(Logger)?.warn(WORKFLOW_DEFAULTS.chainStopped, {
+      automationId,
+      depth: chain.depth,
+      limit: this.maxChainDepth,
+      ...(cause === undefined ? {} : { cause }),
+    });
+    return undefined;
   }
 
   /** The latest run of `workflow`, for inspection (ADR 0152 decision 4). */
@@ -500,8 +557,11 @@ export class NativeWorkflowRunnerDriver extends Driver(WorkflowRunner) {
 
   /**
    * One document step: calls its action block through the action pipeline as the run's caller, in the run's scope,
-   * with its input's references resolved and the step key as the call's idempotency key; a wait-only step returns
-   * the occurrence it received.
+   * with its input's references resolved and the step key as the call's id and idempotency key; a wait-only step
+   * returns the occurrence it received. A for-each step calls its block once per item of its list, in order, the
+   * item as the `item` root and `<step key>:<index>` as each call's key, and returns the results in item order.
+   *
+   * @throws ForEachItemsInvalidError when a for-each list is not a list or is longer than `workflow.forEachLimit`.
    */
   private async perform(
     step: AutomationStep,
@@ -512,7 +572,7 @@ export class NativeWorkflowRunnerDriver extends Driver(WorkflowRunner) {
     if (step.block === undefined) return toJson(received);
     // reason: the plan was built only when every block of the document is registered here
     const block = BUILDING_BLOCKS.get(step.block) as { readonly type: AnyClass };
-    const roots = {
+    const roots: DocumentRoots = {
       input: view.input.input,
       results: view.results,
       ...(received === undefined ? {} : { event: toJson(received) }),
@@ -521,16 +581,31 @@ export class NativeWorkflowRunnerDriver extends Driver(WorkflowRunner) {
     const pipeline = resolver.has(ActionPipeline)
       ? resolver.get(ActionPipeline)
       : new ActionPipeline(resolver);
-    return pipeline.execute(block.type as never, resolveRefs(step.input, roots) as never, {
-      actor: ctx.actor,
-      ...(ctx.scope === undefined ? {} : { scope: ctx.scope }),
-      idempotencyKey: ctx.stepKey,
-      locale: ctx.locale,
-      timeZone: ctx.timeZone,
-      currency: ctx.currency,
-      market: ctx.market,
-      abortSignal: ctx.abortSignal,
-    });
+    const call = (scope: DocumentRoots, key: string): Promise<unknown> =>
+      pipeline.execute(block.type as never, resolveRefs(step.input, scope) as never, {
+        actor: ctx.actor,
+        ...(ctx.scope === undefined ? {} : { scope: ctx.scope }),
+        callId: key,
+        idempotencyKey: key,
+        locale: ctx.locale,
+        timeZone: ctx.timeZone,
+        currency: ctx.currency,
+        market: ctx.market,
+        abortSignal: ctx.abortSignal,
+      });
+    if (step.forEach === undefined) return call(roots, ctx.stepKey);
+    const items = lookupRef(step.forEach.items, roots);
+    if (!Array.isArray(items) || items.length > this.forEachLimit)
+      throw ForEachItemsInvalidError.create({
+        step: step.name,
+        ...(Array.isArray(items) ? { count: items.length } : {}),
+        limit: this.forEachLimit,
+      });
+    const results: unknown[] = [];
+    for (const [index, item] of items.entries())
+      // oxlint-disable-next-line no-await-in-loop -- items run one after another, in list order
+      results.push(toJson(await call({ ...roots, item }, `${ctx.stepKey}:${index}`)) ?? null);
+    return results;
   }
 
   /** Runs the steps of `start` that are not done, in plan order, until the run completes, parks or compensates. */

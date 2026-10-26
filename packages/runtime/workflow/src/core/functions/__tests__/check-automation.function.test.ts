@@ -3,7 +3,8 @@
  * Purpose: unit tests of `checkAutomation` and the shape it parses (`AUTOMATION_DOCUMENT_SCHEMA`): a valid document
  *          comes back with its defaults (version 1, empty inputs); a bad shape is refused path by path; an unknown or
  *          wrong-kind block, a wait on a trigger that does not correlate, a reference to a later step or to an event
- *          outside a wait, and a condition without facts or with an unregistered field are each refused by path.
+ *          outside a wait, an `item` reference outside a for-each step, a for-each list naming `item` or a later step, a
+ *          for-each step without a block, and a condition without facts or with an unregistered field are each refused by path.
  * Boundary: test only; the registry is this test file's process state.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0122 (decision 3 and its enforcement); ADR 0331 (decision 10); ADR 0245 (decision
@@ -129,6 +130,37 @@ describe(checkAutomation, () => {
       "steps.0.input.y": "ref_invalid",
       "steps.1.input.z": "ref_invalid",
     });
+  });
+
+  it("takes a for-each step whose input names the item, and refuses item outside one", () => {
+    const document = checkAutomation({
+      key: "commerce.notify",
+      steps: [
+        {
+          name: "each",
+          block: "sms.send",
+          forEach: { items: "input.buyers" },
+          input: { to: { $ref: "item.phone" }, whole: { $ref: "item" } },
+        },
+      ],
+    });
+    expect(document.steps[0]?.forEach).toEqual({ items: "input.buyers" });
+    expect(
+      refusal({
+        key: "commerce.bad",
+        steps: [
+          { name: "a", block: "sms.send", input: { to: { $ref: "item.phone" } } },
+          { name: "b", block: "sms.send", forEach: { items: "results.c.list" } },
+          { name: "c", block: "sms.send" },
+        ],
+      }),
+    ).toEqual({ "steps.0.input.to": "ref_invalid", "steps.1.forEach.items": "ref_forward" });
+    expect(
+      refusal({
+        key: "commerce.bad",
+        steps: [{ name: "a", waitFor: VALID.steps[1]?.waitFor, forEach: { items: "item" } }],
+      }),
+    ).toHaveProperty(["steps.0.forEach.items"], "shape_invalid");
   });
 
   it("refuses a condition without facts, or naming an unregistered field", () => {

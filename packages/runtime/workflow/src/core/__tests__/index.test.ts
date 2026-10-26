@@ -39,6 +39,7 @@ describe("@stackra/workflow", () => {
       "ChecklistStepCompleted",
       "ChecklistTemplate$",
       "DryRunOutcome",
+      "ForEachItemsInvalidError",
       "IndustryProfile$",
       "MemoryPublisherAccessDriver",
       "MemoryWorkflowJournalDriver",

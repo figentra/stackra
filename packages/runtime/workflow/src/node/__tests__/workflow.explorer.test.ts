@@ -4,8 +4,8 @@
  *          plan fails at boot), subscribes a starter for each `startOn` workflow that starts a run with the event (its
  *          origin naming no scope), and refuses a `startOn` workflow when no event bus is bound; it leaves another
  *          engine alone. It subscribes each trigger block: an occurrence is held for waiting runs under the block's
- *          correlation and starts each published automation as its principal, keyed by automation and occurrence; a
- *          coded step waiting for an event no trigger block correlates fails boot. With `ServiceAckService` bound, each
+ *          correlation and starts each published automation as its principal, keyed by automation and occurrence, with
+ *          its event chain, and starts none the chain stops; a coded step waiting for an event no trigger block correlates fails boot. With `ServiceAckService` bound, each
  *          `ServiceAcked` is recorded and the ack that completes a set holds `AllServicesAcked` for its subject.
  * Boundary: test only; a stand-in container lists fixed instances and binds a recording bus; the engine runs on the
  *           memory journal.
@@ -201,8 +201,43 @@ describe("WorkflowExplorer trigger blocks", () => {
       DOCUMENT,
       event,
       expect.objectContaining({ callId: "evt_1", key: "commerce.thanks", actor: PRINCIPAL }),
-      { key: "wfa_1:evt_1" },
+      { key: "wfa_1:evt_1", chain: { depth: 1, automations: ["wfa_1"] } },
     );
+  });
+
+  it("starts no automation the event chain stops", async () => {
+    const subscriptions: [AnyClass, Listener][] = [];
+    const bus = {
+      subscribe: (type: AnyClass, listener: Listener) => subscriptions.push([type, listener]),
+    };
+    const automations = {
+      triggered: async () => [{ automationId: "wfa_1", document: DOCUMENT, principal: PRINCIPAL }],
+    };
+    const container = {
+      instances: () => [],
+      has: (token: AnyClass) => token === EventBus || token === AutomationService,
+      get: (token: AnyClass) => (token === EventBus ? bus : automations),
+    } as unknown as Container;
+    const runner = engine();
+    vi.spyOn(runner, "hold").mockResolvedValue(undefined);
+    const chained = vi.spyOn(runner, "chained").mockResolvedValue(undefined);
+    const start = vi.spyOn(runner, "startDocument").mockResolvedValue(undefined);
+    new WorkflowExplorer(container, runner).onApplicationBootstrap();
+
+    const [, listener] = subscriptions.find(([candidate]) => candidate === OrderPaid) ?? [];
+    const ctx = {
+      eventId: "evt_2",
+      correlationId: "wfr_00000000000000000000000000:notify",
+      occurredAt: NOON,
+      now: () => NOON,
+    } as ListenerContext;
+    await (listener as unknown as { handle(e: object, c: ListenerContext): Promise<void> }).handle(
+      Object.assign(new OrderPaid(), { orderId: "ord_1" }),
+      ctx,
+    );
+
+    expect(chained).toHaveBeenCalledWith("wfr_00000000000000000000000000:notify", "wfa_1");
+    expect(start).not.toHaveBeenCalled();
   });
 
   it("fails boot for a step that waits for an event no trigger block correlates", () => {

@@ -1,10 +1,11 @@
 /**
  * Stackra file contract:
  * Purpose: `dryRun`, the dry run of an automation document (or a plan) on a sample input: it checks the document, then
- *          says for each step whether it would run, be skipped or wait, the input it would send and its condition's
- *          explanation.
+ *          says for each step whether it would run, be skipped or wait, the input it would send (a for-each step's for
+ *          its first item, with how many items its list holds) and its condition's explanation.
  * Boundary: pure and deterministic: no action is called, nothing is written, the time is `options.now`. A step whose
- *           input names a later result shows the reference, since no step really runs.
+ *           input names a later result shows the reference, since no step really runs; a for-each list that is not
+ *           known yet (a result, an occurrence) counts no items.
  * Runtime: isomorphic
  * Governing contract: ADR 0122 (decision 3: publishing needs a dry run); ADR 0270 (decision 6); ADR 0152 (decision
  *                     6: test runs); ADR 0331 (decisions 6 and 7).
@@ -45,6 +46,8 @@ export function dryRun(document: unknown, input: unknown, options: { readonly no
           });
     const correlation =
       step.waitFor === undefined ? undefined : lookupRef(step.waitFor.correlate, roots);
+    const list = step.forEach === undefined ? undefined : lookupRef(step.forEach.items, roots);
+    const items = Array.isArray(list) ? list : [];
     return Object.freeze({
       name: step.name,
       ...(step.block === undefined ? {} : { block: step.block }),
@@ -54,7 +57,8 @@ export function dryRun(document: unknown, input: unknown, options: { readonly no
           : step.waitFor === undefined
             ? DryRunOutcome.Run
             : DryRunOutcome.Wait,
-      input: resolveRefs(step.input, roots, true),
+      input: resolveRefs(step.input, items.length > 0 ? { ...roots, item: items[0] } : roots, true),
+      ...(step.forEach === undefined ? {} : { iterations: items.length }),
       ...(step.waitFor === undefined
         ? {}
         : {

@@ -10,7 +10,9 @@
  *          envelope's scope field and no `scope` key; a tick takes over a run whose runner died; the port methods
  *          delegate. Documents and plans: a document run calls each action block through the pipeline as the run's
  *          caller with resolved inputs and the step key, skips by condition, parks on a trigger block and resumes on
- *          the held occurrence, starts once per key, and refuses an invalid document; a run resumes on its pinned
+ *          the held occurrence, starts once per key, and refuses an invalid document; a for-each step calls its block once
+ *          per item with per-item keys and refuses a list past the configured limit; `chained` continues the chain of
+ *          the run a step key names and stops one past the configured depth or a loop; a run resumes on its pinned
  *          version's class and waits while that version is not deployed.
  * Boundary: test only; the memory journal and lock driver, a settable clock, a map resolver, recording stand-ins for
  *           the outbox, the bus and the context storage. `backoffDelay` is mocked to zero so a retry does not wait.
@@ -43,7 +45,9 @@ import { NativeWorkflowRunnerDriver } from "#core/drivers/native-workflow-runner
 import { BlockKind } from "#core/enums/block-kind.enum";
 import { StepStatus } from "#core/enums/step-status.enum";
 import { WorkflowRunStatus } from "#core/enums/workflow-run-status.enum";
+import type { WorkflowConfig } from "#config/workflow.config";
 import { AutomationInvalidError } from "#core/errors/automation-invalid.error";
+import { ForEachItemsInvalidError } from "#core/errors/for-each-items-invalid.error";
 import { registerBlocks } from "#core/functions/register-blocks.function";
 import { registerWorkflows } from "#core/functions/register-workflows.function";
 import type { Run } from "#core/types/run.type";
@@ -644,8 +648,8 @@ const COD = {
   ],
 };
 
-/** An engine whose action pipeline is a recording stand-in. */
-function documentEngine() {
+/** An engine whose action pipeline is a recording stand-in, with `config` when given. */
+function documentEngine(config?: Partial<WorkflowConfig>) {
   const calls: { type: unknown; input: unknown; request: Record<string, unknown> }[] = [];
   const pipeline = {
     execute: async (type: unknown, input: unknown, request: Record<string, unknown>) => {
@@ -653,8 +657,31 @@ function documentEngine() {
       return { messageId: `msg_${calls.length}` };
     },
   };
-  return { ...engineWith([[ActionPipeline, pipeline]]), calls };
+  if (config === undefined) return { ...engineWith([[ActionPipeline, pipeline]]), calls };
+  const clock = clockAt(NOON);
+  const journal = new MemoryWorkflowJournalDriver();
+  const runner = new NativeWorkflowRunnerDriver(
+    journal,
+    new Locks(new MemoryLockDriver(), clock),
+    clock,
+    { journal: "memory", signalRetention: "7d", ...config } as WorkflowConfig,
+  );
+  runner.connect(resolverOf([[ActionPipeline, pipeline]]));
+  return { runner, journal, clock, calls };
 }
+
+/** A plan that texts each buyer of its input. */
+const EACH = {
+  key: "ai.plan",
+  steps: [
+    {
+      name: "notify",
+      block: "sms.send",
+      forEach: { items: "input.buyers" },
+      input: { to: { $ref: "item.phone" }, text: "Shipped" },
+    },
+  ],
+};
 
 describe("NativeWorkflowRunnerDriver documents and plans", () => {
   it("runs a document's action blocks through the pipeline as the run's caller", async () => {
@@ -711,6 +738,58 @@ describe("NativeWorkflowRunnerDriver documents and plans", () => {
     await expect(
       runner.startDocument({ key: "ai.plan", steps: [] }, {}, ORIGIN),
     ).rejects.toBeInstanceOf(AutomationInvalidError);
+  });
+
+  it("calls a for-each step's block once per item, each with its own key, and keeps the results in order", async () => {
+    const { runner, calls } = documentEngine();
+    const id = await runner.startDocument(
+      EACH,
+      { buyers: [{ phone: "+9661" }, { phone: "+9662" }] },
+      ORIGIN,
+    );
+
+    expect(calls.map((call) => call.input)).toEqual([
+      { to: "+9661", text: "Shipped" },
+      { to: "+9662", text: "Shipped" },
+    ]);
+    expect(calls.map((call) => call.request["idempotencyKey"])).toEqual([
+      `${id}:notify:0`,
+      `${id}:notify:1`,
+    ]);
+    expect(calls[0]?.request["callId"]).toBe(`${id}:notify:0`);
+    const run = id === undefined ? undefined : await runner.find(id);
+    expect(run?.steps[0]?.result).toEqual([{ messageId: "msg_1" }, { messageId: "msg_2" }]);
+  });
+
+  it("refuses a for-each list longer than the configured limit, or no list, calling nothing", async () => {
+    const { runner, calls } = documentEngine({ forEachLimit: 1 });
+
+    await expect(
+      runner.startDocument(EACH, { buyers: [{ phone: "+9661" }, { phone: "+9662" }] }, ORIGIN),
+    ).rejects.toBeInstanceOf(ForEachItemsInvalidError);
+    await expect(runner.startDocument(EACH, { buyers: "all" }, ORIGIN)).rejects.toBeInstanceOf(
+      ForEachItemsInvalidError,
+    );
+    expect(calls).toHaveLength(0);
+  });
+
+  it("continues the chain of the run a step key names, and stops a loop or a chain past its depth", async () => {
+    const { runner } = documentEngine({ maxChainDepth: 2 });
+    const plan = {
+      key: "ai.plan",
+      steps: [{ name: "notify", block: "sms.send", input: { text: "Hi" } }],
+    };
+    const root = await runner.startDocument(plan, {}, ORIGIN, {
+      chain: { depth: 1, automations: ["wfa_1"] },
+    });
+
+    expect(await runner.chained("evt_1", "wfa_1")).toEqual({ depth: 1, automations: ["wfa_1"] });
+    const second = await runner.chained(`${root}:notify`, "wfa_2");
+    expect(second).toEqual({ depth: 2, automations: ["wfa_1", "wfa_2"] });
+    expect(await runner.chained(`${root}:notify`, "wfa_1")).toBeUndefined();
+
+    const child = await runner.startDocument(plan, {}, ORIGIN, { key: "child", chain: second });
+    expect(await runner.chained(`${child}:notify:0`, "wfa_3")).toBeUndefined();
   });
 
   it("resumes a run on its pinned version, and waits while that version is not deployed", async () => {

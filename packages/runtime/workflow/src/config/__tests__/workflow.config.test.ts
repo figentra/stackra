@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `WorkflowConfig`: a configuration keyed `workflow` (an override keeps the key), its field typed
  *          on the class, built with the shipped default, set by a runway value or a host override, and refusing a
- *          journal nobody ships; the signal retention defaults to seven days and refuses a duration outside 1m to 90d.
+ *          journal nobody ships; the signal retention defaults to seven days and refuses a duration outside 1m to 90d; the
+ *          for-each limit defaults to 1,000 and the chain depth to 3, each refused outside its range.
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0294 (decision 19); ADR 0146 as amended; ADR 0427 (decision 2).
@@ -58,5 +59,13 @@ describe("WorkflowConfig", () => {
       expect(() => buildConfig(WorkflowConfig, { values: { signalRetention } })).toThrow(
         ConfigInvalidError,
       );
+  });
+
+  it("takes 1,000 items per for-each step and a chain depth of 3 by default, each within its range", () => {
+    const config = buildConfig(WorkflowConfig);
+    expect([config.forEachLimit, config.maxChainDepth]).toEqual([1000, 3]);
+    expect(buildConfig(WorkflowConfig, { values: { maxChainDepth: 5 } }).maxChainDepth).toBe(5);
+    for (const values of [{ forEachLimit: 0 }, { forEachLimit: 10_001 }, { maxChainDepth: 21 }])
+      expect(() => buildConfig(WorkflowConfig, { values })).toThrow(ConfigInvalidError);
   });
 });

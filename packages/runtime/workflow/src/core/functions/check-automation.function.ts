@@ -3,13 +3,13 @@
  * Purpose: `checkAutomation`, the validator of an automation document or a plan: its shape (`AutomationDocument$`),
  *          then the registry: the trigger is a registered trigger block, each step's block a registered action, each
  *          awaited block a trigger that correlates, each reference a valid path that points backwards (`results.*` at
- *          an earlier step, `event.*` only in a waiting step), and each `when` a rules condition over the trigger's
- *          facts.
+ *          an earlier step, `event.*` only in a waiting step, `item` only in a for-each step, whose list itself never
+ *          names `item`), and each `when` a rules condition over the trigger's facts.
  * Boundary: pure over the process's `BUILDING_BLOCKS`; the trust boundary for stored automations and agent plans. It
  *           refuses with every problem it finds, by path, and never echoes a refused value. It runs nothing.
  * Runtime: isomorphic
  * Governing contract: ADR 0122 (decision 3; enforcement: the validator refuses an unregistered building block); ADR
- *                     0153 (decision 1); ADR 0331 (decisions 1 and 10); ADR 0245 (decision 8).
+ *                     0153 (decision 1); ADR 0331 (decisions 1 and 10); ADR 0245 (decision 8); OS-232 (for-each).
  */
 import { AUTOMATION_DOCUMENT_SCHEMA } from "#core/constants/automation-document-schema.constant";
 import { BUILDING_BLOCKS } from "#core/constants/building-blocks.constant";
@@ -20,20 +20,22 @@ import { triggerRules } from "#core/functions/trigger-rules.function";
 import type { AutomationDocument } from "#core/types/automation-document.type";
 
 /** A reference path. */
-const REF = /^(input|results|event)(\.[A-Za-z0-9_]+)+$/;
+const REF = /^((input|results|event)(\.[A-Za-z0-9_]+)+|item(\.[A-Za-z0-9_]+)*)$/;
 
 /**
- * The problem of reference `path`, given whether an occurrence is received (`hasEvent`) and the steps `done` before
- * it; `undefined` when it is fine.
+ * The problem of reference `path`, given whether an occurrence is received (`hasEvent`), whether a for-each item is
+ * current (`hasItem`) and the steps `done` before it; `undefined` when it is fine.
  */
 function refProblem(
   path: string,
   hasEvent: boolean,
   done: ReadonlySet<string>,
+  hasItem = false,
 ): string | undefined {
   if (!REF.test(path)) return "ref_invalid";
   const [root, name] = path.split(".");
   if (root === "event" && !hasEvent) return "ref_invalid";
+  if (root === "item" && !hasItem) return "ref_invalid";
   if (root === "results" && !done.has(name ?? "")) return "ref_forward";
   return undefined;
 }
@@ -88,8 +90,12 @@ export function checkAutomation(input: unknown): AutomationDocument {
       const problem = refProblem(step.waitFor.correlate, false, done);
       if (problem !== undefined) errors[`${at}.waitFor.correlate`] = problem;
     }
+    if (step.forEach !== undefined) {
+      const problem = refProblem(step.forEach.items, step.waitFor !== undefined, done);
+      if (problem !== undefined) errors[`${at}.forEach.items`] = problem;
+    }
     for (const [path, ref] of refsIn(step.input, `${at}.input`)) {
-      const problem = refProblem(ref, step.waitFor !== undefined, done);
+      const problem = refProblem(ref, step.waitFor !== undefined, done, step.forEach !== undefined);
       if (problem !== undefined) errors[path] = problem;
     }
     if (step.when !== undefined) {

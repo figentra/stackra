@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `dryRun`: on a sample input each step says whether it would run, be skipped by its condition
  *          (with the explanation) or wait (with the correlation it would wait on), and the input it would send, later
- *          results left as references; an invalid document is refused before anything is reported.
+ *          results left as references; a for-each step shows its first item's input and its item count (0 while its list is
+ *          a later result); an invalid document is refused before anything is reported.
  * Boundary: test only; pure; the registry is this test file's process state.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0122 (decision 3); ADR 0270 (decision 6); ADR 0331 (decision 7).
@@ -77,6 +78,32 @@ describe(dryRun, () => {
       correlation: "ord_1",
     });
     expect(report.steps[3]?.input).toEqual({ reply: { $ref: "results.confirm.orderId" } });
+  });
+
+  it("shows a for-each step's input for its first item and how many items it would take", () => {
+    const report = dryRun(
+      {
+        key: "commerce.notify",
+        steps: [
+          {
+            name: "each",
+            block: "sms.send",
+            forEach: { items: "input.buyers" },
+            input: { to: { $ref: "item.phone" } },
+          },
+          {
+            name: "later",
+            block: "sms.send",
+            forEach: { items: "results.each.list" },
+            input: { to: { $ref: "item" } },
+          },
+        ],
+      },
+      { buyers: [{ phone: "+9661" }, { phone: "+9662" }] },
+      { now },
+    );
+    expect(report.steps[0]).toMatchObject({ input: { to: "+9661" }, iterations: 2 });
+    expect(report.steps[1]?.iterations).toBe(0);
   });
 
   it("refuses an invalid document", () => {

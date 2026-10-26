@@ -168,6 +168,18 @@ An automation is a document that references blocks and adds no code (ADR 0122):
   access, approval and audit apply to every step. An agent's plan is a document without a trigger, started the same
   way: an ephemeral workflow with no stored record (ADR 0245 decision 8). The run keeps the document, so it resumes on
   that version.
+- **For-each** (OS-232): a step with `"forEach": { "items": "input.buyers" }` calls its block once per item, in
+  order, with `{ "$ref": "item" }` or `item.<path>` naming the current item; each call's id and Idempotency-Key is
+  `<step key>:<index>`, and the step's result is the list of results. `checkAutomation` refuses `item` outside a
+  for-each step and a list that names a later step. A list longer than `workflow.forEachLimit` (1,000 by default, up
+  to 10,000), or a reference that names no list, fails the step with `for_each_items_invalid` (no retry). The dry run
+  shows the first item's input and `iterations`.
+- **Event chains** (OS-232): a document step's call id is its step key, so the events its block records carry the run
+  as their correlation. When such an event triggers an automation, `runner.chained(correlationId, automationId)` reads
+  the causing run's `chain` (kept in the run's input) and returns `{ depth, automations }` one deeper; the explorer
+  passes it to `startDocument(…, { key, chain })`. A start deeper than `workflow.maxChainDepth` (3 by default, up to 20)
+  or of an automation already in the chain (a loop) starts nothing and logs `workflow.chain_stopped`. A chain through
+  another service's action keeps its depth only while that service propagates the call id as the correlation.
 - A product's seed pack ships default automations as a `WorkflowTemplatePack$` (`{ key, version, templates }`);
   `seedPack(scope, pack, principal)` publishes each as the product's seed principal, and a new version never
   overwrites a tenant's edit.
@@ -206,7 +218,9 @@ async provisioned(_run: Run<this>, _ctx: StepContext, acked: AllServicesAcked): 
 
 Each service records `ServiceAcked.create({ subject, service })` when its part is done. The waiting service's explorer
 hands each one to `ServiceAckService.ack`, and the ack that completes the set holds `AllServicesAcked` for the subject.
-Call `expect` in the step that sends the request, so no ack can come first.
+Call `expect` in the step that sends the request, so no ack can come first. `ServiceAcked` is the cross-service
+contract (an integration event named `service.acked`, its wire name derived by gen): the acking service imports it from
+`@stackra/workflow`, records it in the transaction that did its part, and needs nothing else of this package.
 
 ## Checklists
 

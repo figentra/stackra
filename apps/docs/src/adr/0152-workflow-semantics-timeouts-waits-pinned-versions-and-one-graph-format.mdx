@@ -4,6 +4,20 @@ description: "Accepted, amended by 0292, 0294 · 2026-10-20"
 ---
 
 <Note>
+  Note 2026-10-26 (STA-1243, stackra-113), decision 6 (loop and recursion guards) for studio
+  automations, and the for-each step of OS-232. A document step calls its action block with its step
+  key (`<run id>:<step>`) as the call id, so every event the block records carries the run as its
+  correlation. When such an event triggers an automation, the engine reads the causing run's chain
+  (depth and automation ids, kept in the run's input) and starts the new run one deeper. A start past
+  `workflow.maxChainDepth` (configuration, 3 by default) or of an automation already in the chain
+  starts nothing and is logged. A for-each step (`forEach: { items: <ref> }`) calls its block once
+  per item in one attempt, each call keyed `<step key>:<index>`, up to `workflow.forEachLimit`
+  (configuration, 1,000 by default); a longer list fails the step without a retry. Both limits are
+  configuration, never constants. A chain through another service keeps its depth only while that
+  service carries the call id as the correlation (ADR 0141). Decisions 1 to 6 stand.
+</Note>
+
+<Note>
   Amendment proposed 2026-10-26 (STA-806) in
   [0383](/adr/0383-naming-and-locking-version-pinned-workflow-classes): an older version of a
   workflow kept for its pinned runs lives in `<name>-v<n>.workflow.ts` with an explicit key, and gen

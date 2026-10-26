@@ -12,14 +12,17 @@
  *           not a `Listener` kind file, so gen never wires it to every event; the run it starts names no scope and
  *           takes the session's from the engine. A trigger's listener reads the automations of the delivery's scope
  *           session (`AutomationService.triggered`, when bound) and starts each as its principal, keyed by the
- *           automation and the occurrence so a redelivery starts nothing twice; one automation's failure does not stop
+ *           automation and the occurrence so a redelivery starts nothing twice, and placed in its event chain from the
+ *           delivery's correlation (`NativeWorkflowRunnerDriver.chained`), so a chain past `workflow.maxChainDepth`
+ *           or a loop back to an automation already in it starts nothing; one automation's failure does not stop
  *           the others. A coded step that waits for an event needs a trigger block that correlates it, or boot fails.
  *           The runtime still runs `work` (the worker loop) per service.
  * Runtime: node
  * Governing contract: ADR 0144 (explorers) as amended by 0263; ADR 0294 (decision 6: the kind acts on what decorators
  *                     recorded); ADR 0101 (0294 note: an event starts a workflow only through `startOn`); ADR 0102
  *                     (decision 7: workflows are resolved through the container); ADR 0152 (decision 1: event waits);
- *                     ADR 0122 (decision 3); ADR 0153 (decisions 1 and 2); ADR 0210 (decision 6); ADR 0427 (decision 1).
+ *                     ADR 0122 (decision 3); ADR 0153 (decisions 1 and 2); ADR 0210 (decision 6); ADR 0427 (decision
+ *                     1); OS-232 (chain depth).
  */
 import type { WorkflowRunner } from "@stackra/actions/contracts";
 import { Explorer, kindOf } from "@stackra/container";
@@ -87,6 +90,9 @@ function triggerOf(
       for (const automation of await automations.triggered(block.key))
         try {
           // oxlint-disable-next-line no-await-in-loop -- automations start one after another in the delivery
+          const chain = await runner.chained(ctx.correlationId, automation.automationId);
+          if (chain === undefined) continue;
+          // oxlint-disable-next-line no-await-in-loop -- see above
           await runner.startDocument(
             automation.document,
             event,
@@ -94,7 +100,7 @@ function triggerOf(
               ...originOf(ctx, automation.document.key),
               actor: automation.principal,
             }),
-            { key: `${automation.automationId}:${ctx.eventId}` },
+            { key: `${automation.automationId}:${ctx.eventId}`, chain },
           );
         } catch (error) {
           failures.push(error);
