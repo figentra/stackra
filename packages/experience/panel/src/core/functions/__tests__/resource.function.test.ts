@@ -11,6 +11,11 @@ import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 import { resource } from "#core/functions/resource.function";
 import type { PageRef } from "#core/types/page-ref.type";
 
+/** Stands in for the permission constants gen emits in an app. */
+const TestPermissions = {
+  ordersOrderRead: "orders.order.read",
+} as const;
+
 class ListOrdersQuery {}
 class GetOrderQuery {}
 class CreateProductAction {}
@@ -22,7 +27,7 @@ describe("resource", () => {
       base: "/orders/orders",
       list: ListOrdersQuery,
       view: GetOrderQuery,
-      permission: "orders.order.read",
+      permission: TestPermissions.ordersOrderRead,
     });
     expect(Order.list).toEqual({ name: "orders.order.list", path: "/orders/orders" });
     expect(Order.view).toEqual({ name: "orders.order.view", path: "/orders/orders/:id" });

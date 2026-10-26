@@ -9,7 +9,7 @@
 import { Enum } from "@stackra/contracts";
 
 /**
- * A total.
+ * How a total column folds its rows.
  *
  * @example
  * { totals: [{ key: "totals.totalMinor", aggregate: Aggregate.Sum }] }

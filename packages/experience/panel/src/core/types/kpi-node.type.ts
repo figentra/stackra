@@ -11,9 +11,9 @@ import type { DisplayKind } from "#core/enums/display-kind.enum";
 import type { DrillNode } from "#core/types/drill-node.type";
 import type { ToneRule } from "#core/types/tone-rule.type";
 
-/** One KPI. */
+/** The node of one KPI a widget draws. */
 export interface KpiNode {
-  /** A KPI. */
+  /** Marks the node as a KPI. */
   readonly kind: typeof DisplayKind.Kpi;
 
   /** The output key typed as a metric class. */

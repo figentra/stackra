@@ -11,11 +11,11 @@
  * Governing contract: ADR 0184 (decision 6: Sentry handles crash reports, no personal data); ADR 0147 (decision 1: no
  *                     vendor SDK in packages); ADR 0173 (secrets by name); ADR 0294 (decision 16).
  */
-import { SecretStore } from "@stackra/config/contracts";
+import type { SecretStore } from "@stackra/config/contracts";
 import { Driver } from "@stackra/container";
-import { Clock } from "@stackra/contracts";
+import type { Clock } from "@stackra/contracts";
 
-import { SentryConfig } from "#config/sentry.config";
+import type { SentryConfig } from "#config/sentry.config";
 import { ErrorReporter } from "#contracts/ports/error-reporter.port";
 import { sentryEnvelope } from "#core/functions/sentry-envelope.function";
 import { sentryTarget } from "#core/functions/sentry-target.function";

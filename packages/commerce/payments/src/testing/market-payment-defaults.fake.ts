@@ -31,6 +31,7 @@ export class MarketPaymentDefaultsFake extends MarketPaymentDefaults {
     return new MarketPaymentDefaultsFake(markets);
   }
 
+  /** The providers set for `market`, or none. */
   async providers(market: string): Promise<readonly ProviderChoice[]> {
     return this.markets[market] ?? [];
   }

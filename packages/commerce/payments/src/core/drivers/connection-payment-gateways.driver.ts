@@ -73,11 +73,7 @@ export class ConnectionPaymentGatewaysDriver extends Driver(PaymentGateways) {
     this.drivers = drivers;
   }
 
-  /** The connection class of `provider`, or undefined for a code the host has no driver for. */
-  private classOf(provider: string): GatewayClass | undefined {
-    return Object.hasOwn(this.drivers, provider) ? this.drivers[provider] : undefined;
-  }
-
+  /** The own Connection that serves `needs` first, else the Market's platform one. */
   async forMarket(market: string, needs: readonly PaymentCapability[]): Promise<PaymentGateway> {
     const offered = (await this.defaults.providers(market)).flatMap((choice) => {
       const type = this.classOf(choice.provider);
@@ -95,9 +91,15 @@ export class ConnectionPaymentGatewaysDriver extends Driver(PaymentGateways) {
     throw NoPaymentProviderError.create({ market, needs: needs.join(",") });
   }
 
+  /** The gateway of Connection `connectionId` of `provider`. */
   async byConnection(provider: string, connectionId: string): Promise<PaymentGateway> {
     const type = this.classOf(provider);
     if (type === undefined) throw NoPaymentProviderError.create({ provider });
     return this.store.byId(type, connectionId);
+  }
+
+  /** The connection class of `provider`, or undefined for a code the host has no driver for. */
+  private classOf(provider: string): GatewayClass | undefined {
+    return Object.hasOwn(this.drivers, provider) ? this.drivers[provider] : undefined;
   }
 }

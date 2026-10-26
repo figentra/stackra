@@ -13,7 +13,7 @@ export interface KpiViewProps {
   /** The widget the KPI belongs to; its key derives the label. */
   readonly widget: WidgetDescriptor;
 
-  /** The KPI. */
+  /** The KPI node to draw. */
   readonly kpi: KpiNode;
 
   /** The answer's value at the KPI's path: a metric shape. */

@@ -14,7 +14,7 @@ export interface PanelNavigation {
   /** The group label key. */
   readonly group: I18nKey;
 
-  /** The icon. */
+  /** The icon beside the entry. */
   readonly icon: IconName;
 
   /** The position in the group, ascending. */

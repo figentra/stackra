@@ -8,7 +8,7 @@
 import type { Built } from "#core/types/built.type";
 import type { FilterNode } from "#core/types/filter-node.type";
 
-/** One filter. */
+/** The chainable builder of one table filter. */
 export interface FilterBuilder extends Built<FilterNode> {
   /** The value the filter starts with on the Default view. */
   default(value: unknown): this;

@@ -44,7 +44,7 @@ export class FieldsRecord<I> implements FieldFactory<I> {
     return { toNode: () => FormField.steps(name, nodesOf(steps)) };
   }
 
-  /** One step. */
+  /** Groups fields into one form step. */
   step(name: string, fields: readonly Built<FieldNode>[]): Built<FormStepNode> {
     return { toNode: () => FormStep.of(name, nodesOf(fields)) };
   }

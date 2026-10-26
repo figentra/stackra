@@ -7,5 +7,5 @@
  * Governing contract: A3-1; R4-6.
  */
 
-/** `legacy-connected-account:<platform>`. */
+/** The mode of an account kept on its own platform: `legacy-connected-account:<platform>`. */
 export type LegacyConnectedAccountMode = `legacy-connected-account:${string}`;

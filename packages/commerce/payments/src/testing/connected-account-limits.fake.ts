@@ -12,20 +12,20 @@ import type { Money } from "@stackra/money";
 import { ConnectedAccountLimits } from "#contracts/ports/connected-account-limits.port";
 
 /**
- * Settable limits.
+ * Connected-account limits a test sets.
  *
  * @example
  * const limits = ConnectedAccountLimitsFake.with({ caps: { conn_1: Money.ofMinor(50_000, "USD") } });
  */
 export class ConnectedAccountLimitsFake extends ConnectedAccountLimits {
+  /** Every connection id the engine asked about, in order. */
+  readonly asked: string[] = [];
+
   /** Caps by connection id. */
   private readonly caps: Readonly<Record<string, Money>>;
 
   /** Connections whose payouts are held. */
   private readonly held: ReadonlySet<string>;
-
-  /** Every connection id the engine asked about, in order. */
-  readonly asked: string[] = [];
 
   private constructor(caps: Readonly<Record<string, Money>>, held: readonly string[]) {
     super();
@@ -43,11 +43,13 @@ export class ConnectedAccountLimitsFake extends ConnectedAccountLimits {
     return new ConnectedAccountLimitsFake(options.caps ?? {}, options.held ?? []);
   }
 
+  /** The cap set for `connectionId`, or null; records the question. */
   async cap(connectionId: string): Promise<Money | null> {
     this.asked.push(connectionId);
     return this.caps[connectionId] ?? null;
   }
 
+  /** Whether `connectionId` was set as held; records the question. */
   async payoutHeld(connectionId: string): Promise<boolean> {
     this.asked.push(connectionId);
     return this.held.has(connectionId);

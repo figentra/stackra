@@ -17,7 +17,7 @@ export interface PaymentLine {
   /** What the customer sees. */
   readonly name: string;
 
-  /** Whole units. */
+  /** The number of whole units. */
   readonly quantity: number;
 
   /** Price of one unit. */

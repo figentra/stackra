@@ -8,7 +8,7 @@
 import type { Built } from "#core/types/built.type";
 import type { ColumnNode } from "#core/types/column-node.type";
 
-/** One column. */
+/** The chainable builder of one table column. */
 export interface ColumnBuilder extends Built<ColumnNode> {
   /** Adds a copy button to the cell. */
   copyable(): this;

@@ -10,6 +10,7 @@
 import { Enum } from "@stackra/contracts";
 
 import { WIDGET_REGISTRY } from "#core/constants/widget-registry.constant";
+import type { DisplayKind } from "#core/enums/display-kind.enum";
 import { Place } from "#core/enums/place.enum";
 import { resolvePlacements } from "#core/functions/resolve-placements.function";
 import type { SlotRef } from "#core/types/slot-ref.type";
@@ -26,7 +27,9 @@ export function widgetsFor(slots: readonly SlotRef[]): WidgetDescriptor[] {
   return resolvePlacements(WIDGET_REGISTRY)
     .filter((widget) => {
       const place = widget.slot === null ? undefined : places.get(widget.slot.key);
-      return place !== undefined && Enum.meta(Place, place).displays.includes(widget.display.kind);
+      if (place === undefined) return false;
+      const displays: readonly DisplayKind[] = Enum.meta(Place, place).displays;
+      return displays.includes(widget.display.kind);
     })
     .sort((left, right) => left.order - right.order || left.key.localeCompare(right.key));
 }

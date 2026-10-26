@@ -18,6 +18,11 @@ import { WidgetSize } from "#core/enums/widget-size.enum";
 import { describeWidget } from "#core/functions/describe-widget.function";
 import type { Display } from "#core/types/display.type";
 
+/** Stands in for the icon constants gen emits in an app. */
+const TestIcons = {
+  Banknote: "banknote",
+} as const;
+
 /** A metric stand-in. */
 interface Metric {
   readonly value: number | null;
@@ -87,7 +92,7 @@ describe("Widget", () => {
       display: {
         kind: "kpi_group",
         kpis: [
-          { kind: "kpi", path: "revenue", icon: "banknote" },
+          { kind: "kpi", path: "revenue", icon: TestIcons.Banknote },
           { kind: "kpi", path: "orders", lowerIsBetter: true },
         ],
       },
@@ -113,7 +118,10 @@ describe("Widget", () => {
   });
 
   it("takes the edition layer 2b and the app layer for a placement", () => {
-    class Edition extends Widget.place(KpisWidget, { slot: null, layer: PlacementLayer.Edition }) {}
+    class Edition extends Widget.place(KpisWidget, {
+      slot: null,
+      layer: PlacementLayer.Edition,
+    }) {}
     expect(describeWidget(Edition).layer).toBe("2b");
     expect(() => Widget.place(KpisWidget, { layer: PlacementLayer.User as never })).toThrow(
       TypeError,

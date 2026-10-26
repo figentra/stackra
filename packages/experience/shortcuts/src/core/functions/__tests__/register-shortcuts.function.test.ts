@@ -13,18 +13,29 @@ import { Shortcut } from "#core/bases/shortcut.base";
 import { SHORTCUT_ENTRIES } from "#core/constants/shortcut-entries.constant";
 import { registerShortcuts } from "#core/functions/register-shortcuts.function";
 
-class OpenPaletteShortcut extends Shortcut({ keys: "mod+k", group: "console::palette.group_app" }) {
+/** Stands in for the icon constants gen emits in an app. */
+const TestIcons = {
+  LogOut: "log-out",
+} as const;
+
+class OpenPaletteShortcut extends Shortcut({
+  keys: "mod+k",
+  group: "console::palette.group_app",
+}) {
   run(): void {}
 }
 
 class SignOutShortcut extends Shortcut({
   group: "console::palette.group_account",
-  icon: "log-out",
+  icon: TestIcons.LogOut,
 }) {
   run(): void {}
 }
 
-class SearchShortcut extends Shortcut({ keys: "meta+k", group: "console::palette.group_app" }) {
+class SearchShortcut extends Shortcut({
+  keys: "meta+k",
+  group: "console::palette.group_app",
+}) {
   run(): void {}
 }
 
@@ -56,7 +67,7 @@ describe("registerShortcuts", () => {
         group: "console::palette.group_account",
         keys: null,
         steps: [],
-        icon: "log-out",
+        icon: TestIcons.LogOut,
         intents: [],
       },
     ]);

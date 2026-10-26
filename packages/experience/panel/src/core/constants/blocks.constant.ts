@@ -18,7 +18,7 @@ import type { QueryInput } from "#core/types/query-input.type";
 import type { QueryRow } from "#core/types/query-row.type";
 
 /**
- * Block nodes.
+ * Builds the block nodes a document page lays out.
  *
  * @example
  * Blocks.table(ListOrdersQuery, { params: { limit: 20 }, columns: ["id", "status", "createdAt"] });

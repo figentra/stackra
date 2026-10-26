@@ -13,7 +13,7 @@ import type { Rule } from "#core/types/rule.type";
 const HEADER = "Stackra file contract:";
 const LABELS = ["Purpose:", "Boundary:", "Runtime:", "Governing contract:"] as const;
 
-/** Requires the `Stackra file contract:` docblock at the top of every file. */
+/** Requires the contract docblock, with its four labels, at the top of every file. */
 export const FILE_CONTRACT_RULE: Rule = {
   meta: {
     type: "problem",

@@ -55,6 +55,7 @@ export class MarketPackPaymentDefaultsDriver extends Driver(MarketPaymentDefault
     this.clock = clock;
   }
 
+  /** The providers the Market's pack offers, in order. */
   async providers(market: string): Promise<readonly ProviderChoice[]> {
     const resolved = await this.packs.resolve(market);
     const today = this.clock.now().toISOString().slice(0, 10);

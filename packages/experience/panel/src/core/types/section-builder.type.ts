@@ -8,7 +8,7 @@
 import type { Built } from "#core/types/built.type";
 import type { EntryNode } from "#core/types/entry-node.type";
 
-/** One section. */
+/** The chainable builder of one View page section. */
 export interface SectionBuilder extends Built<EntryNode> {
   /** Moves the section to the side column. */
   aside(): this;

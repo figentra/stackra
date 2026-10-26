@@ -10,16 +10,21 @@ import { describe, expect, it } from "@stackra/testing";
 
 import { WidgetDisplay } from "#core/constants/widget-display.constant";
 
+/** Stands in for the icon constants gen emits in an app. */
+const TestIcons = {
+  Banknote: "banknote",
+} as const;
+
 describe("WidgetDisplay", () => {
   it("builds frozen display nodes", () => {
     const kpi = WidgetDisplay.kpi("revenue", {
-      icon: "banknote",
+      icon: TestIcons.Banknote,
       tones: [{ belowTarget: 0.8, tone: Tone.Danger }],
     });
     expect(kpi).toEqual({
       kind: "kpi",
       path: "revenue",
-      icon: "banknote",
+      icon: TestIcons.Banknote,
       tones: [{ belowTarget: 0.8, tone: "danger" }],
     });
     expect(WidgetDisplay.kpiGroup([kpi])).toEqual({ kind: "kpi_group", kpis: [kpi] });

@@ -33,7 +33,7 @@ const isMetric = (value: unknown): value is MetricShape =>
   typeof value === "object" && value !== null && "value" in value && "previous" in value;
 
 /**
- * One KPI.
+ * Draws one KPI with its change, tone and target.
  *
  * @example
  * <KpiView widget={widget} kpi={kpi} metric={answer.revenue} />

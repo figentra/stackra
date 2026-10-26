@@ -19,7 +19,9 @@ export class ListingRecord
   extends DraftRecord<ListingFlags, DisplayNode>
   implements ListingBuilder
 {
-  /** @param build - the `WidgetDisplay` constructor call for the recorded flags. */
+  /**
+   * @param build - the `WidgetDisplay` constructor call for the recorded flags.
+   */
   constructor(build: (flags: ListingFlags) => DisplayNode) {
     super(build, {});
   }

@@ -22,6 +22,7 @@ import { MarketPaymentDefaultsFake } from "#testing/market-payment-defaults.fake
 /** A gateway connection that only declares its capabilities; the vendor ones live in OS integrations. */
 abstract class Gateway extends Connection {
   abstract readonly capabilities: readonly PaymentCapability[];
+
   async check(): Promise<ConnectedAccount> {
     return ConnectedAccount.create({ id: "test" });
   }

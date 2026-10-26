@@ -17,7 +17,7 @@ const ACTOR = new Proxy(Object.freeze({}), {
 }) as Readonly<Record<string, BindRef>>;
 
 /**
- * Bound values.
+ * Values a node reads at render time: the record, the date range and the actor.
  *
  * @example
  * c.money("unitPriceMinor", { currency: Bind.record("totals.currency") });

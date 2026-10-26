@@ -9,6 +9,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0269 (fakes in ./testing); ADR 0357 (decisions 2 and 6).
  */
+import { Enum } from "@stackra/contracts";
 import { ProviderUnavailableError } from "@stackra/integrations";
 import type { Money } from "@stackra/money";
 
@@ -49,7 +50,7 @@ interface Held {
 }
 
 /** Every capability, the fake's default. */
-const ALL = Object.values(PaymentCapability);
+const ALL = Enum.values(PaymentCapability);
 
 /**
  * A provider in a Map.
@@ -161,6 +162,7 @@ export class PaymentGatewayFake
     return dispute;
   }
 
+  /** Opens a fake hosted checkout for the request. */
   async checkout(request: CheckoutRequest): Promise<CheckoutSession> {
     const providerRef = `fake_${request.reference}`;
     const amount = request.tip === undefined ? request.amount : request.amount.plus(request.tip);
@@ -173,6 +175,7 @@ export class PaymentGatewayFake
     });
   }
 
+  /** The held payment matching `target`, or null. */
   async lookup(target: PaymentTarget): Promise<ProviderPayment | null> {
     const held =
       (target.providerRef === undefined ? undefined : this.held.get(target.providerRef)) ??
@@ -180,6 +183,7 @@ export class PaymentGatewayFake
     return held?.payment ?? null;
   }
 
+  /** Refunds the held payment and answers succeeded. */
   async refund(request: RefundRequest): Promise<TransferResult> {
     const held = this.find(request.payment);
     const refunded = held.payment.amount.minor === request.amount.minor;
@@ -193,6 +197,7 @@ export class PaymentGatewayFake
     });
   }
 
+  /** Marks the held payment captured. */
   async capture(request: CaptureRequest): Promise<ProviderPayment> {
     const held = this.find(request.payment);
     return this.answer(
@@ -200,11 +205,13 @@ export class PaymentGatewayFake
     );
   }
 
+  /** Marks the held payment voided. */
   async void(target: PaymentTarget): Promise<ProviderPayment> {
     const held = this.find(target);
     return this.answer(this.put(held.reference, { ...held.payment, status: PaymentStatus.Voided }));
   }
 
+  /** Holds a payment charged to the saved token. */
   async charge(request: TokenCharge): Promise<ProviderPayment> {
     const payment = this.put(request.reference, {
       providerRef: `fake_${request.reference}`,
@@ -215,6 +222,7 @@ export class PaymentGatewayFake
     return this.answer(payment);
   }
 
+  /** Answers a succeeded payout. */
   async payout(request: PayoutRequest): Promise<TransferResult> {
     return this.answer({
       providerRef: `po_${request.reference}`,
@@ -222,6 +230,7 @@ export class PaymentGatewayFake
     });
   }
 
+  /** Creates a fake merchant account. */
   async onboard(request: MerchantOnboarding): Promise<MerchantAccount> {
     const account: MerchantAccount = {
       accountRef: `acct_${request.reference}`,
@@ -233,24 +242,29 @@ export class PaymentGatewayFake
     return this.answer(account);
   }
 
+  /** The merchant account under `accountRef`. */
   async account(accountRef: string): Promise<MerchantAccount> {
     const account = this.accounts.get(accountRef);
     if (account === undefined) throw new TypeError(`PaymentGatewayFake: no account ${accountRef}`);
     return account;
   }
 
+  /** The dispute under `providerRef`. */
   async dispute(providerRef: string): Promise<Dispute> {
     return this.disputeOf(providerRef);
   }
 
+  /** Moves the dispute to under review. */
   async respond(providerRef: string): Promise<Dispute> {
     return this.answer(this.moveDispute(providerRef, DisputeStatus.UnderReview));
   }
 
+  /** Moves the dispute to accepted. */
   async accept(providerRef: string): Promise<Dispute> {
     return this.answer(this.moveDispute(providerRef, DisputeStatus.Accepted));
   }
 
+  /** Starts a pending fake terminal session. */
   async startTerminal(request: TerminalRequest): Promise<TerminalSession> {
     const providerRef = `fake_${request.reference}`;
     this.held.set(providerRef, {
@@ -265,6 +279,7 @@ export class PaymentGatewayFake
     });
   }
 
+  /** The terminal session of `providerRef` as it stands. */
   async terminalSession(providerRef: string, terminalId: string): Promise<TerminalSession> {
     const { payment } = this.get(providerRef);
     return {
@@ -275,6 +290,7 @@ export class PaymentGatewayFake
     };
   }
 
+  /** Voids the pending payments on `terminalId`. */
   async cancelTerminal(terminalId: string): Promise<void> {
     for (const held of this.held.values())
       if (held.terminalId === terminalId && held.payment.status === PaymentStatus.Pending)
@@ -282,6 +298,7 @@ export class PaymentGatewayFake
     this.answer(undefined);
   }
 
+  /** The payment methods the fake offers. */
   async paymentMethods(): Promise<readonly string[]> {
     return this.answer(this.methods);
   }

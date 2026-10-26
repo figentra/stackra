@@ -26,7 +26,7 @@ export interface ResourceTree {
   /** The preset views. */
   readonly views?: readonly ViewNode[];
 
-  /** The form. */
+  /** The create and edit form. */
   readonly form?: FormNode;
 
   /** The View page's infolist. */

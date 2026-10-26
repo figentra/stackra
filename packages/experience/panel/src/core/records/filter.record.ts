@@ -15,9 +15,11 @@ interface FilterFlags {
   readonly pinned?: boolean;
 }
 
-/** One filter. */
+/** Records the flags of one filter before it builds. */
 export class FilterRecord extends DraftRecord<FilterFlags, FilterNode> implements FilterBuilder {
-  /** @param build - the `Filter` constructor call for the recorded flags. */
+  /**
+   * @param build - the `Filter` constructor call for the recorded flags.
+   */
   constructor(build: (flags: FilterFlags) => FilterNode) {
     super(build, {});
   }

@@ -24,7 +24,10 @@ vi.mock("#react/panel-shell/panel-shell", () => ({
   },
 }));
 
-class CustomerPortalPanel extends Panel({ path: "/portal", area: ApiArea.App }) {}
+class CustomerPortalPanel extends Panel({
+  path: "/portal",
+  area: ApiArea.App,
+}) {}
 
 afterEach(() => {
   cleanup();

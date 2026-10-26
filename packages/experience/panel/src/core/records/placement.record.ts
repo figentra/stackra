@@ -23,7 +23,9 @@ export class PlacementRecord
   extends DraftRecord<PlacementFlags, PlacementNode>
   implements PlacementBuilder
 {
-  /** @param build - the `Placement` constructor call for the recorded flags. */
+  /**
+   * @param build - the `Placement` constructor call for the recorded flags.
+   */
   constructor(build: (flags: PlacementFlags) => PlacementNode) {
     super(build, {});
   }

@@ -23,10 +23,12 @@ export class MemoryPaymentRecordsDriver extends Driver(PaymentRecords) {
   /** Records by reference. */
   private readonly records = new Map<string, PaymentRecord>();
 
+  /** The record under `reference`, or null. */
   async find(reference: string): Promise<PaymentRecord | null> {
     return this.records.get(reference) ?? null;
   }
 
+  /** Writes `record`, replacing the one under the same reference. */
   async save(record: PaymentRecord): Promise<void> {
     this.records.set(record.reference, record);
   }

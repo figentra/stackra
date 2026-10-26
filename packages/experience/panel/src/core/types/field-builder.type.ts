@@ -8,7 +8,7 @@
 import type { Built } from "#core/types/built.type";
 import type { FieldNode } from "#core/types/field-node.type";
 
-/** One field. */
+/** The chainable builder of one form field. */
 export interface FieldBuilder extends Built<FieldNode> {
   /** The grid columns the field spans. */
   span(columns: number): this;

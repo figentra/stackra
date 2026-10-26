@@ -23,6 +23,13 @@ import { registerWidgets } from "#core/functions/register-widgets.function";
 import { widget } from "#core/functions/widget.function";
 import { Dashboard } from "#react/dashboard/dashboard";
 
+/** Stands in for the permission constants gen emits in an app. */
+const TestPermissions = {
+  inventoryStockRead: "inventory.stock.read",
+  ordersOrderRead: "orders.order.read",
+  ordersSecretRead: "orders.secret.read",
+} as const;
+
 vi.mock("#react/widget-tile/widget-tile", async () => {
   const { createElement } = await import("react");
   return {
@@ -35,7 +42,7 @@ vi.mock("#react/widget-tile/widget-tile", async () => {
 const OrderKpisQuery = Object.assign(function OrderKpisQuery() {}, {
   kind: "query",
   key: "orders.order.kpis@1",
-  permission: "orders.order.read",
+  permission: TestPermissions.ordersOrderRead,
   input: {},
   output: {},
   invalidateOn: [],
@@ -89,14 +96,14 @@ describe("Dashboard", () => {
         display: WidgetDisplay.list({ primary: "id" }),
         slot: MAIN,
         size: WidgetSize.Large,
-        permission: "inventory.stock.read",
+        permission: TestPermissions.inventoryStockRead,
       }),
       widget(WidgetStub, {
         key: "orders.secret",
         query: OrderKpisQuery,
         display: WidgetDisplay.list({ primary: "id" }),
         slot: MAIN,
-        permission: "orders.secret.read",
+        permission: TestPermissions.ordersSecretRead,
       }),
     ]);
     const container = await Container.create([], {

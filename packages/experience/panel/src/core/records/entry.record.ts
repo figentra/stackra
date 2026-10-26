@@ -14,9 +14,11 @@ interface EntryFlags {
   readonly copyable?: boolean;
 }
 
-/** One entry. */
+/** Records the flags of one entry before it builds. */
 export class EntryRecord extends DraftRecord<EntryFlags, EntryNode> implements EntryBuilder {
-  /** @param build - the `Entry` constructor call for the recorded flags. */
+  /**
+   * @param build - the `Entry` constructor call for the recorded flags.
+   */
   constructor(build: (flags: EntryFlags) => EntryNode) {
     super(build, {});
   }

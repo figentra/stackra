@@ -18,13 +18,21 @@ import { ErrorKind } from "#core/enums/error-kind.enum";
 import type { ErrorEnvelope } from "#core/types/error-envelope.type";
 import type { RefusalClass } from "#core/types/refusal-class.type";
 
-class OrderNotPayableError extends Refusal({ kind: ErrorKind.Conflict, retryable: false }) {
+class OrderNotPayableError extends Refusal({
+  kind: ErrorKind.Conflict,
+  retryable: false,
+}) {
   orderId!: string;
+
   status!: "draft" | "paid";
 }
 
-class ProductNotFoundError extends Refusal({ kind: ErrorKind.NotFound, retryable: false }) {
+class ProductNotFoundError extends Refusal({
+  kind: ErrorKind.NotFound,
+  retryable: false,
+}) {
   id?: string;
+
   slug?: string;
 }
 
@@ -32,7 +40,10 @@ class SiteContextMissingError extends Refusal({ kind: ErrorKind.FailedPreconditi
 
 class AccessLogWriteFailedError extends Refusal({ kind: ErrorKind.Unavailable }) {}
 
-class StockRefusedError extends Refusal({ kind: ErrorKind.Unavailable, retryable: false }) {}
+class StockRefusedError extends Refusal({
+  kind: ErrorKind.Unavailable,
+  retryable: false,
+}) {}
 
 describe("Refusal", () => {
   it("is called with its kind; the bare form does not compile", () => {

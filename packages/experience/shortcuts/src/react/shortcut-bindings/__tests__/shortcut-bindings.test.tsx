@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 /**
  * Stackra file contract:
  * Purpose: unit tests of `ShortcutBindings`: a plain binding is registered as a hotkey and a chord as a sequence with
@@ -9,6 +8,7 @@
  * Runtime: node (vitest, jsdom)
  * Governing contract: ADR 0022; ADR 0269 (decision 4: vi.mock hoists); registry v3.1 R-66 and final review H.
  */
+// @vitest-environment jsdom
 import { Container, type Token } from "@stackra/container";
 import { ContainerProvider } from "@stackra/container/react";
 import { afterEach, describe, expect, it } from "@stackra/testing";
@@ -49,7 +49,10 @@ class ToggleSidebarShortcut extends Shortcut({
   }
 }
 
-class GoToSettingsShortcut extends Shortcut({ keys: "g s", group: "console::palette.group_app" }) {
+class GoToSettingsShortcut extends Shortcut({
+  keys: "g s",
+  group: "console::palette.group_app",
+}) {
   run(): void {}
 }
 
@@ -57,7 +60,10 @@ class SignOutShortcut extends Shortcut({ group: "console::palette.group_account"
   run(): void {}
 }
 
-class LeftOutShortcut extends Shortcut({ keys: "mod+j", group: "console::palette.group_app" }) {
+class LeftOutShortcut extends Shortcut({
+  keys: "mod+j",
+  group: "console::palette.group_app",
+}) {
   run(): void {}
 }
 

@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 /**
  * Stackra file contract:
  * Purpose: unit and type tests of `useRunShortcut()`: the palette's runner runs the shortcut of the item it is given,
@@ -8,6 +7,7 @@
  * Runtime: node (vitest, jsdom)
  * Governing contract: ADR 0022; ADR 0269; ADR 0294 (decision 23); ADR 0245.
  */
+// @vitest-environment jsdom
 import { Container, type Token } from "@stackra/container";
 import { ContainerProvider } from "@stackra/container/react";
 import { afterEach, describe, expect, expectTypeOf, it } from "@stackra/testing";

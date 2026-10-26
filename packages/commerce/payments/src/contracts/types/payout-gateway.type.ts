@@ -11,7 +11,7 @@ import type { PayoutRequest } from "#contracts/types/payout-request.type";
 import type { TransferResult } from "#contracts/types/transfer-result.type";
 
 /**
- * Payouts (`PaymentCapability.Payouts`).
+ * Sends payouts (`PaymentCapability.Payouts`).
  *
  * @example
  * await gateway.payout({ reference: "po_1", amount, destination });

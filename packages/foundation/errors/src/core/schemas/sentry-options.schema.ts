@@ -9,7 +9,7 @@
  * Governing contract: ADR 0184 (decision 6: Sentry handles crash reports); ADR 0173 (secrets by name); ADR 0294
  *                     (decisions 19 and 26).
  */
-import { registerSchemas, Schema } from "@stackra/validation";
+import { Num, registerSchemas, Schema } from "@stackra/validation";
 
 import { SENTRY_CONFIG_SCHEMA } from "#core/constants/sentry-config-schema.constant";
 
@@ -23,6 +23,13 @@ import { SENTRY_CONFIG_SCHEMA } from "#core/constants/sentry-config-schema.const
  * }
  */
 export class SentryOptions extends Schema {
+  /** The share of errors reported, 0 to 1. */
+  @Num({
+    min: 0,
+    max: 1,
+  })
+  sampleRate = 1;
+
   /** The SCREAMING_SNAKE name of the secret holding the DSN; reporting is off while the store has no value for it. */
   dsnSecret = "SENTRY_DSN";
 
@@ -31,9 +38,6 @@ export class SentryOptions extends Schema {
 
   /** The release each report is tagged with (a version or a commit); none when empty. */
   release = "";
-
-  /** The share of errors reported, 0 to 1. */
-  sampleRate = 1;
 }
 
 registerSchemas([[SentryOptions, SENTRY_CONFIG_SCHEMA]]);

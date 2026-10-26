@@ -14,7 +14,9 @@ import type { RefusalDetails } from "#core/types/refusal-details.type";
 
 class InsufficientStockError extends Refusal({ kind: ErrorKind.FailedPrecondition }) {
   variantId!: string;
+
   available!: number;
+
   note?: string;
 
   /** A method is never a detail. */

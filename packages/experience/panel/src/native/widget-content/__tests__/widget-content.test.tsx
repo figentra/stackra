@@ -19,6 +19,11 @@ import type { CustomWidgetProps } from "#core/types/custom-widget-props.type";
 import type { WidgetRenderer } from "#core/types/widget-renderer.type";
 import { WidgetContent } from "#native/widget-content/widget-content";
 
+/** Stands in for the permission constants gen emits in an app. */
+const TestPermissions = {
+  ordersOrderRead: "orders.order.read",
+} as const;
+
 vi.mock("react-native", async () => {
   const { createElement } = await import("react");
   return {
@@ -111,7 +116,7 @@ vi.mock("@stackra/ui/native", async () => {
 const OrderKpisQuery = Object.assign(function OrderKpisQuery() {}, {
   kind: "query",
   key: "orders.order.kpis@1",
-  permission: "orders.order.read",
+  permission: TestPermissions.ordersOrderRead,
   input: {},
   output: {},
   invalidateOn: [],

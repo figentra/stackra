@@ -13,7 +13,7 @@ import type { KpiNode } from "#core/types/kpi-node.type";
 import type { ToneRule } from "#core/types/tone-rule.type";
 import type { ToneRules } from "#core/types/tone-rules.type";
 
-/** One KPI. */
+/** The chainable builder of one KPI. */
 export interface KpiBuilder extends Built<KpiNode> {
   /** The icon beside the label. */
   icon(name: IconName): this;

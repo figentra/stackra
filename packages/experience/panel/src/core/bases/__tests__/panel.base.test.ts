@@ -13,7 +13,10 @@ import { Panel, PanelBase } from "#core/bases/panel.base";
 
 describe("Panel", () => {
   it("records its mount path and area", () => {
-    class CustomerPortalPanel extends Panel({ path: "/portal", area: ApiArea.App }) {}
+    class CustomerPortalPanel extends Panel({
+      path: "/portal",
+      area: ApiArea.App,
+    }) {}
     expect(kindOf(CustomerPortalPanel)).toEqual({
       kind: "panel",
       options: { path: "/portal", area: "app" },

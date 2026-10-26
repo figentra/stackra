@@ -9,7 +9,7 @@
 
 /** A parsed Sentry DSN. */
 export interface SentryTarget {
-  /** `https://o1.ingest.sentry.io/api/42/envelope/`. */
+  /** The envelope URL reports go to (`https://o1.ingest.sentry.io/api/42/envelope/`). */
   readonly endpoint: string;
 
   /** The DSN's public key. */

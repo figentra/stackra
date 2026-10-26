@@ -40,7 +40,7 @@ export class EntriesRecord<R> implements EntryFactory<R> {
     return { toNode: () => Entry.list(key, { columns }) };
   }
 
-  /** A section. */
+  /** Groups entries into a named section. */
   section(name: string, entries: readonly Built<EntryNode>[]): SectionRecord {
     return new SectionRecord(name, entries);
   }

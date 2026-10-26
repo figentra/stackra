@@ -16,7 +16,7 @@ type RowOfResource<C> = C extends abstract new (...args: never[]) => ResourceBas
   : never;
 
 /**
- * Drill-down targets.
+ * Builds the drill-down targets a KPI or row opens.
  *
  * @example
  * Drill.resource(OrderResource, { filter: { status: [OrderStatus.Paid], paidAt: Bind.range() } });

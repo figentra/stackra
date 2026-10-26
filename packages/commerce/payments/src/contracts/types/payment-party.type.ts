@@ -9,16 +9,16 @@
 import type { PaymentAddress } from "#contracts/types/payment-address.type";
 
 /**
- * Who pays.
+ * The party who pays.
  *
  * @example
  * const customer: PaymentParty = { name: "Sara Ali", email, phone: "+966500000000" };
  */
 export interface PaymentParty {
-  /** Full name. */
+  /** The payer's full name. */
   readonly name?: string;
 
-  /** Email address. */
+  /** The payer's email address. */
   readonly email?: string;
 
   /** Phone number in E.164. */

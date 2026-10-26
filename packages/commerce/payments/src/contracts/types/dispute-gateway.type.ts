@@ -11,7 +11,7 @@ import type { Dispute } from "#contracts/types/dispute.type";
 import type { DisputeEvidence } from "#contracts/types/dispute-evidence.type";
 
 /**
- * Disputes (`PaymentCapability.Disputes`).
+ * Reads and answers disputes (`PaymentCapability.Disputes`).
  *
  * @example
  * await gateway.respond(dispute.providerRef, { text });

@@ -17,7 +17,7 @@ interface EntryOptions {
 }
 
 /**
- * Entry nodes.
+ * Builds the entry nodes of a View page.
  *
  * @example
  * Entry.from("id", { copyable: true });

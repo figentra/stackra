@@ -12,7 +12,7 @@ import type { ColumnNode } from "#core/types/column-node.type";
 import type { RelationNode } from "#core/types/relation-node.type";
 
 /**
- * Relation nodes.
+ * Builds the relation nodes a View page shows for a record.
  *
  * @example
  * Relation.table(ListOrderLinesQuery, { bind: { orderId: "record.id" }, columns: [Column.from("sku")] });

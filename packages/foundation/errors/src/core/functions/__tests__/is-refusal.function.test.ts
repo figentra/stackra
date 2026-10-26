@@ -14,14 +14,23 @@ import { Refusal } from "#core/bases/refusal.base";
 import { ErrorKind } from "#core/enums/error-kind.enum";
 import { isRefusal } from "#core/functions/is-refusal.function";
 
-class VariantNotFoundError extends Refusal({ kind: ErrorKind.NotFound, retryable: false }) {
+class VariantNotFoundError extends Refusal({
+  kind: ErrorKind.NotFound,
+  retryable: false,
+}) {
   barcode?: string;
 }
 
-class OrdersPausedError extends Refusal({ kind: ErrorKind.FailedPrecondition, retryable: false }) {}
+class OrdersPausedError extends Refusal({
+  kind: ErrorKind.FailedPrecondition,
+  retryable: false,
+}) {}
 
 /** What a generated client's remote refusal does: its code comes from the remote manifest, not its class name. */
-class RemoteMarketUnknownError extends Refusal({ kind: ErrorKind.Validation, retryable: false }) {}
+class RemoteMarketUnknownError extends Refusal({
+  kind: ErrorKind.Validation,
+  retryable: false,
+}) {}
 Object.defineProperty(RemoteMarketUnknownError.prototype, "code", { get: () => "market_unknown" });
 
 describe("isRefusal", () => {

@@ -9,7 +9,7 @@ import type { SortNode } from "#core/types/sort-node.type";
 import type { ViewNode } from "#core/types/view-node.type";
 
 /**
- * View nodes.
+ * Builds the preset view nodes of a resource table.
  *
  * @example
  * View.of("paid_today", { status: [OrderStatus.Paid], paidAt: DateRange.today() }, {

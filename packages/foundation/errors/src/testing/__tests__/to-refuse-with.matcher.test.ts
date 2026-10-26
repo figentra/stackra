@@ -19,10 +19,14 @@ class InsufficientPointsError extends Refusal({
   retryable: false,
 }) {
   balance!: number;
+
   requested!: number;
 }
 
-class PointsExpiredError extends Refusal({ kind: ErrorKind.FailedPrecondition, retryable: false }) {
+class PointsExpiredError extends Refusal({
+  kind: ErrorKind.FailedPrecondition,
+  retryable: false,
+}) {
   expiredAt!: Date;
 }
 

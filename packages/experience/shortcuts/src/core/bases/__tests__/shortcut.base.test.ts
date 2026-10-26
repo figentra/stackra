@@ -15,6 +15,11 @@ import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 import { Shortcut } from "#core/bases/shortcut.base";
 import type { ShortcutClass } from "#core/types/shortcut-class.type";
 
+/** Stands in for the icon constants gen emits in an app. */
+const TestIcons = {
+  LogOut: "log-out",
+} as const;
+
 /** A stand-in for the console's palette store. */
 class PaletteStore {
   isOpen = false;
@@ -24,7 +29,10 @@ class PaletteStore {
   }
 }
 
-class OpenPaletteShortcut extends Shortcut({ keys: "mod+k", group: "console::palette.group_app" }) {
+class OpenPaletteShortcut extends Shortcut({
+  keys: "mod+k",
+  group: "console::palette.group_app",
+}) {
   private readonly palette: PaletteStore;
 
   constructor(palette: PaletteStore) {
@@ -39,7 +47,7 @@ class OpenPaletteShortcut extends Shortcut({ keys: "mod+k", group: "console::pal
 
 class SignOutShortcut extends Shortcut({
   group: "console::palette.group_account",
-  icon: "log-out",
+  icon: TestIcons.LogOut,
   intents: ["logout", "leave"],
 }) {
   run(): void {}
@@ -57,16 +65,22 @@ describe("Shortcut", () => {
     expect(kindOf(SignOutShortcut)?.options).toEqual({
       keys: null,
       group: "console::palette.group_account",
-      icon: "log-out",
+      icon: TestIcons.LogOut,
       intents: ["logout", "leave"],
     });
   });
 
   it("normalises the binding it records", () => {
-    class CycleThemeShortcut extends Shortcut({ keys: "Shift+Mod+L", group: "g::a" }) {
+    class CycleThemeShortcut extends Shortcut({
+      keys: "Shift+Mod+L",
+      group: "g::a",
+    }) {
       run(): void {}
     }
-    class GoToSettingsShortcut extends Shortcut({ keys: " g   s ", group: "g::a" }) {
+    class GoToSettingsShortcut extends Shortcut({
+      keys: " g   s ",
+      group: "g::a",
+    }) {
       run(): void {}
     }
     expect(kindOf(CycleThemeShortcut)?.options["keys"]).toBe("mod+shift+l");

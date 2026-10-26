@@ -18,6 +18,11 @@ import { WidgetDisplay } from "#core/constants/widget-display.constant";
 import { widget } from "#core/functions/widget.function";
 import { KpiView } from "#react/kpi-view/kpi-view";
 
+/** Stands in for the permission constants gen emits in an app. */
+const TestPermissions = {
+  ordersOrderRead: "orders.order.read",
+} as const;
+
 vi.mock("@stackra/i18n/react", () => ({
   useTranslation: () => ({
     t: (key: string, values?: Record<string, unknown>) =>
@@ -103,7 +108,7 @@ vi.mock("@stackra/ui/react", async () => {
 const OrderKpisQuery = Object.assign(function OrderKpisQuery() {}, {
   kind: "query",
   key: "orders.order.kpis@1",
-  permission: "orders.order.read",
+  permission: TestPermissions.ordersOrderRead,
   input: {},
   output: {},
   invalidateOn: [],

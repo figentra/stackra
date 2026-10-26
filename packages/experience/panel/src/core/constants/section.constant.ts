@@ -8,7 +8,7 @@
 import type { EntryNode } from "#core/types/entry-node.type";
 
 /**
- * Section nodes.
+ * Builds the section nodes that group entries on a View page.
  *
  * @example
  * Section.of("summary", [Entry.from("title"), Entry.from("slug", { copyable: true })]);

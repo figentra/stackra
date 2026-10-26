@@ -16,7 +16,7 @@ import type { KpiNode } from "#core/types/kpi-node.type";
 import type { ToneRule } from "#core/types/tone-rule.type";
 
 /**
- * Display nodes.
+ * Builds the display nodes that say how a widget draws its query.
  *
  * @example
  * WidgetDisplay.kpi("revenue", { icon: "banknote", tones: [{ belowTarget: 0.8, tone: Tone.Danger }] });

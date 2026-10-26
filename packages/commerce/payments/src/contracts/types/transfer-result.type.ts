@@ -17,6 +17,6 @@ export interface TransferResult {
   /** The provider's id of the refund or payout. */
   readonly providerRef: string;
 
-  /** Its state. */
+  /** The state of the transfer. */
   readonly status: TransferStatus;
 }

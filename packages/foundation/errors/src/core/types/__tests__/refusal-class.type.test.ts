@@ -13,7 +13,10 @@ import { ErrorKind } from "#core/enums/error-kind.enum";
 import type { ErrorEnvelope } from "#core/types/error-envelope.type";
 import type { RefusalClass } from "#core/types/refusal-class.type";
 
-class AccountFrozenError extends Refusal({ kind: ErrorKind.Conflict, retryable: false }) {
+class AccountFrozenError extends Refusal({
+  kind: ErrorKind.Conflict,
+  retryable: false,
+}) {
   accountId!: string;
 }
 

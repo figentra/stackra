@@ -19,6 +19,6 @@ export interface PaymentResolution {
   /** Why, in their words. */
   readonly reason: string;
 
-  /** When. */
+  /** When it was resolved. */
   readonly at: Date;
 }

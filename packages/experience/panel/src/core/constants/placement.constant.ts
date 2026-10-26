@@ -30,7 +30,7 @@ function frozen<O extends PlacementOptions>(options: O): O {
 }
 
 /**
- * Placement nodes.
+ * Builds the placement nodes that put actions on resource pages.
  *
  * @example
  * Placement.import({ mode: ImportMode.Upsert, match: "slug", places: [ActionPlace.ListHeader, ActionPlace.Empty] });

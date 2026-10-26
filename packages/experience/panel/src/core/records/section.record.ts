@@ -16,7 +16,7 @@ interface SectionFlags {
   readonly aside?: boolean;
 }
 
-/** One section. */
+/** Records the flags of one section before it builds. */
 export class SectionRecord extends DraftRecord<SectionFlags, EntryNode> implements SectionBuilder {
   /**
    * @param name - the section name.

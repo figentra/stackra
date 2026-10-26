@@ -17,7 +17,9 @@ interface FieldFlags {
 
 /** One form field. */
 export class FieldRecord extends DraftRecord<FieldFlags, FieldNode> implements FieldBuilder {
-  /** @param build - the `FormField` constructor call for the recorded flags. */
+  /**
+   * @param build - the `FormField` constructor call for the recorded flags.
+   */
   constructor(build: (flags: FieldFlags) => FieldNode) {
     super(build, {});
   }

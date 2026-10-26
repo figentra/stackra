@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 /**
  * Stackra file contract:
  * Purpose: unit and type tests of `useShortcuts()`: the registered shortcuts the container binds, in order, as
@@ -9,6 +8,7 @@
  * Runtime: node (vitest, jsdom)
  * Governing contract: ADR 0022; ADR 0269; ADR 0294 (decision 23); ADR 0245.
  */
+// @vitest-environment jsdom
 import { Container, type Token } from "@stackra/container";
 import { ContainerProvider } from "@stackra/container/react";
 import { beforeEach, describe, expect, expectTypeOf, it } from "@stackra/testing";
@@ -21,19 +21,30 @@ import { registerShortcuts } from "#core/functions/register-shortcuts.function";
 import type { ShortcutItem } from "#react/shortcuts/shortcut-item.type";
 import { useShortcuts } from "#react/shortcuts/use-shortcuts";
 
-class OpenPaletteShortcut extends Shortcut({ keys: "mod+k", group: "console::palette.group_app" }) {
+/** Stands in for the icon constants gen emits in an app. */
+const TestIcons = {
+  LogOut: "log-out",
+} as const;
+
+class OpenPaletteShortcut extends Shortcut({
+  keys: "mod+k",
+  group: "console::palette.group_app",
+}) {
   run(): void {}
 }
 
 class SignOutShortcut extends Shortcut({
   group: "console::palette.group_account",
-  icon: "log-out",
+  icon: TestIcons.LogOut,
   intents: ["logout"],
 }) {
   run(): void {}
 }
 
-class LeftOutShortcut extends Shortcut({ keys: "mod+j", group: "console::palette.group_app" }) {
+class LeftOutShortcut extends Shortcut({
+  keys: "mod+j",
+  group: "console::palette.group_app",
+}) {
   run(): void {}
 }
 
@@ -71,7 +82,7 @@ describe("useShortcuts", () => {
         key: "console.sign_out",
         label: "shortcuts::sign_out.label",
         group: "console::palette.group_account",
-        icon: "log-out",
+        icon: TestIcons.LogOut,
         intents: ["logout"],
       },
     ]);

@@ -15,7 +15,7 @@ import type { PaymentResolution } from "#contracts/types/payment-resolution.type
 import type { SavedMethod } from "#contracts/types/saved-method.type";
 
 /**
- * One payment.
+ * The stored record of one payment.
  *
  * @example
  * const record = await records.find("ord_1");

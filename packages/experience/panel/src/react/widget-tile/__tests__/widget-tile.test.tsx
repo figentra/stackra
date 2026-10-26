@@ -20,6 +20,11 @@ import { TimeRange } from "#core/enums/time-range.enum";
 import { widget } from "#core/functions/widget.function";
 import { WidgetTile } from "#react/widget-tile/widget-tile";
 
+/** Stands in for the permission constants gen emits in an app. */
+const TestPermissions = {
+  ordersOrderRead: "orders.order.read",
+} as const;
+
 const query = vi.hoisted(() => ({ useQuery: vi.fn() }));
 
 vi.mock("@stackra/clients/react", () => ({ useQuery: query.useQuery }));
@@ -109,7 +114,7 @@ vi.mock("@stackra/ui/react", async () => {
 const OrderKpisQuery = Object.assign(function OrderKpisQuery() {}, {
   kind: "query",
   key: "orders.order.kpis@1",
-  permission: "orders.order.read",
+  permission: TestPermissions.ordersOrderRead,
   input: {},
   output: {},
   invalidateOn: [],

@@ -19,4 +19,7 @@ import { ErrorKind } from "#core/enums/error-kind.enum";
  * @example
  * throw LiveReadOnlyError.create();
  */
-export class LiveReadOnlyError extends Refusal({ kind: ErrorKind.Conflict, retryable: false }) {}
+export class LiveReadOnlyError extends Refusal({
+  kind: ErrorKind.Conflict,
+  retryable: false,
+}) {}

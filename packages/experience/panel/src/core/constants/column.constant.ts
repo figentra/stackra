@@ -29,7 +29,7 @@ function column(
 }
 
 /**
- * Column nodes.
+ * Builds the column nodes of a resource table.
  *
  * @example
  * Column.from("status", { enum: OrderStatus });

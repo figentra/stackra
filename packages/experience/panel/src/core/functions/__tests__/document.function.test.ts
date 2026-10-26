@@ -10,6 +10,11 @@ import { describe, expect, it } from "@stackra/testing";
 
 import { document } from "#core/functions/document.function";
 
+/** Stands in for the permission constants gen emits in an app. */
+const TestPermissions = {
+  ordersOrderRead: "orders.order.read",
+} as const;
+
 const ADMIN = { key: "admin", path: "/", area: ApiArea.Admin };
 const PORTAL = { key: "customer_portal", path: "/portal", area: ApiArea.App };
 
@@ -19,14 +24,14 @@ describe("document", () => {
       document("orders.sales_overview", {
         path: "/sales",
         panel: ADMIN,
-        permission: "orders.order.read",
+        permission: TestPermissions.ordersOrderRead,
       }),
     ).toEqual({
       key: "orders.sales_overview",
       name: "orders.sales_overview",
       path: "/sales",
       panel: ADMIN,
-      permission: "orders.order.read",
+      permission: TestPermissions.ordersOrderRead,
     });
     expect(document("orders.my_orders", { path: "/orders", panel: PORTAL }).path).toBe(
       "/portal/orders",

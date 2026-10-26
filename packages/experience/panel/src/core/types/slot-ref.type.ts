@@ -8,7 +8,7 @@
  */
 import type { Place } from "#core/enums/place.enum";
 
-/** One slot. */
+/** The reference to one typed slot widgets go into. */
 export interface SlotRef {
   /** The snake_case dotted key (`dashboard.main`, `orders.order.view.aside`). */
   readonly key: string;

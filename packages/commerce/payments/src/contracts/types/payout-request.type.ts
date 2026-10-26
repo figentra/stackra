@@ -17,7 +17,7 @@ export interface PayoutRequest {
   /** This payout's id. */
   readonly reference: string;
 
-  /** How much. */
+  /** The amount to pay out. */
   readonly amount: Money;
 
   /** The merchant's account at the provider. */

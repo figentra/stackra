@@ -28,10 +28,17 @@ import type { Relations } from "#core/types/relations.type";
 import type { Table } from "#core/types/table.type";
 import type { Views } from "#core/types/views.type";
 
+/** Stands in for the icon constants gen emits in an app. */
+const TestIcons = {
+  Receipt: "receipt",
+} as const;
+
 /** A model stand-in. */
 class Order {
   id!: string;
+
   status!: string;
+
   record(): void {}
 }
 
@@ -47,8 +54,11 @@ interface OrderView {
 /** A product model stand-in with a repeater field. */
 class Product {
   id!: string;
+
   title!: string;
+
   slug!: string;
+
   variants!: { sku: string; barcode: string }[];
 }
 
@@ -66,7 +76,7 @@ const GROUP = "orders::nav.sales" as I18nKey;
 
 class OrderResource extends Resource<Order, OrderView>({
   area: ApiArea.Admin,
-  navigation: { group: GROUP, icon: "receipt", order: 20, badge: "awaiting_payment" },
+  navigation: { group: GROUP, icon: TestIcons.Receipt, order: 20, badge: "awaiting_payment" },
   operations: { list: ListOrdersQuery, get: GetOrderQuery },
 }) {
   override table(t: Table<OrderView>) {
@@ -144,7 +154,7 @@ describe("Resource", () => {
     expect(record?.kind).toBe("resource");
     expect(record?.options).toEqual({
       area: ApiArea.Admin,
-      navigation: { group: GROUP, icon: "receipt", order: 20, badge: "awaiting_payment" },
+      navigation: { group: GROUP, icon: TestIcons.Receipt, order: 20, badge: "awaiting_payment" },
       operations: { list: ListOrdersQuery, get: GetOrderQuery },
     });
     expect(new OrderResource()).toBeInstanceOf(ResourceBase);
@@ -161,7 +171,10 @@ describe("Resource", () => {
   });
 
   it("records nothing for a member the class does not override", () => {
-    class Bare extends Resource<Order>({ area: ApiArea.Admin, operations: { list: true } }) {}
+    class Bare extends Resource<Order>({
+      area: ApiArea.Admin,
+      operations: { list: true },
+    }) {}
     expect(describeResource(Bare)).toEqual({
       options: { area: ApiArea.Admin, operations: { list: true } },
     });

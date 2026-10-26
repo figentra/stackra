@@ -10,7 +10,7 @@ import type { Money } from "@stackra/money";
 import type { DisputeStatus } from "#contracts/enums/dispute-status.enum";
 
 /**
- * A chargeback.
+ * A chargeback as the provider reports it.
  *
  * @example
  * const dispute = await gateway.dispute("dp_1");
@@ -28,7 +28,7 @@ export interface Dispute {
   /** The provider's reason code. */
   readonly reason: string;
 
-  /** Its state. */
+  /** The state of the dispute. */
   readonly status: DisputeStatus;
 
   /** When evidence is due, while it is. */

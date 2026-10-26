@@ -14,11 +14,16 @@ import { TimeRange } from "#core/enums/time-range.enum";
 import { widget } from "#core/functions/widget.function";
 import { widgetInput } from "#core/functions/widget-input.function";
 
+/** Stands in for the permission constants gen emits in an app. */
+const TestPermissions = {
+  ordersOrderRead: "orders.order.read",
+} as const;
+
 /** A consumed query ref stand-in. */
 const OrderKpisQuery = Object.assign(class {}, {
   kind: "query",
   key: "orders.order.kpis@1",
-  permission: "orders.order.read",
+  permission: TestPermissions.ordersOrderRead,
   input: {},
   output: {},
   invalidateOn: [class OrderPaid {}],

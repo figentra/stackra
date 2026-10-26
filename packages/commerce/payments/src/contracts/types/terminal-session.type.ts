@@ -22,7 +22,7 @@ export interface TerminalSession {
   /** The terminal it runs on. */
   readonly terminalId: string;
 
-  /** Its state. */
+  /** The state of the session's payment. */
   readonly status: PaymentStatus;
 
   /** The tip the customer chose, once known. */

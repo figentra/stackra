@@ -24,7 +24,10 @@ describe("describeResource", () => {
 
   it("records the members without constructing the class", () => {
     let constructed = 0;
-    class Rows extends Resource<Row>({ area: ApiArea.Admin, operations: { list: true } }) {
+    class Rows extends Resource<Row>({
+      area: ApiArea.Admin,
+      operations: { list: true },
+    }) {
       constructor() {
         super();
         constructed += 1;

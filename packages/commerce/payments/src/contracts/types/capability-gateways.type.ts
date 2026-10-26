@@ -27,19 +27,19 @@ export interface CapabilityGateways {
   /** Capture and void. */
   readonly capture: CaptureGateway;
 
-  /** Saved-token charges. */
+  /** Charges a saved payment token. */
   readonly tokens: TokenGateway;
 
-  /** Payouts. */
+  /** Sends payouts to a destination. */
   readonly payouts: PayoutGateway;
 
-  /** Merchant onboarding. */
+  /** Onboards and reads merchant accounts. */
   readonly platform: PlatformGateway;
 
-  /** Disputes. */
+  /** Reads and answers disputes. */
   readonly disputes: DisputeGateway;
 
-  /** Terminal sessions. */
+  /** Runs in-person terminal sessions. */
   readonly terminal: TerminalGateway;
 
   /** A tip prompt on the terminal. */

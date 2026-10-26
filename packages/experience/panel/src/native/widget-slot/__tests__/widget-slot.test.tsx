@@ -23,6 +23,12 @@ import { registerWidgets } from "#core/functions/register-widgets.function";
 import { widget } from "#core/functions/widget.function";
 import { WidgetSlot } from "#native/widget-slot/widget-slot";
 
+/** Stands in for the permission constants gen emits in an app. */
+const TestPermissions = {
+  ordersDRead: "orders.d.read",
+  ordersOrderRead: "orders.order.read",
+} as const;
+
 vi.mock("react-native", async () => {
   const { createElement } = await import("react");
   return {
@@ -135,7 +141,7 @@ vi.mock("@stackra/ui/native", async () => {
 const OrderKpisQuery = Object.assign(function OrderKpisQuery() {}, {
   kind: "query",
   key: "orders.order.kpis@1",
-  permission: "orders.order.read",
+  permission: TestPermissions.ordersOrderRead,
   input: {},
   output: {},
   invalidateOn: [],
@@ -209,7 +215,7 @@ describe("WidgetSlot", () => {
         query: OrderKpisQuery,
         display: kpi,
         slot: HEADER,
-        permission: "orders.d.read",
+        permission: TestPermissions.ordersDRead,
       }),
     ]);
     const view = await renderSlot(<WidgetSlot slot={HEADER} columns={2} />);

@@ -16,6 +16,7 @@ class InsufficientStockError extends Refusal({
   retryable: false,
 }) {
   variantId!: string;
+
   available!: number;
 }
 

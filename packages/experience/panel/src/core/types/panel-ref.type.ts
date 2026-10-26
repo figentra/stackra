@@ -8,7 +8,7 @@
  */
 import type { ApiArea } from "@stackra/contracts";
 
-/** One panel. */
+/** The reference to one panel an app mounts. */
 export interface PanelRef {
   /** The snake_case key derived from the panel file (`admin`). */
   readonly key: string;

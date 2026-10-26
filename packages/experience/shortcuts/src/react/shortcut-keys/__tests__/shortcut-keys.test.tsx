@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 /**
  * Stackra file contract:
  * Purpose: unit tests of `ShortcutKeys`: the server draws the non-Apple form, an Apple client draws glyphs, a chord
@@ -9,6 +8,7 @@
  * Runtime: node (vitest, jsdom)
  * Governing contract: ADR 0022; ADR 0269; registry v3.1 R-66 (display is ours).
  */
+// @vitest-environment jsdom
 import { afterEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";
@@ -17,7 +17,10 @@ import { renderToString } from "react-dom/server";
 import { Shortcut } from "#core/bases/shortcut.base";
 import { ShortcutKeys } from "#react/shortcut-keys/shortcut-keys";
 
-class OpenPaletteShortcut extends Shortcut({ keys: "mod+k", group: "console::palette.group_app" }) {
+class OpenPaletteShortcut extends Shortcut({
+  keys: "mod+k",
+  group: "console::palette.group_app",
+}) {
   run(): void {}
 }
 

@@ -18,7 +18,7 @@ interface FilterOptions {
 }
 
 /**
- * Filter nodes.
+ * Builds the filter nodes of a resource table.
  *
  * @example
  * Filter.from("status", { enum: OrderStatus, default: [OrderStatus.Paid], pinned: true });

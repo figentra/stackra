@@ -38,7 +38,7 @@ export class ActionsRecord<R, V = R> implements Actions<R, V> {
     );
   }
 
-  /** An import. */
+  /** Adds an import action. */
   import(options: {
     readonly mode: ImportMode;
     readonly match: Path<V>;

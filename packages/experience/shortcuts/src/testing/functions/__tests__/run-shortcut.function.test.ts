@@ -49,7 +49,10 @@ class SignOutShortcut extends Shortcut({ group: "console::palette.group_account"
   }
 }
 
-class OpenPaletteShortcut extends Shortcut({ keys: "mod+k", group: "console::palette.group_app" }) {
+class OpenPaletteShortcut extends Shortcut({
+  keys: "mod+k",
+  group: "console::palette.group_app",
+}) {
   private readonly palette: PaletteStore;
 
   constructor(palette: PaletteStore) {

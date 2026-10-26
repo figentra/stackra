@@ -16,9 +16,11 @@ interface ColumnFlags {
   readonly hidden?: boolean;
 }
 
-/** One column. */
+/** Records the flags of one column before it builds. */
 export class ColumnRecord extends DraftRecord<ColumnFlags, ColumnNode> implements ColumnBuilder {
-  /** @param build - the `Column` constructor call for the recorded flags. */
+  /**
+   * @param build - the `Column` constructor call for the recorded flags.
+   */
   constructor(build: (flags: ColumnFlags) => ColumnNode) {
     super(build, {});
   }

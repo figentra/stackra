@@ -18,11 +18,16 @@ import { TimeRange } from "#core/enums/time-range.enum";
 import { WidgetSize } from "#core/enums/widget-size.enum";
 import { widget } from "#core/functions/widget.function";
 
+/** Stands in for the permission constants gen emits in an app. */
+const TestPermissions = {
+  ordersOrderRead: "orders.order.read",
+} as const;
+
 /** A consumed query ref stand-in. */
 const OrderKpisQuery = Object.assign(class {}, {
   kind: "query",
   key: "orders.order.kpis@1",
-  permission: "orders.order.read",
+  permission: TestPermissions.ordersOrderRead,
   input: {},
   output: {},
   invalidateOn: [class OrderPaid {}],
@@ -45,7 +50,7 @@ describe("widget", () => {
     const descriptor = widget(OrderKpisWidget, {
       slot: { key: "dashboard.header", place: Place.Band },
       order: 10,
-      permission: "orders.order.read",
+      permission: TestPermissions.ordersOrderRead,
       roles: [SystemRole.Owner],
     });
     expect(descriptor).toMatchObject({
@@ -60,7 +65,7 @@ describe("widget", () => {
       ranges: ["today", "last_7_days"],
       range: "today",
       refreshOn: OrderKpisQuery.invalidateOn,
-      permission: "orders.order.read",
+      permission: TestPermissions.ordersOrderRead,
       roles: ["owner"],
       layer: PlacementLayer.Owner,
       title: "orders::widgets.order_kpis.title",

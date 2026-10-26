@@ -14,7 +14,7 @@ import type { ProviderChoice } from "#contracts/types/provider-choice.type";
 
 /** A Market list a test writes: one provider for every Market. */
 class OneProvider extends MarketPaymentDefaults {
-  async providers(): Promise<readonly ProviderChoice[]> {
+  async providers(_market: string): Promise<readonly ProviderChoice[]> {
     return [{ provider: "stripe", connectionId: "conn_1" }];
   }
 }

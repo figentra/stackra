@@ -20,10 +20,10 @@ export interface TokenCharge {
   /** The merchant's id of the payment; one payment per reference. */
   readonly reference: string;
 
-  /** The token. */
+  /** The saved token to charge. */
   readonly method: SavedMethod;
 
-  /** How much. */
+  /** The amount to charge. */
   readonly amount: Money;
 
   /** Who starts it. */

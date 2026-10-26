@@ -24,14 +24,16 @@ interface KpiFlags {
   readonly lowerIsBetter?: boolean;
 }
 
-/** One KPI. */
+/** Records the flags of one KPI before it builds. */
 export class KpiRecord extends DraftRecord<KpiFlags, KpiNode> implements KpiBuilder {
-  /** @param path - the output key typed as a metric class. */
+  /**
+   * @param path - the output key typed as a metric class.
+   */
   constructor(path: string) {
     super((flags) => WidgetDisplay.kpi(path, flags), {});
   }
 
-  /** The icon. */
+  /** Sets the icon beside the label. */
   icon(name: IconName): this {
     return this.set({ icon: name });
   }
@@ -41,7 +43,7 @@ export class KpiRecord extends DraftRecord<KpiFlags, KpiNode> implements KpiBuil
     return this.set({ tones: build(TONE_RULES) });
   }
 
-  /** The drill-down. */
+  /** Sets the drill-down the KPI opens. */
   drill(drill: DrillNode): this {
     return this.set({ drill });
   }

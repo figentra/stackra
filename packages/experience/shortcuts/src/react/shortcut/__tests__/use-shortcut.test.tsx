@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 /**
  * Stackra file contract:
  * Purpose: unit and type tests of `useShortcut(Class)`: the handler runs the instance the container binds with the
@@ -8,6 +7,7 @@
  * Runtime: node (vitest, jsdom)
  * Governing contract: ADR 0022; ADR 0269; ADR 0294 (decisions 17 and 23).
  */
+// @vitest-environment jsdom
 import { Container, type Token } from "@stackra/container";
 import { ContainerProvider } from "@stackra/container/react";
 import { afterEach, describe, expect, expectTypeOf, it } from "@stackra/testing";
@@ -21,7 +21,10 @@ import type { ShortcutContext } from "#core/types/shortcut-context.type";
 import { useShortcut } from "#react/shortcut/use-shortcut";
 
 /** Records the context of every run. */
-class RecordingShortcut extends Shortcut({ keys: "mod+b", group: "console::palette.group_app" }) {
+class RecordingShortcut extends Shortcut({
+  keys: "mod+b",
+  group: "console::palette.group_app",
+}) {
   readonly runs: ShortcutContext[] = [];
 
   run(ctx: ShortcutContext): void {

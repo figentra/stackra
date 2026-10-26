@@ -14,7 +14,7 @@
  *                     16, 17 and 25).
  */
 import { Service } from "@stackra/container";
-import { FileSystem } from "@stackra/filesystem/contracts";
+import type { FileSystem } from "@stackra/filesystem/contracts";
 
 import { AssetHashMismatchError } from "#core/errors/asset-hash-mismatch.error";
 import { parseAssetKey } from "#core/functions/parse-asset-key.function";
@@ -34,7 +34,9 @@ import type { ResolvedAsset } from "#core/types/resolved-asset.type";
 export class AssetLibrary extends Service {
   private readonly files: FileSystem;
 
-  /** @param files - the disk the assets are published to; its `url` setting is the CDN base. */
+  /**
+   * @param files - the disk the assets are published to; its `url` setting is the CDN base.
+   */
   constructor(files: FileSystem) {
     super();
     this.files = files;
@@ -85,7 +87,8 @@ export class AssetLibrary extends Service {
   async verify(entries: Iterable<AssetEntry>): Promise<void> {
     for (const entry of entries) {
       if (entry.hash === undefined) continue;
-      const digest = await crypto.subtle.digest("SHA-256", await this.read(entry));
+      // a copy, so the bytes sit in a plain ArrayBuffer as `BufferSource` requires
+      const digest = await crypto.subtle.digest("SHA-256", new Uint8Array(await this.read(entry)));
       const actual = Array.from(new Uint8Array(digest), (byte) =>
         byte.toString(16).padStart(2, "0"),
       ).join("");

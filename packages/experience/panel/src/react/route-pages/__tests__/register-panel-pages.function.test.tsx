@@ -29,7 +29,10 @@ vi.mock("#react/panel-shell/panel-shell", async () => {
   };
 });
 
-class AdminPanel extends Panel({ path: "/admin", area: ApiArea.Admin }) {}
+class AdminPanel extends Panel({
+  path: "/admin",
+  area: ApiArea.Admin,
+}) {}
 
 /** Mounts the panel route at its path. */
 const mount = () =>

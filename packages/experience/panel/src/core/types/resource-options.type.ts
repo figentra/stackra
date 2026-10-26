@@ -19,7 +19,7 @@ export interface ResourceOptions {
   /** Its navigation entry; absent for a resource reached only by links. */
   readonly navigation?: PanelNavigation;
 
-  /** Its operations. */
+  /** The operations the resource offers. */
   readonly operations: ResourceOperations;
 
   /** Whether the panel offers a quick-create dialog for it. */
