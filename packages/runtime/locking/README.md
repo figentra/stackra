@@ -17,7 +17,7 @@ the memory driver, the Postgres advisory-lock driver and the `LockingConfig` con
 | `LockingOptions`                  | `.`           | the shape of `LockingConfig`                                                       |
 | `MemoryLockDriver`                | `.`           | the driver for tests and a single process                                          |
 | `LockDriver`, `LockLease`         | `./contracts` | the port a driver implements, and the lease it gives                               |
-| `PostgresLockDriver`              | `./node`      | the default driver: transaction-level advisory locks and a token sequence          |
+| `PostgresLockDriver`              | `./node`      | the default driver: transaction-level advisory locks and a WAL-position token      |
 
 ## Running work under a lock
 
@@ -66,8 +66,10 @@ and refuses a write with a smaller one stops a holder whose lock lapsed from wri
 
 - **Postgres** (`./node`, default): `pg_try_advisory_xact_lock` on each key's 64-bit text hash. A lock taken inside
   the caller's transaction lasts until that transaction ends, so it covers the caller's commit and ends when its holder
-  dies; outside a transaction, `Locks` opens one around the work. The token comes from `locking.lock_tokens`, created by
-  this package's migration `locking.0001_create_lock_tokens`.
+  dies; outside a transaction, `Locks` opens one around the work. Each lease upserts its keys' rows in `locking.lock_tokens`
+  (created by this package's migration `locking.0001_create_lock_tokens`) and its token is the WAL insert position
+  just after: larger than every earlier lease's on those keys, never handed out twice even after a rollback, and with
+  no Postgres sequence (ADR 0394).
 - **Memory** (`.`): leases in process memory, expiry on the `Clock`. It serialises callers in one process only.
 - **Valkey** (`./node`, `driver: valkey`): each key a Valkey string `<owner>:<token>` with a `PX` lifetime, a lease
   taken, renewed and released in one script, the token from one counter key. The server is the `LOCKING_VALKEY_URL`

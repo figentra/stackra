@@ -1,14 +1,17 @@
 /**
  * Stackra file contract:
  * Purpose: `PostgresLockDriver`, the server's `LockDriver`: a transaction-level advisory lock per key
- *          (`pg_try_advisory_xact_lock` on the key's 64-bit text hash) and a fencing token from the
- *          `locking.lock_tokens` sequence.
+ *          (`pg_try_advisory_xact_lock` on the key's 64-bit text hash) and a fencing token: the WAL insert
+ *          position just after the lease writes its keys' `locking.lock_tokens` rows.
  * Boundary: raw SQL on the running context's entity manager. A lock taken inside the caller's transaction lasts until
  *           that transaction ends, so it covers the caller's commit and cannot outlive its holder (a dead connection
  *           ends it); `within` opens a transaction only when none runs. So renewal and release have nothing to do,
  *           and the TTL never cuts a lock short. A try never blocks; it stops at the first busy key, and the keys
  *           taken before it stay held until the transaction ends (sorted keys keep that free of cycles). Every key is
- *           a bound parameter.
+ *           a bound parameter. The token needs no Postgres sequence (ADR 0394 d3): the
+ *           lease's row write is appended to the WAL after every earlier holder of its keys read its own position, so
+ *           the position read after it is larger, and the WAL never moves back, so a rolled-back lease's token is never
+ *           given again. As with a sequence, a crash can lose the unflushed tail of an uncommitted lease's WAL.
  * Runtime: node
  * Governing contract: ADR 0149 (decisions 1 to 3); ADR 0103 (decisions 1 and 2); ADR 0160 (raw SQL is parameterised);
  *                     ADR 0136 (decision 2: one transaction per action); ADR 0294 (decision 16).
@@ -57,9 +60,17 @@ export class PostgresLockDriver extends Driver(LockDriver) {
       )) as unknown as readonly { readonly held: boolean }[];
       if (row?.held !== true) return undefined;
     }
-    // raw-sql: the fencing token is a sequence value, larger than every token drawn before it (ADR 0149 d3)
+    if (keys.length > 0)
+      // raw-sql: an upsert has no ORM form without a model; it writes WAL even when the row exists (ADR 0149 d3)
+      await em.execute(
+        `insert into locking.lock_tokens (lock_key, leased_at) values ${keys.map(() => "(?, now())").join(", ")} ` +
+          "on conflict (lock_key) do update set leased_at = excluded.leased_at",
+        [...keys],
+      );
+    // raw-sql: the fencing token is the WAL insert position after that write, larger than every earlier lease's on
+    // these keys (ADR 0149 d3)
     const [row] = (await em.execute(
-      "select nextval('locking.lock_tokens') as token",
+      "select (pg_current_wal_insert_lsn() - '0/0'::pg_lsn)::bigint as token",
     )) as unknown as readonly {
       readonly token: string | number;
     }[];
