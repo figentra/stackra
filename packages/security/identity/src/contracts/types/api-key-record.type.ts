@@ -2,11 +2,11 @@
  * Stackra file contract:
  * Purpose: `ApiKeyRecord`, what the identity service keeps for one issued API key: its id, the SHA-256 of the key (never
  *          the key), whom it acts as, in which tenant, its scopes, the origins a publishable key is bound to, and when it
- *          expires or was revoked.
+ *          expires or was revoked, and when it was last used (key hygiene on the security page).
  * Boundary: a type in the leaf entry; the `ApiKeyStore` port answers it by the key's hash. The key's kind is not here:
  *           it is read from the key's own prefix, which hashed to this record.
  * Runtime: isomorphic
- * Governing contract: ADR 0278 (decisions 3 to 7); ADR 0410 (verification by key hash, STA-835).
+ * Governing contract: ADR 0278 (decisions 3 to 7); ADR 0410 (verification by key hash, STA-835; `lastUsedAt`, STA-1264).
  */
 import type { PublicId } from "@stackra/contracts";
 
@@ -35,4 +35,7 @@ export interface ApiKeyRecord {
 
   /** When the key was revoked; absent while it is live. */
   readonly revokedAt?: Date;
+
+  /** When the key last passed verification; absent when never (written through `ApiKeyStore.recordUse`). */
+  readonly lastUsedAt?: Date;
 }

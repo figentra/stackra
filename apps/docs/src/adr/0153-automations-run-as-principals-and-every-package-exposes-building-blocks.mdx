@@ -8,6 +8,14 @@ description: "Accepted · 2026-10-20"
   every package is a set of workflow building blocks.
 </Note>
 
+<Note>
+  Note 2026-10-26 (STA-1264): decision 2 has its identity half. `@stackra/identity/contracts` adds the
+  `AutomationPrincipals` port: `mint({ automationId, tenantId, name })` gives an automation its own `service`
+  principal, the same one on every publish, and `revoke(principalId)` ends it. The identity service implements it over
+  its principals table; the publisher bound stays `@stackra/workflow`'s `PublisherAccess`. ADR 0098 has no automation
+  actor kind, so the principal is a `service` actor; a dedicated kind would be a new decision on 0098.
+</Note>
+
 ## Context
 
 [0122](/adr/0122-workflow-studio-three-layers) described three layers for workflows. The owner's answers WF2 and WF3 (mem L771–772,

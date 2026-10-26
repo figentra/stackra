@@ -1,15 +1,17 @@
 /**
  * Stackra file contract:
  * Purpose: the `ApiKeyStore` port: the verification read of issued API keys, by the SHA-256 of the key. The gateway's
- *          `ApiKeyVerifierService` hashes the presented key and asks this port for the record.
+ *          `ApiKeyVerifierService` hashes the presented key and asks this port for the record, then records the
+ *          use (`lastUsedAt`, read by the security page's key hygiene).
  * Boundary: an abstract class that is its own token. The identity service implements it over its key table (an
  *           indexed equality lookup on the hash column, which reveals nothing about the key); the memory driver serves
  *           tests. A store never sees or keeps the key itself, and issuing and revoking keys are the identity service's
  *           actions, not this port.
  * Runtime: isomorphic
- * Governing contract: ADR 0278 (decision 3: only the hash is stored); ADR 0410 (STA-835).
+ * Governing contract: ADR 0278 (decision 3: only the hash is stored); ADR 0410 (STA-835; `recordUse`, STA-1264).
  */
 import { Port } from "@stackra/contracts";
+import type { PublicId } from "@stackra/contracts";
 
 import type { ApiKeyRecord } from "#contracts/types/api-key-record.type";
 
@@ -30,4 +32,12 @@ export abstract class ApiKeyStore extends Port {
    * @throws Error when the store cannot be reached; the request then fails, never passes.
    */
   abstract findByHash(hash: string): Promise<ApiKeyRecord | undefined>;
+
+  /**
+   * Records that key `id` passed verification at `at` (its `lastUsedAt`). A store without the column keeps this
+   * default, which records nothing, so adding it broke no existing driver.
+   */
+  recordUse(_id: PublicId, _at: Date): Promise<void> {
+    return Promise.resolve();
+  }
 }

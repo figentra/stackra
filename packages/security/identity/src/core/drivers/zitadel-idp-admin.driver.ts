@@ -3,14 +3,15 @@
  * Purpose: `ZitadelIdpAdminDriver`, the ZITADEL driver of `IdpAdmin`: human users through the v2 user service, machine
  *          users and their client secret through the management API, sessions through the v2 session service, the
  *          device flow through the OAuth endpoints (RFC 8628), and an organisation's login policy through the
- *          management API (added the first time, updated after).
+ *          management API (added the first time, updated after); a user's enrolled authentication methods through the
+ *          v2 user service, mapped to RFC 8176 `amr` codes.
  * Boundary: one HTTPS call per step, with the service account token of `IdpAdminConfig` as a bearer token and the
  *           configured timeout. Managed or bring-your-own is the configured URL: the platform's ZITADEL or a tenant's
  *           own. A 409 is `IdpUserExistsError`; a timeout, a network failure, a 429 or a 5xx is `IdpAdminUnavailableError`
  *           (retryable); any other 4xx is a bug and throws an `Error` naming the method, path and status, never a body.
  *           Ending a session that is already gone (404) succeeds. Personal data and secrets are never logged.
  * Runtime: isomorphic (global `fetch`)
- * Governing contract: ADR 0206; ADR 0207; ADR 0235 (decision 1); RFC 8628; ADR 0376; ADR 0410 (STA-834).
+ * Governing contract: ADR 0206; ADR 0207; ADR 0235 (decision 1); RFC 8628; ADR 0376; ADR 0410 (STA-834); RFC 8176; STA-1264.
  */
 import { Driver } from "@stackra/container";
 
@@ -40,6 +41,21 @@ const DEVICE_ERRORS: ReadonlySet<string> = new Set([
   DeviceTokenStatus.Denied,
   DeviceTokenStatus.Expired,
 ]);
+
+/**
+ * ZITADEL's authentication method types to RFC 8176 `amr` codes: a protocol mapping, not policy (which level each code
+ * reaches is `IdentityConfig.assuranceByMethod`). A passkey is a software or platform key (`swk`), a U2F key hardware
+ * (`hwk`), an external provider federated (`fed`). An unknown type is dropped.
+ */
+const AMR_OF_METHOD: Readonly<Record<string, string>> = {
+  AUTHENTICATION_METHOD_TYPE_PASSWORD: "pwd",
+  AUTHENTICATION_METHOD_TYPE_PASSKEY: "swk",
+  AUTHENTICATION_METHOD_TYPE_IDP: "fed",
+  AUTHENTICATION_METHOD_TYPE_TOTP: "otp",
+  AUTHENTICATION_METHOD_TYPE_U2F: "hwk",
+  AUTHENTICATION_METHOD_TYPE_OTP_SMS: "sms",
+  AUTHENTICATION_METHOD_TYPE_OTP_EMAIL: "otp",
+};
 
 /** One request: the method, the path, a JSON or form body, and the organisation it acts in. */
 interface Call {
@@ -220,6 +236,19 @@ export class ZitadelIdpAdminDriver extends Driver(IdpAdmin) {
       ...(typeof refresh === "string" ? { refreshToken: refresh } : {}),
       expiresIn: numberOf(body, "expires_in"),
     };
+  }
+
+  /** See `IdpAdmin.listAuthMethods`. */
+  async listAuthMethods(userId: string): Promise<readonly string[]> {
+    const { body } = await this.call({
+      method: "GET",
+      path: `/v2/users/${encodeURIComponent(userId)}/authentication_methods`,
+    });
+    const types = (body as { authMethodTypes?: unknown }).authMethodTypes;
+    const codes = (Array.isArray(types) ? types : [])
+      .map((type) => (typeof type === "string" ? AMR_OF_METHOD[type] : undefined))
+      .filter((code): code is string => code !== undefined);
+    return [...new Set(codes)];
   }
 
   /** See `IdpAdmin.setLoginPolicy`: adds the organisation's own policy while it uses the default, updates it after. */

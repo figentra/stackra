@@ -4,10 +4,11 @@
  *          right method, path, organisation header, bearer token and body (v2 users and sessions, management machine
  *          users, secrets and login policy, the OAuth device endpoints); a 409 is `IdpUserExistsError`, a 5xx, a 429 or a
  *          network failure `IdpAdminUnavailableError`, another 4xx an `Error` with no body; ending a gone session
- *          succeeds; ending a user's sessions searches and deletes each; a device poll maps the RFC 8628 errors.
+ *          succeeds; ending a user's sessions searches and deletes each; a device poll maps the RFC 8628 errors; a
+ *          user's authentication methods come back as unique `amr` codes.
  * Boundary: test only; a scripted fetch records each request and answers from a queue.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; RFC 8628; ADR 0410 (STA-834).
+ * Governing contract: ADR 0022; RFC 8628; ADR 0410 (STA-834); STA-1264.
  */
 import { buildConfig } from "@stackra/config";
 import { describe, expect, it } from "@stackra/testing";
@@ -204,5 +205,29 @@ describe(ZitadelIdpAdminDriver, () => {
     await updated.idp.setLoginPolicy("org_1", policy);
     expect(updated.sent.map((request) => request.method)).toEqual(["GET", "PUT"]);
     expect(updated.sent[1]?.headers["x-zitadel-orgid"]).toBe("org_1");
+  });
+
+  it("lists a user's authentication methods as unique amr codes", async () => {
+    const { idp, sent } = driverWith([
+      [
+        200,
+        {
+          authMethodTypes: [
+            "AUTHENTICATION_METHOD_TYPE_PASSWORD",
+            "AUTHENTICATION_METHOD_TYPE_TOTP",
+            "AUTHENTICATION_METHOD_TYPE_OTP_EMAIL",
+            "AUTHENTICATION_METHOD_TYPE_U2F",
+            "AUTHENTICATION_METHOD_TYPE_SOMETHING_NEW",
+          ],
+        },
+      ],
+      [200, {}],
+    ]);
+    expect(await idp.listAuthMethods("u 1")).toEqual(["pwd", "otp", "hwk"]);
+    expect(sent[0]).toMatchObject({
+      url: "https://id.acme.example/v2/users/u%201/authentication_methods",
+      method: "GET",
+    });
+    expect(await idp.listAuthMethods("u_2")).toEqual([]);
   });
 });

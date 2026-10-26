@@ -47,6 +47,12 @@ model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./desktop`, `./n
   and key prefixes are `IdentityConfig` values. Never name a country, provider or number in code.
 - A staff PIN is stored only as its salted PBKDF2 hash and compared in constant time; a key is shown once and only its
   hash is stored. Never log either.
+- An API key's `lastUsedAt` is written by `ApiKeyVerifierService` only (through `ApiKeyStore.recordUse`), throttled
+  by `apiKeyLastUsedSeconds`; a failed write never refuses a valid key.
+- `IdpAdmin.listAuthMethods` answers RFC 8176 `amr` codes; which level each reaches is `assuranceByMethod`
+  (configuration), never the driver.
+- An automation runs as its own principal from `AutomationPrincipals.mint` (ADR 0153), never as its publisher; the port
+  mints and revokes, and grants are the workflow package's check.
 - A guardian acting for a minor, a manager override and a step-up grant nothing themselves: the IAM decision point still
   decides the action.
 - No parameter properties and no `#private` fields: apps typecheck this source under `erasableSyntaxOnly`.

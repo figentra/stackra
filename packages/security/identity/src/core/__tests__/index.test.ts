@@ -34,6 +34,7 @@ describe("@stackra/identity", () => {
       "IdpAdminUnavailableError",
       "IdpUserExistsError",
       "MemoryApiKeyStoreDriver",
+      "MemoryAutomationPrincipalsDriver",
       "MemoryGuardianshipDriver",
       "MemoryIdentityResolverDriver",
       "MemoryIdpAdminDriver",

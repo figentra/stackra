@@ -35,10 +35,12 @@ screen reads, and the claims mapping that turns a provider's token into a Stackr
 | `.`           | `StaffPinService`, `StorageStaffPinStoreDriver`, `MemoryStaffPinStoreDriver`                               | staff PIN quick-switch and manager override on a shared device                          |
 | `.`           | `ApiKeyKind`, `mintApiKey`, `parseApiKey`, `checkPublishableKey`, `isOriginAllowed`                        | secret and publishable keys; the origin-bound Storefront key                            |
 | `.`           | `ApiKeyVerifierService`, `hashApiKey`, `MemoryApiKeyStoreDriver`                                           | the gateway's verification of a key by its hash, over the `ApiKeyStore` port            |
-| `.`           | `ZitadelIdpAdminDriver`, `MemoryIdpAdminDriver`, `IdpAdminConfig`                                          | the `IdpAdmin` port: users, machine users, sessions, device flow, login policy          |
+| `.`           | `ZitadelIdpAdminDriver`, `MemoryIdpAdminDriver`, `IdpAdminConfig`                                          | the `IdpAdmin` port: users, machine users, sessions, device flow, login policy, methods |
+| `.`           | `MemoryAutomationPrincipalsDriver`                                                                         | the `AutomationPrincipals` port in memory: one principal per automation (ADR 0153)      |
 | `.`           | `GuardianActingService`, `MemoryGuardianshipDriver`                                                        | a guardian acting for a minor, after the relationship check                             |
 | `.`           | `VerificationService`, `MemoryVerificationDriver`                                                          | KYC and KYB through the providers the market pack lists                                 |
 | `./contracts` | `Verification`, `VerificationKind`, `VerificationStatus`, `StaffPinStore`, `Guardianship`, `SignInOptions` | the verification, PIN and guardianship ports; sign-in extras                            |
+| `./contracts` | `AutomationPrincipals`, `AutomationPrincipalInput`                                                         | mint and revoke the principal an automation runs as (ADR 0153 decision 2)               |
 | `./native`    | `ExpoSignInBrowserDriver`                                                                                  | Expo: the system authentication session and the app's link                              |
 | `./desktop`   | `ElectronSignInBrowserDriver`                                                                              | Electron main: the system browser and a loopback redirect                               |
 | `./react`     | `useSession`, `SessionValue`, `SignedInSession`                                                            | the session in a component                                                              |
@@ -123,9 +125,18 @@ WebCrypto. No `SignInBrowser` driver ships here yet: the Expo and Electron ones 
   `checkPublishableKey(key, origin, record.origins, identity)` before the lookup. The identity service stores
   `hashApiKey(key)` only; the gateway calls `ApiKeyVerifierService.verify(key, origin)`, which refuses a malformed key
   without a lookup, then reads the record by hash through `ApiKeyStore` and checks revocation, expiry and the origin.
+  A passing key's use is written through `ApiKeyStore.recordUse(id, at)` (the record's `lastUsedAt`, for key hygiene)
+  when the last one is older than `apiKeyLastUsedSeconds` (60; `0` writes every time). A failed write never refuses
+  the key. A store without the column keeps the port's no-op default.
 - **IdP admin.** `IdpAdmin` creates users and machine users, ends sessions, runs the device flow and sets login
   policies. `ZitadelIdpAdminDriver` reads `IdpAdminConfig` (key `idp_admin`): the URL of the managed or the tenant's own
-  ZITADEL, and the `IDENTITY_IDP_ADMIN_TOKEN` secret.
+  ZITADEL, and the `IDENTITY_IDP_ADMIN_TOKEN` secret. `listAuthMethods(userId)` answers a user's enrolled methods as
+  RFC 8176 `amr` codes, so `assuranceOf({ amr: methods }, identity).level` is the level they reach: the security
+  page's MFA enrolment list compares it with the MFA rule's level.
+- **Automation principals.** `AutomationPrincipals.mint({ automationId, tenantId, name })` gives an automation its own
+  `service` principal (ADR 0153 decision 2), the same one on every publish until `revoke(principalId)`. The identity
+  service implements it over its principals table; `MemoryAutomationPrincipalsDriver` serves tests. Its grants are
+  the publisher's choice, checked by `@stackra/workflow`'s `PublisherAccess`.
 - **Guardians.** `GuardianActingService.actFor(actor, minor, { purpose, birthDate, ageOfMajority })` checks the link,
   its restrictions and the pack's age, and returns the delegated principal to record.
 - **Verification.** `VerificationService.register(key, driver)` wires providers; `verify(request, resolved, on)` tries

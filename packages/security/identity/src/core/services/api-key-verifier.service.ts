@@ -3,13 +3,15 @@
  * Purpose: `ApiKeyVerifierService`, the gateway's verification of a presented API key: the text is parsed first (a
  *          malformed key or a bad checksum is refused with no lookup), then hashed and looked up by its hash in the
  *          `ApiKeyStore`, the stored hash compared in constant time, and the record checked for revocation, expiry and,
- *          for a publishable key, the request's origin.
+ *          for a publishable key, the request's origin. A passing key's use is recorded (`ApiKeyStore.recordUse`) when
+ *          its `lastUsedAt` is older than `IdentityConfig.apiKeyLastUsedSeconds`.
  * Boundary: every refusal is one `api_key_rejected`, whatever the reason, so a caller learns nothing about which keys
  *           exist. A secret key presented with an `Origin` (a browser) is refused: a secret key never lives in a
  *           browser. The prefixes are `IdentityConfig.apiKeyPrefixes` (configuration). Scopes and the tenant binding
- *           are the caller's next check. An unreachable store throws, so the request fails, never passes.
+ *           are the caller's next check. An unreachable store throws, so the request fails, never passes; a failed
+ *           use record does not refuse a valid key (the hygiene read is only ever late).
  * Runtime: isomorphic
- * Governing contract: ADR 0278 (decisions 3 to 7); COM-56; ADR 0410 (STA-835).
+ * Governing contract: ADR 0278 (decisions 3 to 7); COM-56; ADR 0410 (STA-835; last use, STA-1264).
  */
 import { Service } from "@stackra/container";
 import type { Clock } from "@stackra/contracts";
@@ -71,6 +73,20 @@ export class ApiKeyVerifierService extends Service {
     const browser = origin !== null && origin !== undefined;
     if (parsed.kind === ApiKeyKind.Secret ? browser : !isOriginAllowed(origin, record.origins))
       throw ApiKeyRejectedError.create();
+    await this.recordUse(record);
     return { kind: parsed.kind, record };
+  }
+
+  /** Writes `record`'s last use when it is older than the configured interval; a failure is swallowed. */
+  private async recordUse(record: VerifiedApiKey["record"]): Promise<void> {
+    const now = this.clock.now();
+    const last = record.lastUsedAt?.getTime();
+    if (last !== undefined && now.getTime() - last < this.config.apiKeyLastUsedSeconds * 1000)
+      return;
+    try {
+      await this.store.recordUse(record.id, now);
+    } catch {
+      // A lost last-use write only makes key hygiene late; refusing a valid key would be an outage.
+    }
   }
 }

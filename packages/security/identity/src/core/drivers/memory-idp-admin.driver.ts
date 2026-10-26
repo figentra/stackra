@@ -1,9 +1,10 @@
 /**
  * Stackra file contract:
  * Purpose: `MemoryIdpAdminDriver`, an `IdpAdmin` held in memory, for tests and local runs: users, machine users,
- *          sessions, device flows and login policies live in maps a test can read back.
+ *          sessions, device flows, login policies and enrolled authentication methods live in maps a test can read back.
  * Boundary: process-local; never a real provider. Ids and secrets are random; a device flow stays pending until the
- *           test approves or denies it with `approveDevice` / `denyDevice`. `openSession` adds a session to end.
+ *           test approves or denies it with `approveDevice` / `denyDevice`. `openSession` adds a session to end;
+ *           `enrolAuthMethod` adds an `amr` code to a user.
  * Runtime: isomorphic
  * Governing contract: ADR 0263 (a driver is named by its class: `memory`); ADR 0266 (decision 2); ADR 0410 (STA-834).
  */
@@ -46,6 +47,9 @@ export class MemoryIdpAdminDriver extends Driver(IdpAdmin) {
   /** Organisation id to its login policy. */
   readonly policies = new Map<string, LoginPolicy>();
 
+  /** User id to the `amr` codes of its enrolled methods. */
+  readonly authMethods = new Map<string, string[]>();
+
   /** Device code to its state. */
   private readonly devices = new Map<string, DeviceTokenStatus>();
 
@@ -69,6 +73,7 @@ export class MemoryIdpAdminDriver extends Driver(IdpAdmin) {
   /** See `IdpAdmin.removeUser`. */
   async removeUser(userId: string): Promise<void> {
     this.users.delete(userId);
+    this.authMethods.delete(userId);
     await this.endSessions(userId);
   }
 
@@ -120,6 +125,17 @@ export class MemoryIdpAdminDriver extends Driver(IdpAdmin) {
     if (status !== DeviceTokenStatus.Issued) return { status };
     this.devices.delete(deviceCode);
     return { status, accessToken: randomToken(), expiresIn: 3600 };
+  }
+
+  /** Enrols `userId` in the method `amr` (an RFC 8176 code), once. */
+  enrolAuthMethod(userId: string, amr: string): void {
+    const methods = this.authMethods.get(userId) ?? [];
+    if (!methods.includes(amr)) this.authMethods.set(userId, [...methods, amr]);
+  }
+
+  /** See `IdpAdmin.listAuthMethods`; a user with none, or unknown, has none. */
+  async listAuthMethods(userId: string): Promise<readonly string[]> {
+    return [...(this.authMethods.get(userId) ?? [])];
   }
 
   /** See `IdpAdmin.setLoginPolicy`. */

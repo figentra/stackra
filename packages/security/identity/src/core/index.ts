@@ -3,7 +3,7 @@
  * Purpose: Stand-in barrel: the `.` entry of @stackra/identity (the configuration with its shipped schema, the flows
  *          and statuses, the session service, the session drivers, the claims mapping, the `ClientSession`,
  *          `OfflineSession` and memory `IdentityResolver` drivers, step-up, external sign-in, staff PINs, API keys and
- *          their verification by hash, the identity provider admin drivers (ZITADEL, memory) with their configuration,
+ *          their verification by hash, automation principals in memory, the identity provider admin drivers (ZITADEL, memory) with their configuration,
  *          guardians acting for minors, KYC and KYB verification, and the refusals) until `stackra gen` writes the
  *          entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. `SessionStore`, `SignInBrowser` and `SessionUser` are exported
@@ -20,6 +20,7 @@ export { IDENTITY_CONFIG_SCHEMA as IdentityConfig$ } from "#core/constants/ident
 export { IDP_ADMIN_CONFIG_SCHEMA as IdpAdminConfig$ } from "#core/constants/idp-admin-config-schema.constant";
 export { BffSessionStoreDriver } from "#core/drivers/bff-session-store.driver";
 export { MemoryApiKeyStoreDriver } from "#core/drivers/memory-api-key-store.driver";
+export { MemoryAutomationPrincipalsDriver } from "#core/drivers/memory-automation-principals.driver";
 export { MemoryGuardianshipDriver } from "#core/drivers/memory-guardianship.driver";
 export { MemoryIdpAdminDriver } from "#core/drivers/memory-idp-admin.driver";
 export { MemoryIdentityResolverDriver } from "#core/drivers/memory-identity-resolver.driver";

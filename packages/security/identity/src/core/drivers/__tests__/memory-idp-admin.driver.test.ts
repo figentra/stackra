@@ -2,10 +2,11 @@
  * Stackra file contract:
  * Purpose: unit tests of `MemoryIdpAdminDriver`: it is the `IdpAdmin` port; users and machine users are created with a
  *          taken login name refused per organisation; deactivation, removal and ending sessions; the device flow stays
- *          pending until approved or denied; login policies are kept per organisation.
+ *          pending until approved or denied; login policies are kept per organisation; enrolled methods are listed once
+ *          each and dropped with the user.
  * Boundary: test only.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0410 (STA-834).
+ * Governing contract: ADR 0022; ADR 0410 (STA-834); STA-1264.
  */
 import { describe, expect, it } from "@stackra/testing";
 
@@ -82,5 +83,17 @@ describe(MemoryIdpAdminDriver, () => {
     );
     await idp.setLoginPolicy("org_1", POLICY);
     expect(idp.policies.get("org_1")).toEqual(POLICY);
+  });
+
+  it("lists enrolled authentication methods once each and drops them with the user", async () => {
+    const idp = new MemoryIdpAdminDriver();
+    const userId = await idp.createUser(RANA);
+    expect(await idp.listAuthMethods(userId)).toEqual([]);
+    idp.enrolAuthMethod(userId, "pwd");
+    idp.enrolAuthMethod(userId, "otp");
+    idp.enrolAuthMethod(userId, "otp");
+    expect(await idp.listAuthMethods(userId)).toEqual(["pwd", "otp"]);
+    await idp.removeUser(userId);
+    expect(await idp.listAuthMethods(userId)).toEqual([]);
   });
 });

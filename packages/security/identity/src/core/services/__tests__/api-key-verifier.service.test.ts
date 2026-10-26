@@ -3,10 +3,11 @@
  * Purpose: unit tests of `ApiKeyVerifierService`: an issued secret key from a server and a publishable key from a
  *          bound origin pass with their record; a malformed key is refused without a lookup; an unknown, revoked or
  *          expired key, a publishable key from an unbound origin and a secret key from a browser are each refused
- *          `api_key_rejected`; an unreachable store throws.
+ *          `api_key_rejected`; an unreachable store throws; a passing key's last use is written only when older than
+ *          the configured interval, and a failed write does not refuse the key.
  * Boundary: test only; the memory store, the default identity configuration and a fixed clock.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0278 (decisions 3 to 7); COM-56; ADR 0410 (STA-835).
+ * Governing contract: ADR 0022; ADR 0278 (decisions 3 to 7); COM-56; ADR 0410 (STA-835); STA-1264 (last use).
  */
 import { buildConfig } from "@stackra/config";
 import { Driver } from "@stackra/container";
@@ -105,6 +106,37 @@ describe(ApiKeyVerifierService, () => {
     await expect(verifier.verify(publishable)).rejects.toBeInstanceOf(ApiKeyRejectedError);
     const secret = await issue(ApiKeyKind.Secret);
     await expect(verifier.verify(secret, SHOP)).rejects.toBeInstanceOf(ApiKeyRejectedError);
+  });
+
+  it("records a key's last use only when it is older than the interval", async () => {
+    const fresh = await issue(ApiKeyKind.Secret);
+    await verifier.verify(fresh);
+    expect((await store.findByHash(await hashApiKey(fresh)))?.lastUsedAt).toEqual(NOW);
+    const recent = new Date(NOW.getTime() - 30_000);
+    const quiet = await issue(ApiKeyKind.Secret, { lastUsedAt: recent });
+    await verifier.verify(quiet);
+    expect((await store.findByHash(await hashApiKey(quiet)))?.lastUsedAt).toEqual(recent);
+    const stale = await issue(ApiKeyKind.Secret, { lastUsedAt: new Date(NOW.getTime() - 61_000) });
+    await verifier.verify(stale);
+    expect((await store.findByHash(await hashApiKey(stale)))?.lastUsedAt).toEqual(NOW);
+  });
+
+  it("passes a valid key when its last use cannot be written", async () => {
+    const broken = new (class extends MemoryApiKeyStoreDriver {
+      override recordUse(): Promise<void> {
+        return Promise.reject(new Error("write failed"));
+      }
+    })();
+    const key = mintApiKey(ApiKeyKind.Secret, config);
+    broken.add({
+      id: "key_2",
+      hash: await hashApiKey(key),
+      principal: "usr_bot",
+      scopes: [],
+      origins: [],
+    });
+    const lenient = new ApiKeyVerifierService(broken, config, new FixedClockDriver());
+    expect((await lenient.verify(key)).record.id).toBe("key_2");
   });
 
   it("fails, never passes, when the store is down", async () => {

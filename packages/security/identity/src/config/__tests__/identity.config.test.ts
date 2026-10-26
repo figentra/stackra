@@ -96,6 +96,7 @@ describe("IdentityConfig", () => {
       pinLockoutMinutes: 15,
       managerOverrideSeconds: 120,
       apiKeyPrefixes: { secret: "stackra_sk", publishable: "stackra_pk" },
+      apiKeyLastUsedSeconds: 60,
       verificationPackKey: "verification.drivers",
       signInTimeoutMinutes: 10,
     });

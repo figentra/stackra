@@ -3,7 +3,7 @@
  * Purpose: `IDENTITY_CONFIG_SCHEMA`, the zod schema this package ships for `IdentityConfig` (exported as
  *          `IdentityConfig$`): the flow per target, the public client of a device, the scopes, the BFF mount, the
  *          device redirect path, the route after sign-out, the idle rule and the refresh switches, plus the external
- *          providers, the step-up rule, the staff PIN rules, the API key prefixes and the market-pack keys sign-in and
+ *          providers, the step-up rule, the staff PIN rules, the API key prefixes, the last-use write interval and the market-pack keys sign-in and
  *          verification read.
  * Boundary: the stand-in for what gen writes for this package. Every field has a default and there is no object-level
  *           refinement, so `.parse({})` gives the full defaults and a member's generated `IdentityConfig$` extends it
@@ -109,6 +109,7 @@ export const IDENTITY_CONFIG_SCHEMA = z.object({
       [ApiKeyKind.Secret]: "stackra_sk",
       [ApiKeyKind.Publishable]: "stackra_pk",
     })),
+  apiKeyLastUsedSeconds: z.number().int().min(0).max(86_400).default(60),
   verificationPackKey: z.string().regex(PACK_KEY).default("verification.drivers"),
   signInTimeoutMinutes: z.number().int().min(1).max(60).default(10),
 });

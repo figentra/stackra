@@ -4,7 +4,7 @@
  *          what it asks the provider for, where the BFF is mounted, the device redirect path, the route after sign-out,
  *          the idle rule and when the session is read again; the external identity providers and the pack key that
  *          lists a market's, the assurance each method reaches and how long a step-up lasts, the staff PIN rules, the
- *          API key prefixes, the pack key of the verification providers and the desktop sign-in wait.
+ *          API key prefixes and how often a key's last use is written, the pack key of the verification providers and the desktop sign-in wait.
  * Boundary: a shape class; it registers this package's own schema (`IDENTITY_CONFIG_SCHEMA`) for itself when the module
  *           loads, so `buildConfig(IdentityConfig)` validates with no generated file. It holds no secret: a browser has
  *           no client credential (the BFF holds it, by name), and a device is a public client whose id and issuer are
@@ -113,6 +113,12 @@ export class IdentityOptions extends Schema {
     [ApiKeyKind.Secret]: "stackra_sk",
     [ApiKeyKind.Publishable]: "stackra_pk",
   };
+
+  /**
+   * Seconds a key's `lastUsedAt` may lag: a verification writes it only when it is older than this, so a busy key is
+   * not a write per request. `0` writes on every verification.
+   */
+  apiKeyLastUsedSeconds = 60;
 
   /** The market-pack key mapping each verification kind to its providers, in the order they are tried. */
   verificationPackKey = "verification.drivers";

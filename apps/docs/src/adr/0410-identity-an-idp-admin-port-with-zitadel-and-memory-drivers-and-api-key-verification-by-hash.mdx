@@ -10,6 +10,15 @@ description: "Proposed · 2026-10-26"
   [0278](/adr/0278-api-key-lifecycle). Linear STA-834, STA-835.
 </Note>
 
+<Note>
+  Note 2026-10-26 (STA-1264), additive: `IdpAdmin.listAuthMethods(userId)` answers a user's enrolled
+  authentication methods as RFC 8176 `amr` codes (the ZITADEL driver maps its method types; the
+  level each code reaches stays `IdentityConfig.assuranceByMethod`), for the security page's MFA
+  enrolment list. `ApiKeyRecord` gains `lastUsedAt` and `ApiKeyStore` gains `recordUse(id, at)` with
+  a no-op default; `ApiKeyVerifierService` writes it after a passing verification when it is older
+  than `IdentityConfig.apiKeyLastUsedSeconds` (60), and a failed write never refuses the key.
+</Note>
+
 ## Context
 
 Nothing in Stackra created a ZITADEL user or machine user, ended a session, ran the OAuth device flow or set an
