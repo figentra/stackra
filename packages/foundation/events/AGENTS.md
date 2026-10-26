@@ -29,6 +29,9 @@ Event and listener kind bases, the in-process bus and the event testing helpers.
   consumed service's generated event class (typed by its payload) stands beside a local one (ADR 0260 decision 4).
 - `connect(container)` and `disconnect()` are called by the generated boot only (ADR 0263); `disconnect` removes the
   subscriptions `connect` made and nothing else.
+- Listeners run after commit only (README "When a listener runs"): a domain event through the unit of work's dispatch
+  and drain, an integration event (its own service's included) only through the outbox, the relay and the inbox. Never
+  dispatch an integration event to the bus inside a transaction to make its listeners run sooner.
 - An event holds its payload only; metadata travels in `RecordedEvent`. No constructor-made state on events or on
   aggregates (recording is a WeakMap beside the aggregate).
 - Never import `@stackra/outbox`, `@stackra/analytics`, `@stackra/integrations` or `@stackra/realtime`; they import

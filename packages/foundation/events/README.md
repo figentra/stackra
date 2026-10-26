@@ -73,6 +73,24 @@ Another service's event is subscribed to the same way: import its class from `#s
 `instanceof` and `registerListeners` takes it; there is no subscription by wire name. In a test,
 `deliverRemoteEvent(AppApproved, { appId })` builds it through its payload schema.
 
+### When a listener runs
+
+Every in-process listener (`extends Listener`) runs after the commit, never inside the transaction, and a rolled-back
+unit of work runs none (ADR 0078 decision 4). The path differs by event kind:
+
+| Event                                                  | Path to the listener                                                                                                                                       | Runs                                                                     |
+| ------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| `DomainEvent`                                          | the unit of work dispatches it to the bus after the commit and drains it                                                                                   | at the end of the same call                                              |
+| The service's own `IntegrationEvent`                   | written to the outbox in the transaction; the relay publishes the committed row; the service's inbox claims its id, `deliver`s it to the bus and drains it | once per event id, within the relay's lag (under five seconds, ADR 0221) |
+| Another service's event (`#stackra/clients/<service>`) | the producer's relay, the broker topic, this service's generated subscription, its inbox                                                                   | once per event id                                                        |
+
+So a listener on its own service's integration event (scheduling-calendar's `BookingCreated`) runs in process, after
+commit and once, but not synchronously with the call: read the committed row, never state the call left in memory. It
+reaches the service's own inbox through the outbox's `inbox` publisher driver. With the `broker` driver it does so
+only when gen subscribes the service to its own topics; gen does not yet (STA-1267 follow-up, owned by
+`packages/developer/gen`), so a service that runs the broker driver and listens to its own integration events needs
+that subscription first. `src/testing/functions/__tests__/drain-outbox.after-commit.test.ts` pins the guarantee.
+
 A service's generated boot (`#stackra/boot`) calls `bus.connect(container)` once the container is ready, which
 subscribes every registered listener the container binds, and `bus.disconnect()` when the shutdown signal aborts,
 which removes exactly those (direct `subscribe` calls stay).
