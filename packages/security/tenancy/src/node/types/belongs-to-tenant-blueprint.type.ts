@@ -13,8 +13,9 @@ declare module "@stackra/database" {
   interface Blueprint {
     /**
      * The `BelongsToTenant` trait's column on a table being created: `tenant_id varchar(33) not null`, indexed, and
-     * forced row-level security with the equality policy `pol_<table>_tenant_id` on `app.tenant_id`.
+     * forced row-level security with the equality policy `pol_<table>_tenant_id` on `app.tenant_id`. With
+     * `nullable: true`, the nullable column of `BelongsToTenantOrPlatform`: NULL rows are the platform's.
      */
-    belongsToTenant(): ColumnGroup;
+    belongsToTenant(options?: { readonly nullable?: boolean }): ColumnGroup;
   }
 }

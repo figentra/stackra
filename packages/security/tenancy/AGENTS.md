@@ -3,7 +3,7 @@
 Tenant isolation (the trait, the macro and its equality policy, `withTenant`), the tenant level of the scope tree as
 data, the tenancy step of the resolver chain, and the client's tenant switcher (ADR 0239, 0327 d8). Member at
 `packages/security/tenancy` (`tier:lib`), in the programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./node`,
-`./react`.
+`./react`, `./testing`.
 
 ## Where code goes
 
@@ -17,11 +17,13 @@ data, the tenancy step of the resolver chain, and the client's tenant switcher (
 | A server service, an internal server constant       | `src/node/{services,constants}/`               |
 | A hook                                              | `src/react/tenant/`                            |
 | A label                                             | `assets/lang/{en,ar}/tenancy.json`             |
+| A port and its type (tokens, billing contacts)      | `src/core/{ports,types}/`                      |
+| A test helper                                       | `src/testing/functions/`                       |
 | A test                                              | `__tests__/<name>.<kind>.test.ts` beside it    |
 
 ## Entries and barrels
 
-- `src/{core,node,react}/index.ts` are stand-in barrels until gen writes the entry barrels (STA-339); add every new
+- `src/{core,node,react,testing}/index.ts` are stand-in barrels until gen writes the entry barrels (STA-339); add every new
   public file to its barrel and to that entry's `index.test.ts`.
 - `node` and `react` import `core` through `#core/index`; `react` also re-exports `TenantMembership` from its declaring
   file, which `.` does not export (one symbol, one entry).
@@ -42,6 +44,10 @@ data, the tenancy step of the resolver chain, and the client's tenant switcher (
   comment (ADR 0160).
 - A sandbox or a share is never a grant and never a tree position. Transfer rules, sandbox allowances and the terms of
   an item kind are data (market packs, plan catalogue, the share); never name a law, country or number here.
+- `BelongsToTenantOrPlatform` and `t.belongsToTenant({ nullable: true })` need @stackra/database's `equalsOrUnset`
+  match; never fall back to a hand-written policy or a second one.
+- A tenant token is stored by its SHA-256 only and resolves for its one purpose; never log or store the token itself.
+- `./testing` imports `./node` internals only, never another package's `./testing`.
 - No parameter properties and no `#private` fields: apps typecheck this source under `erasableSyntaxOnly`.
 
 ## Rules that fail the build
@@ -52,8 +58,10 @@ data, the tenancy step of the resolver chain, and the client's tenant switcher (
 
 ## PII
 
-| Data        | Where                             | Handling                                                         |
-| ----------- | --------------------------------- | ---------------------------------------------------------------- |
-| Tenant name | `TenantMembership.name`           | An organisation's display name, not personal data; never logged. |
-| Roles       | `TenantMembership.role`, `.roles` | Role codes from the session; read, never stored or computed.     |
-| Caller      | `withTenant(actor, …)`, the step  | Public ids from the verified credential; never stored or logged. |
+| Data            | Where                             | Handling                                                         |
+| --------------- | --------------------------------- | ---------------------------------------------------------------- |
+| Tenant name     | `TenantMembership.name`           | An organisation's display name, not personal data; never logged. |
+| Roles           | `TenantMembership.role`, `.roles` | Role codes from the session; read, never stored or computed.     |
+| Caller          | `withTenant(actor, …)`, the step  | Public ids from the verified credential; never stored or logged. |
+| Billing contact | `TenantBillingContact`            | A member id or an email address; read to send, never logged.     |
+| Tenant token    | `TenantTokenService`              | A bearer secret: only its SHA-256 is stored; never logged.       |

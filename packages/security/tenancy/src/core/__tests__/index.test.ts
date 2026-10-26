@@ -17,12 +17,16 @@ import { TenancyScopes } from "#core/enums/tenancy-scopes.enum";
 import { TenantRequiredError } from "#core/errors/tenant-required.error";
 import { isTenantId } from "#core/functions/is-tenant-id.function";
 import { TenantSwitcher } from "#core/services/tenant-switcher.service";
+import { TenantTokenService } from "#core/services/tenant-token.service";
+import { TenantBillingContacts } from "#core/ports/tenant-billing-contacts.port";
 
 describe("@stackra/tenancy", () => {
   it("exports exactly the switcher, sandboxes, shares, the level data, the drivers, the check and the refusals", () => {
     expect(Object.keys(core).sort()).toEqual([
       "MemorySandboxTenantsDriver",
+      "MemoryTenantBillingContactsDriver",
       "MemoryTenantSharesDriver",
+      "MemoryTenantTokensDriver",
       "RevokedCopy",
       "SandboxNotFoundError",
       "SandboxTenantService",
@@ -33,6 +37,7 @@ describe("@stackra/tenancy", () => {
       "TENANT_SCOPE_LEVEL",
       "TenancyCronScopesDriver",
       "TenancyScopes",
+      "TenantBillingContacts",
       "TenantEnvironment",
       "TenantMembershipMissingError",
       "TenantRequiredError",
@@ -40,6 +45,8 @@ describe("@stackra/tenancy", () => {
       "TenantShareService",
       "TenantShares",
       "TenantSwitcher",
+      "TenantTokenService",
+      "TenantTokens",
       "TransferCheck",
       "TransferRefusedError",
       "isTenantId",
@@ -55,5 +62,7 @@ describe("@stackra/tenancy", () => {
     expect(core.TenancyScopes).toBe(TenancyScopes);
     expect(core.TenantRequiredError).toBe(TenantRequiredError);
     expect(core.isTenantId).toBe(isTenantId);
+    expect(core.TenantTokenService).toBe(TenantTokenService);
+    expect(core.TenantBillingContacts).toBe(TenantBillingContacts);
   });
 });
