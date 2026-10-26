@@ -1,0 +1,38 @@
+---
+title: "0421 — House oxlint JS plugins load from their source file"
+description: "Proposed · 2026-10-26"
+---
+
+<Note>
+  Proposed (STA-779 remainder). It amends how the house rules of
+  [0129](/adr/0129-house-lint-plugin-and-coding-standard) are loaded in this repo.
+</Note>
+
+## Context
+
+The `feature-flags/no-plan-targeting` rule (ADR 0213 decision 7) ships as the `./lint` entry of
+`@stackra/feature-flags`. Loading it through the package export needs a built dist; the root `lint` task has no build
+dependency, and a `tier:config` preset may take no library dependency, so wiring it broke lint on every unbuilt
+checkout.
+
+## Decision
+
+1. **Source path.** `packages/tooling/oxlint/src/base.jsonc` loads the plugin from its source file by a path relative to
+   the preset. Node strips the types, so a lint run needs no build and no `^build` dependency.
+2. **Loadable files.** A plugin loaded this way imports values only by relative `.ts` paths; types may use subpath
+   imports. A test of each plugin file checks it.
+3. **Other repos** load the built `@stackra/feature-flags/lint` entry as before.
+
+## Consequences
+
+- The rule is an error in every member's lint run.
+- A future house plugin follows the same rule or is not added to the base preset.
+
+## Enforcement
+
+planned — `packages/tooling/oxlint/src/__tests__/presets.test.ts` and
+`packages/state/feature-flags/src/lint/constants/__tests__/feature-flags-lint-plugin.constant.test.ts`.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: STA-779.

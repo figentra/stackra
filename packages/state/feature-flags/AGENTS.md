@@ -21,6 +21,8 @@ programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./li
 
 - A flag is a release switch or experiment arm, never a commercial right (entitlements, ADR 0213 decision 7); the
   `feature-flags/no-plan-targeting` rule of `./lint` refuses a flag named or optioned after a plan, tier or edition.
+- The oxlint base preset loads `src/lint/constants/feature-flags-lint-plugin.constant.ts` from source: the plugin and
+  rule files import values only by relative `.ts` paths (types may use `#lint/...`), or lint breaks repo-wide.
 - Keys and label keys are derived from the class name and module; never add a `key` option.
 - A `null` subject is anonymous: PostHog is not asked and every flag stays at its default.
 - `./contracts` imports no other entry; `src/*/index.ts` are stand-in barrels until gen writes them (STA-339).

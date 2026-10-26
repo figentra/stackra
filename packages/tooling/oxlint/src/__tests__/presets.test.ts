@@ -19,6 +19,15 @@ describe("@stackra/oxlint-config presets", () => {
     });
   }
 
+  it("base.jsonc loads every JS plugin from a source file that exists", () => {
+    const text = readFileSync(join(root, "src", "base.jsonc"), "utf8");
+    const plugins = /"jsPlugins":\s*\[([^\]]*)\]/.exec(text)?.[1] ?? "";
+    const paths = [...plugins.matchAll(/"([^"]+)"/g)].map((match) => match[1] ?? "");
+    expect(paths).toHaveLength(1);
+    for (const path of paths) expect(existsSync(join(root, "src", path))).toBe(true);
+    expect(text).toContain('"feature-flags/no-plan-targeting": "error"');
+  });
+
   it("boundaries.jsonc keeps the tier rule", () => {
     const text = readFileSync(join(root, "src", "boundaries.jsonc"), "utf8");
     expect(text).toContain('"**/apps/**"');

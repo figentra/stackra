@@ -88,7 +88,8 @@ from the host's env configuration (`featureFlagsPosthogKey`).
 
 A flag is never a commercial right (ADR 0213 decision 7): a paid feature is an entitlement. The `feature-flags` oxlint
 plugin refuses a flag named after a plan, tier, edition, entitlement or subscription (`ProPlanFlag`) and a `Flag({...})`
-option keyed by one (`plans: [...]`).
+option keyed by one (`plans: [...]`). In this repo the rule is on in the oxlint base preset, which loads the plugin
+from its source file, so lint needs no build (ADR 0421). Another repo loads the built entry:
 
 ```jsonc
 {

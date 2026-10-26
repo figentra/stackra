@@ -1,5 +1,6 @@
 // Stackra file contract:
-// Purpose: shared oxlint base — correctness is an error, suspicious a warning, `any` and unused code are errors.
+// Purpose: shared oxlint base — correctness is an error, suspicious a warning, `any` and unused code are errors;
+//          house rules shipped as JS plugins (feature-flags/no-plan-targeting, ADR 0213 d7) are errors.
 //          Do NOT extend directly from a workspace; extend a role preset (node/react/decorators).
 // Scope: every TypeScript/JavaScript file in the repo
 // Owner: release-operations
@@ -7,6 +8,11 @@
 {
   "$schema": "../../../../node_modules/oxlint/configuration_schema.json",
   "plugins": ["typescript", "unicorn", "oxc", "import", "jsdoc"],
+  // Loaded from source (Node strips the types), so lint never needs a built dist and the root lint task keeps no
+  // ^build dependency (ADR 0421). The path is relative to this file; the plugin is a file, not a package dependency.
+  "jsPlugins": [
+    "../../../state/feature-flags/src/lint/constants/feature-flags-lint-plugin.constant.ts",
+  ],
   "categories": { "correctness": "error", "suspicious": "warn" },
   "env": { "es2024": true },
   "rules": {
@@ -22,6 +28,8 @@
     // Side-effect imports for CSS and polyfills.
     "import/no-unassigned-import": "off",
     "import/no-cycle": "error",
+    // A flag is a release switch, never a commercial right (ADR 0213 decision 7).
+    "feature-flags/no-plan-targeting": "error",
     // TSDoc tags (ADR 0007, amended 2026-10-21). oxlint 1.86 has no jsdoc/no-types, so the `{type}`
     // ban lives in tools/scripts/doc-standard.mjs.
     "jsdoc/check-tag-names": [
