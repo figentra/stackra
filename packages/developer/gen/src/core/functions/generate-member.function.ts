@@ -8,13 +8,15 @@
  *          service, the package entries or runtime entries, and the tool configs, after the identity checks and,
  *          against the committed manifest, the `@Renamed` lock.
  * Boundary: pure: returns files, never writes them. Any error (discovery's, the manifest's or the lock's) means no
- *           file at all, so a broken run never leaves half an output behind. Other per-target outputs (navigation
+ *           file at all, so a broken run never leaves half an output behind. Two narrower passes break cycles between
+ *           services: the manifest pass (the manifest alone, not blocked by a consumed workspace service whose
+ *           manifest is still to come) and the clients pass (the client files alone, from the producers' manifests). Other per-target outputs (navigation
  *           trees, i18n, the rest of the Encore app, ...) are added by their owning targets.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 10, 22 and 26); ADR 0295 (decisions 5 and 7); ADR 0305 (rules 15, 16 and
  *                     36); ADR 0097 (decision 3); registry v3.1 section 5 (gen-core items 2 to 6 and gap G1); ADR 0148
  *                     (decisions 3, 4 and 6: Encore CronJobs and Pub/Sub in SaaS); ADR 0260 (decision 3: one
- *                     generated client per service; decision 4: the relay hears every event).
+ *                     generated client per service; decision 4: the relay hears every event; a cycle between services is allowed at the manifest level).
  */
 import type { StackraManifest } from "@stackra/contracts";
 
@@ -53,6 +55,9 @@ function json(value: unknown): string {
  *
  * @param ir - the member read by discovery.
  * @param previous - the committed manifest, whose identities are locked; absent on the first run.
+ * @param options - `pass`: `"manifests"` returns the manifest alone, refused by anything but a consumed workspace
+ *                  service still to come; `"clients"` returns the client files alone, refused only by the clients
+ *                  target. Omitted, every file.
  * @example
  * const { files, errors } = generateMember(ir, committed);
  * if (errors.length === 0) files.map((file) => file.path);
@@ -60,6 +65,7 @@ function json(value: unknown): string {
 export function generateMember(
   ir: MemberIR,
   previous?: StackraManifest,
+  options: { readonly pass?: "manifests" | "clients" } = {},
 ): {
   readonly files: readonly GeneratedFile[];
   readonly errors: readonly GenError[];
@@ -76,6 +82,18 @@ export function generateMember(
     all.push(...checkIdentityLock(previous, manifest, renames));
   }
   const clients = emitClients(ir);
+  if (options.pass === "clients") return { ...clients, manifest };
+  if (options.pass === "manifests") {
+    // A manifest never depends on a client: services of the same workspace are still to come, so only others refuse.
+    all.push(...emitClients(ir, { pending: new Set(ir.workspaceServices) }).errors);
+    return all.length > 0
+      ? { files: [], errors: all, manifest }
+      : {
+          files: [{ path: "stackra.manifest.json", content: json(manifest) }],
+          errors: [],
+          manifest,
+        };
+  }
   all.push(...clients.errors);
   if (all.length > 0) return { files: [], errors: all, manifest };
 

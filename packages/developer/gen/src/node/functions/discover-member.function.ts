@@ -3,7 +3,7 @@
  * Purpose: `discoverMember`, gen's discovery: opens the member's program behind the host seam, reads every kind
  *          class, shape, enum and file export of its own sources (sorted by path), its dependency package names and the
  *          committed manifests of those that ship one, the committed manifests of the services it injects a client
- *          of or listens to an event of (for a member with a relay, every publishing sibling service's), its modules and its authored root module, and fills each `DriverName<Port>` field with the driver names
+ *          of or listens to an event of (for a member with a relay, every publishing sibling service's; and which of those exist beside it in the workspace), its modules and its authored root module, and fills each `DriverName<Port>` field with the driver names
  *          found for that port: the `MemberIR` every gen output is a pure function of.
  * Boundary: reads the member; writes nothing. Refusals are collected into `errors`, never thrown; only an unreadable
  *           package.json, tsconfig or dependency manifest throws. The program is always closed.
@@ -13,11 +13,12 @@
  *                     producer's manifest).
  */
 import { existsSync, readdirSync } from "node:fs";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 
 import { CLIENTS_SPECIFIER } from "#core/constants/clients-specifier.constant";
 import { driverName } from "#core/functions/driver-name.function";
 import { folderKey } from "#core/functions/folder-key.function";
+import { kebabCase } from "#core/functions/kebab-case.function";
 import type { DeclaredClass } from "#core/types/declared-class.type";
 import type { EnumIR } from "#core/types/enum-ir.type";
 import type { FileExports } from "#core/types/file-exports.type";
@@ -84,20 +85,26 @@ export async function discoverMember(
       files.push(reader.exports(file));
     }
     const dependencies = readDependencyManifests(facts.root, facts.dependencies);
-    const services = readServiceManifests(
-      facts.root,
-      // A service is consumed by an injected client or by a listener of one of its events.
-      classes.flatMap((declared) =>
-        [...declared.deps.map((dep) => dep.class.from), declared.handle?.event?.from ?? ""]
-          .filter((from) => from.startsWith(CLIENTS_SPECIFIER))
-          .map((from) => from.slice(CLIENTS_SPECIFIER.length)),
-      ),
+    // A service is consumed by an injected client or by a listener of one of its events.
+    const consumed = classes.flatMap((declared) =>
+      [...declared.deps.map((dep) => dep.class.from), declared.handle?.event?.from ?? ""]
+        .filter((from) => from.startsWith(CLIENTS_SPECIFIER))
+        .map((from) => from.slice(CLIENTS_SPECIFIER.length)),
     );
     // A relay service hears every integration topic of the product (ADR 0260 decision 4).
     const publishers =
       facts.layout === "service" && classes.some((declared) => declared.handle?.relay === true)
         ? readPublisherManifests(facts.root)
         : [];
+    const services = readServiceManifests(facts.root, consumed);
+    // Consumed services with a folder beside the member: the manifest pass waits for these instead of refusing them.
+    const workspaceServices = [...new Set(consumed)]
+      .filter((service) =>
+        [service, kebabCase(service)].some((folder) =>
+          existsSync(join(dirname(facts.root), folder, "package.json")),
+        ),
+      )
+      .sort();
 
     // Driver names per port class: this member's drivers, then each dependency's.
     const names = new Map<string, Set<string>>();
@@ -164,6 +171,7 @@ export async function discoverMember(
       dependencies,
       ...(services.length > 0 ? { services } : {}),
       ...(publishers.length > 0 ? { publishers } : {}),
+      ...(workspaceServices.length > 0 ? { workspaceServices } : {}),
       errors: [...reader.errors],
     };
   } finally {

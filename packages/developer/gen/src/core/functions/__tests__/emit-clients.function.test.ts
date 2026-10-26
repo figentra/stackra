@@ -5,7 +5,10 @@
  *          after the producer's classes, and the `<Service>Client` with members grouped by model); the refusals for
  *          a service without a manifest and a client imported under another name; a service consumed only by a
  *          listener of its event, and the refusal of an event it does not publish; and `generateMember` writing the
- *          file and binding the client with its `ClientTransport`.
+ *          file and binding the client with its `ClientTransport`; the two passes that break a cycle between services:
+ *          a `pending` service skipped, the manifest pass writing the manifest alone while a consumed workspace
+ *          service has none yet (and refusing one outside the workspace), and the clients pass writing the clients
+ *          alone despite another refusal.
  * Boundary: test only; the producer is the commerce IR fixture's manifest, the consumer a one-class service IR.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0260 (decisions 2 to 6); ADR 0263 (a class is its own token).
@@ -161,5 +164,83 @@ describe("generateMember with a consumed client", () => {
     expect(wiring).toContain(
       '    { module: "storefront", kind: "service", provide: CommerceClient, deps: [ClientTransport] },',
     );
+  });
+});
+
+describe("the passes that break a cycle between services", () => {
+  const waiting = consumer({ services: [], workspaceServices: ["commerce"] });
+
+  it("skips a pending service: no file, no refusal", () => {
+    expect(emitClients(waiting, { pending: new Set(["commerce"]) })).toEqual({
+      files: [],
+      errors: [],
+    });
+  });
+
+  it("writes the manifest alone while a consumed workspace service has none yet", () => {
+    const { files, errors } = generateMember(waiting, undefined, { pass: "manifests" });
+    expect(errors).toEqual([]);
+    expect(files.map((file) => file.path)).toEqual(["stackra.manifest.json"]);
+    expect(generateMember(waiting).errors.map((error) => error.code)).toEqual([
+      "client_service_unknown",
+    ]);
+  });
+
+  it("still refuses, in the manifest pass, a service outside the workspace and a misnamed client", () => {
+    const outside = consumer({ services: [] });
+    expect(
+      generateMember(outside, undefined, { pass: "manifests" }).errors.map((error) => error.code),
+    ).toEqual(["client_service_unknown"]);
+    const misnamed = consumer({
+      classes: [consumerClass("ShopClient", "commerce")],
+      services: [],
+      workspaceServices: ["commerce"],
+    });
+    expect(
+      generateMember(misnamed, undefined, { pass: "manifests" }).errors.map((error) => error.code),
+    ).toEqual(["client_name_mismatch"]);
+  });
+
+  it("still refuses, in the manifest pass, the member's own errors", () => {
+    const broken = consumer({
+      services: [],
+      workspaceServices: ["commerce"],
+      errors: [
+        {
+          code: "shape_unknown_type",
+          file: "src/modules/storefront/models/x.model.ts",
+          line: 1,
+          column: 1,
+          subject: "X.kind",
+          message: "`Kind` is not a shape type",
+          fix: "use a shape type",
+        },
+      ],
+    });
+    const { files, errors } = generateMember(broken, undefined, { pass: "manifests" });
+    expect(files).toEqual([]);
+    expect(errors.map((error) => error.code)).toEqual(["shape_unknown_type"]);
+  });
+
+  it("writes the clients alone in the clients pass, whatever else the member refuses", () => {
+    const { files, errors } = generateMember(
+      consumer({
+        errors: [
+          {
+            code: "shape_unknown_type",
+            file: "src/modules/storefront/models/x.model.ts",
+            line: 1,
+            column: 1,
+            subject: "X.status",
+            message: "`OrderStatus` is not a shape type",
+            fix: "use a shape type",
+          },
+        ],
+      }),
+      undefined,
+      { pass: "clients" },
+    );
+    expect(errors).toEqual([]);
+    expect(files.map((file) => file.path)).toEqual([".stackra/gen/clients/commerce.ts"]);
   });
 });

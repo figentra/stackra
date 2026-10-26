@@ -2,12 +2,18 @@
  * Stackra file contract:
  * Purpose: `generate`, one gen-core run over a member: discovery, the pure `generateMember`, then either writing the
  *          files (creating folders) or, with `check`, comparing them with what is on disk, which is
- *          `stackra gen --check` (a stale or missing file, or a changed identity without `@Renamed`, fails it).
- * Boundary: writes only under the member root and only when the run has no error; a check writes nothing. The
+ *          `stackra gen --check` (a stale or missing file, or a changed identity without `@Renamed`, fails it). With
+ *          `pass: "manifests"` it writes the manifest alone (`stackra gen --manifests`, the first pass of a workspace
+ *          run); otherwise a refused run that consumes another service writes its client files first and runs again,
+ *          since a shape typed with a client's enum only resolves once that client is on disk, and when it is still
+ *          refused writes its manifest if only consumed workspace services stand in the way.
+ * Boundary: writes only under the member root; a check writes nothing. A refused run writes nothing but the client
+ *           files (when the clients target itself is clean) and the manifest (when the manifest pass is clean). The
  *           committed `stackra.manifest.json` is read first, so its identities stay locked.
  * Runtime: node
  * Governing contract: ADR 0294 (decisions 10 and 22: the committed manifest and `stackra gen --check`); ADR 0295
- *                     (decision 5: generated files are overwritten); ADR 0261.
+ *                     (decision 5: generated files are overwritten); ADR 0261; ADR 0260 (a cycle between services is
+ *                     allowed at the manifest level).
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -15,41 +21,73 @@ import { dirname, join } from "node:path";
 import type { StackraManifest } from "@stackra/contracts";
 
 import { generateMember } from "#core/functions/generate-member.function";
+import type { GeneratedFile } from "#core/types/generated-file.type";
 import { discoverMember } from "#node/functions/discover-member.function";
 import type { GenerateResult } from "#node/types/generate-result.type";
 
-/**
- * Runs gen-core on the member at `root`.
- *
- * @param root - the member root.
- * @param options - `check` compares instead of writing; `backend` picks the TypeScript host.
- * @throws Error when package.json, tsconfig.json or a dependency manifest cannot be read.
- * @example
- * const { errors, changed } = await generate("packages/commerce/loyalty-kit", { check: true });
- */
-export async function generate(
-  root: string,
-  options: { readonly check?: boolean; readonly backend?: "tsgo" | "ts6" } = {},
-): Promise<GenerateResult> {
-  const ir = await discoverMember(
-    root,
-    options.backend === undefined ? {} : { backend: options.backend },
-  );
-  const manifestPath = join(root, "stackra.manifest.json");
-  const previous = existsSync(manifestPath)
-    ? (JSON.parse(readFileSync(manifestPath, "utf8")) as StackraManifest)
-    : undefined;
-  const { files, errors } = generateMember(ir, previous);
-  if (errors.length > 0) return { errors, files: [], changed: [] };
+/** The paths of `files` that differ from disk under `root`, written unless `check`. */
+function write(root: string, files: readonly GeneratedFile[], check: boolean): string[] {
   const changed: string[] = [];
   for (const file of files) {
     const path = join(root, file.path);
     const current = existsSync(path) ? readFileSync(path, "utf8") : undefined;
     if (current === file.content) continue;
     changed.push(file.path);
-    if (options.check === true) continue;
+    if (check) continue;
     mkdirSync(dirname(path), { recursive: true });
     writeFileSync(path, file.content);
   }
-  return { errors: [], files, changed };
+  return changed;
+}
+
+/**
+ * Runs gen-core on the member at `root`.
+ *
+ * @param root - the member root.
+ * @param options - `check` compares instead of writing; `backend` picks the TypeScript host; `pass: "manifests"`
+ *                  writes the manifest alone.
+ * @throws Error when package.json, tsconfig.json or a dependency manifest cannot be read.
+ * @example
+ * const { errors, changed } = await generate("packages/commerce/loyalty-kit", { check: true });
+ */
+export async function generate(
+  root: string,
+  options: {
+    readonly check?: boolean;
+    readonly backend?: "tsgo" | "ts6";
+    readonly pass?: "manifests";
+  } = {},
+): Promise<GenerateResult> {
+  const discover = () =>
+    discoverMember(root, options.backend === undefined ? {} : { backend: options.backend });
+  const manifestPath = join(root, "stackra.manifest.json");
+  const previous = existsSync(manifestPath)
+    ? (JSON.parse(readFileSync(manifestPath, "utf8")) as StackraManifest)
+    : undefined;
+  const check = options.check === true;
+  let ir = await discover();
+  let result = generateMember(
+    ir,
+    previous,
+    options.pass === undefined ? {} : { pass: options.pass },
+  );
+  const partial: string[] = [];
+  if (result.errors.length > 0 && !check && options.pass === undefined) {
+    const clients = generateMember(ir, previous, { pass: "clients" });
+    if (clients.errors.length === 0) partial.push(...write(root, clients.files, false));
+    if (partial.length > 0) {
+      ir = await discover();
+      result = generateMember(ir, previous);
+    }
+    // Still refused: the manifest alone, when only workspace services still to come stand in its way.
+    const manifest =
+      result.errors.length > 0 ? generateMember(ir, previous, { pass: "manifests" }) : undefined;
+    if (manifest?.errors.length === 0) partial.push(...write(root, manifest.files, false));
+  }
+  if (result.errors.length > 0) return { errors: result.errors, files: [], changed: partial };
+  return {
+    errors: [],
+    files: result.files,
+    changed: [...new Set([...partial, ...write(root, result.files, check)])],
+  };
 }

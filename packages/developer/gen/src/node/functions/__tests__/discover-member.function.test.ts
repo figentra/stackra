@@ -5,12 +5,15 @@
  *          tokens with a named instance, the lifetime, facets, public methods, `handle` shapes, refusals, statics,
  *          shapes with rules, defaults, enums, dates and driver names, enums in source order, file exports, the
  *          authored root module, the dependency package names, and tests read only when asked; on both TypeScript
- *          backends with equal results.
+ *          backends with equal results; and the consumed services that exist beside the member (`workspaceServices`).
  * Boundary: test only; writes the fixture under `.cache/` and opens TypeScript on it.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 16, 17, 20, 25 and 26); ADR 0305 (rules 42 and
  *                     45).
  */
+import { mkdirSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+
 import { describe, expect, it } from "@stackra/testing";
 
 import { discoverMember } from "#node/functions/discover-member.function";
@@ -187,5 +190,31 @@ describe("discoverMember", async () => {
     expect(withTests.classes.map((candidate) => candidate.name)).toContain("FixtureModule");
     const six = await discoverMember(root, { backend: "ts6" });
     expect(JSON.stringify(six)).toBe(JSON.stringify(ir));
+  });
+});
+
+describe("discoverMember workspace services", () => {
+  it("lists the consumed services with a folder beside the member, manifest or not", async () => {
+    const root = writeFixtureMember("channels", {
+      "src/core/services/sync.service.ts": [
+        'import { Service } from "@stackra/container";',
+        'import type { CatalogueClient } from "#stackra/clients/catalogue";',
+        'import type { StockClient } from "#stackra/clients/stock";',
+        "export class SyncService extends Service {",
+        "  constructor(",
+        "    private readonly catalogue: CatalogueClient,",
+        "    private readonly stock: StockClient,",
+        "  ) {",
+        "    super();",
+        "  }",
+        "}",
+        "",
+      ].join("\n"),
+    });
+    mkdirSync(join(dirname(root), "catalogue"), { recursive: true });
+    writeFileSync(join(dirname(root), "catalogue", "package.json"), "{}");
+    const ir = await discoverMember(root);
+    expect(ir.workspaceServices).toEqual(["catalogue"]);
+    expect(ir.services).toBeUndefined();
   });
 });

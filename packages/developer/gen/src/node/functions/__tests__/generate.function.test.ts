@@ -2,13 +2,14 @@
  * Stackra file contract:
  * Purpose: unit tests of `generate`: a write run puts the manifest, schemas, wiring and entries on disk; a second run
  *          changes nothing; a check run reports a stale file without writing; a changed identity without `@Renamed`
- *          fails against the committed manifest and writes nothing.
+ *          fails against the committed manifest and writes nothing; a member consuming a workspace service with no
+ *          manifest yet gets its manifest alone (with `pass: "manifests"`, or as what a refused run still writes).
  * Boundary: test only; writes the shop fixture under `.cache/` and runs gen on it.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 10 and 22); ADR 0295 (decision 5).
  */
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
 
 import { describe, expect, it } from "@stackra/testing";
 
@@ -58,5 +59,43 @@ describe("generate", () => {
     const result = await generate(root);
     expect(result.errors.map((error) => error.code)).toEqual(["identity_changed"]);
     expect(result.changed).toEqual([]);
+  });
+});
+
+/** A member injecting the catalogue client, with a catalogue folder (no manifest yet) beside it. */
+function waitingMember(): string {
+  const root = writeFixtureMember("channels", {
+    "src/core/services/sync.service.ts": [
+      'import { Service } from "@stackra/container";',
+      'import type { CatalogueClient } from "#stackra/clients/catalogue";',
+      "export class SyncService extends Service {",
+      "  constructor(private readonly catalogue: CatalogueClient) {",
+      "    super();",
+      "  }",
+      "}",
+      "",
+    ].join("\n"),
+  });
+  mkdirSync(join(dirname(root), "catalogue"), { recursive: true });
+  writeFileSync(join(dirname(root), "catalogue", "package.json"), "{}");
+  return root;
+}
+
+describe("generate across a cycle between services", () => {
+  it("writes the manifest alone in the manifest pass", async () => {
+    const root = waitingMember();
+    const result = await generate(root, { pass: "manifests" });
+    expect(result.errors).toEqual([]);
+    expect(result.changed).toEqual(["stackra.manifest.json"]);
+    expect(existsSync(join(root, ".stackra/gen/wiring.ts"))).toBe(false);
+  });
+
+  it("refuses the full run but still writes the manifest", async () => {
+    const root = waitingMember();
+    const result = await generate(root);
+    expect(result.errors.map((error) => error.code)).toEqual(["client_service_unknown"]);
+    expect(result.changed).toEqual(["stackra.manifest.json"]);
+    expect(existsSync(join(root, ".stackra/gen/wiring.ts"))).toBe(false);
+    expect((await generate(root, { check: true })).changed).toEqual([]);
   });
 });

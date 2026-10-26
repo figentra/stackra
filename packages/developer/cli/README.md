@@ -1,5 +1,14 @@
 # @stackra/cli
 
+<!--
+Stackra file contract:
+Purpose: the package's reader guide: the `stackra` binary, its commands (gen's two passes included) and what is not
+         here.
+Boundary: documentation only; the code and the ADRs win on any difference.
+Runtime: none
+Governing contract: ADR 0083; ADR 0282 decision 3; ADR 0294; ADR 0260.
+-->
+
 The `stackra` binary (ADR 0083, ADR 0282 decision 3). It runs gen, runs each member's tools against the configs gen
 writes, lists what a committed manifest locks, and wires the local developer MCP. It folds the old `console` CLI
 framework (ADR 0127, 2026-10-24 note): a command is data plus one `run` function, parsed with `node:util`.
@@ -12,7 +21,7 @@ framework (ADR 0127, 2026-10-24 note): a command is data plus one `run` function
 | Command                                | Does                                                                                     |
 | -------------------------------------- | ---------------------------------------------------------------------------------------- |
 | `stackra new <kind> <name>`            | a v3 `package` (`--category`), `service` (`--area`) or product `seed-pack`               |
-| `stackra gen [--check] [--backend]`    | gen-core on the member, or on every `stackra.config.ts` member at the workspace root     |
+| `stackra gen [--check] [--manifests]`  | gen-core on the member or every workspace member: manifests first, then the rest         |
 | `stackra dev [--target <t>]`           | gen, then serve: Vite (web, PWA), Expo (iOS, Android), Wrangler, Encore, Mintlify        |
 | `stackra build [--target <t>]`         | gen, then build: tsdown (package), Vite (web), `expo export` (native), Wrangler dry run  |
 | `stackra start`                        | gen, then `vite preview` of an app's web build                                           |

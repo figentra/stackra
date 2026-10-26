@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `runGen`: refusals print in gen's form and fail, a write run lists the written files, and a
- *          check run fails on stale files and passes when clean; the options reach `generate`.
+ *          check run fails on stale files and passes when clean; the options (with the manifest pass) reach
+ *          `generate`; a refused run that still wrote its clients or manifest lists them.
  * Boundary: test only; `@stackra/gen/node`'s `generate` is replaced by a fake, so no TypeScript host opens.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 22 and 26).
@@ -67,5 +68,28 @@ describe("runGen", () => {
     const clean = captureIo();
     expect(await runGen("/repo/packages/x", { base: "/repo", check: true }, clean.io)).toBe(true);
     expect(clean.output()).toBe("");
+  });
+
+  it("passes the manifest pass on, and lists the clients a refused run still wrote", async () => {
+    fake.mockResolvedValue({
+      errors: [
+        {
+          code: "shape_unknown_type",
+          file: "src/modules/x/models/x.model.ts",
+          line: 3,
+          column: 2,
+          subject: "X.kind",
+          message: "`Kind` is not a shape type",
+          fix: "use a shape type",
+        },
+      ],
+      files: [],
+      changed: [".stackra/gen/clients/sales.ts"],
+    });
+    const { io, output } = captureIo();
+    expect(await runGen("/repo/services/x", { base: "/repo", pass: "manifests" }, io)).toBe(false);
+    expect(fake).toHaveBeenCalledWith("/repo/services/x", { pass: "manifests" });
+    expect(output()).toContain("wrote services/x/.stackra/gen/clients/sales.ts");
+    expect(output()).toContain("only the files listed were written");
   });
 });

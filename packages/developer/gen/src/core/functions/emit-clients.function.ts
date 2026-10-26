@@ -11,9 +11,10 @@
  *           the topology picks); a consumer never imports the producer's source. A consumed service without a manifest,
  *           a client imported under another name, or an event the producer does not publish as an integration event
  *           (`client_event_unknown`), is a refusal, so nothing is written. An event is subscribed to by importing its
- *           class; there is no wire-name subscription.
+ *           class; there is no wire-name subscription. In the manifest pass the services of the same workspace are
+ *           `pending` and skipped, so a cycle between services never blocks a manifest.
  * Runtime: isomorphic
- * Governing contract: ADR 0260 (decisions 2 to 6 and 10); ADR 0141 (`<module>.<name>.v<n>` wire names); ADR 0158 (the manifest is the contract); ADR 0261
+ * Governing contract: ADR 0260 (decisions 2 to 6 and 10; a cycle between services is allowed at the manifest level); ADR 0141 (`<module>.<name>.v<n>` wire names); ADR 0158 (the manifest is the contract); ADR 0261
  *                     (`#stackra/clients`); ADR 0263 (a class is its own token).
  */
 import type { StackraManifest } from "@stackra/contracts";
@@ -227,10 +228,15 @@ function clientFile(service: string, manifest: StackraManifest): string {
  * The client files of `ir`, one per consumed service, sorted by path.
  *
  * @param ir - the member read by discovery, with the consumed services' manifests in `services`.
+ * @param options - `pending`: services whose manifest the same run is still writing (the manifest pass); they are
+ *                  skipped, neither written nor refused.
  * @example
  * emitClients(ir).files.map((file) => file.path); // [".stackra/gen/clients/catalogue.ts"]
  */
-export function emitClients(ir: MemberIR): {
+export function emitClients(
+  ir: MemberIR,
+  options: { readonly pending?: ReadonlySet<string> } = {},
+): {
   readonly files: readonly GeneratedFile[];
   readonly errors: readonly GenError[];
 } {
@@ -268,6 +274,7 @@ export function emitClients(ir: MemberIR): {
   }
   const files: GeneratedFile[] = [];
   for (const [service, at] of [...consumers].sort(([left], [right]) => (left < right ? -1 : 1))) {
+    if (options.pending?.has(service) === true) continue;
     const manifest = serviceManifest(ir, service);
     const published = new Set(
       own(manifest?.events)

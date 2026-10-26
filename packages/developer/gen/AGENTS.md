@@ -3,7 +3,7 @@
 <!--
 Stackra file contract:
 Purpose: the agent rules of @stackra/gen: where code goes, entries and barrels, the package rules (generated service
-         clients included), the rules that fail the build and PII.
+         clients and the manifest and clients passes included), the rules that fail the build and PII.
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
 Governing contract: ADR 0294; ADR 0295; ADR 0305; ADR 0260 (generated clients and typed events); ADR 0263; ADR 0162 and ADR 0222
@@ -44,6 +44,11 @@ The Stackra compiler. Member at `packages/developer/gen` (`tier:lib`), in the pr
   (found beside the member by `readServiceManifests`, or in a dependency), never from its source. The source reader
   takes a parameter typed with a class from `CLIENTS_SPECIFIER` as a class token before the file exists; the wiring
   binds it over `ClientTransport`. Keep the one spelling in `CLIENTS_SPECIFIER`.
+- Cycles between services (ADR 0260, STA-1232): a manifest never depends on a client. `generateMember(ir, previous,
+{ pass: "manifests" })` returns the manifest alone and skips (`emitClients`'s `pending`) the consumed services in
+  `ir.workspaceServices` (a folder beside the member); `{ pass: "clients" }` returns the client files alone. `generate`
+  writes the clients of a refused run, rediscovers once, and still writes its manifest when the manifest pass is clean;
+  every other output keeps "nothing written on error". Never make a manifest field depend on a consumed client.
 - Events across services (ADR 0260 decision 4): a listener's `handle` parameter is read into `DeclaredClass.handle`
   (`event`, a `ClassRef`, or `relay` for `EventEnvelope` from `@stackra/outbox`). A `#stackra/clients/<service>` event
   makes that service consumed (discovery and `emitClients`) and must be one of its integration events

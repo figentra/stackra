@@ -3,7 +3,7 @@
 <!--
 Stackra file contract:
 Purpose: the package's reader guide: what gen is, its entries and symbols, a run, what one run writes (the generated
-         service clients included) and what is not here.
+         service clients included, and the two passes that break a cycle between services) and what is not here.
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
 Governing contract: ADR 0294; ADR 0295; ADR 0260 (generated clients); ADR 0261; ADR 0263; ADR 0162 and ADR 0222
@@ -137,8 +137,15 @@ export class StorefrontService extends Service {
   `ClientTransport` the topology picks (`@stackra/clients/contracts`).
 - **Source.** Discovery reads the producer's committed `stackra.manifest.json` from the folder beside the member
   (`services/catalogue` next to `services/channels`), or from a dependency that ships one. Never the producer's
-  source. Run `stackra gen` in the producer first; a consumed service without a manifest is `client_service_unknown`,
-  and a client imported under another name than `<Service>Client` is `client_name_mismatch`.
+  source. A consumed service without a manifest is `client_service_unknown`, and a client imported under another name
+  than `<Service>Client` is `client_name_mismatch`.
+- **Cycles.** Services may consume each other's clients in a cycle (catalogue and stock, sales and fulfilment): gen
+  runs in two passes. Pass 1 (`stackra gen --manifests`, and the first pass of every `stackra gen`) writes each
+  member's manifest without its clients; a consumed service with a folder beside the member is not a refusal there.
+  Pass 2 writes the clients and everything else against those manifests, in rounds until one writes nothing. A
+  refused member still writes its clients (so a shape typed with a client's enum resolves next time) and its manifest
+  when only workspace services stand in the way; every other output is written only when the member is clean.
+  Committed manifests are the steady state from then on.
 - **Shape.** Each descriptor is named after the producer's class (`GetProductQuery`, `PlaceOrderAction`); the client
   groups them by model (`client.<model>.<verb>.call(input)`, and `.queue(input)` for an action). Shapes are
   `remoteShape` classes, enums `Enum.of`, refusals `remoteRefusal`, integration events `remoteEvent`. Entries a

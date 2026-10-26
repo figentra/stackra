@@ -1,9 +1,11 @@
 /**
  * Stackra file contract:
  * Purpose: `runGen(root, options, io)`, one gen run over one member as the CLI prints it: every refusal in gen's
- *          two-line form, then the files written, or with `check` the files that are stale. It resolves true when the
- *          member is clean: no refusal, and with `check` nothing stale.
- * Boundary: gen writes only under the member root and only when there is no refusal; a check writes nothing.
+ *          two-line form, then the files written, or with `check` the files that are stale; `pass: "manifests"` runs
+ *          gen's manifest pass alone. It resolves true when the member is clean: no refusal, and with `check` nothing
+ *          stale.
+ * Boundary: gen writes only under the member root and, on a refusal, nothing but the client files and manifest it
+ *           lists; a check writes nothing.
  * Runtime: node
  * Governing contract: ADR 0294 (decisions 10, 22 and 26: the committed manifest, `stackra gen --check`, refusals
  *                     print their fix); ADR 0295 (decision 5).
@@ -20,7 +22,8 @@ import type { CliIo } from "#node/types/cli-io.type";
  *
  * @param root - the member root.
  * @param options - `check` compares instead of writing; `backend` picks the TypeScript host; `base` is the folder
- *                  printed paths are relative to (default: the working directory).
+ *                  printed paths are relative to (default: the working directory); `pass: "manifests"` writes the
+ *                  manifest alone.
  * @param io - where the outcome is printed.
  * @throws Error when gen cannot read the member's package.json, tsconfig or a dependency manifest.
  * @example
@@ -32,6 +35,7 @@ export async function runGen(
     readonly check?: boolean;
     readonly backend?: "tsgo" | "ts6";
     readonly base?: string;
+    readonly pass?: "manifests";
   },
   io: CliIo,
 ): Promise<boolean> {
@@ -39,10 +43,14 @@ export async function runGen(
   const { errors, changed } = await generate(root, {
     ...(options.check === undefined ? {} : { check: options.check }),
     ...(options.backend === undefined ? {} : { backend: options.backend }),
+    ...(options.pass === undefined ? {} : { pass: options.pass }),
   });
   for (const error of errors) io.err(`${where}/${formatGenError(error)}\n`);
   if (errors.length > 0) {
-    io.err(`gen: ${errors.length} error(s) in ${where}; nothing was written\n`);
+    // A refused run may still have written its clients and manifest, which the next round resolves against.
+    for (const path of changed) io.out(`wrote ${where}/${path}\n`);
+    const what = changed.length > 0 ? "only the files listed were written" : "nothing was written";
+    io.err(`gen: ${errors.length} error(s) in ${where}; ${what}\n`);
     return false;
   }
   if (options.check === true) {
