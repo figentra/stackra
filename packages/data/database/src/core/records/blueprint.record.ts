@@ -8,8 +8,8 @@
  *           an index on an existing table is built concurrently in its own step, and one on a table being created
  *           builds in the transaction; no primary key is added to an existing table.
  * Runtime: node
- * Governing contract: ADR 0159 (decision 3; as amended by ADR 0305); ADR 0239 (equality policy); ADR 0327 (decisions
- *                     3 and 9: scope-tree columns, isolation in the database); ADR 0412 (inherited rows, read only);
+ * Governing contract: ADR 0159 (decision 3; as amended by ADR 0305); ADR 0239 (equality policy; `equalsOrUnset`,
+ *                     STA-1300); ADR 0327 (decisions 3 and 9: scope-tree columns, isolation in the database); ADR 0412 (inherited rows, read only);
  *                     `.agents/rules/tenancy.md`; ADR 0231 (names); ADR 0135 (public ids); ADR 0294 (decision 28: links).
  */
 import { constraintName } from "#core/functions/constraint-name.function";
@@ -38,7 +38,15 @@ const MAX_VARCHAR = 10_485_760;
 const SETTING = /^[a-z][a-z0-9_]*\.[a-z][a-z0-9_]*$/;
 
 /** The ways a policy matches its column with the setting. */
-const MATCHES: readonly RowLevelSecurityOptions["match"][] = ["equals", "ancestor", "inherited"];
+const MATCHES: readonly RowLevelSecurityOptions["match"][] = [
+  "equals",
+  "equalsOrUnset",
+  "ancestor",
+  "inherited",
+];
+
+/** The matches on an id column; the others are on an `ltree` path column. */
+const ID_MATCHES: readonly RowLevelSecurityOptions["match"][] = ["equals", "equalsOrUnset"];
 
 /** A declared row-level-security policy. */
 interface PolicySeed {
@@ -448,7 +456,7 @@ export class BlueprintRecord {
       throw new TypeError(
         `rowLevelSecurity("${name}") needs the ${name} column in the same ${this.table} blueprint`,
       );
-    if (options.match !== "equals" && column.type !== "ltree")
+    if (!ID_MATCHES.includes(options.match) && column.type !== "ltree")
       throw new TypeError(
         `${this.table}.${name} is not ltree, so it takes no ${options.match} match`,
       );
@@ -457,10 +465,14 @@ export class BlueprintRecord {
     // A setting set earlier in the session reads as '' once its transaction ends, so '' counts as unset (no rows).
     // `?` over an lquery array (`<path>.*` is the path and every descendant) is GiST-indexable where `<@ any(...)`
     // seq-scans, and a policy cannot OR-expand a list of unknown length; '' or unset gives an empty array (no rows).
+    // `equalsOrUnset` also lets a session with the setting unset see the rows whose column is null (a nullable scope
+    // column: platform rows); a scoped session still sees only its own. `is not distinct from` is `=` with null = null.
     const check =
       options.match === "equals"
         ? `${quoteIdentifier(name)} = nullif(${setting}, '')::${column.type}`
-        : `${quoteIdentifier(name)} ? array(select (granted || '.*')::lquery from ${granted})`;
+        : options.match === "equalsOrUnset"
+          ? `${quoteIdentifier(name)} is not distinct from nullif(${setting}, '')::${column.type}`
+          : `${quoteIdentifier(name)} ? array(select (granted || '.*')::lquery from ${granted})`;
     const policy = quoteIdentifier(constraintName("pol", this.table, [name]));
     const statements: CompiledStatement[] = [
       {

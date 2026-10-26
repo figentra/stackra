@@ -7,7 +7,7 @@
  *           `DriverName<AccessLogSink>` field, so a typo is a type error. Deploy-time values only, no secret.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 19 and 26); ADR 0146 as amended; ADR 0212 (decision 6: retention); ADR
- *                     0409 (fail-closed classes).
+ *                     0409 (fail-closed classes; regulated added by STA-1300).
  */
 import "#core/types/access-log-sink-driver-names.type";
 
@@ -39,7 +39,11 @@ export class AccessLogOptions extends Schema {
    * is served and the failure logged. A class marked `@AccessLogged({ failClosed: true })` (a privileged surface)
    * fails closed whatever its classification.
    */
-  failClosed: DataClassification[] = [DataClassification.Financial, DataClassification.Health];
+  failClosed: DataClassification[] = [
+    DataClassification.Financial,
+    DataClassification.Health,
+    DataClassification.Regulated,
+  ];
 }
 
 registerSchemas([[AccessLogOptions, ACCESS_LOG_CONFIG_SCHEMA]]);

@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: unit tests of `compileMigration`: the SQL and inverses of the template's migration shapes (create with
  *          trait, money, enum, link and foreign-key columns; expand steps; online indexes; raw statements with `after`),
- *          macros installed by name, the generated equality, ancestor and inherited row-level-security policies, the
+ *          macros installed by name, the generated equality, equals-or-unset, ancestor and inherited row-level-security policies, the
  *          scope-tree columns with their GiST index, generated columns, and every safety refusal (missing nullability or comment,
  *          NOT NULL without a default, non-concurrent index on an existing table, concurrent index on a new one,
  *          unapproved extension, raw statement without an inverse, a policy the table cannot take), and the ICU
@@ -251,6 +251,22 @@ describe(compileMigration, () => {
       'alter table "messages"."messages" disable row level security',
       'alter table "messages"."messages" drop column if exists "workspace_id"',
     ]);
+  });
+
+  it("writes the equalsOrUnset policy: null rows match an unset setting (STA-1300)", () => {
+    class CreatePlansMigration extends Migration {
+      up(schema: SchemaBuilder): void {
+        schema.create("plans", (t: Blueprint) => {
+          t.scopeId().nullable().comment("The scope node; null for a platform row.");
+          t.rowLevelSecurity("scope_id", { setting: "app.scope_id", match: "equalsOrUnset" });
+        });
+      }
+    }
+    const [step] = compileMigration(CreatePlansMigration, { schema: "plans" }).steps;
+    const check = `"scope_id" is not distinct from nullif(current_setting('app.scope_id', true), '')::varchar(33)`;
+    expect(step?.sql).toContain(
+      `create policy "pol_plans_scope_id" on "plans"."plans" using (${check}) with check (${check})`,
+    );
   });
 
   it("creates an ICU collation in the module schema and collates a text column by it", () => {

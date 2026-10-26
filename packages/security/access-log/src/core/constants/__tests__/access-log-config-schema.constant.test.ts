@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `ACCESS_LOG_CONFIG_SCHEMA`: `postgres`, 400 days and financial and health failing closed by
- *          default, the shipped sinks only, known classes only in `failClosed`, and a whole number of days from 90.
+ * Purpose: unit tests of `ACCESS_LOG_CONFIG_SCHEMA`: `postgres`, 400 days and financial, health and regulated failing
+ *          closed by default, the shipped sinks only, known classes only in `failClosed`, and a whole number of days from 90.
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0294 (decision 26); ADR 0212 (decision 6).
@@ -16,7 +16,7 @@ describe("ACCESS_LOG_CONFIG_SCHEMA", () => {
     expect(ACCESS_LOG_CONFIG_SCHEMA.parse({})).toEqual({
       sink: "postgres",
       retentionDays: 400,
-      failClosed: ["financial", "health"],
+      failClosed: ["financial", "health", "regulated"],
     });
   });
 

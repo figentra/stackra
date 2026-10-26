@@ -3,7 +3,7 @@
  * Purpose: unit tests of `AccessLogService`: a record names the principal a call is for by default and the named field
  *          of every record among the arguments and the result otherwise; nothing is written when no subject was
  *          touched; a failing sink is logged as `access_log_write_failed` and reaches the caller only for a class that
- *          fails closed: a configured classification (financial and health by default) or a `failClosed` facet.
+ *          fails closed: a configured classification (financial, health and regulated by default) or a `failClosed` facet.
  * Boundary: test only; the service is built with the package's sink fake, a fixed clock and a logger fake.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0212 (decision 5 and open question 1); ADR 0134; ADR 0409 (STA-821).
@@ -111,9 +111,13 @@ describe("AccessLogService", () => {
     );
   });
 
-  it("refuses a financial or health read whose record is lost, after logging it (STA-821)", async () => {
+  it("refuses a financial, health or regulated read whose record is lost, after logging it (STA-821, STA-1300)", async () => {
     const { service, logger } = serviceWith(AccessLogSinkFake.with({ failing: true }));
-    for (const classification of [DataClassification.Financial, DataClassification.Health])
+    for (const classification of [
+      DataClassification.Financial,
+      DataClassification.Health,
+      DataClassification.Regulated,
+    ])
       await expect(
         service.record("call_2", STAFF, "Wallets.view", { classification }, []),
       ).rejects.toBeInstanceOf(AccessLogWriteFailedError);

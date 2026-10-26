@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `DataClassificationMacro`: installed as `t.dataClassification`, it writes a text column checked
- *          by `ck_<table>_<column>` against the four codes, which are exactly the `DataClassification` codes, and leaves
+ *          by `ck_<table>_<column>` against every code, which are exactly the `DataClassification` codes, and leaves
  *          its nullability and comment to the caller.
  * Boundary: test only; pure compilation through @stackra/database, no database.
  * Runtime: node (vitest)
@@ -38,11 +38,12 @@ describe("DataClassificationMacro", () => {
     expect(new DataClassificationMacro()).toBeInstanceOf(Macro);
   });
 
-  it("writes a text column checked against the four classification codes", () => {
+  it("writes a text column checked against every classification code, regulated included", () => {
     const sql = compiled(true);
     const codes = Enum.values(DataClassification)
       .map((code) => `'${code}'`)
       .join(", ");
+    expect(codes).toContain("'regulated'");
     expect(sql).toContain(
       `"classification" text not null constraint "ck_data_exports_classification" check ("classification" in (${codes}))`,
     );

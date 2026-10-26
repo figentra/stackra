@@ -5,8 +5,8 @@
  * Boundary: the stand-in for what gen writes for this package. Every field has a default, so `.parse({})` gives the
  *           full defaults and a host's generated schema can `.extend` it; the defaults equal `AccessLogOptions`'
  *           initializers (tested). The retention floor is 90 days and the default 400, about the thirteen months hot
- *           that ADR 0212 decision 6 keeps. `failClosed` defaults to financial and health (the regulated special
- *           category), the classes whose read must not be served unlogged (ADR 0409); a market pack or a tenant's
+ *           that ADR 0212 decision 6 keeps. `failClosed` defaults to financial, health and regulated (the special
+ *           categories and regulator-issued identifiers, STA-1300), the classes whose read must not be served unlogged (ADR 0409); a market pack or a tenant's
  *           deployment narrows or widens it through runway's `config.access_log` layer.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 26: a package ships its own `X$`); ADR 0212 (decision 6: retention); ADR 0409
@@ -23,5 +23,9 @@ export const ACCESS_LOG_CONFIG_SCHEMA = z.object({
   retentionDays: z.number().int().min(90).default(400),
   failClosed: z
     .array(z.enum(Enum.values(DataClassification) as [DataClassification, ...DataClassification[]]))
-    .default([DataClassification.Financial, DataClassification.Health]),
+    .default([
+      DataClassification.Financial,
+      DataClassification.Health,
+      DataClassification.Regulated,
+    ]),
 });

@@ -111,10 +111,11 @@ export interface Blueprint {
   /**
    * Enables and forces row-level security with the generated policy `pol_<table>_<column>`, which reads
    * `options.setting` (set for the transaction, as `Database.withScope` sets the scope settings): `equals` compares the
-   * column with it, `ancestor` matches an `ltree` column at or below any of its `|`-separated paths through the GiST
+   * column with it, `equalsOrUnset` also shows the null rows to a session with the setting unset (`is not distinct
+   * from`), `ancestor` matches an `ltree` column at or below any of its `|`-separated paths through the GiST
    * index (`scope_path` with `app.scope_paths`), and `inherited` is `ancestor` plus a select-only policy
    * `pol_<table>_<column>_inherited` that shows the rows on the path above a granted path, read only (a template seeded
-   * at the platform or product node, seen by every tenant below it; ADR 0412). An unset or `''` setting matches no row.
+   * at the platform or product node, seen by every tenant below it; ADR 0412). Otherwise an unset or `''` setting matches no row.
    * The column must be defined in the same blueprint, and a blueprint takes one `rowLevelSecurity` call, as Postgres
    * ORs permissive policies. A business table keeps the equality policy @stackra/tenancy generates (ADR 0239, ADR 0327
    * d8).

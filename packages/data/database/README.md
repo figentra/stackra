@@ -127,7 +127,8 @@ await database.withScope(principal.grantedScopes, () => work()); // several gran
   ran an earlier scope sees nothing. A blueprint takes one `rowLevelSecurity` call: Postgres ORs permissive policies.
   `inherited` is `ancestor` plus a select-only policy `pol_<table>_<column>_inherited` for the rows on the path above a
   granted path, so a template seeded at the platform or product node is read by every tenant below it and written by
-  none of them (ADR 0412).
+  none of them (ADR 0412). `equalsOrUnset` is `equals` through `is not distinct from`: a nullable id column's null
+  rows (platform rows) match a session with the setting unset; a scoped session sees only its own (STA-1300).
 - `service.repath(from, to)` (every `CrudService` over a model with `scopePath`) moves a scope subtree's rows: each
   path at or below `from` takes `to` in place of that prefix, in one statement in the caller's transaction. A service
   calls it from its listener of `@stackra/scope`'s `ScopeMoved`, in a scope that reaches both paths (ADR 0411).
