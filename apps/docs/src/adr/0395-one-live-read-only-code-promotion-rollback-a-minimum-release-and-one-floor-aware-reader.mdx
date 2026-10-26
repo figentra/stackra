@@ -1,0 +1,60 @@
+---
+title: "0395 — One live-read-only code, promotion rollback, a minimum release, and one floor-aware reader"
+description: "Proposed · 2026-10-26"
+---
+
+<Note>
+  Settles open questions 5 (the refusal code) and 6 (release ordering) of
+  [0359](/adr/0359-modes-and-configuration-environments-display-modes-sandbox-promotion-and-live-records)
+  and builds its proposed decision 8 (rollback). Decisions 2 and 3 rest on 0359's proposed
+  mechanics, so this page stays Proposed until the owner confirms them.
+</Note>
+
+## Context
+
+Two codes meant the same thing: the action pipeline refused a structural action on live with `live_read_only`, and
+the settings resolver refused a write to a non-live setting with `setting_live_read_only`. ADR 0359 left rollback and a
+change set's minimum release as proposals, and `SettingsReader` read settings without the market floors that
+`SettingsResolver` applies, so two read paths could disagree on a legal value. The settings pack commands of ADR 0213
+had no CLI.
+
+## Decision
+
+1. **One code.** A write to read-only live configuration is `live_read_only`, the core `LiveReadOnlyError` of
+   `@stackra/errors`. The settings resolver raises it with one field error per refused path (`live_read_only`); the
+   settings-specific `SettingLiveReadOnlyError` is retired.
+2. **Rollback is a new change set.** A promotion diff carries the live snapshot it was computed against (`previous`,
+   which hashes to its `base`). `Promotable.rollbackOf(live, applied)` diffs live now against `applied.previous`; the
+   result is reviewed and applied through `apply` like any promotion, at the same level, so live keeps every applied
+   snapshot.
+3. **A minimum release.** `diff(live, next, { release })` records the platform release the sandbox runs.
+   `apply(live, diff, approver, { release })` needs live's release when the diff names one and refuses an older live
+   with `promotion_release_too_old` (failed precondition); releases compare as semantic versions.
+4. **One reader path honours floors.** `SettingsReader#get` lifts a value below its market floor exactly as
+   `SettingsResolver#get` does (`liftFloors`); gen's wiring binds the reader with the `SettingFloorSource` and binds
+   the resolver wherever either is injected.
+5. **CLI packs.** `stackra settings:diff` and `settings:apply` call `settingsDiff` and `settingsApply` in the member's
+   `@stackra/settings/node`: the pack against a scope node's own values, applied as sandbox revisions with locks
+   checked. That run cannot see the holder's market, so it refuses any group whose keys carry a legal floor and any
+   group not registered in the process; those go through the service or a promotion.
+
+## Consequences
+
+- Clients map one code to one message; the settings form still shows which fields were refused.
+- A promotion record stores the replaced snapshot, which makes rollback exact and the record larger.
+- A sandbox on a newer release cannot promote configuration live does not understand.
+- Runway's deploy locks for a settings apply remain runway's work.
+
+## Enforcement
+
+- `packages/state/settings/src/core/services/__tests__/settings-resolver.service.test.ts` (`live_read_only`).
+- `packages/state/settings/src/core/drivers/__tests__/settings-promotable.driver.test.ts` (rollback, minimum release).
+- `packages/state/settings/src/core/services/__tests__/settings-reader.service.test.ts` (floors lifted).
+- `packages/developer/gen/src/core/functions/__tests__/emit-wiring.function.test.ts` (reader and resolver bindings).
+- `packages/developer/cli/src/node/constants/__tests__/settings-commands.constant.test.ts`.
+- planned — the ADR 0137 amendment listing `live_read_only` and `approval_required` among the declared refusal codes.
+
+## Supersedes and sources
+
+Supersedes: none. Settles 0359 open questions 5 and 6 and builds its decision 8. Sources: STA-779; the wave 10
+handover (`notes/handover/build-wave10-2026-10-25.md`, settings and actions rows); ADR 0213 decision 4.

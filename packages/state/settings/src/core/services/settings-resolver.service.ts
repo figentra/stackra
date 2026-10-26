@@ -10,14 +10,16 @@
  *           tell the holder). A write to a user's own layer is a person's preference and is live-editable. `applyChange`
  *           is the promotion and pack path: it skips the live and approval checks (the promotion action carries its
  *           own approval) but never the floors or the locks. IAM (who may write, approve or break glass) is the calling
- *           action's. `SettingsReader` stays the floor-unaware reader for groups no market floors.
+ *           action's. `SettingsReader#get` lifts floors the same way (`liftFloors`).
  * Runtime: isomorphic
- * Governing contract: ADR 0213 (decisions 2 and 5); ADR 0359 (decisions 3 to 5 and 9); ADR 0370 (decision 6); ADR
+ * Governing contract: ADR 0213 (decisions 2 and 5); ADR 0359 (decisions 3 to 5 and 9); ADR 0395 (decision 1: one
+ *                     code, `live_read_only`); ADR 0370 (decision 6); ADR
  *                     0363 (decision 4); config-model section 3.
  */
 import { Service } from "@stackra/container";
 import type { AnyClass } from "@stackra/container";
 import type { Clock } from "@stackra/contracts";
+import { LiveReadOnlyError } from "@stackra/errors";
 import { validate } from "@stackra/validation";
 
 import {
@@ -31,9 +33,9 @@ import {
 import type { SettingLayer, SettingRevision, SettingTarget, SettingValue } from "#contracts/index";
 import type { Settings } from "#core/bases/settings.base";
 import { SettingFourEyesError } from "#core/errors/setting-four-eyes.error";
-import { SettingLiveReadOnlyError } from "#core/errors/setting-live-read-only.error";
 import { SettingRevisionClosedError } from "#core/errors/setting-revision-closed.error";
 import { crossesFloor } from "#core/functions/crosses-floor.function";
+import { liftFloors } from "#core/functions/lift-floors.function";
 import { mergeSettingLayers } from "#core/functions/merge-setting-layers.function";
 import { nestSettingValues } from "#core/functions/nest-setting-values.function";
 import { refuseBelowFloors } from "#core/functions/refuse-below-floors.function";
@@ -53,13 +55,6 @@ function holderOfPath(layers: readonly SettingLayer[], path: string): string | n
     if (layer.locked.includes(path)) return holder;
   }
   return holder;
-}
-
-/** The section object, or the instance, that holds `path`'s field, and the field name. */
-function fieldOf(data: Record<string, unknown>, path: string): [Record<string, unknown>, string] {
-  const dot = path.indexOf(".");
-  if (dot === -1) return [data, path];
-  return [data[path.slice(0, dot)] as Record<string, unknown>, path.slice(dot + 1)];
 }
 
 /**
@@ -117,14 +112,7 @@ export class SettingsResolver extends Service {
     ]);
     const resolved = validate(type, nestSettingValues(mergeSettingLayers(layers).values));
     if (!resolved.success) throw resolved.error;
-    for (const floor of floors) {
-      const [holder, name] = fieldOf(
-        resolved.data as unknown as Record<string, unknown>,
-        floor.path,
-      );
-      if (crossesFloor(holder[name] as SettingValue | undefined, floor)) holder[name] = floor.value;
-    }
-    return resolved.data;
+    return liftFloors(resolved.data, floors);
   }
 
   /** Each key of `page` at `target` by field name, with its effective value, provenance, floor and lock. */
@@ -164,7 +152,8 @@ export class SettingsResolver extends Service {
    * @returns the revision: applied, pending (a written key needs approval) or scheduled.
    * @throws SettingValueInvalidError when a name is not a key of the page or its value breaks the key.
    * @throws TypeError when a break-glass change has no reason.
-   * @throws SettingLiveReadOnlyError when, on live and not break-glass, a written key is not live-editable.
+   * @throws LiveReadOnlyError (`live_read_only`, each refused path as a field error) when, on live and not break-glass,
+   *         a written key is not live-editable.
    * @throws SettingBelowFloorError when a value crosses a legal floor.
    * @throws SettingsLockedError when a holder above the target locks a written key.
    */
@@ -185,13 +174,9 @@ export class SettingsResolver extends Service {
     ) {
       const readOnly = keys.filter((key) => key.live !== true).map(settingPathInGroup);
       if (readOnly.length > 0)
-        throw SettingLiveReadOnlyError.create(
-          { paths: readOnly },
-          {
-            fieldErrors: Object.fromEntries(
-              readOnly.map((path) => [path, "setting_live_read_only"]),
-            ),
-          },
+        throw LiveReadOnlyError.create(
+          {},
+          { fieldErrors: Object.fromEntries(readOnly.map((path) => [path, "live_read_only"])) },
         );
     }
     refuseBelowFloors(changes, await this.floorSource.floors(page.key, target));

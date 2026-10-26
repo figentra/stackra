@@ -13,6 +13,7 @@
  */
 import type { Clock, ScopeRef } from "@stackra/contracts";
 import type { I18nKey } from "@stackra/i18n";
+import { LiveReadOnlyError } from "@stackra/errors";
 import { describe, expect, it } from "@stackra/testing";
 import { Int, registerSchemas } from "@stackra/validation";
 import { z } from "zod";
@@ -27,7 +28,6 @@ import { SettingScope } from "#core/enums/setting-scope.enum";
 import { SettingType } from "#core/enums/setting-type.enum";
 import { SettingBelowFloorError } from "#core/errors/setting-below-floor.error";
 import { SettingFourEyesError } from "#core/errors/setting-four-eyes.error";
-import { SettingLiveReadOnlyError } from "#core/errors/setting-live-read-only.error";
 import { SettingRevisionClosedError } from "#core/errors/setting-revision-closed.error";
 import { settingKeys } from "#core/functions/setting-keys.function";
 import { settingsPage } from "#core/functions/settings-page.function";
@@ -151,9 +151,12 @@ describe(SettingsResolver, () => {
 
   it("refuses a structural key on live, unless break-glass with a reason or a user's own write", async () => {
     const { resolver } = setup();
-    await expect(
-      resolver.write(PAGE, { mode: "credit" }, { scope: ACME }, LIVE),
-    ).rejects.toBeInstanceOf(SettingLiveReadOnlyError);
+    const refused = await resolver
+      .write(PAGE, { mode: "credit" }, { scope: ACME }, LIVE)
+      .catch((error: unknown) => error);
+    expect(refused).toBeInstanceOf(LiveReadOnlyError);
+    expect((refused as LiveReadOnlyError).code).toBe("live_read_only");
+    expect((refused as LiveReadOnlyError).fieldErrors).toEqual({ mode: "live_read_only" });
     await expect(
       resolver.write(PAGE, { mode: "credit" }, { scope: ACME }, { ...LIVE, breakGlass: true }),
     ).rejects.toThrow(TypeError);

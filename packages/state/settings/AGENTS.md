@@ -41,6 +41,13 @@ generated-key helpers, the native form and the fake (ADR 0307 rules 22 to 24, AD
   floors to keys, `SettingsResolver` refuses (`refuseBelowFloors`) and lifts (`crossesFloor`).
 - Every write through `SettingsResolver` records a `SettingRevision`; `applyChange` is the promotion and pack path and
   skips only the live and approval checks, never floors or locks.
+- A write to read-only live configuration is the core `LiveReadOnlyError` (`live_read_only`, ADR 0395), one field
+  error per path; never add a settings-specific code for it.
+- `SettingsReader#get` and `SettingsResolver#get` both lift floors through `liftFloors`; a new read path calls it too.
+- A promotion diff carries the live snapshot it replaced (`previous`) and the sandbox's release; `rollbackOf` re-applies
+  `previous` as a new change set, and `apply` refuses an older live release (`promotion_release_too_old`).
+- The `settings:diff`/`settings:apply` runner (`settingsDiff`, `settingsApply`) writes sandbox revisions only and uses
+  `RegisteredFloorGuardDriver`, which refuses any group with a legal floor or not registered in the process.
 - `Promotable` is homed here (package-needs conflict note, ADR 0359 d6); a kind's driver validates its snapshot.
 - A store driver names each layer's holder (`SettingLayer.holder`) and implements `remove`.
 - Raw SQL lives only in `StoredSettingService` methods, parameterised with `sql`, with a `// raw-sql:` comment (ADR

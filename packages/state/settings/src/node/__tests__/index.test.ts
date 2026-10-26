@@ -15,10 +15,13 @@ describe("@stackra/settings/node", () => {
     expect(Object.keys(node).sort()).toEqual([
       "PostgresSettingRevisionStoreDriver",
       "PostgresSettingValueStoreDriver",
+      "RegisteredFloorGuardDriver",
       "StoredSetting",
       "StoredSettingRevision",
       "StoredSettingRevisionService",
       "StoredSettingService",
+      "settingsApply",
+      "settingsDiff",
     ]);
   });
 });

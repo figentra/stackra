@@ -1,10 +1,10 @@
 /**
  * Stackra file contract:
  * Purpose: unit and type tests of the `Promotable` port: an abstract class extending `Port`, and a driver of it is an
- *          instance of it with its kind and three methods typed as the port declares.
+ *          instance of it with its kind and four methods typed as the port declares.
  * Boundary: test only; the driver is a minimal stand-in.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0269; ADR 0359 (decision 6); ADR 0263.
+ * Governing contract: ADR 0022; ADR 0269; ADR 0359 (decisions 6 and 8); ADR 0395; ADR 0263.
  */
 import { Driver } from "@stackra/container";
 import { Port } from "@stackra/contracts";
@@ -23,10 +23,14 @@ class EmptyPromotableDriver extends Driver(Promotable) {
   }
 
   async diff(): Promise<PromotionDiff> {
-    return { kind: this.kind, base: "0", changes: [] };
+    return { kind: this.kind, base: "0", changes: [], previous: {} };
   }
 
   async apply(): Promise<void> {}
+
+  async rollbackOf(): Promise<PromotionDiff> {
+    return this.diff();
+  }
 }
 
 describe("Promotable", () => {
@@ -39,9 +43,14 @@ describe("Promotable", () => {
 
   it("types its methods", () => {
     expectTypeOf<Promotable["export"]>().parameters.toEqualTypeOf<[ScopeRef]>();
-    expectTypeOf<Promotable["diff"]>().parameters.toEqualTypeOf<[ScopeRef, unknown]>();
+    expectTypeOf<Promotable["diff"]>().parameters.toEqualTypeOf<
+      [ScopeRef, unknown, { readonly release?: string }?]
+    >();
     expectTypeOf<Promotable["apply"]>().parameters.toEqualTypeOf<
-      [ScopeRef, PromotionDiff, string]
+      [ScopeRef, PromotionDiff, string, { readonly release?: string }?]
+    >();
+    expectTypeOf<Promotable["rollbackOf"]>().parameters.toEqualTypeOf<
+      [ScopeRef, PromotionDiff, { readonly release?: string }?]
     >();
     expectTypeOf<Promotable["~key"]>().toEqualTypeOf<"settings.Promotable">();
   });

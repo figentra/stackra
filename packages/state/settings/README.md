@@ -27,7 +27,7 @@ Depends on `@stackra/container`, `@stackra/contracts`, `@stackra/database`, `@st
 | `.`           | `SettingsPromotableDriver`                            | settings as a promotable kind                                    |
 | `.`           | `MemorySettingFloorSourceDriver`, `MemorySetting...`  | floors and revisions in memory                                   |
 | `.`           | `SettingsLockedError`, `SettingValueInvalidError`     | refusals                                                         |
-| `.`           | `SettingBelowFloorError`, `SettingLiveReadOnlyError`  | refusals of the resolver                                         |
+| `.`           | `SettingBelowFloorError`                              | refusals of the resolver                                         |
 | `.`           | `SettingFourEyesError`, `SettingRevisionClosedError`  | refusals of approval                                             |
 | `.`           | `PromotionBaseStaleError`                             | refusal of a promotion whose live base moved                     |
 | `.`           | `SettingsRules`, `SettingsOptions`, `SettingKey`, ... | types                                                            |
@@ -89,7 +89,8 @@ const preferences = await this.settings.get(MessagesSettings, { user: event.cust
 The reader asks the store for the group's layers: the root holder, then each node down the scope path to the target
 node (the running scope session's when none is given), then the user's. An inner value wins, except a key a holder
 above locked. The merged values are parsed by the class's generated schema, so every unset field reads its default and
-the result is an instance of the class.
+the result is an instance of the class. With the floor source gen's wiring binds, a field below its market's legal
+floor reads the floor, exactly as `SettingsResolver#get` reads it (ADR 0395).
 
 ## Floors, provenance and revisions
 
@@ -110,7 +111,7 @@ await this.resolver.write(
 - Floors come from `SettingFloorSource`; the OS driver resolves the tenant's market pack and calls `settingFloorsOf`.
   A write that crosses a floor is refused `setting_below_floor`; a stored value or default that crosses a floor (a
   floor rose) reads as the floor, with `source: "floor"`, so the admin can tell the tenant.
-- On live, a key that is not `live` is refused `setting_live_read_only`; it changes in the sandbox and is promoted. A
+- On live, a key that is not `live` is refused `live_read_only` (the core `LiveReadOnlyError`, one field error per path, ADR 0395); it changes in the sandbox and is promoted. A
   break-glass write needs a reason and is recorded as such. A user's own preferences are always live.
 - Each write is a `SettingRevision`: applied now, `pending` when a key needs `approval` (a second person approves,
   `setting_four_eyes` refuses the author), or `scheduled` for a later `effectiveAt`; the app's scheduler calls
@@ -131,6 +132,21 @@ pack with one revision per group. `SettingsPromotableDriver` is settings' `Promo
 (`scope_path @> path`), so the table carries no subtree row-level-security policy; a write names its holder and is
 refused `settings_locked` for a key a holder above locks.
 
+## Promotion rollback and release
+
+`Promotable.diff(live, next, { release })` records the live snapshot it replaced (`previous`) and the platform release
+the sandbox runs; `apply(live, diff, approver, { release })` refuses a live environment on an older release with
+`promotion_release_too_old`. `rollbackOf(live, applied)` is a new change set back to `applied.previous`, reviewed and
+applied like any other (ADR 0359 decision 8, ADR 0395).
+
+## CLI packs
+
+`stackra settings:diff` and `settings:apply` call `settingsDiff` and `settingsApply` from `./node` in the member's
+folder: a YAML pack against a scope node's own values, applied as sandbox revisions with locks checked. A group whose
+keys carry a legal floor is refused there (the run cannot see the holder's market) and goes through the service or a
+promotion. The test helper `fakeResolver({ values, floors, now })` in `./testing` builds a real resolver over memory
+drivers and a settable clock.
+
 ## Testing
 
 ```ts
@@ -140,15 +156,14 @@ const app = await createTestingModule(OrdersModule)
 ```
 
 `fakeSettings` runs the real cascade and schema over a memory store, and records each form write as
-`{ page, scope, values }` in `fake.writes`.
+`{ page, scope, values }` in `fake.writes`. `fakeResolver({ values, floors, now })` returns a real `SettingsResolver`
+with its memory drivers and a clock the test moves (`clock.at = …`).
 
 ## Not here
 
 - The generated settings operations (`<module>.settings.get|update|history|revert|approve`) and the settings
-  migrator: gen and the settings control plane (ADR 0213). The `stackra settings:diff|apply` commands and deploy locks
-  from `runway.yaml`: `@stackra/cli` and runway, over `SettingsPackService`.
+  migrator: gen and the settings control plane (ADR 0213). Deploy locks from `runway.yaml`: runway.
 - Which market a tenant is in, and the OS `SettingFloorSource` driver: OS tenancy and settings.
-- Rollback of a promotion (ADR 0359 decision 8, proposed).
 - Moving a value stored under a field's old name (`@Renamed`): gen's settings migrator.
 - A web settings form and the client store driver that calls the operations.
 - `ConnectionRef<C>`, the typed connection reference: `@stackra/integrations` (ADR 0308).

@@ -19,6 +19,7 @@ import { z } from "zod";
 
 import { Settings } from "#core/bases/settings.base";
 import { Setting } from "#core/decorators/setting.decorator";
+import { MemorySettingFloorSourceDriver } from "#core/drivers/memory-setting-floor-source.driver";
 import { MemorySettingValueStoreDriver } from "#core/drivers/memory-setting-value-store.driver";
 import { SettingScope } from "#core/enums/setting-scope.enum";
 import { SettingType } from "#core/enums/setting-type.enum";
@@ -119,6 +120,27 @@ describe(SettingsReader, () => {
     const orders = await new SettingsReader(store).get(OrdersSettings, { scope: ACME });
     expect(orders.acceptingOrders).toBe(false);
     expect(orders.cancellation).toEqual({ autoCancelAfterMinutes: 45, customersMayCancel: false });
+  });
+
+  it("lifts a stored value and a default below the market floor, in a section too", async () => {
+    const store = new MemorySettingValueStoreDriver().seed("orders", {
+      "cancellation.autoCancelAfterMinutes": 10,
+    });
+    const floors = new MemorySettingFloorSourceDriver().seed("orders", [
+      {
+        path: "cancellation.autoCancelAfterMinutes",
+        value: 20,
+        bound: "min",
+        law: "test law",
+        market: "test",
+        version: "1.0.0",
+      },
+    ]);
+    const orders = await new SettingsReader(store, floors).get(OrdersSettings, { scope: ACME });
+    expect(orders.cancellation.autoCancelAfterMinutes).toBe(20);
+    expect(
+      (await new SettingsReader(store).get(OrdersSettings)).cancellation.autoCancelAfterMinutes,
+    ).toBe(10);
   });
 
   it("applies the user's values last", async () => {

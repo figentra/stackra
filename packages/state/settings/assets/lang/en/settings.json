@@ -3,10 +3,11 @@
     "settings_locked": "This setting is locked at a higher level.",
     "setting_value_invalid": "Enter a valid value for this setting.",
     "setting_below_floor": "This value is below what the law requires in this market.",
-    "setting_live_read_only": "This setting changes in your sandbox and goes live when you publish.",
+    "live_read_only": "This setting changes in your sandbox and goes live when you publish.",
     "setting_four_eyes": "Another person must approve this change.",
     "setting_revision_closed": "This change was already applied or rejected.",
-    "promotion_base_stale": "Live changed since this review. Review the changes again."
+    "promotion_base_stale": "Live changed since this review. Review the changes again.",
+    "promotion_release_too_old": "This change needs a newer platform release. Upgrade live, then publish again."
   },
   "form": {
     "not_saved": "This setting was not saved. Try again."
