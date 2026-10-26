@@ -33,6 +33,7 @@ Entry barrels are generated, never authored (ADR 0294 decision 15); until `stack
 | `addBusinessDays`, `BusinessDayResult`                  | N business days on, with every uncertain day crossed                                           |
 | `openIntervals`, `addWorkingMinutes`                    | working hours between two instants; an instant N working minutes on (SLAs, deadlines in hours) |
 | `occurrences`, `RecurrenceOptions`, `Occurrence`        | RRULE expansion in a time zone, skipping holidays and flagging uncertain dates                 |
+| `icalFeed`, `IcalFeed`, `IcalEvent`, `IcalStatus`       | an RFC 5545 published feed (VCALENDAR of VEVENTs) in UTC, TEXT-escaped and folded at 75 octets |
 | `CountMode`                                             | what COUNT counts: every generated date (RFC 5545, the default) or only kept dates             |
 | `findSlots`, `SlotQuery`, `Segment`, `Interval`         | start times a booking fits, with processing gaps that free the resource                        |
 | `ageOn`, `LeapBirthday`                                 | age in whole years on a date; the 29 February rule comes from the pack                         |
@@ -91,6 +92,15 @@ with no other BY part.
 
 Excepted and holiday dates count toward `COUNT`, as `EXDATE` does, unless `countMode` is `kept`: then only the dates
 kept count, so "ten sessions" stays ten when a holiday falls on one. Which mode a product uses is its own setting.
+
+## iCalendar feed
+
+`icalFeed` writes the text of a read-only subscribed calendar (`METHOD:PUBLISH`): one `VEVENT` per event with `UID`,
+`DTSTAMP`, `DTSTART`/`DTEND` in UTC, `SUMMARY` and an optional `STATUS`, CRLF line ends, lines folded at 75 octets
+without splitting a character. It is pure: the caller passes the stamp instant, the `PRODID` and every `UID` (product
+settings, never this package), and chooses a summary free of personal data. Refused with a `RangeError`: an instant
+without an offset, an end not after its start, a line break in `PRODID` or a `UID`. Not written: `RRULE`, `VALARM`,
+`VTIMEZONE`, attendees, location or description; add one only when a consumer needs it.
 
 ## Limits
 

@@ -2,7 +2,7 @@
   "name": "@stackra/calendar",
   "version": "0.0.0",
   "private": true,
-  "description": "Calendar mechanism: Umm al-Qura and Gregorian dates side by side, time zones, business days over holiday sets and working weeks read from market-pack data through the market-pack loader, working hours, RRULE recurrence (every RFC 5545 date and time part, with an optional count of kept dates) that skips holidays, slot finding with processing gaps and age on a date",
+  "description": "Calendar mechanism: Umm al-Qura and Gregorian dates side by side, time zones, business days over holiday sets and working weeks read from market-pack data through the market-pack loader, working hours, RRULE recurrence (every RFC 5545 date and time part, with an optional count of kept dates) that skips holidays, slot finding with processing gaps, an RFC 5545 published-feed writer and age on a date",
   "license": "MIT",
   "repository": {
     "type": "git",

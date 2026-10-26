@@ -35,6 +35,8 @@ times ADR 0414.
 - Calendar values come from pack keys under `calendar.` (`calendarFromPack`, `leapBirthdayFromPack`,
   `prayerMethodFromPack` for `calendar.prayer_times`); never read a market's data any other way, and never default
   a missing key. The `PrayerTimes` port's computed driver is plain arithmetic; the method is pack data.
+- `icalFeed` only writes; it reads no clock and holds no product identity (PRODID, UID host). Every value from a
+  caller that is not TEXT-escaped is refused when it holds a line break.
 - Every RRULE part is either supported or refused with its reason in the message (README table); never ignore one.
 - Only add a symbol a consumer imports today (the registry row in `notes/handover/stackra-package-needs.md`).
 
