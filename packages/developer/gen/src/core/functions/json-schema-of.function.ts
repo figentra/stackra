@@ -4,7 +4,8 @@
  *          with its required fields and properties, enums and shapes by `$ref` to `#/schemas/<module>.<Name>`, rules as
  *          JSON Schema keywords and defaults as their wire values. A shape that extends a member shape is flattened.
  *          A `Translated` field is a locale-to-text map (`@Str` rules on each text) and an `Upload<Bucket>` field the
- *          token object `{ id: "upl_…" }`, each marked with `x-stackra-type` (and the bucket with `x-stackra-bucket`).
+ *          token object `{ id: "upl_…" }`, each marked with `x-stackra-type` (and the bucket with `x-stackra-bucket`). A field typed with a package's shipped
+ *          `X$` is `{ "x-stackra-schema": "<specifier>#X$" }` (STA-1290).
  * Boundary: pure. A config's shape is never passed here (ADR 0305 rule 34: a schema bound to a Config never reaches a
  *           wire surface); `buildManifest` leaves configs out.
  * Runtime: isomorphic
@@ -122,6 +123,9 @@ function typeSchema(
       return { type: "string", enum: [...type.values] };
     case "schema":
       return ref(type.module, type.name);
+    case "shipped":
+      // No local `$ref`: the package's schema is the contract; `zodOfJsonSchema` imports it back.
+      return { "x-stackra-schema": `${type.from}#${type.name}$` };
     case "array":
       return keywords(
         {

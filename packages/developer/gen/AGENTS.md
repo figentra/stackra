@@ -7,7 +7,7 @@ Purpose: the agent rules of @stackra/gen: where code goes, entries and barrels, 
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
 Governing contract: ADR 0294; ADR 0295; ADR 0305; ADR 0260 (generated clients and typed events); ADR 0263; ADR 0162 and ADR 0222
-                    (the translated and upload shape kinds); ADR 0338 (a replica query's `ReplicaPage` output).
+                    (the translated and upload shape kinds); ADR 0338 (a replica query's `ReplicaPage` output); STA-1290 (the shipped shape kind).
 -->
 
 The Stackra compiler. Member at `packages/developer/gen` (`tier:lib`), in the programming model v3.1 shape (ADR 0294,
@@ -67,6 +67,9 @@ The Stackra compiler. Member at `packages/developer/gen` (`tier:lib`), in the pr
   `TypeDesc` kind read in `readTypeReference` (only when declared in a `@stackra/*` package) and one case in each of
   `emitSchemas`, `jsonSchemaOf` and, for a model column, `emitEntities`, with tests. `Translated` and
   `TranslatedStrings` are `translated`; `Upload<Bucket>` is `upload` and its argument must be a Bucket class.
+  Any other `@stackra/*` type whose `<Type>$` a `.` or `./contracts` barrel exports is `shipped` (STA-1290): imported
+  as `Shipped<Type>$`, never compiled again; its JSON Schema is `x-stackra-schema`. Never add a hand-kept table of
+  shipped schemas: the barrels are the source (`shippedSpecifier`).
 - `handle`'s output is a Schema class of the member, or `ReplicaPage` (any type argument) declared in a `@stackra/*`
   package for a replica query (ADR 0338): the reader records `handle.replica` and `buildManifest` writes
   `REPLICA_PAGE_SCHEMA` as `<module>.ReplicaPage`. Keep that constant in step with `ReplicaPage` in

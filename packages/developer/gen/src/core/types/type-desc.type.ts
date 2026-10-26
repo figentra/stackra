@@ -7,7 +7,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 4 and 26: the TypeScript type is the rule); the STA-335 type-to-schema spike;
  *                     ADR 0162 (decision 2: `Translated` per-locale values); ADR 0222 (decision 2: `Upload<Bucket>`
- *                     tokens).
+ *                     tokens); STA-1290 (a `@stackra/*` type with a shipped `X$` is the `shipped` kind).
  */
 
 /** The meaning of one shape field type. */
@@ -55,6 +55,11 @@ export type TypeDesc =
   | { readonly kind: "array"; readonly element: TypeDesc }
   /** `Record<string, T>`. */
   | { readonly kind: "record"; readonly value: TypeDesc }
+  /**
+   * A `@stackra/*` type (class, interface, alias or union) whose package ships `X$`: the schema is imported from
+   * `from` (an isomorphic entry) as `${name}$`, never compiled again.
+   */
+  | { readonly kind: "shipped"; readonly name: string; readonly from: string }
   /** A union of shape classes, discriminated by one enum-case field. */
   | {
       readonly kind: "union";

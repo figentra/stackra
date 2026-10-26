@@ -5,7 +5,7 @@
  *          `{ input, output }` of each action and query, the config alias, a member base `.extend`ed, a package base
  *          reused through `Base<Name>$`, a later reference made lazy, a sibling module imported, the
  *          `registerSchemas` call of gap G1, the `registerChanges` call beside it, and the translated and upload
- *          kinds (STA-1218).
+ *          kinds (STA-1218), and a package's shipped `X$` imported as `ShippedX$` (STA-1290).
  * Boundary: test only; asserts on the generated source text.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decision 26); ADR 0305 (rules 1 and 14); registry v3.1 G1;
@@ -268,5 +268,44 @@ describe("emitSchemas", () => {
     );
     expect(content).toContain('  listId: z.union([publicId("crl"), publicId("prl")]),');
     expect(content).toMatch(/import \{[^}]*type PublicId[^}]*\} from "@stackra\/contracts";/);
+  });
+
+  it("imports a package's shipped schema under an alias instead of compiling it (STA-1290)", () => {
+    const site: ShapeIR = {
+      name: "Site",
+      kind: "schema",
+      module: "orders",
+      file: "src/modules/orders/schemas/site.schema.ts",
+      importPath: "#modules/orders/schemas/site.schema",
+      fields: [
+        {
+          name: "address",
+          optional: false,
+          nullable: false,
+          type: { kind: "shipped", name: "Address", from: "@stackra/validation" },
+          rules: [],
+        },
+        {
+          name: "audience",
+          optional: false,
+          nullable: true,
+          type: { kind: "shipped", name: "Audience", from: "@stackra/iam/contracts" },
+          rules: [],
+        },
+      ],
+      relations: [],
+    };
+    const content = emitSchemas(
+      { ...COMMERCE_IR, shapes: [site], enums: [], classes: [] },
+      "orders",
+    );
+    expect(content).toContain("  address: ShippedAddress$,");
+    expect(content).toContain("  audience: ShippedAudience$.nullable(),");
+    expect(content).toMatch(
+      /import \{[^}]*Address\$ as ShippedAddress\$[^}]*\} from "@stackra\/validation";/,
+    );
+    expect(content).toContain(
+      'import { Audience$ as ShippedAudience$ } from "@stackra/iam/contracts";',
+    );
   });
 });

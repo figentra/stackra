@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `zodOfJsonSchema`: each JSON Schema `jsonSchemaOf` writes prints back as the zod helper the
  *          producer uses (public ids, dates, money, records, nullable, optional and defaulted fields, unions), a local
- *          `$ref` prints the caller's name, and an unknown schema decodes as `json()`.
+ *          `$ref` prints the caller's name, an `x-stackra-schema` imports the package's shipped schema (STA-1290), and an
+ *          unknown schema decodes as `json()`.
  * Boundary: test only; asserts on the printed source and the recorded imports.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0260 (decision 2).
@@ -74,6 +75,17 @@ describe("zodOfJsonSchema", () => {
     expect(print({ anyOf: [{ type: "boolean" }, { type: "null" }] }).source).toBe(
       "z.boolean().nullable()",
     );
+  });
+
+  it("imports a package's shipped schema back under its alias (STA-1290)", () => {
+    expect(print({ "x-stackra-schema": "@stackra/iam/contracts#Audience$" })).toEqual({
+      source: "ShippedAudience$",
+      imports: ["@stackra/iam/contracts#Audience$ as ShippedAudience$"],
+    });
+    expect(
+      print({ anyOf: [{ "x-stackra-schema": "@stackra/validation#Address$" }, { type: "null" }] })
+        .source,
+    ).toBe("ShippedAddress$.nullable()");
   });
 
   it("decodes what it cannot read as json()", () => {

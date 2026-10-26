@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `jsonSchemaOf`: required fields, rules as JSON Schema keywords, `$ref`s to enums and shapes,
  *          nullable fields, defaults as wire values, a member base's fields flattened in, and the translated and
- *          upload kinds (STA-1218).
+ *          upload kinds (STA-1218); a shipped `X$` as
+ *          `x-stackra-schema` (STA-1290).
  * Boundary: test only; runs on the commerce IR fixture.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 10 and 26); ADR 0158; ADR 0162; ADR 0222.
@@ -163,6 +164,42 @@ describe("jsonSchemaOf", () => {
     expect(schema.properties["listId"]).toEqual({
       type: "string",
       pattern: "^(crl|prl)_[0-9A-Za-z]{26}$",
+    });
+  });
+
+  it("references a package's shipped schema instead of describing it again (STA-1290)", () => {
+    const site: ShapeIR = {
+      name: "Site",
+      kind: "schema",
+      module: "orders",
+      file: "src/modules/orders/schemas/site.schema.ts",
+      importPath: "#modules/orders/schemas/site.schema",
+      fields: [
+        {
+          name: "address",
+          optional: false,
+          nullable: false,
+          type: { kind: "shipped", name: "Address", from: "@stackra/validation" },
+          rules: [],
+        },
+        {
+          name: "audience",
+          optional: false,
+          nullable: true,
+          type: { kind: "shipped", name: "Audience", from: "@stackra/iam/contracts" },
+          rules: [],
+        },
+      ],
+      relations: [],
+    };
+    const schema = jsonSchemaOf(site, COMMERCE_IR.shapes) as {
+      properties: Record<string, unknown>;
+    };
+    expect(schema.properties["address"]).toEqual({
+      "x-stackra-schema": "@stackra/validation#Address$",
+    });
+    expect(schema.properties["audience"]).toEqual({
+      anyOf: [{ "x-stackra-schema": "@stackra/iam/contracts#Audience$" }, { type: "null" }],
     });
   });
 });

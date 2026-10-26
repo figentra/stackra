@@ -21,7 +21,8 @@
  *                     `TranslatedStrings` read as the `translated` kind); ADR 0222 (decision 2: `Upload<Bucket>` reads as
  *                     the `upload` kind, its argument a Bucket class); ADR 0294 amendment 2026-10-26 (STA-1283: a bare or
  *                     prefix-union `PublicId`, `Readonly<Record>`, regex constants, `Translated.of`, `this.<field>`
- *                     spreads in a default, a trailing `tool: false, // reason:`).
+ *                     spreads in a default, a trailing `tool: false, // reason:`); STA-1290 (a field typed with a
+ *                     `@stackra/*` class, interface, alias or union whose package ships `X$` reads as `shipped`).
  */
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -32,6 +33,7 @@ import { CLIENTS_SPECIFIER } from "#core/constants/clients-specifier.constant";
 import { MODEL_TOKENS } from "#core/constants/model-tokens.constant";
 import { folderKey } from "#core/functions/folder-key.function";
 import { platformConstant } from "#core/functions/platform-constant.function";
+import { shippedSpecifier } from "#core/functions/shipped-specifier.function";
 import { snakeCase } from "#core/functions/snake-case.function";
 import type { ClassRef } from "#core/types/class-ref.type";
 import type { ClassValue } from "#core/types/class-value.type";
@@ -228,9 +230,10 @@ export function createSourceReader(
   const has = (node: TsNode, modifier: string): boolean =>
     (node.modifiers ?? []).some((candidate) => host.kind(candidate) === modifier);
 
-  // Package names by directory, for "is this declared in a @stackra package".
-  const packages = new Map<string, string | undefined>();
-  const packageOf = (path: string): string | undefined => {
+  // Packages (name and root folder) by directory, for "is this declared in a @stackra package".
+  type PackageAt = { readonly name: string | undefined; readonly root: string } | undefined;
+  const packages = new Map<string, PackageAt>();
+  const packageAt = (path: string): PackageAt => {
     let directory = dirname(path);
     const visited: string[] = [];
     while (true) {
@@ -249,8 +252,9 @@ export function createSourceReader(
         } catch {
           name = undefined;
         }
-        for (const seen of visited) packages.set(seen, name);
-        return name;
+        const found = { name, root: directory };
+        for (const seen of visited) packages.set(seen, found);
+        return found;
       }
       const parent = dirname(directory);
       if (parent === directory) {
@@ -260,6 +264,7 @@ export function createSourceReader(
       directory = parent;
     }
   };
+  const packageOf = (path: string): string | undefined => packageAt(path)?.name;
   const isStackra = (path: string): boolean => packageOf(path)?.startsWith("@stackra/") === true;
 
   const moduleOf = (path: string): string => {
@@ -891,6 +896,45 @@ export function createSourceReader(
       : undefined;
   };
 
+  // The `X$` schemas @stackra packages ship from their `.` and `./contracts` barrels: name to specifiers.
+  let shippedIndex: Map<string, Set<string>> | undefined;
+  const exportedNames = (file: TsNode): string[] =>
+    (file.statements ?? []).flatMap((statement) => {
+      const kind = host.kind(statement);
+      if (kind === "ExportDeclaration" && statement.isTypeOnly !== true)
+        return (statement.exportClause?.elements ?? [])
+          .filter((element) => element.isTypeOnly !== true)
+          .map((element) => nameOf(element.name));
+      if (kind === "VariableStatement" && has(statement, "ExportKeyword"))
+        return (statement.declarationList?.declarations ?? []).map((declaration) =>
+          nameOf(declaration.name),
+        );
+      return [];
+    });
+  /** Where `<name>$` ships from: the type's own package first, else the first specifier in sort order. */
+  const shippedOf = (name: string, typePath: string): string | undefined => {
+    if (shippedIndex === undefined) {
+      const index = new Map<string, Set<string>>();
+      for (const file of all) {
+        const path = file.fileName ?? "";
+        const found = isOwn(path) ? undefined : packageAt(path);
+        if (found?.name === undefined || !found.name.startsWith("@stackra/")) continue;
+        const from = shippedSpecifier(found.name, path.slice(found.root.length + 1));
+        if (from === undefined) continue;
+        for (const exported of exportedNames(file)) {
+          if (!exported.endsWith("$")) continue;
+          index.set(exported, (index.get(exported) ?? new Set<string>()).add(from));
+        }
+      }
+      shippedIndex = index;
+    }
+    const candidates = [...(shippedIndex.get(`${name}$`) ?? [])].sort();
+    const own = packageOf(typePath);
+    return (
+      candidates.find((from) => from === own || from.startsWith(`${own ?? ""}/`)) ?? candidates[0]
+    );
+  };
+
   const readTypeReference = (node: TsNode, subject: string, quiet: boolean): TypeDesc => {
     const symbol = node.typeName === undefined ? undefined : host.symbolAt(node.typeName);
     if (symbol === undefined) return unknownType(node, subject, quiet);
@@ -956,6 +1000,16 @@ export function createSourceReader(
         args[0].exprName !== undefined
       )
         return enumOf(host.symbolAt(args[0].exprName), node) ?? unknownType(node, subject, quiet);
+      // A class, interface, alias or union whose package ships `X$` (STA-1290); a model or an enum keeps its route.
+      const declared = classDeclarationOf(symbol);
+      const from = shippedOf(name, path);
+      if (
+        from !== undefined &&
+        (declared === undefined
+          ? enumOf(symbol, node) === undefined
+          : kindInfo(declared)?.kind !== "model")
+      )
+        return { kind: "shipped", name, from };
     }
     const declarationClass = classDeclarationOf(symbol);
     if (declarationClass !== undefined) {

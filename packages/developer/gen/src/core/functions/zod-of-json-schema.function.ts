@@ -3,7 +3,7 @@
  * Purpose: `zodOfJsonSchema`, the zod source a generated client prints for one JSON Schema of a producer's manifest:
  *          the inverse of `jsonSchemaOf`, so a consumer decodes with the same helpers the producer's `#stackra/schemas`
  *          uses (`publicId`, `isoDateTime`, `money`, `url`, `duration`, `json`) and a `$ref` prints the name the
- *          caller gives it.
+ *          caller gives it; an `x-stackra-schema` (`<specifier>#X$`) imports that package's shipped schema (STA-1290).
  * Boundary: pure: schema in, source text out, imports recorded through `context.use`. Only the keywords
  *           `jsonSchemaOf` writes are read; anything else decodes as `json()` (the producer still validates the call).
  * Runtime: isomorphic
@@ -55,6 +55,13 @@ function isMoney(schema: Schema): boolean {
 
 /** The zod source of one non-null type. */
 function typeOf(schema: Schema, type: unknown, context: ZodPrintContext): string {
+  const shipped = schema["x-stackra-schema"];
+  const at = typeof shipped === "string" ? shipped.lastIndexOf("#") : -1;
+  if (typeof shipped === "string" && at > 0) {
+    const name = shipped.slice(at + 1);
+    context.use(shipped.slice(0, at), `${name} as Shipped${name}`);
+    return `Shipped${name}`;
+  }
   const reference = schema["$ref"];
   if (typeof reference === "string") {
     const printed = context.ref(reference);

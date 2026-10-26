@@ -11,7 +11,8 @@
  *           defaults. A reference to a shape declared later in the file is `z.lazy`, so a cycle still loads. A
  *           `Translated` field is a locale map decoded through `Translated.of` (`TranslatedStrings` to `{ values }`),
  *           its `@Str` rules on each text; an `Upload<Bucket>` field is `@stackra/media`'s `Upload.schema`. A bare
- *           `PublicId` checks the format with any prefix; a prefix union is a union of `publicId(prefix)`.
+ *           `PublicId` checks the format with any prefix; a prefix union is a union of `publicId(prefix)`. A `@stackra/*` type with a shipped `X$` imports that schema
+ *           (as `ShippedX$`) instead of compiling the shape again (STA-1290).
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 26: the shape compiler); ADR 0305 (rules 1 and 14); registry v3.1 gap G1;
  *                     ADR 0162 (decision 2); ADR 0222 (decision 2).
@@ -144,6 +145,10 @@ function zodOf(
       return `z.enum(${JSON.stringify(type.values)})`;
     case "schema":
       return reference(context, type.module, type.name);
+    case "shipped":
+      // Aliased so it never collides with a member shape of the same name in this file.
+      use(imports, type.from, `${type.name}$ as Shipped${type.name}$`);
+      return `Shipped${type.name}$`;
     case "array": {
       const unique = rules.some((rule) => rule.name === "List" && rule.options["unique"] === true)
         ? `.refine((items) => new Set(items.map((item) => JSON.stringify(item))).size === items.length, ` +

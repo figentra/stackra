@@ -14,7 +14,8 @@
  *          listener's `handle` parameter reads as its event class (its own, or a `#stackra/clients/*` one by its import),
  *          `EventEnvelope` as a relay, and anything else as `listener_handle_signature` (ADR 0260 decision 4); a
  *          trailing `tool: false, // reason:` comment; and the OS gen pass forms (STA-1283): a bare or prefix-union
- *          `PublicId`, `Readonly<Record>`, an imported regular expression constant and `this.<field>` spreads.
+ *          `PublicId`, `Readonly<Record>`, an imported regular expression constant and `this.<field>` spreads; and a
+ *          field typed with another package's interface, alias or union that ships `X$` read as `shipped` (STA-1290).
  * Boundary: test only; writes the fixture under `.cache/` and opens TypeScript on it.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decision 26, 2026-10-23 item 13, decision 28); ADR 0305
@@ -655,5 +656,97 @@ describe("createSourceReader on the OS gen pass forms", async () => {
     expect(field("Limits", "levels")?.default?.value).toEqual(["tenant", "location"]);
     expect(field("Limits", "errors")?.default?.value).toEqual({ enabled: false, sampled: true });
     expect(reader.errors.some((error) => error.code === "shape_default_not_constant")).toBe(false);
+  });
+});
+
+/** Stand-in packages: one ships `X$` from `.` and `./contracts`, one ships none (its `ScopeRef$` lives in the first). */
+const SHIPPED_SOURCES: Readonly<Record<string, string>> = {
+  "node_modules/@stackra/geo-fixture/package.json": JSON.stringify({
+    name: "@stackra/geo-fixture",
+    exports: {
+      ".": { types: "./index.d.ts" },
+      "./contracts": { types: "./contracts.d.ts" },
+    },
+  }),
+  "node_modules/@stackra/geo-fixture/index.d.ts": [
+    "export interface Address { line1: string }",
+    "export type Condition = { all: Condition[] } | { fact: string };",
+    "export declare const Address$: unknown;",
+    "declare const CONDITION_SCHEMA: unknown;",
+    "export { CONDITION_SCHEMA as Condition$ };",
+    "export declare const ScopeRef$: unknown;",
+    "",
+  ].join("\n"),
+  "node_modules/@stackra/geo-fixture/contracts.d.ts": [
+    'export type Audience = "all" | "staff";',
+    "export declare const Audience$: unknown;",
+    "",
+  ].join("\n"),
+  "node_modules/@stackra/kernel-fixture/package.json": JSON.stringify({
+    name: "@stackra/kernel-fixture",
+    types: "./index.d.ts",
+  }),
+  "node_modules/@stackra/kernel-fixture/index.d.ts": [
+    "export interface ScopeRef { id: string }",
+    "export interface Plain { id: string }",
+    "",
+  ].join("\n"),
+  "src/core/schemas/site.schema.ts": [
+    'import { Schema } from "@stackra/validation";',
+    'import type { Address, Condition } from "@stackra/geo-fixture";',
+    'import type { Audience } from "@stackra/geo-fixture/contracts";',
+    'import type { Plain, ScopeRef } from "@stackra/kernel-fixture";',
+    "",
+    "export class Site extends Schema {",
+    "  address!: Address;",
+    "  rule!: Condition;",
+    "  audience!: Audience | null;",
+    "  scopes!: ScopeRef[];",
+    "  plain!: Plain;",
+    "}",
+    "",
+  ].join("\n"),
+};
+
+describe("createSourceReader on fields typed with a package's shipped schema", async () => {
+  const root = writeFixtureMember("shipped", SHIPPED_SOURCES);
+  const host = await openHost(join(root, "tsconfig.json"));
+  const reader = createSourceReader(host, readMemberFacts(root));
+  const shapes = reader.sources.flatMap((file) => reader.shapes(file));
+  host.close();
+  const field = (name: string) =>
+    shapes
+      .find((candidate) => candidate.name === "Site")
+      ?.fields.find((candidate) => candidate.name === name);
+
+  it("reads an interface, an alias union and a contracts alias as `shipped` from their entry", () => {
+    expect(field("address")?.type).toEqual({
+      kind: "shipped",
+      name: "Address",
+      from: "@stackra/geo-fixture",
+    });
+    expect(field("rule")?.type).toEqual({
+      kind: "shipped",
+      name: "Condition",
+      from: "@stackra/geo-fixture",
+    });
+    expect(field("audience")?.type).toEqual({
+      kind: "shipped",
+      name: "Audience",
+      from: "@stackra/geo-fixture/contracts",
+    });
+    expect(field("audience")?.nullable).toBe(true);
+  });
+
+  it("finds a schema another package ships for the type", () => {
+    expect(field("scopes")?.type).toEqual({
+      kind: "array",
+      element: { kind: "shipped", name: "ScopeRef", from: "@stackra/geo-fixture" },
+    });
+  });
+
+  it("still refuses a package type nobody ships a schema for, and only that one", () => {
+    const unknown = reader.errors.filter((error) => error.code === "shape_unknown_type");
+    expect(unknown.map((error) => error.subject)).toEqual(["Site.plain"]);
   });
 });

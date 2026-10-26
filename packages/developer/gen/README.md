@@ -7,7 +7,8 @@ Purpose: the package's reader guide: what gen is, its entries and symbols, a run
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
 Governing contract: ADR 0294; ADR 0295; ADR 0260 (generated clients); ADR 0261; ADR 0263; ADR 0162 and ADR 0222
-                    (the translated and upload shape kinds); ADR 0338 (a replica query's `ReplicaPage` output).
+                    (the translated and upload shape kinds); ADR 0338 (a replica query's `ReplicaPage` output); STA-1290 (the
+                    shipped shape kind).
 -->
 
 The Stackra compiler. Gen reads a member's source through the TypeScript compiler API, derives every identity and
@@ -93,6 +94,14 @@ may use these platform types (each read only when declared in a `@stackra/*` pac
 A bare `PublicId` is a polymorphic reference: any registered prefix (`^[a-z]{2,6}_…`), compiled to a format check
 typed `PublicId`. `PublicId<"crl" | "prl">` compiles to a union of `publicId(prefix)`. `Readonly<Record<string, X>>`
 reads as the record.
+
+A field typed with any other `@stackra/*` type (a class, an interface, an alias or a union, such as `Address`,
+`ScopeRef`, `Condition` or `Audience`) reads as `shipped` when a `@stackra/*` package's `.` or `./contracts` barrel
+exports `<Type>$` (STA-1290): `#stackra/schemas` imports it as `Shipped<Type>$` instead of compiling the shape again,
+the JSON Schema is `{ "x-stackra-schema": "<specifier>#<Type>$" }`, and a generated client imports the same schema back.
+The type's own package wins when two ship the name; a model column of that type is `json`. A package type nobody ships
+is still `shape_unknown_type`. `BusinessCalendar["workingWeek"]` (an indexed access) is not read: type the field
+`WorkingWeek`.
 
 `@Str` and `@Trim` on a translated field apply to each locale's text. A model's `Translated` field gets
 `TranslatedType` in its `EntitySchema`, so it loads back as a `Translated`. `Upload<X>` where `X` is not a Bucket class
