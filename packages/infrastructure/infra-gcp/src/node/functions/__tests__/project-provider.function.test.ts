@@ -13,7 +13,9 @@ import { mockPulumi } from "#testing/functions/mock-pulumi.function";
 
 /** A value a provider may receive JSON-encoded. */
 function decoded(value: unknown): unknown {
-  return typeof value === "string" && /^[[{]/.test(value) ? JSON.parse(value) : value;
+  return typeof value === "string" && /^([[{]|true$|false$)/.test(value)
+    ? JSON.parse(value)
+    : value;
 }
 
 describe("projectProvider", () => {

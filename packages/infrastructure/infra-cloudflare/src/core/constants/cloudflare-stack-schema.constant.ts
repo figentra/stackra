@@ -50,26 +50,30 @@ export const CLOUDFLARE_STACK_SCHEMA = z
       })
       .optional(),
   })
-  .superRefine((stack, context) => {
-    if (stack.devZone === undefined && (Object.keys(stack.tunnels).length > 0 || stack.access))
-      context.addIssue({
-        code: "custom",
-        path: ["devZone"],
-        message: "Tunnels and Access need the dev zone (ADR 0290 decision 1)",
-      });
-    for (const [zone, options] of Object.entries(stack.zones)) {
-      const outside = (host: string) => host !== zone && !host.endsWith(`.${zone}`);
-      for (const host of Object.keys(options.workers).filter(outside))
+  .superRefine(
+    (stack, context) => {
+      if (stack.devZone === undefined && (Object.keys(stack.tunnels).length > 0 || stack.access))
         context.addIssue({
           code: "custom",
-          path: ["zones", zone, "workers", host],
-          message: `${host} is not under ${zone}`,
+          path: ["devZone"],
+          message: "Tunnels and Access need the dev zone (ADR 0290 decision 1)",
         });
-      if (options.fallbackOrigin !== undefined && outside(options.fallbackOrigin))
-        context.addIssue({
-          code: "custom",
-          path: ["zones", zone, "fallbackOrigin"],
-          message: `${options.fallbackOrigin} is not under ${zone}`,
-        });
-    }
-  });
+      for (const [zone, options] of Object.entries(stack.zones)) {
+        const outside = (host: string) => host !== zone && !host.endsWith(`.${zone}`);
+        for (const host of Object.keys(options.workers).filter(outside))
+          context.addIssue({
+            code: "custom",
+            path: ["zones", zone, "workers", host],
+            message: `${host} is not under ${zone}`,
+          });
+        if (options.fallbackOrigin !== undefined && outside(options.fallbackOrigin))
+          context.addIssue({
+            code: "custom",
+            path: ["zones", zone, "fallbackOrigin"],
+            message: `${options.fallbackOrigin} is not under ${zone}`,
+          });
+      }
+    },
+    // Cross-field checks run once the shape is valid, so a malformed document reports only its shape.
+    { when: (payload) => payload.issues.length === 0 },
+  );

@@ -131,13 +131,14 @@ beforeAll(async () => {
 
 describe("awsToolsStack", () => {
   it("pins the provider to the region and its account", () => {
-    const provider = resource("Provider", "acme-production-gcc-tools");
+    const provider = resource("providers:aws", "acme-production-gcc-tools");
     expect(provider.inputs.region).toBe("me-central-1");
-    expect(provider.inputs.allowedAccountIds).toEqual(["111122223333"]);
+    // Pulumi hands a provider's non-string inputs over JSON-encoded.
+    expect(JSON.parse(String(provider.inputs.allowedAccountIds))).toEqual(["111122223333"]);
   });
 
   it("runs an endpoint tool privately, registered in the namespace, with its data volume", () => {
-    const service = resource("Service", "acme-production-gcc-nominatim");
+    const service = resource("ecs/service:Service", "acme-production-gcc-nominatim");
     expect(service.type).toContain("ecs");
     expect(service.inputs.networkConfiguration).toMatchObject({ assignPublicIp: false });
     expect(service.inputs.serviceRegistries).toBeDefined();

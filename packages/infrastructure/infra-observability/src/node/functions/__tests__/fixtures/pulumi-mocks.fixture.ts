@@ -26,6 +26,8 @@ const OUTPUTS: Readonly<Record<string, (name: string) => Record<string, unknown>
     bucketRegionalDomainName: `${name}.s3.me-central-1.amazonaws.com`,
   }),
   "aws:iam/accessKey:AccessKey": (name) => ({ secret: `${name}-secret` }),
+  // The engine auto-names a user declared without a name; the mocks stand in with the resource name.
+  "aws:iam/user:User": (name) => ({ name }),
   "better-uptime:index/heartbeat:Heartbeat": (name) => ({
     url: `https://uptime.betterstack.test/${name}`,
   }),

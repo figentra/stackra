@@ -26,9 +26,10 @@ const GITHUB = {
   },
 };
 
-/** A root runway like the template's, with `providers.github` replaced. */
-const root = (github: unknown = GITHUB) =>
-  parseRunway("root", {
+/** A root runway like the template's, with `providers.github` replaced; an explicit `undefined` leaves it out. */
+const root = (...args: [github?: unknown]) => {
+  const github = args.length === 0 ? GITHUB : args[0];
+  return parseRunway("root", {
     version: 3,
     project: "acme-platform",
     providers: {
@@ -43,6 +44,7 @@ const root = (github: unknown = GITHUB) =>
     },
     secrets: { ci: ["EXPO_TOKEN", "TURBO_TOKEN"], gateway: ["GATEWAY_SIGNING_KEY"] },
   });
+};
 
 /** The paths a refused plan names. */
 const pathsOf = (run: () => unknown): string[] => {

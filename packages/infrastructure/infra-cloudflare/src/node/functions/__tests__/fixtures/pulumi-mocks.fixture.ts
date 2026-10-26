@@ -28,8 +28,10 @@ export async function mockPulumi(
   await pulumi.runtime.setMocks(
     {
       newResource: (args) => {
-        declared.push({ type: args.type, name: args.name, inputs: args.inputs, importId: args.id });
-        return { id: args.id ?? `${args.name}-id`, state: args.inputs };
+        // The engine hands an empty id, not undefined, to a resource that is not imported.
+        const importId = args.id || undefined;
+        declared.push({ type: args.type, name: args.name, inputs: args.inputs, importId });
+        return { id: importId ?? `${args.name}-id`, state: args.inputs };
       },
       call: (args) => args.inputs,
     },
