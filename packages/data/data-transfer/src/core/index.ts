@@ -4,7 +4,7 @@
  *          `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. The ports, `ImportRunState` and the contract types are exported
  *           from `./contracts` only (ADR 0294 decision 15); the XLSX drivers from `./node` only, so a browser never
- *           pulls exceljs (ADR 0431 decision 5). The CSV parser, decoders, limits, cell conversions and the constants
+ *           pulls exceljs (ADR 0431 decision 5). The CSV parser, decoders, limits, cell conversions, `crc32` and the constants
  *           other than the two profile schemas stay internal.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision.
@@ -30,6 +30,7 @@ export { normalizeHeader } from "#core/functions/normalize-header.function";
 export { payrollSheet } from "#core/functions/payroll-sheet.function";
 export { previewTabular } from "#core/functions/preview-tabular.function";
 export { sheetImportsOf } from "#core/functions/sheet-imports-of.function";
+export { writeZip } from "#core/functions/write-zip.function";
 export { ImportRunner } from "#core/services/import-runner.service";
 export type { ColumnField } from "#core/types/column-field.type";
 export type { ColumnMapping } from "#core/types/column-mapping.type";
@@ -45,3 +46,4 @@ export type { RevertTargets } from "#core/types/revert-targets.type";
 export type { SheetImport } from "#core/types/sheet-import.type";
 export type { TabularPreview } from "#core/types/tabular-preview.type";
 export type { WorkbookImportOptions } from "#core/types/workbook-import-options.type";
+export type { ZipEntry } from "#core/types/zip-entry.type";

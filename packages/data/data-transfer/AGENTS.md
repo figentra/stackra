@@ -34,6 +34,8 @@ Tabular import and export (ADR 0367, ADR 0163 decisions 3 and 4). Member at `pac
 - Readers stream: never collect a whole file. Decoding is strict (`fatal: true`).
 - A refused row is reported (`RowError`), never fatal. A batch that throws fails the run; the run resumes after its
   cursor.
+- `writeZip` streams: never collect an entry or the archive. ZIP64 is written only when a field overflows, so a small
+  archive stays readable by every unzip tool.
 - Only add a symbol a consumer imports today (OS data-exchange, a product importer, the registry row).
 
 ## Rules that fail the build

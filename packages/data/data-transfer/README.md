@@ -3,8 +3,8 @@
 Tabular import and export for every product (ADR 0367 and ADR 0431, implementing ADR 0163 decisions 3 and 4):
 streaming CSV, JSON Lines and XLSX readers and writers, encoding detection with a market-pack fallback, Arabic header
 normalisation, column mapping and mapping profiles, a preview, per-row errors, resumable single- and multi-sheet
-imports recorded in a ledger with a whole-run revert and a before-image purge, and payroll pay-input exports (CSV,
-XLSX, DATEV ASCII) from per-provider profiles.
+imports recorded in a ledger with a whole-run revert and a before-image purge, payroll pay-input exports (CSV,
+XLSX, DATEV ASCII) from per-provider profiles, and a streaming zip writer (deflate, ZIP64).
 
 **Tier:** `tier:lib` (`packages/data/data-transfer`). Entries `.`, `./contracts` and `./node` (XLSX only, so a browser
 never loads exceljs). Depends on `@stackra/container`,
@@ -29,6 +29,7 @@ encoding of a market are inputs the caller reads from settings and market packs.
 | `.`           | `IMPORT_MAPPING_PROFILE_SCHEMA`, `sheetImportsOf`                                       | a seed-pack mapping profile to `runSheets` sheets               |
 | `.`           | `PAYROLL_EXPORT_PROFILE_SCHEMA`, `payrollSheet`, `datevWriteOptionsOf`                  | pay inputs to a provider's file                                 |
 | `.`           | `previewTabular`, `matchColumns`, `compileMapping`, `normalizeHeader`, `detectEncoding` | the mapping screen's helpers                                    |
+| `.`           | `writeZip`, `ZipEntry`                                                                  | a streamed zip of many files: deflate or store, ZIP64           |
 | `.`           | `TransferLimitExceededError`, `UnreadableEncodingError`                                 | a file past a limit; a file whose text cannot be read (400)     |
 | `.`           | `ImportRunClosedError`, `ImportRunNotFoundError`, `ImportUndoExpiredError`              | a closed run (409); an unknown run (404); past the window (412) |
 
@@ -75,6 +76,29 @@ const bytes = new XlsxWriterDriver().write([
   { name: "Lines", rows: lineRows() },
 ]);
 ```
+
+## A zip
+
+```ts
+import { JsonLinesWriterDriver, writeZip } from "@stackra/data-transfer";
+
+const bytes = writeZip(
+  [
+    { name: "manifest.json", bytes: [manifestBytes] },
+    {
+      name: "models/orders.jsonl",
+      bytes: new JsonLinesWriterDriver().write([{ name: "orders", rows }]),
+    },
+    { name: "files/logo.png", bytes: logo, method: "store" }, // already compressed
+  ],
+  clock.now(),
+);
+await disk.write(path, bytes, { contentType: "application/zip" });
+```
+
+Entries are deflated as their chunks arrive (`CompressionStream("deflate-raw")`) and stored with `method: "store"`.
+Sizes go in a data descriptor after each entry, so nothing is buffered but one central record per entry. Past 4 GiB or
+65,535 entries the archive carries ZIP64 records. Names are UTF-8; signing the bytes is the caller's.
 
 The CSV writer writes a UTF-8 BOM and prefixes text cells that a spreadsheet would run as formulas with `'`; both are
 options (`byteOrderMark`, `formulaGuard`).

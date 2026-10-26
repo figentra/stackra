@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the consumer contract of the `.` entry: the drivers, refusals, functions and `ImportRunner` are exported
+ * Purpose: the consumer contract of the `.` entry: the drivers, refusals, functions (`writeZip` among them) and `ImportRunner` are exported
  *          and nothing else is (no port, no XLSX driver, no internal parser or constant), the public types resolve, and a CSV upload
  *          runs end to end through preview, column matching and import.
  * Boundary: test only; imports the stand-in barrel through its `#core` alias.
@@ -32,6 +32,7 @@ import type {
   SheetImport,
   TabularPreview,
   WorkbookImportOptions,
+  ZipEntry,
 } from "#core/index";
 
 class SystemClock extends Driver(Clock) {
@@ -65,10 +66,12 @@ describe("@stackra/data-transfer", () => {
       "payrollSheet",
       "previewTabular",
       "sheetImportsOf",
+      "writeZip",
     ]);
     expect("XlsxReaderDriver" in dataTransfer).toBe(false);
     expect("TabularReader" in dataTransfer).toBe(false);
     expect("parseCsv" in dataTransfer).toBe(false);
+    expect("crc32" in dataTransfer).toBe(false);
   });
 
   it("resolves its public types", () => {
@@ -84,6 +87,7 @@ describe("@stackra/data-transfer", () => {
     >();
     expectTypeOf<RevertTargets>().not.toBeAny();
     expectTypeOf<PayInput["employee"]>().toEqualTypeOf<string>();
+    expectTypeOf<ZipEntry["method"]>().toEqualTypeOf<"deflate" | "store" | undefined>();
   });
 
   it("runs an upload through preview, matching and import", async () => {
