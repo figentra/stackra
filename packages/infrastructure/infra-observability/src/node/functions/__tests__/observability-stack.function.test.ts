@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `observabilityStack`: a full plan declares the log pipeline, the Sentry projects and the
  *          heartbeats and exports values under the `ref:` paths the runways name; a plan without the telemetry and
- *          Sentry blocks declares only its heartbeats and still exports the indicators.
+ *          Sentry blocks declares only its heartbeats and still exports the indicators; a status page shows each
+ *          heartbeat of its environments in that environment's section and exports its id.
  * Boundary: test only; Pulumi under mocks, so no provider or cloud call.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0184; ADR 0171 (decisions 4 and 6).
@@ -50,6 +51,7 @@ const PLAN: ObservabilityPlan = {
     },
   ],
   slos: { startAt: "first-paying-tenant" },
+  statusPage: null,
 };
 
 describe("observabilityStack", () => {
@@ -82,5 +84,41 @@ describe("observabilityStack", () => {
     expect(stack.sentry).toBeUndefined();
     expect(stack.outputs).toEqual({ heartbeats: {}, slis: PLAN.slis });
     expect(declared).toEqual([]);
+  });
+
+  it("puts each heartbeat of the page's environments in that environment's section", async () => {
+    const stack = observabilityStack({
+      ...PLAN,
+      statusPage: {
+        subdomain: "acme-status",
+        companyName: "Acme",
+        companyUrl: "https://acme.example",
+        timezone: "Asia/Riyadh",
+        customDomain: "status.acme.example",
+        published: false,
+        environments: ["production"],
+      },
+    });
+    await settled(stack);
+
+    const page = declared.find((resource) => resource.type.endsWith("StatusPage"));
+    expect(page?.inputs).toEqual({
+      companyName: "Acme",
+      companyUrl: "https://acme.example",
+      subdomain: "acme-status",
+      timezone: "Asia/Riyadh",
+      published: false,
+      customDomain: "status.acme.example",
+    });
+    const section = declared.find((resource) => resource.type.endsWith("StatusPageSection"));
+    expect(section?.inputs).toMatchObject({ name: "production", position: 0 });
+    const entry = declared.find((resource) => resource.type.endsWith("StatusPageResource"));
+    expect(entry?.inputs).toMatchObject({
+      resourceType: "Heartbeat",
+      publicName: "commerce outbox",
+    });
+    const { statusPage } = stack.outputs;
+    if (!statusPage) throw new Error("the status page was not exported");
+    expect(await valueOf(statusPage.id)).toBe("status-acme-platform-id");
   });
 });

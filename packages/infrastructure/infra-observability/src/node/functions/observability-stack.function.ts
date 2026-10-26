@@ -2,17 +2,19 @@
  * Stackra file contract:
  * Purpose: `observabilityStack(plan)`, the telemetry part of the Pulumi program `stackra infra gen` composes for the
  *          core stack: the log pipeline when the plan has a telemetry block, the Sentry projects when it has a Sentry
- *          block, and the heartbeats. `outputs` mirrors the `ref:` paths the runways name (`otlp.endpoint`,
+ *          block, the heartbeats, and the public status page when the plan has one. `outputs` mirrors the `ref:` paths the runways name (`otlp.endpoint`,
  *          `betterstack.source`, `sentry.dsn.<member>`), plus the OTLP token and heartbeat URLs as secrets and the
  *          indicators, for the program to export and the stacks repository to copy into each stack's config.
  * Boundary: declares Pulumi resources only. Agents run `pulumi preview` at most; `up` is the owner's.
  * Runtime: node (Pulumi program)
- * Governing contract: ADR 0184, ADR 0171 (decisions 3, 4 and 6, as amended by 0289 decision 9), ADR 0173.
+ * Governing contract: ADR 0184, ADR 0185 (decision 3), ADR 0171 (decisions 3, 4 and 6, as amended by 0289 decision 9),
+ *                     ADR 0173.
  */
 import type { ObservabilityPlan } from "#core/types/observability-plan.type";
 import { heartbeatMonitors } from "#node/functions/heartbeat-monitors.function";
 import { logPipeline } from "#node/functions/log-pipeline.function";
 import { sentryProjects } from "#node/functions/sentry-projects.function";
+import { statusPage } from "#node/functions/status-page.function";
 
 /**
  * Every telemetry resource of the plan, and the values the program exports.
@@ -34,10 +36,20 @@ export function observabilityStack(plan: ObservabilityPlan) {
           environments: plan.environments,
         });
   const heartbeats = heartbeatMonitors({ project: plan.project, heartbeats: plan.heartbeats });
+  const status =
+    plan.statusPage === null
+      ? undefined
+      : statusPage({
+          project: plan.project,
+          page: plan.statusPage,
+          heartbeats: plan.heartbeats,
+          monitors: heartbeats.heartbeats,
+        });
   return {
     logs,
     sentry,
     heartbeats: heartbeats.heartbeats,
+    status,
     outputs: {
       ...(logs === undefined
         ? {}
@@ -47,6 +59,7 @@ export function observabilityStack(plan: ObservabilityPlan) {
           }),
       ...(sentry === undefined ? {} : { sentry: { dsn: sentry.dsn } }),
       heartbeats: heartbeats.urls,
+      ...(status === undefined ? {} : { statusPage: { id: status.statusPage.id } }),
       slis: plan.slis,
     },
   };

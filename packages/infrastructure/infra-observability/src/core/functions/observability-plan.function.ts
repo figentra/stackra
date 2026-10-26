@@ -4,12 +4,13 @@
  *          `providers.sentry`, `providers.betterstack` and the `observability` section) and the members (each app's
  *          `telemetry.sentryProject`, the service keys and the jobs that send heartbeats): the OTLP destination and its
  *          log retention, one heartbeat per deployed environment and job, one Sentry project per app that names one,
- *          and availability and latency indicators for every service.
+ *          availability and latency indicators for every service, and the public status page when the runway
+ *          declares one.
  * Boundary: pure: parsed runways in, a plan out. Reports every failure at once. Reads no file, resolves no `ref:` and
  *           calls no cloud; `observabilityStack` (`./node`) declares the plan's resources.
  * Runtime: isomorphic
  * Governing contract: ADR 0184 (decisions 1 to 6), ADR 0171 (decisions 2 and 6), ADR 0296 (decisions 1 and 2: member
- *                     WHAT, root WHERE), ADR 0185 (decision 1: Better Stack runs on-call).
+ *                     WHAT, root WHERE), ADR 0185 (decisions 1 and 3: Better Stack runs on-call and the status page).
  */
 import { Enum } from "@stackra/contracts";
 import { RunwayEnvironment } from "@stackra/runway";
@@ -138,6 +139,19 @@ export function observabilityPlan(
           : "Expected the organization slug (public, never a ref:)",
     });
 
+  const page = policy.statusPage;
+  if (page !== undefined && !betterstack)
+    issues.push({
+      path: "root.providers.betterstack",
+      message: "The status page is served by Better Stack: name the account",
+    });
+  for (const environment of page?.environments ?? [])
+    if (!environments.includes(environment))
+      issues.push({
+        path: "root.observability.statusPage.environments",
+        message: `${environment} is not a monitored environment of this runway`,
+      });
+
   if (issues.length > 0) throw new ObservabilityConfigInvalidError("the telemetry runways", issues);
 
   const slis: ServiceSli[] = members.services.flatMap((service): ServiceSli[] => [
@@ -169,5 +183,17 @@ export function observabilityPlan(
     sentry: projects.length === 0 ? null : { org: String(org), projects },
     slis,
     slos: { startAt: policy.slos.startAt },
+    statusPage:
+      page === undefined
+        ? null
+        : {
+            subdomain: page.subdomain,
+            companyName: page.companyName,
+            companyUrl: page.companyUrl,
+            timezone: page.timezone,
+            customDomain: page.customDomain ?? null,
+            published: page.published,
+            environments: page.environments,
+          },
   };
 }

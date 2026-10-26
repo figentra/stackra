@@ -16,6 +16,7 @@ Pulumi program for the core stack.
 | `.`      | `observabilityPlan(root, members)`                   | the telemetry plan from the root runway, the app runways and the jobs  |
 | `.`      | `HeartbeatKind`, `SliKind`                           | enums of snake_case codes                                              |
 | `.`      | `ObservabilityConfigInvalidError`                    | every runway or job failure at once, with its path                     |
+| `.`      | `ObservabilityHealthIndicatorDriver`                 | the `HealthIndicator` driver: the telemetry endpoint answers           |
 | `.`      | `ObservabilityPlan`, `HeartbeatSource`, …            | types                                                                  |
 | `./node` | `observabilityStack(plan)`                           | inside the Pulumi program: every resource of the plan, and its outputs |
 | `./node` | `logPipeline`, `sentryProjects`, `heartbeatMonitors` | the parts, for a stack that composes its own                           |
@@ -70,6 +71,23 @@ export const observability = observabilityStack(plan).outputs;
 The archive user may only list, read, write and delete in its bucket: Better Stack writes a custom bucket with an
 access key only, so its secret stays in the encrypted Pulumi state and in Better Stack.
 
+## Status page
+
+`observability.statusPage` (ADR 0185 decision 3, ADR 0402) declares a Better Stack status page with one section per
+listed environment and an entry per heartbeat of it; `published` says whether the public sees it yet.
+
+```yaml
+observability:
+  statusPage:
+    subdomain: acme-status
+    companyName: Acme
+    companyUrl: https://acme.example
+    timezone: Asia/Riyadh
+    customDomain: status.acme.example
+    published: false # true from the first external customer
+    environments: [production]
+```
+
 ## Outputs
 
 `observabilityStack(plan).outputs` mirrors the `ref:` paths the runways name, so the stacks repository copies each
@@ -103,6 +121,5 @@ stack's account. The release job's `SENTRY_AUTH_TOKEN` uploads source maps and i
 - Sending a heartbeat: the scheduler, outbox and queue packages beat the URL they are given.
 - The services' OTLP exporter and the redaction of personal data: `@stackra/logger` and `@stackra/errors`.
 - Objectives (SLOs) and their alerts: from the first paying tenant (ADR 0184 decision 3).
-- The on-call rotation, severities and the status page (ADR 0185): the rotation names people, and the status page
-  starts at the first external customer.
+- The on-call rotation and severities (ADR 0185): the rotation names people.
 - Agents run `pulumi preview` at most; `pulumi up` is the owner's.

@@ -90,7 +90,42 @@ describe("observabilityPlan", () => {
       },
       slis: [...indicators("commerce"), ...indicators("notifications")],
       slos: { startAt: "first-paying-tenant" },
+      statusPage: null,
     });
+  });
+
+  it("plans the status page the runway declares, for monitored environments only", () => {
+    const page = {
+      subdomain: "acme-status",
+      companyName: "Acme",
+      companyUrl: "https://acme.example",
+      timezone: "Asia/Riyadh",
+      published: true,
+      environments: ["production"],
+    };
+    const plan = observabilityPlan(
+      rootRunway({
+        providers: { betterstack: {} },
+        environments: { staging: {}, production: {} },
+        observability: { statusPage: page },
+      }),
+      { apps: {}, services: [] },
+    );
+    expect(plan.statusPage).toEqual({ ...page, customDomain: null });
+
+    const run = () =>
+      observabilityPlan(
+        rootRunway({
+          environments: { dev: {}, production: {} },
+          observability: { statusPage: { ...page, environments: ["dev"] } },
+        }),
+        { apps: {}, services: [] },
+      );
+    expect(issuesOf(run).map((issue) => issue.path)).toEqual([
+      "root.providers.betterstack",
+      "root.providers.betterstack",
+      "root.observability.statusPage.environments",
+    ]);
   });
 
   it("applies the ADR 0184 defaults and drops a kind whose switch is off", () => {

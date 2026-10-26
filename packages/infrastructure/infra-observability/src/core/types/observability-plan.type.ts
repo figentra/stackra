@@ -46,4 +46,15 @@ export type ObservabilityPlan = {
   readonly slis: readonly ServiceSli[];
   /** When objectives start (`observability.slos.startAt`); none is declared before then. */
   readonly slos: { readonly startAt: "first-paying-tenant" };
+  /** The public status page, or `null` when the runway declares none (it starts at the first external customer). */
+  readonly statusPage: {
+    readonly subdomain: string;
+    readonly companyName: string;
+    readonly companyUrl: string;
+    readonly timezone: string;
+    readonly customDomain: string | null;
+    readonly published: boolean;
+    /** The monitored environments whose heartbeats the page shows, one section each. */
+    readonly environments: readonly RunwayEnvironment[];
+  } | null;
 };

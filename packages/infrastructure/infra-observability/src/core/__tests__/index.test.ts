@@ -25,6 +25,7 @@ describe("@stackra/infra-observability", () => {
     expect(Object.keys(observability).sort()).toEqual([
       "HeartbeatKind",
       "ObservabilityConfigInvalidError",
+      "ObservabilityHealthIndicatorDriver",
       "SliKind",
       "observabilityPlan",
     ]);
