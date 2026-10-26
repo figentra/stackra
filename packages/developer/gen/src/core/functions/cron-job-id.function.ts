@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `cronJobId`, the Encore CronJob id of a cron action: its locked key in lowercase letters, digits and
- *          hyphens (`billing.invoice.send_reminders@1` is `billing-invoice-send-reminders-1`), the same id
- *          `encoreCronJobs()` of @stackra/scheduler gives at run time, so the emitted CronJobs and the dispatch agree.
+ *          hyphens (`billing.invoice.send_reminders@1` is `billing-invoice-send-reminders-1`). `encoreCronJobs()` of
+ *          @stackra/scheduler calls this same function at run time, so the emitted CronJobs and the dispatch agree.
  * Boundary: pure. The id of the stored schedules' minute tick is `SCHEDULES_CRON_JOB_ID`, never a key's.
  * Runtime: isomorphic
  * Governing contract: ADR 0148 (decisions 4 and 6); ADR 0266 (decision 4.6); ADR 0294 (decision 20: one formula per

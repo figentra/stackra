@@ -44,3 +44,10 @@ queue; treat `{field}` hosts in managed-client base URLs as data in the egress a
 - The broker-delivered `QueueDriver` that publishes to these topics (`@stackra/queue`), and the scheduler calling
   gen's `cronJobId` instead of its private copy.
 - Tests, typecheck and build are written but not run (owner mode).
+
+## Wave 12 remainder (figentra/sta-666-wave12)
+
+- Done: `encoreCronJobs()` in @stackra/scheduler calls gen's `cronJobId` (its private copy is removed); the scheduler
+  depends on `@stackra/gen` (workspace, lockfile link pending).
+- Done: rule outcome kinds. `@stackra/rules` declares them with `RuleOutcome({ key, label, params })`; gen maps the base
+  to `rule_outcome` and lists each kind in the manifest's `outcomes` section (ADR 0425 decision 1).

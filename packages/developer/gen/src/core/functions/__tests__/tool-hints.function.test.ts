@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `toolHints`: read-only from L0 and L1, destructive from L4 or `irreversible`, idempotent for a
- *          query or a declared idempotency, open-world from `external-communication`.
+ *          query or a declared idempotency, open-world from `external_communication`.
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0099 (decision 3).
@@ -34,7 +34,7 @@ describe("toolHints", () => {
     const hints = toolHints({
       kind: "action",
       risk: "L2",
-      effects: ["external-communication"],
+      effects: ["external_communication"],
       idempotent: true,
     });
     expect(hints).toEqual({

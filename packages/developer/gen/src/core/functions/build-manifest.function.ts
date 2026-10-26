@@ -10,7 +10,8 @@
  *          the `@Replaces` replacements. It reports the identity checks it can see: `identity_collision`,
  *          `override_duplicate`, `permission_unknown`, `identity_missing`, the public id prefix checks
  *          `prefix_invalid`, `prefix_taken` and `prefix_duplicate`, `tool_reason_missing`, `effect_unknown`,
- *          `integration_role_unknown`, `egress_invalid`, `sequence_misplaced` and `cron_job_collision`.
+ *          `integration_role_unknown`, `egress_invalid`, `sequence_misplaced`, `document_number_unsequenced` and
+ *          `cron_job_collision`. It lists each declared rule outcome kind (`RuleOutcome({...})`) in `outcomes`.
  * Boundary: pure. A config's schema never reaches the manifest (ADR 0305 rule 34). Sections owned by later targets
  *           (ui, settings, migrations, infra, ...) are written by those targets when they land.
  * Runtime: isomorphic
@@ -72,6 +73,7 @@ const MERGED_SECTIONS = [
   "drivers",
   "integrations",
   "sequences",
+  "outcomes",
 ] as const;
 
 /** `Permission.L2` or `Permission.L2.system()`: the risk level and the system-only marker. */
@@ -529,6 +531,60 @@ export function buildManifest(ir: MemberIR): {
     sequences.push({ key, class: declared.name, module: declared.module, file: declared.file });
   }
 
+  // Rule outcome kinds: `<module>.` + the written camelCase key, with the label and parameters the studio edits
+  // (ADR 0425 decision 1), so a host lists what a rule may yield without running the consumer.
+  const outcomes: Entry[] = [];
+  for (const declared of ir.classes.filter((candidate) => candidate.kind === "rule_outcome")) {
+    const written = declared.options["key"];
+    if (typeof written !== "string") {
+      fail(
+        declared,
+        "identity_missing",
+        "outcome kind has no written `key`",
+        'write `RuleOutcome({ key: "refundWindow", label, params })`',
+      );
+      continue;
+    }
+    const key = `${declared.module}.${written}`;
+    claim(`outcome:${key}`, declared);
+    outcomes.push({
+      key,
+      class: declared.name,
+      module: declared.module,
+      file: declared.file,
+      label: jsonOf(declared.options["label"]),
+      params: jsonOf(declared.options["params"] ?? {}),
+    });
+  }
+
+  // Document numbers: a `@DocumentNumber` field names a sequence of this member or a dependency (ADR 0342
+  // enforcement), so no document is numbered by a counter column or a Postgres SEQUENCE.
+  const sequenceKeys = new Set([
+    ...sequences.map((entry) => entry["key"]),
+    ...ir.dependencies.flatMap(({ manifest }) =>
+      ((manifest["sequences"] ?? []) as unknown as readonly Entry[]).map((entry) => entry["key"]),
+    ),
+  ]);
+  for (const declared of ir.classes.filter((candidate) => candidate.kind === "model"))
+    for (const facet of declared.facets.filter(
+      (candidate) => candidate.name === "DocumentNumber" && candidate.target === "field",
+    )) {
+      const written = (facet.options as { readonly sequence?: unknown } | undefined)?.sequence;
+      const key =
+        typeof written !== "string"
+          ? undefined
+          : written.includes(".")
+            ? written
+            : sequenceKey(declared.module, written);
+      if (key === undefined || !sequenceKeys.has(key))
+        fail(
+          declared,
+          "document_number_unsequenced",
+          `the document number ${declared.name}.${facet.member ?? "?"} names no declared sequence (${key ?? "none"})`,
+          "declare it with `Sequence({ key })` in `database/sequences/`, or name an existing one in `@DocumentNumber({ sequence })`",
+        );
+    }
+
   // An app's block keys (`<member>.<snake(folder)>`) and route keys (`snake(stem)`), locked once published.
   const appKeys = (kind: "block" | "route"): Entry[] =>
     ir.classes
@@ -688,6 +744,7 @@ export function buildManifest(ir: MemberIR): {
     drivers: [...drivers.values()].map((entry) => ({ ...entry })),
     integrations,
     sequences,
+    outcomes,
   };
   if (ir.layout !== "package")
     for (const dependency of ir.dependencies) {

@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `EFFECT_TAGS`, the closed set of effect tags an action may declare in `effects`: `financial`, `security`,
- *          `pii`, `external-communication`, `irreversible` (ADR 0099 decision 2) and `bulk` (ADR 0360 decision 10).
+ *          `pii`, `external_communication`, `irreversible` (ADR 0099 decision 2) and `bulk` (ADR 0360 decision 10).
  *          Gen copies the declared tags into the manifest and refuses any other with `effect_unknown`.
  * Boundary: a frozen list. It is risk vocabulary, not business policy: what a tag triggers (approval floors, hints)
  *           is decided by its readers. A new tag is added only by amending ADR 0099.
@@ -14,7 +14,7 @@ export const EFFECT_TAGS: readonly string[] = Object.freeze([
   "financial",
   "security",
   "pii",
-  "external-communication",
+  "external_communication",
   "irreversible",
   "bulk",
 ]);

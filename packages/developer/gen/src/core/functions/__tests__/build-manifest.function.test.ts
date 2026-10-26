@@ -329,6 +329,73 @@ describe("buildManifest", () => {
     ]);
   });
 
+  it("checks each document number names a declared sequence", () => {
+    const numbered = (sequence: string): MemberIR => ({
+      ...BILLING_IR,
+      classes: BILLING_IR.classes.map((candidate) =>
+        candidate.name === "Invoice"
+          ? {
+              ...candidate,
+              facets: [
+                ...candidate.facets,
+                {
+                  name: "DocumentNumber",
+                  kind: "document_number",
+                  target: "field" as const,
+                  member: "number",
+                  options: { sequence },
+                  from: "@stackra/model",
+                },
+              ],
+            }
+          : candidate,
+      ),
+    });
+    expect(buildManifest(numbered("invoice")).errors).toEqual([]);
+    expect(buildManifest(numbered("segments.export")).errors).toEqual([]);
+    expect(
+      buildManifest(numbered("receipt")).errors.map((error) => `${error.code} ${error.subject}`),
+    ).toEqual(["document_number_unsequenced Invoice"]);
+  });
+
+  it("lists each declared rule outcome kind with its label and params, and refuses one without a key", () => {
+    const sequence = BILLING_IR.classes.find((candidate) => candidate.name === "InvoiceSequence");
+    if (sequence === undefined) throw new Error("no fixture sequence");
+    const outcome = (options: Record<string, unknown>): DeclaredClass => ({
+      ...sequence,
+      name: "LateFee",
+      kind: "rule_outcome",
+      file: "src/modules/billing/rules/late-fee.outcome.ts",
+      options,
+    });
+    const params = {
+      amount: { type: "money", label: "billing::outcomes.amount", floor: "consumer.fee_cap" },
+    };
+    const withOutcome = (options: Record<string, unknown>): MemberIR => ({
+      ...BILLING_IR,
+      classes: [...BILLING_IR.classes, outcome(options)],
+    });
+    const listed = buildManifest(
+      withOutcome({ key: "lateFee", label: "billing::outcomes.late_fee", params }),
+    );
+    expect(listed.errors).toEqual([]);
+    expect(listed.manifest["outcomes"]).toEqual([
+      {
+        key: "billing.lateFee",
+        class: "LateFee",
+        module: "billing",
+        file: "src/modules/billing/rules/late-fee.outcome.ts",
+        label: "billing::outcomes.late_fee",
+        params,
+      },
+    ]);
+    expect(
+      buildManifest(withOutcome({ label: "x" })).errors.map(
+        (error) => `${error.code} ${error.subject}`,
+      ),
+    ).toEqual(["identity_missing LateFee"]);
+  });
+
   it("locks an Integration's egress entry, a {field} host kept as data, and refuses a base URL it cannot call", () => {
     expect(buildManifest(withBase("https://api.stripe.com/v1")).manifest["integrations"]).toEqual([
       expect.objectContaining({ egress: { origin: "https://api.stripe.com" } }),
@@ -413,13 +480,13 @@ describe("buildManifest", () => {
         ...cancel,
         options: {
           ...cancel.options,
-          effects: ["financial", "external-communication", "irreversible"],
+          effects: ["financial", "external_communication", "irreversible"],
         },
       };
       const entry = buildManifest(withClasses(tagged)).manifest.actions?.find(
         (action) => action.class === "CancelOrderAction",
       );
-      expect(entry?.["effects"]).toEqual(["financial", "external-communication", "irreversible"]);
+      expect(entry?.["effects"]).toEqual(["financial", "external_communication", "irreversible"]);
       expect(entry?.["tool"]).toMatchObject({
         default: true,
         hints: { destructiveHint: true, openWorldHint: true, readOnlyHint: false },

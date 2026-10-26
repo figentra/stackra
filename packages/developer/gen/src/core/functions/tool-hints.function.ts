@@ -3,7 +3,7 @@
  * Purpose: `toolHints`, the MCP tool annotations of an action or query, derived and never hand-written:
  *          `readOnlyHint` for L0 and L1, `destructiveHint` for L4 or the `irreversible` tag, `idempotentHint` when the
  *          action declares idempotency (a query is always idempotent), `openWorldHint` for the
- *          `external-communication` tag.
+ *          `external_communication` tag.
  * Boundary: pure; the risk comes from the action's permission, the tags from its `effects` option.
  * Runtime: isomorphic
  * Governing contract: ADR 0099 (decision 3); ADR 0155 (decision 1, as amended by ADR 0360 decision 4).
@@ -29,6 +29,6 @@ export function toolHints(tool: {
     readOnlyHint: readOnly,
     destructiveHint: tool.risk === "L4" || tool.effects.includes("irreversible"),
     idempotentHint: tool.kind === "query" || tool.idempotent,
-    openWorldHint: tool.effects.includes("external-communication"),
+    openWorldHint: tool.effects.includes("external_communication"),
   };
 }

@@ -17,6 +17,6 @@ export type ToolHints = {
   /** A query, or an action that declares idempotency. */
   readonly idempotentHint: boolean;
 
-  /** The `external-communication` tag: the tool reaches people or systems outside the tenant. */
+  /** The `external_communication` tag: the tool reaches people or systems outside the tenant. */
   readonly openWorldHint: boolean;
 };

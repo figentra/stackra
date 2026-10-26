@@ -102,13 +102,16 @@ Metro config sets `babelTransformerPath` to `@stackra/gen/metro-transformer`.
 
 For a service, gen writes the first parts of the Encore app (ADR 0148): `.stackra/encore/<member>/cron.ts` holds one
 `CronJob` per action whose `job` has a `cron` (its endpoint calls `SchedulerService.fire(<locked key>)`; ids by
-`cronJobId`, the formula `encoreCronJobs()` uses) and the stored schedules' minute tick; `.stackra/encore/<member>/queues.ts`
+`cronJobId`, which `encoreCronJobs()` also calls) and the stored schedules' minute tick; `.stackra/encore/<member>/queues.ts`
 holds one Pub/Sub `Topic` and `Subscription` per queue its job actions name, registered as `queue.<name>` for a
 broker-delivered queue driver, each delivery run through `QueueWorkerService.process`. Both reach the member through the
 server app's `handlers`. The manifest also locks each Integration's egress entry from its `baseUrl`: a fixed https
 origin, or a `{field}` host kept as data with the credential-set fields it is filled from (`egress_invalid` otherwise),
-and refuses a sequence outside `database/sequences/` (`sequence_misplaced`) and two cron actions with one CronJob id
-(`cron_job_collision`). The boot connects the bound `HoldRegistry` and `SequenceTimeZone` and registers the legal-hold
+and refuses a sequence outside `database/sequences/` (`sequence_misplaced`), a `@DocumentNumber` field whose sequence
+is declared neither in the member nor in a dependency (`document_number_unsequenced`), and two cron actions with one
+CronJob id (`cron_job_collision`). Effect tags are snake_case (`external_communication`). Each declared rule outcome
+kind (`class X extends RuleOutcome({ key, label, params })`, `@stackra/rules`) is listed in `outcomes` as
+`<module>.<key>` with its label and parameters, locked by class like a sequence. The boot connects the bound `HoldRegistry` and `SequenceTimeZone` and registers the legal-hold
 subscriber; the wiring binds `SequenceService`, and `SettingsReader` with the market floor source, where injected.
 
 ## Not here
