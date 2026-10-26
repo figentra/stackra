@@ -230,6 +230,82 @@
       "key": "calendar.leap_birthday",
       "value": "march_1",
       "from": "2000-01-01"
+    },
+    {
+      "key": "identity.ein",
+      "value": {
+        "pattern": "^(?!00|07|08|09|17|18|19|28|29|49|69|70|78|79|89|96|97)(\\d{2})(\\d{7})$",
+        "canonical": "$1-$2"
+      },
+      "from": "2000-01-01"
+    },
+    {
+      "key": "identity.ssn_last_four",
+      "value": {
+        "pattern": "^(?!0000)\\d{4}$"
+      },
+      "from": "2000-01-01"
+    },
+    {
+      "key": "identity.address_format",
+      "value": {
+        "required": ["locality", "region", "postalCode"],
+        "postalCode": {
+          "pattern": "^(\\d{5})(\\d{4})?$",
+          "canonical": "$1-$2"
+        },
+        "region": {
+          "pattern": "^(A[KLRZ]|C[AOT]|D[CE]|FL|GA|HI|I[ADLN]|K[SY]|LA|M[ADEINOST]|N[CDEHJMVY]|O[HKR]|PA|RI|S[CD]|T[NX]|UT|V[AT]|W[AIVY]|AS|GU|MP|PR|VI)$"
+        },
+        "maxLines": 2,
+        "layout": [["lines"], ["locality", "region", "postalCode"], ["country"]]
+      },
+      "from": "2000-01-01"
+    },
+    {
+      "key": "identity.phone",
+      "value": {
+        "pattern": "^\\+1([2-9]\\d{2})([2-9]\\d{6})$",
+        "canonical": "+1$1$2"
+      },
+      "from": "2000-01-01"
+    },
+    {
+      "key": "money.cash_rounding",
+      "value": [
+        {
+          "currency": "USD",
+          "incrementMinor": 5,
+          "rounding": "half_up",
+          "optional": true
+        }
+      ],
+      "from": "2000-01-01"
+    },
+    {
+      "key": "billing.regional_tier",
+      "value": "high",
+      "from": "2026-01-01"
+    },
+    {
+      "key": "billing.price_currency",
+      "value": "USD",
+      "from": "2026-01-01"
+    },
+    {
+      "key": "billing.collection_currency",
+      "value": "USD",
+      "from": "2026-01-01"
+    },
+    {
+      "key": "billing.contracting_entity",
+      "value": "figentra-ae",
+      "from": "2026-01-01"
+    },
+    {
+      "key": "billing.billing_seller",
+      "value": "figentra-ae",
+      "from": "2026-01-01"
     }
   ],
   "reviews": [],

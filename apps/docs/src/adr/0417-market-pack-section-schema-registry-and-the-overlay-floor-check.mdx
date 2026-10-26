@@ -1,0 +1,50 @@
+---
+title: "0417 — Market-pack section schema registry and the overlay floor check"
+description: "Proposed · 2026-10-26"
+---
+
+<Note>
+  Proposed (STA-666, X2-19; STA-797 and STA-798 pack data). It amends
+  [0370](/adr/0370-market-packs-signed-dated-overlaid-data-with-pins-and-legal-floors) decisions 1
+  and 6.
+</Note>
+
+## Context
+
+Pack keys were invented per package and nothing checked a pack before it was signed, so a typo or a wrong value
+shape shipped, and a state overlay could loosen a federal floor unnoticed (X2-19).
+
+## Decision
+
+1. **Section schemas are data.** A `PackSchema` names a key prefix, its owner (`os` for base sections, the product
+   for its own) and, for a product section, the section key; it declares each key with a JSON Schema (draft 2020-12)
+   for its value and whether every root pack must carry it. OS registers the base sections, products register theirs.
+2. **The registry check.** `PackSchemaRegistry.check(pack)` reports every key no prefix covers (`key_unregistered`),
+   every key its schema does not declare (`key_undeclared`), every value its schema refuses (`value_invalid`), and
+   every required key a root pack lacks (`key_required`; base schemas for base packs, a section's schemas for its
+   section pack, never an overlay). A subject or review may name a whole prefix.
+3. **The overlay floor check.** `overlayFloorIssues(overlay, parent)` checks, on every day a value can change, that an
+   overlay replacing a parent's floor keeps a floor of the same bound (`floor_dropped`) and is at least as strict
+   (`floor_loosened`: below a `min`, above a `max`, or a different unordered value).
+4. **Publish runs both.** The release step that signs a pack refuses it while either check reports an issue; both
+   return every issue and never throw.
+5. **US draft data.** The `us` base pack carries the ADR 0405 formats (`identity.ein`, `identity.ssn_last_four`,
+   `identity.address_format` with the ZIP and state formats, `identity.phone`), `money.cash_rounding` with the
+   optional 5-cent USD rule, and the ADR 0392 billing terms from 2026-01-01: tier `high`, USD price and collection
+   (so no rate source) and `figentra-ae` as contracting entity and seller (US-144). All stay draft until counsel signs.
+
+## Consequences
+
+- `stackra seed-pack --check` and the OS pack loader run the registry against the registered schemas.
+- The regional tier `high` for the US is a default until the cost model sets it.
+
+## Enforcement
+
+`packages/foundation/market-packs/src/core/values/__tests__/pack-schema-registry.value.test.ts`,
+`packages/foundation/market-packs/src/core/functions/__tests__/overlay-floor-issues.function.test.ts`,
+`packages/foundation/market-packs/src/core/__tests__/us-packs.test.ts`.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: `notes/handover/review-round-2/cross.md` (X2-19); R3-SO-19 (market-packs q4); STA-666,
+STA-797, STA-798.

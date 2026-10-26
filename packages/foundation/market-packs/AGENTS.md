@@ -1,7 +1,7 @@
 # AGENTS — @stackra/market-packs
 
 The market-pack loader. Member at `packages/foundation/market-packs` (`tier:lib`), in the programming model v3.1 shape
-(ADR 0294, 0305). Entry `.` only. Decision record: ADR 0370.
+(ADR 0294, 0305). Entries `.` and `./node` (the root module). Decision records: ADR 0370, 0385, 0417, 0418.
 
 ## Where code goes
 
@@ -16,6 +16,9 @@ The market-pack loader. Member at `packages/foundation/market-packs` (`tier:lib`
 | A draft seed pack (data, not code)     | `assets/data/packs/<market>.json`             |
 | A schema or constant                   | `src/core/constants/<name>.constant.ts`       |
 | A type                                 | `src/core/types/<name>.type.ts`               |
+| A shape class (config options)         | `src/core/schemas/<name>.schema.ts`           |
+| The configuration                      | `src/config/market-packs.config.ts`           |
+| The root module                        | `src/node/market-packs.module.ts`             |
 | A test                                 | `__tests__/<name>.<kind>.test.ts` beside it   |
 
 ## Entries and barrels
@@ -29,18 +32,24 @@ The market-pack loader. Member at `packages/foundation/market-packs` (`tier:lib`
 - **No pack content in code.** No market code, rate, period, provider, law or floor value is written in `src/`; packs are
   data owned by the platform (base packs) and by products (their sections). Unit tests use made-up markets (`xa`,
   `xa-one`). The only pack content here is the draft seed data in `assets/data/packs/` (the `us` base and seven state
-  overlays, ADR 0385), checked by `src/core/__tests__/us-packs.test.ts`; it stays `draft` until a reviewer signs it.
+  overlays, ADR 0385, with the ADR 0405 formats, the ADR 0392 billing terms and the optional cash rounding), checked
+  by `src/core/__tests__/us-packs.test.ts`; it stays `draft` until a reviewer signs it.
 - **Subjects.** Which market answers a rule kind (`location`, `buyer`, `entity`, `tenant`) is pack data
   (`subjects`); `MarketContext.packFor` reads it. Never branch on a rule kind in code.
 - **Storage.** Signed packs are stored and fetched by content hash through `PackStore`; the production driver uses
   the `FileSystem` port of `@stackra/filesystem`, and shipped data assets are read through `AssetLibrary` of
   `@stackra/assets`. Use both through their public entries only.
+- **Serving.** A service injects `ResolvedPackSource` (exported by `MarketPacksModule`); the `store` driver fetches the
+  hashes in `MarketPacksConfig` from `PackStore` and verifies them, the `memory` driver serves packs handed to it. The OS
+  loader is a further driver or a host `@Replaces`.
+- **Publish check.** `PackSchemaRegistry` holds the section schemas (JSON Schema per key, registered as data by their
+  owners) and `overlayFloorIssues` refuses an overlay that loosens a parent floor. Both return issues, never throw.
 - Trusted public keys are deployment configuration; the private signing key is held by the caller of `signPack`
   and never read, stored or logged here.
 - The content hash covers the pack exactly as shipped (canonical JSON); never hash a parsed copy in `verifyPack`.
 - A section's keys carry its prefix, so a product can never overwrite a base value.
-- Runtime dependencies are `@stackra/assets`, `@stackra/container`, `@stackra/contracts`, `@stackra/errors`,
-  `@stackra/filesystem` and `zod`; crypto is Web Crypto.
+- Runtime dependencies are `@stackra/assets`, `@stackra/config`, `@stackra/container`, `@stackra/contracts`,
+  `@stackra/errors`, `@stackra/filesystem`, `@stackra/validation` and `zod`; crypto is Web Crypto.
 - Only add a symbol a consumer imports today (the market-pack loader row in `notes/handover/stackra-package-needs.md`).
 
 ## Rules that fail the build

@@ -42,9 +42,13 @@ signing-key holder.
 - **FR-005** `PackStore` with a `FileSystem` driver keyed by content hash; `fetchPacks` verifies each hash it loads;
   `readPackAssets` reads shipped packs through `AssetLibrary`.
 - **FR-006** `MarketPackFiscalPackSourceDriver` answers `FiscalPackSource` from `fiscal.invoice` and `fiscal.till`.
+- **FR-007** (wave 12, ADR 0417) `PackSchemaRegistry` checks a pack against the registered section schemas;
+  `overlayFloorIssues` refuses an overlay floor looser than its parent's.
+- **FR-008** (wave 12) The `us` pack carries the ADR 0405 formats, the optional 5-cent cash rounding and the ADR 0392
+  billing terms (STA-797, STA-798).
 
 ## Not built here
 
 - `MarketPaymentDefaults` production binding (`@stackra/payments`, outside this run's folders).
-- The section schema registry and the publish check that an overlay floor is not looser than its parent (X2-19).
+- The registered base-section schemas themselves (OS data) and wiring the checks into `stackra seed-pack --check`.
 - Tests, typecheck and build are written but not run (owner mode).
