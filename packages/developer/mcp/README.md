@@ -19,7 +19,7 @@ Stackra repository. `@stackra/cli` wires it to `stackra mcp`, `stackra mcp sync`
 | `.`      | `mcpConfigJsonSchema()`                   | the JSON Schema served at `static.stackra.figentra.com/schemas/mcp.json` |
 | `.`      | `McpConfigInvalidError`                   | a `.mcp.yaml` that cannot be used, with every issue                      |
 | `.`      | `toolTable(manifests)`                    | the hosted server's tools, from committed manifests                      |
-| `.`      | `filterTools(tools, access)`              | one caller's tools in one tenant, and the ones locked by the plan        |
+| `.`      | `filterTools(tools, access, scope)`       | one caller's tools by role and record, `locked` where the plan lacks one |
 | `.`      | `protectedResourceMetadata(options)`      | the RFC 9728 document of the hosted endpoint                             |
 | `.`      | `wwwAuthenticate(metadataUrl, challenge)` | the `Bearer` challenge of a 401 or 403                                   |
 | `./node` | `syncMcpConfig(root?)`                    | `stackra mcp sync` (the template's `prepare`): write `.mcp.json`         |
@@ -83,9 +83,10 @@ transport and the token check stay in the service.
 - `toolTable(manifests)` turns every manifest action with a `tool` entry into a row: the MCP descriptor with its input
   schema inlined and gen's derived hints as `annotations`, plus the action key, permission, risk and effect tags the
   gateway filters, approves and audits on. Gen decides what is a tool (ADR 0360 decision 4); nothing is hand-added.
-- `filterTools(tools, access)` drops a tool the caller lacks the permission for and holds back, as `locked`, one the
-  tenant is not entitled to, so the gateway answers it with "requires subscription" (ADR 0155 decision 3). Both
-  answers come from the host's IAM and entitlements.
+- `filterTools(tools, access, scope)` drops a tool the caller lacks the permission for with their roles on their
+  record, drops one the AI permission matrix sets to off there, and lists one the tenant is not entitled to with
+  `locked: true`, so the gateway answers it with "requires subscription" (ADR 0155 decision 3). The answers come from
+  the host's IAM, the `rule-set:os:ai-action-permissions` rows and entitlements.
 - `protectedResourceMetadata({ resource, authorizationServers, ... })` and `wwwAuthenticate(metadataUrl)` publish the
   endpoint as an OAuth protected resource naming the identity provider's issuer (ADR 0348 decision 2, RFC 9728). Every
   URL is the host's configuration.
@@ -94,8 +95,13 @@ transport and the token check stay in the service.
 import { filterTools, protectedResourceMetadata, toolTable } from "@stackra/mcp";
 
 const table = toolTable(manifests);
-const { tools, locked } = filterTools(table, {
-  can: (p) => grants.has(p),
-  isEntitled: (t) => plan.has(t.name),
-});
+const { tools } = filterTools(
+  table,
+  {
+    can: (p, scope) => iam.can(p, scope),
+    isOff: (t, scope) => matrix.isOff(t.action, scope),
+    isEntitled: (t) => plan.has(t.name),
+  },
+  { roles: ["associate"], record: { kind: "matter", id: "mtr_01" } },
+);
 ```

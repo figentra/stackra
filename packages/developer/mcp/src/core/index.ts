@@ -22,6 +22,7 @@ export { toolTable } from "#core/functions/tool-table.function";
 export { wwwAuthenticate } from "#core/functions/www-authenticate.function";
 export type { CommandLine } from "#core/types/command-line.type";
 export type { HostedTool } from "#core/types/hosted-tool.type";
+export type { ListedTool } from "#core/types/listed-tool.type";
 export type { McpConfig } from "#core/types/mcp-config.type";
 export type { McpExecOptions } from "#core/types/mcp-exec-options.type";
 export type { McpIssue } from "#core/types/mcp-issue.type";
@@ -30,3 +31,4 @@ export type { ProtectedResourceMetadata } from "#core/types/protected-resource-m
 export type { ProtectedResourceOptions } from "#core/types/protected-resource-options.type";
 export type { ToolAccess } from "#core/types/tool-access.type";
 export type { ToolFilterResult } from "#core/types/tool-filter-result.type";
+export type { ToolScope } from "#core/types/tool-scope.type";
