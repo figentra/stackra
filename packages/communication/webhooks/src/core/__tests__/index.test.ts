@@ -15,13 +15,16 @@ describe("@stackra/webhooks", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(webhooks).sort()).toEqual([
       "HttpWebhookSenderDriver",
+      "MemoryWebhookEntitlementSourceDriver",
       "SignatureScheme",
       "WebhookDeliveryFailedError",
       "WebhookReceiver",
       "registerWebhookEvents",
+      "s3TargetOf",
       "signWebhook",
       "verifyHmacWebhook",
       "verifyWebhook",
+      "webhookObjectKey",
     ]);
   });
 

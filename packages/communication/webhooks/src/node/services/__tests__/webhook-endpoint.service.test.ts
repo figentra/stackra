@@ -3,21 +3,29 @@
  * Purpose: unit tests of `WebhookEndpointService`: register stores an enabled endpoint of the scope with its secret name
  *          and refuses a URL that is not https or an empty subscription; subscribedTo reads the scope's enabled
  *          endpoints and keeps those subscribed to the event; rotate keeps the replaced secret name with the rotation
- *          time; disable stops an enabled endpoint once and ignores a removed one.
+ *          time; disable stops an enabled endpoint once and ignores a removed one; an `s3:` target registers and a bad
+ *          one is refused; a gated event is registered and delivered only with its grant, fail closed with no source.
  * Boundary: test only; a fake `Database` hands out a recording entity manager, so no database runs.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0269; ADR 0224; ADR 0308 (rule 17); ADR 0327 (decisions 3 and 9).
+ * Governing contract: ADR 0022; ADR 0269; ADR 0224; ADR 0308 (rule 17); ADR 0327 (decisions 3 and 9); ADR 0422
+ *                     (decision 4).
  */
 import { InputInvalidError } from "@stackra/actions";
 import type { ScopeRef } from "@stackra/contracts";
 import { Database, registerModelPartners } from "@stackra/database";
+import { EntitlementRequiredError } from "@stackra/errors";
 import { afterEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 
+import { MemoryWebhookEntitlementSourceDriver } from "#core/drivers/memory-webhook-entitlement-source.driver";
+import { OUTBOUND_EVENT_ENTITLEMENTS } from "#node/constants/outbound-event-entitlements.constant";
 import { WebhookEndpoint } from "#node/models/webhook-endpoint.model";
 import { WebhookEndpointService } from "#node/services/webhook-endpoint.service";
 
 registerModelPartners([[WebhookEndpointService, WebhookEndpoint]]);
+OUTBOUND_EVENT_ENTITLEMENTS.set("records.audit_record.appended.v1", "records.audit_evidence");
+
+const SIEM = "records.audit_record.appended.v1";
 
 const ACME: ScopeRef = { id: "scp_01j9z3k4m5n6p7q8r9s0t1v2w1", path: "platform.acme" };
 const AT = new Date("2026-10-25T09:00:00Z");
@@ -57,13 +65,15 @@ function connect(rows: WebhookEndpoint[] = [], one: WebhookEndpoint | null = nul
 }
 
 /** What `register` throws for `url` and `events`; it throws before anything is stored. */
-function refusalOf(url: string, events: readonly string[]): unknown {
-  try {
-    void new WebhookEndpointService().register({ scope: ACME, url, events, secretName: "S" });
-  } catch (error) {
-    return error;
-  }
-  return undefined;
+function refusalOf(
+  url: string,
+  events: readonly string[],
+  service = new WebhookEndpointService(),
+): Promise<unknown> {
+  return service.register({ scope: ACME, url, events, secretName: "S" }).then(
+    () => undefined,
+    (error: unknown) => error,
+  );
 }
 
 afterEach(() => {
@@ -93,12 +103,19 @@ describe(WebhookEndpointService, () => {
     expect(em.flush).toHaveBeenCalled();
   });
 
-  it("refuses a URL that is not https and an empty subscription", () => {
-    connect();
-    const plain = refusalOf("http://hooks.acme.example/in", ["orders.order.paid.v1"]);
+  it("refuses a URL that is not https and an empty subscription", async () => {
+    const em = connect();
+    const plain = await refusalOf("http://hooks.acme.example/in", ["orders.order.paid.v1"]);
     expect(plain).toBeInstanceOf(InputInvalidError);
     expect((plain as InputInvalidError).fieldErrors).toEqual({ url: "webhook_url_invalid" });
-    expect((refusalOf("hooks", []) as InputInvalidError).fieldErrors).toEqual({
+    expect(
+      ((await refusalOf("s3://Bad_Bucket/x", ["orders.order.paid.v1"])) as InputInvalidError)
+        .fieldErrors,
+    ).toEqual({
+      url: "webhook_url_invalid",
+    });
+    expect(em.create).not.toHaveBeenCalled();
+    expect(((await refusalOf("hooks", [])) as InputInvalidError).fieldErrors).toEqual({
       url: "webhook_url_invalid",
       events: "webhook_events_empty",
     });
@@ -137,5 +154,54 @@ describe(WebhookEndpointService, () => {
     await expect(
       new WebhookEndpointService().disable("whe_00000000000000000000000000", AT),
     ).resolves.toBeUndefined();
+  });
+
+  it("registers an s3 target", async () => {
+    const em = connect();
+    await new WebhookEndpointService().register({
+      scope: ACME,
+      url: "s3://acme-siem/stackra?region=me-central-1",
+      events: ["orders.order.paid.v1"],
+      secretName: "S",
+    });
+    expect(em.create.mock.calls[0]?.[1]).toMatchObject({
+      url: "s3://acme-siem/stackra?region=me-central-1",
+    });
+  });
+
+  it("registers a gated event only with its grant, and fails closed with no source", async () => {
+    const em = connect();
+    const entitlements = new MemoryWebhookEntitlementSourceDriver();
+    const refused = await refusalOf(
+      "https://siem.acme.example/in",
+      [SIEM],
+      new WebhookEndpointService(entitlements),
+    );
+    expect(refused).toBeInstanceOf(EntitlementRequiredError);
+    expect((refused as EntitlementRequiredError).fieldErrors).toEqual({
+      events: "entitlement_required",
+    });
+    expect(await refusalOf("https://siem.acme.example/in", [SIEM])).toBeInstanceOf(
+      EntitlementRequiredError,
+    );
+    expect(em.create).not.toHaveBeenCalled();
+    entitlements.grant(ACME.id, "records.audit_evidence");
+    await expect(
+      refusalOf("https://siem.acme.example/in", [SIEM], new WebhookEndpointService(entitlements)),
+    ).resolves.toBeUndefined();
+  });
+
+  it("delivers a gated event only while the scope holds its grant", async () => {
+    const siem = endpointOf({ events: [SIEM] });
+    connect([siem]);
+    const entitlements = new MemoryWebhookEntitlementSourceDriver().grant(
+      ACME.id,
+      "records.audit_evidence",
+    );
+    const service = new WebhookEndpointService(entitlements);
+    await expect(service.subscribedTo(ACME.id, SIEM)).resolves.toEqual([siem]);
+    entitlements.revoke(ACME.id, "records.audit_evidence");
+    await expect(service.subscribedTo(ACME.id, SIEM)).resolves.toEqual([]);
+    await expect(new WebhookEndpointService().subscribedTo(ACME.id, SIEM)).resolves.toEqual([]);
   });
 });

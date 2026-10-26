@@ -11,6 +11,10 @@ import * as contracts from "#contracts/index";
 
 describe("@stackra/webhooks/contracts", () => {
   it("exports exactly its values", () => {
-    expect(Object.keys(contracts).sort()).toEqual(["WebhookSender"]);
+    expect(Object.keys(contracts).sort()).toEqual([
+      "WebhookEntitlementSource",
+      "WebhookObjectSink",
+      "WebhookSender",
+    ]);
   });
 });

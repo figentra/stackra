@@ -15,6 +15,7 @@ describe("@stackra/webhooks/node", () => {
     expect(Object.keys(node).sort()).toEqual([
       "DeliverWebhookAction",
       "DeliverWebhookInput",
+      "S3WebhookObjectSinkDriver",
       "SendWebhooksListener",
       "WebhookDelivery",
       "WebhookDeliveryService",

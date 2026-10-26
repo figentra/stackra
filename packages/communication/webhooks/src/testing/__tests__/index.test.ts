@@ -12,6 +12,10 @@ import * as testing from "#testing/index";
 
 describe("@stackra/webhooks/testing", () => {
   it("exports exactly its values", () => {
-    expect(Object.keys(testing).sort()).toEqual(["WEBHOOKS_TESTING_PLUGIN", "deliverWebhook"]);
+    expect(Object.keys(testing).sort()).toEqual([
+      "WEBHOOKS_TESTING_PLUGIN",
+      "WebhookObjectSinkFake",
+      "deliverWebhook",
+    ]);
   });
 });

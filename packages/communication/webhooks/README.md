@@ -74,8 +74,27 @@ await endpoints.register({ scope, url: "https://hooks.acme.example/in", events: 
 - A non-2xx answer (a redirect included) or no answer is logged and refused as retryable: exponential backoff, about
   three days of retries, then the dead-letter queue (redrive with `QueueService.redrive`) and the endpoint is disabled.
 - `rotate(id, secretName, at)` keeps the replaced secret signing for 24 hours, so a receiver holding either verifies.
-- An endpoint stores secret names, never values. `register` accepts https URLs only; blocking private hosts is the
-  runtime's egress policy.
+- An endpoint stores secret names, never values. `register` accepts an https URL or an S3 target; blocking private
+  hosts is the runtime's egress policy.
+
+### S3 targets (ADR 0422)
+
+An endpoint URL `s3://<bucket>/<prefix>?region=<region>` receives each delivery as an object at
+`<prefix>/<type>/<yyyy>/<mm>/<dd>/<eventId>.json`: the same signed body, with the Standard Webhooks headers as object
+metadata, so a SIEM that reads the bucket verifies it as a receiver would. `S3WebhookObjectSinkDriver` (`./node`)
+writes it with the AWS SDK's default credentials (the platform's role). Managed or bring your own: the bucket is the
+platform's, or the tenant's own with a bucket policy that grants that role `s3:PutObject`; no tenant credential is
+stored. A refused write is logged and retried like a failed post. `WebhookObjectSinkFake` in `./testing` keeps objects
+in memory.
+
+### Entitlement-gated events
+
+A registration row may name the entitlement a subscriber needs:
+`registerOutboundWebhooks([{ type: AuditRecordAppended, name: "records.audit_record.appended.v1", entitlement:
+"records.audit_evidence" }])`. `register` refuses a gated event the scope is not granted (`entitlement_required` on
+`events`), and the fan-out skips it while the grant is gone, so a downgrade stops the stream at once. Grants are read
+through `WebhookEntitlementSource`; a deployment binds a driver over its plan or licence, and with none every gate stays
+shut.
 
 ## Testing
 

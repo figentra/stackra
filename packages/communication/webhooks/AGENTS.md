@@ -43,6 +43,10 @@ Standard Webhooks signing and verification, the inbound receiver of `WebhookEven
   kept nowhere: not in a job input, the delivery log, an event, a log line or an error (ADR 0173, ADR 0308 rule 20).
 - A delivery attempt is logged in its own transaction (`WebhookDeliveryService.record`) before the refusal that makes
   the queue retry it; the job's `webhook-id` is the event id on every attempt.
+- `DeliverWebhookAction` routes by the endpoint URL: `s3:` through `WebhookObjectSink`, anything else through
+  `WebhookSender`; an object key is derived from the event id and its day, never the attempt's time.
+- A gated event's entitlement is registration data (`OUTBOUND_EVENT_ENTITLEMENTS`); every read of subscribers goes
+  through `WebhookEndpointService.subscribedTo`, which rechecks the grant.
 - No tenant word is declared here (R-59, ADR 0323): a scope is a `ScopeRef`; the listener reads the event envelope's
   `tenantId` field only because @stackra/events names it so.
 - No parameter properties and no `#private` fields: services typecheck this source under `erasableSyntaxOnly`.

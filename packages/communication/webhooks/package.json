@@ -78,6 +78,7 @@
     "clean": "rm -rf dist coverage .turbo"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "catalog:",
     "@stackra/actions": "workspace:*",
     "@stackra/config": "workspace:*",
     "@stackra/container": "workspace:*",
