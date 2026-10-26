@@ -102,14 +102,16 @@ check, first-paint and offline rules, a health-gated canary and a hardened ops c
     licence: product CI type-checks against a types-only Pro package, and the shell serves Pro chunks only on
     authenticated hosts, never on public landing pages. Before this ADR is accepted, the HeroUI Pro licence terms are
     checked (counsel or vendor confirmation) against runtime redistribution to product bundles, the types-only package
-    and white-label apps, and the answer is recorded here. A white-label app published under a merchant keeps the free
-    set only, as [0335](/adr/0335-editions-a-product-made-of-another-products-modules-packs-brand-and-entitlement-bundle)
-    decision 8 requires.
+    and white-label apps, and the answer is recorded here. A white-label app keeps the free set only, whichever account
+    publishes it ([0439](/adr/0439-mobile-apps-from-one-os-template-with-capability-flags) decision 9), as
+    [0335](/adr/0335-editions-a-product-made-of-another-products-modules-packs-brand-and-entitlement-bundle) decision 8
+    requires.
 
 13. **Canary, promoted on health.** A new product bundle goes first to internal and demo tenants (owner decision of
     2026-10-26). It reaches everyone after 24 hours only when its error rate stayed under the threshold for that
-    window; a timer alone never promotes, and a breach rolls the pointer back. The canary window and the error-rate
-    threshold are OS settings with these defaults. Shell releases get the same canary list
+    window; a timer alone never promotes, and a breach rolls the pointer back. The canary window (24 hours by default)
+    and the error-rate threshold are OS settings; the threshold has no default yet and is set before the first canary.
+    Shell releases get the same canary list
     ([0437](/adr/0437-the-edge-worker-its-kv-copy-and-the-server-checks) decision 9), after the contract test of
     decision 5.
 
@@ -127,8 +129,8 @@ check, first-paint and offline rules, a health-gated canary and a hardened ops c
   Commerce bundle loaded through the import map. The registry, the projector, edge rendering and canaries follow;
   Runway writes the KV pointers by hand until the projector exists.
 - The OS carries the shared dependency versions for every product; a product cannot pin its own React.
-- Gen and `@stackra/vite-plugin` need an extension-bundle build mode, Runway a publish step, the CLI `stackra dev
---surface`, and the OS a release job that runs the contract test of decision 5.
+- Gen and `@stackra/vite-plugin` need an extension-bundle build mode, Runway a publish step, the CLI the
+  `stackra dev --surface` command, and the OS a release job that runs the contract test of decision 5.
 - Ops contributions lose free-form components; a product that needs one asks the OS for a block.
 - Decision 12 is open until the licence answer is recorded; nothing may rely on Pro in product bundles before then.
 

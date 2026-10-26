@@ -47,7 +47,8 @@ single piece to build.
    Worker setting.
 
 6. **Two addresses for a product site.** A landing site answers at `<product>.figentra.com` and, when the product
-   registers one, at its own domain too. Both serve the same site as two host rows; the row marked canonical sets the
+   registers one per environment in its root runway (`surfaces.landing.ownDomain`,
+   [0441](/adr/0441-product-repository-layout-assets-tree-and-root-runway-surfaces) decision 3), at its own domain too. Both serve the same site as two host rows; the row marked canonical sets the
    canonical link and the sitemap's host (owner decision of 2026-10-26). This is for product hosts only: a tenant's own
    domains keep [0276](/adr/0276-tenant-custom-domains) decision 6, where the others redirect to the primary.
 

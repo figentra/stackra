@@ -44,7 +44,9 @@ moves to Stackra and Figentra keeps only its own kit.
    members.
 
 3. **The root runway names surfaces and mobile apps.** Beside `product`, the root `runway.yaml` gains `surfaces`
-   (per surface: the shell line, the packages, the host; `contributes` for the ops console; `content` for landing),
+   (per surface: the shell line, the packages, the host; `contributes` for the ops console; for landing, `content`,
+   the product's own domain per environment and which host is canonical, as
+   [0440](/adr/0440-landing-sites-are-experience-documents-rendered-at-the-edge) decision 6 sets),
    `mobile` (per app: the template line, packages, `assets` and `store` paths, identity, capabilities, store accounts,
    EAS project) and `assets` (the tree's root, when not the default). Runway builds and publishes the bundles,
    registers platform hosts and their `host:` and `wellknown:` rows
@@ -53,17 +55,19 @@ moves to Stackra and Figentra keeps only its own kit.
    ([0439](/adr/0439-mobile-apps-from-one-os-template-with-capability-flags)).
 
 4. **Brand sources live in `assets/brand`.** A product's `brand/` folder moves to `assets/brand/` and keeps only
-   sources: the marks, the kit configuration (concept, logo rules, asset manifest), decisions, the Arabic review and
-   the version history. The product's accent layer stays in `@figentra/brand` (0340 decision 11), so the family
+   sources: the marks, the kit configuration (`kit.json`: the symbol, the theme file and the colour roles of icons,
+   splash screens and store frames, beside the owner's concept, logo rules and asset manifest), decisions, the Arabic
+   review and the version history. The product's accent layer stays in `@figentra/brand` (0340 decision 11), so the family
    separation test still sees every product. Fonts stay the OS design record's (0340 decision 11 refuses per-product
    type exceptions); a product kit keeps only the licence notes for fonts it already uses until the owner decides
    otherwise.
 
 5. **The brand kit is split: a Stackra generator and Figentra's own kit.**
-   - The generic generator is the Stackra package `@stackra/brand-kit`. It reads a kit configuration and a resolved
-     theme (`@stackra/tokens`) and generates tokens, HeroUI CSS, app icons and adaptive icons, splash screens, favicons
-     and the web manifest, and the frames for store screenshots. It holds no Figentra identity and no colour logic of
-     its own.
+   - The generic generator is the Stackra package `@stackra/brand-kit`. It reads a kit configuration
+     (`assets/brand/kit.json`) and the theme file the kit names (a `@stackra/tokens` theme, committed beside the kit
+     so CI needs no Figentra package; how a product exports it from `@figentra/brand` is open) and generates tokens,
+     HeroUI CSS, app icons and adaptive icons, splash screens, favicons and the web manifest, and the frames for store
+     screenshots. It holds no Figentra identity and no colour logic of its own.
    - Figentra's parent kit, its marks and its endorsement rules stay in `figentra/os/tools/brand-kit`, as data the
      generator reads.
    - A product's sources stay in its `assets/brand` (decision 4).
