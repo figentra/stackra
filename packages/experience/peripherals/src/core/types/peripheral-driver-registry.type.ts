@@ -20,9 +20,11 @@ declare module "@stackra/container" {
     "peripherals.BarcodeScanner": (typeof PERIPHERAL_DRIVERS.scanner)[number];
     /** The driver names of `LabelPrinter` (`memory`, `zpl`). */
     "peripherals.LabelPrinter": (typeof PERIPHERAL_DRIVERS.labelPrinter)[number];
-    /** The driver names of `CustomerDisplay` (`memory`, `channel`). */
+    /** The driver names of `CustomerDisplay` (`memory`, `channel`, `external`). */
     "peripherals.CustomerDisplay": (typeof PERIPHERAL_DRIVERS.customerDisplay)[number];
     /** The driver names of `CardTerminal` (`memory`). */
     "peripherals.CardTerminal": (typeof PERIPHERAL_DRIVERS.cardTerminal)[number];
+    /** The driver names of `AccessController` (`memory`). */
+    "peripherals.AccessController": (typeof PERIPHERAL_DRIVERS.accessController)[number];
   }
 }

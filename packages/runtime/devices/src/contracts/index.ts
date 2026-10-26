@@ -18,6 +18,7 @@ export { DeviceRegistry } from "#contracts/ports/device-registry.port";
 export { DeviceTelemetry } from "#contracts/ports/device-telemetry.port";
 export type { DeviceCommand } from "#contracts/types/device-command.type";
 export type { DeviceDraft } from "#contracts/types/device-draft.type";
+export type { DeviceKind } from "#contracts/types/device-kind.type";
 export type { DeviceListQuery } from "#contracts/types/device-list-query.type";
 export type { PairingCode } from "#contracts/types/pairing-code.type";
 export type { PairingRequest } from "#contracts/types/pairing-request.type";

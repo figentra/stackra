@@ -16,6 +16,7 @@ export const PERIPHERAL_DRIVERS = Object.freeze({
   drawer: ["memory", "printer_kick"],
   scanner: ["memory", "hid"],
   labelPrinter: ["memory", "zpl"],
-  customerDisplay: ["memory", "channel"],
+  customerDisplay: ["memory", "channel", "external"],
   cardTerminal: ["memory"],
+  accessController: ["memory"],
 } as const);

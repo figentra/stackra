@@ -1,7 +1,9 @@
 /**
  * Stackra file contract:
- * Purpose: the `Scale` port: a weighing scale at the till (ADR 0253). It reads the weight on the scale now and answers
- *          a probe, each as a `CapabilityResult` that refuses with capability `serial` when no scale answers.
+ * Purpose: the `Scale` port: a weighing scale at the till or the bagging area of a self-checkout lane (ADR 0253). It
+ *          reads the weight on the scale now, streams every weight change to a listener (the lane's continuous check
+ *          that the bag holds what was scanned), and answers a probe, each read as a `CapabilityResult` that refuses
+ *          with capability `serial` when no scale answers.
  * Boundary: an abstract class that is its own token, keyed `peripherals.Scale`. Only the `memory` driver ships: a scale
  *           speaks over a serial line, which Electron's main process reaches only through a native module (ADR 0253
  *           decision 3: on evidence) and a Chromium renderer through WebSerial, a driver for a later entry.
@@ -19,6 +21,7 @@ import type { ScaleReading } from "#contracts/types/scale-reading.type";
  * @example
  * const weight = await scale.read();
  * if (weight.ok && weight.data.isStable) line.setGrams(weight.data.grams);
+ * const stop = scale.onWeight((reading) => lane.checkBag(reading));
  */
 export abstract class Scale extends Port {
   /** Type-only port key. */
@@ -29,4 +32,7 @@ export abstract class Scale extends Port {
 
   /** The weight on the scale now. */
   abstract read(): Promise<CapabilityResult<ScaleReading>>;
+
+  /** Calls `listener` with each new weight, settled or not, until the returned function stops it. */
+  abstract onWeight(listener: (reading: ScaleReading) => void): () => void;
 }

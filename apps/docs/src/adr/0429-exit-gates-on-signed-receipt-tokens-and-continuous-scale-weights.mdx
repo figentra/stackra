@@ -1,0 +1,45 @@
+---
+title: "0429 — Exit gates on signed receipt tokens, and continuous scale weights"
+description: "Proposed · 2026-10-26"
+---
+
+<Note>
+  Proposed (STA-801, peripherals part). It extends
+  [0253](/adr/0253-peripherals-web-api-first-and-device-presets) (peripherals) with one port and one
+  stream. Owner items R3-SO-10, GRO-95 and US-128.
+</Note>
+
+## Context
+
+A self-checkout lane checks that the bag holds what was scanned, and lets the shopper out through a gate only with a
+paid receipt. The `Scale` port could only be read once, and nothing modelled a gate.
+
+## Decision
+
+1. **`AccessController` port** (`peripherals.AccessController`): `probe()`, `onCredential(listener)` for every credential
+   the gate's reader presents, and `open()` for one passage. It decides nothing. Only the `memory` driver ships; a gate
+   controller's driver comes with its own ADR under 0253 decision 3.
+2. **Signed receipt tokens.** A receipt's QR code carries `base64url(claims).base64url(Ed25519 signature)`, the claims
+   being `receiptId`, `nodeId` and `issuedAt`. The till or the receipts service signs with a private key it keeps as a
+   secret; a gate holds only the public key, `peripherals.exitTokenPublicKey` (configuration, not a secret).
+   `signReceiptToken`, `verifyReceiptToken` and `importReceiptPublicKey` use Web Crypto only.
+3. **`ExitGateService`** opens the gate once for a token that verifies, was issued in the gate's node within
+   `peripherals.exitTokenMaxAge` (30 minutes by default, a venue setting), has not opened this gate before, and that
+   the product's rule set admits (`admit`); it reports every decision with its reason and never throws on a bad scan.
+   One gate remembers the last 10,000 receipts; a venue with several exits needs a shared used-receipt store (later).
+4. **Continuous weights.** `Scale.onWeight(listener)` streams every weight change, settled or not, until stopped.
+
+## Consequences
+
+- An exit gate works offline: verifying needs no call to the server.
+- A leaked private key lets anyone mint exit tokens: the key is rotated through the secret store, and the gates take
+  the new public key by configuration.
+
+## Enforcement
+
+planned — the unit tests in `packages/experience/peripherals/src/core/{functions,services,drivers}/__tests__/`.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: `notes/handover/stackra-package-needs.md` (review round 3 row); `notes/handover/config-model.md`
+(gate rules are rule sets).

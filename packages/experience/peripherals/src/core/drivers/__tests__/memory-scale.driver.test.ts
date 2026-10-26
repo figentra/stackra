@@ -26,4 +26,19 @@ describe("MemoryScaleDriver", () => {
     expect(await scale.probe()).toEqual(refused);
     expect(await scale.read()).toEqual(refused);
   });
+
+  it("streams each weight to its listeners until they stop", () => {
+    const scale = new MemoryScaleDriver();
+    const seen: unknown[] = [];
+    const stop = scale.onWeight((reading) => seen.push(reading));
+    scale.reading = { grams: 300, isStable: false };
+    scale.reading = { grams: 320, isStable: true };
+    scale.reading = null;
+    stop();
+    scale.reading = { grams: 900, isStable: true };
+    expect(seen).toEqual([
+      { grams: 300, isStable: false },
+      { grams: 320, isStable: true },
+    ]);
+  });
 });

@@ -16,6 +16,7 @@ import { registerSchemas, Schema } from "@stackra/validation";
 
 import type { BarcodeScanner } from "#contracts/ports/barcode-scanner.port";
 import type { CardTerminal } from "#contracts/ports/card-terminal.port";
+import type { AccessController } from "#contracts/ports/access-controller.port";
 import type { CashDrawer } from "#contracts/ports/cash-drawer.port";
 import type { CustomerDisplay } from "#contracts/ports/customer-display.port";
 import type { LabelPrinter } from "#contracts/ports/label-printer.port";
@@ -45,11 +46,17 @@ export class PeripheralsOptions extends Schema {
   /** The label printer driver: `zpl` (desktop) or `memory`. */
   labelPrinter: DriverName<LabelPrinter> = "memory";
 
-  /** The customer display driver: `channel` (a second window of the app) or `memory`. */
+  /**
+   * The customer display driver: `channel` (a second window of the app), `external` (the native app's Android
+   * Presentation or iPad external-display scene) or `memory`.
+   */
   customerDisplay: DriverName<CustomerDisplay> = "memory";
 
   /** The card terminal driver: `memory` until a provider's driver ships with its ADR. */
   cardTerminal: DriverName<CardTerminal> = "memory";
+
+  /** The gate driver: `memory` until a gate controller's driver ships with its ADR. */
+  accessController: DriverName<AccessController> = "memory";
 
   /** Where the `escpos` driver sends receipts: `tcp://<host>:<port>`, a device path, or empty for no printer. */
   printerAddress = "";
@@ -65,6 +72,12 @@ export class PeripheralsOptions extends Schema {
 
   /** Probe each bound peripheral at boot so the capability gate reflects what is plugged in. */
   probeOnBoot = false;
+
+  /** The public key exit gates check receipt tokens with (raw Ed25519, base64url); empty on a site with no gate. */
+  exitTokenPublicKey = "";
+
+  /** How long after its sale a receipt token still opens an exit gate (a venue setting). */
+  exitTokenMaxAge: Duration = Duration.minutes(30);
 }
 
 registerSchemas([[PeripheralsOptions, PERIPHERALS_CONFIG_SCHEMA]]);

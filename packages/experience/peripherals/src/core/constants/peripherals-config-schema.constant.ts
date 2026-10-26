@@ -28,6 +28,7 @@ export const PERIPHERALS_CONFIG_SCHEMA = z.object({
   labelPrinter: z.enum(PERIPHERAL_DRIVERS.labelPrinter).default("memory"),
   customerDisplay: z.enum(PERIPHERAL_DRIVERS.customerDisplay).default("memory"),
   cardTerminal: z.enum(PERIPHERAL_DRIVERS.cardTerminal).default("memory"),
+  accessController: z.enum(PERIPHERAL_DRIVERS.accessController).default("memory"),
   printerAddress: z.string().regex(PRINTER_ADDRESS).default(""),
   labelPrinterAddress: z.string().regex(PRINTER_ADDRESS).default(""),
   drawerPin: z.union([z.literal(2), z.literal(5)]).default(2),
@@ -38,4 +39,14 @@ export const PERIPHERALS_CONFIG_SCHEMA = z.object({
     )
     .default(Duration.seconds(0.05)),
   probeOnBoot: z.boolean().default(false),
+  exitTokenPublicKey: z
+    .string()
+    .regex(/^$|^[A-Za-z0-9_-]{43}$/, "Expected a 32-byte Ed25519 public key as base64url, or empty")
+    .default(""),
+  exitTokenMaxAge: z
+    .custom<Duration>(
+      (value) => typeof value === "string" && Duration.toMilliseconds(value as Duration) > 0,
+      { message: "Expected an ISO 8601 duration above zero, such as PT30M" },
+    )
+    .default(Duration.minutes(30)),
 });

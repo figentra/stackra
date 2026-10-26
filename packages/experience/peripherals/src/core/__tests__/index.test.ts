@@ -19,7 +19,10 @@ describe("@stackra/peripherals", () => {
       "CUSTOMER_DISPLAY_CHANNEL",
       "ChannelCustomerDisplayDriver",
       "EmbeddedValue",
+      "ExitGateService",
+      "ExternalCustomerDisplayDriver",
       "LabelPrinterUnavailableError",
+      "MemoryAccessControllerDriver",
       "MemoryBarcodeScannerDriver",
       "MemoryCardTerminalDriver",
       "MemoryCashDrawerDriver",
@@ -30,8 +33,11 @@ describe("@stackra/peripherals", () => {
       "PeripheralsConfig",
       "PeripheralsConfig$",
       "PrinterUnavailableError",
+      "importReceiptPublicKey",
       "listenCustomerDisplay",
       "parseEmbeddedBarcode",
+      "signReceiptToken",
+      "verifyReceiptToken",
     ]);
   });
 

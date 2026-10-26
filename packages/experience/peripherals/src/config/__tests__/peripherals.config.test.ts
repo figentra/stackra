@@ -47,6 +47,9 @@ describe("PeripheralsConfig", () => {
     expect(config.drawerPin).toBe(2);
     expect(config.scanKeyGap).toBe("PT0.05S");
     expect(config.probeOnBoot).toBe(false);
+    expect(config.accessController).toBe("memory");
+    expect(config.exitTokenPublicKey).toBe("");
+    expect(config.exitTokenMaxAge).toBe("PT30M");
     expect(Object.isFrozen(config)).toBe(true);
   });
 
@@ -69,6 +72,9 @@ describe("PeripheralsConfig", () => {
     );
     expect(() =>
       buildConfig(PeripheralsConfig, { values: { printerAddress: "printer.local" } }),
+    ).toThrow(ConfigInvalidError);
+    expect(() =>
+      buildConfig(PeripheralsConfig, { values: { exitTokenPublicKey: "not a key" } }),
     ).toThrow(ConfigInvalidError);
   });
 });

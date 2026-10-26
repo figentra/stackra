@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: the consumer contract of the `.` entry: every symbol the template and its generated samples import from
- *          `@stackra/platform` (the config vocabulary, `Capability`, the three configurations and `PushConfig$`), the
+ *          `@stackra/platform` (the config vocabulary, `Capability`, the configurations and `PushConfig$`), the kiosk launch step, the
  *          shipped schemas of the other two configurations, the memory drivers, and not `Platform` (registry A3).
  * Boundary: test only; imports the stand-in barrel through its `#core` alias.
  * Runtime: node (vitest)
@@ -24,6 +24,8 @@ describe("@stackra/platform", () => {
         "FileLaunchType",
         "InstallMoment",
         "InstallPrompt",
+        "KioskConfig",
+        "KioskConfig$",
         "MemoryCaptchaVerifierDriver",
         "MemoryKioskModeDriver",
         "MemoryPlatformDriver",
@@ -40,6 +42,7 @@ describe("@stackra/platform", () => {
         "TrayClickAction",
         "UpdateStrategy",
         "WindowKind",
+        "enterKioskOnLaunch",
       ].sort(),
     );
   });

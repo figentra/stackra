@@ -10,6 +10,7 @@
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision; ADR 0127 2026-10-24 note.
  */
 export { DevicesConfig } from "#config/devices.config";
+export { BASE_DEVICE_CATALOGUE } from "#core/constants/base-device-catalogue.constant";
 export { DEVICE_HUB_PATHS } from "#core/constants/device-hub-paths.constant";
 export { DEVICE_STORAGE_KEYS } from "#core/constants/device-storage-keys.constant";
 export { DEVICES_CONFIG_SCHEMA as DevicesConfig$ } from "#core/constants/devices-config-schema.constant";
@@ -22,4 +23,5 @@ export { StoredDeviceIdentityDriver } from "#core/drivers/stored-device-identity
 export { DeviceHubRefusedError } from "#core/errors/device-hub-refused.error";
 export { DeviceUnauthorizedError } from "#core/errors/device-unauthorized.error";
 export { PairingCodeInvalidError } from "#core/errors/pairing-code-invalid.error";
+export { deviceCatalogueOf } from "#core/functions/device-catalogue-of.function";
 export { DevicesOptions } from "#core/schemas/devices-options.schema";

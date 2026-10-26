@@ -9,6 +9,7 @@
  */
 export { LabelFormat } from "#contracts/enums/label-format.enum";
 export { TerminalState } from "#contracts/enums/terminal-state.enum";
+export { AccessController } from "#contracts/ports/access-controller.port";
 export { BarcodeScanner } from "#contracts/ports/barcode-scanner.port";
 export { CardTerminal } from "#contracts/ports/card-terminal.port";
 export { CashDrawer } from "#contracts/ports/cash-drawer.port";
@@ -19,11 +20,13 @@ export { Scale } from "#contracts/ports/scale.port";
 export type { CustomerDisplayLine } from "#contracts/types/customer-display-line.type";
 export type { CustomerDisplayView } from "#contracts/types/customer-display-view.type";
 export type { DrawerPin } from "#contracts/types/drawer-pin.type";
+export type { ExitDecision } from "#contracts/types/exit-decision.type";
 export type { Label } from "#contracts/types/label.type";
 export type { PairedTerminal } from "#contracts/types/paired-terminal.type";
 export type { PrintedLabel } from "#contracts/types/printed-label.type";
 export type { PrintedReceipt } from "#contracts/types/printed-receipt.type";
 export type { RasterImage } from "#contracts/types/raster-image.type";
 export type { Receipt } from "#contracts/types/receipt.type";
+export type { ReceiptTokenClaims } from "#contracts/types/receipt-token-claims.type";
 export type { ScaleReading } from "#contracts/types/scale-reading.type";
 export type { TerminalPairing } from "#contracts/types/terminal-pairing.type";

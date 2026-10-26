@@ -14,6 +14,7 @@ import * as devices from "#core/index";
 describe("@stackra/devices", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(devices).sort()).toEqual([
+      "BASE_DEVICE_CATALOGUE",
       "DEVICE_HUB_PATHS",
       "DEVICE_STORAGE_KEYS",
       "DeviceHubRefusedError",
@@ -28,6 +29,7 @@ describe("@stackra/devices", () => {
       "PairingCodeInvalidError",
       "StoredDeviceCredentialDriver",
       "StoredDeviceIdentityDriver",
+      "deviceCatalogueOf",
     ]);
   });
 

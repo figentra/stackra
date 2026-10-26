@@ -1,0 +1,52 @@
+---
+title: "0430 — Device-catalogue base kinds and the native customer displays"
+description: "Proposed · 2026-10-26"
+---
+
+<Note>
+  Proposed (STA-801, devices and display part; STA-803 open item). It answers the Android half of
+  [0339](/adr/0339-point-of-sale-peripherals-printers-labels-drawer-scanner-display-and-the-native-bluetooth-driver)
+  open question 3 and gives the iPad half a driver while
+  [0344](/adr/0344-platform-targets-form-factors-native-surfaces-and-the-tier-matrix) open spike 1
+  (STA-475) confirms the scene.
+</Note>
+
+## Context
+
+`RegisteredDevice.kind` named "a kind from the product's catalogue", but no catalogue existed. The customer display had
+a `channel` driver for a second Electron or browser window and nothing for the Android and iPad tills.
+
+## Decision
+
+1. **`external` customer display driver.** `ExternalCustomerDisplayDriver` hands each view as JSON to the app's
+   `StackraCustomerDisplay` Expo module, which draws it natively: an Android `Presentation` on the connected display, an
+   iPad window in the external-display scene. The Kotlin and Swift sources live in
+   `apps/mobile/src/native-sources/customer-display/` (0345 decision 6); gen wires the module and the scene manifest
+   around them. Without the module or a display the driver refuses with capability `window`.
+2. **The device catalogue is data.** A `device_kind` row has a snake_case `key`, `unattended`, `customerFacing` and the
+   `peripherals` it drives. `@stackra/devices` ships `BASE_DEVICE_CATALOGUE` (till, kiosk, lane, lane display, gate) as
+   the base a product's seed pack edits, and `deviceCatalogueOf` checks rows. No code compares a kind's key: an
+   unattended kind enters the kiosk lock and shows the kiosk surface ([0428](/adr/0428-kiosk-surface-mode-and-kiosk-lock-on-launch)).
+
+## Open questions
+
+1. **iPad scene (STA-475).** Whether the current React Native line keeps the external-display scene beside the app's
+   own scene is unconfirmed; the driver refuses cleanly until it is.
+2. **`@stackra/ui` `./turnstile` entry (STA-803).** Turnstile stays in `./react` (wave 10 owner decision 12, one symbol
+   in one entry). A separate entry would keep the Cloudflare script out of apps that never show a challenge, at the
+   cost of moving the symbol. Owner to decide.
+
+## Consequences
+
+- A product adds a device kind by editing its seed pack, not code.
+- The native display draws the basket natively, not the app's React screen; a richer display needs a second React root.
+
+## Enforcement
+
+planned — `packages/runtime/devices/src/core/functions/__tests__/device-catalogue-of.function.test.ts` and
+`packages/experience/peripherals/src/core/drivers/__tests__/external-customer-display.driver.test.ts`; the native
+sources compile only in an EAS build.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: `notes/handover/stackra-package-needs.md`; ADR 0339; ADR 0344; ADR 0345.
