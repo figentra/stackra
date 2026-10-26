@@ -55,11 +55,11 @@ describe("renderNativeCss", () => {
     for (const mode of ["light", "dark"] as const) {
       const block = variantOf(mode);
       for (const name of PALETTE)
-        expect(valueIn(block, `color-${name}`), name).toBe(STACKRA_THEME.palette[name]?.[mode]);
+        expect(valueIn(block, name), name).toBe(STACKRA_THEME.palette[name]?.[mode]);
     }
-    // HeroUI Native's theme mixes these from the accent; the theme's own steps replace them.
-    expect(valueIn(variantOf("light"), "color-accent-soft")).toBe("oklch(0.925 0.006 248)");
-    expect(valueIn(variantOf("dark"), "color-accent-pressed")).toBe("oklch(0.8 0.008 248)");
+    // HeroUI Native's theme mixes these from the accent; registering the theme's own steps replaces them.
+    const registered = css.split("@theme inline static {\n")[1]?.split("\n}")[0] ?? "";
+    for (const name of PALETTE) expect(registered).toContain(`  --color-${name}: var(--${name});`);
   });
 
   // @covers sta-455:FR-002
@@ -71,9 +71,9 @@ describe("renderNativeCss", () => {
         contrastRatio(oklchToHex(valueIn(block, fg)), oklchToHex(valueIn(block, bg)));
       const pairs = [
         ["accent-foreground", "accent"],
-        ["accent-foreground", "color-accent-hover"],
-        ["accent-foreground", "color-accent-pressed"],
-        ["color-accent-soft-foreground", "color-accent-soft"],
+        ["accent-foreground", "accent-hover"],
+        ["accent-foreground", "accent-pressed"],
+        ["accent-soft-foreground", "accent-soft"],
       ] as const;
       for (const [fg, bg] of pairs)
         if (ratio(fg, bg) < 4.5)

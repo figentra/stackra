@@ -43,6 +43,7 @@ describe(createTrait, () => {
 
   it("refuses an apply that does not extend the class it is given", () => {
     const Broken = createTrait("broken", () => class extends Model {} as unknown as ModelClass);
-    expect(() => Model.with(Broken)).toThrow(TypeError);
+    // applied after Taggable, its base is Taggable's class, not Model, so `extends Model` skips a link
+    expect(() => Model.with(Taggable, Broken)).toThrow(TypeError);
   });
 });

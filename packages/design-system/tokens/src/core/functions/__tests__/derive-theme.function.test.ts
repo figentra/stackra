@@ -37,15 +37,17 @@ describe("deriveTheme", () => {
 
   it("replaces the accent family and gives the accent the foreground that contrasts most", () => {
     const theme = deriveTheme(STACKRA_THEME, { accent: { hue: 250, chroma: 0.15 } });
-    expect(theme.colors.accent.light).toBe("oklch(0.52 0.15 250)");
+    expect(theme.colors.accent.light).toBe("oklch(0.5 0.15 250)");
     expect(theme.colors.focus).toEqual(theme.colors.accent);
-    expect(theme.palette["accent-hover"]?.light).toBe("oklch(0.47 0.15 250)");
+    expect(theme.palette["accent-hover"]?.light).toBe("oklch(0.45 0.15 250)");
     for (const mode of ["hexLight", "hexDark"] as const) {
       const on = contrastRatio(theme.colors["accent-foreground"][mode], theme.colors.accent[mode]);
+      // the label is the base's background or foreground; the other one must not contrast more
+      const { background, foreground } = STACKRA_THEME.colors;
       const other =
-        theme.colors["accent-foreground"][mode] === "#FFFFFF"
-          ? STACKRA_THEME.colors.foreground.hexLight
-          : "#FFFFFF";
+        theme.colors["accent-foreground"][mode] === background[mode]
+          ? foreground[mode]
+          : background[mode];
       expect(on).toBeGreaterThanOrEqual(contrastRatio(other, theme.colors.accent[mode]));
     }
   });

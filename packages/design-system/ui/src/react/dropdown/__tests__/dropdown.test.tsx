@@ -33,6 +33,8 @@ describe("Dropdown (web)", () => {
     expect(acme.textContent).toContain("Owner");
     expect(screen.getByRole("menuitem", { name: "Sign out" })).toBeTruthy();
     fireEvent.click(acme);
-    expect(onAction).toHaveBeenCalledWith("ten_1");
+    // React Aria passes the key first; a second argument it may add is not ours to pin
+    expect(onAction).toHaveBeenCalledOnce();
+    expect(onAction.mock.calls[0]?.[0]).toBe("ten_1");
   });
 });

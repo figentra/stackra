@@ -27,6 +27,7 @@ vi.mock("@stackra/icons/native/lucide-icons", () => {
     Ellipsis: mark,
     ExternalLink: mark,
     Info: mark,
+    Sparkles: mark,
     TriangleAlert: mark,
     UserRound: mark,
   };

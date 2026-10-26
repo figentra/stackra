@@ -24,7 +24,10 @@ class OrderForm {
 registerSchemas([
   [
     OrderForm,
-    z.object({ variantId: z.string().min(1, "required"), quantity: z.number().min(1).default(1) }),
+    z.object({
+      variantId: z.string({ error: "required" }).min(1, "required"),
+      quantity: z.number().min(1).default(1),
+    }),
   ],
 ]);
 

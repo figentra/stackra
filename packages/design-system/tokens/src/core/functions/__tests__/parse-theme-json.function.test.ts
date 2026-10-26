@@ -67,7 +67,11 @@ describe("themeToDtcg", () => {
     const light = (tokens["color"]?.["light"] ?? {}) as Record<string, unknown>;
     expect(light["accent"]).toEqual({
       $type: "color",
-      $value: ACME.colors.accent.light,
+      $value: {
+        colorSpace: "oklch",
+        components: [0.5, 0.14, 30],
+        hex: ACME.colors.accent.hexLight.slice(0, 7),
+      },
     });
     expect(tokens["font"]?.["sans"]).toEqual({
       $type: "fontFamily",
@@ -77,9 +81,12 @@ describe("themeToDtcg", () => {
 
   it("leaves out a length that refers to another property and keeps the material levels", () => {
     expect(tokens["radius"]?.["field"]).toBeUndefined();
-    expect(tokens["radius"]?.["base"]).toEqual({ $type: "dimension", $value: "0.25rem" });
+    expect(tokens["radius"]?.["base"]).toEqual({
+      $type: "dimension",
+      $value: { value: 0.25, unit: "rem" },
+    });
     expect(tokens["material"]?.["thin"]).toMatchObject({
-      blur: { $type: "dimension", $value: "12px" },
+      blur: { $type: "dimension", $value: { value: 12, unit: "px" } },
     });
   });
 });

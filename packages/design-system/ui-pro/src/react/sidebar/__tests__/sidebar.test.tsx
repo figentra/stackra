@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: proves the web Sidebar names its landmark, menu and toggle button from `label` (and keeps HeroUI Pro's
- *          default toggle name without it), names the icon-only trigger of a collapsed item and the mobile sheet
+ * Purpose: proves the web Sidebar names its landmark, menu and toggle button from `label` (and the package's
+ *          English toggle name without it), names the icon-only trigger of a collapsed item and the mobile sheet
  *          from `label`, draws HeroUI Pro's items, passes unknown props through, carries HeroUI Pro's own parts and
  *          hooks, and types the accessible name as `label`.
  * Boundary: jsdom with real HeroUI Pro and React Aria; `matchMedia` and `ResizeObserver` are stubbed because jsdom has
@@ -112,9 +112,10 @@ describe("Sidebar (web)", () => {
     expect(screen.getByRole("button", { name: "Resize the sidebar", hidden: true })).toBeTruthy();
   });
 
-  it("keeps HeroUI Pro's default rail name when label is left out", () => {
+  it("names the rail with the package's English text when label is left out", () => {
     render(<Shell />);
-    expect(screen.getByRole("button", { name: "Toggle sidebar", hidden: true })).toBeTruthy();
+    const rail = document.querySelector('[data-slot="sidebar-rail"]');
+    expect(rail?.getAttribute("aria-label")).toBe("Collapse the sidebar");
   });
 
   it("draws HeroUI Pro's items, marks the current one, and passes unknown props through", () => {

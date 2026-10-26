@@ -28,6 +28,9 @@ describe("useUiProText", () => {
 
   it("has an English message for every key", () => {
     const { result } = renderHook(() => useUiProText());
-    for (const key of leaves(UI_PRO_KEYS)) expect(() => result.current(key as never)).not.toThrow();
+    // any placeholder a message names gets a value, so only a missing message can throw
+    const values = new Proxy({}, { get: () => "x", has: () => true });
+    for (const key of leaves(UI_PRO_KEYS))
+      expect(() => result.current(key as never, values)).not.toThrow();
   });
 });

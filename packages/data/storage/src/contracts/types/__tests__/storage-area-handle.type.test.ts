@@ -8,13 +8,24 @@
  */
 import type { Json } from "@stackra/contracts";
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
+import { registerSchemas } from "@stackra/validation";
+import { z } from "zod";
 
 import type { StorageAreaHandle } from "#contracts/types/storage-area-handle.type";
 import { MemoryStorageDriver } from "#core/drivers/memory-storage.driver";
+import { registerStorageKeys } from "#core/functions/register-storage-keys.function";
 
 class DevicePrefs {
   density = "comfortable";
 }
+
+registerStorageKeys([[DevicePrefs, { key: "device_prefs" }]]);
+registerSchemas([
+  [
+    DevicePrefs,
+    z.strictObject({ density: z.enum(["comfortable", "compact"]).default("comfortable") }),
+  ],
+]);
 
 describe("StorageAreaHandle", () => {
   it("types values as JSON and shapes by their class", () => {

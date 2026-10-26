@@ -21,7 +21,9 @@ describe("UiProModule", () => {
   });
 
   it("is the root module named after the package", async () => {
-    const name = pkg.name.split("/").at(-1) ?? "";
+    // the pro scope carries "pro" in the module file: @stackra-pro/ui -> ui-pro.module.ts
+    const [scope, last = ""] = pkg.name.split("/");
+    const name = scope === "@stackra-pro" ? `${last}-pro` : last;
     const found: Record<string, unknown> = await import(
       new URL(`../${name}.module.ts`, import.meta.url).href
     );

@@ -46,7 +46,8 @@ function probe(image: Image, options: ImageVariantOptions): ImageVariant | undef
 
 describe("useImageVariant", () => {
   it("renders the template card's 480px WebP variant", () => {
-    expect(renderToString(<Card image={{ url: "https://cdn.test/tee.jpg", alt: "" }} />)).toBe(
+    // React 19 also hoists a `<link rel="preload">` for the image; the card's own markup is the `<img>`.
+    expect(renderToString(<Card image={{ url: "https://cdn.test/tee.jpg", alt: "" }} />)).toContain(
       '<img src="https://cdn.test/tee.jpg?w=480&amp;format=webp" alt="" width="480" height="480"/>',
     );
   });

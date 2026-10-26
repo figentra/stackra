@@ -39,6 +39,8 @@ export function useSchemaFormHandle<T extends FieldValues>(
   });
   const { serverErrors } = options;
   const { setError } = form;
+  // formState is a proxy that re-renders only on what render read; `field()` may run after render, so read errors here.
+  void form.formState.errors;
 
   useEffect(() => {
     for (const [path, message] of Object.entries(serverErrors ?? {}))

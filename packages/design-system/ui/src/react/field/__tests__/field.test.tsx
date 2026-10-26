@@ -62,9 +62,20 @@ function QuickOrder({ submit }: { readonly submit: (values: object) => Promise<v
   );
 }
 
-/** The quick-order form for the settings test. */
-function useQuickOrderForm() {
-  return useSchemaForm(QuickOrderForm, { defaultValues: { sku: "A", quantity: 2 } });
+/** The settings form: each setting drawn by its kind over the quick-order form. */
+function QuickOrderSettings() {
+  return (
+    <Form
+      aria-label="Settings"
+      form={useSchemaForm(QuickOrderForm, { defaultValues: { sku: "A", quantity: 2 } })}
+    >
+      <Field.Setting setting={{ path: "sku", label: "Code", kind: "text" }} provenance="tenant" />
+      <Field.Setting
+        setting={{ path: "quantity", label: "Count", kind: "number", min: 1, max: 9 }}
+      />
+      <Field.Setting setting={{ path: "isGift", label: "Present", kind: "boolean" }} />
+    </Form>
+  );
 }
 
 describe("Field (web)", () => {
@@ -89,15 +100,7 @@ describe("Field (web)", () => {
   });
 
   it("draws Field.Setting by kind with the provenance as its description", () => {
-    render(
-      <Form aria-label="Settings" form={useQuickOrderForm()}>
-        <Field.Setting setting={{ path: "sku", label: "Code", kind: "text" }} provenance="tenant" />
-        <Field.Setting
-          setting={{ path: "quantity", label: "Count", kind: "number", min: 1, max: 9 }}
-        />
-        <Field.Setting setting={{ path: "isGift", label: "Present", kind: "boolean" }} />
-      </Form>,
-    );
+    render(<QuickOrderSettings />);
     expect(screen.getByRole("textbox", { name: "Code" })).toBeTruthy();
     expect(screen.getByText("tenant")).toBeTruthy();
     expect(screen.getByRole("switch", { name: "Present" })).toBeTruthy();

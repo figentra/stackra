@@ -50,6 +50,7 @@ vi.mock("@stackra/icons/native/lucide-icons", async () => {
     Ellipsis: drawn("ellipsis"),
     ExternalLink: drawn("external-link"),
     Info: drawn("info"),
+    Sparkles: drawn("sparkles"),
     TriangleAlert: drawn("triangle-alert"),
     UserRound: drawn("user-round"),
   };
