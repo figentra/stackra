@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `Award`, one award of a kind granted to one recipient: the kind, the recipient by model key and public id,
  *          the level and period, the reason, who granted it (null for its criteria), the criteria revision that
- *          matched, its verify token, and when and why it was revoked.
+ *          matched, its verify token and short code, and when and why it was revoked.
  * Boundary: data only. Key `achievements.award`, table `achievements.awards`, under forced row-level security on
  *           `scope_path` (the scope it was granted in). `createdAt` is when it was granted. The verify token is kept
  *           here so a certificate can be printed again; the cross-scope lookup holds only its hash
@@ -10,7 +10,7 @@
  *           `AwardRevoked`; the ORM loads rows without the constructor.
  * Runtime: node
  * Governing contract: ADR 0368 (decisions 2 to 5); ADR 0327 (decisions 3 and 9); ADR 0294 (decisions 4, 11, 20 and
- *                     27); ADR 0135 (public ids).
+ *                     27); ADR 0135 (public ids); ADR 0432 (decisions 2 and 3: the code, one live award per period).
  */
 import type { PublicId } from "@stackra/contracts";
 import type { OptionalProps } from "@stackra/database";
@@ -51,6 +51,9 @@ export class Award extends Model.with(HasPublicId("awd"), Timestamps) {
 
   /** The opaque verify token printed on its certificate and QR code. */
   verifyToken!: string;
+
+  /** The short verify code printed beside the QR code (`7K3Q-9XPM-0ABZ`); null for an award granted before codes. */
+  verifyCode!: string | null;
 
   /** When it was revoked; null while it is live. */
   revokedAt!: Date | null;

@@ -1,0 +1,52 @@
+---
+title: "0432 — Achievements: a public verify query, a short typed code, one live award per period, and certificates through documents"
+description: "Proposed · 2026-10-26"
+---
+
+<Note>
+  Proposed. It finishes
+  [0368](/adr/0368-achievements-award-kinds-as-data-criteria-grants-revoke-and-a-cross-scope-verify-token)
+  (decisions 3, 5 and 6). Linear STA-717.
+</Note>
+
+## Context
+
+ADR 0368 left verification as a service method, a QR code with no code a person can type, a grant check that two
+concurrent grants for one period could both pass, and a certificate as fields only. Academorix prints certificates
+that parents and clubs check from paper.
+
+## Decision
+
+1. **A public verify query.** `VerifyAwardQuery` (`achievements.award.verify@1`, `GET /awards/verify?token=` or
+   `?code=`) is in the public API area, open to anonymous callers and not an MCP tool. It answers `valid` with the
+   award (recipient by model key and public id only) or `not_found`; a revoked award is indistinguishable from an
+   unknown one, because its index row is deleted on revoke.
+2. **A short typed code.** Every new award gets 12 random Crockford base32 characters (60 bits), printed as
+   `7K3Q-9XPM-0ABZ` beside the QR code. The award keeps the code for a reprint; the unscoped index keeps only the SHA-256
+   of its canonical form, unique. A typed code is folded first (case, spaces, hyphens, O as 0, I and L as 1). The
+   public area's rate limit bounds guessing.
+3. **One live award per kind, recipient and period.** A partial unique index on live awards with a period backs
+   `checkGrant`; the loser of two concurrent grants is refused `award_not_grantable` with `period_taken`. The index is
+   built online; live duplicates must be revoked before it builds.
+4. **Certificates through documents.** `AwardService.renderCertificate` hands the kind's published print template
+   (`certificateTemplate`, loaded by the consumer) and the certificate fields to `renderDocument` of
+   `@stackra/documents`; the template's `qr` block encodes `{{award.verifyUrl}}` and its text may print
+   `{{award.verifyCode}}`. No layout is code.
+5. **Prefixes.** `awk`, `awd` and `awv` belong to `achievements.award_kind`, `achievements.award` and
+   `achievements.award_verification` in gen's prefix registry.
+
+## Consequences
+
+- A certificate can be checked by scanning or by typing; neither leaks who else holds an award.
+- Concurrent automatic grants are safe without a lock.
+- The package depends on `@stackra/documents`.
+
+## Enforcement
+
+`verify-award.query.test.ts`, `award.service.test.ts`, `normalize-award-code.function.test.ts` and
+`0002-add-award-codes-and-unique-grants.migration.test.ts` in `packages/application/achievements`. Planned — the
+prefix rows in `packages/developer/gen/src/core/constants/public-id-prefixes.constant.ts` (gen refuses a taken prefix).
+
+## Supersedes and sources
+
+Supersedes: none. Amends 0368 decisions 3, 5 and 6. Sources: OS ADR 0058; round 3 item 26; ACA-186; ACA-314.

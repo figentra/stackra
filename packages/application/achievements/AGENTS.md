@@ -31,7 +31,7 @@ with a QR code and certificate fields for `@stackra/documents` (ADR 0368, OS ADR
   token hash, an award id and a scope, nothing else: never add personal data or the token to it.
 - Every award write goes through `AwardService`, which records `AwardGranted`/`AwardRevoked` on the row and keeps the
   verification row in step (written on grant, deleted on revoke) in one flush.
-- `verify` opens a scope session (`Database.withScope`); never call it from a method another action's transaction runs.
+- `verify` and `verifyCode` open a scope session (`Database.withScope`); never call it from a method another action's transaction runs.
 - No tenant word is declared here (R-59, ADR 0323): a scope is a `ScopeRef`. No parameter properties and no `#private`
   fields (services typecheck this source under `erasableSyntaxOnly`). Never import `@mikro-orm/*` (ADR 0097 d2).
 
@@ -48,4 +48,5 @@ with a QR code and certificate fields for `@stackra/documents` (ADR 0368, OS ADR
 | Recipient              | `achievements.awards.recipient_id`, events     | A public id and model key only; never a name                                |
 | Grant and revoke words | `achievements.awards.reason`, `revoked_reason` | Written by a person of the scope; may hold personal data; never in an event |
 | Verify token           | `achievements.awards.verify_token`             | A bearer link to a public verify page; the unscoped index keeps its hash    |
+| Short code             | `achievements.awards.verify_code`              | Printed beside the QR code; the unscoped index keeps its hash               |
 | Facts                  | process memory during `consider`               | Computed by the consumer, evaluated and dropped; never stored here          |

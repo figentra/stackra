@@ -2,36 +2,54 @@
  * Stackra file contract:
  * Purpose: `AwardService`, the module service over `Award`: grants an award by hand, grants automatically the kinds
  *          whose published criteria match a recipient's facts, revokes, lists a recipient's live awards, resolves a
- *          verify token across scopes, and builds a certificate's fields with the verify URL and its QR code.
+ *          verify token or short code across scopes, builds a certificate's fields with the verify URL, its QR code and
+ *          the short code, and renders the certificate through @stackra/documents.
  * Boundary: a `CrudService<Award>`, so grants, revokes and reads run in the caller's transaction and scope session. A
- *           grant writes the award with `AwardGranted` and the token's `AwardVerification` row (its SHA-256 only) and
- *           flushes, so the outbox writes the event in the same transaction; a revoke records `AwardRevoked` and
+ *           grant writes the award with `AwardGranted` and the token's `AwardVerification` row (the SHA-256 of the
+ *           token and of the short code only) and flushes, so the outbox writes the event in the same transaction; two
+ *           concurrent grants for one period meet the unique live-period index, and the loser is refused as
+ *           `period_taken` (its transaction is aborted by Postgres, so the caller's unit of work rolls back); a revoke records `AwardRevoked` and
  *           deletes that row, so the token stops resolving. `verify` reads the unscoped index, then opens the award's
  *           scope session (`Database.withScope`) to read it: call it from its own public action, never inside another
  *           action's transaction (the settings would last for the rest of it). Criteria are evaluated only through
  *           `evaluate` of @stackra/rules with the clock's time; the consumer computes the facts (ADR 0331 decision 9).
  *           The verify URL's base is the consumer's setting, never a literal here.
  * Runtime: node
- * Governing contract: ADR 0368 (decisions 2 to 7); OS ADR 0058 (decision 1 and Enforcement); ADR 0331 (decisions 6
- *                     and 9); ADR 0327 (decisions 3 and 9); ADR 0105 as amended by ADR 0294.
+ * Governing contract: ADR 0368 (decisions 2 to 7); ADR 0432 (decisions 1 to 4); OS ADR 0058 (decision 1 and
+ *                     Enforcement); ADR 0331 (decisions 6 and 9); ADR 0327 (decisions 3 and 9); ADR 0105 as amended by
+ *                     ADR 0294.
  */
 import { createHash, randomBytes } from "node:crypto";
 
 import type { Clock, PublicId, ScopeRef } from "@stackra/contracts";
-import { CrudService, type Database } from "@stackra/database";
+import { CrudService, type Database, UniqueViolation } from "@stackra/database";
+import {
+  type DocumentFormat,
+  type DocumentTemplate,
+  type RenderedDocument,
+  renderDocument,
+} from "@stackra/documents";
+import type { PdfEngine } from "@stackra/documents/contracts";
 import { isRefusal, NotFoundError } from "@stackra/errors";
 import { evaluate, type Facts } from "@stackra/rules";
 import type { RuleSetRevision, RuleSetService } from "@stackra/rules/node";
 
-import type { CertificateFields, RecipientRef, VerifiedAward } from "#contracts/index";
+import {
+  type CertificateFields,
+  GrantRefusal,
+  type RecipientRef,
+  type VerifiedAward,
+} from "#contracts/index";
 import {
   AwardGranted,
   AwardNotGrantableError,
   AwardRevoked,
   AwardRevokedError,
   checkGrant,
+  normalizeAwardCode,
   verifyQr,
 } from "#core/index";
+import { newAwardCode } from "#node/functions/new-award-code.function";
 import { recipientRulesOf } from "#node/functions/recipient-rules-of.function";
 import type { Award } from "#node/models/award.model";
 import type { AwardKind } from "#node/models/award-kind.model";
@@ -51,6 +69,7 @@ const hashOf = (token: string): string => createHash("sha256").update(token).dig
  * const award = await awards.grant(ctx.scope, { kindId, recipient, period: "2026-09" }, ctx.actor.id);
  * await awards.consider(ctx.scope, { model: "workforce.member", id }, facts, { period: "2026-09" });
  * const verified = await awards.verify(input.token); // null when unknown or revoked
+ * const typed = await awards.verifyCode("7k3q-9xpm-0abz");
  */
 export class AwardService extends CrudService<Award> {
   /** Reads the kinds. */
@@ -201,22 +220,20 @@ export class AwardService extends CrudService<Award> {
    */
   async verify(token: string): Promise<VerifiedAward | null> {
     if (!TOKEN.test(token)) return null;
-    const index = await this.em().findOne(AwardVerification, { tokenHash: hashOf(token) });
-    if (index === null) return null;
-    return this.database.withScope({ id: index.scopeId, path: index.scopePath }, async () => {
-      const award = await this.findOne({ id: index.awardId, revokedAt: null });
-      if (award === null || award.verifyToken !== token) return null;
-      const kind = await this.kinds.findOneOrFail({ id: award.kindId });
-      return {
-        awardId: award.id,
-        kindId: kind.id,
-        kindName: kind.name,
-        level: award.level,
-        period: award.period,
-        recipient: { model: award.recipientModel, id: award.recipientId },
-        grantedAt: award.createdAt,
-      };
-    });
+    return this.resolve({ tokenHash: hashOf(token) }, (award) => award.verifyToken === token);
+  }
+
+  /**
+   * The live award whose short code is `typed` (case, spaces, hyphens and look-alikes forgiven), from any scope, or
+   * null for an unknown, malformed or revoked code. Opens the award's scope session: call it from its own action.
+   */
+  async verifyCode(typed: string): Promise<VerifiedAward | null> {
+    const code = normalizeAwardCode(typed);
+    if (code === null) return null;
+    return this.resolve(
+      { codeHash: hashOf(code) },
+      (award) => award.verifyCode !== null && normalizeAwardCode(award.verifyCode) === code,
+    );
   }
 
   /**
@@ -240,8 +257,38 @@ export class AwardService extends CrudService<Award> {
       period: award.period,
       grantedAt: award.createdAt,
       verifyUrl,
+      verifyCode: award.verifyCode,
       verifyQr: verifyQr(verifyUrl),
     };
+  }
+
+  /**
+   * The award's certificate rendered by @stackra/documents from `options.template`, the published print template the
+   * kind's `certificateTemplate` key names (the consumer loads it from the studio). The render data is `award` (the
+   * certificate fields, the QR code left to the template's `qr` block over `{{award.verifyUrl}}`) and `recipient` (the
+   * consumer's display values for its own model).
+   *
+   * @throws AwardRevokedError when it is revoked.
+   * @throws NotFoundError when it is not visible.
+   * @throws InvalidDocumentTemplateError or DocumentValueError from @stackra/documents.
+   */
+  async renderCertificate(
+    awardId: PublicId<"awd">,
+    options: {
+      readonly verifyBaseUrl: string;
+      readonly template: DocumentTemplate;
+      readonly format: DocumentFormat;
+      readonly recipient: Readonly<Record<string, unknown>>;
+      readonly pdfEngine?: PdfEngine;
+    },
+  ): Promise<RenderedDocument> {
+    const { verifyQr: _svg, ...award } = await this.certificateOf(awardId, options.verifyBaseUrl);
+    return renderDocument({
+      template: options.template,
+      data: { award, recipient: options.recipient },
+      format: options.format,
+      ...(options.pdfEngine === undefined ? {} : { pdfEngine: options.pdfEngine }),
+    });
   }
 
   /** Writes the award with `AwardGranted` and its verify index row, and flushes. */
@@ -259,6 +306,7 @@ export class AwardService extends CrudService<Award> {
   ): Promise<Award> {
     const em = this.em();
     const verifyToken = randomBytes(32).toString("base64url");
+    const verifyCode = newAwardCode();
     const award = em.create(this.model(), {
       kindId: kind.id,
       scopeId: scope.id,
@@ -267,6 +315,7 @@ export class AwardService extends CrudService<Award> {
       recipientId: recipient.id,
       ...grant,
       verifyToken,
+      verifyCode,
       revokedAt: null,
       revokedReason: null,
     });
@@ -282,12 +331,43 @@ export class AwardService extends CrudService<Award> {
     );
     em.create(AwardVerification, {
       tokenHash: hashOf(verifyToken),
+      codeHash: hashOf(normalizeAwardCode(verifyCode) ?? verifyCode),
       awardId: award.id,
       scopeId: scope.id,
       scopePath: scope.path,
     });
-    await em.flush();
+    try {
+      await em.flush();
+    } catch (error) {
+      // the unique live-period index: a concurrent grant for the same period committed first
+      if (error instanceof UniqueViolation)
+        throw AwardNotGrantableError.create({ kindId: kind.id, reason: GrantRefusal.PeriodTaken });
+      throw error;
+    }
     return award;
+  }
+
+  /** The live award of the index row matching `where`, read in its scope, when `owns` confirms it. */
+  private async resolve(
+    where: { readonly tokenHash: string } | { readonly codeHash: string },
+    owns: (award: Award) => boolean,
+  ): Promise<VerifiedAward | null> {
+    const index = await this.em().findOne(AwardVerification, where);
+    if (index === null) return null;
+    return this.database.withScope({ id: index.scopeId, path: index.scopePath }, async () => {
+      const award = await this.findOne({ id: index.awardId, revokedAt: null });
+      if (award === null || !owns(award)) return null;
+      const kind = await this.kinds.findOneOrFail({ id: award.kindId });
+      return {
+        awardId: award.id,
+        kindId: kind.id,
+        kindName: kind.name,
+        level: award.level,
+        period: award.period,
+        recipient: { model: award.recipientModel, id: award.recipientId },
+        grantedAt: award.createdAt,
+      };
+    });
   }
 
   /** `recipient`'s live awards of `kind`. */

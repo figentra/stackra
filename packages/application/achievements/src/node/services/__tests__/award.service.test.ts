@@ -4,17 +4,21 @@
  *          only the token's hash, and a refused grant writes nothing; `consider` grants each matched kind once (or once
  *          per period) and skips an unmatched kind or one with no published revision; a revoke records
  *          `AwardRevoked`, deletes the verification row and refuses a second revoke; a verify token resolves only its
- *          own award, in its scope, and nothing once revoked, unknown or malformed; a certificate carries the verify
- *          URL and its QR code and is refused for a revoked award; `awardsOf` reads the live awards.
+ *          own award, in its scope, and nothing once revoked, unknown or malformed; a short code resolves however it is
+ *          typed and only its hash is indexed; a lost race on the unique live-period index is refused as
+ *          `period_taken`; a certificate carries the verify URL, its QR code and the short code, is rendered through
+ *          @stackra/documents, and is refused for a revoked award; `awardsOf` reads the live awards.
  * Boundary: test only; the kind and rule set services, the database's scope session and the clock are in-test fakes, a
  *           fake `Database.current()` hands out an in-memory entity manager, and @stackra/rules evaluates for real.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0269; ADR 0368 (decisions 2 to 7); OS ADR 0058 (Enforcement).
+ * Governing contract: ADR 0022; ADR 0269; ADR 0368 (decisions 2 to 7); ADR 0432 (decisions 2 to 4); OS ADR 0058
+ *                     (Enforcement).
  */
 import { createHash } from "node:crypto";
 
 import type { Clock, PublicId, ScopeRef } from "@stackra/contracts";
-import { Database, registerModelPartners } from "@stackra/database";
+import { Database, registerModelPartners, UniqueViolation } from "@stackra/database";
+import { DocumentFormat, type DocumentTemplate, PRINT_DOCUMENT_KIND } from "@stackra/documents";
 import { NotFoundError } from "@stackra/errors";
 import { takeRecordedEvents } from "@stackra/events";
 import { type Condition, Rules } from "@stackra/rules";
@@ -29,6 +33,7 @@ import {
   AwardNotGrantableError,
   AwardRevoked,
   AwardRevokedError,
+  normalizeAwardCode,
   verifyQr,
 } from "#core/index";
 import { AWARD_RECIPIENTS } from "#node/constants/award-recipients.constant";
@@ -181,10 +186,15 @@ describe(AwardService, () => {
     expect(verifications).toHaveLength(1);
     expect(verifications[0]).toMatchObject({
       tokenHash: createHash("sha256").update(award.verifyToken).digest("hex"),
+      codeHash: createHash("sha256")
+        .update(normalizeAwardCode(award.verifyCode ?? "") ?? "")
+        .digest("hex"),
       awardId: award.id,
       scopePath: ACME.path,
     });
+    expect(award.verifyCode).toMatch(/^[0-9A-Z]{4}-[0-9A-Z]{4}-[0-9A-Z]{4}$/);
     expect(JSON.stringify(verifications[0])).not.toContain(award.verifyToken);
+    expect(JSON.stringify(verifications[0])).not.toContain(award.verifyCode);
     expect(takeRecordedEvents(award)).toEqual([
       AwardGranted.create({
         awardId: award.id,
@@ -296,12 +306,75 @@ describe(AwardService, () => {
       period: null,
       grantedAt: AT,
       verifyUrl: url,
+      verifyCode: award.verifyCode,
       verifyQr: verifyQr(url),
     });
     await service.revoke(award.id, "Issued in error");
     await expect(
       service.certificateOf(award.id, "https://verify.example.com/awards/"),
     ).rejects.toBeInstanceOf(AwardRevokedError);
+  });
+
+  it("resolves a short code however it is typed, and nothing once revoked", async () => {
+    const kind = kindOf();
+    const { service } = setup([kind]);
+    const award = await service.grant(ACME, { kindId: kind.id, recipient: MEMBER }, "usr_1");
+    const typed = (award.verifyCode ?? "").toLowerCase().replace(/-/g, " ");
+    await expect(service.verifyCode(typed)).resolves.toMatchObject({ awardId: award.id });
+    await expect(service.verifyCode("0000-0000-0000")).resolves.toBeNull();
+    await expect(service.verifyCode("short")).resolves.toBeNull();
+    await service.revoke(award.id, "Issued in error");
+    await expect(service.verifyCode(award.verifyCode ?? "")).resolves.toBeNull();
+  });
+
+  it("refuses the loser of a concurrent period grant as period_taken", async () => {
+    const kind = kindOf({ isOncePerPeriod: true });
+    const { service, em } = setup([kind]);
+    em.flush.mockRejectedValueOnce(new UniqueViolation(new Error("duplicate key")));
+    const refused = await service
+      .grant(ACME, { kindId: kind.id, recipient: MEMBER, period: "2026-09" }, "usr_1")
+      .catch((error: unknown) => error);
+    expect(refused).toBeInstanceOf(AwardNotGrantableError);
+    expect((refused as AwardNotGrantableError).reason).toBe(GrantRefusal.PeriodTaken);
+  });
+
+  it("renders the certificate through @stackra/documents", async () => {
+    const kind = kindOf();
+    const { service } = setup([kind]);
+    const award = await service.grant(ACME, { kindId: kind.id, recipient: MEMBER }, "usr_1");
+    const template: DocumentTemplate = {
+      kind: PRINT_DOCUMENT_KIND,
+      name: "certificate",
+      version: "1",
+      page: { widthMm: 297, heightMm: 210, marginMm: 10 },
+      locales: [{ code: "en", direction: "ltr" }],
+      layout: "single",
+      blocks: [
+        {
+          type: "text",
+          role: "title",
+          text: { en: "{{award.kindName}}: {{recipient.name}} ({{award.verifyCode}})" },
+          align: "center",
+        },
+        {
+          type: "qr",
+          value: "{{award.verifyUrl}}",
+          sizeMm: 30,
+          errorCorrection: "M",
+          align: "center",
+        },
+      ],
+    };
+    const rendered = await service.renderCertificate(award.id, {
+      verifyBaseUrl: "https://verify.example.com/awards",
+      template,
+      format: DocumentFormat.Html,
+      recipient: { name: "Mona" },
+    });
+    const html = new TextDecoder().decode(rendered.bytes);
+    expect(html).toContain("Top seller");
+    expect(html).toContain("Mona");
+    expect(html).toContain(award.verifyCode ?? "");
   });
 
   it("reads a recipient's live awards", async () => {
