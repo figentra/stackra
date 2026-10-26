@@ -7,11 +7,21 @@
  * Runtime: node
  * Governing contract: ADR 0159 (decision 2 as amended: `stackra db migrate`); ADR 0282 (decision 3).
  */
+import { existsSync } from "node:fs";
 import { createRequire } from "node:module";
-import { join } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
 import type { DatabaseRunner } from "#node/types/database-runner.type";
+
+/**
+ * Whether `dir` or a parent holds `node_modules/@stackra/database`. Checked first because `require.resolve` also
+ * searches NODE_PATH, which pnpm's bin shims set to the workspace's hoisted store, so a member without the package
+ * would otherwise load the CLI's copy.
+ */
+const installed = (dir: string): boolean =>
+  existsSync(join(dir, "node_modules", "@stackra", "database")) ||
+  (dirname(dir) !== dir && installed(dirname(dir)));
 
 /**
  * Loads the runner from the member at `cwd`.
@@ -24,6 +34,7 @@ import type { DatabaseRunner } from "#node/types/database-runner.type";
 export async function loadDatabaseRunner(cwd: string): Promise<DatabaseRunner> {
   let file: string;
   try {
+    if (!installed(resolve(cwd))) throw new Error("not installed");
     file = createRequire(join(cwd, "package.json")).resolve("@stackra/database/node");
   } catch {
     throw new Error(

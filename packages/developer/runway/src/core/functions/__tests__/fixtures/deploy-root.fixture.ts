@@ -15,7 +15,7 @@ export const DEPLOY_ROOT: RootRunway = parseRunway("root", {
   project: "acme",
   providers: {
     aws: { accounts: { nonprod: "ref:aws.accounts.nonprod" } },
-    gcp: { projects: { ksa: {}, firm: {} } },
+    gcp: { projects: { ksa: "ref:gcp.projects.ksa", firm: "ref:gcp.projects.firm" } },
     encore: { app: "acme" },
   },
   regions: {

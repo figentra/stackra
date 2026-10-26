@@ -157,9 +157,9 @@ describe("viteConfig", () => {
     await expect(
       viteConfig(CONSOLE, {
         mode: "web",
-        pages: { fr: { html: ".stackra/fr/index.html", path: "/fr/" } } as never,
+        pages: { xx: { html: ".stackra/xx/index.html", path: "/xx/" } } as never,
       }),
-    ).rejects.toThrow(/"fr" is not a locale/);
+    ).rejects.toThrow(/"xx" is not a locale/);
     await expect(
       viteConfig(CONSOLE, {
         mode: "web",

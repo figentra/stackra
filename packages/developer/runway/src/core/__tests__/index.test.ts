@@ -36,6 +36,7 @@ describe("@stackra/runway", () => {
       "RunwayEnvironment",
       "RunwayInvalidError",
       "RunwayKind",
+      "RunwayLockedError",
       "RunwayProvider",
       "RunwayUnresolvedError",
       "TopologyMode",
@@ -53,6 +54,7 @@ describe("@stackra/runway", () => {
       "rollback",
       "runwayJsonSchema",
       "updateFeed",
+      "withDeployLock",
     ]);
   });
 

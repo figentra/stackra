@@ -62,7 +62,7 @@ describe("checkRegions", () => {
     const root = rootWith({
       providers: {
         aws: { accounts: { prod: "ref:aws.accounts.prod" } },
-        gcp: { projects: { ksa: {}, firm: {} } },
+        gcp: { projects: { ksa: "ref:gcp.projects.ksa", firm: "ref:gcp.projects.firm" } },
       },
       regions,
       environments: {
@@ -79,7 +79,7 @@ describe("checkRegions", () => {
 
   it("reports an unconfigured cloud, an unknown account and a dedicated deployment's undeclared region", () => {
     const root = rootWith({
-      providers: { gcp: { projects: { ksa: {} } } },
+      providers: { gcp: { projects: { ksa: "ref:gcp.projects.ksa" } } },
       regions,
       environments: {
         staging: { cloud: { name: "aws", account: "nonprod" } },

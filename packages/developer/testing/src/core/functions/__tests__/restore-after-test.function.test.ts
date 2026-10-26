@@ -12,7 +12,9 @@ import { restoreAfterTest } from "#core/functions/restore-after-test.function";
 
 // @covers sta-348:FR-003, sta-348:FR-004
 describe(restoreAfterTest, () => {
-  const restore = vi.fn();
+  // Vitest 5 clears mock calls before each test, so runs across tests are counted here.
+  const runs = { restore: 0, outside: 0 };
+  const restore = vi.fn(() => void runs.restore++);
 
   it("returns the restore it was given, without running it", () => {
     expect(restoreAfterTest(restore)).toBe(restore);
@@ -20,11 +22,11 @@ describe(restoreAfterTest, () => {
   });
 
   it("ran it once when the previous test finished", () => {
-    expect(restore).toHaveBeenCalledOnce();
+    expect(runs.restore).toBe(1);
   });
 
   describe("outside a test", () => {
-    const outside = vi.fn();
+    const outside = vi.fn(() => void runs.outside++);
 
     beforeAll(() => {
       restoreAfterTest(outside);
@@ -35,7 +37,7 @@ describe(restoreAfterTest, () => {
     });
 
     it("still has not run it after a test finished", () => {
-      expect(outside).not.toHaveBeenCalled();
+      expect(runs.outside).toBe(0);
     });
   });
 });

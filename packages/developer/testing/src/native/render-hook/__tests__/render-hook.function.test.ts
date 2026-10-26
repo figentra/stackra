@@ -12,11 +12,18 @@ import { vi } from "vitest";
 
 import { renderHook } from "#native/render-hook/render-hook.function";
 
-const library = vi.hoisted(() => ({
-  renderHook: vi.fn(async (hook: unknown, options: unknown) => ({ hook, options })),
-  cleanup: vi.fn(async () => undefined),
-  userEvent: { setup: vi.fn(() => ({})) },
-}));
+const library = vi.hoisted(() => {
+  // Vitest 5 clears mock calls before each test, so cleanups across tests are counted here.
+  const cleanups = { count: 0 };
+  return {
+    renderHook: vi.fn(async (hook: unknown, options: unknown) => ({ hook, options })),
+    cleanups,
+    cleanup: vi.fn(async () => {
+      cleanups.count++;
+    }),
+    userEvent: { setup: vi.fn(() => ({})) },
+  };
+});
 
 vi.mock("@testing-library/react-native/pure", () => library);
 
@@ -50,6 +57,6 @@ describe(renderHook, () => {
   });
 
   it("cleaned up when the earlier tests finished", () => {
-    expect(library.cleanup).toHaveBeenCalledTimes(2);
+    expect(library.cleanups.count).toBe(2);
   });
 });

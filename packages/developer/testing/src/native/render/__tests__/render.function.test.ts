@@ -16,10 +16,15 @@ import { USER_EVENT_SESSION } from "#native/user-event/user-event-session.consta
 
 const library = vi.hoisted(() => {
   const session = { press: vi.fn(async () => undefined) };
+  // Vitest 5 clears mock calls before each test, so cleanups across tests are counted here.
+  const cleanups = { count: 0 };
   return {
     session,
     render: vi.fn(async (ui: unknown, options: unknown) => ({ ui, options })),
-    cleanup: vi.fn(async () => undefined),
+    cleanups,
+    cleanup: vi.fn(async () => {
+      cleanups.count++;
+    }),
     userEvent: { setup: vi.fn(() => session) },
   };
 });
@@ -58,7 +63,7 @@ describe(render, () => {
   });
 
   it("cleaned up and dropped the session when the earlier tests finished", () => {
-    expect(library.cleanup).toHaveBeenCalledTimes(2);
+    expect(library.cleanups.count).toBe(2);
     expect(USER_EVENT_SESSION.current).toBeUndefined();
   });
 });
