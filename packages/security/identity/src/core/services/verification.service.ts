@@ -2,17 +2,18 @@
  * Stackra file contract:
  * Purpose: `VerificationService`, the home of KYC and KYB: it runs a check through the providers the market pack lists
  *          for its kind, in the pack's order, skipping a provider that is not wired here or does not support the kind,
- *          and moving on when one is unavailable. `verifyThrough` runs it through the Connections
- *          `ProviderResolver` answered for the `verification` capability instead: a platform check (use A) only
- *          through managed ones, a tenant check (use B) through the tenant's own first.
+ *          and moving on when one is unavailable. `verifyThrough` runs it through the Connections `ProviderResolver`
+ *          answered for the `verification` capability instead: a platform check (use A) only through managed ones, a
+ *          tenant check (use B) through the tenant's own first.
  * Boundary: the providers per market and kind are pack data under `IdentityConfig.verificationPackKey`
  *           (`{ "company": ["wathq"], "identity": ["nafath", "uqudo"] }`); the drivers are registered by key at boot
- *           from the deployment's wiring. No country or provider is named in code. What a result allows is a rule set. The caller pins a platform check with
- *           `ProviderResolver#candidates("verification", drivers, { pin: "managed" })`; this service drops an own
- *           candidate of a platform check again, so a mis-pinned call still never reaches a tenant's account.
+ *           from the deployment's wiring. No country or provider is named in code. What a result allows is a rule set.
+ *           The caller pins a platform check with `{ pin: "managed" }` on `ProviderResolver#candidates("verification",
+ *           …)`; this service drops an own candidate of a platform check again, so a mis-pinned call still never
+ *           reaches a tenant's account.
  * Runtime: isomorphic
- * Governing contract: Stackra 0357 (decision 7); OS-54 (own verification service, drivers per market); ADR 0370;
- *                     ADR 0363; ADR 0376 (decision 1, verification Note); owner decision R3-1; capability map M2.
+ * Governing contract: Stackra 0357 (decision 7); OS-54 (own verification service, drivers per market); ADR 0370; ADR
+ *                     0363; ADR 0376 (decision 1, verification Note); owner decision R3-1; capability map M2.
  */
 import { Service } from "@stackra/container";
 import { isRefusal } from "@stackra/errors";
