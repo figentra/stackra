@@ -1,0 +1,39 @@
+---
+title: "0413 — Streamed file writes: multipart on S3 and R2, buffered elsewhere, never a partial object"
+description: "Proposed · 2026-10-26"
+---
+
+<Note>
+  Proposed (STA-828). It extends
+  [0222](/adr/0222-files-and-media-storage-drivers-uploads-scanning-and-public-assets) decision 1
+  and [0234](/adr/0234-module-assets-and-storage) decision 7. OS audit gate A, gap 10.
+</Note>
+
+## Context
+
+`FileSystem#write` takes one buffer, so an export for a large tenant is built whole in memory before it is stored.
+
+## Decision
+
+1. **`FileSystem#writeStream(key, source, options)`** takes a web `ReadableStream<Uint8Array>` or an
+   `AsyncIterable<Uint8Array | string>` (strings are UTF-8).
+2. **The port's own default buffers**: it reads the stream and calls `write`. The memory, local, GCS, Encore and Electron
+   disks use it.
+3. **The `s3` disk (S3, R2, MinIO) uploads in parts** of a fixed 8 MiB (above S3's 5 MiB floor, equal as R2 requires),
+   holding one part in memory. A stream shorter than one part is one PUT.
+4. **Never a partial object.** A stream that fails stores nothing: the buffered default never calls `write`, and the
+   multipart upload is aborted (the abort's own failure never hides the stream's error).
+
+## Consequences
+
+- A large export streams on the managed buckets; a local or memory disk still holds it whole (development only).
+- The part size is a constant, not configuration: it is a protocol limit, not a business answer.
+
+## Enforcement
+
+planned — `packages/data/filesystem/src/contracts/ports/__tests__/file-system.port.test.ts` and
+`packages/data/filesystem/src/node/drivers/__tests__/s3-file-system.driver.test.ts`.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: services/audit SPEC (gap 10); STA-828.

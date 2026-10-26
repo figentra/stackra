@@ -11,3 +11,4 @@ export { EncoreBucket } from "#contracts/ports/encore-bucket.port";
 export { FileSystem } from "#contracts/ports/file-system.port";
 export type { FileStat } from "#contracts/types/file-stat.type";
 export type { WriteOptions } from "#contracts/types/write-options.type";
+export type { WriteStreamSource } from "#contracts/types/write-stream-source.type";

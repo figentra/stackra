@@ -6,15 +6,21 @@
  * Boundary: an abstract class that is its own token, keyed `filesystem.FileSystem`. A key is relative, `/`-separated,
  *           with no `..` segment; every driver refuses one that is not. Runtime tenant files and their key layout are
  *           the files service's (ADR 0222); a disk only stores bytes. A leaf file: it imports nothing outside
- *           `src/contracts` but the `Port` base and `Duration`.
+ *           `src/contracts` but the `Port` base and `Duration`. `writeStream` is the one implemented member: it buffers
+ *           the stream and calls `write`, the fallback of the memory, local, GCS, Encore and Electron disks; the S3
+ *           driver overrides it with a multipart upload.
  * Runtime: isomorphic
  * Governing contract: ADR 0234 (decision 7: the only storage API, disks injected); ADR 0222 (decision 1: drivers);
+ *                     ADR 0413 (streamed writes);
  *                     ADR 0294 (decisions 4, 15 and 16); ADR 0263 (ports resolve by type).
  */
 import { type Duration, Port } from "@stackra/contracts";
 
+import { byteChunks } from "#contracts/functions/byte-chunks.function";
+import { concatBytes } from "#contracts/functions/concat-bytes.function";
 import type { FileStat } from "#contracts/types/file-stat.type";
 import type { WriteOptions } from "#contracts/types/write-options.type";
+import type { WriteStreamSource } from "#contracts/types/write-stream-source.type";
 
 /**
  * One disk of files.
@@ -55,6 +61,26 @@ export abstract class FileSystem extends Port {
     contents: Uint8Array | string,
     options?: WriteOptions,
   ): Promise<void>;
+
+  /**
+   * Stores what `contents` yields under `path`, replacing what was there; string chunks are written as UTF-8. Like
+   * `write`, it never leaves a partly written file behind: a stream that fails stores nothing. This default reads the
+   * whole stream into memory and calls `write`; a bucket disk that can upload in parts overrides it (S3 and R2).
+   *
+   * @throws RangeError when `path` is not a key inside the disk.
+   * @throws the stream's own error when it fails.
+   * @example
+   * await this.files.writeStream("exports/orders.csv", csvRows(orders), { contentType: "text/csv" });
+   */
+  async writeStream(
+    path: string,
+    contents: WriteStreamSource,
+    options?: WriteOptions,
+  ): Promise<void> {
+    const chunks: Uint8Array[] = [];
+    for await (const chunk of byteChunks(contents)) chunks.push(chunk);
+    await this.write(path, concatBytes(chunks), options);
+  }
 
   /**
    * Removes the file under `path`.

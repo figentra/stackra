@@ -41,6 +41,19 @@ A key is relative and `/`-separated (`invoices/2026/inv_01.pdf`). A leading `/`,
 `..` segment, a backslash or a NUL is a `RangeError`, so no key reaches outside the disk. `list(prefix)` matches keys by
 prefix at any depth: `images/` is a folder, `images` also matches `images-2026/`.
 
+A large file is written as a stream: `writeStream(key, source, options)` takes a web `ReadableStream` of bytes or any
+async iterable of byte or string chunks. The `s3` disk (S3, R2, MinIO) uploads it in 8 MiB multipart parts, holding one
+part in memory, and aborts the upload when the stream fails; every other disk reads the stream whole and calls `write`.
+Either way nothing is stored under the key unless the whole stream was (ADR 0413).
+
+```ts
+async function* csvRows(orders: AsyncIterable<Order>) {
+  yield "id,total\n";
+  for await (const order of orders) yield `${order.id},${order.totalMinor}\n`;
+}
+await this.files.writeStream("exports/orders.csv", csvRows(orders), { contentType: "text/csv" });
+```
+
 | Driver          | `url()`                 | `temporaryUrl()`                     | `stat().contentType` | `stat().lastModified` |
 | --------------- | ----------------------- | ------------------------------------ | -------------------- | --------------------- |
 | `memory`        | `filesystem.url` + key  | the URL with an unsigned `expires`   | kept                 | the `Clock`'s now     |

@@ -10,7 +10,7 @@
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
 import * as contracts from "#contracts/index";
-import type { FileStat, WriteOptions } from "#contracts/index";
+import type { FileStat, WriteOptions, WriteStreamSource } from "#contracts/index";
 
 describe("@stackra/filesystem/contracts", () => {
   it("exports exactly its values", () => {
@@ -21,5 +21,8 @@ describe("@stackra/filesystem/contracts", () => {
     expectTypeOf<FileStat["lastModified"]>().toEqualTypeOf<Date | null>();
     expectTypeOf<FileStat["contentType"]>().toEqualTypeOf<string | null>();
     expectTypeOf<WriteOptions["contentType"]>().toEqualTypeOf<string | undefined>();
+    expectTypeOf<WriteStreamSource>().toEqualTypeOf<
+      ReadableStream<Uint8Array> | AsyncIterable<Uint8Array | string>
+    >();
   });
 });

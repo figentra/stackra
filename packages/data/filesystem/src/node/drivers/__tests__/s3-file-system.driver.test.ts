@@ -1,19 +1,25 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `S3FileSystemDriver`: the commands it sends for each call, the bucket, region, endpoint and
- *          path style it builds its client with, not-found mapping, paged listing, and a real SigV4 presigned URL.
+ *          path style it builds its client with, not-found mapping, paged listing, a real SigV4 presigned URL, and the
+ *          streamed write: one PUT under a part, equal 8 MiB parts then the rest and a completion above, an abort when
+ *          the stream fails.
  * Boundary: test only; `S3Client.prototype.send` is replaced, so no request leaves the process. Presigning is local
  *           computation, run with fake credentials set through the environment for the test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0222 (decision 1).
  */
 import {
+  AbortMultipartUploadCommand,
+  CompleteMultipartUploadCommand,
+  CreateMultipartUploadCommand,
   DeleteObjectCommand,
   GetObjectCommand,
   HeadObjectCommand,
   ListObjectsV2Command,
   PutObjectCommand,
   S3Client,
+  UploadPartCommand,
 } from "@aws-sdk/client-s3";
 import { buildConfig } from "@stackra/config";
 import { kindOf } from "@stackra/container";
@@ -181,5 +187,68 @@ describe("S3FileSystemDriver", () => {
   it("refuses a key outside the bucket", async () => {
     answer(() => ({}));
     await expect(disk().write("../x", "y")).rejects.toThrow(RangeError);
+  });
+
+  it("writes a stream shorter than one part as one PUT", async () => {
+    const send = answer(() => ({}));
+    async function* rows() {
+      yield "id\n";
+      yield "1\n";
+    }
+    await disk().writeStream("exports/x.csv", rows(), { contentType: "text/csv" });
+    const [command] = send.mock.calls.map(([sent]) => sent);
+    expect(command).toBeInstanceOf(PutObjectCommand);
+    expect((command as PutObjectCommand).input).toMatchObject({
+      Key: "exports/x.csv",
+      Body: new TextEncoder().encode("id\n1\n"),
+      ContentType: "text/csv",
+    });
+  });
+
+  it("uploads a large stream in equal 8 MiB parts, then the rest, and completes", async () => {
+    const send = answer((command) => {
+      if (command instanceof CreateMultipartUploadCommand) return { UploadId: "up-1" };
+      if (command instanceof UploadPartCommand) return { ETag: `"e${command.input.PartNumber}"` };
+      return {};
+    });
+    const mib = 1024 * 1024;
+    async function* chunks() {
+      for (let i = 0; i < 3; i += 1) yield new Uint8Array(6 * mib);
+    }
+    await disk().writeStream("exports/big.bin", chunks());
+    const sent = send.mock.calls.map(([command]) => command);
+    expect(sent[0]).toBeInstanceOf(CreateMultipartUploadCommand);
+    const parts = sent.filter((command) => command instanceof UploadPartCommand);
+    expect(parts.map((part) => (part.input.Body as Uint8Array).byteLength)).toEqual([
+      8 * mib,
+      8 * mib,
+      2 * mib,
+    ]);
+    const complete = sent.at(-1) as CompleteMultipartUploadCommand;
+    expect(complete).toBeInstanceOf(CompleteMultipartUploadCommand);
+    expect(complete.input).toMatchObject({
+      UploadId: "up-1",
+      MultipartUpload: {
+        Parts: [
+          { ETag: '"e1"', PartNumber: 1 },
+          { ETag: '"e2"', PartNumber: 2 },
+          { ETag: '"e3"', PartNumber: 3 },
+        ],
+      },
+    });
+  });
+
+  it("aborts the upload and rethrows when the stream fails", async () => {
+    const send = answer((command) =>
+      command instanceof CreateMultipartUploadCommand ? { UploadId: "up-2" } : { ETag: '"e"' },
+    );
+    async function* broken(): AsyncGenerator<Uint8Array> {
+      yield new Uint8Array(9 * 1024 * 1024);
+      throw new Error("source failed");
+    }
+    await expect(disk().writeStream("exports/big.bin", broken())).rejects.toThrow("source failed");
+    const last = send.mock.calls.at(-1)?.[0];
+    expect(last).toBeInstanceOf(AbortMultipartUploadCommand);
+    expect((last as AbortMultipartUploadCommand).input.UploadId).toBe("up-2");
   });
 });

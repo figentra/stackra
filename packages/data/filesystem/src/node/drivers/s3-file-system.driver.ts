@@ -1,21 +1,28 @@
 /**
  * Stackra file contract:
  * Purpose: the S3-compatible `FileSystem` (`disk: "s3"`): AWS S3, Cloudflare R2 or MinIO, chosen by
- *          `filesystem.s3.{region, endpoint, forcePathStyle}`. Temporary URLs are SigV4 presigned GETs.
+ *          `filesystem.s3.{region, endpoint, forcePathStyle}`. Temporary URLs are SigV4 presigned GETs. A streamed write
+ *          is a multipart upload in 8 MiB parts, so a large export never sits in memory whole.
  * Boundary: holds no credential: the AWS SDK reads its default chain (`AWS_ACCESS_KEY_ID` and
  *           `AWS_SECRET_ACCESS_KEY`, which runway syncs from Infisical, or an instance role). Every key passes
- *           `normalizePath`. A missing object is a `FileNotFoundError`; any other store error is rethrown as it is.
+ *           `normalizePath`. A missing object is a `FileNotFoundError`; any other store error is rethrown as it is. Every
+ *           part but the last is exactly `PART_SIZE` (R2 needs equal parts; S3 needs at least 5 MiB), a stream shorter
+ *           than one part is one PUT, and a failed upload is aborted so no part is left billed or visible.
  * Runtime: node
  * Governing contract: ADR 0222 (decision 1: S3, R2 and MinIO drivers); ADR 0234 (decision 7); ADR 0173 (secrets);
- *                     ADR 0294 (decision 16).
+ *                     ADR 0294 (decision 16); ADR 0413 (streamed writes).
  */
 import {
+  AbortMultipartUploadCommand,
+  CompleteMultipartUploadCommand,
+  CreateMultipartUploadCommand,
   DeleteObjectCommand,
   GetObjectCommand,
   HeadObjectCommand,
   ListObjectsV2Command,
   PutObjectCommand,
   S3Client,
+  UploadPartCommand,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { Driver } from "@stackra/container";
@@ -23,12 +30,18 @@ import { Duration } from "@stackra/contracts";
 
 import { FilesystemConfig } from "#config/filesystem.config";
 import { FileSystem } from "#contracts/ports/file-system.port";
+import { byteChunks } from "#contracts/functions/byte-chunks.function";
+import { concatBytes } from "#contracts/functions/concat-bytes.function";
 import type { FileStat } from "#contracts/types/file-stat.type";
 import type { WriteOptions } from "#contracts/types/write-options.type";
+import type { WriteStreamSource } from "#contracts/types/write-stream-source.type";
 import { FileNotFoundError } from "#core/errors/file-not-found.error";
 import { normalizePath } from "#core/functions/normalize-path.function";
 import { normalizePrefix } from "#core/functions/normalize-prefix.function";
 import { publicUrl } from "#core/functions/public-url.function";
+
+/** The size of every part of a multipart upload but the last: above S3's 5 MiB floor, equal as R2 requires. */
+const PART_SIZE = 8 * 1024 * 1024;
 
 /** Whether a store error means the object is not there (`NoSuchKey` from GET, `NotFound` or 404 from HEAD). */
 function isNotFound(error: unknown): boolean {
@@ -110,6 +123,76 @@ export class S3FileSystemDriver extends Driver(FileSystem) {
         ...(options?.contentType === undefined ? {} : { ContentType: options.contentType }),
       }),
     );
+  }
+
+  /**
+   * Uploads what `contents` yields under `path` in `PART_SIZE` parts, holding at most one part in memory; a stream
+   * shorter than one part is one PUT. The object appears only when the upload completes, and a failure aborts it.
+   */
+  override async writeStream(
+    path: string,
+    contents: WriteStreamSource,
+    options?: WriteOptions,
+  ): Promise<void> {
+    const key = normalizePath(path);
+    let pending: Uint8Array[] = [];
+    let size = 0;
+    let uploadId: string | undefined;
+    const parts: { ETag: string | undefined; PartNumber: number }[] = [];
+    const upload = async (body: Uint8Array) => {
+      uploadId ??= (
+        await this.client.send(
+          new CreateMultipartUploadCommand({
+            Bucket: this.bucket,
+            Key: key,
+            ...(options?.contentType === undefined ? {} : { ContentType: options.contentType }),
+          }),
+        )
+      ).UploadId;
+      const PartNumber = parts.length + 1;
+      const { ETag } = await this.client.send(
+        new UploadPartCommand({
+          Bucket: this.bucket,
+          Key: key,
+          UploadId: uploadId,
+          PartNumber,
+          Body: body,
+        }),
+      );
+      parts.push({ ETag, PartNumber });
+    };
+    try {
+      for await (const chunk of byteChunks(contents)) {
+        pending.push(chunk);
+        size += chunk.byteLength;
+        while (size >= PART_SIZE) {
+          const joined = concatBytes(pending);
+          const rest = joined.subarray(PART_SIZE);
+          pending = rest.byteLength > 0 ? [rest] : [];
+          size = rest.byteLength;
+          await upload(joined.subarray(0, PART_SIZE));
+        }
+      }
+      if (uploadId === undefined) return await this.write(key, concatBytes(pending), options);
+      if (size > 0) await upload(concatBytes(pending));
+      await this.client.send(
+        new CompleteMultipartUploadCommand({
+          Bucket: this.bucket,
+          Key: key,
+          UploadId: uploadId,
+          MultipartUpload: { Parts: parts },
+        }),
+      );
+    } catch (error) {
+      if (uploadId !== undefined)
+        await this.client
+          .send(
+            new AbortMultipartUploadCommand({ Bucket: this.bucket, Key: key, UploadId: uploadId }),
+          )
+          // The upload's own error is the one to report, never an abort failure on top of it.
+          .catch(() => undefined);
+      throw error;
+    }
   }
 
   /** Removes the object under `path`; false when there was none (S3's DELETE does not say, so it asks first). */

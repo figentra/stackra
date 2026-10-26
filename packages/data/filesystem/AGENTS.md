@@ -8,6 +8,7 @@ v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./node`, `./desktop`.
 | You are writing…                         | It goes in…                                      |
 | ---------------------------------------- | ------------------------------------------------ |
 | The port or a port type                  | `src/contracts/{ports,types}/`                   |
+| A helper the port itself needs           | `src/contracts/functions/` (not re-exported)     |
 | The configuration                        | `src/config/filesystem.config.ts`                |
 | A bundle-safe driver (no `node:*`)       | `src/core/drivers/<name>.driver.ts`              |
 | A driver that needs Node or the AWS SDK  | `src/node/drivers/<name>.driver.ts`              |
@@ -28,6 +29,8 @@ v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./node`, `./desktop`.
 - No credential is configuration: the S3 driver uses the SDK's default chain, the GCS driver Application Default
   Credentials; the Encore driver imports no
   `encore.dev` and drives the `EncoreBucket` slice the generated app binds.
+- `writeStream` buffers into `write` by default (the port's own method); a driver overrides it only when its store
+  uploads in parts (S3/R2 multipart, ADR 0413). Never leave a partly written object behind.
 - One disk per member; named disks, uploads and tenant file records belong elsewhere (README, "Not here").
 
 ## Rules that fail the build
