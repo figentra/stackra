@@ -13,6 +13,13 @@ description: "Accepted, amended by 0268 · 2026-10-20"
   `key@major` stays supported for 12 months after its successor ships.
 </Note>
 
+<Note>
+  Note 2026-10-26 (STA-1248): decision 1's handler context gains two call facts set by the transport, never by input:
+  `sandbox` (a call in the tenant's sandbox, OS-132; also on the `CallDescriptor` every port sees) and `client` (the
+  network address and user agent; on the context only, never on the descriptor or the audit entry). A query may return
+  `rawBody(contentType, body)`, which the transport sends as the response body instead of the JSON envelope.
+</Note>
+
 ## Context
 
 [0098](/adr/0098-actions-are-the-unit) made actions the unit of behaviour, and [0118](/adr/0118-api-versioning-dormant-package)

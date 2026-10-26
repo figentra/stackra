@@ -32,6 +32,7 @@ import type {
   QueryContext,
   QueryOptions,
   QueryReplica,
+  RawBody,
   ReplicaBounds,
   ReplicaPage,
   RuleEvaluation,
@@ -79,6 +80,8 @@ describe("@stackra/actions", () => {
       "UsageRecorded",
       "approverRefusal",
       "connectExtensions",
+      "isRawBody",
+      "rawBody",
       "registerActions",
       "registerExtensions",
     ]);
@@ -116,5 +119,10 @@ describe("@stackra/actions", () => {
     >();
     expectTypeOf<QueryContext["replica"]>().toBeFunction();
     expectTypeOf<ActionEffects[number]>().toEqualTypeOf<Effect>();
+    expectTypeOf<RawBody["~raw"]>().toEqualTypeOf<true>();
+    expectTypeOf<QueryContext["sandbox"]>().toEqualTypeOf<true | undefined>();
+    expectTypeOf<CallOptions["client"]>().toEqualTypeOf<
+      { readonly address: string; readonly userAgent?: string } | undefined
+    >();
   });
 });

@@ -34,6 +34,7 @@ export type { Approver } from "#contracts/types/approver.type";
 export type { ApproverRule } from "#contracts/types/approver-rule.type";
 export type { AuditEntry } from "#contracts/types/audit-entry.type";
 export type { CallAssurance } from "#contracts/types/call-assurance.type";
+export type { CallClient } from "#contracts/types/call-client.type";
 export type { CallDescriptor } from "#contracts/types/call-descriptor.type";
 export type { DeviceOrder } from "#contracts/types/device-order.type";
 export type { DeviceSequence } from "#contracts/types/device-sequence.type";

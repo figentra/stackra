@@ -14,6 +14,7 @@ import type {
   AssuranceLevel,
   AuditEntry,
   CallAssurance,
+  CallClient,
   CallDescriptor,
   DeviceOrder,
   DeviceSequence,
@@ -76,5 +77,7 @@ describe("@stackra/actions/contracts", () => {
     expectTypeOf<ReviewItem["client"]>().toEqualTypeOf<Json>();
     expectTypeOf<CallAssurance["level"]>().toEqualTypeOf<AssuranceLevel | undefined>();
     expectTypeOf<CallAssurance["authTime"]>().toEqualTypeOf<Date | undefined>();
+    expectTypeOf<CallClient["userAgent"]>().toEqualTypeOf<string | undefined>();
+    expectTypeOf<CallDescriptor["sandbox"]>().toEqualTypeOf<true | undefined>();
   });
 });

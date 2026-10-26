@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `toHaveAudited`: it passes on a run result whose audit entry matches the outcome, code and a
  *          subset of fields (deep equality), fails on a mismatch, on a result with no entry and on anything that is
- *          not a run result, and `.not` inverts it.
+ *          not a run result, and `.not` inverts it; over a fake context it matches the fields passed to `ctx.audit`
+ *          (STA-1248).
  * Boundary: test only; the results are built by hand, so no app is compiled.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (decision 3); STA-820.
@@ -11,6 +12,7 @@ import { type Actor, ActorKind, ApiArea, Realm } from "@stackra/contracts";
 import { describe, expect, it } from "@stackra/testing";
 
 import type { AuditEntry } from "#contracts/index";
+import { fakeActionContext } from "#testing/functions/fake-action-context.function";
 import { toHaveAudited } from "#testing/matchers/to-have-audited.matcher";
 
 const actor: Actor = { kind: ActorKind.User, id: "usr_1", realm: Realm.Customer };
@@ -47,5 +49,15 @@ describe(toHaveAudited, () => {
     expect(toHaveAudited({ audit: undefined }, {}).message()).toMatch(/wrote none/);
     expect(toHaveAudited(42, {}).message()).toMatch(/run\(\.\.\.\)/);
     expect(toHaveAudited({ audit: entry }, { code: "x" }).message()).toMatch(/code out_of_stock/);
+  });
+
+  it("matches the fields a fake context recorded, and never an outcome", () => {
+    const ctx = fakeActionContext({ actor });
+    expect(ctx).not.toHaveAudited();
+    expect(toHaveAudited(ctx, {}).message()).toMatch(/wrote none/);
+    ctx.audit({ tenantId: "tnt_1", reenabled: ["orders"] });
+    expect(ctx).toHaveAudited({ fields: { reenabled: ["orders"] } });
+    expect(ctx).not.toHaveAudited({ fields: { tenantId: "tnt_2" } });
+    expect(ctx).not.toHaveAudited({ outcome: "ok" });
   });
 });

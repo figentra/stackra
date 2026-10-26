@@ -3,7 +3,8 @@
  * Purpose: `CallOptions`, what a transport hands `ActionPipeline.execute` beside the class and the input: the verified
  *          caller, the scope it acts in, the Idempotency-Key header, the request's locale, time zone, currency and
  *          market, the call id, the abort signal and the device the call came from (with its sequence for a call
- *          replayed from the device's offline queue), and the verified assurance of the caller's last authentication.
+ *          replayed from the device's offline queue), the verified assurance of the caller's last authentication,
+ *          whether the call runs in a sandbox, and the network client it came from (STA-1248).
  * Boundary: a type only. The actor comes from the verified credential, never from a request body (ADR 0098); the scope
  *           is the one the resolver chain settled on, never request input (ADR 0327 decision 7); the device order is
  *           set only once the transport matched its device id to the verified session's device (the header names are
@@ -17,6 +18,7 @@
 import type { Actor, ScopeRef } from "@stackra/contracts";
 
 import type { CallAssurance } from "#contracts/types/call-assurance.type";
+import type { CallClient } from "#contracts/types/call-client.type";
 import type { DeviceOrder } from "#contracts/types/device-order.type";
 
 /** The call-level facts of one invocation. */
@@ -56,4 +58,13 @@ export interface CallOptions {
 
   /** The verified assurance of the caller's last authentication, from the token; absent without a session. */
   readonly assurance?: CallAssurance;
+
+  /**
+   * Whether the call runs in the tenant's sandbox (a private app installed for trial, OS-132); set by the transport
+   * from the verified credential or the sandbox host, never from request input. Absent is a live call.
+   */
+  readonly sandbox?: boolean;
+
+  /** The network client the call came from, from the connection or the edge's trusted forwarding; never input. */
+  readonly client?: CallClient;
 }

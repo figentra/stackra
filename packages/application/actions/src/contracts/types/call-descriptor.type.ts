@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `CallDescriptor`, what the pipeline tells a step's port about one call: the class, its identity, the
- *          permission and risk gen derived, the caller, the tenant, the scope node and the API area.
+ *          permission and risk gen derived, the caller, the tenant, the scope node, the API area and the sandbox
+ *          flag (so an entitlement or access driver can relax a check for a sandbox install, STA-1248).
  * Boundary: a type only; the pipeline builds it once per call and hands the same frozen object to every port. It
  *           carries no input and no record: a step that needs a record gets it as its own argument.
  * Runtime: isomorphic
@@ -47,4 +48,7 @@ export interface CallDescriptor {
 
   /** The API area the call arrived on. */
   readonly area: ApiArea;
+
+  /** `true` when the call runs in the tenant's sandbox (`CallOptions.sandbox`, OS-132); absent for a live call. */
+  readonly sandbox?: true;
 }

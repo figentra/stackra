@@ -2,8 +2,8 @@
  * Stackra file contract:
  * Purpose: `QueryContext`, the second parameter of a query's `handle`: the call context plus the record check
  *          (`authorize`), the reporting helpers (`period`, `startOfDay`) a read needs, the verified device the call
- *          came from (`deviceId`), the caller's verified assurance (`assurance`, STA-814) and a replica query's answer
- *          (`replica`).
+ *          came from (`deviceId`), the caller's verified assurance (`assurance`, STA-814), the sandbox flag and the
+ *          network client (`sandbox`, `client`, STA-1248) and a replica query's answer (`replica`).
  * Boundary: a type only; the pipeline builds it per call. A query has no transaction, no `afterCommit`, no audit and
  *           no Idempotency-Key, so none is here. `ActionContext` extends it.
  * Runtime: isomorphic
@@ -12,6 +12,7 @@
  *                     (decisions 3 and 4: replicas; the device's last acknowledged sequence).
  */
 import type { CallAssurance } from "#contracts/types/call-assurance.type";
+import type { CallClient } from "#contracts/types/call-client.type";
 import type { ReplicaRow } from "#contracts/types/replica-row.type";
 import type { ExtensionContext } from "#core/types/extension-context.type";
 import type { Period } from "#core/types/period.type";
@@ -42,6 +43,15 @@ export interface QueryContext extends ExtensionContext {
 
   /** The verified assurance of the caller's last authentication (`amr`, `auth_time`, level); absent without a session. */
   readonly assurance?: CallAssurance;
+
+  /** `true` when the call runs in the tenant's sandbox (OS-132); absent for a live call. */
+  readonly sandbox?: true;
+
+  /**
+   * The network client the call came from (address, user agent), when the transport knows it; a public call has it
+   * too. Personal data: hash or truncate it before keeping it.
+   */
+  readonly client?: CallClient;
 
   /**
    * A replica query's answer: the changes since the cursor the client sent (the input's `cursor`), or, on a first fill

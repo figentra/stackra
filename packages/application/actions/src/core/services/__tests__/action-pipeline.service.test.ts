@@ -13,7 +13,8 @@
  *          cap's amount field, and the registered effect tags on the descriptor; and the remainder (STA-765): the
  *          approval step runs only with a gate bound unless the action declares `approval` (STA-813), the limit
  *          reservation wraps the unit of work, a successful call's audit entry is written inside it, and written effect
- *          tags reach the descriptor; and the step-up check with `ctx.assurance` (STA-814).
+ *          tags reach the descriptor; and the step-up check with `ctx.assurance` (STA-814); and the sandbox flag on the
+ *          descriptor and the context, and the network client on the context only (STA-1248).
  * Boundary: test only; every port is a stand-in driver in a map resolver, so each step is observed directly; the
  *           offline stores are the memory drivers.
  * Runtime: node (vitest)
@@ -1494,5 +1495,38 @@ describe("ActionPipeline.propose (STA-784)", () => {
     await expect(
       pipeline.propose(GetOrderQuery as never, { orderId: "ord_1" } as never, { actor: customer }),
     ).rejects.toThrow(TypeError);
+  });
+});
+
+/** A query that answers with the call's sandbox flag and network client. */
+class WhereQuery extends Query({ key: "call.where", actors: [ActorKind.User] }) {
+  async handle(
+    _input: object,
+    ctx: QueryContext,
+  ): Promise<Pick<QueryContext, "sandbox" | "client">> {
+    return { sandbox: ctx.sandbox, client: ctx.client };
+  }
+}
+
+describe("ActionPipeline sandbox and client (STA-1248)", () => {
+  const client = { address: "203.0.113.7", userAgent: "kettle/1.0" };
+
+  it("hands the sandbox flag to the descriptor and the context, and the client to the context only", async () => {
+    const { pipeline, access } = setup([[WhereQuery, new WhereQuery()]]);
+    const output = await pipeline.execute(
+      WhereQuery,
+      {},
+      { actor: customer, sandbox: true, client },
+    );
+    expect(output).toEqual({ sandbox: true, client });
+    expect(access.calls.at(-1)?.sandbox).toBe(true);
+    expect(access.calls.at(-1)).not.toHaveProperty("client");
+  });
+
+  it("leaves both absent for a live call with no client", async () => {
+    const { pipeline, access } = setup([[WhereQuery, new WhereQuery()]]);
+    const output = await pipeline.execute(WhereQuery, {}, { actor: customer, sandbox: false });
+    expect(output).toEqual({ sandbox: undefined, client: undefined });
+    expect(access.calls.at(-1)).not.toHaveProperty("sandbox");
   });
 });

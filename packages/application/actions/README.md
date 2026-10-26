@@ -28,11 +28,13 @@ configuration and the action testing helpers.
 | `.`           | `OfflineCapReachedError`, `DeviceSequenceOutOfOrderError`                                | `offline_cap_reached`, `device_sequence_out_of_order`                   |
 | `.`           | `MemoryDeviceSequenceStoreDriver`, `MemoryOfflineCapStoreDriver`                         | the in-process device order and cap stores                              |
 | `.`           | `MemoryReplicaLogDriver`, `MemoryReviewItemSinkDriver`                                   | the in-process replica log and review sink                              |
+| `.`           | `rawBody`, `isRawBody`, `RawBody`                                                        | a query output the transport sends as the body itself (iCal, CSV)       |
 | `./contracts` | `AccessControl`, `TenancyCheck`, `EntitlementCheck`, `FlagCheck`                         | the ports of the pipeline's checks                                      |
 | `./contracts` | `IdempotencyStore`, `RateLimitStore`, `UnitOfWork`, `AuditTrail`                         | the ports of its stores and its transaction                             |
 | `./contracts` | `WorkflowRunner`, `JobDispatcher`, `ContextStorage`                                      | the ports behind `ctx.run`, `ctx.signal`, `ctx.dispatch`, the context   |
 | `./contracts` | `DeviceSequenceStore`, `OfflineCapStore`, `ReplicaLog`, `ReviewItemSink`, `ReviewReason` | the offline stores and the review sink, with their types                |
 | `./contracts` | `DeviceOrder`, `DeviceSequence`, `ReplicaRow`, `ReplicaChange`, `ReviewItem`             | the device on the call, a device's last settled call, replica rows      |
+| `./contracts` | `CallClient`                                                                             | the network client on `ctx.client` (address, user agent)                |
 | `./node`      | `AsyncContextStorageDriver`                                                              | `ContextStorage` over `AsyncLocalStorage`                               |
 | `./testing`   | `run`, `fakeActionContext`, `fakeExtensionContext`, `extension`, `toHaveAudited`         | call through the real pipeline; fake contexts; inline extensions        |
 
@@ -80,6 +82,17 @@ The call carries its scope (ADR 0327 decision 6): the transport passes the `Scop
 `ctx.dispatch` runs in it. No scope is a platform call. `ctx.period(input)` reads a query's `range` (`today`,
 `yesterday`, `last_7_days`, `last_30_days`, `this_month`, or `custom` with `from` and `to`) in the call's time zone.
 
+Two more call facts come from the transport, never from input (STA-1248). `CallOptions.sandbox: true` marks a call
+in the tenant's sandbox (a private app installed for trial, OS-132): every port sees `CallDescriptor.sandbox` (so an
+entitlement driver can let any tier install into its sandbox) and a handler reads `ctx.sandbox`. `CallOptions.client`
+(`{ address, userAgent? }`) is the network client, from the connection or the edge's trusted forwarding header; it
+reaches `ctx.client` only (no port, no audit entry), so a public query such as a traffic hit can count it. It is
+personal data: hash or truncate it before keeping it.
+
+A query whose response is not JSON (an iCalendar feed, a CSV) returns `rawBody(contentType, body, filename?)`; the
+transport tests the output with `isRawBody` and sends the body as is with that content type. An ordinary output with
+`contentType` and `body` fields stays JSON: only the `~raw` marker counts.
+
 An action that also runs as a job declares `job: { queue, unique, timeout, retries, cron }`; `cron: { schedule,
 perScope: true }` runs once per scope the scheduler's `CronScopes` driver lists instead of once for the platform.
 
@@ -88,7 +101,10 @@ perScope: true }` runs once per scope the scheduler's `CronScopes` driver lists 
 - **Approval** (stage `approval`, before idempotency): a bound `ApprovalGate` decides from the tenant's approval rules
   whether a call needs an approval; it parks a request and refuses `approval_required` with its `approvalId`, and the
   call resubmitted with `CallOptions.approvalId` runs once the request is granted. Which calls need approval is data,
-  never code.
+  never code. A second approver (billing's ad-hoc coupons, OS-381) is this stage with an `ApproverRule` of
+  `notRequester: true`: the gate's driver checks a grant with `approverRefusal(rule, approver, call.actor)`, which
+  refuses the requester and the human an agent acts for, so a service needs no two-step request and approve of its
+  own.
 - **Effect tags**: `Effect` (`financial`, `security`, `pii`, `external_communication`, `irreversible`, `bulk`) travel
   with the permission in `registerActions` and reach every port on `CallDescriptor.effects`.
 - **Live configuration**: an action declared `structural: true` runs only where the bound `LiveConfigurationGuard`
@@ -176,6 +192,10 @@ const placed = await run(CreateOrderAction, input, { as: actors.customer(), idem
 expect(placed.output.orderId).toMatch(/^ord_/);
 expect(await run(CreateOrderAction, input, { as })).toRefuseWith(refusal(OrdersPausedError));
 expect(placed).toHaveAudited({ outcome: "ok", fields: { orderId: placed.output.orderId } });
+
+const ctx = fakeActionContext({ actor: actors.admin() });
+await service.reenable(tenantId, ctx);
+expect(ctx).toHaveAudited({ fields: { tenantId } }); // the fields passed to ctx.audit; no outcome on a fake context
 
 createTestingModule(OrdersModule).withExtensions([
   extension(OrderExtensionPoint, "adjustTotals", { order: 10 }, (totals) => discounted(totals)),

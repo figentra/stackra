@@ -52,6 +52,10 @@ Member at `packages/application/actions` (`tier:lib`), in the programming model 
 - The current scope is `scope` (a `ScopeRef`) on `CallOptions`, `CallDescriptor` and the call context (ADR 0327
   decision 6). `tenantId` stays on the descriptor and the context only while iam, entitlements and workflow read it;
   never add another tenant field or option (R-59, ADR 0323): the cron option is `perScope`.
+- `sandbox` and `client` on `CallOptions` come from the verified credential and the connection (or the edge's trusted
+  forwarding header), never from input. The sandbox flag reaches the descriptor and the context; the client reaches
+  `ctx.client` only: never put it on `CallDescriptor`, an audit entry or a log line (STA-1248).
+- A raw-body query output is `rawBody(...)`; the transport keys on the `~raw` marker, never on the field names.
 - The source keeps to erasable syntax: no parameter properties, no `#private` fields.
 
 ## PII
@@ -60,3 +64,4 @@ Member at `packages/application/actions` (`tier:lib`), in the programming model 
 | ------------ | --------------------------------------- | ---------------------------------------------------------------------------- |
 | Call input   | `fingerprintOf`, the idempotency store  | Hashed (SHA-256) for the fingerprint; the output is stored for 24 hours.     |
 | Audit fields | `ctx.audit(...)`, the `AuditTrail` port | Whatever the handler adds; never add a classified field. Stored by the port. |
+| Client IP    | `ctx.client` (`CallClient`)             | Held for the call only; a handler that keeps it hashes or truncates it.      |

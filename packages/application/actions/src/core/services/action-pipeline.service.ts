@@ -9,7 +9,8 @@
  *          the verified device (`ctx.deviceId`) and a replica query's answer (`ctx.replica`, by the input's `cursor`);
  *          and `propose`, an action's draft-only run (the steps up to validation, then a metered draft, no effects).
  *          The permission step includes an action's step-up (`stepUp`, through `StepUpCheck`), and the call context
- *          carries the caller's verified assurance (`ctx.assurance`).
+ *          carries the caller's verified assurance (`ctx.assurance`), the sandbox flag (`ctx.sandbox`, also on the
+ *          descriptor) and the network client (`ctx.client`, never on the descriptor or the audit entry; STA-1248).
  * Boundary: built by the runtime (and the testing module) over a `Resolver`, so it reads the action instances, their
  *           preconditions and interceptors and every step's port by class. Steps whose owner is not installed are
  *           skipped (tenancy, entitlement, flag, limit reservation, unit of work, audit); permission fails closed (no
@@ -259,6 +260,7 @@ export class ActionPipeline {
       ...(actor.tenantId === undefined ? {} : { tenantId: actor.tenantId }),
       ...(request.scope === undefined ? {} : { scope: request.scope }),
       area: options.area,
+      ...(request.sandbox === true ? { sandbox: true as const } : {}),
     });
     const state: CallState = {
       idempotencyKey: undefined,
@@ -700,6 +702,8 @@ export class ActionPipeline {
       startOfDay: () => startOfZonedDay(at, timeZone),
       ...(request.device === undefined ? {} : { deviceId: request.device.deviceId }),
       ...(request.assurance === undefined ? {} : { assurance: request.assurance }),
+      ...(descriptor.sandbox === true ? { sandbox: true as const } : {}),
+      ...(request.client === undefined ? {} : { client: request.client }),
       replica: (fill: (bounds: ReplicaBounds) => Promise<readonly ReplicaRow[]>, slice?: string) =>
         new ReplicaFeed(
           this.required(
