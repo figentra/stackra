@@ -3,7 +3,7 @@
  * Purpose: `CallOptions`, what a transport hands `ActionPipeline.execute` beside the class and the input: the verified
  *          caller, the scope it acts in, the Idempotency-Key header, the request's locale, time zone, currency and
  *          market, the call id, the abort signal and the device the call came from (with its sequence for a call
- *          replayed from the device's offline queue).
+ *          replayed from the device's offline queue), and the verified assurance of the caller's last authentication.
  * Boundary: a type only. The actor comes from the verified credential, never from a request body (ADR 0098); the scope
  *           is the one the resolver chain settled on, never request input (ADR 0327 decision 7); the device order is
  *           set only once the transport matched its device id to the verified session's device (the header names are
@@ -16,6 +16,7 @@
  */
 import type { Actor, ScopeRef } from "@stackra/contracts";
 
+import type { CallAssurance } from "#contracts/types/call-assurance.type";
 import type { DeviceOrder } from "#contracts/types/device-order.type";
 
 /** The call-level facts of one invocation. */
@@ -52,4 +53,7 @@ export interface CallOptions {
 
   /** The id of a granted approval this call resubmits under, from an earlier `approval_required` refusal. */
   readonly approvalId?: string;
+
+  /** The verified assurance of the caller's last authentication, from the token; absent without a session. */
+  readonly assurance?: CallAssurance;
 }

@@ -3,7 +3,8 @@
  * Purpose: `ActionOptions`, what `Action({...})` takes: the written key, the actors, the permission when the stem
  *          differs, the preconditions, interceptors, idempotency and rate limit the pipeline applies, and the surfaces
  *          (`endpoint`, `tool`, `intent`, `job`, `offline`), its effect tags (`effects`), the client rule code it accepts (`accepts`), whether it
- *          changes structural configuration (`structural`) and the meter it feeds (`meter`).
+ *          changes structural configuration (`structural`), the meter it feeds (`meter`), whether it always needs an
+ *          approval gate (`approval`) and the assurance level it needs (`stepUp`).
  * Boundary: a type only. Everything gen derives is absent: the module, the locked key `<module>.<model>.<verb>@<major>`,
  *           the permission name and its risk, the route and the MCP tool name. `permission` names a `Permissions`
  *           static only when the class stem differs from the action's model (ADR 0305 rule 7).
@@ -11,11 +12,13 @@
  * Governing contract: ADR 0294 (decisions 16, 20 and 21); ADR 0305 (rules 7, 9, 28 and 30); ADR 0136 (decision 3);
  *                     ADR 0138 (as amended); ADR 0252 (decision 2); ADR 0338 (decision 5); ADR 0337 (decisions 4
  *                     and 5); ADR 0359 (decisions 3 and 5); ADR 0216 (decisions 1 and 2); ADR 0360 (decision 4:
- *                     the tool default); ADR 0099 (decision 2: effect tags).
+ *                     the tool default); ADR 0099 (decision 2: effect tags); ADR 0397 as amended by STA-813
+ *                     (`approval`); ADR 0406 (`stepUp`).
  */
 import type { AnyClass } from "@stackra/container";
 import type { ActorKind, ApiArea } from "@stackra/contracts";
 
+import type { AssuranceLevel } from "#contracts/enums/assurance-level.enum";
 import type { Interceptor } from "#core/bases/interceptor.base";
 import type { Precondition } from "#core/bases/precondition.base";
 import type { Idempotency } from "#core/enums/idempotency.enum";
@@ -85,4 +88,16 @@ export interface ActionOptions {
 
   /** The meter each applied call feeds through a `usage.recorded` event; unmetered when absent. */
   readonly meter?: ActionMeter;
+
+  /**
+   * Every call must pass an `ApprovalGate`: with none bound the call fails closed. When absent, the approval step runs
+   * only when a gate is bound (which rules decide), and an app with no gate has no approvals.
+   */
+  readonly approval?: boolean;
+
+  /**
+   * The assurance level the caller's last authentication must reach, recently enough (`StepUpCheck` decides); the
+   * call is refused `step_up_required` otherwise. No step-up when absent.
+   */
+  readonly stepUp?: AssuranceLevel;
 }

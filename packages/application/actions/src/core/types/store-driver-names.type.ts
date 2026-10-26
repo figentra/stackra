@@ -11,9 +11,9 @@ import type { STORE_DRIVERS } from "#core/constants/store-drivers.constant";
 
 declare module "@stackra/container" {
   interface DriverRegistry {
-    /** The driver names of `IdempotencyStore` (`memory`, `valkey`). */
+    /** The driver names of `IdempotencyStore` (`memory`, `valkey`, `postgres`). */
     "actions.IdempotencyStore": (typeof STORE_DRIVERS)[number];
-    /** The driver names of `RateLimitStore` (`memory`, `valkey`). */
+    /** The driver names of `RateLimitStore` (`memory`, `valkey`, `postgres`). */
     "actions.RateLimitStore": (typeof STORE_DRIVERS)[number];
   }
 }

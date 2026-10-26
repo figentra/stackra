@@ -34,7 +34,7 @@ configuration and the action testing helpers.
 | `./contracts` | `DeviceSequenceStore`, `OfflineCapStore`, `ReplicaLog`, `ReviewItemSink`, `ReviewReason` | the offline stores and the review sink, with their types                |
 | `./contracts` | `DeviceOrder`, `DeviceSequence`, `ReplicaRow`, `ReplicaChange`, `ReviewItem`             | the device on the call, a device's last settled call, replica rows      |
 | `./node`      | `AsyncContextStorageDriver`                                                              | `ContextStorage` over `AsyncLocalStorage`                               |
-| `./testing`   | `run`, `fakeActionContext`, `fakeExtensionContext`, `extension`                          | call through the real pipeline; fake contexts; inline extensions        |
+| `./testing`   | `run`, `fakeActionContext`, `fakeExtensionContext`, `extension`, `toHaveAudited`         | call through the real pipeline; fake contexts; inline extensions        |
 
 ## Declaring an action
 
@@ -69,8 +69,11 @@ tenancy, permission (the actor kind, then `AccessControl`), preconditions, entit
 approval and idempotency, rate limit, interceptors, then `handle` (an action's in its `UnitOfWork`, with its usage
 event and its success audit entry, all inside the `LimitReservation` when one is bound: reserve, then commit), then the
 `afterCommit` work. A refusal's audit entry is written after the rollback. A step whose port nobody binds is skipped,
-except permission and an action's approval, which fail closed (bind `OpenApprovalGateDriver` for an app with no
-approvals).
+except permission, which fails closed. Approval runs only when an `ApprovalGate` is bound; an action that declares
+`approval: true` fails closed without one (ADR 0397 as amended by STA-813). An action that declares
+`stepUp: AssuranceLevel.Aal2` is checked right after the permission by the bound `StepUpCheck` (a driver over
+`@stackra/identity`'s `requireAssurance`) against `CallOptions.assurance` (`amr`, `authTime`, `level` from the verified
+token), and fails closed without one; handlers read the same facts as `ctx.assurance`.
 
 The call carries its scope (ADR 0327 decision 6): the transport passes the `ScopeRef` the resolver chain settled on as
 `CallOptions.scope`, every port reads it on the `CallDescriptor`, a handler reads `ctx.scope`, and a job queued with
@@ -93,9 +96,9 @@ perScope: true }` runs once per scope the scheduler's `CronScopes` driver lists 
 - **Meters**: `meter: { name, kind, field? }` writes one `UsageRecorded` (`usage.recorded`) event through the
   `EventOutbox` in the action's unit of work, so a metered call never commits without its usage.
 - **Audit**: `OutboxAuditTrailDriver` writes each audit entry as an `AuditEntryRecorded` event for the audit service.
-- **Stores**: `StoresConfig` (key `actions.stores`) picks `memory` or `valkey` for the idempotency and rate-limit
-  stores; the Valkey drivers are in `./node` (`ACTIONS_VALKEY_URL`). The durable Postgres stores come through
-  `@stackra/database`; the offline queue's Postgres stores through `@stackra/outbox`.
+- **Stores**: `StoresConfig` (key `actions.stores`) picks `memory`, `valkey` or `postgres` for the idempotency and
+  rate-limit stores; the Valkey drivers are in `./node` (`ACTIONS_VALKEY_URL`), and the `postgres` drivers come
+  through `@stackra/database`; the offline queue's Postgres stores through `@stackra/outbox`.
 
 ## Offline clients
 
@@ -172,6 +175,7 @@ import { run, fakeActionContext, extension } from "@stackra/actions/testing";
 const placed = await run(CreateOrderAction, input, { as: actors.customer(), idempotencyKey: "k1" });
 expect(placed.output.orderId).toMatch(/^ord_/);
 expect(await run(CreateOrderAction, input, { as })).toRefuseWith(refusal(OrdersPausedError));
+expect(placed).toHaveAudited({ outcome: "ok", fields: { orderId: placed.output.orderId } });
 
 createTestingModule(OrdersModule).withExtensions([
   extension(OrderExtensionPoint, "adjustTotals", { order: 10 }, (totals) => discounted(totals)),

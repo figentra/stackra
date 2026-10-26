@@ -8,6 +8,7 @@
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision.
  */
 export { ApproverRefusal } from "#contracts/enums/approver-refusal.enum";
+export { AssuranceLevel } from "#contracts/enums/assurance-level.enum";
 export { Effect } from "#contracts/enums/effect.enum";
 export { ReviewReason } from "#contracts/enums/review-reason.enum";
 export { AccessControl } from "#contracts/ports/access-control.port";
@@ -25,12 +26,14 @@ export { OfflineCapStore } from "#contracts/ports/offline-cap-store.port";
 export { RateLimitStore } from "#contracts/ports/rate-limit-store.port";
 export { ReplicaLog } from "#contracts/ports/replica-log.port";
 export { ReviewItemSink } from "#contracts/ports/review-item-sink.port";
+export { StepUpCheck } from "#contracts/ports/step-up-check.port";
 export { TenancyCheck } from "#contracts/ports/tenancy-check.port";
 export { UnitOfWork } from "#contracts/ports/unit-of-work.port";
 export { WorkflowRunner } from "#contracts/ports/workflow-runner.port";
 export type { Approver } from "#contracts/types/approver.type";
 export type { ApproverRule } from "#contracts/types/approver-rule.type";
 export type { AuditEntry } from "#contracts/types/audit-entry.type";
+export type { CallAssurance } from "#contracts/types/call-assurance.type";
 export type { CallDescriptor } from "#contracts/types/call-descriptor.type";
 export type { DeviceOrder } from "#contracts/types/device-order.type";
 export type { DeviceSequence } from "#contracts/types/device-sequence.type";

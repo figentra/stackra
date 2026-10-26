@@ -9,8 +9,15 @@
 import type { TestingApp } from "@stackra/container/testing";
 
 import type { ActionPipeline } from "#core/index";
+import type { RecordingAuditTrailDriver } from "#testing/drivers/recording-audit-trail.driver";
 
 /** The last compiled testing app and its pipeline. */
 export const CURRENT_PIPELINE: {
-  value: { readonly app: TestingApp; readonly pipeline: ActionPipeline } | undefined;
+  value:
+    | {
+        readonly app: TestingApp;
+        readonly pipeline: ActionPipeline;
+        readonly trail: RecordingAuditTrailDriver;
+      }
+    | undefined;
 } = { value: undefined };

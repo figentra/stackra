@@ -10,7 +10,8 @@ description: "Proposed · 2026-10-26"
   [0215](/adr/0215-entitlements) and
   [0360](/adr/0360-the-ai-chain-four-layers-one-spine-approval-modes-and-the-never-bypass-floor)
   (decision 4). The amendments of 0137 and 0138 themselves are written by the ADR group. Linear
-  STA-765.
+  STA-765. Decision 5 amended by STA-813 (2026-10-26): an unbound approval step does not run; only
+  an action that declares `approval: true` fails closed.
 </Note>
 
 ## Context
@@ -39,15 +40,18 @@ approval step was skipped, so an app that forgot the binding ran every call unap
 4. **The success audit is in the unit of work.** A successful action's audit entry is written inside its transaction,
    after `handle` and its usage event, so it commits or rolls back with the writes. A refusal's entry (its writes
    rolled back) and an idempotent replay's (no unit of work ran) are written after, outside.
-5. **Approval fails closed.** An action call with no `ApprovalGate` bound is an error, like a call with no
-   `AccessControl`. An app with no approvals binds `OpenApprovalGateDriver` on purpose. The testing pipeline treats a
-   test that binds no gate as "no approvals". A query is never parked.
+5. **Approval fails closed where it is declared** (as amended by STA-813). The approval step runs only when an
+   `ApprovalGate` is bound; with none bound an app has no approvals and the step does not run. An action that declares
+   `approval: true` must pass a gate, so a call of it with no gate bound is an error, like a call with no
+   `AccessControl`. `OpenApprovalGateDriver` remains for an app that binds a gate on purpose and wants every call to
+   pass it. A query is never parked. The first text (every action fails closed with no gate) broke every pipeline
+   built without one: the iam, entitlements and queue tests, the queue worker and the workflow runner.
 
 ## Consequences
 
-- Every service and worker that runs actions binds a gate: the OS tasks-approvals driver, or the open driver. The
-  queue worker, the workflow runner and test suites outside `@stackra/actions` that build an `ActionPipeline` over a
-  bare resolver must bind one.
+- A service whose tenants take approval rules binds the OS tasks-approvals driver; every other pipeline (the queue
+  worker, the workflow runner, the iam, entitlements and queue test suites) binds nothing and keeps working. The risk
+  that an app forgets the binding is carried by the actions that matter declaring `approval: true`, which fail closed.
 - An action a user can perform appears in the tool table and at run time alike; a user-only action that must not be
   a tool says so with a reason.
 - A long transaction now also holds the limit's lock; the hold time is the service's default (30 seconds).
@@ -55,10 +59,11 @@ approval step was skipped, so an app that forgot the binding ran every call unap
 
 ## Enforcement
 
-`packages/application/actions/src/core/services/__tests__/action-pipeline.service.test.ts` (fail-closed approval,
-reservation around the unit of work, audit order); `packages/application/actions/src/core/bases/__tests__/action.base.test.ts`
-(tool default, effects). Planned — the gen change of `EFFECT_TAGS` and its conformance test; the entitlements
-`LimitReservation` driver.
+`packages/application/actions/src/core/services/__tests__/action-pipeline.service.test.ts` (an unbound gate skips the step,
+`approval: true` fails closed, reservation around the unit of work, audit order); `packages/application/actions/src/core/bases/__tests__/action.base.test.ts`
+(tool default, effects); `packages/security/entitlements/src/core/drivers/__tests__/plan-limit-reservation.driver.test.ts`
+(the entitlements `LimitReservation` driver, ADR 0408). Planned — the gen change of `EFFECT_TAGS` and its conformance
+test.
 
 ## Supersedes and sources
 

@@ -11,8 +11,9 @@
  *          changes since the cursor in its input; and the governance additions: the approval step before idempotency,
  *          the live-configuration guard of a structural action, the meter's usage event inside the unit of work, the
  *          cap's amount field, and the registered effect tags on the descriptor; and the remainder (STA-765): the
- *          approval step fails closed, the limit reservation wraps the unit of work, a successful call's audit entry
- *          is written inside it, and written effect tags reach the descriptor.
+ *          approval step runs only with a gate bound unless the action declares `approval` (STA-813), the limit
+ *          reservation wraps the unit of work, a successful call's audit entry is written inside it, and written effect
+ *          tags reach the descriptor; and the step-up check with `ctx.assurance` (STA-814).
  * Boundary: test only; every port is a stand-in driver in a map resolver, so each step is observed directly; the
  *           offline stores are the memory drivers.
  * Runtime: node (vitest)
@@ -26,6 +27,7 @@ import {
   ActorKind,
   Clock,
   Duration,
+  Enum,
   Logger,
   Realm,
   type ScopeRef,
@@ -61,11 +63,13 @@ import {
   RateLimitStore,
   ReplicaLog,
   ReviewItemSink,
+  StepUpCheck,
   TenancyCheck,
   UnitOfWork,
   WorkflowRunner,
 } from "#contracts/index";
-import type { AuditEntry, CallDescriptor } from "#contracts/index";
+import type { AuditEntry, CallAssurance, CallDescriptor } from "#contracts/index";
+import { AssuranceLevel } from "#contracts/enums/assurance-level.enum";
 import { Action } from "#core/bases/action.base";
 import { Interceptor } from "#core/bases/interceptor.base";
 import { Precondition } from "#core/bases/precondition.base";
@@ -1248,22 +1252,144 @@ class BulkNotifyAction extends Action({
   }
 }
 
+/** An action that always needs an approval gate. */
+class ApprovedRefundAction extends Action({
+  key: "order.refund",
+  actors: [ActorKind.User],
+  approval: true,
+}) {
+  async handle(): Promise<string> {
+    log.push("handle");
+    return "refunded";
+  }
+}
+
+/** An action that needs two factors. */
+class RotateKeyAction extends Action({
+  key: "api_key.rotate",
+  actors: [ActorKind.User],
+  stepUp: AssuranceLevel.Aal2,
+}) {
+  async handle(_input: object, ctx: ActionContext): Promise<CallAssurance | undefined> {
+    log.push("handle");
+    return ctx.assurance;
+  }
+}
+
+/** Passes when the call's level is at least the required one; records what it saw. */
+class LevelStepUp extends Driver(StepUpCheck) {
+  readonly seen: [string, CallAssurance | undefined, AssuranceLevel][] = [];
+
+  async require(
+    call: CallDescriptor,
+    assurance: CallAssurance | undefined,
+    level: AssuranceLevel,
+  ): Promise<void> {
+    log.push("step_up");
+    this.seen.push([call.key, assurance, level]);
+    const order = Enum.values(AssuranceLevel);
+    if (assurance?.level === undefined || order.indexOf(assurance.level) < order.indexOf(level))
+      throw StepUpNeededError.create();
+  }
+}
+
+/** The step-up refusal a driver raises. */
+class StepUpNeededError extends Refusal({ kind: ErrorKind.Unauthenticated }) {}
+
+describe("ActionPipeline step-up (STA-814)", () => {
+  const strong: CallAssurance = {
+    amr: ["pwd", "otp"],
+    authTime: new Date("2026-10-24T09:59:00.000Z"),
+    level: AssuranceLevel.Aal2,
+  };
+
+  it("checks the step-up right after the permission and hands the assurance to the context", async () => {
+    const stepUp = new LevelStepUp();
+    const { pipeline } = setup([
+      [StepUpCheck, stepUp],
+      [RotateKeyAction, new RotateKeyAction()],
+    ]);
+    const output = await pipeline.execute(
+      RotateKeyAction,
+      {},
+      { actor: customer, assurance: strong },
+    );
+    expect(output).toEqual(strong);
+    expect(log.indexOf("step_up")).toBe(log.indexOf("permission") + 1);
+    expect(stepUp.seen).toEqual([["api_key.rotate", strong, "aal2"]]);
+  });
+
+  it("refuses a weaker or missing assurance before handle", async () => {
+    const { pipeline } = setup([
+      [StepUpCheck, new LevelStepUp()],
+      [RotateKeyAction, new RotateKeyAction()],
+    ]);
+    await expect(
+      pipeline.execute(
+        RotateKeyAction,
+        {},
+        { actor: customer, assurance: { ...strong, level: "aal1" } },
+      ),
+    ).rejects.toBeInstanceOf(StepUpNeededError);
+    await expect(pipeline.execute(RotateKeyAction, {}, { actor: customer })).rejects.toBeInstanceOf(
+      StepUpNeededError,
+    );
+    expect(log).not.toContain("handle");
+  });
+
+  it("fails closed when an action declares stepUp and no StepUpCheck is bound, and skips actions without it", async () => {
+    const { pipeline } = setup([[RotateKeyAction, new RotateKeyAction()]]);
+    await expect(
+      pipeline.execute(RotateKeyAction, {}, { actor: customer, assurance: strong }),
+    ).rejects.toThrow(/StepUpCheck is not bound/);
+    const inspected = await pipeline.execute(
+      InspectAction,
+      {},
+      { actor: customer, assurance: strong },
+    );
+    expect(inspected).toBeDefined();
+  });
+
+  it("rejects a stepUp that is not an AssuranceLevel", () => {
+    expect(() =>
+      Action({ key: "api_key.rotate", actors: [ActorKind.User], stepUp: "aal9" as AssuranceLevel }),
+    ).toThrow(RangeError);
+    expect(() =>
+      Action({ key: "order.refund", actors: [ActorKind.User], approval: "yes" as never }),
+    ).toThrow(TypeError);
+  });
+});
+
 describe("ActionPipeline remainder (STA-765)", () => {
-  it("fails closed at the approval step when no ApprovalGate is bound, and never for a query", async () => {
+  it("runs no approval step when no ApprovalGate is bound, unless the action declares approval (STA-813)", async () => {
     const bare = new ActionPipeline(
       resolverOf([
         [AccessControl, new RecordingAccess()],
         [InspectAction, new InspectAction()],
+        [ApprovedRefundAction, new ApprovedRefundAction()],
         [GetOrderQuery, new GetOrderQuery()],
         [TracingInterceptor, new TracingInterceptor()],
       ]),
     );
-    await expect(bare.execute(InspectAction, {}, { actor: customer })).rejects.toThrow(
-      /ApprovalGate is not bound/,
+    await expect(bare.execute(InspectAction, {}, { actor: customer })).resolves.toBeDefined();
+    await expect(bare.execute(ApprovedRefundAction, {}, { actor: customer })).rejects.toThrow(
+      /ApprovalGate is not bound: order\.refund declares approval: true/,
     );
     await expect(
       bare.execute(GetOrderQuery, { orderId: "ord_1" }, { actor: customer }),
     ).resolves.toBeDefined();
+  });
+
+  it("asks a bound gate about an action that declares approval", async () => {
+    const approvals = new Approvals();
+    const { pipeline } = setup([
+      [ApprovalGate, approvals],
+      [ApprovedRefundAction, new ApprovedRefundAction()],
+    ]);
+    await expect(
+      pipeline.execute(ApprovedRefundAction, {}, { actor: customer }),
+    ).rejects.toMatchObject({ code: "approval_required" });
+    expect(approvals.seen.at(-1)?.[0]).toBe("order.refund");
   });
 
   it("reserves the limit around the unit of work, and runs no handle when it is full", async () => {

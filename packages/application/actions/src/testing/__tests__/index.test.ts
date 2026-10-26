@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: the consumer contract of the `./testing` entry: every value the template imports from
- *          `@stackra/actions/testing` (`extension`, `fakeActionContext`, `fakeExtensionContext`, `run`) and the plugin are
+ *          `@stackra/actions/testing` (`extension`, `fakeActionContext`, `fakeExtensionContext`, `run`, `toHaveAudited`) and the plugin are
  *          exported, nothing else is, and its types resolve.
  * Boundary: test only; imports the stand-in barrel through its `#testing` alias.
  * Runtime: node (vitest)
@@ -11,9 +11,16 @@ import type { Actor } from "@stackra/contracts";
 import type { Refusal } from "@stackra/errors";
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
+import type { AuditEntry } from "#contracts/index";
 import type { ActionContext } from "#core/index";
 import * as testing from "#testing/index";
-import type { FakeActionContext, RunOptions, RunResult, SlotKey } from "#testing/index";
+import type {
+  AuditExpectation,
+  FakeActionContext,
+  RunOptions,
+  RunResult,
+  SlotKey,
+} from "#testing/index";
 
 describe("@stackra/actions/testing", () => {
   it("exports exactly its values", () => {
@@ -23,6 +30,7 @@ describe("@stackra/actions/testing", () => {
       "fakeActionContext",
       "fakeExtensionContext",
       "run",
+      "toHaveAudited",
     ]);
   });
 
@@ -30,6 +38,8 @@ describe("@stackra/actions/testing", () => {
     expectTypeOf<RunOptions["as"]>().toEqualTypeOf<Actor>();
     expectTypeOf<RunResult<number>["output"]>().toEqualTypeOf<number>();
     expectTypeOf<RunResult<number>["error"]>().toEqualTypeOf<Refusal | undefined>();
+    expectTypeOf<RunResult<number>["audit"]>().toEqualTypeOf<AuditEntry | undefined>();
+    expectTypeOf<AuditExpectation["outcome"]>().toEqualTypeOf<"ok" | "refused" | undefined>();
     expectTypeOf<FakeActionContext>().toMatchTypeOf<ActionContext>();
     expectTypeOf<SlotKey<{ a: { "~slot": "after" }; b: string }>>().toEqualTypeOf<"a">();
   });

@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `run(Class, input, { as, idempotencyKey })`, the one way a test calls an action or query: through the real
  *          pipeline of the testing app compiled last, as the given actor, resolving to a `RunResult` with the output or
- *          the refusal and the events published during the call.
+ *          the refusal, the events published during the call and its audit entry (STA-820).
  * Boundary: test only. Every step runs (tenancy, permission, preconditions, idempotency, rate limit, interceptors, the
  *           unit of work); the app's bindings decide what each step does. A refusal resolves; any other error rejects.
  * Runtime: node
@@ -11,6 +11,7 @@
 import type { AnyClass } from "@stackra/container";
 import { isRefusal, type Refusal } from "@stackra/errors";
 
+import type { AuditEntry } from "#contracts/index";
 import type { Action, CallInput, OutputOf, Query } from "#core/index";
 import { CURRENT_PIPELINE } from "#testing/constants/current-pipeline.constant";
 import type { RunOptions } from "#testing/types/run-options.type";
@@ -26,8 +27,9 @@ function resultOf<O>(
   output: O | undefined,
   error: Refusal | undefined,
   events: readonly object[],
+  audit: AuditEntry | undefined,
 ): RunResult<O> {
-  const result = { ok: error === undefined, error, events: Object.freeze([...events]) };
+  const result = { ok: error === undefined, error, events: Object.freeze([...events]), audit };
   Object.defineProperty(result, "output", {
     get(): O {
       if (error !== undefined) throw error;
@@ -57,16 +59,23 @@ export async function run<C extends AnyClass<Action | Query>>(
       "No testing app: compile one with createTestingModule(Root).compile() before calling run()",
     );
   const { as, ...request } = options;
+  const callId = request.callId ?? globalThis.crypto.randomUUID();
   const before = publishedBy(current.app).length;
   try {
-    const output = await current.pipeline.execute(type, input, { ...request, actor: as });
-    return resultOf(output, undefined, publishedBy(current.app).slice(before));
+    const output = await current.pipeline.execute(type, input, { ...request, callId, actor: as });
+    return resultOf(
+      output,
+      undefined,
+      publishedBy(current.app).slice(before),
+      current.trail.entryOf(callId),
+    );
   } catch (error) {
     if (!isRefusal(error)) throw error;
     return resultOf<OutputOf<InstanceType<C>>>(
       undefined,
       error,
       publishedBy(current.app).slice(before),
+      current.trail.entryOf(callId),
     );
   }
 }

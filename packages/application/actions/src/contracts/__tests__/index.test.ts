@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: the consumer contract of the `./contracts` entry: the eighteen ports of the pipeline's steps and stores and
- *          the `ReviewReason`, `Effect` and `ApproverRefusal` enums are exported, nothing else is as a value, and the exchanged types resolve.
+ * Purpose: the consumer contract of the `./contracts` entry: the twenty ports of the pipeline's steps and stores and
+ *          the `ReviewReason`, `Effect`, `ApproverRefusal` and `AssuranceLevel` enums are exported, nothing else is as a value, and the exchanged types resolve.
  * Boundary: test only; imports the stand-in barrel through its `#contracts` alias.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0294 (decision 15).
@@ -11,7 +11,9 @@ import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
 import * as contracts from "#contracts/index";
 import type {
+  AssuranceLevel,
   AuditEntry,
+  CallAssurance,
   CallDescriptor,
   DeviceOrder,
   DeviceSequence,
@@ -32,6 +34,7 @@ describe("@stackra/actions/contracts", () => {
       "AccessControl",
       "ApprovalGate",
       "ApproverRefusal",
+      "AssuranceLevel",
       "AuditTrail",
       "ContextStorage",
       "DeviceSequenceStore",
@@ -47,6 +50,7 @@ describe("@stackra/actions/contracts", () => {
       "ReplicaLog",
       "ReviewItemSink",
       "ReviewReason",
+      "StepUpCheck",
       "TenancyCheck",
       "UnitOfWork",
       "WorkflowRunner",
@@ -70,5 +74,7 @@ describe("@stackra/actions/contracts", () => {
     expectTypeOf<ReplicaRead["more"]>().toEqualTypeOf<boolean>();
     expectTypeOf<ReviewItem["reason"]>().toEqualTypeOf<ReviewReason>();
     expectTypeOf<ReviewItem["client"]>().toEqualTypeOf<Json>();
+    expectTypeOf<CallAssurance["level"]>().toEqualTypeOf<AssuranceLevel | undefined>();
+    expectTypeOf<CallAssurance["authTime"]>().toEqualTypeOf<Date | undefined>();
   });
 });

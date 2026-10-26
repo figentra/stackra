@@ -2,8 +2,8 @@
  * Stackra file contract:
  * Purpose: `ACTIONS_TESTING_PLUGIN`, the testing-module plugin of @stackra/actions: it adds
  *          `.withExtensions([...])` to the builder, connects the extension slots to each compiled app (with that
- *          module's inline extensions only) and gives `run(...)` a pipeline over the app, whose approval step uses
- *          `OpenApprovalGateDriver` when the test binds no `ApprovalGate`.
+ *          module's inline extensions only) and gives `run(...)` a pipeline over the app whose audit trail records each
+ *          call's entry for `RunResult.audit` (forwarding to the app's own trail).
  * Boundary: registers itself when this module loads; `./testing` is loaded only by vitest (gen's vitest config loads
  *           it for every member that depends on @stackra/actions). Imports `.`, `./contracts` and `@stackra/container/testing` only (ADR
  *           0269 decision 3).
@@ -13,10 +13,11 @@
 import { registerTestingPlugin } from "@stackra/container/testing";
 import type { TestingApp, TestingModuleBuilder, TestingPlugin } from "@stackra/container/testing";
 
-import { ApprovalGate } from "#contracts/index";
-import { ActionPipeline, connectExtensions, OpenApprovalGateDriver } from "#core/index";
+import { AuditTrail } from "#contracts/index";
+import { ActionPipeline, connectExtensions } from "#core/index";
 import type { InlineExtension, Resolver } from "#core/index";
 import { CURRENT_PIPELINE } from "#testing/constants/current-pipeline.constant";
+import { RecordingAuditTrailDriver } from "#testing/drivers/recording-audit-trail.driver";
 
 declare module "@stackra/container/testing" {
   interface TestingModuleBuilder {
@@ -50,14 +51,12 @@ export const ACTIONS_TESTING_PLUGIN: TestingPlugin = {
   app(app: TestingApp) {
     // Runs before the builder's onCompile steps, so `.withExtensions` reconnects with its implementers afterwards.
     connectExtensions(app);
-    // The approval step fails closed in an app; a test that binds no gate means "no approvals", so it gets the open one.
-    const open = new OpenApprovalGateDriver();
+    const trail = new RecordingAuditTrailDriver(app);
     const resolver: Resolver = {
-      has: (token) => token === ApprovalGate || app.has(token),
-      get: (token) =>
-        token === ApprovalGate && !app.has(token) ? (open as never) : app.get(token),
+      has: (token) => token === AuditTrail || app.has(token),
+      get: (token) => (token === AuditTrail ? (trail as never) : app.get(token)),
     };
-    CURRENT_PIPELINE.value = { app, pipeline: new ActionPipeline(resolver) };
+    CURRENT_PIPELINE.value = { app, pipeline: new ActionPipeline(resolver), trail };
     return {};
   },
 };

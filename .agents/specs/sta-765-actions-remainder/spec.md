@@ -45,3 +45,15 @@ unit of work, and an approval step that fails closed.
 - Other packages' tests that build an `ActionPipeline` over a bare resolver (iam, entitlements, queue) and the queue
   worker and workflow runner must bind a gate.
 - Tests, typecheck and build are written but not run (owner mode).
+
+## Wave 12 (figentra/sta-666-wave12)
+
+- Built: `PlanLimitReservationDriver` in `@stackra/entitlements`, the `LimitReservation` driver over
+  `LimitReservationService`; a create a limit entitlement gates is reserved around its unit of work (ADR 0408).
+- Changed by STA-813: approval no longer fails closed for every action (ADR 0397 decision 5 as amended).
+
+## Wave 12 remainder (figentra/sta-666-wave12)
+
+- Done: gen's `EFFECT_TAGS`, `toolHints` and their tests spell `external_communication`, matching `Effect`.
+- Hand-off: @stackra/ai's approval floor types, README and tests still spell `external-communication` (outside this
+  wave's folders).

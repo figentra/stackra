@@ -33,13 +33,20 @@ describe("StoresConfig", () => {
   });
 
   it("types and closes the driver names", () => {
-    expectTypeOf<DriverName<IdempotencyStore>>().toEqualTypeOf<"memory" | "valkey">();
-    expectTypeOf<DriverName<RateLimitStore>>().toEqualTypeOf<"memory" | "valkey">();
+    expectTypeOf<DriverName<IdempotencyStore>>().toEqualTypeOf<"memory" | "valkey" | "postgres">();
+    expectTypeOf<DriverName<RateLimitStore>>().toEqualTypeOf<"memory" | "valkey" | "postgres">();
     expect(() =>
       buildConfig(StoresConfig, {
         values: { idempotency: "redis" as DriverName<IdempotencyStore> },
       }),
     ).toThrow(ConfigInvalidError);
+  });
+
+  it("selects the Postgres stores of @stackra/database by name (STA-756)", () => {
+    const config = buildConfig(StoresConfig, {
+      values: { idempotency: "postgres", rateLimit: "postgres" },
+    });
+    expect([config.idempotency, config.rateLimit]).toEqual(["postgres", "postgres"]);
   });
 
   it("fills the Valkey URL from its secret", () => {

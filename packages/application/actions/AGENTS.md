@@ -38,8 +38,10 @@ Member at `packages/application/actions` (`tier:lib`), in the programming model 
 - A replica answer is the `ReplicaChanges` wire shape of `@stackra/query` (`rows`, `removed`, `cursor`, `asOf`,
   `full`); the cursor arrives as the query's `cursor` input. A replica's slice comes from the query's `handle` after
   it authorized it, never straight from input.
-- Permission and an action's approval fail closed: no `ApprovalGate` bound is an error (an app with no approvals
-  binds `OpenApprovalGateDriver`; the testing pipeline does it for a test that binds none). The `LimitReservation`
+- Permission fails closed. Approval runs only when an `ApprovalGate` is bound; an action that declares
+  `approval: true` fails closed without one, and so does one that declares `stepUp` without a `StepUpCheck`
+  (STA-813, STA-814). Never make every pipeline bind a gate again: the iam, entitlements, queue and workflow
+  pipelines bind none. The `LimitReservation`
   wraps the unit of work (reserve, then commit) and a successful call's audit entry is written inside it.
   `propose` runs the steps up to validation and meters a draft; it never reaches approval or `handle`.
 - Approval, the live-configuration guard and meters decide nothing in code: the gate's rules, the environment and the

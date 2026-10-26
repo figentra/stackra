@@ -4,7 +4,7 @@
  *          buckets, and the Valkey server and key prefix of the `valkey` drivers.
  * Boundary: a shape class; it registers this package's own schema (`STORES_CONFIG_SCHEMA`) for itself when the module
  *           loads. The defaults are `memory` (ADR 0266 decision 2); a deployment with more than one instance names
- *           `valkey` (or @stackra/database's Postgres driver) in runway. The Valkey URL carries its password, so it is
+ *           `valkey` or `postgres` (@stackra/database's durable drivers) in runway. The Valkey URL carries its password, so it is
  *           the `ACTIONS_VALKEY_URL` secret, never a value.
  * Runtime: isomorphic
  * Governing contract: ADR 0136 (decision 3); ADR 0217 (decision 2); ADR 0266; ADR 0294 (decisions 4, 19 and 26); ADR

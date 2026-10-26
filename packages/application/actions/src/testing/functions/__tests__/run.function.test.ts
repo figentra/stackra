@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `run`: it throws before a testing app compiled; on the compiled app it runs a call through the
  *          real pipeline as the given actor, resolving to the output with the events published during it; a refusal
- *          resolves with `ok: false` (and `output` throws it); a repeated Idempotency-Key replays; a bug rejects.
+ *          resolves with `ok: false` (and `output` throws it); a repeated Idempotency-Key replays; a bug rejects; the
+ *          result carries the call's audit entry (STA-820); an action runs with no ApprovalGate bound (STA-813).
  * Boundary: test only; `@stackra/events/testing` adds `app.events` and `toRecord`, `@stackra/errors/testing` adds
  *           `toRefuseWith`.
  * Runtime: node (vitest)
@@ -20,6 +21,7 @@ import { describe, expect, it } from "@stackra/testing";
 import { AccessControl, IdempotencyStore } from "#contracts/index";
 import {
   Action,
+  type ActionContext,
   Idempotency,
   IdempotencyKeyRequiredError,
   MemoryIdempotencyStoreDriver,
@@ -51,7 +53,8 @@ class PlaceOrderAction extends Action({
 }) {
   placed = 0;
 
-  async handle(input: { sku: string }): Promise<{ orderId: string }> {
+  async handle(input: { sku: string }, ctx: ActionContext): Promise<{ orderId: string }> {
+    ctx.audit({ sku: input.sku });
     if (input.sku === "none") throw OutOfStockError.create();
     this.placed += 1;
     await dispatch(new OrderPlaced());
@@ -113,6 +116,22 @@ describe(run, () => {
     expect(() => refused.output).toThrow(OutOfStockError);
     expect(await run(PlaceOrderAction, { sku: "kettle" }, { as })).toRefuseWith(
       refusal(IdempotencyKeyRequiredError),
+    );
+  });
+
+  it("hands back the call's audit entry, and none for a query", async () => {
+    await compile();
+    const placed = await run(PlaceOrderAction, { sku: "kettle" }, { as, idempotencyKey: "k3" });
+    expect(placed.audit).toMatchObject({ outcome: "ok", fields: { sku: "kettle" } });
+    const refused = await run(PlaceOrderAction, { sku: "none" }, { as, idempotencyKey: "k4" });
+    expect(refused.audit).toMatchObject({ outcome: "refused", code: refused.error?.code });
+    await expect(run(BrokenQuery, {}, { as })).rejects.toThrow("bug");
+  });
+
+  it("runs an action with no ApprovalGate bound (STA-813)", async () => {
+    await compile();
+    expect((await run(PlaceOrderAction, { sku: "kettle" }, { as, idempotencyKey: "k5" })).ok).toBe(
+      true,
     );
   });
 

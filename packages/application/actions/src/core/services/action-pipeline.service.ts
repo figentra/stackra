@@ -8,12 +8,14 @@
  *          in sequence order, the `offline.cap` reconciliation, the review of offline-computed documents (`accepts`),
  *          the verified device (`ctx.deviceId`) and a replica query's answer (`ctx.replica`, by the input's `cursor`);
  *          and `propose`, an action's draft-only run (the steps up to validation, then a metered draft, no effects).
+ *          The permission step includes an action's step-up (`stepUp`, through `StepUpCheck`), and the call context
+ *          carries the caller's verified assurance (`ctx.assurance`).
  * Boundary: built by the runtime (and the testing module) over a `Resolver`, so it reads the action instances, their
  *           preconditions and interceptors and every step's port by class. Steps whose owner is not installed are
- *           skipped (tenancy, entitlement, flag, limit reservation, unit of work, audit); permission and approval fail
- *           closed (no `AccessControl`, or no `ApprovalGate` for an action, is an error, never an allowed call; an app
- *           with no approvals binds `OpenApprovalGateDriver`); a declared rate limit, Idempotency-Key, device order,
- *           offline cap, `accepts`, replica, `structural` or `meter` with no port bound is an error. The approval gate
+ *           skipped (tenancy, entitlement, flag, limit reservation, unit of work, audit); permission fails closed (no
+ *           `AccessControl` is an error, never an allowed call); approval runs only when an `ApprovalGate` is bound,
+ *           except that an action declaring `approval: true` fails closed without one (ADR 0397 as amended); a declared rate limit, Idempotency-Key, device order,
+ *           offline cap, `accepts`, replica, `structural`, `meter` or `stepUp` with no port bound is an error. The approval gate
  *           sees the validated input; a metered action's usage event and a successful call's audit entry are written
  *           in its unit of work, after `handle`, and the unit of work runs inside the `LimitReservation` (reserve, then
  *           commit). Nothing reorders the steps: device order wraps them all (like the audit, whose refusal and replay
@@ -27,7 +29,9 @@
  *                     0327 (decision 6: the current scope in the call context); ADR 0338 (decisions 1, 3 and 5); ADR
  *                     0337 (decisions 4 and 5); ADR 0098 (decision 3: approval); ADR 0359 (decision 3: live is
  *                     read-only); ADR 0216 (decisions 1 and 4: usage through the outbox); ADR 0212 (decision 4: the
- *                     audit in the unit of work); ADR 0215 and owner round 3 item 18 (reserve-then-commit).
+ *                     audit in the unit of work); ADR 0215 and owner round 3 item 18 (reserve-then-commit); STA-813
+ *                     (an unbound approval step does not run); ADR 0406
+ *                     (step-up assurance).
  */
 import { kindOf, type AnyClass } from "@stackra/container";
 import {
@@ -48,6 +52,7 @@ import { EventOutbox } from "@stackra/events/contracts";
 import { duration, validate } from "@stackra/validation";
 
 import { RateLimitConfig } from "#config/rate-limit.config";
+import type { AssuranceLevel } from "#contracts/enums/assurance-level.enum";
 import { ReviewReason } from "#contracts/enums/review-reason.enum";
 import { AccessControl } from "#contracts/ports/access-control.port";
 import { ApprovalGate } from "#contracts/ports/approval-gate.port";
@@ -64,6 +69,7 @@ import { OfflineCapStore } from "#contracts/ports/offline-cap-store.port";
 import { RateLimitStore } from "#contracts/ports/rate-limit-store.port";
 import { ReplicaLog } from "#contracts/ports/replica-log.port";
 import { ReviewItemSink } from "#contracts/ports/review-item-sink.port";
+import { StepUpCheck } from "#contracts/ports/step-up-check.port";
 import { TenancyCheck } from "#contracts/ports/tenancy-check.port";
 import { UnitOfWork } from "#contracts/ports/unit-of-work.port";
 import { WorkflowRunner } from "#contracts/ports/workflow-runner.port";
@@ -123,6 +129,8 @@ interface Recorded {
   readonly structural?: boolean;
   readonly meter?: ActionMeter;
   readonly effects?: ActionEffects;
+  readonly approval?: boolean;
+  readonly stepUp?: AssuranceLevel;
 }
 
 /** What one call accumulates while it runs. */
@@ -157,7 +165,7 @@ type Handler = { handle(input: unknown, ctx: unknown): Promise<unknown> };
 const IAM = "bind an AccessControl driver (@stackra/iam); calls fail closed without one";
 
 const APPROVALS =
-  "bind the tasks-approvals driver, or OpenApprovalGateDriver for an app with no approvals; actions fail closed without one";
+  "declares approval: true, so bind an ApprovalGate driver (the OS tasks-approvals service); it fails closed without one";
 
 /**
  * Runs actions and queries.
@@ -268,12 +276,7 @@ export class ActionPipeline {
   private async steps(call: Call, raw: unknown): Promise<unknown> {
     const { descriptor, kind } = call;
     const input = await this.checked(call, raw);
-    if (kind === "action")
-      await this.required(ApprovalGate, APPROVALS).check(
-        descriptor,
-        input,
-        call.request.approvalId,
-      );
+    if (kind === "action") await this.approved(call, input);
     const claim = kind === "action" ? await this.claim(call, input) : undefined;
     if (claim !== undefined && "replay" in claim) return claim.replay;
     try {
@@ -300,8 +303,19 @@ export class ActionPipeline {
   }
 
   /**
+   * The approval step of an action: a bound `ApprovalGate` decides every call; with none bound the step does not run,
+   * except for an action that declares `approval: true`, which fails closed.
+   */
+  private async approved(call: Call, input: unknown): Promise<void> {
+    const gate = this.optional(ApprovalGate);
+    if (gate !== undefined) return gate.check(call.descriptor, input, call.request.approvalId);
+    if (call.options.approval === true)
+      throw new Error(`ApprovalGate is not bound: ${call.descriptor.key} ${APPROVALS}`);
+  }
+
+  /**
    * The steps before approval, in order: tenancy (with the live-configuration guard of a structural action), the actor
-   * kind and permission, preconditions, entitlement, flag; resolves to the validated input.
+   * kind and permission (with an action's step-up), preconditions, entitlement, flag; resolves to the validated input.
    */
   private async checked(call: Call, raw: unknown): Promise<unknown> {
     const { descriptor, options, kind, ctx } = call;
@@ -313,6 +327,12 @@ export class ActionPipeline {
       ).check(descriptor);
     if (!options.actors.includes(descriptor.actor.kind)) throw ForbiddenError.create();
     await this.required(AccessControl, IAM).require(descriptor);
+    const level = kind === "action" ? options.stepUp : undefined;
+    if (level !== undefined)
+      await this.required(
+        StepUpCheck,
+        `${descriptor.key} declares stepUp; bind a StepUpCheck driver over @stackra/identity's requireAssurance`,
+      ).require(descriptor, call.request.assurance, level);
     if (kind === "action")
       for (const type of options.preconditions ?? []) await this.resolver.get(type).check(ctx);
     await this.optional(EntitlementCheck)?.check(descriptor);
@@ -679,6 +699,7 @@ export class ActionPipeline {
       period: (input: PeriodInput) => periodOf(input, at, timeZone),
       startOfDay: () => startOfZonedDay(at, timeZone),
       ...(request.device === undefined ? {} : { deviceId: request.device.deviceId }),
+      ...(request.assurance === undefined ? {} : { assurance: request.assurance }),
       replica: (fill: (bounds: ReplicaBounds) => Promise<readonly ReplicaRow[]>, slice?: string) =>
         new ReplicaFeed(
           this.required(

@@ -7,12 +7,13 @@
  *          call runs.
  * Boundary: an abstract class that is its own token, keyed `actions.ApprovalGate`. Which calls need approval, and who
  *           approves, is data (rule sets and settings, ADR 0331), never code: the driver (the OS tasks-approvals
- *           service) evaluates it. The step fails closed: an action with no gate bound is an error, and an app with
- *           no approvals binds `OpenApprovalGateDriver` on purpose. Actions only; a query is never parked. A leaf
- *           file.
+ *           service) evaluates it. The step runs only when a gate is bound (an app with no gate has no approvals);
+ *           an action that declares `approval: true` fails closed with none bound. Actions only; a query is never
+ *           parked. A leaf file.
  * Runtime: isomorphic
  * Governing contract: ADR 0098 (decision 3: approval, durable park and resume, before idempotency); ADR 0099
- *                     (decision 4: the level and tags are the risk inputs to approval); ADR 0360; ADR 0331.
+ *                     (decision 4: the level and tags are the risk inputs to approval); ADR 0360; ADR 0331; ADR 0397 as
+ *                     amended (STA-813).
  */
 import { Port } from "@stackra/contracts";
 

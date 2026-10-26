@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `QueryContext`, the second parameter of a query's `handle`: the call context plus the record check
  *          (`authorize`), the reporting helpers (`period`, `startOfDay`) a read needs, the verified device the call
- *          came from (`deviceId`) and a replica query's answer (`replica`).
+ *          came from (`deviceId`), the caller's verified assurance (`assurance`, STA-814) and a replica query's answer
+ *          (`replica`).
  * Boundary: a type only; the pipeline builds it per call. A query has no transaction, no `afterCommit`, no audit and
  *           no Idempotency-Key, so none is here. `ActionContext` extends it.
  * Runtime: isomorphic
@@ -10,6 +11,7 @@
  *                     0138 (as amended: the record policy runs inside `handle` through `ctx.authorize`); ADR 0338
  *                     (decisions 3 and 4: replicas; the device's last acknowledged sequence).
  */
+import type { CallAssurance } from "#contracts/types/call-assurance.type";
 import type { ReplicaRow } from "#contracts/types/replica-row.type";
 import type { ExtensionContext } from "#core/types/extension-context.type";
 import type { Period } from "#core/types/period.type";
@@ -37,6 +39,9 @@ export interface QueryContext extends ExtensionContext {
 
   /** The device the call came from, once the transport matched it to the verified session's device; else absent. */
   readonly deviceId?: string;
+
+  /** The verified assurance of the caller's last authentication (`amr`, `auth_time`, level); absent without a session. */
+  readonly assurance?: CallAssurance;
 
   /**
    * A replica query's answer: the changes since the cursor the client sent (the input's `cursor`), or, on a first fill

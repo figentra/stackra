@@ -10,12 +10,13 @@
  * Governing contract: ADR 0294 (decisions 16, 20, 21 and 25); ADR 0305 (rules 2, 28 and 30); ADR 0098 (actions are the
  *                     unit); ADR 0136; ADR 0138 (as amended); ADR 0338 (decision 5: `offline.cap`); ADR 0337
  *                     (decisions 4 and 5: `accepts`); ADR 0360 (decision 4: the tool default); ADR 0099 (decision 2:
- *                     `effects`).
+ *                     `effects`); STA-813 (`approval`); ADR 0406 (`stepUp`).
  */
 import { createKind } from "@stackra/container";
 import { ActorKind, Enum } from "@stackra/contracts";
 import { duration } from "@stackra/validation";
 
+import { AssuranceLevel } from "#contracts/enums/assurance-level.enum";
 import { Effect } from "#contracts/enums/effect.enum";
 import { Precondition } from "#core/bases/precondition.base";
 import { RULE_VERSION_PATTERN } from "#core/constants/rule-version-pattern.constant";
@@ -179,6 +180,14 @@ function read(options: ActionOptions) {
   )
     throw new RangeError(
       `Action({ effects }) lists distinct Effect tags (${options.key}), got ${JSON.stringify(effects)}`,
+    );
+  if (options.approval !== undefined && typeof options.approval !== "boolean")
+    throw new TypeError(
+      `Action({ approval }) is true or false, got ${JSON.stringify(options.approval)}`,
+    );
+  if (options.stepUp !== undefined && !Enum.values(AssuranceLevel).includes(options.stepUp))
+    throw new RangeError(
+      `Action({ stepUp }) takes an AssuranceLevel, got ${JSON.stringify(options.stepUp)}`,
     );
   if (options.structural !== undefined && typeof options.structural !== "boolean")
     throw new TypeError(
