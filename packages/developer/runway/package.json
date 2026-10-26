@@ -13,6 +13,7 @@
     "dist",
     "src",
     "schema",
+    "stackra.manifest.json",
     "README.md",
     "CHANGELOG.md",
     "LICENSE"

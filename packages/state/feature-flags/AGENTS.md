@@ -26,6 +26,9 @@ programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./li
 - Keys and label keys are derived from the class name and module; never add a `key` option.
 - A `null` subject is anonymous: PostHog is not asked and every flag stays at its default.
 - `./contracts` imports no other entry; `src/*/index.ts` are stand-in barrels until gen writes them (STA-339).
+- `memory` FlagProvider (STA-1308): `MemoryFlagProviderDriver` answers what a test `set`s, starting empty.
+  `FlagProviderName` lists `config`, `memory` and `posthog`; keep it in step with the drivers. `FlagsFake` is still
+  the synchronous reader double.
 
 ## Rules that fail the build
 

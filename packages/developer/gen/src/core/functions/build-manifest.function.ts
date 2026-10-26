@@ -10,7 +10,9 @@
  *          the `@Replaces` replacements; a model a hosting member re-declares with a package's prefix records the
  *          package model key it hosts (`hosts`); a package's drivers carry each candidate's class, entry and
  *          constructor tokens (`classes`) and the config class that selects one (`config`), which a host's wiring
- *          reads (STA-1297). It reports the identity checks it can see: `identity_collision`,
+ *          reads (STA-1297); a package lists its config classes (`config`: key, class, entry), so a host's wiring
+ *          knows its configs without guessing from a name (STA-1308). It reports the identity checks it can see:
+ *          `identity_collision`,
  *          `override_duplicate`, `permission_unknown`, `identity_missing`, the public id prefix checks
  *          `prefix_invalid`, `prefix_taken` and `prefix_duplicate`, `tool_reason_missing`, `effect_unknown`,
  *          `integration_role_unknown`, `egress_invalid`, `sequence_misplaced`, `document_number_unsequenced` and
@@ -847,6 +849,20 @@ export function buildManifest(ir: MemberIR): {
           });
     }
 
+  // A package's config classes, so a host's wiring writes a config row for exactly these (STA-1308).
+  const configs: Entry[] = published
+    ? ir.classes
+        .filter(
+          (declared) =>
+            declared.kind === "config" && (declared.base === undefined || declared.base.own),
+        )
+        .map((declared) => ({
+          key: configKeyOf(declared.name, ir.member),
+          class: declared.name,
+          from: packageSpecifier(ir.package, declared.file),
+        }))
+    : [];
+
   const manifest: Entry = {
     $comment: MANIFEST_NOTICE,
     member: ir.member,
@@ -859,6 +875,7 @@ export function buildManifest(ir: MemberIR): {
     ...(facets.size > 0 ? { facets: [...facets.values()] } : {}),
     ...(replaces.length > 0 ? { replaces } : {}),
     ...sections,
+    ...(configs.length > 0 ? { config: configs } : {}),
     ...(ir.layout === "app" ? { blocks, routes } : {}),
     schemas,
   };

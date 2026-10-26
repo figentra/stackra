@@ -124,7 +124,8 @@ would and drops the payload. `fakeRealtime({ status })` starts it at another sta
 ## More than one instance
 
 `RealtimeFanout` (`./contracts`) carries broadcasts and room frames between the instances of one service. Config
-`realtime.fanout` picks `local` (one instance, the default) or `valkey` (`ValkeyRealtimeFanoutDriver` in `./node`, over
+`realtime.fanout` picks `local` (one instance, the default), `memory` (the same, with a `published` log for tests,
+STA-1308) or `valkey` (`ValkeyRealtimeFanoutDriver` in `./node`, over
 Valkey pub/sub on `fanoutChannel`, with the `REALTIME_VALKEY_URL` secret). `RealtimeRelay.start()` delivers what any
 instance fanned out to this instance's sessions and room members; gen wires `RealtimeRelay.broadcast` in place of the
 broadcaster when the fanout is not `local`.

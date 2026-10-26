@@ -9,7 +9,7 @@
  *          `prefix_duplicate`; the v3 tool default with `tool_reason_missing`, the public flag with `public_without_endpoint`, effect tags with `effect_unknown`,
  *          Integration roles and listing with `integration_role_unknown`, the `@Replaces` section, and a replica
  *          query's `ReplicaPage` output schema (ADR 0338); a package's drivers with each candidate's class, entry and
- *          tokens and the selecting config class (STA-1297).
+ *          tokens and the selecting config class (STA-1297); a package's `config` section (STA-1308).
  * Boundary: test only; runs on the commerce IR fixture.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 10, 20, 21 and 22); ADR 0305 (rules 1, 28 and
@@ -695,5 +695,17 @@ describe("buildManifest's package drivers (STA-1297)", () => {
   it("keeps a service's drivers to names", () => {
     const [driver] = buildManifest(COMMERCE_IR).manifest.drivers ?? [];
     expect(driver).not.toHaveProperty("classes");
+  });
+});
+
+describe("buildManifest's package config section (STA-1308)", () => {
+  it("lists a package's config classes with their key and public entry", () => {
+    expect(buildManifest(LOYALTY_KIT_IR).manifest["config"]).toEqual([
+      { key: "loyalty_kit", class: "LoyaltyKitConfig", from: "@acme/loyalty-kit" },
+    ]);
+  });
+
+  it("writes no config section for a service", () => {
+    expect(buildManifest(COMMERCE_IR).manifest).not.toHaveProperty("config");
   });
 });

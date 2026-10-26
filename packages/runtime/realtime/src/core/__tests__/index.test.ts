@@ -32,6 +32,7 @@ describe("@stackra/realtime", () => {
     expect(Object.keys(realtime).sort()).toEqual([
       "LocalRealtimeFanoutDriver",
       "MemoryRealtimeDriver",
+      "MemoryRealtimeFanoutDriver",
       "MemoryRealtimeTransportDriver",
       "REALTIME_PATH",
       "REALTIME_ROOM_PATH",

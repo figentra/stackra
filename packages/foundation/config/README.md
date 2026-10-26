@@ -75,6 +75,7 @@ builds the configuration that reads them (and again after a rotation). Neither l
 | Driver                               | Entry    | Configuration                                                                                                                                                    |
 | ------------------------------------ | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `InfisicalSecretStoreDriver`         | `.`      | `InfisicalConfig`: site, project, environment, folder; the machine identity is `INFISICAL_CLIENT_ID` and `INFISICAL_CLIENT_SECRET` from the platform's own store |
+| `MemorySecretStoreDriver`            | `.`      | none: `memory`, the secrets a test sets (STA-1308)                                                                                                               |
 | `AwsSecretsManagerSecretStoreDriver` | `./node` | `AwsSecretsManagerConfig`: region and secret ids; the runtime's AWS role signs the reads                                                                         |
 
 A JSON-object secret in AWS gives one secret per string member. `@aws-sdk/client-secrets-manager` is an optional peer.

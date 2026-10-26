@@ -34,6 +34,7 @@ describe("@stackra/feature-flags", () => {
       "Flag",
       "FlagReader",
       "FlagTargeting",
+      "MemoryFlagProviderDriver",
       "PosthogFlagProviderDriver",
       "flagRefs",
     ]);
@@ -44,7 +45,7 @@ describe("@stackra/feature-flags", () => {
   });
 
   it("resolves its public types", () => {
-    expectTypeOf<FlagProviderName>().toEqualTypeOf<"config" | "posthog">();
+    expectTypeOf<FlagProviderName>().toEqualTypeOf<"config" | "memory" | "posthog">();
     expectTypeOf<FlagScope>().toEqualTypeOf<"platform" | "product" | "tenant" | "node" | "user">();
     expectTypeOf<FlagOptions["default"]>().toEqualTypeOf<boolean>();
     expectTypeOf<FlagRef<"web.help_centre">["key"]>().toEqualTypeOf<"web.help_centre">();

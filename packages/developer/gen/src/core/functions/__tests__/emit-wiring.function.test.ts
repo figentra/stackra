@@ -7,7 +7,8 @@
  *          dependencies, an Integration's runtime, the inbound webhook route, the platform services it injects, the rules node with its revisions repository), a
  *          projection as a binding, the declared packages' driver tables of the ports the bindings reach (with
  *          their selecting config and package config rows, no registry entry; STA-1297), MediaLibrary over the media
- *          disk, and the names the container really exports.
+ *          disk, a package config row only for a class its manifest's `config` section lists (STA-1308), and the
+ *          names the container really exports.
  * Boundary: test only; asserts on the generated source text and on @stackra/container's exports.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 17 and 26); ADR 0263.
@@ -306,6 +307,15 @@ describe("emitWiring", () => {
         ],
       },
     };
+    const filesystem: MemberIR["dependencies"][number] = {
+      package: "@stackra/filesystem",
+      manifest: {
+        member: "filesystem",
+        package: "@stackra/filesystem",
+        version: "0.1.0",
+        config: [{ key: "filesystem", class: "FilesystemConfig", from: "@stackra/filesystem" }],
+      },
+    };
     const content = emitWiring({
       ...BILLING_IR,
       classes: [
@@ -325,7 +335,7 @@ describe("emitWiring", () => {
           traits: [],
         },
       ],
-      dependencies: [...BILLING_IR.dependencies, media],
+      dependencies: [...BILLING_IR.dependencies, media, filesystem],
     });
     for (const line of [
       '    { module: "billing", kind: "service", provide: MediaLibrary, deps: [MediaDisk, MediaConfig, Clock] },',
@@ -337,5 +347,44 @@ describe("emitWiring", () => {
     ])
       expect(content).toContain(line);
     expect(content.match(/provide: MediaConfig/g)).toHaveLength(1);
+  });
+
+  it("writes a package config row only for a class the package's manifest lists (STA-1308)", () => {
+    const service = (deps: readonly { name: string; from: string }[]) => ({
+      name: "InvoiceScanService",
+      kind: "service" as const,
+      module: "billing",
+      file: "src/modules/billing/services/invoice-scan.service.ts",
+      importPath: "#modules/billing/services/invoice-scan.service",
+      options: {},
+      deps: deps.map((type) => ({ class: type })),
+      facets: [],
+      methods: [],
+      refusals: [],
+      statics: {},
+      traits: [],
+    });
+    const search: MemberIR["dependencies"][number] = {
+      package: "@stackra/search",
+      manifest: {
+        member: "search",
+        package: "@stackra/search",
+        version: "0.1.0",
+        config: [{ key: "search", class: "SearchSettings", from: "@stackra/search" }],
+      },
+    };
+    const content = emitWiring({
+      ...BILLING_IR,
+      classes: [
+        ...BILLING_IR.classes,
+        service([
+          { name: "SearchSettings", from: "@stackra/search" },
+          { name: "SearchIndexConfig", from: "@stackra/search" },
+        ]),
+      ],
+      dependencies: [...BILLING_IR.dependencies, search],
+    });
+    expect(content).toContain('    { key: "search", provide: SearchSettings },');
+    expect(content).not.toContain("provide: SearchIndexConfig }");
   });
 });

@@ -64,6 +64,9 @@ Provider integrations, connections and their store (ADR 0308). Member at `packag
 - `ProviderPackSource` names `ResolvedPack`, so it lives in `src/core/ports`, not `./contracts`.
 - A provider interface a Connection implements (`AccountingProvider`, `VoiceGateway`, the connectors) lives in
   `./contracts/types`; its drivers live with the package that owns the capability.
+- `memory` ConnectionStore (STA-1308): `MemoryConnectionStoreDriver` delegates to a `LocalConnectionStoreDriver` it
+  owns and shares its records in `LOCAL_CONNECTIONS`, so `useDrivers("memory")` resolves a port that has `local` and
+  `hosted`. Keep it a pure delegate; behaviour changes go in the local store.
 
 ## PII
 

@@ -30,6 +30,7 @@ describe("@stackra/errors", () => {
       "ForbiddenError",
       "IdempotencyKeyReusedError",
       "LiveReadOnlyError",
+      "MemoryErrorReporterDriver",
       "NotFoundError",
       "RateLimitedError",
       "Refusal",

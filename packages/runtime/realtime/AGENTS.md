@@ -31,6 +31,8 @@ The realtime hub, the broadcaster, the client connection and the drivers of both
 - Rooms take their grant from the server's checks, never from the client; the sender of every relayed frame is the
   server's stamp. A cap is enforced with `room_limit_reached`, never silently. Room payloads are relayed, never stored.
 - A fanned-out room frame carries its origin instance; never deliver an instance's own frame twice.
+- `memory` RealtimeFanout (STA-1308): `MemoryRealtimeFanoutDriver` delivers like `local` (a macrotask after `publish`)
+  and keeps `published` for assertions. `RealtimeFanoutName` lists `memory`; keep it in step with the drivers.
 
 ## Rules that fail the build
 

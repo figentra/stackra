@@ -74,6 +74,14 @@ The Stackra compiler. Member at `packages/developer/gen` (`tier:lib`), in the pr
   augmentation lists the member's own drivers only: packages augment their own ports. A package manifest written
   before this change has no `classes` and contributes nothing until the package is generated again. Test-only
   candidates (a `ClientFake` transport) are testing plugins, never manifest rows.
+- Package config section (STA-1308). A package manifest lists its config classes under `config`
+  (`[{ key, class, from }]`, own configs only, not overrides). `emitWiring` writes a package config row only for a
+  token that a declared package's manifest lists there or names as a driver's selecting `config`; it never guesses
+  from a `Config` name suffix. A package that is not declared, or whose manifest predates the section, brings no row.
+- Shipped manifests (STA-1308, ADR 0158). Every `@stackra/*` package with a `stackra.config.ts` commits
+  `stackra.manifest.json` and lists it in `files` in package.json. `stackra gen --check` reports a stale or missing
+  manifest as stale, and for a package refuses `manifest_unshipped` when `files` is set and leaves it out. Gen never
+  runs on a Mac (builder rule 6): the testing session regenerates and commits the manifests on ci-box.
 - i18n (STA-1293): `readCatalogues` reads `assets/lang/<locale>/*.json`; `emitI18n` writes `#stackra/i18n` (`I18n`
   through `keys()` of `@stackra/i18n`, `locales`) only when the member declares `@stackra/i18n`. A `@Field(zod)` hatch
   carries the named imports its source uses (`TypeDesc` hatch `imports`); a nullable field gets `.nullable()` once.

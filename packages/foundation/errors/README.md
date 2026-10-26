@@ -57,6 +57,7 @@ Governing ADRs: 0140 (envelope and kinds), 0232 (this package), 0294 (decisions 
 
 ## Sentry and live configuration
 
+- `MemoryErrorReporterDriver` (driver name `memory`) keeps each reported error in `errors` for a test (STA-1308).
 - `SentryErrorReporterDriver` (driver name `sentry`) is an `ErrorReporter` with no vendor SDK: each error becomes one
   Sentry envelope POSTed with `fetch` to the project of the DSN secret (`SentryConfig.dsnSecret`, `SENTRY_DSN` by
   default), tagged with the environment, the release and a refusal's code, sampled by `sampleRate`. It sends no

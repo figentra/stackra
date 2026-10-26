@@ -11,6 +11,7 @@ export { SentryConfig } from "#config/sentry.config";
 export { Refusal } from "#core/bases/refusal.base";
 export { CoreRefusals } from "#core/constants/core-refusals.constant";
 export { SENTRY_CONFIG_SCHEMA as SentryConfig$ } from "#core/constants/sentry-config-schema.constant";
+export { MemoryErrorReporterDriver } from "#core/drivers/memory-error-reporter.driver";
 export { SentryErrorReporterDriver } from "#core/drivers/sentry-error-reporter.driver";
 export { ErrorKind } from "#core/enums/error-kind.enum";
 export { BridgeRejectedError } from "#core/errors/bridge-rejected.error";

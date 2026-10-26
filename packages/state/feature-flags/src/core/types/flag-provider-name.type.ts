@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: `FlagProviderName`, the driver names of the `FlagProvider` port (`config`, `posthog`), registered under
+ * Purpose: `FlagProviderName`, the driver names of the `FlagProvider` port (`config`, `memory`, `posthog`), registered under
  *          the port key `feature_flags.FlagProvider` so a `DriverName<FlagProvider>` field type-checks in this package
  *          before any host's gen has run.
  * Boundary: a type and the `DriverRegistry` augmentation, with exactly the names gen writes for this port in a host's
@@ -10,7 +10,7 @@
  */
 
 /** The drivers of `FlagProvider`. */
-export type FlagProviderName = "config" | "posthog";
+export type FlagProviderName = "config" | "memory" | "posthog";
 
 declare module "@stackra/container" {
   interface DriverRegistry {

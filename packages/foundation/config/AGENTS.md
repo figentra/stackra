@@ -33,6 +33,8 @@ the programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `
 - The key comes from `configKey` only; gen calls the same function. Never add a `key` option.
 - `hydrateEnv(..., { only: "public" })` reads public-prefixed variables only (`PUBLIC_ENV_PREFIXES`).
 - No parameter properties and no `#private` fields: apps typecheck this source under `erasableSyntaxOnly`.
+- `memory` SecretStore (STA-1308): `MemorySecretStoreDriver` answers only what a test `set`s and lists nothing.
+  `.withSecrets(map)` of `./testing` stays the shortcut; the driver is what `useDrivers("memory")` picks.
 
 ## Rules that fail the build
 

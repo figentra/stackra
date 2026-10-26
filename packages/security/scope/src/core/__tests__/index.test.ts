@@ -24,6 +24,7 @@ describe("@stackra/scope", () => {
       "ChainScopeResolverDriver",
       "ClaimScopeResolverDriver",
       "HeaderScopeResolverDriver",
+      "MemoryScopeResolverDriver",
       "MemoryScopeTreeDriver",
       "RootScopeResolverDriver",
       "SCOPE_PATH_CLAIM",

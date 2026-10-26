@@ -3,9 +3,9 @@
  * Purpose: the `ConnectionStore` port: where connections live, and the one way to load, add and remove them. A
  *          driver injects it (`connections.find(ResendConnection)`); the console's connect and disconnect actions and
  *          the webhook router use the rest.
- * Boundary: an abstract class that is its own token, with two drivers: `local` (in process, for the template and
- *           development) and `hosted` (the integrations service holds the credentials, encrypted, and refreshes
- *           the tokens). A loaded connection carries its fields and its managed client; its secret fields are never
+ * Boundary: an abstract class that is its own token, with three drivers: `local` (in process, for the template and
+ *           development), `memory` (the same, for tests, STA-1308) and `hosted` (the integrations service holds the
+ *           credentials, encrypted, and refreshes the tokens). A loaded connection carries its fields and its managed client; its secret fields are never
  *           enumerable. `byId` does not authorize: the caller (a policy, the webhook router) has. It stays in `.`, not
  *           `./contracts`: its signatures use the `Connection` base and `ConnectionClass` of `.` (and a connection's
  *           `check()` returns `ConnectedAccount`), which the template imports from `@stackra/integrations`.

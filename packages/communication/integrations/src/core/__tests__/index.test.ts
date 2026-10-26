@@ -48,6 +48,7 @@ describe("@stackra/integrations", () => {
       "LocalConnectionStoreDriver",
       "MANAGED_PROVISIONING_TEMPLATES",
       "MarketPackProviderDefaultsDriver",
+      "MemoryConnectionStoreDriver",
       "MemoryManagedProvisioningDriver",
       "NoProviderError",
       "PROVIDER_CATALOGUE_SEEDS",

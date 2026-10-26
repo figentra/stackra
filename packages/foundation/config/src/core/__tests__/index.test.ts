@@ -38,6 +38,7 @@ describe("@stackra/config", () => {
       "InfisicalConfig$",
       "InfisicalOptions",
       "InfisicalSecretStoreDriver",
+      "MemorySecretStoreDriver",
       "Secret",
       "buildConfig",
       "configKey",

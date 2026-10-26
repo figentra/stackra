@@ -62,7 +62,9 @@ const { errors, changed } = await generate("services/commerce", { check: true })
 Gen sorts files by path, reads each class's kind from its `extends` clause (`extends Schema`, `Action({ key })`,
 `Model.with(...)`, `Page.of(X)`, `Driver(Port)`, or a class of the member), its options as constants, its partner from
 the heritage type argument (`Policy<Order>`, `Extension<Point["slot"]>`), and its constructor parameter types as
-tokens. A dependency is described by its committed manifest, never by its `.d.ts`. Every refusal carries a
+tokens. A dependency is described by its committed manifest, never by its `.d.ts`; a package lists
+`stackra.manifest.json` in `files` so a host reads it under `node_modules`, and `--check` refuses
+`manifest_unshipped` when it does not (STA-1308). Every refusal carries a
 snake_case code, a position and the fix; when there is one, nothing is written.
 
 ## Tools, effects, listings and replacements
@@ -275,7 +277,8 @@ packages' entity lists. `MediaLibrary` is bound the same way over the media disk
 The wiring's driver tables hold the member's own drivers and, for every port its bindings reach (directly, through a
 platform binding or through another driver's constructor), the declared package's table from that package's
 manifest: each candidate (`memory`, `postgres`, `valkey`, ...) as a lazy import of its public entry, its constructor
-tokens, the field that selects one, and a config row for each package `*Config` class injected (STA-1297). So
+tokens, the field that selects one, and a config row for each injected class the package's manifest lists in its
+`config` section (STA-1297, STA-1308; never guessed from a `Config` suffix). So
 `createTestingModule(X).useDrivers("memory")` finds the packages' memory drivers, and production finds the postgres
 and valkey ones through the same rows. A package's `DriverRegistry` names stay its own augmentation. A
 `Projection<Row>({ key })` class (`@stackra/database`) is a binding like a service: its

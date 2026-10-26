@@ -15,6 +15,7 @@ export { SCOPE_PATH_HEADER } from "#core/constants/scope-path-header.constant";
 export { ChainScopeResolverDriver } from "#core/drivers/chain-scope-resolver.driver";
 export { ClaimScopeResolverDriver } from "#core/drivers/claim-scope-resolver.driver";
 export { HeaderScopeResolverDriver } from "#core/drivers/header-scope-resolver.driver";
+export { MemoryScopeResolverDriver } from "#core/drivers/memory-scope-resolver.driver";
 export { MemoryScopeTreeDriver } from "#core/drivers/memory-scope-tree.driver";
 export { RootScopeResolverDriver } from "#core/drivers/root-scope-resolver.driver";
 export { ScopeLabelInvalidError } from "#core/errors/scope-label-invalid.error";

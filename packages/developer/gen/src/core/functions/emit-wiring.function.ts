@@ -5,8 +5,9 @@
  *          binding with its kind, module, lifetime and constructor tokens, the config classes with their overrides,
  *          the driver table per port with lazy candidates (the member's own, and each declared package's table of a
  *          port its bindings reach, from that package's manifest `classes`, with the config row that selects one and
- *          a row per package `*Config` class injected; STA-1297) and the `DriverRegistry` augmentation keyed by port
- *          key for the member's own drivers,
+ *          a row per package config class injected, read from that package's manifest `config` section and its
+ *          drivers' `config`, never guessed from a name; STA-1297, STA-1308) and the `DriverRegistry` augmentation
+ *          keyed by port key for the member's own drivers,
  *          the `@Replaces` replacements and the partners read from type arguments, typed `satisfies Wiring`. Gen adds
  *          the bindings no class declares: one per per-model token (`repositoryOf(M)`, `journalOf(M)` with `[Locks]`),
  *          an Integration's `IntegrationRuntime`, each generated service client (`#stackra/clients/<service>`, with the
@@ -171,6 +172,30 @@ function dependencyDriverTables(ir: MemberIR): Map<string, PackageTable> {
     }
   }
   return tables;
+}
+
+/**
+ * The config classes the declared packages' manifests list, as `<member>#<Class>` to config key: each package's
+ * `config` section and each driver's selecting `config` (STA-1308). A name is never guessed from its `Config` suffix.
+ */
+function dependencyConfigs(ir: MemberIR): Map<string, string> {
+  const configs = new Map<string, string>();
+  for (const { manifest } of ir.dependencies) {
+    if (manifest.kind === "app") continue;
+    const section = Array.isArray(manifest["config"]) ? (manifest["config"] as unknown[]) : [];
+    for (const item of section) {
+      const { key, class: type } = (item ?? {}) as Record<string, unknown>;
+      if (typeof key === "string" && typeof type === "string")
+        configs.set(`${manifest.member}#${type}`, key);
+    }
+    for (const driver of manifest.drivers ?? []) {
+      const { class: type } = (driver["config"] ?? {}) as Record<string, unknown>;
+      const name = `${manifest.member}#${String(type)}`;
+      if (typeof type === "string" && !configs.has(name))
+        configs.set(name, configKeyOf(type, manifest.member));
+    }
+  }
+  return configs;
 }
 
 /** Sorts module keys so each comes after the modules it depends on; a cycle keeps source order. */
@@ -366,6 +391,7 @@ export function emitWiring(ir: MemberIR): string {
 
   // The declared packages' driver tables by port key, and the member of each package (STA-1297).
   const packageTables = dependencyDriverTables(ir);
+  const packageConfigs = dependencyConfigs(ir);
   const memberOf = (from: string): string =>
     ir.dependencies.find(
       (candidate) => from === candidate.package || from.startsWith(`${candidate.package}/`),
@@ -377,13 +403,14 @@ export function emitWiring(ir: MemberIR): string {
     const from = dep.class.from;
     if (dep.of !== undefined || from.startsWith("#") || from.startsWith(".")) return [];
     const brought: TokenRef[] = [];
-    // A package config class a binding or a driver injects: its row, unless the member overrides it.
-    if (dep.class.name.endsWith("Config")) {
-      const key = configKeyOf(dep.class.name, memberOf(from));
-      if (!configKeys.has(key)) {
-        configKeys.add(key);
+    // A package config class (its manifest lists it) a binding or a driver injects: its row, unless the member
+    // overrides it.
+    const configKey = packageConfigs.get(`${memberOf(from)}#${dep.class.name}`);
+    if (configKey !== undefined) {
+      if (!configKeys.has(configKey)) {
+        configKeys.add(configKey);
         configLines.push(
-          `    { key: ${JSON.stringify(key)}, provide: ${ref(dep.class, "Base")} },`,
+          `    { key: ${JSON.stringify(configKey)}, provide: ${ref(dep.class, "Base")} },`,
         );
       }
       return brought;

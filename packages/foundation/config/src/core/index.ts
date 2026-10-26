@@ -15,6 +15,7 @@ export { env } from "#core/constants/env.constant";
 export { INFISICAL_CONFIG_SCHEMA as InfisicalConfig$ } from "#core/constants/infisical-config-schema.constant";
 export { Secret } from "#core/decorators/secret.decorator";
 export { InfisicalSecretStoreDriver } from "#core/drivers/infisical-secret-store.driver";
+export { MemorySecretStoreDriver } from "#core/drivers/memory-secret-store.driver";
 export { ConfigInvalidError } from "#core/errors/config-invalid.error";
 export { buildConfig } from "#core/functions/build-config.function";
 export { configKey } from "#core/functions/config-key.function";

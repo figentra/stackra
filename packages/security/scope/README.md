@@ -18,6 +18,7 @@ its resolver, and imports it; it never re-exports it.
 | `.`           | `ScopeConfig`, `ScopeConfig$`                                                      | the levels in order, the root's path and the level aliases (data)    |
 | `.`           | `HeaderScopeResolverDriver`, `ClaimScopeResolverDriver`, `RootScopeResolverDriver` | the steps of the resolver chain                                      |
 | `.`           | `ChainScopeResolverDriver`                                                         | the chain: header, claim, root; `scope_unresolved` when none answers |
+| `.`           | `MemoryScopeResolverDriver`                                                        | `memory`: the claim, then the root; no header (STA-1308)             |
 | `.`           | `MemoryScopeTreeDriver`                                                            | a `ScopeTree` over a fixed list (tests, local runs, a client)        |
 | `.`           | `ActiveScopeService`, `SCOPE_PATH_HEADER`                                          | the client's current scope and the one header that carries it        |
 | `.`           | `SCOPE_PATH_CLAIM`                                                                 | the token claim the claim step reads (identity writes it)            |

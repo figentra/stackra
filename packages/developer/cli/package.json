@@ -15,6 +15,7 @@
   "files": [
     "dist",
     "src",
+    "stackra.manifest.json",
     "README.md",
     "CHANGELOG.md",
     "LICENSE"

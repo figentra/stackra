@@ -22,6 +22,7 @@ export { ClientConnectionHostDriver } from "#core/drivers/client-connection-host
 export { HostedConnectionStoreDriver } from "#core/drivers/hosted-connection-store.driver";
 export { LocalConnectionStoreDriver } from "#core/drivers/local-connection-store.driver";
 export { MarketPackProviderDefaultsDriver } from "#core/drivers/market-pack-provider-defaults.driver";
+export { MemoryConnectionStoreDriver } from "#core/drivers/memory-connection-store.driver";
 export { MemoryManagedProvisioningDriver } from "#core/drivers/memory-managed-provisioning.driver";
 export { RequestConnectionContextDriver } from "#core/drivers/request-connection-context.driver";
 export { AuthType } from "#core/enums/auth-type.enum";

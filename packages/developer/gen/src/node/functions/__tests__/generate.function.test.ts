@@ -5,12 +5,13 @@
  *          fails against the committed manifest and writes nothing; a member consuming a workspace service with no
  *          manifest yet gets its manifest alone (with `pass: "manifests"`, or as what a refused run still writes); the root `vitest.config.ts` shim is written,
  *          an authored one that merges `./.stackra/vitest.config` is kept (STA-1297), and any other is refused as
- *          `shim_authored` (STA-1296).
+ *          `shim_authored` (STA-1296); a check fails `manifest_unshipped` when a package's `files` leaves the manifest
+ *          out, and reports a missing manifest as stale (STA-1308).
  * Boundary: test only; writes the shop fixture under `.cache/` and runs gen on it.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 10 and 22); ADR 0295 (decision 5).
  */
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 
 import { describe, expect, it } from "@stackra/testing";
@@ -131,5 +132,30 @@ describe("generate's root Vitest shim (STA-1296)", () => {
     expect(result.files.map((file) => file.path)).not.toContain("vitest.config.ts");
     expect(readFileSync(join(root, "vitest.config.ts"), "utf8")).toBe(authored);
     expect(existsSync(join(root, ".stackra/vitest.config.ts"))).toBe(true);
+  });
+});
+
+describe("generate's shipped manifest check (STA-1308)", () => {
+  /** Sets `files` in the member's package.json. */
+  const shipping = (root: string, files: readonly string[]): void => {
+    const path = join(root, "package.json");
+    writeFileSync(path, JSON.stringify({ ...JSON.parse(readFileSync(path, "utf8")), files }));
+  };
+
+  it("fails a check when package.json `files` leaves the manifest out", async () => {
+    const root = writeFixtureMember("shop", SHOP_SOURCES);
+    expect((await generate(root)).errors).toEqual([]);
+    shipping(root, ["dist", "src"]);
+    const check = await generate(root, { check: true });
+    expect(check.errors.map((error) => error.code)).toEqual(["manifest_unshipped"]);
+    shipping(root, ["dist", "src", "stackra.manifest.json"]);
+    expect((await generate(root, { check: true })).errors).toEqual([]);
+  });
+
+  it("reports a missing manifest as stale", async () => {
+    const root = writeFixtureMember("shop", SHOP_SOURCES);
+    expect((await generate(root)).errors).toEqual([]);
+    rmSync(join(root, "stackra.manifest.json"));
+    expect((await generate(root, { check: true })).changed).toEqual(["stackra.manifest.json"]);
   });
 });

@@ -14,6 +14,7 @@ export { FeatureFlagsConfig } from "#config/feature-flags.config";
 export { Flag } from "#core/bases/flag.base";
 export { FEATURE_FLAGS_CONFIG_SCHEMA as FeatureFlagsConfig$ } from "#core/constants/feature-flags-config-schema.constant";
 export { ConfigFlagProviderDriver } from "#core/drivers/config-flag-provider.driver";
+export { MemoryFlagProviderDriver } from "#core/drivers/memory-flag-provider.driver";
 export { PosthogFlagProviderDriver } from "#core/drivers/posthog-flag-provider.driver";
 export { FlagTargeting } from "#core/enums/flag-targeting.enum";
 export { flagRefs } from "#core/functions/flag-refs.function";

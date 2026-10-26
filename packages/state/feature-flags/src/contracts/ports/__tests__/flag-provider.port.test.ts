@@ -33,7 +33,7 @@ describe("FlagProvider", () => {
 
   it("narrows DriverName to this port's drivers", () => {
     expectTypeOf<DriverName<FlagProvider>>().toEqualTypeOf<FlagProviderName>();
-    expectTypeOf<FlagProviderName>().toEqualTypeOf<"config" | "posthog">();
+    expectTypeOf<FlagProviderName>().toEqualTypeOf<"config" | "memory" | "posthog">();
     const name: DriverName<FlagProvider> = "posthog";
     // @ts-expect-error -- not a driver of this port
     const other: DriverName<FlagProvider> = "redis";

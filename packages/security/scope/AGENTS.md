@@ -44,6 +44,9 @@ active scope (ADR 0327). Member at `packages/security/scope` (`tier:lib`), in th
   table's rows are re-pathed by the service that owns them, from its listener, through `CrudService.repath` (ADR 0411).
 - Raw SQL lives only in `ScopeNodeService` methods, parameterised with `sql`, with a `// raw-sql:` comment (ADR 0160).
 - No parameter properties and no `#private` fields: apps typecheck this source under `erasableSyntaxOnly`.
+- `memory` ScopeResolver (STA-1308): `MemoryScopeResolverDriver` answers the verified claim, then the root, from the
+  `ScopeTree`, and refuses `scope_unresolved` like the chain. It needs no `GrantedScopes`, so it never reads the
+  untrusted `X-Scope-Path` header; a test of the header step binds `chain`.
 
 ## Rules that fail the build
 

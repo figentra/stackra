@@ -12,6 +12,7 @@
     "dist",
     "src",
     "assets",
+    "stackra.manifest.json",
     "README.md",
     "CHANGELOG.md",
     "LICENSE"

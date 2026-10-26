@@ -2,7 +2,9 @@
  * Stackra file contract:
  * Purpose: `generate`, one gen-core run over a member: discovery, the pure `generateMember`, then either writing the
  *          files (creating folders) or, with `check`, comparing them with what is on disk, which is
- *          `stackra gen --check` (a stale or missing file, or a changed identity without `@Renamed`, fails it). With
+ *          `stackra gen --check` (a stale or missing file, the committed `stackra.manifest.json` included, or a changed
+ *          identity without `@Renamed`, fails it; for a package so does a package.json `files` that leaves the manifest
+ *          out, `manifest_unshipped`, since a host reads it under node_modules, STA-1308). With
  *          `pass: "manifests"` it writes the manifest alone (`stackra gen --manifests`, the first pass of a workspace
  *          run); otherwise a refused run that consumes another service writes its client files first and runs again,
  *          since a shape typed with a client's enum only resolves once that client is on disk, and when it is still
@@ -28,6 +30,9 @@ import { generateMember } from "#core/functions/generate-member.function";
 import type { GeneratedFile } from "#core/types/generated-file.type";
 import { discoverMember } from "#node/functions/discover-member.function";
 import type { GenerateResult } from "#node/types/generate-result.type";
+
+/** The committed manifest at the member root. */
+const MANIFEST_FILE = "stackra.manifest.json";
 
 /** An authored root config that imports the generated one (`./.stackra/vitest.config`, with or without `.ts`). */
 const MERGES_GENERATED_VITEST = /["']\.\/\.stackra\/vitest\.config(?:\.ts)?["']/;
@@ -67,7 +72,7 @@ export async function generate(
 ): Promise<GenerateResult> {
   const discover = () =>
     discoverMember(root, options.backend === undefined ? {} : { backend: options.backend });
-  const manifestPath = join(root, "stackra.manifest.json");
+  const manifestPath = join(root, MANIFEST_FILE);
   const previous = existsSync(manifestPath)
     ? (JSON.parse(readFileSync(manifestPath, "utf8")) as StackraManifest)
     : undefined;
@@ -92,6 +97,28 @@ export async function generate(
     if (manifest?.errors.length === 0) partial.push(...write(root, manifest.files, false));
   }
   if (result.errors.length > 0) return { errors: result.errors, files: [], changed: partial };
+  // A package ships its manifest: a host's gen reads it under node_modules (ADR 0158, STA-1308).
+  if (check && ir.layout === "package") {
+    const { files } = JSON.parse(readFileSync(join(root, "package.json"), "utf8")) as {
+      readonly files?: unknown;
+    };
+    if (Array.isArray(files) && !files.includes(MANIFEST_FILE))
+      return {
+        errors: [
+          {
+            code: "manifest_unshipped",
+            file: "package.json",
+            line: 0,
+            column: 0,
+            subject: "files",
+            message: `package.json \`files\` leaves out ${MANIFEST_FILE}, so a host cannot read this package's drivers, configs and identities`,
+            fix: `add "${MANIFEST_FILE}" to \`files\` in package.json`,
+          },
+        ],
+        files: [],
+        changed: partial,
+      };
+  }
   // An authored root vitest.config.ts is never overwritten by the shim. One that merges the generated config is kept
   // and the shim is not written; any other is refused (STA-1296, STA-1297).
   const shimPath = join(root, ROOT_VITEST_SHIM);

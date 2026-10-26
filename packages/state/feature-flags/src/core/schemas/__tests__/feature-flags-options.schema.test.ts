@@ -65,6 +65,8 @@ describe("FeatureFlagsOptions", () => {
 
   it("types the driver field by the port's driver names", () => {
     expectTypeOf<FeatureFlagsOptions["provider"]>().toEqualTypeOf<DriverName<FlagProvider>>();
-    expectTypeOf<FeatureFlagsOptions["provider"]>().toEqualTypeOf<"config" | "posthog">();
+    expectTypeOf<FeatureFlagsOptions["provider"]>().toEqualTypeOf<
+      "config" | "memory" | "posthog"
+    >();
   });
 });

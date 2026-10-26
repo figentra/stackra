@@ -17,6 +17,7 @@ export { REALTIME_PATH } from "#core/constants/realtime-path.constant";
 export { REALTIME_ROOM_PATH } from "#core/constants/realtime-room-path.constant";
 export { LocalRealtimeFanoutDriver } from "#core/drivers/local-realtime-fanout.driver";
 export { MemoryRealtimeDriver } from "#core/drivers/memory-realtime.driver";
+export { MemoryRealtimeFanoutDriver } from "#core/drivers/memory-realtime-fanout.driver";
 export { MemoryRealtimeTransportDriver } from "#core/drivers/memory-realtime-transport.driver";
 export { SseRealtimeDriver } from "#core/drivers/sse-realtime.driver";
 export { WebSocketRealtimeDriver } from "#core/drivers/web-socket-realtime.driver";

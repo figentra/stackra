@@ -22,6 +22,7 @@ decision 7).
 | `.`           | `FlagTargeting`                                         | which id flags are split by: `visitor`, `user` (default) or `tenant`                         |
 | `.`           | `FlagReader`                                            | the service that loads, holds and serves values                                              |
 | `.`           | `ConfigFlagProviderDriver`, `PosthogFlagProviderDriver` | the two drivers of `FlagProvider`                                                            |
+| `.`           | `MemoryFlagProviderDriver`                              | `memory`: the values a test sets (STA-1308)                                                  |
 | `./contracts` | `FlagProvider`, `FlagContext`                           | the port and the ids it evaluates for                                                        |
 | `./lint`      | `FEATURE_FLAGS_LINT_PLUGIN` (default)                   | the `feature-flags` oxlint plugin: `no-plan-targeting`                                       |
 | `./react`     | `useFlag`                                               | one flag's current value in a component                                                      |
