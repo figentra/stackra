@@ -1,12 +1,13 @@
 /**
  * Stackra file contract:
  * Purpose: `DeclaredClass`, one class of the member that extends a kind base, as discovery read it from source: its
- *          kind, module, options, partner, constructor tokens, facets, `handle` signature and the refusals its body
+ *          kind, module, options, partner, constructor tokens, facets, `handle` signature (a listener's event) and the
+ *          refusals its body
  *          raises. Every identity, binding and manifest entry is derived from these records.
  * Boundary: a type only. Options are read from the heritage clause of the member's own source, never from a `.d.ts`
  *           (ADR 0294 decision 25); a class from a dependency is described by that dependency's manifest instead.
  * Runtime: isomorphic
- * Governing contract: ADR 0294 (decisions 16, 17, 20 and 25); ADR 0305 (rules 5 to 9 and 42).
+ * Governing contract: ADR 0294 (decisions 4, 16, 17, 20 and 25); ADR 0305 (rules 5 to 9 and 42); ADR 0260 (decision 4).
  */
 import type { ClassRef } from "#core/types/class-ref.type";
 import type { FacetUse } from "#core/types/facet-use.type";
@@ -57,9 +58,17 @@ export interface DeclaredClass {
 
   /**
    * The input and output shape classes of `handle(input): Promise<Output>`; `replica` when the output is
-   * `ReplicaPage` from `@stackra/actions` (a replica query, ADR 0338), which has no shape class of the member.
+   * `ReplicaPage` from `@stackra/actions` (a replica query, ADR 0338), which has no shape class of the member. For a
+   * listener: `event`, the event class its `handle` parameter is typed with (its own, or a consumed service's from
+   * `#stackra/clients/<service>`), or `relay` when that parameter is `EventEnvelope` (every event, envelope only).
    */
-  readonly handle?: { readonly input?: string; readonly output?: string; readonly replica?: true };
+  readonly handle?: {
+    readonly input?: string;
+    readonly output?: string;
+    readonly replica?: true;
+    readonly event?: ClassRef;
+    readonly relay?: true;
+  };
 
   /** The refusal codes the class body raises (`XError.create`, `new XError`, `ctx.authorize`). */
   readonly refusals: readonly string[];

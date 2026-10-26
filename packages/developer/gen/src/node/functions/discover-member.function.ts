@@ -3,14 +3,14 @@
  * Purpose: `discoverMember`, gen's discovery: opens the member's program behind the host seam, reads every kind
  *          class, shape, enum and file export of its own sources (sorted by path), its dependency package names and the
  *          committed manifests of those that ship one, the committed manifests of the services it injects a client
- *          of, its modules and its authored root module, and fills each `DriverName<Port>` field with the driver names
+ *          of or listens to an event of, its modules and its authored root module, and fills each `DriverName<Port>` field with the driver names
  *          found for that port: the `MemberIR` every gen output is a pure function of.
  * Boundary: reads the member; writes nothing. Refusals are collected into `errors`, never thrown; only an unreadable
  *           package.json, tsconfig or dependency manifest throws. The program is always closed.
  * Runtime: node
  * Governing contract: ADR 0294 (decisions 10, 20, 25 and 26); ADR 0305 (rules 15, 16 and 42); ADR 0090 as amended
- *                     (discovery from the member's folders); ADR 0260 (decision 3: clients from the producer's
- *                     manifest).
+ *                     (discovery from the member's folders); ADR 0260 (decisions 3 and 4: clients and events from the
+ *                     producer's manifest).
  */
 import { existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
@@ -85,9 +85,9 @@ export async function discoverMember(
     const dependencies = readDependencyManifests(facts.root, facts.dependencies);
     const services = readServiceManifests(
       facts.root,
+      // A service is consumed by an injected client or by a listener of one of its events.
       classes.flatMap((declared) =>
-        declared.deps
-          .map((dep) => dep.class.from)
+        [...declared.deps.map((dep) => dep.class.from), declared.handle?.event?.from ?? ""]
           .filter((from) => from.startsWith(CLIENTS_SPECIFIER))
           .map((from) => from.slice(CLIENTS_SPECIFIER.length)),
       ),

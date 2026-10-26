@@ -4,16 +4,19 @@
  *          platform registration with a row each, from the locked identities: the hosted packages' entity lists, the
  *          model partners of each `CrudService<M>`, event wire names, jobs for the queue and the scheduler,
  *          connections, webhook events, outbound webhooks, sequences (a hosted package's imported from its entry) and
- *          searchable models; no file for an app or a member with nothing to register.
+ *          searchable models; a listener with the event class it imports (its own, or a consumed service's, whose wire
+ *          name comes from the producer's manifest) and a relay listener; no file for an app or a member with nothing
+ *          to register.
  * Boundary: test only; runs on the IR fixtures and the manifests `buildManifest` derives from them.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 20 and 22); ADR 0097; ADR 0141; ADR 0308;
- *                     ADR 0342.
+ *                     ADR 0342; ADR 0260 (decision 4).
  */
 import { describe, expect, it } from "@stackra/testing";
 
 import { buildManifest } from "#core/functions/build-manifest.function";
 import { emitRegistrations } from "#core/functions/emit-registrations.function";
+import type { DeclaredClass } from "#core/types/declared-class.type";
 import type { MemberIR } from "#core/types/member-ir.type";
 import { BILLING_IR } from "#core/__tests__/fixtures/billing-ir.fixture";
 import { COMMERCE_IR } from "#core/__tests__/fixtures/commerce-ir.fixture";
@@ -83,5 +86,74 @@ describe("emitRegistrations", () => {
   it("writes no file for an app or a member with nothing to register", () => {
     expect(registrationsOf(WEB_APP_IR)).toBeUndefined();
     expect(registrationsOf({ ...COMMERCE_IR, classes: [], shapes: [], enums: [] })).toBeUndefined();
+  });
+});
+
+/** A listener class of the storefront module with the given `handle`. */
+function listener(name: string, handle: DeclaredClass["handle"]): DeclaredClass {
+  return {
+    name,
+    kind: "listener",
+    module: "storefront",
+    file: `src/modules/storefront/listeners/${name}.ts`,
+    importPath: `#modules/storefront/listeners/${name}`,
+    options: {},
+    deps: [],
+    facets: [],
+    methods: ["handle"],
+    ...(handle !== undefined ? { handle } : {}),
+    refusals: [],
+    statics: {},
+    traits: [],
+  };
+}
+
+describe("emitRegistrations for listeners", () => {
+  const ir: MemberIR = {
+    member: "channels",
+    package: "@acme/service-channels",
+    version: "0.1.0",
+    layout: "service",
+    modules: ["storefront"],
+    classes: [
+      listener("SyncOnOrderPaidListener", {
+        event: { name: "OrderPaid", from: "#stackra/clients/commerce" },
+      }),
+      listener("AuditOnOrderPaidListener", {
+        event: { name: "OrderPaid", from: "#stackra/clients/commerce" },
+      }),
+      listener("WebhooksRelayListener", { relay: true }),
+    ],
+    shapes: [],
+    enums: [],
+    files: [],
+    dependencies: [],
+    errors: [],
+    services: [{ member: "commerce", manifest: buildManifest(COMMERCE_IR).manifest }],
+  };
+  const content = registrationsOf(ir) ?? "";
+
+  it("registers a consumed event's wire name once, from the producer's manifest", () => {
+    expect(content).toContain(
+      'registerEventNames([\n  { type: OrderPaid, name: "orders.order.paid.v1" },\n]);',
+    );
+    expect(content).toContain('import { OrderPaid } from "#stackra/clients/commerce";');
+  });
+
+  it("registers each listener with the event class it imports", () => {
+    expect(content).toContain(
+      [
+        "registerListeners([",
+        "  [OrderPaid, SyncOnOrderPaidListener],",
+        "  [OrderPaid, AuditOnOrderPaidListener],",
+        "]);",
+      ].join("\n"),
+    );
+    expect(content).toContain('import { registerListeners } from "@stackra/events";');
+  });
+
+  it("registers a relay listener, which takes every envelope", () => {
+    expect(content).toContain("registerRelays([\n  WebhooksRelayListener,\n]);");
+    expect(content).toMatch(/import \{[^}]*registerRelays[^}]*\} from "@stackra\/outbox";/);
   });
 });

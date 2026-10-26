@@ -143,6 +143,26 @@ export class StorefrontService extends Service {
   groups them by model (`client.<model>.<verb>.call(input)`, and `.queue(input)` for an action). Shapes are
   `remoteShape` classes, enums `Enum.of`, refusals `remoteRefusal`, integration events `remoteEvent`. Entries a
   hosted package brought into the producer are left out for now.
+- **Events.** A listener subscribes to another service's integration event by importing its class from the client
+  file and typing `handle` with it; the wire name (`<module>.<name>.v<n>`, ADR 0141) comes from the producer's
+  manifest. There is no wire-name subscription: an event the producer does not publish is `client_event_unknown`, and a
+  `handle` parameter that is no event class is `listener_handle_signature`. A service consumed only by a listener still
+  gets its client file. The registrations then name the event's wire name (so the inbox rebuilds it) and the pair:
+
+  ```ts
+  import type { AppApproved } from "#stackra/clients/developer";
+
+  export class ListOnAppApprovedListener extends Listener({ queue: Queues.Default }) {
+    async handle(event: AppApproved, ctx: ListenerContext): Promise<void> { ... }
+  }
+  // .stackra/gen/registrations.ts (generated)
+  registerEventNames([{ type: AppApproved, name: "developer.app.approved.v1" }]);
+  registerListeners([[AppApproved, ListOnAppApprovedListener]]);
+  ```
+
+  A relay (the webhooks relay) types `handle` with `EventEnvelope` from `@stackra/outbox/contracts` and is written as
+  `registerRelays([...])`: the inbox hands it every claimed envelope, typed payload or not.
+
 - **Import map.** The member's `#stackra/*` import (`./.stackra/gen/*`) already resolves `#stackra/clients/<service>`;
   nothing else is needed.
 - **Tests.** Replace the client with `fakeClient()` from `@stackra/clients/testing` through

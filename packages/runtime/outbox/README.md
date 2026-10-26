@@ -15,11 +15,13 @@ backoff retries and dead letters; the inbox runs each received event once.
 | ---------------------------------------------------------------------- | ------------- | ------------------------------------------------------------------------------ |
 | `OutboxWriterService`                                                  | `./node`      | the ORM flush writer, passed as one of `DatabaseOptions.subscribers`           |
 | `OutboxRelayService`                                                   | `./node`      | `connect(container)`, then `work({ signal })` or one `relay()` tick            |
-| `InboxService`                                                         | `./node`      | `receive(envelope)` runs an event's listeners once; `prune(before)`            |
+| `InboxService`                                                         | `./node`      | `receive(envelope)` runs an event's listeners and relays once; `prune(before)` |
+| `InboxService#connect`                                                 | `./node`      | `connect(container)` resolves the registered relays                            |
 | `InboxEventPublisherDriver`                                            | `./node`      | the in-process `EventPublisher`: publishes into this service's inbox           |
 | `PostgresOutboxDriver`, `PostgresInboxDriver`                          | `./node`      | the default stores: `outbox.messages` and `outbox.inbox`                       |
 | `OutboxEventOutboxDriver`                                              | `.`           | the driver of @stackra/events' `EventOutbox` port                              |
 | `registerEventNames`                                                   | `.`           | gen's entry registers each integration event's locked wire name                |
+| `registerRelays`                                                       | `.`           | gen's entry names the relays: listeners whose `handle` takes `EventEnvelope`   |
 | `registerChangeConsumers`                                              | `.`           | watch a model's rows: `[[Product, ProductIndexConsumer]]`                      |
 | `UnknownEventError`                                                    | `.`           | `unknown_event` (retryable): a received wire name this process does not know   |
 | `MemoryOutboxDriver`, `MemoryInboxDriver`                              | `.`           | the stores of a test or a single process                                       |
@@ -110,3 +112,12 @@ revoke and wipe are the client's (`@stackra/query`, `@stackra/storage`).
 - Outbox staging per workflow run (ADR 0102 decision 3) waits for @stackra/workflow.
 - Listing and redriving dead messages, and the retention purge jobs, wait for the scheduler and the console.
 - Publishing both versions of an event until a change's sunset (ADR 0141 note) waits for gen's version table.
+
+## Consuming another service's events
+
+A consumer imports the producer's event class from `#stackra/clients/<service>` and types a listener's `handle` with
+it; gen registers its wire name with `registerEventNames`, so `InboxService#receive` rebuilds it with its payload
+schema and the bus runs that listener. A relay (the webhooks relay) types `handle` with `EventEnvelope` instead: once
+`connect(container)` has resolved it, it gets every claimed envelope, an unknown wire name included (which is then
+claimed, not refused). A relay that throws rolls the receipt back, so the event is redelivered: make it a queued
+listener.

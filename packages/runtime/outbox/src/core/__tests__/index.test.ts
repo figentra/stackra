@@ -25,6 +25,7 @@ describe("@stackra/outbox", () => {
       "UnknownEventError",
       "registerChangeConsumers",
       "registerEventNames",
+      "registerRelays",
     ]);
   });
 

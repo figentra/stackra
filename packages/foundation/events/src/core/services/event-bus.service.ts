@@ -25,7 +25,7 @@ import type { ListenerDelivery } from "#core/types/listener-delivery.type";
 
 /** One listener subscribed to one event class. */
 interface Subscription {
-  readonly type: AnyClass<Event>;
+  readonly type: AnyClass;
   readonly listener: Listener;
 }
 
@@ -59,8 +59,11 @@ export class EventBus extends Service {
     this.clock = clock;
   }
 
-  /** Subscribes `listener` to every event of `type` (and of its subclasses); subscribing a pair again does nothing. */
-  subscribe(type: AnyClass<Event>, listener: Listener): void {
+  /**
+   * Subscribes `listener` to every event of `type` (and of its subclasses); subscribing a pair again does nothing.
+   * `type` is a local event class or a consumed service's generated one, matched by `instanceof`.
+   */
+  subscribe(type: AnyClass, listener: Listener): void {
     if (!this.subscriptions.some((known) => known.type === type && known.listener === listener))
       this.subscriptions.push({ type, listener });
   }

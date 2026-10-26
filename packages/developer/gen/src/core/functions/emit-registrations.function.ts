@@ -3,7 +3,9 @@
  * Purpose: `emitRegistrations`, the member's `#stackra/registrations` (`.stackra/gen/registrations.ts`): it loads the
  *          generated entity and schemas files, then makes every registration call the platform packages wait for,
  *          from the identities the manifest locked: the hosted packages' entity lists, the model partners of each
- *          `CrudService<M>`, the integration events' wire names and outbound webhooks, the job actions for the queue
+ *          `CrudService<M>`, the integration events' wire names (its own, and those of the consumed services' events its
+ *          listeners import from `#stackra/clients/<service>`, so its inbox rebuilds them), each listener with the event
+ *          class it reacts to, the relay listeners, the outbound webhooks, the job actions for the queue
  *          and the scheduler, the connections, the webhook events, the sequences and the `@Searchable` models.
  * Boundary: pure. Node only: the server entry and the generated test setup import it before the container boots. A
  *           service registers its own classes and those its hosted packages list in their manifests (imported from
@@ -12,15 +14,18 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 10, 20 and 22: identities from the manifest); ADR 0097 (decision 5.4);
  *                     ADR 0305 (rule 5: partners); ADR 0141; ADR 0308 (rules 2 and 15); ADR 0224; ADR 0221
- *                     (decision 5); ADR 0342 (decision 5: registered sequences).
+ *                     (decision 5); ADR 0342 (decision 5: registered sequences); ADR 0260 (decision 4: typed
+ *                     subscriptions by import; a relay is the one all-events listener).
  */
 import type { StackraManifest } from "@stackra/contracts";
 
+import { CLIENTS_SPECIFIER } from "#core/constants/clients-specifier.constant";
 import { entitiesName } from "#core/functions/entities-name.function";
 import { generatedHeader } from "#core/functions/generated-header.function";
 import { importLines } from "#core/functions/import-lines.function";
 import { packageSpecifier } from "#core/functions/package-specifier.function";
 import { schemaModules } from "#core/functions/schema-modules.function";
+import { serviceManifest } from "#core/functions/service-manifest.function";
 import type { ClassRef } from "#core/types/class-ref.type";
 import type { MemberIR } from "#core/types/member-ir.type";
 
@@ -130,7 +135,36 @@ export function emitRegistrations(ir: MemberIR, manifest: StackraManifest): stri
       ? undefined
       : `{ type: ${type}, name: ${JSON.stringify(entry["name"])} }`;
   };
-  call("registerEventNames", "@stackra/outbox", events.map(eventRow));
+  // A consumed service's event a listener imports: its wire name from the producer's manifest.
+  const listeners = ir.classes.filter((declared) => declared.kind === "listener");
+  const remote = new Map<string, string>();
+  for (const declared of listeners) {
+    const event = declared.handle?.event;
+    if (event === undefined || !event.from.startsWith(CLIENTS_SPECIFIER)) continue;
+    const producer = serviceManifest(ir, event.from.slice(CLIENTS_SPECIFIER.length));
+    const entry = ((producer?.events ?? []) as readonly Entry[]).find(
+      (candidate) => candidate["kind"] === "integration" && candidate["class"] === event.name,
+    );
+    if (entry !== undefined && typeof entry["name"] === "string")
+      remote.set(ref(event), `{ type: ${ref(event)}, name: ${JSON.stringify(entry["name"])} }`);
+  }
+  call("registerEventNames", "@stackra/outbox", [...events.map(eventRow), ...remote.values()]);
+  call(
+    "registerListeners",
+    "@stackra/events",
+    listeners.map((declared) =>
+      declared.handle?.event === undefined
+        ? undefined
+        : `[${ref(declared.handle.event)}, ${ref({ name: declared.name, from: declared.importPath })}]`,
+    ),
+  );
+  call(
+    "registerRelays",
+    "@stackra/outbox",
+    listeners
+      .filter((declared) => declared.handle?.relay === true)
+      .map((declared) => ref({ name: declared.name, from: declared.importPath })),
+  );
 
   const jobs = ((manifest.actions ?? []) as readonly Entry[])
     .filter((entry) => entry["kind"] === "action" && entry["job"] !== undefined)
@@ -208,7 +242,7 @@ export function emitRegistrations(ir: MemberIR, manifest: StackraManifest): stri
     from: "stackra.manifest.json and the kind classes under src/",
     purpose:
       `the registrations of ${ir.package}: loads the generated entity and schemas files, then names each class the ` +
-      "platform packages look up by its locked identity (entities, model partners, event wire names, jobs, " +
+      "platform packages look up by its locked identity (entities, model partners, event wire names, listeners, relays, jobs, " +
       "connections, webhook events, outbound webhooks, sequences and searchable models).",
     boundary:
       "imported by the server entry and the generated test setup before the container boots; every row comes from " +

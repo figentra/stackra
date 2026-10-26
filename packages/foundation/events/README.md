@@ -68,6 +68,11 @@ export class EarnOnOrderPaidListener extends Listener({ queue: Queues.Default })
 The type of `handle`'s first parameter is the subscription; gen reads it and writes `registerListeners([...])`. A
 failing listener is recorded on its delivery and never reaches the emitter or the other listeners.
 
+Another service's event is subscribed to the same way: import its class from `#stackra/clients/<service>` and type
+`handle` with it (ADR 0260 decision 4). That class is an `IntegrationEvent` at runtime, so the bus matches it by
+`instanceof` and `registerListeners` takes it; there is no subscription by wire name. In a test,
+`deliverRemoteEvent(AppApproved, { appId })` builds it through its payload schema.
+
 ## Testing
 
 ```ts

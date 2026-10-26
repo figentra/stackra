@@ -3,7 +3,8 @@
  * Purpose: unit tests of `emitClients`: one `.stackra/gen/clients/<service>.ts` per consumed service, written from the
  *          producer's manifest (enums, shapes in dependency order, refusals, integration events, call descriptors named
  *          after the producer's classes, and the `<Service>Client` with members grouped by model); the refusals for
- *          a service without a manifest and a client imported under another name; and `generateMember` writing the
+ *          a service without a manifest and a client imported under another name; a service consumed only by a
+ *          listener of its event, and the refusal of an event it does not publish; and `generateMember` writing the
  *          file and binding the client with its `ClientTransport`.
  * Boundary: test only; the producer is the commerce IR fixture's manifest, the consumer a one-class service IR.
  * Runtime: node (vitest)
@@ -110,6 +111,43 @@ describe("emitClients", () => {
 
   it("writes nothing for a member that injects no client", () => {
     expect(emitClients(COMMERCE_IR)).toEqual({ files: [], errors: [] });
+  });
+});
+
+/** A listener of the commerce service's `event`, imported from `#stackra/clients/commerce`. */
+function listenerOf(event: string): DeclaredClass {
+  return {
+    ...consumerClass("CommerceClient", "commerce"),
+    name: "SyncOnOrderPaidListener",
+    kind: "listener",
+    file: "src/modules/storefront/listeners/sync-on-order-paid.listener.ts",
+    importPath: "#modules/storefront/listeners/sync-on-order-paid.listener",
+    deps: [],
+    handle: { event: { name: event, from: "#stackra/clients/commerce" } },
+  };
+}
+
+describe("emitClients for a listener of another service's event", () => {
+  it("writes the client file of a service consumed only by a listener", () => {
+    const { files, errors } = emitClients(consumer({ classes: [listenerOf("OrderPaid")] }));
+    expect(errors).toEqual([]);
+    expect(files.map((file) => file.path)).toEqual([".stackra/gen/clients/commerce.ts"]);
+    expect(files[0]?.content).toContain(
+      'export class OrderPaid extends remoteEvent("orders.order.paid.v1",',
+    );
+  });
+
+  it("refuses an event the producer does not publish, so there is no wire-name fallback", () => {
+    const refused = emitClients(consumer({ classes: [listenerOf("OrderVanished")] }));
+    expect(refused.files).toEqual([]);
+    expect(refused.errors.map((error) => [error.code, error.subject])).toEqual([
+      ["client_event_unknown", "SyncOnOrderPaidListener.handle"],
+    ]);
+  });
+
+  it("refuses a listened-to service with no committed manifest", () => {
+    const refused = emitClients(consumer({ classes: [listenerOf("OrderPaid")], services: [] }));
+    expect(refused.errors.map((error) => error.code)).toEqual(["client_service_unknown"]);
   });
 });
 

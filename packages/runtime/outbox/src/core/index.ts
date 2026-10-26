@@ -19,4 +19,5 @@ export { OutboxEventOutboxDriver } from "#core/drivers/outbox-event-outbox.drive
 export { UnknownEventError } from "#core/errors/unknown-event.error";
 export { registerChangeConsumers } from "#core/functions/register-change-consumers.function";
 export { registerEventNames } from "#core/functions/register-event-names.function";
+export { registerRelays } from "#core/functions/register-relays.function";
 export { OutboxOptions } from "#core/schemas/outbox-options.schema";

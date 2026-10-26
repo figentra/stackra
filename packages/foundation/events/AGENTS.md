@@ -25,6 +25,8 @@ Event and listener kind bases, the in-process bus and the event testing helpers.
 
 ## This package
 
+- A subscription is a class, never a wire name: `registerListeners` and `EventBus#subscribe` take any class, so a
+  consumed service's generated event class (typed by its payload) stands beside a local one (ADR 0260 decision 4).
 - An event holds its payload only; metadata travels in `RecordedEvent`. No constructor-made state on events or on
   aggregates (recording is a WeakMap beside the aggregate).
 - Never import `@stackra/outbox`, `@stackra/analytics`, `@stackra/integrations` or `@stackra/realtime`; they import

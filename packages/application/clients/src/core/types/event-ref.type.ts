@@ -3,11 +3,12 @@
  * Purpose: `EventRef<S>`, the class `eventRef` and `remoteEvent` return: a consumed integration event read by its static
  *          wire name and payload schema, typed by its instances, which are the payload.
  * Boundary: a type only. It satisfies `@stackra/realtime`'s `RealtimeEventRef` structurally (a static `eventName` and
- *           an object prototype), so `useSubscription(OrderPaid, ...)` and a query's `invalidateOn` take it.
+ *           an object prototype), so `useSubscription(OrderPaid, ...)` and a query's `invalidateOn` take it. Its static
+ *           `create` is what a consumer's inbox and `deliverRemoteEvent` build an occurrence with.
  * Runtime: isomorphic
  * Governing contract: ADR 0141 (wire names); ADR 0225 (broadcast); ADR 0260 (decision 4).
  */
-import type { output, ZodType } from "zod";
+import type { input, output, ZodType } from "zod";
 
 import type { ShapeInstance } from "#core/types/shape-instance.type";
 
@@ -20,6 +21,9 @@ export type EventRef<S extends ZodType = ZodType> = (abstract new () => ShapeIns
 
   /** The payload schema. */
   readonly payload: S;
+
+  /** Builds a frozen occurrence from the payload, checked by the payload schema (a consumer's inbox calls it). */
+  create(values: input<S>): ShapeInstance<output<S>>;
 
   /** The broadcast channel pattern (`principal.{principalId}.messages`), when the producer declared one. */
   readonly channel?: string;

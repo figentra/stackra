@@ -10,11 +10,14 @@
  *          (`[OptionalProps]` keys, a one-to-many with its inverse, a `Ref` many-to-one, a `Link` across models,
  *          getters) with `relation_decorator_missing` for a relation gen cannot read; `Translated`,
  *          `TranslatedStrings` and `Upload<Bucket>` fields read as the `translated` and `upload` kinds (STA-1218);
- *          a replica query's `Promise<ReplicaPage>` or `Promise<ReplicaPage<T>>` reads as `replica` (ADR 0338).
+ *          a replica query's `Promise<ReplicaPage>` or `Promise<ReplicaPage<T>>` reads as `replica` (ADR 0338); a
+ *          listener's `handle` parameter reads as its event class (its own, or a `#stackra/clients/*` one by its import),
+ *          `EventEnvelope` as a relay, and anything else as `listener_handle_signature` (ADR 0260 decision 4).
  * Boundary: test only; writes the fixture under `.cache/` and opens TypeScript on it.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decision 26, 2026-10-23 item 13, decision 28); ADR 0305
- *                     (rules 6, 13 and 19); ADR 0097 (decision 3); ADR 0162 (decision 2); ADR 0222 (decision 2).
+ *                     (rules 6, 13 and 19); ADR 0097 (decision 3); ADR 0162 (decision 2); ADR 0222 (decision 2);
+ *                     ADR 0260 (decision 4).
  */
 import { join } from "node:path";
 
@@ -112,6 +115,42 @@ const SOURCES: Readonly<Record<string, string>> = {
     "}",
     "",
   ].join("\n"),
+  "src/core/events/order-placed.event.ts": [
+    'import { IntegrationEvent } from "@stackra/events";',
+    'export class OrderPlaced extends IntegrationEvent({ name: "order.placed" }) {}',
+    "",
+  ].join("\n"),
+  "src/core/listeners/ship-on-order-placed.listener.ts": [
+    'import { Listener } from "@stackra/events";',
+    'import { OrderPlaced } from "#core/events/order-placed.event";',
+    "export class ShipOnOrderPlacedListener extends Listener {",
+    "  async handle(event: OrderPlaced): Promise<void> {}",
+    "}",
+    "",
+  ].join("\n"),
+  "src/core/listeners/list-on-app-approved.listener.ts": [
+    'import { Listener } from "@stackra/events";',
+    'import type { AppApproved } from "#stackra/clients/developer";',
+    "export class ListOnAppApprovedListener extends Listener {",
+    "  async handle(event: AppApproved): Promise<void> {}",
+    "}",
+    "",
+  ].join("\n"),
+  "src/core/listeners/webhooks-relay.listener.ts": [
+    'import { Listener } from "@stackra/events";',
+    'import type { EventEnvelope } from "@stackra/outbox/contracts";',
+    "export class WebhooksRelayListener extends Listener {",
+    "  async handle(envelope: EventEnvelope): Promise<void> {}",
+    "}",
+    "",
+  ].join("\n"),
+  "src/core/listeners/by-name.listener.ts": [
+    'import { Listener } from "@stackra/events";',
+    "export class ByNameListener extends Listener {",
+    "  async handle(event: string): Promise<void> {}",
+    "}",
+    "",
+  ].join("\n"),
   "src/core/schemas/order-view.schema.ts": [
     'import type { PublicId } from "@stackra/contracts";',
     'import { Schema } from "@stackra/validation";',
@@ -206,6 +245,24 @@ describe("createSourceReader", async () => {
     expect(declared.find((item) => item.name === "CatalogueReaderService")?.deps).toEqual([
       { class: { name: "CatalogueClient", from: "#stackra/clients/catalogue" } },
     ]);
+  });
+
+  it("reads a listener's event class: its own, or a generated client's by its import", () => {
+    const own = declared.find((item) => item.name === "ShipOnOrderPlacedListener")?.handle;
+    expect(own?.event?.name).toBe("OrderPlaced");
+    expect(own?.event?.from).toContain("order-placed.event");
+    expect(declared.find((item) => item.name === "ListOnAppApprovedListener")?.handle).toEqual({
+      event: { name: "AppApproved", from: "#stackra/clients/developer" },
+    });
+    expect(codes).not.toContain("listener_handle_signature ListOnAppApprovedListener");
+  });
+
+  it("reads an EventEnvelope parameter as a relay and refuses a parameter that is no event class", () => {
+    expect(declared.find((item) => item.name === "WebhooksRelayListener")?.handle).toEqual({
+      relay: true,
+    });
+    expect(codes).toContain("listener_handle_signature ByNameListener");
+    expect(codes).not.toContain("listener_handle_signature WebhooksRelayListener");
   });
 
   it("reads a derived shape and a discriminated union", () => {

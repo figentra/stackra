@@ -1,9 +1,10 @@
 /**
  * Stackra file contract:
  * Purpose: `writeFixtureMember`, a real member on disk for discovery tests: package.json with its `imports` map, a
- *          tsconfig with decorators on, `stackra.config.ts`, the given source files, and two local stand-in packages
- *          (`@stackra/actions`, `@stackra/events`) for the kind bases whose packages do not ship yet, with
- *          `ReplicaPage` (ADR 0338) for a replica query's output. The real
+ *          tsconfig with decorators on, `stackra.config.ts`, the given source files, and local stand-in packages
+ *          (`@stackra/actions`, `@stackra/events`, `@stackra/outbox`) for the kind bases and types whose packages are
+ *          not gen's dependencies, with `ReplicaPage` (ADR 0338) for a replica query's output, `Listener` and the
+ *          relay's `EventEnvelope` (ADR 0260 decision 4). The real
  *          `@stackra/*` packages resolve through gen's own node_modules.
  * Boundary: test data only; writes under `<gen>/.cache/fixtures/` (gitignored) and never elsewhere.
  * Runtime: node (vitest)
@@ -43,8 +44,15 @@ const STAND_INS: Readonly<Record<string, string>> = {
     "export declare abstract class Event {}",
     "export declare abstract class DomainEvent extends Event {}",
     "export declare function IntegrationEvent(options: { readonly name: string; readonly [option: string]: unknown }): abstract new () => Event;",
+    "export declare abstract class Listener { abstract handle(event: never, ctx: unknown): Promise<void>; }",
     "",
   ].join("\n"),
+  "node_modules/@stackra/outbox/package.json": JSON.stringify({
+    name: "@stackra/outbox",
+    exports: { ".": { types: "./index.d.ts" }, "./contracts": { types: "./index.d.ts" } },
+  }),
+  "node_modules/@stackra/outbox/index.d.ts":
+    "export interface EventEnvelope { readonly id: string; readonly type: string; readonly data: unknown }\n",
 };
 
 /**

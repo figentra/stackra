@@ -1,16 +1,19 @@
 /**
  * Stackra file contract:
  * Purpose: `emitClients`, the clients target: one `.stackra/gen/clients/<service>.ts` per service the member injects a
- *          client of (a constructor parameter typed with a class from `#stackra/clients/<service>`), written from that
+ *          client of (a constructor parameter typed with a class from `#stackra/clients/<service>`) or listens to (a
+ *          listener whose `handle` parameter is an event class from there), written from that
  *          service's committed `stackra.manifest.json`: its enums, its shapes as `remoteShape` classes, its refusals,
  *          its integration events, one `remoteAction` / `remoteQuery` descriptor per action and query (named after the
  *          producer's class), and the `<Service>Client` class over `ServiceClient` with one member per call
  *          (`client.product.get.call(input)`).
  * Boundary: pure. The client is a class, so it is its own DI token (`emitWiring` binds it with the `ClientTransport`
  *           the topology picks); a consumer never imports the producer's source. A consumed service without a manifest,
- *           or a client imported under another name, is a refusal, so nothing is written.
+ *           a client imported under another name, or an event the producer does not publish as an integration event
+ *           (`client_event_unknown`), is a refusal, so nothing is written. An event is subscribed to by importing its
+ *           class; there is no wire-name subscription.
  * Runtime: isomorphic
- * Governing contract: ADR 0260 (decisions 2 to 6 and 10); ADR 0158 (the manifest is the contract); ADR 0261
+ * Governing contract: ADR 0260 (decisions 2 to 6 and 10); ADR 0141 (`<module>.<name>.v<n>` wire names); ADR 0158 (the manifest is the contract); ADR 0261
  *                     (`#stackra/clients`); ADR 0263 (a class is its own token).
  */
 import type { StackraManifest } from "@stackra/contracts";
@@ -22,6 +25,7 @@ import { camelCase } from "#core/functions/camel-case.function";
 import { generatedHeader } from "#core/functions/generated-header.function";
 import { importLines } from "#core/functions/import-lines.function";
 import { pascalCase } from "#core/functions/pascal-case.function";
+import { serviceManifest } from "#core/functions/service-manifest.function";
 import { zodOfJsonSchema } from "#core/functions/zod-of-json-schema.function";
 import type { GenError } from "#core/types/gen-error.type";
 import type { GeneratedFile } from "#core/types/generated-file.type";
@@ -249,11 +253,38 @@ export function emitClients(ir: MemberIR): {
           fix: `type the parameter with \`${clientName(service)}\``,
         });
     }
+  // Listeners of a consumed service's events, by service.
+  const subscribed = new Map<
+    string,
+    { readonly name: string; readonly file: string; readonly subject: string }[]
+  >();
+  for (const declared of ir.classes) {
+    const event = declared.kind === "listener" ? declared.handle?.event : undefined;
+    if (event === undefined || !event.from.startsWith(CLIENTS_SPECIFIER)) continue;
+    const service = event.from.slice(CLIENTS_SPECIFIER.length);
+    const at = { name: event.name, file: declared.file, subject: `${declared.name}.handle` };
+    if (!consumers.has(service)) consumers.set(service, at);
+    subscribed.set(service, [...(subscribed.get(service) ?? []), at]);
+  }
   const files: GeneratedFile[] = [];
   for (const [service, at] of [...consumers].sort(([left], [right]) => (left < right ? -1 : 1))) {
-    const manifest =
-      ir.services?.find((candidate) => candidate.member === service)?.manifest ??
-      ir.dependencies.find((candidate) => candidate.manifest.member === service)?.manifest;
+    const manifest = serviceManifest(ir, service);
+    const published = new Set(
+      own(manifest?.events)
+        .filter((event) => event.kind === "integration")
+        .map((event) => event.class),
+    );
+    for (const listener of manifest === undefined ? [] : (subscribed.get(service) ?? []))
+      if (!published.has(listener.name))
+        errors.push({
+          code: "client_event_unknown",
+          file: listener.file,
+          line: 0,
+          column: 0,
+          subject: listener.subject,
+          message: `the ${service} service publishes no integration event \`${listener.name}\``,
+          fix: `import an integration event the ${service} service declares, or run \`stackra gen\` in it first`,
+        });
     if (manifest === undefined) {
       errors.push({
         code: "client_service_unknown",

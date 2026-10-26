@@ -2,10 +2,11 @@
  * Stackra file contract:
  * Purpose: `deliverRemoteEvent(EventClass, fields, meta?)`, which puts an event another service published into the
  *          memory inbox of the testing app compiled last; `drainOutbox()` then delivers it to its listeners.
- * Boundary: builds the event with `EventClass.create`, so its fields are checked by its generated schema. An event
+ * Boundary: builds the event with `EventClass.create`, so its fields are checked by its generated schema (a consumed
+ *           service's event class from `#stackra/clients/<service>` checks them with its payload schema). An event
  *           delivered again with the same `id` runs no listener (inbox dedup); one with no `id` is always new.
  * Runtime: node
- * Governing contract: ADR 0269 (decision 3); ADR 0260 (decision 3: events across services); ADR 0078 (decision 4).
+ * Governing contract: ADR 0269 (decision 3); ADR 0260 (decisions 3 and 4: events across services, typed by import); ADR 0078 (decision 4).
  */
 import type { Fields } from "@stackra/validation";
 
@@ -25,12 +26,23 @@ import { currentHarness } from "#testing/functions/current-harness.function";
  * await deliverRemoteEvent(OrderPaid, paid, { id: "evt_1" });
  * await drainOutbox();
  */
-export async function deliverRemoteEvent<E extends Event>(
+export function deliverRemoteEvent<E extends Event>(
   type: EventClass<E>,
   values: Fields<E>,
+  meta?: Partial<EventMeta>,
+): Promise<E>;
+/** A consumed service's event class, as gen writes it into `#stackra/clients/<service>`. */
+export function deliverRemoteEvent<E extends object, V>(
+  type: { readonly eventName: string; create(values: V): E },
+  values: V,
+  meta?: Partial<EventMeta>,
+): Promise<E>;
+export async function deliverRemoteEvent(
+  type: { create(values: never): object },
+  values: unknown,
   meta: Partial<EventMeta> = {},
-): Promise<E> {
-  const event = type.create(values);
-  currentHarness().inbox.push({ event, meta });
+): Promise<object> {
+  const event = type.create(values as never);
+  currentHarness().inbox.push({ event: event as Event, meta });
   return event;
 }

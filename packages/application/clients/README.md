@@ -52,6 +52,10 @@ export class CancelOrderAction extends actionRef("orders.order.cancel@1", {
   for a query `invalidateOn` and `replica`. A query with `invalidateOn` is live: the hooks refetch it on each
   broadcast. A query with `replica: { of, window, limit, scope? }` is recorded with `@stackra/query`'s
   `registerReplicas`, so it is available offline through `useReplica` (ADR 0338 decision 3).
+- An event ref (`eventRef`, `remoteEvent`) is typed by its payload and is an `IntegrationEvent` of `@stackra/events` at
+  runtime (written name and version from the wire name), with a static `create(values)` that checks the payload. So a
+  consuming service's listener types `handle` with it, its inbox rebuilds it, and a component passes it to
+  `useSubscription`; nothing subscribes by wire name (ADR 0260 decision 4).
 - A refusal ref is a `Refusal` of this client. A producer's envelope decodes into it, so
   `isRefusal(error, VariantNotFoundError)` holds and `error.refusalKey` is the producer's message key. A code no
   loaded ref declares decodes into `ServerRefusalError`.

@@ -4,7 +4,8 @@
  *          base its `extends` clause names (bare, called, `Model.with`, `Page.of`, `Widget.place`, an own or a
  *          package class), its options as constants, its partner from the heritage type argument (`Point["slot"]`
  *          included), its constructor tokens, facets, `handle` signature (a `ReplicaPage` output from a `@stackra/*`
- *          package reads as `replica`, ADR 0338), refusals, statics and traits; each shape's fields from the declared
+ *          package reads as `replica`, ADR 0338; a listener's parameter is its event class, one from
+ *          `#stackra/clients/<service>` by its import, or `EventEnvelope` from `@stackra/outbox` as a relay), refusals, statics and traits; each shape's fields from the declared
  *          type node first and the checker second, with rules and constant defaults; each model's entity facts
  *          (`[OptionalProps]` keys, relations with their target, inverse and options, getters); each `Enum.of` in
  *          source order; and each file's exports.
@@ -15,7 +16,8 @@
  * Runtime: node
  * Governing contract: ADR 0294 (decisions 16, 17, 20, 25 and 26); ADR 0305 (rules 1, 5 to 13, 19 and 42 to 46); the
  *                     STA-335 type-to-schema and STA-409 partner spikes; ADR 0260 (decision 3: a parameter typed with a
- *                     `#stackra/clients/<service>` client is its class token); ADR 0162 (decision 2: `Translated` and
+ *                     `#stackra/clients/<service>` client is its class token; decision 4: a listener subscribes to the event class
+ *                     its `handle` parameter imports, never to a wire name); ADR 0162 (decision 2: `Translated` and
  *                     `TranslatedStrings` read as the `translated` kind); ADR 0222 (decision 2: `Upload<Bucket>` reads as
  *                     the `upload` kind, its argument a Bucket class).
  */
@@ -1621,7 +1623,47 @@ export function createSourceReader(
     );
   };
 
+  // A listener's subscription: the event class its `handle` parameter is typed with (ADR 0260 decision 4).
+  const listenerHandleOf = (node: TsNode): DeclaredClass["handle"] => {
+    const name = nameOf(node.name);
+    const handle = (node.members ?? []).find(
+      (member) => host.kind(member) === "MethodDeclaration" && nameOf(member.name) === "handle",
+    );
+    if (handle === undefined) return undefined; // the abstract `handle` already fails to compile
+    const parameter = handle.parameters?.[0];
+    const type = parameter?.type;
+    const refuse = (): undefined => {
+      fail(
+        parameter ?? handle,
+        name,
+        "listener_handle_signature",
+        "the first parameter of `handle` is not typed with an event class",
+        "type it with the event class to react to (yours, or one from #stackra/clients/<service>), or " +
+          "`EventEnvelope` from @stackra/outbox/contracts for a relay of every event",
+      );
+      return undefined;
+    };
+    if (type === undefined || host.kind(type) !== "TypeReference" || type.typeName === undefined)
+      return refuse();
+    // A consumed service's event is a class by its import, before gen has written the client file.
+    const specifier = importsOf(host.fileName(handle)).get(nameOf(type.typeName));
+    if (specifier?.startsWith(CLIENTS_SPECIFIER) === true)
+      return { event: { name: nameOf(type.typeName), from: specifier } };
+    const symbol = host.symbolAt(type.typeName);
+    if (symbol === undefined) return refuse();
+    const declaration = host.declarations(symbol)[0];
+    if (
+      host.symbolName(symbol) === "EventEnvelope" &&
+      declaration !== undefined &&
+      packageOf(host.fileName(declaration)) === "@stackra/outbox"
+    )
+      return { relay: true };
+    if (classDeclarationOf(symbol) === undefined) return refuse();
+    return { event: refOf(type.typeName, symbol) };
+  };
+
   const handleOf = (node: TsNode, kind: string): DeclaredClass["handle"] => {
+    if (kind === "listener") return listenerHandleOf(node);
     if (kind !== "action" && kind !== "query") return undefined;
     const name = nameOf(node.name);
     const fix =

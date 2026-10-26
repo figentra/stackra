@@ -33,6 +33,9 @@ model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./node`.
 - The writer takes integration events only; any other recorded event goes back on its model in order. It writes at
   `beforeTransactionCommit` (savepoints included) on the entity manager of that event, never on `Database.em()`, so an
   implicit flush transaction is joined too.
+- The inbox hands every claimed envelope to the relays `registerRelays` named and `connect` resolved, before the bus
+  runs the typed listeners; without a relay an unknown wire name is still refused before the claim (ADR 0260
+  decision 4). A relay is never keyed by wire name.
 - A driver stores and lists; it never delivers, computes a backoff or reads a clock. The relay passes `now` and the
   retry time.
 - One relay runs a tick at a time (`Locks.tryWith`), so `due` reserves nothing. Every delivery that opens a scope runs

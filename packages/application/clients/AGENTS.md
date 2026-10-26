@@ -37,6 +37,8 @@ at `packages/application/clients` (`tier:lib`), in the programming model v3.1 sh
   `replica` registers itself with `registerReplicas` when its ref is built.
 - `ClientSession` belongs to identity: this package never reads a token store, a cookie or a claim. `isAllowed` is
   presentation; the producer's pipeline checks every call.
+- An event ref extends `IntegrationEvent` (this package's one use of `@stackra/events`) so a service's inbox and bus
+  treat a consumed event as a local one; keep its instances typed as the payload and `create` checking the payload.
 - Public clients (`./server`) are anonymous and public-area only; any other area is refused when they are built.
 - Never write "tenant" (R-59). `./contracts` imports no other entry. `src/*/index.ts` are stand-in barrels until gen
   writes them (STA-339). Two spellings of each ref factory (`actionRef` / `ClientAction`, `permissionsRef` /

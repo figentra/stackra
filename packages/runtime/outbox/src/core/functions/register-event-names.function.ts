@@ -3,9 +3,11 @@
  * Purpose: `registerEventNames`, how gen's generated entry tells the outbox the locked wire name of each integration
  *          event, so the writer stores `orders.order.paid.v1` and an inbox in another process rebuilds the class from it.
  * Boundary: writes the process-wide `EVENT_NAMES`; a later row for a class replaces its earlier name. Checks each row,
- *           so a wrong row fails at boot rather than on the first event.
+ *           so a wrong row fails at boot rather than on the first event. A row may name a consumed service's event
+ *           class from `#stackra/clients/<service>` (typed by its payload, an integration event at runtime), so a
+ *           consumer's inbox rebuilds it: the kind check, not the static type, decides.
  * Runtime: isomorphic
- * Governing contract: ADR 0141 (2026-10-23 note); ADR 0294 (decisions 10, 20 and 22); the queue precedent
+ * Governing contract: ADR 0141 (2026-10-23 note); ADR 0294 (decisions 10, 20 and 22); ADR 0260 (decision 4); the queue precedent
  *                     (`registerJobs`).
  */
 import { kindOf } from "@stackra/container";
@@ -22,9 +24,11 @@ import { EVENT_NAMES } from "#core/constants/event-names.constant";
  * registerEventNames([{ type: OrderPaid, name: "orders.order.paid.v1" }]);
  */
 export function registerEventNames(
-  rows: readonly { readonly type: AnyClass<Event>; readonly name: string }[],
+  rows: readonly { readonly type: AnyClass; readonly name: string }[],
 ): void {
-  for (const { type, name } of rows) {
+  for (const row of rows) {
+    const type = row.type as AnyClass<Event>;
+    const { name } = row;
     if (kindOf(type)?.kind !== "integration_event")
       throw new TypeError(`registerEventNames: ${type.name} is not an integration event`);
     if (typeof name !== "string" || name === "")

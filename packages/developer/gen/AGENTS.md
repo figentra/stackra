@@ -6,7 +6,7 @@ Purpose: the agent rules of @stackra/gen: where code goes, entries and barrels, 
          clients included), the rules that fail the build and PII.
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
-Governing contract: ADR 0294; ADR 0295; ADR 0305; ADR 0260 (generated clients); ADR 0263; ADR 0162 and ADR 0222
+Governing contract: ADR 0294; ADR 0295; ADR 0305; ADR 0260 (generated clients and typed events); ADR 0263; ADR 0162 and ADR 0222
                     (the translated and upload shape kinds); ADR 0338 (a replica query's `ReplicaPage` output).
 -->
 
@@ -44,6 +44,11 @@ The Stackra compiler. Member at `packages/developer/gen` (`tier:lib`), in the pr
   (found beside the member by `readServiceManifests`, or in a dependency), never from its source. The source reader
   takes a parameter typed with a class from `CLIENTS_SPECIFIER` as a class token before the file exists; the wiring
   binds it over `ClientTransport`. Keep the one spelling in `CLIENTS_SPECIFIER`.
+- Events across services (ADR 0260 decision 4): a listener's `handle` parameter is read into `DeclaredClass.handle`
+  (`event`, a `ClassRef`, or `relay` for `EventEnvelope` from `@stackra/outbox`). A `#stackra/clients/<service>` event
+  makes that service consumed (discovery and `emitClients`) and must be one of its integration events
+  (`client_event_unknown`); `emitRegistrations` writes `registerListeners`, the consumed events' wire names into
+  `registerEventNames` and `registerRelays`. Never add a subscription by wire name.
 - The shape vocabulary is `TypeDesc` (`src/core/types/type-desc.type.ts`). A new platform field type is one
   `TypeDesc` kind read in `readTypeReference` (only when declared in a `@stackra/*` package) and one case in each of
   `emitSchemas`, `jsonSchemaOf` and, for a model column, `emitEntities`, with tests. `Translated` and
