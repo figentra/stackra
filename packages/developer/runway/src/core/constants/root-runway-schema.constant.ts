@@ -10,7 +10,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0296 (decision 2 and its 2026-10-24 note), ADR 0168 (decisions 1 to 3 and 6), ADR 0171
  *                     (`ref:` values), ADR 0173 (secret names only), ADR 0237 (gateway secret names), ADR 0335 (decision 2: product), ADR 0354
- *                     (decisions 4 and 5: the cloud dimension and GCP).
+ *                     (decisions 4 and 5: the cloud dimension and GCP), ADR 0401 (GCP projects as `{ id, number }`).
  */
 import { Enum } from "@stackra/contracts";
 import { z } from "zod";
@@ -50,7 +50,8 @@ export const ROOT_RUNWAY_SCHEMA = z.strictObject({
         .optional(),
       gcp: z
         .looseObject({
-          projects: z.record(z.string(), VALUE).optional(),
+          // A plain value, or the `{ id, number }` object infra-gcp checks itself (ADR 0401).
+          projects: z.record(z.string(), z.union([VALUE, OPEN_OBJECT_SCHEMA])).optional(),
           state: OPEN_OBJECT_SCHEMA.optional(),
         })
         .optional(),

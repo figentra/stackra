@@ -106,9 +106,9 @@
           "properties": {
             "projects": {
               "type": "object",
-              "description": "Project role → project id or `ref:`.",
+              "description": "Project role → project id or `ref:`, or an object such as `{ id, number }` that infra-gcp checks (ADR 0401).",
               "additionalProperties": {
-                "$ref": "#/$defs/value"
+                "anyOf": [{ "$ref": "#/$defs/value" }, { "type": "object" }]
               }
             },
             "state": {

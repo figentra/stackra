@@ -198,6 +198,19 @@ describe("parseRunway", () => {
     });
   });
 
+  it("accepts a GCP project as a plain value or an { id, number } object, and refuses a list", () => {
+    const projects = {
+      nonprod: "ref:gcp.nonprod",
+      prod: { id: "acme-prod", number: "123456789012" },
+    };
+    const root = parseRunway("root", { ...ROOT, providers: { gcp: { projects } } });
+
+    expect(root.providers?.gcp?.projects).toEqual(projects);
+    expect(() =>
+      parseRunway("root", { ...ROOT, providers: { gcp: { projects: { prod: ["acme-prod"] } } } }),
+    ).toThrow(/providers\.gcp\.projects\.prod/);
+  });
+
   it("selects the Postgres action stores by name in the config layer, root and member alike", () => {
     const stores = { idempotency: "postgres", rateLimit: "postgres" };
     const root = parseRunway("root", {
