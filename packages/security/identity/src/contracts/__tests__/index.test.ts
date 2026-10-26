@@ -29,6 +29,7 @@ describe("@stackra/identity/contracts", () => {
       "Verification",
       "VerificationKind",
       "VerificationStatus",
+      "VerificationUse",
     ]);
   });
 

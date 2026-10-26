@@ -2,14 +2,16 @@
  * Stackra file contract:
  * Purpose: the `Verification` port: one KYC or KYB provider. A driver per provider (a company registry, a tax
  *          authority lookup, a national ID service, an identity-document vendor, a sanctions screen) answers the
- *          checks it supports; `VerificationService` picks the driver for a market from the market pack.
+ *          checks it supports; `VerificationService` picks the driver for a market from the market pack, or tries the
+ *          Connections `ProviderResolver` answers for the `verification` capability (`verifyThrough`), pinned to
+ *          platform Connections for Figentra's own checks.
  * Boundary: an abstract class that is its own token, keyed `identity.Verification`. A driver never chooses a market or
  *           a provider: the pack does. Its credentials are connection references (OS integrations), never config
  *           values. A driver that cannot answer now throws `VerificationUnavailableError`, so the service tries the
  *           next provider the pack lists.
  * Runtime: isomorphic
  * Governing contract: Stackra 0357 (decision 7); OS-54 (own verification service, drivers per market); ADR 0363;
- *                     ADR 0263.
+ *                     ADR 0263; ADR 0376 (decision 1, verification Note); capability map M2.
  */
 import { Port } from "@stackra/contracts";
 

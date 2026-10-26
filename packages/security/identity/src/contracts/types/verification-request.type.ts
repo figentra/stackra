@@ -1,16 +1,19 @@
 /**
  * Stackra file contract:
  * Purpose: `VerificationRequest`, one KYC or KYB check asked of a provider: its kind, the market whose pack picks the
- *          provider, the caller's idempotency reference, the facts to check and the subject's consent.
+ *          provider, the caller's idempotency reference, the facts to check, the subject's consent and whose check it is
+ *          (platform or tenant).
  * Boundary: a type only. The facts are what the kind needs (a national ID number, a registration number, a name and a
  *           date of birth), already format-checked by `@stackra/validation`; they are personal data, so a driver sends
  *           them to its provider only and never logs them.
  * Runtime: isomorphic
- * Governing contract: Stackra 0357 (decision 7); OS-54, OS-56 (verification reused on consent).
+ * Governing contract: Stackra 0357 (decision 7); OS-54, OS-56 (verification reused on consent); owner
+ *                     decision R3-1; capability map M2.
  */
 import type { Json } from "@stackra/contracts";
 
 import type { VerificationKind } from "#contracts/enums/verification-kind.enum";
+import type { VerificationUse } from "#contracts/enums/verification-use.enum";
 
 /** One check. */
 export interface VerificationRequest {
@@ -28,4 +31,7 @@ export interface VerificationRequest {
 
   /** The subject consented to the check (required where the pack says so). */
   readonly consented: boolean;
+
+  /** Whose check it is; `platform` when left out, so a check never reaches a tenant's account by omission. */
+  readonly use?: VerificationUse;
 }

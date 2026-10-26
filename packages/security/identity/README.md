@@ -144,6 +144,11 @@ WebCrypto. No `SignInBrowser` driver ships here yet: the Expo and Electron ones 
   its restrictions and the pack's age, and returns the delegated principal to record.
 - **Verification.** `VerificationService.register(key, driver)` wires providers; `verify(request, resolved, on)` tries
   the providers the pack lists under `verificationPackKey` for the request's kind, in order.
+  `verifyThrough(request, candidates)` runs it through the Connections `ProviderResolver#candidates("verification", …)`
+  of `@stackra/integrations` answers instead. `request.use` says whose check it is: `platform` (the default; Figentra's
+  own KYB and KYC of a tenant) is pinned to platform Connections (`{ pin: "managed" }`) and an `own` candidate is
+  skipped again here; `tenant` (a tenant checking its customers) takes the tenant's own Connection first, then the
+  managed one. The result carries the `mode` that answered. Vendor Connections live in the OS integrations service.
 
 ## The claims
 

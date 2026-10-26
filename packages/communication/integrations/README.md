@@ -139,6 +139,17 @@ market })`) and fall back to `MarketContext` without one (ADR 0422).
 for (const { connection, mode } of await resolver.candidates<SmsTransport>("sms", SMS_CONNECTIONS, { market })) { … }
 ```
 
+`pin` keeps one mode only. Verification (KYC and KYB, capability `verification`, pack key `providers.verification`) uses
+it: Figentra's own checks of a tenant pin to the platform Connections, so a tenant's own account never answers them;
+a tenant's checks of its own customers leave it out and take the tenant's own Connection first (ADR 0376 decision 1
+Note; capability map M2). `@stackra/identity`'s `VerificationService#verifyThrough` runs the list.
+
+```ts
+const platform = await resolver.candidates<VerificationProvider>("verification", drivers, {
+  pin: ProviderMode.Managed,
+});
+```
+
 `MarketPackProviderDefaultsDriver` is the `market-pack` `ProviderDefaults`: it reads the pack's `providers.<capability>`
 list in force today (`providers.sms: [unifonic, { provider: taqnyat, status: planned }]`), live entries only, and asks
 the host's `ProviderPackSource` for each provider's platform Connection; a provider with none is offered to tenants

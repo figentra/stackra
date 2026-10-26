@@ -1,9 +1,12 @@
 /**
  * Stackra file contract:
  * Purpose: `ProviderResolver`, the one rule of ADR 0356 for every multi-provider capability (SMS, WhatsApp, voice,
- *          mail, geocoding, accounting): the tenant's own Connection of a provider the Market offers wins; without
- *          one, the Market's platform Connection serves; a stored record reloads the exact Connection that served it.
+ *          mail, geocoding, accounting, verification): the tenant's own Connection of a provider the Market offers
+ *          wins; without one, the Market's platform Connection serves; a stored record reloads the exact Connection
+ *          that served it.
  *          `candidates` answers the whole ordered failover list with own-or-managed per entry; `resolve` the first.
+ *          `pin` keeps one mode only: Figentra's own checks of a tenant (platform KYB and KYC) pin to `managed`, so
+ *          a tenant's own Connection never answers them; a tenant-run check leaves it out.
  * Boundary: a service with three dependencies: the `ConnectionStore` (which applies the caller's scope and decrypts
  *           credentials), `ProviderDefaults` (market-pack data: the providers a Market offers, in order) and
  *           `MarketContext` (the running call's Market, used when the caller passes none). It names no Market and no
@@ -13,7 +16,7 @@
  *           stays global and is never used for this (ADR 0356 decision 1).
  * Runtime: isomorphic
  * Governing contract: ADR 0356 (decisions 1 to 5 and 7); ADR 0308 (rule 9); ADR 0355 (decision 1); ADR 0422
- *                     (decision 3).
+ *                     (decision 3); ADR 0376 (decision 1, Note of 2026-10-26: verification); capability map M2.
  */
 import { Service } from "@stackra/container";
 
@@ -87,7 +90,8 @@ export class ProviderResolver extends Service {
    * order. Empty when none is accepted.
    *
    * @param drivers - the caller's connection class per provider code.
-   * @param options - `market` to resolve for (the running call's when left out) and `accepts`, the capability flag.
+   * @param options - `market` to resolve for (the running call's when left out), `accepts`, the capability flag, and
+   *                  `pin`, the only mode to answer (both when left out).
    */
   async candidates<T>(
     capability: string,
@@ -95,6 +99,7 @@ export class ProviderResolver extends Service {
     options: {
       readonly market?: string;
       readonly accepts?: (connection: Connection & T) => boolean;
+      readonly pin?: ProviderMode;
     } = {},
   ): Promise<readonly ProviderCandidate<T>[]> {
     const out: ProviderCandidate<T>[] = [];
@@ -104,6 +109,7 @@ export class ProviderResolver extends Service {
       drivers,
       market,
       options.accepts ?? (() => true),
+      options.pin,
     ))
       out.push(candidate);
     return out;
@@ -119,6 +125,7 @@ export class ProviderResolver extends Service {
     drivers: ProviderDrivers<T>,
     market: string | undefined,
     accepts: (connection: Connection & T) => boolean,
+    pin?: ProviderMode,
   ): AsyncGenerator<ProviderCandidate<T>> {
     const choices: readonly { readonly provider: string; readonly connectionId?: string }[] =
       market === undefined
@@ -129,13 +136,13 @@ export class ProviderResolver extends Service {
       const repeated = choices.findIndex((other) => other.provider === choice.provider) !== index;
       return type === undefined || repeated ? [] : [{ choice, type }];
     });
-    for (const { choice, type } of offered) {
+    for (const { choice, type } of pin === ProviderMode.Managed ? [] : offered) {
       // oxlint-disable-next-line no-await-in-loop -- one lookup per offered provider, in the Market's order
       const own = await this.store.find(type);
       if (own !== null && accepts(own))
         yield { provider: choice.provider, connection: own, mode: ProviderMode.Own };
     }
-    for (const { choice, type } of offered) {
+    for (const { choice, type } of pin === ProviderMode.Own ? [] : offered) {
       if (choice.connectionId === undefined) continue;
       // oxlint-disable-next-line no-await-in-loop -- one load per platform Connection, in the Market's order
       const platform = await this.store.byId(type, choice.connectionId);

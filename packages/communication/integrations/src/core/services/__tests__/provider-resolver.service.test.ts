@@ -5,10 +5,12 @@
  *          no Market tries only the tenant's own; nothing fitting refuses; a stored connection or credential reference
  *          reloads the exact Connection; `candidates` answers the ordered failover list (own first, then managed,
  *          each in the Market's order, a repeated provider once, a BYO-only provider own only) with the mode per
- *          entry; a Market passed as an argument wins over the running call's.
+ *          entry; a Market passed as an argument wins over the running call's; `pin` keeps one mode only (platform
+ *          verification pinned to managed never reaches the tenant's own Connection).
  * Boundary: test only; the store, the defaults and the Market are in-memory stand-ins.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0269; ADR 0356 (decisions 2 to 5, enforcement); ADR 0422 (decision 3).
+ * Governing contract: ADR 0022; ADR 0269; ADR 0356 (decisions 2 to 5, enforcement); ADR 0422 (decision 3); ADR 0376
+ *                     (decision 1, verification Note).
  */
 import { describe, expect, it } from "@stackra/testing";
 
@@ -237,5 +239,24 @@ describe("ProviderResolver", () => {
       new Market("sa"),
     );
     await expect(resolver.resolve<Sender>("sms", DRIVERS)).resolves.toBe(alphaPlatform);
+  });
+
+  it("pins the list to one mode", async () => {
+    const resolver = resolverWith(
+      [[BetaConnection, betaTenant]],
+      [
+        { provider: "alpha", connectionId: "conn_a" },
+        { provider: "beta", connectionId: "conn_b" },
+      ],
+    );
+    const managed = await resolver.candidates<Sender>("verification", DRIVERS, {
+      pin: ProviderMode.Managed,
+    });
+    expect(managed.map((c) => c.connection)).toEqual([alphaPlatform, betaPlatform]);
+    expect(managed.every((c) => c.mode === ProviderMode.Managed)).toBe(true);
+    const own = await resolver.candidates<Sender>("verification", DRIVERS, {
+      pin: ProviderMode.Own,
+    });
+    expect(own.map((c) => c.connection)).toEqual([betaTenant]);
   });
 });

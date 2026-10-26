@@ -13,6 +13,7 @@ export { DeviceTokenStatus } from "#contracts/enums/device-token-status.enum";
 export { IdpSecondFactor } from "#contracts/enums/idp-second-factor.enum";
 export { VerificationKind } from "#contracts/enums/verification-kind.enum";
 export { VerificationStatus } from "#contracts/enums/verification-status.enum";
+export { VerificationUse } from "#contracts/enums/verification-use.enum";
 export { ApiKeyStore } from "#contracts/ports/api-key-store.port";
 export { AutomationPrincipals } from "#contracts/ports/automation-principals.port";
 export { Guardianship } from "#contracts/ports/guardianship.port";
@@ -33,5 +34,9 @@ export type { LoginPolicy } from "#contracts/types/login-policy.type";
 export type { SessionUser } from "#contracts/types/session-user.type";
 export type { SignInOptions } from "#contracts/types/sign-in-options.type";
 export type { StaffPinCredential } from "#contracts/types/staff-pin-credential.type";
+export type {
+  VerificationCandidate,
+  VerificationProvider,
+} from "#contracts/types/verification-candidate.type";
 export type { VerificationRequest } from "#contracts/types/verification-request.type";
 export type { VerificationResult } from "#contracts/types/verification-result.type";

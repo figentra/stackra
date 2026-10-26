@@ -2,10 +2,12 @@
  * Stackra file contract:
  * Purpose: unit tests of `VerificationService`: providers come from the market pack per kind, in order, only those
  *          wired here and supporting the kind; the first that answers wins; an unavailable provider passes to the
- *          next; none left refuses `verification_unavailable`; a request for another market than the pack's is a bug.
+ *          next; none left refuses `verification_unavailable`; a request for another market than the pack's is a bug;
+ *          `verifyThrough` tries resolver candidates in order, a platform check never through a tenant's own one.
  * Boundary: test only; memory providers and a one-layer resolved pack.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; Stackra 0357 (decision 7); OS-54; ADR 0370.
+ * Governing contract: ADR 0022; Stackra 0357 (decision 7); OS-54; ADR 0370; ADR 0376 (decision 1,
+ *                     verification Note); capability map M2.
  */
 import { buildConfig } from "@stackra/config";
 import { Driver } from "@stackra/container";
@@ -14,7 +16,12 @@ import type { MarketPack, ResolvedPack } from "@stackra/market-packs";
 import { describe, expect, it } from "@stackra/testing";
 
 import { IdentityConfig } from "#config/identity.config";
-import { Verification, VerificationKind, VerificationStatus } from "#contracts/index";
+import {
+  Verification,
+  VerificationKind,
+  VerificationStatus,
+  VerificationUse,
+} from "#contracts/index";
 import type { VerificationRequest } from "#contracts/index";
 import { MemoryVerificationDriver } from "#core/drivers/memory-verification.driver";
 import { VerificationUnavailableError } from "#core/errors/verification-unavailable.error";
@@ -91,5 +98,33 @@ describe("VerificationService", () => {
     await expect(
       service.verify({ ...request, market: "yy" }, pack({ company: ["down"] }), "2026-10-25"),
     ).rejects.toThrow(RangeError);
+  });
+
+  it("verifies through resolver candidates, a platform check only through managed ones", async () => {
+    const clock = new FixedClockDriver();
+    const tenantOwn = new MemoryVerificationDriver([VerificationKind.Company], clock);
+    const platform = new MemoryVerificationDriver([VerificationKind.Company], clock);
+    const identityOnly = new MemoryVerificationDriver([VerificationKind.Identity], clock);
+    platform.answer("chk_1", VerificationStatus.Verified);
+    const candidates = [
+      { provider: "sumsub", connection: tenantOwn, mode: "own" as const },
+      { provider: "didit", connection: identityOnly, mode: "managed" as const },
+      { provider: "down", connection: new DownVerificationDriver(), mode: "managed" as const },
+      { provider: "wathq", connection: platform, mode: "managed" as const },
+    ];
+    const service = new VerificationService(buildConfig(IdentityConfig));
+    expect(await service.verifyThrough(request, candidates)).toMatchObject({
+      status: VerificationStatus.Verified,
+      provider: "wathq",
+      mode: "managed",
+    });
+    expect(tenantOwn.seen).toEqual([]);
+    expect(identityOnly.seen).toEqual([]);
+    expect(
+      await service.verifyThrough({ ...request, use: VerificationUse.Tenant }, candidates),
+    ).toMatchObject({ provider: "sumsub", mode: "own", status: VerificationStatus.Pending });
+    await expect(service.verifyThrough(request, candidates.slice(0, 1))).rejects.toBeInstanceOf(
+      VerificationUnavailableError,
+    );
   });
 });

@@ -45,6 +45,10 @@ model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./desktop`, `./n
 - Configuration, not code: which external sign-in providers a market offers and which KYC/KYB providers answer each
   check are market-pack data (`signInProvidersKey`, `verificationPackKey`); the provider ids, PIN rules, step-up window
   and key prefixes are `IdentityConfig` values. Never name a country, provider or number in code.
+- A platform verification (Figentra checking a tenant, `VerificationUse.Platform`, the default) never runs through a
+  tenant's own Connection: pin `ProviderResolver#candidates("verification", …)` to `managed`, and `verifyThrough`
+  drops an `own` candidate again. Vendor verification Connections live in the OS integrations service (R3-8), never
+  in this package; it keeps the port (capability map M2).
 - A staff PIN is stored only as its salted PBKDF2 hash and compared in constant time; a key is shown once and only its
   hash is stored. Never log either.
 - An API key's `lastUsedAt` is written by `ApiKeyVerifierService` only (through `ApiKeyStore.recordUse`), throttled
