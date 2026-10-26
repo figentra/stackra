@@ -14,6 +14,7 @@
  */
 export { RuleOutcome } from "#core/bases/rule-outcome.base";
 export { ACTION_PERMISSION_RULES } from "#core/constants/action-permission-rules.constant";
+export { APPROVAL_FLOOR_KEY } from "#core/constants/approval-floor-key.constant";
 export { CONDITION_SCHEMA as Condition$ } from "#core/constants/condition-schema.constant";
 export { FACT_SOURCE_SCHEMA as FactSource$ } from "#core/constants/fact-source-schema.constant";
 export { RULE_SET_PACK_SCHEMA as RuleSetPack$ } from "#core/constants/rule-set-pack-schema.constant";
@@ -25,10 +26,7 @@ export { actionPermissionRowsOf } from "#core/functions/action-permission-rows.f
 export { decide } from "#core/functions/decide.function";
 export { evaluate } from "#core/functions/evaluate.function";
 export { guardFloors } from "#core/functions/guard-floors.function";
-export {
-  APPROVAL_FLOOR_KEY,
-  packApprovalFloorOf,
-} from "#core/functions/pack-approval-floor.function";
+export { packApprovalFloorOf } from "#core/functions/pack-approval-floor-of.function";
 export type { Condition } from "#core/types/condition.type";
 export type { DecideOptions } from "#core/types/decide-options.type";
 export type { Decision } from "#core/types/decision.type";

@@ -3,7 +3,7 @@
  * Purpose: `OperandEditorProps`, what the builder's value editor takes: the leaf's field and operator, its value, and
  *          where a changed value goes.
  * Boundary: a type only; internal to the `./react` entry.
- * Runtime: react
+ * Runtime: browser
  * Governing contract: ADR 0305 (props in `<name>.props.ts`); ADR 0331 (decisions 3 and 8).
  */
 import type { Json } from "@stackra/contracts";

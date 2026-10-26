@@ -15,7 +15,10 @@ import { ErrorKind, Refusal } from "@stackra/errors";
  * @example
  * throw RuleSetChangedError.create({ ruleSetId });
  */
-export class RuleSetChangedError extends Refusal({ kind: ErrorKind.Conflict, retryable: true }) {
+export class RuleSetChangedError extends Refusal({
+  kind: ErrorKind.Conflict,
+  retryable: true,
+}) {
   /** The rule set whose revision number was taken. */
   ruleSetId!: PublicId<"rset">;
 }

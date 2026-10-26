@@ -12,7 +12,7 @@
  */
 import type { PublicId } from "@stackra/contracts";
 import { DomainEvent } from "@stackra/events";
-import { registerSchemas } from "@stackra/validation";
+import { Int, registerSchemas } from "@stackra/validation";
 
 import { RULE_SET_PUBLISHED_SCHEMA } from "#core/constants/rule-set-published-schema.constant";
 
@@ -27,14 +27,15 @@ import { RULE_SET_PUBLISHED_SCHEMA } from "#core/constants/rule-set-published-sc
  * }
  */
 export class RuleSetPublished extends DomainEvent {
+  /** The revision now published. */
+  @Int({ min: 1 })
+  revision!: number;
+
   /** The rule set. */
   ruleSetId!: PublicId<"rset">;
 
   /** The key of the consumer that owns it (`segments.segment`). */
   consumer!: string;
-
-  /** The revision now published. */
-  revision!: number;
 }
 
 registerSchemas([[RuleSetPublished, RULE_SET_PUBLISHED_SCHEMA]]);

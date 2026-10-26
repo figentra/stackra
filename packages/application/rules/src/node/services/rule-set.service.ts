@@ -63,7 +63,9 @@ export class RuleSetService extends CrudService<RuleSet> {
   /** Content's revisions table. */
   private readonly revisions: Repository<Revision>;
 
-  /** @param revisions - the revisions of every `HasRevisions` model, one row per revision. */
+  /**
+   * @param revisions - the revisions of every `HasRevisions` model, one row per revision.
+   */
   constructor(revisions: Repository<Revision>) {
     super();
     this.revisions = revisions;

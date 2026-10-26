@@ -256,7 +256,7 @@ function connectSeed(known: RuleSet | null, latest: Revision[] = []) {
     findOneOrFail: vi.fn(async (model: unknown) =>
       model === RuleSet
         ? (known ?? created.find((row) => row instanceof RuleSet))
-        : created.findLast((row) => row instanceof Revision),
+        : created.filter((row) => row instanceof Revision).at(-1),
     ),
     find: vi.fn(async () => latest),
     count: vi.fn(async () => latest.length),

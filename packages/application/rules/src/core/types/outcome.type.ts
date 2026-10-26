@@ -10,7 +10,7 @@
 import type { Json } from "@stackra/contracts";
 
 /**
- * One outcome.
+ * One outcome a matching rule yields: a kind and its parameter values.
  *
  * @example
  * const outcome: Outcome = { kind: "refundWindow", params: { days: 30 } };

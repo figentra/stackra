@@ -6,7 +6,7 @@
  *           start with no parameters, so each shows `param_missing` until filled in. A parameter past a market floor
  *           shows `past_floor` or `currency_mismatch` from the problems the builder passes. Data only: a value is a
  *           typed element, never an expression (ADR 0331 decision 10).
- * Runtime: react
+ * Runtime: browser
  * Governing contract: ADR 0331 (decisions 8, 9 and 10); config-model section 4; ADR 0302 (web UI from @stackra/ui).
  */
 import type { Json } from "@stackra/contracts";

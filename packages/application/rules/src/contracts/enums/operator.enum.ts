@@ -11,7 +11,7 @@
 import { Enum } from "@stackra/contracts";
 
 /**
- * The operators.
+ * The operators a condition leaf may apply, each with the shape of its operand.
  *
  * @example
  * Enum.meta(Operator, Operator.Between).operand; // "range"

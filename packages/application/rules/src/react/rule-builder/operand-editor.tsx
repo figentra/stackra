@@ -9,7 +9,7 @@
  *           from `2026-10-01` (midnight UTC) or a full ISO 8601 time. Text that reads as no valid value is reported as
  *           written, so the check marks it rather than the builder dropping it. An outcome parameter passes its own
  *           label in place of "Value".
- * Runtime: react
+ * Runtime: browser
  * Governing contract: ADR 0331 (decisions 3 and 8); ADR 0220 (money); ADR 0302 (web UI from @stackra/ui).
  */
 import { Enum, type Json } from "@stackra/contracts";

@@ -161,6 +161,10 @@ describe("Rules", () => {
   });
 });
 
+/** A thunk that creates a registry with `outcomes`, for `toThrow`. */
+const withKinds = (outcomes: never[]) => () =>
+  Rules.create({ key: "shop.returns", sources: [CART], outcomes });
+
 describe("Rules outcome kinds", () => {
   const REFUND = {
     key: "refundWindow",
@@ -184,8 +188,6 @@ describe("Rules outcome kinds", () => {
   });
 
   it("throws on a misdeclared outcome kind", () => {
-    const withKinds = (outcomes: never[]) => () =>
-      Rules.create({ key: "shop.returns", sources: [CART], outcomes });
     expect(withKinds([REFUND, REFUND] as never[])).toThrow(/distinct camelCase outcome key/);
     expect(
       withKinds([

@@ -8,7 +8,7 @@
  *           shown where they are; saving, and the server-side check, are the host's (`RuleSetService.draft` with the
  *           same floors refuses what is marked). It writes data only: there is no way to type an expression (ADR 0331
  *           decision 10).
- * Runtime: react
+ * Runtime: browser
  * Governing contract: ADR 0331 (decisions 3, 4, 8, 9 and 10); ADR 0302 (web UI from @stackra/ui); config-model
  *                     section 4; ADR 0425 (decision 3).
  */

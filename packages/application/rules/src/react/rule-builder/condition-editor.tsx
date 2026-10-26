@@ -6,7 +6,7 @@
  * Boundary: internal to the `./react` entry; recursive. A new condition and a changed field start at the field's
  *          `is_set` test, which needs no value; a changed operator drops the value, so the leaf shows `value_invalid`
  *          until the user fills it in. Lists offer only `Rules.fields()` and the field type's operators.
- * Runtime: react
+ * Runtime: browser
  * Governing contract: ADR 0331 (decisions 2, 3, 4 and 8); ADR 0302 (web UI from @stackra/ui).
  */
 import { Enum } from "@stackra/contracts";

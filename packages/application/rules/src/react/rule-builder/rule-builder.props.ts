@@ -5,7 +5,7 @@
  *          and the market floors a save will be refused against.
  * Boundary: a type only. The builder is controlled: it holds no condition or outcome of its own and reports every
  *           change. The outcome list shows only when `onOutcomesChange` is given.
- * Runtime: react
+ * Runtime: browser
  * Governing contract: ADR 0305 (props in `<name>.props.ts`); ADR 0331 (decisions 8 and 9); config-model section 4.
  */
 import type { ResolvedValue } from "@stackra/market-packs";

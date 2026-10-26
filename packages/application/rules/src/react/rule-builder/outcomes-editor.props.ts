@@ -3,7 +3,7 @@
  * Purpose: `OutcomesEditorProps`, what the builder's outcome list takes: the consumer's `Rules`, the outcomes it
  *          edits, their problems by path and where each change goes.
  * Boundary: a type only; internal to the `./react` entry.
- * Runtime: react
+ * Runtime: browser
  * Governing contract: ADR 0305 (props in `<name>.props.ts`); ADR 0331 (decisions 8 and 9).
  */
 import type { FieldErrors } from "@stackra/errors";

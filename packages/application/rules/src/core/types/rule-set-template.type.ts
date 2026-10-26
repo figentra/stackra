@@ -8,5 +8,5 @@
  */
 import type { RuleSetPack } from "#core/types/rule-set-pack.type";
 
-/** One template. */
+/** One rule-set template of a pack: an entry of its `ruleSets`. */
 export type RuleSetTemplate = RuleSetPack["ruleSets"][number];

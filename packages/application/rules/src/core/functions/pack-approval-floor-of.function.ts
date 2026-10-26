@@ -14,8 +14,7 @@ import type { ApprovalFloor } from "@stackra/ai";
 import type { ResolvedValue } from "@stackra/market-packs";
 import { z } from "zod";
 
-/** The pack key of the AI approval floor. */
-export const APPROVAL_FLOOR_KEY = "ai.approval_floor";
+import { APPROVAL_FLOOR_KEY } from "#core/constants/approval-floor-key.constant";
 
 /** The pack value's shape. */
 const FLOOR = z.object({

@@ -9,10 +9,8 @@
 import type { ResolvedValue } from "@stackra/market-packs";
 import { describe, expect, it } from "@stackra/testing";
 
-import {
-  APPROVAL_FLOOR_KEY,
-  packApprovalFloorOf,
-} from "#core/functions/pack-approval-floor.function";
+import { APPROVAL_FLOOR_KEY } from "#core/constants/approval-floor-key.constant";
+import { packApprovalFloorOf } from "#core/functions/pack-approval-floor-of.function";
 
 /** A resolved pack value at `key`. */
 const valueAt = (key: string, value: unknown) =>

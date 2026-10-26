@@ -11,5 +11,5 @@ import type { Money } from "@stackra/money";
 
 import type { GeoPoint } from "#contracts/index";
 
-/** One fact. */
+/** One fact: the runtime value of a registered field. */
 export type FactValue = string | number | Money | Date | readonly string[] | GeoPoint;

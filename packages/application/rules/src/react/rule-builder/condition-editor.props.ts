@@ -3,7 +3,7 @@
  * Purpose: `ConditionEditorProps`, what the builder's node editor takes: the node, its path, the tree's problems and
  *          where a change or a removal goes.
  * Boundary: a type only; internal to the `./react` entry.
- * Runtime: react
+ * Runtime: browser
  * Governing contract: ADR 0305 (props in `<name>.props.ts`); ADR 0331 (decision 8).
  */
 import type { FieldErrors } from "@stackra/errors";
