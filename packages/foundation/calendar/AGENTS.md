@@ -1,7 +1,7 @@
 # AGENTS — @stackra/calendar
 
 Calendar mechanism over market-pack data. Member at `packages/foundation/calendar` (`tier:lib`), in the programming
-model v3.1 shape (ADR 0294, 0305). Entry `.` only. Decision record: ADR 0366.
+model v3.1 shape (ADR 0294, 0305). Entry `.` only. Decision records: ADR 0366, amended by ADR 0387.
 
 ## Where code goes
 
@@ -26,7 +26,10 @@ model v3.1 shape (ADR 0294, 0305). Entry `.` only. Decision record: ADR 0366.
 - Dates are `YYYY-MM-DD` Gregorian and arithmetic runs on UTC day numbers; instants are ISO 8601 with an offset.
 - Never guess an unconfirmed Hijri holiday: report `uncertain` and let `uncertainDays` data decide how it counts.
 - Time zones and Umm al-Qura come from `Intl` (ICU); no time-zone or Hijri library is added.
-- Runtime dependencies are `@stackra/contracts` and `zod` only. Refusals are `RangeError`s.
+- Runtime dependencies are `@stackra/contracts`, `@stackra/market-packs` and `zod` only. Refusals are `RangeError`s.
+- Calendar values come from pack keys under `calendar.` (`calendarFromPack`, `leapBirthdayFromPack`); never read a
+  market's data any other way, and never default a missing key.
+- Every RRULE part is either supported or refused with its reason in the message (README table); never ignore one.
 - Only add a symbol a consumer imports today (the registry row in `notes/handover/stackra-package-needs.md`).
 
 ## Rules that fail the build

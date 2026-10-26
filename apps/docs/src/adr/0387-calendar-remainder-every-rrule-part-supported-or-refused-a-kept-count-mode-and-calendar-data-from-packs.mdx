@@ -1,0 +1,67 @@
+---
+title: "0387 — Calendar remainder: every RRULE part supported or refused, a kept COUNT mode, and calendar data from packs"
+description: "Proposed · 2026-10-26"
+---
+
+<Note>
+  Proposed (STA-708). It amends
+  [0366](/adr/0366-stackra-calendar-umm-al-qura-business-days-recurrence-and-slots-over-market-pack-data)
+  decisions 3, 6 and 9 now that the market-pack loader exists
+  ([0370](/adr/0370-market-packs-signed-dated-overlaid-data-with-pins-and-legal-floors), with
+  [0385](/adr/0385-market-packs-a-pack-per-rule-subject-for-records-that-touch-two-markets-nested-overlays-and-storage-by-content-hash)),
+  and answers wave 10 calendar owner questions 2, 3 and 5 with draft pack values.
+</Note>
+
+## Context
+
+0366 supported a subset of RRULE and refused the rest, read UNTIL by its date only, counted skipped dates toward COUNT,
+and left callers to pass `BusinessCalendar` data until a pack loader existed. Products need monthly "last working day"
+runs (BYSETPOS), a time of day per instance (BYHOUR), week-numbered schedules and an exact end instant. Owner question 5
+asked for "ten sessions" to stay ten when a holiday falls on one. The US pack needs federal and state holidays, which
+are weekday positions (third Monday of January), observed on a weekday when they fall on a weekend, and need
+`uncertainDays` and the 29 February rule as pack values.
+
+## Decision
+
+1. **RRULE.** Supported: FREQ DAILY to YEARLY, INTERVAL, COUNT, UNTIL (a date, or a date and time in UTC or in the
+   series' wall time), BYDAY (positions in the month, or in the year for YEARLY without BYMONTH), BYMONTHDAY, BYMONTH,
+   BYYEARDAY, BYWEEKNO, BYHOUR, BYMINUTE, BYSECOND, BYSETPOS and WKST. A rule is expanded period by period and
+   BYSETPOS picks within a period; instances before the series start are neither returned nor counted.
+2. **Refused on purpose, with the reason in the error.** FREQ HOURLY, MINUTELY and SECONDLY (a series is dates at wall
+   times; repetition within a day is working hours or slots); RSCALE and SKIP of RFC 7529 (a yearly Hijri date is a
+   holiday rule of kind `hijri`, converted by ICU); BYSECOND=60 (no instant in ECMAScript time). Also refused, as
+   RFC 5545 forbids: an unknown or repeated part, COUNT with UNTIL, BYYEARDAY with DAILY, WEEKLY or MONTHLY, BYWEEKNO
+   outside YEARLY, BYMONTHDAY with WEEKLY, a BYDAY position with DAILY, WEEKLY or BYWEEKNO, and BYSETPOS alone.
+3. **COUNT mode.** `countMode` is `generated` (RFC 5545, the default: excepted and holiday dates count) or `kept`
+   (only kept dates count). Which a product uses is its setting.
+4. **Holiday rules gain a weekday position and an observed shift.** Kind `nth_weekday`: the n-th or n-th last weekday
+   of a month plus an offset in days. A yearly `gregorian` or `nth_weekday` rule may carry `observe`: per weekday, a
+   shift in days, possibly into the year before.
+5. **Calendar data from packs.** `calendarFromPack(resolved, on, local)` builds the `BusinessCalendar` from the pack
+   keys `calendar.time_zone`, `calendar.working_week`, `calendar.uncertain_days` and every `calendar.holidays.<set>`
+   (joined across overlays), with the location's zone, week and closures laid over it. `leapBirthdayFromPack` reads
+   `calendar.leap_birthday`. A missing key is refused, never defaulted. The calendar's subject is `location` in the
+   seed packs (0385).
+6. **First pack values, as draft.** The `us` seed pack sets `calendar.uncertain_days` to `working` (no US holiday is
+   sighted) and `calendar.leap_birthday` to `march_1`, the federal holiday set, and a Monday-to-Friday 09:00-17:00
+   default week; the seven state overlays set their state holiday sets. All are `draft` and need counsel's sign-off.
+7. **Hermes ICU is a note, not code.** Whether the till's Hermes build ships the `islamic-umalqura` calendar and time
+   zones is checked on a release build (README "Limits"); the package still throws rather than fall back.
+
+## Consequences
+
+- Recurring payroll, billing and class schedules can be written as standard RRULE text; a refused part says why.
+- A US calendar is pack data; a state that adds or moves a holiday is a pack edit.
+- `@stackra/calendar` depends on `@stackra/market-packs`.
+- Values for markets with sighted holidays (`sa`, `ae`, `eg`) still need an owner answer to wave 10 question 2.
+
+## Enforcement
+
+planned — the package tests fix the behaviour (`packages/foundation/calendar/src/core/functions/__tests__/`); nothing
+runs them in CI yet.
+
+## Supersedes and sources
+
+Supersedes: none. Amends 0366 decisions 3, 6 and 9. Sources: `notes/handover/build-wave10-2026-10-25.md`
+(`@stackra/calendar` owner questions); `notes/handover/review-round-3/stackra-os.md` (R3-SO-16);
+`notes/handover/us/default-applied.md` (US-133, US-134); STA-708.

@@ -3,7 +3,7 @@
  * Purpose: the consumer contract of the `.` entry: exactly the public values are exported (the helpers stay internal), the `$` name is the shipped schema, and the public types resolve.
  * Boundary: test only; imports the subject through its `#core` alias and the runner through @stackra/testing.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0366.
+ * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0366; ADR 0387.
  */
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
@@ -15,6 +15,7 @@ describe("@stackra/calendar", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(entry).sort()).toEqual([
       "BusinessCalendar$",
+      "CountMode",
       "DayStatus",
       "HolidayKind",
       "LeapBirthday",
@@ -22,11 +23,13 @@ describe("@stackra/calendar", () => {
       "addBusinessDays",
       "addWorkingMinutes",
       "ageOn",
+      "calendarFromPack",
       "dayStatus",
       "findSlots",
       "gregorianOf",
       "hijriOf",
       "instantOf",
+      "leapBirthdayFromPack",
       "localDateOf",
       "occurrences",
       "openIntervals",

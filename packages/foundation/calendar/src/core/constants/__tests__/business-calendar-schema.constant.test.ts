@@ -1,9 +1,12 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `BUSINESS_CALENDAR_SCHEMA`: it accepts well-formed calendar data with defaults, and refuses an unknown zone, a repeated weekday, empty hours, a bad time, a bad holiday kind and an unknown uncertain-day policy.
+ * Purpose: unit tests of `BUSINESS_CALENDAR_SCHEMA`: it accepts well-formed calendar data with defaults (weekday
+ *          positions and observed shifts included), and refuses an unknown zone, a repeated weekday, empty hours, a bad
+ *          time, a bad holiday kind, a zero or out-of-range position, a weekday moved twice and an unknown
+ *          uncertain-day policy.
  * Boundary: test only; imports the subject through its `#core` alias and the runner through @stackra/testing.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0366.
+ * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0366; ADR 0387.
  */
 import { describe, expect, it } from "@stackra/testing";
 
@@ -16,6 +19,14 @@ const valid = {
     { kind: "dated", key: "closure", date: "2026-01-05" },
     { kind: "gregorian", key: "day", month: 2, day: 22, since: "2026-01-01" },
     { kind: "hijri", key: "feast", month: 10, day: 1, days: 3, sighted: true },
+    {
+      kind: "nth_weekday",
+      key: "harvest",
+      month: 11,
+      weekday: 4,
+      nth: 4,
+      observe: [{ weekday: 6, shift: -1 }],
+    },
   ],
   uncertainDays: "working",
 };
@@ -23,7 +34,8 @@ const valid = {
 describe("BUSINESS_CALENDAR_SCHEMA", () => {
   it("accepts calendar data and defaults days to 1", () => {
     const parsed = BUSINESS_CALENDAR_SCHEMA.parse(valid);
-    expect(parsed.holidays.map((rule) => rule.days)).toEqual([1, 1, 3]);
+    expect(parsed.holidays.map((rule) => rule.days)).toEqual([1, 1, 3, 1]);
+    expect(parsed.holidays[3]).toMatchObject({ offset: 0, observe: [{ weekday: 6, shift: -1 }] });
   });
 
   it.each([
@@ -34,6 +46,31 @@ describe("BUSINESS_CALENDAR_SCHEMA", () => {
     ["a bad weekday", { workingWeek: [{ day: 8, hours: [{ start: "09:00", end: "17:00" }] }] }],
     ["an unknown holiday kind", { holidays: [{ kind: "lunar", key: "x", month: 1, day: 1 }] }],
     ["a Hijri rule without sighted", { holidays: [{ kind: "hijri", key: "x", month: 1, day: 1 }] }],
+    [
+      "a zero position",
+      { holidays: [{ kind: "nth_weekday", key: "x", month: 1, weekday: 1, nth: 0 }] },
+    ],
+    [
+      "a sixth position",
+      { holidays: [{ kind: "nth_weekday", key: "x", month: 1, weekday: 1, nth: 6 }] },
+    ],
+    [
+      "a weekday moved twice",
+      {
+        holidays: [
+          {
+            kind: "gregorian",
+            key: "x",
+            month: 1,
+            day: 1,
+            observe: [
+              { weekday: 6, shift: -1 },
+              { weekday: 6, shift: 2 },
+            ],
+          },
+        ],
+      },
+    ],
     ["an unknown uncertain-day policy", { uncertainDays: "guess" }],
   ])("refuses %s", (_name, change) => {
     expect(BUSINESS_CALENDAR_SCHEMA.safeParse({ ...valid, ...change }).success).toBe(false);
