@@ -1,10 +1,10 @@
 /**
  * Stackra file contract:
- * Purpose: the consumer contract of the `./node` entry: the Postgres driver and the unit-of-work driver are exported,
- *          nothing else is.
+ * Purpose: the consumer contract of the `./node` entry: the Postgres, unit-of-work, idempotency and rate-limit
+ *          drivers, the migration runner and the seed runner are exported, nothing else is.
  * Boundary: test only; no database is connected.
  * Runtime: node (vitest)
- * Governing contract: ADR 0294 (decision 15); ADR 0022.
+ * Governing contract: ADR 0294 (decision 15); ADR 0396; ADR 0022.
  */
 import { describe, expect, it } from "@stackra/testing";
 
@@ -15,6 +15,12 @@ describe("@stackra/database/node", () => {
     expect(Object.keys(node).sort()).toEqual([
       "DatabaseUnitOfWorkDriver",
       "PostgresDatabaseDriver",
+      "PostgresIdempotencyStoreDriver",
+      "PostgresRateLimitStoreDriver",
+      "applySeed",
+      "migrate",
+      "rollback",
+      "seedState",
     ]);
   });
 });

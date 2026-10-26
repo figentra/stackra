@@ -441,6 +441,19 @@ describe(compileMigration, () => {
     expect(() => compileMigration(RawMigration, { schema: "geo" })).toThrow(/needs \{ inverse \}/);
   });
 
+  it("refuses a Postgres sequence, so a document number is always a Sequence", () => {
+    class CounterMigration extends Migration {
+      up(schema: SchemaBuilder): void {
+        schema.sql("CREATE  SEQUENCE billing.invoice_no START 1", {
+          inverse: "drop sequence billing.invoice_no",
+        });
+      }
+    }
+    expect(() => compileMigration(CounterMigration, { schema: "billing" })).toThrow(
+      /creates a Postgres sequence/,
+    );
+  });
+
   it("refuses a class that is not a migration, a bad schema name and a misnamed macro", () => {
     class NotAMigration {}
     class Classify extends Macro {

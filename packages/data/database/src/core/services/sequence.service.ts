@@ -11,10 +11,12 @@
  *           write. A returned remainder is handed out before the counter moves, lowest first, so every number ends up a
  *           document or an explained void. `next` and `claim` refuse to run outside a transaction, where the number
  *           would commit without its document. Row-level security limits every statement to the session's granted
- *           scopes (`Database.withScope`), so a scope outside them fails the write.
+ *           scopes (`Database.withScope`), so a scope outside them fails the write. The year of a yearly series is
+ *           read in the time zone its owner's setting names (the connected `SequenceTimeZone`), else in the call's.
  * Runtime: node
- * Governing contract: ADR 0342 (decisions 2 to 5); ADR 0160 (raw SQL is parameterised, in this package); ADR 0136
- *                     (decision 2: one transaction per action); ADR 0327 (decisions 3 and 9); ADR 0338.
+ * Governing contract: ADR 0342 (decisions 2 to 5); ADR 0394 (decision 1: the series' time zone is a setting); ADR
+ *                     0160 (raw SQL is parameterised, in this package); ADR 0136 (decision 2: one transaction per
+ *                     action); ADR 0327 (decisions 3 and 9); ADR 0338.
  */
 import type { EntityManager } from "@mikro-orm/postgresql";
 import { Service, kindOf } from "@stackra/container";
@@ -22,6 +24,7 @@ import type { Clock, PublicId, ScopeRef } from "@stackra/contracts";
 import { NotFoundError } from "@stackra/errors";
 
 import { SEQUENCE_REGISTRY } from "#core/constants/sequence-registry.constant";
+import { SEQUENCE_TIME_ZONE_HOST } from "#core/constants/sequence-time-zone-host.constant";
 import { SequenceBlockClosedError } from "#core/errors/sequence-block-closed.error";
 import { SequenceNotReservableError } from "#core/errors/sequence-not-reservable.error";
 import { SequenceNumberOutOfOrderError } from "#core/errors/sequence-number-out-of-order.error";
@@ -154,7 +157,7 @@ export class SequenceService extends Service {
    * The next number of `sequence` in `scope` and `series`, taken in the running transaction: it commits with the
    * document or not at all.
    *
-   * @param timeZone - the IANA time zone the year of a yearly sequence is read in (the call's `ctx.timeZone`).
+   * @param timeZone - the IANA time zone the year of a yearly sequence is read in when its owner sets none.
    * @throws Error outside a transaction.
    * @throws TypeError for an unregistered sequence or a series that does not match its dimensions.
    * @throws RangeError for an unknown time zone.
@@ -166,7 +169,7 @@ export class SequenceService extends Service {
     timeZone = "UTC",
   ): Promise<SequenceNumber> {
     const em = this.transactionEm("next");
-    const counter = this.counterOf(sequence, scope, series, timeZone);
+    const counter = await this.counterOf(sequence, scope, series, timeZone);
     const { first } = await this.take(em, counter, 1);
     return numberOf(counter.options.format, first, counter.period);
   }
@@ -185,7 +188,7 @@ export class SequenceService extends Service {
     series: SequenceSeries,
     options: SequenceReserveOptions,
   ): Promise<SequenceBlock> {
-    const counter = this.counterOf(sequence, scope, series, options.timeZone ?? "UTC");
+    const counter = await this.counterOf(sequence, scope, series, options.timeZone ?? "UTC");
     const { reserve, format } = counter.options;
     if (reserve === false) throw SequenceNotReservableError.create({ sequence: counter.key });
     const size = options.size ?? reserve.size;
@@ -365,17 +368,18 @@ export class SequenceService extends Service {
   }
 
   /**
-   * The counter `sequence`, `scope` and `series` name now.
+   * The counter `sequence`, `scope` and `series` name now. A yearly series reads its year in the time zone the
+   * connected `SequenceTimeZone` answers for it, else in `timeZone`.
    *
    * @throws TypeError for an unregistered sequence or a series that does not match its dimensions.
    * @throws RangeError for series values too long for the column, or an unknown time zone.
    */
-  private counterOf(
+  private async counterOf(
     sequence: SequenceClass,
     scope: ScopeRef,
     series: SequenceSeries,
     timeZone: string,
-  ): Counter {
+  ): Promise<Counter> {
     const { key, options } = this.registrationOf(sequence);
     const given = Object.keys(series);
     if (
@@ -390,7 +394,12 @@ export class SequenceService extends Service {
       throw new RangeError(
         `Sequence ${key}: the series values are longer than ${MAX_SERIES} characters`,
       );
-    const period = options.reset === "yearly" ? yearOf(this.clock.now(), timeZone) : 0;
+    let period = 0;
+    if (options.reset === "yearly") {
+      const named = Object.fromEntries(options.series.map((name) => [name, String(series[name])]));
+      const owned = await SEQUENCE_TIME_ZONE_HOST.source?.timeZoneOf(key, scope, named);
+      period = yearOf(this.clock.now(), owned ?? timeZone);
+    }
     return { key, scope, series: values, period, options };
   }
 

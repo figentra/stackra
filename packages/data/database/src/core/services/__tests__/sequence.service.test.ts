@@ -7,7 +7,7 @@
  *          of the last one and voids those it skips, and refuses a number behind it or outside the block, another
  *          holder's or another sequence's block and a closed one; `release` steps the counter back when the block is
  *          its tail and otherwise leaves the remainder to be handed out first; `void` records the remainder with its
- *          reason.
+ *          reason. A connected `SequenceTimeZone` names the zone a yearly series reads its year in, over the call's.
  * Boundary: test only; a scripted entity manager answers each statement in turn and records it, so no database runs.
  *           The real-Postgres conformance is `sequence.service.int.test.ts`.
  * Runtime: node (vitest)
@@ -17,7 +17,7 @@ import type { EntityManager } from "@mikro-orm/postgresql";
 import { Clock } from "@stackra/contracts";
 import type { ScopeRef } from "@stackra/contracts";
 import { NotFoundError } from "@stackra/errors";
-import { describe, expect, it } from "@stackra/testing";
+import { afterEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 import type { Mock } from "vitest";
 
@@ -25,9 +25,11 @@ import { Sequence } from "#core/bases/sequence.base";
 import { SequenceBlockClosedError } from "#core/errors/sequence-block-closed.error";
 import { SequenceNotReservableError } from "#core/errors/sequence-not-reservable.error";
 import { SequenceNumberOutOfOrderError } from "#core/errors/sequence-number-out-of-order.error";
+import { connectSequenceTimeZone } from "#core/functions/connect-sequence-time-zone.function";
 import { registerSequences } from "#core/functions/register-sequences.function";
 import { Database } from "#core/ports/database.port";
 import { SequenceService } from "#core/services/sequence.service";
+import { SequenceTimeZone } from "#contracts/ports/sequence-time-zone.port";
 
 class InvoiceSequence extends Sequence({
   key: "invoice",
@@ -56,6 +58,24 @@ class NewYearsEveClock extends Clock {
     return new Date("2026-12-31T22:30:00Z");
   }
 }
+
+/** The owner's setting: the legal entity `le_1` numbers in Riyadh, every other one has none. */
+class LegalEntityZone extends SequenceTimeZone {
+  readonly asked: [string, ScopeRef, Readonly<Record<string, string>>][] = [];
+
+  async timeZoneOf(
+    key: string,
+    at: ScopeRef,
+    series: Readonly<Record<string, string>>,
+  ): Promise<string | undefined> {
+    this.asked.push([key, at, series]);
+    return series["legalEntityId"] === "le_1" ? "Asia/Riyadh" : undefined;
+  }
+}
+
+afterEach(() => {
+  connectSequenceTimeZone(undefined);
+});
 
 /** A database whose entity manager answers each statement with the next of `results`. */
 class ScriptedDatabase extends Database {
@@ -136,6 +156,22 @@ describe(SequenceService, () => {
       '["le_1"]',
       2027,
     ]);
+  });
+
+  it("reads the year in the owner's time zone over the call's, and in the call's when the owner sets none", async () => {
+    const zone = new LegalEntityZone();
+    connectSequenceTimeZone(zone);
+    const owned = serviceWith([[], [], [{ last_number: "1" }]]);
+    expect(
+      (await owned.service.next(InvoiceSequence, scope, { legalEntityId: "le_1" }, "UTC")).period,
+    ).toBe(2027);
+    expect(zone.asked).toEqual([["billing.invoice", scope, { legalEntityId: "le_1" }]]);
+    const unset = serviceWith([[], [], [{ last_number: "1" }]]);
+    expect(
+      (await unset.service.next(InvoiceSequence, scope, { legalEntityId: "le_2" }, "UTC")).period,
+    ).toBe(2026);
+    await unset.service.next(ReceiptSequence, scope).catch(() => undefined);
+    expect(zone.asked).toHaveLength(2);
   });
 
   it("hands out a returned remainder before the counter moves", async () => {

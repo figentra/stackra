@@ -47,6 +47,11 @@ The MikroORM layer on Postgres. Member at `packages/data/database` (`tier:lib`),
 - Legal holds (ADR 0134, 2026-10-24 amendment): every disposal path asks the connected `HoldRegistry` through
   `disposableIds`: `HoldSubscriber` for unit-of-work deletes, `CrudService.purge` for bulk deletes, and retention jobs
   directly. A new bulk delete path calls it too; never decide or lift a hold here (the compliance service does).
+- The yearly period's time zone is the series owner's setting, through the connected `SequenceTimeZone` (ADR 0394);
+  never add a time zone constant or read a setting here.
+- The Postgres action stores (`database.idempotency_keys`, `database.rate_limit_buckets`) and the seed ledger
+  (`database.seed_records`) are this package's own tables, written only by their drivers and the seed runner (ADR 0396).
+  No row-level security on them: an action-store key is already scoped, and product defaults are not tenant-owned.
 - Collations: `schema.createCollation(name, locale)` creates an ICU collation in the module schema and
   `.collate(name)` names it on a text column; the locale is the migration's literal, never chosen in this package.
 - `t.scopeId()` and `t.scopePath()` are the only scope columns built in; tenancy's `belongsToTenant` and any other

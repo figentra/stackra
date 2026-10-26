@@ -5,9 +5,11 @@
  *          its derived inverse.
  * Boundary: internal. Raw statements keep the inverse the migration stated; a `CONCURRENTLY` statement becomes its
  *           own non-transactional step. Extensions are the ADR 0160 list only; an ICU collation is created
- *           in the module's schema.
+ *           in the module's schema. A raw `CREATE SEQUENCE` is refused: a document number is a `Sequence` (ADR 0342
+ *           d5), and an id is a public id, so no migration needs one.
  * Runtime: node
- * Governing contract: ADR 0159 (decision 3; 2026-10-23 and 2026-10-24 notes); ADR 0160 (approved extensions).
+ * Governing contract: ADR 0159 (decision 3; 2026-10-23 and 2026-10-24 notes); ADR 0160 (approved extensions); ADR
+ *                     0342 (decision 5) and ADR 0394 (decision 3: no Postgres sequence).
  */
 import { Enum } from "@stackra/contracts";
 
@@ -29,6 +31,9 @@ type Operation =
 
 /** A statement that cannot run inside a transaction. */
 const CONCURRENTLY = /\bconcurrently\b/i;
+
+/** A Postgres sequence, which a rolled-back transaction burns a value of. */
+const CREATE_SEQUENCE = /\bcreate\s+(?:(?:temp|temporary|unlogged)\s+)?sequence\b/i;
 
 /** The inverse of a run of statements: theirs, last first, or `false` when one has none. */
 function inverseOf(statements: readonly CompiledStatement[]): readonly string[] | false {
@@ -67,10 +72,14 @@ export class SchemaRecord implements SchemaBuilder {
   /**
    * See `SchemaBuilder.sql`.
    *
-   * @throws TypeError for a blank statement, or an inverse that is neither a statement nor `false`.
+   * @throws TypeError for a blank statement, a `CREATE SEQUENCE`, or an inverse that is neither a statement nor `false`.
    */
   sql(statement: string, options: { readonly inverse: string | false }): void {
     if (statement.trim() === "") throw new TypeError("schema.sql needs a statement");
+    if (CREATE_SEQUENCE.test(statement))
+      throw new TypeError(
+        "schema.sql creates a Postgres sequence: a document number is a Sequence({ key }) in database/sequences/ (ADR 0342), an id is a public id",
+      );
     const inverse = options?.inverse;
     if (inverse !== false && (typeof inverse !== "string" || inverse.trim() === ""))
       throw new TypeError(

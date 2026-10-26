@@ -31,6 +31,7 @@ export { SequenceNotReservableError } from "#core/errors/sequence-not-reservable
 export { SequenceNumberOutOfOrderError } from "#core/errors/sequence-number-out-of-order.error";
 export { compileMigration } from "#core/functions/compile-migration.function";
 export { connectHoldRegistry } from "#core/functions/connect-hold-registry.function";
+export { connectSequenceTimeZone } from "#core/functions/connect-sequence-time-zone.function";
 export { connectVisibilityFilter } from "#core/functions/connect-visibility-filter.function";
 export { disposableIds } from "#core/functions/disposable-ids.function";
 export { formatSequenceNumber } from "#core/functions/format-sequence-number.function";

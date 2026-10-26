@@ -195,6 +195,7 @@ describe("@stackra/database", () => {
       "UniqueViolation",
       "compileMigration",
       "connectHoldRegistry",
+      "connectSequenceTimeZone",
       "connectVisibilityFilter",
       "disposableIds",
       "formatSequenceNumber",
