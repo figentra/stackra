@@ -73,9 +73,11 @@
     "@stackra/contracts": "workspace:*",
     "@stackra/database": "workspace:*",
     "@stackra/errors": "workspace:*",
+    "@stackra/events": "workspace:*",
     "@stackra/model": "workspace:*",
     "@stackra/search": "workspace:*",
     "@stackra/tenancy": "workspace:*",
+    "@stackra/validation": "workspace:*",
     "ai": "catalog:",
     "zod": "catalog:"
   },

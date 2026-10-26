@@ -28,6 +28,7 @@ the one MCP gateway in the `ai` service serves it.
 | `runGuardrails(layers, text, stage)`                              | the layered guardrail check over bound `Guardrail` drivers; the first block wins                            |
 | `runEvals(cases, subject)`                                        | an eval suite run, for CI on AI SDK's mock or recorded models                                               |
 | `routeIntent(text, intents, { model })`                           | the intent router: a phrase match, else one `decide` among the keys                                         |
+| `ApprovalRequested`, `ApprovalResolved`, `RunCompleted`           | the three integration events of ADR 0100 decision 11 (`ai.approval.requested.v1` and the others)            |
 
 ## Retrieval for Facts
 
@@ -158,6 +159,14 @@ const isComplaint = await decide({ model, prompt: `Is this a complaint? ${text}`
 secret name resolved at run time). A model id string is refused: AI SDK would resolve it through its hosted gateway,
 an LLM proxy ADR 0155 rules out. An answer outside the choices or the range rejects with AI SDK's
 `NoObjectGeneratedError`.
+
+## Events
+
+ADR 0100 decision 11 allows three integration events and no others. `PostgresRunStoreDriver` (`./node`) records each on
+the row that changes, so the outbox writes it in the same flush: `ApprovalRequested` on the run as it parks on a gated
+tool call, `ApprovalResolved` on the approval as it is granted or denied, and `RunCompleted` on the run as it completes
+or fails (with its steps and a failure's code). None carries prompt, response or tool input text. The memory store
+records none: it has no outbox.
 
 ## Not here
 

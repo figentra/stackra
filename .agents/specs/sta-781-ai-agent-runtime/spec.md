@@ -37,9 +37,13 @@ d10 tables as models and migrations, a `./node` entry and a tenant-key encryptio
 - **FR-003** Memory drivers of both stores in `.`; Postgres drivers, the eight models, the first migration and
   `TenantKeyCast` in `./node`.
 
+- **FR-004** (wave 12) The three integration events of ADR 0100 d11: `ApprovalRequested`
+  (`ai.approval.requested.v1`), `ApprovalResolved` (`ai.approval.resolved.v1`) and `RunCompleted`
+  (`ai.run.completed.v1`), recorded by `PostgresRunStoreDriver` on the row that changes so the outbox writes them in the
+  same flush; no text in any of them. The table rename to the `ai.<name>` schema waits for the owner (ADR 0399).
+
 ## Not built here
 
 - A2A and the MCP gateway; the ai service's `ToolDispatcher`, `AgentModels`, `InstructionSource` and `AgentQueue`
   drivers.
-- The three integration events of ADR 0100 d11.
 - Tests, typecheck and build are written but not run (owner mode).

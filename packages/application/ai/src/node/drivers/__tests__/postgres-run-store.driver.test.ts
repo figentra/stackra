@@ -2,20 +2,25 @@
  * Stackra file contract:
  * Purpose: unit tests of `PostgresRunStoreDriver`: it creates runs with their scope and record, updates the status and
  *          the parked call (cleared with `null`), records steps and tool calls, keeps one approval row per id whose
- *          status a later record changes, and reads them per run.
+ *          status a later record changes, and reads them per run; it records `ApprovalRequested` on the run as it
+ *          parks, `ApprovalResolved` on the approval as it leaves `pending` and `RunCompleted` as the run ends.
  * Boundary: test only; the repositories are in-memory stand-ins (the unit of work's flush is the database's). The SQL
  *           side is the migration's test.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0100 (decision 10); ADR 0399.
+ * Governing contract: ADR 0022 (test placement); ADR 0100 (decisions 10 and 11); ADR 0399.
  */
 import { ActorKind } from "@stackra/contracts";
 import type { Repository } from "@stackra/database";
+import { takeRecordedEvents } from "@stackra/events";
 import { describe, expect, it } from "@stackra/testing";
 
 import { RunApprovalStatus } from "#contracts/enums/run-approval-status.enum";
 import { RunStatus } from "#contracts/enums/run-status.enum";
 import { ToolCallOutcome } from "#contracts/enums/tool-call-outcome.enum";
 import { RunStore } from "#contracts/ports/run-store.port";
+import { ApprovalRequested } from "#core/events/approval-requested.event";
+import { ApprovalResolved } from "#core/events/approval-resolved.event";
+import { RunCompleted } from "#core/events/run-completed.event";
 import { PostgresRunStoreDriver } from "#node/drivers/postgres-run-store.driver";
 import type { RunApproval } from "#node/models/run-approval.model";
 import type { RunStep } from "#node/models/run-step.model";
@@ -37,7 +42,7 @@ function rowsOf<M extends object>(
     rows,
     insert: async (data: object) => {
       const row = {
-        id: `${prefix}_${rows.length + 1}`,
+        id: `${prefix}_01j9z3k4m5n6p7q8r9s0t1v2w${rows.length + 1}`,
         tenantId: "scp_a",
         createdAt: at,
         updatedAt: at,
@@ -81,6 +86,15 @@ describe(PostgresRunStoreDriver, () => {
     expect(run).toMatchObject({ record: { kind: "matter" }, steps: 0, status: "running" });
     expect(run.scope).toBeUndefined();
 
+    const parked = {
+      approvalId: "apr_1",
+      runId: run.id,
+      toolCallId: "call_1",
+      tool: "legal.letter.send@1",
+      status: RunApprovalStatus.Pending,
+      at,
+    };
+    await store.recordApproval(parked);
     await store.update(run.id, {
       status: RunStatus.WaitingApproval,
       pending: { approvalId: "apr_1", toolCallId: "call_1" },
@@ -91,9 +105,46 @@ describe(PostgresRunStoreDriver, () => {
       pending: { approvalId: "apr_1", toolCallId: "call_1" },
       steps: 1,
     });
+    const [runRow] = runs.rows;
+    expect(takeRecordedEvents(runRow as object)).toEqual([
+      ApprovalRequested.create({
+        runId: run.id as never,
+        agent: "matter_assistant",
+        approvalId: "apr_1",
+        tool: "legal.letter.send@1",
+      }),
+    ]);
+    await store.recordApproval({ ...parked, status: RunApprovalStatus.Denied });
+    expect(approvals.rows).toHaveLength(1);
+    expect((await store.approvals(run.id)).map(({ status }) => status)).toEqual(["denied"]);
+    expect(takeRecordedEvents(approvals.rows[0] as object)).toEqual([
+      ApprovalResolved.create({
+        runId: run.id as never,
+        approvalId: "apr_1",
+        tool: "legal.letter.send@1",
+        status: "denied",
+      }),
+    ]);
+    await store.recordApproval({ ...parked, status: RunApprovalStatus.Denied });
+    expect(takeRecordedEvents(approvals.rows[0] as object)).toEqual([]);
     await store.update(run.id, { status: RunStatus.Completed, pending: null, finishedAt: at });
     expect(await store.get(run.id)).toMatchObject({ status: "completed", finishedAt: at });
     expect((await store.get(run.id))?.pending).toBeUndefined();
+    expect(takeRecordedEvents(runRow as object)).toEqual([
+      RunCompleted.create({
+        runId: run.id as never,
+        agent: "matter_assistant",
+        status: "completed",
+        steps: 1,
+        errorCode: null,
+      }),
+    ]);
+    await expect(
+      store.update(run.id, {
+        status: RunStatus.WaitingApproval,
+        pending: { approvalId: "apr_unknown", toolCallId: "call_2" },
+      }),
+    ).rejects.toThrow(RangeError);
 
     await store.recordStep({
       runId: run.id,
@@ -115,17 +166,5 @@ describe(PostgresRunStoreDriver, () => {
     expect(await store.toolCalls(run.id)).toEqual([
       expect.objectContaining({ outcome: "refused", code: "forbidden" }),
     ]);
-    const parked = {
-      approvalId: "apr_1",
-      runId: run.id,
-      toolCallId: "call_1",
-      tool: "legal.letter.send@1",
-      status: RunApprovalStatus.Pending,
-      at,
-    };
-    await store.recordApproval(parked);
-    await store.recordApproval({ ...parked, status: RunApprovalStatus.Denied });
-    expect(approvals.rows).toHaveLength(1);
-    expect((await store.approvals(run.id)).map(({ status }) => status)).toEqual(["denied"]);
   });
 });
