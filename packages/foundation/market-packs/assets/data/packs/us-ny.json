@@ -1,0 +1,44 @@
+{
+  "market": "us-ny",
+  "extends": "us",
+  "version": "0.1.0",
+  "status": "draft",
+  "entries": [
+    {
+      "key": "calendar.holidays.state",
+      "value": [
+        {
+          "kind": "gregorian",
+          "key": "lincolns_birthday",
+          "month": 2,
+          "day": 12,
+          "observe": [
+            {
+              "weekday": 6,
+              "shift": -1
+            },
+            {
+              "weekday": 7,
+              "shift": 1
+            }
+          ]
+        },
+        {
+          "kind": "nth_weekday",
+          "key": "election_day",
+          "month": 11,
+          "weekday": 1,
+          "nth": 1,
+          "offset": 1
+        }
+      ],
+      "from": "2000-01-01"
+    }
+  ],
+  "reviews": [],
+  "checklist": [
+    {
+      "id": "counsel_review"
+    }
+  ]
+}

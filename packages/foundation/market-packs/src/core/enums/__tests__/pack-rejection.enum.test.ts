@@ -18,12 +18,18 @@ describe("PackRejection", () => {
       "key_unknown",
       "signature_invalid",
       "overlay_cycle",
+      "not_stored",
     ]);
   });
 
   it("types one code", () => {
     expectTypeOf<PackRejection>().toEqualTypeOf<
-      "shape_invalid" | "hash_mismatch" | "key_unknown" | "signature_invalid" | "overlay_cycle"
+      | "shape_invalid"
+      | "hash_mismatch"
+      | "key_unknown"
+      | "signature_invalid"
+      | "overlay_cycle"
+      | "not_stored"
     >();
   });
 });

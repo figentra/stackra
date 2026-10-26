@@ -1,0 +1,51 @@
+{
+  "market": "us-ca",
+  "extends": "us",
+  "version": "0.1.0",
+  "status": "draft",
+  "entries": [
+    {
+      "key": "calendar.holidays.state",
+      "value": [
+        {
+          "kind": "gregorian",
+          "key": "cesar_chavez_day",
+          "month": 3,
+          "day": 31,
+          "observe": [
+            {
+              "weekday": 6,
+              "shift": -1
+            },
+            {
+              "weekday": 7,
+              "shift": 1
+            }
+          ]
+        },
+        {
+          "kind": "nth_weekday",
+          "key": "native_american_day",
+          "month": 9,
+          "weekday": 5,
+          "nth": 4
+        },
+        {
+          "kind": "nth_weekday",
+          "key": "day_after_thanksgiving",
+          "month": 11,
+          "weekday": 4,
+          "nth": 4,
+          "offset": 1
+        }
+      ],
+      "from": "2000-01-01"
+    }
+  ],
+  "reviews": [],
+  "checklist": [
+    {
+      "id": "counsel_review"
+    }
+  ]
+}

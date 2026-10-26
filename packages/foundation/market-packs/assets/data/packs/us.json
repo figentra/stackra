@@ -1,0 +1,241 @@
+{
+  "market": "us",
+  "version": "0.1.0",
+  "status": "draft",
+  "subjects": [
+    {
+      "key": "auto_renewal",
+      "subject": "buyer"
+    },
+    {
+      "key": "calendar",
+      "subject": "location"
+    },
+    {
+      "key": "food",
+      "subject": "location"
+    },
+    {
+      "key": "labour",
+      "subject": "location"
+    },
+    {
+      "key": "privacy",
+      "subject": "buyer"
+    },
+    {
+      "key": "registration",
+      "subject": "entity"
+    },
+    {
+      "key": "tax.sales",
+      "subject": "buyer"
+    },
+    {
+      "key": "till",
+      "subject": "location"
+    },
+    {
+      "key": "tips",
+      "subject": "location"
+    }
+  ],
+  "entries": [
+    {
+      "key": "calendar.working_week",
+      "value": [
+        {
+          "day": 1,
+          "hours": [
+            {
+              "start": "09:00",
+              "end": "17:00"
+            }
+          ]
+        },
+        {
+          "day": 2,
+          "hours": [
+            {
+              "start": "09:00",
+              "end": "17:00"
+            }
+          ]
+        },
+        {
+          "day": 3,
+          "hours": [
+            {
+              "start": "09:00",
+              "end": "17:00"
+            }
+          ]
+        },
+        {
+          "day": 4,
+          "hours": [
+            {
+              "start": "09:00",
+              "end": "17:00"
+            }
+          ]
+        },
+        {
+          "day": 5,
+          "hours": [
+            {
+              "start": "09:00",
+              "end": "17:00"
+            }
+          ]
+        }
+      ],
+      "from": "2000-01-01"
+    },
+    {
+      "key": "calendar.holidays.federal",
+      "value": [
+        {
+          "kind": "gregorian",
+          "key": "new_years_day",
+          "month": 1,
+          "day": 1,
+          "observe": [
+            {
+              "weekday": 6,
+              "shift": -1
+            },
+            {
+              "weekday": 7,
+              "shift": 1
+            }
+          ]
+        },
+        {
+          "kind": "nth_weekday",
+          "key": "martin_luther_king_jr_day",
+          "month": 1,
+          "weekday": 1,
+          "nth": 3
+        },
+        {
+          "kind": "nth_weekday",
+          "key": "washingtons_birthday",
+          "month": 2,
+          "weekday": 1,
+          "nth": 3
+        },
+        {
+          "kind": "nth_weekday",
+          "key": "memorial_day",
+          "month": 5,
+          "weekday": 1,
+          "nth": -1
+        },
+        {
+          "kind": "gregorian",
+          "key": "juneteenth",
+          "month": 6,
+          "day": 19,
+          "observe": [
+            {
+              "weekday": 6,
+              "shift": -1
+            },
+            {
+              "weekday": 7,
+              "shift": 1
+            }
+          ],
+          "since": "2021-06-18"
+        },
+        {
+          "kind": "gregorian",
+          "key": "independence_day",
+          "month": 7,
+          "day": 4,
+          "observe": [
+            {
+              "weekday": 6,
+              "shift": -1
+            },
+            {
+              "weekday": 7,
+              "shift": 1
+            }
+          ]
+        },
+        {
+          "kind": "nth_weekday",
+          "key": "labor_day",
+          "month": 9,
+          "weekday": 1,
+          "nth": 1
+        },
+        {
+          "kind": "nth_weekday",
+          "key": "columbus_day",
+          "month": 10,
+          "weekday": 1,
+          "nth": 2
+        },
+        {
+          "kind": "gregorian",
+          "key": "veterans_day",
+          "month": 11,
+          "day": 11,
+          "observe": [
+            {
+              "weekday": 6,
+              "shift": -1
+            },
+            {
+              "weekday": 7,
+              "shift": 1
+            }
+          ]
+        },
+        {
+          "kind": "nth_weekday",
+          "key": "thanksgiving_day",
+          "month": 11,
+          "weekday": 4,
+          "nth": 4
+        },
+        {
+          "kind": "gregorian",
+          "key": "christmas_day",
+          "month": 12,
+          "day": 25,
+          "observe": [
+            {
+              "weekday": 6,
+              "shift": -1
+            },
+            {
+              "weekday": 7,
+              "shift": 1
+            }
+          ]
+        }
+      ],
+      "from": "2000-01-01"
+    },
+    {
+      "key": "calendar.uncertain_days",
+      "value": "working",
+      "from": "2000-01-01"
+    },
+    {
+      "key": "calendar.leap_birthday",
+      "value": "march_1",
+      "from": "2000-01-01"
+    }
+  ],
+  "reviews": [],
+  "checklist": [
+    {
+      "id": "counsel_review"
+    }
+  ]
+}

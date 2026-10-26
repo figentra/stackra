@@ -10,23 +10,30 @@ import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
 import { MARKET_PACK_SCHEMA } from "#core/constants/market-pack-schema.constant";
 import { SIGNED_PACK_SCHEMA } from "#core/constants/signed-pack-schema.constant";
-import type { MarketPack, PackEntry, SignedPack } from "#core/index";
+import type { MarketPack, MarketRecord, PackEntry, SignedPack } from "#core/index";
 import * as entry from "#core/index";
 
 describe("@stackra/market-packs", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(entry).sort()).toEqual([
+      "FilesystemPackStoreDriver",
       "FloorBound",
+      "MarketContext",
       "MarketPack$",
       "PackNotFoundError",
       "PackRejectedError",
       "PackRejection",
       "PackStatus",
+      "PackStore",
+      "PackSubject",
       "SignedPack$",
+      "SubjectMarketMissingError",
       "contentHash",
       "factsOn",
+      "fetchPacks",
       "floorsOn",
       "launchGate",
+      "readPackAssets",
       "resolvePack",
       "signPack",
       "unreviewed",
@@ -44,5 +51,6 @@ describe("@stackra/market-packs", () => {
   it("resolves its public types", () => {
     expectTypeOf<MarketPack["entries"][number]>().toEqualTypeOf<PackEntry>();
     expectTypeOf<SignedPack["pack"]>().toEqualTypeOf<MarketPack>();
+    expectTypeOf<MarketRecord["tenant"]>().toEqualTypeOf<string>();
   });
 });

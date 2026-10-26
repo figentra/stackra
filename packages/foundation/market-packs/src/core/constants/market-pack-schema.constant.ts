@@ -7,15 +7,18 @@
  *           are `major.minor.patch`; entry keys are dotted lowercase paths. An entry is in force from `from` through
  *           `until` (both inclusive). One key never has two entries starting the same day. A product section names
  *           its keys under its own prefix (`<section>.`), so it can never overwrite a base value, and does not overlay
- *           a market itself: it follows its base pack. `reviews` and `checklist` default to empty.
+ *           a market itself: it follows its base pack. `reviews` and `checklist` default to empty. `subjects` names, per
+ *           key or key prefix, whose market answers it (`location`, `buyer`, `entity`, `tenant`); each key is named
+ *           once per pack and a section's subject keys carry its prefix too.
  * Runtime: isomorphic
- * Governing contract: ADR 0370 (decisions 1, 4, 5, 6 and 8); ADR 0363 (decisions 3 and 4).
+ * Governing contract: ADR 0370 (decisions 1, 4, 5, 6 and 8) as amended by ADR 0385; ADR 0363 (decisions 3 and 4).
  */
 import { Enum } from "@stackra/contracts";
 import { z } from "zod";
 
 import { FloorBound } from "#core/enums/floor-bound.enum";
 import { PackStatus } from "#core/enums/pack-status.enum";
+import { PackSubject } from "#core/enums/pack-subject.enum";
 
 /** A market code. */
 const MARKET = z.string().regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, "Expected a lowercase market code");
@@ -64,6 +67,13 @@ export const MARKET_PACK_SCHEMA = z
         }),
       )
       .default([]),
+    subjects: z
+      .array(z.object({ key: KEY, subject: z.enum(Enum.values(PackSubject)) }))
+      .refine(
+        (subjects) => new Set(subjects.map((item) => item.key)).size === subjects.length,
+        "A key is given one subject",
+      )
+      .exactOptional(),
   })
   .refine(
     (pack) =>
@@ -74,7 +84,9 @@ export const MARKET_PACK_SCHEMA = z
   .refine(
     (pack) =>
       pack.section === undefined ||
-      [...pack.entries, ...pack.reviews].every((item) => item.key.startsWith(`${pack.section}.`)),
+      [...pack.entries, ...pack.reviews, ...(pack.subjects ?? [])].every((item) =>
+        item.key.startsWith(`${pack.section}.`),
+      ),
     { message: "A section's keys start with its section key", path: ["entries"] },
   )
   .refine((pack) => pack.section === undefined || pack.extends === undefined, {

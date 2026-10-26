@@ -1,6 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `resolvePack`: overlays root first with sections beside their base, pins per market, accepted statuses, a missing market and an overlay loop.
+ * Purpose: unit tests of `resolvePack`: overlays of any depth root first with sections beside each base (a section per
+ *          overlay), pins per market, accepted statuses, a missing market and overlay loops of any length.
  * Boundary: test only; imports the subject through its `#core` alias and the runner through @stackra/testing. Pack
  *           data is a made-up fixture, not any market's values (ADR 0363 decision 9).
  * Runtime: node (vitest)
@@ -41,6 +42,20 @@ describe("resolvePack", () => {
   it("lists the root first and the overlay last", () => {
     expect(labels("xa-one")).toEqual(["xa@2.0.0", "xa-one@1.0.0"]);
     expect(resolvePack(packs, "xa-one").market).toBe("xa-one");
+  });
+
+  it("resolves a chain of any depth, parent first, with a section per overlay", () => {
+    const deep = [
+      ...packs,
+      pack({ market: "xa-one-city", extends: "xa-one", version: "1.0.0" }),
+      pack({ market: "xa-one-city", section: "shop", version: "1.0.0" }),
+      pack({ market: "xa-one-city-ward", extends: "xa-one-city", version: "1.0.0" }),
+    ];
+    expect(
+      resolvePack(deep, "xa-one-city-ward", { sections: ["shop"] }).layers.map(
+        (layer) => `${layer.market}${layer.section ? `/${layer.section}` : ""}`,
+      ),
+    ).toEqual(["xa", "xa/shop", "xa-one", "xa-one-city", "xa-one-city/shop", "xa-one-city-ward"]);
   });
 
   it("applies a pin per market and the accepted statuses", () => {
@@ -85,5 +100,11 @@ describe("resolvePack", () => {
       }
     })();
     expect(isRefusal(error, PackRejectedError) && error.reason).toBe(PackRejection.OverlayCycle);
+    const longer = [
+      pack({ market: "xa", extends: "xc", version: "1.0.0" }),
+      pack({ market: "xb", extends: "xa", version: "1.0.0" }),
+      pack({ market: "xc", extends: "xb", version: "1.0.0" }),
+    ];
+    expect(() => resolvePack(longer, "xb")).toThrow(PackRejectedError);
   });
 });

@@ -2,7 +2,7 @@
   "name": "@stackra/market-packs",
   "version": "0.0.0",
   "private": true,
-  "description": "Market-pack loader: verifies signed, content-hashed market packs, resolves overlays and product sections under a tenant's pins and accepted statuses, answers the value of a key for a market on a date, and exposes legal floors to settings, facts to rules and the review and launch gate of each pack",
+  "description": "Market-pack loader: verifies signed, content-hashed market packs, resolves overlays and product sections under a tenant's pins and accepted statuses, answers the value of a key for a market on a date, picks the market of a record's subject per rule kind, stores and fetches signed packs by content hash, and exposes legal floors to settings, facts to rules and the review and launch gate of each pack",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -12,6 +12,7 @@
   "files": [
     "dist",
     "src",
+    "assets",
     "README.md",
     "CHANGELOG.md",
     "LICENSE"
@@ -48,11 +49,15 @@
     "clean": "rm -rf dist coverage .turbo"
   },
   "dependencies": {
+    "@stackra/assets": "workspace:*",
+    "@stackra/container": "workspace:*",
     "@stackra/contracts": "workspace:*",
     "@stackra/errors": "workspace:*",
+    "@stackra/filesystem": "workspace:*",
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@stackra/config": "workspace:*",
     "@stackra/testing": "workspace:*",
     "@stackra/tsdown-config": "workspace:*",
     "@stackra/typescript-config": "workspace:*",

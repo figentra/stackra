@@ -1,0 +1,28 @@
+{
+  "market": "us-fl",
+  "extends": "us",
+  "version": "0.1.0",
+  "status": "draft",
+  "entries": [
+    {
+      "key": "calendar.holidays.state",
+      "value": [
+        {
+          "kind": "nth_weekday",
+          "key": "day_after_thanksgiving",
+          "month": 11,
+          "weekday": 4,
+          "nth": 4,
+          "offset": 1
+        }
+      ],
+      "from": "2000-01-01"
+    }
+  ],
+  "reviews": [],
+  "checklist": [
+    {
+      "id": "counsel_review"
+    }
+  ]
+}

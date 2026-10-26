@@ -379,6 +379,10 @@ export const MUST_STAY_JSON = [
   [/^\.specify\//, "spec-kit CLI output, read by its scripts with jq / python json"],
   [/^\.(agents|claude)\/skills\//, "vendored skills: upstream content"],
   [
+    /^packages\/foundation\/market-packs\/assets\/data\/packs\/[\w-]+\.json$/,
+    "market packs: readPackAssets loads them with AssetLibrary.json and the pack hash is over the JSON document",
+  ],
+  [
     /(^|\/)assets\/lang\/[\w-]+\/[\w-]+\.json$/,
     "lang catalogues are assets/lang/<locale>/<namespace>.json by ADR 0305 (rule 1); @stackra/i18n reads JSON",
   ],

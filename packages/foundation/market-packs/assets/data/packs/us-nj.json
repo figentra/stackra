@@ -1,0 +1,69 @@
+{
+  "market": "us-nj",
+  "extends": "us",
+  "version": "0.1.0",
+  "status": "draft",
+  "entries": [
+    {
+      "key": "calendar.holidays.state",
+      "value": [
+        {
+          "kind": "gregorian",
+          "key": "lincolns_birthday",
+          "month": 2,
+          "day": 12,
+          "observe": [
+            {
+              "weekday": 6,
+              "shift": -1
+            },
+            {
+              "weekday": 7,
+              "shift": 1
+            }
+          ]
+        },
+        {
+          "kind": "dated",
+          "key": "good_friday",
+          "date": "2026-04-03"
+        },
+        {
+          "kind": "dated",
+          "key": "good_friday",
+          "date": "2027-03-26"
+        },
+        {
+          "kind": "dated",
+          "key": "good_friday",
+          "date": "2028-04-14"
+        },
+        {
+          "kind": "dated",
+          "key": "good_friday",
+          "date": "2029-03-30"
+        },
+        {
+          "kind": "dated",
+          "key": "good_friday",
+          "date": "2030-04-19"
+        },
+        {
+          "kind": "nth_weekday",
+          "key": "election_day",
+          "month": 11,
+          "weekday": 1,
+          "nth": 1,
+          "offset": 1
+        }
+      ],
+      "from": "2000-01-01"
+    }
+  ],
+  "reviews": [],
+  "checklist": [
+    {
+      "id": "counsel_review"
+    }
+  ]
+}

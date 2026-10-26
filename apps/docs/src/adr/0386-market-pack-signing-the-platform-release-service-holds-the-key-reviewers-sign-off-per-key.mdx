@@ -1,0 +1,61 @@
+---
+title: "0386 — Market-pack signing: the platform release service holds the key, reviewers sign off per key"
+description: "Proposed · 2026-10-26"
+---
+
+<Note>
+  Proposed (STA-666). It settles
+  [0363](/adr/0363-configuration-over-code-business-behaviour-is-data-rules-workflows-and-studios)
+  open question 2 (who signs a pack version) and fills in
+  [0370](/adr/0370-market-packs-signed-dated-overlaid-data-with-pins-and-legal-floors) decision 2,
+  which says packs are signed with Ed25519 by a named key but not who holds it, and decision 8
+  (reviewer sign-off). It reads with
+  [0385](/adr/0385-market-packs-a-pack-per-rule-subject-for-records-that-touch-two-markets-nested-overlays-and-storage-by-content-hash)
+  (storage by content hash).
+</Note>
+
+## Context
+
+0370 makes a service refuse to start on a pack whose signature does not verify against a trusted key, so whoever holds
+the private key can change tax, fiscal and legal behaviour in every tenant. Two different things were called "signing":
+a person vouching that a value is legally right, and the cryptographic signature that proves the bytes came from the
+release. Alternatives weighed: counsel or each local reviewer holding a key (rejected: many keys, held on laptops, and a
+reviewer's approval is per value, not per file), a key per product for its sections (rejected for now: every service
+would trust several keys and a product could ship a section the platform never saw), and a CI secret variable
+(rejected: anyone who can change a workflow can read it).
+
+## Decision
+
+1. **Two acts, two records.** A reviewer's approval is a sign-off per entry key in the pack version (`reviews`,
+   0370 decision 8): who, on what date. The Ed25519 signature is the release's proof that the bytes are the reviewed
+   ones. A reviewer never holds a signing key.
+2. **One holder.** The platform release service (OS) holds the private key in a managed key store (a cloud KMS or HSM
+   with an Ed25519 key that cannot be exported). No person, repository, CI variable or tenant holds it. `signPack`
+   runs inside that service with a non-exportable `CryptoKey`.
+3. **What may be signed.** The release service signs a pack version only when `unreviewed` lists no key and its
+   status is `beta` or `live`. Drafts are never signed. Product sections are signed by the same service after the
+   product's own reviewers sign off their keys.
+4. **Key ids and rotation.** Each key has an id (`packs-2026`). Deployments list trusted public keys by id
+   (0370 decision 2); during a rotation two ids are trusted, and the old one is removed once every live pack is
+   re-signed. A compromised key is removed from every deployment at once; packs it signed stop loading.
+5. **Who may promote.** Moving a signed version to `live`, and pinning a tenant, remain operator actions with their own
+   permissions and audit; holding the key gives no right to promote.
+
+## Consequences
+
+- The blast radius of a leaked reviewer account is one unsigned draft; a forged pack needs the release service.
+- A pack change always needs both a reviewer sign-off and a release run; there is no "quick fix" path that skips
+  either.
+- Rotation is routine data work (a new trusted id, re-signing), not a code change.
+- A product that wants to ship sections without the platform's release service needs a new ADR.
+
+## Enforcement
+
+planned — the release service's sign step refuses a draft or a version with unreviewed keys; deployments read trusted
+keys from configuration only. Nothing checks either yet.
+
+## Supersedes and sources
+
+Supersedes: none. Settles 0363 open question 2; fills 0370 decisions 2 and 8. Sources:
+`notes/handover/stackra-package-needs.md` (market-pack loader row); `notes/handover/answers-as-config.md`
+(CAP-pack-review, CAP-pack-launch-gate); STA-666.

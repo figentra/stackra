@@ -1,13 +1,14 @@
 /**
  * Stackra file contract:
  * Purpose: `resolvePack`, the layers that answer for one market for one tenant: the market's base pack, then the pack
- *          it overlays, and so on to the root (`eu-de` then `eu`), each chosen under the tenant's pin and accepted
- *          statuses, with the requested product sections on the same major line beside each base pack.
+ *          it overlays, and so on to the root at any depth (`us-ca-sf`, `us-ca`, `us`), each chosen under the tenant's
+ *          pin and accepted statuses, with the requested product sections on the same major line beside each base
+ *          pack, so a section declared on an overlay (`us-ca-sf` / `restaurant`) overlays its parent's section.
  * Boundary: pure over verified packs. Refuses with `PackNotFoundError` when a market in the chain has no fitting base
  *           version, and with `PackRejectedError` (`overlay_cycle`) when the chain loops. A market with no section
  *           for a product simply adds none. Only `live` is accepted unless `statuses` says otherwise.
  * Runtime: isomorphic
- * Governing contract: ADR 0370 (decisions 3, 4 and 7).
+ * Governing contract: ADR 0370 (decisions 3, 4 and 7) as amended by ADR 0385.
  */
 import { PackRejection } from "#core/enums/pack-rejection.enum";
 import { PackStatus } from "#core/enums/pack-status.enum";

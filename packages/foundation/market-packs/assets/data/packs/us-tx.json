@@ -1,0 +1,64 @@
+{
+  "market": "us-tx",
+  "extends": "us",
+  "version": "0.1.0",
+  "status": "draft",
+  "entries": [
+    {
+      "key": "calendar.holidays.state",
+      "value": [
+        {
+          "kind": "gregorian",
+          "key": "confederate_heroes_day",
+          "month": 1,
+          "day": 19
+        },
+        {
+          "kind": "gregorian",
+          "key": "texas_independence_day",
+          "month": 3,
+          "day": 2
+        },
+        {
+          "kind": "gregorian",
+          "key": "san_jacinto_day",
+          "month": 4,
+          "day": 21
+        },
+        {
+          "kind": "gregorian",
+          "key": "lyndon_baines_johnson_day",
+          "month": 8,
+          "day": 27
+        },
+        {
+          "kind": "nth_weekday",
+          "key": "day_after_thanksgiving",
+          "month": 11,
+          "weekday": 4,
+          "nth": 4,
+          "offset": 1
+        },
+        {
+          "kind": "gregorian",
+          "key": "christmas_eve",
+          "month": 12,
+          "day": 24
+        },
+        {
+          "kind": "gregorian",
+          "key": "day_after_christmas",
+          "month": 12,
+          "day": 26
+        }
+      ],
+      "from": "2000-01-01"
+    }
+  ],
+  "reviews": [],
+  "checklist": [
+    {
+      "id": "counsel_review"
+    }
+  ]
+}

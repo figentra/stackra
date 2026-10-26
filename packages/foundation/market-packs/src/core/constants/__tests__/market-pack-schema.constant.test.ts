@@ -73,8 +73,42 @@ describe("MARKET_PACK_SCHEMA", () => {
       },
     ],
     ["a section that overlays a market", { section: "shop", entries: [] }],
+    ["an unknown subject", { subjects: [{ key: "tax", subject: "visitor" }] }],
+    [
+      "a key given two subjects",
+      {
+        subjects: [
+          { key: "tax", subject: "buyer" },
+          { key: "tax", subject: "location" },
+        ],
+      },
+    ],
   ])("refuses %s", (_name, change) => {
     expect(MARKET_PACK_SCHEMA.safeParse({ ...valid, ...change }).success).toBe(false);
+  });
+
+  it("accepts a subject per key and leaves it out when absent", () => {
+    const subjects = [
+      { key: "tax.sales", subject: "buyer" },
+      { key: "labour", subject: "location" },
+    ];
+    expect(MARKET_PACK_SCHEMA.parse({ ...valid, subjects }).subjects).toEqual(subjects);
+    expect("subjects" in MARKET_PACK_SCHEMA.parse(valid)).toBe(false);
+  });
+
+  it("refuses a section subject outside its prefix", () => {
+    const { extends: _parent, ...base } = valid;
+    const section = { ...base, section: "shop", entries: [] };
+    expect(
+      MARKET_PACK_SCHEMA.safeParse({ ...section, subjects: [{ key: "tax", subject: "buyer" }] })
+        .success,
+    ).toBe(false);
+    expect(
+      MARKET_PACK_SCHEMA.safeParse({
+        ...section,
+        subjects: [{ key: "shop.tips", subject: "location" }],
+      }).success,
+    ).toBe(true);
   });
 
   it("refuses a section key outside its prefix", () => {

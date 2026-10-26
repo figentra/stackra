@@ -1,0 +1,40 @@
+{
+  "market": "us-mi",
+  "extends": "us",
+  "version": "0.1.0",
+  "status": "draft",
+  "entries": [
+    {
+      "key": "calendar.holidays.state",
+      "value": [
+        {
+          "kind": "nth_weekday",
+          "key": "day_after_thanksgiving",
+          "month": 11,
+          "weekday": 4,
+          "nth": 4,
+          "offset": 1
+        },
+        {
+          "kind": "gregorian",
+          "key": "christmas_eve",
+          "month": 12,
+          "day": 24
+        },
+        {
+          "kind": "gregorian",
+          "key": "new_years_eve",
+          "month": 12,
+          "day": 31
+        }
+      ],
+      "from": "2000-01-01"
+    }
+  ],
+  "reviews": [],
+  "checklist": [
+    {
+      "id": "counsel_review"
+    }
+  ]
+}
