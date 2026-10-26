@@ -4,7 +4,8 @@
  *          keeps `instanceof` and constructor dependencies, and refuses every malformed option (key, actors, version,
  *          endpoint method, tool without an agent, job without the system actor, job and offline values, precondition
  *          classes, rate limit), records an offline cap and the `accepts` option and refuses malformed ones; a bare
- *          `extends Action` and a missing `handle` fail to compile.
+ *          `extends Action` and a missing `handle` fail to compile; the tool default matches gen (a user action is a
+ *          tool unless it says `tool: false`) and `effects` takes distinct `Effect` tags only.
  * Boundary: test only; the options are the template's create, expire and freeze actions.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 16, 20 and 21); ADR 0305 (rules 28 and 30); ADR
@@ -14,6 +15,7 @@ import { kindOf } from "@stackra/container";
 import { ActorKind, ApiArea, HttpMethod } from "@stackra/contracts";
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
+import { Effect } from "#contracts/enums/effect.enum";
 import { Action } from "#core/bases/action.base";
 import { Interceptor } from "#core/bases/interceptor.base";
 import { Precondition } from "#core/bases/precondition.base";
@@ -118,6 +120,24 @@ describe("Action", () => {
       preconditions: [],
       interceptors: [],
     });
+  });
+
+  it("defaults tool as gen does and records distinct effect tags", () => {
+    class FreezeAccountAction extends Action({ ...base, effects: [Effect.Security] }) {
+      async handle(): Promise<void> {}
+    }
+    class OptedOutAction extends Action({ ...base, tool: false }) {
+      async handle(): Promise<void> {}
+    }
+    expect(kindOf(FreezeAccountAction)?.options).toMatchObject({
+      tool: true,
+      effects: [Effect.Security],
+    });
+    expect(kindOf(OptedOutAction)?.options).toMatchObject({ tool: false });
+    expect(() => Action({ ...base, effects: ["external-communication" as Effect] })).toThrow(
+      RangeError,
+    );
+    expect(() => Action({ ...base, effects: [Effect.Bulk, Effect.Bulk] })).toThrow(RangeError);
   });
 
   it("keeps instanceof and passes constructor dependencies", async () => {

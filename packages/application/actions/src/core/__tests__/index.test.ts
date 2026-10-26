@@ -14,10 +14,12 @@
 import type { Actor } from "@stackra/contracts";
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
+import type { Effect } from "#contracts/index";
 import * as actions from "#core/index";
 import type {
   ActionAccepts,
   ActionContext,
+  ActionEffects,
   CallInput,
   CallOptions,
   ExtensionContext,
@@ -62,6 +64,7 @@ describe("@stackra/actions", () => {
       "OfflineCapReachedError",
       "OfflineMode",
       "OfflinePrecondition",
+      "OpenApprovalGateDriver",
       "OutboxAuditTrailDriver",
       "PipelineStage",
       "Precondition",
@@ -74,6 +77,7 @@ describe("@stackra/actions", () => {
       "StoresConfig$",
       "StoresOptions",
       "UsageRecorded",
+      "approverRefusal",
       "connectExtensions",
       "registerActions",
       "registerExtensions",
@@ -111,5 +115,6 @@ describe("@stackra/actions", () => {
       Promise<RuleEvaluation | undefined>
     >();
     expectTypeOf<QueryContext["replica"]>().toBeFunction();
+    expectTypeOf<ActionEffects[number]>().toEqualTypeOf<Effect>();
   });
 });

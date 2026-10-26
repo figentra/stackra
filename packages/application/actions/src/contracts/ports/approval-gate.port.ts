@@ -7,8 +7,9 @@
  *          call runs.
  * Boundary: an abstract class that is its own token, keyed `actions.ApprovalGate`. Which calls need approval, and who
  *           approves, is data (rule sets and settings, ADR 0331), never code: the driver (the OS tasks-approvals
- *           service) evaluates it. A call without a bound gate needs no approval. Actions only; a query is never
- *           parked. A leaf file.
+ *           service) evaluates it. The step fails closed: an action with no gate bound is an error, and an app with
+ *           no approvals binds `OpenApprovalGateDriver` on purpose. Actions only; a query is never parked. A leaf
+ *           file.
  * Runtime: isomorphic
  * Governing contract: ADR 0098 (decision 3: approval, durable park and resume, before idempotency); ADR 0099
  *                     (decision 4: the level and tags are the risk inputs to approval); ADR 0360; ADR 0331.

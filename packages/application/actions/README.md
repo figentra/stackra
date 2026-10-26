@@ -58,14 +58,19 @@ export class CreateOrderAction extends Action({
 
 The key is written once; gen derives the module, the locked key (`orders.order.create@1`), the permission and the
 route, and registers them with `registerActions`. A query is the same with `Query({...})`; it takes no preconditions,
-idempotency, job or offline option, and `tool` is on by default.
+idempotency, job or offline option, and `tool` is on by default. An action a user can perform is a tool too unless it
+says `tool: false` (with a `// reason:` line gen reads, ADR 0360 decision 4); `effects: [Effect.Financial]` declares
+its effect tags (`Effect` from `@stackra/actions/contracts`, snake_case codes).
 
 ## The pipeline
 
 `ActionPipeline.execute(Class, input, { actor, idempotencyKey, locale, ... })` runs, in this order and no other:
-tenancy, permission (the actor kind, then `AccessControl`), preconditions, entitlement, flag, input validation and
-idempotency, rate limit, interceptors, then `handle` (an action's in its `UnitOfWork`), then the `afterCommit` work and
-the audit entry. A step whose port nobody binds is skipped, except permission, which fails closed.
+tenancy, permission (the actor kind, then `AccessControl`), preconditions, entitlement, flag, input validation,
+approval and idempotency, rate limit, interceptors, then `handle` (an action's in its `UnitOfWork`, with its usage
+event and its success audit entry, all inside the `LimitReservation` when one is bound: reserve, then commit), then the
+`afterCommit` work. A refusal's audit entry is written after the rollback. A step whose port nobody binds is skipped,
+except permission and an action's approval, which fail closed (bind `OpenApprovalGateDriver` for an app with no
+approvals).
 
 The call carries its scope (ADR 0327 decision 6): the transport passes the `ScopeRef` the resolver chain settled on as
 `CallOptions.scope`, every port reads it on the `CallDescriptor`, a handler reads `ctx.scope`, and a job queued with

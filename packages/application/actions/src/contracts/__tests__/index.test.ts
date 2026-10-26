@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: the consumer contract of the `./contracts` entry: the fifteen ports of the pipeline's steps and stores and
- *          the `ReviewReason` enum are exported, nothing else is as a value, and the exchanged types resolve.
+ * Purpose: the consumer contract of the `./contracts` entry: the eighteen ports of the pipeline's steps and stores and
+ *          the `ReviewReason`, `Effect` and `ApproverRefusal` enums are exported, nothing else is as a value, and the exchanged types resolve.
  * Boundary: test only; imports the stand-in barrel through its `#contracts` alias.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0294 (decision 15).
@@ -31,6 +31,7 @@ describe("@stackra/actions/contracts", () => {
     expect(Object.keys(contracts).sort()).toEqual([
       "AccessControl",
       "ApprovalGate",
+      "ApproverRefusal",
       "AuditTrail",
       "ContextStorage",
       "DeviceSequenceStore",
@@ -39,6 +40,7 @@ describe("@stackra/actions/contracts", () => {
       "FlagCheck",
       "IdempotencyStore",
       "JobDispatcher",
+      "LimitReservation",
       "LiveConfigurationGuard",
       "OfflineCapStore",
       "RateLimitStore",

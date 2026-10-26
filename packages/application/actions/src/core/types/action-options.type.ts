@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `ActionOptions`, what `Action({...})` takes: the written key, the actors, the permission when the stem
  *          differs, the preconditions, interceptors, idempotency and rate limit the pipeline applies, and the surfaces
- *          (`endpoint`, `tool`, `intent`, `job`, `offline`), the client rule code it accepts (`accepts`), whether it
+ *          (`endpoint`, `tool`, `intent`, `job`, `offline`), its effect tags (`effects`), the client rule code it accepts (`accepts`), whether it
  *          changes structural configuration (`structural`) and the meter it feeds (`meter`).
  * Boundary: a type only. Everything gen derives is absent: the module, the locked key `<module>.<model>.<verb>@<major>`,
  *           the permission name and its risk, the route and the MCP tool name. `permission` names a `Permissions`
@@ -10,7 +10,8 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 16, 20 and 21); ADR 0305 (rules 7, 9, 28 and 30); ADR 0136 (decision 3);
  *                     ADR 0138 (as amended); ADR 0252 (decision 2); ADR 0338 (decision 5); ADR 0337 (decisions 4
- *                     and 5); ADR 0359 (decisions 3 and 5); ADR 0216 (decisions 1 and 2).
+ *                     and 5); ADR 0359 (decisions 3 and 5); ADR 0216 (decisions 1 and 2); ADR 0360 (decision 4:
+ *                     the tool default); ADR 0099 (decision 2: effect tags).
  */
 import type { AnyClass } from "@stackra/container";
 import type { ActorKind, ApiArea } from "@stackra/contracts";
@@ -19,6 +20,7 @@ import type { Interceptor } from "#core/bases/interceptor.base";
 import type { Precondition } from "#core/bases/precondition.base";
 import type { Idempotency } from "#core/enums/idempotency.enum";
 import type { ActionAccepts } from "#core/types/action-accepts.type";
+import type { ActionEffects } from "#core/types/action-effects.type";
 import type { ActionMeter } from "#core/types/action-meter.type";
 import type { ActionRateLimit } from "#core/types/action-rate-limit.type";
 import type { EndpointOptions } from "#core/types/endpoint-options.type";
@@ -57,8 +59,14 @@ export interface ActionOptions {
   /** A route override, or `false` for no endpoint; derived from the key when absent. */
   readonly endpoint?: EndpointOptions | false;
 
-  /** Expose it as an MCP tool (off by default for actions); needs an agent actor. */
+  /**
+   * Expose it as an MCP tool. When absent, an action a user can perform is a tool and any other is not (ADR 0360
+   * decision 4, the same default gen applies); `tool: false` on a user action carries a `// reason:` line gen reads.
+   */
   readonly tool?: boolean;
+
+  /** The effect tags it declares (`[Effect.Financial]`); none when absent. Gen's registered tags win at runtime. */
+  readonly effects?: ActionEffects;
 
   /** Let the intent router and the palette start it, with phrases from the lang files. */
   readonly intent?: boolean;

@@ -10,7 +10,9 @@
  *          cap by count and amount, the review of offline-computed documents, and a replica query's full fill and the
  *          changes since the cursor in its input; and the governance additions: the approval step before idempotency,
  *          the live-configuration guard of a structural action, the meter's usage event inside the unit of work, the
- *          cap's amount field, and the registered effect tags on the descriptor.
+ *          cap's amount field, and the registered effect tags on the descriptor; and the remainder (STA-765): the
+ *          approval step fails closed, the limit reservation wraps the unit of work, a successful call's audit entry
+ *          is written inside it, and written effect tags reach the descriptor.
  * Boundary: test only; every port is a stand-in driver in a map resolver, so each step is observed directly; the
  *           offline stores are the memory drivers.
  * Runtime: node (vitest)
@@ -53,6 +55,7 @@ import {
   FlagCheck,
   IdempotencyStore,
   JobDispatcher,
+  LimitReservation,
   LiveConfigurationGuard,
   OfflineCapStore,
   RateLimitStore,
@@ -73,6 +76,7 @@ import { MemoryOfflineCapStoreDriver } from "#core/drivers/memory-offline-cap-st
 import { MemoryRateLimitStoreDriver } from "#core/drivers/memory-rate-limit-store.driver";
 import { MemoryReplicaLogDriver } from "#core/drivers/memory-replica-log.driver";
 import { MemoryReviewItemSinkDriver } from "#core/drivers/memory-review-item-sink.driver";
+import { OpenApprovalGateDriver } from "#core/drivers/open-approval-gate.driver";
 import { Effect } from "#contracts/enums/effect.enum";
 import { ConflictResolution } from "#core/enums/conflict-resolution.enum";
 import { Idempotency } from "#core/enums/idempotency.enum";
@@ -466,6 +470,7 @@ function setup(extra: readonly (readonly [AnyClass, object])[] = []) {
   const resolver = resolverOf([
     [Clock, new FixedClock()],
     [AccessControl, access],
+    [ApprovalGate, new OpenApprovalGateDriver()],
     [TenancyCheck, new LoggingTenancy()],
     [EntitlementCheck, new LoggingEntitlements()],
     [FlagCheck, new LoggingFlags()],
@@ -683,6 +688,7 @@ describe(ActionPipeline, () => {
     const bare = new ActionPipeline(
       resolverOf([
         [AccessControl, new RecordingAccess()],
+        [ApprovalGate, new OpenApprovalGateDriver()],
         [IdempotencyStore, new MemoryIdempotencyStoreDriver(new FixedClock())],
         [SendMessageAction, new SendMessageAction()],
       ]),
@@ -782,6 +788,7 @@ describe(ActionPipeline, () => {
     const bare = new ActionPipeline(
       resolverOf([
         [AccessControl, new RecordingAccess()],
+        [ApprovalGate, new OpenApprovalGateDriver()],
         [RedeemPointsAction, new RedeemPointsAction()],
       ]),
     );
@@ -856,6 +863,7 @@ describe(ActionPipeline, () => {
     const bare = new ActionPipeline(
       resolverOf([
         [AccessControl, new RecordingAccess()],
+        [ApprovalGate, new OpenApprovalGateDriver()],
         [InspectAction, new InspectAction()],
       ]),
     );
@@ -1200,5 +1208,165 @@ describe("ActionPipeline governance additions", () => {
         { actor: customer, device: { deviceId: "dev_1", sequence: 2 } },
       ),
     ).rejects.toBeInstanceOf(OfflineCapReachedError);
+  });
+});
+
+/** Logs the reservation around the commit, and refuses once `full`. */
+class Seats extends Driver(LimitReservation) {
+  full = false;
+
+  readonly keys: string[] = [];
+
+  async reserve<T>(call: CallDescriptor, _input: unknown, commit: () => Promise<T>): Promise<T> {
+    log.push("reserve");
+    this.keys.push(call.key);
+    if (this.full) throw RateLimitedError.create();
+    const output = await commit();
+    log.push("release");
+    return output;
+  }
+}
+
+/** An audit trail that logs when it writes. */
+class LoggingTrail extends Driver(AuditTrail) {
+  readonly entries: AuditEntry[] = [];
+
+  async record(entry: AuditEntry): Promise<void> {
+    log.push(`audit:${entry.outcome}`);
+    this.entries.push(entry);
+  }
+}
+
+class BulkNotifyAction extends Action({
+  key: "message.notify_all",
+  actors: [ActorKind.User],
+  effects: [Effect.Bulk, Effect.ExternalCommunication],
+}) {
+  async handle(): Promise<string> {
+    log.push("handle");
+    return "sent";
+  }
+}
+
+describe("ActionPipeline remainder (STA-765)", () => {
+  it("fails closed at the approval step when no ApprovalGate is bound, and never for a query", async () => {
+    const bare = new ActionPipeline(
+      resolverOf([
+        [AccessControl, new RecordingAccess()],
+        [InspectAction, new InspectAction()],
+        [GetOrderQuery, new GetOrderQuery()],
+        [TracingInterceptor, new TracingInterceptor()],
+      ]),
+    );
+    await expect(bare.execute(InspectAction, {}, { actor: customer })).rejects.toThrow(
+      /ApprovalGate is not bound/,
+    );
+    await expect(
+      bare.execute(GetOrderQuery, { orderId: "ord_1" }, { actor: customer }),
+    ).resolves.toBeDefined();
+  });
+
+  it("reserves the limit around the unit of work, and runs no handle when it is full", async () => {
+    const seats = new Seats();
+    const { pipeline } = setup([[LimitReservation, seats]]);
+    await pipeline.execute(
+      CreateOrderAction,
+      { quantity: 1 },
+      { actor: customer, idempotencyKey: "k-seat" },
+    );
+    expect(log.slice(log.indexOf("reserve"), log.indexOf("release") + 1)).toEqual([
+      "reserve",
+      "begin",
+      "handle",
+      "commit",
+      "release",
+    ]);
+    expect(seats.keys).toEqual(["order.create"]);
+    seats.full = true;
+    log = [];
+    await expect(
+      pipeline.execute(
+        CreateOrderAction,
+        { quantity: 1 },
+        { actor: customer, idempotencyKey: "k-full" },
+      ),
+    ).rejects.toBeInstanceOf(RateLimitedError);
+    expect(log).not.toContain("handle");
+  });
+
+  it("writes a successful call's audit entry inside the unit of work, a refusal's after the rollback", async () => {
+    const trail = new LoggingTrail();
+    const { pipeline, shop } = setup([[AuditTrail, trail]]);
+    await pipeline.execute(
+      CreateOrderAction,
+      { quantity: 2 },
+      { actor: customer, idempotencyKey: "k-audit" },
+    );
+    expect(log.slice(log.indexOf("begin"), log.indexOf("commit") + 1)).toEqual([
+      "begin",
+      "handle",
+      "audit:ok",
+      "commit",
+    ]);
+    await pipeline.execute(
+      CreateOrderAction,
+      { quantity: 2 },
+      { actor: customer, idempotencyKey: "k-audit" },
+    );
+    expect(trail.entries.map(({ outcome }) => outcome)).toEqual(["ok", "ok"]);
+    shop.open = false;
+    log = [];
+    await expect(
+      pipeline.execute(
+        CreateOrderAction,
+        { quantity: 1 },
+        { actor: customer, idempotencyKey: "k-no" },
+      ),
+    ).rejects.toBeInstanceOf(OrdersPausedError);
+    expect(log.at(-1)).toBe("audit:refused");
+  });
+
+  it("puts the written effect tags on the descriptor when gen registered none", async () => {
+    const { pipeline, access } = setup([[BulkNotifyAction, new BulkNotifyAction()]]);
+    await pipeline.execute(BulkNotifyAction, {}, { actor: customer });
+    expect(access.calls.at(-1)?.effects).toEqual([Effect.Bulk, Effect.ExternalCommunication]);
+  });
+});
+
+describe("ActionPipeline.propose (STA-784)", () => {
+  it("checks the call up to validation, meters it, and returns a draft with no effects", async () => {
+    const outbox = new Outbox();
+    const approvals = new Approvals();
+    const { pipeline } = setup([
+      [EventOutbox, outbox],
+      [ApprovalGate, approvals],
+    ]);
+    const draft = await pipeline.propose(
+      CreateOrderAction,
+      { quantity: 4 },
+      { actor: agent, scope: SCOPE },
+    );
+    expect(draft).toMatchObject({ key: "order.create", input: { quantity: 4 }, proposedAt: NOW });
+    expect(log).toEqual(["tenancy", "permission", "precondition", "entitlement", "flag", "outbox"]);
+    expect(approvals.seen).toEqual([]);
+    expect(outbox.written[0]?.event).toMatchObject({
+      meter: "actions.proposals",
+      kind: "count",
+      value: 1,
+      key: "order.create",
+      callId: draft.callId,
+      scopeId: SCOPE.id,
+    });
+  });
+
+  it("refuses what a step refuses, and never proposes a query", async () => {
+    const { pipeline, shop } = setup([[EventOutbox, new Outbox()]]);
+    shop.open = false;
+    await expect(
+      pipeline.propose(CreateOrderAction, { quantity: 1 }, { actor: customer }),
+    ).rejects.toBeInstanceOf(OrdersPausedError);
+    await expect(
+      pipeline.propose(GetOrderQuery as never, { orderId: "ord_1" } as never, { actor: customer }),
+    ).rejects.toThrow(TypeError);
   });
 });

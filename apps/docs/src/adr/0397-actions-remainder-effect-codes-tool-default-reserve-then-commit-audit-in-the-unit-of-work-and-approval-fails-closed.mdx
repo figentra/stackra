@@ -1,0 +1,65 @@
+---
+title: "0397 — Actions remainder: effect codes, the tool default, reserve-then-commit, the audit in the unit of work and an approval step that fails closed"
+description: "Proposed · 2026-10-26"
+---
+
+<Note>
+  Proposed. It settles the open rows of `@stackra/actions` after wave 10 and touches
+  [0099](/adr/0099-risk-scale-l0-to-l4) (decision 2), [0138](/adr/0138-pipeline-order-is-fixed),
+  [0212](/adr/0212-audit-evidence-access-logs-hash-chain-and-retention) (decision 4),
+  [0215](/adr/0215-entitlements) and
+  [0360](/adr/0360-the-ai-chain-four-layers-one-spine-approval-modes-and-the-never-bypass-floor)
+  (decision 4). The amendments of 0137 and 0138 themselves are written by the ADR group. Linear
+  STA-765.
+</Note>
+
+## Context
+
+Wave 10 left five gaps in the action pipeline. The effect tags existed as an enum in `@stackra/actions/contracts`
+with snake_case codes while gen's list and hints spelt `external-communication` in kebab case (ADR 0099 was written
+before ADR 0231). The runtime recorded `tool: false` for every action while gen, following ADR 0360 decision 4, makes
+an action a user can perform a tool unless it says `tool: false` with a reason. Plan limits were checked by the
+entitlement step but nothing serialised two creates racing at the limit (owner round 3 item 18). The audit entry was
+written after the unit of work committed, so a crash between the two lost it. And with no `ApprovalGate` bound the
+approval step was skipped, so an app that forgot the binding ran every call unapproved.
+
+## Decision
+
+1. **Effect codes are snake_case.** `Effect` (`financial`, `security`, `pii`, `external_communication`, `irreversible`,
+   `bulk`) is the one vocabulary, exported from `@stackra/actions/contracts` (ADR 0231 wins over the kebab spelling of
+   ADR 0099). An action declares its tags with `effects: ActionEffects` (distinct `Effect` values); gen's registered
+   tags win at run time and reach the call descriptor. Gen's `EFFECT_TAGS` and tool hints adopt the same codes.
+2. **The tool default is gen's.** At run time an action whose actors include a user is a tool unless it says
+   `tool: false` (with the `// reason:` line gen reads); any other action is not. A query stays a tool by default.
+3. **Reserve, then commit.** A `LimitReservation` port wraps every applied action's unit of work: the driver
+   (`@stackra/entitlements`, over `LimitReservationService`) holds the limit's lock for a call that creates a counted
+   model, checks the grant and the count, runs the commit and releases. Which call counts against which limit is the
+   entitlements registry, never a verb the pipeline parses. No binding means no plan limits; callers write no
+   reservation code.
+4. **The success audit is in the unit of work.** A successful action's audit entry is written inside its transaction,
+   after `handle` and its usage event, so it commits or rolls back with the writes. A refusal's entry (its writes
+   rolled back) and an idempotent replay's (no unit of work ran) are written after, outside.
+5. **Approval fails closed.** An action call with no `ApprovalGate` bound is an error, like a call with no
+   `AccessControl`. An app with no approvals binds `OpenApprovalGateDriver` on purpose. The testing pipeline treats a
+   test that binds no gate as "no approvals". A query is never parked.
+
+## Consequences
+
+- Every service and worker that runs actions binds a gate: the OS tasks-approvals driver, or the open driver. The
+  queue worker, the workflow runner and test suites outside `@stackra/actions` that build an `ActionPipeline` over a
+  bare resolver must bind one.
+- An action a user can perform appears in the tool table and at run time alike; a user-only action that must not be
+  a tool says so with a reason.
+- A long transaction now also holds the limit's lock; the hold time is the service's default (30 seconds).
+- Gen's effect list changes spelling; manifests regenerate.
+
+## Enforcement
+
+`packages/application/actions/src/core/services/__tests__/action-pipeline.service.test.ts` (fail-closed approval,
+reservation around the unit of work, audit order); `packages/application/actions/src/core/bases/__tests__/action.base.test.ts`
+(tool default, effects). Planned — the gen change of `EFFECT_TAGS` and its conformance test; the entitlements
+`LimitReservation` driver.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: STA-765; owner round 3 items 18 and 33; `notes/handover/stackra-package-needs.md`.

@@ -6,15 +6,19 @@
  *          context (with the call's scope, so `ctx.scope` and every port read it), the action's unit of work with
  *          `afterCommit`, the audit entry, and the idempotent replay; for offline clients, a device's replayed calls
  *          in sequence order, the `offline.cap` reconciliation, the review of offline-computed documents (`accepts`),
- *          the verified device (`ctx.deviceId`) and a replica query's answer (`ctx.replica`, by the input's `cursor`).
+ *          the verified device (`ctx.deviceId`) and a replica query's answer (`ctx.replica`, by the input's `cursor`);
+ *          and `propose`, an action's draft-only run (the steps up to validation, then a metered draft, no effects).
  * Boundary: built by the runtime (and the testing module) over a `Resolver`, so it reads the action instances, their
  *           preconditions and interceptors and every step's port by class. Steps whose owner is not installed are
- *           skipped (tenancy, entitlement, flag, approval, unit of work, audit); permission fails closed (no
- *           `AccessControl` is an error, never an allowed call); a declared rate limit, Idempotency-Key, device order,
+ *           skipped (tenancy, entitlement, flag, limit reservation, unit of work, audit); permission and approval fail
+ *           closed (no `AccessControl`, or no `ApprovalGate` for an action, is an error, never an allowed call; an app
+ *           with no approvals binds `OpenApprovalGateDriver`); a declared rate limit, Idempotency-Key, device order,
  *           offline cap, `accepts`, replica, `structural` or `meter` with no port bound is an error. The approval gate
- *           sees the validated input; a metered action's usage event is written in its unit of work, after `handle`. Nothing reorders the steps: device order wraps them all (like the
- *           audit), so a call refused by any step still settles its sequence; the cap is part of the idempotency step
- *           and the review part of `handle`. A device's sequences are strictly increasing, not contiguous: one above
+ *           sees the validated input; a metered action's usage event and a successful call's audit entry are written
+ *           in its unit of work, after `handle`, and the unit of work runs inside the `LimitReservation` (reserve, then
+ *           commit). Nothing reorders the steps: device order wraps them all (like the audit, whose refusal and replay
+ *           entries are written outside), so a call refused by any step still settles its sequence; the cap is part
+ *           of the idempotency step and the review part of `handle`. A device's sequences are strictly increasing, not contiguous: one above
  *           the last settled is applied (the client sends one call at a time, so it is the next), one at or below may
  *           only replay its stored output. Only a Refusal is a refusal; any other error is a bug and propagates.
  * Runtime: isomorphic
@@ -22,7 +26,8 @@
  *                     (rule 24: interceptors); ADR 0217 (decision 2: limits enforced in the pipeline); ADR 0098; ADR
  *                     0327 (decision 6: the current scope in the call context); ADR 0338 (decisions 1, 3 and 5); ADR
  *                     0337 (decisions 4 and 5); ADR 0098 (decision 3: approval); ADR 0359 (decision 3: live is
- *                     read-only); ADR 0216 (decisions 1 and 4: usage through the outbox).
+ *                     read-only); ADR 0216 (decisions 1 and 4: usage through the outbox); ADR 0212 (decision 4: the
+ *                     audit in the unit of work); ADR 0215 and owner round 3 item 18 (reserve-then-commit).
  */
 import { kindOf, type AnyClass } from "@stackra/container";
 import {
@@ -53,6 +58,7 @@ import { EntitlementCheck } from "#contracts/ports/entitlement-check.port";
 import { FlagCheck } from "#contracts/ports/flag-check.port";
 import { IdempotencyStore } from "#contracts/ports/idempotency-store.port";
 import { JobDispatcher } from "#contracts/ports/job-dispatcher.port";
+import { LimitReservation } from "#contracts/ports/limit-reservation.port";
 import { LiveConfigurationGuard } from "#contracts/ports/live-configuration-guard.port";
 import { OfflineCapStore } from "#contracts/ports/offline-cap-store.port";
 import { RateLimitStore } from "#contracts/ports/rate-limit-store.port";
@@ -61,6 +67,7 @@ import { ReviewItemSink } from "#contracts/ports/review-item-sink.port";
 import { TenancyCheck } from "#contracts/ports/tenancy-check.port";
 import { UnitOfWork } from "#contracts/ports/unit-of-work.port";
 import { WorkflowRunner } from "#contracts/ports/workflow-runner.port";
+import type { AuditEntry } from "#contracts/types/audit-entry.type";
 import type { CallDescriptor } from "#contracts/types/call-descriptor.type";
 import type { RateLimitBucket } from "#contracts/types/rate-limit-bucket.type";
 import type { ReplicaRow } from "#contracts/types/replica-row.type";
@@ -72,6 +79,7 @@ import { ACTION_REGISTRY } from "#core/constants/action-registry.constant";
 import { AFTER_COMMIT_FAILED } from "#core/constants/after-commit-failed.constant";
 import { CALL_DEFAULTS } from "#core/constants/call-defaults.constant";
 import { IDEMPOTENCY_TTL } from "#core/constants/idempotency-ttl.constant";
+import { PROPOSAL_METER } from "#core/constants/proposal-meter.constant";
 import { Idempotency } from "#core/enums/idempotency.enum";
 import { MeterKind } from "#core/enums/meter-kind.enum";
 import { DeviceSequenceOutOfOrderError } from "#core/errors/device-sequence-out-of-order.error";
@@ -87,6 +95,8 @@ import { startOfZonedDay } from "#core/functions/start-of-zoned-day.function";
 import { ReplicaFeed } from "#core/services/replica-feed.service";
 import type { ActionAccepts } from "#core/types/action-accepts.type";
 import type { ActionContext } from "#core/types/action-context.type";
+import type { ActionDraft } from "#core/types/action-draft.type";
+import type { ActionEffects } from "#core/types/action-effects.type";
 import type { ActionMeter } from "#core/types/action-meter.type";
 import type { ActionRateLimit } from "#core/types/action-rate-limit.type";
 import type { ActionRegistration } from "#core/types/action-registration.type";
@@ -112,6 +122,7 @@ interface Recorded {
   readonly accepts?: ActionAccepts;
   readonly structural?: boolean;
   readonly meter?: ActionMeter;
+  readonly effects?: ActionEffects;
 }
 
 /** What one call accumulates while it runs. */
@@ -123,6 +134,8 @@ interface CallState {
   replicaCursor: string | undefined;
   readonly afterCommit: (() => unknown)[];
   readonly audit: Record<string, Json>;
+  /** Set once the success entry was written inside the unit of work, so the outer audit does not write it again. */
+  audited: boolean;
 }
 
 /** Everything one call carries through the steps. */
@@ -142,6 +155,9 @@ interface Call {
 type Handler = { handle(input: unknown, ctx: unknown): Promise<unknown> };
 
 const IAM = "bind an AccessControl driver (@stackra/iam); calls fail closed without one";
+
+const APPROVALS =
+  "bind the tasks-approvals driver, or OpenApprovalGateDriver for an app with no approvals; actions fail closed without one";
 
 /**
  * Runs actions and queries.
@@ -171,6 +187,47 @@ export class ActionPipeline {
     input: CallInput<InstanceType<C>>,
     request: CallOptions,
   ): Promise<OutputOf<InstanceType<C>>> {
+    const call = this.prepare(type, request);
+    const work = () => this.audited(call, () => this.ordered(call, () => this.steps(call, input)));
+    const storage = this.optional(ContextStorage);
+    return (await (storage === undefined ? work() : storage.run(call.ctx, work))) as OutputOf<
+      InstanceType<C>
+    >;
+  }
+
+  /**
+   * Proposes one call of the action `type` with `input`: runs the steps up to and including input validation
+   * (tenancy, permission, preconditions, entitlement, flag), writes one usage event on `PROPOSAL_METER`, and resolves
+   * to the draft. Approval, idempotency, the rate limit, interceptors and `handle` never run, so nothing else is
+   * written and no effect happens: the suggest mode of an agent (R3-SO-02).
+   *
+   * @throws Refusal from any step it runs.
+   * @throws TypeError when `type` is not an action; Error when a required port (the outbox included) is not bound.
+   */
+  async propose<C extends AnyClass<ActionBase>>(
+    type: C,
+    input: CallInput<InstanceType<C>>,
+    request: CallOptions,
+  ): Promise<ActionDraft> {
+    const call = this.prepare(type, request);
+    if (call.kind !== "action")
+      throw new TypeError(`${type.name} is a query: only an action is proposed`);
+    const work = async (): Promise<ActionDraft> => {
+      const checked = await this.checked(call, input);
+      await this.metered(call, { name: PROPOSAL_METER, kind: MeterKind.Count }, checked);
+      return Object.freeze({
+        key: call.descriptor.key,
+        callId: call.descriptor.callId,
+        input: checked,
+        proposedAt: call.at,
+      });
+    };
+    const storage = this.optional(ContextStorage);
+    return storage === undefined ? work() : storage.run(call.ctx, work);
+  }
+
+  /** The call `type` makes under `request`: its options, identity, descriptor, state and context. */
+  private prepare(type: AnyClass<ActionBase | QueryBase>, request: CallOptions): Call {
     const record = kindOf(type);
     if (record?.kind !== "action" && record?.kind !== "query")
       throw new TypeError(
@@ -187,9 +244,9 @@ export class ActionPipeline {
       key: registration?.key ?? options.key,
       ...(registration?.permission === undefined ? {} : { permission: registration.permission }),
       ...(registration?.risk === undefined ? {} : { risk: registration.risk }),
-      ...(registration?.effects === undefined
+      ...((registration?.effects ?? options.effects) === undefined
         ? {}
-        : { effects: Object.freeze([...registration.effects]) }),
+        : { effects: Object.freeze([...(registration?.effects ?? options.effects ?? [])]) }),
       actor,
       ...(actor.tenantId === undefined ? {} : { tenantId: actor.tenantId }),
       ...(request.scope === undefined ? {} : { scope: request.scope }),
@@ -201,46 +258,22 @@ export class ActionPipeline {
       replicaCursor: undefined,
       afterCommit: [],
       audit: {},
+      audited: false,
     };
     const ctx = this.contextOf(descriptor, request, at, state);
-    const call: Call = {
-      type,
-      kind: record.kind,
-      options,
-      registration,
-      descriptor,
-      request,
-      at,
-      state,
-      ctx,
-    };
-    const work = () => this.audited(call, () => this.ordered(call, () => this.steps(call, input)));
-    const storage = this.optional(ContextStorage);
-    return (await (storage === undefined ? work() : storage.run(ctx, work))) as OutputOf<
-      InstanceType<C>
-    >;
+    return { type, kind: record.kind, options, registration, descriptor, request, at, state, ctx };
   }
 
   /** The steps, in the fixed order. */
   private async steps(call: Call, raw: unknown): Promise<unknown> {
-    const { descriptor, options, kind, ctx } = call;
-    await this.optional(TenancyCheck)?.check(descriptor);
-    if (kind === "action" && options.structural === true)
-      await this.required(
-        LiveConfigurationGuard,
-        `${descriptor.key} changes structural configuration; bind a guard (@stackra/tenancy)`,
-      ).check(descriptor);
-    if (!options.actors.includes(descriptor.actor.kind)) throw ForbiddenError.create();
-    await this.required(AccessControl, IAM).require(descriptor);
+    const { descriptor, kind } = call;
+    const input = await this.checked(call, raw);
     if (kind === "action")
-      for (const type of options.preconditions ?? []) await this.resolver.get(type).check(ctx);
-    await this.optional(EntitlementCheck)?.check(descriptor);
-    await this.optional(FlagCheck)?.check(descriptor);
-    const input = this.validated(call, raw);
-    const cursor = (input as { readonly cursor?: unknown } | null | undefined)?.cursor;
-    if (kind === "query" && typeof cursor === "string") call.state.replicaCursor = cursor;
-    if (kind === "action")
-      await this.optional(ApprovalGate)?.check(descriptor, input, call.request.approvalId);
+      await this.required(ApprovalGate, APPROVALS).check(
+        descriptor,
+        input,
+        call.request.approvalId,
+      );
     const claim = kind === "action" ? await this.claim(call, input) : undefined;
     if (claim !== undefined && "replay" in claim) return claim.replay;
     try {
@@ -264,6 +297,30 @@ export class ActionPipeline {
       if (claim !== undefined) await this.required(IdempotencyStore, "").release(claim.held);
       throw error;
     }
+  }
+
+  /**
+   * The steps before approval, in order: tenancy (with the live-configuration guard of a structural action), the actor
+   * kind and permission, preconditions, entitlement, flag; resolves to the validated input.
+   */
+  private async checked(call: Call, raw: unknown): Promise<unknown> {
+    const { descriptor, options, kind, ctx } = call;
+    await this.optional(TenancyCheck)?.check(descriptor);
+    if (kind === "action" && options.structural === true)
+      await this.required(
+        LiveConfigurationGuard,
+        `${descriptor.key} changes structural configuration; bind a guard (@stackra/tenancy)`,
+      ).check(descriptor);
+    if (!options.actors.includes(descriptor.actor.kind)) throw ForbiddenError.create();
+    await this.required(AccessControl, IAM).require(descriptor);
+    if (kind === "action")
+      for (const type of options.preconditions ?? []) await this.resolver.get(type).check(ctx);
+    await this.optional(EntitlementCheck)?.check(descriptor);
+    await this.optional(FlagCheck)?.check(descriptor);
+    const input = this.validated(call, raw);
+    const cursor = (input as { readonly cursor?: unknown } | null | undefined)?.cursor;
+    if (kind === "query" && typeof cursor === "string") call.state.replicaCursor = cursor;
+    return input;
   }
 
   /** The input checked against the registered input schema, when gen registered one. */
@@ -416,7 +473,11 @@ export class ActionPipeline {
       if (!(await store.take(key, bucket, at)).allowed) throw RateLimitedError.create();
   }
 
-  /** Runs the interceptors around `handle`, the first outermost; an action's `handle` runs in its unit of work. */
+  /**
+   * Runs the interceptors around `handle`, the first outermost. An action's `handle` runs in its unit of work with its
+   * usage event and its success audit entry (so the entry commits or rolls back with the writes), and the unit of work
+   * runs inside the limit reservation when one is bound (reserve, then commit).
+   */
   private intercepted(call: Call, input: unknown): Promise<unknown> {
     const instance = this.resolver.get(call.type) as unknown as Handler;
     const handle = () => instance.handle(input, call.ctx);
@@ -424,19 +485,25 @@ export class ActionPipeline {
     const reviewed =
       accepts === undefined ? handle : () => this.reviewed(call, accepts, input, handle);
     const meter = call.kind === "action" ? call.options.meter : undefined;
-    const run =
-      meter === undefined
-        ? reviewed
-        : async () => {
-            const output = await reviewed();
-            await this.metered(call, meter, input);
-            return output;
-          };
+    const run = async () => {
+      const output = await reviewed();
+      if (meter !== undefined) await this.metered(call, meter, input);
+      const trail = this.optional(AuditTrail);
+      if (trail !== undefined) {
+        await trail.record(this.auditEntry(call, "ok"));
+        call.state.audited = true;
+      }
+      return output;
+    };
     const core =
       call.kind === "action"
         ? () => {
             const unit = this.optional(UnitOfWork);
-            return unit === undefined ? run() : unit.transaction(run);
+            const commit = () => (unit === undefined ? run() : unit.transaction(run));
+            const reservation = this.optional(LimitReservation);
+            return reservation === undefined
+              ? commit()
+              : reservation.reserve(call.descriptor, input, commit);
           }
         : handle;
     return call.options.interceptors
@@ -559,25 +626,32 @@ export class ActionPipeline {
       }
   }
 
-  /** Runs `work` and writes the action's audit entry with its outcome; queries are not audited. */
+  /**
+   * Runs `work` and writes the action's audit entry for what the unit of work did not: a refusal (its writes rolled
+   * back, so the entry is written after) and an idempotent replay (no unit of work ran). Queries are not audited.
+   */
   private async audited(call: Call, work: () => Promise<unknown>): Promise<unknown> {
     if (call.kind === "query") return work();
     const trail = this.optional(AuditTrail);
-    const entry = (outcome: "ok" | "refused", code?: string) => ({
+    try {
+      const output = await work();
+      if (!call.state.audited) await trail?.record(this.auditEntry(call, "ok"));
+      return output;
+    } catch (error) {
+      if (isRefusal(error)) await trail?.record(this.auditEntry(call, "refused", error.code));
+      throw error;
+    }
+  }
+
+  /** The action's audit entry with `outcome`, and the fields the handler added so far. */
+  private auditEntry(call: Call, outcome: "ok" | "refused", code?: string): AuditEntry {
+    return {
       call: call.descriptor,
       at: call.at,
       outcome,
       ...(code === undefined ? {} : { code }),
       fields: Object.freeze({ ...call.state.audit }),
-    });
-    try {
-      const output = await work();
-      await trail?.record(entry("ok"));
-      return output;
-    } catch (error) {
-      if (isRefusal(error)) await trail?.record(entry("refused", error.code));
-      throw error;
-    }
+    };
   }
 
   /** The context handed to preconditions, interceptors and `handle`. */

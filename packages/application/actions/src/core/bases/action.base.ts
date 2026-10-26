@@ -9,12 +9,14 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 16, 20, 21 and 25); ADR 0305 (rules 2, 28 and 30); ADR 0098 (actions are the
  *                     unit); ADR 0136; ADR 0138 (as amended); ADR 0338 (decision 5: `offline.cap`); ADR 0337
- *                     (decisions 4 and 5: `accepts`).
+ *                     (decisions 4 and 5: `accepts`); ADR 0360 (decision 4: the tool default); ADR 0099 (decision 2:
+ *                     `effects`).
  */
 import { createKind } from "@stackra/container";
 import { ActorKind, Enum } from "@stackra/contracts";
 import { duration } from "@stackra/validation";
 
+import { Effect } from "#contracts/enums/effect.enum";
 import { Precondition } from "#core/bases/precondition.base";
 import { RULE_VERSION_PATTERN } from "#core/constants/rule-version-pattern.constant";
 import { ConflictResolution } from "#core/enums/conflict-resolution.enum";
@@ -168,6 +170,16 @@ function read(options: ActionOptions) {
         `Action({ accepts: { evaluator } }) names a class with an evaluate(input, ctx) method (${options.key})`,
       );
   }
+  const { effects } = options;
+  if (
+    effects !== undefined &&
+    (!Array.isArray(effects) ||
+      !effects.every((effect) => Enum.values(Effect).includes(effect)) ||
+      new Set(effects).size !== effects.length)
+  )
+    throw new RangeError(
+      `Action({ effects }) lists distinct Effect tags (${options.key}), got ${JSON.stringify(effects)}`,
+    );
   if (options.structural !== undefined && typeof options.structural !== "boolean")
     throw new TypeError(
       `Action({ structural }) is true or false, got ${JSON.stringify(options.structural)}`,
@@ -192,7 +204,9 @@ function read(options: ActionOptions) {
     ...shared,
     preconditions: Object.freeze([...(options.preconditions ?? [])]),
     idempotency,
-    tool: options.tool ?? false,
+    // ADR 0360 d4, as gen derives it: an action a user can perform is a tool unless it says `tool: false`.
+    tool: options.tool ?? options.actors.includes(ActorKind.User),
+    ...(effects === undefined ? {} : { effects: Object.freeze([...effects]) }),
     intent: options.intent ?? false,
     structural: options.structural ?? false,
   };
