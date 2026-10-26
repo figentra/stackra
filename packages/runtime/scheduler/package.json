@@ -88,6 +88,7 @@
     "@stackra/contracts": "workspace:*",
     "@stackra/database": "workspace:*",
     "@stackra/errors": "workspace:*",
+    "@stackra/gen": "workspace:*",
     "@stackra/locking": "workspace:*",
     "@stackra/queue": "workspace:*",
     "@stackra/validation": "workspace:*",
