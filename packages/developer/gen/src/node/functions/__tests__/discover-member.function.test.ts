@@ -5,7 +5,8 @@
  *          tokens with a named instance, the lifetime, facets, public methods, `handle` shapes, refusals, statics,
  *          shapes with rules, defaults, enums, dates and driver names, enums in source order, file exports, the
  *          authored root module, the dependency package names, and tests read only when asked; on both TypeScript
- *          backends with equal results; and the consumed services that exist beside the member (`workspaceServices`).
+ *          backends with equal results; the consumed services that exist beside the member (`workspaceServices`); and
+ *          the declared packages' lang catalogues and the `I18n` keys the member uses (STA-1298).
  * Boundary: test only; writes the fixture under `.cache/` and opens TypeScript on it.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 16, 17, 20, 25 and 26); ADR 0305 (rules 42 and
@@ -222,5 +223,33 @@ describe("discoverMember workspace services", () => {
     const ir = await discoverMember(root);
     expect(ir.workspaceServices).toEqual(["catalogue"]);
     expect(ir.services).toBeUndefined();
+  });
+});
+
+describe("discoverMember i18n (STA-1298)", () => {
+  it("reads the declared packages' lang and the I18n keys the member's files use", async () => {
+    const root = writeFixtureMember("customers", {
+      "node_modules/@stackra/loyalty-kit/package.json": JSON.stringify({
+        name: "@stackra/loyalty-kit",
+      }),
+      "node_modules/@stackra/loyalty-kit/assets/lang/en/loyalty_kit.json": JSON.stringify({
+        enums: { loyalty_tier: { gold: "Gold" } },
+      }),
+      "package.json": JSON.stringify({
+        name: "@fixture/customers",
+        version: "1.0.0",
+        type: "module",
+        dependencies: { "@stackra/loyalty-kit": "workspace:*" },
+      }),
+      "src/core/labels.ts":
+        'import { I18n } from "#stackra/i18n";\nexport const gold = I18n.loyalty_kit.enums.loyalty_tier.gold;\n',
+    });
+    const ir = await discoverMember(root);
+    expect(ir.packageCatalogues?.map((shipped) => shipped.package)).toEqual([
+      "@stackra/loyalty-kit",
+    ]);
+    expect(ir.i18nReferences?.map((reference) => reference.path)).toEqual([
+      ["loyalty_kit", "enums", "loyalty_tier", "gold"],
+    ]);
   });
 });

@@ -4,15 +4,15 @@
  *          class, shape, enum and file export of its own sources (sorted by path), its dependency package names and the
  *          committed manifests of those that ship one, the committed manifests of the services it injects a client
  *          of or listens to an event of (for a member with a relay, every publishing sibling service's; and which of those exist beside it in the workspace), the services any of its files imports a client from, its lang catalogues
- *          (`assets/lang/<locale>/*.json`), its modules and its authored root module, and fills each `DriverName<Port>` field with the driver names
+ *          (`assets/lang/<locale>/*.json`) and those its declared `@stackra/*` packages ship, the `I18n` keys its files use, its modules and its authored root module, and fills each `DriverName<Port>` field with the driver names
  *          found for that port: the `MemberIR` every gen output is a pure function of.
  * Boundary: reads the member; writes nothing. Refusals are collected into `errors`, never thrown; only an unreadable
- *           package.json, tsconfig or dependency manifest throws. The program is always closed.
+ *           package.json, tsconfig, dependency manifest or catalogue throws. The program is always closed.
  * Runtime: node
  * Governing contract: ADR 0294 (decisions 10, 20, 25 and 26); ADR 0305 (rules 15, 16 and 42); ADR 0090 as amended
  *                     (discovery from the member's folders); ADR 0260 (decisions 3 and 4: clients and events from the
  *                     producer's manifest); STA-1293 (client imports and lang
- *                     catalogues).
+ *                     catalogues); STA-1298 (package catalogues and key references).
  */
 import { existsSync, readdirSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -32,6 +32,8 @@ import { openHost } from "#node/functions/open-host.function";
 import { readDependencyManifests } from "#node/functions/read-dependency-manifests.function";
 import { readMemberFacts } from "#node/functions/read-member-facts.function";
 import { readCatalogues } from "#node/functions/read-catalogues.function";
+import { readI18nReferences } from "#node/functions/read-i18n-references.function";
+import { readPackageCatalogues } from "#node/functions/read-package-catalogues.function";
 import { readPublisherManifests } from "#node/functions/read-publisher-manifests.function";
 import { readServiceManifests } from "#node/functions/read-service-manifests.function";
 
@@ -99,6 +101,9 @@ export async function discoverMember(
       ...clientImports.map((imported) => imported.service),
     ];
     const catalogues = readCatalogues(facts.root);
+    // The lang its declared packages ship, found like their manifests, and the keys its files use (STA-1298).
+    const packageCatalogues = readPackageCatalogues(facts.root, facts.dependencies);
+    const i18nReferences = readI18nReferences(facts.root);
     // A relay service hears every integration topic of the product (ADR 0260 decision 4).
     const publishers =
       facts.layout === "service" && classes.some((declared) => declared.handle?.relay === true)
@@ -184,6 +189,8 @@ export async function discoverMember(
       ...(workspaceServices.length > 0 ? { workspaceServices } : {}),
       ...(clientImports.length > 0 ? { clientImports } : {}),
       ...(catalogues !== undefined ? { catalogues } : {}),
+      ...(packageCatalogues.length > 0 ? { packageCatalogues } : {}),
+      ...(i18nReferences.length > 0 ? { i18nReferences } : {}),
       errors: [...reader.errors],
     };
   } finally {

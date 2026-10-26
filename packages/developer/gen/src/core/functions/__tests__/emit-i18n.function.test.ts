@@ -2,10 +2,11 @@
  * Stackra file contract:
  * Purpose: unit tests of `emitI18n`: `#stackra/i18n` with the typed key tree of the base locale (nested objects as
  *          branches, leaves beside children under `_`, `$` notes left out) and the sorted locale list; nothing for a member without
- *          catalogues or without `@stackra/i18n`; and `generateMember` writing `.stackra/gen/i18n.ts`.
+ *          catalogues or without `@stackra/i18n`; a declared package's namespace merged into `I18n` (STA-1298); and
+ *          `generateMember` writing `.stackra/gen/i18n.ts`.
  * Boundary: test only; asserts on the generated source text.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0268 (R15); STA-1293.
+ * Governing contract: ADR 0022 (test placement); ADR 0268 (R15); STA-1293; STA-1298.
  */
 import { describe, expect, it } from "@stackra/testing";
 
@@ -54,6 +55,36 @@ describe("emitI18n", () => {
     expect(
       emitI18n({ ...COMMERCE_IR, catalogues: CATALOGUES, packages: ["@stackra/i18n"] }),
     ).toBeDefined();
+  });
+
+  it("merges a declared package's namespaces, keeping the member's locales", () => {
+    const merged =
+      emitI18n({
+        ...COMMERCE_IR,
+        catalogues: CATALOGUES,
+        packageCatalogues: [
+          {
+            package: "@stackra/loyalty-kit",
+            catalogues: { en: { loyalty_kit: { enums: { loyalty_tier: { gold: "Gold" } } } } },
+          },
+        ],
+      })?.content ?? "";
+    expect(merged).toContain(
+      '"loyalty_kit": {\n    "enums": {\n      "loyalty_tier": [\n        "gold"',
+    );
+    expect(merged).toContain("the assets/lang of @stackra/loyalty-kit");
+    expect(merged).toContain('export const locales = ["ar","en","fr"] as const;');
+  });
+
+  it("writes the packages' namespaces for a member without catalogues of its own", () => {
+    const only = emitI18n({
+      ...COMMERCE_IR,
+      packageCatalogues: [
+        { package: "@stackra/rules", catalogues: { en: { rules: { title: "Rules" } } } },
+      ],
+    });
+    expect(only?.content).toContain('"rules": [\n    "title"\n  ]');
+    expect(only?.content).toContain("export const locales = [] as const;");
   });
 
   it("is written by generateMember", () => {

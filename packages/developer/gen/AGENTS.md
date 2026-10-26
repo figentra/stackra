@@ -7,7 +7,7 @@ Purpose: the agent rules of @stackra/gen: where code goes, entries and barrels, 
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
 Governing contract: ADR 0294; ADR 0295; ADR 0305; ADR 0260 (generated clients and typed events); ADR 0263; ADR 0162 and ADR 0222
-                    (the translated and upload shape kinds); ADR 0338 (a replica query's `ReplicaPage` output); STA-1290 (the shipped shape kind); STA-1293 (i18n, clients for apps, undeclared packages); STA-1296 (client modules and permission sets, config overrides, the root Vitest shim).
+                    (the translated and upload shape kinds); ADR 0338 (a replica query's `ReplicaPage` output); STA-1290 (the shipped shape kind); STA-1293 (i18n, clients for apps, undeclared packages); STA-1296 (client modules and permission sets, config overrides, the root Vitest shim); STA-1298 (package lang namespaces in `I18n`, `i18n_key_missing`, `i18n_namespace_clash`).
 -->
 
 The Stackra compiler. Member at `packages/developer/gen` (`tier:lib`), in the programming model v3.1 shape (ADR 0294,
@@ -77,6 +77,12 @@ The Stackra compiler. Member at `packages/developer/gen` (`tier:lib`), in the pr
 - i18n (STA-1293): `readCatalogues` reads `assets/lang/<locale>/*.json`; `emitI18n` writes `#stackra/i18n` (`I18n`
   through `keys()` of `@stackra/i18n`, `locales`) only when the member declares `@stackra/i18n`. A `@Field(zod)` hatch
   carries the named imports its source uses (`TypeDesc` hatch `imports`); a nullable field gets `.nullable()` once.
+- i18n packages (STA-1298): `readPackageCatalogues` reads the `assets/lang` of each declared `@stackra/*` package
+  through `dependencyPath` (the node_modules walk `readDependencyManifests` uses); `i18nTree` merges their namespaces
+  (the file name, e.g. `loyalty_kit`) beside the member's, each from its own base locale. `readI18nReferences` reads
+  every `I18n.<ns>.<path>` chain of a file importing `#stackra/i18n` (tests included); `checkI18n` refuses a chain no
+  merged catalogue ships (`i18n_key_missing`, reused by stackra-167) and a namespace two owners ship
+  (`i18n_namespace_clash`). Gen does not yet write catalogue loaders, for the member or its packages.
 - Cycles between services (ADR 0260, STA-1232): a manifest never depends on a client. `generateMember(ir, previous,
 { pass: "manifests" })` returns the manifest alone and skips (`emitClients`'s `pending`) the consumed services in
   `ir.workspaceServices` (a folder beside the member); `{ pass: "clients" }` returns the client files alone. `generate`

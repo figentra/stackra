@@ -1,13 +1,13 @@
 /**
  * Stackra file contract:
  * Purpose: `MemberIR`, everything discovery read from one member: its facts, modules, kind classes, shapes, enums,
- *          file exports, its lang catalogues, the services its files import a client from, the committed manifests of its dependencies and of the services it injects a client of (and, for a relay service, of every publishing sibling), and which
+ *          file exports, its lang catalogues and those its declared packages ship, its `I18n` key references, the services its files import a client from, the committed manifests of its dependencies and of the services it injects a client of (and, for a relay service, of every publishing sibling), and which
  *          of those services exist in the workspace. Every gen output is a pure function of it.
  * Boundary: a type only. The committed `stackra.manifest.json` is the IR other members read (ADR 0127 2026-10-24
  *           note: `ir` folds into gen); this in-memory form never leaves a gen run.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 10, 20 and 25); ADR 0295 (decisions 1 and 7); ADR 0305 (rules 15 and 16); ADR 0260
- *                     (decision 3: clients from the producer's manifest).
+ *                     (decision 3: clients from the producer's manifest); STA-1298 (package catalogues, key references).
  */
 import type { StackraManifest } from "@stackra/contracts";
 
@@ -109,6 +109,26 @@ export interface MemberIR {
    * i18n target writes `#stackra/i18n` from it. Absent when the member has no `assets/lang`.
    */
   readonly catalogues?: Readonly<Record<string, Readonly<Record<string, unknown>>>>;
+
+  /**
+   * The lang catalogues of each declared `@stackra/*` package that ships `assets/lang`, in package.json order: the
+   * i18n target merges their namespaces into `I18n` (`I18n.loyalty_kit.*`). Absent when none ships one (STA-1298).
+   */
+  readonly packageCatalogues?: readonly {
+    readonly package: string;
+    readonly catalogues: Readonly<Record<string, Readonly<Record<string, unknown>>>>;
+  }[];
+
+  /**
+   * Every `I18n.<namespace>.<path>` chain in the member's own files that import `#stackra/i18n`, as path segments
+   * with its place; a key no merged catalogue ships is refused (`i18n_key_missing`). Absent when none (STA-1298).
+   */
+  readonly i18nReferences?: readonly {
+    readonly file: string;
+    readonly line: number;
+    readonly column: number;
+    readonly path: readonly string[];
+  }[];
 
   /** What discovery refused. */
   readonly errors: readonly GenError[];

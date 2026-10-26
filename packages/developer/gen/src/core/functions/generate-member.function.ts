@@ -6,14 +6,15 @@
  *          registrations, a service's boot and inbound webhook route, a service's Encore CronJobs, broker-delivered
  *          queue topics, integration event topics and (for a relay service) the subscriptions to every product topic, the public id prefixes, an app's route tables and blocks, the public SDKs (TypeScript, Python and PHP) of the actions marked public, one generated client per consumed
  *          service (injected, listened to, or imported by any file, so an app's routes count), `#stackra/i18n` from
- *          the lang catalogues, the package entries or runtime entries, and the tool configs, after the identity checks and,
+ *          the lang catalogues and those of the declared `@stackra/*` packages, the package entries or runtime entries, and the tool configs, after the identity checks and,
  *          against the committed manifest, the `@Renamed` lock.
  * Boundary: pure: returns files, never writes them. Any error (discovery's, the manifest's or the lock's) means no
  *           file at all, so a broken run never leaves half an output behind. Two narrower passes break cycles between
  *           services: the manifest pass (the manifest alone, not blocked by a consumed workspace service whose
  *           manifest is still to come) and the clients pass (the client files alone, from the producers' manifests). A client or schema file that imports
  *           a `@stackra/*` package the member does not declare is refused (`client_dependency_missing`,
- *           `schema_dependency_missing`), and so is any other generated file (`generated_dependency_missing`, STA-1296). Other per-target outputs (navigation trees, the rest of the Encore app, ...)
+ *           `schema_dependency_missing`), and so is any other generated file (`generated_dependency_missing`, STA-1296), and so is a lang namespace clash
+ *           or a key no merged catalogue ships (`i18n_namespace_clash`, `i18n_key_missing`, STA-1298). Other per-target outputs (navigation trees, the rest of the Encore app, ...)
  *           are added by their owning targets.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 10, 22 and 26); ADR 0295 (decisions 5 and 7); ADR 0305 (rules 15, 16 and
@@ -25,6 +26,7 @@
 import type { StackraManifest } from "@stackra/contracts";
 
 import { buildManifest } from "#core/functions/build-manifest.function";
+import { checkI18n } from "#core/functions/check-i18n.function";
 import { checkIdentityLock } from "#core/functions/check-identity-lock.function";
 import { emitBlocks } from "#core/functions/emit-blocks.function";
 import { emitBoot } from "#core/functions/emit-boot.function";
@@ -104,7 +106,8 @@ export function generateMember(
           manifest,
         };
   }
-  all.push(...clients.errors);
+  // The i18n target refuses a namespace clash and a key no merged catalogue ships (STA-1298).
+  all.push(...clients.errors, ...checkI18n(ir));
   if (all.length > 0) return { files: [], errors: all, manifest };
 
   const files: GeneratedFile[] = [{ path: "stackra.manifest.json", content: json(manifest) }];

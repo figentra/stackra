@@ -7,23 +7,15 @@
  *           is not valid JSON fails the run, since a host cannot be wired from it.
  * Runtime: node
  * Governing contract: ADR 0294 (decision 25: a dependency's options come from its committed manifest); ADR 0127
- *                     2026-10-24 note (`ir` folds into gen: the manifest is the IR).
+ *                     2026-10-24 note (`ir` folds into gen: the manifest is the IR); STA-1298 (`dependencyPath`, the
+ *                     lookup the lang catalogues share).
  */
-import { existsSync, readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { readFileSync } from "node:fs";
 
 import type { StackraManifest } from "@stackra/contracts";
 
 import type { MemberIR } from "#core/types/member-ir.type";
-
-/** The manifest file of `dependency`, searched from `root` up. */
-function manifestPath(root: string, dependency: string): string | undefined {
-  for (let directory = root; ; directory = dirname(directory)) {
-    const candidate = join(directory, "node_modules", dependency, "stackra.manifest.json");
-    if (existsSync(candidate)) return candidate;
-    if (dirname(directory) === directory) return undefined;
-  }
-}
+import { dependencyPath } from "#node/functions/dependency-path.function";
 
 /**
  * The manifests of `dependencies`.
@@ -40,7 +32,7 @@ export function readDependencyManifests(
 ): MemberIR["dependencies"] {
   const found: { package: string; manifest: StackraManifest }[] = [];
   for (const dependency of new Set(dependencies)) {
-    const path = manifestPath(root, dependency);
+    const path = dependencyPath(root, dependency, "stackra.manifest.json");
     if (path === undefined) continue;
     try {
       found.push({
