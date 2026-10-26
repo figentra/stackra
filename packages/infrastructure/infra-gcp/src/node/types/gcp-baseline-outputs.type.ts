@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `GcpBaselineOutputs`, what an environment's GCP foundation exports: the data key, the files bucket, the
- *          infra service account and the Workload Identity provider a deploy job authenticates with, and the budget
- *          topic; `null` where the runway asked for none or another environment owns the project-wide resource.
+ *          infra service account and the Workload Identity provider a deploy job authenticates with, the budget
+ *          topic and the spend stop function; `null` where the runway asked for none or another environment owns the project-wide resource.
  * Boundary: type only; the stack exports these, and the stacks repository turns the bucket name into the services'
  *           `filesystem.s3.bucket` and the provider and service account into the deploy job's auth step.
  * Runtime: node
@@ -22,4 +22,6 @@ export type GcpBaselineOutputs = {
   readonly workloadIdentityProvider: pulumi.Output<string> | null;
   /** The topic the budget notifications go to. */
   readonly budgetTopic: pulumi.Output<string> | null;
+  /** The function that detaches billing at the non-production stop, or `null` where spend never stops. */
+  readonly spendStopFunction: pulumi.Output<string> | null;
 };

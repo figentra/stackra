@@ -2,11 +2,12 @@
  * Stackra file contract:
  * Purpose: unit tests of `gcpBaseline` under Pulumi's mocks: the provider is pinned to the environment's resolved
  *          project and region with the cost labels; the data key, the files bucket on it, the infra service account
- *          and the budget are created and exported; an environment that does not own its project creates no budget;
- *          what the runway leaves out is not created; a malformed project id fails.
+ *          and the budget are created and exported; the non-production stop deploys the billing-detach function on the
+ *          budget topic; an environment that does not own its project creates no budget; what the runway leaves out
+ *          is not created; a malformed project id fails.
  * Boundary: test only; no engine and no cloud call (ADR 0171: agents never apply a stack).
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0354, ADR 0171, ADR 0172, ADR 0222.
+ * Governing contract: ADR 0022 (test placement); ADR 0354, ADR 0171, ADR 0172, ADR 0222, ADR 0401.
  */
 import { describe, expect, it } from "@stackra/testing";
 
@@ -25,6 +26,9 @@ const STACK = {
 const STAGING: GcpBaselineConfig = {
   project: "acme",
   environment: "staging",
+  deployment: "acme-staging",
+  dedicated: null,
+  projectKey: "nonprod",
   region: "europe-west3",
   cloudProject: { id: "ref:gcp.projects.nonprod.id", number: "ref:gcp.projects.nonprod.number" },
   ownsProject: true,
@@ -34,6 +38,7 @@ const STAGING: GcpBaselineConfig = {
     currency: "EUR",
     amount: "ref:billing.nonprod",
     thresholds: [50, 100],
+    stopAt: null,
   },
   files: { versioning: true, expireNoncurrentDays: 30, origins: [] },
   github: { org: "acme", repo: "acme-platform" },
@@ -92,6 +97,7 @@ describe("gcpBaseline", () => {
     const foundation = gcpBaseline({
       ...STAGING,
       environment: "production",
+      deployment: "acme-production",
       ownsProject: false,
       files: null,
       github: null,
@@ -106,7 +112,59 @@ describe("gcpBaseline", () => {
       foundation.infraServiceAccount,
       foundation.workloadIdentityProvider,
       foundation.budgetTopic,
-    ]).toEqual([null, null, null, null]);
+      foundation.spendStopFunction,
+    ]).toEqual([null, null, null, null, null]);
+  });
+
+  it("detaches billing at the non-production stop through a function on the budget topic", async () => {
+    const engine = await mockPulumi(STACK);
+    const budgets = {
+      ...(STAGING.budgets as NonNullable<GcpBaselineConfig["budgets"]>),
+      stopAt: 100,
+    };
+    const foundation = gcpBaseline({ ...STAGING, budgets });
+
+    expect((await engine.find("Account", "acme-staging-stop")).inputs["accountId"]).toBe(
+      "acme-staging-stop",
+    );
+    expect((await engine.find("IAMMember", "acme-staging-stop-billing")).inputs).toEqual({
+      project: "acme-nonprod",
+      role: "roles/billing.projectManager",
+      member: "serviceAccount:acme-staging-stop@mock.iam.gserviceaccount.com",
+    });
+    expect((await engine.find("Function", "acme-staging-stop")).inputs).toMatchObject({
+      project: "acme-nonprod",
+      location: "europe-west3",
+      buildConfig: { runtime: "nodejs22", entryPoint: "stopSpend" },
+      serviceConfig: {
+        ingressSettings: "ALLOW_INTERNAL_ONLY",
+        environmentVariables: { PROJECT_ID: "acme-nonprod", STOP_AT_PERCENT: "100" },
+      },
+      eventTrigger: {
+        eventType: "google.cloud.pubsub.topic.v1.messagePublished",
+        pubsubTopic: "acme-staging-budgets-id",
+      },
+    });
+    expect(await outputOf(present(foundation.spendStopFunction))).toBe("acme-staging-stop");
+  });
+
+  it("names the deploy pool after a dedicated deployment", async () => {
+    const engine = await mockPulumi(STACK);
+    gcpBaseline({
+      ...STAGING,
+      environment: "production",
+      deployment: "acme-firm",
+      dedicated: { key: "firm", tenant: "tenant-1" },
+    });
+
+    expect(
+      (await engine.find("WorkloadIdentityPool", "acme-firm-github")).inputs[
+        "workloadIdentityPoolId"
+      ],
+    ).toBe("firm-github");
+    expect((await engine.find("Account", "acme-firm-infra")).inputs["accountId"]).toBe(
+      "acme-firm-infra",
+    );
   });
 
   it("refuses a project id GCP would not accept", async () => {

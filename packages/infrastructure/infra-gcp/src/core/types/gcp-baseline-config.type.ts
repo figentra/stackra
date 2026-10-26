@@ -1,33 +1,18 @@
 /**
  * Stackra file contract:
- * Purpose: `GcpBaselineConfig`, the typed config of one environment's GCP foundation, derived from the root runway by
- *          `gcpBaselineConfig` and read by the `gcpBaseline` Pulumi program: the GCP project and whether this
- *          environment owns its project-wide resources, the cost labels, the budget, the files bucket and the GitHub
+ * Purpose: `GcpBaselineConfig`, the typed config of one deployment's GCP foundation, derived from the root runway by
+ *          `gcpBaselineConfig` and read by the `gcpBaseline` Pulumi program: the deployment (project, region, stack
+ *          prefix, ownership, labels), the budget with its non-production spend stop, the files bucket and the GitHub
  *          repository the deploy service account trusts.
  * Boundary: type only; plain JSON, so gen can write it as `<env>.infra-gcp.config.json`. Project ids and numbers, the
  *           billing account and amounts may still be `ref:<path>`; no value is a secret.
  * Runtime: isomorphic
- * Governing contract: ADR 0354 (decisions 3 and 4), ADR 0171, ADR 0172 (decision 5), ADR 0296.
+ * Governing contract: ADR 0354 (decisions 3 and 4), ADR 0171, ADR 0172 (decision 5), ADR 0296, ADR 0400, ADR 0401.
  */
-import type { RunwayEnvironment } from "@stackra/runway";
+import type { GcpDeployment } from "#core/types/gcp-deployment.type";
 
-/** One environment's GCP foundation. */
-export type GcpBaselineConfig = {
-  /** The runway `project`. */
-  readonly project: string;
-  /** The environment this config is for. */
-  readonly environment: RunwayEnvironment;
-  /** `providers.gcp.region`. */
-  readonly region: string;
-  /** The environment's GCP project: its id and number, each a quoted value or `ref:<path>`. */
-  readonly cloudProject: { readonly id: string; readonly number: string };
-  /**
-   * Whether this environment creates its project's project-wide resources (the budget and its topic): true for the
-   * first environment, in promotion order, that names the project.
-   */
-  readonly ownsProject: boolean;
-  /** The provider's default labels: the project, the environment and every required label key. */
-  readonly labels: Readonly<Record<string, string>>;
+/** One deployment's GCP foundation. */
+export type GcpBaselineConfig = GcpDeployment & {
   /** The project's monthly budget, or `null` when the runway has no `providers.gcp.budgets`. */
   readonly budgets: {
     /** The billing account the budget is created on, or `ref:<path>`. */
@@ -38,6 +23,11 @@ export type GcpBaselineConfig = {
     readonly amount: string;
     /** Alert percentages of the limit. */
     readonly thresholds: readonly number[];
+    /**
+     * The percentage at which the project's billing is detached (`stopNonProdAt`); `null` in a project production
+     * runs in, or when the runway sets none.
+     */
+    readonly stopAt: number | null;
   } | null;
   /** The files bucket, or `null` when no service default puts files or media on the `s3` disk. */
   readonly files: {
@@ -48,6 +38,6 @@ export type GcpBaselineConfig = {
     /** The app origins a browser uploads from (the media CORS rule). */
     readonly origins: readonly string[];
   } | null;
-  /** The repository whose deploy job may impersonate the environment's infra service account, or `null`. */
+  /** The repository whose deploy job may impersonate the deployment's infra service account, or `null`. */
   readonly github: { readonly org: string; readonly repo: string } | null;
 };

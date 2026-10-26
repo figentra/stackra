@@ -1,23 +1,23 @@
 /**
  * Stackra file contract:
- * Purpose: `gcpBaselineConfig(root, environment, origins)`, one environment's GCP foundation config from the root
- *          runway: its GCP project (from `providers.gcp.environments`) and whether it owns the project's project-wide
- *          resources, the cost labels, the budget, the files bucket (when a service default puts files or media on the
- *          `s3` disk, which reaches GCS through its S3-compatible endpoint) and the GitHub repository.
+ * Purpose: `gcpBaselineConfig(root, environment, origins, dedicated?)`, one deployment's GCP foundation config from the
+ *          root runway: the deployment (`gcpDeploymentOf`: the project its runway `cloud` names, its region, its stack
+ *          prefix, ownership and labels), the budget and its non-production spend stop, the files bucket (when a
+ *          service default puts files or media on the `s3` disk, which reaches GCS through its S3-compatible endpoint)
+ *          and the GitHub repository.
  * Boundary: plain data in and out, so gen can write the result as a config file; project ids, numbers, the billing
- *           account and amounts stay `ref:<path>` until the Pulumi program resolves them. Which environment runs on
- *           GCP, in which region and project, is runway data (ADR 0354 decision 4); nothing here names a region. The
- *           app origins come from gen, which knows the app members' hosts.
+ *           account and amounts stay `ref:<path>` until the Pulumi program resolves them. Nothing here names a region
+ *           or project (ADR 0354 decision 4). The app origins come from gen, which knows the app members' hosts.
+ *           Spend never stops in a project production runs in: a detached billing account stops production too.
  * Runtime: isomorphic
  * Governing contract: ADR 0354 (decisions 1, 3 and 4), ADR 0171 (decisions 1 to 4), ADR 0172 (decision 5 per project),
- *                     ADR 0222 (media direct uploads).
+ *                     ADR 0222 (media direct uploads), ADR 0400, ADR 0401 (the spend stop).
  */
-import { Enum } from "@stackra/contracts";
 import { RunwayEnvironment, RunwayInvalidError } from "@stackra/runway";
 import type { RootRunway, RunwayIssue } from "@stackra/runway";
 
 import { ROOT_SOURCE } from "#core/constants/root-source.constant";
-import { costLabels } from "#core/functions/cost-labels.function";
+import { gcpDeploymentOf } from "#core/functions/gcp-deployment-of.function";
 import { parseInfraRunway } from "#core/functions/parse-infra-runway.function";
 import type { GcpBaselineConfig } from "#core/types/gcp-baseline-config.type";
 
@@ -25,13 +25,14 @@ import type { GcpBaselineConfig } from "#core/types/gcp-baseline-config.type";
 const ORIGIN = /^https:\/\/[a-z0-9.-]+(:\d+)?$/;
 
 /**
- * The GCP foundation config of `environment`.
+ * The GCP foundation config of `environment`, or of its dedicated deployment `dedicated`.
  *
  * @param root - the parsed root runway (`readRunway("runway.yaml", "root")`).
  * @param environment - the environment the Pulumi stack deploys.
  * @param origins - the app origins that upload files straight to the bucket (`https://console.acme.example`).
- * @throws RunwayInvalidError when `providers.gcp` is missing or invalid, the environment runs in no listed project, or
- *         a budget has no billing account or no amount for its project.
+ * @param dedicated - the key of a dedicated deployment of `environment`.
+ * @throws RunwayInvalidError when `providers.gcp` is missing or invalid, the deployment does not run on a listed GCP
+ *         project, or a budget has no billing account or no amount for its project.
  * @throws TypeError when an origin is not `https://<host>[:port]`.
  * @example
  * const config = gcpBaselineConfig(root, "production", ["https://console.acme.example"]);
@@ -41,28 +42,23 @@ export function gcpBaselineConfig(
   root: RootRunway,
   environment: RunwayEnvironment,
   origins: readonly string[] = [],
+  dedicated?: string,
 ): GcpBaselineConfig {
   for (const origin of origins)
     if (!ORIGIN.test(origin))
       throw new TypeError(`${origin} is not an upload origin: expected https://<host>[:port]`);
 
   const runway = parseInfraRunway(root);
+  const deployment = gcpDeploymentOf(runway, environment, dedicated);
   const { gcp, github } = runway.providers;
-  const name = gcp.environments[environment];
-  const cloudProject = name === undefined ? undefined : gcp.projects[name];
-  if (name === undefined || cloudProject === undefined)
-    throw new RunwayInvalidError(ROOT_SOURCE, [
-      {
-        path: `providers.gcp.environments.${environment}`,
-        message:
-          name === undefined
-            ? "Name the GCP project (a key of providers.gcp.projects) this environment runs in"
-            : `providers.gcp.projects has no "${name}"`,
-      },
-    ]);
-
-  const first = Enum.values(RunwayEnvironment).find((entry) => gcp.environments[entry] === name);
+  const name = deployment.projectKey;
   const issues: RunwayIssue[] = [];
+
+  const live = runway.environments[RunwayEnvironment.Production];
+  const production = [
+    live?.cloud,
+    ...Object.values(live?.dedicated ?? {}).map((entry) => entry.cloud),
+  ].some((cloud) => cloud?.name === "gcp" && cloud.account === name);
 
   let budgets: GcpBaselineConfig["budgets"] = null;
   if (gcp.budgets !== undefined) {
@@ -83,6 +79,7 @@ export function gcpBaselineConfig(
         currency: gcp.budgets.currency,
         amount: String(amount),
         thresholds: gcp.budgets.thresholds,
+        stopAt: production ? null : (gcp.budgets.stopNonProdAt ?? null),
       };
   }
   if (issues.length > 0) throw new RunwayInvalidError(ROOT_SOURCE, issues);
@@ -93,12 +90,7 @@ export function gcpBaselineConfig(
   const buckets = settings?.shared?.buckets;
 
   return {
-    project: runway.project,
-    environment,
-    region: gcp.region,
-    cloudProject: { id: cloudProject.id, number: cloudProject.number },
-    ownsProject: first === environment,
-    labels: costLabels(runway.project, environment, gcp.requiredLabels),
+    ...deployment,
     budgets,
     files: onS3
       ? {

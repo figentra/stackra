@@ -1,18 +1,21 @@
 /**
  * Stackra file contract:
- * Purpose: `gcpBaseline(config, opts?)`, the Pulumi program of one environment's free GCP foundation: a GCP provider
- *          pinned to the environment's project and region with the cost labels as default labels, then the data key,
- *          the files bucket, the GitHub Workload Identity infra service account, and, from the project's first
- *          environment, the billing budget with its topic.
+ * Purpose: `gcpBaseline(config, opts?)`, the Pulumi program of one deployment's free GCP foundation (an environment's,
+ *          or a dedicated tenant's): a GCP provider pinned to its project and region with the cost labels as default
+ *          labels, then the data key, the files bucket, the GitHub Workload Identity infra service account with the
+ *          deploy roles, and, from the project's first deployment, the billing budget with its topic and, outside
+ *          production, the spend stop that detaches billing.
  * Boundary: creates resources only through Pulumi; agents run it under `stackra runway infra preview` or Pulumi's mocks
- *           and never apply it (`pulumi up` is the owner's or the deploy job's). The network, the database server,
- *           caches and queues are the runtime stack's, not this program's (ADR 0354 open question 1: the GCP runtime is
- *           not decided). Which region and project an environment uses is runway data; nothing here names one.
+ *           and never apply it (`pulumi up` is the owner's or the deploy job's). The database server is `gcpRuntime`'s;
+ *           the network, caches and queues are the runtime stack's (ADR 0354 open question 1). Which region and
+ *           project a deployment uses is runway data; nothing here names one.
  * Runtime: node
- * Governing contract: ADR 0354 (decisions 1 to 5), ADR 0171 (decisions 1 to 5), ADR 0172 (decisions 1 and 5), ADR 0222.
+ * Governing contract: ADR 0354 (decisions 1 to 5), ADR 0171 (decisions 1 to 5), ADR 0172 (decisions 1 and 5), ADR 0222,
+ *                     ADR 0400, ADR 0401.
  */
 import * as pulumi from "@pulumi/pulumi";
 
+import { serviceAccountId } from "#core/functions/service-account-id.function";
 import type { GcpBaselineConfig } from "#core/types/gcp-baseline-config.type";
 import { ciAccess } from "#node/functions/ci-access.function";
 import { cloudProjectOf } from "#node/functions/cloud-project-of.function";
@@ -21,7 +24,7 @@ import { dataKey } from "#node/functions/data-key.function";
 import { filesBucket } from "#node/functions/files-bucket.function";
 import { projectProvider } from "#node/functions/project-provider.function";
 import { resolveRef } from "#node/functions/resolve-ref.function";
-import { serviceAccountId } from "#node/functions/service-account-id.function";
+import { spendStop } from "#node/functions/spend-stop.function";
 import type { GcpBaselineOutputs } from "#node/types/gcp-baseline-outputs.type";
 
 /**
@@ -39,9 +42,8 @@ export function gcpBaseline(
   config: GcpBaselineConfig,
   opts?: pulumi.ComponentResourceOptions,
 ): GcpBaselineOutputs {
-  const { project, environment, region } = config;
-  const cloud = cloudProjectOf(config.cloudProject, `the ${environment} project`);
-  const prefix = `${project}-${environment}`;
+  const { environment, region, deployment: prefix } = config;
+  const cloud = cloudProjectOf(config.cloudProject, `the ${prefix} project`);
 
   const group = new pulumi.ComponentResource("stackra:infra-gcp:Baseline", prefix, {}, opts);
   const provider = projectProvider(
@@ -76,8 +78,9 @@ export function gcpBaseline(
           {
             project: cloud.id,
             environment,
+            pool: config.dedicated?.key ?? environment,
             github: config.github,
-            accountId: serviceAccountId(project, environment),
+            accountId: serviceAccountId(prefix, "infra"),
           },
           options,
         );
@@ -98,11 +101,27 @@ export function gcpBaseline(
           options,
         );
 
+  const stop =
+    topic === null || config.budgets?.stopAt == null
+      ? null
+      : spendStop(
+          prefix,
+          {
+            project: cloud.id,
+            region,
+            topic,
+            stopAt: config.budgets.stopAt,
+            accountId: serviceAccountId(prefix, "stop"),
+          },
+          options,
+        );
+
   return {
     dataKeyId: key.id,
     filesBucket: files?.name ?? null,
     infraServiceAccount: infra?.serviceAccount.email ?? null,
     workloadIdentityProvider: infra?.provider.name ?? null,
     budgetTopic: topic?.id ?? null,
+    spendStopFunction: stop?.name ?? null,
   };
 }

@@ -1,64 +1,19 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `gcpBaselineConfig`: a root runway gives staging and production their projects, labels,
- *          budget, files bucket and repository; project ownership follows promotion order; every missing budget input
- *          is reported with its path; an environment in no project, a project the runway does not list and an upload
- *          origin that is not https fail.
+ * Purpose: unit tests of `gcpBaselineConfig`: the runway `cloud` gives staging and production their projects, labels,
+ *          budget, files bucket and repository; production runs in its KSA region and never stops spend; a dedicated
+ *          tenant gets its own project, prefix and tenant label; project ownership follows promotion order; every
+ *          missing budget input is reported with its path; a deployment not on GCP, a project the runway does not
+ *          list, a project name too long for a service account id and an upload origin that is not https fail.
  * Boundary: test only; roots are built through `parseRunway`, so each is a valid root runway.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0354, ADR 0171, ADR 0172, ADR 0222.
+ * Governing contract: ADR 0022 (test placement); ADR 0354, ADR 0171, ADR 0172, ADR 0222, ADR 0400, ADR 0401.
  */
-import { parseRunway, RunwayInvalidError } from "@stackra/runway";
-import type { RootRunway } from "@stackra/runway";
+import { RunwayInvalidError } from "@stackra/runway";
 import { describe, expect, it } from "@stackra/testing";
 
 import { gcpBaselineConfig } from "#core/functions/gcp-baseline-config.function";
-
-/** The object at `path` inside `value`, for a test to change in place. */
-function at(value: unknown, ...path: string[]): Record<string, unknown> {
-  return path.reduce<Record<string, unknown>>(
-    (node, key) => node[key] as Record<string, unknown>,
-    value as Record<string, unknown>,
-  );
-}
-
-/** A root runway with staging and production on GCP, reduced to what infra-gcp reads. */
-function gcpRoot(change: (root: Record<string, unknown>) => void = () => {}): RootRunway {
-  const root: Record<string, unknown> = {
-    version: 3,
-    project: "acme",
-    providers: {
-      gcp: {
-        region: "europe-west3",
-        projects: {
-          nonprod: { id: "ref:gcp.projects.nonprod.id", number: "ref:gcp.projects.nonprod.number" },
-          prod: { id: "acme-prod", number: "123456789012" },
-        },
-        environments: { staging: "nonprod", production: "prod" },
-        requiredLabels: ["env", "tenant"],
-        billingAccount: "ref:gcp.billingAccount",
-        budgets: {
-          currency: "EUR",
-          thresholds: [50, 80, 100],
-          monthly: { nonprod: "ref:gcp.budgets.nonprod", prod: 2000 },
-        },
-      },
-      github: { org: "acme", repo: "acme-platform" },
-    },
-    environments: {
-      dev: { destinations: { services: "compose" } },
-      staging: {
-        shared: { buckets: { versioning: true, lifecycle: { expireNoncurrentDays: 30 } } },
-        defaults: { service: { config: { filesystem: { disk: "s3" } } } },
-      },
-      production: {
-        defaults: { service: { config: { media: { disk: "s3" } } } },
-      },
-    },
-  };
-  change(root);
-  return parseRunway("root", root);
-}
+import { at, gcpRoot } from "#core/functions/__tests__/fixtures/gcp-root.fixture";
 
 /** The paths a `RunwayInvalidError` names. */
 function pathsOf(run: () => unknown): string[] {
@@ -72,7 +27,7 @@ function pathsOf(run: () => unknown): string[] {
 }
 
 describe("gcpBaselineConfig", () => {
-  it("derives staging from the root", () => {
+  it("derives staging from its runway cloud", () => {
     const config = gcpBaselineConfig(gcpRoot(), "staging", [
       "https://console.staging.acme.example",
     ]);
@@ -80,11 +35,14 @@ describe("gcpBaselineConfig", () => {
     expect(config).toEqual({
       project: "acme",
       environment: "staging",
-      region: "europe-west3",
+      deployment: "acme-staging",
+      dedicated: null,
+      projectKey: "nonprod",
       cloudProject: {
         id: "ref:gcp.projects.nonprod.id",
         number: "ref:gcp.projects.nonprod.number",
       },
+      region: "europe-west3",
       ownsProject: true,
       labels: { env: "staging", tenant: "shared", project: "acme", service: "infra-gcp" },
       budgets: {
@@ -92,6 +50,7 @@ describe("gcpBaselineConfig", () => {
         currency: "EUR",
         amount: "ref:gcp.budgets.nonprod",
         thresholds: [50, 80, 100],
+        stopAt: 100,
       },
       files: {
         versioning: true,
@@ -102,21 +61,39 @@ describe("gcpBaselineConfig", () => {
     });
   });
 
-  it("gives production its own project, budget and a versioned bucket by default", () => {
+  it("runs production in its KSA region, in its own project, and never stops its spend", () => {
     const config = gcpBaselineConfig(gcpRoot(), "production");
 
+    expect(config.region).toBe("me-central2");
     expect(config.cloudProject).toEqual({ id: "acme-prod", number: "123456789012" });
     expect(config.budgets?.amount).toBe("2000");
+    expect(config.budgets?.stopAt).toBeNull();
     expect(config.files).toEqual({ versioning: true, expireNoncurrentDays: null, origins: [] });
+  });
+
+  it("gives a dedicated tenant its own project, prefix and tenant label", () => {
+    const config = gcpBaselineConfig(gcpRoot(), "production", [], "firm");
+
+    expect(config).toMatchObject({
+      deployment: "acme-firm",
+      dedicated: { key: "firm", tenant: "tenant-1" },
+      projectKey: "firm",
+      cloudProject: { id: "acme-firm", number: "223456789012" },
+      region: "me-central2",
+      ownsProject: true,
+      labels: { tenant: "tenant-1", env: "production" },
+    });
+    expect(config.budgets?.stopAt).toBeNull();
   });
 
   it("lets the first environment of a shared project own it", () => {
     const root = gcpRoot((draft) => {
-      at(draft, "providers", "gcp", "environments").staging = "prod";
+      at(draft, "environments", "staging").cloud = { name: "gcp", account: "prod" };
     });
 
     expect(gcpBaselineConfig(root, "staging").ownsProject).toBe(true);
     expect(gcpBaselineConfig(root, "production").ownsProject).toBe(false);
+    expect(gcpBaselineConfig(root, "staging").budgets?.stopAt).toBeNull();
   });
 
   it("leaves out what the runway does not ask for", () => {
@@ -145,16 +122,18 @@ describe("gcpBaselineConfig", () => {
     ]);
   });
 
-  it("refuses an environment in no project and a project the runway does not list", () => {
-    expect(pathsOf(() => gcpBaselineConfig(gcpRoot(), "dev"))).toEqual([
-      "providers.gcp.environments.dev",
-    ]);
+  it("refuses a deployment off GCP, an unlisted project and a name too long for a service account", () => {
+    expect(pathsOf(() => gcpBaselineConfig(gcpRoot(), "dev"))).toEqual(["environments.dev.cloud"]);
     const unlisted = gcpRoot((draft) => {
-      at(draft, "providers", "gcp", "environments").staging = "qa";
+      at(draft, "environments", "staging").cloud = { name: "gcp", account: "qa" };
     });
-    expect(() => gcpBaselineConfig(unlisted, "staging")).toThrow(
-      /providers\.gcp\.projects has no "qa"/,
-    );
+    expect(pathsOf(() => gcpBaselineConfig(unlisted, "staging"))).toEqual([
+      "providers.gcp.projects.qa",
+    ]);
+    const long = gcpRoot((draft) => {
+      draft["project"] = "acme-platform-xx";
+    });
+    expect(pathsOf(() => gcpBaselineConfig(long, "production"))).toEqual(["project", "project"]);
   });
 
   it("refuses an upload origin that is not https", () => {

@@ -2,13 +2,14 @@
  * Stackra file contract:
  * Purpose: unit tests of `ciAccess` under Pulumi's mocks: the environment's own Workload Identity pool and GitHub
  *          provider admit only one repository's environment, only that subject may impersonate the infra service
- *          account, and the service account owns the project.
+ *          account, and the service account holds the deploy roles and never `roles/owner`.
  * Boundary: test only; no engine and no cloud call.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0167 (CI over OIDC), ADR 0172 (decision 1), ADR 0354.
  */
 import { describe, expect, it } from "@stackra/testing";
 
+import { DEPLOY_ROLES } from "#node/constants/deploy-roles.constant";
 import { ciAccess } from "#node/functions/ci-access.function";
 import { mockPulumi } from "#testing/functions/mock-pulumi.function";
 import { outputOf } from "#testing/functions/output-of.function";
@@ -17,6 +18,7 @@ import { outputOf } from "#testing/functions/output-of.function";
 const ARGS = {
   project: "acme-stg",
   environment: "staging",
+  pool: "staging",
   github: { org: "figentra", repo: "stackra" },
   accountId: "acme-staging-infra",
 };
@@ -43,7 +45,7 @@ describe("ciAccess", () => {
     });
   });
 
-  it("lets only that subject impersonate the infra service account, which owns the project", async () => {
+  it("lets only that subject impersonate the infra service account, which holds the deploy roles", async () => {
     const engine = await mockPulumi();
     const { serviceAccount, provider } = ciAccess("acme-staging", ARGS, {});
 
@@ -57,11 +59,19 @@ describe("ciAccess", () => {
       member:
         "principal://iam.googleapis.com/acme-staging-github/subject/repo:figentra/stackra:environment:staging",
     });
-    expect((await engine.find("IAMMember", "acme-staging-infra-owner")).inputs).toEqual({
+    expect((await engine.find("IAMMember", "acme-staging-infra-cloudsql-admin")).inputs).toEqual({
       project: "acme-stg",
-      role: "roles/owner",
+      role: "roles/cloudsql.admin",
       member: "serviceAccount:acme-staging-infra@mock.iam.gserviceaccount.com",
     });
+    const roles = (await engine.settled())
+      .filter(
+        (resource) =>
+          resource.type.endsWith("IAMMember") && resource.inputs["project"] !== undefined,
+      )
+      .map((resource) => resource.inputs["role"]);
+    expect(roles).toEqual([...DEPLOY_ROLES]);
+    expect(roles).not.toContain("roles/owner");
     expect(await outputOf(serviceAccount.email)).toBe(
       "acme-staging-infra@mock.iam.gserviceaccount.com",
     );

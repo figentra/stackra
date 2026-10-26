@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `parseInfraRunway`: a root runway narrows to the GCP foundation's view with its defaults; a
- *          malformed region, an unquoted project number, an unknown environment, a bad label key and a missing
+ *          malformed region, an unquoted project number, a bad Postgres version, a bad label key and a missing
  *          `providers.gcp` are refused with their paths.
  * Boundary: test only; roots are built through `parseRunway`, so each is a valid root runway.
  * Runtime: node (vitest)
@@ -24,14 +24,14 @@ function rootWith(gcp: Record<string, unknown> | null) {
 }
 
 describe("parseInfraRunway", () => {
-  it("narrows the root and defaults the projects, environments and required labels", () => {
+  it("narrows the root and defaults the projects, regions and required labels", () => {
     const runway = parseInfraRunway(rootWith({ region: "europe-west3" }));
 
     expect(runway.project).toBe("acme");
+    expect(runway.regions).toEqual({});
     expect(runway.providers.gcp).toMatchObject({
       region: "europe-west3",
       projects: {},
-      environments: {},
       requiredLabels: [],
     });
   });
@@ -52,10 +52,16 @@ describe("parseInfraRunway", () => {
     expect(() => parseInfraRunway(root)).toThrow(/providers\.gcp\.projects\.prod\.number/);
   });
 
-  it("refuses an environment the runway does not know and an upper-case label key", () => {
-    expect(() =>
-      parseInfraRunway(rootWith({ region: "europe-west3", environments: { qa: "prod" } })),
-    ).toThrow(/providers\.gcp\.environments/);
+  it("refuses a Postgres version Cloud SQL does not name and an upper-case label key", () => {
+    const root = parseRunway("root", {
+      version: 3,
+      project: "acme",
+      providers: { gcp: {} },
+      environments: { production: { shared: { database: { version: "17" } } } },
+    });
+    expect(() => parseInfraRunway(root)).toThrow(
+      /environments\.production\.shared\.database\.version/,
+    );
     expect(() =>
       parseInfraRunway(rootWith({ region: "europe-west3", requiredLabels: ["Team"] })),
     ).toThrow(/providers\.gcp\.requiredLabels\.0/);

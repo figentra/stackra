@@ -12,12 +12,14 @@ job, driven by `stackra runway infra` (ADR 0354 decision 5).
 
 ## What is here
 
-| Entry       | Symbol                                    | Use                                                                  |
-| ----------- | ----------------------------------------- | -------------------------------------------------------------------- |
-| `.`         | `gcpBaselineConfig(root, env, origins)`   | one environment's typed config, plain JSON (gen writes it to a file) |
-| `./node`    | `gcpBaseline(config)`                     | the environment stack                                                |
-| `./node`    | `resolveRef(value)`                       | a `ref:<path>` value read from the stack config                      |
-| `./testing` | `mockPulumi(config?)`, `outputOf(output)` | Pulumi's mocks and an output reader, for tests of a composed program |
+| Entry       | Symbol                                                                                    | Use                                                                       |
+| ----------- | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| `.`         | `gcpBaselineConfig(root, env, origins)`                                                   | one environment's typed config, plain JSON (gen writes it to a file)      |
+| `.`         | `gcpRuntimeConfig(root, env, dedicated?)`, `serviceAccountId`, `GcpHealthIndicatorDriver` | the runtime config (Cloud SQL); the 30-character guard; the health driver |
+| `./node`    | `gcpBaseline(config)`                                                                     | the environment stack                                                     |
+| `./node`    | `gcpRuntime(config, { keyId? })`                                                          | the runtime stack: Cloud SQL Postgres with backups and recovery           |
+| `./node`    | `resolveRef(value)`                                                                       | a `ref:<path>` value read from the stack config                           |
+| `./testing` | `mockPulumi(config?)`, `outputOf(output)`                                                 | Pulumi's mocks and an output reader, for tests of a composed program      |
 
 `.` never loads Pulumi, so gen can derive the config without it.
 
@@ -41,7 +43,8 @@ exists.
 | --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | data key        | a key ring `<project>-<env>` in the region and the key `data`, rotating yearly, destroyed versions kept 30 days                                                                                                                                                             |
 | files bucket    | when a service default puts `filesystem.disk` or `media.disk` on `s3` (GCS through its S3-compatible endpoint): uniform access, public access prevention, the data key, the media CORS rule, `uploads/` deleted after a day, replaced versions after `expireNoncurrentDays` |
-| deploy identity | the environment's Workload Identity pool `<env>-github` and provider admitting only `repo:<org>/<repo>:environment:<env>`, the service account `<project>-<env>-infra` it may impersonate, owner of the project                                                             |
+| deploy identity | the environment's Workload Identity pool `<env>-github` and provider admitting only `repo:<org>/<repo>:environment:<env>`, the service account `<project>-<env>-infra` it may impersonate, holding `DEPLOY_ROLES` (never `roles/owner`, ADR 0401)                           |
+| spend stop      | outside production, when `budgets.stopNonProdAt` is set: a Cloud Function on the budget topic that detaches the project's billing at that percentage (ADR 0401)                                                                                                             |
 | budget          | from the project's first environment: a monthly budget on the billing account, scoped to the project, in the runway's currency, a rule at each threshold, notifications to a Pub/Sub topic                                                                                  |
 
 ## What the root runway must hold
@@ -49,41 +52,58 @@ exists.
 ```yaml
 providers:
   gcp:
-    region: europe-west3 # any GCP region; Figentra's runway names its own
+    region: europe-west3 # the default; a deployment's GCP region in `regions` wins
     projects:
       nonprod: { id: ref:gcp.projects.nonprod.id, number: ref:gcp.projects.nonprod.number }
-      prod: { id: ref:gcp.projects.prod.id, number: ref:gcp.projects.prod.number }
-    environments: # which environment runs in which project
-      staging: nonprod
-      production: prod
+      ksa: { id: ref:gcp.projects.ksa.id, number: ref:gcp.projects.ksa.number }
+      firm: { id: ref:gcp.projects.firm.id, number: ref:gcp.projects.firm.number }
     requiredLabels: [env, service, tenant]
     billingAccount: ref:gcp.billingAccount
     budgets:
       currency: EUR # the billing account's currency
       thresholds: [50, 80, 100]
+      stopNonProdAt: 100 # detach billing outside production
       monthly:
-        nonprod: ref:gcp.budgets.nonprod
-        prod: ref:gcp.budgets.prod
-  github:
-    org: acme
-    repo: acme-platform
+        { nonprod: ref:gcp.budgets.nonprod, ksa: ref:gcp.budgets.ksa, firm: ref:gcp.budgets.firm }
+  github: { org: acme, repo: acme-platform }
+regions:
+  ksa: { cloud: gcp, location: me-central2, jurisdiction: sa }
+environments:
+  staging:
+    cloud: { name: gcp, account: nonprod }
+  production:
+    cloud: { name: gcp, account: ksa } # which project: ADR 0400, replacing providers.gcp.environments
+    regions: [ksa]
+    shared:
+      database:
+        tier: db-custom-2-7680
+        version: POSTGRES_17
+        highAvailability: true
+        backups: { retentionDays: 35, pitr: true, pitrDays: 7 }
+      network: { vpc: ref:gcp.network.prod }
+    dedicated:
+      firm: { tenant: tenant-1, cloud: { name: gcp, account: firm } }
 ```
 
-A project number is a quoted string or a `ref:`. `ref:gcp.projects.prod.id` reads the stack config key `gcp` and walks
-`projects.prod.id` (ADR 0171 decision 4). The environment-to-project map sits in `providers.gcp.environments` until
-the Runway schema names the cloud of each environment (ADR 0354 decision 4).
+A project number is a quoted string or a `ref:`. `ref:gcp.projects.ksa.id` reads the stack config key `gcp` and walks
+`projects.ksa.id` (ADR 0171 decision 4). `gcpBaselineConfig(root, env, origins, "firm")` and
+`gcpRuntimeConfig(root, env, "firm")` give the dedicated tenant's stacks, prefixed `<project>-firm`. Every service
+account id (`<prefix>-infra`, `<prefix>-stop`) must fit GCP's 30 characters; the config readers refuse a name that would
+not. Cloud SQL backups are always on and stored in the server's region; the runway sizes them.
 
 ## Owner steps
 
-- Create each project, link it to the billing account and enable the KMS, Storage, IAM, IAM Credentials, STS, Pub/Sub
-  and Billing Budgets APIs.
+- Create each project, link it to the billing account and enable the KMS, Storage, IAM, IAM Credentials, STS, Pub/Sub,
+  Billing Budgets, Cloud Billing, Cloud Functions, Cloud Run, Eventarc, Cloud Build and Cloud SQL Admin APIs.
+- Grant the infra service account `roles/billing.costsManager` on the billing account (budgets live there).
+- Re-link a project's billing after the spend stop detached it, once the cause is fixed.
 - Create the HMAC key the `s3` disk signs with for the infra service account, and store it in the secret store.
 - Subscribe the budget topic (`budgetTopic`) to the alerting channel.
 - Point the deploy job's auth step at `workloadIdentityProvider` and `infraServiceAccount`.
 
 ## Not here
 
-The network, the database server and its backups, caches and queues belong to the runtime stack, and the GCP runtime is
-not decided (ADR 0354 open question 1). There is no GCP state backend: the stack state stays in the AWS state backend
-of `figentra/infra` (ADR 0354 consequences). Copies to a backup project, a spend stop at a threshold (GCP budgets only
-alert) and a project per product and region created by the program (ADR 0354 open question 2) are open (see the spec).
+The network, caches and queues belong to the runtime stack, and the GCP compute runtime is not decided (ADR 0354 open
+question 1); the database server is `gcpRuntime`'s. There is no GCP state backend: the stack state stays in the AWS
+state backend of `figentra/infra` (ADR 0354 consequences). Copies to a backup project and a project per product and
+region created by the program (ADR 0354 open question 2) are owner decisions (see the spec).

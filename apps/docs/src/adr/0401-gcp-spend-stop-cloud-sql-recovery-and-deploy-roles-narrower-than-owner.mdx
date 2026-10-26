@@ -1,0 +1,50 @@
+---
+title: "0401 — GCP: a billing-detach spend stop, Cloud SQL backups with point-in-time recovery, and deploy roles narrower than owner"
+description: "Proposed · 2026-10-26"
+---
+
+<Note>
+  Proposed. It applies [0172](/adr/0172-aws-accounts-primary-region-and-cloud-cost-controls)
+  decision 5 and [0186](/adr/0186-backups-and-disaster-recovery) to GCP and answers
+  [0354](/adr/0354-two-clouds-aws-and-gcp-and-one-aws-account-per-product-region) open question 1
+  for the database only. The backup project and the project-per-product layout (0354 open question
+  2) stay owner decisions. Linear STA-730.
+</Note>
+
+## Context
+
+GCP budgets alert but take no action, so the non-production stop of 0172 had no GCP form. The GCP runtime was
+undecided, which left Cloud SQL without the backups and point-in-time recovery 0186 requires. The deploy service account
+held `roles/owner`, and a long project name could make a service account id GCP refuses only at apply time.
+
+## Decision
+
+1. **Spend stop.** When `providers.gcp.budgets.stopNonProdAt` is set, a project production does not run in gets a Cloud
+   Function on its budget topic that detaches the project's billing once the cost reaches that percentage. Its own
+   service account holds only `roles/billing.projectManager` on the project; the function is internal-ingress only.
+   Production is never detached.
+2. **Cloud SQL in the runtime stack.** `gcpRuntime` creates the environment's Postgres server from `shared.database`
+   (tier, version, `highAvailability`), always with daily backups stored in the server's own region, keeping
+   `backups.retentionDays` backups, and point-in-time recovery for `backups.pitrDays` when `backups.pitr` is on. The
+   server is deletion-protected, joins the runway's VPC on a private IP (or is reachable only through the connector
+   over TLS) and uses the deployment's data key when one is passed.
+3. **Deploy roles.** The infra service account holds the predefined roles of the resources the programs manage
+   (`DEPLOY_ROLES`), never `roles/owner`. `projectIamAdmin` remains, so the trust stays the GitHub environment's.
+4. **Service account guard.** Every service account id a deployment makes is checked against GCP's 30 characters while
+   the runway is read, so `stackra validate` fails before Pulumi runs.
+
+## Consequences
+
+- A sandbox project stops spending at its threshold without an operator; re-linking billing is an owner step.
+- A new resource kind in infra-gcp adds its role to `DEPLOY_ROLES` in the same change.
+- The budget on the billing account needs `roles/billing.costsManager` granted by the owner.
+
+## Enforcement
+
+`packages/infrastructure/infra-gcp/src/node/functions/__tests__/{spend-stop,gcp-runtime,ci-access,gcp-baseline}.function.test.ts`;
+`packages/infrastructure/infra-gcp/src/core/functions/__tests__/{service-account-id,gcp-runtime-config}.function.test.ts`.
+Planned — the spend stop exercised on a sandbox project by the owner.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: STA-730; ADR 0354 OQ1; JUR-215; `notes/handover/build-wave10-2026-10-25.md` (infra-gcp).
