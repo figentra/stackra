@@ -8,7 +8,8 @@
  *          and refuses one past a floor when the studio passes the floors;
  *          `decide` guards the published revision's outcomes against the floors; `seed` creates and publishes a
  *          template, skips the version it already holds, keeps a tenant's edit and updates a seeded copy; `seedPack`
- *          seeds each template against its consumer's `Rules`.
+ *          seeds each template against its consumer's `Rules`; `approvalMatrix` reads the rows of a scope's published
+ *          AI action permission matrix, none without one.
  * Boundary: test only; a fake `Database` hands out a recording entity manager, so no database runs.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0331 (decisions 5, 6 and 10); ADR 0327 (decisions 3 and 9).
@@ -383,5 +384,50 @@ describe("RuleSetService outcomes and seeds", () => {
       "shop.returns": SeedResult.Created,
     });
     await expect(serviceOf().seedPack(SCOPE, pack, [])).rejects.toThrow(/needs the Rules/);
+  });
+});
+
+/** Connects an entity manager whose matrix rule set is `ruleSet` (or none) with `revisions` published. */
+function connectMatrix(ruleSet: RuleSet | null, revisions: Revision[]) {
+  const em = {
+    findOne: vi.fn(async (_model: unknown, _where: unknown) => ruleSet),
+    find: vi.fn(async () => revisions),
+  };
+  vi.spyOn(Database, "current").mockReturnValue({
+    em: () => em as unknown as ReturnType<Database["em"]>,
+  } as unknown as Database);
+  return em;
+}
+
+describe("RuleSetService.approvalMatrix", () => {
+  const matrix = storedRuleSet("ai.action_permissions");
+
+  it("reads the rows of the scope's published matrix", async () => {
+    const published = Object.assign(storedRevision(matrix, 1, new Date("2026-10-20T00:00:00Z")), {
+      data: {
+        condition: { all: [] },
+        outcomes: [
+          {
+            kind: "row",
+            params: { action: "legal.claim.file@1", state: "suggest", role: "associate" },
+          },
+        ],
+      },
+    });
+    const em = connectMatrix(matrix, [published]);
+    expect(await serviceOf().approvalMatrix(SCOPE)).toEqual([
+      { action: "legal.claim.file@1", state: "suggest", role: "associate" },
+    ]);
+    expect(em.findOne.mock.calls[0]?.[1]).toMatchObject({
+      scopeId: SCOPE.id,
+      consumer: "ai.action_permissions",
+    });
+  });
+
+  it("is empty with no matrix rule set or no published revision", async () => {
+    connectMatrix(null, []);
+    expect(await serviceOf().approvalMatrix(SCOPE)).toEqual([]);
+    connectMatrix(matrix, []);
+    expect(await serviceOf().approvalMatrix(SCOPE)).toEqual([]);
   });
 });

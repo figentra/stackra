@@ -6,7 +6,8 @@
  * Boundary: a type only. It is a `FactField` (type, label, enum values) plus `floor`, the dotted key of a legal floor in
  *           the market pack (`consumer.withdrawal_days`); the floor's value and bound are pack data, never code. Only a
  *           number or money parameter names a floor; a money floor's pack value is `{ minor, currency }`, so it carries
- *           its currency. A geo parameter is refused: an outcome carries amounts, codes and text.
+ *           its currency. A geo parameter is refused: an outcome carries amounts, codes and text. An `optional`
+ *           parameter may be left out of a stored outcome and never names a floor.
  * Runtime: isomorphic
  * Governing contract: ADR 0331 (decision 9: consumers own the outcome); ADR 0370 (decision 6: floors are pack data);
  *                     config-model section 4 (a rule outcome never crosses a floor).
@@ -22,4 +23,7 @@ import type { FactField } from "#contracts/types/fact-field.type";
 export interface OutcomeParam extends FactField {
   /** The market-pack floor key the value is guarded against; a number or money parameter only. */
   readonly floor?: string;
+
+  /** Whether a stored outcome may leave the parameter out (a matrix row's role); never with a floor. */
+  readonly optional?: boolean;
 }

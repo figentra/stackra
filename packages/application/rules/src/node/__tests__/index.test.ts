@@ -15,7 +15,12 @@ import type { RuleSetRevision } from "#node/index";
 
 describe("@stackra/rules/node", () => {
   it("exports exactly its values", () => {
-    expect(Object.keys(node).sort()).toEqual(["RuleSet", "RuleSetService"]);
+    expect(Object.keys(node).sort()).toEqual([
+      "ConditionField",
+      "ConditionFieldService",
+      "RuleSet",
+      "RuleSetService",
+    ]);
   });
 
   it("shares no symbol with the `.` entry", () => {

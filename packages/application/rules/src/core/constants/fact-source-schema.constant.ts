@@ -13,10 +13,10 @@ import { Enum } from "@stackra/contracts";
 import type { I18nKey } from "@stackra/i18n";
 import { z } from "zod";
 
-import { type FactSource, FieldType } from "#contracts/index";
+import { type FactSource, FIELD_KEY, FieldType } from "#contracts/index";
 
-/** A camelCase key of 1 to 63 characters. */
-const KEY = z.string().regex(/^[a-z][a-zA-Z0-9]{0,62}$/, "Expected a camelCase key");
+/** A camelCase key of 1 to 63 characters: the one casing (`FIELD_KEY`). */
+const KEY = z.string().regex(FIELD_KEY, "Expected a camelCase key");
 
 /** A lang key (`<module>::<path>`). */
 const LABEL = z

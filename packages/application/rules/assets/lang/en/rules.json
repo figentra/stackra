@@ -69,6 +69,36 @@
     "param_missing": "Fill in this setting.",
     "too_many_outcomes": "This rule has too many outcomes.",
     "past_floor": "The law in this market does not allow this value.",
-    "currency_mismatch": "Use the currency the law in this market sets."
+    "currency_mismatch": "Use the currency the law in this market sets.",
+    "model_unregistered": "No field of this record can be tested yet."
+  },
+  "matrix": {
+    "facts": {
+      "action": "Action"
+    },
+    "outcomes": {
+      "row": "Permission row"
+    },
+    "params": {
+      "action": "Action",
+      "state": "State",
+      "role": "Role",
+      "record_kind": "Record kind",
+      "record_id": "Record",
+      "data_class": "Data class",
+      "seat_kind": "Approver's seat",
+      "not_requester": "Approver is not the requester",
+      "step_up": "Approver steps up"
+    },
+    "states": {
+      "off": "Off",
+      "suggest": "Suggest",
+      "after_approval": "After approval",
+      "on_its_own": "On its own"
+    },
+    "answers": {
+      "yes": "Yes",
+      "no": "No"
+    }
   }
 }

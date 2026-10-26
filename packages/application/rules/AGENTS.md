@@ -16,9 +16,11 @@ the programming model v3.1 shape (ADR 0294, 0305). Entries `./contracts`, `.`, `
 | The registry, the evaluator, an operand rule | `src/core/{values,functions}/`                            |
 | A refusal, the event and its shipped schema  | `src/core/{errors,events,constants}/`                     |
 | The model, its service                       | `src/node/{models,services}/`                             |
+| The condition-field registry                 | `src/node/{models,services}/condition-field.*`            |
+| A reader of a rule set another package reads | `src/core/{constants,functions}/` (the matrix readers)    |
 | A migration                                  | `src/node/database/migrations/<NNNN>-<name>.migration.ts` |
 | The rule builder and its parts               | `src/react/rule-builder/`                                 |
-| A word the builder shows                     | `assets/lang/{en,ar}/rules.json`                          |
+| A word the builder or the matrix shows       | `assets/lang/<locale>/rules.json` (seven locales)         |
 | A test                                       | `__tests__/<name>.<kind>.test.ts(x)` beside it            |
 
 ## Entries and barrels
@@ -46,6 +48,12 @@ the programming model v3.1 shape (ADR 0294, 0305). Entries `./contracts`, `.`, `
 - A seed never overwrites a rule set whose latest revision is the tenant's.
 - No tenant vocabulary (R-59, ADR 0323): rule sets are keyed by the contracts `ScopeRef`.
 - Field error codes are snake_case and never echo a value; explanation steps never carry a fact's value.
+- One key casing (STA-1250): every source, field, outcome kind and parameter key is tested with `FIELD_KEY`
+  (camelCase); never add a second pattern or accept snake_case keys.
+- `rules.condition_fields` is platform data: no scope column, no RLS; only `ConditionFieldService.sync` writes it.
+- The AI matrix's state codes come from `@stackra/ai`'s `ActionPermission` by type only (`satisfies`); `@stackra/ai`
+  and `@stackra/actions` are type-only imports here, so `.` stays light and isomorphic. No row, floor or default value
+  is written in this package.
 - Migrations are frozen literal snapshots that import only @stackra/database.
 - No parameter properties and no `#private` fields: services typecheck this source under `erasableSyntaxOnly`.
 

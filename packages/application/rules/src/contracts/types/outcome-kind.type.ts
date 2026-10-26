@@ -29,6 +29,6 @@ export interface OutcomeKind {
   /** The lang key of the kind's name in the rule builder. */
   readonly label: I18nKey;
 
-  /** The parameters, by camelCase key; every one is required on a stored outcome. */
+  /** The parameters, by camelCase key; every one not marked `optional` is required on a stored outcome. */
   readonly params: Readonly<Record<string, OutcomeParam>>;
 }

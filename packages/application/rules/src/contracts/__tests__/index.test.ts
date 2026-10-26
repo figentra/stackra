@@ -17,8 +17,13 @@ import { FieldType } from "#contracts/enums/field-type.enum";
 import { Operator } from "#contracts/enums/operator.enum";
 
 describe("@stackra/rules/contracts", () => {
-  it("exports exactly the three enums", () => {
-    expect(Object.keys(contracts).sort()).toEqual(["FieldType", "Operator", "SeedResult"]);
+  it("exports exactly the key pattern and the three enums", () => {
+    expect(Object.keys(contracts).sort()).toEqual([
+      "FIELD_KEY",
+      "FieldType",
+      "Operator",
+      "SeedResult",
+    ]);
     expect(contracts.FieldType).toBe(FieldType);
     expect(contracts.Operator).toBe(Operator);
   });
@@ -56,5 +61,6 @@ describe("@stackra/rules/contracts", () => {
     };
     expect(kind.params["days"]?.floor).toBe("consumer.withdrawal_days");
     expectTypeOf<OutcomeParam["floor"]>().toEqualTypeOf<string | undefined>();
+    expectTypeOf<OutcomeParam["optional"]>().toEqualTypeOf<boolean | undefined>();
   });
 });

@@ -1,0 +1,34 @@
+{
+  "problems": {
+    "model_unregistered": "Aún no se puede comprobar ningún campo de este registro."
+  },
+  "matrix": {
+    "facts": {
+      "action": "Acción"
+    },
+    "outcomes": {
+      "row": "Fila de permiso"
+    },
+    "params": {
+      "action": "Acción",
+      "state": "Estado",
+      "role": "Rol",
+      "record_kind": "Tipo de registro",
+      "record_id": "Registro",
+      "data_class": "Clase de datos",
+      "seat_kind": "Puesto del aprobador",
+      "not_requester": "El aprobador no es el solicitante",
+      "step_up": "El aprobador vuelve a verificarse"
+    },
+    "states": {
+      "off": "Desactivado",
+      "suggest": "Sugerir",
+      "after_approval": "Tras aprobación",
+      "on_its_own": "Por su cuenta"
+    },
+    "answers": {
+      "yes": "Sí",
+      "no": "No"
+    }
+  }
+}

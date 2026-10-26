@@ -6,29 +6,33 @@ missing value, so one rule never gives two answers in two places. A rule is stor
 and operators; it is never an expression and never runs code (ADR 0154, ADR 0227).
 
 **Tier:** `tier:lib` (`packages/application/rules`). Entries `./contracts`, `.`, `./node` and `./react`. Depends on
-`@stackra/content`, `@stackra/contracts`, `@stackra/database`, `@stackra/errors`, `@stackra/events`, `@stackra/i18n`,
+`@stackra/actions` and `@stackra/ai` (types of the matrix rows only), `@stackra/content`, `@stackra/contracts`, `@stackra/database`, `@stackra/errors`, `@stackra/events`, `@stackra/i18n`,
 `@stackra/market-packs`, `@stackra/model`, `@stackra/money`, `@stackra/ui` and `@stackra/validation`.
 
 ## What is here
 
-| Entry         | Symbol                                                                 | Use                                                                     |
-| ------------- | ---------------------------------------------------------------------- | ----------------------------------------------------------------------- |
-| `./contracts` | `FieldType`, `Operator`                                                | the field types and the operator set each one fixes (IAM may reuse it)  |
-| `./contracts` | `FactSource`, `FactField`, `GeoPoint`                                  | what a consumer registers, and a geo fact (types)                       |
-| `./contracts` | `OutcomeKind`, `OutcomeParam`, `SeedResult`                            | the outcomes a consumer registers; what a seed did                      |
-| `.`           | `Rules`                                                                | one consumer's registry of fact sources and the check of a condition    |
-| `.`           | `evaluate`                                                             | the evaluator: deterministic, explained by tree path                    |
-| `.`           | `Condition`, `Facts`, `FactValue`, `Evaluation`, `EvaluationStep`, ... | the tree, the facts and the result (types)                              |
-| `.`           | `decide`, `Decision`, `DecideOptions`, `guardFloors`, `FlooredParam`   | a rule's guarded outcomes; the market-pack floor as the final guard     |
-| `.`           | `OutcomeDispatcher`, `OutcomeHandler`, `Outcome`, `RuleDocument`       | the consumer's handlers per outcome kind                                |
-| `.`           | `RuleSetPack$`, `RuleSetPack`, `RuleSetTemplate`                       | default rule sets as a versioned seed document                          |
-| `.`           | `RuleOutcome`, `RuleOutcomeClass`                                      | a declared outcome kind gen lists in the manifest's `outcomes`          |
-| `.`           | `Condition$`, `FactSource$`, `rules.conditionSchema()`                 | untrusted condition trees: shape only, or against a field registry      |
-| `.`           | `FloorValue`, `rules.floorProblems`, `checkOutcomes(input, floors)`    | money floors with their currency; refusing a value past a floor at save |
-| `.`           | `ConditionInvalidError`, `OutcomeInvalidError`, `RuleSetChangedError`  | refusals (400, 400, 409)                                                |
-| `.`           | `RuleSetPublished`                                                     | the domain event of a published revision                                |
-| `./node`      | `RuleSet`, `RuleSetService`, `RuleSetRevision`                         | versioned rule sets on `HasRevisions`, and their service                |
-| `./react`     | `RuleBuilder`, `RuleBuilderProps`                                      | the rule-builder panel on `@stackra/ui`                                 |
+| Entry         | Symbol                                                                 | Use                                                                      |
+| ------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| `./contracts` | `FieldType`, `Operator`                                                | the field types and the operator set each one fixes (IAM may reuse it)   |
+| `./contracts` | `FactSource`, `FactField`, `GeoPoint`                                  | what a consumer registers, and a geo fact (types)                        |
+| `./contracts` | `OutcomeKind`, `OutcomeParam`, `SeedResult`                            | the outcomes a consumer registers; what a seed did                       |
+| `./contracts` | `FIELD_KEY`                                                            | the one key casing (camelCase) every registry tests keys with            |
+| `.`           | `Rules`                                                                | one consumer's registry of fact sources and the check of a condition     |
+| `.`           | `evaluate`                                                             | the evaluator: deterministic, explained by tree path                     |
+| `.`           | `Condition`, `Facts`, `FactValue`, `Evaluation`, `EvaluationStep`, ... | the tree, the facts and the result (types)                               |
+| `.`           | `decide`, `Decision`, `DecideOptions`, `guardFloors`, `FlooredParam`   | a rule's guarded outcomes; the market-pack floor as the final guard      |
+| `.`           | `OutcomeDispatcher`, `OutcomeHandler`, `Outcome`, `RuleDocument`       | the consumer's handlers per outcome kind                                 |
+| `.`           | `RuleSetPack$`, `RuleSetPack`, `RuleSetTemplate`                       | default rule sets as a versioned seed document                           |
+| `.`           | `RuleOutcome`, `RuleOutcomeClass`                                      | a declared outcome kind gen lists in the manifest's `outcomes`           |
+| `.`           | `Condition$`, `FactSource$`, `rules.conditionSchema()`                 | untrusted condition trees: shape only, or against a field registry       |
+| `.`           | `FloorValue`, `rules.floorProblems`, `checkOutcomes(input, floors)`    | money floors with their currency; refusing a value past a floor at save  |
+| `.`           | `ConditionInvalidError`, `OutcomeInvalidError`, `RuleSetChangedError`  | refusals (400, 400, 409)                                                 |
+| `.`           | `RuleSetPublished`                                                     | the domain event of a published revision                                 |
+| `.`           | `ACTION_PERMISSION_RULES`, `actionPermissionRowsOf`                    | the AI action permission matrix as a rule set, and its reader            |
+| `.`           | `packApprovalFloorOf`, `APPROVAL_FLOOR_KEY`                            | a market pack's AI approval floor (`ai.approval_floor`) for the resolver |
+| `./node`      | `RuleSet`, `RuleSetService`, `RuleSetRevision`                         | versioned rule sets on `HasRevisions`, and their service                 |
+| `./node`      | `ConditionField`, `ConditionFieldService`                              | the cross-service condition-field registry (`rules.condition_fields`)    |
+| `./react`     | `RuleBuilder`, `RuleBuilderProps`                                      | the rule-builder panel on `@stackra/ui`                                  |
 
 `.` and `./contracts` are isomorphic: a browser previews an evaluation with the server's code.
 
@@ -61,6 +65,10 @@ export const DISCOUNT_RULES = Rules.create({
 | `enum`     | a code     | equals, not equals, one of, not one of; the field lists its codes and their labels        |
 | `list`     | `string[]` | includes, includes any, includes all, includes none, is empty, is not empty               |
 | `geo`      | `GeoPoint` | within radius, outside radius (`{ latitude, longitude, radiusKilometres }`, great circle) |
+
+Keys have one casing: a source, field, outcome kind and parameter key is camelCase (`FIELD_KEY`, `channelId`, never
+`channel_id`), so the field a model names in TypeScript is the field a stored condition names in every service.
+`Rules.create` throws on any other casing, and a condition naming `record.channel_id` is `field_unknown`.
 
 Every type also has `is_set` and `is_not_set`. A missing fact (`null` or left out) matches `is_not_set` and nothing
 else. Strings compare exactly, ranges include both ends, and `within_last` holds from the current time minus the
@@ -173,7 +181,48 @@ operators, `<source>.<field>` paths). A service that checks fields at write time
 sources or from another service's published `FactSource$` documents, and validates with `rules.conditionSchema()`:
 each unknown field, foreign operator or unfitting value is a zod issue at its node's path with the snake_case code.
 
+### The cross-service registry
+
+The service that owns a model publishes the fields other services' conditions may test on it; the service that stores
+those conditions (Access, for a deny on `orders.order`) checks a tenant's tree against them at write time.
+
+```ts
+await conditionFields.sync("orders.order", [RECORD_FACTS]); // FactSource$ documents; replaces the model's rows
+const condition = await conditionFields.check("orders.order", input.condition); // ConditionInvalidError
+await conditionFields.check(null, input.condition); // a wildcard permission: the shape only (Condition$)
+const rules = await conditionFields.rulesOf("orders.order"); // the model's Rules, to evaluate with; null without rows
+```
+
+`rules.condition_fields` (migration `rules.0003`) is a platform table: one row per model, source and field, no scope
+and no row-level security. A sync is all or nothing for its model; a model with no row refuses every condition
+(`model_unregistered`). Who may call `sync` is the host action's permission.
+
 - The dispatcher needs exactly one handler per registered kind, and takes only a `Decision`.
+
+## The AI action permission matrix
+
+The matrix (`rule-set:os:ai-action-permissions`, ADR 0398) is an ordinary rule set of the consumer
+`ai.action_permissions` (`ACTION_PERMISSION_RULES`): its condition is `{ all: [] }` and each outcome of kind `row` is a
+matrix row: `action` and `state` (`off`, `suggest`, `after_approval`, `on_its_own`), and the optional `role`,
+`recordKind`, `recordId`, `dataClass`, `seatKind`, `notRequester` and `stepUp` (`yes` or `no`). It holds up to 500 rows,
+is seeded per product from a `RuleSetPack$` and is edited in the rules studio.
+
+```ts
+const rules: ApprovalRules = {
+  floor,
+  packFloor: packApprovalFloorOf(resolved), // the pack value at ai.approval_floor, or undefined
+  matrix: await ruleSets.approvalMatrix(scope), // the published rows, [] without a matrix
+  policy,
+  preferences,
+};
+resolveApproval(request, rules);
+```
+
+A row names an approver rule when it names a seat kind, `notRequester` or `stepUp`; left out, `notRequester` is `yes`
+and `stepUp` is `no`. A record id needs its record kind. A pack floor value of the wrong shape throws.
+
+An outcome parameter may be `optional` (never one with a floor), and a consumer may raise its outcome limit with
+`maxOutcomes` (1 to 500, 20 by default).
 
 ## Rule-set packs
 
@@ -207,6 +256,7 @@ the panel also edits the outcomes: a registered kind per outcome and a field per
 - Applying an outcome: the consumer's handlers do (segments record membership, promotions apply a discount, pricing
   chooses a price; ADR 0331 decision 9). The engine checks, guards and routes outcomes only.
 - A boolean field type: ADR 0331 fixes seven types; a yes-or-no fact is an enum of two codes until an ADR adds one.
+- The pack-schema entry of `ai.approval_floor` (`@stackra/market-packs`) and the seeded matrix rows (product packs).
 - The planned gen check (an unregistered field or a foreign operator in a seeded rule set) and the oxlint rule against
   other evaluators.
 - A native rule builder.

@@ -1,0 +1,34 @@
+{
+  "problems": {
+    "model_unregistered": "Aucun champ de cet enregistrement ne peut encore être testé."
+  },
+  "matrix": {
+    "facts": {
+      "action": "Action"
+    },
+    "outcomes": {
+      "row": "Ligne d'autorisation"
+    },
+    "params": {
+      "action": "Action",
+      "state": "État",
+      "role": "Rôle",
+      "record_kind": "Type d'enregistrement",
+      "record_id": "Enregistrement",
+      "data_class": "Classe de données",
+      "seat_kind": "Siège de l'approbateur",
+      "not_requester": "L'approbateur n'est pas le demandeur",
+      "step_up": "L'approbateur se réauthentifie"
+    },
+    "states": {
+      "off": "Désactivé",
+      "suggest": "Suggérer",
+      "after_approval": "Après approbation",
+      "on_its_own": "De lui-même"
+    },
+    "answers": {
+      "yes": "Oui",
+      "no": "Non"
+    }
+  }
+}

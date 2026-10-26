@@ -6,10 +6,12 @@
  *          valid tree; `check` returns the tree or throws `ConditionInvalidError` with those field errors; outcome
  *          kinds are registered and misdeclared ones throw; `outcomeProblems` names each refused outcome or parameter
  *          and `checkOutcomes` returns the outcomes or throws `OutcomeInvalidError`, also for a parameter past a floor
- *          at save time (`floorProblems`); `conditionSchema` refuses an unregistered field at its node's path.
+ *          at save time (`floorProblems`); `conditionSchema` refuses an unregistered field at its node's path; a
+ *          snake_case key is refused (one casing); an optional parameter may be left out but never names a floor; and
+ *          `maxOutcomes` raises the outcome limit within 1 to 500.
  * Boundary: test only; pure.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0269; ADR 0331 (decisions 2, 3, 4 and 10).
+ * Governing contract: ADR 0022; ADR 0269; ADR 0331 (decisions 2, 3, 4 and 10); STA-1250.
  */
 import { isRefusal } from "@stackra/errors";
 import type { I18nKey } from "@stackra/i18n";
@@ -253,6 +255,73 @@ describe("Rules outcome kinds", () => {
     const long = [{ kind: "refundWindow", params: { days: 30, note: "long" } }];
     expect(RETURNS.checkOutcomes(long, floors)).toEqual(long);
     expect(RETURNS.checkOutcomes(short)).toEqual(short);
+  });
+});
+
+/** `length` row outcomes. */
+const rows = (length: number) =>
+  Array.from({ length }, () => ({ kind: "row", params: { note: "x" } }));
+
+describe("Rules one key casing, optional parameters and maxOutcomes", () => {
+  it("refuses a snake_case field key, naming the one casing", () => {
+    expect(
+      create("access.record", [
+        { key: "record", fields: { channel_id: { type: FieldType.String, label } } },
+      ]),
+    ).toThrow(/one casing: channelId, never channel_id/);
+  });
+
+  it("lets an outcome leave an optional parameter out, never one with a floor", () => {
+    const ROW = Rules.create({
+      key: "ai.action_permissions",
+      sources: [CART],
+      outcomes: [
+        {
+          key: "row",
+          label,
+          params: {
+            action: { type: FieldType.String, label },
+            role: { type: FieldType.String, label, optional: true },
+          },
+        },
+      ],
+    });
+    expect(ROW.outcomeProblems([{ kind: "row", params: { action: "a.b.c@1" } }])).toEqual({});
+    expect(ROW.outcomeProblems([{ kind: "row", params: { role: "associate" } }])).toEqual({
+      "0.params.action": "param_missing",
+    });
+    expect(ROW.outcomeProblems([{ kind: "row", params: { action: "a.b.c@1", role: 3 } }])).toEqual({
+      "0.params.role": "value_invalid",
+    });
+    expect(() =>
+      Rules.create({
+        key: "shop.returns",
+        sources: [CART],
+        outcomes: [
+          {
+            key: "fee",
+            label,
+            params: { days: { type: FieldType.Number, label, floor: "x.y", optional: true } },
+          },
+        ],
+      }),
+    ).toThrow(/a floored parameter is never optional/);
+  });
+
+  it("raises the outcome limit to maxOutcomes, from 1 to 500", () => {
+    const outcomes = [{ key: "row", label, params: { note: { type: FieldType.String, label } } }];
+    const MATRIX = Rules.create({
+      key: "ai.action_permissions",
+      sources: [CART],
+      outcomes,
+      maxOutcomes: 200,
+    });
+    expect(MATRIX.outcomeProblems(rows(200))).toEqual({});
+    expect(MATRIX.outcomeProblems(rows(201))).toEqual({ "(root)": "too_many_outcomes" });
+    for (const maxOutcomes of [0, 501, 1.5])
+      expect(() =>
+        Rules.create({ key: "ai.action_permissions", sources: [CART], outcomes, maxOutcomes }),
+      ).toThrow(/maxOutcomes must be a whole number/);
   });
 });
 

@@ -1,6 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: Stand-in barrel: the `./contracts` entry of @stackra/rules (the operator sets: `Operator` and `FieldType`,
+ * Purpose: Stand-in barrel: the `./contracts` entry of @stackra/rules (the one key casing `FIELD_KEY`, the operator
+ *          sets: `Operator` and `FieldType`,
  *          the fact source and outcome kind types a consumer registers, and `SeedResult`) until `stackra gen` writes
  *          the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. The leaf entry: it imports no other entry of this package
@@ -8,6 +9,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 15); ADR 0331 (decisions 3, 4 and 11); the STA-347 stand-in barrel decision.
  */
+export { FIELD_KEY } from "#contracts/constants/field-key.constant";
 export { FieldType } from "#contracts/enums/field-type.enum";
 export { Operator } from "#contracts/enums/operator.enum";
 export { SeedResult } from "#contracts/enums/seed-result.enum";

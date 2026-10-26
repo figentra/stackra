@@ -27,6 +27,8 @@ import type {
 describe("@stackra/rules", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(core).sort()).toEqual([
+      "ACTION_PERMISSION_RULES",
+      "APPROVAL_FLOOR_KEY",
       "Condition$",
       "ConditionInvalidError",
       "FactSource$",
@@ -37,9 +39,11 @@ describe("@stackra/rules", () => {
       "RuleSetPack$",
       "RuleSetPublished",
       "Rules",
+      "actionPermissionRowsOf",
       "decide",
       "evaluate",
       "guardFloors",
+      "packApprovalFloorOf",
     ]);
   });
 

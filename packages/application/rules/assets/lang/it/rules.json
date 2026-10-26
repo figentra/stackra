@@ -1,0 +1,34 @@
+{
+  "problems": {
+    "model_unregistered": "Nessun campo di questo record può ancora essere verificato."
+  },
+  "matrix": {
+    "facts": {
+      "action": "Azione"
+    },
+    "outcomes": {
+      "row": "Riga di autorizzazione"
+    },
+    "params": {
+      "action": "Azione",
+      "state": "Stato",
+      "role": "Ruolo",
+      "record_kind": "Tipo di record",
+      "record_id": "Record",
+      "data_class": "Classe di dati",
+      "seat_kind": "Posto dell'approvatore",
+      "not_requester": "L'approvatore non è il richiedente",
+      "step_up": "L'approvatore si riautentica"
+    },
+    "states": {
+      "off": "Disattivato",
+      "suggest": "Suggerisci",
+      "after_approval": "Dopo approvazione",
+      "on_its_own": "In autonomia"
+    },
+    "answers": {
+      "yes": "Sì",
+      "no": "No"
+    }
+  }
+}

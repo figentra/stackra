@@ -1,0 +1,34 @@
+{
+  "problems": {
+    "model_unregistered": "Er kan nog geen veld van dit record worden getest."
+  },
+  "matrix": {
+    "facts": {
+      "action": "Actie"
+    },
+    "outcomes": {
+      "row": "Machtigingsregel"
+    },
+    "params": {
+      "action": "Actie",
+      "state": "Status",
+      "role": "Rol",
+      "record_kind": "Soort record",
+      "record_id": "Record",
+      "data_class": "Gegevensklasse",
+      "seat_kind": "Plaats van de goedkeurder",
+      "not_requester": "Goedkeurder is niet de aanvrager",
+      "step_up": "Goedkeurder bevestigt opnieuw"
+    },
+    "states": {
+      "off": "Uit",
+      "suggest": "Voorstellen",
+      "after_approval": "Na goedkeuring",
+      "on_its_own": "Zelfstandig"
+    },
+    "answers": {
+      "yes": "Ja",
+      "no": "Nee"
+    }
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "problems": {
+    "model_unregistered": "Für diesen Datensatz kann noch kein Feld geprüft werden."
+  },
+  "matrix": {
+    "facts": {
+      "action": "Aktion"
+    },
+    "outcomes": {
+      "row": "Berechtigungszeile"
+    },
+    "params": {
+      "action": "Aktion",
+      "state": "Status",
+      "role": "Rolle",
+      "record_kind": "Datensatzart",
+      "record_id": "Datensatz",
+      "data_class": "Datenklasse",
+      "seat_kind": "Platz des Genehmigenden",
+      "not_requester": "Genehmigender ist nicht der Antragsteller",
+      "step_up": "Genehmigender bestätigt sich erneut"
+    },
+    "states": {
+      "off": "Aus",
+      "suggest": "Vorschlagen",
+      "after_approval": "Nach Genehmigung",
+      "on_its_own": "Selbstständig"
+    },
+    "answers": {
+      "yes": "Ja",
+      "no": "Nein"
+    }
+  }
+}

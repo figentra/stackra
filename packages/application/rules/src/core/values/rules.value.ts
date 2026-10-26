@@ -7,12 +7,13 @@
  *           enum without values, a floor on a parameter that is not a number) is the consumer's bug and throws a
  *           `TypeError` at module load. The checks are the trust boundary for stored rules: a tree of at most 200 nodes
  *           and 8 levels, each leaf a registered field, an operator of its type's set and a value that operator takes
- *           (`fitsOperand`, through `conditionProblems`); at most 20 outcomes, each a registered kind with every
- *           parameter and a fitting value, and, at a save, none past a market floor. It never evaluates or applies
+ *           (`fitsOperand`, through `conditionProblems`); at most 20 outcomes (or the consumer's `maxOutcomes`, up to 500), each a registered
+ *           kind with every required parameter and a fitting value, and, at a save, none past a market floor. It never evaluates or applies
  *           anything. Outcome kinds come as data or as declared `RuleOutcome` classes.
  * Runtime: isomorphic
  * Governing contract: ADR 0331 (decisions 2, 3, 4, 9 and 10); ADR 0328 (values are built with `create`); ADR 0140
- *                     (field errors by path); ADR 0425 (decisions 1 to 4); config-model sections 3 and 4.
+ *                     (field errors by path); ADR 0425 (decisions 1 to 4); config-model sections 3 and 4;
+ *                     STA-1250 (one key casing, `FIELD_KEY`).
  */
 import { Enum } from "@stackra/contracts";
 import type { FieldErrors } from "@stackra/errors";
@@ -22,6 +23,7 @@ import { z } from "zod";
 import {
   type FactField,
   type FactSource,
+  FIELD_KEY,
   FieldType,
   Operator,
   type OutcomeKind,
@@ -41,11 +43,14 @@ import type { RulesOptions } from "#core/types/rules-options.type";
 /** A consumer key: a module key, a dot, a snake_case name (`promotions.discount`). */
 const CONSUMER_KEY = /^[a-z][a-z0-9_]*\.[a-z][a-z0-9_]*$/;
 
-/** A camelCase source or field key of 1 to 63 characters. */
-const KEY = /^[a-z][a-zA-Z0-9]{0,62}$/;
+/** A source, field, outcome kind or parameter key: the one casing every registry shares. */
+const KEY = FIELD_KEY;
 
-/** The most outcomes one rule may yield. */
+/** The most outcomes one rule may yield, unless the consumer raises it (`RulesOptions.maxOutcomes`). */
 const MAX_OUTCOMES = 20;
+
+/** The most a consumer may raise it to (a permission matrix's rows). */
+const MAX_OUTCOMES_CEILING = 500;
 
 /** The keys an outcome carries. */
 const OUTCOME_KEYS = ["kind", "params"] as const;
@@ -59,7 +64,10 @@ const FLOOR_KEY = /^[a-z0-9_]+(\.[a-z0-9_]+)*$/;
  * @throws TypeError for a key that is not camelCase, a type that is not a `FieldType`, or enum values on the wrong type.
  */
 function checkField(path: string, key: string, field: FactField): void {
-  if (!KEY.test(key)) throw new TypeError(`Rules.create: "${path}" is not a camelCase field key`);
+  if (!KEY.test(key))
+    throw new TypeError(
+      `Rules.create: "${path}" is not a camelCase field key (one casing: channelId, never channel_id)`,
+    );
   if (!Enum.values(FieldType).includes(field.type))
     throw new TypeError(`Rules.create: "${path}" has no FieldType`);
   const isEnum = field.type === FieldType.Enum;
@@ -110,6 +118,8 @@ function kindsOf(kinds: readonly OutcomeKind[]): Map<string, OutcomeKind> {
         throw new TypeError(
           `Rules.create: "${path}": only a number or money parameter names a floor, as a dotted lowercase key`,
         );
+      if (param.floor !== undefined && param.optional === true)
+        throw new TypeError(`Rules.create: "${path}": a floored parameter is never optional`);
     }
     byKey.set(kind.key, kind);
   }
@@ -141,16 +151,21 @@ export class Rules {
   /** Each registered outcome kind by its key. */
   private readonly kinds: ReadonlyMap<string, OutcomeKind>;
 
+  /** The most outcomes one rule may yield. */
+  private readonly maxOutcomes: number;
+
   private constructor(
     key: string,
     sources: readonly FactSource[],
     byPath: ReadonlyMap<string, FactField>,
     kinds: ReadonlyMap<string, OutcomeKind>,
+    maxOutcomes: number,
   ) {
     this.key = key;
     this.sources = sources;
     this.byPath = byPath;
     this.kinds = kinds;
+    this.maxOutcomes = maxOutcomes;
     Object.freeze(this);
   }
 
@@ -161,18 +176,24 @@ export class Rules {
    *         camelCase, a source has no field, a field key is not camelCase or its type is not a `FieldType`, or an
    *         enum field lists no values (or another field lists some); or when an outcome kind key is repeated or not
    *         camelCase, a parameter is misdeclared the same ways or is a geo point, or a floor sits on a parameter that
-   *         is not a number.
+   *         is not a number or is optional; or when `maxOutcomes` is not a whole number from 1 to 500.
    */
   static create(options: RulesOptions): Rules {
     if (!CONSUMER_KEY.test(options.key))
       throw new TypeError(
         `Rules.create: "${options.key}" is not a consumer key such as "promotions.discount"`,
       );
+    const maxOutcomes = options.maxOutcomes ?? MAX_OUTCOMES;
+    if (!Number.isInteger(maxOutcomes) || maxOutcomes < 1 || maxOutcomes > MAX_OUTCOMES_CEILING)
+      throw new TypeError(
+        `Rules.create: maxOutcomes must be a whole number from 1 to ${MAX_OUTCOMES_CEILING}`,
+      );
     return new Rules(
       options.key,
       Object.freeze([...options.sources]),
       fieldsOf(options.sources),
       kindsOf((options.outcomes ?? []).map(outcomeKindOf)),
+      maxOutcomes,
     );
   }
 
@@ -244,7 +265,7 @@ export class Rules {
    */
   outcomeProblems(input: unknown): FieldErrors {
     if (!Array.isArray(input)) return { "(root)": "node_invalid" };
-    if (input.length > MAX_OUTCOMES) return { "(root)": "too_many_outcomes" };
+    if (input.length > this.maxOutcomes) return { "(root)": "too_many_outcomes" };
     const errors: Record<string, string> = {};
     (input as readonly unknown[]).forEach((outcome, index) => {
       const at = String(index);
@@ -268,8 +289,10 @@ export class Rules {
       for (const name of Object.keys(values))
         if (!Object.hasOwn(kind.params, name)) errors[`${at}.params.${name}`] = "param_unknown";
       for (const [name, param] of Object.entries(kind.params))
-        if (values[name] === undefined) errors[`${at}.params.${name}`] = "param_missing";
-        else if (!fitsParam(param, values[name])) errors[`${at}.params.${name}`] = "value_invalid";
+        if (values[name] === undefined) {
+          if (param.optional !== true) errors[`${at}.params.${name}`] = "param_missing";
+        } else if (!fitsParam(param, values[name]))
+          errors[`${at}.params.${name}`] = "value_invalid";
     });
     return errors;
   }

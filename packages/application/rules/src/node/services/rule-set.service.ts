@@ -2,8 +2,8 @@
  * Stackra file contract:
  * Purpose: `RuleSetService`, the module service over `RuleSet`: opens a rule set for a consumer in a scope, stores a
  *          checked condition and its outcomes as its next draft revision, publishes a revision, reads one, evaluates
- *          or decides the published (or a stated) revision against facts, and seeds the default rule sets of a
- *          versioned rule-set pack into a scope.
+ *          or decides the published (or a stated) revision against facts, seeds the default rule sets of a
+ *          versioned rule-set pack into a scope, and reads a scope's AI action permission matrix.
  * Boundary: a `CrudService<RuleSet>` that injects `Repository<Revision>` (content's `HasRevisions` table), so every
  *           read and write runs in the caller's transaction and scope session; row-level security limits both tables
  *           to the session's granted subtrees. A draft is checked against the consumer's `Rules` and refused for a
@@ -15,16 +15,20 @@
  * Runtime: node
  * Governing contract: ADR 0331 (decisions 5, 6, 9 and 10); ADR 0321 (decision 2); ADR 0327 (decisions 3 and 9);
  *                     ADR 0105 as amended by ADR 0294; config-model sections 4 and 6 (rule sets ship as versioned seed
- *                     documents; a new seed version never overwrites tenant values).
+ *                     documents; a new seed version never overwrites tenant values); ADR 0398 and STA-1250 (the
+ *                     matrix reader).
  */
 import type { Revision } from "@stackra/content/node";
+import type { ActionPermissionRow } from "@stackra/ai";
 import type { PublicId, ScopeRef } from "@stackra/contracts";
 import { CrudService, type Repository, UniqueViolation } from "@stackra/database";
-import { NotFoundError } from "@stackra/errors";
+import { isRefusal, NotFoundError } from "@stackra/errors";
 import type { ResolvedValue } from "@stackra/market-packs";
 
 import { SeedResult } from "#contracts/index";
 import {
+  ACTION_PERMISSION_RULES,
+  actionPermissionRowsOf,
   type Condition,
   decide,
   type DecideOptions,
@@ -171,6 +175,28 @@ export class RuleSetService extends CrudService<RuleSet> {
   ): Promise<Decision> {
     const revision = await this.revision(ruleSetId, options.revision);
     return decide(rules, revision, facts, { ...options, revision: revision.number });
+  }
+
+  /**
+   * The AI action permission matrix of `scope`: the rows of the published revision of its `ai.action_permissions`
+   * rule set, for `ApprovalRules.matrix`; none when the scope has no such rule set or none is published.
+   *
+   * @throws OutcomeInvalidError when a stored row no longer reads as a row (see `actionPermissionRowsOf`).
+   * @example
+   * resolveApproval(request, { floor, packFloor, matrix: await ruleSets.approvalMatrix(scope), policy, preferences });
+   */
+  async approvalMatrix(scope: ScopeRef): Promise<ActionPermissionRow[]> {
+    const ruleSet = await this.findOne({
+      scopeId: scope.id,
+      consumer: ACTION_PERMISSION_RULES.key,
+    });
+    if (ruleSet === null) return [];
+    try {
+      return actionPermissionRowsOf((await this.revision(ruleSet.id)).outcomes);
+    } catch (error) {
+      if (isRefusal(error, NotFoundError)) return [];
+      throw error;
+    }
   }
 
   /**
