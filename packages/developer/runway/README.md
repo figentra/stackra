@@ -23,10 +23,19 @@ tool configs call so no port, origin or feed URL is typed outside a `runway.yaml
 | `.`         | `deploy`, `promote`, `rollback`                                                         | ship, promote and roll back a release through the providers                 |
 | `.`         | `withDeployLock`, `DeployLock`, `RunwayLockedError`                                     | one apply per environment at a time (ADR 0435)                              |
 | `.`         | `RunwayProvider`                                                                        | the provider port: plan, apply, verify, rollback and current (ADR 0352 d3)  |
+| `.`         | `checkSurfaces(root, apps)`                                                             | surface, mobile and assets failures for `stackra validate` (ADR 0441)       |
+| `.`         | `checkDevPorts(root, members)`                                                          | dev port collisions across every indexed repository's lanes (STA-863)       |
+| `.`         | `publishExtensionBundles`, `ExtensionBundlePublisher`                                   | publish each surface's extension bundle; ops waits for a reviewer (0436)    |
+| `.`         | `edgeRowsOf`, `registerPlatformHosts`, `EdgeStore`                                      | the platform `host:` and app-link `wellknown:` KV rows Runway owns (0437)   |
+| `.`         | `mobileBuildRequests`, `buildMobileApps`, `MobileBuilder`                               | the mobile build job, from a product merge or an OS tenant event (0439)     |
 | `./node`    | `EncoreCloudProviderDriver`, `EasProviderDriver`                                        | the `encore-cloud` and `eas` providers                                      |
+| `./node`    | `EasMobileBuilderDriver`                                                                | the EAS `MobileBuilder`: writes the entry, runs `eas build`                 |
+| `./node`    | `CloudflareKvEdgeStoreDriver`, `RegistryBundlePublisherDriver`                          | not wired yet: reject with `RunwayNotConfiguredError`                       |
 | `./node`    | `runCommand`, `CommandRunner`                                                           | how a provider runs its CLI, with no shell                                  |
 | `.`         | `RunwayKind`, `RunwayEnvironment`, `TopologyMode`, `RequirementEngine`, `CacheEviction` | enums                                                                       |
+| `.`         | `SurfaceKind`, `MobileBuildTrigger`, `AppPublisher`                                     | enums of the app-shell sections and the mobile build job                    |
 | `.`         | `RunwayInvalidError`, `RunwayUnresolvedError`, `RunwayDeployFailedError`                | errors                                                                      |
+| `.`         | `RunwayNotConfiguredError`, `RunwayRefusedError`                                        | a driver with no vendor wired; a release a policy refuses                   |
 | `./node`    | `definesFor(member, environment)`                                                       | the bundler `define` map: public vars and the injected runway facts         |
 | `./node`    | `devServer(member)`                                                                     | the Vite `server` block from the dev facts                                  |
 | `./node`    | `readRunway(file, kind)`                                                                | read, YAML-parse and check one runway file                                  |
@@ -51,6 +60,102 @@ import { readRunway } from "@stackra/runway/node";
 const root = readRunway("runway.yaml", "root");
 const issues = checkPlacement(root, ["commerce", "notifications"]); // [] when every member is placed
 ```
+
+## Surfaces, mobile apps and the assets tree
+
+A product repository has no `apps/` folder by default (ADR 0436): it ships packages, data and assets, and its root
+runway names what goes where (ADR 0441 decision 3).
+
+```yaml
+product:
+  key: mezzora
+  edition:
+    of: commerce
+    version: ^1.0.0
+surfaces:
+  console:
+    shell: os/console@3
+    packages: ["@mezzora/console-ui"]
+    host: console.mezzora
+  landing:
+    shell: os/landing@1
+    content: assets/landing
+    host: mezzora
+  ops:
+    contributes: "@mezzora/ops-ui"
+mobile:
+  staff:
+    template: os/mobile@3
+    packages: ["@mezzora/mobile-ui"]
+    assets: assets/mobile/staff
+    store: assets/store/staff
+    identity:
+      name:
+        en: Mezzora Staff
+      ios:
+        bundleId: com.figentra.mezzora.staff
+        team: figentra
+      android:
+        package: com.figentra.mezzora.staff
+      links: [console.mezzora.figentra.com]
+    capabilities: [scanner, push, printer]
+    stores:
+      apple:
+        account: figentra
+      google:
+        account: figentra
+    eas:
+      project: <eas project id>
+      channel: production
+```
+
+The surfaces are `console`, `landing`, `ops`, `till`, `shopper` and `kiosk`. A surface's `host` is relative to
+`environments.<env>.domains.zone`. A product's own app member (an ADR must allow it, 0436 decision 3) is named in the
+entry's `app: { member, adr }`. `assets: { root }` is needed only when the tree is not `assets/`. `checkSurfaces` adds
+the rules a JSON Schema cannot state: `ops` takes only `contributes` and no other surface does; only `landing` takes
+`content`; every other surface names its shell line; every path sits under the assets root; no two surfaces share a
+host; an app id ends in `.<product>.<app>`; an `app` names an existing app member.
+
+The Runway steps behind the sections, each over a port:
+
+| Step                                                                | Port                       | Driver                                                |
+| ------------------------------------------------------------------- | -------------------------- | ----------------------------------------------------- |
+| `publishExtensionBundles(root, sha, publisher, { opsApproved })`    | `ExtensionBundlePublisher` | `RegistryBundlePublisherDriver`: not wired yet        |
+| `registerPlatformHosts(root, environment, store, signing)`          | `EdgeStore`                | `CloudflareKvEdgeStoreDriver`: not wired yet          |
+| `buildMobileApps(requests, builder, { platformPublishingCleared })` | `MobileBuilder`            | `EasMobileBuilderDriver`: `eas build` in the template |
+
+The ops contribution is published declarations-only and only once a second reviewer approved it; until then it comes
+back in `held`. `edgeRowsOf` computes the `host:` rows (product, surface, home region, status, realm, canonical host)
+and the `apple-app-site-association` and `assetlinks.json` rows of every linked host, from the Apple team ids and
+Android fingerprints the caller passes; nothing is written unless every row resolves. `mobileBuildRequests(root, sha)`
+asks for one build per app on a product merge; an OS tenant event's handler builds a white-label request from tenant
+data, which `buildMobileApps` parses again and refuses under the platform's store accounts until the Apple 4.2.6 and
+4.3 checks are recorded (`RunwayRefusedError`). The EAS builder writes the entry to `.stackra/mobile-app.json` in the
+template checkout, where the template's app config and capability plugins read it. A driver with no vendor wired
+rejects with `RunwayNotConfiguredError`; bind another driver behind the same port.
+
+## Dev ports across lanes
+
+Lane N adds N × `portStep` to every dev port. With a repository index, every repository's lanes are counted:
+lane = index × `worktrees` + worktree.
+
+```yaml
+environments:
+  dev:
+    lanes:
+      enabled: true
+      portStep: 100
+      from: STACKRA_LANE
+      worktrees: 10
+      repoIndex:
+        os: 0
+        commerce: 1
+```
+
+`checkDevPorts(root, members)` computes every effective port (member ports, dev console, Metro and Electron ports,
+each infra container's `port`, `dashboard` and `*Port` fields, the dev proxy) on every lane and reports two owners on
+one port, with both lanes, and any port a lane pushes past 65535. Every indexed repository is counted with this
+repository's ports, as the template gives each the same layout.
 
 ## Regions and clouds
 

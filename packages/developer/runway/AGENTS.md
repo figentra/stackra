@@ -13,8 +13,8 @@ Runway format version 3 (ADR 0296) as code. Member at `packages/developer/runway
 | An error                                | `src/core/errors/<name>.error.ts`           |
 | An isomorphic function (no Node import) | `src/core/functions/<name>.function.ts`     |
 | A Node-only function (reads files)      | `src/node/functions/<name>.function.ts`     |
-| A port (the deploy provider)            | `src/core/ports/<name>.port.ts`             |
-| A deploy provider driver (runs a CLI)   | `src/node/drivers/<name>.driver.ts`         |
+| A port (a provider, publisher or store) | `src/core/ports/<name>.port.ts`             |
+| A driver (runs a CLI or a vendor API)   | `src/node/drivers/<name>.driver.ts`         |
 | A test                                  | `__tests__/<name>.<kind>.test.ts` beside it |
 
 ## Rules
@@ -27,6 +27,13 @@ Runway format version 3 (ADR 0296) as code. Member at `packages/developer/runway
   `eas build` or `eas update`: tests use fake command runners; a real run is the deploy workflow's (ADR 0352 d6).
 - Provider settings are runway data (`targets.<destination>`, `environments.<env>.encore|mobile`, a dedicated
   deployment's own blocks); a provider never hard-codes a branch, channel or profile.
+- The app-shell sections (`surfaces`, `mobile`, `assets`, ADR 0436 to 0441) are shape in the zod and the canonical
+  schema, and rules in `checkSurfaces`; dev port collisions across lanes are `checkDevPorts`'s (STA-863). Both run in
+  `pnpm validate` through `checkRunwayFiles`.
+- Agents never publish a bundle, write the edge KV or start a mobile build for real: tests use fake publishers, stores
+  and builders. A driver whose vendor is not wired rejects with `RunwayNotConfiguredError`; never make it succeed
+  silently.
+- A tenant-started mobile request is untrusted input: `buildMobileApps` parses its entry again before any build.
 - A runway holds secret names only. `definesFor` inlines public vars (`VITE_`, `EXPO_PUBLIC_`, `RENDERER_VITE_`) and
   never the TLS paths.
 
