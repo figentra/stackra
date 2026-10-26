@@ -5,8 +5,9 @@
  *          driver table with its selecting field and lazy candidate, the `DriverRegistry` augmentation, replacements,
  *          partners and dependency modules marked `from`, the bindings gen adds (per-model tokens with their
  *          dependencies, an Integration's runtime, the inbound webhook route, the platform services it injects, the rules node with its revisions repository), a
- *          projection as a binding, and
- *          the names the container really exports.
+ *          projection as a binding, the declared packages' driver tables of the ports the bindings reach (with
+ *          their selecting config and package config rows, no registry entry; STA-1297), MediaLibrary over the media
+ *          disk, and the names the container really exports.
  * Boundary: test only; asserts on the generated source text and on @stackra/container's exports.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 17 and 26); ADR 0263.
@@ -219,5 +220,122 @@ describe("emitWiring", () => {
   it("uses names @stackra/container exports", () => {
     expect(Lifetime.Request).toBe("request");
     expect(typeof named).toBe("function");
+  });
+
+  it("lists the declared packages' driver tables of the ports its bindings reach (STA-1297)", () => {
+    const locking: MemberIR["dependencies"][number] = {
+      package: "@stackra/locking",
+      manifest: {
+        member: "locking",
+        package: "@stackra/locking",
+        version: "0.1.0",
+        drivers: [
+          {
+            port: "LockDriver",
+            key: "locking.LockDriver",
+            candidates: ["memory", "postgres"],
+            selectedBy: "config:locking.driver",
+            classes: {
+              memory: { class: "MemoryLockDriver", from: "@stackra/locking" },
+              postgres: {
+                class: "PostgresLockDriver",
+                from: "@stackra/locking/node",
+                deps: [{ class: { name: "Database", from: "@stackra/database" } }],
+              },
+            },
+            config: { class: "LockingConfig", from: "@stackra/locking" },
+          },
+          {
+            port: "Unreached",
+            key: "locking.Unreached",
+            candidates: ["memory"],
+            classes: { memory: { class: "MemoryUnreachedDriver", from: "@stackra/locking" } },
+          },
+        ],
+      },
+    };
+    const content = emitWiring({
+      ...BILLING_IR,
+      dependencies: [...BILLING_IR.dependencies, locking],
+    });
+    for (const line of [
+      "      port: LockDriver,",
+      '      key: "locking.LockDriver",',
+      '      selectedBy: "config:locking.driver",',
+      '        "memory": () => import("@stackra/locking").then((m) => m.MemoryLockDriver),',
+      '        "postgres": () => import("@stackra/locking/node").then((m) => m.PostgresLockDriver),',
+      '      deps: { "postgres": [Database] },',
+      '    { key: "locking", provide: LockingConfig },',
+    ])
+      expect(content).toContain(line);
+    expect(content).toContain('import { LockingConfig } from "@stackra/locking";');
+    expect(content).not.toContain("MemoryUnreachedDriver");
+    expect(content).not.toContain('"locking.LockDriver": ');
+  });
+
+  it("binds MediaLibrary over the media disk table and a media config row (STA-1297)", () => {
+    const media: MemberIR["dependencies"][number] = {
+      package: "@stackra/media",
+      manifest: {
+        member: "media",
+        package: "@stackra/media",
+        version: "0.1.0",
+        drivers: [
+          {
+            port: "MediaDisk",
+            key: "media.MediaDisk",
+            candidates: ["memory", "s3"],
+            selectedBy: "config:media.disk",
+            classes: {
+              memory: {
+                class: "MemoryMediaDiskDriver",
+                from: "@stackra/media",
+                deps: [
+                  { class: { name: "FilesystemConfig", from: "@stackra/filesystem" } },
+                  { class: { name: "Clock", from: "@stackra/contracts" } },
+                ],
+              },
+              s3: {
+                class: "S3MediaDiskDriver",
+                from: "@stackra/media/node",
+                deps: [{ class: { name: "FilesystemConfig", from: "@stackra/filesystem" } }],
+              },
+            },
+            config: { class: "MediaConfig", from: "@stackra/media" },
+          },
+        ],
+      },
+    };
+    const content = emitWiring({
+      ...BILLING_IR,
+      classes: [
+        ...BILLING_IR.classes,
+        {
+          name: "InvoiceScanService",
+          kind: "service",
+          module: "billing",
+          file: "src/modules/billing/services/invoice-scan.service.ts",
+          importPath: "#modules/billing/services/invoice-scan.service",
+          options: {},
+          deps: [{ class: { name: "MediaLibrary", from: "@stackra/media" } }],
+          facets: [],
+          methods: [],
+          refusals: [],
+          statics: {},
+          traits: [],
+        },
+      ],
+      dependencies: [...BILLING_IR.dependencies, media],
+    });
+    for (const line of [
+      '    { module: "billing", kind: "service", provide: MediaLibrary, deps: [MediaDisk, MediaConfig, Clock] },',
+      '      key: "media.MediaDisk",',
+      '        "memory": () => import("@stackra/media").then((m) => m.MemoryMediaDiskDriver),',
+      '      deps: { "memory": [FilesystemConfig, Clock], "s3": [FilesystemConfig] },',
+      '    { key: "media", provide: MediaConfig },',
+      '    { key: "filesystem", provide: FilesystemConfig },',
+    ])
+      expect(content).toContain(line);
+    expect(content.match(/provide: MediaConfig/g)).toHaveLength(1);
   });
 });

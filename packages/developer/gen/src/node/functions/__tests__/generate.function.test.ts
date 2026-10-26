@@ -4,7 +4,8 @@
  *          changes nothing; a check run reports a stale file without writing; a changed identity without `@Renamed`
  *          fails against the committed manifest and writes nothing; a member consuming a workspace service with no
  *          manifest yet gets its manifest alone (with `pass: "manifests"`, or as what a refused run still writes); the root `vitest.config.ts` shim is written,
- *          and an authored one is refused as `shim_authored` (STA-1296).
+ *          an authored one that merges `./.stackra/vitest.config` is kept (STA-1297), and any other is refused as
+ *          `shim_authored` (STA-1296).
  * Boundary: test only; writes the shop fixture under `.cache/` and runs gen on it.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 10 and 22); ADR 0295 (decision 5).
@@ -118,5 +119,17 @@ describe("generate's root Vitest shim (STA-1296)", () => {
     const result = await generate(root);
     expect(result.errors.map((error) => error.code)).toEqual(["shim_authored"]);
     expect(readFileSync(join(root, "vitest.config.ts"), "utf8")).toBe("export default {};\n");
+  });
+
+  it("keeps an authored root vitest.config.ts that merges the generated config (STA-1297)", async () => {
+    const authored =
+      'import { mergeConfig } from "vitest/config";\n\nimport generated from "./.stackra/vitest.config";\n\n' +
+      "export default mergeConfig(generated, { test: { testTimeout: 10_000 } });\n";
+    const root = writeFixtureMember("shop", { ...SHOP_SOURCES, "vitest.config.ts": authored });
+    const result = await generate(root);
+    expect(result.errors).toEqual([]);
+    expect(result.files.map((file) => file.path)).not.toContain("vitest.config.ts");
+    expect(readFileSync(join(root, "vitest.config.ts"), "utf8")).toBe(authored);
+    expect(existsSync(join(root, ".stackra/vitest.config.ts"))).toBe(true);
   });
 });

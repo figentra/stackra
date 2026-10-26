@@ -8,7 +8,9 @@
  *          each sequence's key; an app's block and route
  *          keys; each tool's derived MCP hints and each action's effect tags; each Integration's roles and listing;
  *          the `@Replaces` replacements; a model a hosting member re-declares with a package's prefix records the
- *          package model key it hosts (`hosts`). It reports the identity checks it can see: `identity_collision`,
+ *          package model key it hosts (`hosts`); a package's drivers carry each candidate's class, entry and
+ *          constructor tokens (`classes`) and the config class that selects one (`config`), which a host's wiring
+ *          reads (STA-1297). It reports the identity checks it can see: `identity_collision`,
  *          `override_duplicate`, `permission_unknown`, `identity_missing`, the public id prefix checks
  *          `prefix_invalid`, `prefix_taken` and `prefix_duplicate`, `tool_reason_missing`, `effect_unknown`,
  *          `integration_role_unknown`, `egress_invalid`, `sequence_misplaced`, `document_number_unsequenced` and
@@ -47,7 +49,9 @@ import { integrationKey } from "#core/functions/integration-key.function";
 import { jsonSchemaOf } from "#core/functions/json-schema-of.function";
 import { modelKey } from "#core/functions/model-key.function";
 import { permissionKey } from "#core/functions/permission-key.function";
+import { packageSpecifier } from "#core/functions/package-specifier.function";
 import { portKey } from "#core/functions/port-key.function";
+import { publicSpecifier } from "#core/functions/public-specifier.function";
 import { rootModuleOf } from "#core/functions/root-module-of.function";
 import { routeKey } from "#core/functions/route-key.function";
 import { sequenceKey } from "#core/functions/sequence-key.function";
@@ -63,6 +67,7 @@ import type { GenError } from "#core/types/gen-error.type";
 import type { MemberIR } from "#core/types/member-ir.type";
 import type { RegexValue } from "#core/types/regex-value.type";
 import type { ShapeIR } from "#core/types/shape-ir.type";
+import type { TokenRef } from "#core/types/token-ref.type";
 
 /** A manifest entry under construction. */
 type Entry = { [key: string]: Json };
@@ -674,11 +679,27 @@ export function buildManifest(ir: MemberIR): {
     else overridden.set(base, declared);
   }
 
-  // Drivers, grouped by port.
+  // Drivers, grouped by port. A package also records where each candidate is imported from and its constructor
+  // tokens, and the config class that selects one, so a host's wiring lists them (STA-1297).
   const drivers = new Map<
     string,
-    { port: string; key: string; candidates: string[]; selectedBy?: string }
+    {
+      port: string;
+      key: string;
+      candidates: string[];
+      selectedBy?: string;
+      classes?: Entry;
+      config?: Entry;
+    }
   >();
+  const published = ir.layout === "package";
+  const publicToken = (dep: TokenRef): Entry => ({
+    class: { name: dep.class.name, from: publicSpecifier(ir.package, dep.class.from) },
+    ...(dep.named !== undefined ? { named: dep.named } : {}),
+    ...(dep.of !== undefined
+      ? { of: { name: dep.of.name, from: publicSpecifier(ir.package, dep.of.from) } }
+      : {}),
+  });
   for (const declared of ir.classes.filter((candidate) => candidate.kind === "driver")) {
     const port = declared.partner;
     if (port === undefined) continue;
@@ -698,6 +719,15 @@ export function buildManifest(ir: MemberIR): {
     const name = driverName(declared.file, port.name);
     const entry = drivers.get(key) ?? { port: port.name, key, candidates: [] };
     entry.candidates.push(name);
+    if (published)
+      entry.classes = {
+        ...entry.classes,
+        [name]: {
+          class: declared.name,
+          from: packageSpecifier(ir.package, declared.file),
+          ...(declared.deps.length > 0 ? { deps: declared.deps.map(publicToken) } : {}),
+        },
+      };
     drivers.set(key, entry);
   }
   for (const declared of ir.classes.filter((candidate) => candidate.kind === "config")) {
@@ -707,8 +737,14 @@ export function buildManifest(ir: MemberIR): {
       if (field.type.kind !== "driver_name") continue;
       const port = field.type.port;
       for (const entry of drivers.values())
-        if (entry.port === port)
+        if (entry.port === port) {
           entry.selectedBy = `config:${configKeyOf(declared.name, ir.member)}.${field.name}`;
+          if (published)
+            entry.config = {
+              class: declared.name,
+              from: packageSpecifier(ir.package, declared.file),
+            };
+        }
     }
   }
 

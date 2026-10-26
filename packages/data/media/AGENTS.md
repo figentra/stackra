@@ -41,6 +41,12 @@ Entries `.`, `./contracts`, `./node`, `./react`, `./testing`.
 - `Upload.schema` is the wire schema gen writes for every `Upload<Bucket>` field (gen's `upload` kind, STA-1218), and
   gen's JSON Schema mirrors it (`{ id: "upl_…" }`). Change the token's wire form only together with gen's
   `jsonSchemaOf`.
+- A host binds `MediaLibrary` through gen's `PLATFORM_BINDINGS` row (`MediaDisk`, `MediaConfig`, `Clock`), and its
+  `MediaDisk`, `Uploader` and `FileScanner` candidates come from this package's manifest (STA-1297): `memory` for each,
+  so `.useDrivers("memory")` binds it. The memory and S3 disks take `FilesystemConfig`, so a host that injects
+  `MediaLibrary` declares `@stackra/filesystem` too (gen refuses otherwise, `generated_dependency_missing`).
+- No memory candidate (STA-1297 sweep): `ImageTransformer`, `TextExtractor` and `ContentCredentials` have no driver
+  in this package at all and nothing here injects them; the host that binds an engine adds its memory twin beside it.
 - `./contracts` imports no other entry; `src/*/index.ts` are stand-in barrels until gen writes them (STA-339).
 
 ## Rules that fail the build

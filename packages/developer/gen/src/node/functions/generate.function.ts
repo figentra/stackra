@@ -10,7 +10,8 @@
  * Boundary: writes only under the member root; a check writes nothing. A refused run writes nothing but the client
  *           files (when the clients target itself is clean) and the manifest (when the manifest pass is clean). The
  *           committed `stackra.manifest.json` is read first, so its identities stay locked. An authored root
- *           `vitest.config.ts` (no generated notice) is refused as `shim_authored`, never overwritten (STA-1296).
+ *           `vitest.config.ts` (no generated notice) is never overwritten: one that imports `./.stackra/vitest.config`
+ *           is kept and the shim skipped; any other is refused as `shim_authored` (STA-1296, STA-1297).
  * Runtime: node
  * Governing contract: ADR 0294 (decisions 10 and 22: the committed manifest and `stackra gen --check`); ADR 0295
  *                     (decision 5: generated files are overwritten); ADR 0261; ADR 0260 (a cycle between services is
@@ -27,6 +28,9 @@ import { generateMember } from "#core/functions/generate-member.function";
 import type { GeneratedFile } from "#core/types/generated-file.type";
 import { discoverMember } from "#node/functions/discover-member.function";
 import type { GenerateResult } from "#node/types/generate-result.type";
+
+/** An authored root config that imports the generated one (`./.stackra/vitest.config`, with or without `.ts`). */
+const MERGES_GENERATED_VITEST = /["']\.\/\.stackra\/vitest\.config(?:\.ts)?["']/;
 
 /** The paths of `files` that differ from disk under `root`, written unless `check`. */
 function write(root: string, files: readonly GeneratedFile[], check: boolean): string[] {
@@ -88,29 +92,33 @@ export async function generate(
     if (manifest?.errors.length === 0) partial.push(...write(root, manifest.files, false));
   }
   if (result.errors.length > 0) return { errors: result.errors, files: [], changed: partial };
-  // An authored root vitest.config.ts is never overwritten by the shim: the author merges it first (STA-1296).
+  // An authored root vitest.config.ts is never overwritten by the shim. One that merges the generated config is kept
+  // and the shim is not written; any other is refused (STA-1296, STA-1297).
   const shimPath = join(root, ROOT_VITEST_SHIM);
-  if (
-    result.files.some((file) => file.path === ROOT_VITEST_SHIM) &&
-    existsSync(shimPath) &&
-    !readFileSync(shimPath, "utf8").includes(GENERATED_NOTICE)
-  )
-    return {
-      errors: [
-        {
-          code: "shim_authored",
-          file: ROOT_VITEST_SHIM,
-          line: 0,
-          column: 0,
-          subject: ROOT_VITEST_SHIM,
-          message:
-            "an authored vitest.config.ts sits at the member root, where gen writes the shim of .stackra/vitest.config.ts",
-          fix: "move what it adds into stackra.config.ts or the shared Vitest preset, then delete it so gen writes the shim",
-        },
-      ],
-      files: [],
-      changed: partial,
-    };
+  const authored =
+    result.files.some((file) => file.path === ROOT_VITEST_SHIM) && existsSync(shimPath)
+      ? readFileSync(shimPath, "utf8")
+      : undefined;
+  if (authored !== undefined && !authored.includes(GENERATED_NOTICE)) {
+    if (!MERGES_GENERATED_VITEST.test(authored))
+      return {
+        errors: [
+          {
+            code: "shim_authored",
+            file: ROOT_VITEST_SHIM,
+            line: 0,
+            column: 0,
+            subject: ROOT_VITEST_SHIM,
+            message:
+              "an authored vitest.config.ts sits at the member root and does not import ./.stackra/vitest.config, so the generated setup never loads",
+            fix: 'import the generated config and merge it: `import generated from "./.stackra/vitest.config"; export default mergeConfig(generated, { ... })`, or delete the file so gen writes the shim',
+          },
+        ],
+        files: [],
+        changed: partial,
+      };
+    result = { ...result, files: result.files.filter((file) => file.path !== ROOT_VITEST_SHIM) };
+  }
   return {
     errors: [],
     files: result.files,

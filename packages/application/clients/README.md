@@ -32,7 +32,7 @@ and zod. React is an optional peer for `./react`.
 | `./react`     | `useQuery`, `useInfiniteQuery`, `useQueryClient`, `useAction`, `useIntentRouter` | consumed queries and actions in a component                     |
 | `./server`    | `createPublicClients`, `RetryOn`, `PublicClients`                                | a Worker's anonymous calls to the public area                   |
 | `./worker`    | `forwardedFacts`                                                                 | the visitor facts a Worker forwards to the gateway              |
-| `./testing`   | `fakeClient`, `ClientFake`, `fakeClientError`                                    | a scripted client for tests                                     |
+| `./testing`   | `fakeClient`, `ClientFake`, `fakeClientError`, `memoryTransport`                 | a scripted client for tests; the `memory` `ClientTransport`     |
 
 ## Generated clients
 
@@ -143,3 +143,13 @@ expect(pricing.called(QuotePriceQuery)).toHaveLength(1);
 
 The fake is a `ClientTransport` and also stands in for any `ServiceClient`. Name the client when the fake is kept in a
 variable (`fakeClient<PaymentsClient>()`); inline in `.override(...)` it is inferred.
+
+`ClientFake` is also the `memory` candidate of `ClientTransport` (STA-1297): importing `./testing` (gen's Vitest setup
+does it for a member on this package) registers it as a test-only driver, so `.useDrivers("memory")` binds every
+generated client over one fake. `memoryTransport(app)` returns it for scripting and reading calls. A production wiring
+never lists it.
+
+```ts
+const app = await createTestingModule(SalesModule).useDrivers("memory").compile();
+memoryTransport(app).on(ListAvailableStockQuery).returns({ items: [] });
+```

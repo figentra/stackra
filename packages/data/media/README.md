@@ -138,5 +138,8 @@ const image = await fakeUpload(app, ProductImagesBucket, { mediaType: MediaType.
 const foreign = await fakeUpload(app, null, { mediaType: MediaType.Png }); // refused as another bucket's
 ```
 
+A service that injects `MediaLibrary` gets it bound by gen over the memory disk under `.useDrivers("memory")`
+(STA-1297); it declares `@stackra/filesystem` beside `@stackra/media`, since the disks read `FilesystemConfig`.
+
 `fakeUpload` goes through `createUpload` and the memory disk's `receive`, so the bucket's rules apply as in production.
 In a browser test, the `memory` uploader returns a fresh token for every file and records it in `uploads`.

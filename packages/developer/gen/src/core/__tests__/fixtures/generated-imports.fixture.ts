@@ -4,7 +4,8 @@
  *          configs, the test setup, entries), declared by a fixture IR so the undeclared-package check on every
  *          generated file stays quiet in tests that are not about it (STA-1296).
  * Boundary: test data only. `@stackra/database` and `@stackra/i18n` are left out: declaring them changes what gen
- *           writes (the database testing import, the i18n target).
+ *           writes (the database testing import, the i18n target). `@stackra/clients` stays: its testing import in the
+ *           setup is asserted on the billing fixture (STA-1297).
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); STA-1293 (undeclared packages refused).
  */

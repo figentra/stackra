@@ -70,6 +70,12 @@ describe("emitToolConfigs", () => {
     expect(bare[1]?.content).toContain("await loadMemberSchemas(");
   });
 
+  it("loads the clients testing entry only for a member on @stackra/clients (STA-1297)", () => {
+    expect(content(".stackra/vitest.setup.ts")).toContain('import "@stackra/clients/testing";');
+    const bare = emitToolConfigs(COMMERCE_IR, { entries: [], registrations: false });
+    expect(bare[1]?.content).not.toContain("@stackra/clients/testing");
+  });
+
   it("leaves out what a member does not have", () => {
     const bare = emitToolConfigs(COMMERCE_IR, { entries: [], registrations: false });
     expect(bare.map((file) => file.path)).toEqual([

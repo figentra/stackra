@@ -61,7 +61,19 @@ The Stackra compiler. Member at `packages/developer/gen` (`tier:lib`), in the pr
   shared `const` with a constant initializer, and `I18n.<ns>.<path>` from `#stackra/i18n` (`"<ns>::<path>"`) are
   constants. A shipped `X$` is also looked up in the barrels of declared packages the program never loaded.
 - Root shims (ADR 0295 decision 5): `vitest.config.ts` at the member root re-exports `.stackra/vitest.config.ts`
-  (`ROOT_VITEST_SHIM`); `generate` refuses (`shim_authored`) to replace an authored one without the generated notice.
+  (`ROOT_VITEST_SHIM`), written only when no root config exists. `generate` keeps an authored one (no generated
+  notice) that imports `./.stackra/vitest.config` and skips the shim; it refuses (`shim_authored`) any other (STA-1297).
+- Driver candidates of declared packages (STA-1297). **Source: the package manifests**, never a hand-kept table and
+  never the packages' source or `.d.ts`. `buildManifest` writes, for a package only, each driver entry's `classes`
+  (`{ <name>: { class, from, deps? } }`: the class, its public entry from `packageSpecifier`, its constructor tokens
+  with `#…` subpaths mapped by `publicSpecifier`) and `config` (`{ class, from }`, the config class whose field
+  selects one). `emitWiring` reads them (`dependencyDriverTables`) and lists a package's table only for a port its
+  bindings reach (the `used` worklist: bindings, platform bindings and driver constructors, transitively), merged
+  under the member's own candidates (own name wins). A package `*Config` class a reached token names gets a config
+  row (key from `configKeyOf` and the package's member) unless the member overrides it. The `DriverRegistry`
+  augmentation lists the member's own drivers only: packages augment their own ports. A package manifest written
+  before this change has no `classes` and contributes nothing until the package is generated again. Test-only
+  candidates (a `ClientFake` transport) are testing plugins, never manifest rows.
 - i18n (STA-1293): `readCatalogues` reads `assets/lang/<locale>/*.json`; `emitI18n` writes `#stackra/i18n` (`I18n`
   through `keys()` of `@stackra/i18n`, `locales`) only when the member declares `@stackra/i18n`. A `@Field(zod)` hatch
   carries the named imports its source uses (`TypeDesc` hatch `imports`); a nullable field gets `.nullable()` once.
@@ -100,7 +112,8 @@ The Stackra compiler. Member at `packages/developer/gen` (`tier:lib`), in the pr
   connects nothing. The server entry passes `boot` to `createApp` (`@stackra/app/server`), which calls it with
   `DATABASE_URL` and aborts the signal on `close()`.
 
-- Platform services (ADR 0263): a `@stackra/*` service gen binds where injected is a `PLATFORM_BINDINGS` row; a token
+- Platform services (ADR 0263): a `@stackra/*` service gen binds where injected is a `PLATFORM_BINDINGS` row
+  (`MediaLibrary` included, STA-1297); a token
   may be a per-model token (`{ class: Revision, of: repositoryOf }`). A platform `CrudService<M>` also has a
   `PLATFORM_PARTNERS` row, so the host's registrations write its model partner (`RuleSetService` over `RuleSet`, the
   `@stackra/rules` node of ADR 0331). Keep both maps in step.

@@ -8,7 +8,8 @@
  *          `override_duplicate`, `permission_unknown`, `identity_missing`, `prefix_invalid`, `prefix_taken` and
  *          `prefix_duplicate`; the v3 tool default with `tool_reason_missing`, the public flag with `public_without_endpoint`, effect tags with `effect_unknown`,
  *          Integration roles and listing with `integration_role_unknown`, the `@Replaces` section, and a replica
- *          query's `ReplicaPage` output schema (ADR 0338).
+ *          query's `ReplicaPage` output schema (ADR 0338); a package's drivers with each candidate's class, entry and
+ *          tokens and the selecting config class (STA-1297).
  * Boundary: test only; runs on the commerce IR fixture.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 10, 20, 21 and 22); ADR 0305 (rules 1, 28 and
@@ -23,6 +24,7 @@ import type { DeclaredClass } from "#core/types/declared-class.type";
 import type { MemberIR } from "#core/types/member-ir.type";
 import { BILLING_IR } from "#core/__tests__/fixtures/billing-ir.fixture";
 import { COMMERCE_IR } from "#core/__tests__/fixtures/commerce-ir.fixture";
+import { LOYALTY_KIT_IR } from "#core/__tests__/fixtures/loyalty-kit-ir.fixture";
 import { WEB_APP_IR } from "#core/__tests__/fixtures/web-app-ir.fixture";
 
 /** The fixture class named `name`. */
@@ -650,5 +652,48 @@ describe("buildManifest", () => {
         },
       ]);
     });
+  });
+});
+
+describe("buildManifest's package drivers (STA-1297)", () => {
+  it("records each candidate's class, entry and tokens, and the config class that selects one", () => {
+    const ir: MemberIR = {
+      ...LOYALTY_KIT_IR,
+      classes: LOYALTY_KIT_IR.classes.map((candidate) =>
+        candidate.name === "MemoryLoyaltyLedgerDriver"
+          ? {
+              ...candidate,
+              deps: [
+                { class: { name: "LoyaltyKitConfig", from: "#config/loyalty-kit.config" } },
+                { class: { name: "Clock", from: "@stackra/contracts" } },
+              ],
+            }
+          : candidate,
+      ),
+    };
+    expect(buildManifest(ir).manifest.drivers).toEqual([
+      {
+        port: "LoyaltyLedger",
+        key: "loyalty_kit.LoyaltyLedger",
+        candidates: ["memory"],
+        selectedBy: "config:loyalty_kit.ledger",
+        classes: {
+          memory: {
+            class: "MemoryLoyaltyLedgerDriver",
+            from: "@acme/loyalty-kit",
+            deps: [
+              { class: { name: "LoyaltyKitConfig", from: "@acme/loyalty-kit" } },
+              { class: { name: "Clock", from: "@stackra/contracts" } },
+            ],
+          },
+        },
+        config: { class: "LoyaltyKitConfig", from: "@acme/loyalty-kit" },
+      },
+    ]);
+  });
+
+  it("keeps a service's drivers to names", () => {
+    const [driver] = buildManifest(COMMERCE_IR).manifest.drivers ?? [];
+    expect(driver).not.toHaveProperty("classes");
   });
 });

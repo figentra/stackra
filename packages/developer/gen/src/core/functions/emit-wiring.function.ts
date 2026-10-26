@@ -3,7 +3,10 @@
  * Purpose: `emitWiring`, the member's `#stackra/wiring` (`.stackra/gen/wiring.ts`): the module graph in topological
  *          order (with each dependency's module marked `from`), the platform classes the member injects, every
  *          binding with its kind, module, lifetime and constructor tokens, the config classes with their overrides,
- *          the driver table per port with lazy candidates and the `DriverRegistry` augmentation keyed by port key,
+ *          the driver table per port with lazy candidates (the member's own, and each declared package's table of a
+ *          port its bindings reach, from that package's manifest `classes`, with the config row that selects one and
+ *          a row per package `*Config` class injected; STA-1297) and the `DriverRegistry` augmentation keyed by port
+ *          key for the member's own drivers,
  *          the `@Replaces` replacements and the partners read from type arguments, typed `satisfies Wiring`. Gen adds
  *          the bindings no class declares: one per per-model token (`repositoryOf(M)`, `journalOf(M)` with `[Locks]`),
  *          an Integration's `IntegrationRuntime`, each generated service client (`#stackra/clients/<service>`, with the
@@ -16,7 +19,8 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 17 and 26); ADR 0263 (gen writes the wiring); ADR 0227 2026-10-24 note
  *                     (build-time wiring from constructor types); registry v3.1 section 5 item 4; ADR 0308; ADR 0224;
- *                     ADR 0260 (decisions 3 and 6: an injected client over the transport the topology picks).
+ *                     ADR 0260 (decisions 3 and 6: an injected client over the transport the topology picks); ADR 0266
+ *                     (memory first: a test's `useDrivers("memory")` finds the packages' memory candidates).
  */
 import { BINDING_KINDS } from "#core/constants/binding-kinds.constant";
 import { CLIENTS_SPECIFIER } from "#core/constants/clients-specifier.constant";
@@ -29,6 +33,7 @@ import { importLines } from "#core/functions/import-lines.function";
 import { modelKey } from "#core/functions/model-key.function";
 import { portKey } from "#core/functions/port-key.function";
 import { rootModuleOf } from "#core/functions/root-module-of.function";
+import { snakeCase } from "#core/functions/snake-case.function";
 import { webhookIntegrations } from "#core/functions/webhook-integrations.function";
 import type { ClassRef } from "#core/types/class-ref.type";
 import type { ClassValue } from "#core/types/class-value.type";
@@ -82,6 +87,90 @@ function own(declared: DeclaredClass): ClassRef {
 /** An array literal of printed items. */
 function list(items: readonly string[]): string {
   return `[${items.join(", ")}]`;
+}
+
+/** One driver candidate: its name (the file prefix), its class and its constructor tokens. */
+interface Candidate {
+  readonly name: string;
+  readonly type: ClassRef;
+  readonly deps: readonly TokenRef[];
+}
+
+/** The drivers of one port in the wiring, with the names the member itself declares. */
+interface PortTable {
+  readonly port: ClassRef;
+  readonly key: string;
+  readonly candidates: Candidate[];
+  readonly own: string[];
+  selectedBy?: string | undefined;
+}
+
+/** A package's driver table as its manifest records it (STA-1297). */
+interface PackageTable {
+  readonly candidates: Candidate[];
+  selectedBy?: string | undefined;
+  config?: ClassRef | undefined;
+}
+
+/** Whether `value` is a class reference as a manifest writes one. */
+function isClassRef(value: unknown): value is ClassRef {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    typeof (value as ClassRef).name === "string" &&
+    typeof (value as ClassRef).from === "string"
+  );
+}
+
+/** A token as a manifest writes it (`{ class: { name, from }, named?, of? }`), or undefined. */
+function tokenOf(value: unknown): TokenRef | undefined {
+  if (typeof value !== "object" || value === null) return undefined;
+  const { class: type, named: name, of } = value as Record<string, unknown>;
+  if (!isClassRef(type)) return undefined;
+  return {
+    class: { name: type.name, from: type.from },
+    ...(typeof name === "string" ? { named: name } : {}),
+    ...(isClassRef(of) ? { of: { name: of.name, from: of.from } } : {}),
+  };
+}
+
+/**
+ * The driver tables the declared packages' manifests record, by port key: each candidate's class, entry and tokens
+ * (`classes`) and the config that selects one. The manifest is the one source (gen's AGENTS.md); a package whose
+ * manifest predates `classes` contributes nothing.
+ */
+function dependencyDriverTables(ir: MemberIR): Map<string, PackageTable> {
+  const tables = new Map<string, PackageTable>();
+  for (const { manifest } of ir.dependencies) {
+    if (manifest.kind === "app") continue;
+    for (const driver of manifest.drivers ?? []) {
+      const classes = driver["classes"];
+      if (typeof classes !== "object" || classes === null) continue;
+      const table = tables.get(driver.key) ?? { candidates: [] };
+      for (const [name, value] of Object.entries(classes as Record<string, unknown>)) {
+        const { class: type, from, deps } = (value ?? {}) as Record<string, unknown>;
+        if (typeof type !== "string" || typeof from !== "string") continue;
+        if (table.candidates.some((known) => known.name === name)) continue;
+        table.candidates.push({
+          name,
+          type: { name: type, from },
+          deps: (Array.isArray(deps) ? deps : [])
+            .map(tokenOf)
+            .filter((dep): dep is TokenRef => dep !== undefined),
+        });
+      }
+      const selectedBy = driver["selectedBy"];
+      if (typeof selectedBy === "string") table.selectedBy ??= selectedBy;
+      const { class: configClass, from: configFrom } = (driver["config"] ?? {}) as Record<
+        string,
+        unknown
+      >;
+      if (typeof configClass === "string" && typeof configFrom === "string")
+        table.config ??= { name: configClass, from: configFrom };
+      tables.set(driver.key, table);
+    }
+  }
+  return tables;
 }
 
 /** Sorts module keys so each comes after the modules it depends on; a cycle keeps source order. */
@@ -224,8 +313,9 @@ export function emitWiring(ir: MemberIR): string {
     );
   }
 
-  // Drivers per port, and the config fields that select them.
-  const ports = new Map<string, { port: ClassRef; key: string; drivers: DeclaredClass[] }>();
+  // Drivers per port: the member's own, then (in the worklist below) each declared package's table of a port the
+  // member's bindings reach, read from that package's manifest (STA-1297). And the config fields that select them.
+  const ports = new Map<string, PortTable>();
   for (const declared of ir.classes) {
     if (declared.kind !== "driver" || declared.partner === undefined) continue;
     const port: ClassRef = { name: declared.partner.name, from: declared.partner.from };
@@ -236,8 +326,10 @@ export function emitWiring(ir: MemberIR): string {
             port.from === candidate.package || port.from.startsWith(`${candidate.package}/`),
         )?.manifest.member ?? ir.member);
     const key = portKey(member, port.name);
-    const entry = ports.get(key) ?? { port, key, drivers: [] };
-    entry.drivers.push(declared);
+    const entry = ports.get(key) ?? { port, key, candidates: [], own: [] };
+    const name = driverName(declared.file, port.name);
+    entry.candidates.push({ name, type: own(declared), deps: declared.deps });
+    entry.own.push(name);
     ports.set(key, entry);
   }
   const selectors = new Map<string, { selectedBy?: string; named?: string }>();
@@ -271,41 +363,46 @@ export function emitWiring(ir: MemberIR): string {
       );
     }
   }
-  const driverLines: string[] = [];
-  const registry: string[] = [];
-  for (const { port, key, drivers } of ports.values()) {
-    const selected = selectors.get(port.name);
-    const candidates = drivers.map(
-      (declared) =>
-        `      ${JSON.stringify(driverName(declared.file, port.name))}: () => import(${JSON.stringify(declared.importPath)}).then((m) => m.${declared.name}),`,
-    );
-    const deps = drivers
-      .filter((declared) => declared.deps.length > 0)
-      .map(
-        (declared) =>
-          `${JSON.stringify(driverName(declared.file, port.name))}: ${list(declared.deps.map(token))}`,
-      );
-    driverLines.push(
-      "    {",
-      `      port: ${ref(port)},`,
-      `      key: ${JSON.stringify(key)},`,
-      ...(selected?.selectedBy !== undefined
-        ? [`      selectedBy: ${JSON.stringify(selected.selectedBy)},`]
-        : []),
-      ...(selected?.named !== undefined ? [`      named: ${JSON.stringify(selected.named)},`] : []),
-      "      candidates: {",
-      ...candidates.map((line) => `  ${line}`),
-      "      },",
-      ...(deps.length > 0 ? [`      deps: { ${deps.join(", ")} },`] : []),
-      "    },",
-    );
-    const driverNames = [
-      ...new Set(drivers.map((declared) => driverName(declared.file, port.name))),
-    ].sort();
-    registry.push(
-      `    ${JSON.stringify(key)}: ${driverNames.map((name) => JSON.stringify(name)).join(" | ")};`,
-    );
-  }
+
+  // The declared packages' driver tables by port key, and the member of each package (STA-1297).
+  const packageTables = dependencyDriverTables(ir);
+  const memberOf = (from: string): string =>
+    ir.dependencies.find(
+      (candidate) => from === candidate.package || from.startsWith(`${candidate.package}/`),
+    )?.manifest.member ?? snakeCase(from.replace(/^@[^/]+\//, "").split("/")[0] ?? from);
+  const configKeys = new Set(configLines.map((line) => /key: "([^"]+)"/.exec(line)?.[1]));
+  const linked = new Set<string>();
+  /** The tokens `dep` brings: its package's driver table and a package config row (STA-1297). */
+  const link = (dep: TokenRef): readonly TokenRef[] => {
+    const from = dep.class.from;
+    if (dep.of !== undefined || from.startsWith("#") || from.startsWith(".")) return [];
+    const brought: TokenRef[] = [];
+    // A package config class a binding or a driver injects: its row, unless the member overrides it.
+    if (dep.class.name.endsWith("Config")) {
+      const key = configKeyOf(dep.class.name, memberOf(from));
+      if (!configKeys.has(key)) {
+        configKeys.add(key);
+        configLines.push(
+          `    { key: ${JSON.stringify(key)}, provide: ${ref(dep.class, "Base")} },`,
+        );
+      }
+      return brought;
+    }
+    const key = portKey(memberOf(from), dep.class.name);
+    const table = packageTables.get(key);
+    if (table === undefined || linked.has(key)) return brought;
+    linked.add(key);
+    const entry = ports.get(key) ?? { port: dep.class, key, candidates: [], own: [] };
+    for (const candidate of table.candidates)
+      if (!entry.candidates.some((known) => known.name === candidate.name)) {
+        entry.candidates.push(candidate);
+        brought.push(...candidate.deps);
+      }
+    entry.selectedBy ??= table.selectedBy;
+    if (table.config !== undefined) brought.push({ class: table.config });
+    ports.set(key, entry);
+    return brought;
+  };
 
   // Bindings gen adds: one per per-model token, the inbound webhook route, and each platform service it knows where
   // it is injected. A worklist, so `journalOf(M)` brings `Locks` with it.
@@ -326,6 +423,7 @@ export function emitWiring(ir: MemberIR): string {
     const entry = used[index];
     if (entry === undefined) continue;
     const { module, dep } = entry;
+    for (const next of link(dep)) used.push({ module, dep: next });
     const factory = dep.of;
     const deps: readonly (ClassRef | TokenRef)[] | undefined =
       factory !== undefined
@@ -344,6 +442,37 @@ export function emitWiring(ir: MemberIR): string {
       `    { module: ${JSON.stringify(module)}, kind: "service", provide: ${token(dep)}, deps: ${list(tokens.map(token))} },`,
     );
     for (const next of tokens) used.push({ module, dep: next });
+  }
+
+  const driverLines: string[] = [];
+  const registry: string[] = [];
+  for (const { port, key, candidates, own: owned, selectedBy } of ports.values()) {
+    const selected = selectors.get(port.name);
+    const select = selected?.selectedBy ?? selectedBy;
+    const deps = candidates
+      .filter((candidate) => candidate.deps.length > 0)
+      .map((candidate) => `${JSON.stringify(candidate.name)}: ${list(candidate.deps.map(token))}`);
+    driverLines.push(
+      "    {",
+      `      port: ${ref(port)},`,
+      `      key: ${JSON.stringify(key)},`,
+      ...(select !== undefined ? [`      selectedBy: ${JSON.stringify(select)},`] : []),
+      ...(selected?.named !== undefined ? [`      named: ${JSON.stringify(selected.named)},`] : []),
+      "      candidates: {",
+      ...candidates.map(
+        (candidate) =>
+          `        ${JSON.stringify(candidate.name)}: () => import(${JSON.stringify(candidate.type.from)}).then((m) => m.${candidate.type.name}),`,
+      ),
+      "      },",
+      ...(deps.length > 0 ? [`      deps: { ${deps.join(", ")} },`] : []),
+      "    },",
+    );
+    // A package's own port names are its `DriverRegistry` augmentation; the member augments only its own drivers.
+    const driverNames = [...new Set(owned)].sort();
+    if (driverNames.length > 0)
+      registry.push(
+        `    ${JSON.stringify(key)}: ${driverNames.map((name) => JSON.stringify(name)).join(" | ")};`,
+      );
   }
 
   // Replacements and partners.

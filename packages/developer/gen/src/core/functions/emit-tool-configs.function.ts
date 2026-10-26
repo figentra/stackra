@@ -2,8 +2,8 @@
  * Stackra file contract:
  * Purpose: `emitToolConfigs`, the tool configs gen writes into `.stackra/` for a package or a service: tsdown with one
  *          entry per generated entry file, Vitest on the decorators preset with the shared coverage gate and the unit
- *          tier, and the Vitest setup that loads the registrations and (for a member on `@stackra/database`) its testing
- *          entry, registers the member's wiring for `createTestingModule`, awaits `loadMemberSchemas` so a test file's
+ *          tier, and the Vitest setup that loads the registrations and (for a member on `@stackra/database` or
+ *          `@stackra/clients`) that package's testing entry, registers the member's wiring for `createTestingModule`, awaits `loadMemberSchemas` so a test file's
  *          top-level `X.create(...)` finds its schema, and pairs each `Factory<M>` with its model; and the root
  *          `vitest.config.ts` shim that re-exports the generated config, since `vitest run` reads only the member root
  *          (STA-1296).
@@ -122,6 +122,10 @@ export function emitToolConfigs(
     ...(ir.packages?.includes("@stackra/database") === true
       ? ['import "@stackra/database/testing";']
       : []),
+    // The memory `ClientTransport` (`ClientFake`) a test picks with `useDrivers("memory")` (STA-1297).
+    ...(ir.packages?.includes("@stackra/clients") === true
+      ? ['import "@stackra/clients/testing";']
+      : []),
     ...(generated.registrations ? ['import "#stackra/registrations";'] : []),
     ...importLines(imports),
     "",
@@ -138,7 +142,8 @@ export function emitToolConfigs(
       from: ".stackra/vitest.config.ts",
       purpose: `the root shim of ${ir.package}'s Vitest config: \`vitest run\` reads only the member root.`,
       boundary:
-        "a re-export only, gitignored; gen refuses to replace an authored vitest.config.ts.",
+        "a re-export only, gitignored; written only when no root config exists. An authored one that merges " +
+        "./.stackra/vitest.config is kept; any other is refused.",
       runtime: "node",
     }),
     'export { default } from "./.stackra/vitest.config";',

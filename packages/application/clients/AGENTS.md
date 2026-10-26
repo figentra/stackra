@@ -40,6 +40,11 @@ at `packages/application/clients` (`tier:lib`), in the programming model v3.1 sh
 - The offline drivers (`ClientMutationSenderDriver`, `ClientReplicaSourceDriver`, `ClientAcknowledgementReaderDriver`)
   implement `@stackra/query`'s ports through the bound `ClientTransport` and check every answer's shape; a query with
   `replica` registers itself with `registerReplicas` when its ref is built.
+- Memory transport (STA-1297): `ClientFake` is the `memory` `ClientTransport`, offered as a test-only candidate by
+  `CLIENTS_TESTING_PLUGIN` (registered on import of `./testing`), never as a `core/drivers` file, so a production
+  wiring lists only `http`. Keep `ClientTransportName` to the `core/drivers` names. `ClientSession` has no memory
+  candidate here because its one driver is identity's (`@stackra/identity`); a test's transport is the fake, which
+  never asks for a session.
 - `ClientSession` belongs to identity: this package never reads a token store, a cookie or a claim. `isAllowed` is
   presentation; the producer's pipeline checks every call.
 - An event ref extends `IntegrationEvent` (this package's one use of `@stackra/events`) so a service's inbox and bus
