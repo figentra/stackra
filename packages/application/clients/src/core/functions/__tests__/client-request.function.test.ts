@@ -41,7 +41,7 @@ describe("clientRequest", () => {
     const request = clientRequest(
       RescheduleOrderAction,
       { orderId: "ord_1", at: new Date("2027-03-01T09:00:00.000Z"), lines: [{ quantity: 2 }] },
-      { idempotencyKey: "step-1", signal },
+      { idempotencyKey: "step-1", scope: "platform.acme", signal },
     );
     expect(request).toEqual({
       key: "orders.order.reschedule@1",
@@ -55,6 +55,7 @@ describe("clientRequest", () => {
       },
       output,
       idempotencyKey: "step-1",
+      scope: "platform.acme",
       signal,
     });
   });

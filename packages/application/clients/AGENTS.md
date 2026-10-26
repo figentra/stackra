@@ -13,6 +13,7 @@ at `packages/application/clients` (`tier:lib`), in the programming model v3.1 sh
 | The configuration                  | `src/config/clients.config.ts`                 |
 | A ref factory                      | `src/core/functions/<name>.function.ts`        |
 | A kind-factory spelling or a base  | `src/core/bases/<name>.base.ts`                |
+| A concrete service client          | `src/core/clients/<name>.client.ts`            |
 | A transport or sender driver       | `src/core/drivers/<name>.driver.ts`            |
 | A React hook                       | `src/react/<name>/`                            |
 | A Worker or server-render function | `src/server/` or `src/worker/`                 |
@@ -23,6 +24,10 @@ at `packages/application/clients` (`tier:lib`), in the programming model v3.1 sh
 
 - A ref describes a call; a `ClientTransport` driver makes it. Topology picks the driver (ADR 0260 decision 6), so
   nothing here knows whether a call is in process or over the network. This package ships only `http`.
+- A key known only at runtime goes through `DynamicClient`, which builds an unregistered ref per call (JSON in, the
+  answer undecoded): never `actionRef` for it, which would register the key in `CALL_REFS`. The `http` driver picks
+  the base URL per module key (`producers`, else `baseUrl`) and sends `CallOptions.scope` in `scopeHeader`, over the
+  session's (ADR 0260, note of 2026-10-26). Both are configuration; never hard-code a producer URL or the header.
 - A call rejects with a `ClientError` only: a refusal decoded from the producer's envelope, `InputInvalidError`, or
   `TransportError`. The envelope is untrusted: a detail never shadows a refusal's own field.
 - Refs record themselves by key (`CALL_REFS`) and by code (`REFUSAL_REFS`), so the queue can replay by key and an

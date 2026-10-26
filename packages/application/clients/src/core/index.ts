@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `.` entry of @stackra/clients (the ref factories gen writes `#stackra/clients/<service>`
- *          over, `ServiceClient`, the config, the HTTP `ClientTransport` driver, the `MutationSender`,
+ *          over, `ServiceClient`, `DynamicClient` and `producerBaseUrl` for runtime keys, the config, the HTTP `ClientTransport` driver, the `MutationSender`,
  *          `AcknowledgementReader` and `ReplicaSource` drivers of `@stackra/query`'s offline ports, the transport and
  *          server refusals, and the public types) until `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. The shipped schema is re-exported under the generated name
@@ -15,6 +15,7 @@ export { ClientAction } from "#core/bases/client-action.base";
 export { ClientQuery } from "#core/bases/client-query.base";
 export { ClientRefusal } from "#core/bases/client-refusal.base";
 export { ServiceClient } from "#core/bases/service-client.base";
+export { DynamicClient } from "#core/clients/dynamic.client";
 export { CLIENTS_CONFIG_SCHEMA as ClientsConfig$ } from "#core/constants/clients-config-schema.constant";
 export { ClientAcknowledgementReaderDriver } from "#core/drivers/client-acknowledgement-reader.driver";
 export { ClientMutationSenderDriver } from "#core/drivers/client-mutation-sender.driver";
@@ -29,6 +30,7 @@ export { intents } from "#core/functions/intents.function";
 export { moduleRef } from "#core/functions/module-ref.function";
 export { permissionRefs } from "#core/functions/permission-refs.function";
 export { permissionsRef } from "#core/functions/permissions-ref.function";
+export { producerBaseUrl } from "#core/functions/producer-base-url.function";
 export { queryRef } from "#core/functions/query-ref.function";
 export { refusalRef } from "#core/functions/refusal-ref.function";
 export { remoteAction } from "#core/functions/remote-action.function";
@@ -52,6 +54,7 @@ export type { ClientModuleClass } from "#core/types/client-module-class.type";
 export type { ClientQueryOptions } from "#core/types/client-query-options.type";
 export type { ClientRefusalOptions } from "#core/types/client-refusal-options.type";
 export type { ClientTransportName } from "#core/types/client-transport-name.type";
+export type { DynamicCall } from "#core/types/dynamic-call.type";
 export type { EventRef } from "#core/types/event-ref.type";
 export type { EventRefOptions } from "#core/types/event-ref-options.type";
 export type { IntentEntry } from "#core/types/intent-entry.type";

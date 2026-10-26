@@ -15,23 +15,24 @@ and zod. React is an optional peer for `./react`.
 
 ## What is here
 
-| Entry         | Symbol                                                                           | Use                                                            |
-| ------------- | -------------------------------------------------------------------------------- | -------------------------------------------------------------- |
-| `.`           | `actionRef`, `queryRef`, `eventRef`, `refusalRef`, `remoteShape`, `widgetRef`    | bases of consumed actions, queries, events, refusals, shapes   |
-| `.`           | `moduleRef`, `clientModule`, `permissionsRef` (`permissionRefs`), `intents`      | consumed modules, permission statics, the intent table         |
-| `.`           | `ClientAction`, `ClientQuery`, `ClientRefusal`                                   | the public-area spelling of the refs (key inside the options)  |
-| `.`           | `ServiceClient`, `remoteAction`, `remoteQuery`, `remoteEvent`, `remoteRefusal`   | a service's client of another service                          |
-| `.`           | `ClientsConfig`, `ClientsConfig$`, `ClientsOptions`                              | key `clients`: base URL, API version, timeout, attempts        |
-| `.`           | `HttpClientTransportDriver`, `ClientMutationSenderDriver`                        | the `http` transport; the `client` sender of the offline queue |
-| `.`           | `ClientReplicaSourceDriver`, `ClientAcknowledgementReaderDriver`                 | the `client` replica source and acknowledgement reader         |
-| `.`           | `TransportError`, `ServerRefusalError`                                           | no readable answer; a refusal code no loaded ref declares      |
-| `.`           | `ActionInput`, `QueryOutput`, `ClientError`, `ActionRef`, `QueryRef`             | the types the template names                                   |
-| `./contracts` | `ClientTransport`, `ClientSession`, `ClientRequest`, `TransportFailure`          | how calls are sent; what the session provides                  |
-| `./contracts` | `DEVICE_ORDER`                                                                   | the device-order headers and the acknowledged query's key      |
-| `./react`     | `useQuery`, `useInfiniteQuery`, `useQueryClient`, `useAction`, `useIntentRouter` | consumed queries and actions in a component                    |
-| `./server`    | `createPublicClients`, `RetryOn`, `PublicClients`                                | a Worker's anonymous calls to the public area                  |
-| `./worker`    | `forwardedFacts`                                                                 | the visitor facts a Worker forwards to the gateway             |
-| `./testing`   | `fakeClient`, `ClientFake`, `fakeClientError`                                    | a scripted client for tests                                    |
+| Entry         | Symbol                                                                           | Use                                                             |
+| ------------- | -------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| `.`           | `actionRef`, `queryRef`, `eventRef`, `refusalRef`, `remoteShape`, `widgetRef`    | bases of consumed actions, queries, events, refusals, shapes    |
+| `.`           | `moduleRef`, `clientModule`, `permissionsRef` (`permissionRefs`), `intents`      | consumed modules, permission statics, the intent table          |
+| `.`           | `ClientAction`, `ClientQuery`, `ClientRefusal`                                   | the public-area spelling of the refs (key inside the options)   |
+| `.`           | `ServiceClient`, `remoteAction`, `remoteQuery`, `remoteEvent`, `remoteRefusal`   | a service's client of another service                           |
+| `.`           | `DynamicClient`, `DynamicCall`, `producerBaseUrl`                                | a call to a key registered at runtime (no generated ref)        |
+| `.`           | `ClientsConfig`, `ClientsConfig$`, `ClientsOptions`                              | key `clients`: base URLs, scope header, version, timeout, tries |
+| `.`           | `HttpClientTransportDriver`, `ClientMutationSenderDriver`                        | the `http` transport; the `client` sender of the offline queue  |
+| `.`           | `ClientReplicaSourceDriver`, `ClientAcknowledgementReaderDriver`                 | the `client` replica source and acknowledgement reader          |
+| `.`           | `TransportError`, `ServerRefusalError`                                           | no readable answer; a refusal code no loaded ref declares       |
+| `.`           | `ActionInput`, `QueryOutput`, `ClientError`, `ActionRef`, `QueryRef`             | the types the template names                                    |
+| `./contracts` | `ClientTransport`, `ClientSession`, `ClientRequest`, `TransportFailure`          | how calls are sent; what the session provides                   |
+| `./contracts` | `DEVICE_ORDER`                                                                   | the device-order headers and the acknowledged query's key       |
+| `./react`     | `useQuery`, `useInfiniteQuery`, `useQueryClient`, `useAction`, `useIntentRouter` | consumed queries and actions in a component                     |
+| `./server`    | `createPublicClients`, `RetryOn`, `PublicClients`                                | a Worker's anonymous calls to the public area                   |
+| `./worker`    | `forwardedFacts`                                                                 | the visitor facts a Worker forwards to the gateway              |
+| `./testing`   | `fakeClient`, `ClientFake`, `fakeClientError`                                    | a scripted client for tests                                     |
 
 ## Generated clients
 
@@ -101,6 +102,32 @@ await this.payments.payment.void.queue({ paymentId }); // a queued call on the p
 ```
 
 Topology picks the transport driver (in process, RPC or this package's `http`), so the consumer's code is the same.
+
+## Calls to a key known only at runtime
+
+A service that calls keys other services registered (an import target, an export source) has no generated ref for
+them. `DynamicClient` calls a `DynamicCall` (`key`, `kind`, `endpoint`) over the same `ClientTransport`; the input is
+JSON and the answer comes back undecoded, so the caller validates it.
+
+```ts
+const answer = await this.dynamic.call(
+  {
+    key: "orders.order.import_rows@1",
+    kind: "action",
+    endpoint: { method: "POST", path: "/orders/import-rows" },
+  },
+  { rows },
+  { scope: job.scopePath, idempotencyKey: ctx.stepKey },
+);
+```
+
+- **Base URL.** The `http` driver sends every call to its producer's base URL: `ClientsOptions.producers` maps a
+  module key (`orders` of `orders.order.import_rows@1`) to a URL, and a module not listed goes to `baseUrl`
+  (`producerBaseUrl`). A host behind one gateway sets nothing.
+- **Scope.** `CallOptions.scope` (a scope path, `platform.acme`) travels in `ClientsOptions.scopeHeader`
+  (`X-Scope-Path`, what `@stackra/scope` reads) and replaces the session's scope header for that call. The producer
+  accepts it only inside the caller's grants. Without it the session's scope applies, so a job with no session passes
+  the scope it runs in.
 
 ## Testing
 

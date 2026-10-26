@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: the consumer contract of the `.` entry: every value the template imports from `@stackra/clients` (the ref
- *          factories of the three generated-client dialects, `ServiceClient`, `TransportError`) and the registry
+ *          factories of the three generated-client dialects, `ServiceClient`, `DynamicClient`, `producerBaseUrl`,
+ *          `TransportError`) and the registry
  *          row's config and drivers are exported, nothing else is, the `$` name is the shipped schema, and the public
  *          types the template names resolve.
  * Boundary: test only; imports the stand-in barrel through its `#core` alias.
@@ -36,6 +37,7 @@ describe("@stackra/clients", () => {
       "ClientsConfig",
       "ClientsConfig$",
       "ClientsOptions",
+      "DynamicClient",
       "HttpClientTransportDriver",
       "ServerRefusalError",
       "ServiceClient",
@@ -47,6 +49,7 @@ describe("@stackra/clients", () => {
       "moduleRef",
       "permissionRefs",
       "permissionsRef",
+      "producerBaseUrl",
       "queryRef",
       "refusalRef",
       "remoteAction",

@@ -1,15 +1,18 @@
 /**
  * Stackra file contract:
  * Purpose: `httpCall`, sends one `ClientRequest` over HTTP and reads the answer: fills the route's `:params` from the
- *          input, puts the rest in the query string (`GET`) or a JSON body, sends the caller's Idempotency-Key and the
- *          call's device order (`DEVICE_ORDER` headers), and resolves the answer decoded by the output schema, or rejects with the decoded refusal or a `TransportError`.
+ *          input, puts the rest in the query string (`GET`) or a JSON body, sends the caller's Idempotency-Key, the
+ *          call's scope path (in the configured scope header, over the session's) and device order (`DEVICE_ORDER`
+ *          headers), and resolves the answer decoded by the output schema, or rejects with the decoded refusal or a
+ *          `TransportError`.
  * Boundary: internal to the HTTP transport driver and the public clients; not exported from an entry. A queued call
  *           sends `Prefer: respond-async` (RFC 7240) and reads no answer body. A query-string value that is not text,
  *           a number or a boolean is sent as JSON. A call that acts on behalf of a principal is service-to-service
  *           and never goes through this function. A caller's abort rejects with the platform's abort error.
  * Runtime: isomorphic
  * Governing contract: ADR 0140 (envelope); ADR 0142 (transport through drivers); ADR 0138 (Idempotency-Key); ADR 0338
- *                     (decision 1: device order); the HTTP conventions rule.
+ *                     (decision 1: device order); ADR 0260 (2026-10-26 note: scope of a dynamic key); the HTTP
+ *                     conventions rule.
  */
 import { HttpMethod } from "@stackra/contracts";
 import { isRefusal } from "@stackra/errors";
@@ -33,6 +36,9 @@ interface HttpCallOptions {
 
   /** Headers of every call (session, locale, forwarded facts). */
   readonly headers: Readonly<Record<string, string>>;
+
+  /** The header a call's `scope` travels in; without it, a call's scope is not sent. */
+  readonly scopeHeader?: string;
 
   /** Hand the call to the producer's queue instead of waiting for its answer. */
   readonly queue?: boolean;
@@ -107,6 +113,12 @@ export async function httpCall(request: ClientRequest, options: HttpCallOptions)
   const headers: Record<string, string> = { Accept: "application/json", ...options.headers };
   if (request.idempotencyKey !== undefined)
     headers[TRANSPORT_HEADERS.idempotencyKey] = request.idempotencyKey;
+  if (request.scope !== undefined && options.scopeHeader !== undefined) {
+    // The call's scope wins over the session's; header names are case-insensitive, so drop any spelling first.
+    const name = options.scopeHeader.toLowerCase();
+    for (const key of Object.keys(headers)) if (key.toLowerCase() === name) delete headers[key];
+    headers[options.scopeHeader] = request.scope;
+  }
   if (request.device !== undefined) headers[DEVICE_ORDER.deviceHeader] = request.device.deviceId;
   if (request.device?.sequence !== undefined)
     headers[DEVICE_ORDER.sequenceHeader] = String(request.device.sequence);

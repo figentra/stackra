@@ -49,6 +49,7 @@ export function clientRequest(
     output: ref.output,
     ...(options.idempotencyKey === undefined ? {} : { idempotencyKey: options.idempotencyKey }),
     ...(options.onBehalfOf === undefined ? {} : { onBehalfOf: options.onBehalfOf }),
+    ...(options.scope === undefined ? {} : { scope: options.scope }),
     ...(options.signal === undefined ? {} : { signal: options.signal }),
   };
 }

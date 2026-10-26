@@ -4,6 +4,18 @@ description: "Accepted, amended by 0294, 0351 · 2026-10-21"
 ---
 
 <Note>
+  Note on decisions 3 and 6, 2026-10-26 (STA-1261): a service may call a key it learns at runtime
+  (an import target or an export source another service registered) through `DynamicClient` from
+  `@stackra/clients`, over the same `ClientTransport` as a generated client. The input is JSON and
+  the answer is undecoded, and the key is never registered as a ref. The `http` driver picks a
+  call's base URL per producer module from the `clients.producers` setting, and any module not
+  listed goes to `clients.baseUrl`. A call may carry its scope path (`CallOptions.scope`), which is
+  sent in the `clients.scopeHeader` setting (`X-Scope-Path`) in place of the session's scope. The
+  producer accepts that scope only inside the caller's grants. A call made on behalf of a principal
+  still needs a service transport. The other decisions stand.
+</Note>
+
+<Note>
   Note on decision 4, 2026-10-26 (STA-1229, built by STA-1224): besides the typed subscription,
   there is one wildcard subscription, and only relays may use it. A relay is a listener whose
   `handle` parameter is typed `EventEnvelope` from `@stackra/outbox/contracts`. Gen lists it in

@@ -1,16 +1,18 @@
 /**
  * Stackra file contract:
  * Purpose: `ClientRequest`, one call as a `ClientTransport` receives it: the versioned key, action or query, the route,
- *          the input already validated and encoded to its wire form, the output schema to decode the answer with, and
- *          the caller's own call options, and the device the call comes from (with its per-device sequence when the
- *          offline queue replays it).
- * Boundary: a type only, built once per call by the client runtime. `idempotencyKey`, `onBehalfOf` and `device` are
- *           present only when the caller passed them; a transport mints the Idempotency-Key of a write that has none.
- *           The HTTP transport sends `device` as the `DEVICE_ORDER` headers; the server trusts it only once it matched
- *           the device to the verified session's. The input is JSON, so a transport may queue or log it as it is.
+ *          the input already validated and encoded to its wire form, the output schema to decode the answer with, the
+ *          caller's own call options (with the scope path the call runs in), and the device the call comes from (with
+ *          its per-device sequence when the offline queue replays it).
+ * Boundary: a type only, built once per call by the client runtime. `idempotencyKey`, `onBehalfOf`, `scope` and
+ *           `device` are present only when the caller passed them; a transport mints the Idempotency-Key of a write
+ *           that has none. The HTTP transport sends `scope` in the configured scope header, over the session's; the
+ *           producer accepts it only inside the caller's grants. It sends `device` as the `DEVICE_ORDER` headers; the
+ *           server trusts it only once it matched the device to the verified session's. The input is JSON, so a
+ *           transport may queue or log it as it is.
  * Runtime: isomorphic
- * Governing contract: ADR 0260 (decisions 3, 4 and 6); ADR 0138 (the idempotency step); ADR 0142 (drivers); ADR 0338
- *                     (decisions 1 and 4).
+ * Governing contract: ADR 0260 (decisions 3, 4 and 6, and the 2026-10-26 note on dynamic keys); R-59 (scope, not
+ *                     tenant); ADR 0138 (the idempotency step); ADR 0142 (drivers); ADR 0338 (decisions 1 and 4).
  */
 import type { EndpointOptions } from "@stackra/actions";
 import type { Json } from "@stackra/contracts";
@@ -44,6 +46,9 @@ export interface ClientRequest {
 
   /** The principal a service acts for; the producer's pipeline checks it. */
   readonly onBehalfOf?: string;
+
+  /** The scope path the call runs in (`platform.acme`); absent, the session's scope applies. */
+  readonly scope?: string;
 
   /** The device the call comes from (`DeviceIdentity.id()`), and its sequence when the offline queue replays it. */
   readonly device?: { readonly deviceId: string; readonly sequence?: number };

@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `HttpClientTransportDriver`: a call reaches the configured base URL with the session's headers,
  *          the pinned `Stackra-Version` and a minted Idempotency-Key on a write; a queued call asks to run
- *          asynchronously; no version header when none is pinned.
+ *          asynchronously; no version header when none is pinned; a module listed in `producers` goes to its own base
+ *          URL; a call's scope replaces the session's scope header.
  * Boundary: test only; `fetch` is stubbed, so nothing reaches a network.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0142; ADR 0118; ADR 0138.
@@ -79,5 +80,28 @@ describe("HttpClientTransportDriver", () => {
     await driver.queue(cancel);
     expect(seen[0]?.headers.get("Prefer")).toBe("respond-async");
     expect(seen[0]?.headers.has("Stackra-Version")).toBe(false);
+  });
+
+  it("sends a listed module to its producer and the call's scope over the session's", async () => {
+    const seen = stubFetch({ status: "cancelled" });
+    /** A session that sends its own scope. */
+    class ScopedSession extends StubSession {
+      override headers(): Promise<Readonly<Record<string, string>>> {
+        return Promise.resolve({
+          Authorization: "Bearer token-1",
+          "x-scope-path": "platform.other",
+        });
+      }
+    }
+    const driver = new HttpClientTransportDriver(
+      configWith({ producers: { orders: "https://orders.internal/" } }),
+      new ScopedSession(),
+    );
+    await driver.send({ ...cancel, scope: "platform.acme" });
+    expect(seen[0]?.url).toBe("https://orders.internal/orders/ord_1/cancel");
+    expect(seen[0]?.headers.get("X-Scope-Path")).toBe("platform.acme");
+    await driver.send({ ...cancel, key: "billing.invoice.void@1" });
+    expect(seen[1]?.url).toBe("https://api.acme.example/orders/ord_1/cancel");
+    expect(seen[1]?.headers.get("X-Scope-Path")).toBe("platform.other");
   });
 });

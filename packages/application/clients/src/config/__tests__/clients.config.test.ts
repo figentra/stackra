@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `ClientsConfig` and its shipped schema: keyed `clients`, the initializers equal the schema's
  *          defaults, a host override, a runway values layer, and refused values (a base URL that is no URL, a version
- *          that is no date, attempts out of range).
+ *          that is no date, attempts out of range, a producer
+ *          key that is no module key, a scope header that is no header name).
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0146 (config classes); ADR 0294 (decision 26).
@@ -35,6 +36,8 @@ describe("ClientsConfig", () => {
     expect(schemaOf(ClientsOptions)).toBe(CLIENTS_CONFIG_SCHEMA);
     expect({ ...buildConfig(ClientsConfig) }).toEqual({
       baseUrl: "",
+      producers: {},
+      scopeHeader: "X-Scope-Path",
       apiVersion: "",
       timeoutSeconds: 30,
       attempts: 3,
@@ -56,6 +59,12 @@ describe("ClientsConfig", () => {
       ConfigInvalidError,
     );
     expect(() => buildConfig(ClientsConfig, { values: { attempts: 0 } })).toThrow(
+      ConfigInvalidError,
+    );
+    expect(() =>
+      buildConfig(ClientsConfig, { values: { producers: { Orders: "https://orders.example" } } }),
+    ).toThrow(ConfigInvalidError);
+    expect(() => buildConfig(ClientsConfig, { values: { scopeHeader: "X Scope" } })).toThrow(
       ConfigInvalidError,
     );
   });
