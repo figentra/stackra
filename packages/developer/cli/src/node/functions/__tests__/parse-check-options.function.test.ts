@@ -27,7 +27,14 @@ describe("parseCheckOptions", () => {
       "catalogues",
       "spec",
     ]);
-    expect(options).toMatchObject({ fix: false, affected: false, format: "text", base: undefined });
+    expect(options).toMatchObject({
+      fix: false,
+      affected: false,
+      keepGoing: false,
+      format: "text",
+      base: undefined,
+    });
+    expect(parseCheckOptions({ "keep-going": true }, {}).keepGoing).toBe(true);
   });
 
   it("keeps phase order for --only, drops --skip, and adds test on request", () => {

@@ -26,6 +26,8 @@ The repository checks `stackra check` runs (ADR 0282 decision 3). Member at `pac
 
 - A check is pure: it takes paths and texts and returns finding strings (`path: message` or `path:line: message`,
   ending with the ADR in parentheses where one governs). Only the runners read the disk or run git and pnpm.
+- A missing or broken git never crashes a phase: `readRepoContext` falls back to `walkRepoFiles` (a walk honouring
+  `.gitignore`).
 - A check that changes behaviour changes its test in the same commit; the cases moved from `tools/scripts` stay.
 - Erasable TypeScript only (no enums, namespaces or parameter properties): core's wrappers in `tools/scripts` load
   this source with plain `node` (type stripping plus a `#` resolve hook in `tools/scripts/repo-checks.mjs`). Every

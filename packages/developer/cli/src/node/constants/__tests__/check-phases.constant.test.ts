@@ -177,6 +177,49 @@ describe("check phases", () => {
     expect(tool.calls[0]?.args).toContain("--filter=...[origin/dev]");
   });
 
+  it("typecheck falls back to tsc per member when turbo reports a dependency cycle", async () => {
+    const root = mkdtempSync(join(tmpdir(), "phase-"));
+    writeFileSync(join(root, "pnpm-workspace.yaml"), "packages:\n  - packages/*/*\n");
+    for (const name of ["demo", "other"]) {
+      mkdirSync(join(root, "packages/data", name), { recursive: true });
+      writeFileSync(
+        join(root, "packages/data", name, "package.json"),
+        `{ "name": "@stackra/${name}" }`,
+      );
+    }
+    writeFileSync(join(root, "packages/data/demo/tsconfig.json"), "{}");
+    tool.outputs = [
+      {
+        code: 1,
+        stdout: "",
+        stderr:
+          "  x Invalid task configuration\n  | dependency cycle, or by explicit task references that form a loop.\n",
+      },
+      { code: 2, stdout: "src/a.ts(4,9): error TS2322: Type 'x' is not assignable.\n", stderr: "" },
+    ];
+    const { findings } = await TYPECHECK_PHASE.run(runIn(root));
+    expect(findings).toEqual([
+      expect.objectContaining({
+        path: "packages/data/demo/src/a.ts",
+        line: 4,
+        column: 9,
+        rule: "TS2322",
+      }),
+    ]);
+    expect(tool.calls.map((call) => call.command)).toEqual(["turbo", "tsc"]);
+    expect(tool.calls[1]?.args).toEqual(["--noEmit", "-p", join(root, "packages/data/demo")]);
+
+    tool.calls = [];
+    tool.outputs = [undefined];
+    expect(
+      await TYPECHECK_PHASE.run(runIn(root, { files: ["packages/data/other/src/b.ts"] })),
+    ).toEqual({
+      findings: [],
+      skipped: "not installed",
+    });
+    expect(tool.calls.map((call) => call.command)).toEqual(["turbo"]);
+  });
+
   it("test names each failed turbo task", async () => {
     tool.outputs = [
       { code: 1, stdout: " Failed:    @stackra/a#test, @stackra/b#test\n", stderr: "" },

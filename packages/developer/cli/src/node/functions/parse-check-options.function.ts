@@ -27,7 +27,7 @@ function phaseList(flag: string, value: string): string[] {
 /**
  * The options of one run.
  *
- * @param values - the parsed flags (`fix`, `affected`, `only`, `skip`, `format`, `base`, `with-tests`).
+ * @param values - the parsed flags (`fix`, `affected`, `only`, `skip`, `format`, `base`, `with-tests`, `keep-going`).
  * @param defaults - what an alias presets (`only`, `fix`, `withTests`); a flag on the command line wins.
  * @throws CliUsageError when a phase or format is unknown.
  * @example
@@ -62,6 +62,7 @@ export function parseCheckOptions(
     affected: values["affected"] === true,
     base,
     phases,
+    keepGoing: values["keep-going"] === true,
     format,
     withTests,
   };

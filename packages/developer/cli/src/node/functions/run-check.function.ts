@@ -2,8 +2,9 @@
  * Stackra file contract:
  * Purpose: `runCheck(context, defaults)`, the run behind `stackra check` and its aliases: the selected phases in order
  *          at the workspace root, each over the affected files when `--affected`, stopping after the first phase that
- *          fails; then the findings (text lines grouped by phase, a JSON array, or GitHub annotations) and, except for
- *          JSON, the summary table. Resolves 1 when any phase failed, 0 otherwise.
+ *          fails unless `--keep-going`; a finding that repeats an earlier phase's on the same file
+ *          (`SAME_MEANING_RULES`) is reported once; then the findings (text lines grouped by phase, a JSON array, or
+ *          GitHub annotations) and, except for JSON, the summary table. Resolves 1 when any phase failed, 0 otherwise.
  * Boundary: writes findings and the table to `io.out` and phase notices to `io.err`; a phase that throws becomes one
  *           `crash` finding, never an uncaught error. Reads `CI` from the environment.
  * Runtime: node
@@ -14,6 +15,7 @@ import type { Finding } from "@stackra/repo-checks/node";
 
 import { CHECK_PHASES } from "#node/constants/check-phases.constant";
 import { changedFiles } from "#node/functions/changed-files.function";
+import { dropSameMeaning } from "#node/functions/drop-same-meaning.function";
 import { formatFinding } from "#node/functions/format-finding.function";
 import { isAffected } from "#node/functions/is-affected.function";
 import { parseCheckOptions } from "#node/functions/parse-check-options.function";
@@ -50,10 +52,10 @@ export async function runCheck(
   };
   const rows: { phase: string; status: string; findings: number; fixable: number; ms: number }[] =
     [];
-  const all: Finding[] = [];
+  let all: readonly Finding[] = [];
   let failed = false;
   for (const phase of CHECK_PHASES.filter(({ name }) => options.phases.includes(name))) {
-    if (failed) {
+    if (failed && !options.keepGoing) {
       rows.push({ phase: phase.name, status: "not run", findings: 0, fixable: 0, ms: 0 });
       continue;
     }
@@ -71,18 +73,21 @@ export async function runCheck(
         ],
       };
     }
-    const findings =
+    const deduped = dropSameMeaning(
+      all,
       files === undefined
         ? outcome.findings
-        : outcome.findings.filter((f) => isAffected(f.path, files));
+        : outcome.findings.filter((f) => isAffected(f.path, files)),
+    );
+    const findings = deduped.incoming;
     const status =
       outcome.skipped !== undefined
         ? `skipped (${outcome.skipped})`
         : findings.some((f) => f.severity === "error")
           ? "failed"
           : "passed";
-    failed = status === "failed";
-    all.push(...findings);
+    failed ||= status === "failed";
+    all = [...deduped.earlier, ...findings];
     rows.push({
       phase: phase.name,
       status,

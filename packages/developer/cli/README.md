@@ -54,14 +54,18 @@ that cannot start.
 
 `stackra check` runs the same way in core, in every product, in lefthook and in CI. Phases, in order: `config`,
 `format` (oxfmt), `spelling` (cspell), `secrets` (gitleaks), `structure`, `docs`, `lint` (oxlint), `gen`
-(`stackra gen --check`), `typecheck` (`turbo run typecheck`), `catalogues`, `spec` (the repository's spec gates) and,
+(`stackra gen --check`), `typecheck` (`turbo run typecheck`; `tsc --noEmit -p <member>` per member when turbo is
+absent or refuses a dependency cycle), `catalogues`, `spec` (the repository's spec gates) and,
 opt-in, `test` (`turbo run test`). The `config`, `structure`, `docs` and `catalogues` checks come from
-`@stackra/repo-checks`. The run stops after the first phase that fails. A phase whose tool is not installed in the
+`@stackra/repo-checks`. The run stops after the first phase that fails, unless `--keep-going` (every phase runs, so a baseline is one call).
+A finding two tools report for the same file under the same meaning (gen `two_declarations_in_file` and lint
+`stackra(one-declaration-per-file)`) is reported once, by the earlier phase, noting the later tool agrees; the pairs
+live in `SAME_MEANING_RULES`. A phase whose tool is not installed in the
 repository reports `skipped (not installed)`.
 
 Flags: `--fix` (oxfmt writes, oxlint autofixes, `stackra gen` writes, then each checks again), `--affected` (only the
 files changed since `--base`, default `origin/main`, plus staged, unstaged and untracked ones), `--only <phase,…>`,
-`--skip <phase,…>`, `--with-tests`, `--format text|json|github` and `--base <ref>`.
+`--skip <phase,…>`, `--with-tests`, `--keep-going`, `--format text|json|github` and `--base <ref>`.
 
 Output: one line per finding, `path:line:col  tool/rule  message  [fixable]`, grouped by phase, then a table of phase,
 status, findings, fixable count and duration. `--format json` prints only the findings array

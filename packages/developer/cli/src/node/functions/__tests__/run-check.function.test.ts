@@ -84,6 +84,53 @@ describe("runCheck", () => {
     expect(later).not.toHaveBeenCalled();
   });
 
+  it("runs every phase after a failure with --keep-going and still exits 1", async () => {
+    const later = vi.fn(async () => ({ findings: [] }));
+    state.phases = [
+      phase("format", async () => ({
+        findings: [
+          toolFinding(
+            { name: "format", tool: "oxfmt", adr: null },
+            { rule: "format", message: "x" },
+          ),
+        ],
+      })),
+      phase("lint", later),
+    ];
+    const { code, text } = await check({ only: "format,lint", "keep-going": true });
+    expect(code).toBe(1);
+    expect(later).toHaveBeenCalledOnce();
+    expect(text).toMatch(/lint\s+passed/);
+  });
+
+  it("reports a gen finding lint already reported on the same file once", async () => {
+    state.phases = [
+      phase("lint", async () => ({
+        findings: [
+          toolFinding(
+            { name: "lint", tool: "oxlint", adr: null },
+            { rule: "stackra(one-declaration-per-file)", path: "a.ts", message: "split" },
+          ),
+        ],
+      })),
+      phase("gen", async () => ({
+        findings: [
+          toolFinding(
+            { name: "gen", tool: "gen", adr: null },
+            { rule: "two_declarations_in_file", path: "a.ts", message: "two" },
+          ),
+        ],
+      })),
+    ];
+    const { text } = await check({ only: "lint,gen", "keep-going": true, format: "json" });
+    expect(JSON.parse(text)).toEqual([
+      expect.objectContaining({
+        rule: "stackra(one-declaration-per-file)",
+        message: "split (gen two_declarations_in_file agrees)",
+      }),
+    ]);
+  });
+
   it("turns a throwing phase into a crash finding and keeps warnings from failing", async () => {
     state.phases = [
       phase("lint", async () => ({

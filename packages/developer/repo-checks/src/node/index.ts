@@ -84,6 +84,7 @@ export { structureFindings } from "#node/functions/structure-findings.function";
 export { testFileFor } from "#node/functions/test-file-for.function";
 export { tierFor } from "#node/functions/tier-for.function";
 export { toFinding } from "#node/functions/to-finding.function";
+export { walkRepoFiles } from "#node/functions/walk-repo-files.function";
 export type { Finding } from "#node/types/finding.type";
 export type { KindFolder } from "#node/types/kind-folder.type";
 export type { PackageManifest } from "#node/types/package-manifest.type";

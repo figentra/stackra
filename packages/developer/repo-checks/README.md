@@ -25,7 +25,8 @@ TypeScript 6 compiler API the doc standard parses with).
 | `docs`                  | `docsFindings`      | contract headers, TSDoc on exports and members, no types in doc tags (ADR 0007)                   |
 | `catalogues`            | `catalogueFindings` | lang catalogues complete per locale, ICU placeholders match `en` (ADR 0403)                       |
 
-Each runner takes a `RepoContext` (`readRepoContext(root)`: the root and its git file list) and returns `RawFinding`s
+Each runner takes a `RepoContext` (`readRepoContext(root)`: the root and its git file list, or, when git cannot list it, the files `walkRepoFiles`
+finds honouring `.gitignore`) and returns `RawFinding`s
 (`{ rule, dir, text }`, the text the old scripts printed). `toFinding(phase, raw)` locates one as a `Finding`
 (`{ phase, tool, rule, path, line, column, message, severity, fixable, adr }`), the shape `stackra check --format json`
 prints.

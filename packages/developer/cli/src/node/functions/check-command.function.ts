@@ -20,11 +20,12 @@ const OPTIONS: NonNullable<CliCommand["options"]> = {
   format: { type: "string" },
   base: { type: "string" },
   "with-tests": { type: "boolean" },
+  "keep-going": { type: "boolean" },
 };
 
 /** The flag synopsis shared by the check commands. */
 const FLAGS =
-  "[--fix] [--affected] [--only <phase,…>] [--skip <phase,…>] [--format text|json|github] [--base <ref>] [--with-tests]";
+  "[--fix] [--affected] [--only <phase,…>] [--skip <phase,…>] [--format text|json|github] [--base <ref>] [--with-tests] [--keep-going]";
 
 /**
  * A check command.
