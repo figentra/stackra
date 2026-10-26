@@ -8,7 +8,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0305 (rules 10 to 13); ADR 0294 (rule R2).
  */
-import { bodyOf } from "#core/functions/body-of.function";
+import { bodyOf } from "../functions/body-of.function.ts";
 import type { AstNode } from "#core/types/ast-node.type";
 import type { Rule } from "#core/types/rule.type";
 

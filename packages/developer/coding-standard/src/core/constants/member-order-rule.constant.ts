@@ -9,7 +9,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0128 (decision 7, the conventions put in force by ADR 0268 R1); ADR 0129 (decision 1).
  */
-import { bodyOf } from "#core/functions/body-of.function";
+import { bodyOf } from "../functions/body-of.function.ts";
 import type { AstNode } from "#core/types/ast-node.type";
 import type { Rule } from "#core/types/rule.type";
 

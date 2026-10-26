@@ -30,5 +30,8 @@
     "oxfmt": "catalog:quality",
     "oxlint": "catalog:quality",
     "vitest": "catalog:quality"
+  },
+  "peerDependencies": {
+    "@stackra/coding-standard": "workspace:*"
   }
 }

@@ -7,7 +7,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0128 (decision 3); ADR 0129 (decision 1).
  */
-import { bodyOf } from "#core/functions/body-of.function";
+import { bodyOf } from "../functions/body-of.function.ts";
 import type { Rule } from "#core/types/rule.type";
 
 /** Refuses `#private` class members. */

@@ -1,7 +1,12 @@
 // Stackra file contract:
 // Purpose: the repo-wide entry carrying the tier dependency rule (docs/constitution/boundaries.md):
 //          a package (packages/<category>/<name>) never imports an app, a service or encore.dev; no service
-//          imports another service's internals; nothing imports a package's src/ deep path. CI fails on a violation.
+//          imports another service's internals or package (./contracts included) and no app imports a service
+//          (ADR 0117, 0260); nothing imports a package's src/ deep path; a package's entries point one way:
+//          contracts, then core, then node/react/native, then testing (ADR 0117, 0294). CI fails on a violation.
+//          `.*/**/services/**` in the package tier group is relative only: a #core/services/... subpath is a
+//          package group, not the tier. Every override also repeats the retired kind-decorator/define* import ban
+//          from base.jsonc (ADR 0294 R6, ADR 0305 r3).
 //          oxlint does not merge one rule across overrides: the LAST matching override's options replace the
 //          earlier ones. So the no-restricted-imports overrides run general → specific and each one repeats the
 //          patterns of the broader ones it narrows (STA-167). Keep that when adding a pattern.
@@ -9,8 +14,8 @@
 {
   "extends": ["./node.jsonc"],
   "overrides": [
+    // Every file: no deep import into a package's src/.
     {
-      // Every file: no deep import into a package's src/.
       "files": ["**/*.ts", "**/*.tsx"],
       "rules": {
         "no-restricted-imports": [
@@ -21,14 +26,25 @@
                 "group": ["@stackra/*/src/*"],
                 "message": "Deep imports into a package's src/ bypass its public exports. Import the package or one of its declared subpaths.",
               },
+              {
+                "group": ["@stackra/*", "@stackra/*/*"],
+                "importNames": [
+                  "defineConfig",
+                  "defineToken",
+                  "defineDriver",
+                  "Injectable",
+                  "Inject",
+                ],
+                "message": "Retired: no @Injectable/@Inject (a class is a provider by its kind; the parameter type names the dependency) and define* only for defineApp/Service/Package/Worker (ADR 0294 R6, ADR 0305 r3).",
+              },
             ],
           },
         ],
       },
     },
+    // Services: + another service's internals and another service's package (./contracts included).
     {
-      // Services: + another service's internals.
-      "files": ["**/services/**/*.ts"],
+      "files": ["**/services/**/*.ts", "**/services/**/*.tsx"],
       "rules": {
         "no-restricted-imports": [
           "error",
@@ -48,13 +64,66 @@
                 ],
                 "message": "A service's internal/, entities/ and db.ts are private. Call it through ~encore/clients or subscribe to its events.ts Topic.",
               },
+              {
+                "group": ["@*/service-*", "@*/service-*/*", "@*/*-service-*", "@*/*-service-*/*"],
+                "message": "A service never imports another service's package, its ./contracts included. Reach it through its generated client (#stackra/clients) or its events (ADR 0117, ADR 0260).",
+              },
+              {
+                "group": ["@stackra/*", "@stackra/*/*"],
+                "importNames": [
+                  "defineConfig",
+                  "defineToken",
+                  "defineDriver",
+                  "Injectable",
+                  "Inject",
+                ],
+                "message": "Retired: no @Injectable/@Inject (a class is a provider by its kind; the parameter type names the dependency) and define* only for defineApp/Service/Package/Worker (ADR 0294 R6, ADR 0305 r3).",
+              },
             ],
           },
         ],
       },
     },
+    // Apps: + no service package or source (ADR 0003, ADR 0260).
     {
-      // Packages: + no app, service or encore.dev.
+      "files": ["**/apps/**/*.ts", "**/apps/**/*.tsx"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["@stackra/*/src/*"],
+                "message": "Deep imports into a package's src/ bypass its public exports. Import the package or one of its declared subpaths.",
+              },
+              {
+                "group": [
+                  "@*/service-*",
+                  "@*/service-*/*",
+                  "@*/*-service-*",
+                  "@*/*-service-*/*",
+                  ".*/**/services/**",
+                ],
+                "message": "An app never imports a service, its ./contracts included. Call it through the generated client (#stackra/clients) or the api-client (ADR 0003, ADR 0260).",
+              },
+              {
+                "group": ["@stackra/*", "@stackra/*/*"],
+                "importNames": [
+                  "defineConfig",
+                  "defineToken",
+                  "defineDriver",
+                  "Injectable",
+                  "Inject",
+                ],
+                "message": "Retired: no @Injectable/@Inject (a class is a provider by its kind; the parameter type names the dependency) and define* only for defineApp/Service/Package/Worker (ADR 0294 R6, ADR 0305 r3).",
+              },
+            ],
+          },
+        ],
+      },
+    },
+    // Packages: + no app, service or encore.dev.
+    {
       "files": ["**/packages/**/*.ts", "**/packages/**/*.tsx"],
       "rules": {
         "no-restricted-imports": [
@@ -68,7 +137,7 @@
               {
                 "group": [
                   "**/apps/**",
-                  ".*/**/services/**", // relative only: a #core/services/... subpath is a package group, not the tier
+                  ".*/**/services/**",
                   "**/workers/**",
                   "encore.dev",
                   "encore.dev/*",
@@ -76,12 +145,24 @@
                 ],
                 "message": "A package never imports an app, a service or encore.dev. Move the dependency the other way or publish a contract in @stackra/contracts; talk to services through the generated api-client.",
               },
+              {
+                "group": ["@stackra/*", "@stackra/*/*"],
+                "importNames": [
+                  "defineConfig",
+                  "defineToken",
+                  "defineDriver",
+                  "Injectable",
+                  "Inject",
+                ],
+                "message": "Retired: no @Injectable/@Inject (a class is a provider by its kind; the parameter type names the dependency) and define* only for defineApp/Service/Package/Worker (ADR 0294 R6, ADR 0305 r3).",
+              },
             ],
           },
         ],
       },
     },
-    // Domain archetype layers (ADR-0004 §1): the direction is enforced here, not in review.
+    // Entry and layer direction (ADR-0004 §1, ADR 0117, ADR 0294): contracts, then core, then node/react/native, then
+    // testing. The direction is enforced here, not in review. core holds both the archetype layer and the v3 entry.
     {
       "files": ["**/packages/*/*/src/core/**/*.ts", "**/packages/*/*/src/core/**/*.tsx"],
       "rules": {
@@ -96,7 +177,7 @@
               {
                 "group": [
                   "**/apps/**",
-                  ".*/**/services/**", // relative only: a #core/services/... subpath is a package group, not the tier
+                  ".*/**/services/**",
                   "**/workers/**",
                   "encore.dev",
                   "encore.dev/*",
@@ -112,11 +193,88 @@
                   "#infrastructure/*",
                   "#presentation",
                   "#presentation/*",
+                  "#node",
+                  "#node/*",
+                  "#react",
+                  "#react/*",
+                  "#native",
+                  "#native/*",
+                  "#testing",
+                  "#testing/*",
                   "react",
                   "react-dom",
                   "react-native",
                 ],
-                "message": "core is domain meaning: it imports no other layer and no host library (ADR-0004 §1).",
+                "message": "core is isomorphic domain meaning: it imports no other layer, no runtime entry (node/, react/, native/, testing/) and no host library (ADR-0004 \u00a71, ADR 0117).",
+              },
+              {
+                "group": ["@stackra/*", "@stackra/*/*"],
+                "importNames": [
+                  "defineConfig",
+                  "defineToken",
+                  "defineDriver",
+                  "Injectable",
+                  "Inject",
+                ],
+                "message": "Retired: no @Injectable/@Inject (a class is a provider by its kind; the parameter type names the dependency) and define* only for defineApp/Service/Package/Worker (ADR 0294 R6, ADR 0305 r3).",
+              },
+            ],
+          },
+        ],
+      },
+    },
+    {
+      "files": ["**/packages/*/*/src/contracts/**/*.ts", "**/packages/*/*/src/contracts/**/*.tsx"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["@stackra/*/src/*"],
+                "message": "Deep imports into a package's src/ bypass its public exports. Import the package or one of its declared subpaths.",
+              },
+              {
+                "group": [
+                  "**/apps/**",
+                  ".*/**/services/**",
+                  "**/workers/**",
+                  "encore.dev",
+                  "encore.dev/*",
+                  "~encore/*",
+                ],
+                "message": "A package never imports an app, a service or encore.dev. Move the dependency the other way or publish a contract in @stackra/contracts; talk to services through the generated api-client.",
+              },
+              {
+                "group": [
+                  "#core",
+                  "#core/*",
+                  "#config",
+                  "#config/*",
+                  "#node",
+                  "#node/*",
+                  "#react",
+                  "#react/*",
+                  "#native",
+                  "#native/*",
+                  "#testing",
+                  "#testing/*",
+                  "react",
+                  "react-dom",
+                  "react-native",
+                ],
+                "message": "contracts is the leaf entry: types, ports and enums only. It imports no other entry and no host library (ADR 0117, ADR 0294).",
+              },
+              {
+                "group": ["@stackra/*", "@stackra/*/*"],
+                "importNames": [
+                  "defineConfig",
+                  "defineToken",
+                  "defineDriver",
+                  "Injectable",
+                  "Inject",
+                ],
+                "message": "Retired: no @Injectable/@Inject (a class is a provider by its kind; the parameter type names the dependency) and define* only for defineApp/Service/Package/Worker (ADR 0294 R6, ADR 0305 r3).",
               },
             ],
           },
@@ -140,7 +298,7 @@
               {
                 "group": [
                   "**/apps/**",
-                  ".*/**/services/**", // relative only: a #core/services/... subpath is a package group, not the tier
+                  ".*/**/services/**",
                   "**/workers/**",
                   "encore.dev",
                   "encore.dev/*",
@@ -158,7 +316,18 @@
                   "react-dom",
                   "react-native",
                 ],
-                "message": "application imports core only and owns its ports; an adapter or a delivery surface never reaches it (ADR-0004 §1).",
+                "message": "application imports core only and owns its ports; an adapter or a delivery surface never reaches it (ADR-0004 \u00a71).",
+              },
+              {
+                "group": ["@stackra/*", "@stackra/*/*"],
+                "importNames": [
+                  "defineConfig",
+                  "defineToken",
+                  "defineDriver",
+                  "Injectable",
+                  "Inject",
+                ],
+                "message": "Retired: no @Injectable/@Inject (a class is a provider by its kind; the parameter type names the dependency) and define* only for defineApp/Service/Package/Worker (ADR 0294 R6, ADR 0305 r3).",
               },
             ],
           },
@@ -182,7 +351,7 @@
               {
                 "group": [
                   "**/apps/**",
-                  ".*/**/services/**", // relative only: a #core/services/... subpath is a package group, not the tier
+                  ".*/**/services/**",
                   "**/workers/**",
                   "encore.dev",
                   "encore.dev/*",
@@ -192,7 +361,18 @@
               },
               {
                 "group": ["#infrastructure", "#infrastructure/*"],
-                "message": "presentation translates for application and core; it never reaches infrastructure (ADR-0004 §1). Bind adapters in the module.",
+                "message": "presentation translates for application and core; it never reaches infrastructure (ADR-0004 \u00a71). Bind adapters in the module.",
+              },
+              {
+                "group": ["@stackra/*", "@stackra/*/*"],
+                "importNames": [
+                  "defineConfig",
+                  "defineToken",
+                  "defineDriver",
+                  "Injectable",
+                  "Inject",
+                ],
+                "message": "Retired: no @Injectable/@Inject (a class is a provider by its kind; the parameter type names the dependency) and define* only for defineApp/Service/Package/Worker (ADR 0294 R6, ADR 0305 r3).",
               },
             ],
           },
@@ -216,7 +396,7 @@
               {
                 "group": [
                   "**/apps/**",
-                  ".*/**/services/**", // relative only: a #core/services/... subpath is a package group, not the tier
+                  ".*/**/services/**",
                   "**/workers/**",
                   "encore.dev",
                   "encore.dev/*",
@@ -226,11 +406,22 @@
               },
               {
                 "group": ["#infrastructure", "#infrastructure/*"],
-                "message": "presentation translates for application and core; it never reaches infrastructure (ADR-0004 §1). Bind adapters in the module.",
+                "message": "presentation translates for application and core; it never reaches infrastructure (ADR-0004 \u00a71). Bind adapters in the module.",
               },
               {
                 "group": ["#presentation/web", "#presentation/web/*"],
                 "message": "native composes react, never web (ADR-0004).",
+              },
+              {
+                "group": ["@stackra/*", "@stackra/*/*"],
+                "importNames": [
+                  "defineConfig",
+                  "defineToken",
+                  "defineDriver",
+                  "Injectable",
+                  "Inject",
+                ],
+                "message": "Retired: no @Injectable/@Inject (a class is a provider by its kind; the parameter type names the dependency) and define* only for defineApp/Service/Package/Worker (ADR 0294 R6, ADR 0305 r3).",
               },
             ],
           },
@@ -238,8 +429,180 @@
       },
     },
     {
-      // Packages declare modules with legacy decorators (ADR-0005): the same relaxations as the
-      // decorators preset, applied from the root so the boundary rule above still holds for it.
+      "files": ["**/packages/*/*/src/node/**/*.ts", "**/packages/*/*/src/node/**/*.tsx"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["@stackra/*/src/*"],
+                "message": "Deep imports into a package's src/ bypass its public exports. Import the package or one of its declared subpaths.",
+              },
+              {
+                "group": [
+                  "**/apps/**",
+                  ".*/**/services/**",
+                  "**/workers/**",
+                  "encore.dev",
+                  "encore.dev/*",
+                  "~encore/*",
+                ],
+                "message": "A package never imports an app, a service or encore.dev. Move the dependency the other way or publish a contract in @stackra/contracts; talk to services through the generated api-client.",
+              },
+              {
+                "group": ["#react", "#react/*", "#native", "#native/*", "#testing", "#testing/*"],
+                "message": "node/ is a runtime entry beside react/ and native/: it imports contracts, core and config, never a sibling runtime entry or testing/ (ADR 0117, ADR 0294).",
+              },
+              {
+                "group": ["@stackra/*", "@stackra/*/*"],
+                "importNames": [
+                  "defineConfig",
+                  "defineToken",
+                  "defineDriver",
+                  "Injectable",
+                  "Inject",
+                ],
+                "message": "Retired: no @Injectable/@Inject (a class is a provider by its kind; the parameter type names the dependency) and define* only for defineApp/Service/Package/Worker (ADR 0294 R6, ADR 0305 r3).",
+              },
+            ],
+          },
+        ],
+      },
+    },
+    {
+      "files": ["**/packages/*/*/src/react/**/*.ts", "**/packages/*/*/src/react/**/*.tsx"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["@stackra/*/src/*"],
+                "message": "Deep imports into a package's src/ bypass its public exports. Import the package or one of its declared subpaths.",
+              },
+              {
+                "group": [
+                  "**/apps/**",
+                  ".*/**/services/**",
+                  "**/workers/**",
+                  "encore.dev",
+                  "encore.dev/*",
+                  "~encore/*",
+                ],
+                "message": "A package never imports an app, a service or encore.dev. Move the dependency the other way or publish a contract in @stackra/contracts; talk to services through the generated api-client.",
+              },
+              {
+                "group": ["#node", "#node/*", "#native", "#native/*", "#testing", "#testing/*"],
+                "message": "react/ runs in the browser and React Native: it never imports node/, native/ or testing/ (ADR 0004, ADR 0117).",
+              },
+              {
+                "group": ["@stackra/*", "@stackra/*/*"],
+                "importNames": [
+                  "defineConfig",
+                  "defineToken",
+                  "defineDriver",
+                  "Injectable",
+                  "Inject",
+                ],
+                "message": "Retired: no @Injectable/@Inject (a class is a provider by its kind; the parameter type names the dependency) and define* only for defineApp/Service/Package/Worker (ADR 0294 R6, ADR 0305 r3).",
+              },
+            ],
+          },
+        ],
+      },
+    },
+    {
+      "files": ["**/packages/*/*/src/native/**/*.ts", "**/packages/*/*/src/native/**/*.tsx"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["@stackra/*/src/*"],
+                "message": "Deep imports into a package's src/ bypass its public exports. Import the package or one of its declared subpaths.",
+              },
+              {
+                "group": [
+                  "**/apps/**",
+                  ".*/**/services/**",
+                  "**/workers/**",
+                  "encore.dev",
+                  "encore.dev/*",
+                  "~encore/*",
+                ],
+                "message": "A package never imports an app, a service or encore.dev. Move the dependency the other way or publish a contract in @stackra/contracts; talk to services through the generated api-client.",
+              },
+              {
+                "group": ["#node", "#node/*", "#testing", "#testing/*", "react-dom", "react-dom/*"],
+                "message": "native/ composes react, never node/, testing/ or react-dom (ADR 0004, ADR 0117).",
+              },
+              {
+                "group": ["@stackra/*", "@stackra/*/*"],
+                "importNames": [
+                  "defineConfig",
+                  "defineToken",
+                  "defineDriver",
+                  "Injectable",
+                  "Inject",
+                ],
+                "message": "Retired: no @Injectable/@Inject (a class is a provider by its kind; the parameter type names the dependency) and define* only for defineApp/Service/Package/Worker (ADR 0294 R6, ADR 0305 r3).",
+              },
+            ],
+          },
+        ],
+      },
+    },
+    // Tests and fixtures of a package drive every entry (they import #testing and #core from anywhere): the package
+    // tier rule only. testing/ itself needs no block: it may import every entry, and no production entry imports it.
+    {
+      "files": [
+        "**/packages/*/*/src/*/**/__tests__/**/*.ts",
+        "**/packages/*/*/src/*/**/__tests__/**/*.tsx",
+        "**/packages/*/*/src/*/**/__fixtures__/**/*.ts",
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["@stackra/*/src/*"],
+                "message": "Deep imports into a package's src/ bypass its public exports. Import the package or one of its declared subpaths.",
+              },
+              {
+                "group": [
+                  "**/apps/**",
+                  ".*/**/services/**",
+                  "**/workers/**",
+                  "encore.dev",
+                  "encore.dev/*",
+                  "~encore/*",
+                ],
+                "message": "A package never imports an app, a service or encore.dev. Move the dependency the other way or publish a contract in @stackra/contracts; talk to services through the generated api-client.",
+              },
+              {
+                "group": ["@stackra/*", "@stackra/*/*"],
+                "importNames": [
+                  "defineConfig",
+                  "defineToken",
+                  "defineDriver",
+                  "Injectable",
+                  "Inject",
+                ],
+                "message": "Retired: no @Injectable/@Inject (a class is a provider by its kind; the parameter type names the dependency) and define* only for defineApp/Service/Package/Worker (ADR 0294 R6, ADR 0305 r3).",
+              },
+            ],
+          },
+        ],
+      },
+    },
+    {
+      // Packages declare modules with legacy decorators (ADR-0005): the decorators preset's `new-cap` and
+      // empty-class relaxations, applied from the root so the boundary rule above still holds for it.
+      // `consistent-type-imports` stays on from base here (ADR 0005 d5): a class used as a value keeps its
+      // value import; only the opt-in decorators preset turns it off.
       "files": [
         "**/packages/**/*.ts",
         "**/packages/**/*.tsx",
@@ -247,7 +610,6 @@
         "**/apps/**/*.tsx",
       ],
       "rules": {
-        "typescript/consistent-type-imports": "off",
         "eslint/new-cap": ["warn", { "capIsNew": false }],
         "typescript/no-extraneous-class": ["error", { "allowWithDecorator": true }],
       },

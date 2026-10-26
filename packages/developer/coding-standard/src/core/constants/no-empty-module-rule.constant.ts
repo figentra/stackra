@@ -6,9 +6,9 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0305 (rule 15, an empty module file fails lint as `empty_module`).
  */
-import { bodyOf } from "#core/functions/body-of.function";
-import { fileKind } from "#core/functions/file-kind.function";
-import { rootIdentifier } from "#core/functions/root-identifier.function";
+import { bodyOf } from "../functions/body-of.function.ts";
+import { fileKind } from "../functions/file-kind.function.ts";
+import { rootIdentifier } from "../functions/root-identifier.function.ts";
 import type { AstNode } from "#core/types/ast-node.type";
 import type { Rule } from "#core/types/rule.type";
 

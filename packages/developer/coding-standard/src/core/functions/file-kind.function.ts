@@ -7,7 +7,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (rules R1 and R3); ADR 0305 (one declaration per file).
  */
-import { baseName } from "#core/functions/base-name.function";
+import { baseName } from "./base-name.function.ts";
 
 const KIND_FILE = /^[^.]+\.(?<kind>[a-z][a-z0-9]*(?:-[a-z0-9]+)*)\.ts$/;
 

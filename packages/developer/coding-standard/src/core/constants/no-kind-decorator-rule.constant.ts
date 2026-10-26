@@ -8,9 +8,9 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (rule R6 and decision 23); ADR 0305 (rule 3).
  */
-import { KIND_BASES } from "#core/constants/kind-bases.constant";
-import { RETIRED_DECORATORS } from "#core/constants/retired-decorators.constant";
-import { rootIdentifier } from "#core/functions/root-identifier.function";
+import { KIND_BASES } from "./kind-bases.constant.ts";
+import { RETIRED_DECORATORS } from "./retired-decorators.constant.ts";
+import { rootIdentifier } from "../functions/root-identifier.function.ts";
 import type { Rule } from "#core/types/rule.type";
 
 const BANNED = new Set([...Object.values(KIND_BASES).flat(), ...RETIRED_DECORATORS]);

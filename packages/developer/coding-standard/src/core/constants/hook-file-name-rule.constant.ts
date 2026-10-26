@@ -8,9 +8,9 @@
  * Governing contract: ADR 0128 (decision 5, amendment 2026-10-21); ADR 0294 (rule R7, hooks are `use-<name>.ts`);
  *                     ADR 0129 (decision 1).
  */
-import { baseName } from "#core/functions/base-name.function";
-import { bodyOf } from "#core/functions/body-of.function";
-import { kebabCase } from "#core/functions/kebab-case.function";
+import { baseName } from "../functions/base-name.function.ts";
+import { bodyOf } from "../functions/body-of.function.ts";
+import { kebabCase } from "../functions/kebab-case.function.ts";
 import type { AstNode } from "#core/types/ast-node.type";
 import type { Rule } from "#core/types/rule.type";
 

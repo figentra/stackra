@@ -23,6 +23,9 @@ Add the plugin to an oxlint config and turn on the rules you want. The plugin re
 
 Run `oxlint --fix` to apply the autofixes. The rules take no options.
 
+In this repository the oxlint base preset (`@stackra/oxlint-config`) loads the plugin from its source file and turns
+every rule on at `error` (ADR 0421), so lint needs no built dist. Other repositories load the built package as above.
+
 ## Entry points
 
 | Import                     | Holds                                                          |

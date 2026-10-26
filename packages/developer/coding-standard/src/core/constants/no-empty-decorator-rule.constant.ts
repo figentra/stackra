@@ -8,7 +8,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (rule R6, empty decorators are banned; the decorator test).
  */
-import { rootIdentifier } from "#core/functions/root-identifier.function";
+import { rootIdentifier } from "../functions/root-identifier.function.ts";
 import type { Rule } from "#core/types/rule.type";
 
 /** Refuses decorators called with no arguments or an empty object. */

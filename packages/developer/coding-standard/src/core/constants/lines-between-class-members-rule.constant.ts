@@ -7,7 +7,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (rule R9, lint autofixes one blank line between class members).
  */
-import { bodyOf } from "#core/functions/body-of.function";
+import { bodyOf } from "../functions/body-of.function.ts";
 import type { AstNode } from "#core/types/ast-node.type";
 import type { Rule } from "#core/types/rule.type";
 

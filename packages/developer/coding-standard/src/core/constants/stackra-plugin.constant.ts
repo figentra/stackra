@@ -5,28 +5,30 @@
  *          and enabled per rule as `"stackra/<rule>": "error"`.
  * Boundary: data only; registers the rules and turns none on. Which rules run, and where, is the oxlint preset's
  *           choice (`@stackra/oxlint-config`). The default export is the same object, because oxlint loads a plugin
- *           module's default export.
+ *           module's default export. The repo's oxlint base preset loads this file from source (Node strips its
+ *           types, ADR 0421), so this file and every rule it reaches import values only by relative `.ts` paths;
+ *           a `#core/...` value import would not resolve in Node. Type imports may keep the alias.
  * Runtime: isomorphic
  * Governing contract: ADR 0129 (decisions 1 and 5); ADR 0294 (Enforcement, STA-338 and STA-340); ADR 0305 (rules
- *                     13 and 15); ADR 0127 2026-10-24 note (coding-standard in developer, entry `.`).
+ *                     13 and 15); ADR 0127 2026-10-24 note (coding-standard in developer, entry `.`); ADR 0421.
  */
-import { BASE_MATCHES_SUFFIX_RULE } from "#core/constants/base-matches-suffix-rule.constant";
-import { DISABLE_NEEDS_REASON_RULE } from "#core/constants/disable-needs-reason-rule.constant";
-import { DOCBLOCK_SHAPE_RULE } from "#core/constants/docblock-shape-rule.constant";
-import { FILE_CONTRACT_RULE } from "#core/constants/file-contract-rule.constant";
-import { HOOK_FILE_NAME_RULE } from "#core/constants/hook-file-name-rule.constant";
-import { LINES_BETWEEN_CLASS_MEMBERS_RULE } from "#core/constants/lines-between-class-members-rule.constant";
-import { MEMBER_ORDER_RULE } from "#core/constants/member-order-rule.constant";
-import { MULTILINE_DECORATOR_OPTIONS_RULE } from "#core/constants/multiline-decorator-options-rule.constant";
-import { NO_EMPTY_DECORATOR_RULE } from "#core/constants/no-empty-decorator-rule.constant";
-import { NO_EMPTY_MODULE_RULE } from "#core/constants/no-empty-module-rule.constant";
-import { NO_ENUM_RULE } from "#core/constants/no-enum-rule.constant";
-import { NO_HASH_PRIVATE_RULE } from "#core/constants/no-hash-private-rule.constant";
-import { NO_KIND_DECORATOR_RULE } from "#core/constants/no-kind-decorator-rule.constant";
-import { NO_PARAMETER_DECORATOR_RULE } from "#core/constants/no-parameter-decorator-rule.constant";
-import { NO_RAW_KEY_LITERAL_RULE } from "#core/constants/no-raw-key-literal-rule.constant";
-import { NO_TENANT_VOCABULARY_RULE } from "#core/constants/no-tenant-vocabulary-rule.constant";
-import { ONE_DECLARATION_PER_FILE_RULE } from "#core/constants/one-declaration-per-file-rule.constant";
+import { BASE_MATCHES_SUFFIX_RULE } from "./base-matches-suffix-rule.constant.ts";
+import { DISABLE_NEEDS_REASON_RULE } from "./disable-needs-reason-rule.constant.ts";
+import { DOCBLOCK_SHAPE_RULE } from "./docblock-shape-rule.constant.ts";
+import { FILE_CONTRACT_RULE } from "./file-contract-rule.constant.ts";
+import { HOOK_FILE_NAME_RULE } from "./hook-file-name-rule.constant.ts";
+import { LINES_BETWEEN_CLASS_MEMBERS_RULE } from "./lines-between-class-members-rule.constant.ts";
+import { MEMBER_ORDER_RULE } from "./member-order-rule.constant.ts";
+import { MULTILINE_DECORATOR_OPTIONS_RULE } from "./multiline-decorator-options-rule.constant.ts";
+import { NO_EMPTY_DECORATOR_RULE } from "./no-empty-decorator-rule.constant.ts";
+import { NO_EMPTY_MODULE_RULE } from "./no-empty-module-rule.constant.ts";
+import { NO_ENUM_RULE } from "./no-enum-rule.constant.ts";
+import { NO_HASH_PRIVATE_RULE } from "./no-hash-private-rule.constant.ts";
+import { NO_KIND_DECORATOR_RULE } from "./no-kind-decorator-rule.constant.ts";
+import { NO_PARAMETER_DECORATOR_RULE } from "./no-parameter-decorator-rule.constant.ts";
+import { NO_RAW_KEY_LITERAL_RULE } from "./no-raw-key-literal-rule.constant.ts";
+import { NO_TENANT_VOCABULARY_RULE } from "./no-tenant-vocabulary-rule.constant.ts";
+import { ONE_DECLARATION_PER_FILE_RULE } from "./one-declaration-per-file-rule.constant.ts";
 import type { Plugin } from "#core/types/plugin.type";
 
 /**

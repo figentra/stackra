@@ -1,6 +1,8 @@
 // Stackra file contract:
 // Purpose: shared oxlint base — correctness is an error, suspicious a warning, `any` and unused code are errors;
-//          house rules shipped as JS plugins (feature-flags/no-plan-targeting, ADR 0213 d7) are errors.
+//          house rules shipped as JS plugins are errors: every rule of @stackra/coding-standard (`stackra/*`, ADR 0129,
+//          0294, 0305) and feature-flags/no-plan-targeting (ADR 0213 d7). Files are kebab-case (ADR 0006 d1); the
+//          retired kind decorators and define* helpers are banned at the import (ADR 0294 R6, ADR 0305 r3).
 //          Do NOT extend directly from a workspace; extend a role preset (node/react/decorators).
 // Scope: every TypeScript/JavaScript file in the repo
 // Owner: release-operations
@@ -9,8 +11,10 @@
   "$schema": "../../../../node_modules/oxlint/configuration_schema.json",
   "plugins": ["typescript", "unicorn", "oxc", "import", "jsdoc"],
   // Loaded from source (Node strips the types), so lint never needs a built dist and the root lint task keeps no
-  // ^build dependency (ADR 0421). The path is relative to this file; the plugin is a file, not a package dependency.
+  // ^build dependency (ADR 0421). The paths are relative to this file. @stackra/coding-standard is also a peer of this
+  // package so a consumer outside the repo installs it (it then names `@stackra/coding-standard`, not this path).
   "jsPlugins": [
+    "../../../developer/coding-standard/src/core/constants/stackra-plugin.constant.ts",
     "../../../state/feature-flags/src/lint/constants/feature-flags-lint-plugin.constant.ts",
   ],
   "categories": { "correctness": "error", "suspicious": "warn" },
@@ -30,6 +34,41 @@
     "import/no-cycle": "error",
     // A flag is a release switch, never a commercial right (ADR 0213 decision 7).
     "feature-flags/no-plan-targeting": "error",
+    // House rules (@stackra/coding-standard): every rule the plugin registers, all at error. Keep this list equal
+    // to STACKRA_PLUGIN.rules; presets.test.ts checks it.
+    "stackra/base-matches-suffix": "error",
+    "stackra/disable-needs-reason": "error",
+    "stackra/docblock-shape": "error",
+    "stackra/file-contract": "error",
+    "stackra/hook-file-name": "error",
+    "stackra/lines-between-class-members": "error",
+    "stackra/member-order": "error",
+    "stackra/multiline-decorator-options": "error",
+    "stackra/no-empty-decorator": "error",
+    "stackra/no-empty-module": "error",
+    "stackra/no-enum": "error",
+    "stackra/no-hash-private": "error",
+    "stackra/no-kind-decorator": "error",
+    "stackra/no-parameter-decorator": "error",
+    "stackra/no-raw-key-literal": "error",
+    "stackra/no-tenant-vocabulary": "error",
+    "stackra/one-declaration-per-file": "error",
+    // Files under src/ are kebab-case (ADR 0006 d1, ADR 0231); directories are a validator check.
+    "unicorn/filename-case": ["error", { "case": "kebabCase" }],
+    // Retired kind decorators and define* helpers (ADR 0294 R6, ADR 0305 r3). boundaries.jsonc repeats this
+    // pattern in every no-restricted-imports override, because the last matching override replaces it.
+    "no-restricted-imports": [
+      "error",
+      {
+        "patterns": [
+          {
+            "group": ["@stackra/*", "@stackra/*/*"],
+            "importNames": ["defineConfig", "defineToken", "defineDriver", "Injectable", "Inject"],
+            "message": "Retired: no @Injectable/@Inject (a class is a provider by its kind; the parameter type names the dependency) and define* only for defineApp/Service/Package/Worker (ADR 0294 R6, ADR 0305 r3).",
+          },
+        ],
+      },
+    ],
     // TSDoc tags (ADR 0007, amended 2026-10-21). oxlint 1.86 has no jsdoc/no-types, so the `{type}`
     // ban lives in tools/scripts/doc-standard.mjs.
     "jsdoc/check-tag-names": [
@@ -56,6 +95,14 @@
       },
     ],
   },
+  "overrides": [
+    {
+      // The plugin's own source and tests name the rule it ships (`no-tenant-vocabulary`); the vocabulary ban
+      // targets product code, not the rule that defines it.
+      "files": ["**/developer/coding-standard/src/**/*.ts"],
+      "rules": { "stackra/no-tenant-vocabulary": "off" },
+    },
+  ],
   "ignorePatterns": [
     "**/dist/**",
     "**/build/**",

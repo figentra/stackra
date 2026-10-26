@@ -2,11 +2,14 @@
  * Stackra file contract:
  * Purpose: unit tests of `STACKRA_PLUGIN`: the plugin is named `stackra`, is the module's default export, registers
  *          every house rule under its kebab-case name, and each rule carries messages, an empty options schema and
- *          a `create` function; fixable rules say so.
+ *          a `create` function; fixable rules say so; and every non-test source file stays loadable from source by
+ *          Node (no `#` value import, ADR 0421).
  * Boundary: test only; imports the subject through its `#core` alias and the runner through @stackra/testing.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing).
  */
+import { readdirSync, readFileSync } from "node:fs";
+
 import { describe, expect, it } from "@stackra/testing";
 
 import STACKRA_PLUGIN_DEFAULT, { STACKRA_PLUGIN } from "#core/constants/stackra-plugin.constant";
@@ -56,5 +59,20 @@ describe("STACKRA_PLUGIN", () => {
       "lines-between-class-members",
       "multiline-decorator-options",
     ]);
+  });
+});
+
+describe("the source-loaded plugin files", () => {
+  it("import values only by relative .ts paths, so oxlint loads them without a dist", () => {
+    for (const group of ["constants", "functions"]) {
+      const dir = new URL(`../../${group}/`, import.meta.url);
+      for (const file of readdirSync(dir).filter((name) => name.endsWith(".ts"))) {
+        const text = readFileSync(new URL(file, dir), "utf8");
+        const valueImports = [...text.matchAll(/^import (?!type )[^;]*from "([^"]+)";/gm)].map(
+          (match) => match[1] ?? "",
+        );
+        for (const specifier of valueImports) expect(specifier).toMatch(/^\.\.?\/.*\.ts$/);
+      }
+    }
   });
 });

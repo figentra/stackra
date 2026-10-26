@@ -10,11 +10,11 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (rules R1 and R3, decision 16); ADR 0305 (rules 1 to 3).
  */
-import { KIND_BASES } from "#core/constants/kind-bases.constant";
-import { bodyOf } from "#core/functions/body-of.function";
-import { fileKind } from "#core/functions/file-kind.function";
-import { pascalCase } from "#core/functions/pascal-case.function";
-import { rootIdentifier } from "#core/functions/root-identifier.function";
+import { KIND_BASES } from "./kind-bases.constant.ts";
+import { bodyOf } from "../functions/body-of.function.ts";
+import { fileKind } from "../functions/file-kind.function.ts";
+import { pascalCase } from "../functions/pascal-case.function.ts";
+import { rootIdentifier } from "../functions/root-identifier.function.ts";
 import type { AstNode } from "#core/types/ast-node.type";
 import type { Rule } from "#core/types/rule.type";
 

@@ -12,6 +12,9 @@ programming model v3.1 shape (ADR 0294, 0305).
 - A rule is `src/core/constants/<name>-rule.constant.ts` exporting `<NAME>_RULE`, registered in
   `stackra-plugin.constant.ts`, with a `RuleTester` test in `src/core/constants/__tests__/`. A rule's description
   ends with its governing ADR in parentheses.
+- Source-loadable (ADR 0421): the core oxlint base preset loads `stackra-plugin.constant.ts` from source, so every
+  non-test file imports values only by relative `.ts` paths (`./x.constant.ts`, `../functions/x.function.ts`).
+  Type imports may use `#core/*`. A test in `stackra-plugin.constant.test.ts` checks it.
 - Rules take no options. An autofix never drops a comment and never removes code that changes behaviour.
 - No `node:*` import and no file system read: rules work from the file name and the syntax tree only.
 - One declaration per file (ADR 0305); a file opens with the Stackra file contract and every export carries TSDoc.
