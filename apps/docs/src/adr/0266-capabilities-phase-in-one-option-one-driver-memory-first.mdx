@@ -57,6 +57,15 @@ planned — the conformance test of [0144](/adr/0144-metadata-registry-and-explo
 `memory` and a fake in `./testing`, and `stackra gen` fails when a declared capability names a driver that is not in its list. Nothing checks
 this yet.
 
+## Addendum 2026-10-26: the database memory driver is PGlite
+
+`@stackra/database/testing` ships `MemoryDatabaseDriver`, the `memory` candidate of the Database port: PGlite (Postgres compiled to
+WASM) in process, through `@mikro-orm/pglite`. It applies the member's compiled migrations, or the entity schema, before the first query,
+and the testing plugin connects a fresh one per testing module unless another database is already connected. Unit tests
+(`.test.ts`) keep real Postgres SQL, constraints and migrations without Docker; Testcontainers stays the integration tier
+(`.int.test.ts`, [0269](/adr/0269-stackra-testing-package-entries-and-helper-placement) decision 3). The driver lives on the testing entry only and never in a
+runtime path. Source: STA-597 run 4 (178 unit tests failed with "No database is connected"); STA-1292.
+
 ## Supersedes and sources
 
 Supersedes: none. Amends: none. Sources: owner settlement in chat, 2026-10-21 (programming model question Q12).
