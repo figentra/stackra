@@ -3,15 +3,17 @@
  * Purpose: unit tests of `gcpBaseline` under Pulumi's mocks: the provider is pinned to the environment's resolved
  *          project and region with the cost labels; the data key, the files bucket on it, the infra service account
  *          and the budget are created and exported; the non-production stop deploys the billing-detach function on the
- *          budget topic; an environment that does not own its project creates no budget; what the runway leaves out
- *          is not created; a malformed project id fails.
+ *          budget topic; the Encore Cloud service account gets `ENCORE_ROLES` and a malformed one fails; an environment
+ *          that does not own its project creates no budget; what the runway leaves out is not created; a malformed
+ *          project id fails.
  * Boundary: test only; no engine and no cloud call (ADR 0171: agents never apply a stack).
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0354, ADR 0171, ADR 0172, ADR 0222, ADR 0401.
+ * Governing contract: ADR 0022 (test placement); ADR 0354, ADR 0171, ADR 0172, ADR 0222, ADR 0401, ADR 0435.
  */
 import { describe, expect, it } from "@stackra/testing";
 
 import type { GcpBaselineConfig } from "#core/types/gcp-baseline-config.type";
+import { ENCORE_ROLES } from "#node/constants/encore-roles.constant";
 import { gcpBaseline } from "#node/functions/gcp-baseline.function";
 import { mockPulumi } from "#testing/functions/mock-pulumi.function";
 import { outputOf } from "#testing/functions/output-of.function";
@@ -42,6 +44,7 @@ const STAGING: GcpBaselineConfig = {
   },
   files: { versioning: true, expireNoncurrentDays: 30, origins: [] },
   github: { org: "acme", repo: "acme-platform" },
+  encore: null,
 };
 
 /** A value a provider may receive JSON-encoded. */
@@ -114,6 +117,30 @@ describe("gcpBaseline", () => {
       foundation.budgetTopic,
       foundation.spendStopFunction,
     ]).toEqual([null, null, null, null, null]);
+  });
+
+  it("grants the Encore Cloud service account its roles and never owner", async () => {
+    const engine = await mockPulumi({
+      ...STACK,
+      encore: { account: "encore-acme@encore-cloud.iam.gserviceaccount.com" },
+    });
+    gcpBaseline({ ...STAGING, encore: { serviceAccount: "ref:encore.account" } });
+
+    const roles = (await engine.settled())
+      .filter((resource) => resource.name.startsWith("acme-staging-encore-"))
+      .map((resource) => resource.inputs);
+    expect(roles.map((inputs) => inputs["role"])).toEqual([...ENCORE_ROLES]);
+    expect(new Set(roles.map((inputs) => inputs["member"]))).toEqual(
+      new Set(["serviceAccount:encore-acme@encore-cloud.iam.gserviceaccount.com"]),
+    );
+    expect(roles.map((inputs) => inputs["role"])).not.toContain("roles/owner");
+  });
+
+  it("refuses an Encore Cloud principal that is not a service account", async () => {
+    await mockPulumi(STACK);
+    expect(() =>
+      gcpBaseline({ ...STAGING, encore: { serviceAccount: "someone@example.com" } }),
+    ).toThrow(TypeError);
   });
 
   it("detaches billing at the non-production stop through a function on the budget topic", async () => {

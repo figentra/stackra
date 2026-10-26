@@ -2,9 +2,9 @@
  * Stackra file contract:
  * Purpose: `INFRA_RUNWAY_SCHEMA`, the parts of an already parsed root runway that the GCP foundation and runtime
  *          read, checked strictly: the project, `providers.gcp` (default region, projects, required labels, billing
- *          account, budgets and the non-production spend stop), the GitHub repository, the regions, and per
- *          environment its `cloud`, regions, dedicated deployments, database server and backups, network, bucket
- *          defaults and file disks. Every other key passes through untouched.
+ *          account, budgets and the non-production spend stop, the Encore Cloud service account), the GitHub
+ *          repository, the regions, and per environment its destinations, `cloud`, regions, dedicated deployments,
+ *          database server and backups, network, bucket defaults and file disks. Every other key passes through untouched.
  * Boundary: internal; `parseInfraRunway` is its only reader. `@stackra/runway` owns the root schema, whose provider
  *           blocks stay open (`providers` has a catch-all), so `providers.gcp` reaches here unchecked; this schema
  *           narrows only what infra-gcp reads. Which project an environment runs in is its runway `cloud` (ADR 0400),
@@ -13,7 +13,8 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0354 (decisions 1, 3 and 4), ADR 0171 (`ref:` values from the stacks repository), ADR 0172
  *                     (decision 5: budgets, tags and the non-production stop, applied per project), ADR 0186
- *                     (backups), ADR 0296 (root runway), ADR 0401 (spend stop, Cloud SQL recovery, deploy roles).
+ *                     (backups), ADR 0296 (root runway), ADR 0401 (spend stop, Cloud SQL recovery, deploy roles),
+ *                     ADR 0435 (the Encore Cloud roles).
  */
 import { z } from "zod";
 
@@ -39,6 +40,14 @@ const BILLING_ACCOUNT = z
   .regex(
     new RegExp(`^([A-F0-9]{6}-[A-F0-9]{6}-[A-F0-9]{6}|${REF})$`),
     "Expected a billing account id or ref:<path>",
+  );
+
+/** A service account email, or `ref:<path>`; never a group or a user, since it is granted project roles. */
+const SERVICE_ACCOUNT = z
+  .string()
+  .regex(
+    new RegExp(`^([a-z][a-z0-9-]{4,28}[a-z0-9]@[a-z0-9.-]+\\.iam\\.gserviceaccount\\.com|${REF})$`),
+    "Expected a service account email or ref:<path>",
   );
 
 /** A GitHub organisation or repository name; never a wildcard, since it ends up in a Workload Identity condition. */
@@ -73,6 +82,7 @@ const DISK = z.looseObject({ disk: z.string().optional() }).optional();
 
 /** One environment, as far as the GCP foundation reads it. */
 const ENVIRONMENT = z.looseObject({
+  destinations: z.record(z.string(), z.string()).optional(),
   cloud: CLOUD.optional(),
   regions: z.array(z.string()).optional(),
   dedicated: z
@@ -136,6 +146,7 @@ export const INFRA_RUNWAY_SCHEMA = z.looseObject({
           monthly: z.record(z.string(), AMOUNT).default({}),
         })
         .optional(),
+      encore: z.looseObject({ serviceAccount: SERVICE_ACCOUNT }).optional(),
     }),
     github: z.looseObject({ org: GITHUB_NAME.optional(), repo: GITHUB_NAME.optional() }).optional(),
   }),

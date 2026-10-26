@@ -5,13 +5,14 @@
  *          (`member`, `deployable`, `isolate`, `group`, `cpu`, `memory`, `instances`) at the top and in an
  *          environment; a dedicated resource needs a non-empty reason; the engines are ADR 0296's four; a grouped
  *          topology needs groups and lists a member once; the root's environments, `secrets` and `destinations` are
- *          closed while its provider and target blocks and the member size blocks stay open; a var reference names
+ *          closed while its provider and target blocks and the member size blocks stay open; the config layer selects
+ *          the Postgres action stores by name; a var reference names
  *          exactly one origin; a version other than 3, a misspelt environment, a duplicated secret and an inverted
  *          instance range fail with their paths.
  * Boundary: test only; the fixtures mirror the template's `runway.yaml` files, trimmed.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0296 (decisions 1, 2
- *                     and 5, its 2026-10-24 note, and enforcement); ADR 0227.
+ *                     and 5, its 2026-10-24 note, and enforcement); ADR 0227; ADR 0294 (decision 4, store drivers).
  */
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
@@ -195,6 +196,29 @@ describe("parseRunway", () => {
     expect(root.targets?.["electron-release"]?.["feed"]).toEqual({
       publicOrigin: "https://downloads.acme.example",
     });
+  });
+
+  it("selects the Postgres action stores by name in the config layer, root and member alike", () => {
+    const stores = { idempotency: "postgres", rateLimit: "postgres" };
+    const root = parseRunway("root", {
+      ...ROOT,
+      environments: {
+        ...ROOT.environments,
+        production: {
+          ...ROOT.environments.production,
+          defaults: { service: { config: { "actions.stores": stores } } },
+        },
+      },
+    });
+    const service = parseRunway("service", {
+      version: 3,
+      environments: { staging: { config: { "actions.stores": stores } } },
+    });
+
+    expect(root.environments.production?.defaults?.service?.config?.["actions.stores"]).toEqual(
+      stores,
+    );
+    expect(service.environments.staging?.config?.["actions.stores"]).toEqual(stores);
   });
 
   it("refuses root keys in a member runway", () => {

@@ -2,12 +2,14 @@
  * Stackra file contract:
  * Purpose: unit tests of `gcpBaselineConfig`: the runway `cloud` gives staging and production their projects, labels,
  *          budget, files bucket and repository; production runs in its KSA region and never stops spend; a dedicated
- *          tenant gets its own project, prefix and tenant label; project ownership follows promotion order; every
- *          missing budget input is reported with its path; a deployment not on GCP, a project the runway does not
- *          list, a project name too long for a service account id and an upload origin that is not https fail.
+ *          tenant gets its own project, prefix and tenant label; project ownership follows promotion order; the Encore
+ *          Cloud service account is named only where services deploy to Encore Cloud, and must be a service account;
+ *          every missing budget input is reported with its path; a deployment not on GCP, a project the runway does
+ *          not list, a project name too long for a service account id and an upload origin that is not https fail.
  * Boundary: test only; roots are built through `parseRunway`, so each is a valid root runway.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0354, ADR 0171, ADR 0172, ADR 0222, ADR 0400, ADR 0401.
+ * Governing contract: ADR 0022 (test placement); ADR 0354, ADR 0171, ADR 0172, ADR 0222, ADR 0400, ADR 0401,
+ *                     ADR 0435.
  */
 import { RunwayInvalidError } from "@stackra/runway";
 import { describe, expect, it } from "@stackra/testing";
@@ -58,7 +60,32 @@ describe("gcpBaselineConfig", () => {
         origins: ["https://console.staging.acme.example"],
       },
       github: { org: "acme", repo: "acme-platform" },
+      encore: null,
     });
+  });
+
+  it("names the Encore Cloud service account only where services deploy to Encore Cloud", () => {
+    const root = gcpRoot((draft) => {
+      at(draft, "providers", "gcp").encore = {
+        serviceAccount: "encore-acme@encore-cloud.iam.gserviceaccount.com",
+      };
+      at(draft, "environments", "staging").destinations = { services: "encore-cloud" };
+    });
+
+    expect(gcpBaselineConfig(root, "staging").encore).toEqual({
+      serviceAccount: "encore-acme@encore-cloud.iam.gserviceaccount.com",
+    });
+    expect(gcpBaselineConfig(root, "production").encore).toBeNull();
+  });
+
+  it("refuses an Encore principal that is not a service account", () => {
+    const root = gcpRoot((draft) => {
+      at(draft, "providers", "gcp").encore = { serviceAccount: "someone@example.com" };
+    });
+
+    expect(pathsOf(() => gcpBaselineConfig(root, "staging"))).toEqual([
+      "providers.gcp.encore.serviceAccount",
+    ]);
   });
 
   it("runs production in its KSA region, in its own project, and never stops its spend", () => {

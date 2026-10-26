@@ -2,12 +2,12 @@
  * Stackra file contract:
  * Purpose: `GcpBaselineConfig`, the typed config of one deployment's GCP foundation, derived from the root runway by
  *          `gcpBaselineConfig` and read by the `gcpBaseline` Pulumi program: the deployment (project, region, stack
- *          prefix, ownership, labels), the budget with its non-production spend stop, the files bucket and the GitHub
- *          repository the deploy service account trusts.
+ *          prefix, ownership, labels), the budget with its non-production spend stop, the files bucket, the GitHub
+ *          repository the deploy service account trusts and the Encore Cloud service account that runs its services.
  * Boundary: type only; plain JSON, so gen can write it as `<env>.infra-gcp.config.json`. Project ids and numbers, the
  *           billing account and amounts may still be `ref:<path>`; no value is a secret.
  * Runtime: isomorphic
- * Governing contract: ADR 0354 (decisions 3 and 4), ADR 0171, ADR 0172 (decision 5), ADR 0296, ADR 0400, ADR 0401.
+ * Governing contract: ADR 0354 (decisions 3 and 4), ADR 0171, ADR 0172 (decision 5), ADR 0296, ADR 0400, ADR 0401, ADR 0435.
  */
 import type { GcpDeployment } from "#core/types/gcp-deployment.type";
 
@@ -40,4 +40,9 @@ export type GcpBaselineConfig = GcpDeployment & {
   } | null;
   /** The repository whose deploy job may impersonate the deployment's infra service account, or `null`. */
   readonly github: { readonly org: string; readonly repo: string } | null;
+  /**
+   * The Encore Cloud service account granted `ENCORE_ROLES` on the project (an email or `ref:<path>`), or `null` when
+   * the environment's services do not deploy to `encore-cloud` or the runway names no `providers.gcp.encore`.
+   */
+  readonly encore: { readonly serviceAccount: string } | null;
 };

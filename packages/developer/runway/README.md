@@ -21,6 +21,7 @@ tool configs call so no port, origin or feed URL is typed outside a `runway.yaml
 | `.`         | `runwayJsonSchema(kind)`                                                                | the zod schemas as JSON Schema, tested against the shipped canonical files  |
 | `.`         | `deployTargets(root, environment)`                                                      | every place a release lands, in release order (regions, dedicated tenants)  |
 | `.`         | `deploy`, `promote`, `rollback`                                                         | ship, promote and roll back a release through the providers                 |
+| `.`         | `withDeployLock`, `DeployLock`, `RunwayLockedError`                                     | one apply per environment at a time (ADR 0435)                              |
 | `.`         | `RunwayProvider`                                                                        | the provider port: plan, apply, verify, rollback and current (ADR 0352 d3)  |
 | `./node`    | `EncoreCloudProviderDriver`, `EasProviderDriver`                                        | the `encore-cloud` and `eas` providers                                      |
 | `./node`    | `runCommand`, `CommandRunner`                                                           | how a provider runs its CLI, with no shell                                  |
@@ -125,6 +126,16 @@ const results = await promote(root, "staging", "production", providers); // one 
 
 A store build cannot be rolled back; the EAS provider refuses it. Helm and Zarf output for on-prem waits for the first
 prospect (ADR 0400).
+
+One apply runs per environment at a time (ADR 0435): wrap a deploy, promotion, rollback or settings promotion in
+`withDeployLock`, which holds `runway:deploy:<project>:<environment>` through your `@stackra/locking` `Locks` and
+throws `RunwayLockedError` at once when another apply holds it.
+
+```ts
+await withDeployLock(root, "production", locks, () =>
+  promote(root, "staging", "production", providers),
+);
+```
 
 ## Runway facts
 

@@ -4,8 +4,8 @@
  *          the runway readers the generated configs import (`baseUrlOf`, `devPorts`, `updateFeed`, folded in from the
  *          old `./ports` entry, owner Q4; `productOf` and `brandsOf`, ADR 0335), the version 3 runway check, the JSON Schema derivation, the placement
  *          check, the region check and reader (ADR 0354), the deploy targets, the `RunwayProvider` port and the
- *          `deploy`, `promote` and `rollback` orchestration (ADR 0352 decision 3, ADR 0400), their enums, errors and
- *          types.
+ *          `deploy`, `promote` and `rollback` orchestration (ADR 0352 decision 3, ADR 0400), the per-environment
+ *          deploy lock (`withDeployLock`, ADR 0435), their enums, errors and types.
  * Boundary: names each re-export and declares nothing. The zod schemas, the facts reader and the dev facts path stay
  *           internal; Vite-facing helpers are `./node`'s.
  * Runtime: isomorphic
@@ -20,6 +20,7 @@ export { RunwayKind } from "#core/enums/runway-kind.enum";
 export { TopologyMode } from "#core/enums/topology-mode.enum";
 export { RunwayDeployFailedError } from "#core/errors/runway-deploy-failed.error";
 export { RunwayInvalidError } from "#core/errors/runway-invalid.error";
+export { RunwayLockedError } from "#core/errors/runway-locked.error";
 export { RunwayUnresolvedError } from "#core/errors/runway-unresolved.error";
 export { baseUrlOf } from "#core/functions/base-url-of.function";
 export { brandsOf } from "#core/functions/brands-of.function";
@@ -35,9 +36,11 @@ export { regionsOf } from "#core/functions/regions-of.function";
 export { rollback } from "#core/functions/rollback.function";
 export { runwayJsonSchema } from "#core/functions/runway-json-schema.function";
 export { updateFeed } from "#core/functions/update-feed.function";
+export { withDeployLock } from "#core/functions/with-deploy-lock.function";
 export { RunwayProvider } from "#core/ports/runway-provider.port";
 export type { AppRunway } from "#core/types/app-runway.type";
 export type { Brand } from "#core/types/brand.type";
+export type { DeployLock } from "#core/types/deploy-lock.type";
 export type { DeployRecord } from "#core/types/deploy-record.type";
 export type { DeployResult } from "#core/types/deploy-result.type";
 export type { DeployStep } from "#core/types/deploy-step.type";

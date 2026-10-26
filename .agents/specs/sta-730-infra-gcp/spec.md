@@ -22,7 +22,7 @@
 - **Cross-service events**: none
 - **Tenancy and data**: none in code; every value is runway data or a tenant setting
 - **Secrets**: none; ids are `ref:<path>` values from the stack config, CLIs use their own login
-- **ADR needed**: ADR 0400, ADR 0401 (new)
+- **ADR needed**: ADR 0400, ADR 0401, ADR 0435 (new, Proposed: the Encore Cloud roles)
 - **New dependencies**: none
 - **Deploy modes**: SaaS
 - **Licence tier**: free (MIT)
@@ -45,16 +45,18 @@ CLI or anything that touches a cloud account.
 - **FR-004**: `gcpRuntimeConfig` and `gcpRuntime`: Cloud SQL Postgres with backups in its region, retention, point-in-time recovery, deletion protection, private IP or connector-only TLS, and the data key when passed.
 - **FR-005**: The infra service account holds `DEPLOY_ROLES`, never `roles/owner`.
 - **FR-006**: `GcpHealthIndicatorDriver` checks the region's endpoint.
+- **FR-007**: Where `destinations.services` is `encore-cloud` and `providers.gcp.encore.serviceAccount` is set, that service account holds `ENCORE_ROLES` on the project (`encoreAccess`), never `roles/owner`; a principal that is not a service account email is refused.
 
 ## Success Criteria
 
-- **SC-001**: Every new symbol has a test beside it: `src/core/functions/__tests__/{gcp-baseline-config,gcp-runtime-config,service-account-id,parse-infra-runway}.function.test.ts`, `src/node/functions/__tests__/{gcp-baseline,gcp-runtime,spend-stop,ci-access}.function.test.ts`.
+- **SC-001**: Every new symbol has a test beside it: `src/core/functions/__tests__/{gcp-baseline-config,gcp-runtime-config,service-account-id,parse-infra-runway}.function.test.ts`, `src/node/functions/__tests__/{gcp-baseline,gcp-runtime,spend-stop,ci-access,encore-access}.function.test.ts`.
 - **SC-002**: `pnpm verify` is green for the members (run in the separate testing workflow).
 
 ## Out of scope
 
-Copies to a backup project (ADR 0186, owner); projects per product and region (ADR 0354 OQ2, owner); the Encore Cloud role on GCP (runtime undecided); the spend stop on a sandbox project (owner).
+Copies to a backup project (ADR 0186, owner); projects per product and region (ADR 0354 OQ2, owner); the spend stop on a sandbox project (owner).
 
 ## Status history
 
 - 2026-10-26 · — → Implementing · Claude (wave 11 builder) · spec written with the change (owner mode).
+- 2026-10-26 · Implementing · Claude (wave 12 builder) · FR-007 added: the Encore Cloud roles on GCP (ADR 0435), owner mode, nothing run.

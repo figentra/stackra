@@ -44,6 +44,7 @@ exists.
 | data key        | a key ring `<project>-<env>` in the region and the key `data`, rotating yearly, destroyed versions kept 30 days                                                                                                                                                             |
 | files bucket    | when a service default puts `filesystem.disk` or `media.disk` on `s3` (GCS through its S3-compatible endpoint): uniform access, public access prevention, the data key, the media CORS rule, `uploads/` deleted after a day, replaced versions after `expireNoncurrentDays` |
 | deploy identity | the environment's Workload Identity pool `<env>-github` and provider admitting only `repo:<org>/<repo>:environment:<env>`, the service account `<project>-<env>-infra` it may impersonate, holding `DEPLOY_ROLES` (never `roles/owner`, ADR 0401)                           |
+| Encore roles    | when the environment's `destinations.services` is `encore-cloud` and `providers.gcp.encore.serviceAccount` is set: that service account holds `ENCORE_ROLES` on the project instead of the `roles/owner` Encore's connect flow asks for (ADR 0435)                          |
 | spend stop      | outside production, when `budgets.stopNonProdAt` is set: a Cloud Function on the budget topic that detaches the project's billing at that percentage (ADR 0401)                                                                                                             |
 | budget          | from the project's first environment: a monthly budget on the billing account, scoped to the project, in the runway's currency, a rule at each threshold, notifications to a Pub/Sub topic                                                                                  |
 
@@ -58,6 +59,8 @@ providers:
       ksa: { id: ref:gcp.projects.ksa.id, number: ref:gcp.projects.ksa.number }
       firm: { id: ref:gcp.projects.firm.id, number: ref:gcp.projects.firm.number }
     requiredLabels: [env, service, tenant]
+    encore:
+      serviceAccount: ref:encore.serviceAccount # the account Encore Cloud's GCP connect flow shows
     billingAccount: ref:gcp.billingAccount
     budgets:
       currency: EUR # the billing account's currency
@@ -73,6 +76,7 @@ environments:
     cloud: { name: gcp, account: nonprod }
   production:
     cloud: { name: gcp, account: ksa } # which project: ADR 0400, replacing providers.gcp.environments
+    destinations: { services: encore-cloud } # grants the Encore roles (ADR 0435)
     regions: [ksa]
     shared:
       database:
