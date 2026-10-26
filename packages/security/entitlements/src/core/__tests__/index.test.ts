@@ -25,20 +25,28 @@ import * as contracts from "#contracts/index";
 describe("@stackra/entitlements", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(entitlements).sort()).toEqual([
+      "CatalogueChangeBackdatedError",
+      "CatalogueVersionNotPendingError",
       "Entitlement",
       "EntitlementKind",
       "EntitlementSource",
       "LimitReachedError",
       "LimitReservationService",
+      "MemoryCatalogueVersionsDriver",
       "MemoryPlanSnapshotsDriver",
       "MemorySeatLedgerDriver",
+      "PlanCatalogueService",
       "PlanEntitlementCheckDriver",
       "PlanSnapshotEntitlementSourceDriver",
       "SeatLimitReachedError",
       "SeatMeterService",
+      "SecondApproverRequiredError",
       "entitlementKey",
       "limitAllows",
+      "planCatalogueOf",
       "registerEntitlements",
+      "tierPlan",
+      "versionInForce",
     ]);
   });
 

@@ -1,0 +1,65 @@
+---
+title: "0391 — Plan-catalogue admin: dated versions, changes at renewal and a second approver for discounts"
+description: "Proposed · 2026-10-26"
+---
+
+<Note>
+  Proposed. It gives the plan catalogue of config-model section 2 a home in Stackra. It reads with
+  [0215](/adr/0215-entitlements) (entitlements and plan snapshots),
+  [0220](/adr/0220-stackra-money-and-the-ledger-package) (money),
+  [0355](/adr/0355-marketplace-one-integration-with-up-to-five-roles-one-app-market-and-open-to-any-developer)
+  (fee-schedule records) and
+  [0363](/adr/0363-configuration-over-code-business-behaviour-is-data-rules-workflows-and-studios)
+  (configuration over code). Linear STA-799.
+</Note>
+
+## Context
+
+Nothing can be sold until each product's commercial shape exists: tiers, seat kinds, modules, limits, trials, offers,
+price lists per regional tier and currency, fee schedules and rate cards. The owner ruled that all of it is admin data
+seeded from each product's seed pack (`plan-catalogue:<product>`, `price-list:<product>`, `offer:<name>`,
+`fee-schedule:<name>`, `rate-card:<name>`), that a price change reaches a subscriber at renewal (OS-82), and that a
+discount needs a second approver (OS-381). The OS billing service owns the records and each product console renders
+them. What Stackra must ship is the mechanism every console and the billing engine share. Alternatives weighed: one
+new package (rejected: `@stackra/entitlements` already owns plan snapshots and `@stackra/pricing` already owns money
+evaluation, and a third package would duplicate both) and records as typed code constants (rejected: config, not
+code).
+
+## Decision
+
+1. **Record shapes.** The plan catalogue (tiers with features, limits, seats per kind and included modules; seat
+   kinds; modules; trials) is typed in `@stackra/entitlements`, which turns a tier plus add-ons into a `PlanSnapshot`
+   (`tierPlan`). Price lists, offers and rate cards are typed in `@stackra/pricing` over `Money` and `UnitPrice`.
+   Fee schedules stay `@stackra/registry`'s `FeeSchedule` (0355 decision 8). Each kind has a pure reader
+   (`planCatalogueOf`, `planPriceListsOf`, `offerOf`, `rateCardOf`) that refuses a malformed row with a `RangeError`
+   naming the row id.
+2. **Dated versions.** Every record is a list of versions (`CatalogueVersion`: key, kind, number, rows,
+   `effectiveFrom`, state, proposer, decider) behind the `CatalogueVersions` port, with a memory driver. A version is
+   never edited; a change is a new version, numbered under a lock per record key.
+3. **Changes at renewal.** A term uses the approved version with the latest `effectiveFrom` at or before the term's
+   start (`versionInForce`). A running subscription passes its current term start, so a change reaches it at its next
+   renewal. A change dated before now is refused (`catalogue_change_backdated`).
+4. **Second approver.** A version that is a discount (every offer; a price list that lowers or drops a price, decided
+   by `isCatalogueDiscount`, never by the proposer) waits as `pending` until someone other than its proposer approves
+   it (`second_approver_required`); it can be rejected or withdrawn. Other changes are approved on proposal.
+5. **Seeding.** `PlanCatalogueService.seed` stores each `seed-pack:<product>` record that has no version yet as its
+   approved version 1, decided by the pack key. A record the admin already holds is never overwritten by a seed.
+6. **Consoles.** The admin screens are `@stackra/panel` resources in the OS billing service over actions that call
+   `PlanCatalogueService`; product consoles render the same resources. No package ships a screen for them.
+
+## Consequences
+
+Every product sells through the same records and engine; a price, trial length or seat kind is a row, so the
+placeholders of config-model section 2 change without a release. OS billing owns the server driver of
+`CatalogueVersions`, the actions and the resources. The CLI's seed-record kinds do not yet list `fee-schedule` and
+`rate-card`; until they do those two records are created in the admin, not seeded.
+
+## Enforcement
+
+Unit tests beside each reader and `PlanCatalogueService` (`packages/security/entitlements`,
+`packages/commerce/pricing`). planned — an OS billing contract test that every proposal passes `isCatalogueDiscount`.
+
+## Supersedes and sources
+
+`Supersedes: none`. Sources: `notes/handover/config-model.md` section 2; `notes/handover/stackra-package-needs.md`
+(plan-catalogue admin row); owner OS-82, OS-381, OS-232, XP-1.

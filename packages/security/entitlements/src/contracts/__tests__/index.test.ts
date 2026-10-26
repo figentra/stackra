@@ -13,6 +13,8 @@ import * as contracts from "#contracts/index";
 describe("@stackra/entitlements/contracts", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(contracts).sort()).toEqual([
+      "CatalogueVersionState",
+      "CatalogueVersions",
       "EntitlementSource",
       "EntitlementUsage",
       "PlanSnapshots",
