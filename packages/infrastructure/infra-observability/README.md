@@ -21,6 +21,10 @@ Pulumi program for the core stack.
 | `./node` | `observabilityStack(plan)`                           | inside the Pulumi program: every resource of the plan, and its outputs |
 | `./node` | `logPipeline`, `sentryProjects`, `heartbeatMonitors` | the parts, for a stack that composes its own                           |
 
+`heartbeatMonitors`, `logPipeline`, `statusPage` and `observabilityStack` declare their return types, so the
+declarations name the Better Stack classes through `pulumi-better-uptime` and `pulumi-logtail`, not their `bin/` files
+(STA-1220).
+
 ## Where the facts come from
 
 | Fact                                       | Source                                                                      |

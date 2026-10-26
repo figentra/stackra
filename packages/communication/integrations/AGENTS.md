@@ -26,6 +26,8 @@ Provider integrations, connections and their store (ADR 0308). Member at `packag
 - `managedClient`, the placeholder lookup, the token calls, the JWT signer and the registries stay internal. `./testing`
   imports `.`, `./contracts` and `@stackra/container/testing` only (ADR 0269 decision 3). `./contracts` is the leaf: it
   imports `@stackra/contracts` and the `Money` and `Address` types only. `.` reads `valueOf` of `@stackra/market-packs`.
+- Annotate every export whose inferred type would reach an unexported or deep-path type (`ExtensionBase`, `ActionBase`,
+  `PassBase`, a provider's `bin/` class, `@types/react`'s `Element`): the declaration build fails with TS2883 (STA-1220).
 
 ## This package
 

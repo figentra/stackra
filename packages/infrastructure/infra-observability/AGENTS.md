@@ -25,6 +25,8 @@ Telemetry infrastructure (ADR 0171 decision 2, ADR 0184). Member at `packages/in
 - A secret is an output wrapped in `pulumi.secret` (the OTLP token, the heartbeat URLs) or one the provider marks
   (the archive key); never a literal, a file or a log line (ADR 0173).
 - Telemetry carries no personal data (ADR 0184 decision 5); nothing here adds a field that could hold one.
+- Annotate every export whose inferred type would reach an unexported or deep-path type (`ExtensionBase`, `ActionBase`,
+  `PassBase`, a provider's `bin/` class, `@types/react`'s `Element`): the declaration build fails with TS2883 (STA-1220).
 
 ## PII
 

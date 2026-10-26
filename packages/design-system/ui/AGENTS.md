@@ -55,6 +55,8 @@ extending the kind's base class. The group table is the docs page `standards/str
 - No `enum`, no `#private` fields, no `app()`/`config()`/`logger()` helpers, no `*.stories.*`.
 - A package that defines decorators ships an Explorer at `src/<entry>/ui.explorer.ts`.
 - Coverage meets the shared gate (lines/functions 80, branches 70).
+- Annotate every export whose inferred type would reach an unexported or deep-path type (`ExtensionBase`, `ActionBase`,
+  `PassBase`, a provider's `bin/` class, `@types/react`'s `Element`): the declaration build fails with TS2883 (STA-1220).
 
 ## Tasks
 

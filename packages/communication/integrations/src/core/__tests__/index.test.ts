@@ -4,7 +4,7 @@
  *          `Connection`, `ConnectionCheckFailedError`, `ConnectionLevel`, `ConnectionStore`, `Integration`,
  *          `IntegrationCategory`, `InvalidSignatureError`, `ProviderRefusedError`, `ProviderUnavailableError`,
  *          `RateLimitScope`) and the registry row's runtime are exported, nothing else is, the internals are not, and
- *          the public types resolve.
+ *          the public types resolve, `PassBase` (type only) among them.
  * Boundary: test only; imports the stand-in barrel through its `#core` alias.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0294 (decision 15).
@@ -19,6 +19,7 @@ import type {
   IntegrationApi,
   IntegrationOptions,
   OAuthTokens,
+  PassBase,
   RequestOptions,
 } from "#core/index";
 
@@ -81,5 +82,7 @@ describe("@stackra/integrations", () => {
     expectTypeOf<ConnectInput<integrations.Connection>["tokens"]>().toEqualTypeOf<
       OAuthTokens | undefined
     >();
+    // `Pass({ key })` returns a class of `PassBase`, so a consumer's declaration emit can name its base (STA-1220).
+    expectTypeOf<InstanceType<ReturnType<typeof integrations.Pass>>>().toEqualTypeOf<PassBase>();
   });
 });

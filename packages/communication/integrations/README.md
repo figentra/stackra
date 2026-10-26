@@ -88,6 +88,10 @@ const api = own?.api ?? this.resend.api;
 await api.post<ResendSendResult>("/emails", mail, { idempotencyKey });
 ```
 
+`.` also exports the type `PassBase`, the instance side of `Pass({ key })`, so a consumer's
+`class LoyaltyCardPass extends Pass({ key: "loyalty_card" })` has a nameable base in its declaration emit (TS2883,
+STA-1220).
+
 ## The six auth types
 
 `OAuth2Code` (the connection holds the tokens; refreshed single-flight before they expire, revoked at disconnect),

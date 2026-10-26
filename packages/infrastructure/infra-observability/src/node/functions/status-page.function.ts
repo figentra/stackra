@@ -9,6 +9,8 @@
  *           not this program's.
  * Runtime: node (Pulumi program)
  * Governing contract: ADR 0185 (decision 3), ADR 0184 (decision 4: heartbeats), ADR 0402.
+ *                     STA-1220 (the return type is written out, so the declaration emit names the provider classes
+ *                     through the package entry, not their `bin/` files).
  */
 import * as betterstack from "pulumi-better-uptime";
 
@@ -27,7 +29,13 @@ export function statusPage(args: {
   readonly page: NonNullable<ObservabilityPlan["statusPage"]>;
   readonly heartbeats: ObservabilityPlan["heartbeats"];
   readonly monitors: readonly betterstack.Heartbeat[];
-}) {
+}): {
+  readonly statusPage: betterstack.StatusPage;
+  readonly sections: {
+    readonly section: betterstack.StatusPageSection;
+    readonly resources: betterstack.StatusPageResource[];
+  }[];
+} {
   const { project, page } = args;
   const statusPage = new betterstack.StatusPage(`status-${project}`, {
     companyName: page.companyName,

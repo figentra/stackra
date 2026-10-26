@@ -63,6 +63,9 @@ A schedule names its action by the locked job key, so it only references registe
 in the schedule's time zone; across a daylight-saving change a skipped wall time does not run that day and a repeated
 one runs at both instants. No run from before the schedule was made is pushed.
 
+`SCHEDULED_JOBS` is annotated with `AnyClass<Action>` maps, so the declarations name the exported `Action` type
+(STA-1220).
+
 ## Ticks, misfires and one runner
 
 - `tick(at)` takes the lock `scheduler:tick` with `Locks.tryWith`: every instance ticks, one runs, the others get

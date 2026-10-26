@@ -13,6 +13,8 @@
  * Runtime: node (Pulumi program)
  * Governing contract: ADR 0184 (decisions 1, 2 and 5: OTLP everywhere, 30 days hot and 13 months in S3), ADR 0171
  *                     (decisions 4 and 6), ADR 0173 (no secret value in git).
+ *                     STA-1220 (the return type is written out, so the declaration emit names the provider classes
+ *                     through the package entry, not their `bin/` files).
  */
 import * as pulumi from "@pulumi/pulumi";
 import * as logtail from "pulumi-logtail";
@@ -30,7 +32,12 @@ export function logPipeline(args: {
   readonly project: string;
   readonly hotDays: number;
   readonly coldMonths: number;
-}) {
+}): {
+  readonly archive: ReturnType<typeof logArchive> | undefined;
+  readonly source: logtail.Source;
+  readonly endpoint: pulumi.Output<string>;
+  readonly token: pulumi.Output<string>;
+} {
   const { project, hotDays, coldMonths } = args;
   const archive = coldMonths === 0 ? undefined : logArchive(`logs-archive-${project}`, coldMonths);
   const source = new logtail.Source(`telemetry-${project}`, {

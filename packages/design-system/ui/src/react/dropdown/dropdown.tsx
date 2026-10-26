@@ -10,7 +10,8 @@
  *           with sections and shortcuts, use `Menu`.
  * Runtime: browser
  * Governing contract: ADR 0302 (decision 3); ADR 0165 (UI contract, HeroUI v3 on web); ADR 0303 (decision 7); owner
- *                     decision 6 of STA-350 (thin wrappers).
+ *                     decision 6 of STA-350 (thin wrappers); explicit compound type so the declaration emit is
+ *                     self-contained (STA-1220).
  */
 import {
   Dropdown as HeroDropdown,
@@ -62,15 +63,24 @@ function DropdownItem({ children, description, color, ...rest }: DropdownItemPro
   );
 }
 
+/** The dropdown root: HeroUI's, which holds the open state. */
+function DropdownRoot(props: Parameters<typeof HeroDropdown>[0]): ReactElement {
+  return <HeroDropdown {...props} />;
+}
+
+/** The parts of the compound, typed from HeroUI's own so the declaration output can name them (TS2883). */
+interface DropdownParts {
+  /** The button that opens the menu; give it an `aria-label` when it shows no text. */
+  readonly Trigger: typeof HeroDropdown.Trigger;
+  /** The menu, drawn in its popover. */
+  readonly Menu: typeof DropdownMenu;
+  /** One action or choice. */
+  readonly Item: typeof DropdownItem;
+}
+
 /** A menu behind a button: `Dropdown`, `Dropdown.Trigger`, `Dropdown.Menu` and `Dropdown.Item`. */
-export const Dropdown = Object.assign(
-  (props: Parameters<typeof HeroDropdown>[0]): ReactElement => <HeroDropdown {...props} />,
-  {
-    /** The button that opens the menu; give it an `aria-label` when it shows no text. */
-    Trigger: HeroDropdown.Trigger,
-    /** The menu, drawn in its popover. */
-    Menu: DropdownMenu,
-    /** One action or choice. */
-    Item: DropdownItem,
-  },
-);
+export const Dropdown: typeof DropdownRoot & DropdownParts = Object.assign(DropdownRoot, {
+  Trigger: HeroDropdown.Trigger,
+  Menu: DropdownMenu,
+  Item: DropdownItem,
+});

@@ -5,13 +5,14 @@
  * Boundary: names each re-export and declares nothing. The provider-category, catalogue and managed-provisioning
  *           template seeds are exported for the registry and the seeders. The managed client's internals (`managedClient`, the placeholder
  *           lookup, the token calls, the JWT signer) and the registries stay internal. The `ConnectionContext` port is
- *           exported from `./contracts` only (ADR 0294 decision 15).
+ *           exported from `./contracts` only (ADR 0294 decision 15). `PassBase` is exported as a type so a consumer's
+ *           `extends Pass({ key })` class has a nameable base in its declaration emit (TS2883, STA-1220).
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision.
  */
 export { Connection } from "#core/bases/connection.base";
 export { Integration } from "#core/bases/integration.base";
-export { Pass } from "#core/bases/pass.base";
+export { Pass, type PassBase } from "#core/bases/pass.base";
 export { MANAGED_PROVISIONING_TEMPLATES } from "#core/constants/managed-provisioning-templates.constant";
 export { PROVIDER_CATALOGUE_SEEDS } from "#core/constants/provider-catalogue-seeds.constant";
 export { PROVIDER_CATEGORY_SEEDS } from "#core/constants/provider-category-seeds.constant";

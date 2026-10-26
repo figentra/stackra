@@ -85,6 +85,9 @@ more contrast, ADR 0319). `react` and `react-hook-form` are needed by both, and 
 imports `react-hook-form`, so an app that imports either entry resolves it at build. The schema forms of `./form` read
 the registered schema through `@stackra/validation` and type it with `zod`, both plain dependencies.
 
+`Dropdown`, like `Card`, `Modal` and `Drawer`, carries an explicit compound type (`typeof DropdownRoot & DropdownParts`),
+so the declaration build names HeroUI's own parts (STA-1220).
+
 ## Contracts
 
 The shared values are frozen tuples with a type of the same name, verified against HeroUI v3 (`@heroui/styles`

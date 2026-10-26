@@ -85,6 +85,8 @@ await worker.work(Queues.Maintenance, { concurrency: 4, signal: shutdown.signal 
 `work` loops until the signal aborts: it reserves the next due job of the queue, runs it, and polls every second when
 none is due. Redrive a dead letter with `queue.redrive(id)`; it runs again with all its attempts.
 
+`JOB_TYPES` is annotated with `AnyClass<Action>` maps, so the declarations name the exported `Action` type (STA-1220).
+
 ## Drivers
 
 - **Postgres** (`./node`, default): rows of `queue.jobs`, created by this package's migration `queue.0001_create_jobs`.

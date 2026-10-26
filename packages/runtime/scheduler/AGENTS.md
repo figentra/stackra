@@ -52,6 +52,8 @@ decisions 4 and 5). Member at `packages/runtime/scheduler` (`tier:lib`), in the 
 - A package never imports an app, a service, `encore.dev`/`~encore/*`, or another package's `src/`.
 - Versions are `catalog:<name>` or `workspace:*` only.
 - Coverage meets the shared gate (lines/functions 80, branches 70).
+- Annotate every export whose inferred type would reach an unexported or deep-path type (`ExtensionBase`, `ActionBase`,
+  `PassBase`, a provider's `bin/` class, `@types/react`'s `Element`): the declaration build fails with TS2883 (STA-1220).
 
 ## PII
 

@@ -9,6 +9,8 @@
  *           The provider's API token (`better-uptime:apiToken`) is the owner's stack config.
  * Runtime: node (Pulumi program)
  * Governing contract: ADR 0184 (decision 4), ADR 0185 (decision 1: Better Stack runs on-call), ADR 0173.
+ *                     STA-1220 (the return type is written out, so the declaration emit names the provider classes
+ *                     through the package entry, not their `bin/` files).
  */
 import * as pulumi from "@pulumi/pulumi";
 import * as betterstack from "pulumi-better-uptime";
@@ -26,7 +28,10 @@ import type { ObservabilityPlan } from "#core/types/observability-plan.type";
 export function heartbeatMonitors(args: {
   readonly project: string;
   readonly heartbeats: ObservabilityPlan["heartbeats"];
-}) {
+}): {
+  readonly heartbeats: betterstack.Heartbeat[];
+  readonly urls: Record<string, Record<string, Record<string, pulumi.Output<string>>>>;
+} {
   const urls: Record<string, Record<string, Record<string, pulumi.Output<string>>>> = {};
   const heartbeats = args.heartbeats.map(
     ({ environment, service, name, periodSeconds, graceSeconds }) => {

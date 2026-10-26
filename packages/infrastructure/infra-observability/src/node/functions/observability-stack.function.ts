@@ -9,7 +9,11 @@
  * Runtime: node (Pulumi program)
  * Governing contract: ADR 0184, ADR 0185 (decision 3), ADR 0171 (decisions 3, 4 and 6, as amended by 0289 decision 9),
  *                     ADR 0173.
+ *                     STA-1220 (the return type is written out, so the declaration emit names the provider classes
+ *                     through the package entry, not their `bin/` files).
  */
+import type * as pulumi from "@pulumi/pulumi";
+
 import type { ObservabilityPlan } from "#core/types/observability-plan.type";
 import { heartbeatMonitors } from "#node/functions/heartbeat-monitors.function";
 import { logPipeline } from "#node/functions/log-pipeline.function";
@@ -24,7 +28,23 @@ import { statusPage } from "#node/functions/status-page.function";
  * // .stackra/infra/index.ts (generated)
  * export const observability = observabilityStack(plan).outputs;
  */
-export function observabilityStack(plan: ObservabilityPlan) {
+export function observabilityStack(plan: ObservabilityPlan): {
+  readonly logs: ReturnType<typeof logPipeline> | undefined;
+  readonly sentry: ReturnType<typeof sentryProjects> | undefined;
+  readonly heartbeats: ReturnType<typeof heartbeatMonitors>["heartbeats"];
+  readonly status: ReturnType<typeof statusPage> | undefined;
+  readonly outputs: {
+    readonly otlp?: {
+      readonly endpoint: pulumi.Output<string>;
+      readonly token: pulumi.Output<string>;
+    };
+    readonly betterstack?: { readonly source: pulumi.Output<pulumi.ID> };
+    readonly sentry?: { readonly dsn: ReturnType<typeof sentryProjects>["dsn"] };
+    readonly heartbeats: ReturnType<typeof heartbeatMonitors>["urls"];
+    readonly statusPage?: { readonly id: pulumi.Output<pulumi.ID> };
+    readonly slis: ObservabilityPlan["slis"];
+  };
+} {
   const logs =
     plan.telemetry === null ? undefined : logPipeline({ project: plan.project, ...plan.telemetry });
   const sentry =

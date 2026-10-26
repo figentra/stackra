@@ -7,13 +7,17 @@
  *           by `SchedulerService`.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 20 and 22: locked identities); ADR 0305 (rule 28: the job's name is the
- *                     action's key).
+ *                     action's key); annotated, not inferred, so the declaration emit
+ *                     names `Action` rather than the unexported `ActionBase` (STA-1220).
  */
 import type { Action } from "@stackra/actions";
 import type { AnyClass } from "@stackra/container";
 
 /** The registered job actions. */
-export const SCHEDULED_JOBS = Object.freeze({
+export const SCHEDULED_JOBS: Readonly<{
+  byKey: Map<string, AnyClass<Action>>;
+  keys: Map<AnyClass<Action>, string>;
+}> = Object.freeze({
   /** Key to action class. */
   byKey: new Map<string, AnyClass<Action>>(),
 
