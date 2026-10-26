@@ -195,7 +195,14 @@ For a service, gen writes the first parts of the Encore app (ADR 0148): `.stackr
 `cronJobId`, which `encoreCronJobs()` also calls) and the stored schedules' minute tick; `.stackra/encore/<member>/queues.ts`
 holds one Pub/Sub `Topic` and `Subscription` per queue its job actions name, registered as `queue.<name>` for a
 broker-delivered queue driver, each delivery run through `QueueWorkerService.process`. Both reach the member through the
-server app's `handlers`. The manifest also locks each Integration's egress entry from its `baseUrl`: a fixed https
+server app's `handlers`.
+
+`.stackra/encore/<member>/events.ts` holds one Pub/Sub `Topic` per integration event the manifest publishes, registered
+under its `<module>.<name>.v<n>` wire name for the outbox's `broker` publisher. A service with a relay listener (the
+webhooks relay, ADR 0260 decision 4) also gets `.stackra/encore/<member>/relay.ts`: one `Subscription` per integration
+topic of the product, its own and every publishing service's beside it (`readPublisherManifests` fills
+`MemberIR.publishers`), each delivery handed to `InboxService#receive`. No producer is edited to add the relay; a new
+publishing service is heard on the relay service's next gen run. The manifest also locks each Integration's egress entry from its `baseUrl`: a fixed https
 origin, or a `{field}` host kept as data with the credential-set fields it is filled from (`egress_invalid` otherwise),
 and refuses a sequence outside `database/sequences/` (`sequence_misplaced`), a `@DocumentNumber` field whose sequence
 is declared neither in the member nor in a dependency (`document_number_unsequenced`), and two cron actions with one

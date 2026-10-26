@@ -1,5 +1,14 @@
 # @stackra/runway
 
+<!--
+Stackra file contract:
+Purpose: the package's reader guide: runway format version 3, the topology placement check, deploy, the runway facts
+         readers, and how integration events fan out between the services a topology places.
+Boundary: documentation only; the event topics and subscriptions are gen's output, not this package's.
+Runtime: none
+Governing contract: ADR 0296; ADR 0352; ADR 0400; ADR 0148 (decisions 3 and 6); ADR 0260 (decision 4).
+-->
+
 Runway format version 3 as code: the schemas of the root runway (WHERE things run and how they are packed) and of the
 app and service member runways (WHAT a member needs), the topology placement check, and the readers that generated
 tool configs call so no port, origin or feed URL is typed outside a `runway.yaml`.
@@ -136,6 +145,24 @@ await withDeployLock(root, "production", locks, () =>
   promote(root, "staging", "production", providers),
 );
 ```
+
+## Event fan-out between services
+
+Integration events cross services on the broker, never by a topology setting. Gen writes each publishing service's
+topics (`.stackra/encore/<member>/events.ts`, one per `<module>.<name>.v<n>` wire name) and, for a service with a relay
+listener (the webhooks service), one subscription per integration topic of the product
+(`.stackra/encore/<member>/relay.ts`), so every service's events reach the relay's inbox without a producer listing it.
+
+```text
+orders   -- orders.order.paid.v1 -------+
+billing  -- billing.invoice.issued.v2 --+--> webhooks relay.ts --> InboxService --> relay listener
+webhooks -- its own events -------------+
+```
+
+The topology does not change this: grouped, isolated or monolith, the same topics and subscriptions exist, and a
+service in another group or region still subscribes through Encore Pub/Sub. Which `EventPublisher` driver publishes
+(`inbox` in process, `broker` across services) is runtime configuration; the topics cost nothing while the in-process
+driver runs. A new publishing service is subscribed on the relay service's next `stackra gen`.
 
 ## Runway facts
 

@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `MemberIR`, everything discovery read from one member: its facts, modules, kind classes, shapes, enums,
- *          file exports, the committed manifests of its dependencies and of the services it injects a client of. Every gen output is a pure function of it.
+ *          file exports, the committed manifests of its dependencies and of the services it injects a client of (and, for a relay service, of every publishing sibling). Every gen output is a
+ *          pure function of it.
  * Boundary: a type only. The committed `stackra.manifest.json` is the IR other members read (ADR 0127 2026-10-24
  *           note: `ir` folds into gen); this in-memory form never leaves a gen run.
  * Runtime: isomorphic
@@ -76,6 +77,17 @@ export interface MemberIR {
    */
   readonly services?: readonly {
     readonly member: string;
+    readonly manifest: StackraManifest;
+  }[];
+
+  /**
+   * The committed manifests of every other service beside the member that publishes an integration event, with the
+   * folder each sits in. Read only for a member with a relay listener (ADR 0260 decision 4), whose events target
+   * subscribes it to all of their topics. Absent otherwise and in an IR built by hand.
+   */
+  readonly publishers?: readonly {
+    readonly member: string;
+    readonly folder: string;
     readonly manifest: StackraManifest;
   }[];
 

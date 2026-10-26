@@ -3,7 +3,7 @@
  * Purpose: `discoverMember`, gen's discovery: opens the member's program behind the host seam, reads every kind
  *          class, shape, enum and file export of its own sources (sorted by path), its dependency package names and the
  *          committed manifests of those that ship one, the committed manifests of the services it injects a client
- *          of or listens to an event of, its modules and its authored root module, and fills each `DriverName<Port>` field with the driver names
+ *          of or listens to an event of (for a member with a relay, every publishing sibling service's), its modules and its authored root module, and fills each `DriverName<Port>` field with the driver names
  *          found for that port: the `MemberIR` every gen output is a pure function of.
  * Boundary: reads the member; writes nothing. Refusals are collected into `errors`, never thrown; only an unreadable
  *           package.json, tsconfig or dependency manifest throws. The program is always closed.
@@ -28,6 +28,7 @@ import { createSourceReader } from "#node/functions/create-source-reader.functio
 import { openHost } from "#node/functions/open-host.function";
 import { readDependencyManifests } from "#node/functions/read-dependency-manifests.function";
 import { readMemberFacts } from "#node/functions/read-member-facts.function";
+import { readPublisherManifests } from "#node/functions/read-publisher-manifests.function";
 import { readServiceManifests } from "#node/functions/read-service-manifests.function";
 
 /** A type with every `DriverName<Port>` filled from `names`. */
@@ -92,6 +93,11 @@ export async function discoverMember(
           .map((from) => from.slice(CLIENTS_SPECIFIER.length)),
       ),
     );
+    // A relay service hears every integration topic of the product (ADR 0260 decision 4).
+    const publishers =
+      facts.layout === "service" && classes.some((declared) => declared.handle?.relay === true)
+        ? readPublisherManifests(facts.root)
+        : [];
 
     // Driver names per port class: this member's drivers, then each dependency's.
     const names = new Map<string, Set<string>>();
@@ -157,6 +163,7 @@ export async function discoverMember(
       packages: facts.dependencies,
       dependencies,
       ...(services.length > 0 ? { services } : {}),
+      ...(publishers.length > 0 ? { publishers } : {}),
       errors: [...reader.errors],
     };
   } finally {

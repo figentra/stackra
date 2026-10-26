@@ -49,6 +49,10 @@ The Stackra compiler. Member at `packages/developer/gen` (`tier:lib`), in the pr
   makes that service consumed (discovery and `emitClients`) and must be one of its integration events
   (`client_event_unknown`); `emitRegistrations` writes `registerListeners`, the consumed events' wire names into
   `registerEventNames` and `registerRelays`. Never add a subscription by wire name.
+- Event transport (ADR 0260 decision 4, ADR 0148): `emitEncoreEvents` writes a service's integration event topics
+  (`events.ts`, registered by wire name) and, for a relay service only, `relay.ts`, which subscribes to every topic of
+  the product from each publisher's generated `events.ts`. Discovery reads the publishers (`readPublisherManifests`)
+  only for a member with a relay. Never make a producer list its subscribers.
 - The shape vocabulary is `TypeDesc` (`src/core/types/type-desc.type.ts`). A new platform field type is one
   `TypeDesc` kind read in `readTypeReference` (only when declared in a `@stackra/*` package) and one case in each of
   `emitSchemas`, `jsonSchemaOf` and, for a model column, `emitEntities`, with tests. `Translated` and

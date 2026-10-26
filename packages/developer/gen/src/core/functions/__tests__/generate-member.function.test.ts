@@ -31,6 +31,7 @@ describe("generateMember", () => {
       ".stackra/gen/registrations.ts",
       ".stackra/gen/boot.ts",
       ".stackra/gen/prefixes.ts",
+      ".stackra/encore/commerce/events.ts",
       ".stackra/entry/server.ts",
       ".stackra/tsdown.config.ts",
       ".stackra/vitest.config.ts",
@@ -40,7 +41,7 @@ describe("generateMember", () => {
     expect(files[0]?.content.endsWith("}\n")).toBe(true);
   });
 
-  it("writes the entity files, registrations, boot, webhook route, CronJobs and queue topics of a service", () => {
+  it("writes the entity files, registrations, boot, webhook route, CronJobs, queue topics and event topics of a service", () => {
     const { files, errors } = generateMember(BILLING_IR);
     expect(errors).toEqual([]);
     expect(files.map((file) => file.path)).toEqual([
@@ -57,6 +58,7 @@ describe("generateMember", () => {
       ".stackra/gen/prefixes.ts",
       ".stackra/encore/billing/cron.ts",
       ".stackra/encore/billing/queues.ts",
+      ".stackra/encore/billing/events.ts",
       ".stackra/entry/server.ts",
       ".stackra/tsdown.config.ts",
       ".stackra/vitest.config.ts",
