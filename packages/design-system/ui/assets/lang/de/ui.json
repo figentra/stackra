@@ -1,0 +1,108 @@
+{
+  "filter_bar": {
+    "filters": "Filter",
+    "add": "Filter hinzufügen",
+    "done": "Fertig",
+    "clear_all": "Alle löschen",
+    "clear_search": "Suche löschen",
+    "all_applied": "Alle Filter sind angewendet.",
+    "remove": "Filter {label} entfernen",
+    "landmark": "{label}, Filter",
+    "applied": "{count, plural, =0 {Keine Filter angewendet} one {# Filter angewendet} other {# Filter angewendet}}",
+    "yes": "Ja",
+    "no": "Nein",
+    "from": "Von",
+    "until": "Bis",
+    "minimum": "Minimum",
+    "maximum": "Maximum"
+  },
+  "date_field": {
+    "empty": "Datum auswählen",
+    "done": "Fertig",
+    "cancel": "Abbrechen",
+    "unavailable": "Dieser Tag ist nicht verfügbar. Wählen Sie einen anderen."
+  },
+  "date_picker": {
+    "calendar": "Datum wählen"
+  },
+  "section": {
+    "more_actions": "Weitere Aktionen"
+  },
+  "page_header": {
+    "more_actions": "Weitere Aktionen"
+  },
+  "navigation_list": {
+    "label": "Navigation"
+  },
+  "navigation_header": {
+    "back": "Zurück"
+  },
+  "tab_bar": {
+    "label": "Tabs"
+  },
+  "entity_picker": {
+    "search": "Suchen",
+    "close": "Schließen"
+  },
+  "number_field": {
+    "increment": "Erhöhen",
+    "decrement": "Verringern"
+  },
+  "bulk_action_bar": {
+    "label": "Sammelaktionen",
+    "selected": "{count, plural, one {# ausgewählt} other {# ausgewählt}}",
+    "clear": "Auswahl aufheben",
+    "select_all": "Alle {total} auswählen",
+    "select_shown": "Nur die {count} angezeigten auswählen",
+    "more_actions": "Weitere Aktionen",
+    "close": "Schließen"
+  },
+  "link": {
+    "opens_in_browser": "öffnet sich in Ihrem Browser",
+    "opens_in_new_tab": "öffnet sich in einem neuen Tab"
+  },
+  "table": {
+    "sort_by": "Sortieren nach",
+    "ascending": "aufsteigend",
+    "descending": "absteigend",
+    "loading": "Wird geladen",
+    "selection_column": "Auswahl"
+  },
+  "cursor_pagination": {
+    "label": "Seitennavigation",
+    "previous": "Zurück",
+    "next": "Weiter",
+    "load_more": "Mehr laden",
+    "count": "{count, plural, one {# Eintrag angezeigt} other {# Einträge angezeigt}}"
+  },
+  "app_shell": {
+    "skip": "Zum Hauptinhalt springen",
+    "navigation": "Navigationsmenü",
+    "close": "Schließen"
+  },
+  "breadcrumbs": {
+    "label": "Brotkrumen"
+  },
+  "property_list": {
+    "copied": "Kopiert"
+  },
+  "sidebar": {
+    "collapse": "Seitenleiste einklappen",
+    "expand": "Seitenleiste ausklappen"
+  },
+  "data_table": {
+    "loading": "Wird geladen",
+    "actions_column": "Aktionen",
+    "row_actions": "Aktionen für {name}",
+    "working": "Wird ausgeführt",
+    "no_data_title": "Noch nichts vorhanden",
+    "no_data_description": "Einträge erscheinen hier, sobald es welche gibt.",
+    "no_results_title": "Keine Ergebnisse",
+    "no_results_description": "Kein Eintrag passt zur Suche und zu den Filtern. Ändern oder löschen Sie sie.",
+    "clear_filters": "Filter löschen",
+    "error_title": "Die Einträge konnten nicht geladen werden",
+    "retry": "Erneut versuchen",
+    "pagination": "Seitennavigation für {label}",
+    "bulk_actions": "Aktionen für {label}"
+  }
+}

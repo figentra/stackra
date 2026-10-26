@@ -1,0 +1,26 @@
+{
+  "widgets": {
+    "empty": "Rien à afficher pour le moment.",
+    "failed": "Cette vignette n’a pas pu se charger.",
+    "retry": "Réessayer",
+    "range": "Période",
+    "change": "{change} par rapport à la période précédente",
+    "target": "Objectif {target}",
+    "not_rendered": "Cette vignette ne peut pas s’afficher ici."
+  },
+  "time_range": {
+    "today": "Aujourd’hui",
+    "yesterday": "Hier",
+    "last_7_days": "7 derniers jours",
+    "last_30_days": "30 derniers jours",
+    "this_month": "Ce mois-ci",
+    "custom": "Personnalisée"
+  },
+  "actions": {
+    "confirm_title": "Êtes-vous sûr ?",
+    "confirm": "Continuer",
+    "cancel": "Annuler",
+    "done": "C’est fait.",
+    "refused": "Cette action n’a pas pu être effectuée."
+  }
+}

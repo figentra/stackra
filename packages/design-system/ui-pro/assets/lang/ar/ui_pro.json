@@ -1,0 +1,42 @@
+{
+  "enums": {
+    "approval_status": {
+      "pending": "قيد الانتظار",
+      "approved": "تمت الموافقة",
+      "rejected": "مرفوض",
+      "escalated": "مُصعَّد"
+    },
+    "plan_step_status": {
+      "pending": "قيد الانتظار",
+      "running": "قيد التنفيذ",
+      "done": "تم",
+      "failed": "فشل",
+      "skipped": "تم التخطي"
+    },
+    "scheduler_view": {
+      "day": "يوم",
+      "week": "أسبوع"
+    }
+  },
+  "chat": {
+    "scroll_to_latest": "الانتقال إلى الأحدث",
+    "attach_files": "إرفاق ملفات",
+    "remove_attachment": "إزالة {name}",
+    "loading_reply": "جارٍ تحميل الرد"
+  },
+  "code_block": {
+    "copy": "نسخ الرمز",
+    "copied": "تم النسخ"
+  },
+  "navbar": {
+    "open_menu": "فتح القائمة",
+    "close_menu": "إغلاق القائمة"
+  },
+  "sidebar": {
+    "toggle": "طي الشريط الجانبي",
+    "resize": "تغيير حجم الشريط الجانبي"
+  },
+  "table_of_contents": {
+    "on_this_page": "في هذه الصفحة"
+  }
+}

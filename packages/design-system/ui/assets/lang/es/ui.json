@@ -1,0 +1,108 @@
+{
+  "filter_bar": {
+    "filters": "Filtros",
+    "add": "Añadir filtro",
+    "done": "Listo",
+    "clear_all": "Borrar todo",
+    "clear_search": "Borrar búsqueda",
+    "all_applied": "Se han aplicado todos los filtros.",
+    "remove": "Quitar filtro {label}",
+    "landmark": "{label}, filtros",
+    "applied": "{count, plural, =0 {Ningún filtro aplicado} one {# filtro aplicado} other {# filtros aplicados}}",
+    "yes": "Sí",
+    "no": "No",
+    "from": "Desde",
+    "until": "Hasta",
+    "minimum": "Mínimo",
+    "maximum": "Máximo"
+  },
+  "date_field": {
+    "empty": "Seleccionar una fecha",
+    "done": "Listo",
+    "cancel": "Cancelar",
+    "unavailable": "Ese día no está disponible. Elija otro."
+  },
+  "date_picker": {
+    "calendar": "Elegir una fecha"
+  },
+  "section": {
+    "more_actions": "Más acciones"
+  },
+  "page_header": {
+    "more_actions": "Más acciones"
+  },
+  "navigation_list": {
+    "label": "Navegación"
+  },
+  "navigation_header": {
+    "back": "Atrás"
+  },
+  "tab_bar": {
+    "label": "Pestañas"
+  },
+  "entity_picker": {
+    "search": "Buscar",
+    "close": "Cerrar"
+  },
+  "number_field": {
+    "increment": "Aumentar",
+    "decrement": "Disminuir"
+  },
+  "bulk_action_bar": {
+    "label": "Acciones en bloque",
+    "selected": "{count, plural, one {# seleccionado} other {# seleccionados}}",
+    "clear": "Borrar selección",
+    "select_all": "Seleccionar los {total}",
+    "select_shown": "Seleccionar solo los {count} visibles",
+    "more_actions": "Más acciones",
+    "close": "Cerrar"
+  },
+  "link": {
+    "opens_in_browser": "se abre en el navegador",
+    "opens_in_new_tab": "se abre en una pestaña nueva"
+  },
+  "table": {
+    "sort_by": "Ordenar por",
+    "ascending": "ascendente",
+    "descending": "descendente",
+    "loading": "Cargando",
+    "selection_column": "Selección"
+  },
+  "cursor_pagination": {
+    "label": "Paginación",
+    "previous": "Anterior",
+    "next": "Siguiente",
+    "load_more": "Cargar más",
+    "count": "{count, plural, one {Mostrando # elemento} other {Mostrando # elementos}}"
+  },
+  "app_shell": {
+    "skip": "Saltar al contenido principal",
+    "navigation": "Menú de navegación",
+    "close": "Cerrar"
+  },
+  "breadcrumbs": {
+    "label": "Ruta de navegación"
+  },
+  "property_list": {
+    "copied": "Copiado"
+  },
+  "sidebar": {
+    "collapse": "Contraer la barra lateral",
+    "expand": "Expandir la barra lateral"
+  },
+  "data_table": {
+    "loading": "Cargando",
+    "actions_column": "Acciones",
+    "row_actions": "Acciones de {name}",
+    "working": "Procesando",
+    "no_data_title": "Aún no hay nada",
+    "no_data_description": "Los registros aparecerán aquí cuando existan.",
+    "no_results_title": "Sin resultados",
+    "no_results_description": "Ningún registro coincide con la búsqueda y los filtros. Pruebe a cambiarlos o borrarlos.",
+    "clear_filters": "Borrar filtros",
+    "error_title": "No se han podido cargar los registros",
+    "retry": "Reintentar",
+    "pagination": "Paginación de {label}",
+    "bulk_actions": "Acciones de {label}"
+  }
+}

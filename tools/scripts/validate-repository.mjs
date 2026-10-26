@@ -15,6 +15,7 @@
  *          Member TS imports carry no file extension and climb at most one folder (checkImports, ADR 0233).
  *          An Expo app locks no orientation and asks for no full screen, and its code never sizes from the device
  *          (checkIosFormFactor and checkWindowSizing, STA-461).
+ *          Every lang catalogue is complete per locale against its English source (checkCatalogues, ADR 0403).
  *          Prints the findings and exits 1; prints nothing on success. Adapted from Figentra's checks 1–5.
  * Scope: every member listed by `pnpm -r list --json --depth -1`; test placement covers every non-ignored file.
  * Owner: release-operations · Secrets: forbidden
@@ -24,6 +25,7 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join, relative } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { LineCounter, parseDocument, visit } from "yaml";
+import { checkCatalogues } from "./catalogue-completeness.mjs";
 import { readJsonc } from "./jsonc.mjs";
 import {
   FORBIDDEN_FILES,
@@ -652,6 +654,10 @@ async function main() {
     .filter((p) => p && existsSync(join(ROOT, p)));
   report("", checkTestPlacement(repoFiles));
   report("", checkJsonConfigs(repoFiles));
+  report(
+    "",
+    checkCatalogues(repoFiles, (p) => readFileSync(join(ROOT, p), "utf8")),
+  );
   report(
     "",
     checkRunwaySchemas((p) => read(ROOT, p)),

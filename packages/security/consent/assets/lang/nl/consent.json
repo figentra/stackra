@@ -1,0 +1,30 @@
+{
+  "enums": {
+    "consent_category": {
+      "necessary": "Noodzakelijk",
+      "analytics": "Productanalyse",
+      "crash_replay": "Crashopnames"
+    }
+  },
+  "ui": {
+    "banner": {
+      "title": "Cookies en opslag",
+      "body": "We gebruiken wat deze site nodig heeft om te werken. Met uw toestemming gebruiken we ook optionele cookies en opslag voor de doelen in de instellingen.",
+      "accept_all": "Alles accepteren",
+      "reject_all": "Alles weigeren",
+      "manage": "Beheren",
+      "policy": "Cookiebeleid"
+    },
+    "preferences": {
+      "title": "Toestemmingsvoorkeuren"
+    },
+    "legal": {
+      "version": "Versie {version}, geldig vanaf {effectiveFrom}"
+    },
+    "terms": {
+      "title": "Bekijk onze voorwaarden",
+      "body": "Deze documenten zijn nieuw of gewijzigd. Lees en accepteer ze om door te gaan.",
+      "accept": "Accepteren en doorgaan"
+    }
+  }
+}

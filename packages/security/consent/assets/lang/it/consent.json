@@ -1,0 +1,30 @@
+{
+  "enums": {
+    "consent_category": {
+      "necessary": "Necessari",
+      "analytics": "Analisi del prodotto",
+      "crash_replay": "Registrazioni degli arresti anomali"
+    }
+  },
+  "ui": {
+    "banner": {
+      "title": "Cookie e archiviazione",
+      "body": "Usiamo ciò che serve a questo sito per funzionare. Con il tuo consenso usiamo anche cookie e archiviazione facoltativi per le finalità indicate nelle impostazioni.",
+      "accept_all": "Accetta tutto",
+      "reject_all": "Rifiuta tutto",
+      "manage": "Gestisci",
+      "policy": "Informativa sui cookie"
+    },
+    "preferences": {
+      "title": "Preferenze di consenso"
+    },
+    "legal": {
+      "version": "Versione {version}, in vigore dal {effectiveFrom}"
+    },
+    "terms": {
+      "title": "Leggi le nostre condizioni",
+      "body": "Questi documenti sono nuovi o sono cambiati. Leggili e accettali per continuare.",
+      "accept": "Accetta e continua"
+    }
+  }
+}

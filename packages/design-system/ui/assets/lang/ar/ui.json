@@ -1,0 +1,108 @@
+{
+  "filter_bar": {
+    "filters": "عوامل التصفية",
+    "add": "إضافة عامل تصفية",
+    "done": "تم",
+    "clear_all": "مسح الكل",
+    "clear_search": "مسح البحث",
+    "all_applied": "تم تطبيق كل عوامل التصفية.",
+    "remove": "إزالة عامل التصفية {label}",
+    "landmark": "{label}، عوامل التصفية",
+    "applied": "{count, plural, =0 {لا توجد عوامل تصفية مطبقة} one {عامل تصفية واحد مطبق} two {عاملا تصفية مطبقان} few {# عوامل تصفية مطبقة} many {# عامل تصفية مطبقًا} other {# عامل تصفية مطبق}}",
+    "yes": "نعم",
+    "no": "لا",
+    "from": "من",
+    "until": "حتى",
+    "minimum": "الحد الأدنى",
+    "maximum": "الحد الأقصى"
+  },
+  "date_field": {
+    "empty": "اختر تاريخًا",
+    "done": "تم",
+    "cancel": "إلغاء",
+    "unavailable": "هذا اليوم غير متاح. اختر يومًا آخر."
+  },
+  "date_picker": {
+    "calendar": "اختر تاريخًا"
+  },
+  "section": {
+    "more_actions": "إجراءات أخرى"
+  },
+  "page_header": {
+    "more_actions": "إجراءات أخرى"
+  },
+  "navigation_list": {
+    "label": "التنقل"
+  },
+  "navigation_header": {
+    "back": "رجوع"
+  },
+  "tab_bar": {
+    "label": "علامات التبويب"
+  },
+  "entity_picker": {
+    "search": "بحث",
+    "close": "إغلاق"
+  },
+  "number_field": {
+    "increment": "زيادة",
+    "decrement": "إنقاص"
+  },
+  "bulk_action_bar": {
+    "label": "إجراءات جماعية",
+    "selected": "{count, plural, zero {لم يُحدَّد شيء} one {عنصر واحد محدد} two {عنصران محددان} few {# عناصر محددة} many {# عنصرًا محددًا} other {# عنصر محدد}}",
+    "clear": "مسح التحديد",
+    "select_all": "تحديد الكل ({total})",
+    "select_shown": "تحديد المعروض فقط ({count})",
+    "more_actions": "إجراءات أخرى",
+    "close": "إغلاق"
+  },
+  "link": {
+    "opens_in_browser": "يُفتح في المتصفح",
+    "opens_in_new_tab": "يُفتح في علامة تبويب جديدة"
+  },
+  "table": {
+    "sort_by": "الترتيب حسب",
+    "ascending": "تصاعدي",
+    "descending": "تنازلي",
+    "loading": "جارٍ التحميل",
+    "selection_column": "التحديد"
+  },
+  "cursor_pagination": {
+    "label": "ترقيم الصفحات",
+    "previous": "السابق",
+    "next": "التالي",
+    "load_more": "تحميل المزيد",
+    "count": "{count, plural, zero {لا توجد عناصر} one {عرض عنصر واحد} two {عرض عنصرين} few {عرض # عناصر} many {عرض # عنصرًا} other {عرض # عنصر}}"
+  },
+  "app_shell": {
+    "skip": "انتقل إلى المحتوى الرئيسي",
+    "navigation": "قائمة التنقل",
+    "close": "إغلاق"
+  },
+  "breadcrumbs": {
+    "label": "مسار التنقل"
+  },
+  "property_list": {
+    "copied": "تم النسخ"
+  },
+  "sidebar": {
+    "collapse": "طي الشريط الجانبي",
+    "expand": "توسيع الشريط الجانبي"
+  },
+  "data_table": {
+    "loading": "جارٍ التحميل",
+    "actions_column": "الإجراءات",
+    "row_actions": "إجراءات {name}",
+    "working": "جارٍ التنفيذ",
+    "no_data_title": "لا يوجد شيء هنا بعد",
+    "no_data_description": "ستظهر السجلات هنا عند إنشائها.",
+    "no_results_title": "لا توجد نتائج",
+    "no_results_description": "لا يوجد سجل يطابق البحث وعوامل التصفية. جرّب تغييرها أو مسحها.",
+    "clear_filters": "مسح عوامل التصفية",
+    "error_title": "تعذّر تحميل السجلات",
+    "retry": "حاول مرة أخرى",
+    "pagination": "ترقيم صفحات {label}",
+    "bulk_actions": "إجراءات {label}"
+  }
+}

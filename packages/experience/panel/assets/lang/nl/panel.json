@@ -1,0 +1,26 @@
+{
+  "widgets": {
+    "empty": "Nog niets om te tonen.",
+    "failed": "Deze tegel kon niet worden geladen.",
+    "retry": "Opnieuw proberen",
+    "range": "Periode",
+    "change": "{change} t.o.v. vorige periode",
+    "target": "Doel {target}",
+    "not_rendered": "Deze tegel kan hier niet worden getoond."
+  },
+  "time_range": {
+    "today": "Vandaag",
+    "yesterday": "Gisteren",
+    "last_7_days": "Afgelopen 7 dagen",
+    "last_30_days": "Afgelopen 30 dagen",
+    "this_month": "Deze maand",
+    "custom": "Aangepast"
+  },
+  "actions": {
+    "confirm_title": "Weet u het zeker?",
+    "confirm": "Doorgaan",
+    "cancel": "Annuleren",
+    "done": "Klaar.",
+    "refused": "Dit kon niet worden uitgevoerd."
+  }
+}

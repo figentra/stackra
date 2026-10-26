@@ -1,0 +1,26 @@
+{
+  "widgets": {
+    "empty": "Noch nichts anzuzeigen.",
+    "failed": "Diese Kachel konnte nicht geladen werden.",
+    "retry": "Erneut versuchen",
+    "range": "Zeitraum",
+    "change": "{change} gegenüber dem Vorzeitraum",
+    "target": "Ziel {target}",
+    "not_rendered": "Diese Kachel kann hier nicht angezeigt werden."
+  },
+  "time_range": {
+    "today": "Heute",
+    "yesterday": "Gestern",
+    "last_7_days": "Letzte 7 Tage",
+    "last_30_days": "Letzte 30 Tage",
+    "this_month": "Dieser Monat",
+    "custom": "Benutzerdefiniert"
+  },
+  "actions": {
+    "confirm_title": "Sind Sie sicher?",
+    "confirm": "Fortfahren",
+    "cancel": "Abbrechen",
+    "done": "Erledigt.",
+    "refused": "Das konnte nicht ausgeführt werden."
+  }
+}

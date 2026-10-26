@@ -1,0 +1,42 @@
+{
+  "enums": {
+    "approval_status": {
+      "pending": "Pendiente",
+      "approved": "Aprobado",
+      "rejected": "Rechazado",
+      "escalated": "Escalado"
+    },
+    "plan_step_status": {
+      "pending": "Pendiente",
+      "running": "En curso",
+      "done": "Hecho",
+      "failed": "Fallido",
+      "skipped": "Omitido"
+    },
+    "scheduler_view": {
+      "day": "Día",
+      "week": "Semana"
+    }
+  },
+  "chat": {
+    "scroll_to_latest": "Ir a lo más reciente",
+    "attach_files": "Adjuntar archivos",
+    "remove_attachment": "Quitar {name}",
+    "loading_reply": "Cargando la respuesta"
+  },
+  "code_block": {
+    "copy": "Copiar código",
+    "copied": "Copiado"
+  },
+  "navbar": {
+    "open_menu": "Abrir menú",
+    "close_menu": "Cerrar menú"
+  },
+  "sidebar": {
+    "toggle": "Contraer la barra lateral",
+    "resize": "Cambiar el tamaño de la barra lateral"
+  },
+  "table_of_contents": {
+    "on_this_page": "En esta página"
+  }
+}

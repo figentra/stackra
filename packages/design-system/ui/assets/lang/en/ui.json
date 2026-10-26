@@ -1,0 +1,108 @@
+{
+  "filter_bar": {
+    "filters": "Filters",
+    "add": "Add filter",
+    "done": "Done",
+    "clear_all": "Clear all",
+    "clear_search": "Clear search",
+    "all_applied": "Every filter is applied.",
+    "remove": "Remove filter {label}",
+    "landmark": "{label}, filters",
+    "applied": "{count, plural, =0 {No filters applied} one {# filter applied} other {# filters applied}}",
+    "yes": "Yes",
+    "no": "No",
+    "from": "From",
+    "until": "Until",
+    "minimum": "Minimum",
+    "maximum": "Maximum"
+  },
+  "date_field": {
+    "empty": "Select a date",
+    "done": "Done",
+    "cancel": "Cancel",
+    "unavailable": "That day is not available. Choose another."
+  },
+  "date_picker": {
+    "calendar": "Choose a date"
+  },
+  "section": {
+    "more_actions": "More actions"
+  },
+  "page_header": {
+    "more_actions": "More actions"
+  },
+  "navigation_list": {
+    "label": "Navigation"
+  },
+  "navigation_header": {
+    "back": "Back"
+  },
+  "tab_bar": {
+    "label": "Tabs"
+  },
+  "entity_picker": {
+    "search": "Search",
+    "close": "Close"
+  },
+  "number_field": {
+    "increment": "Increase",
+    "decrement": "Decrease"
+  },
+  "bulk_action_bar": {
+    "label": "Bulk actions",
+    "selected": "{count, plural, one {# selected} other {# selected}}",
+    "clear": "Clear selection",
+    "select_all": "Select all {total}",
+    "select_shown": "Select only the {count} shown",
+    "more_actions": "More actions",
+    "close": "Close"
+  },
+  "link": {
+    "opens_in_browser": "opens in your browser",
+    "opens_in_new_tab": "opens in a new tab"
+  },
+  "table": {
+    "sort_by": "Sort by",
+    "ascending": "ascending",
+    "descending": "descending",
+    "loading": "Loading",
+    "selection_column": "Selection"
+  },
+  "cursor_pagination": {
+    "label": "Pagination",
+    "previous": "Previous",
+    "next": "Next",
+    "load_more": "Load more",
+    "count": "{count, plural, one {Showing # item} other {Showing # items}}"
+  },
+  "app_shell": {
+    "skip": "Skip to main content",
+    "navigation": "Navigation menu",
+    "close": "Close"
+  },
+  "breadcrumbs": {
+    "label": "Breadcrumbs"
+  },
+  "property_list": {
+    "copied": "Copied"
+  },
+  "sidebar": {
+    "collapse": "Collapse sidebar",
+    "expand": "Expand sidebar"
+  },
+  "data_table": {
+    "loading": "Loading",
+    "actions_column": "Actions",
+    "row_actions": "Actions for {name}",
+    "working": "Working",
+    "no_data_title": "Nothing here yet",
+    "no_data_description": "Records will appear here once they exist.",
+    "no_results_title": "No results",
+    "no_results_description": "No record matches the search and filters. Try changing or clearing them.",
+    "clear_filters": "Clear filters",
+    "error_title": "The records could not be loaded",
+    "retry": "Try again",
+    "pagination": "{label} pagination",
+    "bulk_actions": "{label} actions"
+  }
+}

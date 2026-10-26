@@ -1,0 +1,42 @@
+{
+  "enums": {
+    "approval_status": {
+      "pending": "In afwachting",
+      "approved": "Goedgekeurd",
+      "rejected": "Afgewezen",
+      "escalated": "Geëscaleerd"
+    },
+    "plan_step_status": {
+      "pending": "In afwachting",
+      "running": "Bezig",
+      "done": "Klaar",
+      "failed": "Mislukt",
+      "skipped": "Overgeslagen"
+    },
+    "scheduler_view": {
+      "day": "Dag",
+      "week": "Week"
+    }
+  },
+  "chat": {
+    "scroll_to_latest": "Naar nieuwste",
+    "attach_files": "Bestanden bijvoegen",
+    "remove_attachment": "{name} verwijderen",
+    "loading_reply": "Antwoord laden"
+  },
+  "code_block": {
+    "copy": "Code kopiëren",
+    "copied": "Gekopieerd"
+  },
+  "navbar": {
+    "open_menu": "Menu openen",
+    "close_menu": "Menu sluiten"
+  },
+  "sidebar": {
+    "toggle": "Zijbalk inklappen",
+    "resize": "Formaat van de zijbalk wijzigen"
+  },
+  "table_of_contents": {
+    "on_this_page": "Op deze pagina"
+  }
+}

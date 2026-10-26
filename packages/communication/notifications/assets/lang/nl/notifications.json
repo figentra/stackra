@@ -1,0 +1,32 @@
+{
+  "enums": {
+    "notification_category": {
+      "transactional": "Transactioneel",
+      "activity": "Activiteit",
+      "marketing": "Nieuws en aanbiedingen"
+    },
+    "notification_channel": {
+      "mail": "E-mail",
+      "sms": "Sms",
+      "whatsapp": "WhatsApp",
+      "push": "Pushmelding",
+      "in_app": "In de app",
+      "chat": "Chat",
+      "voice": "Spraakoproep"
+    }
+  },
+  "templates": {
+    "content_free": {
+      "subject": "U hebt een nieuwe melding",
+      "body": "Er staat iets voor u klaar. Log in om het te lezen.",
+      "title": "Nieuwe melding"
+    },
+    "footer": {
+      "sent_by": "Verzonden door {sender}",
+      "why_activity": "U ontvangt dit vanwege activiteit op uw account bij {sender}.",
+      "why_marketing": "U ontvangt dit omdat u hebt ingestemd met berichten van {sender}.",
+      "unsubscribe": "Afmelden",
+      "manage": "Meldingsvoorkeuren beheren"
+    }
+  }
+}

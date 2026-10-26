@@ -12,6 +12,7 @@
   "files": [
     "dist",
     "src",
+    "assets",
     "README.md",
     "CHANGELOG.md",
     "LICENSE"

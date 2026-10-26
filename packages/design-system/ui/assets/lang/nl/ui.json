@@ -1,0 +1,108 @@
+{
+  "filter_bar": {
+    "filters": "Filters",
+    "add": "Filter toevoegen",
+    "done": "Klaar",
+    "clear_all": "Alles wissen",
+    "clear_search": "Zoekopdracht wissen",
+    "all_applied": "Alle filters zijn toegepast.",
+    "remove": "Filter {label} verwijderen",
+    "landmark": "{label}, filters",
+    "applied": "{count, plural, =0 {Geen filters toegepast} one {# filter toegepast} other {# filters toegepast}}",
+    "yes": "Ja",
+    "no": "Nee",
+    "from": "Van",
+    "until": "Tot",
+    "minimum": "Minimum",
+    "maximum": "Maximum"
+  },
+  "date_field": {
+    "empty": "Kies een datum",
+    "done": "Klaar",
+    "cancel": "Annuleren",
+    "unavailable": "Die dag is niet beschikbaar. Kies een andere."
+  },
+  "date_picker": {
+    "calendar": "Kies een datum"
+  },
+  "section": {
+    "more_actions": "Meer acties"
+  },
+  "page_header": {
+    "more_actions": "Meer acties"
+  },
+  "navigation_list": {
+    "label": "Navigatie"
+  },
+  "navigation_header": {
+    "back": "Terug"
+  },
+  "tab_bar": {
+    "label": "Tabbladen"
+  },
+  "entity_picker": {
+    "search": "Zoeken",
+    "close": "Sluiten"
+  },
+  "number_field": {
+    "increment": "Verhogen",
+    "decrement": "Verlagen"
+  },
+  "bulk_action_bar": {
+    "label": "Bulkacties",
+    "selected": "{count, plural, one {# geselecteerd} other {# geselecteerd}}",
+    "clear": "Selectie wissen",
+    "select_all": "Alle {total} selecteren",
+    "select_shown": "Alleen de {count} getoonde selecteren",
+    "more_actions": "Meer acties",
+    "close": "Sluiten"
+  },
+  "link": {
+    "opens_in_browser": "opent in uw browser",
+    "opens_in_new_tab": "opent in een nieuw tabblad"
+  },
+  "table": {
+    "sort_by": "Sorteren op",
+    "ascending": "oplopend",
+    "descending": "aflopend",
+    "loading": "Laden",
+    "selection_column": "Selectie"
+  },
+  "cursor_pagination": {
+    "label": "Paginering",
+    "previous": "Vorige",
+    "next": "Volgende",
+    "load_more": "Meer laden",
+    "count": "{count, plural, one {# item getoond} other {# items getoond}}"
+  },
+  "app_shell": {
+    "skip": "Naar de hoofdinhoud",
+    "navigation": "Navigatiemenu",
+    "close": "Sluiten"
+  },
+  "breadcrumbs": {
+    "label": "Kruimelpad"
+  },
+  "property_list": {
+    "copied": "Gekopieerd"
+  },
+  "sidebar": {
+    "collapse": "Zijbalk inklappen",
+    "expand": "Zijbalk uitklappen"
+  },
+  "data_table": {
+    "loading": "Laden",
+    "actions_column": "Acties",
+    "row_actions": "Acties voor {name}",
+    "working": "Bezig",
+    "no_data_title": "Hier staat nog niets",
+    "no_data_description": "Records verschijnen hier zodra ze bestaan.",
+    "no_results_title": "Geen resultaten",
+    "no_results_description": "Geen record komt overeen met de zoekopdracht en filters. Wijzig of wis ze.",
+    "clear_filters": "Filters wissen",
+    "error_title": "De records konden niet worden geladen",
+    "retry": "Opnieuw proberen",
+    "pagination": "Paginering van {label}",
+    "bulk_actions": "Acties voor {label}"
+  }
+}

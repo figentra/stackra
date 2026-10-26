@@ -1,0 +1,32 @@
+{
+  "enums": {
+    "notification_category": {
+      "transactional": "معاملات",
+      "activity": "النشاط",
+      "marketing": "الأخبار والعروض"
+    },
+    "notification_channel": {
+      "mail": "البريد الإلكتروني",
+      "sms": "رسالة نصية",
+      "whatsapp": "واتساب",
+      "push": "إشعار فوري",
+      "in_app": "داخل التطبيق",
+      "chat": "الدردشة",
+      "voice": "مكالمة صوتية"
+    }
+  },
+  "templates": {
+    "content_free": {
+      "subject": "لديك إشعار جديد",
+      "body": "هناك ما ينتظرك. سجّل الدخول لقراءته.",
+      "title": "إشعار جديد"
+    },
+    "footer": {
+      "sent_by": "مرسل من {sender}",
+      "why_activity": "تصلك هذه الرسالة بسبب نشاط على حسابك لدى {sender}.",
+      "why_marketing": "تصلك هذه الرسالة لأنك وافقت على تلقي رسائل من {sender}.",
+      "unsubscribe": "إلغاء الاشتراك",
+      "manage": "إدارة تفضيلات الإشعارات"
+    }
+  }
+}

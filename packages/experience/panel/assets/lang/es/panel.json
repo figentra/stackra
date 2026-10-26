@@ -1,0 +1,26 @@
+{
+  "widgets": {
+    "empty": "Todavía no hay nada que mostrar.",
+    "failed": "No se ha podido cargar este panel.",
+    "retry": "Reintentar",
+    "range": "Periodo",
+    "change": "{change} frente al periodo anterior",
+    "target": "Objetivo {target}",
+    "not_rendered": "Este panel no se puede mostrar aquí."
+  },
+  "time_range": {
+    "today": "Hoy",
+    "yesterday": "Ayer",
+    "last_7_days": "Últimos 7 días",
+    "last_30_days": "Últimos 30 días",
+    "this_month": "Este mes",
+    "custom": "Personalizado"
+  },
+  "actions": {
+    "confirm_title": "¿Seguro?",
+    "confirm": "Continuar",
+    "cancel": "Cancelar",
+    "done": "Hecho.",
+    "refused": "No se ha podido hacer."
+  }
+}

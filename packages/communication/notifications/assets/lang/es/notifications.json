@@ -1,0 +1,32 @@
+{
+  "enums": {
+    "notification_category": {
+      "transactional": "Transaccionales",
+      "activity": "Actividad",
+      "marketing": "Novedades y ofertas"
+    },
+    "notification_channel": {
+      "mail": "Correo electrónico",
+      "sms": "SMS",
+      "whatsapp": "WhatsApp",
+      "push": "Notificación push",
+      "in_app": "En la aplicación",
+      "chat": "Chat",
+      "voice": "Llamada de voz"
+    }
+  },
+  "templates": {
+    "content_free": {
+      "subject": "Tiene una notificación nueva",
+      "body": "Tiene algo pendiente. Inicie sesión para leerlo.",
+      "title": "Notificación nueva"
+    },
+    "footer": {
+      "sent_by": "Enviado por {sender}",
+      "why_activity": "Recibe este mensaje por la actividad de su cuenta en {sender}.",
+      "why_marketing": "Recibe este mensaje porque aceptó recibir comunicaciones de {sender}.",
+      "unsubscribe": "Darse de baja",
+      "manage": "Gestionar las preferencias de notificación"
+    }
+  }
+}

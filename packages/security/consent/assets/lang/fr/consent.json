@@ -1,0 +1,30 @@
+{
+  "enums": {
+    "consent_category": {
+      "necessary": "Nécessaires",
+      "analytics": "Analyse du produit",
+      "crash_replay": "Relectures des plantages"
+    }
+  },
+  "ui": {
+    "banner": {
+      "title": "Cookies et stockage",
+      "body": "Nous utilisons ce dont ce site a besoin pour fonctionner. Avec votre accord, nous utilisons aussi des cookies et un stockage facultatifs pour les finalités indiquées dans les paramètres.",
+      "accept_all": "Tout accepter",
+      "reject_all": "Tout refuser",
+      "manage": "Gérer",
+      "policy": "Politique relative aux cookies"
+    },
+    "preferences": {
+      "title": "Préférences de consentement"
+    },
+    "legal": {
+      "version": "Version {version}, en vigueur depuis le {effectiveFrom}"
+    },
+    "terms": {
+      "title": "Veuillez relire nos conditions",
+      "body": "Ces documents sont nouveaux ou ont changé. Veuillez les lire et les accepter pour continuer.",
+      "accept": "Accepter et continuer"
+    }
+  }
+}

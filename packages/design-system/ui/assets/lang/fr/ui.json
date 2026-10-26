@@ -1,0 +1,108 @@
+{
+  "filter_bar": {
+    "filters": "Filtres",
+    "add": "Ajouter un filtre",
+    "done": "Terminé",
+    "clear_all": "Tout effacer",
+    "clear_search": "Effacer la recherche",
+    "all_applied": "Tous les filtres sont appliqués.",
+    "remove": "Retirer le filtre {label}",
+    "landmark": "{label}, filtres",
+    "applied": "{count, plural, =0 {Aucun filtre appliqué} one {# filtre appliqué} other {# filtres appliqués}}",
+    "yes": "Oui",
+    "no": "Non",
+    "from": "Du",
+    "until": "Au",
+    "minimum": "Minimum",
+    "maximum": "Maximum"
+  },
+  "date_field": {
+    "empty": "Choisir une date",
+    "done": "Terminé",
+    "cancel": "Annuler",
+    "unavailable": "Ce jour n’est pas disponible. Choisissez-en un autre."
+  },
+  "date_picker": {
+    "calendar": "Choisir une date"
+  },
+  "section": {
+    "more_actions": "Plus d’actions"
+  },
+  "page_header": {
+    "more_actions": "Plus d’actions"
+  },
+  "navigation_list": {
+    "label": "Navigation"
+  },
+  "navigation_header": {
+    "back": "Retour"
+  },
+  "tab_bar": {
+    "label": "Onglets"
+  },
+  "entity_picker": {
+    "search": "Rechercher",
+    "close": "Fermer"
+  },
+  "number_field": {
+    "increment": "Augmenter",
+    "decrement": "Diminuer"
+  },
+  "bulk_action_bar": {
+    "label": "Actions groupées",
+    "selected": "{count, plural, one {# sélectionné} other {# sélectionnés}}",
+    "clear": "Effacer la sélection",
+    "select_all": "Tout sélectionner ({total})",
+    "select_shown": "Sélectionner uniquement les {count} affichés",
+    "more_actions": "Plus d’actions",
+    "close": "Fermer"
+  },
+  "link": {
+    "opens_in_browser": "s’ouvre dans votre navigateur",
+    "opens_in_new_tab": "s’ouvre dans un nouvel onglet"
+  },
+  "table": {
+    "sort_by": "Trier par",
+    "ascending": "croissant",
+    "descending": "décroissant",
+    "loading": "Chargement",
+    "selection_column": "Sélection"
+  },
+  "cursor_pagination": {
+    "label": "Pagination",
+    "previous": "Précédent",
+    "next": "Suivant",
+    "load_more": "Charger plus",
+    "count": "{count, plural, one {# élément affiché} other {# éléments affichés}}"
+  },
+  "app_shell": {
+    "skip": "Aller au contenu principal",
+    "navigation": "Menu de navigation",
+    "close": "Fermer"
+  },
+  "breadcrumbs": {
+    "label": "Fil d’Ariane"
+  },
+  "property_list": {
+    "copied": "Copié"
+  },
+  "sidebar": {
+    "collapse": "Réduire la barre latérale",
+    "expand": "Développer la barre latérale"
+  },
+  "data_table": {
+    "loading": "Chargement",
+    "actions_column": "Actions",
+    "row_actions": "Actions pour {name}",
+    "working": "En cours",
+    "no_data_title": "Rien ici pour le moment",
+    "no_data_description": "Les enregistrements apparaîtront ici dès qu’ils existeront.",
+    "no_results_title": "Aucun résultat",
+    "no_results_description": "Aucun enregistrement ne correspond à la recherche et aux filtres. Modifiez-les ou effacez-les.",
+    "clear_filters": "Effacer les filtres",
+    "error_title": "Les enregistrements n’ont pas pu être chargés",
+    "retry": "Réessayer",
+    "pagination": "Pagination de {label}",
+    "bulk_actions": "Actions sur {label}"
+  }
+}

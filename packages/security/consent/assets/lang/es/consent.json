@@ -1,0 +1,30 @@
+{
+  "enums": {
+    "consent_category": {
+      "necessary": "Necesarias",
+      "analytics": "Analítica del producto",
+      "crash_replay": "Grabaciones de errores"
+    }
+  },
+  "ui": {
+    "banner": {
+      "title": "Cookies y almacenamiento",
+      "body": "Usamos lo que este sitio necesita para funcionar. Con su permiso, también usamos cookies y almacenamiento opcionales para los fines indicados en la configuración.",
+      "accept_all": "Aceptar todo",
+      "reject_all": "Rechazar todo",
+      "manage": "Gestionar",
+      "policy": "Política de cookies"
+    },
+    "preferences": {
+      "title": "Preferencias de consentimiento"
+    },
+    "legal": {
+      "version": "Versión {version}, vigente desde {effectiveFrom}"
+    },
+    "terms": {
+      "title": "Revise nuestras condiciones",
+      "body": "Estos documentos son nuevos o han cambiado. Léalos y acéptelos para continuar.",
+      "accept": "Aceptar y continuar"
+    }
+  }
+}

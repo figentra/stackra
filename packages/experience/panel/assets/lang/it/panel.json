@@ -1,0 +1,26 @@
+{
+  "widgets": {
+    "empty": "Ancora niente da mostrare.",
+    "failed": "Impossibile caricare questo riquadro.",
+    "retry": "Riprova",
+    "range": "Periodo",
+    "change": "{change} rispetto al periodo precedente",
+    "target": "Obiettivo {target}",
+    "not_rendered": "Questo riquadro non può essere mostrato qui."
+  },
+  "time_range": {
+    "today": "Oggi",
+    "yesterday": "Ieri",
+    "last_7_days": "Ultimi 7 giorni",
+    "last_30_days": "Ultimi 30 giorni",
+    "this_month": "Questo mese",
+    "custom": "Personalizzato"
+  },
+  "actions": {
+    "confirm_title": "Sei sicuro?",
+    "confirm": "Continua",
+    "cancel": "Annulla",
+    "done": "Fatto.",
+    "refused": "Non è stato possibile farlo."
+  }
+}

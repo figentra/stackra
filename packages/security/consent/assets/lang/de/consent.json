@@ -1,0 +1,30 @@
+{
+  "enums": {
+    "consent_category": {
+      "necessary": "Notwendig",
+      "analytics": "Produktanalyse",
+      "crash_replay": "Absturzaufzeichnungen"
+    }
+  },
+  "ui": {
+    "banner": {
+      "title": "Cookies und Speicher",
+      "body": "Wir verwenden, was diese Website zum Funktionieren braucht. Mit Ihrer Erlaubnis verwenden wir außerdem optionale Cookies und Speicher für die in den Einstellungen genannten Zwecke.",
+      "accept_all": "Alle akzeptieren",
+      "reject_all": "Alle ablehnen",
+      "manage": "Verwalten",
+      "policy": "Cookie-Richtlinie"
+    },
+    "preferences": {
+      "title": "Einwilligungseinstellungen"
+    },
+    "legal": {
+      "version": "Version {version}, gültig ab {effectiveFrom}"
+    },
+    "terms": {
+      "title": "Bitte prüfen Sie unsere Bedingungen",
+      "body": "Diese Dokumente sind neu oder wurden geändert. Bitte lesen und akzeptieren Sie sie, um fortzufahren.",
+      "accept": "Akzeptieren und fortfahren"
+    }
+  }
+}
