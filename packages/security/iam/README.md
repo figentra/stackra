@@ -145,7 +145,9 @@ connectVisibilityFilter(container); // with IamVisibilityFilterDriver bound to V
   longest duration is a setting passed to `breakGlassGrant`.
 - `pdp.fieldAccess(actor, model, { record })` answers the `FieldRule`s in force: hidden and read-only fields.
 - A condition on a field `registerDimensions` names is checked against `DimensionValues` (the event-fed projection): a
-  value not live fails an allow and holds a deny; `visibleCondition` pushes the live values into the read.
+  value not live fails an allow and holds a deny; `visibleCondition` pushes the live values into the read. The field is
+  `record.<key>` in the one key casing, `FIELD_KEY` of `@stackra/rules/contracts` (`record.channelId`, never
+  `record.channel_id`); any other row is refused at boot.
 - `Capability.Exists` lets an audience learn only that a record exists; `existenceHit` shapes the search result.
 
 ## Wiring

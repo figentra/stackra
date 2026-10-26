@@ -1,0 +1,35 @@
+{
+  "market": "ae",
+  "version": "0.1.0",
+  "status": "draft",
+  "entries": [
+    {
+      "key": "identity.national_ids",
+      "value": {
+        "emirates_id": {
+          "pattern": "^784\\d{12}$",
+          "check": "luhn"
+        }
+      },
+      "from": "2000-01-01"
+    },
+    {
+      "key": "identity.address_format",
+      "value": {
+        "required": ["locality", "region"],
+        "region": {
+          "pattern": "^(AZ|AJ|DU|FU|RK|SH|UQ)$"
+        },
+        "maxLines": 2,
+        "layout": [["lines"], ["district"], ["locality", "region"], ["country"]]
+      },
+      "from": "2000-01-01"
+    }
+  ],
+  "reviews": [],
+  "checklist": [
+    {
+      "id": "counsel_review"
+    }
+  ]
+}

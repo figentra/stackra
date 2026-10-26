@@ -28,7 +28,7 @@ import { MarketContext } from "#core/values/market-context.value";
 const folder = new URL("../../../assets/data/packs/", import.meta.url);
 
 const packs = readdirSync(folder)
-  .filter((name) => name.endsWith(".json"))
+  .filter((name) => /^us(-[a-z]+)?\.json$/.test(name))
   .map((name) => MARKET_PACK_SCHEMA.parse(JSON.parse(readFileSync(new URL(name, folder), "utf8"))));
 
 const states = ["us-ca", "us-fl", "us-il", "us-mi", "us-nj", "us-ny", "us-tx"];

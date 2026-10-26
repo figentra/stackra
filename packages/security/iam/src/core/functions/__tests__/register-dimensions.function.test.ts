@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `registerDimensions` and `conditionFields`: rows are stored per model (a later row for a field
- *          replaces it), malformed rows are refused, and every tested field of a condition tree is found.
+ *          replaces it), malformed rows are refused (a snake_case field included: one key casing), and every tested
+ *          field of a condition tree is found.
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0351 (decisions 1 to 3).
@@ -33,8 +34,8 @@ describe("registerDimensions", () => {
   it.each([
     [{ model: "Orders", field: "record.channelId", dimension: "sales.channel" }],
     [{ model: "orders.order", field: "channelId", dimension: "sales.channel" }],
-    [{ model: "orders.order", field: "record.channel_id", dimension: "sales.channel" }],
     [{ model: "orders.order", field: "record.channelId", dimension: "channel" }],
+    [{ model: "orders.order", field: "record.channel_id", dimension: "sales.channel" }],
   ])("refuses %j", (row) => {
     expect(() => registerDimensions([row])).toThrow(TypeError);
   });

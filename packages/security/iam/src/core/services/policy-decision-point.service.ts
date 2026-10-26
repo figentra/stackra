@@ -114,7 +114,7 @@ function roleHoldsRestricted(role: string, snapshot: PolicySnapshot): boolean {
   return false;
 }
 
-/** The value of `path` (`record.channel_id`) in `facts`, or `undefined`. */
+/** The value of `path` (`record.channelId`) in `facts`, or `undefined`. */
 function valueAt(facts: unknown, path: string): unknown {
   let value = facts;
   for (const part of path.split(".")) {

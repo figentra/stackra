@@ -1,0 +1,42 @@
+{
+  "market": "sa",
+  "version": "0.1.0",
+  "status": "draft",
+  "entries": [
+    {
+      "key": "identity.national_ids",
+      "value": {
+        "national_id": {
+          "pattern": "^1\\d{9}$",
+          "check": "luhn"
+        },
+        "residence_permit": {
+          "pattern": "^2\\d{9}$",
+          "check": "luhn"
+        }
+      },
+      "from": "2000-01-01"
+    },
+    {
+      "key": "identity.address_format",
+      "value": {
+        "required": ["district", "locality", "postalCode"],
+        "postalCode": {
+          "pattern": "^\\d{5}$"
+        },
+        "shortCode": {
+          "pattern": "^[A-Z]{4}\\d{4}$"
+        },
+        "maxLines": 2,
+        "layout": [["lines"], ["district"], ["locality", "postalCode"], ["country"]]
+      },
+      "from": "2000-01-01"
+    }
+  ],
+  "reviews": [],
+  "checklist": [
+    {
+      "id": "counsel_review"
+    }
+  ]
+}

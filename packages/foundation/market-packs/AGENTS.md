@@ -33,7 +33,8 @@ The market-pack loader. Member at `packages/foundation/market-packs` (`tier:lib`
   data owned by the platform (base packs) and by products (their sections). Unit tests use made-up markets (`xa`,
   `xa-one`). The only pack content here is the draft seed data in `assets/data/packs/` (the `us` base and seven state
   overlays, ADR 0385, with the ADR 0405 formats, the ADR 0392 billing terms and the optional cash rounding), checked
-  by `src/core/__tests__/us-packs.test.ts`; it stays `draft` until a reviewer signs it.
+  by `src/core/__tests__/us-packs.test.ts`, and the `sa`, `ae` and `eg` identity packs, checked by
+  `src/core/__tests__/mena-packs.test.ts`; it stays `draft` until a reviewer signs it.
 - **Subjects.** Which market answers a rule kind (`location`, `buyer`, `entity`, `tenant`) is pack data
   (`subjects`); `MarketContext.packFor` reads it. Never branch on a rule kind in code.
 - **Storage.** Signed packs are stored and fetched by content hash through `PackStore`; the production driver uses
@@ -46,7 +47,9 @@ The market-pack loader. Member at `packages/foundation/market-packs` (`tier:lib`
   owners) and `overlayFloorIssues` refuses an overlay that loosens a parent floor. Both return issues, never throw. A
   `*` segment in a declared key declares a family whose last part is data (`providers.*`); it is never required.
 - **Base schemas.** `BASE_PACK_SCHEMAS` declares the base keys Stackra packages and OS services read but no OS section
-  owns yet (`notifications.channels.*`, `notifications.prayer_holds`, `providers.*`, `imports.legacy_encoding`). Keep
+  owns yet (`notifications.channels.*`, `notifications.prayer_holds`, `providers.*`, `imports.legacy_encoding`,
+  `identity.national_ids`, `identity.address_format`, `ai.approval_floor`). An identity shape is the JSON Schema of
+  its @stackra/validation `X$`; never copy it by hand. Keep
   each prefix as narrow as its keys; add a key here only when a consumer reads it, and never a market's value.
 - Trusted public keys are deployment configuration; the private signing key is held by the caller of `signPack`
   and never read, stored or logged here.
