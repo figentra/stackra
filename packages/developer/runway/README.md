@@ -6,7 +6,8 @@ Purpose: the package's reader guide: runway format version 3, the topology place
          readers, and how integration events fan out between the services a topology places.
 Boundary: documentation only; the event topics and subscriptions are gen's output, not this package's.
 Runtime: none
-Governing contract: ADR 0296; ADR 0352; ADR 0400; ADR 0148 (decisions 3 and 6); ADR 0260 (decision 4).
+Governing contract: ADR 0296; ADR 0352; ADR 0400; ADR 0444 (the tools stack block); ADR 0148 (decisions 3 and 6);
+                    ADR 0260 (decision 4).
 -->
 
 Runway format version 3 as code: the schemas of the root runway (WHERE things run and how they are packed) and of the
@@ -107,6 +108,32 @@ environments:
 
 `checkRegions` also reports a `cloud` whose provider section is missing (`cloud_unconfigured`) or does not hold the
 account (`unknown_account`).
+
+### The self-hosted tools stack of each region
+
+Each region an environment deploys to may run one shared tools stack (owner decision R3-5, ADR 0444): Documenso,
+the OCR server, Nominatim and Photon on the region's OpenStreetMap extract, LibreTranslate and Chatwoot. Its block is
+`providers.tools`, which the root schema already leaves open (a provider block needs no schema change); runway passes
+it through and `@stackra/infra-tools` checks and plans it.
+
+```yaml
+providers:
+  tools:
+    environments: [staging, production] # the environments that run it, in each region they list
+    extracts: # the OSM extract each region imports (gcc, egypt, eu, us, or one under sources)
+      gcc: gcc
+      eg: egypt
+    network: # the VPC, private subnets and security groups (ids or ref:)
+      gcc:
+        vpcId: ref:network.gcc.vpc
+        subnetIds: [ref:network.gcc.private-a, ref:network.gcc.private-b]
+        securityGroupIds: [ref:network.gcc.tools]
+    tools: # overrides of the catalogue defaults; enabled: false removes a tool
+      ocr:
+        image: ghcr.io/figentra/tools-ocr:1.0.0
+      photon:
+        image: ghcr.io/figentra/tools-photon:0.6.0
+```
 
 ## Deploy, promote and roll back
 

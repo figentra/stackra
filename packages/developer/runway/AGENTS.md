@@ -5,7 +5,8 @@ Stackra file contract:
 Purpose: the agent rules of @stackra/runway: where code goes, the schema, deploy, secrets and event fan-out rules, PII.
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
-Governing contract: ADR 0296; ADR 0352; ADR 0400; ADR 0260 (decision 4: the relay fan-out is gen's).
+Governing contract: ADR 0296; ADR 0352; ADR 0400; ADR 0444 (`providers.tools`); ADR 0260 (decision 4: the relay fan-out
+                    is gen's).
 -->
 
 Runway format version 3 (ADR 0296) as code. Member at `packages/developer/runway` (`tier:lib`). Entries `.` and
@@ -37,6 +38,8 @@ Runway format version 3 (ADR 0296) as code. Member at `packages/developer/runway
   deployment's own blocks); a provider never hard-codes a branch, channel or profile.
 - Event fan-out is gen's (`.stackra/encore/<member>/events.ts` and a relay service's `relay.ts`), never a runway key:
   do not add per-service subscriber lists to a runway; document topology effects in the README's fan-out section.
+- `providers.tools` (the per-region self-hosted tools stack, ADR 0444) stays an open provider block here;
+  `@stackra/infra-tools` owns its schema. Do not type it in the root zod or the canonical schema.
 - A runway holds secret names only. `definesFor` inlines public vars (`VITE_`, `EXPO_PUBLIC_`, `RENDERER_VITE_`) and
   never the TLS paths.
 
