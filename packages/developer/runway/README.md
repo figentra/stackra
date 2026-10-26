@@ -19,8 +19,13 @@ tool configs call so no port, origin or feed URL is typed outside a `runway.yaml
 | `.`         | `checkRegions(root)`, `regionsOf(root, environment)`                                    | region failures for `stackra validate`; an environment's resolved regions   |
 | `.`         | `RunwayCloud`                                                                           | `aws`, `gcp`: the cloud a region names                                      |
 | `.`         | `runwayJsonSchema(kind)`                                                                | the zod schemas as JSON Schema, tested against the shipped canonical files  |
+| `.`         | `deployTargets(root, environment)`                                                      | every place a release lands, in release order (regions, dedicated tenants)  |
+| `.`         | `deploy`, `promote`, `rollback`                                                         | ship, promote and roll back a release through the providers                 |
+| `.`         | `RunwayProvider`                                                                        | the provider port: plan, apply, verify, rollback and current (ADR 0352 d3)  |
+| `./node`    | `EncoreCloudProviderDriver`, `EasProviderDriver`                                        | the `encore-cloud` and `eas` providers                                      |
+| `./node`    | `runCommand`, `CommandRunner`                                                           | how a provider runs its CLI, with no shell                                  |
 | `.`         | `RunwayKind`, `RunwayEnvironment`, `TopologyMode`, `RequirementEngine`, `CacheEviction` | enums                                                                       |
-| `.`         | `RunwayInvalidError`, `RunwayUnresolvedError`                                           | errors                                                                      |
+| `.`         | `RunwayInvalidError`, `RunwayUnresolvedError`, `RunwayDeployFailedError`                | errors                                                                      |
 | `./node`    | `definesFor(member, environment)`                                                       | the bundler `define` map: public vars and the injected runway facts         |
 | `./node`    | `devServer(member)`                                                                     | the Vite `server` block from the dev facts                                  |
 | `./node`    | `readRunway(file, kind)`                                                                | read, YAML-parse and check one runway file                                  |
@@ -67,6 +72,60 @@ A region without a cloud or a location, or a cloud other than `aws` and `gcp`, f
 a region whose cloud has no `providers` section (`cloud_unconfigured`) and an environment that names an undeclared
 region (`unknown_region`); `regionsOf` resolves an environment's regions for the providers. Nothing here deploys.
 
+### The cloud of an environment, KSA in-country and dedicated tenants
+
+Each environment (and each dedicated deployment) names the cloud its foundation runs on and the account or project
+that holds it, by key of `providers.aws.accounts` or `providers.gcp.projects` (ADR 0400). This replaces
+`providers.gcp.environments`. A dedicated deployment ships the environment's services for one tenant, in its own
+project, every time the environment is released.
+
+```yaml
+providers:
+  gcp: { projects: { ksa: { id: "ref:gcp.ksa.id", number: "ref:gcp.ksa.number" }, firm: { … } } }
+regions:
+  ksa: { cloud: gcp, location: me-central2, account: "ref:gcp.ksa.id", jurisdiction: sa }
+environments:
+  production:
+    cloud: { name: gcp, account: ksa }
+    regions: [ksa]
+    destinations: { services: encore-cloud, mobile: eas }
+    encore: { branch: main, regions: { ksa: { branch: ksa } } }
+    deploy: { on: promote }
+    dedicated:
+      firm: { tenant: tenant-1, cloud: { name: gcp, account: firm }, encore: { branch: firm } }
+```
+
+`checkRegions` also reports a `cloud` whose provider section is missing (`cloud_unconfigured`) or does not hold the
+account (`unknown_account`).
+
+## Deploy, promote and roll back
+
+`deployTargets(root, environment)` lists every place a release lands: each kind of member in build order, in each
+region in release order, then each dedicated tenant's services. `deploy` applies and verifies each target through its
+provider and stops at the first one that is down; `promote` ships what the source environment runs to an environment
+with `deploy.on: promote`; `rollback` returns each target to its record from an earlier release (the caller reads the
+records from the release log, ADR 0352 decision 7).
+
+```ts
+import { promote } from "@stackra/runway";
+import { EasProviderDriver, EncoreCloudProviderDriver, readRunway } from "@stackra/runway/node";
+
+const root = readRunway("runway.yaml", "root");
+const providers = [
+  new EncoreCloudProviderDriver({ app: "acme" }),
+  new EasProviderDriver({ projectDir: "apps/mobile" }),
+];
+const results = await promote(root, "staging", "production", providers); // one record per target
+```
+
+| Provider       | apply                                                                     | verify                      | rollback                      |
+| -------------- | ------------------------------------------------------------------------- | --------------------------- | ----------------------------- |
+| `encore-cloud` | `git push encore://<app> <sha>:refs/heads/<branch>` (`encore.branch`)     | the branch holds the commit | force-push the earlier commit |
+| `eas`          | `eas build --profile <channel>` or `eas update --channel` (`targets.eas`) | build status, or the group  | republish the earlier group   |
+
+A store build cannot be rolled back; the EAS provider refuses it. Helm and Zarf output for on-prem waits for the first
+prospect (ADR 0400).
+
 ## Runway facts
 
 The readers answer from resolved facts, never from the YAML. `stackra dev` writes them for every member as
@@ -94,4 +153,5 @@ The canonical schemas are `tools/schemas/runway-<kind>.schema.json` at the repos
 them, ADR 0284). `schema/<kind>.json` is a byte copy of each, and `pnpm validate` fails until you `cp` the canonical
 file over it. The zod in `src/core/constants/` must accept and refuse the same documents (plus the cross-field rules
 JSON Schema cannot state), and the `runwayJsonSchema` test compares its derivation with the shipped file once both are
-normalised, so a canonical change lands with the matching zod change.
+normalised, so a canonical change lands with the matching zod change. ADR 0400 keeps `tools/schemas` the source of
+truth and the package copy the byte copy.

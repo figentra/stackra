@@ -15,7 +15,14 @@ import type { DevServerOptions } from "#node/index";
 
 describe("@stackra/runway/node", () => {
   it("exports exactly its values, none of them also exported by .", () => {
-    expect(Object.keys(node).sort()).toEqual(["definesFor", "devServer", "readRunway"]);
+    expect(Object.keys(node).sort()).toEqual([
+      "EasProviderDriver",
+      "EncoreCloudProviderDriver",
+      "definesFor",
+      "devServer",
+      "readRunway",
+      "runCommand",
+    ]);
     for (const name of Object.keys(node)) expect(Object.keys(core)).not.toContain(name);
   });
 

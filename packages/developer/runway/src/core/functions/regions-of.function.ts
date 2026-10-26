@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: `regionsOf(root, environment)`, the regions an environment deploys to, resolved from the root runway, in its
- *          release order.
+ * Purpose: `regionsOf(root, environment, keys?)`, the regions an environment (or one of its dedicated deployments,
+ *          through `keys`) deploys to, resolved from the root runway, in its release order.
  * Boundary: pure; reads the parsed root only. An environment that lists no regions deploys to none here (a
  *           single-region repository keeps `providers.aws.region`). Run `checkRegions` first: a region the root does
  *           not declare throws.
@@ -16,14 +16,19 @@ import type { RunwayRegion } from "#core/types/runway-region.type";
 /**
  * The resolved regions of `environment`.
  *
+ * @param keys - the region keys to resolve; the environment's `regions` when absent.
  * @throws RunwayUnresolvedError when the environment lists a region `regions` does not declare.
  * @example
  * regionsOf(root, "production").map((region) => `${region.cloud}:${region.location}`);
  * // ["aws:eu-central-1", "gcp:me-central2"]
  */
-export function regionsOf(root: RootRunway, environment: RunwayEnvironment): RunwayRegion[] {
+export function regionsOf(
+  root: RootRunway,
+  environment: RunwayEnvironment,
+  keys: readonly string[] = root.environments[environment]?.regions ?? [],
+): RunwayRegion[] {
   const regions = root.regions ?? {};
-  return (root.environments[environment]?.regions ?? []).map((key) => {
+  return keys.map((key) => {
     if (!Object.hasOwn(regions, key))
       throw new RunwayUnresolvedError(
         `${environment} deploys to "${key}", which the root runway's \`regions\` does not declare`,

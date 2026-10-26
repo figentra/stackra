@@ -677,6 +677,65 @@
               "examples": ["beta", "latest"]
             }
           }
+        },
+        "cloud": {
+          "$ref": "#/$defs/cloud"
+        },
+        "dedicated": {
+          "type": "object",
+          "description": "Dedicated deployments of this environment's services: one tenant each, in its own account or project, released with the environment (ADR 0400).",
+          "propertyNames": {
+            "pattern": "^[a-z][a-z0-9-]*$"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/dedicated"
+          }
+        }
+      }
+    },
+    "cloud": {
+      "type": "object",
+      "description": "The cloud an environment's foundation runs on and the account or project that holds it (ADR 0354 d4, ADR 0400). It replaces `providers.gcp.environments`.",
+      "additionalProperties": false,
+      "required": ["name", "account"],
+      "properties": {
+        "name": {
+          "enum": ["aws", "gcp"],
+          "description": "The cloud (ADR 0354 d1)."
+        },
+        "account": {
+          "type": "string",
+          "minLength": 1,
+          "description": "A key of `providers.aws.accounts` (AWS) or `providers.gcp.projects` (GCP).",
+          "examples": ["prod", "ksa"]
+        }
+      }
+    },
+    "dedicated": {
+      "type": "object",
+      "description": "One dedicated deployment: one tenant, its own account or project, the environment's release train (ADR 0400).",
+      "additionalProperties": false,
+      "required": ["tenant", "cloud"],
+      "properties": {
+        "tenant": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The tenant id the deployment serves; never a name."
+        },
+        "cloud": {
+          "$ref": "#/$defs/cloud"
+        },
+        "regions": {
+          "type": "array",
+          "description": "The regions it runs in, by key of the root `regions`; the environment's when absent.",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "encore": {
+          "type": "object",
+          "description": "Encore Cloud settings of its own app environment (the branch it deploys from)."
         }
       }
     }

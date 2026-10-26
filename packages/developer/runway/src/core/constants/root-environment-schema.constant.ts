@@ -3,23 +3,28 @@
  * Purpose: `ROOT_ENVIRONMENT_SCHEMA`, one `environments.<env>` block of the root runway: where each kind of member
  *          runs (`destinations`), the dev containers, lanes, https and proxy, the Encore environment, a preview's ttl
  *          and data, the shared resources, the defaults members start from, the topology, the domains, the deploy
- *          rule, the mobile and desktop channels, and the regions it deploys to, in release order.
+ *          rule, the mobile and desktop channels, the regions it deploys to, in release order, the cloud its foundation
+ *          runs on, and the dedicated deployments that ride its release train.
  * Boundary: internal. Strict at its top and in `shared` and `defaults.service`, as the canonical schema is; the
  *           provider facts inside stay open, and the commands that read them check their own part.
  * Runtime: isomorphic
  * Governing contract: ADR 0296 (decision 2), ADR 0238 (one database server per environment), ADR 0170, ADR 0289,
- *                     ADR 0354 (decision 4); OS-12 (a release rolls region by region).
+ *                     ADR 0354 (decision 4); OS-12 (a release rolls region by region); ADR 0400 (`cloud`, `dedicated`).
  */
+import { Enum } from "@stackra/contracts";
 import { z } from "zod";
 
 import { CONFIG_VALUES_SCHEMA } from "#core/constants/config-values-schema.constant";
+import { DEDICATED_SCHEMA } from "#core/constants/dedicated-schema.constant";
+import { ENVIRONMENT_CLOUD_SCHEMA } from "#core/constants/environment-cloud-schema.constant";
 import { OPEN_OBJECT_SCHEMA } from "#core/constants/open-object-schema.constant";
 import { TOPOLOGY_SCHEMA } from "#core/constants/topology-schema.constant";
+import { DeployKind } from "#core/enums/deploy-kind.enum";
 
 /** One root environment. */
 export const ROOT_ENVIRONMENT_SCHEMA = z.strictObject({
   destinations: z
-    .partialRecord(z.enum(["services", "web", "mobile", "desktop", "docs"]), z.string())
+    .partialRecord(z.enum(Enum.values(DeployKind) as [DeployKind, ...DeployKind[]]), z.string())
     .optional(),
   infra: z.record(z.string(), OPEN_OBJECT_SCHEMA).optional(),
   lanes: z
@@ -78,4 +83,8 @@ export const ROOT_ENVIRONMENT_SCHEMA = z.strictObject({
     .optional(),
   mobile: z.looseObject({ channel: z.string().optional() }).optional(),
   desktop: z.looseObject({ channel: z.string().optional() }).optional(),
+  cloud: ENVIRONMENT_CLOUD_SCHEMA.optional(),
+  dedicated: z
+    .record(z.string().regex(/^[a-z][a-z0-9-]*$/, "Expected a lower-case key"), DEDICATED_SCHEMA)
+    .optional(),
 });
