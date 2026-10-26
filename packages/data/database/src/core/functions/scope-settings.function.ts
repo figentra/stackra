@@ -11,8 +11,7 @@
  */
 import type { ScopeRef } from "@stackra/contracts";
 
-/** An `ltree` path: labels of letters, digits, `_` and `-`, root first, separated by dots. */
-const LTREE_PATH = /^[\w-]+(?:\.[\w-]+)*$/;
+import { LTREE_PATH } from "#core/constants/ltree-path.constant";
 
 /**
  * The settings of `scopes`, as `[name, value]` pairs.

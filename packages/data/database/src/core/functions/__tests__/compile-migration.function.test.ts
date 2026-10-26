@@ -2,8 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `compileMigration`: the SQL and inverses of the template's migration shapes (create with
  *          trait, money, enum, link and foreign-key columns; expand steps; online indexes; raw statements with `after`),
- *          macros installed by name, the generated equality and ancestor row-level-security policies, the scope-tree
- *          columns with their GiST index, generated columns, and every safety refusal (missing nullability or comment,
+ *          macros installed by name, the generated equality, ancestor and inherited row-level-security policies, the
+ *          scope-tree columns with their GiST index, generated columns, and every safety refusal (missing nullability or comment,
  *          NOT NULL without a default, non-concurrent index on an existing table, concurrent index on a new one,
  *          unapproved extension, raw statement without an inverse, a policy the table cannot take), and the ICU
  *          collation of a text column (with its refusals).
@@ -317,6 +317,46 @@ describe(compileMigration, () => {
     );
   });
 
+  it("writes the inherited policy: ancestor reads and writes, and a select-only policy for the paths above", () => {
+    class CreateTemplatesMigration extends Migration {
+      up(schema: SchemaBuilder): void {
+        schema.createExtension(Extension.Ltree);
+        schema.create("templates", (t: Blueprint) => {
+          t.hasPublicId("tpl");
+          t.scopePath().notNull().comment("The node the template is seeded at.");
+          t.rowLevelSecurity("scope_path", { setting: "app.scope_paths", match: "inherited" });
+        });
+      }
+    }
+    const [step] = compileMigration(CreateTemplatesMigration, { schema: "templates" }).steps;
+    const granted = `unnest(string_to_array(current_setting('app.scope_paths', true), '|')) as granted`;
+    const check = `"scope_path" ? array(select (granted || '.*')::lquery from ${granted})`;
+    expect(step?.sql).toContain(
+      `create policy "pol_templates_scope_path" on "templates"."templates" using (${check}) with check (${check})`,
+    );
+    expect(step?.sql).toContain(
+      `create policy "pol_templates_scope_path_inherited" on "templates"."templates" for select using ("scope_path" @> array(select granted::ltree from ${granted}))`,
+    );
+  });
+
+  it("adds the inherited policies to an existing table with both inverses", () => {
+    class InheritTemplatesMigration extends Migration {
+      up(schema: SchemaBuilder): void {
+        schema.table("templates", (t: Blueprint) => {
+          t.scopePath().nullable().comment("The node the template is seeded at.");
+          t.rowLevelSecurity("scope_path", { setting: "app.scope_paths", match: "inherited" });
+        });
+      }
+    }
+    const [step] = compileMigration(InheritTemplatesMigration, { schema: "templates" }).steps;
+    expect(step?.inverse).toContain(
+      'drop policy if exists "pol_templates_scope_path_inherited" on "templates"."templates"',
+    );
+    expect(step?.inverse).toContain(
+      'drop policy if exists "pol_templates_scope_path" on "templates"."templates"',
+    );
+  });
+
   it("adds the scope path to an existing table with its GiST index as an online step", () => {
     class ScopeDocumentsMigration extends Migration {
       up(schema: SchemaBuilder): void {
@@ -350,6 +390,14 @@ describe(compileMigration, () => {
         t.rowLevelSecurity("owner_id", { setting: "app.owner_id", match: "ancestor" });
       },
       /is not ltree/,
+    ],
+    [
+      "an inherited match on a column that is not ltree",
+      (t: Blueprint) => {
+        t.uuid("owner_id").notNull().comment("The owner.");
+        t.rowLevelSecurity("owner_id", { setting: "app.owner_id", match: "inherited" });
+      },
+      /takes no inherited match/,
     ],
     [
       "a policy on a column the blueprint lacks",

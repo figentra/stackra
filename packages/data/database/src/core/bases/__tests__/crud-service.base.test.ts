@@ -6,7 +6,8 @@
  *          `update` assigns, `table` builds the cursor read, `sum` aggregates, and `metrics` returns a reader. With a
  *          `VisibilityFilter` bound, every read ANDs its conditions for the running call's actor (none outside a
  *          call), and a read with no conditions or no driver is unchanged. With a `HoldRegistry`
- *          connected, `purge` removes only the rows no hold covers.
+ *          connected, `purge` removes only the rows no hold covers. `repath` rewrites a subtree's path prefix in one
+ *          parameterised statement and refuses a path that is not `ltree` or a move under itself.
  * Boundary: test only; a fake `Database` hands out a recording entity manager, so no database runs.
  * Runtime: node (vitest)
  * Governing contract: ADR 0105 as amended by ADR 0294; ADR 0307 (rules 2 and 16); ADR 0333 (decision 4); ADR 0022;
@@ -58,7 +59,11 @@ registerModelPartners([[OrderService, Order]]);
 const metadata = {
   className: "Order",
   primaryKeys: ["id"],
-  properties: { id: { fieldNames: ["id"] }, createdAt: { fieldNames: ["created_at"] } },
+  properties: {
+    id: { fieldNames: ["id"] },
+    createdAt: { fieldNames: ["created_at"] },
+    scopePath: { fieldNames: ["scope_path"] },
+  },
 };
 
 /** A recording entity manager. */
@@ -79,6 +84,7 @@ function fakeEm() {
     flush: vi.fn(async () => undefined),
     assign: vi.fn((row: object, data: object) => Object.assign(row, data)),
     nativeDelete: vi.fn(async () => 2),
+    nativeUpdate: vi.fn(async (..._args: unknown[]) => 4),
     getMetadata: vi.fn(() => metadata),
     createQueryBuilder: vi.fn(() => builder),
     findByCursor: vi.fn(async () => ({
@@ -304,5 +310,38 @@ describe("CrudService.purge with legal holds", () => {
     connectHoldRegistry(registry().holds);
     expect(await new OrderService().purge({ status: "paid" })).toBe(0);
     expect(em.nativeDelete).not.toHaveBeenCalled();
+  });
+});
+
+describe("CrudService.repath", () => {
+  it("rewrites the prefix of every row at or below the old path in one parameterised statement", async () => {
+    const em = connect();
+    expect(await new OrderService().repath("platform.a", "platform.b.c")).toBe(4);
+    const [model, where, data] = em.nativeUpdate.mock.calls[0] as [
+      unknown,
+      object,
+      { scopePath: { sql: string; params: unknown[] } },
+    ];
+    expect(model).toBe(Order);
+    // the raw condition is a symbol key described as `raw('<sql>')`
+    expect(Object.getOwnPropertySymbols(where)[0]?.description).toContain(
+      '"scope_path" <@ ?::ltree',
+    );
+    expect(data.scopePath.sql).toBe('?::ltree || subpath("scope_path", nlevel(?::ltree))');
+    expect(data.scopePath.params).toEqual(["platform.b.c", "platform.a"]);
+  });
+
+  it("moves nothing when the paths are the same", async () => {
+    const em = connect();
+    expect(await new OrderService().repath("platform.a", "platform.a")).toBe(0);
+    expect(em.nativeUpdate).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["a path that is not ltree", "platform.a", "platform|b"],
+    ["a move under itself", "platform.a", "platform.a.b"],
+  ])("refuses %s", async (_name, from, to) => {
+    connect();
+    await expect(new OrderService().repath(from, to)).rejects.toThrow(TypeError);
   });
 });

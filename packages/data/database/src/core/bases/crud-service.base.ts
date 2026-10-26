@@ -9,11 +9,12 @@
  *           caller's transaction (an action's unit of work) and a query reads on a fork. A hand-written method of the
  *           same name overrides an inherited one. Every read (`find`, `findOne`, `findOneOrFail`, `count`, `sum`,
  *           `table`, `metrics`) ANDs in the bound `VisibilityFilter`'s conditions, on top of row-level security;
- *           writes and `purge` carry none. `purge` skips every row the connected `HoldRegistry` holds.
+ *           writes and `purge` carry none. `purge` skips every row the connected `HoldRegistry` holds. `repath` moves
+ *           a scope subtree's rows to a new path prefix, the step every service takes when a scope node moves.
  * Runtime: node
  * Governing contract: ADR 0105 as amended by ADR 0294; ADR 0097 (decision 5.3); ADR 0307 (rules 2 and 16);
  *                     ADR 0305 (rule 5: partner by type argument); ADR 0136 (decision 2); ADR 0333 (decision 4);
- *                     ADR 0134 (2026-10-24 amendment: legal holds).
+ *                     ADR 0134 (2026-10-24 amendment: legal holds); ADR 0411 (subtree move).
  */
 import { TransactionPropagation, raw } from "@mikro-orm/core";
 import type {
@@ -31,6 +32,7 @@ import { SortDirection } from "@stackra/contracts";
 import { NotFoundError } from "@stackra/errors";
 
 import { HOLD_HOST } from "#core/constants/hold-host.constant";
+import { LTREE_PATH } from "#core/constants/ltree-path.constant";
 import { columnOf } from "#core/functions/column-of.function";
 import { disposableIds } from "#core/functions/disposable-ids.function";
 import { filterOf } from "#core/functions/filter-of.function";
@@ -176,6 +178,35 @@ export abstract class CrudService<M extends object> extends Service implements R
     // reason: assign types its data as MikroORM's DTO union; EntityData<M> is what callers hold and assign takes
     this.em().assign(row as M, data as never);
     return row as M;
+  }
+
+  /**
+   * Moves a scope subtree's rows: every row whose `scopePath` is `from` or below it takes `to` in place of that prefix
+   * (`platform.a.shop` becomes `platform.b.shop` when `platform.a` moves to `platform.b`), in one statement inside the
+   * caller's transaction, so the move commits whole or not at all. A service calls it from its listener of
+   * `ScopeMoved` (`@stackra/scope/node`). The session's scope must reach both paths (a grant at a common ancestor):
+   * row-level security hides the rows outside it and refuses a new path outside it. Rows the entity manager already
+   * loaded keep their old path until they are read again.
+   *
+   * @returns the number of rows moved; 0 when `from` and `to` are the same path.
+   * @throws TypeError when either path is not an `ltree` path, `to` lies below `from`, or the model has no
+   *         single-column `scopePath`.
+   */
+  async repath(from: string, to: string): Promise<number> {
+    if (!LTREE_PATH.test(from) || !LTREE_PATH.test(to))
+      throw new TypeError(`repath needs two ltree paths, got "${from}" and "${to}"`);
+    if (to.startsWith(`${from}.`))
+      throw new TypeError(`"${to}" lies below "${from}": a subtree cannot move under itself`);
+    if (from === to) return 0;
+    const em = this.em();
+    const model = this.model();
+    const column = quoteIdentifier(columnOf(em.getMetadata(model), "scopePath"));
+    // raw-sql: the ltree prefix rewrite (`<@`, `subpath`, `nlevel`) has no typed form; both paths are parameters
+    return em.nativeUpdate(
+      model,
+      filterOf({ $raw: raw(`${column} <@ ?::ltree`, [from]) } as Where<M>),
+      { scopePath: raw(`?::ltree || subpath(${column}, nlevel(?::ltree))`, [to, from]) } as never,
+    );
   }
 
   /**

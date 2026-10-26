@@ -114,6 +114,7 @@ describe("@stackra/model", () => {
       "Collection",
       "Commentable",
       "DataClass",
+      "DocumentNumber",
       "EncryptedFieldsSubscriber",
       "ExportLabel",
       "HasAttachments",

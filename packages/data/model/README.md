@@ -10,9 +10,9 @@ Depends on `@stackra/contracts`, `@stackra/container`, `@stackra/validation`, `@
 
 ## Entry points
 
-| Import           | Holds                     | Exports                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| ---------------- | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@stackra/model` | `src/core/`: node runtime | `Model`, traits (`HasPublicId`, `Timestamps`, `UserStamps`, `Versioned`, `SoftDeletes`, `AppendOnly`, `HasCorrections`, `Commentable`, `HasAttachments`, `Taggable`, `Translatable`, `HasEncryptedFields`), `currentRows`, `Model.global`, `ModelAddition`, `DataClass`, `PrivilegedDataClass`, `Classify`, `AiAudience`, `SupportAccess`, `SearchSnippet`, `ExportLabel`, `Meter`, `MeterKind`, `createTrait`, `traitsOf`, `encryptedFieldsOf`, `EncryptedFieldsSubscriber`, `Index`, `Searchable`, `Visibility`, `ManyToOne`, `OneToMany`, `ManyToMany`, `OnDelete`, `Collection`, `Ref`, `Link`, `Translated`, `Attributes`, `LinkType`, `TranslatedType`, `MoneySchema` |
+| Import           | Holds                     | Exports                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| ---------------- | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@stackra/model` | `src/core/`: node runtime | `Model`, traits (`HasPublicId`, `Timestamps`, `UserStamps`, `Versioned`, `SoftDeletes`, `AppendOnly`, `HasCorrections`, `Commentable`, `HasAttachments`, `Taggable`, `Translatable`, `HasEncryptedFields`), `currentRows`, `Model.global`, `ModelAddition`, `DataClass`, `PrivilegedDataClass`, `Classify`, `DocumentNumber`, `AiAudience`, `SupportAccess`, `SearchSnippet`, `ExportLabel`, `Meter`, `MeterKind`, `createTrait`, `traitsOf`, `encryptedFieldsOf`, `EncryptedFieldsSubscriber`, `Index`, `Searchable`, `Visibility`, `ManyToOne`, `OneToMany`, `ManyToMany`, `OnDelete`, `Collection`, `Ref`, `Link`, `Translated`, `Attributes`, `LinkType`, `TranslatedType`, `MoneySchema` |
 
 Entry barrels are generated, never authored (ADR 0294 decision 15); until `stackra gen` writes them (STA-339),
 `src/core/index.ts` is a stand-in barrel.
@@ -143,3 +143,17 @@ Gen writes MikroORM `EntitySchema` metadata per module into `.stackra/gen/entiti
 
 `pnpm turbo run test --filter=@stackra/model`. Tests sit in `__tests__/` beside each subject (ADR 0022) and import the
 runner from `@stackra/testing` (ADR 0269).
+
+## Document numbers
+
+```ts
+export class Invoice extends Model.with(HasPublicId("inv")) {
+  @DocumentNumber({ sequence: "invoice" }) // billing.invoice, a Sequence in database/sequences/
+  number: string | null = null;
+}
+```
+
+`@DocumentNumber` marks a legal document number taken from a gapless `Sequence` at commit (ADR 0342). It records
+metadata only; gen refuses a field whose sequence is declared neither in the member nor in a dependency
+(`document_number_unsequenced`), and the migration compiler refuses a Postgres `SEQUENCE`, so a document number is never
+a counter column.

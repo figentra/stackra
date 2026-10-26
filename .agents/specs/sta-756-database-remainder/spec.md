@@ -47,3 +47,13 @@ without `--check`.
 - `postgres` in `@stackra/actions`' `STORE_DRIVERS` (actions is not edited here), so runway can select the drivers.
 - Each owning package's reader of its seeded product defaults from the ledger.
 - Tests, typecheck and build are written but not run (owner mode).
+
+## Wave 12 (figentra/sta-666-wave12)
+
+- Built: `postgres` joins `STORE_DRIVERS` in `@stackra/actions`, so `config.actions.stores` can select
+  @stackra/database's Postgres idempotency and rate-limit drivers (the schema enum and `DriverName` follow).
+
+## Wave 12 remainder (figentra/sta-666-wave12)
+
+- Done: `@DocumentNumber({ sequence })` field marker in @stackra/model; gen refuses `document_number_unsequenced` when
+  the sequence is declared neither in the member nor in a dependency (ADR 0342 enforcement).

@@ -1,0 +1,40 @@
+---
+title: "0412 — Inherited row policy: rows on the path above the session are read only to it"
+description: "Proposed · 2026-10-26"
+---
+
+<Note>
+  Proposed (STA-842). It extends
+  [0327](/adr/0327-scope-package-owns-the-scope-tree-tenancy-is-a-consumer) decision 9 (isolation is
+  the database's). OS tenancy gate A, gap G2.
+</Note>
+
+## Context
+
+The `ancestor` policy shows rows at or below the session's granted paths. Templates seeded at the platform or product
+node (checklist templates, default documents) sit above a tenant's path, so a tenant could not read them, and the
+tenancy migration left `checklist_templates` without a policy as a shortcut.
+
+## Decision
+
+1. **`t.rowLevelSecurity(column, { setting, match: "inherited" })`** on an `ltree` column writes the `ancestor` policy
+   `pol_<table>_<column>` (reads and writes at or below a granted path) and a second, select-only policy
+   `pol_<table>_<column>_inherited`: `column @> array(granted paths)`, true when the row's path is an ancestor of, or
+   equal to, a granted path.
+2. **Read only by construction.** Postgres ORs permissive policies per command, so the select-only policy widens reads
+   and nothing else: insert, update and delete still pass only the `ancestor` policy. A tenant reads the platform's
+   template and copies it; it never edits it.
+3. Both policies match no row while the setting is unset or `''`. Each statement carries its inverse.
+
+## Consequences
+
+- Seeded rows are written by a session granted at their own node (the platform's seeding job), never by a tenant.
+- The `@>` array scan is not GiST-indexed; the tables that take `inherited` are small catalogues of templates.
+
+## Enforcement
+
+planned — `packages/data/database/src/core/functions/__tests__/compile-migration.function.test.ts`.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: services/tenancy SPEC (G2); STA-842.

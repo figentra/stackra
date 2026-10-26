@@ -9,8 +9,8 @@
  *           builds in the transaction; no primary key is added to an existing table.
  * Runtime: node
  * Governing contract: ADR 0159 (decision 3; as amended by ADR 0305); ADR 0239 (equality policy); ADR 0327 (decisions
- *                     3 and 9: scope-tree columns, isolation in the database); `.agents/rules/tenancy.md`; ADR 0231
- *                     (names); ADR 0135 (public ids); ADR 0294 (decision 28: links).
+ *                     3 and 9: scope-tree columns, isolation in the database); ADR 0412 (inherited rows, read only);
+ *                     `.agents/rules/tenancy.md`; ADR 0231 (names); ADR 0135 (public ids); ADR 0294 (decision 28: links).
  */
 import { constraintName } from "#core/functions/constraint-name.function";
 import { quoteIdentifier } from "#core/functions/quote-identifier.function";
@@ -38,7 +38,7 @@ const MAX_VARCHAR = 10_485_760;
 const SETTING = /^[a-z][a-z0-9_]*\.[a-z][a-z0-9_]*$/;
 
 /** The ways a policy matches its column with the setting. */
-const MATCHES: readonly RowLevelSecurityOptions["match"][] = ["equals", "ancestor"];
+const MATCHES: readonly RowLevelSecurityOptions["match"][] = ["equals", "ancestor", "inherited"];
 
 /** A declared row-level-security policy. */
 interface PolicySeed {
@@ -380,7 +380,7 @@ export class BlueprintRecord {
       add(index.sql(this.table, qualified, false));
     }
     if (this.policy !== undefined)
-      for (const sql of this.policySql(qualified, this.policy)) add(sql);
+      for (const { sql } of this.policySql(qualified, this.policy)) add(sql);
     return { statements, online: [] };
   }
 
@@ -428,48 +428,64 @@ export class BlueprintRecord {
         );
       onlineIndex(index);
     }
-    if (this.policy !== undefined) {
-      const [enable, force, policy] = this.policySql(qualified, this.policy);
-      const name = quoteIdentifier(constraintName("pol", this.table, [this.policy.column]));
-      statements.push(
-        { sql: enable, inverse: [`alter table ${qualified} disable row level security`] },
-        { sql: force, inverse: [`alter table ${qualified} no force row level security`] },
-        { sql: policy, inverse: [`drop policy if exists ${name} on ${qualified}`] },
-      );
-    }
+    if (this.policy !== undefined) statements.push(...this.policySql(qualified, this.policy));
     return { statements, online };
   }
 
   /**
-   * Enable, force and the policy on the column `name`: equal to the transaction's setting, or an `ltree` column at or
-   * below one of the setting's `|`-separated paths.
+   * Enable, force and the policies on the column `name`, each with its inverse: equal to the transaction's setting, or
+   * an `ltree` column at or below one of the setting's `|`-separated paths; `inherited` adds a select-only policy
+   * (`pol_<table>_<column>_inherited`) for the rows on the path above a granted path.
    *
-   * @throws TypeError when the blueprint has no such column, or an ancestor match is on a column that is not `ltree`.
+   * @throws TypeError when the blueprint has no such column, or a path match is on a column that is not `ltree`.
    */
   private policySql(
     qualified: string,
     { column: name, options }: PolicySeed,
-  ): readonly [string, string, string] {
+  ): readonly CompiledStatement[] {
     const column = this.columns.find((known) => known.name === name);
     if (column === undefined)
       throw new TypeError(
         `rowLevelSecurity("${name}") needs the ${name} column in the same ${this.table} blueprint`,
       );
-    if (options.match === "ancestor" && column.type !== "ltree")
-      throw new TypeError(`${this.table}.${name} is not ltree, so it takes no ancestor match`);
+    if (options.match !== "equals" && column.type !== "ltree")
+      throw new TypeError(
+        `${this.table}.${name} is not ltree, so it takes no ${options.match} match`,
+      );
     const setting = `current_setting(${sqlLiteral(options.setting)}, true)`;
+    const granted = `unnest(string_to_array(${setting}, '|')) as granted`;
     // A setting set earlier in the session reads as '' once its transaction ends, so '' counts as unset (no rows).
     // `?` over an lquery array (`<path>.*` is the path and every descendant) is GiST-indexable where `<@ any(...)`
     // seq-scans, and a policy cannot OR-expand a list of unknown length; '' or unset gives an empty array (no rows).
     const check =
       options.match === "equals"
         ? `${quoteIdentifier(name)} = nullif(${setting}, '')::${column.type}`
-        : `${quoteIdentifier(name)} ? array(select (granted || '.*')::lquery from unnest(string_to_array(${setting}, '|')) as granted)`;
+        : `${quoteIdentifier(name)} ? array(select (granted || '.*')::lquery from ${granted})`;
     const policy = quoteIdentifier(constraintName("pol", this.table, [name]));
-    return [
-      `alter table ${qualified} enable row level security`,
-      `alter table ${qualified} force row level security`,
-      `create policy ${policy} on ${qualified} using (${check}) with check (${check})`,
+    const statements: CompiledStatement[] = [
+      {
+        sql: `alter table ${qualified} enable row level security`,
+        inverse: [`alter table ${qualified} disable row level security`],
+      },
+      {
+        sql: `alter table ${qualified} force row level security`,
+        inverse: [`alter table ${qualified} no force row level security`],
+      },
+      {
+        sql: `create policy ${policy} on ${qualified} using (${check}) with check (${check})`,
+        inverse: [`drop policy if exists ${policy} on ${qualified}`],
+      },
     ];
+    if (options.match === "inherited") {
+      // Permissive policies OR per command, so a select-only policy widens reads and never writes: update, delete and
+      // insert still pass only the policy above. `ltree @> ltree[]` is true when the row's path is an ancestor of, or
+      // equal to, one of the granted paths; the tables that take it hold few rows, so the array scan is cheap.
+      const inherited = quoteIdentifier(constraintName("pol", this.table, [name, "inherited"]));
+      statements.push({
+        sql: `create policy ${inherited} on ${qualified} for select using (${quoteIdentifier(name)} @> array(select granted::ltree from ${granted}))`,
+        inverse: [`drop policy if exists ${inherited} on ${qualified}`],
+      });
+    }
+    return statements;
   }
 }

@@ -103,7 +103,13 @@ await database.withScope(principal.grantedScopes, () => work()); // several gran
   `pol_<table>_<column>`. `equals` compares the column with `current_setting(setting, true)` (`@stackra/tenancy` uses
   it for its isolation column, ADR 0239); `ancestor` matches an `ltree` column at or below any of the setting's
   `|`-separated paths, through the GiST index. An unset or `''` setting matches no row, so a pooled connection that
-  ran an earlier scope sees nothing. A blueprint takes one policy: Postgres ORs permissive policies.
+  ran an earlier scope sees nothing. A blueprint takes one `rowLevelSecurity` call: Postgres ORs permissive policies.
+  `inherited` is `ancestor` plus a select-only policy `pol_<table>_<column>_inherited` for the rows on the path above a
+  granted path, so a template seeded at the platform or product node is read by every tenant below it and written by
+  none of them (ADR 0412).
+- `service.repath(from, to)` (every `CrudService` over a model with `scopePath`) moves a scope subtree's rows: each
+  path at or below `from` takes `to` in place of that prefix, in one statement in the caller's transaction. A service
+  calls it from its listener of `@stackra/scope`'s `ScopeMoved`, in a scope that reaches both paths (ADR 0411).
 - `Database.withScope(scope | scopes, work)` sets, for the transaction, `app.scope_id` and `app.scope_path` when one
   scope is given and `app.scope_paths` (every granted path joined by `|`) always; no granted scope means no rows. A
   path that is not an `ltree` path is refused.
