@@ -1,14 +1,15 @@
 /**
  * Stackra file contract:
  * Purpose: `TurnstileCaptchaVerifierDriver` (`turnstile`), the `CaptchaVerifier` driver that checks a token with
- *          Cloudflare Turnstile's siteverify endpoint from the Worker, with the secret `TURNSTILE_SECRET_KEY`.
+ *          Cloudflare Turnstile's siteverify endpoint from a Worker or a Node service, with the secret `TURNSTILE_SECRET_KEY`.
  * Boundary: the secret is read by name from the `SecretStore` the runtime binds (runway syncs it from Infisical) and
  *           sent only to Cloudflare; it is never logged or returned. An empty or over-long token fails without a
  *           call. A missing secret, a failed call or an answer with no verdict throws, so it is never mistaken for a
  *           failed captcha. Each call waits at most five seconds.
- * Runtime: worker
+ * Runtime: worker, node (only `fetch`, `FormData` and `AbortSignal`; exported from `./worker` and `./node`)
  * Governing contract: ADR 0173 (secrets by name); ADR 0294 (decision 17: dependencies by type); ADR 0127 2026-10-24
- *                     note (`./worker` entry).
+ *                     note (`./worker` entry) and
+ *                     2026-10-26 note (also from `./node`).
  */
 import { SecretStore } from "@stackra/config/contracts";
 import { Driver } from "@stackra/container";
@@ -30,6 +31,8 @@ const TIMEOUT = 5000;
  * @example
  * // generated wiring, web worker
  * { port: CaptchaVerifier, candidates: { turnstile: () => import("@stackra/platform/worker").then((m) => m.TurnstileCaptchaVerifierDriver) } }
+ * // generated wiring, Node service
+ * { port: CaptchaVerifier, candidates: { turnstile: () => import("@stackra/platform/node").then((m) => m.TurnstileCaptchaVerifierDriver) } }
  */
 export class TurnstileCaptchaVerifierDriver extends Driver(CaptchaVerifier) {
   /** Where `TURNSTILE_SECRET_KEY` is read from. */

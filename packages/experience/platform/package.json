@@ -2,7 +2,7 @@
   "name": "@stackra/platform",
   "version": "0.0.0",
   "private": true,
-  "description": "Stackra platform: the Platform capability port with its typed refusal, the push, captcha, kiosk-mode and second-screen ports, the desktop, PWA and push configurations, memory, web, Electron (platform, kiosk mode, second screen), Expo (platform and push) and Turnstile drivers, the Bridge kind and its kiosk and second-screen bridges, the service-worker handlers, the React hooks and fakePlatform",
+  "description": "Stackra platform: the Platform capability port with its typed refusal, the push, captcha, kiosk-mode and second-screen ports, the desktop, PWA and push configurations, memory, web, Electron (platform, kiosk mode, second screen), Expo (platform and push) and Turnstile (Worker and Node) drivers, the Bridge kind and its kiosk and second-screen bridges, the service-worker handlers, the React hooks and fakePlatform",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -48,6 +48,11 @@
       "./src/native/*",
       "./src/native/*.ts",
       "./src/native/*/index.ts"
+    ],
+    "#node/*": [
+      "./src/node/*",
+      "./src/node/*.ts",
+      "./src/node/*/index.ts"
     ],
     "#react/*": [
       "./src/react/*",
@@ -96,6 +101,11 @@
       "@stackra/source": "./src/native/index.ts",
       "types": "./dist/native.d.mts",
       "default": "./dist/native.mjs"
+    },
+    "./node": {
+      "@stackra/source": "./src/node/index.ts",
+      "types": "./dist/node.d.mts",
+      "default": "./dist/node.mjs"
     },
     "./react": {
       "@stackra/source": "./src/react/index.ts",

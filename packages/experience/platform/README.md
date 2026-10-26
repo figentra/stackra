@@ -8,7 +8,7 @@ check (`CaptchaVerifier`), the desktop, PWA and push configurations, the `Bridge
 the service-worker handlers. It absorbs the retired `network` and `pwa` packages.
 
 **Tier:** `tier:lib` (`packages/experience/platform`). Entries `.`, `./contracts`, `./browser`, `./desktop`,
-`./native`, `./react`, `./sw`, `./testing` and `./worker` (ADR 0127 2026-10-24 note). Depends on `@stackra/contracts`,
+`./native`, `./node`, `./react`, `./sw`, `./testing` and `./worker` (ADR 0127 2026-10-24 and 2026-10-26 notes). Depends on `@stackra/contracts`,
 `@stackra/container`, `@stackra/config`, `@stackra/validation`, `@stackra/state` (signals), `@stackra/storage`
 (`OfflineStore`) and `@stackra/filesystem` (the folder picker's disk). React is a peer; Electron, the Expo modules and
 React Native, NetInfo, expo-camera and expo-haptics are optional peers of `./desktop` and `./native`.
@@ -29,6 +29,7 @@ React Native, NetInfo, expo-camera and expo-haptics are optional peers of `./des
 | `./desktop`   | `ElectronKioskModeDriver`, `ElectronSecondScreenDriver`, `SetKioskModeBridge`, `ShowSecondScreenBridge`                                                                                                                         | the main-process drivers and `platform.kiosk.set`, `platform.screen.second` |
 | `./native`    | `ExpoPlatformDriver`, `ExpoPushTransportDriver`, `SelfHostedPushTransportDriver`                                                                                                                                                | the phone platform; push on a device (`platform.push.provider`)             |
 | `./worker`    | `TurnstileCaptchaVerifierDriver`                                                                                                                                                                                                | Turnstile siteverify from a Cloudflare Worker                               |
+| `./node`      | `TurnstileCaptchaVerifierDriver`                                                                                                                                                                                                | the same verifier for a Node service (Encore)                               |
 | `./sw`        | `handleBackgroundSync`, `handlePush`, `handlePushSubscriptionChange`, `handleNotificationClick`, `handleShareTarget`, `handleSkipWaiting`                                                                                       | registered by the generated `sw.ts`                                         |
 | `./react`     | `usePlatform`, `useCapability`, `useLaunchedFiles`, `usePushPermission`, `ScannerView`                                                                                                                                          | hooks and the scanner's camera view                                         |
 | `./testing`   | `fakePlatform`                                                                                                                                                                                                                  | a fresh memory platform for one test                                        |

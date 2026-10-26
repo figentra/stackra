@@ -16,6 +16,7 @@ export default library({
   browser: "src/browser/index.ts",
   desktop: "src/desktop/index.ts",
   native: "src/native/index.ts",
+  node: "src/node/index.ts",
   react: "src/react/index.ts",
   sw: "src/sw/index.ts",
   testing: "src/testing/index.ts",

@@ -1,7 +1,16 @@
 ---
 title: "0127 — Package categories, including infrastructure and commerce"
-description: "Accepted, amended by 0282, 0286, 0294, 0302, 0327, 0331, 0332, 0345 · 2026-10-20 · amended 2026-10-24 (STA-348, STA-428)"
+description: "Accepted, amended by 0282, 0286, 0294, 0302, 0327, 0331, 0332, 0345 · 2026-10-20 · amended 2026-10-24 (STA-348, STA-428), 2026-10-26 (STA-1265)"
 ---
+
+<Note>
+  Amended 2026-10-26 (STA-1265): a driver whose code is portable across server runtimes (it uses only
+  `fetch`, `FormData` and `AbortSignal`) may be exported from both `./worker` and `./node`, the one
+  exception to "one symbol from one entry"; both entries re-export the same class from one source file.
+  The first is `TurnstileCaptchaVerifierDriver` of `@stackra/platform`, which a Node service (OS
+  security-center, OS-366) binds from `@stackra/platform/node`; `./worker` keeps it unchanged. Every
+  other symbol stays on one entry, and the entry set is unchanged.
+</Note>
 
 <Note>
   Amended 2026-10-24 (STA-469) by

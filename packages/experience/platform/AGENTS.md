@@ -1,8 +1,8 @@
 # AGENTS — @stackra/platform
 
 Capabilities of the running target. Member at `packages/experience/platform` (`tier:lib`), in the programming model
-v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./browser`, `./desktop`, `./native`, `./react`, `./sw`,
-`./testing`, `./worker`.
+v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./browser`, `./desktop`, `./native`, `./node`, `./react`,
+`./sw`, `./testing`, `./worker`.
 
 ## Where code goes
 
@@ -24,6 +24,9 @@ v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./browser`, `./desktop
 
 - `src/*/index.ts` are stand-in barrels until gen writes the entry barrels (STA-339); add every new public file to its
   barrel and to that entry's `index.test.ts`.
+- `TurnstileCaptchaVerifierDriver` is the one symbol on two entries, `./worker` and `./node` (ADR 0127 2026-10-26
+  note): its code is portable (`fetch` only), so `src/node/index.ts` re-exports the `src/worker/drivers/` file. A new
+  driver goes on one entry; another portable server driver follows the same note.
 - `Platform` is exported from `./contracts` only (registry A3). `./contracts` imports no other entry, so `has` takes a
   capability code as a string.
 - `./react` stays platform-neutral: the driver supplies what differs (the scanner's `View`).
