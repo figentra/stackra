@@ -62,6 +62,7 @@ describe("@stackra/ai", () => {
       "Facts",
       "MemoryConversationStoreDriver",
       "MemoryRunStoreDriver",
+      "ModelProviders",
       "Prompt",
       "Promptable",
       "RunCompleted",

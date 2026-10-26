@@ -5,6 +5,8 @@
  *          every tool call as an action call (Idempotency-Key `runId:toolCallId`), records each step, tool call and
  *          approval, parks the run on the first call the approval gate parks, stores the model's messages, and resumes
  *          a parked run once the approval resolves; `queue` stores a run for a worker, which runs it with `runQueued`.
+ *          Every tool call carries the session's bypass switch (`PromptCall.bypass`, `ResumeDecision.bypass`); a
+ *          queued run has no session, so its calls carry none.
  * Boundary: a service over the ai ports (`ConversationStore`, `RunStore`, `ToolDispatcher`, `AgentModels`,
  *           `InstructionSource`, `AgentQueue`) and the `Clock`; it names no provider, prompt or policy. Text lives only
  *           in the conversation; runs, steps and tool calls hold hashes, codes and counts (ADR 0100 decision 9). A run
@@ -12,7 +14,7 @@
  *           parked call is not stored, so the conversation holds exactly one result per call once it resumes.
  * Runtime: isomorphic
  * Governing contract: ADR 0100 (decisions 2, 3, 5, 9 and 10); ADR 0155 (no hosted gateway); ADR 0227 (no separate
- *                     agent runtime); STA-781.
+ *                     agent runtime); STA-781; STA-1256 (bypass switch).
  */
 import { Service } from "@stackra/container";
 import { type Actor, Clock } from "@stackra/contracts";
@@ -51,6 +53,9 @@ import type { ResumeDecision } from "#core/types/resume-decision.type";
 interface LoopState {
   /** The first tool call the gate parked in this loop. */
   paused: PendingApproval | undefined;
+
+  /** The session's bypass switch, passed to every tool call. */
+  readonly bypass: boolean;
 }
 
 /** The parts of a settled model call the runtime stores. */
@@ -162,13 +167,13 @@ export class AgentRuntime extends Service {
    */
   async prompt(agent: AgentDefinition, text: string, call: PromptCall): Promise<AgentReply> {
     const run = await this.begin(agent, text, call, RunStatus.Running);
-    return this.loop(agent, run, call.locale, call.abortSignal);
+    return this.loop(agent, run, call.locale, call.abortSignal, call.bypass === true);
   }
 
   /** Runs `text` for `agent`, streaming the model's text; `reply` settles as `prompt` does. */
   async stream(agent: AgentDefinition, text: string, call: PromptCall): Promise<AgentStream> {
     const run = await this.begin(agent, text, call, RunStatus.Running);
-    const state: LoopState = { paused: undefined };
+    const state: LoopState = { paused: undefined, bypass: call.bypass === true };
     const result = streamText({
       ...(await this.setup(agent, run, state, call.locale)),
       ...(call.abortSignal === undefined ? {} : { abortSignal: call.abortSignal }),
@@ -259,7 +264,8 @@ export class AgentRuntime extends Service {
           (candidate) => candidate.name === callPart.toolName,
         )
       : undefined;
-    const state: LoopState = { paused: undefined };
+    const bypass = decision.bypass === true;
+    const state: LoopState = { paused: undefined, bypass };
     const output =
       offered === undefined
         ? {
@@ -304,7 +310,7 @@ export class AgentRuntime extends Service {
       };
     }
     await this.runs.update(run.id, { status: RunStatus.Running, pending: null });
-    return this.loop(agent, { ...run, status: RunStatus.Running }, locale, abortSignal);
+    return this.loop(agent, { ...run, status: RunStatus.Running }, locale, abortSignal, bypass);
   }
 
   /** Opens or continues the conversation, starts the run in `status` and stores the prompt. */
@@ -376,8 +382,9 @@ export class AgentRuntime extends Service {
     run: RunRecord,
     locale: string | undefined,
     abortSignal: AbortSignal | undefined,
+    bypass = false,
   ): Promise<AgentReply> {
-    const state: LoopState = { paused: undefined };
+    const state: LoopState = { paused: undefined, bypass };
     try {
       const result = await generateText({
         ...(await this.setup(agent, run, state, locale)),
@@ -414,6 +421,7 @@ export class AgentRuntime extends Service {
       toolCallId,
       idempotencyKey: `${run.id}:${toolCallId}`,
       ...(approvalId === undefined ? {} : { approvalId }),
+      ...(state.bypass ? { bypass: true } : {}),
     });
     const at = this.clock.now();
     await this.runs.recordToolCall({

@@ -128,6 +128,9 @@ const decision = resolveApproval(
 - A floor hit or L3 and L4 always need a named human; the organisation may escalate it to another human, nothing
   relaxes it. Below the floor the organisation tightens first (`escalate`, `ask`), L0 and L1 run at once, then allow
   by default, always allow, and a bypass session where the organisation allows bypass.
+- The session's switch reaches the gate on every tool call: pass `bypass: true` in the `PromptCall` (or the
+  `ResumeDecision` of a resume) and `AgentRuntime` sets `ToolCallContext.bypass`. A queued run has no session, so its
+  calls carry none.
 
 ## Model routing
 
@@ -136,6 +139,10 @@ class allows and that serves the tenant's region; otherwise a fallback jurisdict
 skipping those that need an opt-in the tenant did not give. A strict tenant, or a data class marked in-region only,
 never falls back; a class whose enabled providers list is empty is closed. The table, the regions and the classes are
 data. `resolveModel` hands the choice to the bound `ModelProviderDriver`, which resolves its own credentials.
+
+The bound drivers are collected behind the `ModelProviders` port (`ai.ModelProviders`): the ai service binds a driver
+that lists them, and its `AgentModels` driver calls `resolveModel(choice, container.get(ModelProviders).drivers())`.
+Only the token is here; the Bedrock and Anthropic drivers are the ai service's.
 
 Context reaches the model through `allowFields` (a field allow-list per data class, deny by default) and `redact`
 (contact details, document numbers and card numbers, with patterns from the market pack and the platform floor).

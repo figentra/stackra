@@ -15,6 +15,7 @@ ADR 0100 tables, the Postgres stores and `TenantKeyCast`; storage home: ADR 0399
 | A function       | `src/core/functions/<name>.function.ts`     |
 | A type           | `src/core/types/<name>.type.ts`             |
 | A port or record | `src/contracts/{ports,enums,types}/`        |
+| A core-type port | `src/core/ports/<name>.port.ts`             |
 | A service/driver | `src/core/{services,drivers}/`              |
 | Node-only code   | `src/node/{models,drivers,casts,database}/` |
 | A test           | `__tests__/<name>.<kind>.test.ts` beside it |
@@ -40,6 +41,10 @@ ADR 0100 tables, the Postgres stores and `TenantKeyCast`; storage home: ADR 0399
   the checks hold only mechanism.
 - Text lives only in conversations, sealed with `TenantKeyCast`; runs, steps and tool calls hold hashes, codes and
   counts (ADR 0100 decision 9). A tool call is always an action dispatch through `ToolDispatcher` (ADR 0100 d3).
+- `ModelProviders` (`.` entry) is only the token that collects `ModelProviderDriver`s; the Bedrock and Anthropic
+  drivers and the driver that lists them are the ai service's (OS ai). Add no provider driver here.
+- The session's bypass switch travels `PromptCall.bypass` / `ResumeDecision.bypass` to `ToolCallContext.bypass`; it is a
+  wish the approval gate checks, never a grant. A queued run has no session and carries none.
 - Only add a symbol a consumer imports today (the template, a package, or the registry row).
 
 ## Rules that fail the build

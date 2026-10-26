@@ -2,12 +2,12 @@
  * Stackra file contract:
  * Purpose: `PromptCall`, what a caller hands `prompt`, `stream` and `queue` beside the text: the acting agent
  *          principal, the conversation to continue, where the run acts, the record it works in, the locale of the
- *          instructions and an abort signal.
+ *          instructions, the session's bypass switch and an abort signal.
  * Boundary: a type only. The actor is an agent principal whose `onBehalfOf` names the human (ADR 0100 decision 3),
  *           built by the caller from the verified session, never from input; a conversation of another principal is
  *           refused.
  * Runtime: isomorphic
- * Governing contract: ADR 0100 (decisions 2 to 4); ADR 0327 (decision 6: the scope); STA-781.
+ * Governing contract: ADR 0100 (decisions 2 to 4); ADR 0327 (decision 6: the scope); STA-781; STA-1256 (bypass).
  */
 import type { Actor, ScopeRef } from "@stackra/contracts";
 
@@ -29,6 +29,9 @@ export interface PromptCall {
 
   /** The locale of the instructions. */
   readonly locale?: string;
+
+  /** Whether this session is switched to bypass; off when absent. Passed to every tool call; `queue` drops it. */
+  readonly bypass?: boolean;
 
   /** Stops the model loop. */
   readonly abortSignal?: AbortSignal;

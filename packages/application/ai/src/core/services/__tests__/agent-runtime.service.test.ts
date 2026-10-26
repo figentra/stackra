@@ -4,11 +4,12 @@
  *          messages, records steps and tool calls (hashed input, Idempotency-Key `runId:toolCallId`) and completes; a
  *          call the gate parks parks the run without storing its placeholder result, and `resume` re-dispatches it with
  *          the approval id and finishes the loop, or tells the model a denial; `queue` stores a queued run that
- *          `runQueued` runs; `stream` streams text and settles; a conversation of another principal is refused.
+ *          `runQueued` runs; `stream` streams text and settles; the session's bypass switch reaches each tool call; a
+ *          conversation of another principal is refused.
  * Boundary: test only; the model is AI SDK's `MockLanguageModelV4`, the stores are the memory drivers, and the
  *           dispatcher, models, instructions and queue are stand-ins.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0100 (decisions 2, 3, 9 and 10); STA-781.
+ * Governing contract: ADR 0022 (test placement); ADR 0100 (decisions 2, 3, 9 and 10); STA-781; STA-1256.
  */
 import { Driver } from "@stackra/container";
 import { type Actor, ActorKind, Clock, Realm } from "@stackra/contracts";
@@ -196,6 +197,19 @@ describe(AgentRuntime, () => {
       (message) => message.role === "tool",
     );
     expect(JSON.stringify(result)).toContain("approval_denied");
+  });
+
+  it("passes the session's bypass switch to every tool call, and none when off", async () => {
+    const model = new MockLanguageModelV4({
+      doGenerate: [toolCall("call_3"), text("Sent it."), toolCall("call_4"), text("Asked.")],
+    });
+    const { runtime, dispatcher } = setup(model);
+    const parked = await runtime.prompt(agent, "Send the letter", { actor, bypass: true });
+    expect(dispatcher.calls[0]).toMatchObject({ toolCallId: "call_3", bypass: true });
+    await runtime.resume(parked.runId, { approvalId: "apr_1", granted: true });
+    expect(dispatcher.calls[1]).not.toHaveProperty("bypass");
+    await runtime.prompt(agent, "Send another", { actor });
+    expect(dispatcher.calls[2]).not.toHaveProperty("bypass");
   });
 
   it("queues a run that a worker then runs", async () => {

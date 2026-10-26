@@ -3,8 +3,8 @@
  * Purpose: Stand-in barrel: the `.` entry of @stackra/ai, which has several public files, until `stackra gen` writes
  *          the entry barrels (STA-339): the kinds, the tool-table vocabulary, `decide` and `retrieve`, the approval-mode
  *          resolver with the permission matrix, the model router, the context allow-list and redaction, budgets,
- *          guardrails, evals and intents, and the agent runtime (`Agent`, `Promptable`, `AgentRuntime`, the memory
- *          stores).
+ *          guardrails, evals and intents, the `ModelProviders` token, and the agent runtime (`Agent`, `Promptable`,
+ *          `AgentRuntime`, the memory stores).
  * Boundary: names each re-export and declares nothing. The one entry serves the module's `ai/` group, the generated
  *           tool table and the service that calls a model.
  * Runtime: isomorphic
@@ -36,6 +36,7 @@ export { routeIntent } from "#core/functions/route-intent.function";
 export { routeModel } from "#core/functions/route-model.function";
 export { runEvals } from "#core/functions/run-evals.function";
 export { runGuardrails } from "#core/functions/run-guardrails.function";
+export { ModelProviders } from "#core/ports/model-providers.port";
 export { AgentRuntime } from "#core/services/agent-runtime.service";
 export type { ActionPermissionRow } from "#core/types/action-permission-row.type";
 export type { AgentClass } from "#core/types/agent-class.type";
