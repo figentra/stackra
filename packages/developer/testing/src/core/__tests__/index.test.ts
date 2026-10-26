@@ -32,6 +32,8 @@ const KIT = {
   factory: kit.factory,
   freezeClock: kit.freezeClock,
   freezeIds: kit.freezeIds,
+  tenantId: kit.tenantId,
+  tenantScopeRef: kit.tenantScopeRef,
 };
 
 // @covers sta-348:FR-001
