@@ -19,7 +19,7 @@ describe(searchSnippetOf, () => {
   });
 
   it("matches Arabic with diacritics in the text", () => {
-    expect(searchSnippetOf("قميص مِنَ الكَتّان", ["الكتان"])).toBe("قميص مِنَ الكَتّان");
+    expect(searchSnippetOf("قميص مِنَ الكَتّان", ["كتان"])).toBe("قميص مِنَ الكَتّان");
   });
 
   it("is undefined when no word occurs", () => {

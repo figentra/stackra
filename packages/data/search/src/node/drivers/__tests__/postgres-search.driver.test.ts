@@ -3,11 +3,12 @@
  * Purpose: unit tests of `PostgresSearchDriver`, Arabizi alternatives and the visibility subquery included: it reads a table's vector columns from the catalogue once (locale and
  *          configuration from the column name), writes each document as weighted vectors per locale with the folded
  *          text and filter values, clears removed documents, and ranks with the two fused lanes, every value bound as a
- *          parameter in placeholder order.
+ *          parameter in placeholder order; facets count filter values over either lane's matches (or every indexed row
+ *          for no words) under the visibility subquery, through the `search.fold` trigram function.
  * Boundary: test only; a stand-in entity manager records each statement and answers the catalogue read and the
  *           search from fixed rows, so no database runs. The SQL itself runs in the integration tier.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0269; ADR 0221 (decisions 1, 3 and 7); ADR 0160.
+ * Governing contract: ADR 0022; ADR 0269; ADR 0221 (decisions 1, 3 and 7); ADR 0160; ADR 0404.
  */
 import type { Database } from "@stackra/database";
 import { describe, expect, it } from "@stackra/testing";
@@ -24,14 +25,19 @@ interface Statement {
   readonly params: readonly unknown[];
 }
 
-/** A database whose entity manager reports `columns` from the catalogue and `ids` from a search. */
-function databaseWith(columns: readonly string[], ids: readonly string[] = []) {
+/** A database whose entity manager reports `columns` from the catalogue, `ids` from a search and `counts` from facets. */
+function databaseWith(
+  columns: readonly string[],
+  ids: readonly string[] = [],
+  counts: readonly { readonly path: string; readonly value: string; readonly count: number }[] = [],
+) {
   const statements: Statement[] = [];
   const em = {
     execute: async (sql: string, params: readonly unknown[] = []) => {
       statements.push({ sql, params });
       if (sql.includes("information_schema.columns"))
         return columns.map((name) => ({ column_name: name }));
+      if (sql.startsWith("with hits")) return counts;
       return sql.startsWith("with q") ? ids.map((id) => ({ id })) : [];
     },
   };
@@ -106,7 +112,7 @@ describe(PostgresSearchDriver, () => {
     expect(search?.sql).toContain(
       `greatest(ts_rank_cd(t."search_vector_ar", q.q0), ts_rank_cd(t."search_vector_en", q.q1))`,
     );
-    expect(search?.sql).toContain(`search.unaccent_immutable(t."search_text") %> ?`);
+    expect(search?.sql).toContain(`search.fold(t."search_text") %> ?`);
     expect(search?.sql).toContain("from fts full join trigram");
     const filter = '{"status":["active"],"collections.slug":["sale"]}';
     expect(search?.params).toEqual([
@@ -172,5 +178,57 @@ describe(PostgresSearchDriver, () => {
         limit: 5,
       }),
     ).rejects.toThrow(TypeError);
+  });
+
+  it("counts facet values over both lanes' matches under the visibility subquery", async () => {
+    const { database, statements } = databaseWith(
+      ["search_vector_ar", "search_vector_en"],
+      [],
+      [
+        { path: "status", value: "active", count: 4 },
+        { path: "status", value: "draft", count: 1 },
+      ],
+    );
+    const facets = await new PostgresSearchDriver(database).facets(PRODUCTS, {
+      words: ["linen"],
+      filters: { brand: "acme" },
+      paths: ["status", "collections.slug"],
+      limit: 10,
+      visible: {
+        sql: 'select "visible"."id" from "catalogue"."products" as "visible" where "wall" = ?',
+        params: [1],
+      },
+    });
+    expect(facets).toEqual({ status: { active: 4, draft: 1 }, "collections.slug": {} });
+    const count = statements.at(-1);
+    expect(count?.sql).toContain(
+      `t."search_vector_ar" @@ to_tsquery('arabic', ?) or t."search_vector_en" @@ to_tsquery('english', ?)`,
+    );
+    expect(count?.sql).toContain(`search.fold(t."search_text") %> ?`);
+    expect(count?.sql).toContain(`and t."id" in (select "visible"."id"`);
+    expect(count?.sql).toContain("count(distinct hits.id)");
+    expect(count?.params).toEqual([
+      "linen:*",
+      "linen:*",
+      "linen",
+      '{"brand":["acme"]}',
+      1,
+      ["status", "collections.slug"],
+      10,
+    ]);
+    expect(count?.sql.match(/\?/g)).toHaveLength(count?.params.length ?? -1);
+  });
+
+  it("counts every indexed row for no words, and asks nothing for no path", async () => {
+    const { database, statements } = databaseWith(["search_vector"]);
+    const driver = new PostgresSearchDriver(database);
+    await expect(
+      driver.facets(PRODUCTS, { words: [], filters: {}, paths: [], limit: 5 }),
+    ).resolves.toEqual({});
+    expect(statements).toHaveLength(0);
+    await driver.facets(PRODUCTS, { words: [], filters: {}, paths: ["status"], limit: 5 });
+    const count = statements.at(-1);
+    expect(count?.sql).toContain(`where t."search_filters" is not null`);
+    expect(count?.params).toEqual([["status"], 5]);
   });
 });

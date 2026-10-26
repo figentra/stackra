@@ -1,11 +1,13 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `searchWordsOf`: Latin accents and case folded, Arabic diacritics, tatweel and hamza removed,
- *          the three Arabic letter variants unified, words split on anything that is not a letter or digit.
+ * Purpose: unit tests of `searchWordsOf`: Latin accents and case folded, Arabic folded exactly as `normalizeArabic`
+ *          folds it (diacritics, tatweel and hamza removed, the letter variants unified, the article stripped), words
+ *          split on anything that is not a letter or digit.
  * Boundary: test only.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0269; ADR 0221 (decision 3).
+ * Governing contract: ADR 0022; ADR 0269; ADR 0221 (decision 3); ADR 0404.
  */
+import { normalizeArabic } from "@stackra/i18n";
 import { describe, expect, it } from "@stackra/testing";
 
 import { searchWordsOf } from "#core/functions/search-words-of.function";
@@ -21,9 +23,15 @@ describe(searchWordsOf, () => {
     expect(searchWordsOf("كتـــاب")).toEqual(["كتاب"]);
   });
 
-  it("unifies hamza forms and the letter variants", () => {
+  it("unifies hamza forms and the letter variants, and strips the article", () => {
     expect(searchWordsOf("أحمد إسلام آمن")).toEqual(["احمد", "اسلام", "امن"]);
-    expect(searchWordsOf("مستشفى مدرسة ٱلكتاب")).toEqual(["مستشفي", "مدرسه", "الكتاب"]);
+    expect(searchWordsOf("مستشفى مدرسة ٱلكتاب")).toEqual(["مستشفي", "مدرسه", "كتاب"]);
+    expect(searchWordsOf("المدرسة")).toEqual(searchWordsOf("مدرسة"));
+  });
+
+  it("agrees with normalizeArabic word for word", () => {
+    const text = "الْمَدْرَسَةُ أحمد مستشفى";
+    expect(searchWordsOf(text)).toEqual(normalizeArabic(text).split(" "));
   });
 
   it("keeps repeats and returns nothing for punctuation only", () => {

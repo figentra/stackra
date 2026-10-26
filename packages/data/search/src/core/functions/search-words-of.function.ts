@@ -1,30 +1,21 @@
 /**
  * Stackra file contract:
- * Purpose: `searchWordsOf`, the one normalisation of search text, used for documents and phrases alike: accents and
- *          Arabic diacritics removed, Arabic letter variants unified, lower case, split into words.
- * Boundary: pure. Hamza forms (أ إ آ ؤ ئ) lose their hamza through the canonical decomposition; alef wasla, alef
- *           maqsura and teh marbuta fold to alef, yeh and heh. The text function of this package's migration
- *           (`search.unaccent_immutable`) applies the same folding in SQL, so the trigram index and the documents
- *           agree; change both together.
+ * Purpose: `searchWordsOf`, the one normalisation of search text, used for documents and phrases alike: Arabic folded
+ *          by `@stackra/i18n`'s `normalizeArabic` (diacritics and tatweel removed, alef and hamza forms, teh marbuta and
+ *          alef maqsura unified, the "al-" article stripped), Latin accents removed, lower case, split into words.
+ * Boundary: pure. Arabic folding is `normalizeArabic`'s alone (ADR 0080 note: callers keep no copy); this function
+ *           adds only the Latin accents, the case and the split. The text function of this package's migration
+ *           `search.0003_create_fold_function` (`search.fold`) applies the same folding in SQL, so the trigram index
+ *           and the documents agree; change both together, and reindex (ADR 0404).
  * Runtime: isomorphic
- * Governing contract: ADR 0221 (decision 3: Arabic normalisation in the index and in queries).
+ * Governing contract: ADR 0221 (decision 3: Arabic normalisation in the index and in queries; 2026-10-24 note);
+ *                     ADR 0080 (note of 2026-10-24); ADR 0404 (one Arabic normaliser, reindex plan).
  */
+import { normalizeArabic } from "@stackra/i18n";
 
 // The code points are spelled as escapes inside strings so the formatter keeps them readable (it inlines bare escapes).
-/** Combining accents (after decomposition), the tatweel, the tashkeel and the superscript alef. */
-const MARKS = new RegExp("[\\u0300-\\u036f\\u0640\\u064b-\\u065f\\u0670]", "gu");
-
-/** The Arabic letter variants folded to one form. */
-const VARIANT = new RegExp("[\\u0671\\u0649\\u0629]", "gu");
-
-/** Alef wasla to alef, alef maqsura to yeh, teh marbuta to heh. */
-const FOLDED: ReadonlyMap<string, string> = new Map(
-  [
-    [0x0671, 0x0627],
-    [0x0649, 0x064a],
-    [0x0629, 0x0647],
-  ].map(([from = 0, to = 0]) => [String.fromCodePoint(from), String.fromCodePoint(to)]),
-);
+/** Combining accents after decomposition (the Latin ones `normalizeArabic` leaves). */
+const ACCENTS = new RegExp("[\\u0300-\\u036f]", "gu");
 
 /** Anything that is not a letter, a combining mark of a letter, or a digit. */
 const SEPARATOR = /[^\p{L}\p{M}\p{N}]+/u;
@@ -34,14 +25,13 @@ const SEPARATOR = /[^\p{L}\p{M}\p{N}]+/u;
  *
  * @example
  * searchWordsOf("Café-Crème"); // ["cafe", "creme"]
- * searchWordsOf("مَكْتَبَة"); // ["مكتبه"]
+ * searchWordsOf("المَكْتَبَة"); // ["مكتبه"]
  */
 export function searchWordsOf(text: string): string[] {
-  return text
+  return normalizeArabic(text)
     .normalize("NFD")
-    .replace(MARKS, "")
+    .replace(ACCENTS, "")
     .normalize("NFC")
-    .replace(VARIANT, (letter) => FOLDED.get(letter) ?? letter)
     .toLowerCase()
     .split(SEPARATOR)
     .filter((word) => word !== "");

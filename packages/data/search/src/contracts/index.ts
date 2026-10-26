@@ -12,6 +12,8 @@ export { Embedder } from "#contracts/ports/embedder.port";
 export { SearchDriver } from "#contracts/ports/search-driver.port";
 export { VectorIndex } from "#contracts/ports/vector-index.port";
 export type { SearchDocument } from "#contracts/types/search-document.type";
+export type { SearchFacetRequest } from "#contracts/types/search-facet-request.type";
+export type { SearchFacets } from "#contracts/types/search-facets.type";
 export type { SearchFilterValue } from "#contracts/types/search-filter-value.type";
 export type { SearchRequest } from "#contracts/types/search-request.type";
 export type { SearchTable } from "#contracts/types/search-table.type";

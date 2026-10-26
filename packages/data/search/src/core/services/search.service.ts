@@ -62,7 +62,8 @@ export class Search extends Service {
   /**
    * The best rows for `phrase` across several models' indexes (a global search, the Cmd+K palette), fused by
    * reciprocal rank so each model's best rows come first, up to `limit` in all. Each index applies its own
-   * visibility and filters nothing else.
+   * visibility and filters nothing else. This is what "global indexes" means (ADR 0404): no shared cross-model index
+   * table exists; each model keeps its own index in its own table and schema, and a global search reads them in turn.
    *
    * @throws RangeError for a limit that is not a whole number from 1 to 100.
    * @throws TypeError when a model has no `@Searchable` facet.

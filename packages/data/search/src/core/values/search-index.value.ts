@@ -1,20 +1,20 @@
 /**
  * Stackra file contract:
  * Purpose: `SearchIndex<M>`, one model's search index as `search.in(Model)` returns it: ranked `find` and cursor
- *          `page` reads that return loaded rows, `snippets` for a result list, and `index`, `remove` and `reindex`, which
- *          keep the documents current.
+ *          `page` reads that return loaded rows, `facets` (value counts of the filter fields over the same matches),
+ *          `snippets` for a result list, and `index`, `remove` and `reindex`, which keep the documents current.
  * Boundary: a value built by `Search`, never injected. It reads the model's `@Searchable` facet and its ORM metadata,
  *           builds documents and phrase words (the one normalisation, ADR 0221 d3) and leaves ranking and storage to the
  *           driver. Every read and write runs on the running context's entity manager, so it joins the caller's
  *           transaction and scope session: row-level security isolates, and record visibility is the only
  *           narrowing added. A cursor is the next page's offset; a page past the driver's candidate window is empty.
  *           Record visibility (ADR 0333) is handed to the driver as a key subquery, so it bounds the rows before
- *           they are ranked; an Arabizi word also matches its Arabic spelling; a snippet never shows a `no_snippet`
+ *           they are ranked or counted (a facet count never includes a row the caller may not see); an Arabizi word also matches its Arabic spelling; a snippet never shows a `no_snippet`
  *           field outside the record's team.
  * Runtime: node
  * Governing contract: ADR 0221 (decisions 1, 2, 3 and 7); ADR 0294 (decision 6: `@Searchable` is a class facet);
  *                     cursor pagination in the HTTP conventions; ADR 0327 (decision 9: isolation in the database); ADR 0333
- *                     (amendment); ADR 0341 (decision 2); OS-173.
+ *                     (amendment); ADR 0341 (decision 2); OS-173; ADR 0404 (facets).
  */
 import type { AnyClass } from "@stackra/container";
 import { visibleKeysQuery } from "@stackra/database";
@@ -22,12 +22,13 @@ import type { Database, TablePage } from "@stackra/database";
 import { Classify, Searchable, SearchSnippet, Translated } from "@stackra/model";
 import type { SearchableOptions } from "@stackra/model";
 
-import type { SearchDriver, SearchTable } from "#contracts/index";
+import type { SearchDriver, SearchFacets, SearchTable } from "#contracts/index";
 import { SearchCursorInvalidError } from "#core/errors/search-cursor-invalid.error";
 import { arabiziOf } from "#core/functions/arabizi-of.function";
 import { searchDocumentOf } from "#core/functions/search-document-of.function";
 import { searchSnippetOf } from "#core/functions/search-snippet-of.function";
 import { searchWordsOf } from "#core/functions/search-words-of.function";
+import type { SearchFacetOptions } from "#core/types/search-facet-options.type";
 import type { SearchFindOptions } from "#core/types/search-find-options.type";
 import type { SearchPageOptions } from "#core/types/search-page-options.type";
 
@@ -123,6 +124,32 @@ export class SearchIndex<M extends object> {
   }
 
   /**
+   * How many rows matching `phrase` and `options.filters` hold each value of each of `options.paths`, under the same
+   * record visibility a ranked read applies; an empty phrase counts every indexed row that holds the filters.
+   *
+   * @throws RangeError for a limit that is not a whole number from 1 to 100.
+   * @throws TypeError for a path or filter the facet does not list.
+   * @example
+   * const facets = await search.in(Product).facets(input.q, { paths: ["status"], filters: { brand: "acme" } });
+   * // { status: { active: 12, draft: 3 } }
+   */
+  async facets(phrase: string, options: SearchFacetOptions): Promise<SearchFacets> {
+    const limit = this.limitOf(options.limit);
+    const filters = options.filters ?? {};
+    this.checkFilters([...options.paths, ...Object.keys(filters)]);
+    const visible = await visibleKeysQuery(this.model);
+    const { words, alternatives } = this.wordsOf(phrase);
+    return this.driver.facets(this.shape().table, {
+      words,
+      filters,
+      paths: options.paths,
+      limit,
+      ...(Object.keys(alternatives).length === 0 ? {} : { alternatives }),
+      ...(visible === undefined ? {} : { visible }),
+    });
+  }
+
+  /**
    * The excerpt of each row's own text fields around the phrase, by primary key, for a result list. A field whose data
    * class says `no_snippet` (`privileged`) is excerpted only for a member of the record's own team, which
    * `isTeamMember` answers (IAM's decision, never this index's); a row with nothing to show has no entry.
@@ -212,24 +239,11 @@ export class SearchIndex<M extends object> {
     offset: number,
     options: SearchFindOptions<M>,
   ): Promise<TablePage<M>> {
-    const limit = options.limit ?? DEFAULT_LIMIT;
-    if (!Number.isInteger(limit) || limit < 1 || limit > MAX_LIMIT)
-      throw new RangeError(`A search limit is a whole number from 1 to ${MAX_LIMIT}, got ${limit}`);
+    const limit = this.limitOf(options.limit);
     const filters = options.filters ?? {};
-    const declared = this.facet.filters ?? [];
-    for (const path of Object.keys(filters))
-      if (!declared.includes(path))
-        throw new TypeError(
-          `${this.model.name} does not filter on ${path}; its @Searchable filters are: ${declared.join(", ") || "none"}`,
-        );
-    const words = [...new Set(searchWordsOf(phrase))].slice(0, MAX_WORDS);
+    this.checkFilters(Object.keys(filters));
+    const { words, alternatives } = this.wordsOf(phrase);
     if (words.length === 0) return { items: [], hasMore: false };
-    const alternatives = Object.fromEntries(
-      words.flatMap((word) => {
-        const arabic = arabiziOf(word);
-        return arabic === undefined ? [] : [[word, [arabic]]];
-      }),
-    );
     const visible = await visibleKeysQuery(this.model);
     const { table, key } = this.shape();
     const ids = await this.driver.search(table, {
@@ -244,6 +258,46 @@ export class SearchIndex<M extends object> {
     return ids.length > limit
       ? { items, hasMore: true, nextCursor: String(offset + limit) }
       : { items, hasMore: false };
+  }
+
+  /**
+   * `limit`, or the default when absent.
+   *
+   * @throws RangeError for a limit that is not a whole number from 1 to 100.
+   */
+  private limitOf(limit: number = DEFAULT_LIMIT): number {
+    if (!Number.isInteger(limit) || limit < 1 || limit > MAX_LIMIT)
+      throw new RangeError(`A search limit is a whole number from 1 to ${MAX_LIMIT}, got ${limit}`);
+    return limit;
+  }
+
+  /**
+   * Refuses a filter path the facet does not list.
+   *
+   * @throws TypeError for the first such path.
+   */
+  private checkFilters(paths: readonly string[]): void {
+    const declared = this.facet.filters ?? [];
+    for (const path of paths)
+      if (!declared.includes(path))
+        throw new TypeError(
+          `${this.model.name} does not filter on ${path}; its @Searchable filters are: ${declared.join(", ") || "none"}`,
+        );
+  }
+
+  /** The phrase's distinct normalised words, capped, and the Arabic spelling of each Arabizi word. */
+  private wordsOf(phrase: string): {
+    readonly words: readonly string[];
+    readonly alternatives: Readonly<Record<string, readonly string[]>>;
+  } {
+    const words = [...new Set(searchWordsOf(phrase))].slice(0, MAX_WORDS);
+    const alternatives = Object.fromEntries(
+      words.flatMap((word) => {
+        const arabic = arabiziOf(word);
+        return arabic === undefined ? [] : [[word, [arabic]]];
+      }),
+    );
+    return { words, alternatives };
   }
 
   /** The rows of `ids`, in that order; a row the session cannot see any more is left out. */

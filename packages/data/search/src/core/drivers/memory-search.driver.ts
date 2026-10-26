@@ -14,7 +14,13 @@
 import { Driver } from "@stackra/container";
 
 import { SearchDriver } from "#contracts/index";
-import type { SearchDocument, SearchRequest, SearchTable } from "#contracts/index";
+import type {
+  SearchDocument,
+  SearchFacetRequest,
+  SearchFacets,
+  SearchRequest,
+  SearchTable,
+} from "#contracts/index";
 import { searchWordsOf } from "#core/functions/search-words-of.function";
 
 /** One stored document: each field's words, all its text, and its filter values. */
@@ -44,7 +50,10 @@ function wordScoreOf(document: StoredDocument, word: string): number {
 }
 
 /** The score of `document` for `request`'s words, each matched by itself or an alternative; 0 when one misses. */
-function scoreOf(document: StoredDocument, request: SearchRequest): number {
+function scoreOf(
+  document: StoredDocument,
+  request: Pick<SearchRequest, "words" | "alternatives">,
+): number {
   let score = 0;
   for (const word of request.words) {
     const best = Math.max(
@@ -75,20 +84,28 @@ export class MemorySearchDriver extends Driver(SearchDriver) {
    * @throws TypeError when the request carries a visibility subquery, which only a SQL engine can apply.
    */
   async search(table: SearchTable, request: SearchRequest): Promise<readonly string[]> {
-    if (request.visible !== undefined)
-      throw new TypeError(
-        "The memory search driver cannot apply record visibility; use the postgres driver",
-      );
-    const filters = Object.entries(request.filters);
-    const hits: { readonly id: string; readonly score: number }[] = [];
-    for (const [id, document] of this.tables.get(keyOf(table)) ?? []) {
-      if (!filters.every(([path, value]) => document.filters[path]?.includes(value) === true))
-        continue;
-      const score = scoreOf(document, request);
-      if (score > 0) hits.push({ id, score });
-    }
+    const hits = this.matching(table, request);
     hits.sort((a, b) => b.score - a.score || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
     return hits.slice(request.offset, request.offset + request.limit).map((hit) => hit.id);
+  }
+
+  /**
+   * See `SearchDriver.facets`.
+   *
+   * @throws TypeError when the request carries a visibility subquery, which only a SQL engine can apply.
+   */
+  async facets(table: SearchTable, request: SearchFacetRequest): Promise<SearchFacets> {
+    const hits = this.matching(table, request);
+    return Object.fromEntries(
+      request.paths.map((path) => {
+        const counts = new Map<string, number>();
+        for (const { document } of hits)
+          for (const value of new Set(document.filters[path]?.map(String)))
+            counts.set(value, (counts.get(value) ?? 0) + 1);
+        const ranked = [...counts].sort(([a, x], [b, y]) => y - x || (a < b ? -1 : a > b ? 1 : 0));
+        return [path, Object.fromEntries(ranked.slice(0, request.limit))];
+      }),
+    );
   }
 
   /** See `SearchDriver.index`. */
@@ -110,5 +127,38 @@ export class MemorySearchDriver extends Driver(SearchDriver) {
   async remove(table: SearchTable, ids: readonly string[]): Promise<void> {
     const stored = this.tables.get(keyOf(table));
     for (const id of ids) stored?.delete(id);
+  }
+
+  /**
+   * The documents of `table` that hold every filter and match every word, with their scores; with no words, every
+   * document that holds the filters (score 0).
+   *
+   * @throws TypeError when the request carries a visibility subquery.
+   */
+  private matching(
+    table: SearchTable,
+    request: Omit<SearchRequest, "offset" | "limit">,
+  ): { readonly id: string; readonly score: number; readonly document: StoredDocument }[] {
+    if (request.visible !== undefined)
+      throw new TypeError(
+        "The memory search driver cannot apply record visibility; use the postgres driver",
+      );
+    const filters = Object.entries(request.filters);
+    const hits: {
+      readonly id: string;
+      readonly score: number;
+      readonly document: StoredDocument;
+    }[] = [];
+    for (const [id, document] of this.tables.get(keyOf(table)) ?? []) {
+      if (!filters.every(([path, value]) => document.filters[path]?.includes(value) === true))
+        continue;
+      if (request.words.length === 0) {
+        hits.push({ id, score: 0, document });
+        continue;
+      }
+      const score = scoreOf(document, request);
+      if (score > 0) hits.push({ id, score, document });
+    }
+    return hits;
   }
 }

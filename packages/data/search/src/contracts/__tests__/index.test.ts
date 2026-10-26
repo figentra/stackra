@@ -12,6 +12,8 @@ import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 import * as contracts from "#contracts/index";
 import type {
   SearchDocument,
+  SearchFacetRequest,
+  SearchFacets,
   SearchFilterValue,
   SearchRequest,
   SearchTable,
@@ -29,6 +31,8 @@ describe("@stackra/search/contracts", () => {
     expectTypeOf<SearchFilterValue>().toEqualTypeOf<string | number | boolean>();
     expectTypeOf<SearchDocument["id"]>().toEqualTypeOf<string>();
     expectTypeOf<SearchRequest["words"]>().toEqualTypeOf<readonly string[]>();
+    expectTypeOf<SearchFacetRequest["paths"]>().toEqualTypeOf<readonly string[]>();
+    expectTypeOf<SearchFacets[string][string]>().toEqualTypeOf<number>();
     expectTypeOf<SearchTable["schema"]>().toEqualTypeOf<string | undefined>();
     expectTypeOf<VectorItem["vector"]>().toEqualTypeOf<readonly number[]>();
     expectTypeOf<VectorHit["score"]>().toEqualTypeOf<number>();

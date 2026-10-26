@@ -87,7 +87,7 @@ schema.table("products", (t: Blueprint) => {
 });
 schema.sql(
   "CREATE INDEX CONCURRENTLY idx_products_search_text_trgm ON catalogue.products " +
-    "USING gin (search.unaccent_immutable(search_text) gin_trgm_ops)",
+    "USING gin (search.fold(search_text) gin_trgm_ops)",
   { inverse: "DROP INDEX CONCURRENTLY IF EXISTS catalogue.idx_products_search_text_trgm" },
 );
 ```
@@ -95,7 +95,10 @@ schema.sql(
 `t.searchable` writes `search_vector` (or one `search_vector_<locale>` per locale, stemmed with that language's Postgres
 configuration, `arabic` and `english` included), `search_text` and `search_filters`, all nullable and commented. It
 writes no index: the migration declares its own. This package's migration `search.0001_create_text_functions` creates
-the trigram extension and `search.unaccent_immutable(text)`.
+the trigram extension and `search.unaccent_immutable(text)`; `search.0003_create_fold_function` creates `search.fold(text)`,
+the SQL mirror of `searchWordsOf` (Arabic folded as `@stackra/i18n`'s `normalizeArabic` folds it, article included), which
+the driver's trigram lane calls. A model built on `unaccent_immutable` adds the `search.fold` index beside the old one,
+drops the old one, then runs `search.in(Model).reindex()` (ADR 0404).
 
 ## Vector retrieval
 
@@ -122,10 +125,14 @@ session (`Database.withScope`), so row-level security limits every read and writ
 narrows to the rows at or below its `scope`. The embedding column has no fixed dimension, so a query scans the scope's
 rows exactly (no HNSW index yet); every passage of one deployment comes from one embedder. `MemoryVectorIndexDriver`
 does the same in memory. `HttpEmbedderDriver` (`./node`) calls an OpenAI-compatible `/embeddings` endpoint in the
-tenant's region (`search.embedder: { url, model, dimensions, tokenEnv }`), so the text never leaves it; it checks
+tenant's region (`search.embedder: { url, model, dimensions, tokenSecret }`; the bearer token is read through the runtime's
+`SecretStore` under the `tokenSecret` name, never from the environment), so the text never leaves it; it checks
 every vector's size against `dimensions`. Provider-specific drivers live with the AI integrations.
 
 ## Visibility, Arabizi, snippets and global search
+
+- `search.in(Product).facets(phrase, { paths: ["status"], filters })` counts each filter value over the rows the same
+  search matches, under the same record visibility subquery, so a count never includes a row the viewer cannot see.
 
 - Record visibility (ADR 0333) bounds a search before it ranks: `SearchIndex` hands the driver the subquery of the
   visible keys (`visibleKeysQuery` of `@stackra/database`), which the Postgres driver ANDs into both lanes. The memory

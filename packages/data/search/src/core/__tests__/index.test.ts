@@ -12,7 +12,7 @@ import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
 import { SEARCH_CONFIG_SCHEMA } from "#core/constants/search-config-schema.constant";
 import * as search from "#core/index";
-import type { SearchFindOptions, SearchPageOptions } from "#core/index";
+import type { SearchFacetOptions, SearchFindOptions, SearchPageOptions } from "#core/index";
 
 describe("@stackra/search", () => {
   it("exports exactly its values", () => {
@@ -37,5 +37,6 @@ describe("@stackra/search", () => {
       readonly "variants"[] | undefined
     >();
     expectTypeOf<SearchPageOptions<object>["cursor"]>().toEqualTypeOf<string | undefined>();
+    expectTypeOf<SearchFacetOptions["paths"]>().toEqualTypeOf<readonly string[]>();
   });
 });

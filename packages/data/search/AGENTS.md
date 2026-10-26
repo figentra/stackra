@@ -32,13 +32,13 @@ Postgres drivers, the `t.searchable(...)` macro and the text-function migration 
 
 ## This package
 
-- One normalisation: `searchWordsOf` for documents and phrases, and `search.unaccent_immutable` in the migration for
-  the trigram index. Change the two together; a released migration is frozen, so a change is a new migration.
+- One normalisation: `searchWordsOf` (Arabic through `@stackra/i18n`'s `normalizeArabic`, never a local copy) for
+  documents and phrases, and `search.fold` (migration 0003) for the trigram index. Change the two together; a released migration is frozen, so a change is a new migration.
 - Automatic indexing goes through `@stackra/outbox` only (`registerSearchableModels`); outbox must never depend on
   search. `SEARCHABLE_MODELS` stays internal.
 - Drivers deal in ids and documents; only `SearchIndex` and `SearchableChangeService` (one row load) touch the ORM. Isolation is the database's: never add a
   scope filter in application code (ADR 0327 d9).
-- Record visibility is the one narrowing a search adds, and it goes in before ranking: `SearchIndex` passes
+- Record visibility is the one narrowing a search adds, and it goes in before ranking and before facet counting: `SearchIndex` passes
   `visibleKeysQuery`'s subquery as `SearchRequest.visible`, and a driver applies it in every lane or refuses (ADR 0333).
 - Snippets read the field's data class: a `no_snippet` field is excerpted only when the caller says the user is on the
   record's team; team membership is IAM's answer, never decided here (ADR 0341).
@@ -59,3 +59,4 @@ Postgres drivers, the `t.searchable(...)` macro and the text-function migration 
 | -------------- | ----------------------------------------------- | ----------------------------------------------------------------------------------------------- |
 | Indexed text   | the model table's search columns, memory driver | Copies of the facet's text fields; `remove` clears them on erasure; ADR 0134 decides the fields |
 | Search phrases | `SearchRequest.words`                           | Passed to the engine as bound parameters; never stored or logged here                           |
+| Embedder token | `SecretStore` (`search.embedder.tokenSecret`)   | Read at call time by name; never logged, kept or put in an error (ADR 0173)                     |

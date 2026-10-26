@@ -1,14 +1,16 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `HttpEmbedderDriver`: it posts the model and texts to `<url>/embeddings` with the token from
- *          the named variable, returns vectors in input order, batches long inputs, and refuses a missing endpoint, an
- *          unset token variable, an error status and a vector of the wrong size.
- * Boundary: test only; `fetch` is replaced, so no request leaves the process; the token is a test value set through
- *           the environment for the test only.
+ * Purpose: unit tests of `HttpEmbedderDriver`: it posts the model and texts to `<url>/embeddings` with the token read
+ *          from the runtime secret store under the configured secret name, returns vectors in input order, batches long
+ *          inputs, and refuses a missing endpoint, an unbound token secret, an error status and a vector of the wrong
+ *          size; it never reads the environment.
+ * Boundary: test only; `fetch` is replaced, so no request leaves the process; the token is a test value held by a
+ *           stand-in `SecretStore`.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0269; ADR 0354.
+ * Governing contract: ADR 0022; ADR 0269; ADR 0354; ADR 0173; ADR 0404.
  */
 import { buildConfig } from "@stackra/config";
+import { SecretStore } from "@stackra/config/contracts";
 import { afterEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 
@@ -16,12 +18,23 @@ import { SearchConfig } from "#config/search.config";
 import { Embedder } from "#contracts/ports/embedder.port";
 import { HttpEmbedderDriver } from "#node/drivers/http-embedder.driver";
 
+/** A secret store holding `values`. */
+function storeOf(values: Readonly<Record<string, string>>): SecretStore {
+  return Object.assign(Object.create(SecretStore.prototype) as SecretStore, {
+    get: (name: string) => values[name],
+  });
+}
+
+/** The test store: one bound token. */
+const SECRETS = storeOf({ SEARCH_EMBEDDER_TOKEN: "test-only-token" });
+
 /** An embedder over the test endpoint with vectors of `dimensions`. */
-function embedder(tokenEnv: string | null = null, dimensions = 2): HttpEmbedderDriver {
+function embedder(tokenSecret: string | null = null, dimensions = 2): HttpEmbedderDriver {
   return new HttpEmbedderDriver(
     buildConfig(SearchConfig, {
-      values: { embedder: { url: "https://embed.test/v1/", model: "e5", dimensions, tokenEnv } },
+      values: { embedder: { url: "https://embed.test/v1/", model: "e5", dimensions, tokenSecret } },
     }),
+    SECRETS,
   );
 }
 
@@ -40,10 +53,9 @@ afterEach(() => {
 });
 
 describe("HttpEmbedderDriver", () => {
-  it("embeds through the endpoint in input order, with the token", async () => {
-    vi.stubEnv("STACKRA_TEST_EMBEDDER_TOKEN", "test-only-token");
+  it("embeds through the endpoint in input order, with the token from the secret store", async () => {
     const fetch = endpoint();
-    const driver = embedder("STACKRA_TEST_EMBEDDER_TOKEN");
+    const driver = embedder("SEARCH_EMBEDDER_TOKEN");
     expect(driver).toBeInstanceOf(Embedder);
     expect(driver.dimensions).toBe(2);
     expect(await driver.embed(["linen", "قميص"])).toEqual([
@@ -56,6 +68,18 @@ describe("HttpEmbedderDriver", () => {
     expect(JSON.parse(String(init?.body))).toEqual({ model: "e5", input: ["linen", "قميص"] });
   });
 
+  it("never reads the token from the environment", async () => {
+    vi.stubEnv("STACKRA_TEST_EMBEDDER_TOKEN", "from-the-environment");
+    endpoint();
+    await expect(embedder("STACKRA_TEST_EMBEDDER_TOKEN").embed(["x"])).rejects.toThrow(/not bound/);
+  });
+
+  it("sends no token when none is configured", async () => {
+    const fetch = endpoint();
+    await embedder().embed(["x"]);
+    expect(fetch.mock.calls[0]?.[1]?.headers).not.toHaveProperty("authorization");
+  });
+
   it("batches a long input", async () => {
     const fetch = endpoint();
     const vectors = await embedder().embed(Array.from({ length: 100 }, () => "x"));
@@ -64,8 +88,10 @@ describe("HttpEmbedderDriver", () => {
   });
 
   it("refuses what it cannot use", async () => {
-    expect(() => new HttpEmbedderDriver(buildConfig(SearchConfig))).toThrow(/search\.embedder/);
-    await expect(embedder("STACKRA_TEST_UNSET_TOKEN").embed(["x"])).rejects.toThrow(/not set/);
+    expect(() => new HttpEmbedderDriver(buildConfig(SearchConfig), SECRETS)).toThrow(
+      /search\.embedder/,
+    );
+    await expect(embedder("SEARCH_UNBOUND_TOKEN").embed(["x"])).rejects.toThrow(/not bound/);
     endpoint(503);
     await expect(embedder().embed(["x"])).rejects.toThrow(/503/);
     vi.restoreAllMocks();

@@ -14,7 +14,7 @@ describe("SEARCH_CONFIG_SCHEMA", () => {
   it("parses {} to the default", () => {
     expect(SEARCH_CONFIG_SCHEMA.parse({})).toEqual({
       driver: "postgres",
-      embedder: { url: null, model: "", dimensions: 1024, tokenEnv: null },
+      embedder: { url: null, model: "", dimensions: 1024, tokenSecret: null },
     });
   });
 

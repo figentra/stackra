@@ -6,7 +6,8 @@
  *           a language not listed, and the locale-free `search_vector`, use `simple` (no stemming). The driver inlines
  *           these names into its SQL, so this closed list is the only source of them.
  * Runtime: node
- * Governing contract: ADR 0221 (decisions 1 and 3: full-text search, Arabic stemming).
+ * Governing contract: ADR 0221 (decisions 1 and 3: full-text search, Arabic stemming); ADR 0403 (the seven
+ *                     languages, `es`, `it` and `nl` included, and their reindex plan).
  */
 
 /** Language subtag to text search configuration. */

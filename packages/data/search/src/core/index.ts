@@ -16,6 +16,7 @@ export { MemoryVectorIndexDriver } from "#core/drivers/memory-vector-index.drive
 export { SearchCursorInvalidError } from "#core/errors/search-cursor-invalid.error";
 export { SearchOptions } from "#core/schemas/search-options.schema";
 export { Search } from "#core/services/search.service";
+export type { SearchFacetOptions } from "#core/types/search-facet-options.type";
 export type { SearchFindOptions } from "#core/types/search-find-options.type";
 export type { SearchHit } from "#core/types/search-hit.type";
 export type { SearchPageOptions } from "#core/types/search-page-options.type";

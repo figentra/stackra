@@ -2,15 +2,16 @@
  * Stackra file contract:
  * Purpose: unit tests of `MemorySearchDriver`: a `SearchDriver` whose search requires every word, ranks a match in an
  *          earlier field higher, falls back to a match inside the text, applies exact filters, slices by offset and
- *          limit, keeps tables apart, replaces a re-indexed document and forgets a removed one.
+ *          limit, keeps tables apart, replaces a re-indexed document and forgets a removed one; facets count each
+ *          matching document once per value, most frequent first, and refuse record visibility as a search does.
  * Boundary: test only.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0269; ADR 0221 (decisions 1 and 7); ADR 0266.
+ * Governing contract: ADR 0022; ADR 0269; ADR 0221 (decisions 1 and 7); ADR 0266; ADR 0404.
  */
 import { describe, expect, it } from "@stackra/testing";
 
 import { SearchDriver } from "#contracts/index";
-import type { SearchRequest, SearchTable } from "#contracts/index";
+import type { SearchFacetRequest, SearchRequest, SearchTable } from "#contracts/index";
 import { MemorySearchDriver } from "#core/drivers/memory-search.driver";
 
 const PRODUCTS: SearchTable = { schema: "catalogue", table: "products", primaryKey: "id" };
@@ -109,5 +110,42 @@ describe("MemorySearchDriver alternatives and visibility", () => {
         request(["x"], { visible: { sql: "select 1", params: [] } }),
       ),
     ).rejects.toThrow(/record visibility/);
+  });
+
+  it("counts the filter values of the matching documents, each once, most frequent first", async () => {
+    const driver = await seeded();
+    const facets = (words: string[], extra: Partial<SearchFacetRequest> = {}) =>
+      driver.facets(PRODUCTS, {
+        words,
+        filters: {},
+        paths: ["status", "collections.slug"],
+        limit: 10,
+        ...extra,
+      });
+    await expect(facets(["linen"])).resolves.toEqual({
+      status: { active: 1, draft: 1 },
+      "collections.slug": { sale: 1, summer: 1 },
+    });
+    await expect(facets([])).resolves.toEqual({
+      status: { active: 2, draft: 1 },
+      "collections.slug": { sale: 1, summer: 1 },
+    });
+    await expect(facets([], { filters: { status: "active" }, limit: 1 })).resolves.toEqual({
+      status: { active: 2 },
+      "collections.slug": {},
+    });
+  });
+
+  it("refuses facets under record visibility", async () => {
+    const driver = await seeded();
+    await expect(
+      driver.facets(PRODUCTS, {
+        words: [],
+        filters: {},
+        paths: ["status"],
+        limit: 10,
+        visible: { sql: "select 1", params: [] },
+      }),
+    ).rejects.toThrow(TypeError);
   });
 });

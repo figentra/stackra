@@ -6,7 +6,8 @@
  *           full defaults and a host's generated `SearchConfig$` can `.extend` it. The default equals `SearchOptions`'
  *           initializer (tested). No credential: the Postgres driver uses the service's own database connection.
  * Runtime: isomorphic
- * Governing contract: ADR 0294 (decision 26: a package ships its own `X$`); ADR 0173 (no secret values in config).
+ * Governing contract: ADR 0294 (decision 26: a package ships its own `X$`); ADR 0173 (no secret values in config:
+ *                     the embedder token is a secret name); ADR 0404.
  */
 import { z } from "zod";
 
@@ -20,11 +21,11 @@ export const SEARCH_CONFIG_SCHEMA = z.object({
       url: z.url().nullable().default(null),
       model: z.string().default(""),
       dimensions: z.number().int().min(1).max(16_000).default(1024),
-      tokenEnv: z
+      tokenSecret: z
         .string()
         .regex(/^[A-Z][A-Z0-9_]*$/)
         .nullable()
         .default(null),
     })
-    .default(() => ({ url: null, model: "", dimensions: 1024, tokenEnv: null })),
+    .default(() => ({ url: null, model: "", dimensions: 1024, tokenSecret: null })),
 });

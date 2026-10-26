@@ -3,12 +3,13 @@
  * Purpose: unit tests of `SearchIndex`: indexing loads the facet's relations and stores normalised documents under the
  *          model's table; `find` and `page` return loaded rows in rank order with the next cursor; filters, limits and
  *          cursors are checked; a phrase with no word reads nothing; `remove` and `reindex` reach the driver; an Arabizi word
- *          carries its Arabic alternative, record visibility reaches the driver before ranking, and a privileged field
- *          is excerpted only for the record's team.
+ *          carries its Arabic alternative, record visibility reaches the driver before ranking and before facet
+ *          counting, facets count filter values over the matches (or every row for an empty phrase), and a privileged
+ *          field is excerpted only for the record's team.
  * Boundary: test only; the memory driver ranks and a stand-in entity manager answers metadata, populate and find from
  *           a fixed list, so no database runs.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0269; ADR 0221 (decisions 1 to 3 and 7).
+ * Governing contract: ADR 0022; ADR 0269; ADR 0221 (decisions 1 to 3 and 7); ADR 0404.
  */
 import { connectVisibilityFilter, Database as DatabasePort } from "@stackra/database";
 import type { Database } from "@stackra/database";
@@ -136,6 +137,30 @@ describe(SearchIndex, () => {
     expect(isRefusal(refused, SearchCursorInvalidError)).toBe(true);
   });
 
+  it("counts the filter values of the matching rows, or of every row for an empty phrase", async () => {
+    const { products } = await indexed();
+    expect(await products.facets("linen", { paths: ["status"] })).toEqual({
+      status: { active: 1, draft: 1 },
+    });
+    expect(await products.facets("", { paths: ["status"] })).toEqual({
+      status: { active: 2, draft: 1 },
+    });
+    expect(
+      await products.facets("shirt", { paths: ["status"], filters: { status: "draft" } }),
+    ).toEqual({ status: { draft: 1 } });
+    expect(await products.facets("", { paths: ["status"], limit: 1 })).toEqual({
+      status: { active: 2 },
+    });
+  });
+
+  it("refuses an unlisted facet path and a bad facet limit", async () => {
+    const { products } = await indexed();
+    await expect(products.facets("linen", { paths: ["brand"] })).rejects.toThrow(TypeError);
+    await expect(products.facets("linen", { paths: ["status"], limit: 0 })).rejects.toThrow(
+      RangeError,
+    );
+  });
+
   it("removes documents", async () => {
     const { products } = await indexed();
     await products.remove(["prd_1"]);
@@ -218,6 +243,31 @@ describe("SearchIndex Arabizi, visibility and snippets", () => {
     expect(search.mock.calls[0]?.[1].visible).toEqual({
       sql: "select id from memos where wall = ?",
       params: [1],
+    });
+  });
+
+  it("hands the driver the visibility subquery before it counts facets", async () => {
+    const { driver, index } = await memos();
+    const facets = vi.spyOn(driver, "facets").mockResolvedValue({});
+    const builder = {
+      select: () => builder,
+      where: () => builder,
+      toQuery: () => ({ sql: "select id from memos where wall = ?", params: [2] }),
+    };
+    vi.spyOn(DatabasePort, "current").mockReturnValue({
+      em: () => ({ getMetadata: () => META, createQueryBuilder: () => builder }),
+    } as unknown as DatabasePort);
+    const filter = { conditionsFor: async () => ({ wall: 2 }) } as unknown as VisibilityFilter;
+    connectVisibilityFilter({
+      has: (token) => token === VisibilityFilter,
+      get: () => filter as never,
+    });
+    await index.facets("lease", { paths: [] });
+    expect(facets.mock.calls[0]?.[1]).toMatchObject({
+      words: ["lease"],
+      paths: [],
+      limit: 20,
+      visible: { sql: "select id from memos where wall = ?", params: [2] },
     });
   });
 

@@ -3,23 +3,31 @@
  * Purpose: `PostgresSearchDriver`, the server's `SearchDriver`: the index lives in the model's own table, in the
  *          columns `t.searchable(...)` wrote, and a search fuses two ranked lanes by reciprocal rank: full-text (every
  *          word as a prefix, `ts_rank_cd` over the weighted vectors, the best locale counting) and trigram (word
- *          similarity of the phrase to the folded `search_text`).
+ *          similarity of the phrase to the folded `search_text`). Facets count the filter values of the rows either lane
+ *          matches (every indexed row holding the filters when there are no words), each row once per value.
  * Boundary: raw SQL on the running context's entity manager, so it joins the caller's transaction and scope session:
  *           row-level security decides the rows, and the request's record-visibility subquery narrows both lanes
- *           before they rank. An Arabizi word's alternatives join its prefix as an OR group. Every value is a bound parameter;
+ *           before they rank or count. An Arabizi word's alternatives join its prefix as an OR group. Every value is a bound parameter;
  *           identifiers are quoted and come from the ORM metadata and the catalogue; configuration names come from
  *           `TEXT_SEARCH_CONFIGS` only. A table's vector columns are read once from the catalogue and kept, so a
  *           table's locales need no configuration. Each lane ranks at most `CANDIDATES` rows, so a page past that window
  *           is empty. The vector lane (pgvector) waits for an embedding port.
  * Runtime: node
  * Governing contract: ADR 0221 (decisions 1, 3 and 7); ADR 0160 (raw SQL is parameterised; approved extensions);
- *                     ADR 0327 (decision 9: isolation in the database); ADR 0294 (decision 16).
+ *                     ADR 0327 (decision 9: isolation in the database); ADR 0294 (decision 16); ADR 0333 (amendment);
+ *                     ADR 0404 (facets under the VisibilityFilter; `search.fold`).
  */
 import { Driver } from "@stackra/container";
 import type { Database } from "@stackra/database";
 
 import { SearchDriver } from "#contracts/index";
-import type { SearchDocument, SearchRequest, SearchTable } from "#contracts/index";
+import type {
+  SearchDocument,
+  SearchFacetRequest,
+  SearchFacets,
+  SearchRequest,
+  SearchTable,
+} from "#contracts/index";
 import { TEXT_SEARCH_CONFIGS } from "#node/constants/text-search-configs.constant";
 
 /** One full-text column, the locale it holds (none for `search_vector`) and its text search configuration. */
@@ -41,8 +49,8 @@ const CANDIDATES = 1000;
 /** The reciprocal rank fusion constant: a row's score is the sum of 1 / (60 + its rank) over the lanes. */
 const FUSION = 60;
 
-/** The folding function of this package's migration, which the trigram index is built on. */
-const FOLD = "search.unaccent_immutable";
+/** The folding function of migration `search.0003_create_fold_function`, which the trigram index is built on. */
+const FOLD = "search.fold";
 
 /** A quoted identifier. */
 const quote = (name: string): string => `"${name.replaceAll('"', '""')}"`;
@@ -50,6 +58,38 @@ const quote = (name: string): string => `"${name.replaceAll('"', '""')}"`;
 /** The table's qualified, quoted name. */
 const qualified = (table: SearchTable): string =>
   table.schema === undefined ? quote(table.table) : `${quote(table.schema)}.${quote(table.table)}`;
+
+/** The tsquery text of `request`'s words: each as a prefix, its alternatives ORed in, all ANDed. */
+const prefixesOf = (request: Pick<SearchRequest, "words" | "alternatives">): string =>
+  request.words
+    .map((word) => {
+      const spellings = [word, ...(request.alternatives?.[word] ?? [])].map(
+        (spelling) => `${spelling}:*`,
+      );
+      return spellings.length === 1 ? spellings[0] : `(${spellings.join(" | ")})`;
+    })
+    .join(" & ");
+
+/** The filter and visibility conditions of a lane, each opening with ` and `, and their parameters in order. */
+function narrowingOf(
+  table: SearchTable,
+  request: Pick<SearchRequest, "filters" | "visible">,
+): { readonly sql: string; readonly params: readonly unknown[] } {
+  const filters = Object.entries(request.filters);
+  const { visible } = request;
+  return {
+    sql:
+      (filters.length === 0 ? "" : ` and t."search_filters" @> ?::jsonb`) +
+      // Visibility bounds every lane before it ranks or counts (ADR 0333); the subquery is the ORM's, parameterised.
+      (visible === undefined ? "" : ` and t.${quote(table.primaryKey)} in (${visible.sql})`),
+    params: [
+      ...(filters.length === 0
+        ? []
+        : [JSON.stringify(Object.fromEntries(filters.map(([path, value]) => [path, [value]])))]),
+      ...(visible?.params ?? []),
+    ],
+  };
+}
 
 /** The text of one field for `locale`: that tag, else its language, else the first stored; every locale for none. */
 function textIn(field: SearchDocument["fields"][number], locale: string | undefined): string {
@@ -86,40 +126,23 @@ export class PostgresSearchDriver extends Driver(SearchDriver) {
   /** See `SearchDriver.search`. */
   async search(table: SearchTable, request: SearchRequest): Promise<readonly string[]> {
     const vectors = await this.vectorsOf(table);
-    const filters = Object.entries(request.filters);
-    const filter = filters.length === 0 ? "" : ` and t."search_filters" @> ?::jsonb`;
-    const filterParams =
-      filters.length === 0
-        ? []
-        : [JSON.stringify(Object.fromEntries(filters.map(([path, value]) => [path, [value]])))];
-    const { visible } = request;
-    // Record visibility bounds both lanes before they rank (ADR 0333); its subquery is the ORM's, parameterised.
-    const restrict =
-      visible === undefined ? "" : ` and t.${quote(table.primaryKey)} in (${visible.sql})`;
-    const laneParams = [...filterParams, ...(visible?.params ?? [])];
+    const { sql: narrowing, params: laneParams } = narrowingOf(table, request);
     const key = `t.${quote(table.primaryKey)}`;
     const phrase = request.words.join(" ");
-    const prefixes = request.words
-      .map((word) => {
-        const spellings = [word, ...(request.alternatives?.[word] ?? [])].map(
-          (spelling) => `${spelling}:*`,
-        );
-        return spellings.length === 1 ? spellings[0] : `(${spellings.join(" | ")})`;
-      })
-      .join(" & ");
+    const prefixes = prefixesOf(request);
     // raw-sql: hybrid ranking (tsvector and trigram lanes fused by reciprocal rank) has no ORM form (ADR 0221 d1)
     const rows = (await this.database.em().execute(
       `with q as (select ${vectors.map((vector, index) => `to_tsquery('${vector.config}', ?) as q${index}`).join(", ")}),
 fts as (
   select ${key} as id, row_number() over (order by greatest(${vectors.map((vector, index) => `ts_rank_cd(t.${quote(vector.name)}, q.q${index})`).join(", ")}) desc, ${key}) as rank
   from ${qualified(table)} t cross join q
-  where (${vectors.map((vector, index) => `t.${quote(vector.name)} @@ q.q${index}`).join(" or ")})${filter}${restrict}
+  where (${vectors.map((vector, index) => `t.${quote(vector.name)} @@ q.q${index}`).join(" or ")})${narrowing}
   order by rank limit ${CANDIDATES}
 ),
 trigram as (
   select ${key} as id, row_number() over (order by word_similarity(?, ${FOLD}(t."search_text")) desc, ${key}) as rank
   from ${qualified(table)} t
-  where ${FOLD}(t."search_text") %> ?${filter}${restrict}
+  where ${FOLD}(t."search_text") %> ?${narrowing}
   order by rank limit ${CANDIDATES}
 )
 select id from (
@@ -140,6 +163,57 @@ limit ? offset ?`,
       ],
     )) as unknown as readonly { readonly id: unknown }[];
     return rows.map((row) => String(row.id));
+  }
+
+  /** See `SearchDriver.facets`. */
+  async facets(table: SearchTable, request: SearchFacetRequest): Promise<SearchFacets> {
+    if (request.paths.length === 0) return {};
+    const vectors = await this.vectorsOf(table);
+    const { sql: narrowing, params: narrowingParams } = narrowingOf(table, request);
+    const key = `t.${quote(table.primaryKey)}`;
+    const searching = request.words.length > 0;
+    const prefixes = prefixesOf(request);
+    const match = searching
+      ? `((${vectors.map((vector) => `t.${quote(vector.name)} @@ to_tsquery('${vector.config}', ?)`).join(" or ")}) or ${FOLD}(t."search_text") %> ?)`
+      : `t."search_filters" is not null`;
+    // raw-sql: counting jsonb filter values per path over the matching rows has no ORM form (ADR 0221 d1)
+    const rows = (await this.database.em().execute(
+      `with hits as (
+  select ${key} as id, t."search_filters" as filters
+  from ${qualified(table)} t
+  where ${match}${narrowing}
+),
+counted as (
+  select facet_path.path, facet_value.value, count(distinct hits.id)::int as count
+  from hits
+  cross join unnest(?::text[]) as facet_path(path)
+  cross join lateral jsonb_array_elements_text(coalesce(hits.filters -> facet_path.path, '[]'::jsonb)) as facet_value(value)
+  group by facet_path.path, facet_value.value
+)
+select path, value, count from (
+  select path, value, count, row_number() over (partition by path order by count desc, value) as rank from counted
+) ranked
+where rank <= ?
+order by path, rank`,
+      [
+        ...(searching ? [...vectors.map(() => prefixes), request.words.join(" ")] : []),
+        ...narrowingParams,
+        [...request.paths],
+        request.limit,
+      ],
+    )) as unknown as readonly {
+      readonly path: string;
+      readonly value: string;
+      readonly count: number;
+    }[];
+    const facets: Record<string, Record<string, number>> = Object.fromEntries(
+      request.paths.map((path) => [path, {}]),
+    );
+    for (const row of rows) {
+      const counts = facets[row.path];
+      if (counts !== undefined) counts[row.value] = Number(row.count);
+    }
+    return facets;
   }
 
   /** See `SearchDriver.index`. */
