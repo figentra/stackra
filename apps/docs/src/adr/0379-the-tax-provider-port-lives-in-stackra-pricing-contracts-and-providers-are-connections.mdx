@@ -63,3 +63,13 @@ missing rate refuses.
 Supersedes: none. Sources: `notes/handover/build-wave10-2026-10-25.md` (commerce primitives builder, not built item 2,
 question 2); `notes/handover/review-round-3/stackra-os.md` (R3-SO-19: pricing question 2);
 `packages/commerce/pricing/src/contracts/ports/tax-provider.port.ts`.
+
+## Amendment 2026-10-26: decisions 3 and 4, US tax providers (STA-1280, [0443](/adr/0443-integration-architecture-connectors-apps-and-extensions-in-one-marketplace-and-vendor-drivers-in-os-integrations))
+
+- **Decision 3.** "Provider drivers live with the integrations connectors" means the OS integrations service: the
+  Stripe Tax, Avalara and TaxJar Integrations are OS code. `TaxProvider`, `TaxGateway` and `taxByRates` stay in
+  `@stackra/pricing/contracts` (owner R3-8).
+- **Decision 4.** The owner confirmed decision 4 on 2026-10-26 (R3-3), which overrides R2-12 for US tax: **Stripe Tax is
+  the managed default** where a pack's engine is `provider`, and **Avalara and TaxJar are own-account connectors**
+  (TaxJar is added; Avalara is an own-account connector rather than an add-on on Figentra's account). Both stay pack
+  and catalogue data (`market-pack:us.providers.tax`, `provider-category:tax`).

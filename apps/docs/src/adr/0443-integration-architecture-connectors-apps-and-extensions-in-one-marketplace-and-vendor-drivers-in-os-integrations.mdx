@@ -1,0 +1,116 @@
+---
+title: "0443 — Integration architecture: connectors, apps and extensions in one marketplace, and vendor drivers in OS integrations"
+description: "Accepted · 2026-10-26"
+---
+
+<Note>
+  Accepted (STA-1280). Records the owner's standing vendor rule (2026-10-26, round 2, R2-4) and the
+  integration architecture and vendor-code placement (round 3, R3-7 and R3-8). It amends
+  [0236](/adr/0236-translation-providers-as-connectors) decision 4,
+  [0376](/adr/0376-provider-resolution-ports-credential-references-managed-or-own-accounts-and-the-telephony-ports)
+  decisions 5 and 8, and
+  [0379](/adr/0379-the-tax-provider-port-lives-in-stackra-pricing-contracts-and-providers-are-connections)
+  decisions 3 and 4, each by an amendment on that page. It reads with
+  [0308](/adr/0308-integrations-v3-1-provider-descriptions-connection-stores-and-webhooks)
+  (Integrations and Connections),
+  [0355](/adr/0355-marketplace-one-integration-with-up-to-five-roles-one-app-market-and-open-to-any-developer)
+  (one app market) and [0155](/adr/0155-queries-are-mcp-tools-and-all-ai-code-is-free) (the MCP
+  gateway).
+</Note>
+
+## Context
+
+Three different things were all called "integrations": Figentra calling a vendor (a payment gateway, an SMS provider),
+a third party calling Figentra (a partner app reading orders), and partner UI or AI tools running next to ours. They
+need different security models, and the board mixed them. At the same time wave 12 shipped 16 vendor Integration
+classes in `@stackra/payments`, 8 in `@stackra/notifications` and one (Chatwoot) in `@stackra/integrations`, while
+[0236](/adr/0236-translation-providers-as-connectors) decision 4 and the owner's rule R2-4 say a vendor is a connector
+delivered through the OS integrations service (capability map M10). The owner settled both on 2026-10-26: three
+mechanisms in one marketplace (R3-7), and every vendor integration in the OS integrations service with Stackra keeping
+only ports and shared machinery (R3-8). The alternative of keeping vendor Integrations in Stackra as SDK-free provider
+descriptions (capability map Q5, option a) was weighed and not chosen.
+
+## Decision
+
+**The vendor rule (R2-4).**
+
+1. **A port in Stackra, each vendor a connector.** Every capability that reaches an outside vendor does so through a
+   port owned by the Stackra package for that capability (payments, notifications, pricing tax, identity verification,
+   media OCR, documents e-signature, i18n translation, money FX, shipping, peripherals, integrations for the rest). Each
+   vendor is a connector listed in the OS marketplace. The tenant picks the vendor and the mode, `own` or `managed`
+   ([0376](/adr/0376-provider-resolution-ports-credential-references-managed-or-own-accounts-and-the-telephony-ports)
+   decision 5). Where an open-source or self-hosted product is good enough, Figentra runs it as the managed default
+   (Documenso, PaddleOCR or Surya, Nominatim and Photon, LibreTranslate, Chatwoot, on one tools stack per region, R3-5),
+   and it is reached through the same port as a `managed` Connection.
+
+**Three mechanisms, one marketplace (R3-7).**
+
+2. **Connectors: Figentra calls the vendor.** Figentra is the OAuth client of the vendor, or holds the vendor's API key.
+   The Connection stores the credential in the integrations vault; records keep only a `CredentialRef` (0376 decision
+   6). The vendor driver sits behind the Stackra port and is chosen per call by `ProviderResolver` (0376 decision 1;
+   payments by `PaymentGateways`). Nothing outside the driver knows the vendor's name.
+3. **Apps: third parties call Figentra.** Figentra is the OAuth2 authorization server (OS identity, on the provider of
+   [0206](/adr/0206-zitadel-is-the-identity-provider-and-stackra-identity-is-provider-neutral)). An app has a client ID
+   and secret, declares the scopes it needs in its listing, and is installed only after a tenant admin consents to those
+   scopes. Its tokens are scoped to that tenant and to the consented scopes, and a scope maps to permissions the
+   ordinary permission check enforces. An app receives events through webhook subscriptions to the events in the
+   registry's webhook event catalogue, signed by the shared webhook signer. A major version or a new scope waits for
+   consent again ([0355](/adr/0355-marketplace-one-integration-with-up-to-five-roles-one-app-market-and-open-to-any-developer)
+   decision 9).
+4. **Extensions: partner UI and AI tools next to ours.** A partner UI is a sandboxed bundle that fills a slot a shell
+   declares (the slot model of ADR 0438, the extension model on the app-shells branch). It runs isolated from the
+   shell and its own code, and reaches data only through the API with an app token under decision 3. MCP runs both
+   ways: Tamo uses external MCP servers, each one a connector whose Connection holds Figentra's token for that server;
+   and Figentra exposes its own API as an MCP server through the one gateway of
+   [0155](/adr/0155-queries-are-mcp-tools-and-all-ai-code-is-free) decision 4, under the same scopes as apps.
+5. **Partner code never runs in our services.** A connector driver is Figentra's code. An app runs on the partner's
+   infrastructure. An extension bundle runs in the viewer's sandbox. No partner-supplied code is loaded into a Figentra
+   service process or a shell bundle.
+6. **One marketplace, three shelves.** The one app market of 0355 decision 7 lists `connectors`, `apps` and `ai-tools`
+   with one install flow, one bill and one consent screen. The shelf, category and modes offered per market are
+   catalogue data (`provider-category:<category>`, market packs), never code.
+
+**Where vendor code lives (R3-8).**
+
+7. **Every vendor Integration lives in the OS integrations service.** A class that names a vendor (its description,
+   Connection shape, API client, webhook verifier and `ManagedProvisioning` implementation) is OS code. This includes
+   the payments, messaging, mail, push, tax, verification, OCR, e-signature, geocoding, translation, FX, carrier,
+   accounting and voice vendors.
+8. **Stackra keeps the ports and the shared machinery, and nothing vendor-specific.** It keeps the capability ports
+   and the provider description types (`@stackra/integrations` bases, `Connection`, `ConnectionStore`,
+   `WebhookEvent`), the OAuth client, the token vault and refresh, webhook signing and verification, the
+   `ManagedProvisioning` port and its runner contracts, `ProviderDefaults`, `MarketContext` and `ProviderResolver`, and
+   the testing kit (fake Integration API, memory drivers). A test fake or memory driver that names no vendor stays.
+9. **The move is not a breaking change for port callers.** Callers that use a port (charge, send, quote tax) keep
+   working; the Connection now resolves to a driver registered by the OS integrations service. A caller that imported a
+   vendor class by name imports it from OS integrations instead, and each package records the move in its changeset.
+10. **Values.** Catalogue data: shelves, `provider-category:<category>` modes and fees, listings, app scopes. Pack
+    data: which vendors and modes a market offers and the managed default per category. Seed data: the regional tools
+    stack endpoints as platform `managed` Connections. Settings: none. Code: ports, shared machinery and the OS
+    drivers.
+
+## Consequences
+
+- A new vendor is an OS integrations change and a catalogue entry, never a Stackra release.
+- Stackra packages carry no vendor SDK and no vendor name, so a product built on Stackra alone runs on the memory
+  drivers and its own Connections.
+- The OS integrations service grows by every vendor driver that wave 12 built in Stackra (stackra-150, os-104).
+- Apps and MCP share one scope model, so a tenant admin consents once per app and sees the same scopes for an AI tool.
+- The OAuth2 authorization server, consent screens, app registration and webhook subscriptions are OS identity, OS
+  registry and OS integrations items; Stackra supplies the scope and webhook contracts.
+
+## Enforcement
+
+planned — the boundaries rule fails a file under `packages/**/src/core/providers/` that extends `Integration` and
+names a vendor (an allow-list holds memory and fake drivers); the OS gen pass lists every vendor Integration under the
+integrations service. Until then the rule is a comment.
+
+## Supersedes and sources
+
+Supersedes: none. Amends [0236](/adr/0236-translation-providers-as-connectors) decision 4,
+[0376](/adr/0376-provider-resolution-ports-credential-references-managed-or-own-accounts-and-the-telephony-ports)
+decisions 5 and 8, and
+[0379](/adr/0379-the-tax-provider-port-lives-in-stackra-pricing-contracts-and-providers-are-connections) decisions 3
+and 4. Sources: `notes/handover/owner-decisions-2026-10-26-round-2.md` (R2-4);
+`notes/handover/owner-decisions-2026-10-26-round-3.md` (R3-3, R3-5, R3-7, R3-8);
+`notes/handover/capability-map-2026-10-26.md` (tiers T3 to T5, M4, M10, Q3, Q5).

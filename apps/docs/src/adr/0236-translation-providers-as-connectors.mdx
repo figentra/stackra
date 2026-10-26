@@ -37,3 +37,10 @@ planned — the boundaries rule bans vendor translation SDKs in `@stackra/i18n`,
 Supersedes: none. Builds on: [0147](/adr/0147-logger-and-runtime-telemetry-defaults) (no vendor SDKs in packages), [0234](/adr/0234-module-assets-and-storage) (`lang/`).
 Sources: the owner's idea and the assistant's recommendation (`stackra-decisions-2026-10-19.md`, end of file, "Translation integrations", 2026-10-20);
 the owner's acceptance of the recommendation (2026-10-20).
+
+## Amendment 2026-10-26: decision 4, where the connector code lives (STA-1280, [0443](/adr/0443-integration-architecture-connectors-apps-and-extensions-in-one-marketplace-and-vendor-drivers-in-os-integrations))
+
+Decision 4 now reads: the translation connectors (DeepL, Google, AWS Translate, the TMS connectors) are vendor
+Integrations in the OS integrations service, listed on the `connectors` shelf of the one app market; `@stackra/i18n`
+keeps only the translation-provider port. The managed default is AI translation through Tamo, with LibreTranslate on
+the regional tools stack as the offline fallback, both reached as `managed` Connections (owner R2-10, R3-5, R3-8).
