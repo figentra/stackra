@@ -19,7 +19,7 @@ describe("CreateChecklistsMigration", () => {
     expect(sql).toContain('"workflow"."checklists"');
     expect(sql).toContain('"workflow"."checklist_progress"');
     expect(sql).toContain('"owner_id" varchar(63) not null');
-    expect(sql).toMatch(/"customized" boolean not null/);
+    expect(sql).toMatch(/"customized" boolean default false not null/);
     expect(sql.match(/row level security/gi)?.length).toBeGreaterThanOrEqual(2);
   });
 });

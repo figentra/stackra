@@ -69,7 +69,7 @@ describe("WORKFLOW_TESTING_PLUGIN", () => {
   it("uses the app's native engine when bound", () => {
     const runner = new NativeWorkflowRunnerDriver(
       new MemoryWorkflowJournalDriver(),
-      new Locks(new MemoryLockDriver(), clock),
+      new Locks(new MemoryLockDriver(clock), clock),
       clock,
     );
     compile(appOf([], runner));

@@ -33,7 +33,9 @@ describe("LockingConfig", () => {
   it("types its field on the class and builds with the default", () => {
     const config = buildConfig(LockingConfig);
     expectTypeOf(config.driver).toEqualTypeOf<DriverName<LockDriver>>();
-    expect({ ...config }).toEqual(LOCKING_CONFIG_SCHEMA.parse({}));
+    const { valkeyUrl, ...defaults } = LOCKING_CONFIG_SCHEMA.parse({});
+    expect({ ...config }).toEqual(defaults);
+    expect(config.valkeyUrl).toBe(valkeyUrl);
     expect(config.driver).toBe("postgres");
   });
 

@@ -43,7 +43,9 @@ describe("RealtimeConfig", () => {
 
   it("builds with the dev-safe defaults", () => {
     const config = buildConfig(RealtimeConfig);
-    expect({ ...config }).toEqual(REALTIME_CONFIG_SCHEMA.parse({}));
+    const { fanoutValkeyUrl, ...defaults } = REALTIME_CONFIG_SCHEMA.parse({});
+    expect({ ...config }).toEqual(defaults);
+    expect(config.fanoutValkeyUrl).toBe(fanoutValkeyUrl);
     expect(config.driver).toBe("memory");
     expect(config.origin).toBe("");
     expect(config.channelRealms).toEqual(["platform", "tenant", "customer"]);
@@ -88,11 +90,13 @@ describe("RealtimeConfig", () => {
       backgroundGraceSeconds: shape.backgroundGraceSeconds.unwrap().default(30),
       maxBackoffSeconds: shape.maxBackoffSeconds.unwrap().default(60),
     });
-    expect(Mobile$.parse({})).toEqual({ ...buildConfig(MobileRealtimeConfig) });
+    const { fanoutValkeyUrl: _mobileSecret, ...mobile } = Mobile$.parse({});
+    expect(mobile).toEqual({ ...buildConfig(MobileRealtimeConfig) });
     const Commerce$ = REALTIME_CONFIG_SCHEMA.extend({
       channelRealms: shape.channelRealms.unwrap().default(() => ["tenant" as const]),
       subscribeTokenTtl: shape.subscribeTokenTtl.unwrap().default(duration("5m")),
     });
-    expect(Commerce$.parse({})).toEqual({ ...buildConfig(CommerceRealtimeConfig) });
+    const { fanoutValkeyUrl: _commerceSecret, ...commerce } = Commerce$.parse({});
+    expect(commerce).toEqual({ ...buildConfig(CommerceRealtimeConfig) });
   });
 });

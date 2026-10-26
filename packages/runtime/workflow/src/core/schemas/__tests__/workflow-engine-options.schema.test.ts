@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `WorkflowEngineOptions`: a shape registered with the shipped `WorkflowConfig$`, whose
- *          initializer equals the shipped default (`postgres`), with `journal` typed as the journal driver names; the
- *          schema refuses a journal nobody ships.
+ *          initializer equals the shipped default (`postgres`, `7d`, 1000, 3), with `journal` typed as the journal
+ *          driver names; the schema refuses a journal nobody ships.
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0294 (decisions 4 and 19).
@@ -22,7 +22,12 @@ describe("WorkflowEngineOptions", () => {
 
   it("has an initializer equal to the shipped default", () => {
     expect({ ...new WorkflowEngineOptions() }).toEqual(WORKFLOW_CONFIG_SCHEMA.parse({}));
-    expect(WORKFLOW_CONFIG_SCHEMA.parse({})).toEqual({ journal: "postgres" });
+    expect(WORKFLOW_CONFIG_SCHEMA.parse({})).toEqual({
+      journal: "postgres",
+      signalRetention: "7d",
+      forEachLimit: 1000,
+      maxChainDepth: 3,
+    });
   });
 
   it("accepts the shipped journals only", () => {

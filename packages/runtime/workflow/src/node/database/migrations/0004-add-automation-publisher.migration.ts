@@ -27,7 +27,9 @@ export class AddAutomationPublisherMigration extends Migration {
       t.string("pause_reason", 63)
         .nullable()
         .comment("Why it paused, a snake_case code; null while it runs.");
-      t.index(["trigger"]).where("published_revision is not null and paused_at is null");
+      t.index(["trigger"])
+        .where("published_revision is not null and paused_at is null")
+        .concurrently();
     });
   }
 }

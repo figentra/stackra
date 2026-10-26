@@ -17,6 +17,6 @@ describe("AddRunVersionMigration", () => {
       .steps.flatMap((step) => step.sql)
       .join("\n");
     expect(sql).toContain('"workflow"."runs"');
-    expect(sql).toMatch(/"version" integer not null default 1/);
+    expect(sql).toMatch(/"version" integer default 1 not null/);
   });
 });

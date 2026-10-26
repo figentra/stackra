@@ -1,9 +1,9 @@
 /**
  * Stackra file contract:
- * Purpose: `DevicesConfig`, a device app's hub configuration (key `devices.devices`): the hub URL, the call timeout and
+ * Purpose: `DevicesConfig`, a device app's hub configuration (key `devices`): the hub URL, the call timeout and
  *          the attempts per call that the HTTP drivers read.
  * Boundary: a configuration class over `DevicesOptions` with no env map: the URL's variable differs per target, so the
- *           host feeds it from its own env configuration, and runway's `config.devices.devices` layer sets it per
+ *           host feeds it from its own env configuration, and runway's `config.devices` layer sets it per
  *           environment. A host overrides it as `class DevicesConfig extends BaseDevicesConfig` with `override`
  *           members only.
  * Runtime: isomorphic

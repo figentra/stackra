@@ -20,7 +20,7 @@ export class AddRunAutomationAndCancelMigration extends Migration {
       t.string("automation_id", 30)
         .nullable()
         .comment("The public id of the automation a document run runs; null for other runs.");
-      t.index(["automation_id", "started_at"]).where("automation_id is not null");
+      t.index(["automation_id", "started_at"]).where("automation_id is not null").concurrently();
     });
     // raw-sql: a column's enum check has no blueprint change; the constraint name is migration 0001's
     schema.sql(

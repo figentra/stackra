@@ -18,7 +18,7 @@ describe("CreateServiceAckSetsMigration", () => {
       .join("\n");
     expect(sql).toContain('"workflow"."service_ack_sets"');
     expect(sql).toContain('"subject" varchar(255) not null');
-    expect(sql).toContain('"version" integer not null default 1');
+    expect(sql).toContain('"version" integer default 1 not null');
     expect(sql).toMatch(/"completed_at" timestamptz null/);
     expect(sql).not.toMatch(/row level security/i);
   });

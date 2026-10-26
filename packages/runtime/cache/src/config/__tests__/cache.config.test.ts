@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: unit and type tests of `CacheConfig`: a configuration over `CacheOptions` keyed `cache.cache`, built with
+ * Purpose: unit and type tests of `CacheConfig`: a configuration over `CacheOptions` keyed `cache`, built with
  *          its defaults, a host override and a runway values layer, the Valkey URL resolved only as the
  *          `CACHE_VALKEY_URL` secret and kept off serialisation, and refusing an invalid bound or driver.
  * Boundary: test only.
@@ -33,10 +33,10 @@ class ValkeySecrets extends SecretStore {
 }
 
 describe("CacheConfig", () => {
-  it("is a configuration keyed cache.cache, an override inheriting the key", () => {
+  it("is a configuration keyed cache, an override inheriting the key", () => {
     expect(new CacheConfig()).toBeInstanceOf(Config);
-    expect(configKey(CacheConfig, "cache")).toBe("cache.cache");
-    expect(configKey(HostCacheConfig, "cache")).toBe("cache.cache");
+    expect(configKey(CacheConfig, "cache")).toBe("cache");
+    expect(configKey(HostCacheConfig, "cache")).toBe("cache");
   });
 
   it("types its fields on the class and builds with the defaults", () => {

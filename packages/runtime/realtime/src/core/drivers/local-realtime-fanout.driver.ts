@@ -23,14 +23,15 @@ export class LocalRealtimeFanoutDriver extends Driver(RealtimeFanout) {
 
   /** See `RealtimeFanout.publish`. */
   publish(message: FanoutMessage): Promise<void> {
+    // A macrotask, not a microtask: a microtask queued here runs before the caller's `await` resumes.
     for (const receive of this.receivers)
-      queueMicrotask(() => {
+      setTimeout(() => {
         try {
           receive(message);
         } catch {
           // One receiver must not stop the others.
         }
-      });
+      }, 0);
     return Promise.resolve();
   }
 

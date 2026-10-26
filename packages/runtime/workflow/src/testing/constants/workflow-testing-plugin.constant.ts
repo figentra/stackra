@@ -62,7 +62,7 @@ export const WORKFLOW_TESTING_PLUGIN: TestingPlugin = {
         ? bound
         : new NativeWorkflowRunnerDriver(
             app.has(WorkflowJournal) ? app.get(WorkflowJournal) : new MemoryWorkflowJournalDriver(),
-            app.has(Locks) ? app.get(Locks) : new Locks(new MemoryLockDriver(), clock),
+            app.has(Locks) ? app.get(Locks) : new Locks(new MemoryLockDriver(clock), clock),
             clock,
           );
     runner.connect(app);

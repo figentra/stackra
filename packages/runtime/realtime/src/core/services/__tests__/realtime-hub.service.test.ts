@@ -77,10 +77,12 @@ describe("RealtimeHub", () => {
     expect(hub.join(token, peer)).toBeTypeOf("function");
     expect(hub.join(token, peer)).toBeUndefined();
     expect(hub.join("unknown", peer)).toBeUndefined();
+    expect(hub.size).toBe(1);
     const late = hub.issueToken(STAFF).token;
     vi.advanceTimersByTime(30_000);
     expect(hub.join(late, peer)).toBeUndefined();
-    expect(hub.size).toBe(1);
+    // The first join's token expired at the same tick, so it left; the refused join added none.
+    expect(hub.size).toBe(0);
   });
 
   it("delivers only what the session may receive", () => {

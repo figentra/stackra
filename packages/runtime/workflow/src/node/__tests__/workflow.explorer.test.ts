@@ -75,7 +75,7 @@ function containerOf(instances: readonly object[], bus?: object): Container {
 const engine = () =>
   new NativeWorkflowRunnerDriver(
     new MemoryWorkflowJournalDriver(),
-    new Locks(new MemoryLockDriver(), clock),
+    new Locks(new MemoryLockDriver(clock), clock),
     clock,
   );
 
@@ -88,6 +88,9 @@ describe(WorkflowExplorer, () => {
     const subscriptions: [AnyClass, Listener][] = [];
     const bus = {
       subscribe: (type: AnyClass, listener: Listener) => subscriptions.push([type, listener]),
+      // The engine dispatches a run's domain events to the bound bus and drains it.
+      dispatch: () => undefined,
+      drain: () => Promise.resolve(),
     };
     const fulfil = new FulfilWorkflow();
     const runner = engine();
@@ -174,6 +177,9 @@ describe("WorkflowExplorer trigger blocks", () => {
     const subscriptions: [AnyClass, Listener][] = [];
     const bus = {
       subscribe: (type: AnyClass, listener: Listener) => subscriptions.push([type, listener]),
+      // The engine dispatches a run's domain events to the bound bus and drains it.
+      dispatch: () => undefined,
+      drain: () => Promise.resolve(),
     };
     const automations = {
       triggered: async () => [{ automationId: "wfa_1", document: DOCUMENT, principal: PRINCIPAL }],
@@ -214,6 +220,9 @@ describe("WorkflowExplorer trigger blocks", () => {
     const subscriptions: [AnyClass, Listener][] = [];
     const bus = {
       subscribe: (type: AnyClass, listener: Listener) => subscriptions.push([type, listener]),
+      // The engine dispatches a run's domain events to the bound bus and drains it.
+      dispatch: () => undefined,
+      drain: () => Promise.resolve(),
     };
     const automations = {
       triggered: async () => [{ automationId: "wfa_1", document: DOCUMENT, principal: PRINCIPAL }],
@@ -260,6 +269,9 @@ describe("WorkflowExplorer service acks", () => {
     const subscriptions: [AnyClass, Listener][] = [];
     const bus = {
       subscribe: (type: AnyClass, listener: Listener) => subscriptions.push([type, listener]),
+      // The engine dispatches a run's domain events to the bound bus and drains it.
+      dispatch: () => undefined,
+      drain: () => Promise.resolve(),
     };
     const answers: (readonly string[] | undefined)[] = [undefined, ["commerce", "billing"]];
     const acks = { ack: vi.fn(async () => answers.shift()) };

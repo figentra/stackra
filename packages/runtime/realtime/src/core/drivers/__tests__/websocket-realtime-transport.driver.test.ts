@@ -56,9 +56,9 @@ class FakeSocket extends EventTarget {
 /** Handlers that record their calls. */
 const handlers = () => ({ onOpen: vi.fn(), onMessage: vi.fn(), onClose: vi.fn() });
 
-/** Lets queued promise callbacks run. */
+/** Lets queued promise callbacks run: a macrotask, as a stream read takes more microtask hops than a fixed count. */
 async function settle(): Promise<void> {
-  for (let hop = 0; hop < 20; hop += 1) await Promise.resolve();
+  await new Promise((resolve) => setTimeout(resolve, 0));
 }
 
 /** An event-stream response whose body a test writes. */

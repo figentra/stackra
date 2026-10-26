@@ -253,7 +253,7 @@ function engineWith(
   const clock = clockAt(NOON);
   const runner = new NativeWorkflowRunnerDriver(
     journal,
-    new Locks(new MemoryLockDriver(), clock),
+    new Locks(new MemoryLockDriver(clock), clock),
     clock,
   );
   runner.connect(resolverOf(entries));
@@ -569,6 +569,8 @@ describe(NativeWorkflowRunnerDriver, () => {
   });
 
   it("takes over a running run whose runner died", async () => {
+    // A well-formed public id, as the run's events validate it.
+    const ORPHAN = `wfr_${"0".repeat(22)}rphn`;
     const order = new OrderWorkflow();
     const { runner, journal } = engineWith([[OrderWorkflow, order]]);
     await runner.start(OrderWorkflow, { sku: "sku_1", quantity: 1 }, ORIGIN);
@@ -576,7 +578,7 @@ describe(NativeWorkflowRunnerDriver, () => {
     if (finished === undefined) throw new Error("the run was recorded");
     await journal.save({
       ...finished,
-      id: "wfr_orphan",
+      id: ORPHAN,
       status: WorkflowRunStatus.Running,
       steps: finished.steps.slice(0, 2),
     });
@@ -584,7 +586,7 @@ describe(NativeWorkflowRunnerDriver, () => {
 
     expect(await runner.tick()).toBe(1);
 
-    expect((await runner.find("wfr_orphan"))?.status).toBe(WorkflowRunStatus.Completed);
+    expect((await runner.find(ORPHAN))?.status).toBe(WorkflowRunStatus.Completed);
     expect(order.calls).toEqual(["create", "authorize:1:null"]);
   });
 
@@ -595,7 +597,7 @@ describe(NativeWorkflowRunnerDriver, () => {
     const clock = clockAt(NOON);
     const unconnected = new NativeWorkflowRunnerDriver(
       new MemoryWorkflowJournalDriver(),
-      new Locks(new MemoryLockDriver(), clock),
+      new Locks(new MemoryLockDriver(clock), clock),
       clock,
     );
     await expect(unconnected.start(SkippingWorkflow, { gift: true }, ORIGIN)).rejects.toThrow(
@@ -672,7 +674,7 @@ function documentEngine(config?: Partial<WorkflowConfig>) {
   const journal = new MemoryWorkflowJournalDriver();
   const runner = new NativeWorkflowRunnerDriver(
     journal,
-    new Locks(new MemoryLockDriver(), clock),
+    new Locks(new MemoryLockDriver(clock), clock),
     clock,
     { journal: "memory", signalRetention: "7d", ...config } as WorkflowConfig,
   );

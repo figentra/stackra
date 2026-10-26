@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `DevicesConfig`: a configuration over `DevicesOptions` keyed `devices.devices`, built with its
+ * Purpose: unit tests of `DevicesConfig`: a configuration over `DevicesOptions` keyed `devices`, built with its
  *          defaults, a host override and a runway values layer, and refusing a value its schema refuses.
  * Boundary: test only.
  * Runtime: node (vitest)
@@ -21,10 +21,10 @@ class KioskDevicesConfig extends BaseDevicesConfig {
 }
 
 describe("DevicesConfig", () => {
-  it("is a configuration keyed devices.devices, an override inheriting the key", () => {
+  it("is a configuration keyed devices, an override inheriting the key", () => {
     expect(new DevicesConfig()).toBeInstanceOf(Config);
-    expect(configKey(DevicesConfig, "devices")).toBe("devices.devices");
-    expect(configKey(KioskDevicesConfig, "devices")).toBe("devices.devices");
+    expect(configKey(DevicesConfig, "devices")).toBe("devices");
+    expect(configKey(KioskDevicesConfig, "devices")).toBe("devices");
   });
 
   it("types its fields on the class and builds with the defaults", () => {
