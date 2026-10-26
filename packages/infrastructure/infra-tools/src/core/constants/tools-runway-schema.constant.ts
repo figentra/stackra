@@ -15,7 +15,7 @@ import { RunwayEnvironment } from "@stackra/runway";
 import { z } from "zod";
 
 import { TOOLS_CATALOGUE } from "#core/constants/tools-catalogue.constant";
-import type { ToolKey } from "#core/constants/tools-catalogue.constant";
+import type { ToolKey } from "#core/types/tool-key.type";
 
 /** A tool key of the catalogue. */
 const TOOL_KEY = z.enum(Object.keys(TOOLS_CATALOGUE) as [ToolKey, ...ToolKey[]]);

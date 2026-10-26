@@ -11,7 +11,7 @@
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 import type { z } from "zod";
 
-import { TABLE_INPUT_SCHEMA } from "#core/constants/table-input-schema.constant";
+import type { TABLE_INPUT_SCHEMA } from "#core/constants/table-input-schema.constant";
 import { validate } from "#core/functions/validate.function";
 import { TableInput } from "#core/schemas/table-input.schema";
 import type { Fields } from "#core/types/fields.type";

@@ -16,9 +16,10 @@
 export function luhnValid(digits: string): boolean {
   if (!/^\d{2,}$/.test(digits)) return false;
   let sum = 0;
-  for (const [index, char] of [...digits].reverse().entries()) {
+  // Every second digit from the right is doubled.
+  for (const [index, char] of [...digits].entries()) {
     const digit = Number(char);
-    const doubled = index % 2 === 1 ? digit * 2 : digit;
+    const doubled = (digits.length - 1 - index) % 2 === 1 ? digit * 2 : digit;
     sum += doubled > 9 ? doubled - 9 : doubled;
   }
   return sum % 10 === 0;

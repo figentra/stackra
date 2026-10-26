@@ -23,7 +23,10 @@ registerSchemas([
   [StoreSearch, z.object({ q: z.string().min(2).optional(), cursor: z.string().optional() })],
 ]);
 
-class StoreRoute extends Route({ path: "/store", search: StoreSearch }) {}
+class StoreRoute extends Route({
+  path: "/store",
+  search: StoreSearch,
+}) {}
 class ShareRoute extends Route({ path: "/share" }) {}
 
 describe("parseSearch", () => {

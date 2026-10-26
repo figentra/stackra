@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 /**
  * Stackra file contract:
  * Purpose: unit tests of `Link`: a route ref with params and query renders an `<a>` to its href in the visitor's mount,
@@ -7,6 +6,7 @@
  * Runtime: node (vitest, jsdom)
  * Governing contract: ADR 0022; ADR 0303 (decision 1); ADR 0297 (decision 4).
  */
+// @vitest-environment jsdom
 import { buildConfig } from "@stackra/config";
 import { Container, type Token } from "@stackra/container";
 import { ContainerProvider } from "@stackra/container/react";

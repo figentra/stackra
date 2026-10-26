@@ -14,6 +14,7 @@
 import type { ActionRef } from "@stackra/clients";
 import type { UseActionResult } from "@stackra/clients/react";
 import { useContainer } from "@stackra/container/react";
+import type { I18nKey } from "@stackra/i18n";
 import { useTranslation } from "@stackra/i18n/react";
 import { Menu } from "@stackra/ui/native";
 import type { MenuItem as UiMenuItem } from "@stackra/ui/contracts";
@@ -73,7 +74,7 @@ export function ContextMenu<V>({ menu, value, children }: ContextMenuProps<V>): 
           return [
             {
               id: `route:${entry.to.name}:${String(index)}`,
-              label: t(entry.label ?? entry.to.name),
+              label: t((entry.label ?? entry.to.name) as I18nKey),
               ...(entry.icon === undefined ? {} : { icon: entry.icon }),
               onPress: () => navigate.to(entry.to, params),
             },
@@ -85,7 +86,7 @@ export function ContextMenu<V>({ menu, value, children }: ContextMenuProps<V>): 
           return [
             {
               id: `action:${entry.action.key}:${String(index)}`,
-              label: t(entry.label ?? entry.action.key),
+              label: t((entry.label ?? entry.action.key) as I18nKey),
               ...(entry.icon === undefined ? {} : { icon: entry.icon }),
               ...(entry.destructive === true ? { tone: "danger" as const } : {}),
               isDisabled: runner.isPending,
@@ -96,12 +97,12 @@ export function ContextMenu<V>({ menu, value, children }: ContextMenuProps<V>): 
           ];
         }
         case MenuItemKind.Link:
-          return [{ id: `link:${entry.url}`, label: t(entry.label), href: entry.url }];
+          return [{ id: `link:${entry.url}`, label: t(entry.label as I18nKey), href: entry.url }];
         case MenuItemKind.Group:
           return [
             {
               id: `group:${entry.label}`,
-              label: t(entry.label),
+              label: t(entry.label as I18nKey),
               items: itemsOf(entry.items, runnerOf),
             },
           ];

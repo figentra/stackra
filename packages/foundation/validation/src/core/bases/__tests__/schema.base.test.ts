@@ -19,13 +19,13 @@ import { registerSchemas } from "#core/functions/register-schemas.function";
 import type { Fields } from "#core/types/fields.type";
 
 class PointsEarned extends Schema {
-  memberId!: string;
-
   @Int({ min: 1 })
   points!: number;
 
   @Int({ min: 0 })
   bonus = 0;
+
+  memberId!: string;
 
   at!: Date;
 }

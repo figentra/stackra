@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 /**
  * Stackra file contract:
  * Purpose: unit tests of `routeAdapter` in framework mode: the loader builds the context from the request's context
@@ -11,6 +10,7 @@
  * Runtime: node (vitest, jsdom)
  * Governing contract: ADR 0022; ADR 0165 (framework mode); ADR 0301; ADR 0305 (rule 35).
  */
+// @vitest-environment jsdom
 import { buildConfig } from "@stackra/config";
 import { Container, type Token } from "@stackra/container";
 import { I18nConfig } from "@stackra/i18n";

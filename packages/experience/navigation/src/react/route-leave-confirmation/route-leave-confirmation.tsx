@@ -15,10 +15,7 @@ import { LeaveConfirmation } from "@stackra/ui/react";
 import { useEffect, useRef, type ReactElement } from "react";
 import { useBlocker } from "react-router";
 
-import type { RouteLeaveConfirmationContractProps } from "#contracts/types/route-leave-confirmation-contract-props.type";
-
-/** Props of the web RouteLeaveConfirmation: the shared contract, which has no element of its own to pass props to. */
-export type RouteLeaveConfirmationProps = RouteLeaveConfirmationContractProps;
+import type { RouteLeaveConfirmationProps } from "#react/route-leave-confirmation/route-leave-confirmation.props";
 
 /** Asks before a route change drops unsaved work: hold the navigation, ask, then proceed or reset. */
 export function RouteLeaveConfirmation(props: RouteLeaveConfirmationProps): ReactElement {

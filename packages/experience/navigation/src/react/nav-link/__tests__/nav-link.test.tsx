@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 /**
  * Stackra file contract:
  * Purpose: unit tests of `NavLink`: the current route's link is `aria-current="page"` with its active class, `end`
@@ -7,6 +6,7 @@
  * Runtime: node (vitest, jsdom)
  * Governing contract: ADR 0022; ADR 0303 (decision 1); WCAG 2.2 SC 2.4.8.
  */
+// @vitest-environment jsdom
 import { buildConfig } from "@stackra/config";
 import { Container, type Token } from "@stackra/container";
 import { ContainerProvider } from "@stackra/container/react";

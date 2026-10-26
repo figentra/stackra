@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 /**
  * Stackra file contract:
  * Purpose: unit tests of `renderLayout`: the layout's component renders with its loader's data over an empty outlet at
@@ -7,6 +6,7 @@
  * Runtime: node (vitest, jsdom)
  * Governing contract: ADR 0022; ADR 0269 (decisions 3 and 6).
  */
+// @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
 import { screen } from "@testing-library/react";
 import { createElement } from "react";

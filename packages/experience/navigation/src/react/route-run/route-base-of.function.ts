@@ -13,14 +13,8 @@ import { ErrorReporter } from "@stackra/errors/contracts";
 import type { RouteCaller } from "#contracts/index";
 import { readRouteKey } from "#react/route-keys/read-route-key.function";
 import type { RouteKeys } from "#react/route-keys/route-keys.type";
+import type { RouterArgs } from "#react/route-run/router-args.type";
 import type { RouteRun } from "#react/route-run/route-run.type";
-
-/** The arguments React Router gives a loader or an action. */
-export interface RouterArgs {
-  readonly request: Request;
-  readonly params: Readonly<Record<string, string | undefined>>;
-  readonly context?: unknown;
-}
 
 /**
  * The shared inputs of one request, with its public clients and reporter.

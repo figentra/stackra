@@ -29,6 +29,6 @@ export interface Address {
   /** A national short address (the Saudi national address short code), when the Market has one. */
   readonly shortCode?: string;
 
-  /** The country. */
+  /** The country of the address. */
   readonly country: CountryCode;
 }

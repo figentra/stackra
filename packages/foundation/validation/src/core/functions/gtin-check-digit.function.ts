@@ -19,7 +19,8 @@ export function gtinCheckDigit(body: string): number {
   if (!/^\d{7,17}$/.test(body))
     throw new RangeError(`gtinCheckDigit: "${body}" is not a GTIN body of 7 to 17 digits`);
   let sum = 0;
-  for (const [index, digit] of [...body].reverse().entries())
-    sum += Number(digit) * (index % 2 === 0 ? 3 : 1);
+  // Weights alternate 3, 1 from the rightmost digit.
+  for (const [index, digit] of [...body].entries())
+    sum += Number(digit) * ((body.length - 1 - index) % 2 === 0 ? 3 : 1);
   return (10 - (sum % 10)) % 10;
 }

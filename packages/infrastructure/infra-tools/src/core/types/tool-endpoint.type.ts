@@ -18,6 +18,6 @@ export type ToolEndpoint = {
   readonly provider: string;
   /** The root runway region key. */
   readonly region: string;
-  /** `http://<tool>.<namespace>:<port>`. */
+  /** The private base URL, `http://<tool>.<namespace>:<port>`. */
   readonly baseUrl: string;
 };

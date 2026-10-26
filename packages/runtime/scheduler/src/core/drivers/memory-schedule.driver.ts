@@ -28,21 +28,21 @@ export class MemoryScheduleDriver extends Driver(ScheduleDriver) {
   /** Watermark key to instant. */
   private readonly marks = new Map<string, Date>();
 
-  /** See `ScheduleDriver.add`. */
+  /** Stores a frozen copy of `schedule` (see `ScheduleDriver.add`). */
   add(schedule: Schedule): Promise<void> {
     const input = JSON.parse(JSON.stringify(schedule.input)) as object;
     this.stored.set(schedule.id, Object.freeze({ ...schedule, input }));
     return Promise.resolve();
   }
 
-  /** See `ScheduleDriver.remove`. */
+  /** Deletes schedule `id` of `scope` and its watermark (see `ScheduleDriver.remove`). */
   remove(id: PublicId<"sch">, scope: ScopeRef): Promise<boolean> {
     if (this.stored.get(id)?.scope.id !== scope.id) return Promise.resolve(false);
     this.marks.delete(id);
     return Promise.resolve(this.stored.delete(id));
   }
 
-  /** See `ScheduleDriver.schedules`. */
+  /** Lists the schedules of `scope`, or of every scope (see `ScheduleDriver.schedules`). */
   schedules(scope?: ScopeRef): Promise<readonly Schedule[]> {
     const all = [...this.stored.values()];
     return Promise.resolve(
@@ -50,12 +50,12 @@ export class MemoryScheduleDriver extends Driver(ScheduleDriver) {
     );
   }
 
-  /** See `ScheduleDriver.watermarks`. */
+  /** Returns a copy of every watermark, by key (see `ScheduleDriver.watermarks`). */
   watermarks(): Promise<ReadonlyMap<string, Date>> {
     return Promise.resolve(new Map(this.marks));
   }
 
-  /** See `ScheduleDriver.advance`. */
+  /** Sets the watermark of each key to `at` (see `ScheduleDriver.advance`). */
   advance(keys: readonly string[], at: Date): Promise<void> {
     for (const key of keys) this.marks.set(key, new Date(at.getTime()));
     return Promise.resolve();

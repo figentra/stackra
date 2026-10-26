@@ -28,7 +28,7 @@ export abstract class ScheduleDriver extends Port {
   /** Type-only port key, so `DriverName<ScheduleDriver>` narrows to this port's drivers. */
   declare readonly "~key": "scheduler.ScheduleDriver";
 
-  /** Stores `schedule`. */
+  /** Stores `schedule` in this driver. */
   abstract add(schedule: Schedule): Promise<void>;
 
   /** Deletes schedule `id` of `scope` and its watermark; `false` when `scope` holds no such schedule. */

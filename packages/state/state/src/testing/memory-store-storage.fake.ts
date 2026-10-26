@@ -13,11 +13,11 @@ import type { StoreStorage, StoreStorageArea } from "#core/index";
 /** Client storage held in memory, one map per area. */
 export class MemoryStoreStorage implements StoreStorage {
   /** Area name to its area. */
-  readonly #areas = new Map<string, StoreStorageArea>();
+  private readonly areas = new Map<string, StoreStorageArea>();
 
   /** The area named `name`, created empty on first use; the same object every time. */
   area(name: string): StoreStorageArea {
-    const known = this.#areas.get(name);
+    const known = this.areas.get(name);
     if (known !== undefined) return known;
     const values = new Map<string, string>();
     const area: StoreStorageArea = {
@@ -29,7 +29,7 @@ export class MemoryStoreStorage implements StoreStorage {
         values.set(key, JSON.stringify(value));
       },
     };
-    this.#areas.set(name, area);
+    this.areas.set(name, area);
     return area;
   }
 }

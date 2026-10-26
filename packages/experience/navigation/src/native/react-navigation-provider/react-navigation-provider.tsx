@@ -11,13 +11,9 @@
  */
 import { useLinkTo } from "@react-navigation/native";
 import { RouterProvider } from "@stackra/ui/native";
-import type { ReactElement, ReactNode } from "react";
+import type { ReactElement } from "react";
 
-/** Props of {@link ReactNavigationProvider}. */
-export interface ReactNavigationProviderProps {
-  /** The tree whose links navigate through React Navigation. */
-  readonly children?: ReactNode;
-}
+import type { ReactNavigationProviderProps } from "#native/react-navigation-provider/react-navigation-provider.props";
 
 /** Gives every `Link` below it React Navigation's link-to function. */
 export function ReactNavigationProvider({ children }: ReactNavigationProviderProps): ReactElement {

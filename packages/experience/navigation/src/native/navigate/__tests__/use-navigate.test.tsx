@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 /**
  * Stackra file contract:
  * Purpose: unit tests of the native `useNavigate`: `to` pushes the route key's screen with its params, `replace`
@@ -7,6 +6,7 @@
  * Runtime: node (vitest, jsdom)
  * Governing contract: ADR 0022; ADR 0165 (React Navigation on mobile).
  */
+// @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
 import { renderHook } from "@testing-library/react";
 import { vi } from "vitest";

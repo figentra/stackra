@@ -34,7 +34,10 @@ class OrderDetailParams extends Schema {
 registerSchemas([[OrderDetailParams, z.object({ orderId: z.string().startsWith("ord_") })]]);
 
 class ProductRoute extends Route({ path: "/store/:slug" }) {}
-class OrderDetailRoute extends Route({ path: "/orders/:orderId", params: OrderDetailParams }) {}
+class OrderDetailRoute extends Route({
+  path: "/orders/:orderId",
+  params: OrderDetailParams,
+}) {}
 
 class RateLimitedError extends Refusal({ kind: ErrorKind.RateLimited }) {}
 

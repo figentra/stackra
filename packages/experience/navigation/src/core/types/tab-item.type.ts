@@ -10,7 +10,7 @@ import type { IconName } from "@stackra/icons/contracts";
 
 import type { RouteRef } from "#core/types/route-ref.type";
 
-/** One tab. */
+/** One tab of the tab bar. */
 export interface TabItem {
   /** The tab's route. */
   readonly route: RouteRef;
@@ -18,7 +18,7 @@ export interface TabItem {
   /** Its place, from 1. */
   readonly order: number;
 
-  /** Its icon. */
+  /** The tab's icon. */
   readonly icon: IconName;
 
   /** Its label key: the route's title. */

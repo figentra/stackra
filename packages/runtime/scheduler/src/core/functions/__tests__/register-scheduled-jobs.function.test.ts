@@ -31,7 +31,10 @@ class SendDigestAction extends Action({
   async handle(_input: object): Promise<void> {}
 }
 
-class PlaceOrderAction extends Action({ key: "order.place", actors: [ActorKind.User] }) {
+class PlaceOrderAction extends Action({
+  key: "order.place",
+  actors: [ActorKind.User],
+}) {
   async handle(_input: object): Promise<void> {}
 }
 

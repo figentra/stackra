@@ -16,10 +16,7 @@ import type { LeaveConfirmationHandle } from "@stackra/ui/contracts";
 import { LeaveConfirmation } from "@stackra/ui/native";
 import { useRef, type ReactElement } from "react";
 
-import type { RouteLeaveConfirmationContractProps } from "#contracts/types/route-leave-confirmation-contract-props.type";
-
-/** Props of the native RouteLeaveConfirmation: the shared contract, which has no element of its own to pass props to. */
-export type RouteLeaveConfirmationProps = RouteLeaveConfirmationContractProps;
+import type { RouteLeaveConfirmationProps } from "#native/route-leave-confirmation/route-leave-confirmation.props";
 
 /** Asks before leaving the screen drops unsaved work: hold the removal, ask, then replay it or drop it. */
 export function RouteLeaveConfirmation(props: RouteLeaveConfirmationProps): ReactElement {

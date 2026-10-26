@@ -77,6 +77,15 @@ const netherlands: AddressFormat = {
   layout: [["lines"], ["postalCode", "locality"], ["country"]],
 };
 
+/** True when an Amsterdam address with `postalCode` passes the Dutch format. */
+const dutch = (postalCode: string) =>
+  address(netherlands).safeParse({
+    lines: ["Damrak 1"],
+    locality: "Amsterdam",
+    postalCode,
+    country: "NL",
+  }).success;
+
 describe("address(format) with the Italian and Dutch formats", () => {
   it("accepts an Italian CAP and a Dutch postcode, stored canonical", () => {
     expect(
@@ -99,13 +108,6 @@ describe("address(format) with the Italian and Dutch formats", () => {
   });
 
   it("refuses a malformed CAP or postcode", () => {
-    const dutch = (postalCode: string) =>
-      address(netherlands).safeParse({
-        lines: ["Damrak 1"],
-        locality: "Amsterdam",
-        postalCode,
-        country: "NL",
-      }).success;
     expect(dutch("0123 AB")).toBe(false);
     expect(dutch("1012 SS")).toBe(false);
     expect(dutch("1012")).toBe(false);

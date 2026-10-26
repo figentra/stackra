@@ -23,7 +23,7 @@ export class MemoryCronScopesDriver extends Driver(CronScopes) {
   /** The scopes a per-scope cron runs in. */
   scopes: readonly ScopeRef[] = [];
 
-  /** See `CronScopes.list`. */
+  /** Returns a copy of the configured scopes (see `CronScopes.list`). */
   list(): Promise<readonly ScopeRef[]> {
     return Promise.resolve([...this.scopes]);
   }

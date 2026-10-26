@@ -13,7 +13,7 @@
 import { Enum } from "@stackra/contracts";
 
 /**
- * The algorithms.
+ * The check-digit algorithms an identifier format can require.
  *
  * @example
  * const nationalId: IdentifierFormat = { pattern: "^[12]\\d{9}$", check: IdentifierCheck.Luhn };

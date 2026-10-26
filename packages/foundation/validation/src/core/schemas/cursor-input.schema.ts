@@ -22,12 +22,15 @@ import { registerSchemas } from "#core/functions/register-schemas.function";
  * }
  */
 export class CursorInput extends Schema {
+  /** How many items to return. */
+  @Int({
+    min: 1,
+    max: 100,
+  })
+  limit = 20;
+
   /** The opaque cursor of the page to read; absent for the first page. */
   cursor?: string;
-
-  /** How many items to return. */
-  @Int({ min: 1, max: 100 })
-  limit = 20;
 }
 
 registerSchemas([[CursorInput, CURSOR_INPUT_SCHEMA]]);

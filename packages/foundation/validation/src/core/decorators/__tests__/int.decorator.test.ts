@@ -13,7 +13,11 @@ import { Schema } from "#core/bases/schema.base";
 import { Int } from "#core/decorators/int.decorator";
 
 class Quantities extends Schema {
-  @Int({ min: 1, max: 99, message: "orders::errors.quantity" })
+  @Int({
+    min: 1,
+    max: 99,
+    message: "orders::errors.quantity",
+  })
   quantity = 1;
 
   @Int()
@@ -22,7 +26,10 @@ class Quantities extends Schema {
   @Int({ min: 0 })
   nullable: number | null = null;
 
-  @Int({ min: 1, each: true })
+  @Int({
+    min: 1,
+    each: true,
+  })
   perLine: number[] = [];
 
   @Int({ each: true })

@@ -17,7 +17,10 @@ import { resolveHref } from "#core/functions/resolve-href.function";
 import { resolveMenuItems } from "#core/functions/resolve-menu-items.function";
 import { routeRef } from "#core/functions/route-ref.function";
 
-class QuickOrderRoute extends Route({ path: "/quick-order", title: "orders::quick_order.title" }) {}
+class QuickOrderRoute extends Route({
+  path: "/quick-order",
+  title: "orders::quick_order.title",
+}) {}
 class OrderDetailRoute extends Route({ path: "/orders/:orderId" }) {}
 class PageRoute extends Route({ path: "*" }) {}
 

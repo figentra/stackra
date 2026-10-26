@@ -7,7 +7,7 @@
  */
 import type { I18nKey } from "@stackra/i18n";
 
-/** One crumb. */
+/** One crumb of the breadcrumb trail. */
 export interface Breadcrumb {
   /** The href the crumb links to. */
   readonly to: string;

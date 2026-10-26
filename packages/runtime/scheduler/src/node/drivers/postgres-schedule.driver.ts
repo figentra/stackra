@@ -59,13 +59,17 @@ export class PostgresScheduleDriver extends Driver(ScheduleDriver) {
   /** The connected database. */
   private readonly database: Database;
 
-  /** @param database - the connected database whose running transaction each statement joins. */
+  /**
+   * Builds the driver over the connected database.
+   *
+   * @param database - the connected database whose running transaction each statement joins.
+   */
   constructor(database: Database) {
     super();
     this.database = database;
   }
 
-  /** See `ScheduleDriver.add`. */
+  /** Inserts `schedule` (see `ScheduleDriver.add`). */
   async add(schedule: Schedule): Promise<void> {
     // raw-sql: the schedule table has no model; one parameterised insert
     await this.database
@@ -87,7 +91,7 @@ export class PostgresScheduleDriver extends Driver(ScheduleDriver) {
       );
   }
 
-  /** See `ScheduleDriver.remove`. */
+  /** Deletes schedule `id` of `scope` and its watermark (see `ScheduleDriver.remove`). */
   async remove(id: PublicId<"sch">, scope: ScopeRef): Promise<boolean> {
     // raw-sql: the schedule and its watermark go in one statement, so neither outlives the other
     const rows = await this.database
@@ -101,7 +105,7 @@ export class PostgresScheduleDriver extends Driver(ScheduleDriver) {
     return IDS.parse(rows).length > 0;
   }
 
-  /** See `ScheduleDriver.schedules`. */
+  /** Lists the schedules of `scope`, or of every scope (see `ScheduleDriver.schedules`). */
   async schedules(scope?: ScopeRef): Promise<readonly Schedule[]> {
     const filter = scope === undefined ? "" : " where scope_id = ?";
     // raw-sql: the schedule table has no model; ids are UUIDv7, so ordering by id is creation order
@@ -125,7 +129,7 @@ export class PostgresScheduleDriver extends Driver(ScheduleDriver) {
     );
   }
 
-  /** See `ScheduleDriver.watermarks`. */
+  /** Reads every watermark, by key (see `ScheduleDriver.watermarks`). */
   async watermarks(): Promise<ReadonlyMap<string, Date>> {
     // raw-sql: the watermark table has no model; one read of every key
     const rows = await this.database
@@ -134,7 +138,7 @@ export class PostgresScheduleDriver extends Driver(ScheduleDriver) {
     return new Map(MARKS.parse(rows).map((row) => [row.schedule_key, row.ticked_at]));
   }
 
-  /** See `ScheduleDriver.advance`. */
+  /** Upserts the watermark of each key to `at` (see `ScheduleDriver.advance`). */
   async advance(keys: readonly string[], at: Date): Promise<void> {
     if (keys.length === 0) return;
     // raw-sql: every key in one upsert, the keys bound as one JSON array

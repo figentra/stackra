@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 /**
  * Stackra file contract:
  * Purpose: unit tests of `toRoute`, `toLayout` and `toRoot` together: paths become relative (`/` an index), the tree
@@ -9,6 +8,7 @@
  * Runtime: node (vitest, jsdom)
  * Governing contract: ADR 0022; ADR 0294 (decisions 14 and 16); ADR 0297 (decision 4); ADR 0305 (rule 35).
  */
+// @vitest-environment jsdom
 import { afterEach, describe, expect, it } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
@@ -39,20 +39,29 @@ class ShellLayout extends Layout {
   }
 }
 
-class DashboardRoute extends Route({ path: "/", layout: ShellLayout }) {
+class DashboardRoute extends Route({
+  path: "/",
+  layout: ShellLayout,
+}) {
   override loader(ctx: RouteContext<this>) {
     return { locale: ctx.locale, user: (ctx as unknown as { user: string }).user };
   }
 }
 
-class ProductRoute extends Route({ path: "/store/:slug", layout: ShellLayout }) {
+class ProductRoute extends Route({
+  path: "/store/:slug",
+  layout: ShellLayout,
+}) {
   override loader(ctx: RouteContext<this>) {
     if (ctx.params.slug === "gone") throw ctx.notFound({ code: "product_not_found" });
     return { slug: ctx.params.slug };
   }
 }
 
-class OpenRoute extends Route({ path: "/open", layout: ShellLayout }) {
+class OpenRoute extends Route({
+  path: "/open",
+  layout: ShellLayout,
+}) {
   override loader(ctx: RouteContext<this>) {
     return ctx.redirect(`/store/${ctx.search["slug"] ?? "tee"}`);
   }

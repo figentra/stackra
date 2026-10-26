@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 /**
  * Stackra file contract:
  * Purpose: unit tests of `useSignal(s)`: the current value on first render, a re-render with the new value after `set`,
@@ -8,6 +7,7 @@
  * Runtime: node (vitest, jsdom)
  * Governing contract: ADR 0022; ADR 0269; ADR 0079 (decisions 2 and 6).
  */
+// @vitest-environment jsdom
 import { describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 import { act, renderHook } from "@testing-library/react";

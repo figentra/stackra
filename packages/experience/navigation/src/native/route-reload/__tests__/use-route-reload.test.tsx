@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 /**
  * Stackra file contract:
  * Purpose: unit tests of `useRouteReload`: inside a screen it is the screen's reload; outside one it throws.
@@ -6,6 +5,7 @@
  * Runtime: node (vitest, jsdom)
  * Governing contract: ADR 0022; ADR 0294 (decision 16).
  */
+// @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
 import { renderHook } from "@testing-library/react";
 import type { ReactNode } from "react";

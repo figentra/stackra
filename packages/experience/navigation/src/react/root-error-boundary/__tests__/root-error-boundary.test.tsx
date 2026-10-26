@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 /**
  * Stackra file contract:
  * Purpose: unit tests of `RootErrorBoundary`: a thrown 404 renders the not-found page with a home link in the mount, a
@@ -9,6 +8,7 @@
  * Runtime: node (vitest, jsdom)
  * Governing contract: ADR 0022; ADR 0305 (rule 35); ADR 0324.
  */
+// @vitest-environment jsdom
 import { ErrorKind, Refusal } from "@stackra/errors";
 import { afterEach, describe, expect, it } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";

@@ -12,7 +12,9 @@ import type { ToolEndpoint } from "#core/types/tool-endpoint.type";
 
 /** One region's declared tools stack. */
 export type AwsToolsStack = {
+  /** The ECS cluster id. */
   readonly cluster: pulumi.Output<string>;
+  /** The private service-discovery namespace id. */
   readonly namespace: pulumi.Output<string>;
   /** Tool key to its ECS service id. */
   readonly services: Readonly<Record<string, pulumi.Output<string>>>;

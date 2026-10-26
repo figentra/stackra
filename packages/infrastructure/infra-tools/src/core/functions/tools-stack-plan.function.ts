@@ -16,7 +16,7 @@ import type { RootRunway, RunwayEnvironment, RunwayIssue } from "@stackra/runway
 import { OSM_EXTRACTS } from "#core/constants/osm-extracts.constant";
 import { ROOT_SOURCE } from "#core/constants/root-source.constant";
 import { TOOLS_CATALOGUE } from "#core/constants/tools-catalogue.constant";
-import type { ToolKey } from "#core/constants/tools-catalogue.constant";
+import type { ToolKey } from "#core/types/tool-key.type";
 import { TOOLS_RUNWAY_SCHEMA } from "#core/constants/tools-runway-schema.constant";
 import type { ToolDefinition } from "#core/types/tool-definition.type";
 import type { ToolPlan } from "#core/types/tool-plan.type";
@@ -113,27 +113,28 @@ export function toolsStackPlan(root: RootRunway, environment: RunwayEnvironment)
           key,
           name: `${project}-${environment}-${regionKey}-${key}`,
           image,
-          port,
+          ...(port === undefined ? {} : { port }),
           cpu: override.cpu ?? definition.cpu,
           memoryMb: override.memoryMb ?? definition.memoryMb,
           replicas: override.replicas ?? definition.replicas,
-          command: definition.command,
+          ...(definition.command === undefined ? {} : { command: definition.command }),
           environment: environmentVars,
           secrets: definition.secrets.map((name) => ({
             name,
             parameter: `${secretsPath}/${key}/${name}`,
           })),
-          volume: definition.volume,
-          endpoint:
-            port === undefined || connection === undefined
-              ? undefined
-              : {
+          ...(definition.volume === undefined ? {} : { volume: definition.volume }),
+          ...(port === undefined || connection === undefined
+            ? {}
+            : {
+                endpoint: {
                   tool: key,
                   category: connection.category,
                   provider: override.provider ?? connection.provider,
                   region: regionKey,
                   baseUrl: `http://${key}.${namespace}:${port}`,
                 },
+              }),
         },
       ];
     });
@@ -150,8 +151,8 @@ export function toolsStackPlan(root: RootRunway, environment: RunwayEnvironment)
       key: regionKey,
       cloud: region?.cloud ?? "",
       location: region?.location ?? "",
-      account: region?.account === undefined ? undefined : String(region.account),
-      network,
+      ...(region?.account === undefined ? {} : { account: String(region.account) }),
+      ...(network === undefined ? {} : { network }),
       namespace,
       logRetentionDays: tools.logRetentionDays,
       tools: planned,

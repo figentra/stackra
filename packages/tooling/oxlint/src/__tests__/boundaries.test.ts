@@ -1,7 +1,11 @@
 /**
- * Runs oxlint with the boundaries preset over fixtures/ and proves every import ban fires (STA-167: the
- * last matching override replaced the earlier ones, so only the deep-src ban ever fired). Every line of
- * every fixture is one banned import (the `@boundaries-ignore` comments keep turbo boundaries off them); the fixture folders mimic packages/<category>/<name>/src and services/.
+ * Stackra file contract:
+ * Purpose: runs oxlint with the boundaries preset over fixtures/ and proves every import ban fires (STA-167: the last
+ *          matching override replaced the earlier ones, so only the deep-src ban ever fired).
+ * Boundary: test only; every line of every fixture is one banned import (the `@boundaries-ignore` comments keep turbo
+ *           boundaries off them); the fixture folders mimic packages/<category>/<name>/src and services/.
+ * Runtime: node
+ * Governing contract: ADR 0022 (test placement); STA-167.
  */
 import { spawnSync } from "node:child_process";
 import { readdirSync, readFileSync } from "node:fs";
@@ -36,5 +40,5 @@ it("boundaries.jsonc reports every banned import in the fixtures", () => {
     );
 
   expect(expected.length).toBeGreaterThan(10);
-  expect([...reported].toSorted()).toEqual(expected.toSorted());
+  expect([...reported].sort()).toEqual([...expected].sort());
 });

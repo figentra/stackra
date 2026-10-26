@@ -15,13 +15,20 @@ import { Str } from "#core/decorators/str.decorator";
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 class ContactInput extends Schema {
-  @Str({ min: 2, max: 120, message: "web::contact.errors.name" })
+  @Str({
+    min: 2,
+    max: 120,
+    message: "web::contact.errors.name",
+  })
   name!: string;
 
   @Str({ max: 0 })
   website?: string;
 
-  @Str({ pattern: DATE, each: true })
+  @Str({
+    pattern: DATE,
+    each: true,
+  })
   supported = ["2026-10-01", "2027-03-01"];
 
   @Str()

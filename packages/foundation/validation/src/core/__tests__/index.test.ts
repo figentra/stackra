@@ -23,7 +23,11 @@ class Line extends Schema {
 
 class ContactInput extends Schema {
   @Trim
-  @Str({ min: 2, max: 120, message: "web::contact.errors.name" })
+  @Str({
+    min: 2,
+    max: 120,
+    message: "web::contact.errors.name",
+  })
   name!: string;
 
   // reason: an email format with its own message

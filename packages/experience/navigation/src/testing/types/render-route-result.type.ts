@@ -3,7 +3,7 @@
  * Purpose: `RenderRouteResult`, what `renderRoute` and `renderLayout` return: Testing Library's render result with the
  *          fakes the testing parts supplied (`RouteLoaderRun`, open for their members).
  * Boundary: a type only.
- * Runtime: browser (vitest, jsdom)
+ * Runtime: browser
  * Governing contract: ADR 0269 (decisions 3 and 6).
  */
 import type { render } from "@stackra/testing/react";

@@ -16,7 +16,7 @@ import type { RouteRedirect } from "#core/types/route-redirect.type";
 const HAS_SCHEME = /^[a-z][a-z\d+.-]*:/i;
 
 /**
- * Follows `redirect`.
+ * Follows `redirect`: a named route replaces the current screen, an absolute URL opens through `openUrl`.
  *
  * @example
  * followRedirect(navigation, outcome.redirect, (url) => void Linking.openURL(url));

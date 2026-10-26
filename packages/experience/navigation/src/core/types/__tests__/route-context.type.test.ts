@@ -42,19 +42,29 @@ class ShellLayout extends Layout({}) {
   }
 }
 
-class MobileLinkRoute extends Route({ path: "/m/*", layout: ShellLayout }) {
+class MobileLinkRoute extends Route({
+  path: "/m/*",
+  layout: ShellLayout,
+}) {
   override loader(ctx: RouteContext<this>) {
     return ctx.params["*"] === "" ? ctx.redirect("/") : { path: ctx.params["*"] };
   }
 }
 
-class StoreRoute extends Route({ path: "/store", layout: SiteLayout, search: StoreSearch }) {
+class StoreRoute extends Route({
+  path: "/store",
+  layout: SiteLayout,
+  search: StoreSearch,
+}) {
   override async loader(ctx: RouteContext<this>) {
     return ctx.data({ origin: ctx.site.origin, q: ctx.search.q }, { status: 200 });
   }
 }
 
-class OrdersRoute extends Route({ path: "/orders", params: OrdersFilter }) {}
+class OrdersRoute extends Route({
+  path: "/orders",
+  params: OrdersFilter,
+}) {}
 
 /** Narrows an action result the way the template's submits do. */
 const narrow = (result: RouteActionResult<{ orderId: string }>) => {

@@ -12,7 +12,10 @@ import type { ToolsRegionPlan } from "#core/types/tools-region-plan.type";
 
 /** One environment's tools stacks. */
 export type ToolsStackPlan = {
+  /** The root runway's project name. */
   readonly project: string;
+  /** The environment the plan is for. */
   readonly environment: RunwayEnvironment;
+  /** The tools stack of each region the environment deploys to, in release order. */
   readonly regions: readonly ToolsRegionPlan[];
 };

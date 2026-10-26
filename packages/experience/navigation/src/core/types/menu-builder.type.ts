@@ -62,7 +62,7 @@ export interface MenuBuilder<V = unknown> {
   /** A shortcut class, run as the keyboard runs it. */
   shortcut(shortcut: AnyClass): Entry<V, typeof MenuItemKind.Shortcut>;
 
-  /** A divider. */
+  /** A divider between groups of entries. */
   separator(): Entry<V, typeof MenuItemKind.Separator>;
 
   /** The place of the app's generated navigation tree. */

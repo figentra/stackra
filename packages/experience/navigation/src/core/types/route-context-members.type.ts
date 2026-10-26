@@ -41,7 +41,7 @@ export interface RouteContextMembers<T> {
   /** The locale of the request's mount. */
   readonly locale: Locale;
 
-  /** The request. */
+  /** The incoming request being answered. */
   readonly request: Request;
 
   /** The target's capabilities. */

@@ -17,7 +17,10 @@ class Line extends Schema {
 }
 
 class CreateOrderInput extends Schema {
-  @List({ min: 1, max: 100 })
+  @List({
+    min: 1,
+    max: 100,
+  })
   lines!: Line[];
 
   @List({ unique: true })

@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 /**
  * Stackra file contract:
  * Purpose: the consumer contract of the `./testing` entry: the route helpers `renderRoute`, `renderLayout`,
@@ -8,6 +7,7 @@
  * Runtime: node (vitest, jsdom)
  * Governing contract: ADR 0022; ADR 0269 (decision 6); ADR 0294 (decision 15).
  */
+// @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
 import { createRoutesStub } from "react-router";
 

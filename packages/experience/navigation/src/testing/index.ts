@@ -6,7 +6,7 @@
  *          barrels (STA-339).
  * Boundary: names each re-export and declares nothing; test-only code, never imported by a runtime entry. Web only
  *           (React Router): the native `renderRoute` for React Navigation is not here.
- * Runtime: browser (vitest)
+ * Runtime: browser
  * Governing contract: ADR 0294 (decision 15); ADR 0269 (decisions 3 and 6); the STA-347 stand-in barrel decision.
  */
 export { createRoutesStub } from "react-router";

@@ -20,7 +20,10 @@ import { registerSchemas } from "#core/functions/register-schemas.function";
 import { validate } from "#core/functions/validate.function";
 
 class ContactInput extends Schema {
-  @Str({ min: 2, message: "web::contact.errors.name" })
+  @Str({
+    min: 2,
+    message: "web::contact.errors.name",
+  })
   name!: string;
 
   @Int({ min: 0 })

@@ -21,17 +21,14 @@
  */
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useLinkTo, useNavigation, type ParamListBase } from "@react-navigation/native";
-import * as Ui from "@stackra/ui/native";
+import { CloseButton, Drawer, Heading } from "@stackra/ui/native";
 import { useCallback, useLayoutEffect, useMemo, useState, type ReactElement } from "react";
 import { View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import type { RouteOverlayContractProps } from "#contracts/types/route-overlay-contract-props.type";
 import type { RouteOverlayControls } from "#contracts/types/route-overlay-controls.type";
 import { RouteOverlayContext } from "#native/route-overlay/route-overlay-context";
-
-/** Props of the native RouteOverlay: the shared contract, in which `size` is unread (the platform sizes modals). */
-export type RouteOverlayProps = RouteOverlayContractProps;
+import type { RouteOverlayProps } from "#native/route-overlay/route-overlay.props";
 
 /**
  * The page of a stack screen presented as a modal, sheet, drawer or full-screen page. Register the screen with
@@ -80,20 +77,20 @@ export function RouteOverlay({
   return (
     <RouteOverlayContext value={controls}>
       {isPanel ? (
-        <Ui.Drawer
+        <Drawer
           isOpen
           onOpenChange={(isOpen) => {
             if (!isOpen) close();
           }}
           isDismissable={isDismissable}
         >
-          <Ui.Drawer.Close label={closeLabel} />
-          <Ui.Drawer.Header>
-            <Ui.Drawer.Title>{title}</Ui.Drawer.Title>
-          </Ui.Drawer.Header>
-          <Ui.Drawer.Body>{children}</Ui.Drawer.Body>
-          {footer ? <Ui.Drawer.Footer>{footer}</Ui.Drawer.Footer> : null}
-        </Ui.Drawer>
+          <Drawer.Close label={closeLabel} />
+          <Drawer.Header>
+            <Drawer.Title>{title}</Drawer.Title>
+          </Drawer.Header>
+          <Drawer.Body>{children}</Drawer.Body>
+          {footer ? <Drawer.Footer>{footer}</Drawer.Footer> : null}
+        </Drawer>
       ) : (
         <View
           className="flex-1 bg-background px-4 pt-4"
@@ -104,14 +101,14 @@ export function RouteOverlay({
           }}
         >
           {/* The sections are the kit's drawer parts: plain views that wrap a string child in Text. */}
-          <Ui.Drawer.Header className="flex-row items-center justify-between gap-2">
-            <Ui.Heading level={2} className="flex-1">
+          <Drawer.Header className="flex-row items-center justify-between gap-2">
+            <Heading level={2} className="flex-1">
               {title}
-            </Ui.Heading>
-            <Ui.CloseButton label={closeLabel} onPress={close} />
-          </Ui.Drawer.Header>
-          <Ui.Drawer.Body className="flex-1">{children}</Ui.Drawer.Body>
-          {footer ? <Ui.Drawer.Footer>{footer}</Ui.Drawer.Footer> : null}
+            </Heading>
+            <CloseButton label={closeLabel} onPress={close} />
+          </Drawer.Header>
+          <Drawer.Body className="flex-1">{children}</Drawer.Body>
+          {footer ? <Drawer.Footer>{footer}</Drawer.Footer> : null}
         </View>
       )}
     </RouteOverlayContext>

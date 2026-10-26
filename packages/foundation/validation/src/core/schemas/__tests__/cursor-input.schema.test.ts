@@ -11,7 +11,7 @@ import { kindOf } from "@stackra/container";
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 import type { z } from "zod";
 
-import { CURSOR_INPUT_SCHEMA } from "#core/constants/cursor-input-schema.constant";
+import type { CURSOR_INPUT_SCHEMA } from "#core/constants/cursor-input-schema.constant";
 import { Int } from "#core/decorators/int.decorator";
 import { validate } from "#core/functions/validate.function";
 import { CursorInput } from "#core/schemas/cursor-input.schema";

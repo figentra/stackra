@@ -18,17 +18,12 @@ export { useNavigate } from "#native/navigate/use-navigate";
 export type { RouteReload } from "#native/route-reload/route-reload.type";
 export { useRouteReload } from "#native/route-reload/use-route-reload";
 export { toScreen } from "#native/screen/to-screen.function";
-export {
-  ReactNavigationProvider,
-  type ReactNavigationProviderProps,
-} from "#native/react-navigation-provider/react-navigation-provider";
-export {
-  RouteLeaveConfirmation,
-  type RouteLeaveConfirmationProps,
-} from "#native/route-leave-confirmation/route-leave-confirmation";
-export { RouteOverlay, type RouteOverlayProps } from "#native/route-overlay/route-overlay";
-export {
-  routeOverlayScreenOptions,
-  type RouteOverlayScreenOptionsInput,
-} from "#native/route-overlay/route-overlay-screen-options";
+export { ReactNavigationProvider } from "#native/react-navigation-provider/react-navigation-provider";
+export type { ReactNavigationProviderProps } from "#native/react-navigation-provider/react-navigation-provider.props";
+export { RouteLeaveConfirmation } from "#native/route-leave-confirmation/route-leave-confirmation";
+export type { RouteLeaveConfirmationProps } from "#native/route-leave-confirmation/route-leave-confirmation.props";
+export { RouteOverlay } from "#native/route-overlay/route-overlay";
+export type { RouteOverlayProps } from "#native/route-overlay/route-overlay.props";
+export { routeOverlayScreenOptions } from "#native/route-overlay/route-overlay-screen-options";
+export type { RouteOverlayScreenOptionsInput } from "#native/route-overlay/route-overlay-screen-options-input.type";
 export { useRouteOverlay } from "#native/route-overlay/use-route-overlay";

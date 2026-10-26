@@ -14,11 +14,17 @@ export type ToolPlan = {
   readonly key: string;
   /** `<project>-<env>-<region>-<key>`: the task family and the service name. */
   readonly name: string;
+  /** The container image the task runs. */
   readonly image: string;
+  /** The container port the tool listens on; absent for a worker. */
   readonly port?: number;
+  /** The task's CPU units (1024 is one vCPU). */
   readonly cpu: number;
+  /** The task's memory in MiB. */
   readonly memoryMb: number;
+  /** How many tasks the service keeps running. */
   readonly replicas: number;
+  /** The container command, when it overrides the image's own. */
   readonly command?: readonly string[];
   /** Public variables, the extract URLs included. */
   readonly environment: Readonly<Record<string, string>>;

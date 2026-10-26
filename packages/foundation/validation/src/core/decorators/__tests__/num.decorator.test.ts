@@ -16,10 +16,17 @@ class LoyaltyOptions extends Schema {
   @Num({ exclusiveMin: 0 })
   earnPerMinor = 0.01;
 
-  @Num({ min: 0, max: 1, each: true })
+  @Num({
+    min: 0,
+    max: 1,
+    each: true,
+  })
   weights: number[] = [];
 
-  @Num({ min: 0, each: true })
+  @Num({
+    min: 0,
+    each: true,
+  })
   rates: Record<string, number> = {};
 }
 

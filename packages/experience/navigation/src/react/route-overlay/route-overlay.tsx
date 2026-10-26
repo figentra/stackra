@@ -16,17 +16,14 @@
  * Governing contract: ADR 0317 (decisions 2, 6 and 9); ADR 0312; ADR 0165 (React Router 7, no Next.js); ADR 0060
  *          (right-to-left); WCAG 2.2 SC 2.1.2, 2.4.3 and 4.1.2.
  */
-import * as Ui from "@stackra/ui/react";
+import { Drawer, Modal } from "@stackra/ui/react";
 import { useEffect, useMemo, useState, type ReactElement } from "react";
 
-import type { RouteOverlayContractProps } from "#contracts/types/route-overlay-contract-props.type";
 import type { RouteOverlayControls } from "#contracts/types/route-overlay-controls.type";
 import { RouteOverlayContext } from "#react/route-overlay/route-overlay-context";
+import type { RouteOverlayProps } from "#react/route-overlay/route-overlay.props";
 import { useNarrowScreen } from "#react/route-overlay/use-narrow-screen";
 import { useRouteClose } from "#react/route-overlay/use-route-close";
-
-/** Props of the web RouteOverlay: the shared contract, which has no element of its own to pass props to. */
-export type RouteOverlayProps = RouteOverlayContractProps;
 
 /**
  * A route drawn as a modal, sheet, drawer or full-screen page. Render it as the element of a child route; the open
@@ -76,28 +73,28 @@ export function RouteOverlay({
   return (
     <RouteOverlayContext value={controls}>
       {isPanel ? (
-        <Ui.Drawer isOpen onOpenChange={onOpenChange} placement={edge} {...dismissal}>
-          <Ui.Drawer.Close label={closeLabel} />
-          <Ui.Drawer.Header>
-            <Ui.Drawer.Title>{title}</Ui.Drawer.Title>
-          </Ui.Drawer.Header>
-          <Ui.Drawer.Body>{children}</Ui.Drawer.Body>
-          {footer ? <Ui.Drawer.Footer>{footer}</Ui.Drawer.Footer> : null}
-        </Ui.Drawer>
+        <Drawer isOpen onOpenChange={onOpenChange} placement={edge} {...dismissal}>
+          <Drawer.Close label={closeLabel} />
+          <Drawer.Header>
+            <Drawer.Title>{title}</Drawer.Title>
+          </Drawer.Header>
+          <Drawer.Body>{children}</Drawer.Body>
+          {footer ? <Drawer.Footer>{footer}</Drawer.Footer> : null}
+        </Drawer>
       ) : (
-        <Ui.Modal
+        <Modal
           isOpen
           onOpenChange={onOpenChange}
           size={presentation === "full-screen" ? "full" : size}
           {...dismissal}
         >
-          <Ui.Modal.Close label={closeLabel} />
-          <Ui.Modal.Header>
-            <Ui.Modal.Title>{title}</Ui.Modal.Title>
-          </Ui.Modal.Header>
-          <Ui.Modal.Body>{children}</Ui.Modal.Body>
-          {footer ? <Ui.Modal.Footer>{footer}</Ui.Modal.Footer> : null}
-        </Ui.Modal>
+          <Modal.Close label={closeLabel} />
+          <Modal.Header>
+            <Modal.Title>{title}</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>{children}</Modal.Body>
+          {footer ? <Modal.Footer>{footer}</Modal.Footer> : null}
+        </Modal>
       )}
     </RouteOverlayContext>
   );

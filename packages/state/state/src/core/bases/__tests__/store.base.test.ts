@@ -26,6 +26,10 @@ class UiStore extends Store({ persist: "prefs" }) {
 
   density = "comfortable";
 
+  get densityClass(): string {
+    return `panel-${this.density}`;
+  }
+
   toggleSidebar(): void {
     this.set({ sidebarCollapsed: !this.sidebarCollapsed });
   }
@@ -40,10 +44,6 @@ class UiStore extends Store({ persist: "prefs" }) {
 
   setMethod(): void {
     this.set({ toggleSidebar: 1 });
-  }
-
-  get densityClass(): string {
-    return `panel-${this.density}`;
   }
 }
 

@@ -18,7 +18,8 @@ import type { LoaderData } from "#core/types/loader-data.type";
 import type { RouteModuleContext } from "#react/route-context/route-module-context.type";
 import type { RouteKeys } from "#react/route-keys/route-keys.type";
 import { layoutDataOf } from "#react/route-run/layout-data-of.function";
-import { routeBaseOf, type RouterArgs } from "#react/route-run/route-base-of.function";
+import { routeBaseOf } from "#react/route-run/route-base-of.function";
+import type { RouterArgs } from "#react/route-run/router-args.type";
 
 /**
  * The context of one request to a resource route module.

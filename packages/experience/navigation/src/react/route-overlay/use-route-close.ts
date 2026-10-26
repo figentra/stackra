@@ -12,14 +12,7 @@ import { useCallback } from "react";
 import { useLocation, useNavigate } from "react-router";
 
 import type { RouteOverlayState } from "#contracts/types/route-overlay-state.type";
-
-/** The two ways out of a route overlay. */
-export interface RouteClose {
-  /** Goes back to where the user came from. */
-  readonly close: () => void;
-  /** Goes to `to` (replacing the entry) when given, and otherwise closes. */
-  readonly complete: (to?: string) => void;
-}
+import type { RouteClose } from "#react/route-overlay/route-close.type";
 
 /** The close and complete functions of the route overlay in the current route. */
 export function useRouteClose(): RouteClose {

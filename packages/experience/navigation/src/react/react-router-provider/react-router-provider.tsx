@@ -10,14 +10,10 @@
  *          Router 7 on web).
  */
 import { RouterProvider } from "@stackra/ui/react";
-import type { ReactElement, ReactNode } from "react";
+import type { ReactElement } from "react";
 import { useHref, useNavigate } from "react-router";
 
-/** Props of {@link ReactRouterProvider}. */
-export interface ReactRouterProviderProps {
-  /** The tree whose links navigate through React Router. */
-  readonly children?: ReactNode;
-}
+import type { ReactRouterProviderProps } from "#react/react-router-provider/react-router-provider.props";
 
 /** A URL with a scheme (`https:`, `mailto:`) or a protocol-relative one: it leaves the app, so the router never owns it. */
 const ABSOLUTE_URL = /^(?:[a-z][a-z\d+.-]*:|\/\/)/i;

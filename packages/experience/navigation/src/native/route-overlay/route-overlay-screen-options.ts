@@ -13,12 +13,7 @@
 import type { NativeStackNavigationOptions } from "@react-navigation/native-stack";
 
 import type { OverlayPresentation } from "#contracts/enums/overlay-presentation.enum";
-
-/** What {@link routeOverlayScreenOptions} may be told besides the presentation. */
-export interface RouteOverlayScreenOptionsInput {
-  /** False to turn off the swipe-down that dismisses a `modal` or `full-screen` overlay. Defaults to true. */
-  readonly isDismissable?: boolean | undefined;
-}
+import type { RouteOverlayScreenOptionsInput } from "#native/route-overlay/route-overlay-screen-options-input.type";
 
 /**
  * The stack screen options for a route overlay of the given presentation.

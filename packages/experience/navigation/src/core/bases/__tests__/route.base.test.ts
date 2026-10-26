@@ -24,7 +24,10 @@ class SiteLayout extends Layout {
   }
 }
 
-class ProductRoute extends Route({ path: "/store/:slug", layout: SiteLayout }) {
+class ProductRoute extends Route({
+  path: "/store/:slug",
+  layout: SiteLayout,
+}) {
   override async loader(ctx: RouteContext<this>) {
     return { slug: ctx.params.slug, site: ctx.site.name };
   }
@@ -35,7 +38,10 @@ class SiteConfig {
   readonly product = "acme";
 }
 
-class PricingRoute extends Route({ path: "/pricing", seo: { title: "web::pricing.title" } }) {
+class PricingRoute extends Route({
+  path: "/pricing",
+  seo: { title: "web::pricing.title" },
+}) {
   private readonly site: SiteConfig;
 
   constructor(site: SiteConfig) {
@@ -81,7 +87,10 @@ describe("Route", () => {
   });
 
   it("records a route with no path (a signed-out screen)", () => {
-    class SignInRoute extends Route({ auth: false, chrome: { header: HeaderStyle.Hidden } }) {}
+    class SignInRoute extends Route({
+      auth: false,
+      chrome: { header: HeaderStyle.Hidden },
+    }) {}
     expect(kindOf(SignInRoute)?.options).toMatchObject({ path: null, auth: false });
   });
 

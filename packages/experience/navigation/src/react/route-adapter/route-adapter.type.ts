@@ -10,7 +10,7 @@
 import type { ReactElement } from "react";
 import type { MetaDescriptor } from "react-router";
 
-import type { RouterArgs } from "#react/route-run/route-base-of.function";
+import type { RouterArgs } from "#react/route-run/router-args.type";
 
 /** The delegates of one route module. */
 export interface RouteAdapter {

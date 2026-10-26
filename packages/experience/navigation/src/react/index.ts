@@ -43,13 +43,10 @@ export { registerRoutePages } from "#react/route-pages/register-route-pages.func
 export type { RoutePages } from "#react/route-pages/route-pages.type";
 export type { RouteSubmit } from "#react/submit/route-submit.type";
 export { useSubmit } from "#react/submit/use-submit";
-export {
-  ReactRouterProvider,
-  type ReactRouterProviderProps,
-} from "#react/react-router-provider/react-router-provider";
-export {
-  RouteLeaveConfirmation,
-  type RouteLeaveConfirmationProps,
-} from "#react/route-leave-confirmation/route-leave-confirmation";
-export { RouteOverlay, type RouteOverlayProps } from "#react/route-overlay/route-overlay";
+export { ReactRouterProvider } from "#react/react-router-provider/react-router-provider";
+export type { ReactRouterProviderProps } from "#react/react-router-provider/react-router-provider.props";
+export { RouteLeaveConfirmation } from "#react/route-leave-confirmation/route-leave-confirmation";
+export type { RouteLeaveConfirmationProps } from "#react/route-leave-confirmation/route-leave-confirmation.props";
+export { RouteOverlay } from "#react/route-overlay/route-overlay";
+export type { RouteOverlayProps } from "#react/route-overlay/route-overlay.props";
 export { useRouteOverlay } from "#react/route-overlay/use-route-overlay";

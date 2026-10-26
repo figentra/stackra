@@ -19,9 +19,12 @@ export type ToolsRegionPlan = {
   readonly location: string;
   /** The account, an id or `ref:<path>`, when the runway names one. */
   readonly account?: string;
+  /** The network the tools run in, when the runway names one. */
   readonly network?: ToolsNetwork;
-  /** `<region>.tools.<project>.internal`. */
+  /** The private namespace, `<region>.tools.<project>.internal`. */
   readonly namespace: string;
+  /** How many days the region's tool logs are kept. */
   readonly logRetentionDays: number;
+  /** The tools this region runs. */
   readonly tools: readonly ToolPlan[];
 };

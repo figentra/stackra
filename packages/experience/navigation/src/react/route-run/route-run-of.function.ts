@@ -15,7 +15,8 @@ import type { Layout } from "#core/bases/layout.base";
 import { createRouteContext } from "#core/functions/create-route-context.function";
 import type { RouteKeys } from "#react/route-keys/route-keys.type";
 import { layoutDataOf } from "#react/route-run/layout-data-of.function";
-import { routeBaseOf, type RouterArgs } from "#react/route-run/route-base-of.function";
+import { routeBaseOf } from "#react/route-run/route-base-of.function";
+import type { RouterArgs } from "#react/route-run/router-args.type";
 import type { RouteRun } from "#react/route-run/route-run.type";
 
 /**

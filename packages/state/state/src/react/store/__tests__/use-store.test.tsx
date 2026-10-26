@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 /**
  * Stackra file contract:
  * Purpose: unit and type tests of `useStore(Class)`: the instance the container binds, typed as the class; a re-render
@@ -9,6 +8,7 @@
  * Runtime: node (vitest, jsdom)
  * Governing contract: ADR 0022; ADR 0269; ADR 0079 (decision 2); ADR 0294 (decisions 16 and 17).
  */
+// @vitest-environment jsdom
 import { Container } from "@stackra/container";
 import type { AnyClass } from "@stackra/container";
 import { ContainerProvider } from "@stackra/container/react";

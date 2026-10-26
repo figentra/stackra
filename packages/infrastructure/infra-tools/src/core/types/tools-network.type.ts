@@ -9,7 +9,10 @@
 
 /** One region's network. */
 export type ToolsNetwork = {
+  /** The VPC, an id or `ref:<path>`. */
   readonly vpcId: string;
+  /** The private subnets the tasks run in, each an id or `ref:<path>`. */
   readonly subnetIds: readonly string[];
+  /** The security groups of the tasks, each an id or `ref:<path>`. */
   readonly securityGroupIds: readonly string[];
 };

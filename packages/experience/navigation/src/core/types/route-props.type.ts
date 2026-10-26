@@ -23,6 +23,6 @@ export interface RouteProps<R extends AnyClass<Route>> {
   /** The path params. */
   readonly params: ParamsOf<InstanceType<R>>;
 
-  /** The query. */
+  /** The parsed query string. */
   readonly search: SearchOf<InstanceType<R>>;
 }

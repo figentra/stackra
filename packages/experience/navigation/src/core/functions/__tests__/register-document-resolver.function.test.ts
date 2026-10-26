@@ -18,9 +18,15 @@ import { registerDocumentResolver } from "#core/functions/register-document-reso
 
 class WelcomeDocument {}
 
-class WelcomeRoute extends Route({ path: "/welcome", document: WelcomeDocument }) {}
+class WelcomeRoute extends Route({
+  path: "/welcome",
+  document: WelcomeDocument,
+}) {}
 
-class AnnouncementsRoute extends Route({ path: "/announcements", document: WelcomeDocument }) {
+class AnnouncementsRoute extends Route({
+  path: "/announcements",
+  document: WelcomeDocument,
+}) {
   override loader() {
     return { custom: true };
   }

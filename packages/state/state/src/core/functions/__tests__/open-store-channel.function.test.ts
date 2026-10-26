@@ -42,15 +42,20 @@ const channels: FakeChannel[] = [];
 
 /** A context's channel: a post reaches every other open channel of the same name, never itself. */
 class FakeChannel {
-  onmessage: ((event: { data: unknown }) => void) | null = null;
+  private readonly listeners: ((event: { data: unknown }) => void)[] = [];
 
   constructor(readonly name: string) {
     channels.push(this);
   }
 
+  addEventListener(_type: "message", listener: (event: { data: unknown }) => void): void {
+    this.listeners.push(listener);
+  }
+
   postMessage(data: unknown): void {
     for (const other of channels)
-      if (other !== this && other.name === this.name) other.onmessage?.({ data });
+      if (other !== this && other.name === this.name)
+        for (const listener of other.listeners) listener({ data });
   }
 }
 
@@ -72,7 +77,9 @@ describe("cross-tab sync of a persisted store", () => {
     stubBrowser();
     const seen: unknown[] = [];
     const tab = new ThemeStore(storage);
-    new FakeChannel("stackra:state:prefs").onmessage = ({ data }) => seen.push(data);
+    new FakeChannel("stackra:state:prefs").addEventListener("message", ({ data }) =>
+      seen.push(data),
+    );
     tab.toggle();
     expect(seen).toEqual([{ key: "web.theme", version: 1, state: { mode: "dark" } }]);
   });

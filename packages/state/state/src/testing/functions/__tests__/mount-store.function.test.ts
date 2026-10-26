@@ -26,16 +26,16 @@ class UiStore extends Store({ persist: "prefs" }) {
 
   density: Density = Density.Comfortable;
 
+  get densityClass(): string {
+    return Enum.meta(Density, this.density).className;
+  }
+
   toggleSidebar(): void {
     this.set({ sidebarCollapsed: !this.sidebarCollapsed });
   }
 
   setDensity(density: Density): void {
     this.set({ density });
-  }
-
-  get densityClass(): string {
-    return Enum.meta(Density, this.density).className;
   }
 }
 

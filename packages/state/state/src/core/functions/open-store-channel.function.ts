@@ -29,11 +29,11 @@ export function openStoreChannel(
   )
     return undefined;
   const channel = new BroadcastChannel(`stackra:state:${areaName}`);
-  channel.onmessage = ({ data }: MessageEvent<unknown>) => {
+  channel.addEventListener("message", ({ data }: MessageEvent<unknown>) => {
     if (typeof data !== "object" || data === null) return;
     const message = data as { key?: unknown; version?: unknown; state?: unknown };
     if (message.key !== internals.key || message.version !== STORE_SYNC_VERSION) return;
     applyStoreState(store as Record<string, unknown>, internals, message.state, true);
-  };
+  });
   return channel;
 }

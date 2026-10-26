@@ -7,7 +7,7 @@
  *           `wrapper`). The route is a class or a `Routes.<key>` ref that `registerRoutes` registered; the page is
  *           `options.component`, else the one gen's route table bound. Only the route's own loader runs: pass the
  *           layout's data as `layoutData`. The loader resolves after the first paint, so read the page with `findBy`.
- * Runtime: browser (vitest, jsdom)
+ * Runtime: browser
  * Governing contract: ADR 0269 (decisions 3 and 6); ADR 0294 (decisions 14 and 16).
  */
 import { ROUTE_TABLE } from "#core/constants/route-table.constant";

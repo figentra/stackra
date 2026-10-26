@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 /**
  * Stackra file contract:
  * Purpose: unit tests of `toScreen`: the screen validates its params, runs the loader and renders the page with
@@ -9,6 +8,7 @@
  * Runtime: node (vitest, jsdom)
  * Governing contract: ADR 0022; ADR 0165; ADR 0294 (decision 16); ADR 0110.
  */
+// @vitest-environment jsdom
 import { Container } from "@stackra/container";
 import { ContainerProvider } from "@stackra/container/react";
 import { afterEach, describe, expect, it } from "vitest";
@@ -60,7 +60,10 @@ registerSchemas([[OrderDetailParams, z.object({ orderId: z.string().startsWith("
 
 let failures = 0;
 
-class OrderDetailRoute extends Route({ path: "/orders/:orderId", params: OrderDetailParams }) {
+class OrderDetailRoute extends Route({
+  path: "/orders/:orderId",
+  params: OrderDetailParams,
+}) {
   override loader(ctx: RouteContext<this>) {
     if (ctx.params.orderId === "ord_moved")
       return ctx.redirect({ name: "orders" }, { status: "open" });

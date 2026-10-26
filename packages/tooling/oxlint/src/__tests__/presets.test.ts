@@ -55,7 +55,7 @@ describe("@stackra/oxlint-config presets", () => {
     );
     const enabled = [...text.matchAll(/"stackra\/([a-z-]+)": "error"/g)].map((match) => match[1]);
     expect(registered.length).toBeGreaterThan(0);
-    expect(enabled.toSorted()).toEqual(registered.toSorted());
+    expect([...enabled].sort()).toEqual([...registered].sort());
   });
 
   it("package.json names @stackra/coding-standard as a peer, so a consumer installs the plugin", () => {

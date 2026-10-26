@@ -11,10 +11,10 @@
  */
 export { OSM_EXTRACTS } from "#core/constants/osm-extracts.constant";
 export { TOOLS_CATALOGUE } from "#core/constants/tools-catalogue.constant";
-export type { ToolKey } from "#core/constants/tools-catalogue.constant";
 export { toolsStackPlan } from "#core/functions/tools-stack-plan.function";
 export type { ToolDefinition } from "#core/types/tool-definition.type";
 export type { ToolEndpoint } from "#core/types/tool-endpoint.type";
+export type { ToolKey } from "#core/types/tool-key.type";
 export type { ToolPlan } from "#core/types/tool-plan.type";
 export type { ToolsNetwork } from "#core/types/tools-network.type";
 export type { ToolsRegionPlan } from "#core/types/tools-region-plan.type";

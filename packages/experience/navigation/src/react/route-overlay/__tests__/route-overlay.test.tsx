@@ -20,7 +20,8 @@ import { act, fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { createMemoryRouter, Link, Outlet, RouterProvider, type InitialEntry } from "react-router";
 
 import type { RouteOverlayContractProps } from "#contracts/types/route-overlay-contract-props.type";
-import { RouteOverlay, type RouteOverlayProps } from "#react/route-overlay/route-overlay";
+import { RouteOverlay } from "#react/route-overlay/route-overlay";
+import type { RouteOverlayProps } from "#react/route-overlay/route-overlay.props";
 import { useRouteOverlay } from "#react/route-overlay/use-route-overlay";
 
 /** The page inside the overlay: buttons that call the hook the way a form would. */

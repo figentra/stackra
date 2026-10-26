@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 /**
  * Stackra file contract:
  * Purpose: unit tests of `renderRoute`: the page renders with its loader's data, params and query at the route's path,
@@ -9,6 +8,7 @@
  * Runtime: node (vitest, jsdom)
  * Governing contract: ADR 0022; ADR 0269 (decisions 3 and 6).
  */
+// @vitest-environment jsdom
 import { afterEach, describe, expect, it } from "vitest";
 import { fireEvent, screen } from "@testing-library/react";
 import { createElement, type ReactNode } from "react";

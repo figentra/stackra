@@ -101,6 +101,3 @@ export const TOOLS_CATALOGUE = {
     secrets: ["SECRET_KEY_BASE", "DATABASE_URL", "REDIS_URL"],
   },
 } as const satisfies Readonly<Record<string, ToolDefinition>>;
-
-/** A tool key. */
-export type ToolKey = keyof typeof TOOLS_CATALOGUE;

@@ -5,7 +5,7 @@
  *          and the providers and wrapper of `@stackra/testing/react`'s `render`.
  * Boundary: a type only. The providers are the caller's: this package adds none, so tenancy's, i18n's or the
  *           container's test providers come in through `providers`.
- * Runtime: browser (vitest, jsdom)
+ * Runtime: browser
  * Governing contract: ADR 0269 (decisions 3 and 6).
  */
 import type { RenderOptions } from "@stackra/testing/react";

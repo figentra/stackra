@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 /**
  * Stackra file contract:
  * Purpose: unit tests of `BreadcrumbsProvider`, `useBreadcrumb` and `useBreadcrumbs`: published crumbs form the trail
@@ -8,6 +7,7 @@
  * Runtime: node (vitest, jsdom)
  * Governing contract: ADR 0022 (test placement); ADR 0164; ADR 0303 (decision 1).
  */
+// @vitest-environment jsdom
 import type { I18nKey } from "@stackra/i18n";
 import { afterEach, describe, expect, it } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";

@@ -9,7 +9,7 @@
  *           revalidation after a submit included) shares one set of fakes; members of a part that answers
  *           asynchronously join the result when it resolves. Redirects, responses and refusals become their router
  *           forms, as in the app. The request URL is the stub's (`http://localhost` and the path).
- * Runtime: browser (vitest, jsdom)
+ * Runtime: browser
  * Governing contract: ADR 0269 (decisions 3 and 6); ADR 0165 (React Router 7).
  */
 import type { AnyClass } from "@stackra/container";
