@@ -28,11 +28,17 @@ describe("@stackra/registry", () => {
       "DeveloperSandbox",
       "EditionBundle",
       "FeeSchedule",
+      "ListingRole",
       "PartnerPayout",
+      "PerkListing",
+      "PerkRedemptionKind",
       "ReviewState",
       "canTransitionReview",
       "computePartnerPayout",
+      "perkEligible",
+      "perkListingFee",
       "planEditionInstall",
+      "redeemPerk",
       "validateCatalogue",
     ]);
   });

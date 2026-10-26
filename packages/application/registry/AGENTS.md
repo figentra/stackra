@@ -28,6 +28,9 @@ programming model v3.1 shape (ADR 0294, 0305). Entry `.` only.
 - Configuration, not code: fee rates, sandbox counts and lifetimes, and review rules are records and settings the
   service passes in; only the transitions, the arithmetic and the install order live here.
 - Only add a symbol a consumer imports today (the template, a package, or the registry row).
+- A `perk` listing never installs (ADR 0393): it is redeemed by code, link or lead. The offer rule sets in
+  `assets/data/rule-sets/` are seeds in the `@stackra/rules` `RuleSetPack$` shape; this package never imports
+  `@stackra/rules`, and the incubator list is the editable `settings:os:startup-incubators` record.
 
 ## Rules that fail the build
 
@@ -43,6 +46,7 @@ programming model v3.1 shape (ADR 0294, 0305). Entry `.` only.
 
 ## PII
 
-| Data | Where                                                                       | Handling                                                         |
-| ---- | --------------------------------------------------------------------------- | ---------------------------------------------------------------- |
-| Ids  | `AppReview.reviewer`, `DeveloperSandbox.developer`, `PartnerPayout.partner` | Principal and organisation public ids only; nothing stored here. |
+| Data | Where                                                                                              | Handling                                                                                                        |
+| ---- | -------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| Ids  | `AppReview.reviewer`, `DeveloperSandbox.developer`, `PartnerPayout.partner`, `PerkListing.partner` | Principal and organisation public ids only; nothing stored here.                                                |
+| Lead | `redeemPerk` (a lead perk's `lead`)                                                                | Only the listing's named fields, only after the admin's consent; returned, never stored or logged here (US-62). |

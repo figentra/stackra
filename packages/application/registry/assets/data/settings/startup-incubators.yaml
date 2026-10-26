@@ -1,0 +1,6 @@
+kind: settings
+key: settings:os:startup-incubators
+rows:
+  - id: incubators
+    answer: RV-52
+    value: []

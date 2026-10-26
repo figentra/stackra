@@ -12,6 +12,7 @@
   "files": [
     "dist",
     "src",
+    "assets",
     "README.md",
     "CHANGELOG.md",
     "LICENSE"
@@ -63,6 +64,7 @@
     "oxlint": "catalog:quality",
     "tsdown": "catalog:build",
     "typescript": "catalog:build",
-    "vitest": "catalog:quality"
+    "vitest": "catalog:quality",
+    "yaml": "catalog:"
   }
 }

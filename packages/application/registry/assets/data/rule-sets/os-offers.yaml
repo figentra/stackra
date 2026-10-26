@@ -1,0 +1,31 @@
+key: os
+version: 0.1.0
+ruleSets:
+  - key: startup_perk_eligibility
+    consumer: os.billing.offers
+    condition:
+      any:
+        - field: organisation.incubator_member
+          operator: equals
+          value: true
+        - all:
+            - field: organisation.software_company
+              operator: equals
+              value: true
+            - field: organisation.incorporated_on
+              operator: within_last
+              value: 730d
+    outcomes:
+      - kind: grant_offer
+        params:
+          offer: offer:startup
+  - key: offer_stacking
+    consumer: os.billing.offers
+    condition:
+      field: offer.key
+      operator: one_of
+      value:
+        - offer:annual
+    outcomes:
+      - kind: offer_stacks
+        params: {}
