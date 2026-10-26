@@ -48,6 +48,7 @@
     "#native/*": [
       "./src/native/*",
       "./src/native/*.ts",
+      "./src/native/*.tsx",
       "./src/native/*/index.ts"
     ],
     "#node/*": [

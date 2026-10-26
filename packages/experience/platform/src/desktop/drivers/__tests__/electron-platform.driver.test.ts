@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 /**
  * Stackra file contract:
  * Purpose: unit tests of `ElectronPlatformDriver`: the web set as `WebPlatformDriver` detects it, plus windows, tray,
@@ -7,6 +6,7 @@
  * Runtime: node (vitest, jsdom)
  * Governing contract: ADR 0022; ADR 0250; ADR 0281 (decision 2).
  */
+// @vitest-environment jsdom
 import { afterEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 

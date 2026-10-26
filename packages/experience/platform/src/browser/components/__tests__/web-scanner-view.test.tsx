@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 /**
  * Stackra file contract:
  * Purpose: unit tests of `WebScannerView`: it renders a muted inline video, opens the rear camera, hands a decoded code
@@ -7,6 +6,7 @@
  * Runtime: node (vitest, jsdom)
  * Governing contract: ADR 0022; ADR 0250 (decision 2).
  */
+// @vitest-environment jsdom
 import { afterEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 import { render, screen } from "@testing-library/react";

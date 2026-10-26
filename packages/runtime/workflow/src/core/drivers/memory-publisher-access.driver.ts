@@ -36,7 +36,7 @@ export class MemoryPublisherAccessDriver extends Driver(PublisherAccess) {
     else for (const block of blocks) this.grants.get(publisherId)?.delete(block);
   }
 
-  /** See `PublisherAccess.missing`. */
+  /** See `PublisherAccess.missing`: the blocks the publisher may not call, in the order given. */
   missing(
     publisher: Actor,
     _scope: ScopeRef,

@@ -109,7 +109,10 @@ describe("githubPlan", () => {
         variables: { BUILD_SHARDS: 4, SMOKE_ENABLED: true },
         environments: {
           preview: { branches: ["feature/*"] },
-          production: { reviewers: ["octo-owner"], variables: { AWS_ROLE_ARN: "ref:aws.roles.prod" } },
+          production: {
+            reviewers: ["octo-owner"],
+            variables: { AWS_ROLE_ARN: "ref:aws.roles.prod" },
+          },
           static: { tags: ["schemas@*"] },
         },
       }),
@@ -117,10 +120,12 @@ describe("githubPlan", () => {
 
     expect(plan.visibility).toBe("public");
     expect(plan.variables).toMatchObject({ BUILD_SHARDS: "4", SMOKE_ENABLED: "true" });
-    expect(plan.environments.find((environment) => environment.name === "preview")?.branches).toEqual([
-      "feature/*",
-    ]);
-    expect(plan.environments.find((environment) => environment.name === "production")).toMatchObject({
+    expect(
+      plan.environments.find((environment) => environment.name === "preview")?.branches,
+    ).toEqual(["feature/*"]);
+    expect(
+      plan.environments.find((environment) => environment.name === "production"),
+    ).toMatchObject({
       users: ["octo-owner"],
       variables: { AWS_ROLE_ARN: "ref:aws.roles.prod" },
     });

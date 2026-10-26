@@ -16,7 +16,10 @@ import { ErrorKind, Refusal } from "@stackra/errors";
  * @example
  * throw AutomationChangedError.create({ automationId });
  */
-export class AutomationChangedError extends Refusal({ kind: ErrorKind.Conflict, retryable: true }) {
+export class AutomationChangedError extends Refusal({
+  kind: ErrorKind.Conflict,
+  retryable: true,
+}) {
   /** The automation whose revision number was taken. */
   automationId!: PublicId<"wfa">;
 }

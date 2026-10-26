@@ -9,8 +9,8 @@
  */
 import { Driver } from "@stackra/container";
 
-import { DevicesConfig } from "#config/devices.config";
-import { DeviceCredential } from "#contracts/ports/device-credential.port";
+import type { DevicesConfig } from "#config/devices.config";
+import type { DeviceCredential } from "#contracts/ports/device-credential.port";
 import { DeviceTelemetry } from "#contracts/ports/device-telemetry.port";
 import type { TelemetryReading } from "#contracts/types/telemetry-reading.type";
 import { DEVICE_HUB_PATHS } from "#core/constants/device-hub-paths.constant";

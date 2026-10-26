@@ -8,5 +8,5 @@
  */
 import type { AutomationDocument } from "#core/types/automation-document.type";
 
-/** One step. */
+/** One step of an automation document. */
 export type AutomationStep = AutomationDocument["steps"][number];

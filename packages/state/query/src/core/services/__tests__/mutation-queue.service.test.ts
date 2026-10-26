@@ -136,10 +136,6 @@ class TestClock extends Clock {
 
 /** A leader a test switches with `set`. */
 class TestLeader extends QueueLeader {
-  private value: boolean;
-
-  private readonly listeners = new Set<(value: boolean) => void>();
-
   readonly isLeader = {
     get: () => this.value,
     subscribe: (listener: (value: boolean) => void) => {
@@ -149,6 +145,10 @@ class TestLeader extends QueueLeader {
       };
     },
   };
+
+  private value: boolean;
+
+  private readonly listeners = new Set<(value: boolean) => void>();
 
   constructor(value: boolean) {
     super();

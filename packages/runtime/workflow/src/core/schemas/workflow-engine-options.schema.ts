@@ -12,24 +12,32 @@
 import "#core/types/workflow-journal-names.type";
 
 import type { DriverName } from "@stackra/container";
-import { registerSchemas, Schema } from "@stackra/validation";
+import { Int, registerSchemas, Schema } from "@stackra/validation";
 
 import { WORKFLOW_CONFIG_SCHEMA } from "#core/constants/workflow-config-schema.constant";
 import type { WorkflowJournal } from "#core/ports/workflow-journal.port";
 
 /** The workflow engine's options. */
 export class WorkflowEngineOptions extends Schema {
+  /** The most items a for-each step of an automation takes, from 1 to 10,000. */
+  @Int({
+    min: 1,
+    max: 10_000,
+  })
+  forEachLimit: number = 1000;
+
+  /** How deep an event chain of triggered automation runs may grow, from 1 to 20; a deeper start is dropped. */
+  @Int({
+    min: 1,
+    max: 20,
+  })
+  maxChainDepth: number = 3;
+
   /** Which journal keeps runs: `postgres`, durable in the service's database; `memory`, in the process. */
   journal: DriverName<WorkflowJournal> = "postgres";
 
   /** How long an untaken signal or held event is kept (`"7d"`), from 1 minute to 90 days. */
   signalRetention: string = "7d";
-
-  /** The most items a for-each step of an automation takes, from 1 to 10,000. */
-  forEachLimit: number = 1000;
-
-  /** How deep an event chain of triggered automation runs may grow, from 1 to 20; a deeper start is dropped. */
-  maxChainDepth: number = 3;
 }
 
 registerSchemas([[WorkflowEngineOptions, WORKFLOW_CONFIG_SCHEMA]]);

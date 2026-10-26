@@ -23,6 +23,6 @@ export interface ReplicaRow {
   /** The time the replica's window ages the record by (ISO 8601). */
   readonly at: string;
 
-  /** The record. */
+  /** The record itself, as JSON. */
   readonly data: Json;
 }

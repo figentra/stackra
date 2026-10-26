@@ -41,7 +41,9 @@ export class DeviceAcknowledgedQuery extends Query({
   /** Each device's last settled call. */
   private readonly sequences: DeviceSequenceStore;
 
-  /** @param sequences - the pipeline's device sequence store. */
+  /**
+   * @param sequences - the pipeline's device sequence store.
+   */
   constructor(sequences: DeviceSequenceStore) {
     super();
     this.sequences = sequences;

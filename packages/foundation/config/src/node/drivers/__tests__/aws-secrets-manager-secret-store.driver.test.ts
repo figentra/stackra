@@ -26,6 +26,7 @@ const aws = vi.hoisted(() => ({
 vi.mock("@aws-sdk/client-secrets-manager", () => ({
   BatchGetSecretValueCommand: class {
     readonly input: { SecretIdList: string[] };
+
     constructor(input: { SecretIdList: string[] }) {
       this.input = input;
     }
@@ -34,6 +35,7 @@ vi.mock("@aws-sdk/client-secrets-manager", () => ({
     constructor(options: unknown) {
       aws.regions.push(options);
     }
+
     async send(command: { input: { SecretIdList: string[] } }) {
       aws.batches.push(command.input.SecretIdList);
       return {
@@ -47,6 +49,7 @@ vi.mock("@aws-sdk/client-secrets-manager", () => ({
         Errors: aws.errors,
       };
     }
+
     destroy() {
       aws.destroyed += 1;
     }

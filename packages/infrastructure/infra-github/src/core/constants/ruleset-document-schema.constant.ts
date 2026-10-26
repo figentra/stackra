@@ -39,7 +39,10 @@ const RULE = z.discriminatedUnion(
     z.strictObject({
       type: z.literal("pull_request"),
       parameters: mappable({
-        allowed_merge_methods: z.array(z.enum(["merge", "squash", "rebase"])).min(1).optional(),
+        allowed_merge_methods: z
+          .array(z.enum(["merge", "squash", "rebase"]))
+          .min(1)
+          .optional(),
         dismiss_stale_reviews_on_push: z.boolean().optional(),
         require_code_owner_review: z.boolean().optional(),
         require_last_push_approval: z.boolean().optional(),
@@ -51,9 +54,7 @@ const RULE = z.discriminatedUnion(
       type: z.literal("required_status_checks"),
       parameters: mappable({
         required_status_checks: z
-          .array(
-            z.strictObject({ context: z.string().min(1), integration_id: z.int().optional() }),
-          )
+          .array(z.strictObject({ context: z.string().min(1), integration_id: z.int().optional() }))
           .min(1),
         strict_required_status_checks_policy: z.boolean().optional(),
         do_not_enforce_on_create: z.boolean().optional(),

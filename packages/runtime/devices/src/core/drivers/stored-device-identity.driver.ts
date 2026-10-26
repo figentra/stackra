@@ -9,7 +9,7 @@
  * Governing contract: ADR 0361 (decision 7: device identity in @stackra/devices); ADR 0338 (decision 1); ADR 0256.
  */
 import { Driver } from "@stackra/container";
-import { Storage } from "@stackra/storage/contracts";
+import type { Storage } from "@stackra/storage/contracts";
 
 import { DeviceIdentity } from "#contracts/ports/device-identity.port";
 import { DEVICE_STORAGE_KEYS } from "#core/constants/device-storage-keys.constant";
@@ -25,7 +25,9 @@ export class StoredDeviceIdentityDriver extends Driver(DeviceIdentity) {
   /** The device app's storage. */
   private readonly storage: Storage;
 
-  /** @param storage - the device app's storage. */
+  /**
+   * @param storage - the device app's storage.
+   */
   constructor(storage: Storage) {
     super();
     this.storage = storage;

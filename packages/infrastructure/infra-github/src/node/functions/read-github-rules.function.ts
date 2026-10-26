@@ -18,6 +18,21 @@ import { parseRuleset } from "#core/functions/parse-ruleset.function";
 import type { GithubRules } from "#core/types/github-rules.type";
 
 /**
+ * The parsed JSON of `file`.
+ *
+ * @throws GithubInfraInvalidError when the file is not readable as JSON.
+ */
+function json(file: string): unknown {
+  try {
+    return JSON.parse(readFileSync(file, "utf8"));
+  } catch (error) {
+    throw new GithubInfraInvalidError(file, [
+      { path: "", message: `Not readable as JSON: ${(error as Error).message}` },
+    ]);
+  }
+}
+
+/**
  * The checked rules under `directory`.
  *
  * @param directory - the repository's `.github` folder.
@@ -27,16 +42,6 @@ import type { GithubRules } from "#core/types/github-rules.type";
  * rules.rulesets.map((ruleset) => ruleset.name); // ["main"]
  */
 export function readGithubRules(directory: string): GithubRules {
-  const json = (file: string): unknown => {
-    try {
-      return JSON.parse(readFileSync(file, "utf8"));
-    } catch (error) {
-      throw new GithubInfraInvalidError(file, [
-        { path: "", message: `Not readable as JSON: ${(error as Error).message}` },
-      ]);
-    }
-  };
-
   const folder = join(directory, "rulesets");
   const rulesets = existsSync(folder)
     ? readdirSync(folder)

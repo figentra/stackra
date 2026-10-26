@@ -26,6 +26,14 @@ import { Secret } from "#core/decorators/secret.decorator";
  * }
  */
 export class InfisicalOptions extends Schema {
+  /** The machine identity's client id (universal auth). */
+  @Secret("INFISICAL_CLIENT_ID")
+  clientId = "";
+
+  /** The machine identity's client secret (universal auth). */
+  @Secret("INFISICAL_CLIENT_SECRET")
+  clientSecret = "";
+
   /** The Infisical instance (`https://secrets.example.test`); the store refuses to load while it is empty. */
   siteUrl = "";
 
@@ -37,14 +45,6 @@ export class InfisicalOptions extends Schema {
 
   /** The folder read, `/` for the root; its subfolders are not read. */
   path = "/";
-
-  /** The machine identity's client id (universal auth). */
-  @Secret("INFISICAL_CLIENT_ID")
-  clientId = "";
-
-  /** The machine identity's client secret (universal auth). */
-  @Secret("INFISICAL_CLIENT_SECRET")
-  clientSecret = "";
 }
 
 registerSchemas([[InfisicalOptions, INFISICAL_CONFIG_SCHEMA]]);

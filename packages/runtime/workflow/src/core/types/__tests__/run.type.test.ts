@@ -27,12 +27,12 @@ class ShipWorkflow extends Workflow<{ readonly orderId: string }>({}) {
     return run.results.allocate.length;
   }
 
-  private async helper(): Promise<void> {}
-
   output(run: Run<this>): number {
     void this.helper;
     return run.results.buyLabels;
   }
+
+  private async helper(): Promise<void> {}
 }
 
 class ExpressWorkflow extends ShipWorkflow {

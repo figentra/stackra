@@ -22,6 +22,9 @@ import type { BuildFacts } from "#core/types/build-facts.type";
 import type { PublicPart } from "#core/types/public-part.type";
 
 class EnvOptions extends Schema {
+  @Secret("TURNSTILE_SECRET_KEY")
+  turnstileSecret!: string;
+
   analyticsPosthogKey = "";
 
   turnstileSiteKey!: string;
@@ -29,9 +32,6 @@ class EnvOptions extends Schema {
   apiUrl!: Url;
 
   realtimeOrigin = "";
-
-  @Secret("TURNSTILE_SECRET_KEY")
-  turnstileSecret!: string;
 }
 
 registerSchemas([

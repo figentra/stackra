@@ -15,7 +15,7 @@ import { Port } from "@stackra/contracts";
 import type { CapabilityResult } from "#contracts/types/capability-result.type";
 
 /**
- * Kiosk mode.
+ * Locks the app to its own windows for a till or a kiosk, and releases it.
  *
  * @example
  * if (settings.kioskMode) await kiosk.enter();

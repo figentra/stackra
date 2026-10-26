@@ -25,7 +25,10 @@ class Shipped extends Signal {
 }
 
 class DeliveryWorkflow extends Workflow<{ readonly orderId: string }>({}) {
-  @Step<DeliveryWorkflow>({ waitFor: Shipped, correlate: (run) => run.input.orderId })
+  @Step<DeliveryWorkflow>({
+    waitFor: Shipped,
+    correlate: (run) => run.input.orderId,
+  })
   async ship(_run: Run<this>, _ctx: StepContext, shipped: Shipped): Promise<string> {
     return shipped.carrier;
   }

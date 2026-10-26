@@ -13,7 +13,10 @@ import { Capability } from "#core/enums/capability.enum";
 import { Bridge } from "#desktop/bases/bridge.base";
 
 /** A bridge with one dependency. */
-class EchoBridge extends Bridge({ key: "echo.say", capability: Capability.Window }) {
+class EchoBridge extends Bridge({
+  key: "echo.say",
+  capability: Capability.Window,
+}) {
   readonly prefix: string;
 
   constructor(prefix: string) {

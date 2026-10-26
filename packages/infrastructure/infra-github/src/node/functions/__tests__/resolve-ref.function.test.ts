@@ -35,7 +35,9 @@ describe("resolveRef", () => {
 
   it("fails on an unset key or a path that holds no value", () => {
     expect(() => resolveRef("ref:missing")).toThrow();
-    expect(() => resolveRef("ref:infisical.identities")).toThrow(/ref:infisical\.identities is not set/);
+    expect(() => resolveRef("ref:infisical.identities")).toThrow(
+      /ref:infisical\.identities is not set/,
+    );
     expect(() => resolveRef("ref:infisical.nothing.here")).toThrow(/is not set/);
   });
 });

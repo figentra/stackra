@@ -164,7 +164,9 @@ export class PostgresWorkflowJournalDriver extends Driver(WorkflowJournal) {
   /** The connected database. */
   private readonly database: Database;
 
-  /** @param database - the connected database whose transactions the journal opens and joins. */
+  /**
+   * @param database - the connected database whose transactions the journal opens and joins.
+   */
   constructor(database: Database) {
     super();
     this.database = database;
@@ -190,7 +192,7 @@ export class PostgresWorkflowJournalDriver extends Driver(WorkflowJournal) {
     return row === undefined ? undefined : scopeOf(row.scope_id, row.scope_path).scope;
   }
 
-  /** See `WorkflowJournal.save`. */
+  /** See `WorkflowJournal.save`: inserts or updates the run and each of its steps. */
   async save(run: WorkflowRun): Promise<void> {
     const em = this.database.em();
     // raw-sql: the journal has no model; one upsert for the run and one for all its steps
@@ -244,7 +246,7 @@ export class PostgresWorkflowJournalDriver extends Driver(WorkflowJournal) {
     );
   }
 
-  /** See `WorkflowJournal.find`. */
+  /** See `WorkflowJournal.find`: the run with its steps in the order they were reached. */
   async find(id: PublicId<"wfr">): Promise<WorkflowRun | undefined> {
     const em = this.database.em();
     // raw-sql: the journal has no model; the run, then its steps in the order they were reached
@@ -277,7 +279,7 @@ export class PostgresWorkflowJournalDriver extends Driver(WorkflowJournal) {
     return row === undefined ? undefined : this.find(row.id as PublicId<"wfr">);
   }
 
-  /** See `WorkflowJournal.byAutomation`. */
+  /** See `WorkflowJournal.byAutomation`: one page of the automation's runs, newest start first. */
   async byAutomation(
     automation: PublicId<"wfa">,
     limit: number,
@@ -303,7 +305,7 @@ export class PostgresWorkflowJournalDriver extends Driver(WorkflowJournal) {
     return runs;
   }
 
-  /** See `WorkflowJournal.hold`. */
+  /** See `WorkflowJournal.hold`: keeps the signal until a waiting run takes it. */
   async hold(signal: HeldSignal): Promise<void> {
     // raw-sql: the journal has no model; one insert in the caller's transaction
     await this.database
@@ -324,7 +326,7 @@ export class PostgresWorkflowJournalDriver extends Driver(WorkflowJournal) {
       );
   }
 
-  /** See `WorkflowJournal.take`. */
+  /** See `WorkflowJournal.take`: removes and returns the oldest matching held signal. */
   async take(
     signal: string,
     correlation: string,
@@ -344,7 +346,7 @@ export class PostgresWorkflowJournalDriver extends Driver(WorkflowJournal) {
     return row === undefined ? undefined : signalOf(row);
   }
 
-  /** See `WorkflowJournal.due`. */
+  /** See `WorkflowJournal.due`: the runs to advance now, oldest first. */
   async due(now: Date, limit: number): Promise<readonly PublicId<"wfr">[]> {
     // raw-sql: the journal has no model; the worker reads across scopes, oldest run first
     const rows = await this.database
@@ -360,7 +362,7 @@ export class PostgresWorkflowJournalDriver extends Driver(WorkflowJournal) {
     return IDS.parse(rows).map((row) => row.id as PublicId<"wfr">);
   }
 
-  /** See `WorkflowJournal.expire`. */
+  /** See `WorkflowJournal.expire`: drops the held signals that lapsed. */
   async expire(now: Date): Promise<void> {
     // raw-sql: the journal has no model; one parameterised delete
     await this.database.em().execute(`delete from ${SIGNALS} where expires_at <= ?`, [now]);

@@ -6,10 +6,8 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0361 (decision 7: pairing).
  */
-import {
-  PAIRING_CODE_ALPHABET,
-  PAIRING_CODE_LENGTH,
-} from "#core/constants/pairing-code-alphabet.constant";
+import { PAIRING_CODE_ALPHABET } from "#core/constants/pairing-code-alphabet.constant";
+import { PAIRING_CODE_LENGTH } from "#core/constants/pairing-code-length.constant";
 
 /** The largest byte value that keeps the draw unbiased: a multiple of the alphabet's size. */
 const LIMIT = 256 - (256 % PAIRING_CODE_ALPHABET.length);

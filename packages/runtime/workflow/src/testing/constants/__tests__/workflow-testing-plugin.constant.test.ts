@@ -36,7 +36,10 @@ class ApprovalWorkflow extends Workflow({ timeout: "1h" }) {
 
   async undoSubmit(): Promise<void> {}
 
-  @Step({ waitFor: Approved, timeout: "15m" })
+  @Step({
+    waitFor: Approved,
+    timeout: "15m",
+  })
   async approve(): Promise<void> {}
 }
 
@@ -58,7 +61,7 @@ function appOf(instances: readonly object[], runner?: NativeWorkflowRunnerDriver
 
 /** The members the plugin adds to `app`. */
 function compile(app: TestingApp) {
-  return WORKFLOW_TESTING_PLUGIN.app?.(app) as TestingApp;
+  return WORKFLOW_TESTING_PLUGIN.app?.(app) as unknown as TestingApp;
 }
 
 describe("WORKFLOW_TESTING_PLUGIN", () => {

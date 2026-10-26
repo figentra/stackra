@@ -12,6 +12,9 @@ import { WORKFLOW_TEMPLATE_PACK_SCHEMA } from "#core/constants/workflow-template
 
 const TEMPLATE = { key: "commerce.cod_confirmation", steps: [{ name: "ask", block: "sms.send" }] };
 
+/** Whether `pack` is a valid template pack. */
+const parses = (pack: unknown): boolean => WORKFLOW_TEMPLATE_PACK_SCHEMA.safeParse(pack).success;
+
 describe("WORKFLOW_TEMPLATE_PACK_SCHEMA", () => {
   it("parses a pack and keeps each template whole", () => {
     const pack = WORKFLOW_TEMPLATE_PACK_SCHEMA.parse({
@@ -23,7 +26,6 @@ describe("WORKFLOW_TEMPLATE_PACK_SCHEMA", () => {
   });
 
   it("refuses a bad version and a repeated template", () => {
-    const parses = (pack: unknown) => WORKFLOW_TEMPLATE_PACK_SCHEMA.safeParse(pack).success;
     expect(parses({ key: "commerce", version: "1", templates: [] })).toBe(false);
     expect(parses({ key: "commerce", version: "1.0.0", templates: [TEMPLATE, TEMPLATE] })).toBe(
       false,

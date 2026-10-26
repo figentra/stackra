@@ -26,10 +26,10 @@ class KitOptions extends Schema {
 }
 
 class DeliveryOptions extends Schema {
-  transport = "memory";
-
   @Secret("WEB_PUSH_VAPID_PRIVATE_KEY")
   webPushVapidPrivateKey!: string;
+
+  transport = "memory";
 }
 
 registerSchemas([

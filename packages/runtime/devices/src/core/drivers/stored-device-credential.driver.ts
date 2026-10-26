@@ -9,7 +9,7 @@
  * Governing contract: ADR 0361 (decision 7); ADR 0235 (decision 1, as amended); ADR 0256 (the `secrets` area).
  */
 import { Driver } from "@stackra/container";
-import { Storage } from "@stackra/storage/contracts";
+import type { Storage } from "@stackra/storage/contracts";
 
 import { DeviceCredential } from "#contracts/ports/device-credential.port";
 import { DEVICE_STORAGE_KEYS } from "#core/constants/device-storage-keys.constant";
@@ -25,7 +25,9 @@ export class StoredDeviceCredentialDriver extends Driver(DeviceCredential) {
   /** The device app's storage. */
   private readonly storage: Storage;
 
-  /** @param storage - the device app's storage. */
+  /**
+   * @param storage - the device app's storage.
+   */
   constructor(storage: Storage) {
     super();
     this.storage = storage;

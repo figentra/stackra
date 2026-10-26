@@ -10,7 +10,7 @@ import type { PublicId, ScopeRef } from "@stackra/contracts";
 
 /** One held signal. */
 export interface HeldSignal {
-  /** Its id. */
+  /** The held signal's id. */
   readonly id: PublicId<"wfs">;
 
   /** The signal's registered key, else its class name. */

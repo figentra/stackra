@@ -16,12 +16,12 @@
  */
 import { Service } from "@stackra/container";
 import { Duration } from "@stackra/contracts";
-import { RealtimeConnection } from "@stackra/realtime";
+import type { RealtimeConnection } from "@stackra/realtime";
 import type { RealtimeEventRef } from "@stackra/realtime";
 import { QueryClient } from "@tanstack/query-core";
 
-import { QueryConfig } from "#config/query.config";
-import { OfflineLock } from "#core/services/offline-lock.service";
+import type { QueryConfig } from "#config/query.config";
+import type { OfflineLock } from "#core/services/offline-lock.service";
 import type { LiveQueryRef } from "#core/types/live-query-ref.type";
 import type { QueryPartition } from "#core/types/query-partition.type";
 
@@ -69,6 +69,13 @@ export class ServerStateCache extends Service {
     this.stopWiping = lock.onWipe(() => this.client.clear());
   }
 
+  /** Ends every live subscription and stops listening to the lock when the container closes. */
+  onApplicationShutdown(): void {
+    this.stopWiping();
+    for (const watch of this.watches.values()) watch.stop();
+    this.watches.clear();
+  }
+
   /** Opens the cache of `partition`: empties the client, so nothing of the previous partition shows. */
   open(_partition: QueryPartition): void {
     this.client.clear();
@@ -94,13 +101,6 @@ export class ServerStateCache extends Service {
       watch.stop();
       this.watches.delete(query.key);
     };
-  }
-
-  /** Ends every live subscription and stops listening to the lock when the container closes. */
-  onApplicationShutdown(): void {
-    this.stopWiping();
-    for (const watch of this.watches.values()) watch.stop();
-    this.watches.clear();
   }
 
   /** Subscribes `key`'s invalidation to each of `events` and records the watch. */

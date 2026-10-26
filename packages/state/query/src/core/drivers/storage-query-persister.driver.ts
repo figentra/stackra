@@ -16,7 +16,7 @@
 import { Driver } from "@stackra/container";
 import type { Json } from "@stackra/contracts";
 import { StorageArea } from "@stackra/storage";
-import { PayloadSeal, Storage } from "@stackra/storage/contracts";
+import type { PayloadSeal, Storage } from "@stackra/storage/contracts";
 
 import { QueryPersister } from "#contracts/ports/query-persister.port";
 

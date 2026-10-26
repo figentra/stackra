@@ -45,13 +45,13 @@ class KitOptions extends Schema {
 }
 
 class CommerceOptions extends Schema {
-  storefrontBaseUrl!: string;
-
   @Secret("PRICING_API_KEY")
   pricingApiKey!: string;
 
   @Secret("PRICING_WEBHOOK_SECRET")
   webhookSecret?: string;
+
+  storefrontBaseUrl!: string;
 }
 
 registerSchemas([

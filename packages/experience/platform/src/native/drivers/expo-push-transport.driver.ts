@@ -14,7 +14,7 @@ import Constants from "expo-constants";
 import * as Notifications from "expo-notifications";
 import { Linking } from "react-native";
 
-import { PushConfig } from "#config/push.config";
+import type { PushConfig } from "#config/push.config";
 import { PushTransport } from "#contracts/ports/push-transport.port";
 import type { CapabilityResult } from "#contracts/types/capability-result.type";
 import type { PermissionStatus } from "#contracts/types/permission-status.type";
@@ -35,7 +35,9 @@ export class ExpoPushTransportDriver extends Driver(PushTransport) {
   /** The push configuration (`iosProvisional`). */
   private readonly config: PushConfig;
 
-  /** @param config - the push configuration. */
+  /**
+   * @param config - the push configuration.
+   */
   constructor(config: PushConfig) {
     super();
     this.config = config;

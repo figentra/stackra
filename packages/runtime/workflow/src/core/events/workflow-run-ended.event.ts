@@ -29,7 +29,7 @@ import type { WorkflowError } from "#core/types/workflow-error.type";
  * }
  */
 export class WorkflowRunEnded extends DomainEvent {
-  /** The run. */
+  /** The id of the run that ended. */
   runId!: PublicId<"wfr">;
 
   /** Its workflow key. */

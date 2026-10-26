@@ -71,7 +71,10 @@ describe(Workflow, () => {
 
 describe("Workflow versions", () => {
   it("records a version and refuses one that is not a whole number from 1", () => {
-    class PlaceV2Workflow extends Workflow<PlaceInput>({ timeout: "2m", version: 2 }) {}
+    class PlaceV2Workflow extends Workflow<PlaceInput>({
+      timeout: "2m",
+      version: 2,
+    }) {}
     expect(kindOf(PlaceV2Workflow)?.options["version"]).toBe(2);
     expect(() => Workflow({ version: 0 })).toThrow(RangeError);
     expect(() => Workflow({ version: 1.5 })).toThrow(RangeError);

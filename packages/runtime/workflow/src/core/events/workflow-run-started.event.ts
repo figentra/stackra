@@ -27,7 +27,7 @@ import { WORKFLOW_RUN_STARTED_SCHEMA } from "#core/constants/workflow-run-starte
  * }
  */
 export class WorkflowRunStarted extends DomainEvent {
-  /** The run. */
+  /** The id of the run that started. */
   runId!: PublicId<"wfr">;
 
   /** Its workflow key (`workflow.document` for an automation or a plan). */

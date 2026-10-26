@@ -25,7 +25,10 @@ class OrderPaid extends DomainEvent {
   orderId!: string;
 }
 
-class SendSmsAction extends Action({ key: "sms.send", actors: [ActorKind.System] }) {
+class SendSmsAction extends Action({
+  key: "sms.send",
+  actors: [ActorKind.System],
+}) {
   async handle(): Promise<void> {}
 }
 

@@ -36,7 +36,9 @@ export class ServiceAckSet extends Model.with(HasPublicId("wfk"), Timestamps, Ve
 
 // shortcut: the `[OptionalProps]` augmentation is written by hand so `CrudService.insert` may leave the defaulted
 // fields out; remove it once gen writes the entity files (STA-339).
+/** The insert-time side of `ServiceAckSet`: which fields `CrudService.insert` may leave out. */
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: the generated `[OptionalProps]` augmentation merges into the model, as gen's entity files do
 export interface ServiceAckSet {
+  /** The fields that have a default, so an insert may leave them out. */
   [OptionalProps]?: "createdAt" | "updatedAt" | "version" | "acked" | "kept" | "completedAt";
 }

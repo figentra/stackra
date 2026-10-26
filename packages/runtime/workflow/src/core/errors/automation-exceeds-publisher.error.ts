@@ -20,7 +20,7 @@ export class AutomationExceedsPublisherError extends Refusal({
   kind: ErrorKind.Forbidden,
   retryable: false,
 }) {
-  /** The automation. */
+  /** The id of the automation that was refused. */
   automationId!: PublicId<"wfa">;
 
   /** The revision that was to be published. */

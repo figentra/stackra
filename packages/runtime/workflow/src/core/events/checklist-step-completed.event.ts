@@ -28,7 +28,7 @@ export class ChecklistStepCompleted extends DomainEvent {
   /** Its template key (`workflow-template:commerce:onboarding`). */
   key!: string;
 
-  /** The step. */
+  /** The name of the completed step. */
   step!: string;
 
   /** The user, for a user step; null for a scope step. */

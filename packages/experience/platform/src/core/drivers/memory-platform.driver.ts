@@ -43,21 +43,6 @@ const DONE: CapabilityResult = Object.freeze({ ok: true, data: undefined });
  * platform.network.isOnline.set(true);
  */
 export class MemoryPlatformDriver extends Driver(Platform) {
-  /** The capability codes offered. */
-  private readonly offered = new Set<string>([Capability.Network]);
-
-  /** The permission each capability answers with; `prompt` when absent. */
-  private readonly permissions = new Map<string, PermissionStatus>();
-
-  /** Payloads waiting in the share inbox, by id. */
-  private readonly inbox = new Map<string, SharedPayload>();
-
-  /** Whether the device has a camera now. */
-  private cameraPresent = true;
-
-  /** The barcode handler of the scanner view rendered last. */
-  private barcodeHandler: ((code: string) => void) | undefined = undefined;
-
   /** Online state; a test flips it with `network.isOnline.set(false)`. */
   readonly network: { readonly isOnline: LiveValue<boolean> };
 
@@ -90,6 +75,21 @@ export class MemoryPlatformDriver extends Driver(Platform) {
 
   /** The install prompt; a test holds one with `install.canPrompt.set(true)`. */
   readonly install: InstallCapability & { readonly canPrompt: LiveValue<boolean> };
+
+  /** The capability codes offered. */
+  private readonly offered = new Set<string>([Capability.Network]);
+
+  /** The permission each capability answers with; `prompt` when absent. */
+  private readonly permissions = new Map<string, PermissionStatus>();
+
+  /** Payloads waiting in the share inbox, by id. */
+  private readonly inbox = new Map<string, SharedPayload>();
+
+  /** Whether the device has a camera now. */
+  private cameraPresent = true;
+
+  /** The barcode handler of the scanner view rendered last. */
+  private barcodeHandler: ((code: string) => void) | undefined = undefined;
 
   /** Online, nothing else offered, every permission still to be asked. */
   constructor() {

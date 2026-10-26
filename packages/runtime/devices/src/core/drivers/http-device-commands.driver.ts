@@ -10,10 +10,10 @@
  */
 import { Driver } from "@stackra/container";
 
-import { DevicesConfig } from "#config/devices.config";
+import type { DevicesConfig } from "#config/devices.config";
 import type { CommandStatus } from "#contracts/enums/command-status.enum";
 import { DeviceCommands } from "#contracts/ports/device-commands.port";
-import { DeviceCredential } from "#contracts/ports/device-credential.port";
+import type { DeviceCredential } from "#contracts/ports/device-credential.port";
 import type { DeviceCommand } from "#contracts/types/device-command.type";
 import { DEVICE_COMMAND_LIST_SCHEMA } from "#core/constants/device-command-list-schema.constant";
 import { DEVICE_HUB_PATHS } from "#core/constants/device-hub-paths.constant";

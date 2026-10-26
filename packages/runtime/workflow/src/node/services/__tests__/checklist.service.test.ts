@@ -9,7 +9,7 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0424 (decisions 1 to 4).
  */
-import { ActorKind } from "@stackra/contracts";
+import { ActorKind, Realm } from "@stackra/contracts";
 import type { Actor, ScopeRef } from "@stackra/contracts";
 import { CrudService, Database, registerModelPartners } from "@stackra/database";
 import { isRefusal } from "@stackra/errors";
@@ -38,7 +38,11 @@ registerModelPartners([
 
 const SCOPE: ScopeRef = { id: "scp_01j9z3k4m5n6p7q8r9s0t1v2w1", path: "platform.acme" };
 
-const OWNER: Actor = { kind: ActorKind.User, id: "usr_01j9z3k4m5n6p7q8r9s0t1v2w3" };
+const OWNER: Actor = {
+  kind: ActorKind.User,
+  id: "usr_01j9z3k4m5n6p7q8r9s0t1v2w3",
+  realm: Realm.Tenant,
+};
 
 const TEMPLATE = {
   key: "workflow-template:commerce:onboarding",

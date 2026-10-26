@@ -20,11 +20,11 @@ import { CaptchaVerifier } from "#contracts/ports/captcha-verifier.port";
  * await captcha.verify("token"); // false
  */
 export class MemoryCaptchaVerifierDriver extends Driver(CaptchaVerifier) {
-  /** Whether non-empty tokens pass. */
-  accepts = true;
-
   /** Every token asked about, in order. */
   readonly verified: string[] = [];
+
+  /** Whether non-empty tokens pass. */
+  accepts = true;
 
   /** True for a non-empty token while `accepts` holds. */
   async verify(token: string): Promise<boolean> {

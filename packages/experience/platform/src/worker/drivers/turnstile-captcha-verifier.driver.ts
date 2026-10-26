@@ -5,13 +5,14 @@
  * Boundary: the secret is read by name from the `SecretStore` the runtime binds (runway syncs it from Infisical) and
  *           sent only to Cloudflare; it is never logged or returned. An empty or over-long token fails without a
  *           call. A missing secret, a failed call or an answer with no verdict throws, so it is never mistaken for a
- *           failed captcha. Each call waits at most five seconds.
- * Runtime: worker, node (only `fetch`, `FormData` and `AbortSignal`; exported from `./worker` and `./node`)
+ *           failed captcha. Each call waits at most five seconds. It uses only `fetch`, `FormData` and `AbortSignal`, so
+ *           it is also exported from `./node`.
+ * Runtime: worker
  * Governing contract: ADR 0173 (secrets by name); ADR 0294 (decision 17: dependencies by type); ADR 0127 2026-10-24
  *                     note (`./worker` entry) and
  *                     2026-10-26 note (also from `./node`).
  */
-import { SecretStore } from "@stackra/config/contracts";
+import type { SecretStore } from "@stackra/config/contracts";
 import { Driver } from "@stackra/container";
 
 import { CaptchaVerifier } from "#contracts/ports/captcha-verifier.port";
@@ -38,7 +39,9 @@ export class TurnstileCaptchaVerifierDriver extends Driver(CaptchaVerifier) {
   /** Where `TURNSTILE_SECRET_KEY` is read from. */
   private readonly secrets: SecretStore;
 
-  /** @param secrets - the runtime's secret store. */
+  /**
+   * @param secrets - the runtime's secret store.
+   */
   constructor(secrets: SecretStore) {
     super();
     this.secrets = secrets;

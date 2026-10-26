@@ -11,7 +11,7 @@
  */
 import { Driver } from "@stackra/container";
 
-import { PushConfig } from "#config/push.config";
+import type { PushConfig } from "#config/push.config";
 import { PushTransport } from "#contracts/ports/push-transport.port";
 import type { CapabilityResult } from "#contracts/types/capability-result.type";
 import type { PermissionStatus } from "#contracts/types/permission-status.type";
@@ -31,7 +31,9 @@ export class WebPushTransportDriver extends Driver(PushTransport) {
   /** The push configuration (`vapidPublicKey`). */
   private readonly config: PushConfig;
 
-  /** @param config - the push configuration; its `vapidPublicKey` signs the subscription. */
+  /**
+   * @param config - the push configuration; its `vapidPublicKey` signs the subscription.
+   */
   constructor(config: PushConfig) {
     super();
     this.config = config;

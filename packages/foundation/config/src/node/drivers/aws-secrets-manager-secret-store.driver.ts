@@ -15,7 +15,7 @@
 import { BatchGetSecretValueCommand, SecretsManagerClient } from "@aws-sdk/client-secrets-manager";
 import { Driver } from "@stackra/container";
 
-import { AwsSecretsManagerConfig } from "#config/aws-secrets-manager.config";
+import type { AwsSecretsManagerConfig } from "#config/aws-secrets-manager.config";
 import { SecretStore } from "#contracts/ports/secret-store.port";
 
 /** The most ids one `BatchGetSecretValue` call takes. */
@@ -47,7 +47,9 @@ export class AwsSecretsManagerSecretStoreDriver extends Driver(SecretStore) {
 
   private values: ReadonlyMap<string, string> | undefined;
 
-  /** @param config - the region and the secret ids. */
+  /**
+   * @param config - the region and the secret ids.
+   */
   constructor(config: AwsSecretsManagerConfig) {
     super();
     this.config = config;
@@ -88,7 +90,7 @@ export class AwsSecretsManagerSecretStoreDriver extends Driver(SecretStore) {
   }
 
   /**
-   * See `SecretStore.get`.
+   * See `SecretStore.get`: the loaded value of `name`, or `undefined` when the store has none.
    *
    * @throws Error before the first `load`.
    */

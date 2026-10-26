@@ -10,11 +10,11 @@
  * Governing contract: ADR 0361 (decision 7); ADR 0235 (decision 1, as amended); ADR 0294 (decision 17: drivers).
  */
 import { Driver } from "@stackra/container";
-import { Storage } from "@stackra/storage/contracts";
+import type { Storage } from "@stackra/storage/contracts";
 
-import { DevicesConfig } from "#config/devices.config";
-import { DeviceCredential } from "#contracts/ports/device-credential.port";
-import { DeviceIdentity } from "#contracts/ports/device-identity.port";
+import type { DevicesConfig } from "#config/devices.config";
+import type { DeviceCredential } from "#contracts/ports/device-credential.port";
+import type { DeviceIdentity } from "#contracts/ports/device-identity.port";
 import { DevicePairing } from "#contracts/ports/device-pairing.port";
 import type { PairingCode } from "#contracts/types/pairing-code.type";
 import type { PairingStatus } from "#contracts/types/pairing-status.type";

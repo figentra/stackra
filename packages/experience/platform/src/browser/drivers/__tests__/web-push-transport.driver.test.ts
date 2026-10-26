@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 /**
  * Stackra file contract:
  * Purpose: unit tests of `WebPushTransportDriver`: a browser without Web Push refuses with `unavailable`; a granted
@@ -8,6 +7,7 @@
  * Runtime: node (vitest, jsdom)
  * Governing contract: ADR 0022; ADR 0255 (decision 3).
  */
+// @vitest-environment jsdom
 import { buildConfig } from "@stackra/config";
 import { afterEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
@@ -24,6 +24,7 @@ function stubPush(existing: object | null = null) {
     "Notification",
     class {
       static permission: NotificationPermission = "granted";
+
       static requestPermission = async (): Promise<NotificationPermission> => "granted";
     },
   );

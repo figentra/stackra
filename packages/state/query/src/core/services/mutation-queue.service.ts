@@ -22,23 +22,23 @@
  */
 import { ConflictResolution, OfflineCapReachedError, OfflineMode } from "@stackra/actions";
 import { Service } from "@stackra/container";
-import { Clock, Duration } from "@stackra/contracts";
-import type { Json } from "@stackra/contracts";
-import { DeviceIdentity } from "@stackra/devices/contracts";
-import { Platform } from "@stackra/platform/contracts";
+import { Duration } from "@stackra/contracts";
+import type { Json, Clock } from "@stackra/contracts";
+import type { DeviceIdentity } from "@stackra/devices/contracts";
+import type { Platform } from "@stackra/platform/contracts";
 import { StorageArea } from "@stackra/storage";
 import { duration } from "@stackra/validation";
 
-import { QueryConfig } from "#config/query.config";
-import { MutationSender } from "#contracts/ports/mutation-sender.port";
-import { QueryPersister } from "#contracts/ports/query-persister.port";
-import { QueueLeader } from "#contracts/ports/queue-leader.port";
+import type { QueryConfig } from "#config/query.config";
+import type { MutationSender } from "#contracts/ports/mutation-sender.port";
+import type { QueryPersister } from "#contracts/ports/query-persister.port";
+import type { QueueLeader } from "#contracts/ports/queue-leader.port";
 import type { ReplayOutcome } from "#contracts/types/replay-outcome.type";
 import { OFFLINE_POLICIES } from "#core/constants/offline-policies.constant";
 import { PERSISTED_QUEUE_SCHEMA } from "#core/constants/persisted-queue-schema.constant";
 import { OfflineError } from "#core/errors/offline.error";
 import { partitionKey } from "#core/functions/partition-key.function";
-import { OfflineLock } from "#core/services/offline-lock.service";
+import type { OfflineLock } from "#core/services/offline-lock.service";
 import type { ConflictRecord } from "#core/types/conflict-record.type";
 import type { OfflineActionRef } from "#core/types/offline-action-ref.type";
 import type { OfflineCap } from "#core/types/offline-cap.type";
@@ -91,6 +91,21 @@ function amountOf(input: Json, cap: OfflineCap): number {
  * queue.pending; // 1, until the network returns and the leader drains it
  */
 export class MutationQueue extends Service {
+  /**
+   * Calls `listener` after every change; the shape `useSyncExternalStore` takes.
+   *
+   * @returns removes the listener.
+   */
+  readonly subscribe = (listener: () => void): (() => void) => {
+    this.listeners.add(listener);
+    return () => {
+      this.listeners.delete(listener);
+    };
+  };
+
+  /** A number that changes with every change of the queue; the snapshot `useMutationQueue` reads. */
+  readonly version = (): number => this.changes;
+
   private readonly config: QueryConfig;
 
   private readonly persister: QueryPersister;
@@ -191,20 +206,10 @@ export class MutationQueue extends Service {
     return this.state.isDraining;
   }
 
-  /**
-   * Calls `listener` after every change; the shape `useSyncExternalStore` takes.
-   *
-   * @returns removes the listener.
-   */
-  readonly subscribe = (listener: () => void): (() => void) => {
-    this.listeners.add(listener);
-    return () => {
-      this.listeners.delete(listener);
-    };
-  };
-
-  /** A number that changes with every change of the queue; the snapshot `useMutationQueue` reads. */
-  readonly version = (): number => this.changes;
+  /** Stops listening to the network, the leader and the lock when the container closes. */
+  onApplicationShutdown(): void {
+    for (const stop of this.stops) stop();
+  }
 
   /**
    * Opens the queue of `partition`: reads what it persisted (upgrading a version 1 queue to this device), then replays
@@ -345,11 +350,6 @@ export class MutationQueue extends Service {
     this.publish({ ...this.state, items, conflicts });
     await this.persist(partition);
     this.replayIfAllowed();
-  }
-
-  /** Stops listening to the network, the leader and the lock when the container closes. */
-  onApplicationShutdown(): void {
-    for (const stop of this.stops) stop();
   }
 
   /**

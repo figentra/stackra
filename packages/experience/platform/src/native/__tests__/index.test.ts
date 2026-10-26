@@ -14,7 +14,7 @@ import * as native from "#native/index";
 vi.mock("expo-notifications", () => ({}));
 vi.mock("expo-constants", () => ({ default: {} }));
 vi.mock("react-native", () => ({ Linking: {}, Platform: {}, Share: {} }));
-vi.mock("@react-native-community/netinfo", () => ({ default: {} }));
+vi.mock("@react-native-community/netinfo", () => ({ addEventListener: () => () => undefined }));
 vi.mock("expo-camera", () => ({ Camera: {}, CameraView: {} }));
 vi.mock("expo-haptics", () => ({
   ImpactFeedbackStyle: { Light: "light", Medium: "medium", Heavy: "heavy" },

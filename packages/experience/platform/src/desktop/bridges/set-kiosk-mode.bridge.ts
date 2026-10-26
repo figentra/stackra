@@ -7,7 +7,7 @@
  * Runtime: node
  * Governing contract: ADR 0251 (decisions 1 to 3, as amended by 0294); ADR 0281 (kiosk launch mode); registry A13.
  */
-import { KioskMode } from "#contracts/ports/kiosk-mode.port";
+import type { KioskMode } from "#contracts/ports/kiosk-mode.port";
 import type { CapabilityResult } from "#contracts/types/capability-result.type";
 import { Capability } from "#core/enums/capability.enum";
 import { Bridge } from "#desktop/bases/bridge.base";
@@ -27,7 +27,9 @@ export class SetKioskModeBridge extends Bridge({
   /** The bound kiosk mode. */
   private readonly kiosk: KioskMode;
 
-  /** @param kiosk - the bound kiosk mode (`ElectronKioskModeDriver`). */
+  /**
+   * @param kiosk - the bound kiosk mode (`ElectronKioskModeDriver`).
+   */
   constructor(kiosk: KioskMode) {
     super();
     this.kiosk = kiosk;

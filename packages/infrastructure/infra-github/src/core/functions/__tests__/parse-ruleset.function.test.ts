@@ -99,7 +99,10 @@ describe("parseRuleset", () => {
 
     const on = {
       ...pullRequest,
-      parameters: { ...pullRequest.parameters, require_extra_approval_for_unattributed_changes: true },
+      parameters: {
+        ...pullRequest.parameters,
+        require_extra_approval_for_unattributed_changes: true,
+      },
     };
     expect(refusal({ ...MAIN, rules: [{ type: "deletion" }, on] })).toEqual({
       source: ".github/rulesets/x.json",
@@ -113,8 +116,8 @@ describe("parseRuleset", () => {
     expect(refusal({ ...MAIN, rules: [{ type: "code_scanning" }] }).paths).toEqual([
       expect.stringMatching(/^rules\.0/),
     ]);
-    expect(refusal({ ...MAIN, rules: [{ type: "deletion" }, { type: "deletion" }] }).paths).toEqual([
-      "rules",
-    ]);
+    expect(refusal({ ...MAIN, rules: [{ type: "deletion" }, { type: "deletion" }] }).paths).toEqual(
+      ["rules"],
+    );
   });
 });

@@ -9,7 +9,7 @@
  * Governing contract: ADR 0338 (decisions 1 and 4); ADR 0294 (decisions 4, 13 and 26); ADR 0305 (one declaration per
  *                     file).
  */
-import { registerSchemas, Schema } from "@stackra/validation";
+import { Int, registerSchemas, Schema } from "@stackra/validation";
 import { z } from "zod";
 
 /**
@@ -20,6 +20,7 @@ import { z } from "zod";
  */
 export class DeviceAcknowledgedOutput extends Schema {
   /** The highest applied or rejected sequence, a whole number from 1; `null` when there is none. */
+  @Int({ min: 1 })
   sequence!: number | null;
 }
 

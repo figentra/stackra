@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 /**
  * Stackra file contract:
  * Purpose: unit tests of `useLaunchedFiles()`: the files of the latest launch, empty before one, re-rendered when a
@@ -7,6 +6,7 @@
  * Runtime: node (vitest, jsdom)
  * Governing contract: ADR 0022; ADR 0269; ADR 0255 (file handlers).
  */
+// @vitest-environment jsdom
 import { Container } from "@stackra/container";
 import { ContainerProvider } from "@stackra/container/react";
 import { describe, expect, it } from "@stackra/testing";

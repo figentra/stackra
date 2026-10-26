@@ -15,6 +15,7 @@ import { KioskConfig as BaseKioskConfig } from "#config/kiosk.config";
 /** A host's override: a seated kiosk that locks on launch. */
 class KioskConfig extends BaseKioskConfig {
   override enterOnLaunch = true;
+
   override reach: BaseKioskConfig["reach"] = "seated";
 }
 

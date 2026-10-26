@@ -18,21 +18,22 @@
  *                     (decisions 16 and 17).
  */
 import { Service } from "@stackra/container";
-import { Clock, Duration } from "@stackra/contracts";
-import { Platform } from "@stackra/platform/contracts";
-import { RealtimeConnection } from "@stackra/realtime";
+import type { Clock } from "@stackra/contracts";
+import { Duration } from "@stackra/contracts";
+import type { Platform } from "@stackra/platform/contracts";
+import type { RealtimeConnection } from "@stackra/realtime";
 import { StorageArea } from "@stackra/storage";
 import { duration } from "@stackra/validation";
 
-import { QueryConfig } from "#config/query.config";
-import { QueryPersister } from "#contracts/ports/query-persister.port";
-import { ReplicaSource } from "#contracts/ports/replica-source.port";
+import type { QueryConfig } from "#config/query.config";
+import type { QueryPersister } from "#contracts/ports/query-persister.port";
+import type { ReplicaSource } from "#contracts/ports/replica-source.port";
 import type { ReplicaRow } from "#contracts/types/replica-row.type";
 import { PERSISTED_REPLICA_SCHEMA } from "#core/constants/persisted-replica-schema.constant";
 import { REPLICA_CHANGES_SCHEMA } from "#core/constants/replica-changes-schema.constant";
 import { REPLICAS } from "#core/constants/replicas.constant";
 import { partitionKey } from "#core/functions/partition-key.function";
-import { OfflineLock } from "#core/services/offline-lock.service";
+import type { OfflineLock } from "#core/services/offline-lock.service";
 import type { QueryPartition } from "#core/types/query-partition.type";
 import type { ReplicaRef } from "#core/types/replica-ref.type";
 import type { ReplicaSnapshot } from "#core/types/replica-snapshot.type";
@@ -66,6 +67,21 @@ function isInSlice(row: ReplicaRow, scope: string, value: string): boolean {
  * replicas.read(RecentSalesQuery); // { data: [...], asOf: Date }
  */
 export class ReplicaStore extends Service {
+  /**
+   * Calls `listener` after every change; the shape `useSyncExternalStore` takes.
+   *
+   * @returns removes the listener.
+   */
+  readonly subscribe = (listener: () => void): (() => void) => {
+    this.listeners.add(listener);
+    return () => {
+      this.listeners.delete(listener);
+    };
+  };
+
+  /** A number that changes with every change of a replica; the snapshot `useReplica` reads. */
+  readonly version = (): number => this.changes;
+
   private readonly config: QueryConfig;
 
   private readonly persister: QueryPersister;
@@ -138,20 +154,11 @@ export class ReplicaStore extends Service {
     ];
   }
 
-  /**
-   * Calls `listener` after every change; the shape `useSyncExternalStore` takes.
-   *
-   * @returns removes the listener.
-   */
-  readonly subscribe = (listener: () => void): (() => void) => {
-    this.listeners.add(listener);
-    return () => {
-      this.listeners.delete(listener);
-    };
-  };
-
-  /** A number that changes with every change of a replica; the snapshot `useReplica` reads. */
-  readonly version = (): number => this.changes;
+  /** Stops listening to the network, the lock and the refresh signals when the container closes. */
+  onApplicationShutdown(): void {
+    this.unsubscribe();
+    for (const stop of this.stops) stop();
+  }
 
   /**
    * The records of `query`'s replica and its "as of" time; empty with `asOf: null` before the first fill.
@@ -212,12 +219,6 @@ export class ReplicaStore extends Service {
     const pulling = this.pull(partition, query).finally(() => this.refreshing.delete(key));
     this.refreshing.set(key, pulling);
     return pulling;
-  }
-
-  /** Stops listening to the network, the lock and the refresh signals when the container closes. */
-  onApplicationShutdown(): void {
-    this.unsubscribe();
-    for (const stop of this.stops) stop();
   }
 
   /** Refreshes every replica when online; a failure leaves that replica as it was. */

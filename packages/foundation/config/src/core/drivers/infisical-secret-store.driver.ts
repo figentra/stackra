@@ -14,7 +14,7 @@
  */
 import { Driver } from "@stackra/container";
 
-import { InfisicalConfig } from "#config/infisical.config";
+import type { InfisicalConfig } from "#config/infisical.config";
 import { SecretStore } from "#contracts/ports/secret-store.port";
 
 /** The login answer this driver reads. */
@@ -40,7 +40,9 @@ export class InfisicalSecretStoreDriver extends Driver(SecretStore) {
 
   private values: ReadonlyMap<string, string> | undefined;
 
-  /** @param config - the instance, project, environment, folder and machine identity. */
+  /**
+   * @param config - the instance, project, environment, folder and machine identity.
+   */
   constructor(config: InfisicalConfig) {
     super();
     this.config = config;
@@ -90,7 +92,7 @@ export class InfisicalSecretStoreDriver extends Driver(SecretStore) {
   }
 
   /**
-   * See `SecretStore.get`.
+   * See `SecretStore.get`: the loaded value of `name`, or `undefined` when the store has none.
    *
    * @throws Error before the first `load`.
    */

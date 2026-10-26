@@ -25,12 +25,19 @@ class FulfilWorkflow extends Workflow<{ readonly orderId: string }>({ timeout: "
 
   async undoAllocate(): Promise<void> {}
 
-  @Step({ after: ["notify"], retry: { attempts: 5, backoff: Backoff.Fixed }, heartbeat: "30s" })
+  @Step({
+    after: ["notify"],
+    retry: { attempts: 5, backoff: Backoff.Fixed },
+    heartbeat: "30s",
+  })
   async buyLabels(): Promise<void> {}
 
   async notify(): Promise<void> {}
 
-  @Step({ waitFor: Collected, timeout: "72h" })
+  @Step({
+    waitFor: Collected,
+    timeout: "72h",
+  })
   async awaitPickup(): Promise<void> {}
 
   output(): string {
@@ -124,7 +131,11 @@ describe("planOf versions and event waits", () => {
   }
 
   class PickupWorkflow extends Workflow({ version: 3 }) {
-    @Step({ waitFor: OrderCollected, correlate: () => "ord_1", timeout: "1h" })
+    @Step({
+      waitFor: OrderCollected,
+      correlate: () => "ord_1",
+      timeout: "1h",
+    })
     async collected(): Promise<void> {}
   }
 

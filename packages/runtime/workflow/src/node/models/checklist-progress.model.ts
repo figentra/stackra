@@ -36,7 +36,9 @@ export class ChecklistProgress extends Model.with(HasPublicId("wfp"), Timestamps
 
 // shortcut: the `[OptionalProps]` augmentation is written by hand so `CrudService.insert` may leave the trait timestamps
 // out; remove it once gen writes the entity files (STA-339).
+/** The insert-time side of `ChecklistProgress`: which fields `CrudService.insert` may leave out. */
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: the generated `[OptionalProps]` augmentation merges into the model, as gen's entity files do
 export interface ChecklistProgress {
+  /** The fields that have a default, so an insert may leave them out. */
   [OptionalProps]?: "createdAt" | "updatedAt";
 }

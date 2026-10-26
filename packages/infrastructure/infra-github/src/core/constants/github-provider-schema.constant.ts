@@ -59,6 +59,9 @@ export const GITHUB_PROVIDER_SCHEMA = z.strictObject({
     .default(GithubVisibility.Private),
   variables: VARIABLES.optional(),
   environments: z
-    .record(z.string().regex(/^[a-z][a-z0-9-]*$/, "Expected a lower-case environment name"), ENVIRONMENT)
+    .record(
+      z.string().regex(/^[a-z][a-z0-9-]*$/, "Expected a lower-case environment name"),
+      ENVIRONMENT,
+    )
     .optional(),
 });

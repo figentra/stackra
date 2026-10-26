@@ -29,7 +29,10 @@ class OrderPaid extends DomainEvent {
 
 class OrderShipped extends DomainEvent {}
 
-class SendSmsAction extends Action({ key: "sms.send", actors: [ActorKind.System] }) {
+class SendSmsAction extends Action({
+  key: "sms.send",
+  actors: [ActorKind.System],
+}) {
   async handle(): Promise<void> {}
 }
 

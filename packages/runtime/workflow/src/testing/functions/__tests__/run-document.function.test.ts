@@ -23,7 +23,10 @@ const clock = { now: () => new Date(Date.UTC(2026, 9, 26, 12)) } as Clock;
 
 class QuotaExceededError extends Refusal({ kind: ErrorKind.FailedPrecondition }) {}
 
-class NotifyAction extends Action({ key: "notify.send", actors: [ActorKind.System] }) {
+class NotifyAction extends Action({
+  key: "notify.send",
+  actors: [ActorKind.System],
+}) {
   async handle(): Promise<void> {}
 }
 

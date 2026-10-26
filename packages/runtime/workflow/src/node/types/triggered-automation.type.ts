@@ -12,7 +12,7 @@ import type { AutomationDocument } from "#core/index";
 
 /** One automation to start. */
 export interface TriggeredAutomation {
-  /** The automation. */
+  /** The id of the automation to start. */
   readonly automationId: PublicId<"wfa">;
 
   /** The published revision's document. */

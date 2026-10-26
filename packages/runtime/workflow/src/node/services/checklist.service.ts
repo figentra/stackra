@@ -43,7 +43,9 @@ export class ChecklistService extends CrudService<Checklist> {
   /** Each completed step. */
   private readonly progress: Repository<ChecklistProgress>;
 
-  /** @param progress - the completed steps of every checklist, one row per step and owner. */
+  /**
+   * @param progress - the completed steps of every checklist, one row per step and owner.
+   */
   constructor(progress: Repository<ChecklistProgress>) {
     super();
     this.progress = progress;

@@ -29,7 +29,7 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@react-native-community/netinfo", () => ({
-  default: { addEventListener: (fn: typeof mocks.listener) => (mocks.listener = fn) },
+  addEventListener: (fn: typeof mocks.listener) => (mocks.listener = fn),
 }));
 vi.mock("expo-notifications", () => ({
   getPermissionsAsync: mocks.getPermissionsAsync,

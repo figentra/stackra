@@ -15,7 +15,7 @@
  */
 import { Action } from "@stackra/actions";
 import { Revision } from "@stackra/content/node";
-import { ActorKind } from "@stackra/contracts";
+import { ActorKind, Realm } from "@stackra/contracts";
 import type { Actor, ScopeRef } from "@stackra/contracts";
 import { CrudService, Database, registerModelPartners } from "@stackra/database";
 import { isRefusal } from "@stackra/errors";
@@ -46,7 +46,10 @@ registerModelPartners([
 
 class OrderPaid extends DomainEvent {}
 
-class SendSmsAction extends Action({ key: "sms.send", actors: [ActorKind.System] }) {
+class SendSmsAction extends Action({
+  key: "sms.send",
+  actors: [ActorKind.System],
+}) {
   async handle(): Promise<void> {}
 }
 
@@ -64,7 +67,11 @@ const SCOPE: ScopeRef = { id: "scp_01j9z3k4m5n6p7q8r9s0t1v2w1", path: "platform.
 
 const PRINCIPAL: Actor = { kind: ActorKind.System, id: "sys_automation" };
 
-const PUBLISHER: Actor = { kind: ActorKind.User, id: "usr_01j9z3k4m5n6p7q8r9s0t1v2w3" };
+const PUBLISHER: Actor = {
+  kind: ActorKind.User,
+  id: "usr_01j9z3k4m5n6p7q8r9s0t1v2w3",
+  realm: Realm.Tenant,
+};
 
 const DOCUMENT = {
   key: "commerce.thanks",
@@ -106,7 +113,7 @@ function connect(automations: Automation[], revisions: Revision[] = []) {
     findOneOrFail: vi.fn(async (model: unknown) =>
       model === Automation
         ? (automations[0] ?? created.find((row) => row instanceof Automation))
-        : (created.findLast((row) => row instanceof Revision) ?? revisions[0]),
+        : (created.filter((row) => row instanceof Revision).at(-1) ?? revisions[0]),
     ),
     find: vi.fn(async (model: unknown) => (model === Automation ? automations : revisions)),
     count: vi.fn(async () => revisions.length),

@@ -155,7 +155,10 @@ describe("WorkflowExplorer trigger blocks", () => {
   class OrderRefunded extends DomainEvent {}
 
   class AwaitRefundWorkflow extends Workflow({}) {
-    @Step({ waitFor: OrderRefunded, correlate: () => "ord_1" })
+    @Step({
+      waitFor: OrderRefunded,
+      correlate: () => "ord_1",
+    })
     async refunded(): Promise<void> {}
   }
 

@@ -20,7 +20,7 @@ export class AutomationNotDryRunError extends Refusal({
   kind: ErrorKind.FailedPrecondition,
   retryable: false,
 }) {
-  /** The automation. */
+  /** The id of the automation that was refused. */
   automationId!: PublicId<"wfa">;
 
   /** The revision that has no dry run. */

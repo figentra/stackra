@@ -60,7 +60,7 @@ import type { StepContext } from "#core/types/step-context.type";
 import type { WorkflowRun } from "#core/types/workflow-run.type";
 
 vi.mock("@stackra/queue", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@stackra/queue")>()),
+  ...(await importOriginal<Record<string, unknown>>()),
   backoffDelay: () => 0,
 }));
 
@@ -570,7 +570,7 @@ describe(NativeWorkflowRunnerDriver, () => {
 
   it("takes over a running run whose runner died", async () => {
     // A well-formed public id, as the run's events validate it.
-    const ORPHAN = `wfr_${"0".repeat(22)}rphn`;
+    const ORPHAN = `wfr_${"0".repeat(22)}rphn` as const;
     const order = new OrderWorkflow();
     const { runner, journal } = engineWith([[OrderWorkflow, order]]);
     await runner.start(OrderWorkflow, { sku: "sku_1", quantity: 1 }, ORIGIN);
@@ -619,7 +619,10 @@ class CodConfirmed extends DomainEvent {
   answer!: string;
 }
 
-class SendSmsAction extends Action({ key: "sms.send", actors: [ActorKind.System] }) {
+class SendSmsAction extends Action({
+  key: "sms.send",
+  actors: [ActorKind.System],
+}) {
   async handle(): Promise<void> {}
 }
 
@@ -800,6 +803,7 @@ describe("NativeWorkflowRunnerDriver documents and plans", () => {
     expect(second).toEqual({ depth: 2, automations: ["wfa_1", "wfa_2"] });
     expect(await runner.chained(`${root}:notify`, "wfa_1")).toBeUndefined();
 
+    if (second === undefined) throw new Error("the chain was joined");
     const child = await runner.startDocument(plan, {}, ORIGIN, { key: "child", chain: second });
     expect(await runner.chained(`${child}:notify:0`, "wfa_3")).toBeUndefined();
   });
@@ -852,7 +856,10 @@ describe("NativeWorkflowRunnerDriver documents and plans", () => {
 
   it("resumes a run on its pinned version, and waits while that version is not deployed", async () => {
     class PinnedWorkflow extends Workflow({}) {
-      @Step({ waitFor: Confirmed, correlate: () => "pin" })
+      @Step({
+        waitFor: Confirmed,
+        correlate: () => "pin",
+      })
       async confirm(): Promise<string> {
         return "v1";
       }

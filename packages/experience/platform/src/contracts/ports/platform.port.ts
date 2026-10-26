@@ -34,9 +34,6 @@ export abstract class Platform extends Port {
   /** Type-only port key, so `DriverName<Platform>` narrows to this port's drivers. */
   declare readonly "~key": "platform.Platform";
 
-  /** Whether the target offers `capability` (a `Capability` code) at all; a device may still lack it at run time. */
-  abstract has(capability: string): boolean;
-
   /** Online state (capability `network`). */
   abstract readonly network: NetworkCapability;
 
@@ -63,4 +60,7 @@ export abstract class Platform extends Port {
 
   /** The install prompt (capability `install_prompt`). */
   abstract readonly install: InstallCapability;
+
+  /** Whether the target offers `capability` (a `Capability` code) at all; a device may still lack it at run time. */
+  abstract has(capability: string): boolean;
 }

@@ -45,13 +45,13 @@ export class MemoryWorkflowJournalDriver extends Driver(WorkflowJournal) {
     return Promise.resolve(undefined);
   }
 
-  /** See `WorkflowJournal.save`. */
+  /** See `WorkflowJournal.save`: inserts or updates the run and each of its steps. */
   save(run: WorkflowRun): Promise<void> {
     this.runs.set(run.id, structuredClone(run));
     return Promise.resolve();
   }
 
-  /** See `WorkflowJournal.find`. */
+  /** See `WorkflowJournal.find`: the run with its steps in the order they were reached. */
   find(id: PublicId<"wfr">): Promise<WorkflowRun | undefined> {
     const run = this.runs.get(id);
     return Promise.resolve(run === undefined ? undefined : structuredClone(run));
@@ -71,7 +71,7 @@ export class MemoryWorkflowJournalDriver extends Driver(WorkflowJournal) {
     return Promise.resolve(latest === undefined ? undefined : structuredClone(latest));
   }
 
-  /** See `WorkflowJournal.byAutomation`. */
+  /** See `WorkflowJournal.byAutomation`: one page of the automation's runs, newest start first. */
   byAutomation(
     automation: PublicId<"wfa">,
     limit: number,
@@ -90,13 +90,13 @@ export class MemoryWorkflowJournalDriver extends Driver(WorkflowJournal) {
     return Promise.resolve(runs.slice(0, limit).map((run) => structuredClone(run)));
   }
 
-  /** See `WorkflowJournal.hold`. */
+  /** See `WorkflowJournal.hold`: keeps the signal until a waiting run takes it. */
   hold(signal: HeldSignal): Promise<void> {
     this.signals.push(structuredClone(signal));
     return Promise.resolve();
   }
 
-  /** See `WorkflowJournal.take`. */
+  /** See `WorkflowJournal.take`: removes and returns the oldest matching held signal. */
   take(
     signal: string,
     correlation: string,
@@ -114,7 +114,7 @@ export class MemoryWorkflowJournalDriver extends Driver(WorkflowJournal) {
     return Promise.resolve(taken);
   }
 
-  /** See `WorkflowJournal.due`. */
+  /** See `WorkflowJournal.due`: the runs to advance now, oldest first. */
   due(now: Date, limit: number): Promise<readonly PublicId<"wfr">[]> {
     const at = now.getTime();
     const ids = [...this.runs.values()]
@@ -140,7 +140,7 @@ export class MemoryWorkflowJournalDriver extends Driver(WorkflowJournal) {
     return Promise.resolve(ids.slice(0, limit));
   }
 
-  /** See `WorkflowJournal.expire`. */
+  /** See `WorkflowJournal.expire`: drops the held signals that lapsed. */
   expire(now: Date): Promise<void> {
     this.signals = this.signals.filter((held) => held.expiresAt.getTime() > now.getTime());
     return Promise.resolve();

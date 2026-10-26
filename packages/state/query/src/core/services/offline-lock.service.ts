@@ -19,14 +19,15 @@
  * Governing contract: ADR 0338 (decisions 2 and 4); ADR 0256 (the areas); ADR 0294 (decisions 16 and 17).
  */
 import { Service } from "@stackra/container";
-import { Clock, Duration } from "@stackra/contracts";
-import { DeviceIdentity } from "@stackra/devices/contracts";
-import { Platform } from "@stackra/platform/contracts";
-import { SettingsReader } from "@stackra/settings";
-import { Storage } from "@stackra/storage/contracts";
+import type { Clock } from "@stackra/contracts";
+import { Duration } from "@stackra/contracts";
+import type { DeviceIdentity } from "@stackra/devices/contracts";
+import type { Platform } from "@stackra/platform/contracts";
+import type { SettingsReader } from "@stackra/settings";
+import type { Storage } from "@stackra/storage/contracts";
 
-import { AcknowledgementReader } from "#contracts/ports/acknowledgement-reader.port";
-import { OfflineSession } from "#contracts/ports/offline-session.port";
+import type { AcknowledgementReader } from "#contracts/ports/acknowledgement-reader.port";
+import type { OfflineSession } from "#contracts/ports/offline-session.port";
 import { QuerySettings } from "#core/query.settings";
 
 /** The `prefs` key of the last sync's time; no secret, so it lives in `prefs`, and a wipe removes it. */
@@ -118,6 +119,13 @@ export class OfflineLock extends Service {
     return this.acknowledged;
   }
 
+  /** Stops watching and the pending check when the container closes. */
+  onApplicationShutdown(): void {
+    clearTimeout(this.timer);
+    for (const stop of this.stops) stop();
+    this.stops = [];
+  }
+
   /**
    * Calls `listener` at the start of every wipe and waits for it before the areas are cleared.
    *
@@ -205,13 +213,6 @@ export class OfflineLock extends Service {
    */
   wipe(): Promise<void> {
     return this.erase(false);
-  }
-
-  /** Stops watching and the pending check when the container closes. */
-  onApplicationShutdown(): void {
-    clearTimeout(this.timer);
-    for (const stop of this.stops) stop();
-    this.stops = [];
   }
 
   /** One wipe, ending the session on the device when `endSession`. */

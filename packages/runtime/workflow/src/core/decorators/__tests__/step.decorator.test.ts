@@ -24,7 +24,11 @@ class ApproveWorkflow extends Workflow<{ readonly id: string }>({ timeout: "1d" 
   @Step({ retry: { attempts: 3, backoff: Backoff.Linear } })
   async submit(): Promise<void> {}
 
-  @Step<ApproveWorkflow>({ waitFor: Approved, correlate: (run) => run.input.id, timeout: "12h" })
+  @Step<ApproveWorkflow>({
+    waitFor: Approved,
+    correlate: (run) => run.input.id,
+    timeout: "12h",
+  })
   async approve(_run: Run<this>, _ctx: unknown, approved: Approved): Promise<string> {
     return approved.by;
   }

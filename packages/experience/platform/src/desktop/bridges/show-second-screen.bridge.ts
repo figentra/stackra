@@ -7,7 +7,7 @@
  * Runtime: node
  * Governing contract: ADR 0251 (decisions 1 to 3); ADR 0339 (open question 3); registry A13.
  */
-import { SecondScreen } from "#contracts/ports/second-screen.port";
+import type { SecondScreen } from "#contracts/ports/second-screen.port";
 import type { CapabilityResult } from "#contracts/types/capability-result.type";
 import { Capability } from "#core/enums/capability.enum";
 import { Bridge } from "#desktop/bases/bridge.base";
@@ -30,7 +30,9 @@ export class ShowSecondScreenBridge extends Bridge({
   /** The bound second screen. */
   private readonly screen: SecondScreen;
 
-  /** @param screen - the bound second screen (`ElectronSecondScreenDriver`). */
+  /**
+   * @param screen - the bound second screen (`ElectronSecondScreenDriver`).
+   */
   constructor(screen: SecondScreen) {
     super();
     this.screen = screen;

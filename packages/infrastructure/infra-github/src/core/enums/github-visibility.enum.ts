@@ -9,7 +9,7 @@
  */
 import { Enum } from "@stackra/contracts";
 
-/** Repository visibility. */
+/** Who can see a repository. */
 export const GithubVisibility = Enum.of({
   /** Anyone can read it; GitHub's secret scanning and push protection are free and switched on. */
   Public: "public",

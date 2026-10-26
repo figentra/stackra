@@ -15,7 +15,10 @@ import { ErrorKind, Refusal } from "@stackra/errors";
  * @example
  * throw OfflineError.create({ action: "orders.order.cancel@1" });
  */
-export class OfflineError extends Refusal({ kind: ErrorKind.Unavailable, retryable: true }) {
+export class OfflineError extends Refusal({
+  kind: ErrorKind.Unavailable,
+  retryable: true,
+}) {
   /** The refused action's versioned key. */
   action!: string;
 }

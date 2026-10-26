@@ -207,7 +207,7 @@ function invoke(instance: object, method: string, args: readonly unknown[]): unk
   const body = (instance as Readonly<Record<string, unknown>>)[method];
   if (typeof body !== "function")
     throw new TypeError(`${instance.constructor.name} has no method ${method}`);
-  return (body as (...rest: readonly unknown[]) => unknown).apply(instance, args);
+  return (body as (...rest: readonly unknown[]) => unknown).call(instance, ...args);
 }
 
 /** The guard of one attempt of `step`: its timeout (without a wait) and its heartbeat watchdog abort it. */
@@ -252,7 +252,7 @@ const sleep = (milliseconds: number): Promise<void> =>
   });
 
 /**
- * Runs workflows.
+ * Runs workflows in this process, keeping each run, step and held signal in the journal.
  *
  * @example
  * // generated wiring: { port: WorkflowRunner, candidates: { native: () => import("@stackra/workflow").then((m) => m.NativeWorkflowRunnerDriver) } }
@@ -388,63 +388,6 @@ export class NativeWorkflowRunnerDriver extends Driver(WorkflowRunner) {
   }
 
   /**
-   * Saves a new run of `plan` with `input` (of `automation`, when given), announces it and advances it; with `key`, the
-   * run's id is derived from it and a key that already has a run starts nothing. An origin without a `scope` takes the
-   * caller's session scope.
-   *
-   * @throws the failing step's error once the completed steps were undone.
-   */
-  private async launch(
-    plan: WorkflowPlan,
-    instance: object,
-    input: unknown,
-    origin: RunOrigin,
-    key: string | undefined,
-    automation: PublicId<"wfa"> | undefined,
-  ): Promise<Outcome | undefined> {
-    const id = await mintId("wfr", key);
-    const scope = await this.journal.currentScope();
-    return this.locks.with(lockKey(id), WORKFLOW_DEFAULTS.lease, async () => {
-      if (key !== undefined && (await this.journal.find(id)) !== undefined) return undefined;
-      const startedAt = this.clock.now();
-      const run = await this.save(
-        Object.freeze({
-          id,
-          workflow: plan.key,
-          version: plan.version,
-          ...(automation === undefined ? {} : { automation }),
-          status: WorkflowRunStatus.Running,
-          input,
-          // A run an event starts has no call scope: its steps run in, and read, the session's.
-          origin:
-            origin.scope === undefined && scope !== undefined
-              ? Object.freeze({ ...origin, scope })
-              : origin,
-          ...(scope === undefined ? {} : { scope }),
-          startedAt,
-          ...(plan.timeout === undefined ? {} : { deadlineAt: later(startedAt, plan.timeout) }),
-          steps: Object.freeze([]),
-        }),
-      );
-      await this.publish(
-        [
-          WorkflowRunStarted.create({
-            runId: run.id,
-            workflow: run.workflow,
-            version: run.version ?? 1,
-            ...(automation === undefined ? {} : { automationId: automation }),
-          }),
-        ],
-        run,
-        startedAt,
-      );
-      const outcome = await this.advance(run, instance, plan, startedAt);
-      if (outcome.failed) throw outcome.error;
-      return outcome;
-    });
-  }
-
-  /**
    * Holds `payload` as a `signal` (or an awaited event) sent with `correlation`, in the caller's transaction, for the
    * run of the caller's scope that waits on both; the next tick resumes that run.
    *
@@ -560,6 +503,63 @@ export class NativeWorkflowRunnerDriver extends Driver(WorkflowRunner) {
         // oxlint-disable-next-line no-await-in-loop -- see above
         await pause(options.signal);
       }
+  }
+
+  /**
+   * Saves a new run of `plan` with `input` (of `automation`, when given), announces it and advances it; with `key`, the
+   * run's id is derived from it and a key that already has a run starts nothing. An origin without a `scope` takes the
+   * caller's session scope.
+   *
+   * @throws the failing step's error once the completed steps were undone.
+   */
+  private async launch(
+    plan: WorkflowPlan,
+    instance: object,
+    input: unknown,
+    origin: RunOrigin,
+    key: string | undefined,
+    automation: PublicId<"wfa"> | undefined,
+  ): Promise<Outcome | undefined> {
+    const id = await mintId("wfr", key);
+    const scope = await this.journal.currentScope();
+    return this.locks.with(lockKey(id), WORKFLOW_DEFAULTS.lease, async () => {
+      if (key !== undefined && (await this.journal.find(id)) !== undefined) return undefined;
+      const startedAt = this.clock.now();
+      const run = await this.save(
+        Object.freeze({
+          id,
+          workflow: plan.key,
+          version: plan.version,
+          ...(automation === undefined ? {} : { automation }),
+          status: WorkflowRunStatus.Running,
+          input,
+          // A run an event starts has no call scope: its steps run in, and read, the session's.
+          origin:
+            origin.scope === undefined && scope !== undefined
+              ? Object.freeze({ ...origin, scope })
+              : origin,
+          ...(scope === undefined ? {} : { scope }),
+          startedAt,
+          ...(plan.timeout === undefined ? {} : { deadlineAt: later(startedAt, plan.timeout) }),
+          steps: Object.freeze([]),
+        }),
+      );
+      await this.publish(
+        [
+          WorkflowRunStarted.create({
+            runId: run.id,
+            workflow: run.workflow,
+            version: run.version ?? 1,
+            ...(automation === undefined ? {} : { automationId: automation }),
+          }),
+        ],
+        run,
+        startedAt,
+      );
+      const outcome = await this.advance(run, instance, plan, startedAt);
+      if (outcome.failed) throw outcome.error;
+      return outcome;
+    });
   }
 
   /** Advances run `id` when its lock is free and its workflow version is known here; `true` when it did. */

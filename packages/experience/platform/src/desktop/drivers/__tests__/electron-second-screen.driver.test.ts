@@ -20,15 +20,22 @@ const electron = vi.hoisted(() => {
   }[] = [];
   class FakeWindow {
     readonly loadURL = vi.fn(async () => undefined);
+
     readonly close = vi.fn();
+
     readonly options: unknown;
+
     constructor(options: unknown) {
       this.options = options;
       created.push(this);
     }
+
     once() {}
+
     on() {}
+
     show() {}
+
     isDestroyed() {
       return false;
     }

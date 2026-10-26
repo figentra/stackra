@@ -23,7 +23,7 @@ import { AUTOMATION_PAUSED_SCHEMA } from "#core/constants/automation-paused-sche
  * automation.record(AutomationPaused.create({ automationId, key, reason: "publisher_access_lost", blocks }));
  */
 export class AutomationPaused extends DomainEvent {
-  /** The automation. */
+  /** The id of the paused automation. */
   automationId!: PublicId<"wfa">;
 
   /** Its document key (`commerce.cod_confirmation`). */

@@ -10,7 +10,7 @@
  * Governing contract: ADR 0251 (decisions 1 to 3, as amended by 0294); ADR 0234 (decision 7: files through the
  *                     FileSystem port); registry A13.
  */
-import { FileSystem } from "@stackra/filesystem/contracts";
+import type { FileSystem } from "@stackra/filesystem/contracts";
 import type { OpenDialogOptions } from "electron";
 
 import { Capability } from "#core/enums/capability.enum";
@@ -35,7 +35,9 @@ export class PickFolderBridge extends Bridge({
   /** The app's own disk (`ElectronFileSystemDriver`). */
   private readonly files: FileSystem;
 
-  /** @param files - the app's own disk, where the chosen path is remembered. */
+  /**
+   * @param files - the app's own disk, where the chosen path is remembered.
+   */
   constructor(files: FileSystem) {
     super();
     this.files = files;

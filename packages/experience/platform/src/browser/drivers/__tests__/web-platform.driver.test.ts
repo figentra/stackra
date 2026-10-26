@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 /**
  * Stackra file contract:
  * Purpose: unit tests of `WebPlatformDriver`: online state follows the browser's events; capabilities are detected
@@ -10,6 +9,7 @@
  * Runtime: node (vitest, jsdom)
  * Governing contract: ADR 0022; ADR 0250 (decisions 2 and 3); ADR 0255.
  */
+// @vitest-environment jsdom
 import "fake-indexeddb/auto";
 import { afterEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
@@ -54,7 +54,9 @@ describe("WebPlatformDriver", () => {
       "Notification",
       class {
         static permission: NotificationPermission = "default";
+
         static requestPermission = async () => answer;
+
         constructor(title: string) {
           shown.push(title);
         }

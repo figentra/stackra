@@ -24,8 +24,14 @@ export class QuerySettings extends Settings({
   scopes: [SettingScope.Platform, SettingScope.Node],
 }) {
   /** Hours a device may go without a sync before its offline data is wiped and it locks. */
-  @Int({ min: 1, max: 720 })
-  @Setting({ client: true, lockable: true })
+  @Int({
+    min: 1,
+    max: 720,
+  })
+  @Setting({
+    client: true,
+    lockable: true,
+  })
   offlineLimitHours = 24;
 }
 

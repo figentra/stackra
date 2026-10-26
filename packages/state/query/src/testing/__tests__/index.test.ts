@@ -8,7 +8,7 @@
  */
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
-import { MutationQueue } from "#core/index";
+import type { MutationQueue } from "#core/index";
 import * as testing from "#testing/index";
 import type { FakeQueueOptions, QueueFake } from "#testing/index";
 

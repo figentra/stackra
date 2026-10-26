@@ -17,7 +17,7 @@ export interface StepPlan {
   /** The steps that must be done first. */
   readonly after: readonly string[];
 
-  /** Its condition. */
+  /** The condition the step runs under; without it the step always runs. */
   readonly when?: (run: never) => boolean;
 
   /** The longest gap between two heartbeats, in milliseconds. */

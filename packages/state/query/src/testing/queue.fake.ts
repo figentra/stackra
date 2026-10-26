@@ -49,7 +49,9 @@ function seededCall(index: number, now: Date): PendingMutation {
  * queue.pending; // 2
  */
 export class QueueFake extends MutationQueue {
-  /** @param options - how many calls wait and how many conflicts need a person. */
+  /**
+   * @param options - how many calls wait and how many conflicts need a person.
+   */
   constructor(options: FakeQueueOptions = {}) {
     const clock = Object.assign(Object.create(Clock.prototype) as Clock, { now: () => new Date() });
     const leader = Object.assign(Object.create(QueueLeader.prototype) as QueueLeader, {

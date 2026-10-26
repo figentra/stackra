@@ -12,7 +12,7 @@
  *                     (decisions 4, 19 and 26).
  */
 import type { DriverName } from "@stackra/container";
-import { registerSchemas, Schema } from "@stackra/validation";
+import { Int, registerSchemas, Schema } from "@stackra/validation";
 
 import type { QueueLeader } from "#contracts/ports/queue-leader.port";
 import { QUERY_CONFIG_SCHEMA } from "#core/constants/query-config-schema.constant";
@@ -28,14 +28,45 @@ import { QueryScope } from "#core/enums/query-scope.enum";
  * }
  */
 export class QueryOptions extends Schema {
+  /** Hours a persisted replica may be shown after a restart before it must refresh; 0 keeps nothing on disk. */
+  @Int({
+    min: 0,
+    max: 720,
+  })
+  persistMaxAgeHours = 24;
+
+  // shortcut: kept so existing overrides still parse; per-device order (ADR 0338 decision 1) sends one call at a time,
+  // so it no longer widens the replay. Remove with the template's next config sync.
+  /** No longer read: the queue replays one call at a time. */
+  @Int({
+    min: 1,
+    max: 32,
+  })
+  maxParallelAggregates = 4;
+
+  /** Days a queued call is kept at most; an older one surfaces as a conflict, never silently dropped. */
+  @Int({
+    min: 1,
+    max: 90,
+  })
+  queueRetentionDays = 7;
+
+  /** Seconds a fetched query counts as fresh. */
+  @Int({ min: 0 })
+  staleTimeSeconds = 0;
+
+  /** Retries of a failed read before the error state shows. */
+  @Int({
+    min: 0,
+    max: 10,
+  })
+  retry = 3;
+
   /** What the cache, the replicas and the queue are keyed by; the principal is always part of the key. */
   scope: QueryScope = QueryScope.ActiveScope;
 
   /** Persist replicas only through a persister that encrypts at rest; off allows a plain one. */
   persistEncrypted = true;
-
-  /** Hours a persisted replica may be shown after a restart before it must refresh; 0 keeps nothing on disk. */
-  persistMaxAgeHours = 24;
 
   /** Drain the queue as soon as the network returns (or this context starts leading), without a click. */
   replayOnReconnect = true;
@@ -43,22 +74,8 @@ export class QueryOptions extends Schema {
   /** The `QueueLeader` driver that elects the one context that drains the queue. */
   queueLeader: DriverName<QueueLeader> = "memory";
 
-  // shortcut: kept so existing overrides still parse; per-device order (ADR 0338 decision 1) sends one call at a time,
-  // so it no longer widens the replay. Remove with the template's next config sync.
-  /** No longer read: the queue replays one call at a time. */
-  maxParallelAggregates = 4;
-
-  /** Days a queued call is kept at most; an older one surfaces as a conflict, never silently dropped. */
-  queueRetentionDays = 7;
-
-  /** Seconds a fetched query counts as fresh. */
-  staleTimeSeconds = 0;
-
   /** Refetch stale queries when the window or the app regains focus. */
   refetchOnFocus = true;
-
-  /** Retries of a failed read before the error state shows. */
-  retry = 3;
 }
 
 registerSchemas([[QueryOptions, QUERY_CONFIG_SCHEMA]]);

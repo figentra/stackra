@@ -68,14 +68,14 @@ export function githubStack(
     { ...opts, protect: true, retainOnDelete: true },
   );
 
-  new github.ActionsRepositoryOidcSubjectClaimCustomizationTemplate(
+  void new github.ActionsRepositoryOidcSubjectClaimCustomizationTemplate(
     `${plan.repo}-oidc`,
     { repository: repository.name, useDefault: true },
     opts,
   );
 
   for (const [name, value] of Object.entries(plan.variables)) {
-    new github.ActionsVariable(
+    void new github.ActionsVariable(
       `${plan.repo}-${name}`,
       { repository: repository.name, variableName: name, value: resolveRef(value, config) },
       opts,
@@ -89,13 +89,13 @@ export function githubStack(
         ? undefined
         : Promise.all([
             Promise.all(
-              environment.teams.map(
-                async (slug) => Number((await github.getTeam({ slug, summaryOnly: true }, opts)).id),
+              environment.teams.map(async (slug) =>
+                Number((await github.getTeam({ slug, summaryOnly: true }, opts)).id),
               ),
             ),
             Promise.all(
-              environment.users.map(
-                async (username) => Number((await github.getUser({ username }, opts)).id),
+              environment.users.map(async (username) =>
+                Number((await github.getUser({ username }, opts)).id),
               ),
             ),
           ]).then(([teams, users]) => [{ teams, users }]);
@@ -112,21 +112,21 @@ export function githubStack(
       opts,
     );
     for (const branch of environment.branches) {
-      new github.RepositoryEnvironmentDeploymentPolicy(
+      void new github.RepositoryEnvironmentDeploymentPolicy(
         `${plan.repo}-${environment.name}-branch-${branch}`,
         { repository: repository.name, environment: created.environment, branchPattern: branch },
         opts,
       );
     }
     for (const tag of environment.tags) {
-      new github.RepositoryEnvironmentDeploymentPolicy(
+      void new github.RepositoryEnvironmentDeploymentPolicy(
         `${plan.repo}-${environment.name}-tag-${tag}`,
         { repository: repository.name, environment: created.environment, tagPattern: tag },
         opts,
       );
     }
     for (const [name, value] of Object.entries(environment.variables)) {
-      new github.ActionsEnvironmentVariable(
+      void new github.ActionsEnvironmentVariable(
         `${plan.repo}-${environment.name}-${name}`,
         {
           repository: repository.name,
@@ -140,7 +140,7 @@ export function githubStack(
   }
 
   for (const ruleset of rules.rulesets) {
-    new github.RepositoryRuleset(
+    void new github.RepositoryRuleset(
       `${plan.repo}-${ruleset.name}`,
       {
         name: ruleset.name,
@@ -169,7 +169,7 @@ export function githubStack(
     const { rules: branch } = protection;
     const checks = branch.required_status_checks;
     const reviews = branch.required_pull_request_reviews;
-    new github.BranchProtection(
+    void new github.BranchProtection(
       `${plan.repo}-${protection.branch}`,
       {
         repositoryId: repository.nodeId,

@@ -47,7 +47,9 @@ export class Checklist extends Model.with(HasPublicId("wfc"), Timestamps) {
 
 // shortcut: the `[OptionalProps]` augmentation is written by hand so `CrudService.insert` may leave the defaulted
 // fields out; remove it once gen writes the entity files (STA-339).
+/** The insert-time side of `Checklist`: which fields `CrudService.insert` may leave out. */
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: the generated `[OptionalProps]` augmentation merges into the model, as gen's entity files do
 export interface Checklist {
+  /** The fields that have a default, so an insert may leave them out. */
   [OptionalProps]?: "createdAt" | "updatedAt" | "hidden" | "order" | "profile" | "customized";
 }

@@ -14,7 +14,7 @@
  * Governing contract: ADR 0250 (decisions 2 and 3); ADR 0255 (decision 3); ADR 0281 (decision 2: the capability
  *                     matrix); ADR 0294 (decision 17: dependencies by type).
  */
-import NetInfo from "@react-native-community/netinfo";
+import { addEventListener } from "@react-native-community/netinfo";
 import { Driver } from "@stackra/container";
 import { signal } from "@stackra/state/react";
 import { Camera, CameraView } from "expo-camera";
@@ -106,7 +106,7 @@ export class ExpoPlatformDriver extends Driver(Platform) {
     let hasCamera = false;
 
     // An unknown reachability (null) counts as online, so a slow probe never blocks the app.
-    NetInfo.addEventListener((state) =>
+    addEventListener((state) =>
       isOnline.set(state.isConnected !== false && state.isInternetReachable !== false),
     );
     void readPushPermission()
@@ -145,7 +145,7 @@ export class ExpoPlatformDriver extends Driver(Platform) {
           return refuse(Capability.LocalNotifications, "permission_denied");
         await Notifications.scheduleNotificationAsync({
           identifier: options.tag,
-          content: { title, body: options.body },
+          content: { title, ...(options.body === undefined ? {} : { body: options.body }) },
           trigger: null,
         });
         return DONE;

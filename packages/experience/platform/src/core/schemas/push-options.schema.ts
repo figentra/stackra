@@ -11,7 +11,7 @@
  */
 import "#core/types/push-transport-driver-names.type";
 import type { DriverName } from "@stackra/container";
-import { registerSchemas, Schema } from "@stackra/validation";
+import { Int, registerSchemas, Schema } from "@stackra/validation";
 
 import type { PushTransport } from "#contracts/ports/push-transport.port";
 import { PUSH_CONFIG_SCHEMA } from "#core/constants/push-config-schema.constant";
@@ -28,11 +28,15 @@ import { PromptMoment } from "#core/enums/prompt-moment.enum";
  * }
  */
 export class PushOptions extends Schema {
+  /** Registration attempts after the first one before the app gives up for this launch. */
+  @Int({
+    min: 0,
+    max: 10,
+  })
+  retries = 3;
+
   /** The push transport driver; `memory` registers nothing real. */
   provider: DriverName<PushTransport> = "memory";
-
-  /** Registration attempts after the first one before the app gives up for this launch. */
-  retries = 3;
 
   /** Show a banner for a notification that arrives while the app is open. */
   foregroundBanner = true;

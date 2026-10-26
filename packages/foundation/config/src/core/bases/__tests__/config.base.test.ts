@@ -19,10 +19,13 @@ import { Config } from "#core/bases/config.base";
 import { buildConfig } from "#core/functions/build-config.function";
 
 class LoyaltyKitOptions extends Schema {
-  ledger: "memory" | "postgres" = "postgres";
-
-  @Int({ min: 0, max: 100 })
+  @Int({
+    min: 0,
+    max: 100,
+  })
   maxRedeemPercent = 50;
+
+  ledger: "memory" | "postgres" = "postgres";
 }
 
 registerSchemas([

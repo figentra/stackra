@@ -82,7 +82,10 @@ export function githubPlan(root: RootRunway): GithubPlan {
   for (const name of names) {
     const path = `root.providers.github.environments.${name}`;
     if (name === RunwayEnvironment.Dev) {
-      issues.push({ path, message: "dev runs on a developer machine and has no GitHub environment" });
+      issues.push({
+        path,
+        message: "dev runs on a developer machine and has no GitHub environment",
+      });
       continue;
     }
     const entry = declared[name];

@@ -15,10 +15,10 @@ import { Config } from "#core/bases/config.base";
 import { Secret } from "#core/decorators/secret.decorator";
 
 class DeliveryOptions extends Schema {
-  transport = "memory";
-
   @Secret("WEB_PUSH_VAPID_PRIVATE_KEY")
   webPushVapidPrivateKey!: string;
+
+  transport = "memory";
 }
 
 class TenantDeliveryOptions extends DeliveryOptions {

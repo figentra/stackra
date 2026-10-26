@@ -8,7 +8,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0235 (decision 2); ADR 0294 (decisions 19 and 26).
  */
-import { registerSchemas, Schema } from "@stackra/validation";
+import { Int, registerSchemas, Schema } from "@stackra/validation";
 
 import { DEVICES_CONFIG_SCHEMA } from "#core/constants/devices-config-schema.constant";
 
@@ -21,14 +21,19 @@ import { DEVICES_CONFIG_SCHEMA } from "#core/constants/devices-config-schema.con
  * }
  */
 export class DevicesOptions extends Schema {
-  /** The hub's base URL; the HTTP drivers refuse to start while it is `null`. */
-  hubUrl: string | null = null;
-
   /** Milliseconds one attempt may take before it fails with `RequestTimedOutError`. */
+  @Int({ min: 1 })
   timeoutMs = 10_000;
 
   /** Attempts per call, the first included, for a network failure, a timeout, a 429 or a 503 (1 to 10). */
+  @Int({
+    min: 1,
+    max: 10,
+  })
   attempts = 3;
+
+  /** The hub's base URL; the HTTP drivers refuse to start while it is `null`. */
+  hubUrl: string | null = null;
 }
 
 registerSchemas([[DevicesOptions, DEVICES_CONFIG_SCHEMA]]);

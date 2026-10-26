@@ -51,7 +51,14 @@ const PLAN: GithubPlan = {
       tags: [],
       variables: { AWS_ROLE_ARN: "arn:aws:iam::123456789012:role/acme-production-infra" },
     },
-    { name: "static", teams: [], users: [], branches: ["main"], tags: ["schemas@*"], variables: {} },
+    {
+      name: "static",
+      teams: [],
+      users: [],
+      branches: ["main"],
+      tags: ["schemas@*"],
+      variables: {},
+    },
   ],
   ciSecrets: ["EXPO_TOKEN"],
 };
@@ -79,7 +86,10 @@ const RULES: GithubRules = {
             required_status_checks: [{ context: "Quality Gate", integration_id: 15368 }],
           },
         },
-        { type: "merge_queue", parameters: { merge_method: "SQUASH", grouping_strategy: "ALLGREEN" } },
+        {
+          type: "merge_queue",
+          parameters: { merge_method: "SQUASH", grouping_strategy: "ALLGREEN" },
+        },
       ],
     }),
   ],
@@ -88,7 +98,10 @@ const RULES: GithubRules = {
     rules: {
       required_status_checks: { strict: false, contexts: ["Quality Gate"] },
       enforce_admins: null,
-      required_pull_request_reviews: { dismiss_stale_reviews: true, required_approving_review_count: 0 },
+      required_pull_request_reviews: {
+        dismiss_stale_reviews: true,
+        required_approving_review_count: 0,
+      },
       restrictions: null,
       required_linear_history: true,
     },
@@ -162,7 +175,8 @@ describe("githubStack", () => {
 
   it("pins the default OIDC subject and creates no Actions secret", () => {
     expect(
-      resource("ActionsRepositoryOidcSubjectClaimCustomizationTemplate", "acme-platform-oidc").inputs,
+      resource("ActionsRepositoryOidcSubjectClaimCustomizationTemplate", "acme-platform-oidc")
+        .inputs,
     ).toMatchObject({ repository: "acme-platform", useDefault: true });
     expect(registered.filter((entry) => /secret/i.test(entry.type))).toEqual([]);
   });
@@ -196,10 +210,12 @@ describe("githubStack", () => {
       ]),
     );
     expect(
-      resource("RepositoryEnvironmentDeploymentPolicy", "acme-platform-production-branch-main").inputs,
+      resource("RepositoryEnvironmentDeploymentPolicy", "acme-platform-production-branch-main")
+        .inputs,
     ).toMatchObject({ environment: "production", branchPattern: "main" });
     expect(
-      resource("RepositoryEnvironmentDeploymentPolicy", "acme-platform-static-tag-schemas@*").inputs,
+      resource("RepositoryEnvironmentDeploymentPolicy", "acme-platform-static-tag-schemas@*")
+        .inputs,
     ).toMatchObject({ environment: "static", tagPattern: "schemas@*" });
     expect(
       resource("ActionsEnvironmentVariable", "acme-platform-production-AWS_ROLE_ARN").inputs,
@@ -246,7 +262,10 @@ describe("githubStack", () => {
   });
 
   it("leaves secret scanning to the owner on a private repository", async () => {
-    githubStack({ ...PLAN, repo: "acme-private", visibility: "private", environments: [] }, { rulesets: [] });
+    githubStack(
+      { ...PLAN, repo: "acme-private", visibility: "private", environments: [] },
+      { rulesets: [] },
+    );
     await vi.waitFor(() => resource("Repository", "acme-private"));
 
     expect(resource("Repository", "acme-private").inputs["securityAndAnalysis"]).toBeUndefined();
@@ -255,7 +274,11 @@ describe("githubStack", () => {
   it("fails on a ref the stack config does not hold", () => {
     expect(() =>
       githubStack(
-        { ...PLAN, repo: "acme-missing", variables: { INFISICAL_PROJECT_ID: "ref:missing.workspace" } },
+        {
+          ...PLAN,
+          repo: "acme-missing",
+          variables: { INFISICAL_PROJECT_ID: "ref:missing.workspace" },
+        },
         { rulesets: [] },
       ),
     ).toThrow(/missing/);
