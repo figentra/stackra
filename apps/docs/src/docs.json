@@ -535,7 +535,14 @@
               "adr/0432-achievements-a-public-verify-query-a-short-typed-code-one-live-award-per-period-and-certificates-through-documents",
               "adr/0433-comments-threads-and-mentions-live-in-the-collaboration-package",
               "adr/0434-sandbox-process-pool-typescript-steps-and-the-python-engine-waiting-on-its-dependency",
-              "adr/0435-encore-cloud-roles-on-gcp-and-one-apply-per-environment"
+              "adr/0435-encore-cloud-roles-on-gcp-and-one-apply-per-environment",
+              "adr/0436-products-ship-packages-and-figentra-os-ships-the-shells",
+              "adr/0437-the-edge-worker-its-kv-copy-and-the-server-checks",
+              "adr/0438-the-extension-model-slots-for-shells-shadows-for-own-code-rules-and-events-toward-the-os",
+              "adr/0439-mobile-apps-from-one-os-template-with-capability-flags",
+              "adr/0440-landing-sites-are-experience-documents-rendered-at-the-edge",
+              "adr/0441-product-repository-layout-assets-tree-and-root-runway-surfaces",
+              "adr/0442-native-android-till-for-pos-terminals-from-the-commerce-till-template"
             ]
           }
         ]
