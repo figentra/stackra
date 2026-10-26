@@ -14,10 +14,8 @@
  * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-416 FR-009.
  */
 import { Agenda as HeroAgenda } from "heroui-native-pro/agenda";
-import type { ComponentPropsWithRef, ReactElement } from "react";
-
-/** Props of the native Agenda: HeroUI Native Pro's own root props, which are the `useAgenda` result plus the children. */
-export type AgendaProps = ComponentPropsWithRef<typeof HeroAgenda>;
+import type { ReactElement } from "react";
+import type { AgendaProps } from "#native/agenda/agenda.props";
 
 /** The root: HeroUI Native Pro's, which lays out the views on a split view from the `useAgenda` state. */
 function AgendaRoot(props: AgendaProps): ReactElement {

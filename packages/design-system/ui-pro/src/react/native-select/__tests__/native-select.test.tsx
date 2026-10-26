@@ -12,12 +12,11 @@
 import { NativeSelect as HeroNativeSelect } from "@heroui-pro/react/native-select";
 import { render, screen } from "@testing-library/react";
 
-import type {
-  NativeSelectContractProps,
-  NativeSelectTriggerContractProps,
-} from "#contracts/types/native-select-contract-props.type";
-import { NativeSelect, type NativeSelectProps } from "#react/native-select/native-select";
-import type { NativeSelectTriggerProps } from "#react/native-select/native-select-trigger";
+import type { NativeSelectContractProps } from "#contracts/types/native-select-contract-props.type";
+import type { NativeSelectTriggerContractProps } from "#contracts/types/native-select-trigger-contract-props.type";
+import { NativeSelect } from "#react/native-select/native-select";
+import type { NativeSelectProps } from "#react/native-select/native-select.props";
+import type { NativeSelectTriggerProps } from "#react/native-select/native-select-trigger.props";
 
 interface SelectOptions {
   readonly root?: Omit<NativeSelectProps, "children">;

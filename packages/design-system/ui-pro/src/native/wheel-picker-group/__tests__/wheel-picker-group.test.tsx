@@ -22,8 +22,8 @@ import type { WheelPickerGroupContractProps } from "#contracts/types/wheel-picke
 import {
   WheelPickerGroup,
   useWheelPickerGroup,
-  type WheelPickerGroupProps,
 } from "#native/wheel-picker-group/wheel-picker-group";
+import type { WheelPickerGroupProps } from "#native/wheel-picker-group/wheel-picker-group.props";
 
 /** The props the root stand-in was last handed, as the real component would receive them. */
 const received = vi.hoisted(() => ({ props: {} as Record<string, unknown> }));

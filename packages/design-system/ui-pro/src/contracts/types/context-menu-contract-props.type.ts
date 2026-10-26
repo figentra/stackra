@@ -14,9 +14,3 @@ export interface ContextMenuContractProps {
   /** The controlled open state; HeroUI Pro's `open`. Uncontrolled when left out. */
   readonly isOpen?: boolean | undefined;
 }
-
-/** Props of `ContextMenu.Menu` that the Stackra vocabulary names. */
-export interface ContextMenuMenuContractProps {
-  /** The accessible name of the menu, required by its menu role; HeroUI Pro's `aria-label`. */
-  readonly label: string;
-}

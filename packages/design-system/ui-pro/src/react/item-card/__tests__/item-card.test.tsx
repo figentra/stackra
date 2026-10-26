@@ -11,7 +11,8 @@
 import { ItemCard as HeroItemCard } from "@heroui-pro/react/item-card";
 import { render, screen } from "@testing-library/react";
 
-import { ItemCard, type ItemCardProps } from "#react/item-card/item-card";
+import { ItemCard } from "#react/item-card/item-card";
+import type { ItemCardProps } from "#react/item-card/item-card.props";
 
 describe("ItemCard (web)", () => {
   it("draws the parts and passes unknown props through", () => {

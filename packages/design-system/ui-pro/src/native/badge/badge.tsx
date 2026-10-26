@@ -10,17 +10,10 @@
  * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-416 FR-008.
  */
 import { Badge as HeroBadge } from "heroui-native-pro/badge";
-import type { ComponentPropsWithRef, ReactElement } from "react";
+import type { ReactElement } from "react";
 
-import type { BadgeContractProps } from "#contracts/types/badge-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
-
-/**
- * Props of the native Badge: the shared contract plus HeroUI Native Pro's own props, passed through unchanged. The
- * colour role is `tone`, so HeroUI's `color` is left out of the type.
- */
-export type BadgeProps = BadgeContractProps &
-  Omit<ComponentPropsWithRef<typeof HeroBadge>, keyof BadgeContractProps | "color">;
+import type { BadgeProps } from "#native/badge/badge.props";
 
 /** The root: HeroUI Native Pro's, with `tone` as its `color`. */
 function BadgeRoot({ tone, ...rest }: BadgeProps): ReactElement {

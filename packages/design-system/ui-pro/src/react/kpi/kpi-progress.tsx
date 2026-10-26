@@ -6,17 +6,10 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 4); ADR 0303 (decision 7); STA-403 FR-007.
  */
-import {
-  KPI as HeroKpi,
-  type KPIProgressProps as HeroKpiProgressProps,
-} from "@heroui-pro/react/kpi";
+import { KPI as HeroKpi } from "@heroui-pro/react/kpi";
 
-import type { KpiProgressContractProps } from "#contracts/types/kpi-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
-
-/** Props of the KPI progress bar: the shared contract plus HeroUI Pro's own, with `status` renamed `tone`. */
-export type KpiProgressProps = KpiProgressContractProps &
-  Omit<HeroKpiProgressProps, keyof KpiProgressContractProps | "status">;
+import type { KpiProgressProps } from "#react/kpi/kpi-progress.props";
 
 /** The progress bar of a KPI card, from 0 to 100 by `value`, tinted by `tone`. */
 // shortcut: the bar's accessible name stays HeroUI Pro's English "Progress"; a `label` prop arrives when HeroUI Pro

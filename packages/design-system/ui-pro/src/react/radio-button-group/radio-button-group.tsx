@@ -9,17 +9,10 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-416 FR-003.
  */
-import {
-  RadioButtonGroup as HeroRadioButtonGroup,
-  type RadioButtonGroupProps as HeroRadioButtonGroupProps,
-} from "@heroui-pro/react/radio-button-group";
+import { RadioButtonGroup as HeroRadioButtonGroup } from "@heroui-pro/react/radio-button-group";
 
-import type { RadioButtonGroupContractProps } from "#contracts/types/radio-button-group-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
-
-/** Props of the web RadioButtonGroup: the shared contract plus HeroUI Pro's own, with `aria-label` renamed `label`. */
-export type RadioButtonGroupProps = RadioButtonGroupContractProps &
-  Omit<HeroRadioButtonGroupProps, keyof RadioButtonGroupContractProps | "aria-label">;
+import type { RadioButtonGroupProps } from "#react/radio-button-group/radio-button-group.props";
 
 /** The root: HeroUI Pro's, with `label` as the accessible name. */
 function RadioButtonGroupRoot({ label, isDisabled, ...rest }: RadioButtonGroupProps) {

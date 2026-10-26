@@ -8,20 +8,10 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-416 FR-005.
  */
-import {
-  EmojiReactionButton as HeroEmojiReactionButton,
-  type EmojiReactionButtonRootProps,
-} from "@heroui-pro/react/emoji-reaction-button";
+import { EmojiReactionButton as HeroEmojiReactionButton } from "@heroui-pro/react/emoji-reaction-button";
 
-import type { EmojiReactionButtonContractProps } from "#contracts/types/emoji-reaction-button-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
-
-/**
- * Props of the web EmojiReactionButton: the shared contract plus HeroUI Pro's own toggle props, with `aria-label`
- * renamed `label`.
- */
-export type EmojiReactionButtonProps = EmojiReactionButtonContractProps &
-  Omit<EmojiReactionButtonRootProps, keyof EmojiReactionButtonContractProps | "aria-label">;
+import type { EmojiReactionButtonProps } from "#react/emoji-reaction-button/emoji-reaction-button.props";
 
 /** The toggle root: HeroUI Pro's, named by `label`. */
 function EmojiReactionButtonRoot({ label, size, ...rest }: EmojiReactionButtonProps) {

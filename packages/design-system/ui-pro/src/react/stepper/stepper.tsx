@@ -10,17 +10,10 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-416 FR-004.
  */
-import {
-  Stepper as HeroStepper,
-  type StepperProps as HeroStepperProps,
-} from "@heroui-pro/react/stepper";
+import { Stepper as HeroStepper } from "@heroui-pro/react/stepper";
 
-import type { StepperWebContractProps } from "#contracts/types/stepper-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
-
-/** Props of the web Stepper: the shared contract plus HeroUI Pro's own, with `aria-label` renamed `label`. */
-export type StepperProps = StepperWebContractProps &
-  Omit<HeroStepperProps, keyof StepperWebContractProps | "aria-label">;
+import type { StepperProps } from "#react/stepper/stepper.props";
 
 /** The step list: HeroUI Pro's `Stepper.Root`, an ordered list named by `label`. */
 function StepperRoot({ size, label, ...rest }: StepperProps) {

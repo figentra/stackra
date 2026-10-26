@@ -14,15 +14,11 @@ import { render } from "@testing-library/react";
 import { SwipeableRow as HeroSwipeableRow } from "heroui-native-pro/swipeable-row";
 import { createRef, type ReactNode } from "react";
 
-import type {
-  SwipeableRowActionContractProps,
-  SwipeableRowContractProps,
-} from "#contracts/types/swipeable-row-contract-props.type";
-import {
-  SwipeableRow,
-  type SwipeableRowActionProps,
-  type SwipeableRowProps,
-} from "#native/swipeable-row/swipeable-row";
+import type { SwipeableRowActionContractProps } from "#contracts/types/swipeable-row-action-contract-props.type";
+import type { SwipeableRowContractProps } from "#contracts/types/swipeable-row-contract-props.type";
+import { SwipeableRow } from "#native/swipeable-row/swipeable-row";
+import type { SwipeableRowActionProps } from "#native/swipeable-row/swipeable-row-action.props";
+import type { SwipeableRowProps } from "#native/swipeable-row/swipeable-row.props";
 
 /** The props the root stand-in was last handed, as the real component would receive them. */
 const received = vi.hoisted(() => ({

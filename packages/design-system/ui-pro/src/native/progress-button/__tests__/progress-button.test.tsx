@@ -15,7 +15,8 @@ import { ProgressButton as HeroProgressButton } from "heroui-native-pro/progress
 import type { ReactNode } from "react";
 
 import type { ProgressButtonContractProps } from "#contracts/types/progress-button-contract-props.type";
-import { ProgressButton, type ProgressButtonProps } from "#native/progress-button/progress-button";
+import { ProgressButton } from "#native/progress-button/progress-button";
+import type { ProgressButtonProps } from "#native/progress-button/progress-button.props";
 
 /** The props the root stand-in was last handed, as the real component would receive them. */
 const received = vi.hoisted(() => ({ props: {} as Record<string, unknown> }));

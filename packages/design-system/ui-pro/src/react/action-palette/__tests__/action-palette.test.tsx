@@ -12,9 +12,10 @@
 import { Command as HeroCommand } from "@heroui-pro/react/command";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 
-import { ActionPalette, type ActionPaletteProps } from "#react/action-palette/action-palette";
-import type { ActionPaletteDialogProps } from "#react/action-palette/action-palette-dialog";
-import type { ActionPaletteInputGroupProps } from "#react/action-palette/action-palette-input-group";
+import { ActionPalette } from "#react/action-palette/action-palette";
+import type { ActionPaletteProps } from "#react/action-palette/action-palette.props";
+import type { ActionPaletteDialogProps } from "#react/action-palette/action-palette-dialog.props";
+import type { ActionPaletteInputGroupProps } from "#react/action-palette/action-palette-input-group.props";
 
 interface PaletteLabels {
   readonly dialog?: string;

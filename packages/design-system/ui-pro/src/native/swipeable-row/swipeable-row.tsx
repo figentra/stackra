@@ -10,23 +10,11 @@
  * Governing contract: ADR 0310 (decision 4); ADR 0303 (decision 7); STA-403 FR-010.
  */
 import { SwipeableRow as HeroSwipeableRow } from "heroui-native-pro/swipeable-row";
-import type { ComponentPropsWithRef, ReactElement } from "react";
+import type { ReactElement } from "react";
 
-import type {
-  SwipeableRowActionContractProps,
-  SwipeableRowContractProps,
-} from "#contracts/types/swipeable-row-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
-
-/**
- * Props of the native SwipeableRow: the shared contract plus HeroUI Native Pro's own props, passed through
- * unchanged. The accessible name is `label`, so HeroUI's two spellings of it are left out of the type.
- */
-export type SwipeableRowProps = SwipeableRowContractProps &
-  Omit<
-    ComponentPropsWithRef<typeof HeroSwipeableRow>,
-    keyof SwipeableRowContractProps | "accessibilityLabel" | "aria-label"
-  >;
+import type { SwipeableRowProps } from "#native/swipeable-row/swipeable-row.props";
+import type { SwipeableRowActionProps } from "#native/swipeable-row/swipeable-row-action.props";
 
 /** The root: HeroUI Native Pro's, with `label` as the accessibility label; its `ref` passes through. */
 function SwipeableRowRoot({ label, isDisabled, ...rest }: SwipeableRowProps): ReactElement {
@@ -34,16 +22,6 @@ function SwipeableRowRoot({ label, isDisabled, ...rest }: SwipeableRowProps): Re
     <HeroSwipeableRow {...rest} {...omitUndefined({ isDisabled, accessibilityLabel: label })} />
   );
 }
-
-/**
- * Props of `SwipeableRow.Action`: the shared contract plus HeroUI Native Pro's own action props, passed through
- * unchanged. The colour scheme is `tone`, so HeroUI's `variant` is left out of the type.
- */
-export type SwipeableRowActionProps = SwipeableRowActionContractProps &
-  Omit<
-    ComponentPropsWithRef<typeof HeroSwipeableRow.Action>,
-    keyof SwipeableRowActionContractProps | "variant"
-  >;
 
 /** The action: HeroUI Native Pro's, with `tone` as its colour `variant`. */
 function SwipeableRowAction({ tone, ...rest }: SwipeableRowActionProps): ReactElement {

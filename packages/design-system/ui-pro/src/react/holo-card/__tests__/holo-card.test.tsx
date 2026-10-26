@@ -12,7 +12,8 @@
 import { HoloCard as HeroHoloCard } from "@heroui-pro/react/holo-card";
 import { render, screen } from "@testing-library/react";
 
-import { HoloCard, type HoloCardProps } from "#react/holo-card/holo-card";
+import { HoloCard } from "#react/holo-card/holo-card";
+import type { HoloCardProps } from "#react/holo-card/holo-card.props";
 
 describe("HoloCard (web)", () => {
   it("draws the layers in HeroUI Pro's parts and passes unknown props through", () => {

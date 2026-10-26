@@ -10,10 +10,8 @@
  * Governing contract: ADR 0329 (motion layer); ADR 0310 (decision 3); ADR 0303 (decision 7); STA-416 FR-008.
  */
 import { NumberValue as HeroNumberValue } from "heroui-native-pro/number-value";
-import type { ComponentPropsWithRef, ReactElement } from "react";
-
-/** Props of the native NumberValue: HeroUI Native Pro's own root props, passed through unchanged. */
-export type NumberValueProps = ComponentPropsWithRef<typeof HeroNumberValue>;
+import type { ReactElement } from "react";
+import type { NumberValueProps } from "#native/number-value/number-value.props";
 
 /** The root: HeroUI Native Pro's, which formats `value` for the locale. */
 function NumberValueRoot(props: NumberValueProps): ReactElement {

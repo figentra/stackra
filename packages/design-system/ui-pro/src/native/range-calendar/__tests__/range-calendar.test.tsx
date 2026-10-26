@@ -16,7 +16,8 @@ import { RangeCalendar as HeroRangeCalendar } from "heroui-native-pro/range-cale
 import type { ReactNode } from "react";
 
 import type { CalendarContractProps } from "#contracts/types/calendar-contract-props.type";
-import { RangeCalendar, type RangeCalendarProps } from "#native/range-calendar/range-calendar";
+import { RangeCalendar } from "#native/range-calendar/range-calendar";
+import type { RangeCalendarProps } from "#native/range-calendar/range-calendar.props";
 
 /** The props the root stand-in was last handed, as the real component would receive them. */
 const received = vi.hoisted(() => ({ props: {} as Record<string, unknown> }));

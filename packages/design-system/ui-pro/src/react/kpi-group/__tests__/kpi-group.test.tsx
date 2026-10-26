@@ -12,7 +12,8 @@ import { KPIGroup as HeroKpiGroup } from "@heroui-pro/react/kpi-group";
 import { render, screen } from "@testing-library/react";
 
 import { Kpi } from "#react/kpi/kpi";
-import { KpiGroup, type KpiGroupProps } from "#react/kpi-group/kpi-group";
+import { KpiGroup } from "#react/kpi-group/kpi-group";
+import type { KpiGroupProps } from "#react/kpi-group/kpi-group.props";
 
 describe("KpiGroup (web)", () => {
   it("groups Kpi cards and passes unknown props through", () => {

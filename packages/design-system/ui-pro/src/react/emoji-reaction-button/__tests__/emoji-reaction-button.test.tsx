@@ -15,10 +15,8 @@ import { EmojiReactionButton as HeroEmojiReactionButton } from "@heroui-pro/reac
 import type { Size } from "@stackra/ui/contracts";
 import { render, screen } from "@testing-library/react";
 
-import {
-  EmojiReactionButton,
-  type EmojiReactionButtonProps,
-} from "#react/emoji-reaction-button/emoji-reaction-button";
+import { EmojiReactionButton } from "#react/emoji-reaction-button/emoji-reaction-button";
+import type { EmojiReactionButtonProps } from "#react/emoji-reaction-button/emoji-reaction-button.props";
 
 describe("EmojiReactionButton (web)", () => {
   it("names the button from label, shows emoji and count, and toggles", () => {

@@ -12,28 +12,16 @@
  * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-416 FR-011.
  */
 import { SwipeableTabs as HeroSwipeableTabs } from "heroui-native-pro/swipeable-tabs";
-import type { ComponentPropsWithRef, ReactElement } from "react";
+import type { ReactElement } from "react";
 
-import type { SwipeableTabsListContractProps } from "#contracts/types/swipeable-tabs-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
-
-/** Props of the native SwipeableTabs: HeroUI Native Pro's own root props, the imperative `ref` included. */
-export type SwipeableTabsProps = ComponentPropsWithRef<typeof HeroSwipeableTabs>;
+import type { SwipeableTabsProps } from "#native/swipeable-tabs/swipeable-tabs.props";
+import type { SwipeableTabsListProps } from "#native/swipeable-tabs/swipeable-tabs-list.props";
 
 /** The root: HeroUI Native Pro's, which owns the selected value and the pager position; its `ref` passes through. */
 function SwipeableTabsRoot(props: SwipeableTabsProps): ReactElement {
   return <HeroSwipeableTabs {...props} />;
 }
-
-/**
- * Props of `SwipeableTabs.List`: the shared contract plus HeroUI Native Pro's own, with `accessibilityLabel` renamed
- * `label`.
- */
-export type SwipeableTabsListProps = SwipeableTabsListContractProps &
-  Omit<
-    ComponentPropsWithRef<typeof HeroSwipeableTabs.List>,
-    keyof SwipeableTabsListContractProps | "accessibilityLabel" | "aria-label"
-  >;
 
 /** The row of tabs, the tablist: HeroUI Native Pro's, named by `label`. */
 function SwipeableTabsList({ label, ...rest }: SwipeableTabsListProps): ReactElement {

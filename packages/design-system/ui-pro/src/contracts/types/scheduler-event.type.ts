@@ -9,7 +9,7 @@
  */
 import type { SchedulerSegment } from "#contracts/types/scheduler-segment.type";
 
-/** A booking. */
+/** One booking on the schedule. */
 export interface SchedulerEvent {
   /** The booking's id. */
   readonly id: string;

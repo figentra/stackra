@@ -9,32 +9,18 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-416 FR-004.
  */
-import {
-  Navbar as HeroNavbar,
-  type NavbarMenuToggleProps as HeroNavbarMenuToggleProps,
-  type NavbarProps as HeroNavbarProps,
-} from "@heroui-pro/react/navbar";
+import { Navbar as HeroNavbar } from "@heroui-pro/react/navbar";
 
-import type {
-  NavbarContractProps,
-  NavbarMenuToggleContractProps,
-} from "#contracts/types/navbar-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { UI_PRO_KEYS } from "#core/constants/ui-pro-keys.constant";
 import { useUiProText } from "#core/hooks/use-ui-pro-text";
-
-/** Props of the web Navbar: the shared contract plus HeroUI Pro's own, with `aria-label` renamed `label`. */
-export type NavbarProps = NavbarContractProps &
-  Omit<HeroNavbarProps, keyof NavbarContractProps | "aria-label">;
+import type { NavbarProps } from "#react/navbar/navbar.props";
+import type { NavbarMenuToggleProps } from "#react/navbar/navbar-menu-toggle.props";
 
 /** The navigation landmark: HeroUI Pro's `Navbar.Root`, named by `label`. */
 function NavbarRoot({ label, size, ...rest }: NavbarProps) {
   return <HeroNavbar.Root {...rest} {...omitUndefined({ size, "aria-label": label })} />;
 }
-
-/** Props of `Navbar.MenuToggle`: the shared contract plus HeroUI Pro's own, with `srLabel` renamed `label`. */
-export type NavbarMenuToggleProps = NavbarMenuToggleContractProps &
-  Omit<HeroNavbarMenuToggleProps, keyof NavbarMenuToggleContractProps | "srLabel">;
 
 /** The button that opens and closes the menu on a narrow viewport, named by `label`. */
 function NavbarMenuToggle({ label, ...rest }: NavbarMenuToggleProps) {

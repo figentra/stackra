@@ -15,7 +15,8 @@ import { NumberField as HeroNumberField } from "heroui-native-pro/number-field";
 import type { ReactNode } from "react";
 
 import type { NumberFieldContractProps } from "#contracts/types/number-field-contract-props.type";
-import { NumberField, type NumberFieldProps } from "#native/number-field/number-field";
+import { NumberField } from "#native/number-field/number-field";
+import type { NumberFieldProps } from "#native/number-field/number-field.props";
 
 /** The props the root stand-in was last handed, as the real component would receive them. */
 const received = vi.hoisted(() => ({ props: {} as Record<string, unknown> }));

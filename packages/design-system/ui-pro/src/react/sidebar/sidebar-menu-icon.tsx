@@ -8,18 +8,10 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 4); ADR 0303 (decision 7); STA-403 FR-005.
  */
-import {
-  Sidebar as HeroSidebar,
-  useSidebar,
-  type SidebarMenuIconProps as HeroSidebarMenuIconProps,
-} from "@heroui-pro/react/sidebar";
+import { Sidebar as HeroSidebar, useSidebar } from "@heroui-pro/react/sidebar";
 
-import type { SidebarMenuIconContractProps } from "#contracts/types/sidebar-contract-props.type";
 import { HIDDEN_TEXT_STYLE } from "#react/sidebar/sidebar-hidden-text-style";
-
-/** Props of the menu icon: the shared contract plus HeroUI Pro's own. */
-export type SidebarMenuIconProps = SidebarMenuIconContractProps &
-  Omit<HeroSidebarMenuIconProps, keyof SidebarMenuIconContractProps>;
+import type { SidebarMenuIconProps } from "#react/sidebar/sidebar-menu-icon.props";
 
 /** The icon of a menu item, named by `label` while the sidebar shows icons only. */
 export function SidebarMenuIcon({ label, children, ...rest }: SidebarMenuIconProps) {

@@ -16,13 +16,11 @@ import {
 } from "@heroui-pro/react/drop-zone";
 import { fireEvent, render, screen } from "@testing-library/react";
 
-import type {
-  DropZoneAreaContractProps,
-  DropZoneInputContractProps,
-} from "#contracts/types/drop-zone-contract-props.type";
+import type { DropZoneAreaContractProps } from "#contracts/types/drop-zone-area-contract-props.type";
+import type { DropZoneInputContractProps } from "#contracts/types/drop-zone-input-contract-props.type";
 import { DropZone, useDropZonePickerContext } from "#react/drop-zone/drop-zone";
-import type { DropZoneAreaProps } from "#react/drop-zone/drop-zone-area";
-import type { DropZoneInputProps } from "#react/drop-zone/drop-zone-input";
+import type { DropZoneAreaProps } from "#react/drop-zone/drop-zone-area.props";
+import type { DropZoneInputProps } from "#react/drop-zone/drop-zone-input.props";
 
 interface ZoneOptions {
   readonly area?: Omit<DropZoneAreaProps, "children">;

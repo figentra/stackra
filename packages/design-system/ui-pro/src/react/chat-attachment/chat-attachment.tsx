@@ -9,25 +9,11 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-416 FR-002.
  */
-import {
-  ChatAttachment as HeroChatAttachment,
-  type ChatAttachmentProps as HeroChatAttachmentProps,
-  type ChatAttachmentRemoveProps as HeroChatAttachmentRemoveProps,
-} from "@heroui-pro/react/chat-attachment";
+import { ChatAttachment as HeroChatAttachment } from "@heroui-pro/react/chat-attachment";
 
-import type {
-  ChatAttachmentContractProps,
-  ChatAttachmentRemoveContractProps,
-} from "#contracts/types/chat-attachment-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
-
-/** Props of the web ChatAttachment: the shared contract plus HeroUI Pro's own chip props, passed through. */
-export type ChatAttachmentProps = ChatAttachmentContractProps &
-  Omit<HeroChatAttachmentProps, keyof ChatAttachmentContractProps>;
-
-/** Props of the remove button: the shared contract plus HeroUI Pro's close button props, with `aria-label` as `label`. */
-export type ChatAttachmentRemoveProps = ChatAttachmentRemoveContractProps &
-  Omit<HeroChatAttachmentRemoveProps, keyof ChatAttachmentRemoveContractProps | "aria-label">;
+import type { ChatAttachmentProps } from "#react/chat-attachment/chat-attachment.props";
+import type { ChatAttachmentRemoveProps } from "#react/chat-attachment/chat-attachment-remove.props";
 
 /** The chip root: HeroUI Pro's, which infers the kind of file from `mimeType` and `name`. */
 function ChatAttachmentRoot({ children, ...rest }: ChatAttachmentProps) {

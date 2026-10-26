@@ -5,18 +5,11 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 4); ADR 0303 (decision 7); STA-403 FR-005.
  */
-import {
-  Sidebar as HeroSidebar,
-  type SidebarRailProps as HeroSidebarRailProps,
-} from "@heroui-pro/react/sidebar";
+import { Sidebar as HeroSidebar } from "@heroui-pro/react/sidebar";
 
-import type { SidebarRailContractProps } from "#contracts/types/sidebar-contract-props.type";
 import { UI_PRO_KEYS } from "#core/constants/ui-pro-keys.constant";
 import { useUiProText } from "#core/hooks/use-ui-pro-text";
-
-/** Props of the sidebar rail: the shared contract plus HeroUI Pro's own, with `aria-label` renamed `label`. */
-export type SidebarRailProps = SidebarRailContractProps &
-  Omit<HeroSidebarRailProps, keyof SidebarRailContractProps | "aria-label">;
+import type { SidebarRailProps } from "#react/sidebar/sidebar-rail.props";
 
 /** The edge strip of the sidebar that toggles it open and closed when pressed. */
 export function SidebarRail({ label, ...rest }: SidebarRailProps) {

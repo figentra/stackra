@@ -14,9 +14,3 @@ export interface MarkdownContractProps {
   /** The Markdown source text to render. */
   readonly children: string;
 }
-
-/** Props of `StreamMarkdown`. */
-export interface StreamMarkdownContractProps {
-  /** The Markdown source text so far; it may end part-way through a block while `isStreaming`. */
-  readonly children: string;
-}

@@ -7,19 +7,9 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-416 FR-002.
  */
-import {
-  ChatListView as HeroChatListView,
-  type ChatListViewRootProps as HeroChatListViewRootProps,
-} from "@heroui-pro/react/chat-list-view";
+import { ChatListView as HeroChatListView } from "@heroui-pro/react/chat-list-view";
 
-import type { ChatListViewContractProps } from "#contracts/types/chat-list-view-contract-props.type";
-
-/**
- * Props of the web ChatListView: the shared contract plus HeroUI Pro's own list props, passed through. HeroUI Pro's
- * `aria-label` is the contract's `label`, so the type refuses it.
- */
-export type ChatListViewProps<T extends object> = ChatListViewContractProps &
-  Omit<HeroChatListViewRootProps<T>, keyof ChatListViewContractProps | "aria-label">;
+import type { ChatListViewProps } from "#react/chat-list-view/chat-list-view.props";
 
 /** The list root: HeroUI Pro's, named for assistive technology by `label`. */
 function ChatListViewRoot<T extends object>({ label, ...rest }: ChatListViewProps<T>) {

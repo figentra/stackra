@@ -8,21 +8,9 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-416 FR-005.
  */
-import { ItemCard as HeroItemCard, type ItemCardRootProps } from "@heroui-pro/react/item-card";
-import type { ComponentPropsWithoutRef } from "react";
+import { ItemCard as HeroItemCard } from "@heroui-pro/react/item-card";
 
-import type { ItemCardContractProps } from "#contracts/types/item-card-contract-props.type";
-
-/**
- * Props of the web ItemCard: the shared contract plus HeroUI Pro's own card props (those of a `div`), passed through
- * unchanged.
- */
-export type ItemCardProps = ItemCardContractProps &
-  Omit<ItemCardRootProps<"div">, keyof ItemCardContractProps> &
-  Omit<
-    ComponentPropsWithoutRef<"div">,
-    keyof ItemCardRootProps<"div"> | keyof ItemCardContractProps
-  >;
+import type { ItemCardProps } from "#react/item-card/item-card.props";
 
 /** The card root: HeroUI Pro's, a surface that holds one item. */
 // shortcut: the root is typed for its default `div`; HeroUI Pro's generic over other elements returns when a caller

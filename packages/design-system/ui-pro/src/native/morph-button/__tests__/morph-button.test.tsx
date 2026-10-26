@@ -14,7 +14,8 @@ import { MorphButton as HeroMorphButton } from "heroui-native-pro/morph-button";
 import type { ReactNode } from "react";
 
 import type { MorphButtonContractProps } from "#contracts/types/morph-button-contract-props.type";
-import { MorphButton, type MorphButtonProps } from "#native/morph-button/morph-button";
+import { MorphButton } from "#native/morph-button/morph-button";
+import type { MorphButtonProps } from "#native/morph-button/morph-button.props";
 
 /** The props the root stand-in was last handed, as the real component would receive them. */
 const received = vi.hoisted(() => ({ props: {} as Record<string, unknown> }));

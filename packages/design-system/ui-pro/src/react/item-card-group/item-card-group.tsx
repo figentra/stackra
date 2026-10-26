@@ -8,16 +8,9 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-416 FR-005.
  */
-import {
-  ItemCardGroup as HeroItemCardGroup,
-  type ItemCardGroupRootProps,
-} from "@heroui-pro/react/item-card-group";
+import { ItemCardGroup as HeroItemCardGroup } from "@heroui-pro/react/item-card-group";
 
-import type { ItemCardGroupContractProps } from "#contracts/types/item-card-group-contract-props.type";
-
-/** Props of the web ItemCardGroup: the shared contract plus HeroUI Pro's own group props, passed through unchanged. */
-export type ItemCardGroupProps = ItemCardGroupContractProps &
-  Omit<ItemCardGroupRootProps, keyof ItemCardGroupContractProps>;
+import type { ItemCardGroupProps } from "#react/item-card-group/item-card-group.props";
 
 /** The group root: HeroUI Pro's, which lays its item cards out as a list or a grid. */
 function ItemCardGroupRoot(props: ItemCardGroupProps) {

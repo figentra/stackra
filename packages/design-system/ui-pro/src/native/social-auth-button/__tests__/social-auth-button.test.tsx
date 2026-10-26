@@ -13,10 +13,8 @@ import { render } from "@testing-library/react";
 import type { ReactNode } from "react";
 
 import type { SocialAuthButtonContractProps } from "#contracts/types/social-auth-button-contract-props.type";
-import {
-  SocialAuthButton,
-  type SocialAuthButtonProps,
-} from "#native/social-auth-button/social-auth-button";
+import { SocialAuthButton } from "#native/social-auth-button/social-auth-button";
+import type { SocialAuthButtonProps } from "#native/social-auth-button/social-auth-button.props";
 
 /** The props the root stand-in was last handed, as the real component would receive them. */
 const received = vi.hoisted(() => ({ props: {} as Record<string, unknown> }));

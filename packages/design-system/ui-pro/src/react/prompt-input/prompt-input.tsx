@@ -12,37 +12,13 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-416 FR-002.
  */
-import {
-  PromptInput as HeroPromptInput,
-  type PromptInputActionProps as HeroPromptInputActionProps,
-  type PromptInputProps as HeroPromptInputProps,
-  type PromptInputSendProps as HeroPromptInputSendProps,
-  type PromptInputTextAreaProps as HeroPromptInputTextAreaProps,
-} from "@heroui-pro/react/prompt-input";
+import { PromptInput as HeroPromptInput } from "@heroui-pro/react/prompt-input";
 
-import type {
-  PromptInputActionContractProps,
-  PromptInputContractProps,
-  PromptInputSendContractProps,
-  PromptInputTextAreaContractProps,
-} from "#contracts/types/prompt-input-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
-
-/** Props of the web PromptInput: the shared contract plus HeroUI Pro's own, with `isPending` renamed `isLoading`. */
-export type PromptInputProps = PromptInputContractProps &
-  Omit<HeroPromptInputProps, keyof PromptInputContractProps | "isPending">;
-
-/** Props of the text area: the shared contract plus HeroUI Pro's own, with `aria-label` as `label`. */
-export type PromptInputTextAreaProps = PromptInputTextAreaContractProps &
-  Omit<HeroPromptInputTextAreaProps, keyof PromptInputTextAreaContractProps | "aria-label">;
-
-/** Props of the send button: the shared contract plus HeroUI Pro's own, with `aria-label` as `label`. */
-export type PromptInputSendProps = PromptInputSendContractProps &
-  Omit<HeroPromptInputSendProps, keyof PromptInputSendContractProps | "aria-label" | "isPending">;
-
-/** Props of an icon action: the shared contract plus HeroUI Pro's own, with `aria-label` as `label`. */
-export type PromptInputActionProps = PromptInputActionContractProps &
-  Omit<HeroPromptInputActionProps, keyof PromptInputActionContractProps | "aria-label">;
+import type { PromptInputProps } from "#react/prompt-input/prompt-input.props";
+import type { PromptInputTextAreaProps } from "#react/prompt-input/prompt-input-text-area.props";
+import type { PromptInputSendProps } from "#react/prompt-input/prompt-input-send.props";
+import type { PromptInputActionProps } from "#react/prompt-input/prompt-input-action.props";
 
 /** The composer root: HeroUI Pro's, which owns the value, the submit and stop handlers and the status. */
 function PromptInputRoot({ size, isDisabled, isLoading, ...rest }: PromptInputProps) {

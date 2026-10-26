@@ -12,36 +12,3 @@ export interface SidebarContractProps {
   /** The accessible name of the sidebar landmark; HeroUI Pro's `aria-label` on the `aside` element. */
   readonly label?: string | undefined;
 }
-
-/** Props of `Sidebar.Menu` that the Stackra vocabulary names. */
-export interface SidebarMenuContractProps {
-  /** The accessible name of the menu, required by its tree role; HeroUI Pro's `aria-label`. */
-  readonly label: string;
-}
-
-/** Props of `Sidebar.Trigger` that the Stackra vocabulary names. */
-export interface SidebarTriggerContractProps {
-  /** The accessible name of the icon-only toggle button; HeroUI Pro's `aria-label`, which it has no default for. */
-  readonly label: string;
-}
-
-/** Props of `Sidebar.Mobile` that the Stackra vocabulary names. */
-export interface SidebarMobileContractProps {
-  /** The accessible name of the navigation sheet, a dialog that HeroUI Pro leaves unnamed. */
-  readonly label: string;
-}
-
-/** Props of `Sidebar.MenuIcon` that the Stackra vocabulary names. */
-export interface SidebarMenuIconContractProps {
-  /**
-   * The name of the item while the sidebar is collapsed to icons, when HeroUI Pro hides its label and its tooltip
-   * trigger would have no name; usually the item's own label. Ignored while the label is drawn.
-   */
-  readonly label?: string | undefined;
-}
-
-/** Props of `Sidebar.Rail` that the Stackra vocabulary names. */
-export interface SidebarRailContractProps {
-  /** The accessible name of the rail button; HeroUI Pro's `aria-label`; `ui_pro::sidebar.toggle` when left out. */
-  readonly label?: string | undefined;
-}

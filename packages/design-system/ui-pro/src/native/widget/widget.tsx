@@ -10,10 +10,8 @@
  * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-416 FR-008.
  */
 import { Widget as HeroWidget } from "heroui-native-pro/widget";
-import type { ComponentPropsWithRef, ReactElement } from "react";
-
-/** Props of the native Widget: HeroUI Native Pro's own root props, passed through unchanged. */
-export type WidgetProps = ComponentPropsWithRef<typeof HeroWidget>;
+import type { ReactElement } from "react";
+import type { WidgetProps } from "#native/widget/widget.props";
 
 /** The root: HeroUI Native Pro's, a card that holds the widget. */
 function WidgetRoot(props: WidgetProps): ReactElement {

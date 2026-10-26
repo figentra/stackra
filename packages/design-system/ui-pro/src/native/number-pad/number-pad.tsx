@@ -9,22 +9,12 @@
  * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-416 FR-010.
  */
 import { NumberPad as HeroNumberPad } from "heroui-native-pro/number-pad";
-import type { ComponentPropsWithRef, ReactElement } from "react";
+import type { ReactElement } from "react";
 
-import type { NumberPadContractProps } from "#contracts/types/number-pad-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
+import type { NumberPadProps } from "#native/number-pad/number-pad.props";
 
 export { useNumberPad } from "heroui-native-pro/number-pad";
-
-/**
- * Props of the native NumberPad: the shared contract plus HeroUI Native Pro's own, passed through unchanged. The
- * accessible name is `label`, so HeroUI's two spellings of it are left out of the type.
- */
-export type NumberPadProps = NumberPadContractProps &
-  Omit<
-    ComponentPropsWithRef<typeof HeroNumberPad>,
-    keyof NumberPadContractProps | "accessibilityLabel" | "aria-label"
-  >;
 
 /** The root: HeroUI Native Pro's, with `label` as the accessibility label. */
 function NumberPadRoot({ label, isDisabled, ...rest }: NumberPadProps): ReactElement {

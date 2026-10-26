@@ -14,8 +14,8 @@ import { Kanban as HeroKanban } from "@heroui-pro/react/kanban";
 import { render, screen } from "@testing-library/react";
 
 import { Kanban, useKanban, useKanbanCardPlaceholder, useKanbanColumn } from "#react/kanban/kanban";
-import type { KanbanCardListProps } from "#react/kanban/kanban-card-list";
-import type { KanbanProps } from "#react/kanban/kanban";
+import type { KanbanCardListProps } from "#react/kanban/kanban-card-list.props";
+import type { KanbanProps } from "#react/kanban/kanban.props";
 
 function Board({ size }: { size?: "sm" | "md" | "lg" }) {
   return (
@@ -46,7 +46,9 @@ describe("Kanban (web)", () => {
       "ResizeObserver",
       class {
         observe() {}
+
         unobserve() {}
+
         disconnect() {}
       },
     );

@@ -13,15 +13,3 @@ export interface AppLayoutContractProps {
   /** The main content, drawn in the column beside the sidebar. */
   readonly children: ReactNode;
 }
-
-/** Props of `AppLayout.MenuToggle` that the Stackra vocabulary names. */
-export interface AppLayoutMenuToggleContractProps {
-  /** The accessible name of the button; HeroUI Pro's `aria-label`, which defaults to "Open navigation". */
-  readonly label?: string | undefined;
-}
-
-/** Props of `AppLayout.AsideTrigger` that the Stackra vocabulary names. */
-export interface AppLayoutAsideTriggerContractProps {
-  /** The accessible name of the button; HeroUI Pro's `aria-label`, which defaults to "Toggle aside panel". */
-  readonly label?: string | undefined;
-}

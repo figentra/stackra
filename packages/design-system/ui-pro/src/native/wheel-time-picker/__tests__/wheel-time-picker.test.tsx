@@ -16,10 +16,8 @@ import { WheelTimePicker as HeroWheelTimePicker } from "heroui-native-pro/wheel-
 import type { ReactNode } from "react";
 
 import type { DatePickerContractProps } from "#contracts/types/date-picker-contract-props.type";
-import {
-  WheelTimePicker,
-  type WheelTimePickerProps,
-} from "#native/wheel-time-picker/wheel-time-picker";
+import { WheelTimePicker } from "#native/wheel-time-picker/wheel-time-picker";
+import type { WheelTimePickerProps } from "#native/wheel-time-picker/wheel-time-picker.props";
 
 /** The props the root stand-in was last handed, as the real component would receive them. */
 const received = vi.hoisted(() => ({ props: {} as Record<string, unknown> }));

@@ -13,7 +13,9 @@
 import { Sheet as HeroSheet } from "@heroui-pro/react/sheet";
 import { render, screen } from "@testing-library/react";
 
-import { Sheet, type SheetDialogProps, type SheetProps } from "#react/sheet/sheet";
+import { Sheet } from "#react/sheet/sheet";
+import type { SheetDialogProps } from "#react/sheet/sheet-dialog.props";
+import type { SheetProps } from "#react/sheet/sheet.props";
 
 // jsdom has neither `matchMedia` nor `ResizeObserver`. HeroUI Pro's Sheet reads `matchMedia` as its module loads, so the
 // stubs also exist before any import; the config restores stubbed globals after each test, so `beforeEach` stubs again.
@@ -32,7 +34,9 @@ function stubBrowserApis() {
     "ResizeObserver",
     class {
       observe() {}
+
       unobserve() {}
+
       disconnect() {}
     },
   );

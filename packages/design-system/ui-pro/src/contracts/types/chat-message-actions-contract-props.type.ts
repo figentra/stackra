@@ -14,9 +14,3 @@ export interface ChatMessageActionsContractProps {
   /** The preset actions and any custom `ChatMessage.Action` buttons. */
   readonly children: ReactNode;
 }
-
-/** Props of every preset action (`Copy`, `Regenerate`, `Menu`, `ThumbsUp`, `ThumbsDown`) that the vocabulary names. */
-export interface ChatMessageActionsPresetContractProps {
-  /** The accessible name of the icon-only action; HeroUI Pro's `aria-label`, which its presets have no default for. */
-  readonly label: string;
-}

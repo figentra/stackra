@@ -10,24 +10,10 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-416 FR-004.
  */
-import {
-  Segment as HeroSegment,
-  type SegmentProps as HeroSegmentProps,
-} from "@heroui-pro/react/segment";
+import { Segment as HeroSegment } from "@heroui-pro/react/segment";
 
-import type {
-  SegmentContractProps,
-  SegmentLabelContractProps,
-} from "#contracts/types/segment-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
-
-/** Props of the web Segment: the shared contract plus HeroUI Pro's own, with `aria-label` renamed `label`. */
-export type SegmentProps = SegmentContractProps &
-  SegmentLabelContractProps &
-  Omit<
-    HeroSegmentProps,
-    keyof SegmentContractProps | keyof SegmentLabelContractProps | "aria-label"
-  >;
+import type { SegmentProps } from "#react/segment/segment.props";
 
 /** The control: HeroUI Pro's `Segment.Root`, a toggle group named by `label`. */
 function SegmentRoot({ size, isDisabled, label, ...rest }: SegmentProps) {

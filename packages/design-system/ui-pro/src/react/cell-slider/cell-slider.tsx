@@ -7,17 +7,10 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-416 FR-003.
  */
-import {
-  CellSlider as HeroCellSlider,
-  type CellSliderProps as HeroCellSliderProps,
-} from "@heroui-pro/react/cell-slider";
+import { CellSlider as HeroCellSlider } from "@heroui-pro/react/cell-slider";
 
-import type { CellSliderContractProps } from "#contracts/types/cell-slider-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
-
-/** Props of the web CellSlider: the shared contract plus HeroUI Pro's own, with `aria-label` renamed `label`. */
-export type CellSliderProps = CellSliderContractProps &
-  Omit<HeroCellSliderProps, keyof CellSliderContractProps | "aria-label">;
+import type { CellSliderProps } from "#react/cell-slider/cell-slider.props";
 
 /** The root: HeroUI Pro's, with `label` as the accessible name. */
 function CellSliderRoot({ label, isDisabled, ...rest }: CellSliderProps) {

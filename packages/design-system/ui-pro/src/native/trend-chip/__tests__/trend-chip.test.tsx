@@ -19,7 +19,8 @@ import type { ReactNode } from "react";
 
 import { TrendChipVariant } from "#contracts/enums/trend-chip-variant.enum";
 import type { TrendChipContractProps } from "#contracts/types/trend-chip-contract-props.type";
-import { TrendChip, type TrendChipProps, useTrendChip } from "#native/trend-chip/trend-chip";
+import { TrendChip, useTrendChip } from "#native/trend-chip/trend-chip";
+import type { TrendChipProps } from "#native/trend-chip/trend-chip.props";
 
 /** The props the root stand-in was last handed, as the real component would receive them. */
 const received = vi.hoisted(() => ({ props: {} as Record<string, unknown> }));

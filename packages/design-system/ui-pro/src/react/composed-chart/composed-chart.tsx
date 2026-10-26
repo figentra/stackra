@@ -8,20 +8,10 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-416 FR-001.
  */
-import {
-  ComposedChart as HeroComposedChart,
-  type ComposedChartRootProps as HeroComposedChartRootProps,
-} from "@heroui-pro/react/composed-chart";
+import { ComposedChart as HeroComposedChart } from "@heroui-pro/react/composed-chart";
 
-import type { ComposedChartContractProps } from "#contracts/types/composed-chart-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
-
-/**
- * Props of the web ComposedChart: the shared contract plus HeroUI Pro's own container props, passed through unchanged. The
- * accessible name is `label`, so `aria-label` is left out of the type.
- */
-export type ComposedChartProps = ComposedChartContractProps &
-  Omit<HeroComposedChartRootProps, keyof ComposedChartContractProps | "aria-label">;
+import type { ComposedChartProps } from "#react/composed-chart/composed-chart.props";
 
 /** The root: HeroUI Pro's, with `label` as the `aria-label`. */
 function ComposedChartRoot({ label, ...rest }: ComposedChartProps) {

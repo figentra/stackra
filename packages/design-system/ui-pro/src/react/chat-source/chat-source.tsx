@@ -12,19 +12,12 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-416 FR-002.
  */
-import {
-  ChatSource as HeroChatSource,
-  chatSourceVariants,
-  type ChatSourceProps as HeroChatSourceProps,
-} from "@heroui-pro/react/chat-source";
-import { createContext, useContext, type ComponentPropsWithoutRef, type ReactNode } from "react";
+import { ChatSource as HeroChatSource, chatSourceVariants } from "@heroui-pro/react/chat-source";
+import { createContext, useContext } from "react";
 import { Focusable } from "react-aria-components";
 
-import type { ChatSourceContractProps } from "#contracts/types/chat-source-contract-props.type";
-
-/** Props of the web ChatSource: the shared contract plus HeroUI Pro's own chip props, passed through. */
-export type ChatSourceProps = ChatSourceContractProps &
-  Omit<HeroChatSourceProps, keyof ChatSourceContractProps>;
+import type { ChatSourceProps } from "#react/chat-source/chat-source.props";
+import type { ChatSourceTriggerProps } from "#react/chat-source/chat-source-trigger.props";
 
 /** The link of a source that opens a preview card, which the wrapper's Trigger draws; `undefined` for any other. */
 const PreviewedHrefContext = createContext<string | undefined>(undefined);
@@ -50,12 +43,6 @@ function ChatSourceRoot({ children, ...rest }: ChatSourceProps) {
       </HeroChatSource.Root>
     </PreviewedHrefContext>
   );
-}
-
-/** Props of `ChatSource.Trigger`, HeroUI Pro's: a link's, with a `label` drawn when there are no children. */
-export interface ChatSourceTriggerProps extends ComponentPropsWithoutRef<"a"> {
-  /** What the link shows in place of the icon and the title. */
-  readonly label?: ReactNode;
 }
 
 /**

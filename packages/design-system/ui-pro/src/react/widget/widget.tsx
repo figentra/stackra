@@ -8,15 +8,9 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-416 FR-005.
  */
-import {
-  Widget as HeroWidget,
-  type WidgetRootProps as HeroWidgetRootProps,
-} from "@heroui-pro/react/widget";
-import type { ComponentPropsWithRef } from "react";
+import { Widget as HeroWidget } from "@heroui-pro/react/widget";
 
-/** Props of the web Widget: HeroUI Pro's own root props plus the attributes of the `div` it draws. */
-export type WidgetProps = HeroWidgetRootProps &
-  Omit<ComponentPropsWithRef<"div">, keyof HeroWidgetRootProps>;
+import type { WidgetProps } from "#react/widget/widget.props";
 
 /** The root: HeroUI Pro's, a card that holds the widget. */
 function WidgetRoot(props: WidgetProps) {

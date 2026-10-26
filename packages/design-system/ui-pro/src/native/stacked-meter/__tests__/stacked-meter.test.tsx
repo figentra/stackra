@@ -15,7 +15,8 @@ import { StackedMeter as HeroStackedMeter } from "heroui-native-pro/stacked-mete
 import type { ReactNode } from "react";
 
 import type { StackedMeterContractProps } from "#contracts/types/stacked-meter-contract-props.type";
-import { StackedMeter, type StackedMeterProps } from "#native/stacked-meter/stacked-meter";
+import { StackedMeter } from "#native/stacked-meter/stacked-meter";
+import type { StackedMeterProps } from "#native/stacked-meter/stacked-meter.props";
 
 /** The props the root stand-in was last handed, as the real component would receive them. */
 const received = vi.hoisted(() => ({ props: {} as Record<string, unknown> }));

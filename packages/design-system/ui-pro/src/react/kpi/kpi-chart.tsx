@@ -10,10 +10,8 @@
  */
 import { KPI as HeroKpi } from "@heroui-pro/react/kpi";
 import { motionTiming, STACKRA_THEME } from "@stackra/tokens";
-import type { ComponentProps } from "react";
 
-/** Props of `Kpi.Chart`: HeroUI Pro's own, passed through. */
-export type KpiChartProps = ComponentProps<typeof HeroKpi.Chart>;
+import type { KpiChartProps } from "#react/kpi/kpi-chart.props";
 
 /** The easing Recharts takes: a CSS name or `cubic-bezier(a,b,c,d)` written without spaces. */
 type ChartEasing = NonNullable<NonNullable<KpiChartProps["areaProps"]>["animationEasing"]>;

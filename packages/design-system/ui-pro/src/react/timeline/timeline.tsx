@@ -10,13 +10,8 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-416 FR-005.
  */
-import {
-  Timeline as HeroTimeline,
-  type TimelineRootProps as HeroTimelineRootProps,
-} from "@heroui-pro/react/timeline";
-
-/** Props of the web Timeline: HeroUI Pro's own root props, passed through unchanged. */
-export type TimelineProps = HeroTimelineRootProps;
+import { Timeline as HeroTimeline } from "@heroui-pro/react/timeline";
+import type { TimelineProps } from "#react/timeline/timeline.props";
 
 /** The root: HeroUI Pro's, an ordered list that numbers its `Timeline.Item` children. */
 function TimelineRoot(props: TimelineProps) {

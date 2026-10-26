@@ -14,7 +14,8 @@ import { Rating as HeroRating, useRating as heroUseRating } from "heroui-native-
 import type { ReactNode } from "react";
 
 import type { RatingContractProps } from "#contracts/types/rating-contract-props.type";
-import { Rating, type RatingProps, useRating } from "#native/rating/rating";
+import { Rating, useRating } from "#native/rating/rating";
+import type { RatingProps } from "#native/rating/rating.props";
 
 /** The props the root stand-in was last handed, as the real component would receive them. */
 const received = vi.hoisted(() => ({ props: {} as Record<string, unknown> }));

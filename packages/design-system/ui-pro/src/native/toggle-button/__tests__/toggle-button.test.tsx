@@ -14,7 +14,8 @@ import { ToggleButton as HeroToggleButton } from "heroui-native-pro/toggle-butto
 import type { ReactNode } from "react";
 
 import type { ToggleButtonContractProps } from "#contracts/types/toggle-button-contract-props.type";
-import { ToggleButton, type ToggleButtonProps } from "#native/toggle-button/toggle-button";
+import { ToggleButton } from "#native/toggle-button/toggle-button";
+import type { ToggleButtonProps } from "#native/toggle-button/toggle-button.props";
 
 /** The props the root stand-in was last handed, as the real component would receive them. */
 const received = vi.hoisted(() => ({ props: {} as Record<string, unknown> }));

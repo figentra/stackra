@@ -15,7 +15,8 @@ import { SlideButton as HeroSlideButton } from "heroui-native-pro/slide-button";
 import type { ReactNode } from "react";
 
 import type { SlideButtonContractProps } from "#contracts/types/slide-button-contract-props.type";
-import { SlideButton, type SlideButtonProps } from "#native/slide-button/slide-button";
+import { SlideButton } from "#native/slide-button/slide-button";
+import type { SlideButtonProps } from "#native/slide-button/slide-button.props";
 
 /** The props the root stand-in was last handed, as the real component would receive them. */
 const received = vi.hoisted(() => ({ props: {} as Record<string, unknown> }));

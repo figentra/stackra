@@ -9,20 +9,10 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-416 FR-005.
  */
-import {
-  Carousel as HeroCarousel,
-  type CarouselRootProps as HeroCarouselRootProps,
-} from "@heroui-pro/react/carousel";
+import { Carousel as HeroCarousel } from "@heroui-pro/react/carousel";
 
-import type { CarouselContractProps } from "#contracts/types/carousel-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
-
-/**
- * Props of the web Carousel: the shared contract plus HeroUI Pro's own props, passed through unchanged. The accessible
- * name is `label`, so HeroUI Pro's `aria-label` is left out of the type.
- */
-export type CarouselProps = CarouselContractProps &
-  Omit<HeroCarouselRootProps, keyof CarouselContractProps | "aria-label">;
+import type { CarouselProps } from "#react/carousel/carousel.props";
 
 /** The root: HeroUI Pro's, a `region` that scrolls its slides, with `label` as its `aria-label`. */
 function CarouselRoot({ label, ...rest }: CarouselProps) {

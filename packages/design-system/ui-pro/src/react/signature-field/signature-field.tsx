@@ -13,12 +13,9 @@
 import { Button, TextField } from "@stackra/ui/react";
 import { useId, useRef, useState, type PointerEvent, type ReactElement } from "react";
 
-import type { SignatureFieldContractProps } from "#contracts/types/signature-field-contract-props.type";
 import type { SignatureValue } from "#contracts/types/signature-value.type";
 import { pathOfStrokes } from "#core/functions/path-of-strokes.function";
-
-/** Props of the web SignatureField. */
-export type SignatureFieldProps = SignatureFieldContractProps;
+import type { SignatureFieldProps } from "#react/signature-field/signature-field.props";
 
 /** One stroke's points, in the box's units. */
 type Stroke = (readonly [number, number])[];

@@ -12,11 +12,8 @@
 import { Button } from "@stackra/ui/react";
 import type { ReactElement } from "react";
 
-import type { ApprovalCardContractProps } from "#contracts/types/approval-card-contract-props.type";
 import { ChatTool, type ToolPartState } from "#react/chat-tool/chat-tool";
-
-/** Props of the web ApprovalCard. */
-export type ApprovalCardProps = ApprovalCardContractProps;
+import type { ApprovalCardProps } from "#react/approval-card/approval-card.props";
 
 /** The ChatTool state each approval status draws as. */
 const STATE: Readonly<Record<ApprovalCardProps["status"], ToolPartState>> = Object.freeze({

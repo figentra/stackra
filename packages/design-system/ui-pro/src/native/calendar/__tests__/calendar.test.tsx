@@ -16,7 +16,8 @@ import { Calendar as HeroCalendar } from "heroui-native-pro/calendar";
 import type { ReactNode } from "react";
 
 import type { CalendarContractProps } from "#contracts/types/calendar-contract-props.type";
-import { Calendar, type CalendarProps } from "#native/calendar/calendar";
+import { Calendar } from "#native/calendar/calendar";
+import type { CalendarProps } from "#native/calendar/calendar.props";
 
 /** The props the root stand-in was last handed, and the part names the stand-in carries. */
 const received = vi.hoisted(() => ({

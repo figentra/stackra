@@ -12,7 +12,8 @@ import { ItemCardGroup as HeroItemCardGroup } from "@heroui-pro/react/item-card-
 import { render, screen } from "@testing-library/react";
 
 import { ItemCard } from "#react/item-card/item-card";
-import { ItemCardGroup, type ItemCardGroupProps } from "#react/item-card-group/item-card-group";
+import { ItemCardGroup } from "#react/item-card-group/item-card-group";
+import type { ItemCardGroupProps } from "#react/item-card-group/item-card-group.props";
 
 describe("ItemCardGroup (web)", () => {
   it("draws the header and the item cards, and passes unknown props through", () => {

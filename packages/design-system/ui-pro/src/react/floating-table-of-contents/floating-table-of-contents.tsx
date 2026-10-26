@@ -9,55 +9,28 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); ADR 0231 (no abbreviations); STA-416 FR-004.
  */
-import {
-  FloatingToc as HeroFloatingToc,
-  type FloatingTocBarProps as HeroFloatingTocBarProps,
-  type FloatingTocItemProps as HeroFloatingTocItemProps,
-  type FloatingTocProps as HeroFloatingTocProps,
-  type FloatingTocTriggerProps as HeroFloatingTocTriggerProps,
-} from "@heroui-pro/react/floating-toc";
+import { FloatingToc as HeroFloatingToc } from "@heroui-pro/react/floating-toc";
 
-import type {
-  FloatingTableOfContentsBarContractProps,
-  FloatingTableOfContentsContractProps,
-  FloatingTableOfContentsItemContractProps,
-  FloatingTableOfContentsTriggerContractProps,
-} from "#contracts/types/floating-table-of-contents-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
-
-/** Props of the web FloatingTableOfContents: the shared contract plus HeroUI Pro's own, with `open` renamed `isOpen`. */
-export type FloatingTableOfContentsProps = FloatingTableOfContentsContractProps &
-  Omit<HeroFloatingTocProps, keyof FloatingTableOfContentsContractProps | "open">;
+import type { FloatingTableOfContentsProps } from "#react/floating-table-of-contents/floating-table-of-contents.props";
+import type { FloatingTableOfContentsTriggerProps } from "#react/floating-table-of-contents/floating-table-of-contents-trigger.props";
+import type { FloatingTableOfContentsBarProps } from "#react/floating-table-of-contents/floating-table-of-contents-bar.props";
+import type { FloatingTableOfContentsItemProps } from "#react/floating-table-of-contents/floating-table-of-contents-item.props";
 
 /** The root: HeroUI Pro's, which holds the open state, the side and the trigger mode. */
 function FloatingTableOfContentsRoot({ isOpen, ...rest }: FloatingTableOfContentsProps) {
   return <HeroFloatingToc.Root {...rest} {...omitUndefined({ open: isOpen })} />;
 }
 
-/** Props of the trigger: the shared contract plus HeroUI Pro's own, with `aria-label` renamed `label`. */
-export type FloatingTableOfContentsTriggerProps = FloatingTableOfContentsTriggerContractProps &
-  Omit<
-    HeroFloatingTocTriggerProps,
-    keyof FloatingTableOfContentsTriggerContractProps | "aria-label"
-  >;
-
 /** The trigger that holds the bars, named by `label`. */
 function FloatingTableOfContentsTrigger({ label, ...rest }: FloatingTableOfContentsTriggerProps) {
   return <HeroFloatingToc.Trigger {...rest} aria-label={label} />;
 }
 
-/** Props of a bar: the shared contract plus HeroUI Pro's own, with `active` renamed `isActive`. */
-export type FloatingTableOfContentsBarProps = FloatingTableOfContentsBarContractProps &
-  Omit<HeroFloatingTocBarProps, keyof FloatingTableOfContentsBarContractProps | "active">;
-
 /** One bar of the trigger, a section mark; the current section's is highlighted by `isActive`. */
 function FloatingTableOfContentsBar({ isActive, ...rest }: FloatingTableOfContentsBarProps) {
   return <HeroFloatingToc.Bar {...rest} {...omitUndefined({ active: isActive })} />;
 }
-
-/** Props of an item: the shared contract plus HeroUI Pro's own, with `active` renamed `isActive`. */
-export type FloatingTableOfContentsItemProps = FloatingTableOfContentsItemContractProps &
-  Omit<HeroFloatingTocItemProps, keyof FloatingTableOfContentsItemContractProps | "active">;
 
 /** One entry of the content, a section link; the current section's is highlighted by `isActive`. */
 function FloatingTableOfContentsItem({ isActive, ...rest }: FloatingTableOfContentsItemProps) {

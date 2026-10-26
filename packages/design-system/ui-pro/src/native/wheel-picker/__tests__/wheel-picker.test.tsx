@@ -20,12 +20,8 @@ import {
 import type { ReactNode } from "react";
 
 import type { WheelPickerContractProps } from "#contracts/types/wheel-picker-contract-props.type";
-import {
-  WheelPicker,
-  useWheelPicker,
-  useWheelPickerItem,
-  type WheelPickerProps,
-} from "#native/wheel-picker/wheel-picker";
+import { WheelPicker, useWheelPicker, useWheelPickerItem } from "#native/wheel-picker/wheel-picker";
+import type { WheelPickerProps } from "#native/wheel-picker/wheel-picker.props";
 
 /** The props the root stand-in was last handed, as the real component would receive them. */
 const received = vi.hoisted(() => ({ props: {} as Record<string, unknown> }));

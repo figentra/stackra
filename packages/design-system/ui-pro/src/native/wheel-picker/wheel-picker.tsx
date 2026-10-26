@@ -12,22 +12,12 @@ import {
   WheelPicker as HeroWheelPicker,
   type WheelPickerRootProps as HeroWheelPickerRootProps,
 } from "heroui-native-pro/wheel-picker";
-import type { ComponentProps, ReactElement } from "react";
+import type { ReactElement } from "react";
 
-import type { WheelPickerContractProps } from "#contracts/types/wheel-picker-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
+import type { WheelPickerProps } from "#native/wheel-picker/wheel-picker.props";
 
 export { useWheelPicker, useWheelPickerItem } from "heroui-native-pro/wheel-picker";
-
-/**
- * Props of the native WheelPicker: the shared contract plus HeroUI Native Pro's own, passed through unchanged. The
- * accessible name is `label`, so HeroUI's two spellings of it are left out of the type.
- */
-export type WheelPickerProps<T = unknown> = WheelPickerContractProps &
-  Omit<
-    HeroWheelPickerRootProps<T>,
-    keyof WheelPickerContractProps | "accessibilityLabel" | "aria-label"
-  > & { readonly ref?: ComponentProps<typeof HeroWheelPicker>["ref"] };
 
 /** The root: HeroUI Native Pro's, with `label` as the accessibility label. */
 function WheelPickerRoot<T = unknown>({

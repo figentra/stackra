@@ -13,9 +13,10 @@
 import { AppLayout as HeroAppLayout } from "@heroui-pro/react/app-layout";
 import { render, screen } from "@testing-library/react";
 
-import { AppLayout, useAppLayout, type AppLayoutProps } from "#react/app-layout/app-layout";
-import type { AppLayoutAsideTriggerProps } from "#react/app-layout/app-layout-aside-trigger";
-import type { AppLayoutMenuToggleProps } from "#react/app-layout/app-layout-menu-toggle";
+import { AppLayout, useAppLayout } from "#react/app-layout/app-layout";
+import type { AppLayoutProps } from "#react/app-layout/app-layout.props";
+import type { AppLayoutAsideTriggerProps } from "#react/app-layout/app-layout-aside-trigger.props";
+import type { AppLayoutMenuToggleProps } from "#react/app-layout/app-layout-menu-toggle.props";
 import { Sidebar } from "#react/sidebar/sidebar";
 
 // jsdom has neither `matchMedia` nor `ResizeObserver`. HeroUI Pro's Sheet reads `matchMedia` as its module loads, so the
@@ -35,7 +36,9 @@ function stubBrowserApis() {
     "ResizeObserver",
     class {
       observe() {}
+
       unobserve() {}
+
       disconnect() {}
     },
   );

@@ -16,9 +16,3 @@ export interface ChatConversationContractProps {
   /** The accessible name of the thread, a scrolling region the keyboard reaches; its `aria-label`. */
   readonly label: string;
 }
-
-/** Props of `ChatConversation.ScrollButton` that the Stackra vocabulary names. */
-export interface ChatConversationScrollButtonContractProps {
-  /** The accessible name of the icon-only button; HeroUI Pro's `aria-label`, which it has no default for. */
-  readonly label: string;
-}

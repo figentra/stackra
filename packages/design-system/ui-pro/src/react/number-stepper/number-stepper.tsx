@@ -10,17 +10,10 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-416 FR-003.
  */
-import {
-  NumberStepper as HeroNumberStepper,
-  type NumberStepperProps as HeroNumberStepperProps,
-} from "@heroui-pro/react/number-stepper";
+import { NumberStepper as HeroNumberStepper } from "@heroui-pro/react/number-stepper";
 
-import type { NumberStepperContractProps } from "#contracts/types/number-stepper-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
-
-/** Props of the web NumberStepper: the shared contract plus HeroUI Pro's own, with `aria-label` renamed `label`. */
-export type NumberStepperProps = NumberStepperContractProps &
-  Omit<HeroNumberStepperProps, keyof NumberStepperContractProps | "aria-label">;
+import type { NumberStepperProps } from "#react/number-stepper/number-stepper.props";
 
 /** The root: HeroUI Pro's, with `label` as the accessible name. */
 function NumberStepperRoot({ label, isDisabled, ...rest }: NumberStepperProps) {

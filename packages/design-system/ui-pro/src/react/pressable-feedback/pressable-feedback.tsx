@@ -8,25 +8,10 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-416 FR-005.
  */
-import {
-  PressableFeedback as HeroPressableFeedback,
-  type PressableFeedbackRootProps,
-} from "@heroui-pro/react/pressable-feedback";
-import type { ComponentPropsWithoutRef } from "react";
+import { PressableFeedback as HeroPressableFeedback } from "@heroui-pro/react/pressable-feedback";
 
-import type { PressableFeedbackContractProps } from "#contracts/types/pressable-feedback-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
-
-/**
- * Props of the web PressableFeedback: the shared contract plus HeroUI Pro's own pressable props (those of a
- * `button`, bar its native `disabled`, which `isDisabled` replaces), passed through unchanged.
- */
-export type PressableFeedbackProps = PressableFeedbackContractProps &
-  Omit<PressableFeedbackRootProps<"button">, keyof PressableFeedbackContractProps> &
-  Omit<
-    ComponentPropsWithoutRef<"button">,
-    keyof PressableFeedbackRootProps<"button"> | keyof PressableFeedbackContractProps | "disabled"
-  >;
+import type { PressableFeedbackProps } from "#react/pressable-feedback/pressable-feedback.props";
 
 /** The pressable root: HeroUI Pro's, a `button` that holds the feedback layers. */
 // shortcut: the root is typed for its default `button`; HeroUI Pro's generic over other elements returns when a

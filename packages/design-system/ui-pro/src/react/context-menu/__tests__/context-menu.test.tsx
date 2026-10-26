@@ -12,7 +12,8 @@
 import { ContextMenu as HeroContextMenu } from "@heroui-pro/react/context-menu";
 import { render, screen } from "@testing-library/react";
 
-import { ContextMenu, type ContextMenuProps } from "#react/context-menu/context-menu";
+import { ContextMenu } from "#react/context-menu/context-menu";
+import type { ContextMenuProps } from "#react/context-menu/context-menu.props";
 
 /** A context menu with one item, the open state left to the caller. */
 function Example(props: Partial<ContextMenuProps> & { readonly label?: string }) {

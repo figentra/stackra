@@ -10,25 +10,20 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-416 FR-003.
  */
-import {
-  RichTextEditor as HeroRichTextEditor,
-  type RichTextEditorProps as HeroRichTextEditorProps,
-} from "@heroui-pro/react/rich-text-editor";
+import { RichTextEditor as HeroRichTextEditor } from "@heroui-pro/react/rich-text-editor";
 
 import { RichTextEditorActionButton } from "#react/rich-text-editor/rich-text-editor-action-button";
 import { RichTextEditorCommandButton } from "#react/rich-text-editor/rich-text-editor-command-button";
 import { RichTextEditorLinkPopover } from "#react/rich-text-editor/rich-text-editor-link-popover";
 import { RichTextEditorToggleButton } from "#react/rich-text-editor/rich-text-editor-toggle-button";
 import { RichTextEditorToolbar } from "#react/rich-text-editor/rich-text-editor-toolbar";
+import type { RichTextEditorProps } from "#react/rich-text-editor/rich-text-editor.props";
 
 export {
   filterRichTextEditorSuggestionItems,
   useRichTextEditor,
   useRichTextEditorState,
 } from "@heroui-pro/react/rich-text-editor";
-
-/** Props of the web RichTextEditor: HeroUI Pro's own, whose `isDisabled` already has the Stackra name. */
-export type RichTextEditorProps = HeroRichTextEditorProps;
 
 /**
  * The root: HeroUI Pro's, which owns the Tiptap editor and its value. A disabled editor says so on the root, so its

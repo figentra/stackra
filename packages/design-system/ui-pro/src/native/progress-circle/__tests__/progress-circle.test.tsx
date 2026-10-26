@@ -17,11 +17,8 @@ import {
 import type { ReactNode } from "react";
 
 import type { ProgressCircleContractProps } from "#contracts/types/progress-circle-contract-props.type";
-import {
-  ProgressCircle,
-  type ProgressCircleProps,
-  useProgressCircle,
-} from "#native/progress-circle/progress-circle";
+import { ProgressCircle, useProgressCircle } from "#native/progress-circle/progress-circle";
+import type { ProgressCircleProps } from "#native/progress-circle/progress-circle.props";
 
 /** The props the root stand-in was last handed, as the real component would receive them. */
 const received = vi.hoisted(() => ({ props: {} as Record<string, unknown> }));

@@ -23,13 +23,11 @@ import {
 import { useLocale } from "react-aria-components";
 
 import type { SchedulerEvent } from "#contracts/types/scheduler-event.type";
-import type { ResourceSchedulerContractProps } from "#contracts/types/resource-scheduler-contract-props.type";
+
 import { eventLanes } from "#core/functions/event-lanes.function";
 import { moveEvent } from "#core/functions/move-event.function";
 import { resizeEvent } from "#core/functions/resize-event.function";
-
-/** Props of the web ResourceScheduler. */
-export type ResourceSchedulerProps = ResourceSchedulerContractProps;
+import type { ResourceSchedulerProps } from "#react/resource-scheduler/resource-scheduler.props";
 
 /** A drag in progress. */
 interface Drag {

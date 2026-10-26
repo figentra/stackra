@@ -9,21 +9,14 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 4); ADR 0303 (decision 7); STA-403 FR-005.
  */
-import {
-  Sidebar as HeroSidebar,
-  type SidebarRootProps as HeroSidebarRootProps,
-} from "@heroui-pro/react/sidebar";
+import { Sidebar as HeroSidebar } from "@heroui-pro/react/sidebar";
 
-import type { SidebarContractProps } from "#contracts/types/sidebar-contract-props.type";
 import { SidebarMenu } from "#react/sidebar/sidebar-menu";
 import { SidebarMenuIcon } from "#react/sidebar/sidebar-menu-icon";
 import { SidebarMobile } from "#react/sidebar/sidebar-mobile";
 import { SidebarRail } from "#react/sidebar/sidebar-rail";
 import { SidebarTrigger } from "#react/sidebar/sidebar-trigger";
-
-/** Props of the web Sidebar: the shared contract plus HeroUI Pro's own, with `aria-label` renamed `label`. */
-export type SidebarProps = SidebarContractProps &
-  Omit<HeroSidebarRootProps, keyof SidebarContractProps | "aria-label">;
+import type { SidebarProps } from "#react/sidebar/sidebar.props";
 
 /** The sidebar landmark: HeroUI Pro's `Sidebar.Root`, named by `label`. */
 function SidebarRoot({ label, ...rest }: SidebarProps) {

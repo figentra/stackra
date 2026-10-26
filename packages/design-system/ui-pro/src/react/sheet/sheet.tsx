@@ -9,26 +9,16 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-416 FR-004.
  */
-import {
-  Sheet as HeroSheet,
-  type SheetDialogProps as HeroSheetDialogProps,
-  type SheetProps as HeroSheetProps,
-} from "@heroui-pro/react/sheet";
+import { Sheet as HeroSheet } from "@heroui-pro/react/sheet";
 
-import type { SheetDialogContractProps } from "#contracts/types/sheet-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
-
-/** Props of the web Sheet: HeroUI Pro's own root props, unchanged. */
-export type SheetProps = HeroSheetProps;
+import type { SheetProps } from "#react/sheet/sheet.props";
+import type { SheetDialogProps } from "#react/sheet/sheet-dialog.props";
 
 /** The root: HeroUI Pro's, which holds the open state, the edge and the snap points. */
 function SheetRoot(props: SheetProps) {
   return <HeroSheet.Root {...props} />;
 }
-
-/** Props of `Sheet.Dialog`: the shared contract plus HeroUI Pro's own, with `aria-label` renamed `label`. */
-export type SheetDialogProps = SheetDialogContractProps &
-  Omit<HeroSheetDialogProps, keyof SheetDialogContractProps | "aria-label">;
 
 /** The dialog surface: HeroUI Pro's, named by `label` (a `Sheet.Heading` inside names it too). */
 function SheetDialog({ label, ...rest }: SheetDialogProps) {

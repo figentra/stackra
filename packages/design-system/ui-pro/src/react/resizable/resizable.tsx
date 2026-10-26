@@ -10,26 +10,16 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-416 FR-004.
  */
-import {
-  Resizable as HeroResizable,
-  type ResizableHandleProps as HeroResizableHandleProps,
-  type ResizableProps as HeroResizableProps,
-} from "@heroui-pro/react/resizable";
+import { Resizable as HeroResizable } from "@heroui-pro/react/resizable";
 
-import type { ResizableHandleContractProps } from "#contracts/types/resizable-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
-
-/** Props of the web Resizable: HeroUI Pro's own root props, unchanged. */
-export type ResizableProps = HeroResizableProps;
+import type { ResizableProps } from "#react/resizable/resizable.props";
+import type { ResizableHandleProps } from "#react/resizable/resizable-handle.props";
 
 /** The root: HeroUI Pro's, a group of panels that holds the layout. */
 function ResizableRoot(props: ResizableProps) {
   return <HeroResizable.Root {...props} />;
 }
-
-/** Props of `Resizable.Handle`: the shared contract plus HeroUI Pro's own, with `aria-label` and `disabled` renamed. */
-export type ResizableHandleProps = ResizableHandleContractProps &
-  Omit<HeroResizableHandleProps, keyof ResizableHandleContractProps | "aria-label" | "disabled">;
 
 /** The handle between two panels: HeroUI Pro's, named by `label`. */
 function ResizableHandle({ label, isDisabled, ...rest }: ResizableHandleProps) {

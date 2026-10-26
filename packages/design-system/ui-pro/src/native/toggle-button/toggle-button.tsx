@@ -9,20 +9,10 @@
  * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-416 FR-007.
  */
 import { ToggleButton as HeroToggleButton } from "heroui-native-pro/toggle-button";
-import type { ComponentPropsWithRef, ReactElement } from "react";
+import type { ReactElement } from "react";
 
-import type { ToggleButtonContractProps } from "#contracts/types/toggle-button-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
-
-/**
- * Props of the native ToggleButton: the shared contract plus HeroUI Native Pro's own props, passed through
- * unchanged. The accessible name is `label`, so HeroUI's two spellings of it are left out of the type.
- */
-export type ToggleButtonProps = ToggleButtonContractProps &
-  Omit<
-    ComponentPropsWithRef<typeof HeroToggleButton>,
-    keyof ToggleButtonContractProps | "accessibilityLabel" | "aria-label"
-  >;
+import type { ToggleButtonProps } from "#native/toggle-button/toggle-button.props";
 
 /** The root: HeroUI Native Pro's, with `label` as the accessibility label. */
 function ToggleButtonRoot({ label, size, isDisabled, ...rest }: ToggleButtonProps): ReactElement {

@@ -10,28 +10,16 @@
  * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-416 FR-011.
  */
 import { SplitView as HeroSplitView } from "heroui-native-pro/split-view";
-import type { ComponentPropsWithRef, ReactElement } from "react";
+import type { ReactElement } from "react";
 
-import type { SplitViewDragAreaContractProps } from "#contracts/types/split-view-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
-
-/** Props of the native SplitView: HeroUI Native Pro's own root props, unchanged. */
-export type SplitViewProps = ComponentPropsWithRef<typeof HeroSplitView>;
+import type { SplitViewProps } from "#native/split-view/split-view.props";
+import type { SplitViewDragAreaProps } from "#native/split-view/split-view-drag-area.props";
 
 /** The root: HeroUI Native Pro's, which holds the snap points and the drag state. */
 function SplitViewRoot(props: SplitViewProps): ReactElement {
   return <HeroSplitView {...props} />;
 }
-
-/**
- * Props of `SplitView.DragArea`: the shared contract plus HeroUI Native Pro's own, with `accessibilityLabel` renamed
- * `label`.
- */
-export type SplitViewDragAreaProps = SplitViewDragAreaContractProps &
-  Omit<
-    ComponentPropsWithRef<typeof HeroSplitView.DragArea>,
-    keyof SplitViewDragAreaContractProps | "accessibilityLabel" | "aria-label"
-  >;
 
 /** The pan region of the divider: HeroUI Native Pro's, named by `label`. */
 function SplitViewDragArea({ label, ...rest }: SplitViewDragAreaProps): ReactElement {

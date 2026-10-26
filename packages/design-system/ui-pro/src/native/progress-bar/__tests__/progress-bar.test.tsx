@@ -17,11 +17,8 @@ import {
 import type { ReactNode } from "react";
 
 import type { ProgressBarContractProps } from "#contracts/types/progress-bar-contract-props.type";
-import {
-  ProgressBar,
-  type ProgressBarProps,
-  useProgressBar,
-} from "#native/progress-bar/progress-bar";
+import { ProgressBar, useProgressBar } from "#native/progress-bar/progress-bar";
+import type { ProgressBarProps } from "#native/progress-bar/progress-bar.props";
 
 /** The props the root stand-in was last handed, as the real component would receive them. */
 const received = vi.hoisted(() => ({ props: {} as Record<string, unknown> }));

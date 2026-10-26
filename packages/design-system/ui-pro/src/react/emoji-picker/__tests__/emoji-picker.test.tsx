@@ -18,13 +18,9 @@ import {
 } from "@heroui-pro/react/emoji-picker";
 import { render, screen } from "@testing-library/react";
 
-import {
-  EMOJI_CATEGORIES,
-  EMOJI_SKIN_TONES,
-  EmojiPicker,
-  type EmojiPickerProps,
-  type EmojiPickerSkinToneTriggerProps,
-} from "#react/emoji-picker/emoji-picker";
+import { EMOJI_CATEGORIES, EMOJI_SKIN_TONES, EmojiPicker } from "#react/emoji-picker/emoji-picker";
+import type { EmojiPickerProps } from "#react/emoji-picker/emoji-picker.props";
+import type { EmojiPickerSkinToneTriggerProps } from "#react/emoji-picker/emoji-picker-skin-tone-trigger.props";
 
 // jsdom has neither `matchMedia` nor `ResizeObserver`; the config restores stubbed globals after each test.
 function stubBrowserApis() {
@@ -42,7 +38,9 @@ function stubBrowserApis() {
     "ResizeObserver",
     class {
       observe() {}
+
       unobserve() {}
+
       disconnect() {}
     },
   );

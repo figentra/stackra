@@ -13,9 +13,3 @@ export interface KanbanContractProps {
   /** The card padding, text size and column width. Defaults to `md`. */
   readonly size?: Size | undefined;
 }
-
-/** Props of `Kanban.CardList` that the Stackra vocabulary names. */
-export interface KanbanCardListContractProps {
-  /** The accessible name of the card list, usually the column title; HeroUI Pro's `aria-label`. */
-  readonly label: string;
-}

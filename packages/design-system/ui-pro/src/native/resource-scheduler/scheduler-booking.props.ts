@@ -7,15 +7,7 @@
  * Governing contract: ADR 0310 (decision 3); WCAG 2.2 SC 2.5.7 (a single-pointer way for every drag).
  */
 import type { SchedulerEvent } from "#contracts/types/scheduler-event.type";
-
-/** A screen-reader action on a booking, named after its `ui_pro::scheduler.*` key. */
-export type SchedulerBookingAction =
-  | "move_earlier"
-  | "move_later"
-  | "move_previous"
-  | "move_next"
-  | "lengthen"
-  | "shorten";
+import type { SchedulerBookingAction } from "#native/resource-scheduler/scheduler-booking-action.type";
 
 /** Props of one booking block. */
 export interface SchedulerBookingProps {

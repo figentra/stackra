@@ -13,10 +13,8 @@ import { RadioButtonGroup as HeroRadioButtonGroup } from "@heroui-pro/react/radi
 import { render, screen } from "@testing-library/react";
 
 import type { RadioButtonGroupContractProps } from "#contracts/types/radio-button-group-contract-props.type";
-import {
-  RadioButtonGroup,
-  type RadioButtonGroupProps,
-} from "#react/radio-button-group/radio-button-group";
+import { RadioButtonGroup } from "#react/radio-button-group/radio-button-group";
+import type { RadioButtonGroupProps } from "#react/radio-button-group/radio-button-group.props";
 
 function Group(props: Omit<RadioButtonGroupProps, "children">) {
   return (

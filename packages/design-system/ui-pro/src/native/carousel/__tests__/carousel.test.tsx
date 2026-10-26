@@ -17,7 +17,8 @@ import {
 import type { ReactNode } from "react";
 
 import type { CarouselContractProps } from "#contracts/types/carousel-contract-props.type";
-import { Carousel, type CarouselProps, useCarousel } from "#native/carousel/carousel";
+import { Carousel, useCarousel } from "#native/carousel/carousel";
+import type { CarouselProps } from "#native/carousel/carousel.props";
 
 /** The props the root stand-in was last handed, as the real component would receive them. */
 const received = vi.hoisted(() => ({ props: {} as Record<string, unknown> }));

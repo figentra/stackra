@@ -9,32 +9,13 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-416 FR-002.
  */
-import {
-  ChatLoader as HeroChatLoader,
-  type ChatLoaderDotsProps as HeroChatLoaderDotsProps,
-  type ChatLoaderPulseProps as HeroChatLoaderPulseProps,
-  type ChatLoaderSkeletonProps as HeroChatLoaderSkeletonProps,
-  type ChatLoaderSpinnerProps as HeroChatLoaderSpinnerProps,
-} from "@heroui-pro/react/chat-loader";
+import { ChatLoader as HeroChatLoader } from "@heroui-pro/react/chat-loader";
 
-import type { ChatLoaderContractProps } from "#contracts/types/chat-loader-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
-
-/** Props of `ChatLoader.Dots`: the shared contract plus HeroUI Pro's own span props, passed through. */
-export type ChatLoaderDotsProps = ChatLoaderContractProps &
-  Omit<HeroChatLoaderDotsProps, keyof ChatLoaderContractProps | "aria-label">;
-
-/** Props of `ChatLoader.Pulse`: the shared contract plus HeroUI Pro's own span props, passed through. */
-export type ChatLoaderPulseProps = ChatLoaderContractProps &
-  Omit<HeroChatLoaderPulseProps, keyof ChatLoaderContractProps | "aria-label">;
-
-/** Props of `ChatLoader.Spinner`: the shared contract plus HeroUI Pro's own span props, passed through. */
-export type ChatLoaderSpinnerProps = ChatLoaderContractProps &
-  Omit<HeroChatLoaderSpinnerProps, keyof ChatLoaderContractProps | "aria-label">;
-
-/** Props of `ChatLoader.Skeleton`: the shared contract plus HeroUI Pro's own div props, passed through. */
-export type ChatLoaderSkeletonProps = ChatLoaderContractProps &
-  Omit<HeroChatLoaderSkeletonProps, keyof ChatLoaderContractProps | "aria-label">;
+import type { ChatLoaderDotsProps } from "#react/chat-loader/chat-loader-dots.props";
+import type { ChatLoaderPulseProps } from "#react/chat-loader/chat-loader-pulse.props";
+import type { ChatLoaderSpinnerProps } from "#react/chat-loader/chat-loader-spinner.props";
+import type { ChatLoaderSkeletonProps } from "#react/chat-loader/chat-loader-skeleton.props";
 
 /** Three bouncing dots. */
 function ChatLoaderDots({ label, size, ...rest }: ChatLoaderDotsProps) {

@@ -10,10 +10,7 @@
 import { AiMark } from "@stackra/ui/react";
 import { useId, type ReactElement } from "react";
 
-import type { AssistantPanelContractProps } from "#contracts/types/assistant-panel-contract-props.type";
-
-/** Props of the web AssistantPanel. */
-export type AssistantPanelProps = AssistantPanelContractProps;
+import type { AssistantPanelProps } from "#react/assistant-panel/assistant-panel.props";
 
 /** The assistant's panel. */
 export function AssistantPanel({

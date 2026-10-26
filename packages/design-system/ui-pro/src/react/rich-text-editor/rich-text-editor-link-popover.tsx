@@ -19,17 +19,7 @@ import {
 import { Button } from "@heroui/react";
 import type { ComponentProps } from "react";
 
-import type { RichTextEditorLinkPopoverTriggerContractProps } from "#contracts/types/rich-text-editor-contract-props.type";
-
-/** Props of the link popover's trigger: the shared contract plus HeroUI's button props, with `aria-label` as `label`. */
-export type RichTextEditorLinkPopoverTriggerProps = RichTextEditorLinkPopoverTriggerContractProps &
-  Omit<
-    ComponentProps<typeof Button>,
-    keyof RichTextEditorLinkPopoverTriggerContractProps | "aria-label" | "className"
-  > & {
-    /** Classes added to HeroUI Pro's own. */
-    readonly className?: string | undefined;
-  };
+import type { RichTextEditorLinkPopoverTriggerProps } from "#react/rich-text-editor/rich-text-editor-link-popover-trigger.props";
 
 /** The trigger: the toolbar button that opens the link popover, marked while the selection is a link. */
 function RichTextEditorLinkPopoverTrigger({

@@ -12,10 +12,8 @@
  * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-416 FR-008.
  */
 import { Table as HeroTable } from "heroui-native-pro/table";
-import type { ComponentPropsWithRef, ReactElement } from "react";
-
-/** Props of the native Table: HeroUI Native Pro's own root props, passed through unchanged. */
-export type TableProps = ComponentPropsWithRef<typeof HeroTable>;
+import type { ReactElement } from "react";
+import type { TableProps } from "#native/table/table.props";
 
 /** The root: HeroUI Native Pro's, which holds the sort and selection state. */
 function TableRoot(props: TableProps): ReactElement {

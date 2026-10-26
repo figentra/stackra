@@ -15,31 +15,3 @@ export interface ChatAttachmentContractProps {
   /** The attachment's parts: preview, icon, info and the remove button. Drawn from the file data when left out. */
   readonly children?: ReactNode | undefined;
 }
-
-/** Props of `ChatAttachment.Remove` that the Stackra vocabulary names. */
-export interface ChatAttachmentRemoveContractProps {
-  /** The accessible name of the remove button; HeroUI Pro's `aria-label`. HeroUI Pro's own name when left out. */
-  readonly label?: string | undefined;
-}
-
-/** Props of the `ChatAttachmentGroup` root. */
-export interface ChatAttachmentGroupContractProps {
-  /** The attachments of one message, in order. */
-  readonly children: ReactNode;
-}
-
-/** Props of the `ChatAttachmentInput` root. */
-export interface ChatAttachmentInputContractProps {
-  /** Whether the picker refuses to open and to take dropped or pasted files; HeroUI Pro's `disabled`. */
-  readonly isDisabled?: boolean | undefined;
-  /** The trigger and the dropzone, which share the picker. */
-  readonly children: ReactNode;
-}
-
-/** Props of `ChatAttachmentInput.Trigger` that the Stackra vocabulary names. */
-export interface ChatAttachmentInputTriggerContractProps {
-  /** The accessible name of the attach button; HeroUI Pro's `aria-label`; `ui_pro::chat.attach_files` when left out. */
-  readonly label?: string | undefined;
-  /** Whether the button is disabled; HeroUI Pro's native `disabled`. */
-  readonly isDisabled?: boolean | undefined;
-}

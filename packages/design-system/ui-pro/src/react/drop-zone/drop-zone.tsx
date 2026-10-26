@@ -9,19 +9,13 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-416 FR-003.
  */
-import {
-  DropZone as HeroDropZone,
-  type DropZoneProps as HeroDropZoneProps,
-} from "@heroui-pro/react/drop-zone";
+import { DropZone as HeroDropZone } from "@heroui-pro/react/drop-zone";
 
 import { DropZoneArea } from "#react/drop-zone/drop-zone-area";
 import { DropZoneInput } from "#react/drop-zone/drop-zone-input";
+import type { DropZoneProps } from "#react/drop-zone/drop-zone.props";
 
 export { useDropZonePickerContext } from "@heroui-pro/react/drop-zone";
-
-/** Props of the web DropZone root: HeroUI Pro's own, which has no prop the Stackra vocabulary renames. */
-export type DropZoneProps<E extends keyof React.JSX.IntrinsicElements = "div"> =
-  HeroDropZoneProps<E> & Omit<React.JSX.IntrinsicElements[E], keyof HeroDropZoneProps<E>>;
 
 /** The root: HeroUI Pro's, the element that holds the area, the input and the file list. */
 function DropZoneRoot<E extends keyof React.JSX.IntrinsicElements = "div">(

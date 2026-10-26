@@ -10,20 +10,10 @@
  * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-416 FR-008.
  */
 import { ProgressBar as HeroProgressBar } from "heroui-native-pro/progress-bar";
-import type { ComponentPropsWithRef, ReactElement } from "react";
+import type { ReactElement } from "react";
 
-import type { ProgressBarContractProps } from "#contracts/types/progress-bar-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
-
-/**
- * Props of the native ProgressBar: the shared contract plus HeroUI Native Pro's own props, passed through unchanged.
- * The colour role is `tone` and the accessible name is `label`, so HeroUI's names for them are left out of the type.
- */
-export type ProgressBarProps = ProgressBarContractProps &
-  Omit<
-    ComponentPropsWithRef<typeof HeroProgressBar>,
-    keyof ProgressBarContractProps | "color" | "accessibilityLabel" | "aria-label"
-  >;
+import type { ProgressBarProps } from "#native/progress-bar/progress-bar.props";
 
 /** The root: HeroUI Native Pro's, with `tone` as its `color` and `label` as the accessibility label. */
 function ProgressBarRoot({ tone, label, ...rest }: ProgressBarProps): ReactElement {

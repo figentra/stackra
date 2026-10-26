@@ -14,7 +14,8 @@
 import { ListView as HeroListView } from "@heroui-pro/react/list-view";
 import { render, screen } from "@testing-library/react";
 
-import { ListView, type ListViewProps } from "#react/list-view/list-view";
+import { ListView } from "#react/list-view/list-view";
+import type { ListViewProps } from "#react/list-view/list-view.props";
 
 const files = [
   { id: "a", name: "Proposal.pdf" },

@@ -19,7 +19,8 @@ import {
 import type { ReactNode } from "react";
 
 import type { ComboBoxContractProps } from "#contracts/types/combo-box-contract-props.type";
-import { ComboBox, useComboBox, type ComboBoxProps } from "#native/combo-box/combo-box";
+import { ComboBox, useComboBox } from "#native/combo-box/combo-box";
+import type { ComboBoxProps } from "#native/combo-box/combo-box.props";
 
 /** The props the root stand-in was last handed, as the real component would receive them. */
 const received = vi.hoisted(() => ({ props: {} as Record<string, unknown> }));

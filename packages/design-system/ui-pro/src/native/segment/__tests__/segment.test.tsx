@@ -14,16 +14,11 @@ import { render } from "@testing-library/react";
 import { Segment as HeroSegment, useSegment as heroUseSegment } from "heroui-native-pro/segment";
 import type { ReactNode } from "react";
 
-import type {
-  SegmentContractProps,
-  SegmentLabelContractProps,
-} from "#contracts/types/segment-contract-props.type";
-import {
-  Segment,
-  useSegment,
-  type SegmentGroupProps,
-  type SegmentProps,
-} from "#native/segment/segment";
+import type { SegmentContractProps } from "#contracts/types/segment-contract-props.type";
+import type { SegmentLabelContractProps } from "#contracts/types/segment-label-contract-props.type";
+import { Segment, useSegment } from "#native/segment/segment";
+import type { SegmentGroupProps } from "#native/segment/segment-group.props";
+import type { SegmentProps } from "#native/segment/segment.props";
 
 /** The props the root and the group stand-ins were last handed, as the real components would receive them. */
 const received = vi.hoisted(() => ({

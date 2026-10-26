@@ -13,10 +13,7 @@ import { AiMark, Heading } from "@stackra/ui/native";
 import type { ReactElement } from "react";
 import { View } from "react-native";
 
-import type { AssistantPanelContractProps } from "#contracts/types/assistant-panel-contract-props.type";
-
-/** Props of the native AssistantPanel. */
-export type AssistantPanelProps = AssistantPanelContractProps;
+import type { AssistantPanelProps } from "#native/assistant-panel/assistant-panel.props";
 
 /** The assistant's panel. */
 export function AssistantPanel({

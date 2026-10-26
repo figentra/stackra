@@ -12,15 +12,8 @@ import {
   type InlineSelectProps as HeroInlineSelectProps,
 } from "@heroui-pro/react/inline-select";
 
-import type { InlineSelectContractProps } from "#contracts/types/inline-select-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
-
-/** Props of the web InlineSelect: the shared contract plus HeroUI Pro's own, with `aria-label` renamed `label`. */
-export type InlineSelectProps<
-  T extends object = object,
-  M extends "single" | "multiple" = "single",
-> = InlineSelectContractProps &
-  Omit<HeroInlineSelectProps<T, M>, keyof InlineSelectContractProps | "aria-label">;
+import type { InlineSelectProps } from "#react/inline-select/inline-select.props";
 
 /** The root: HeroUI Pro's, with `label` as the accessible name. */
 function InlineSelectRoot<T extends object = object, M extends "single" | "multiple" = "single">({

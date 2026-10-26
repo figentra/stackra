@@ -13,7 +13,8 @@
 import { Segment as HeroSegment } from "@heroui-pro/react/segment";
 import { fireEvent, render, screen } from "@testing-library/react";
 
-import { Segment, type SegmentProps } from "#react/segment/segment";
+import { Segment } from "#react/segment/segment";
+import type { SegmentProps } from "#react/segment/segment.props";
 
 // jsdom has no `Element.getAnimations`, which React Aria's shared-element transition calls when the selection moves.
 beforeAll(() => {

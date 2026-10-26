@@ -12,10 +12,8 @@
 import { ChatAttachmentInput as HeroChatAttachmentInput } from "@heroui-pro/react/chat-attachment";
 import { fireEvent, render, screen } from "@testing-library/react";
 
-import {
-  ChatAttachmentInput,
-  type ChatAttachmentInputProps,
-} from "#react/chat-attachment/chat-attachment-input";
+import { ChatAttachmentInput } from "#react/chat-attachment/chat-attachment-input";
+import type { ChatAttachmentInputProps } from "#react/chat-attachment/chat-attachment-input.props";
 
 describe("ChatAttachmentInput (web)", () => {
   it("names the trigger from label", () => {

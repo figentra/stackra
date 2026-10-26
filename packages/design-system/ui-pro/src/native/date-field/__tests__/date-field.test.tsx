@@ -15,7 +15,8 @@ import { DateField as HeroDateField } from "heroui-native-pro/date-field";
 import type { ReactNode } from "react";
 
 import type { DatePickerContractProps } from "#contracts/types/date-picker-contract-props.type";
-import { DateField, type DateFieldProps } from "#native/date-field/date-field";
+import { DateField } from "#native/date-field/date-field";
+import type { DateFieldProps } from "#native/date-field/date-field.props";
 
 /** The props the root stand-in was last handed, as the real component would receive them. */
 const received = vi.hoisted(() => ({ props: {} as Record<string, unknown> }));

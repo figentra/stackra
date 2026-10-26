@@ -8,20 +8,10 @@
  * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-416 FR-009.
  */
 import { DateField as HeroDateField } from "heroui-native-pro/date-field";
-import type { ComponentPropsWithRef, ReactElement } from "react";
+import type { ReactElement } from "react";
 
-import type { DatePickerContractProps } from "#contracts/types/date-picker-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
-
-/**
- * Props of the native DateField: the shared contract plus HeroUI Native Pro's own props, passed through unchanged.
- * The accessible name is `label`, so HeroUI's two spellings of it are left out of the type.
- */
-export type DateFieldProps = DatePickerContractProps &
-  Omit<
-    ComponentPropsWithRef<typeof HeroDateField>,
-    keyof DatePickerContractProps | "accessibilityLabel" | "aria-label"
-  >;
+import type { DateFieldProps } from "#native/date-field/date-field.props";
 
 /** The root: HeroUI Native Pro's, with `label` as the accessibility label. */
 function DateFieldRoot({ label, isDisabled, ...rest }: DateFieldProps): ReactElement {

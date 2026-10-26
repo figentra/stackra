@@ -13,10 +13,8 @@ import { render } from "@testing-library/react";
 import type { ReactNode } from "react";
 
 import type { ToggleButtonGroupContractProps } from "#contracts/types/toggle-button-group-contract-props.type";
-import {
-  ToggleButtonGroup,
-  type ToggleButtonGroupProps,
-} from "#native/toggle-button-group/toggle-button-group";
+import { ToggleButtonGroup } from "#native/toggle-button-group/toggle-button-group";
+import type { ToggleButtonGroupProps } from "#native/toggle-button-group/toggle-button-group.props";
 
 /** The props the root stand-in was last handed, as the real component would receive them. */
 const received = vi.hoisted(() => ({ props: {} as Record<string, unknown> }));

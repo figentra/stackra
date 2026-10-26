@@ -14,13 +14,10 @@
 import * as heroMap from "@heroui-pro/react/map";
 import { render } from "@testing-library/react";
 
-import {
-  Map,
-  type MapMarkerProps,
-  type MapProps,
-  type MapRouteProps,
-  useMap,
-} from "#react/map/map";
+import { Map, useMap } from "#react/map/map";
+import type { MapMarkerProps } from "#react/map/map-marker.props";
+import type { MapProps } from "#react/map/map.props";
+import type { MapRouteProps } from "#react/map/map-route.props";
 
 const { seen, recording } = vi.hoisted(() => {
   const calls = { Root: [], Marker: [], Route: [] } as Record<string, Record<string, unknown>[]>;

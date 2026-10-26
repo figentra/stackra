@@ -18,12 +18,8 @@ import {
 import type { ReactNode } from "react";
 
 import type { FlipCardContractProps } from "#contracts/types/flip-card-contract-props.type";
-import {
-  FlipCard,
-  type FlipCardProps,
-  useFlipCard,
-  useFlipCardAnimation,
-} from "#native/flip-card/flip-card";
+import { FlipCard, useFlipCard, useFlipCardAnimation } from "#native/flip-card/flip-card";
+import type { FlipCardProps } from "#native/flip-card/flip-card.props";
 
 /** The props the root stand-in was last handed, as the real component would receive them. */
 const received = vi.hoisted(() => ({ props: {} as Record<string, unknown> }));

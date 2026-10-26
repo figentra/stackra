@@ -13,10 +13,8 @@ import { Text } from "@stackra/ui/native";
 import { useMemo, useRef, type ReactElement } from "react";
 import { PanResponder, View, type PanResponderInstance } from "react-native";
 
-import type {
-  SchedulerBookingAction,
-  SchedulerBookingProps,
-} from "#native/resource-scheduler/scheduler-booking.props";
+import type { SchedulerBookingAction } from "#native/resource-scheduler/scheduler-booking-action.type";
+import type { SchedulerBookingProps } from "#native/resource-scheduler/scheduler-booking.props";
 
 /** The order the actions are offered in. */
 const ACTIONS: readonly SchedulerBookingAction[] = Object.freeze([

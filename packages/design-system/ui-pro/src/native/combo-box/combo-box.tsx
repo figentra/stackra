@@ -14,22 +14,12 @@ import {
   type ComboBoxRootProps as HeroComboBoxRootProps,
   type ComboBoxSelectionMode,
 } from "heroui-native-pro/combo-box";
-import type { ComponentProps, ReactElement } from "react";
+import type { ReactElement } from "react";
 
-import type { ComboBoxContractProps } from "#contracts/types/combo-box-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
+import type { ComboBoxProps } from "#native/combo-box/combo-box.props";
 
 export { useComboBox } from "heroui-native-pro/combo-box";
-
-/**
- * Props of the native ComboBox: the shared contract plus HeroUI Native Pro's own, passed through unchanged. The
- * accessible name is `label`, so HeroUI's two spellings of it are left out of the type.
- */
-export type ComboBoxProps<M extends ComboBoxSelectionMode = "single"> = ComboBoxContractProps &
-  Omit<
-    HeroComboBoxRootProps<M>,
-    keyof ComboBoxContractProps | "accessibilityLabel" | "aria-label"
-  > & { readonly ref?: ComponentProps<typeof HeroComboBox>["ref"] };
 
 /** The root: HeroUI Native Pro's, with `label` as the accessibility label. */
 function ComboBoxRoot<M extends ComboBoxSelectionMode = "single">({

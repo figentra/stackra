@@ -72,7 +72,9 @@ describe("Agenda (web)", () => {
       "ResizeObserver",
       class {
         observe() {}
+
         unobserve() {}
+
         disconnect() {}
       },
     );

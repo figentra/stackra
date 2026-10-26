@@ -13,11 +13,9 @@ import { CellColorPicker as HeroCellColorPicker } from "@heroui-pro/react/cell-c
 import { render, screen } from "@testing-library/react";
 
 import type { CellColorPickerTriggerContractProps } from "#contracts/types/cell-color-picker-contract-props.type";
-import {
-  CellColorPicker,
-  type CellColorPickerProps,
-} from "#react/cell-color-picker/cell-color-picker";
-import type { CellColorPickerTriggerProps } from "#react/cell-color-picker/cell-color-picker-trigger";
+import { CellColorPicker } from "#react/cell-color-picker/cell-color-picker";
+import type { CellColorPickerProps } from "#react/cell-color-picker/cell-color-picker.props";
+import type { CellColorPickerTriggerProps } from "#react/cell-color-picker/cell-color-picker-trigger.props";
 
 function Cell(props: Omit<CellColorPickerTriggerProps, "children">) {
   return (

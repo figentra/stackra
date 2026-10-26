@@ -15,7 +15,8 @@ import { render } from "@testing-library/react";
 import type { ReactNode } from "react";
 
 import type { LineChartContractProps } from "#contracts/types/line-chart-contract-props.type";
-import { LineChart, type LineChartProps } from "#react/line-chart/line-chart";
+import { LineChart } from "#react/line-chart/line-chart";
+import type { LineChartProps } from "#react/line-chart/line-chart.props";
 
 /** The props the root stand-in was last handed, as the real component would receive them. */
 const received = vi.hoisted(() => ({ props: {} as Record<string, unknown> }));

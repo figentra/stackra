@@ -13,7 +13,8 @@
 import { ActionBar as HeroActionBar } from "@heroui-pro/react/action-bar";
 import { render, screen } from "@testing-library/react";
 
-import { ActionBar, type ActionBarProps } from "#react/action-bar/action-bar";
+import { ActionBar } from "#react/action-bar/action-bar";
+import type { ActionBarProps } from "#react/action-bar/action-bar.props";
 
 describe("ActionBar (web)", () => {
   it("names the toolbar from label, and keeps HeroUI Pro's default name without one", () => {

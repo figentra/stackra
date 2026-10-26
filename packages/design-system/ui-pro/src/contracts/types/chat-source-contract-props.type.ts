@@ -14,9 +14,3 @@ export interface ChatSourceContractProps {
   /** The chip's custom parts (trigger and preview). Drawn from `title`, `href` and `description` when left out. */
   readonly children?: ReactNode | undefined;
 }
-
-/** Props of the `ChatSources` root. */
-export interface ChatSourcesContractProps {
-  /** The trigger and the collapsible content that holds the list of sources. */
-  readonly children: ReactNode;
-}

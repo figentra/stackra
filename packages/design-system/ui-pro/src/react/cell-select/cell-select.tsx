@@ -12,15 +12,8 @@ import {
   type CellSelectProps as HeroCellSelectProps,
 } from "@heroui-pro/react/cell-select";
 
-import type { CellSelectContractProps } from "#contracts/types/cell-select-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
-
-/** Props of the web CellSelect: the shared contract plus HeroUI Pro's own, with `aria-label` renamed `label`. */
-export type CellSelectProps<
-  T extends object = object,
-  M extends "single" | "multiple" = "single",
-> = CellSelectContractProps &
-  Omit<HeroCellSelectProps<T, M>, keyof CellSelectContractProps | "aria-label">;
+import type { CellSelectProps } from "#react/cell-select/cell-select.props";
 
 /** The root: HeroUI Pro's, with `label` as the accessible name. */
 function CellSelectRoot<T extends object = object, M extends "single" | "multiple" = "single">({

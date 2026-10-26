@@ -8,7 +8,7 @@
  *                     `@stackra/documents`').
  */
 
-/** A signature. */
+/** A signature, drawn or typed. */
 export type SignatureValue =
   | {
       /** Drawn with a pointer. */

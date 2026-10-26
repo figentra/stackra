@@ -13,10 +13,11 @@
 import { KPI as HeroKpi } from "@heroui-pro/react/kpi";
 import { render, screen } from "@testing-library/react";
 
-import { Kpi, type KpiProps } from "#react/kpi/kpi";
-import type { KpiActionsProps } from "#react/kpi/kpi-actions";
-import type { KpiIconProps } from "#react/kpi/kpi-icon";
-import type { KpiProgressProps } from "#react/kpi/kpi-progress";
+import { Kpi } from "#react/kpi/kpi";
+import type { KpiProps } from "#react/kpi/kpi.props";
+import type { KpiActionsProps } from "#react/kpi/kpi-actions.props";
+import type { KpiIconProps } from "#react/kpi/kpi-icon.props";
+import type { KpiProgressProps } from "#react/kpi/kpi-progress.props";
 
 describe("Kpi (web)", () => {
   beforeEach(() => {
@@ -24,7 +25,9 @@ describe("Kpi (web)", () => {
       "ResizeObserver",
       class {
         observe() {}
+
         unobserve() {}
+
         disconnect() {}
       },
     );

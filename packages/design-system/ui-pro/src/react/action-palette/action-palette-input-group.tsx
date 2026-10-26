@@ -6,16 +6,9 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 4); ADR 0303 (decision 7); STA-403 FR-004.
  */
-import {
-  Command as HeroCommand,
-  type CommandInputGroupProps as HeroCommandInputGroupProps,
-} from "@heroui-pro/react/command";
+import { Command as HeroCommand } from "@heroui-pro/react/command";
 
-import type { ActionPaletteInputGroupContractProps } from "#contracts/types/action-palette-contract-props.type";
-
-/** Props of the search input group: the shared contract plus HeroUI Pro's own, with `aria-label` renamed. */
-export type ActionPaletteInputGroupProps = ActionPaletteInputGroupContractProps &
-  Omit<HeroCommandInputGroupProps, keyof ActionPaletteInputGroupContractProps | "aria-label">;
+import type { ActionPaletteInputGroupProps } from "#react/action-palette/action-palette-input-group.props";
 
 /** The parts of the input group, typed from HeroUI Pro's own so the declaration output can name them. */
 interface ActionPaletteInputGroupParts {

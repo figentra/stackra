@@ -11,7 +11,7 @@ import type { ReactNode } from "react";
 export interface SchedulerResource {
   /** The resource's id. */
   readonly id: string;
-  /** Its name. */
+  /** Its name as shown. */
   readonly label: ReactNode;
   /** Its name as text, for screen readers. */
   readonly labelText: string;

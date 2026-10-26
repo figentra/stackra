@@ -8,20 +8,10 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-416 FR-001.
  */
-import {
-  LineChart as HeroLineChart,
-  type LineChartRootProps as HeroLineChartRootProps,
-} from "@heroui-pro/react/line-chart";
+import { LineChart as HeroLineChart } from "@heroui-pro/react/line-chart";
 
-import type { LineChartContractProps } from "#contracts/types/line-chart-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
-
-/**
- * Props of the web LineChart: the shared contract plus HeroUI Pro's own container props, passed through unchanged. The
- * accessible name is `label`, so `aria-label` is left out of the type.
- */
-export type LineChartProps = LineChartContractProps &
-  Omit<HeroLineChartRootProps, keyof LineChartContractProps | "aria-label">;
+import type { LineChartProps } from "#react/line-chart/line-chart.props";
 
 /** The root: HeroUI Pro's, with `label` as the `aria-label`. */
 function LineChartRoot({ label, ...rest }: LineChartProps) {

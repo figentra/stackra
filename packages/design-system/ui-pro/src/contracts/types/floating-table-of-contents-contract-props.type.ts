@@ -14,21 +14,3 @@ export interface FloatingTableOfContentsContractProps {
   /** The controlled open state; HeroUI Pro's `open`. Uncontrolled when left out. */
   readonly isOpen?: boolean | undefined;
 }
-
-/** Props of `FloatingTableOfContents.Trigger` that the Stackra vocabulary names. */
-export interface FloatingTableOfContentsTriggerContractProps {
-  /** The accessible name of the trigger, which holds bars and no text; HeroUI Pro's `aria-label`. */
-  readonly label: string;
-}
-
-/** Props of `FloatingTableOfContents.Bar` that the Stackra vocabulary names. */
-export interface FloatingTableOfContentsBarContractProps {
-  /** True to highlight the bar as the current section; HeroUI Pro's `active`. */
-  readonly isActive?: boolean | undefined;
-}
-
-/** Props of `FloatingTableOfContents.Item` that the Stackra vocabulary names. */
-export interface FloatingTableOfContentsItemContractProps {
-  /** True to highlight the item as the current section; HeroUI Pro's `active`. */
-  readonly isActive?: boolean | undefined;
-}

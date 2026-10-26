@@ -21,25 +21,3 @@ export interface PromptInputContractProps {
   /** Whether a reply is being generated, which swaps the send button for stop; HeroUI Pro's `isPending`. */
   readonly isLoading?: boolean | undefined;
 }
-
-/** Props of `PromptInput.TextArea` that the Stackra vocabulary names. */
-export interface PromptInputTextAreaContractProps {
-  /** The accessible name of the text area; HeroUI Pro's `aria-label`, "Message input" when left out. */
-  readonly label?: string | undefined;
-}
-
-/** Props of `PromptInput.Send` that the Stackra vocabulary names. */
-export interface PromptInputSendContractProps {
-  /** The accessible name of the icon-only send button; HeroUI Pro's `aria-label`, "Send message" or "Stop" when left out. */
-  readonly label?: string | undefined;
-  /** Whether the button shows its busy state; HeroUI Pro's `isPending`. */
-  readonly isLoading?: boolean | undefined;
-}
-
-/** Props of `PromptInput.Action` that the Stackra vocabulary names. */
-export interface PromptInputActionContractProps {
-  /** The accessible name of the icon-only action button; HeroUI Pro's `aria-label`, which it has no default for. */
-  readonly label: string;
-  /** The icon of the action. */
-  readonly children: ReactNode;
-}

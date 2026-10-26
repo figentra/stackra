@@ -19,12 +19,8 @@ import {
 import { createRef, type ReactNode } from "react";
 
 import type { MorphTabsListContractProps } from "#contracts/types/morph-tabs-contract-props.type";
-import {
-  MorphTabs,
-  useMorphTabs,
-  useMorphTabsTrigger,
-  type MorphTabsListProps,
-} from "#native/morph-tabs/morph-tabs";
+import { MorphTabs, useMorphTabs, useMorphTabsTrigger } from "#native/morph-tabs/morph-tabs";
+import type { MorphTabsListProps } from "#native/morph-tabs/morph-tabs-list.props";
 
 /** The props the root and the list stand-ins were last handed, as the real components would receive them. */
 const received = vi.hoisted(() => ({

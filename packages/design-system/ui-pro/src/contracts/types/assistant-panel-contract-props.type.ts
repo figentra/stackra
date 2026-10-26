@@ -17,7 +17,7 @@ export interface AssistantPanelContractProps {
   readonly disclosure?: string | undefined;
   /** Buttons in the header (new conversation, close). */
   readonly headerActions?: ReactNode | undefined;
-  /** The conversation. */
+  /** The conversation the panel holds. */
   readonly children: ReactNode;
   /** The message composer, pinned under the conversation. */
   readonly composer: ReactNode;

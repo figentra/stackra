@@ -13,10 +13,8 @@
 import { PressableFeedback as HeroPressableFeedback } from "@heroui-pro/react/pressable-feedback";
 import { render, screen } from "@testing-library/react";
 
-import {
-  PressableFeedback,
-  type PressableFeedbackProps,
-} from "#react/pressable-feedback/pressable-feedback";
+import { PressableFeedback } from "#react/pressable-feedback/pressable-feedback";
+import type { PressableFeedbackProps } from "#react/pressable-feedback/pressable-feedback.props";
 
 describe("PressableFeedback (web)", () => {
   // First in the file: React warns about a boolean attribute once per run, so a later disabled render hides it.

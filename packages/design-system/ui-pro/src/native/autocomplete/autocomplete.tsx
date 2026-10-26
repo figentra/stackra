@@ -14,23 +14,12 @@ import {
   type AutocompleteRootProps as HeroAutocompleteRootProps,
   type AutocompleteSelectionMode,
 } from "heroui-native-pro/autocomplete";
-import type { ComponentProps, ReactElement } from "react";
+import type { ReactElement } from "react";
 
-import type { AutocompleteContractProps } from "#contracts/types/autocomplete-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
+import type { AutocompleteProps } from "#native/autocomplete/autocomplete.props";
 
 export { useAutocomplete } from "heroui-native-pro/autocomplete";
-
-/**
- * Props of the native Autocomplete: the shared contract plus HeroUI Native Pro's own, passed through unchanged. The
- * accessible name is `label`, so HeroUI's two spellings of it are left out of the type.
- */
-export type AutocompleteProps<M extends AutocompleteSelectionMode = "single"> =
-  AutocompleteContractProps &
-    Omit<
-      HeroAutocompleteRootProps<M>,
-      keyof AutocompleteContractProps | "accessibilityLabel" | "aria-label"
-    > & { readonly ref?: ComponentProps<typeof HeroAutocomplete>["ref"] };
 
 /** The root: HeroUI Native Pro's, with `label` as the accessibility label. */
 function AutocompleteRoot<M extends AutocompleteSelectionMode = "single">({

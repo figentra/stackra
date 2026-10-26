@@ -10,20 +10,10 @@
  * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-416 FR-006.
  */
 import { StackedMeter as HeroStackedMeter } from "heroui-native-pro/stacked-meter";
-import type { ComponentPropsWithRef, ReactElement } from "react";
+import type { ReactElement } from "react";
 
-import type { StackedMeterContractProps } from "#contracts/types/stacked-meter-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
-
-/**
- * Props of the native StackedMeter: the shared contract plus HeroUI Native Pro's own props, passed through
- * unchanged. The accessible name is `label`, so HeroUI's spelling of it is left out of the type.
- */
-export type StackedMeterProps = StackedMeterContractProps &
-  Omit<
-    ComponentPropsWithRef<typeof HeroStackedMeter>,
-    keyof StackedMeterContractProps | "accessibilityLabel" | "aria-label"
-  >;
+import type { StackedMeterProps } from "#native/stacked-meter/stacked-meter.props";
 
 /** The root: HeroUI Native Pro's, with `label` as the accessibility label. */
 function StackedMeterRoot({ label, size, isDisabled, ...rest }: StackedMeterProps): ReactElement {

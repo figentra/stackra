@@ -13,22 +13,11 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-416 FR-005.
  */
-import {
-  agendaVariants,
-  Agenda as HeroAgenda,
-  type AgendaRootProps as HeroAgendaRootProps,
-} from "@heroui-pro/react/agenda";
-import type { HeadingLevel } from "@stackra/ui/contracts";
-import { createContext, useContext, type ComponentPropsWithoutRef } from "react";
+import { agendaVariants, Agenda as HeroAgenda } from "@heroui-pro/react/agenda";
 
-/** Props of the web Agenda: HeroUI Pro's own root props, which are the `useAgenda` result plus the children. */
-export type AgendaProps = HeroAgendaRootProps;
-
-/** Props of `Agenda.Heading`: a heading's own props, plus the level the page outline gives it. */
-export interface AgendaHeadingProps extends ComponentPropsWithoutRef<"h2"> {
-  /** The heading level, `h2` unless told otherwise. */
-  readonly level?: HeadingLevel | undefined;
-}
+import { createContext, useContext } from "react";
+import type { AgendaProps } from "#react/agenda/agenda.props";
+import type { AgendaHeadingProps } from "#react/agenda/agenda-heading.props";
 
 /** The visible period (`useAgenda`'s `heading`), which the root shares with `Agenda.Heading`. */
 const AgendaHeadingContext = createContext("");

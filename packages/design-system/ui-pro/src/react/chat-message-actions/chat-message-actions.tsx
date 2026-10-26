@@ -10,32 +10,11 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-416 FR-002.
  */
-import {
-  ChatMessageActions as HeroChatMessageActions,
-  type ChatMessageActionPresetProps as HeroChatMessageActionPresetProps,
-  type ChatMessageActionsCopyProps as HeroChatMessageActionsCopyProps,
-  type ChatMessageActionsProps as HeroChatMessageActionsProps,
-} from "@heroui-pro/react/chat-message-actions";
+import { ChatMessageActions as HeroChatMessageActions } from "@heroui-pro/react/chat-message-actions";
 
-import type {
-  ChatMessageActionsContractProps,
-  ChatMessageActionsPresetContractProps,
-} from "#contracts/types/chat-message-actions-contract-props.type";
-
-/** Props of the web ChatMessageActions: the shared contract plus HeroUI Pro's own div props, passed through. */
-export type ChatMessageActionsProps = ChatMessageActionsContractProps &
-  Omit<HeroChatMessageActionsProps, keyof ChatMessageActionsContractProps>;
-
-/** Props of `Regenerate`, `Menu`, `ThumbsUp` and `ThumbsDown`: HeroUI Pro's action props, with `aria-label` as `label`. */
-export type ChatMessageActionsPresetProps = ChatMessageActionsPresetContractProps &
-  Omit<
-    HeroChatMessageActionPresetProps,
-    keyof ChatMessageActionsPresetContractProps | "aria-label"
-  >;
-
-/** Props of `Copy`: HeroUI Pro's copy action props, with `aria-label` as `label`. */
-export type ChatMessageActionsCopyProps = ChatMessageActionsPresetContractProps &
-  Omit<HeroChatMessageActionsCopyProps, keyof ChatMessageActionsPresetContractProps | "aria-label">;
+import type { ChatMessageActionsProps } from "#react/chat-message-actions/chat-message-actions.props";
+import type { ChatMessageActionsPresetProps } from "#react/chat-message-actions/chat-message-actions-preset.props";
+import type { ChatMessageActionsCopyProps } from "#react/chat-message-actions/chat-message-actions-copy.props";
 
 /** The row root: HeroUI Pro's. */
 function ChatMessageActionsRoot(props: ChatMessageActionsProps) {

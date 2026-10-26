@@ -10,21 +10,10 @@
  * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-416 FR-008.
  */
 import { ProgressCircle as HeroProgressCircle } from "heroui-native-pro/progress-circle";
-import type { ComponentPropsWithRef, ReactElement } from "react";
+import type { ReactElement } from "react";
 
-import type { ProgressCircleContractProps } from "#contracts/types/progress-circle-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
-
-/**
- * Props of the native ProgressCircle: the shared contract plus HeroUI Native Pro's own props, passed through
- * unchanged. The colour role is `tone` and the accessible name is `label`, so HeroUI's names for them are left out
- * of the type.
- */
-export type ProgressCircleProps = ProgressCircleContractProps &
-  Omit<
-    ComponentPropsWithRef<typeof HeroProgressCircle>,
-    keyof ProgressCircleContractProps | "color" | "accessibilityLabel" | "aria-label"
-  >;
+import type { ProgressCircleProps } from "#native/progress-circle/progress-circle.props";
 
 /** The root: HeroUI Native Pro's, with `tone` as its `color` and `label` as the accessibility label. */
 function ProgressCircleRoot({ tone, label, ...rest }: ProgressCircleProps): ReactElement {

@@ -8,20 +8,10 @@
  * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-416 FR-009.
  */
 import { WheelTimePicker as HeroWheelTimePicker } from "heroui-native-pro/wheel-time-picker";
-import type { ComponentPropsWithRef, ReactElement } from "react";
+import type { ReactElement } from "react";
 
-import type { DatePickerContractProps } from "#contracts/types/date-picker-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
-
-/**
- * Props of the native WheelTimePicker: the shared contract plus HeroUI Native Pro's own props, passed through unchanged.
- * The accessible name is `label`, so HeroUI's two spellings of it are left out of the type.
- */
-export type WheelTimePickerProps = DatePickerContractProps &
-  Omit<
-    ComponentPropsWithRef<typeof HeroWheelTimePicker>,
-    keyof DatePickerContractProps | "accessibilityLabel" | "aria-label"
-  >;
+import type { WheelTimePickerProps } from "#native/wheel-time-picker/wheel-time-picker.props";
 
 /** The root: HeroUI Native Pro's, with `label` as the accessibility label. */
 function WheelTimePickerRoot({ label, isDisabled, ...rest }: WheelTimePickerProps): ReactElement {

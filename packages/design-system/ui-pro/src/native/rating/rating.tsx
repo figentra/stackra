@@ -9,20 +9,10 @@
  * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-416 FR-008.
  */
 import { Rating as HeroRating } from "heroui-native-pro/rating";
-import type { ComponentPropsWithRef, ReactElement } from "react";
+import type { ReactElement } from "react";
 
-import type { RatingContractProps } from "#contracts/types/rating-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
-
-/**
- * Props of the native Rating: the shared contract plus HeroUI Native Pro's own props, passed through unchanged. The
- * accessible name is `label`, so HeroUI's two spellings of it are left out of the type.
- */
-export type RatingProps = RatingContractProps &
-  Omit<
-    ComponentPropsWithRef<typeof HeroRating>,
-    keyof RatingContractProps | "accessibilityLabel" | "aria-label"
-  >;
+import type { RatingProps } from "#native/rating/rating.props";
 
 /** The root: HeroUI Native Pro's, with `label` as the accessibility label. */
 function RatingRoot({ label, ...rest }: RatingProps): ReactElement {

@@ -13,10 +13,8 @@ import { CheckboxButtonGroup as HeroCheckboxButtonGroup } from "@heroui-pro/reac
 import { render, screen } from "@testing-library/react";
 
 import type { CheckboxButtonGroupContractProps } from "#contracts/types/checkbox-button-group-contract-props.type";
-import {
-  CheckboxButtonGroup,
-  type CheckboxButtonGroupProps,
-} from "#react/checkbox-button-group/checkbox-button-group";
+import { CheckboxButtonGroup } from "#react/checkbox-button-group/checkbox-button-group";
+import type { CheckboxButtonGroupProps } from "#react/checkbox-button-group/checkbox-button-group.props";
 
 function Group(props: Omit<CheckboxButtonGroupProps, "children">) {
   return (

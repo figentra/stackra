@@ -9,27 +9,10 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-416 FR-002.
  */
-import {
-  ChatConversation as HeroChatConversation,
-  type ChatConversationProps as HeroChatConversationProps,
-  type ChatConversationScrollButtonProps as HeroChatConversationScrollButtonProps,
-} from "@heroui-pro/react/chat-conversation";
+import { ChatConversation as HeroChatConversation } from "@heroui-pro/react/chat-conversation";
 
-import type {
-  ChatConversationContractProps,
-  ChatConversationScrollButtonContractProps,
-} from "#contracts/types/chat-conversation-contract-props.type";
-
-/** Props of the web ChatConversation: the shared contract plus HeroUI Pro's own div props, with `aria-label` as `label`. */
-export type ChatConversationProps = ChatConversationContractProps &
-  Omit<HeroChatConversationProps, keyof ChatConversationContractProps | "aria-label">;
-
-/** Props of the scroll button: the shared contract plus HeroUI Pro's button props, with `aria-label` as `label`. */
-export type ChatConversationScrollButtonProps = ChatConversationScrollButtonContractProps &
-  Omit<
-    HeroChatConversationScrollButtonProps,
-    keyof ChatConversationScrollButtonContractProps | "aria-label"
-  >;
+import type { ChatConversationProps } from "#react/chat-conversation/chat-conversation.props";
+import type { ChatConversationScrollButtonProps } from "#react/chat-conversation/chat-conversation-scroll-button.props";
 
 /**
  * The scrolling root: HeroUI Pro's, which follows new content while the reader is at the bottom. A chat history is a

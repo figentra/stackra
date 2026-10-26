@@ -11,30 +11,12 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-416 FR-005.
  */
-import {
-  Map as HeroMap,
-  type MapMarkerProps as HeroMapMarkerProps,
-  type MapRootProps,
-  type MapRouteProps as HeroMapRouteProps,
-} from "@heroui-pro/react/map";
+import { Map as HeroMap } from "@heroui-pro/react/map";
 
-import type {
-  MapContractProps,
-  MapMarkerContractProps,
-  MapRouteContractProps,
-} from "#contracts/types/map-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
-
-/** Props of the web Map: the shared contract plus HeroUI Pro's own map props, with `aria-label` renamed `label`. */
-export type MapProps = MapContractProps & Omit<MapRootProps, keyof MapContractProps | "aria-label">;
-
-/** Props of `Map.Marker`: the shared contract plus HeroUI Pro's own, with `onClick` renamed `onPress`. */
-export type MapMarkerProps = MapMarkerContractProps &
-  Omit<HeroMapMarkerProps, keyof MapMarkerContractProps | "onClick">;
-
-/** Props of `Map.Route`: the shared contract plus HeroUI Pro's own, with `onClick` renamed `onPress`. */
-export type MapRouteProps = MapRouteContractProps &
-  Omit<HeroMapRouteProps, keyof MapRouteContractProps | "onClick">;
+import type { MapProps } from "#react/map/map.props";
+import type { MapMarkerProps } from "#react/map/map-marker.props";
+import type { MapRouteProps } from "#react/map/map-route.props";
 
 /** The map root: HeroUI Pro's, a MapLibre map, a region named by `label`. */
 function MapRoot({ label, ...rest }: MapProps) {

@@ -12,7 +12,8 @@
 import { ChatListView as HeroChatListView } from "@heroui-pro/react/chat-list-view";
 import { render, screen } from "@testing-library/react";
 
-import { ChatListView, type ChatListViewProps } from "#react/chat-list-view/chat-list-view";
+import { ChatListView } from "#react/chat-list-view/chat-list-view";
+import type { ChatListViewProps } from "#react/chat-list-view/chat-list-view.props";
 
 interface Thread {
   readonly id: string;

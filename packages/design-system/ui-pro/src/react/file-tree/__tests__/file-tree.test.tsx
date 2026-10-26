@@ -15,17 +15,13 @@ import * as heroFileTree from "@heroui-pro/react/file-tree";
 import type { Size } from "@stackra/ui/contracts";
 import { fireEvent, render, screen } from "@testing-library/react";
 
-import {
-  FileTree,
-  type FileTreeProps,
-  useFileTree,
-  useFileTreeDrag,
-} from "#react/file-tree/file-tree";
+import { FileTree, useFileTree, useFileTreeDrag } from "#react/file-tree/file-tree";
+import type { FileTreeProps } from "#react/file-tree/file-tree.props";
 
 const rootProps = vi.hoisted(() => [] as Record<string, unknown>[]);
 
 vi.mock("@heroui-pro/react/file-tree", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@heroui-pro/react/file-tree")>();
+  const actual = await importOriginal<typeof heroFileTree>();
   const Root = (props: Record<string, unknown>) => {
     rootProps.push(props);
     // A call, not an element: this factory runs before the JSX runtime import is bound.

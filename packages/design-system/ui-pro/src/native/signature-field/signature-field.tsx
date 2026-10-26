@@ -17,12 +17,9 @@ import { Button, Text, TextField, useThemeColor } from "@stackra/ui/native";
 import { useMemo, useRef, useState, type ReactElement } from "react";
 import { PanResponder, View, type GestureResponderEvent } from "react-native";
 
-import type { SignatureFieldContractProps } from "#contracts/types/signature-field-contract-props.type";
 import type { SignatureValue } from "#contracts/types/signature-value.type";
 import { pathOfStrokes } from "#core/functions/path-of-strokes.function";
-
-/** Props of the native SignatureField. */
-export type SignatureFieldProps = SignatureFieldContractProps;
+import type { SignatureFieldProps } from "#native/signature-field/signature-field.props";
 
 /** One stroke's points, in the box's units. */
 type Stroke = (readonly [number, number])[];

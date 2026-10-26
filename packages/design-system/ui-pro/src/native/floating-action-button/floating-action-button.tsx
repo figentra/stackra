@@ -10,20 +10,10 @@
  * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-416 FR-007.
  */
 import { FAB as HeroFab } from "heroui-native-pro/fab";
-import type { ComponentPropsWithRef, ReactElement } from "react";
+import type { ReactElement } from "react";
 
-import type { FloatingActionButtonContractProps } from "#contracts/types/floating-action-button-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
-
-/**
- * Props of the native FloatingActionButton: the shared contract plus HeroUI Native Pro's own props, passed through
- * unchanged. The accessible name is `label`, so HeroUI's two spellings of it are left out of the type.
- */
-export type FloatingActionButtonProps = FloatingActionButtonContractProps &
-  Omit<
-    ComponentPropsWithRef<typeof HeroFab>,
-    keyof FloatingActionButtonContractProps | "accessibilityLabel" | "aria-label"
-  >;
+import type { FloatingActionButtonProps } from "#native/floating-action-button/floating-action-button.props";
 
 /** The root: HeroUI Native Pro's, with `label` as the accessibility label. */
 function FloatingActionButtonRoot({

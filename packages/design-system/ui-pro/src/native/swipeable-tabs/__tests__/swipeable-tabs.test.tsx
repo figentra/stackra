@@ -18,11 +18,8 @@ import {
 import { createRef, type ReactNode } from "react";
 
 import type { SwipeableTabsListContractProps } from "#contracts/types/swipeable-tabs-contract-props.type";
-import {
-  SwipeableTabs,
-  useSwipeableTabs,
-  type SwipeableTabsListProps,
-} from "#native/swipeable-tabs/swipeable-tabs";
+import { SwipeableTabs, useSwipeableTabs } from "#native/swipeable-tabs/swipeable-tabs";
+import type { SwipeableTabsListProps } from "#native/swipeable-tabs/swipeable-tabs-list.props";
 
 /** The props the root and the list stand-ins were last handed, as the real components would receive them. */
 const received = vi.hoisted(() => ({

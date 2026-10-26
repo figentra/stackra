@@ -14,15 +14,3 @@ export interface ActionPaletteContractProps {
   /** The palette's parts, usually a backdrop holding a container and a dialog. */
   readonly children: ReactNode;
 }
-
-/** Props of `ActionPalette.Dialog` that the Stackra vocabulary names. */
-export interface ActionPaletteDialogContractProps {
-  /** The accessible name of the dialog; HeroUI Pro's `aria-label`, which defaults to "Command palette". */
-  readonly label?: string | undefined;
-}
-
-/** Props of `ActionPalette.InputGroup` that the Stackra vocabulary names. */
-export interface ActionPaletteInputGroupContractProps {
-  /** The accessible name of the search field; HeroUI Pro's `aria-label`, which defaults to "Search commands". */
-  readonly label?: string | undefined;
-}

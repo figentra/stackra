@@ -8,15 +8,10 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-416 FR-003.
  */
-import {
-  CellColorPicker as HeroCellColorPicker,
-  type CellColorPickerProps as HeroCellColorPickerProps,
-} from "@heroui-pro/react/cell-color-picker";
+import { CellColorPicker as HeroCellColorPicker } from "@heroui-pro/react/cell-color-picker";
 
 import { CellColorPickerTrigger } from "#react/cell-color-picker/cell-color-picker-trigger";
-
-/** Props of the web CellColorPicker: HeroUI Pro's own, which has no prop the Stackra vocabulary renames. */
-export type CellColorPickerProps = HeroCellColorPickerProps;
+import type { CellColorPickerProps } from "#react/cell-color-picker/cell-color-picker.props";
 
 /** The root: HeroUI Pro's, which holds the colour state and draws no element of its own. */
 function CellColorPickerRoot(props: CellColorPickerProps) {

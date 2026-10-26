@@ -15,7 +15,8 @@ import { render } from "@testing-library/react";
 import type { ReactNode } from "react";
 
 import type { ComposedChartContractProps } from "#contracts/types/composed-chart-contract-props.type";
-import { ComposedChart, type ComposedChartProps } from "#react/composed-chart/composed-chart";
+import { ComposedChart } from "#react/composed-chart/composed-chart";
+import type { ComposedChartProps } from "#react/composed-chart/composed-chart.props";
 
 /** The props the root stand-in was last handed, as the real component would receive them. */
 const received = vi.hoisted(() => ({ props: {} as Record<string, unknown> }));

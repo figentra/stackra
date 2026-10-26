@@ -14,15 +14,3 @@ export interface EmojiPickerContractProps {
   /** The accessible name of the picker, a select; HeroUI Pro's `aria-label`. */
   readonly label?: string | undefined;
 }
-
-/** Props of `EmojiPicker.SkinToneTrigger` that the Stackra vocabulary names. */
-export interface EmojiPickerSkinToneTriggerContractProps {
-  /** The accessible name of the skin-tone button; HeroUI Pro's `aria-label`. */
-  readonly label?: string | undefined;
-}
-
-/** Props of `EmojiPicker.SkinToneContent` that the Stackra vocabulary names. */
-export interface EmojiPickerSkinToneContentContractProps {
-  /** The accessible name of the skin-tone list; HeroUI Pro's `aria-label`. */
-  readonly label?: string | undefined;
-}

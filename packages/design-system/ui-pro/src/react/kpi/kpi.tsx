@@ -12,17 +12,14 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 4); ADR 0303 (decision 7); ADR 0231 (acronyms cased as words); STA-403 FR-007.
  */
-import { KPI as HeroKpi, type KPIRootProps as HeroKpiRootProps } from "@heroui-pro/react/kpi";
+import { KPI as HeroKpi } from "@heroui-pro/react/kpi";
 import type { ComponentProps } from "react";
 
-import type { KpiContractProps } from "#contracts/types/kpi-contract-props.type";
 import { KpiActions } from "#react/kpi/kpi-actions";
 import { KpiChart } from "#react/kpi/kpi-chart";
 import { KpiIcon } from "#react/kpi/kpi-icon";
 import { KpiProgress } from "#react/kpi/kpi-progress";
-
-/** Props of the web Kpi: the shared contract plus HeroUI Pro's own card props, passed through unchanged. */
-export type KpiProps = KpiContractProps & Omit<HeroKpiRootProps, keyof KpiContractProps>;
+import type { KpiProps } from "#react/kpi/kpi.props";
 
 /**
  * A HeroUI Pro workaround: Pro draws the title and value as `dt` and `dd` with no `dl`, which axe refuses (`dlitem`). The

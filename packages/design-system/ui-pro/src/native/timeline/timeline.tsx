@@ -11,10 +11,8 @@
  * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-416 FR-008.
  */
 import { Timeline as HeroTimeline } from "heroui-native-pro/timeline";
-import type { ComponentPropsWithRef, ReactElement } from "react";
-
-/** Props of the native Timeline: HeroUI Native Pro's own root props, passed through unchanged. */
-export type TimelineProps = ComponentPropsWithRef<typeof HeroTimeline>;
+import type { ReactElement } from "react";
+import type { TimelineProps } from "#native/timeline/timeline.props";
 
 /** The root: HeroUI Native Pro's, which numbers its `Timeline.Item` children. */
 function TimelineRoot(props: TimelineProps): ReactElement {

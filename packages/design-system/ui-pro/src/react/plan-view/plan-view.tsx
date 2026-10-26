@@ -10,16 +10,11 @@
 import type { ReactElement } from "react";
 
 import type { PlanStepStatus } from "#contracts/enums/plan-step-status.enum";
-import type { PlanViewContractProps } from "#contracts/types/plan-view-contract-props.type";
+
 import { UI_PRO_KEYS } from "#core/constants/ui-pro-keys.constant";
 import { useUiProText } from "#core/hooks/use-ui-pro-text";
 import { Timeline } from "#react/timeline/timeline";
-
-/** Props of the web PlanView: the contract plus the word read for each status. */
-export type PlanViewProps = PlanViewContractProps & {
-  /** The words read for each status; `ui_pro::enums.plan_step_status.*` in the active locale when left out. */
-  readonly statusLabels?: Readonly<Record<PlanStepStatus, string>> | undefined;
-};
+import type { PlanViewProps } from "#react/plan-view/plan-view.props";
 
 /** The Timeline marker tone of each step status. */
 const TONE = Object.freeze({

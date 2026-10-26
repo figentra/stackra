@@ -13,7 +13,8 @@ import { CellSwitch as HeroCellSwitch } from "@heroui-pro/react/cell-switch";
 import { render, screen } from "@testing-library/react";
 
 import type { CellSwitchContractProps } from "#contracts/types/cell-switch-contract-props.type";
-import { CellSwitch, type CellSwitchProps } from "#react/cell-switch/cell-switch";
+import { CellSwitch } from "#react/cell-switch/cell-switch";
+import type { CellSwitchProps } from "#react/cell-switch/cell-switch.props";
 
 function Cell(props: Omit<CellSwitchProps, "children">) {
   return (

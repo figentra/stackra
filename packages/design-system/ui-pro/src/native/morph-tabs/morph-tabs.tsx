@@ -10,28 +10,16 @@
  * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-416 FR-011.
  */
 import { MorphTabs as HeroMorphTabs } from "heroui-native-pro/morph-tabs";
-import type { ComponentPropsWithRef, ReactElement } from "react";
+import type { ReactElement } from "react";
 
-import type { MorphTabsListContractProps } from "#contracts/types/morph-tabs-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
-
-/** Props of the native MorphTabs: HeroUI Native Pro's own root props, the imperative `ref` included. */
-export type MorphTabsProps = ComponentPropsWithRef<typeof HeroMorphTabs>;
+import type { MorphTabsProps } from "#native/morph-tabs/morph-tabs.props";
+import type { MorphTabsListProps } from "#native/morph-tabs/morph-tabs-list.props";
 
 /** The root: HeroUI Native Pro's, which owns the selected value and the pager position; its `ref` passes through. */
 function MorphTabsRoot(props: MorphTabsProps): ReactElement {
   return <HeroMorphTabs {...props} />;
 }
-
-/**
- * Props of `MorphTabs.List`: the shared contract plus HeroUI Native Pro's own, with `accessibilityLabel` renamed
- * `label`.
- */
-export type MorphTabsListProps = MorphTabsListContractProps &
-  Omit<
-    ComponentPropsWithRef<typeof HeroMorphTabs.List>,
-    keyof MorphTabsListContractProps | "accessibilityLabel" | "aria-label"
-  >;
 
 /** The row of tab pills, the tablist: HeroUI Native Pro's, named by `label`. */
 function MorphTabsList({ label, ...rest }: MorphTabsListProps): ReactElement {

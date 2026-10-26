@@ -18,11 +18,8 @@ import {
 import type { ReactNode } from "react";
 
 import type { SplitViewDragAreaContractProps } from "#contracts/types/split-view-contract-props.type";
-import {
-  SplitView,
-  useSplitView,
-  type SplitViewDragAreaProps,
-} from "#native/split-view/split-view";
+import { SplitView, useSplitView } from "#native/split-view/split-view";
+import type { SplitViewDragAreaProps } from "#native/split-view/split-view-drag-area.props";
 
 /** The props the root and the drag area stand-ins were last handed, as the real components would receive them. */
 const received = vi.hoisted(() => ({

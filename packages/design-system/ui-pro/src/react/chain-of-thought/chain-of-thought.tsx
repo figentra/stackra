@@ -8,16 +8,9 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-416 FR-002.
  */
-import {
-  ChainOfThought as HeroChainOfThought,
-  type ChainOfThoughtRootProps as HeroChainOfThoughtRootProps,
-} from "@heroui-pro/react/chain-of-thought";
+import { ChainOfThought as HeroChainOfThought } from "@heroui-pro/react/chain-of-thought";
 
-import type { ChainOfThoughtContractProps } from "#contracts/types/chain-of-thought-contract-props.type";
-
-/** Props of the web ChainOfThought: the shared contract plus HeroUI Pro's own disclosure props, passed through. */
-export type ChainOfThoughtProps = ChainOfThoughtContractProps &
-  Omit<HeroChainOfThoughtRootProps, keyof ChainOfThoughtContractProps>;
+import type { ChainOfThoughtProps } from "#react/chain-of-thought/chain-of-thought.props";
 
 /** The root: HeroUI Pro's disclosure, which shimmers the trigger while `isStreaming`. */
 function ChainOfThoughtRoot(props: ChainOfThoughtProps) {

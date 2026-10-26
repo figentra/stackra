@@ -5,20 +5,10 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-416 FR-003.
  */
-import {
-  RichTextEditor as HeroRichTextEditor,
-  type RichTextEditorActionButtonProps as HeroRichTextEditorActionButtonProps,
-} from "@heroui-pro/react/rich-text-editor";
+import { RichTextEditor as HeroRichTextEditor } from "@heroui-pro/react/rich-text-editor";
 
-import type { RichTextEditorActionButtonContractProps } from "#contracts/types/rich-text-editor-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
-
-/** Props of the editor action button: the shared contract plus HeroUI Pro's own, with `aria-label` renamed `label`. */
-export type RichTextEditorActionButtonProps = RichTextEditorActionButtonContractProps &
-  Omit<
-    HeroRichTextEditorActionButtonProps,
-    keyof RichTextEditorActionButtonContractProps | "aria-label"
-  >;
+import type { RichTextEditorActionButtonProps } from "#react/rich-text-editor/rich-text-editor-action-button.props";
 
 /** The editor action button: a button that runs an editor action such as undo. */
 export function RichTextEditorActionButton({ label, ...rest }: RichTextEditorActionButtonProps) {

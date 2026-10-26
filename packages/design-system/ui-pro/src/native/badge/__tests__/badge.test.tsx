@@ -14,7 +14,8 @@ import { Badge as HeroBadge, useBadge as heroUseBadge } from "heroui-native-pro/
 import type { ReactNode } from "react";
 
 import type { BadgeContractProps } from "#contracts/types/badge-contract-props.type";
-import { Badge, type BadgeProps, useBadge } from "#native/badge/badge";
+import { Badge, useBadge } from "#native/badge/badge";
+import type { BadgeProps } from "#native/badge/badge.props";
 
 /** The props the root stand-in was last handed, as the real component would receive them. */
 const received = vi.hoisted(() => ({ props: {} as Record<string, unknown> }));

@@ -29,7 +29,7 @@ export interface ResourceSchedulerContractProps {
   readonly slotMinutes: number;
   /** The height of one slot, in pixels. */
   readonly slotHeight?: number | undefined;
-  /** The bookings. */
+  /** The bookings to draw. */
   readonly events: readonly SchedulerEvent[];
   /** Called with the booking as it would be after a move or a resize. */
   readonly onEventChange?: ((event: SchedulerEvent) => void) | undefined;

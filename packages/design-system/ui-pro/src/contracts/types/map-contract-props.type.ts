@@ -14,15 +14,3 @@ export interface MapContractProps {
   /** The accessible name of the map, announced by assistive technology; HeroUI Pro's `aria-label`. */
   readonly label?: string | undefined;
 }
-
-/** Props of `Map.Marker` that the Stackra vocabulary names. */
-export interface MapMarkerContractProps {
-  /** Called when the marker is pressed; HeroUI Pro's `onClick`, without the pointer event. */
-  readonly onPress?: (() => void) | undefined;
-}
-
-/** Props of `Map.Route` that the Stackra vocabulary names. */
-export interface MapRouteContractProps {
-  /** Called when the route line is pressed; HeroUI Pro's `onClick`. Only fires while `interactive` is on. */
-  readonly onPress?: (() => void) | undefined;
-}

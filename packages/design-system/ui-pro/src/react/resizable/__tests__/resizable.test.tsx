@@ -14,7 +14,8 @@
 import { Resizable as HeroResizable } from "@heroui-pro/react/resizable";
 import { render, screen } from "@testing-library/react";
 
-import { Resizable, type ResizableHandleProps } from "#react/resizable/resizable";
+import { Resizable } from "#react/resizable/resizable";
+import type { ResizableHandleProps } from "#react/resizable/resizable-handle.props";
 
 /** The handle's markup without its generated id, which differs on every render. */
 const handleHtml = () => screen.getByRole("separator").outerHTML.replace(/ id="[^"]*"/, "");
@@ -38,7 +39,9 @@ describe("Resizable (web)", () => {
       "ResizeObserver",
       class {
         observe() {}
+
         unobserve() {}
+
         disconnect() {}
       },
     );

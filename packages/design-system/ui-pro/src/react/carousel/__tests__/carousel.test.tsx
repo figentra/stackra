@@ -13,13 +13,16 @@
 import { Carousel as HeroCarousel } from "@heroui-pro/react/carousel";
 import { render, screen } from "@testing-library/react";
 
-import { Carousel, type CarouselProps } from "#react/carousel/carousel";
+import { Carousel } from "#react/carousel/carousel";
+import type { CarouselProps } from "#react/carousel/carousel.props";
 
 describe("Carousel (web)", () => {
   beforeEach(() => {
     class Observer {
       observe() {}
+
       unobserve() {}
+
       disconnect() {}
     }
     vi.stubGlobal("ResizeObserver", Observer);

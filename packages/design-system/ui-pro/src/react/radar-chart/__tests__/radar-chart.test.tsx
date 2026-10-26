@@ -15,7 +15,8 @@ import { render } from "@testing-library/react";
 import type { ReactNode } from "react";
 
 import type { RadarChartContractProps } from "#contracts/types/radar-chart-contract-props.type";
-import { RadarChart, type RadarChartProps } from "#react/radar-chart/radar-chart";
+import { RadarChart } from "#react/radar-chart/radar-chart";
+import type { RadarChartProps } from "#react/radar-chart/radar-chart.props";
 
 /** The props the root stand-in was last handed, as the real component would receive them. */
 const received = vi.hoisted(() => ({ props: {} as Record<string, unknown> }));

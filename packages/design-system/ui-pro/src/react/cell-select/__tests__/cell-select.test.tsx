@@ -14,7 +14,8 @@ import { CellSelect as HeroCellSelect } from "@heroui-pro/react/cell-select";
 import { render, screen } from "@testing-library/react";
 
 import type { CellSelectContractProps } from "#contracts/types/cell-select-contract-props.type";
-import { CellSelect, type CellSelectProps } from "#react/cell-select/cell-select";
+import { CellSelect } from "#react/cell-select/cell-select";
+import type { CellSelectProps } from "#react/cell-select/cell-select.props";
 
 function Cell(props: Omit<CellSelectProps, "children">) {
   return (

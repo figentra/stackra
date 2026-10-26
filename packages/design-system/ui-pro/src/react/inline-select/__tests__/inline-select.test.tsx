@@ -14,7 +14,8 @@ import { InlineSelect as HeroInlineSelect } from "@heroui-pro/react/inline-selec
 import { render, screen } from "@testing-library/react";
 
 import type { InlineSelectContractProps } from "#contracts/types/inline-select-contract-props.type";
-import { InlineSelect, type InlineSelectProps } from "#react/inline-select/inline-select";
+import { InlineSelect } from "#react/inline-select/inline-select";
+import type { InlineSelectProps } from "#react/inline-select/inline-select.props";
 
 function Inline(props: Omit<InlineSelectProps, "children">) {
   return (

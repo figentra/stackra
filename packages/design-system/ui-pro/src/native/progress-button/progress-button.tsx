@@ -10,20 +10,10 @@
  * Governing contract: ADR 0310 (decision 4); ADR 0303 (decision 7); STA-403 FR-008.
  */
 import { ProgressButton as HeroProgressButton } from "heroui-native-pro/progress-button";
-import type { ComponentPropsWithRef, ReactElement } from "react";
+import type { ReactElement } from "react";
 
-import type { ProgressButtonContractProps } from "#contracts/types/progress-button-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
-
-/**
- * Props of the native ProgressButton: the shared contract plus HeroUI Native Pro's own props, passed through
- * unchanged. The accessible name is `label` and the colour scheme is `tone`, so HeroUI's names for them are left out.
- */
-export type ProgressButtonProps = ProgressButtonContractProps &
-  Omit<
-    ComponentPropsWithRef<typeof HeroProgressButton>,
-    keyof ProgressButtonContractProps | "variant" | "accessibilityLabel" | "aria-label"
-  >;
+import type { ProgressButtonProps } from "#native/progress-button/progress-button.props";
 
 /** The root: HeroUI Native Pro's, with `label` as the accessibility label and `tone` as its colour `variant`. */
 function ProgressButtonRoot({

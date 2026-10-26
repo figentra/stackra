@@ -10,12 +10,9 @@
  */
 import { Command as HeroCommand } from "@heroui-pro/react/command";
 
-import type { ActionPaletteContractProps } from "#contracts/types/action-palette-contract-props.type";
 import { ActionPaletteDialog } from "#react/action-palette/action-palette-dialog";
 import { ActionPaletteInputGroup } from "#react/action-palette/action-palette-input-group";
-
-/** Props of the `ActionPalette` root: its children. */
-export type ActionPaletteProps = ActionPaletteContractProps;
+import type { ActionPaletteProps } from "#react/action-palette/action-palette.props";
 
 /** The root: HeroUI Pro's, which holds the palette's state context. */
 function ActionPaletteRoot({ children }: ActionPaletteProps) {

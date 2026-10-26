@@ -13,11 +13,9 @@
 import { FloatingToc as HeroFloatingToc } from "@heroui-pro/react/floating-toc";
 import { render, screen } from "@testing-library/react";
 
-import {
-  FloatingTableOfContents,
-  type FloatingTableOfContentsProps,
-  type FloatingTableOfContentsTriggerProps,
-} from "#react/floating-table-of-contents/floating-table-of-contents";
+import { FloatingTableOfContents } from "#react/floating-table-of-contents/floating-table-of-contents";
+import type { FloatingTableOfContentsProps } from "#react/floating-table-of-contents/floating-table-of-contents.props";
+import type { FloatingTableOfContentsTriggerProps } from "#react/floating-table-of-contents/floating-table-of-contents-trigger.props";
 
 /** A table of contents with two sections, the open state left to the caller. */
 function Example(props: Partial<FloatingTableOfContentsProps>) {

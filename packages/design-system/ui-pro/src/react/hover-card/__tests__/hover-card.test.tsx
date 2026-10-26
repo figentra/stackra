@@ -14,11 +14,9 @@ import { HoverCard as HeroHoverCard } from "@heroui-pro/react/hover-card";
 import { Link } from "@heroui/react";
 import { render, screen } from "@testing-library/react";
 
-import {
-  HoverCard,
-  type HoverCardContentProps,
-  type HoverCardProps,
-} from "#react/hover-card/hover-card";
+import { HoverCard } from "#react/hover-card/hover-card";
+import type { HoverCardContentProps } from "#react/hover-card/hover-card-content.props";
+import type { HoverCardProps } from "#react/hover-card/hover-card.props";
 
 /** A hover card with a labelled card, the open state left to the caller. */
 function Example(props: Partial<HoverCardProps>) {

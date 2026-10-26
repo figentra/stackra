@@ -7,17 +7,10 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-416 FR-002.
  */
-import {
-  ChatToolGroup as HeroChatToolGroup,
-  type ChatToolGroupProps as HeroChatToolGroupProps,
-} from "@heroui-pro/react/chat-tool";
+import { ChatToolGroup as HeroChatToolGroup } from "@heroui-pro/react/chat-tool";
 
-import type { ChatToolGroupContractProps } from "#contracts/types/chat-tool-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
-
-/** Props of the web ChatToolGroup: the shared contract plus HeroUI Pro's own, with `active` renamed `isActive`. */
-export type ChatToolGroupProps = ChatToolGroupContractProps &
-  Omit<HeroChatToolGroupProps, keyof ChatToolGroupContractProps | "active">;
+import type { ChatToolGroupProps } from "#react/chat-tool/chat-tool-group.props";
 
 /** The root: HeroUI Pro's disclosure, which shimmers its trigger while `isActive`. */
 function ChatToolGroupRoot({ isActive, ...rest }: ChatToolGroupProps) {

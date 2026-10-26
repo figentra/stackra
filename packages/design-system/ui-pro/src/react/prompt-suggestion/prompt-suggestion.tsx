@@ -9,16 +9,9 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-416 FR-002.
  */
-import {
-  PromptSuggestion as HeroPromptSuggestion,
-  type PromptSuggestionRootProps as HeroPromptSuggestionRootProps,
-} from "@heroui-pro/react/prompt-suggestion";
+import { PromptSuggestion as HeroPromptSuggestion } from "@heroui-pro/react/prompt-suggestion";
 
-import type { PromptSuggestionContractProps } from "#contracts/types/prompt-suggestion-contract-props.type";
-
-/** Props of the web PromptSuggestion: the shared contract plus HeroUI Pro's own root props, passed through. */
-export type PromptSuggestionProps = PromptSuggestionContractProps &
-  Omit<HeroPromptSuggestionRootProps, keyof PromptSuggestionContractProps>;
+import type { PromptSuggestionProps } from "#react/prompt-suggestion/prompt-suggestion.props";
 
 /** The root: HeroUI Pro's, which lays the suggestions out as pills or cards by `variant`. */
 function PromptSuggestionRoot(props: PromptSuggestionProps) {

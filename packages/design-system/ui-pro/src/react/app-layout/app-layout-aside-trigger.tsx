@@ -6,16 +6,9 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 4); ADR 0303 (decision 7); STA-403 FR-005.
  */
-import {
-  AppLayout as HeroAppLayout,
-  type AppLayoutAsideTriggerProps as HeroAppLayoutAsideTriggerProps,
-} from "@heroui-pro/react/app-layout";
+import { AppLayout as HeroAppLayout } from "@heroui-pro/react/app-layout";
 
-import type { AppLayoutAsideTriggerContractProps } from "#contracts/types/app-layout-contract-props.type";
-
-/** Props of the aside trigger: the shared contract plus HeroUI Pro's own, with `aria-label` renamed `label`. */
-export type AppLayoutAsideTriggerProps = AppLayoutAsideTriggerContractProps &
-  Omit<HeroAppLayoutAsideTriggerProps, keyof AppLayoutAsideTriggerContractProps | "aria-label">;
+import type { AppLayoutAsideTriggerProps } from "#react/app-layout/app-layout-aside-trigger.props";
 
 /** The button that toggles the aside panel. */
 export function AppLayoutAsideTrigger({ label, ...rest }: AppLayoutAsideTriggerProps) {

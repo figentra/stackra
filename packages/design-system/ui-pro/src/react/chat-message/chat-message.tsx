@@ -7,16 +7,9 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-416 FR-002.
  */
-import {
-  ChatMessage as HeroChatMessage,
-  type ChatMessageActionProps as HeroChatMessageActionProps,
-} from "@heroui-pro/react/chat-message";
+import { ChatMessage as HeroChatMessage } from "@heroui-pro/react/chat-message";
 
-import type { ChatMessageActionContractProps } from "#contracts/types/chat-message-contract-props.type";
-
-/** Props of the message action: the shared contract plus HeroUI Pro's button props, with `aria-label` as `label`. */
-export type ChatMessageActionProps = ChatMessageActionContractProps &
-  Omit<HeroChatMessageActionProps, keyof ChatMessageActionContractProps | "aria-label">;
+import type { ChatMessageActionProps } from "#react/chat-message/chat-message-action.props";
 
 /** An icon-only action under a message: HeroUI Pro's, named by `label`. */
 function ChatMessageAction({ label, ...rest }: ChatMessageActionProps) {

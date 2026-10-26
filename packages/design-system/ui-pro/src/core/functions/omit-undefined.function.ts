@@ -7,9 +7,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0310 (decision 3: unknown props pass through, typed); ADR 0303 (decision 7).
  */
-
-/** The props with `undefined` taken out of each value's type, the keys staying optional. */
-export type DefinedProps<T extends object> = { [K in keyof T]: Exclude<T[K], undefined> };
+import type { DefinedProps } from "#core/types/defined-props.type";
 
 /**
  * A shallow copy of `props` without the keys whose value is `undefined`.

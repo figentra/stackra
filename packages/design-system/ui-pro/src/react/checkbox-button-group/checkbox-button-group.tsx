@@ -9,17 +9,10 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-416 FR-003.
  */
-import {
-  CheckboxButtonGroup as HeroCheckboxButtonGroup,
-  type CheckboxButtonGroupProps as HeroCheckboxButtonGroupProps,
-} from "@heroui-pro/react/checkbox-button-group";
+import { CheckboxButtonGroup as HeroCheckboxButtonGroup } from "@heroui-pro/react/checkbox-button-group";
 
-import type { CheckboxButtonGroupContractProps } from "#contracts/types/checkbox-button-group-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
-
-/** Props of the web CheckboxButtonGroup: the shared contract plus HeroUI Pro's own, with `aria-label` renamed `label`. */
-export type CheckboxButtonGroupProps = CheckboxButtonGroupContractProps &
-  Omit<HeroCheckboxButtonGroupProps, keyof CheckboxButtonGroupContractProps | "aria-label">;
+import type { CheckboxButtonGroupProps } from "#react/checkbox-button-group/checkbox-button-group.props";
 
 /** The root: HeroUI Pro's, with `label` as the accessible name. */
 function CheckboxButtonGroupRoot({ label, isDisabled, ...rest }: CheckboxButtonGroupProps) {

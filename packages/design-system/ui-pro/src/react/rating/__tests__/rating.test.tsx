@@ -13,7 +13,8 @@
 import { Rating as HeroRating } from "@heroui-pro/react/rating";
 import { render, screen } from "@testing-library/react";
 
-import { Rating, type RatingProps } from "#react/rating/rating";
+import { Rating } from "#react/rating/rating";
+import type { RatingProps } from "#react/rating/rating.props";
 
 describe("Rating (web)", () => {
   it("names the radio group from label", () => {

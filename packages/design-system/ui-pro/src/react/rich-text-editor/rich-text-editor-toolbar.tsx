@@ -5,17 +5,10 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-416 FR-003.
  */
-import {
-  RichTextEditor as HeroRichTextEditor,
-  type RichTextEditorToolbarProps as HeroRichTextEditorToolbarProps,
-} from "@heroui-pro/react/rich-text-editor";
+import { RichTextEditor as HeroRichTextEditor } from "@heroui-pro/react/rich-text-editor";
 
-import type { RichTextEditorToolbarContractProps } from "#contracts/types/rich-text-editor-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
-
-/** Props of the editor toolbar: the shared contract plus HeroUI Pro's own, with `aria-label` renamed `label`. */
-export type RichTextEditorToolbarProps = RichTextEditorToolbarContractProps &
-  Omit<HeroRichTextEditorToolbarProps, keyof RichTextEditorToolbarContractProps | "aria-label">;
+import type { RichTextEditorToolbarProps } from "#react/rich-text-editor/rich-text-editor-toolbar.props";
 
 /** The editor toolbar: the toolbar that holds the editor's controls. */
 export function RichTextEditorToolbar({ label, ...rest }: RichTextEditorToolbarProps) {

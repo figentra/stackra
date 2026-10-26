@@ -14,9 +14,3 @@ export interface CodeBlockContractProps {
   /** The header, the code and the copy button. */
   readonly children: ReactNode;
 }
-
-/** Props of `CodeBlock.CopyButton` that the Stackra vocabulary names. */
-export interface CodeBlockCopyButtonContractProps {
-  /** The accessible name of the icon-only copy button; HeroUI Pro's `aria-label`, `ui_pro::code_block.copy` when left out. */
-  readonly label?: string | undefined;
-}

@@ -14,7 +14,8 @@
 import { Navbar as HeroNavbar } from "@heroui-pro/react/navbar";
 import { render, screen } from "@testing-library/react";
 
-import { Navbar, type NavbarProps } from "#react/navbar/navbar";
+import { Navbar } from "#react/navbar/navbar";
+import type { NavbarProps } from "#react/navbar/navbar.props";
 
 // jsdom has neither `matchMedia` nor `ResizeObserver`. HeroUI Pro's Sheet reads `matchMedia` as its module loads, so the
 // stubs also exist before any import; the config restores stubbed globals after each test, so `beforeEach` stubs again.
@@ -33,7 +34,9 @@ function stubBrowserApis() {
     "ResizeObserver",
     class {
       observe() {}
+
       unobserve() {}
+
       disconnect() {}
     },
   );

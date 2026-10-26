@@ -17,7 +17,6 @@ import { Text } from "@stackra/ui/native";
 import { useState, type ReactElement, type ReactNode } from "react";
 import { I18nManager, View } from "react-native";
 
-import type { ResourceSchedulerContractProps } from "#contracts/types/resource-scheduler-contract-props.type";
 import type { SchedulerEvent } from "#contracts/types/scheduler-event.type";
 import { UI_PRO_KEYS } from "#core/constants/ui-pro-keys.constant";
 import { eventLanes } from "#core/functions/event-lanes.function";
@@ -25,10 +24,8 @@ import { moveEvent } from "#core/functions/move-event.function";
 import { resizeEvent } from "#core/functions/resize-event.function";
 import { useUiProText } from "#core/hooks/use-ui-pro-text";
 import { SchedulerBooking } from "#native/resource-scheduler/scheduler-booking";
-import type { SchedulerBookingAction } from "#native/resource-scheduler/scheduler-booking.props";
-
-/** Props of the native ResourceScheduler. */
-export type ResourceSchedulerProps = ResourceSchedulerContractProps;
+import type { SchedulerBookingAction } from "#native/resource-scheduler/scheduler-booking-action.type";
+import type { ResourceSchedulerProps } from "#native/resource-scheduler/resource-scheduler.props";
 
 /** A node as the header can draw it: a string or number inside `Text`, any other node as it is. */
 function textual(node: ReactNode): ReactNode {

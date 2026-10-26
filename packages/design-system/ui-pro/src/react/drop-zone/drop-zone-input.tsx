@@ -7,17 +7,10 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-416 FR-003.
  */
-import {
-  DropZone as HeroDropZone,
-  type DropZoneInputProps as HeroDropZoneInputProps,
-} from "@heroui-pro/react/drop-zone";
+import { DropZone as HeroDropZone } from "@heroui-pro/react/drop-zone";
 
-import type { DropZoneInputContractProps } from "#contracts/types/drop-zone-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
-
-/** Props of the file input: the shared contract plus HeroUI Pro's own, with `disabled` and `aria-label` renamed. */
-export type DropZoneInputProps = DropZoneInputContractProps &
-  Omit<HeroDropZoneInputProps, keyof DropZoneInputContractProps | "disabled" | "aria-label">;
+import type { DropZoneInputProps } from "#react/drop-zone/drop-zone-input.props";
 
 /** The file input behind the trigger: the browser's picker, which calls `onSelect` with the chosen files. */
 export function DropZoneInput({ label, isDisabled, ...rest }: DropZoneInputProps) {

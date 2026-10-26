@@ -22,8 +22,8 @@ import type { PhoneNumberFieldContractProps } from "#contracts/types/phone-numbe
 import {
   PhoneNumberField,
   usePhoneNumberField,
-  type PhoneNumberFieldProps,
 } from "#native/phone-number-field/phone-number-field";
+import type { PhoneNumberFieldProps } from "#native/phone-number-field/phone-number-field.props";
 
 /** The props the root stand-in was last handed, as the real component would receive them. */
 const received = vi.hoisted(() => ({ props: {} as Record<string, unknown> }));

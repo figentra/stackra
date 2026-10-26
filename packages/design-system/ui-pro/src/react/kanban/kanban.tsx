@@ -8,18 +8,11 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 4); ADR 0303 (decision 7); STA-403 FR-006.
  */
-import {
-  Kanban as HeroKanban,
-  type KanbanRootProps as HeroKanbanRootProps,
-} from "@heroui-pro/react/kanban";
+import { Kanban as HeroKanban } from "@heroui-pro/react/kanban";
 
-import type { KanbanContractProps } from "#contracts/types/kanban-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { KanbanCardList } from "#react/kanban/kanban-card-list";
-
-/** Props of the web Kanban: the shared contract plus HeroUI Pro's own board props, passed through unchanged. */
-export type KanbanProps = KanbanContractProps &
-  Omit<HeroKanbanRootProps, keyof KanbanContractProps>;
+import type { KanbanProps } from "#react/kanban/kanban.props";
 
 /** The board root: HeroUI Pro's, a horizontally scrolling row of columns. */
 function KanbanRoot({ size, ...rest }: KanbanProps) {

@@ -11,41 +11,21 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-416 FR-004.
  */
-import {
-  HoverCard as HeroHoverCard,
-  type HoverCardContentProps as HeroHoverCardContentProps,
-  type HoverCardProps as HeroHoverCardProps,
-} from "@heroui-pro/react/hover-card";
-import type { ReactElement } from "react";
+import { HoverCard as HeroHoverCard } from "@heroui-pro/react/hover-card";
 
-import type {
-  HoverCardContentContractProps,
-  HoverCardContractProps,
-} from "#contracts/types/hover-card-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
-
-/** Props of the web HoverCard: the shared contract plus HeroUI Pro's own, with `open` renamed `isOpen`. */
-export type HoverCardProps = HoverCardContractProps &
-  Omit<HeroHoverCardProps, keyof HoverCardContractProps | "open">;
+import type { HoverCardProps } from "#react/hover-card/hover-card.props";
+import type { HoverCardContentProps } from "#react/hover-card/hover-card-content.props";
+import type { HoverCardTriggerProps } from "#react/hover-card/hover-card-trigger.props";
 
 /** The root: HeroUI Pro's, which holds the open state and the delays shared by the trigger and the card. */
 function HoverCardRoot({ isOpen, ...rest }: HoverCardProps) {
   return <HeroHoverCard.Root {...rest} {...omitUndefined({ open: isOpen })} />;
 }
 
-/** Props of `HoverCard.Content`: the shared contract plus HeroUI Pro's own, with `aria-label` renamed `label`. */
-export type HoverCardContentProps = HoverCardContentContractProps &
-  Omit<HeroHoverCardContentProps, keyof HoverCardContentContractProps | "aria-label">;
-
 /** The card: HeroUI Pro's popover, a dialog named by `label`. */
 function HoverCardContent({ label, ...rest }: HoverCardContentProps) {
   return <HeroHoverCard.Content {...rest} {...omitUndefined({ "aria-label": label })} />;
-}
-
-/** Props of `HoverCard.Trigger`. */
-export interface HoverCardTriggerProps {
-  /** The one element that opens the card on hover or focus: a React Aria link or button, such as HeroUI's `Link`. */
-  readonly children: ReactElement;
 }
 
 /** The trigger: its child, which takes the card's trigger props (hover, focus, `aria-expanded`) from React Aria. */

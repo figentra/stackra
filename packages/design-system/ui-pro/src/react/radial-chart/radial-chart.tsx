@@ -8,20 +8,10 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-416 FR-001.
  */
-import {
-  RadialChart as HeroRadialChart,
-  type RadialChartRootProps as HeroRadialChartRootProps,
-} from "@heroui-pro/react/radial-chart";
+import { RadialChart as HeroRadialChart } from "@heroui-pro/react/radial-chart";
 
-import type { RadialChartContractProps } from "#contracts/types/radial-chart-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
-
-/**
- * Props of the web RadialChart: the shared contract plus HeroUI Pro's own container props, passed through unchanged. The
- * accessible name is `label`, so `aria-label` is left out of the type.
- */
-export type RadialChartProps = RadialChartContractProps &
-  Omit<HeroRadialChartRootProps, keyof RadialChartContractProps | "aria-label">;
+import type { RadialChartProps } from "#react/radial-chart/radial-chart.props";
 
 /** The root: HeroUI Pro's, with `label` as the `aria-label`. */
 function RadialChartRoot({ label, ...rest }: RadialChartProps) {

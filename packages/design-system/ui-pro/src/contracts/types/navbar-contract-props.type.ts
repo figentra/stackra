@@ -14,9 +14,3 @@ export interface NavbarContractProps {
   /** The size of the bar's items and toggle; HeroUI Pro's own default when left out. */
   readonly size?: Size | undefined;
 }
-
-/** Props of `Navbar.MenuToggle` that the Stackra vocabulary names. */
-export interface NavbarMenuToggleContractProps {
-  /** The accessible name of the toggle button; HeroUI Pro's `srLabel`; `ui_pro::navbar.open_menu` when left out. */
-  readonly label?: string | undefined;
-}

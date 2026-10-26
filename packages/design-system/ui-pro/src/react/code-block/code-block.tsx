@@ -9,26 +9,12 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-416 FR-002.
  */
-import {
-  CodeBlock as HeroCodeBlock,
-  type CodeBlockCopyButtonProps as HeroCodeBlockCopyButtonProps,
-  type CodeBlockProps as HeroCodeBlockProps,
-} from "@heroui-pro/react/code-block";
+import { CodeBlock as HeroCodeBlock } from "@heroui-pro/react/code-block";
 
-import type {
-  CodeBlockContractProps,
-  CodeBlockCopyButtonContractProps,
-} from "#contracts/types/code-block-contract-props.type";
 import { UI_PRO_KEYS } from "#core/constants/ui-pro-keys.constant";
 import { useUiProText } from "#core/hooks/use-ui-pro-text";
-
-/** Props of the web CodeBlock: the shared contract plus HeroUI Pro's own div props, passed through. */
-export type CodeBlockProps = CodeBlockContractProps &
-  Omit<HeroCodeBlockProps, keyof CodeBlockContractProps>;
-
-/** Props of the copy button: the shared contract plus HeroUI Pro's own, with `aria-label` as `label`. */
-export type CodeBlockCopyButtonProps = CodeBlockCopyButtonContractProps &
-  Omit<HeroCodeBlockCopyButtonProps, keyof CodeBlockCopyButtonContractProps | "aria-label">;
+import type { CodeBlockProps } from "#react/code-block/code-block.props";
+import type { CodeBlockCopyButtonProps } from "#react/code-block/code-block-copy-button.props";
 
 /** The panel root: HeroUI Pro's. */
 function CodeBlockRoot(props: CodeBlockProps) {

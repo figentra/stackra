@@ -11,29 +11,16 @@
  * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-416 FR-011.
  */
 import { Segment as HeroSegment } from "heroui-native-pro/segment";
-import type { ComponentPropsWithRef, ReactElement } from "react";
+import type { ReactElement } from "react";
 
-import type {
-  SegmentContractProps,
-  SegmentLabelContractProps,
-} from "#contracts/types/segment-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
-
-/** Props of the native Segment: the shared contract plus HeroUI Native Pro's own, passed through unchanged. */
-export type SegmentProps = SegmentContractProps &
-  Omit<ComponentPropsWithRef<typeof HeroSegment>, keyof SegmentContractProps>;
+import type { SegmentProps } from "#native/segment/segment.props";
+import type { SegmentGroupProps } from "#native/segment/segment-group.props";
 
 /** The root: HeroUI Native Pro's, which holds the selection, the size and the disabled state. */
 function SegmentRoot({ size, isDisabled, ...rest }: SegmentProps): ReactElement {
   return <HeroSegment {...rest} {...omitUndefined({ size, isDisabled })} />;
 }
-
-/** Props of `Segment.Group`: the shared name plus HeroUI Native Pro's own, with `accessibilityLabel` renamed `label`. */
-export type SegmentGroupProps = SegmentLabelContractProps &
-  Omit<
-    ComponentPropsWithRef<typeof HeroSegment.Group>,
-    keyof SegmentLabelContractProps | "accessibilityLabel" | "aria-label"
-  >;
 
 /** The row of items, the tablist: HeroUI Native Pro's, named by `label`. */
 function SegmentGroup({ label, ...rest }: SegmentGroupProps): ReactElement {

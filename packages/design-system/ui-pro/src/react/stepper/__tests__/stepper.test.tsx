@@ -13,7 +13,8 @@
 import { Stepper as HeroStepper } from "@heroui-pro/react/stepper";
 import { render, screen } from "@testing-library/react";
 
-import { Stepper, type StepperProps } from "#react/stepper/stepper";
+import { Stepper } from "#react/stepper/stepper";
+import type { StepperProps } from "#react/stepper/stepper.props";
 
 /** Two steps, the list's props left to the caller. */
 function Example(props: Partial<StepperProps>) {

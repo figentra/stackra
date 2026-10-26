@@ -15,7 +15,8 @@ import { TimePicker as HeroTimePicker } from "heroui-native-pro/time-picker";
 import type { ReactNode } from "react";
 
 import type { DatePickerContractProps } from "#contracts/types/date-picker-contract-props.type";
-import { TimePicker, type TimePickerProps } from "#native/time-picker/time-picker";
+import { TimePicker } from "#native/time-picker/time-picker";
+import type { TimePickerProps } from "#native/time-picker/time-picker.props";
 
 /** The props the root stand-in was last handed, as the real component would receive them. */
 const received = vi.hoisted(() => ({ props: {} as Record<string, unknown> }));

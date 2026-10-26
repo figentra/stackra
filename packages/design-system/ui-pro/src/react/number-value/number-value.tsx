@@ -13,26 +13,18 @@
  * Runtime: browser
  * Governing contract: ADR 0329 (motion layer); ADR 0310 (decision 3); ADR 0303 (decision 7); STA-416 FR-005.
  */
-import {
-  NumberValue as HeroNumberValue,
-  type NumberValueRootProps as HeroNumberValueRootProps,
-} from "@heroui-pro/react/number-value";
+import { NumberValue as HeroNumberValue } from "@heroui-pro/react/number-value";
 import NumberFlow from "@number-flow/react";
 import { motionTiming, STACKRA_THEME } from "@stackra/tokens";
 import { Children, isValidElement, type ReactNode } from "react";
 import { useLocale } from "react-aria-components";
 
 import { omitUndefined } from "#core/functions/omit-undefined.function";
+import type { NumberValueProps } from "#react/number-value/number-value.props";
 
 const REVEAL = {
   duration: motionTiming(STACKRA_THEME, "reveal").durationMs,
   easing: STACKRA_THEME.motion["reveal"]?.easing ?? "ease-out",
-};
-
-/** Props of the web NumberValue: HeroUI Pro's own root props, passed through unchanged, plus `isAnimated`. */
-export type NumberValueProps = HeroNumberValueRootProps & {
-  /** Roll the number to a new value instead of swapping it; on by default. */
-  isAnimated?: boolean | undefined;
 };
 
 /** The root: formats `value` for the locale and rolls it to a new value. */

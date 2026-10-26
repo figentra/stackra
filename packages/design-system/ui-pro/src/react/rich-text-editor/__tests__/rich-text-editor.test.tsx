@@ -20,22 +20,20 @@ import {
 } from "@heroui-pro/react/rich-text-editor";
 import { render, screen } from "@testing-library/react";
 
-import type {
-  RichTextEditorActionButtonContractProps,
-  RichTextEditorCommandButtonContractProps,
-  RichTextEditorToggleButtonContractProps,
-  RichTextEditorToolbarContractProps,
-} from "#contracts/types/rich-text-editor-contract-props.type";
+import type { RichTextEditorActionButtonContractProps } from "#contracts/types/rich-text-editor-action-button-contract-props.type";
+import type { RichTextEditorCommandButtonContractProps } from "#contracts/types/rich-text-editor-command-button-contract-props.type";
+import type { RichTextEditorToggleButtonContractProps } from "#contracts/types/rich-text-editor-toggle-button-contract-props.type";
+import type { RichTextEditorToolbarContractProps } from "#contracts/types/rich-text-editor-toolbar-contract-props.type";
 import {
   RichTextEditor,
   filterRichTextEditorSuggestionItems,
   useRichTextEditor,
   useRichTextEditorState,
 } from "#react/rich-text-editor/rich-text-editor";
-import type { RichTextEditorActionButtonProps } from "#react/rich-text-editor/rich-text-editor-action-button";
-import type { RichTextEditorCommandButtonProps } from "#react/rich-text-editor/rich-text-editor-command-button";
-import type { RichTextEditorToggleButtonProps } from "#react/rich-text-editor/rich-text-editor-toggle-button";
-import type { RichTextEditorToolbarProps } from "#react/rich-text-editor/rich-text-editor-toolbar";
+import type { RichTextEditorActionButtonProps } from "#react/rich-text-editor/rich-text-editor-action-button.props";
+import type { RichTextEditorCommandButtonProps } from "#react/rich-text-editor/rich-text-editor-command-button.props";
+import type { RichTextEditorToggleButtonProps } from "#react/rich-text-editor/rich-text-editor-toggle-button.props";
+import type { RichTextEditorToolbarProps } from "#react/rich-text-editor/rich-text-editor-toolbar.props";
 
 interface Labels {
   readonly toolbar?: string;

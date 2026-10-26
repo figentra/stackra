@@ -13,7 +13,8 @@ import { NumberStepper as HeroNumberStepper } from "@heroui-pro/react/number-ste
 import { render, screen } from "@testing-library/react";
 
 import type { NumberStepperContractProps } from "#contracts/types/number-stepper-contract-props.type";
-import { NumberStepper, type NumberStepperProps } from "#react/number-stepper/number-stepper";
+import { NumberStepper } from "#react/number-stepper/number-stepper";
+import type { NumberStepperProps } from "#react/number-stepper/number-stepper.props";
 
 function Stepper(props: Omit<NumberStepperProps, "children">) {
   return (

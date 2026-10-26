@@ -13,7 +13,8 @@ import { CellSlider as HeroCellSlider } from "@heroui-pro/react/cell-slider";
 import { render, screen } from "@testing-library/react";
 
 import type { CellSliderContractProps } from "#contracts/types/cell-slider-contract-props.type";
-import { CellSlider, type CellSliderProps } from "#react/cell-slider/cell-slider";
+import { CellSlider } from "#react/cell-slider/cell-slider";
+import type { CellSliderProps } from "#react/cell-slider/cell-slider.props";
 
 function Cell(props: Omit<CellSliderProps, "children">) {
   return (

@@ -14,12 +14,13 @@
 import { Sidebar as HeroSidebar } from "@heroui-pro/react/sidebar";
 import { fireEvent, render, screen } from "@testing-library/react";
 
-import { Sidebar, useSidebar, useSidebarPages, type SidebarProps } from "#react/sidebar/sidebar";
-import type { SidebarMenuProps } from "#react/sidebar/sidebar-menu";
-import type { SidebarMenuIconProps } from "#react/sidebar/sidebar-menu-icon";
-import type { SidebarMobileProps } from "#react/sidebar/sidebar-mobile";
-import type { SidebarRailProps } from "#react/sidebar/sidebar-rail";
-import type { SidebarTriggerProps } from "#react/sidebar/sidebar-trigger";
+import { Sidebar, useSidebar, useSidebarPages } from "#react/sidebar/sidebar";
+import type { SidebarProps } from "#react/sidebar/sidebar.props";
+import type { SidebarMenuProps } from "#react/sidebar/sidebar-menu.props";
+import type { SidebarMenuIconProps } from "#react/sidebar/sidebar-menu-icon.props";
+import type { SidebarMobileProps } from "#react/sidebar/sidebar-mobile.props";
+import type { SidebarRailProps } from "#react/sidebar/sidebar-rail.props";
+import type { SidebarTriggerProps } from "#react/sidebar/sidebar-trigger.props";
 
 // jsdom has neither `matchMedia` nor `ResizeObserver`. HeroUI Pro's Sheet reads `matchMedia` as its module loads, so the
 // stubs also exist before any import; the config restores stubbed globals after each test, so `beforeEach` stubs again.
@@ -38,7 +39,9 @@ function stubBrowserApis(matches = false) {
     "ResizeObserver",
     class {
       observe() {}
+
       unobserve() {}
+
       disconnect() {}
     },
   );

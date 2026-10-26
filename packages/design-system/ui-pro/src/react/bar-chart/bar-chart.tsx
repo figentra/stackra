@@ -8,20 +8,10 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-416 FR-001.
  */
-import {
-  BarChart as HeroBarChart,
-  type BarChartRootProps as HeroBarChartRootProps,
-} from "@heroui-pro/react/bar-chart";
+import { BarChart as HeroBarChart } from "@heroui-pro/react/bar-chart";
 
-import type { BarChartContractProps } from "#contracts/types/bar-chart-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
-
-/**
- * Props of the web BarChart: the shared contract plus HeroUI Pro's own container props, passed through unchanged. The
- * accessible name is `label`, so `aria-label` is left out of the type.
- */
-export type BarChartProps = BarChartContractProps &
-  Omit<HeroBarChartRootProps, keyof BarChartContractProps | "aria-label">;
+import type { BarChartProps } from "#react/bar-chart/bar-chart.props";
 
 /** The root: HeroUI Pro's, with `label` as the `aria-label`. */
 function BarChartRoot({ label, ...rest }: BarChartProps) {

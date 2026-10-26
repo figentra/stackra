@@ -10,17 +10,10 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-416 FR-002.
  */
-import {
-  ChatTool as HeroChatTool,
-  type ChatToolProps as HeroChatToolProps,
-} from "@heroui-pro/react/chat-tool";
+import { ChatTool as HeroChatTool } from "@heroui-pro/react/chat-tool";
 
-import type { ChatToolContractProps } from "#contracts/types/chat-tool-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
-
-/** Props of the web ChatTool: the shared contract plus HeroUI Pro's own, with `active` renamed `isActive`. */
-export type ChatToolProps = ChatToolContractProps &
-  Omit<HeroChatToolProps, keyof ChatToolContractProps | "active">;
+import type { ChatToolProps } from "#react/chat-tool/chat-tool.props";
 
 /** The root: HeroUI Pro's disclosure, a preset row from `state` or a composed one from its children. */
 function ChatToolRoot({ isActive, ...rest }: ChatToolProps) {

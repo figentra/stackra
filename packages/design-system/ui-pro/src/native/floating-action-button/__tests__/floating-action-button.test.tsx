@@ -14,10 +14,8 @@ import { FAB as HeroFloatingActionButton } from "heroui-native-pro/fab";
 import type { ReactNode } from "react";
 
 import type { FloatingActionButtonContractProps } from "#contracts/types/floating-action-button-contract-props.type";
-import {
-  FloatingActionButton,
-  type FloatingActionButtonProps,
-} from "#native/floating-action-button/floating-action-button";
+import { FloatingActionButton } from "#native/floating-action-button/floating-action-button";
+import type { FloatingActionButtonProps } from "#native/floating-action-button/floating-action-button.props";
 
 /** The props the root stand-in was last handed, as the real component would receive them. */
 const received = vi.hoisted(() => ({ props: {} as Record<string, unknown> }));

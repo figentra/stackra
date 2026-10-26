@@ -9,20 +9,10 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-416 FR-005.
  */
-import {
-  Rating as HeroRating,
-  type RatingRootProps as HeroRatingRootProps,
-} from "@heroui-pro/react/rating";
+import { Rating as HeroRating } from "@heroui-pro/react/rating";
 
-import type { RatingContractProps } from "#contracts/types/rating-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
-
-/**
- * Props of the web Rating: the shared contract plus HeroUI Pro's own props, passed through unchanged. The accessible
- * name is `label`, so HeroUI Pro's `aria-label` is left out of the type.
- */
-export type RatingProps = RatingContractProps &
-  Omit<HeroRatingRootProps, keyof RatingContractProps | "aria-label">;
+import type { RatingProps } from "#react/rating/rating.props";
 
 /** The root: HeroUI Pro's, a radio group of rating items, with `label` as its `aria-label`. */
 function RatingRoot({ label, ...rest }: RatingProps) {

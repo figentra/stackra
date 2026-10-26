@@ -6,17 +6,10 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-416 FR-003.
  */
-import {
-  DropZone as HeroDropZone,
-  type DropZoneAreaProps as HeroDropZoneAreaProps,
-} from "@heroui-pro/react/drop-zone";
+import { DropZone as HeroDropZone } from "@heroui-pro/react/drop-zone";
 
-import type { DropZoneAreaContractProps } from "#contracts/types/drop-zone-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
-
-/** Props of the drop area: the shared contract plus HeroUI Pro's own, with `aria-label` renamed `label`. */
-export type DropZoneAreaProps = DropZoneAreaContractProps &
-  Omit<HeroDropZoneAreaProps, keyof DropZoneAreaContractProps | "aria-label">;
+import type { DropZoneAreaProps } from "#react/drop-zone/drop-zone-area.props";
 
 /** The drop area: holds the icon, the label, the description and the trigger. */
 export function DropZoneArea({ label, isDisabled, ...rest }: DropZoneAreaProps) {

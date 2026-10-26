@@ -20,13 +20,8 @@ import {
 import type { ReactNode } from "react";
 
 import type { StepperContractProps } from "#contracts/types/stepper-contract-props.type";
-import {
-  Stepper,
-  useStepper,
-  useStepperAnimation,
-  useStepperStep,
-  type StepperProps,
-} from "#native/stepper/stepper";
+import { Stepper, useStepper, useStepperAnimation, useStepperStep } from "#native/stepper/stepper";
+import type { StepperProps } from "#native/stepper/stepper.props";
 
 /** The props the root stand-in was last handed, as the real component would receive them. */
 const received = vi.hoisted(() => ({ props: {} as Record<string, unknown> }));

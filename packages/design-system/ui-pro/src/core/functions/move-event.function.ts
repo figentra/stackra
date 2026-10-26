@@ -10,7 +10,8 @@ import type { SchedulerEvent } from "#contracts/types/scheduler-event.type";
 import type { SchedulerBounds } from "#core/types/scheduler-bounds.type";
 
 /**
- * `event` moved.
+ * `event` moved by `minutes`, snapped to the slot grid and kept inside `bounds`, optionally to another day or
+ * resource.
  *
  * @example
  * moveEvent(booking, 17, { startMinute: 540, endMinute: 1080, slotMinutes: 15 }); // 15 minutes later

@@ -11,20 +11,10 @@
  * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-416 FR-011.
  */
 import { Stepper as HeroStepper } from "heroui-native-pro/stepper";
-import type { ComponentPropsWithRef, ReactElement } from "react";
+import type { ReactElement } from "react";
 
-import type { StepperContractProps } from "#contracts/types/stepper-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
-
-/**
- * Props of the native Stepper: the shared contract plus HeroUI Native Pro's own, passed through unchanged. The
- * accessible name is `label`, so HeroUI's two spellings of it are left out of the type.
- */
-export type StepperProps = StepperContractProps &
-  Omit<
-    ComponentPropsWithRef<typeof HeroStepper>,
-    keyof StepperContractProps | "accessibilityLabel" | "aria-label"
-  >;
+import type { StepperProps } from "#native/stepper/stepper.props";
 
 /** The step list: HeroUI Native Pro's root, named by `label` as its accessibility label. */
 function StepperRoot({ label, ...rest }: StepperProps): ReactElement {

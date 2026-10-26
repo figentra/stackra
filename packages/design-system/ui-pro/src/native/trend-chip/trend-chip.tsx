@@ -10,14 +10,10 @@
  * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-416 FR-008.
  */
 import { TrendChip as HeroTrendChip } from "heroui-native-pro/trend-chip";
-import type { ComponentPropsWithRef, ReactElement } from "react";
+import type { ReactElement } from "react";
 
-import type { TrendChipContractProps } from "#contracts/types/trend-chip-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
-
-/** Props of the native TrendChip: the shared contract plus HeroUI Native Pro's own chip props, passed through unchanged. */
-export type TrendChipProps = TrendChipContractProps &
-  Omit<ComponentPropsWithRef<typeof HeroTrendChip>, keyof TrendChipContractProps>;
+import type { TrendChipProps } from "#native/trend-chip/trend-chip.props";
 
 /** The root: HeroUI Native Pro's, which draws the arrow and the colour from `trend`. */
 function TrendChipRoot({ size, variant, ...rest }: TrendChipProps): ReactElement {

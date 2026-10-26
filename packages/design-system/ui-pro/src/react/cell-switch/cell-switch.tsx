@@ -7,17 +7,10 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-416 FR-003.
  */
-import {
-  CellSwitch as HeroCellSwitch,
-  type CellSwitchProps as HeroCellSwitchProps,
-} from "@heroui-pro/react/cell-switch";
+import { CellSwitch as HeroCellSwitch } from "@heroui-pro/react/cell-switch";
 
-import type { CellSwitchContractProps } from "#contracts/types/cell-switch-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
-
-/** Props of the web CellSwitch: the shared contract plus HeroUI Pro's own, with `aria-label` renamed `label`. */
-export type CellSwitchProps = CellSwitchContractProps &
-  Omit<HeroCellSwitchProps, keyof CellSwitchContractProps | "aria-label">;
+import type { CellSwitchProps } from "#react/cell-switch/cell-switch.props";
 
 /** The root: HeroUI Pro's, with `label` as the accessible name. */
 function CellSwitchRoot({ label, isDisabled, ...rest }: CellSwitchProps) {

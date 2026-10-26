@@ -8,30 +8,16 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-416 FR-004.
  */
-import {
-  ContextMenu as HeroContextMenu,
-  type ContextMenuMenuProps as HeroContextMenuMenuProps,
-  type ContextMenuProps as HeroContextMenuProps,
-} from "@heroui-pro/react/context-menu";
+import { ContextMenu as HeroContextMenu } from "@heroui-pro/react/context-menu";
 
-import type {
-  ContextMenuContractProps,
-  ContextMenuMenuContractProps,
-} from "#contracts/types/context-menu-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
-
-/** Props of the web ContextMenu: the shared contract plus HeroUI Pro's own, with `open` renamed `isOpen`. */
-export type ContextMenuProps = ContextMenuContractProps &
-  Omit<HeroContextMenuProps, keyof ContextMenuContractProps | "open">;
+import type { ContextMenuProps } from "#react/context-menu/context-menu.props";
+import type { ContextMenuMenuProps } from "#react/context-menu/context-menu-menu.props";
 
 /** The root: HeroUI Pro's, which holds the open state shared by the trigger and the popover. */
 function ContextMenuRoot({ isOpen, ...rest }: ContextMenuProps) {
   return <HeroContextMenu.Root {...rest} {...omitUndefined({ open: isOpen })} />;
 }
-
-/** Props of `ContextMenu.Menu`: the shared contract plus HeroUI Pro's own, with `aria-label` renamed `label`. */
-export type ContextMenuMenuProps<T extends object = object> = ContextMenuMenuContractProps &
-  Omit<HeroContextMenuMenuProps<T>, keyof ContextMenuMenuContractProps | "aria-label">;
 
 /** The menu: HeroUI Pro's, named by `label`. */
 function ContextMenuMenu<T extends object>({ label, ...rest }: ContextMenuMenuProps<T>) {

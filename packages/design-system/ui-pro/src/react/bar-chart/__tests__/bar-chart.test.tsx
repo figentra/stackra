@@ -15,7 +15,8 @@ import { render } from "@testing-library/react";
 import type { ReactNode } from "react";
 
 import type { BarChartContractProps } from "#contracts/types/bar-chart-contract-props.type";
-import { BarChart, type BarChartProps } from "#react/bar-chart/bar-chart";
+import { BarChart } from "#react/bar-chart/bar-chart";
+import type { BarChartProps } from "#react/bar-chart/bar-chart.props";
 
 /** The props the root stand-in was last handed, as the real component would receive them. */
 const received = vi.hoisted(() => ({ props: {} as Record<string, unknown> }));

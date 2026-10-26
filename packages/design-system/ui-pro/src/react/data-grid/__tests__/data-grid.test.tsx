@@ -11,7 +11,8 @@
 // @covers sta-403:FR-003
 import { render, screen } from "@testing-library/react";
 
-import { DataGrid, type DataGridColumn, type DataGridProps } from "#react/data-grid/data-grid";
+import { DataGrid, type DataGridColumn } from "#react/data-grid/data-grid";
+import type { DataGridProps } from "#react/data-grid/data-grid.props";
 
 interface Person {
   readonly id: number;
@@ -32,7 +33,9 @@ describe("DataGrid (web)", () => {
       "ResizeObserver",
       class {
         observe() {}
+
         unobserve() {}
+
         disconnect() {}
       },
     );

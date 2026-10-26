@@ -19,7 +19,8 @@ import {
 import type { ReactNode } from "react";
 
 import type { NumberPadContractProps } from "#contracts/types/number-pad-contract-props.type";
-import { NumberPad, useNumberPad, type NumberPadProps } from "#native/number-pad/number-pad";
+import { NumberPad, useNumberPad } from "#native/number-pad/number-pad";
+import type { NumberPadProps } from "#native/number-pad/number-pad.props";
 
 /** The props the root stand-in was last handed, as the real component would receive them. */
 const received = vi.hoisted(() => ({ props: {} as Record<string, unknown> }));

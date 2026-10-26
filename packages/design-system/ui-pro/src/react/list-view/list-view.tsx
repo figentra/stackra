@@ -9,17 +9,10 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-416 FR-005.
  */
-import { ListView as HeroListView, type ListViewRootProps } from "@heroui-pro/react/list-view";
+import { ListView as HeroListView } from "@heroui-pro/react/list-view";
 
-import type { ListViewContractProps } from "#contracts/types/list-view-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
-
-/**
- * Props of the web ListView: the shared contract plus HeroUI Pro's own list props, with `aria-label` renamed `label`
- * and `virtualized` renamed `isVirtualized`.
- */
-export type ListViewProps<T extends object> = ListViewContractProps &
-  Omit<ListViewRootProps<T>, keyof ListViewContractProps | "aria-label" | "virtualized">;
+import type { ListViewProps } from "#react/list-view/list-view.props";
 
 /** The list root: HeroUI Pro's, named by `label`. */
 function ListViewRoot<T extends object>({ label, isVirtualized, ...rest }: ListViewProps<T>) {

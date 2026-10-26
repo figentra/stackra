@@ -8,7 +8,6 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0310 (decision 4); ADR 0303 (decision 7); STA-403 FR-010.
  */
-import type { Tone } from "@stackra/ui/contracts";
 
 /** Props of the native `SwipeableRow` that the Stackra vocabulary names. */
 export interface SwipeableRowContractProps {
@@ -16,10 +15,4 @@ export interface SwipeableRowContractProps {
   readonly label?: string | undefined;
   /** True to refuse the swipe gesture. */
   readonly isDisabled?: boolean | undefined;
-}
-
-/** Props of `SwipeableRow.Action` that the Stackra vocabulary names. */
-export interface SwipeableRowActionContractProps {
-  /** The colour role; HeroUI Native Pro's colour-scheme `variant`, which has no `warning`. Defaults to `default`. */
-  readonly tone?: Exclude<Tone, "warning"> | undefined;
 }

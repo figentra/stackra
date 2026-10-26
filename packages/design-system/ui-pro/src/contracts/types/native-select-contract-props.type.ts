@@ -14,11 +14,3 @@ export interface NativeSelectContractProps {
   /** True to make the select fill the width of its container; HeroUI Pro's `fullWidth`. */
   readonly isFullWidth?: boolean | undefined;
 }
-
-/** Props of `NativeSelect.Trigger` that the Stackra vocabulary names. */
-export interface NativeSelectTriggerContractProps {
-  /** The accessible name of the select, read by screen readers; HeroUI Pro's `aria-label`. */
-  readonly label?: string | undefined;
-  /** True to disable the select; the native `disabled` attribute. */
-  readonly isDisabled?: boolean | undefined;
-}

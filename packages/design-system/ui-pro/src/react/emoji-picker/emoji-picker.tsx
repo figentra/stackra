@@ -9,47 +9,22 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-416 FR-004.
  */
-import {
-  EmojiPicker as HeroEmojiPicker,
-  type EmojiPickerProps as HeroEmojiPickerProps,
-  type EmojiPickerSkinToneContentProps as HeroEmojiPickerSkinToneContentProps,
-  type EmojiPickerSkinToneTriggerProps as HeroEmojiPickerSkinToneTriggerProps,
-} from "@heroui-pro/react/emoji-picker";
+import { EmojiPicker as HeroEmojiPicker } from "@heroui-pro/react/emoji-picker";
 
-import type {
-  EmojiPickerContractProps,
-  EmojiPickerSkinToneContentContractProps,
-  EmojiPickerSkinToneTriggerContractProps,
-} from "#contracts/types/emoji-picker-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
-
-/** Props of the web EmojiPicker: the shared contract plus HeroUI Pro's own, with `aria-label` renamed `label`. */
-export type EmojiPickerProps = EmojiPickerContractProps &
-  Omit<HeroEmojiPickerProps, keyof EmojiPickerContractProps | "aria-label">;
+import type { EmojiPickerProps } from "#react/emoji-picker/emoji-picker.props";
+import type { EmojiPickerSkinToneTriggerProps } from "#react/emoji-picker/emoji-picker-skin-tone-trigger.props";
+import type { EmojiPickerSkinToneContentProps } from "#react/emoji-picker/emoji-picker-skin-tone-content.props";
 
 /** The picker: HeroUI Pro's `EmojiPicker.Root`, a select named by `label`. */
 function EmojiPickerRoot({ size, label, ...rest }: EmojiPickerProps) {
   return <HeroEmojiPicker.Root {...rest} {...omitUndefined({ size, "aria-label": label })} />;
 }
 
-/** Props of `EmojiPicker.SkinToneTrigger`: the shared contract plus HeroUI Pro's own, with `aria-label` renamed `label`. */
-export type EmojiPickerSkinToneTriggerProps = EmojiPickerSkinToneTriggerContractProps &
-  Omit<
-    HeroEmojiPickerSkinToneTriggerProps,
-    keyof EmojiPickerSkinToneTriggerContractProps | "aria-label"
-  >;
-
 /** The skin-tone button: HeroUI Pro's, named by `label`. */
 function EmojiPickerSkinToneTrigger({ label, ...rest }: EmojiPickerSkinToneTriggerProps) {
   return <HeroEmojiPicker.SkinToneTrigger {...rest} {...omitUndefined({ "aria-label": label })} />;
 }
-
-/** Props of `EmojiPicker.SkinToneContent`: the shared contract plus HeroUI Pro's own, with `aria-label` renamed `label`. */
-export type EmojiPickerSkinToneContentProps = EmojiPickerSkinToneContentContractProps &
-  Omit<
-    HeroEmojiPickerSkinToneContentProps,
-    keyof EmojiPickerSkinToneContentContractProps | "aria-label"
-  >;
 
 /** The skin-tone list: HeroUI Pro's, named by `label`. */
 function EmojiPickerSkinToneContent({ label, ...rest }: EmojiPickerSkinToneContentProps) {

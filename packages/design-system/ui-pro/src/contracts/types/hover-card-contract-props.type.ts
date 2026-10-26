@@ -14,9 +14,3 @@ export interface HoverCardContractProps {
   /** The controlled open state; HeroUI Pro's `open`. Uncontrolled when left out. */
   readonly isOpen?: boolean | undefined;
 }
-
-/** Props of `HoverCard.Content` that the Stackra vocabulary names. */
-export interface HoverCardContentContractProps {
-  /** The accessible name of the card, a dialog; HeroUI Pro's `aria-label`. */
-  readonly label?: string | undefined;
-}

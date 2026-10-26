@@ -8,15 +8,9 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-416 FR-005.
  */
-import {
-  EmptyState as HeroEmptyState,
-  type EmptyStateRootProps as HeroEmptyStateRootProps,
-} from "@heroui-pro/react/empty-state";
-import type { ComponentPropsWithRef } from "react";
+import { EmptyState as HeroEmptyState } from "@heroui-pro/react/empty-state";
 
-/** Props of the web EmptyState: HeroUI Pro's own root props plus the attributes of the `div` it draws. */
-export type EmptyStateProps = HeroEmptyStateRootProps &
-  Omit<ComponentPropsWithRef<"div">, keyof HeroEmptyStateRootProps>;
+import type { EmptyStateProps } from "#react/empty-state/empty-state.props";
 
 /** The root: HeroUI Pro's, a centred column that holds the placeholder. */
 function EmptyStateRoot(props: EmptyStateProps) {

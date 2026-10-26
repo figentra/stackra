@@ -9,17 +9,10 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-416 FR-005.
  */
-import { FileTree as HeroFileTree, type FileTreeRootProps } from "@heroui-pro/react/file-tree";
+import { FileTree as HeroFileTree } from "@heroui-pro/react/file-tree";
 
-import type { FileTreeContractProps } from "#contracts/types/file-tree-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
-
-/**
- * Props of the web FileTree: the shared contract plus HeroUI Pro's own tree props, with `aria-label` renamed `label`
- * and `reduceMotion` renamed `isMotionReduced`.
- */
-export type FileTreeProps<T extends object> = FileTreeContractProps &
-  Omit<FileTreeRootProps<T>, keyof FileTreeContractProps | "aria-label" | "reduceMotion">;
+import type { FileTreeProps } from "#react/file-tree/file-tree.props";
 
 /** The tree root: HeroUI Pro's, named by `label`. */
 function FileTreeRoot<T extends object>({
