@@ -37,6 +37,9 @@ programming model v3.1 shape (ADR 0294, 0305). Entry `.` only.
 - Only add a symbol a consumer imports today (the template, a generated sample, a package, or the registry row).
 - Configuration, not code: an identifier, phone, postal-code or address format is market-pack data passed in as an
   `IdentifierFormat` or `AddressFormat`. Add an algorithm (`IdentifierCheck`), never a country's pattern.
+- A format read from a market pack is parsed with its `X$` (`AddressFormat$`, `IdentifierFormat$`,
+  `NationalIdFormats$`), never cast. National-ID kinds (`national_id`, `residence_permit`) are pack keys of
+  `identity.national_ids`, never code. This package cannot import `@stackra/market-packs` (it depends on us).
 - One-time codes store a peppered HMAC only; never log or return a code after issue, never compare with `===`.
 
 ## Rules that fail the build
@@ -53,7 +56,8 @@ programming model v3.1 shape (ADR 0294, 0305). Entry `.` only.
 
 ## PII
 
-| Data          | Where              | Handling                                                                                          |
-| ------------- | ------------------ | ------------------------------------------------------------------------------------------------- |
-| None          | —                  | Shapes only; `@Classified` records a field's class of personal data but this package stores none. |
-| One-time code | `issueOneTimeCode` | Returned once to the caller for delivery; the record holds an HMAC digest only.                   |
+| Data          | Where              | Handling                                                                                                   |
+| ------------- | ------------------ | ---------------------------------------------------------------------------------------------------------- |
+| None          | —                  | Shapes only; `@Classified` records a field's class of personal data but this package stores none.          |
+| National ID   | `nationalId()`     | Checked and normalised only; a refusal never echoes the number. A field holding one carries `@Classified`. |
+| One-time code | `issueOneTimeCode` | Returned once to the caller for delivery; the record holds an HMAC digest only.                            |

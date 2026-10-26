@@ -3,7 +3,8 @@
  * Purpose: Stand-in barrel: the `.` entry of @stackra/validation, which has several public files, until `stackra gen`
  *          writes the entry barrels (STA-339). The old `./runtime` entry is folded in (owner Q4).
  * Boundary: names each re-export and declares nothing. The shipped schemas of @stackra/contracts' object types
- *           (`Actor$`, `ScopeRef$`, `Signature$`, `SignerPublicKey$`) and `Address$` are public, under their generated
+ *           (`Actor$`, `ScopeRef$`, `Signature$`, `SignerPublicKey$`), `Address$` and the market-pack format schemas
+ *           (`AddressFormat$`, `IdentifierFormat$`, `NationalIdFormats$`, STA-1269) are public, under their generated
  *           names, because contracts carries no zod (STA-1284). `Enum` is @stackra/contracts' (Q1); `money` and
  *           `currencyCode` are @stackra/money's (Q5). The registry, the kind lists, the other shipped schemas, `deriveShape`, the check
  *           algorithms (`luhnValid`, `mod97Valid`, `centuryBirthDateValid`) and the code digest stay internal.
@@ -16,6 +17,9 @@ export { OneTimeCodeResult } from "#core/enums/one-time-code-result.enum";
 export { Page } from "#core/constants/page.constant";
 export { ACTOR_SCHEMA as Actor$ } from "#core/constants/actor-schema.constant";
 export { ADDRESS_SCHEMA as Address$ } from "#core/constants/address-schema.constant";
+export { ADDRESS_FORMAT_SCHEMA as AddressFormat$ } from "#core/constants/address-format-schema.constant";
+export { IDENTIFIER_FORMAT_SCHEMA as IdentifierFormat$ } from "#core/constants/identifier-format-schema.constant";
+export { NATIONAL_ID_FORMATS_SCHEMA as NationalIdFormats$ } from "#core/constants/national-id-formats-schema.constant";
 export { SCOPE_REF_SCHEMA as ScopeRef$ } from "#core/constants/scope-ref-schema.constant";
 export { SIGNATURE_SCHEMA as Signature$ } from "#core/constants/signature-schema.constant";
 export { SIGNER_PUBLIC_KEY_SCHEMA as SignerPublicKey$ } from "#core/constants/signer-public-key-schema.constant";
@@ -48,6 +52,7 @@ export { registerSchemas } from "#core/functions/register-schemas.function";
 export { schemaOf } from "#core/functions/schema-of.function";
 export { tableInput } from "#core/functions/table-input.function";
 export { url } from "#core/functions/url.function";
+export { nationalId } from "#core/functions/national-id.function";
 export { normalizeIdentifier } from "#core/functions/normalize-identifier.function";
 export { validate } from "#core/functions/validate.function";
 export { verifyOneTimeCode } from "#core/functions/verify-one-time-code.function";
@@ -60,6 +65,7 @@ export type { Assert } from "#core/types/assert.type";
 export type { CountryCode } from "#core/types/country-code.type";
 export type { E164 } from "#core/types/e164.type";
 export type { IdentifierFormat } from "#core/types/identifier-format.type";
+export type { NationalId } from "#core/types/national-id.type";
 export type { OneTimeCodePolicy } from "#core/types/one-time-code-policy.type";
 export type { OneTimeCodeRecord } from "#core/types/one-time-code-record.type";
 export type { FieldDecorator } from "#core/types/field-decorator.type";

@@ -17,7 +17,7 @@ import type { IdentifierFormat } from "#core/types/identifier-format.type";
  * A new schema of identifiers in `format`.
  *
  * @example
- * const taxNumber = identifier(valueOf(pack, "identity.vat_number", today).value as IdentifierFormat);
+ * const taxNumber = identifier(IdentifierFormat$.parse(valueOf(pack, "identity.vat_number", today)?.value));
  */
 export function identifier(format: IdentifierFormat): ZodType<string, string> {
   return z.string().transform((value, context) => {

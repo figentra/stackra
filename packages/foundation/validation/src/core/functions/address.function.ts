@@ -1,12 +1,14 @@
 /**
  * Stackra file contract:
  * Purpose: `address(format)`, the schema of an `Address` in one Market: trimmed parts, at least one and at most
- *          `maxLines` street lines, the parts the format requires, and the postal code and short address checked
- *          against their formats (and stored normalised).
- * Boundary: the format is market-pack data the caller passes for the address's Market. The country must be a known
- *           region; whether it matches the Market is the caller's rule.
+ *          `maxLines` street lines, the parts the format requires, and the region, postal code and short address
+ *          checked against their formats (and stored normalised).
+ * Boundary: the format is market-pack data the caller passes for the address's Market (`identity.address_format`,
+ *           parsed with `AddressFormat$`). The country must be a known region; whether it matches the Market is the
+ *           caller's rule.
  * Runtime: isomorphic
- * Governing contract: OS-370 and COM-117; owner principle 2026-10-25 (configuration, not code).
+ * Governing contract: OS-370 and COM-117; owner principle 2026-10-25 (configuration, not code); ADR 0405; OS
+ *                     tenancy G8 (STA-1269).
  */
 import { z } from "zod";
 import type { ZodType } from "zod";
@@ -28,7 +30,7 @@ const part = () =>
  * A new schema of addresses in `format`.
  *
  * @example
- * const shipping = address(valueOf(pack, "identity.address_format", today).value as AddressFormat);
+ * const shipping = address(AddressFormat$.parse(valueOf(pack, "identity.address_format", today)?.value));
  */
 export function address(format: AddressFormat): ZodType<Address, unknown> {
   const maxLines = format.maxLines ?? 1;
@@ -47,7 +49,7 @@ export function address(format: AddressFormat): ZodType<Address, unknown> {
         if (value[field] === undefined)
           context.addIssue({ code: "custom", path: [field], message: "Required in this market" });
       const checked = { ...value };
-      for (const field of ["postalCode", "shortCode"] as const) {
+      for (const field of ["region", "postalCode", "shortCode"] as const) {
         const rule = format[field];
         const given = value[field];
         if (rule === undefined || given === undefined) continue;

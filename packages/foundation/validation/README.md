@@ -26,7 +26,7 @@ Depends on `@stackra/contracts`, `@stackra/container` and `zod`; one-time codes 
 
 `@stackra/contracts` carries no zod, so the `X$` of its object types (`ScopeRef$`, `Actor$`, `Signature$`,
 `SignerPublicKey$`) ships here. `Address$` is the market-neutral address; `address(format)` checks one Market's format
-(STA-1284).
+(STA-1284), fed from the pack through `AddressFormat$` (STA-1269).
 
 ## Identifiers, phones, addresses and barcodes
 
@@ -39,12 +39,27 @@ Formats are market-pack data; this package holds the algorithms only, so no coun
 | `normalizeIdentifier`                                         | the normal form alone                                                                                                                                             |
 | `e164()`, `E164`                                              | a phone number typed any common way, output as `+966500000001`                                                                                                    |
 | `countryCode()`, `CountryCode`                                | ISO 3166-1 alpha-2, upper-cased, known to Intl                                                                                                                    |
-| `address(format)`, `Address`, `AddressFormat`, `AddressField` | an address checked against its Market's required parts, line count, postal code and short address                                                                 |
+| `address(format)`, `Address`, `AddressFormat`, `AddressField` | an address checked against its Market's required parts, line count, region code, postal code and short address                                                    |
+| `nationalId(formats)`, `NationalId`                           | an identity document number checked against the kind the issuing Market names (`national_id`, `residence_permit`)                                                 |
+| `IdentifierFormat$`, `AddressFormat$`, `NationalIdFormats$`   | parse a pack value into a format (no `as` cast); `z.toJSONSchema(X$)` declares the key in a pack section schema                                                   |
 | `gtin()`, `isGtin`, `gtinCheckDigit`                          | GTIN-8, UPC-A, EAN-13 and GTIN-14 check digits; the schema outputs GTIN-14 (conflict #1)                                                                          |
 
+Wiring to the market pack (`@stackra/market-packs` depends on this package, so the caller reads the value):
+
+| Pack key                  | Value                           | Parse with           | Check with            |
+| ------------------------- | ------------------------------- | -------------------- | --------------------- |
+| `identity.address_format` | `AddressFormat`                 | `AddressFormat$`     | `address(format)`     |
+| `identity.national_ids`   | kind code to `IdentifierFormat` | `NationalIdFormats$` | `nationalId(formats)` |
+| `identity.<name>` (VAT…)  | `IdentifierFormat`              | `IdentifierFormat$`  | `identifier(format)`  |
+
 ```ts
-const vat = identifier(valueOf(pack, "identity.vat_number", today).value as IdentifierFormat);
+const vat = identifier(IdentifierFormat$.parse(valueOf(pack, "identity.vat_number", today)?.value));
 vat.parse("3000 0000 0000 003");
+
+const ids = nationalId(
+  NationalIdFormats$.parse(valueOf(pack, "identity.national_ids", today)?.value),
+);
+ids.parse({ country: "SA", kind: "national_id", number: "1012345672" });
 ```
 
 ## One-time codes
