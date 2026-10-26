@@ -13,6 +13,7 @@ import * as entry from "#core/index";
 import type {
   CatalogueDiagnostic,
   CatalogueDiagnosticCode,
+  DeliverableEventRow,
   EditionInstallIssue,
   EditionInstallPlan,
   InstallableModule,
@@ -25,6 +26,7 @@ describe("@stackra/registry", () => {
       "AppReview",
       "CatalogueDiagnosticCode",
       "CatalogueManifest",
+      "DeliverablePayload",
       "DeveloperSandbox",
       "EditionBundle",
       "FeeSchedule",
@@ -35,6 +37,7 @@ describe("@stackra/registry", () => {
       "ReviewState",
       "canTransitionReview",
       "computePartnerPayout",
+      "deliverableEvents",
       "perkEligible",
       "perkListingFee",
       "planEditionInstall",
@@ -49,6 +52,10 @@ describe("@stackra/registry", () => {
     ]);
     expect(diagnostics).toEqual([]);
     expectTypeOf(diagnostics).toEqualTypeOf<CatalogueDiagnostic[]>();
+  });
+
+  it("types the webhook event catalogue", () => {
+    expectTypeOf(entry.deliverableEvents).returns.toEqualTypeOf<DeliverableEventRow[]>();
   });
 
   it("types the review, payout and edition install surface", () => {

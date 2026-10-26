@@ -67,6 +67,79 @@ describe("CatalogueManifest", () => {
     expect(result.data.permissions[0]?.["label"]).toBe("Cancel an order");
   });
 
+  it("reads the catalogue fields: intents, entitlement, tool and the webhook event row", () => {
+    const result = validate(CatalogueManifest, {
+      ...HEADER,
+      modules: [
+        {
+          key: "orders",
+          dependsOn: [],
+          enhances: ["loyalty"],
+          intents: ["order.track"],
+          entitlement: "orders.module",
+        },
+      ],
+      actions: [
+        {
+          key: "orders.order.cancel@1",
+          kind: "action",
+          module: "orders",
+          class: "CancelOrderAction",
+          permission: "orders.order.cancel",
+          risk: "L2",
+          tool: { name: "orders_order_cancel", default: true, hints: {} },
+        },
+        {
+          key: "orders.order.refund@1",
+          kind: "action",
+          module: "orders",
+          class: "RefundOrderAction",
+          permission: "orders.order.refund",
+          risk: "L3",
+          tool: true,
+        },
+      ],
+      events: [
+        {
+          name: "orders.order.paid.v1",
+          module: "orders",
+          class: "OrderPaid",
+          kind: "integration",
+          webhook: true,
+          dataClasses: ["personal"],
+          thinFields: ["total"],
+        },
+      ],
+    });
+    expect(result.success).toBe(true);
+    if (!result.success) return;
+    expect(result.data.modules[0]?.intents).toEqual(["order.track"]);
+    expect(result.data.modules[0]?.entitlement).toBe("orders.module");
+    expect(result.data.actions[1]?.tool).toBe(true);
+    expect(result.data.events[0]?.dataClasses).toEqual(["personal"]);
+  });
+
+  it("fails a broken catalogue field at its path", () => {
+    expect(
+      failedPaths({ ...HEADER, modules: [{ key: "orders", dependsOn: [], entitlement: "" }] }),
+    ).toEqual(["modules.0.entitlement"]);
+    expect(
+      failedPaths({
+        ...HEADER,
+        events: [
+          {
+            name: "orders.order.paid.v1",
+            module: "orders",
+            class: "OrderPaid",
+            kind: "integration",
+            webhook: "yes",
+            dataClasses: ["secret"],
+          },
+        ],
+      }),
+    ).toEqual(["events.0.webhook", "events.0.dataClasses.0"]);
+  });
+
   it("builds an instance from code with create", () => {
     const manifest = CatalogueManifest.create({
       ...HEADER,

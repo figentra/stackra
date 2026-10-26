@@ -22,7 +22,12 @@ programming model v3.1 shape (ADR 0294, 0305). Entry `.` only.
 ## This package
 
 - Runtime dependencies are `@stackra/contracts`, `@stackra/validation` and `zod` only.
-- `validateCatalogue`, `canTransitionReview` and `planEditionInstall` are pure and never throw on untrusted input. Any new check keeps the output independent of input
+- `CatalogueManifest` names the catalogue fields a registry reads (module `enhances`, `intents`, `entitlement`; action
+  `tool`, `toolOff`; event `webhook`, `dataClasses`, `thinFields`). A new one goes in both the shipped schema and the
+  class, optional, so older manifests still pass.
+- `deliverableEvents` is the only place that turns `webhook` and `dataClasses` into a payload shape; any personal-data
+  class makes it thin.
+- `validateCatalogue`, `canTransitionReview`, `planEditionInstall` and `deliverableEvents` are pure and never throw on untrusted input. Any new check keeps the output independent of input
   order: walk manifests in the sorted order, and compare strings by code unit, never with `localeCompare`.
 - A new diagnostic code is a new case of `CatalogueDiagnosticCode`, snake_case.
 - Configuration, not code: fee rates, sandbox counts and lifetimes, and review rules are records and settings the

@@ -14,7 +14,9 @@ decision 8: the review state, developer sandboxes, fee schedules and partner pay
 | Symbol                                                 | Use                                                                                                                          |
 | ------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------- |
 | `validateCatalogue`                                    | checks a set of manifests as one catalogue; returns `CatalogueDiagnostic[]`, empty when valid                                |
-| `CatalogueManifest`                                    | the shape of one published manifest: header plus `modules`, `actions`, `events`, `permissions`                               |
+| `CatalogueManifest`                                    | the shape of one published manifest: header plus `modules`, `actions`, `events`, `permissions`, with the catalogue fields    |
+| `deliverableEvents`, `DeliverableEventRow`             | the webhook event catalogue rows of a release (opt-ins, thin or full, withdrawals), to register at manifest publish          |
+| `DeliverablePayload`                                   | `thin` or `full`, the body a webhook endpoint receives for a catalogue event                                                 |
 | `CatalogueDiagnosticCode`                              | the seven codes below                                                                                                        |
 | `CatalogueDiagnostic`                                  | type: `{ code, member, path, message }`                                                                                      |
 | `ReviewState`, `canTransitionReview`                   | an app version's review state and the moves allowed between states                                                           |
@@ -45,6 +47,34 @@ const manifest = validate(CatalogueManifest, incoming); // typed, now known to p
 | `foreign_namespace`  | an action key or event name does not start with `<its module>.`, or a permission key with a module of its member |
 | `unknown_dependency` | a module depends on a module no manifest declares                                                                |
 | `dependency_cycle`   | modules reach each other through `dependsOn` (one per group, on its smallest key)                                |
+
+## Catalogue fields
+
+Beside the identities, a manifest entry may carry the fields a registry stores. They are optional; a wrong value is a
+`manifest_invalid` diagnostic at its path.
+
+| Entry     | Field         | Meaning                                                                                          |
+| --------- | ------------- | ------------------------------------------------------------------------------------------------ |
+| `modules` | `enhances`    | module keys it adds to without needing them                                                      |
+| `modules` | `intents`     | the assistant intents it serves (the tenant's union is the assistant's)                          |
+| `modules` | `entitlement` | the entitlement key that sells it; absent when free                                              |
+| `actions` | `tool`        | gen's `{ name, default, hints }` (or `true`): an agent may call it                               |
+| `actions` | `toolOff`     | why a user-facing action is not a tool                                                           |
+| `events`  | `webhook`     | `true` opts the event into tenant webhooks                                                       |
+| `events`  | `dataClasses` | the personal-data classes (`DataClassification`) its payload carries; any makes the webhook thin |
+| `events`  | `thinFields`  | for a thin payload, the non-id fields kept                                                       |
+
+## Webhook event catalogue
+
+```ts
+import { deliverableEvents } from "@stackra/registry";
+
+for (const row of deliverableEvents(incoming, storedPreviousRelease))
+  await webhooks.registerDeliverableEvent(row); // { type, payload: "thin" | "full", thinFields?, withdrawn? }
+```
+
+Only `webhook: true` events become rows; an event that declares a data class leaves thin (ids plus `thinFields`). An
+event the previous release offered and this one does not comes back with `withdrawn: true`. Rows sort by wire name.
 
 ## App market records
 
