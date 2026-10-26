@@ -3,15 +3,17 @@
  * Purpose: `generateMember`, gen-core's whole output for one member as a pure function of what discovery read: the
  *          committed `stackra.manifest.json` (and `openapi.json` for a service or app with endpoints), one schemas
  *          file and one entity file per module, the wiring, the member module when none is authored, the
- *          registrations, a service's boot and inbound webhook route, the public id prefixes, an app's route tables
- *          and blocks, the package entries or runtime entries, and the tool configs, after the identity checks and,
+ *          registrations, a service's boot and inbound webhook route, a service's Encore CronJobs and broker-delivered
+ *          queue topics, the public id prefixes, an app's route tables and blocks, the package entries or runtime
+ *          entries, and the tool configs, after the identity checks and,
  *          against the committed manifest, the `@Renamed` lock.
  * Boundary: pure: returns files, never writes them. Any error (discovery's, the manifest's or the lock's) means no
  *           file at all, so a broken run never leaves half an output behind. Other per-target outputs (clients,
- *           navigation trees, i18n, the Encore app, ...) are added by their owning targets.
+ *           navigation trees, i18n, the rest of the Encore app, ...) are added by their owning targets.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 10, 22 and 26); ADR 0295 (decisions 5 and 7); ADR 0305 (rules 15, 16 and
- *                     36); ADR 0097 (decision 3); registry v3.1 section 5 (gen-core items 2 to 6 and gap G1).
+ *                     36); ADR 0097 (decision 3); registry v3.1 section 5 (gen-core items 2 to 6 and gap G1); ADR 0148
+ *                     (decisions 3, 4 and 6: Encore CronJobs and Pub/Sub in SaaS).
  */
 import type { StackraManifest } from "@stackra/contracts";
 
@@ -19,6 +21,8 @@ import { buildManifest } from "#core/functions/build-manifest.function";
 import { checkIdentityLock } from "#core/functions/check-identity-lock.function";
 import { emitBlocks } from "#core/functions/emit-blocks.function";
 import { emitBoot } from "#core/functions/emit-boot.function";
+import { emitEncoreCronJobs } from "#core/functions/emit-encore-cron-jobs.function";
+import { emitEncoreQueues } from "#core/functions/emit-encore-queues.function";
 import { emitEntities } from "#core/functions/emit-entities.function";
 import { emitMemberModule } from "#core/functions/emit-member-module.function";
 import { emitPackageEntries } from "#core/functions/emit-package-entries.function";
@@ -94,6 +98,8 @@ export function generateMember(
     [".stackra/gen/prefixes.ts", emitPrefixes(manifest)],
   ];
   for (const [path, content] of optional) if (content !== undefined) files.push({ path, content });
+  for (const encore of [emitEncoreCronJobs(ir, manifest), emitEncoreQueues(ir, manifest)])
+    if (encore !== undefined) files.push(encore);
   files.push(...emitRoutes(ir), ...emitBlocks(ir));
   const entries = [
     ...emitPackageEntries(ir),

@@ -123,6 +123,40 @@ describe("emitWiring", () => {
     expect(billing.match(/provide: Locks,/g)).toHaveLength(1);
   });
 
+  it("binds the floor-aware settings reader, the resolver and the sequence allocator where they are injected", () => {
+    const ir: MemberIR = {
+      ...BILLING_IR,
+      classes: [
+        ...BILLING_IR.classes,
+        {
+          name: "InvoiceNumberService",
+          kind: "service",
+          module: "billing",
+          file: "src/modules/billing/services/invoice-number.service.ts",
+          importPath: "#modules/billing/services/invoice-number.service",
+          options: {},
+          deps: [
+            { class: { name: "SequenceService", from: "@stackra/database" } },
+            { class: { name: "SettingsReader", from: "@stackra/settings" } },
+            { class: { name: "SettingsResolver", from: "@stackra/settings" } },
+          ],
+          facets: [],
+          methods: [],
+          refusals: [],
+          statics: {},
+          traits: [],
+        },
+      ],
+    };
+    const bound = emitWiring(ir);
+    for (const line of [
+      '    { module: "billing", kind: "service", provide: SequenceService, deps: [Database, Clock] },',
+      '    { module: "billing", kind: "service", provide: SettingsReader, deps: [SettingValueStore, SettingFloorSource] },',
+      '    { module: "billing", kind: "service", provide: SettingsResolver, deps: [SettingValueStore, SettingFloorSource, SettingRevisionStore, Clock] },',
+    ])
+      expect(bound).toContain(line);
+  });
+
   it("uses names @stackra/container exports", () => {
     expect(Lifetime.Request).toBe("request");
     expect(typeof named).toBe("function");

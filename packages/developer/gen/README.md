@@ -98,10 +98,23 @@ it("only adds to the last release", async () => {
 `unmount()` one effect, `render()` the body. The generated Vite config puts `classComponents()` first; the generated
 Metro config sets `babelTransformerPath` to `@stackra/gen/metro-transformer`.
 
+## Encore jobs and queues
+
+For a service, gen writes the first parts of the Encore app (ADR 0148): `.stackra/encore/<member>/cron.ts` holds one
+`CronJob` per action whose `job` has a `cron` (its endpoint calls `SchedulerService.fire(<locked key>)`; ids by
+`cronJobId`, the formula `encoreCronJobs()` uses) and the stored schedules' minute tick; `.stackra/encore/<member>/queues.ts`
+holds one Pub/Sub `Topic` and `Subscription` per queue its job actions name, registered as `queue.<name>` for a
+broker-delivered queue driver, each delivery run through `QueueWorkerService.process`. Both reach the member through the
+server app's `handlers`. The manifest also locks each Integration's egress entry from its `baseUrl`: a fixed https
+origin, or a `{field}` host kept as data with the credential-set fields it is filled from (`egress_invalid` otherwise),
+and refuses a sequence outside `database/sequences/` (`sequence_misplaced`) and two cron actions with one CronJob id
+(`cron_job_collision`). The boot connects the bound `HoldRegistry` and `SequenceTimeZone` and registers the legal-hold
+subscriber; the wiring binds `SequenceService`, and `SettingsReader` with the market floor source, where injected.
+
 ## Not here
 
 Per-target outputs land with the target that owns them: clients, navigation trees and the `keys` `toRoot` takes,
-panels, resources and widgets, flags, settings pages, i18n keys, migrations, the Encore app (which calls `boot` and
-subscribes the inbox), the Vite, Expo, Metro, Wrangler and electron-builder configs, and the worker and desktop main
+panels, resources and widgets, flags, settings pages, i18n keys, migrations, the rest of the Encore app (which calls
+`boot` and subscribes the inbox), the Vite, Expo, Metro, Wrangler and electron-builder configs, and the worker and desktop main
 entries. The per-kind registrations of actions, permissions, roles, policies, listeners, extensions, workflows,
 entitlements, buckets and segment subjects come with those targets too.

@@ -31,6 +31,18 @@ function declared(name: string): DeclaredClass {
   return found;
 }
 
+/** The billing service with its Stripe Integration calling `baseUrl`. */
+function withBase(baseUrl: string): MemberIR {
+  return {
+    ...BILLING_IR,
+    classes: BILLING_IR.classes.map((candidate) =>
+      candidate.name === "StripeIntegration"
+        ? { ...candidate, options: { ...candidate.options, baseUrl } }
+        : candidate,
+    ),
+  };
+}
+
 describe("buildManifest", () => {
   const { manifest, errors } = buildManifest(COMMERCE_IR);
 
@@ -301,6 +313,38 @@ describe("buildManifest", () => {
     expect(buildManifest(ir).errors.map((error) => `${error.code} ${error.subject}`)).toEqual([
       "identity_missing InvoiceSequence",
     ]);
+  });
+
+  it("refuses a sequence outside its module's database/sequences group", () => {
+    const ir: MemberIR = {
+      ...BILLING_IR,
+      classes: BILLING_IR.classes.map((candidate) =>
+        candidate.name === "InvoiceSequence"
+          ? { ...candidate, file: "src/modules/billing/services/invoice.sequence.ts" }
+          : candidate,
+      ),
+    };
+    expect(buildManifest(ir).errors.map((error) => `${error.code} ${error.subject}`)).toEqual([
+      "sequence_misplaced InvoiceSequence",
+    ]);
+  });
+
+  it("locks an Integration's egress entry, a {field} host kept as data, and refuses a base URL it cannot call", () => {
+    expect(buildManifest(withBase("https://api.stripe.com/v1")).manifest["integrations"]).toEqual([
+      expect.objectContaining({ egress: { origin: "https://api.stripe.com" } }),
+    ]);
+    expect(
+      buildManifest(withBase("https://{region}.api.stripe.com")).manifest["integrations"],
+    ).toEqual([
+      expect.objectContaining({
+        egress: { origin: "https://{region}.api.stripe.com", fields: ["region"] },
+      }),
+    ]);
+    expect(
+      buildManifest(withBase("http://api.stripe.com")).errors.map(
+        (error) => `${error.code} ${error.subject}`,
+      ),
+    ).toEqual(["egress_invalid StripeIntegration"]);
   });
 
   it("reports colliding, duplicate, unknown and missing identities", () => {

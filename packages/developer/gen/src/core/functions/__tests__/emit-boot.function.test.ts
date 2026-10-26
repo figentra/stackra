@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `emitBoot`: a service that runs the database, the outbox and segments connects them in order
- *          (the database with the outbox writer among its subscribers, then segments, then the relay and its work loop
+ *          (the bound legal-hold registry and sequence time zone, the database with the hold subscriber and the outbox
+ *          writer among its subscribers, then segments, then the relay and its work loop
  *          on the shutdown signal); each step only when its package is used; no file for a package, an app or a
  *          service with nothing to connect.
  * Boundary: test only; runs on the IR fixtures.
@@ -22,6 +23,12 @@ describe("emitBoot", () => {
     expect(boot).toContain('import type { Container } from "@stackra/container";');
     expect(boot).toContain('import { PostgresDatabaseDriver } from "@stackra/database/node";');
     expect(boot).toContain(
+      'import { connectHoldRegistry, connectSequenceTimeZone, HoldSubscriber } from "@stackra/database";',
+    );
+    expect(boot).toContain(
+      'import { HoldRegistry, SequenceTimeZone } from "@stackra/database/contracts";',
+    );
+    expect(boot).toContain(
       'import { OutboxRelayService, OutboxWriterService } from "@stackra/outbox/node";',
     );
     expect(boot).toContain('import { SegmentService } from "@stackra/segments/node";');
@@ -31,7 +38,11 @@ describe("emitBoot", () => {
         "  container: Container,",
         "  options: { readonly url: string; readonly signal: AbortSignal },",
         "): Promise<void> {",
-        "  await PostgresDatabaseDriver.connect({ url: options.url, subscribers: [container.get(OutboxWriterService)] });",
+        "  connectHoldRegistry(container.has(HoldRegistry) ? container.get(HoldRegistry) : undefined);",
+        "  connectSequenceTimeZone(",
+        "    container.has(SequenceTimeZone) ? container.get(SequenceTimeZone) : undefined,",
+        "  );",
+        "  await PostgresDatabaseDriver.connect({ url: options.url, subscribers: [new HoldSubscriber(), container.get(OutboxWriterService)] });",
         "  container.get(SegmentService).connect(container);",
         "  const relay = container.get(OutboxRelayService);",
         "  relay.connect(container);",
@@ -43,7 +54,9 @@ describe("emitBoot", () => {
 
   it("writes only the steps whose packages the service runs", () => {
     const boot = emitBoot(COMMERCE_IR) ?? "";
-    expect(boot).toContain("  await PostgresDatabaseDriver.connect({ url: options.url });");
+    expect(boot).toContain(
+      "  await PostgresDatabaseDriver.connect({ url: options.url, subscribers: [new HoldSubscriber()] });",
+    );
     expect(boot).not.toContain("Outbox");
     expect(boot).not.toContain("SegmentService");
   });

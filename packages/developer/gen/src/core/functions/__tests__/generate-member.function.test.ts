@@ -40,7 +40,7 @@ describe("generateMember", () => {
     expect(files[0]?.content.endsWith("}\n")).toBe(true);
   });
 
-  it("writes the entity files, registrations, boot and webhook route of a service", () => {
+  it("writes the entity files, registrations, boot, webhook route, CronJobs and queue topics of a service", () => {
     const { files, errors } = generateMember(BILLING_IR);
     expect(errors).toEqual([]);
     expect(files.map((file) => file.path)).toEqual([
@@ -55,6 +55,8 @@ describe("generateMember", () => {
       ".stackra/gen/boot.ts",
       ".stackra/gen/webhooks.ts",
       ".stackra/gen/prefixes.ts",
+      ".stackra/encore/billing/cron.ts",
+      ".stackra/encore/billing/queues.ts",
       ".stackra/entry/server.ts",
       ".stackra/tsdown.config.ts",
       ".stackra/vitest.config.ts",

@@ -4,12 +4,13 @@
  *          identity (action and query keys, event wire names, permission keys, refusal codes, model keys and tables,
  *          port keys), the endpoint, tool and refusal list of each action, the module graph, the facets, and the JSON
  *          Schema of every wire shape; a service or app also lists what its hosted packages contribute, marked
- *          `from`; each Integration's key, connection and webhook path; each sequence's key; an app's block and route
+ *          `from`; each Integration's key, connection, webhook path and egress entry (a `{field}` host kept as data);
+ *          each sequence's key; an app's block and route
  *          keys; each tool's derived MCP hints and each action's effect tags; each Integration's roles and listing;
  *          the `@Replaces` replacements. It reports the identity checks it can see: `identity_collision`,
  *          `override_duplicate`, `permission_unknown`, `identity_missing`, the public id prefix checks
- *          `prefix_invalid`, `prefix_taken` and `prefix_duplicate`, and `tool_reason_missing`, `effect_unknown` and
- *          `integration_role_unknown`.
+ *          `prefix_invalid`, `prefix_taken` and `prefix_duplicate`, `tool_reason_missing`, `effect_unknown`,
+ *          `integration_role_unknown`, `egress_invalid`, `sequence_misplaced` and `cron_job_collision`.
  * Boundary: pure. A config's schema never reaches the manifest (ADR 0305 rule 34). Sections owned by later targets
  *           (ui, settings, migrations, infra, ...) are written by those targets when they land.
  * Runtime: isomorphic
@@ -18,7 +19,7 @@
  *                     (decision 1: sequence keys); ADR 0270 (decision 3: block keys); ADR 0360 (decisions 4 and 10: user
  *                     actions are tools by default, `tool: false` needs a reason, the `bulk` tag); ADR 0099 (decisions
  *                     2 and 3: effect tags, derived hints); ADR 0355 (decision 1: Integration roles); ADR 0308 (rule
- *                     21: `listing.entitlement`).
+ *                     21: `listing.entitlement`); ADR 0394 (decision 2: a sequence's one home).
  */
 import { Enum } from "@stackra/contracts";
 import type { Json, StackraManifest } from "@stackra/contracts";
@@ -32,8 +33,10 @@ import { actionKey } from "#core/functions/action-key.function";
 import { blockKey } from "#core/functions/block-key.function";
 import { camelCase } from "#core/functions/camel-case.function";
 import { configKeyOf } from "#core/functions/config-key-of.function";
+import { cronJobId } from "#core/functions/cron-job-id.function";
 import { deriveEndpoint } from "#core/functions/derive-endpoint.function";
 import { driverName } from "#core/functions/driver-name.function";
+import { egressOf } from "#core/functions/egress-of.function";
 import { eventName } from "#core/functions/event-name.function";
 import { integrationKey } from "#core/functions/integration-key.function";
 import { jsonSchemaOf } from "#core/functions/json-schema-of.function";
@@ -426,6 +429,24 @@ export function buildManifest(ir: MemberIR): {
       }
     }
 
+  // Cron actions: each locked key is its own Encore CronJob id (ADR 0148 decision 6).
+  const cronIds = new Map<string, string>([["scheduler-schedules", "the stored schedules' tick"]]);
+  for (const entry of actions) {
+    const job = entry["job"] as { readonly cron?: unknown } | undefined;
+    if (job?.cron === undefined || typeof entry["key"] !== "string") continue;
+    const id = cronJobId(entry["key"]);
+    const holder = cronIds.get(id);
+    const owner = byName.get(String(entry["class"]));
+    if (holder !== undefined && owner !== undefined)
+      fail(
+        owner,
+        "cron_job_collision",
+        `the cron action ${entry["key"]} and ${holder} both run as the Encore CronJob ${id}`,
+        "give one of the two actions another written key",
+      );
+    else cronIds.set(id, entry["key"]);
+  }
+
   // Integrations: the key, the connection typed against each, and the webhook path (ADR 0308 rules 16 and 19).
   const integrations: Entry[] = [];
   for (const declared of ir.classes.filter((candidate) => candidate.kind === "integration")) {
@@ -448,6 +469,15 @@ export function buildManifest(ir: MemberIR): {
     const roleSet = new Set(declaredRoles);
     if (declared.options["webhooks"] !== undefined) roleSet.add("webhooks");
     const roles = INTEGRATION_ROLES.filter((role) => roleSet.has(role));
+    const baseUrl = declared.options["baseUrl"];
+    const egress = typeof baseUrl === "string" ? egressOf(baseUrl) : undefined;
+    if (baseUrl !== undefined && egress === undefined)
+      fail(
+        declared,
+        "egress_invalid",
+        `\`baseUrl\` ${JSON.stringify(baseUrl)} is not an https origin the managed client can call`,
+        'write an https URL; a per-region host is a camelCase `{field}` of the credential set ("https://{region}.api.example.com")',
+      );
     integrations.push({
       key,
       class: declared.name,
@@ -460,6 +490,14 @@ export function buildManifest(ir: MemberIR): {
         ? { webhookPath: webhookPath(declared.module, declared.name) }
         : {}),
       ...(roles.length > 0 ? { roles: [...roles] } : {}),
+      ...(egress !== undefined
+        ? {
+            egress: {
+              origin: egress.origin,
+              ...(egress.fields.length > 0 ? { fields: [...egress.fields] } : {}),
+            },
+          }
+        : {}),
       ...(declared.options["listing"] !== undefined
         ? { listing: jsonOf(declared.options["listing"]) }
         : {}),
@@ -479,6 +517,13 @@ export function buildManifest(ir: MemberIR): {
       );
       continue;
     }
+    if (!/(^|\/)database\/sequences\/[a-z0-9]+(?:-[a-z0-9]+)*\.sequence\.ts$/.test(declared.file))
+      fail(
+        declared,
+        "sequence_misplaced",
+        `a sequence lives in its module's \`database/sequences/\` group, not ${declared.file}`,
+        "move it to `src/modules/<module>/database/sequences/<name>.sequence.ts` (a package: `src/node/database/sequences/`)",
+      );
     const key = sequenceKey(declared.module, written);
     claim(`sequence:${key}`, declared);
     sequences.push({ key, class: declared.name, module: declared.module, file: declared.file });
