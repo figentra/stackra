@@ -7,7 +7,7 @@ Purpose: the package's reader guide: what gen is, its entries and symbols, a run
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
 Governing contract: ADR 0294; ADR 0295; ADR 0260 (generated clients); ADR 0261; ADR 0263; ADR 0162 and ADR 0222
-                    (the translated and upload shape kinds).
+                    (the translated and upload shape kinds); ADR 0338 (a replica query's `ReplicaPage` output).
 -->
 
 The Stackra compiler. Gen reads a member's source through the TypeScript compiler API, derives every identity and
@@ -90,6 +90,11 @@ may use these platform types (each read only when declared in a `@stackra/*` pac
 `@Str` and `@Trim` on a translated field apply to each locale's text. A model's `Translated` field gets
 `TranslatedType` in its `EntitySchema`, so it loads back as a `Translated`. `Upload<X>` where `X` is not a Bucket class
 is `shape_unknown_type`.
+
+An action or query's `handle` answers `Promise<Output>` with a Schema class of the member. A replica query (ADR 0338)
+answers `Promise<ReplicaPage>` (or `ReplicaPage<T>`) from `@stackra/actions` instead: the manifest gives it the output
+`<module>.ReplicaPage` and writes that JSON Schema (rows, removed ids, cursor, `asOf`, `full`) under `schemas`, so the
+OpenAPI document and the generated clients type it. Any other output is `action_handle_signature`.
 
 ## What one run writes
 

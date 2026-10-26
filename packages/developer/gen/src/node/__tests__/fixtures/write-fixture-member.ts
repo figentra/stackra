@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `writeFixtureMember`, a real member on disk for discovery tests: package.json with its `imports` map, a
  *          tsconfig with decorators on, `stackra.config.ts`, the given source files, and two local stand-in packages
- *          (`@stackra/actions`, `@stackra/events`) for the kind bases whose packages do not ship yet. The real
+ *          (`@stackra/actions`, `@stackra/events`) for the kind bases whose packages do not ship yet, with
+ *          `ReplicaPage` (ADR 0338) for a replica query's output. The real
  *          `@stackra/*` packages resolve through gen's own node_modules.
  * Boundary: test data only; writes under `<gen>/.cache/fixtures/` (gitignored) and never elsewhere.
  * Runtime: node (vitest)
@@ -29,6 +30,7 @@ const STAND_INS: Readonly<Record<string, string>> = {
     'export declare abstract class QueryBase { protected readonly "~kind": "query"; }',
     "export declare function Action(options: { readonly key: string; readonly [option: string]: unknown }): abstract new () => ActionBase;",
     "export declare function Query(options: { readonly key: string; readonly [option: string]: unknown }): abstract new () => QueryBase;",
+    "export interface ReplicaPage<T = unknown> { readonly rows: readonly T[]; readonly removed: readonly string[]; readonly cursor: string; readonly asOf: Date; readonly full: boolean }",
     "export declare abstract class Permissions {}",
     'export declare const Permission: { readonly L0: "L0"; readonly L1: "L1"; readonly L2: "L2"; readonly L3: "L3"; readonly L4: "L4" };',
     "",

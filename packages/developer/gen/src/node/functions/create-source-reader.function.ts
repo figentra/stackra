@@ -3,10 +3,11 @@
  * Purpose: `createSourceReader`, discovery's analyser over one opened program: it reads each class's kind from the
  *          base its `extends` clause names (bare, called, `Model.with`, `Page.of`, `Widget.place`, an own or a
  *          package class), its options as constants, its partner from the heritage type argument (`Point["slot"]`
- *          included), its constructor tokens, facets, `handle` signature, refusals, statics and traits; each shape's
- *          fields from the declared type node first and the checker second, with rules and constant defaults; each
- *          model's entity facts (`[OptionalProps]` keys, relations with their target, inverse and options, getters);
- *          each `Enum.of` in source order; and each file's exports.
+ *          included), its constructor tokens, facets, `handle` signature (a `ReplicaPage` output from a `@stackra/*`
+ *          package reads as `replica`, ADR 0338), refusals, statics and traits; each shape's fields from the declared
+ *          type node first and the checker second, with rules and constant defaults; each model's entity facts
+ *          (`[OptionalProps]` keys, relations with their target, inverse and options, getters); each `Enum.of` in
+ *          source order; and each file's exports.
  * Boundary: syntax-first and backend-neutral: every question goes through `TsHost`. Only the member's own source
  *           files under `src/` are read as declarations; a dependency is read only to resolve a kind, an inherited
  *           field or a constant, and its options never (ADR 0294 decision 25). Every refusal is collected with its
@@ -1607,11 +1608,25 @@ export function createSourceReader(
     return { class: refOf(type.typeName, symbol) };
   };
 
+  // `ReplicaPage` (or `ReplicaPage<T>`) from a Stackra package: a replica query's answer (ADR 0338 decision 3).
+  const isReplicaPage = (type: TsNode): boolean => {
+    if (host.kind(type) !== "TypeReference" || type.typeName === undefined) return false;
+    const symbol = host.symbolAt(type.typeName);
+    const declaration = symbol === undefined ? undefined : host.declarations(symbol)[0];
+    return (
+      symbol !== undefined &&
+      host.symbolName(symbol) === "ReplicaPage" &&
+      declaration !== undefined &&
+      isStackra(host.fileName(declaration))
+    );
+  };
+
   const handleOf = (node: TsNode, kind: string): DeclaredClass["handle"] => {
     if (kind !== "action" && kind !== "query") return undefined;
     const name = nameOf(node.name);
     const fix =
-      "declare `async handle(input: XInput, ctx): Promise<XOutput>` with Schema classes from schemas/";
+      "declare `async handle(input: XInput, ctx): Promise<XOutput>` with Schema classes from schemas/ " +
+      "(a replica query answers `Promise<ReplicaPage>`)";
     const handle = (node.members ?? []).find(
       (member) => host.kind(member) === "MethodDeclaration" && nameOf(member.name) === "handle",
     );
@@ -1637,6 +1652,7 @@ export function createSourceReader(
       );
     const returns = handle.type;
     let output: string | undefined;
+    let replica = false;
     if (
       returns === undefined ||
       host.kind(returns) !== "TypeReference" ||
@@ -1652,8 +1668,9 @@ export function createSourceReader(
     else {
       const inner = returns.typeArguments?.[0];
       if (inner !== undefined && host.kind(inner) !== "VoidKeyword") {
-        output = shapeClassAt(inner)?.name;
-        if (output === undefined)
+        replica = isReplicaPage(inner);
+        output = replica ? undefined : shapeClassAt(inner)?.name;
+        if (output === undefined && !replica)
           fail(
             inner,
             name,
@@ -1666,6 +1683,7 @@ export function createSourceReader(
     return {
       ...(input !== undefined ? { input: input.name } : {}),
       ...(output !== undefined ? { output } : {}),
+      ...(replica ? { replica: true as const } : {}),
     };
   };
 

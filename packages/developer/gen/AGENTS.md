@@ -7,7 +7,7 @@ Purpose: the agent rules of @stackra/gen: where code goes, entries and barrels, 
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
 Governing contract: ADR 0294; ADR 0295; ADR 0305; ADR 0260 (generated clients); ADR 0263; ADR 0162 and ADR 0222
-                    (the translated and upload shape kinds).
+                    (the translated and upload shape kinds); ADR 0338 (a replica query's `ReplicaPage` output).
 -->
 
 The Stackra compiler. Member at `packages/developer/gen` (`tier:lib`), in the programming model v3.1 shape (ADR 0294,
@@ -48,6 +48,10 @@ The Stackra compiler. Member at `packages/developer/gen` (`tier:lib`), in the pr
   `TypeDesc` kind read in `readTypeReference` (only when declared in a `@stackra/*` package) and one case in each of
   `emitSchemas`, `jsonSchemaOf` and, for a model column, `emitEntities`, with tests. `Translated` and
   `TranslatedStrings` are `translated`; `Upload<Bucket>` is `upload` and its argument must be a Bucket class.
+- `handle`'s output is a Schema class of the member, or `ReplicaPage` (any type argument) declared in a `@stackra/*`
+  package for a replica query (ADR 0338): the reader records `handle.replica` and `buildManifest` writes
+  `REPLICA_PAGE_SCHEMA` as `<module>.ReplicaPage`. Keep that constant in step with `ReplicaPage` in
+  `@stackra/actions` and `REPLICA_CHANGES_SCHEMA` in `@stackra/query`.
 - `generateMember` runs every emitter; `generate` (and so `stackra gen`) writes what it returns. A new output is an
   emitter in `src/core/functions/` called from `generateMember`, with its test.
 

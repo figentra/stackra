@@ -55,8 +55,11 @@ export interface DeclaredClass {
   /** The public instance methods, in source order. */
   readonly methods: readonly string[];
 
-  /** The input and output shape classes of `handle(input): Promise<Output>`. */
-  readonly handle?: { readonly input?: string; readonly output?: string };
+  /**
+   * The input and output shape classes of `handle(input): Promise<Output>`; `replica` when the output is
+   * `ReplicaPage` from `@stackra/actions` (a replica query, ADR 0338), which has no shape class of the member.
+   */
+  readonly handle?: { readonly input?: string; readonly output?: string; readonly replica?: true };
 
   /** The refusal codes the class body raises (`XError.create`, `new XError`, `ctx.authorize`). */
   readonly refusals: readonly string[];

@@ -7,7 +7,8 @@
  *          config's schema, merged package sections marked `from`, and the checks `identity_collision`,
  *          `override_duplicate`, `permission_unknown`, `identity_missing`, `prefix_invalid`, `prefix_taken` and
  *          `prefix_duplicate`; the v3 tool default with `tool_reason_missing`, effect tags with `effect_unknown`,
- *          Integration roles and listing with `integration_role_unknown`, and the `@Replaces` section.
+ *          Integration roles and listing with `integration_role_unknown`, the `@Replaces` section, and a replica
+ *          query's `ReplicaPage` output schema (ADR 0338).
  * Boundary: test only; runs on the commerce IR fixture.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 10, 20, 21 and 22); ADR 0305 (rules 1, 28 and
@@ -151,6 +152,27 @@ describe("buildManifest", () => {
     expect(Object.keys(schemas)).toContain("orders.OrderStatus");
     expect(Object.keys(schemas)).toContain("orders.CancelOrderInput");
     expect(Object.keys(schemas)).not.toContain("commerce.CommerceOptions");
+  });
+
+  it("answers a replica query with the ReplicaPage schema (ADR 0338)", () => {
+    const ir: MemberIR = {
+      ...COMMERCE_IR,
+      classes: COMMERCE_IR.classes.map((candidate) =>
+        candidate.name === "ListOrdersQuery"
+          ? { ...candidate, handle: { input: "ListOrdersInput", replica: true } }
+          : candidate,
+      ),
+    };
+    const built = buildManifest(ir);
+    const list = built.manifest.actions?.find((entry) => entry.class === "ListOrdersQuery");
+    expect(list?.["output"]).toEqual({ $ref: "#/schemas/orders.ReplicaPage" });
+    expect((built.manifest.schemas as Record<string, unknown>)["orders.ReplicaPage"]).toMatchObject(
+      {
+        type: "object",
+        required: ["rows", "removed", "cursor", "asOf", "full"],
+      },
+    );
+    expect(built.errors).toEqual(errors);
   });
 
   it("merges a hosted package's sections with `from`", () => {

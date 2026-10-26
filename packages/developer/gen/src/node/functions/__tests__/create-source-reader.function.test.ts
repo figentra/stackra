@@ -9,7 +9,8 @@
  *          derived shape (`PickType`) and a discriminated union read correctly; and each model's entity facts
  *          (`[OptionalProps]` keys, a one-to-many with its inverse, a `Ref` many-to-one, a `Link` across models,
  *          getters) with `relation_decorator_missing` for a relation gen cannot read; `Translated`,
- *          `TranslatedStrings` and `Upload<Bucket>` fields read as the `translated` and `upload` kinds (STA-1218).
+ *          `TranslatedStrings` and `Upload<Bucket>` fields read as the `translated` and `upload` kinds (STA-1218);
+ *          a replica query's `Promise<ReplicaPage>` or `Promise<ReplicaPage<T>>` reads as `replica` (ADR 0338).
  * Boundary: test only; writes the fixture under `.cache/` and opens TypeScript on it.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decision 26, 2026-10-23 item 13, decision 28); ADR 0305
@@ -65,6 +66,24 @@ const SOURCES: Readonly<Record<string, string>> = {
     'export class UntypedAction extends Action({ key: "order.untyped" }) {',
     "  async handle(input: string): Promise<number> {",
     "    return input.length;",
+    "  }",
+    "}",
+    "",
+  ].join("\n"),
+  "src/node/queries/replica.query.ts": [
+    'import { Query, type ReplicaPage } from "@stackra/actions";',
+    'export class ReplicaQuery extends Query({ key: "order.replica" }) {',
+    "  async handle(): Promise<ReplicaPage> {",
+    '    return { rows: [], removed: [], cursor: "0", asOf: new Date(), full: true };',
+    "  }",
+    "}",
+    "",
+  ].join("\n"),
+  "src/node/queries/typed-replica.query.ts": [
+    'import { Query, type ReplicaPage } from "@stackra/actions";',
+    'export class TypedReplicaQuery extends Query({ key: "order.typed_replica" }) {',
+    "  async handle(): Promise<ReplicaPage<string>> {",
+    '    return { rows: [], removed: [], cursor: "0", asOf: new Date(), full: true };',
     "  }",
     "}",
     "",
@@ -169,6 +188,17 @@ describe("createSourceReader", async () => {
     expect(codes).toContain("action_handle_signature UntypedAction");
     expect(codes).toContain("event_base_abstract RawEvent");
     expect(codes).toContain("token_not_a_class BadTokenService.constructor");
+  });
+
+  it("accepts ReplicaPage and ReplicaPage<T> as a replica query's output (ADR 0338)", () => {
+    expect(codes).not.toContain("action_handle_signature ReplicaQuery");
+    expect(codes).not.toContain("action_handle_signature TypedReplicaQuery");
+    expect(declared.find((item) => item.name === "ReplicaQuery")?.handle).toEqual({
+      replica: true,
+    });
+    expect(declared.find((item) => item.name === "TypedReplicaQuery")?.handle).toEqual({
+      replica: true,
+    });
   });
 
   it("takes a generated client as its class token before its file exists", () => {
