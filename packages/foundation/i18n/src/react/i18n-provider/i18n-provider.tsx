@@ -7,13 +7,14 @@
  *           loads nothing: the catalogues arrive merged, and a locale switch is the `setLocale` prop's (absent on the
  *           web, where switching is a navigation).
  * Runtime: isomorphic
- * Governing contract: ADR 0080, ADR 0192, ADR 0295 (decision 7), ADR 0297 (decision 4).
+ * Governing contract: ADR 0080, ADR 0192, ADR 0295 (decision 7), ADR 0297 (decision 4), ADR 0403 (formats).
  */
 import { useConfig } from "@stackra/config/react";
 import { type ReactNode, useMemo } from "react";
 
 import { I18nConfig } from "#config/i18n.config";
 import { intlLocale } from "#core/functions/intl-locale.function";
+import { localeFormat } from "#core/functions/locale-format.function";
 
 import { I18nContext } from "./i18n-context";
 import type { I18nProviderProps } from "./i18n-provider-props.type";
@@ -43,15 +44,16 @@ export function I18nProvider({
   children,
 }: I18nProviderProps): ReactNode {
   const config = useConfig(I18nConfig);
-  const state = useMemo<I18nState>(
-    () => ({
+  const state = useMemo<I18nState>(() => {
+    const format = localeFormat(locale, config.formats[locale]);
+    return {
       locale,
-      intlLocale: intlLocale(locale, config.numerals),
+      intlLocale: intlLocale(locale, config.numerals, format.hourCycle),
+      format,
       messages,
       config,
       setLocale: setLocale ?? urlSelectsLocale,
-    }),
-    [locale, messages, config, setLocale],
-  );
+    };
+  }, [locale, messages, config, setLocale]);
   return <I18nContext value={state}>{children}</I18nContext>;
 }

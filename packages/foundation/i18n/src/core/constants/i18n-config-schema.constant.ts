@@ -15,6 +15,7 @@
 import { Enum } from "@stackra/contracts";
 import { z } from "zod";
 
+import { HourCycle } from "#core/enums/hour-cycle.enum";
 import { Locale } from "#core/enums/locale.enum";
 import { LocaleUrlStrategy } from "#core/enums/locale-url-strategy.enum";
 import { NumberingSystem } from "#core/enums/numbering-system.enum";
@@ -40,6 +41,15 @@ export const I18nConfig$ = z.object({
     .default(() => [Locale.Ar, Locale.ArSa, Locale.ArAe, Locale.ArEg]),
   fallbacks: z.record(z.string(), z.array(LOCALE)).default(() => ({})),
   numerals: z.enum(Enum.values(NumberingSystem)).default(NumberingSystem.Latn),
+  formats: z
+    .record(
+      z.string(),
+      z.object({
+        weekStart: z.number().int().min(1).max(7).optional(),
+        hourCycle: z.enum(Enum.values(HourCycle)).optional(),
+      }),
+    )
+    .default(() => ({})),
   urlStrategy: z
     .enum(Enum.values(LocaleUrlStrategy))
     .default(LocaleUrlStrategy.PrefixExceptDefault),

@@ -9,6 +9,8 @@
  */
 export { I18nConfig } from "#config/i18n.config";
 export { I18nConfig$ } from "#core/constants/i18n-config-schema.constant";
+export { DisplayUnit } from "#core/enums/display-unit.enum";
+export { HourCycle } from "#core/enums/hour-cycle.enum";
 export { LengthUnit } from "#core/enums/length-unit.enum";
 export { Locale } from "#core/enums/locale.enum";
 export { LocaleUrlStrategy } from "#core/enums/locale-url-strategy.enum";
@@ -16,10 +18,13 @@ export { NumberingSystem } from "#core/enums/numbering-system.enum";
 export { countryName } from "#core/functions/country-name.function";
 export { formatAddress } from "#core/functions/format-address.function";
 export { formatLength } from "#core/functions/format-length.function";
+export { formatQuantity } from "#core/functions/format-quantity.function";
 export { formatMessage } from "#core/functions/format-message.function";
 export { keys } from "#core/functions/keys.function";
+export { localeFormat } from "#core/functions/locale-format.function";
 export { mergeCatalogues } from "#core/functions/merge-catalogues.function";
 export { normalizeArabic } from "#core/functions/normalize-arabic.function";
 export { withDigits } from "#core/functions/with-digits.function";
 export type { I18nKey } from "#core/types/i18n-key.type";
 export type { LoadCatalogue } from "#core/types/load-catalogue.type";
+export type { LocaleFormat } from "#core/types/locale-format.type";

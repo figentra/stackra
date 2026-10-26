@@ -1,0 +1,73 @@
+---
+title: "0403 — Seven languages: locales, formats, analysers, catalogues and a completeness gate"
+description: "Proposed · 2026-10-26"
+---
+
+<Note>
+  Proposed (STA-788). It amends [0080](/adr/0080-i18n-is-the-figentra-i18n-port) (the closed
+  `Locale` set) and
+  [0221](/adr/0221-search-postgres-hybrid-elasticsuite-parity-arabic-and-operations) (the analysers
+  in use), and keeps [0192](/adr/0192-translation-workflow-and-arabic-defaults) (native-speaker
+  review, Latin digits by default).
+</Note>
+
+## Context
+
+Every product release ships seven languages: Arabic, English, French, German, Spanish, Italian and Dutch (RV-55a makes
+this a release blocker). `@stackra/i18n` knew four base languages and four overlays, formatted times with whatever clock
+the engine guessed, and had no week start. The framework UI packages shipped English and Arabic or nothing, with
+English strings left in component code. Nothing failed when a translation missed a key. The US and Dutch markets need
+imperial display over metric storage and their own postal formats.
+
+## Decision
+
+1. **Locales.** `Locale` holds the seven base languages `ar`, `en`, `fr`, `de`, `es`, `it`, `nl` and the overlays
+   `ar-SA`, `ar-AE`, `ar-EG`, `en-US` and `es-US`. Which locales a Market offers, and its binding legal language, stay
+   `market-pack:<code>.languages[]` data.
+2. **Formats as case data with an override.** Each `Locale` case carries its CLDR default first day of the week (ISO:
+   Monday for the European languages, `ar-AE` and `en`; Sunday for `en-US`, `es-US` and `ar-SA`; Saturday for `ar` and
+   `ar-EG`) and its clock (`HourCycle`: 24-hour for fr, de, es, it and nl; 12-hour otherwise). `I18nConfig.formats`
+   overrides either per locale, and `localeFormat(locale, override)` merges them. The provider puts the result in
+   context and builds every Intl tag with `-u-hc-<cycle>-nu-<digits>`. Decimal and grouping separators come from Intl
+   (comma decimal in fr, de, es, it and nl); no separator table is written.
+3. **Imperial display over metric storage.** Storage stays metric `Quantity`. `DisplayUnit` (grams to gallons) and
+   `formatQuantity(quantity, unit, options)` convert exactly and format with Intl's unit names; the unit a Market or a
+   user sees is pack data or a user setting. `formatLength` stays for lengths.
+4. **Postal formats are pack data.** The Italian CAP (`^\d{5}$`) and the Dutch postcode
+   (`^([1-9]\d{3})(?!SA|SD|SS)([A-Z]{2})$`, stored `1234 AB`) are `identity.address_format` values in the `it` and
+   `nl` packs. `IdentifierFormat` gains `canonical`, a `$n` template that writes the stored form from the pattern's
+   groups (a group that did not match drops with the text before it). No country is named in code.
+5. **Analysers.** Spanish, Italian and Dutch use the Postgres built-in `spanish`, `italian` and `dutch` configurations,
+   already in `TEXT_SEARCH_CONFIGS`; a `search_vector_<locale>` column picks its configuration from its language
+   subtag, so `es-US` uses `spanish`.
+6. **Reindex plan for the new languages.** A model that adds a language adds its `search_vector_<locale>` column with
+   `t.searchable({ locales })` in a new migration (expand), builds its GIN index concurrently in the next migration,
+   then runs `search.in(Model).reindex()` as a job in its own context. Until the reindex finishes, rows without the new
+   vector are found through the other lanes; nothing is dropped.
+7. **Framework catalogues.** `ui`, `ui-pro` (`ui_pro`), `panel`, `consent` and `notifications` ship
+   `assets/lang/<language>/<namespace>.json` in all seven languages. The `ui` keys are the ones its components name in
+   their shortcut comments; moving each component from its English constant to `useTranslation` follows in the `ui`
+   package's own change. Every non-English catalogue is reviewed by a native speaker before it ships (0192).
+8. **Completeness gate.** `tools/scripts/catalogue-completeness.mjs`, run inside `pnpm validate`, fails when a base
+   language misses a namespace or a key of `en`, when any catalogue holds a key `en` lacks, when a member has no `en`,
+   and when one of the five framework members lacks one of the seven languages. Overlays may hold fewer keys.
+9. **Amount in words.** Stays a pack option for `ar` and `en` only; no speller is added for the new languages. Voice
+   languages stay pack data.
+
+## Consequences
+
+- A member may list `es`, `it` and `nl` in `I18nConfig.locales`; the fallback rules are unchanged.
+- A 12-hour or Sunday-first market on a European language is a configuration change, not code.
+- A translator who drops a key fails `pnpm validate` with the file and the key.
+- Message placeholders are not compared across locales yet; the review catches a dropped `{name}`.
+
+## Enforcement
+
+automated — `tools/scripts/catalogue-completeness.mjs` in `pnpm validate`; the package tests fix the locales, formats
+and postal formats (`packages/foundation/i18n/src/core/**/__tests__/`, `packages/foundation/validation/src/core/functions/__tests__/`).
+
+## Supersedes and sources
+
+Supersedes: none. Amends 0080 and 0221. Sources: `notes/handover/review-round-3/owner-answers.md` (RV-54, RV-55,
+RV-55a, RV-57, R3-SO-06); `notes/handover/review-round-4/languages-scope.md` (R4-3, R4-L-07);
+`notes/handover/review-round-4/whole-plan.md`; US-118a, US-117, US-83; STA-788.

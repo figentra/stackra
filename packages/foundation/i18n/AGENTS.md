@@ -30,13 +30,16 @@ Locales, the i18n configuration, the ICU engine and the React hooks. Member at `
   case with its endonym.
 - Fallback is resolved by merging catalogues (`mergeCatalogues`, farthest first), never inside `formatMessage`. A key
   with no message throws; never return the raw key.
-- Digits travel as the `-u-nu-` extension (`intlLocale`); do not pass `numberingSystem` options separately.
+- Digits and the clock travel as the `-u-hc-…-nu-…` extension (`intlLocale`); do not pass `numberingSystem` or
+  `hourCycle` options separately. A locale's week start and clock are `Locale` case data, overridden per locale by
+  `I18nConfig.formats` through `localeFormat`; decimal separators are Intl's, never a table here (ADR 0403).
 - `useLocaleChoice` never runs on the server path: its server snapshot is `null`, and nothing here reads the cookie to
   redirect or vary a response.
 - No parameter properties and no `#private` fields: apps typecheck this source under `erasableSyntaxOnly`.
 - No vendor SDK and no provider driver here (ADR 0147, 0236): translators, geocoders and autocomplete providers are
   Integrations behind the `./contracts` ports, chosen per tenant and Market (ADR 0356).
-- Configuration, not code: an address layout, a Market's length unit or digit choice is data passed in. Address and
+- Configuration, not code: an address layout, a Market's display unit (`DisplayUnit`, imperial over metric storage)
+  or digit choice is data passed in. Address and
   country types are `@stackra/validation`'s; do not redeclare them.
 - `normalizeArabic` is the only Arabic normaliser; callers keep no copy (ADR 0080 note).
 

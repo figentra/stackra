@@ -14,6 +14,8 @@ import type { I18nKey, LoadCatalogue, Locale } from "#core/index";
 describe("@stackra/i18n", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(i18n).sort()).toEqual([
+      "DisplayUnit",
+      "HourCycle",
       "I18nConfig",
       "I18nConfig$",
       "LengthUnit",
@@ -24,7 +26,9 @@ describe("@stackra/i18n", () => {
       "formatAddress",
       "formatLength",
       "formatMessage",
+      "formatQuantity",
       "keys",
+      "localeFormat",
       "mergeCatalogues",
       "normalizeArabic",
       "withDigits",

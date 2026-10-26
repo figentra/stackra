@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `I18nProvider`: it renders its children with the active locale's state (config from the
- *          container, the digit-aware Intl tag), the hooks under it read that state, the default `setLocale` rejects
+ *          container, the clock- and digit-aware Intl tag, the week start and clock with the configured override), the hooks under it read that state, the default `setLocale` rejects
  *          where the URL selects the locale, and both a missing provider and a missing container fail loudly.
  * Boundary: test only; renders with react-dom/server (no DOM needed).
  * Runtime: node (vitest)
@@ -16,6 +16,7 @@ import { renderToString } from "react-dom/server";
 import { I18nConfig } from "#config/i18n.config";
 import { Locale } from "#core/enums/locale.enum";
 import { NumberingSystem } from "#core/enums/numbering-system.enum";
+import type { LocaleFormat } from "#core/types/locale-format.type";
 import { I18nProvider } from "#react/i18n-provider/i18n-provider";
 import type { I18nState } from "#react/i18n-provider/i18n-state.type";
 import { useI18nState } from "#react/i18n-provider/use-i18n-state";
@@ -24,6 +25,12 @@ class ArabicDigitsConfig extends I18nConfig {
   override locales: Locale[] = [Locale.En, Locale.Ar];
 
   override numerals: NumberingSystem = NumberingSystem.Arab;
+}
+
+class DutchClockConfig extends I18nConfig {
+  override locales: Locale[] = [Locale.En, Locale.Nl];
+
+  override formats: Record<string, Partial<LocaleFormat>> = { nl: { weekStart: 7 } };
 }
 
 /** A container that binds `type` as the i18n configuration. */
@@ -58,9 +65,23 @@ describe("I18nProvider", () => {
       </ContainerProvider>,
     );
     expect(html).toBe("<span>ar</span>");
-    expect(states[0]?.intlLocale).toBe("ar-u-nu-arab");
+    expect(states[0]?.intlLocale).toBe("ar-u-hc-h12-nu-arab");
+    expect(states[0]?.format).toEqual({ weekStart: 6, hourCycle: "h12" });
     expect(states[0]?.messages).toBe(messages);
     expect(states[0]?.config.locales).toEqual(["en", "ar"]);
+  });
+
+  it("applies the locale's clock and the configured week start override", async () => {
+    const states: I18nState[] = [];
+    renderToString(
+      <ContainerProvider container={await containerWith(DutchClockConfig)}>
+        <I18nProvider locale={Locale.Nl} messages={{}}>
+          <Probe onState={(state) => states.push(state)} />
+        </I18nProvider>
+      </ContainerProvider>,
+    );
+    expect(states[0]?.intlLocale).toBe("nl-u-hc-h23-nu-latn");
+    expect(states[0]?.format).toEqual({ weekStart: 7, hourCycle: "h23" });
   });
 
   it("rejects setLocale where the URL selects the locale, and uses the given setter otherwise", async () => {

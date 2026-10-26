@@ -52,6 +52,7 @@ describe("I18nConfig", () => {
       rtl: ["ar", "ar-SA", "ar-AE", "ar-EG"],
       fallbacks: {},
       numerals: "latn",
+      formats: {},
       urlStrategy: "prefix_except_default",
       followDevice: false,
       tenantChoosesNumerals: false,
@@ -122,6 +123,14 @@ describe("I18nConfig", () => {
     expect(parsed.numerals).toBe("user");
     expect(parsed.followDevice).toBe(true);
     expect(parsed.cookieName).toBe("locale");
+  });
+
+  it("takes a week start and clock override per locale, and refuses one out of range", () => {
+    expect(I18nConfig$.parse({ formats: { en: { hourCycle: "h23" } } }).formats).toEqual({
+      en: { hourCycle: "h23" },
+    });
+    expect(I18nConfig$.safeParse({ formats: { en: { weekStart: 8 } } }).success).toBe(false);
+    expect(I18nConfig$.safeParse({ formats: { en: { hourCycle: "h24" } } }).success).toBe(false);
   });
 
   it("allows right-to-left locales the member does not ship", () => {
