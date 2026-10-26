@@ -6,8 +6,8 @@
  *          check, the region check and reader (ADR 0354), the deploy targets, the `RunwayProvider` port and the
  *          `deploy`, `promote` and `rollback` orchestration (ADR 0352 decision 3, ADR 0400), the per-environment
  *          deploy lock (`withDeployLock`, ADR 0435), the surface, mobile and dev port checks and the app-shell Runway
- *          steps with their ports (extension bundles, platform host and app-link rows, mobile builds; ADR 0436 to
- *          0441, STA-863), their enums, errors and types.
+ *          steps with their ports (extension bundles, platform host and app-link rows, mobile builds, the brand set
+ *          through `BrandGenerator`; ADR 0436 to 0441, STA-863), their enums, errors and types.
  * Boundary: names each re-export and declares nothing. The zod schemas, the facts reader and the dev facts path stay
  *           internal; Vite-facing helpers are `./node`'s.
  * Runtime: isomorphic
@@ -30,6 +30,7 @@ export { RunwayNotConfiguredError } from "#core/errors/runway-not-configured.err
 export { RunwayRefusedError } from "#core/errors/runway-refused.error";
 export { RunwayUnresolvedError } from "#core/errors/runway-unresolved.error";
 export { baseUrlOf } from "#core/functions/base-url-of.function";
+export { brandGenerateRequest } from "#core/functions/brand-generate-request.function";
 export { brandsOf } from "#core/functions/brands-of.function";
 export { buildMobileApps } from "#core/functions/build-mobile-apps.function";
 export { checkDevPorts } from "#core/functions/check-dev-ports.function";
@@ -40,6 +41,7 @@ export { deployTargets } from "#core/functions/deploy-targets.function";
 export { deploy } from "#core/functions/deploy.function";
 export { devPorts } from "#core/functions/dev-ports.function";
 export { edgeRowsOf } from "#core/functions/edge-rows-of.function";
+export { generateBrandSet } from "#core/functions/generate-brand-set.function";
 export { mobileBuildRequests } from "#core/functions/mobile-build-requests.function";
 export { parseRunway } from "#core/functions/parse-runway.function";
 export { productOf } from "#core/functions/product-of.function";
@@ -51,12 +53,15 @@ export { rollback } from "#core/functions/rollback.function";
 export { runwayJsonSchema } from "#core/functions/runway-json-schema.function";
 export { updateFeed } from "#core/functions/update-feed.function";
 export { withDeployLock } from "#core/functions/with-deploy-lock.function";
+export { BrandGenerator } from "#core/ports/brand-generator.port";
 export { EdgeStore } from "#core/ports/edge-store.port";
 export { ExtensionBundlePublisher } from "#core/ports/extension-bundle-publisher.port";
 export { MobileBuilder } from "#core/ports/mobile-builder.port";
 export { RunwayProvider } from "#core/ports/runway-provider.port";
 export type { AppLinkSigning } from "#core/types/app-link-signing.type";
 export type { AppRunway } from "#core/types/app-runway.type";
+export type { BrandGenerateRecord } from "#core/types/brand-generate-record.type";
+export type { BrandGenerateRequest } from "#core/types/brand-generate-request.type";
 export type { Brand } from "#core/types/brand.type";
 export type { BundlePublishResult } from "#core/types/bundle-publish-result.type";
 export type { DeployLock } from "#core/types/deploy-lock.type";

@@ -123,6 +123,7 @@ The Runway steps behind the sections, each over a port:
 | `publishExtensionBundles(root, sha, publisher, { opsApproved })`    | `ExtensionBundlePublisher` | `RegistryBundlePublisherDriver`: not wired yet        |
 | `registerPlatformHosts(root, environment, store, signing)`          | `EdgeStore`                | `CloudflareKvEdgeStoreDriver`: not wired yet          |
 | `buildMobileApps(requests, builder, { platformPublishingCleared })` | `MobileBuilder`            | `EasMobileBuilderDriver`: `eas build` in the template |
+| `generateBrandSet(root, generator, { screenshots })`                | `BrandGenerator`           | `BrandKitGeneratorDriver`: `brand-kit generate`       |
 
 The ops contribution is published declarations-only and only once a second reviewer approved it; until then it comes
 back in `held`. `edgeRowsOf` computes the `host:` rows (product, surface, home region, status, realm, canonical host)
@@ -133,6 +134,14 @@ data, which `buildMobileApps` parses again and refuses under the platform's stor
 4.3 checks are recorded (`RunwayRefusedError`). The EAS builder writes the entry to `.stackra/mobile-app.json` in the
 template checkout, where the template's app config and capability plugins read it. A driver with no vendor wired
 rejects with `RunwayNotConfiguredError`; bind another driver behind the same port.
+
+The brand step runs in CI before the web and mobile builds that read its output. `brandGenerateRequest(root)` points
+the generator at `<assets root>/brand` (the kit) and `<assets root>/store` (the screenshot captions) and writes to
+`.stackra/brand`, which is gitignored: the generated set (tokens, HeroUI CSS, app and adaptive icons, splash screens,
+favicons and the web manifest, store-screenshot frames) is a build artefact and is never committed (ADR 0441
+decision 5). `BrandKitGeneratorDriver` runs the `@stackra/brand-kit` binary, so Runway depends on no brand code; the CI
+job installs `@stackra/brand-kit` with the repository (a dev dependency of the product root) and passes the screenshot
+job's folder as `screenshots` once that job exists.
 
 ## Dev ports across lanes
 

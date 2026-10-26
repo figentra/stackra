@@ -17,6 +17,7 @@ import type { DevServerOptions } from "#node/index";
 describe("@stackra/runway/node", () => {
   it("exports exactly its values, none of them also exported by .", () => {
     expect(Object.keys(node).sort()).toEqual([
+      "BrandKitGeneratorDriver",
       "CloudflareKvEdgeStoreDriver",
       "EasMobileBuilderDriver",
       "EasProviderDriver",

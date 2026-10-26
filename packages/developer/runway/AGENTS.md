@@ -33,6 +33,9 @@ Runway format version 3 (ADR 0296) as code. Member at `packages/developer/runway
 - Agents never publish a bundle, write the edge KV or start a mobile build for real: tests use fake publishers, stores
   and builders. A driver whose vendor is not wired rejects with `RunwayNotConfiguredError`; never make it succeed
   silently.
+- The brand step (`generateBrandSet`, ADR 0441 decision 5) runs `@stackra/brand-kit` only through its command line
+  (`BrandKitGeneratorDriver`); never add `@stackra/brand-kit`, and never any `@figentra/*` package, as a dependency.
+  Its output goes to `.stackra/brand` and is never committed.
 - A tenant-started mobile request is untrusted input: `buildMobileApps` parses its entry again before any build.
 - A runway holds secret names only. `definesFor` inlines public vars (`VITE_`, `EXPO_PUBLIC_`, `RENDERER_VITE_`) and
   never the TLS paths.

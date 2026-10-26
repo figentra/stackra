@@ -32,6 +32,7 @@ describe("@stackra/runway", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(runway).sort()).toEqual([
       "AppPublisher",
+      "BrandGenerator",
       "CacheEviction",
       "DeployKind",
       "EdgeStore",
@@ -52,6 +53,7 @@ describe("@stackra/runway", () => {
       "SurfaceKind",
       "TopologyMode",
       "baseUrlOf",
+      "brandGenerateRequest",
       "brandsOf",
       "buildMobileApps",
       "checkDevPorts",
@@ -62,6 +64,7 @@ describe("@stackra/runway", () => {
       "deployTargets",
       "devPorts",
       "edgeRowsOf",
+      "generateBrandSet",
       "mobileBuildRequests",
       "parseRunway",
       "productOf",
