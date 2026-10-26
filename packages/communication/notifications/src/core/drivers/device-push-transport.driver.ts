@@ -1,19 +1,22 @@
 /**
  * Stackra file contract:
- * Purpose: `DevicePushTransportDriver`, the `device` `PushTransport`: an Expo push through the Expo Integration for the
- *          mobile apps, or a Web Push (VAPID, `aes128gcm`) straight to the browser's push service; a device the service
- *          reports gone (Expo `DeviceNotRegistered`, Web Push 404 or 410) is revoked through `PushTokenStore`. Expo
- *          receipts are read with `receipts`, which revokes the devices they report gone.
+ * Purpose: `DevicePushTransportDriver`, the `device` `PushTransport`: an Expo push through the host's Expo Integration
+ *          for the mobile apps, or a Web Push (VAPID, `aes128gcm`) straight to the browser's push service; a device the
+ *          service reports gone (Expo `DeviceNotRegistered`, Web Push 404 or 410) is revoked through `PushTokenStore`.
+ *          Expo receipts are read with `receipts`, which revokes the devices they report gone.
  * Boundary: the VAPID key pair and contact are platform secrets read by name (`WEB_PUSH_VAPID_PUBLIC_KEY`,
  *           `WEB_PUSH_VAPID_PRIVATE_KEY`, `WEB_PUSH_VAPID_SUBJECT`), never logged. A Web Push goes only to an https
- *           endpoint, the browser's own push service. Sends are logged by key in `SendLog`.
+ *           endpoint, the browser's own push service. Sends are logged by key in `SendLog`. The Expo Integration is a
+ *           vendor connector in the OS integrations service (R3-8): the host subclasses this driver and passes it.
  * Runtime: isomorphic
- * Governing contract: ADR 0223 (decision 1: web push with VAPID); RFC 8030; RFC 8291; RFC 8292; ADR 0305 (rule 8).
+ * Governing contract: ADR 0223 (decision 1: web push with VAPID); RFC 8030; RFC 8291; RFC 8292; ADR 0305 (rule 8);
+ *                     owner decision R3-8 (STA-1281).
  */
 import type { SecretStore } from "@stackra/config/contracts";
 import { Driver } from "@stackra/container";
 import type { Clock } from "@stackra/contracts";
 import { ProviderRefusedError, ProviderUnavailableError } from "@stackra/integrations";
+import type { IntegrationApi } from "@stackra/integrations";
 
 import { PushTransport } from "#contracts/ports/push-transport.port";
 import type { PushTokenStore } from "#contracts/ports/push-token-store.port";
@@ -22,7 +25,6 @@ import type { OutboundPush } from "#contracts/types/outbound-push.type";
 import type { PushOutcome } from "#contracts/types/push-outcome.type";
 import { encryptWebPush } from "#core/functions/encrypt-web-push.function";
 import { vapidAuthorization } from "#core/functions/vapid-authorization.function";
-import type { ExpoIntegration } from "#core/providers/expo/expo.integration";
 
 /** An Expo push ticket or receipt. */
 interface ExpoTicket {
@@ -41,8 +43,8 @@ const REVOKED = "revoked";
  * const outcome = await push.send({ target, title, body, ttlSeconds: 3600 }, delivery.commandKey);
  */
 export class DevicePushTransportDriver extends Driver(PushTransport) {
-  /** Expo's push service. */
-  private readonly expo: ExpoIntegration;
+  /** Expo's push service: the host's Expo Integration, of which only the managed client is used. */
+  private readonly expo: { readonly api: IntegrationApi };
 
   /** The VAPID secrets. */
   private readonly secrets: SecretStore;
@@ -57,14 +59,14 @@ export class DevicePushTransportDriver extends Driver(PushTransport) {
   private readonly clock: Clock;
 
   /**
-   * @param expo - the Expo Integration.
+   * @param expo - the host's Expo Integration (provider `expo`, base URL `https://exp.host`).
    * @param secrets - the secret store.
    * @param tokens - the push target store.
    * @param log - the send log.
    * @param clock - the clock.
    */
   constructor(
-    expo: ExpoIntegration,
+    expo: { readonly api: IntegrationApi },
     secrets: SecretStore,
     tokens: PushTokenStore,
     log: SendLog,

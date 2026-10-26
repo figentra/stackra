@@ -53,6 +53,9 @@ Provider integrations, connections and their store (ADR 0308). Member at `packag
   webhook route for the same provider.
 - `ProviderResolver#candidates` is the one failover order (own, then managed, pack order); a caller never re-derives
   it. Provider lists are pack data under `providers.<capability>`, read by `MarketPackProviderDefaultsDriver`.
+- No vendor Integration in this package (owner decision R3-8, STA-1281): vendors are connectors in the OS integrations
+  service. This package keeps the bases, the managed client (OAuth client, token refresh), the stores and vault
+  references, webhook signing, `ManagedProvisioning`, `ProviderDefaults` and `ProviderResolver`.
   `pin: ProviderMode.Managed` is how a platform-only check (Figentra's KYB and KYC of a tenant) keeps a tenant's own
   Connection out; never filter the list by hand for that.
 - `ClientConnectionHostDriver` takes the service's refs as configuration (`ConnectionHostCalls`); never hard-code a

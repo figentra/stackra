@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `.` entry of @stackra/integrations, which has several public files, until `stackra gen`
- *          writes the entry barrels (STA-339).
+ *          writes the entry barrels (STA-339). No vendor Integration is here: Chatwoot moved to the OS integrations
+ *          service with the other connectors (R3-8, STA-1281).
  * Boundary: names each re-export and declares nothing. The provider-category, catalogue and managed-provisioning
  *           template seeds are exported for the registry and the seeders. The managed client's internals (`managedClient`, the placeholder
  *           lookup, the JWT signer) and the registries stay internal; `requestToken` is public for a store host's code
@@ -47,8 +48,6 @@ export { resolvePlaceholders } from "#core/functions/resolve-placeholders.functi
 export { ConnectionHost } from "#core/ports/connection-host.port";
 export { ConnectionStore } from "#core/ports/connection-store.port";
 export { ProviderPackSource } from "#core/ports/provider-pack-source.port";
-export { ChatwootConnection } from "#core/providers/chatwoot/chatwoot.connection";
-export { ChatwootIntegration } from "#core/providers/chatwoot/chatwoot.integration";
 export { IntegrationRuntime } from "#core/services/integration-runtime.service";
 export { ProviderResolver } from "#core/services/provider-resolver.service";
 export { ConnectedAccount } from "#core/values/connected-account.value";

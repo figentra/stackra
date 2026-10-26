@@ -44,8 +44,10 @@ Messages to people (ADR 0086, 0223 as amended by 0294; R-26). Member at `package
   channel order, sender ids and escalation steps are data passed in. Never branch on a Market or a country.
 - One provider, one Integration (ADR 0355): a provider with two channels (Twilio: SMS and voice) has one Integration and
   one Connection implementing both interfaces.
-- A provider driver lives in `src/core/providers/<provider>/` as `<provider>.integration.ts` and
-  `<provider>.connection.ts`, and is added to its channel's `*_CONNECTIONS` map.
+- No vendor code here (owner decision R3-8, STA-1281): a provider's Integration and Connection are a connector in the
+  OS integrations service, implementing this package's `*Sender` contracts; the host passes its map to the
+  `Connection*TransportDriver`s and its Expo Integration to `DevicePushTransportDriver`. Change a contract here,
+  additively, when a vendor needs one.
 - `NotificationsNotifierDriver` never names a service: the target action and its payload come from a `NotifierTarget`
   (a host's own, else the built-in one config `notifications.target` names: `messages` or `delivery`); add a field to
   `NotifierMessage`, never a branch on the target. A new built-in target is a new `<name>-notifier-target.constant.ts`,

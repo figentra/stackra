@@ -43,7 +43,6 @@ Depends on `@stackra/actions` (the `RateLimitStore`, and `RequestContext` for th
 | `MarketPackProviderDefaultsDriver`, `ProviderPackSource`, `./contracts`: `ProviderMode`; `ProviderCandidate`            | the market-pack `ProviderDefaults` for every capability, and the failover list's own-or-managed mode |
 | `./contracts`: `VoiceGateway`, `CallInstruction`, `CallStatus`, `RecordingConsent`; `recordingPlan`                     | the telephony port per Market; recording from the pack's consent rule                                |
 | `Pass`, `PassContent`                                                                                                   | the wallet pass kind a module declares (ADR 0348 decision 5)                                         |
-| `ChatwootIntegration`, `ChatwootConnection`                                                                             | headless Chatwoot per region: provisioning, inboxes, contacts, conversations                         |
 
 ## An integration and its connection
 
@@ -163,9 +162,18 @@ tenant's mapping. `assertPayInputs` checks a batch before any call; a repeated k
 with the provider (RV-50). The provider connectors (ZenHR, Kombo, Gusto) live with the capability's owner;
 `MemoryPayrollConnector` in `./testing` serves tests and local hosts.
 
+## Vendor connectors live in OS integrations (STA-1281)
+
+This package keeps the ports and the shared machinery: the Integration and Connection bases, the managed client (OAuth
+client, token requests and refresh, API key and JWT auth), the connection stores and the vault references, webhook
+signing, `ManagedProvisioning`, `ProviderDefaults` and `ProviderResolver`. Every vendor Integration is a connector in
+the OS integrations service (owner decision R3-8). The Chatwoot Integration and Connection left this package for it
+(os-104): copy `packages/communication/integrations/src/core/providers/chatwoot/` at commit `8d3f7b2`
+(`figentra/sta-666-wave12` before the move); it imports only this package's public names.
+
 ## A per-region base URL
 
-`baseUrl: "https://{chatwootHost}"` fills the host from the credential set (connection first, then the Integration's
+`baseUrl: "https://{host}"` (Chatwoot's `{chatwootHost}`) fills the host from the credential set (connection first, then the Integration's
 `@Secret`), so each region's deployment talks to its own instance. It must start with `https://`.
 
 ## Form bodies

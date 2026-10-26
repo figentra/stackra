@@ -30,8 +30,6 @@ describe("@stackra/integrations", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(integrations).sort()).toEqual([
       "AuthType",
-      "ChatwootConnection",
-      "ChatwootIntegration",
       "ClientConnectionHostDriver",
       "ConnectedAccount",
       "Connection",

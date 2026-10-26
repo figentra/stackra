@@ -2,7 +2,8 @@
 
 Stackra payments: the gateway ports every payment driver implements, the engine's `PaymentService` with the `unknown`
 state and lookup before retry, pay links, saved-token charges with a merchant-initiated flag, payouts and the platform
-layer, disputes, terminal sessions with a tip prompt, and the provider drivers. A product never carries payment code;
+layer, disputes and terminal sessions with a tip prompt. The vendor drivers (Stripe, Checkout.com, Moyasar, HyperPay,
+Paymob, Fawry, Tabby, Tamara) are connectors in the OS integrations service (owner decision R3-8). A product never carries payment code;
 it calls the engine built on these ports (ADR 0357). Which provider serves a call is the Connection's and the Market's
 data (ADR 0356), never code.
 
@@ -23,15 +24,6 @@ data (ADR 0356), never code.
 | `PaymentService`                                                                                          | `.`           | checkout, `payLink`, `charge`, `startTerminal`, `cancelTerminal`, `reconcile`, `capture`, `void`, `refund`, `resolve`                                                                                                                    |
 | `ConnectionPaymentGatewaysDriver`                                                                         | `.`           | the `connection` driver of `PaymentGateways`: tenant Connection, then Market default                                                                                                                                                     |
 | `MemoryPaymentRecordsDriver`                                                                              | `.`           | the `memory` driver of `PaymentRecords`                                                                                                                                                                                                  |
-| `PAYMENT_CONNECTIONS`                                                                                     | `.`           | provider code to connection class                                                                                                                                                                                                        |
-| `StripeIntegration` / `StripeConnection`                                                                  | `.`           | every port: Checkout, PaymentIntents, Connect, disputes, Terminal with tipping                                                                                                                                                           |
-| `CheckoutIntegration` / `CheckoutConnection` (+ sandbox)                                                  | `.`           | hosted page or payment link, capture and void, disputes                                                                                                                                                                                  |
-| `MoyasarIntegration` / `MoyasarConnection`                                                                | `.`           | invoices, capture and void, token charges                                                                                                                                                                                                |
-| `HyperpayIntegration` / `HyperpayConnection` (+ sandbox)                                                  | `.`           | COPYandPAY widget, CP / RV / RF, registrations with MIT standing instructions                                                                                                                                                            |
-| `PaymobIntegration` / `PaymobConnection`                                                                  | `.`           | Intention and Unified Checkout, capture, void, refund                                                                                                                                                                                    |
-| `FawryIntegration` / `FawryConnection` (+ sandbox)                                                        | `.`           | signed Express Checkout, status, refund                                                                                                                                                                                                  |
-| `TabbyIntegration` / `TabbyConnection`                                                                    | `.`           | buy now, pay later: session, capture, close, refund                                                                                                                                                                                      |
-| `TamaraIntegration` / `TamaraConnection` (+ sandbox)                                                      | `.`           | buy now, pay later: checkout, authorise and capture, cancel, refund                                                                                                                                                                      |
 | the refusals                                                                                              | `.`           | `PaymentUnknownError`, `NoPaymentProviderError`, `MerchantInitiatedNotAllowedError`, `InvalidPaymentTransitionError`, `CapabilityUnsupportedError`, `PaymentFieldRequiredError`, `PaymentDeclinedError`, `ResolutionReasonRequiredError` |
 | `PaymentGatewayFake`, `PaymentGatewaysFake`, `MarketPaymentDefaultsFake`                                  | `./testing`   | an in-memory provider that can lose answers, and the two port fakes                                                                                                                                                                      |
 
@@ -66,6 +58,26 @@ so a token is never charged twice.
 order), takes the tenant's own Connection of the first provider that has every capability the call needs, and
 otherwise the Market's platform Connection. A stored payment always goes back to the connection that served it.
 Sandboxes use the `-sandbox` providers (their own Integrations and hosts), chosen by the same data.
+
+The connection class per provider code is the host's: the OS integrations service owns the vendor Connections and
+subclasses the driver with its map.
+
+```ts
+export class OsPaymentGatewaysDriver extends ConnectionPaymentGatewaysDriver {
+  constructor(store: ConnectionStore, defaults: MarketPaymentDefaults) {
+    super(store, defaults, PAYMENT_CONNECTIONS); // provider code to the OS's vendor connection class
+  }
+}
+```
+
+## Vendor drivers moved (STA-1281)
+
+The eight vendor Integrations and Connections (with the sandbox and regional ones, Stripe Connect, the webhook
+recipes, `stripeParams`, `hyperpayResult` and `sha256Hex`) and `PAYMENT_CONNECTIONS` left this package for the OS
+integrations service (os-104). Copy them from `packages/commerce/payments/src/core/providers/` and
+`src/core/constants/payment-connections.constant.ts` at commit `8d3f7b2`
+(`figentra/sta-666-wave12` before the move). They import only public names: `@stackra/payments` (`totalOf`, the refusals), `@stackra/payments/contracts`
+and `@stackra/integrations`.
 
 ## Not here
 

@@ -190,18 +190,40 @@ Products declare channels, never providers (ADR 0223 decision 2). The provider b
 and Market by `@stackra/integrations`' `ProviderResolver` (ADR 0356): the tenant's own Connection first, then the
 Market's platform Connection, both data.
 
-| Channel port (`./contracts`)                                | Driver (`.`)                                           | Providers                                                                          |
-| ----------------------------------------------------------- | ------------------------------------------------------ | ---------------------------------------------------------------------------------- |
-| `MailTransport`                                             | `ConnectionMailTransportDriver`                        | `ResendConnection`, `SesConnection` (SigV4)                                        |
-| `SmsTransport`                                              | `ConnectionSmsTransportDriver`                         | `UnifonicConnection`, `TaqnyatConnection`, `TwilioConnection`, `CequensConnection` |
-| `WhatsAppTransport`                                         | `ConnectionWhatsAppTransportDriver`                    | `MetaWhatsAppConnection` (WhatsApp Cloud API: templates and text)                  |
-| `PushTransport`                                             | `DevicePushTransportDriver`                            | `ExpoIntegration` (mobile) and Web Push (VAPID, `aes128gcm`)                       |
-| voice (`VoiceGateway` of `@stackra/integrations/contracts`) | `ProviderResolver.resolve("voice", VOICE_CONNECTIONS)` | `TwilioConnection` (calls, TwiML, speech, handover, recording)                     |
+| Channel port (`./contracts`)                                | Driver (`.`)                                      | Providers (connectors in OS integrations)       |
+| ----------------------------------------------------------- | ------------------------------------------------- | ----------------------------------------------- |
+| `MailTransport`                                             | `ConnectionMailTransportDriver`                   | Resend, SES                                     |
+| `SmsTransport`                                              | `ConnectionSmsTransportDriver`                    | Unifonic, Taqnyat, Twilio, Cequens              |
+| `WhatsAppTransport`                                         | `ConnectionWhatsAppTransportDriver`               | Meta WhatsApp (Cloud API)                       |
+| `PushTransport`                                             | `DevicePushTransportDriver`                       | Expo (mobile) and Web Push (VAPID, `aes128gcm`) |
+| voice (`VoiceGateway` of `@stackra/integrations/contracts`) | `ProviderResolver.resolve("voice", <host's map>)` | Twilio                                          |
+
+The vendor Integrations and Connections live in the OS integrations service (owner decision R3-8), so the host passes
+them: each `Connection*TransportDriver` takes the host's connection class per provider code as its third argument, and
+`DevicePushTransportDriver` the host's Expo Integration as its first.
+
+```ts
+export class OsSmsTransportDriver extends ConnectionSmsTransportDriver {
+  constructor(resolver: ProviderResolver, log: SendLog) {
+    super(resolver, log, SMS_CONNECTIONS); // provider code to the OS's vendor connection class
+  }
+}
+```
 
 - Every connection transport sends once per idempotency key through `SendLog` (keys and provider ids only).
 - A device the push service reports gone is revoked through `PushTokenStore`; `receipts` reads Expo receipts.
 - The VAPID keys and contact are platform secrets: `WEB_PUSH_VAPID_PUBLIC_KEY`, `WEB_PUSH_VAPID_PRIVATE_KEY`,
   `WEB_PUSH_VAPID_SUBJECT`.
+
+### Vendor drivers moved (STA-1281)
+
+The eight vendor Integrations (Resend, SES with its SigV4 signer `signAwsV4`, Unifonic, Taqnyat, Twilio, Cequens, Meta
+WhatsApp, Expo) and the `MAIL_CONNECTIONS`, `SMS_CONNECTIONS`, `WHATSAPP_CONNECTIONS` and `VOICE_CONNECTIONS` maps
+left this package for the OS integrations service (os-104). Copy them from
+`packages/communication/notifications/src/core/providers/`, `src/core/constants/*-connections.constant.ts` and
+`src/core/functions/sign-aws-v4.function.ts` at commit `8d3f7b2` (`figentra/sta-666-wave12` before the move). They
+import only public names (`@stackra/notifications`' `twiml`, `@stackra/notifications/contracts`,
+`@stackra/integrations`, `@stackra/config`).
 
 ## Templates, quiet hours and escalation
 

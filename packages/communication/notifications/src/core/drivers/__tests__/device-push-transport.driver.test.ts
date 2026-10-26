@@ -3,12 +3,14 @@
  * Purpose: unit tests of `DevicePushTransportDriver`: an Expo push returns its ticket id; `DeviceNotRegistered` revokes
  *          the token; a Web Push goes encrypted with a VAPID header to the endpoint and a 410 revokes the subscription;
  *          a non-https endpoint is refused; a logged key sends nothing; Expo receipts revoke gone devices.
- * Boundary: test only; the Expo client is `fakeIntegrationApi`, `fetch` is stubbed, the VAPID keys are generated here.
+ * Boundary: test only; the Expo client is `fakeIntegrationApi` over a test Integration, `fetch` is stubbed, the VAPID
+ *           keys are generated here.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; RFC 8030; RFC 8292.
  */
 import { SecretStore } from "@stackra/config/contracts";
 import { Clock } from "@stackra/contracts";
+import { AuthType, Integration, IntegrationCategory, IntegrationRole } from "@stackra/integrations";
 import { fakeIntegrationApi } from "@stackra/integrations/testing";
 import { afterEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
@@ -18,7 +20,16 @@ import { SendLog } from "#contracts/ports/send-log.port";
 import type { PushTarget } from "#contracts/types/push-target.type";
 import { DevicePushTransportDriver } from "#core/drivers/device-push-transport.driver";
 import { base64url } from "#core/functions/base64url.function";
-import { ExpoIntegration } from "#core/providers/expo/expo.integration";
+
+/** A stand-in for the host's Expo Integration (the vendor one lives in the OS integrations service). */
+class ExpoIntegration extends Integration({
+  provider: "expo",
+  category: IntegrationCategory.Messaging,
+  roles: [IntegrationRole.Channel],
+  levels: [],
+  auth: { type: AuthType.None },
+  baseUrl: "https://exp.host",
+}) {}
 
 class Tokens extends PushTokenStore {
   readonly revoked: PushTarget[] = [];
