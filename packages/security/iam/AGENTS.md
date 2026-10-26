@@ -47,6 +47,9 @@ Permissions, policies, roles and the embedded policy decision point (ADR 0208, 0
 - The visibility filter only narrows: never add an option, flag or decorator that skips it (ADR 0333 d5, ADR 0327).
 - A restricted permission never counts through a self-made grant; break-glass passes only `breakable` denies; a
   dimension value not in the projection fails closed. Durations and walls are data (settings, rules), never numbers here.
+- **Roles at a node.** A consumer that checks a role rather than a permission (an approver, an escalation role)
+  injects `RolesAtNode`; `IamRolesAtNodeDriver` answers it from the snapshot with the decision point's grant rule
+  (held at or above the node, unexpired). Never list grants in the consumer.
 - No tenant vocabulary (R-59): scopes are the contracts `ScopeRef`. The access-control driver reads the call's
   `scope`; never read the descriptor's `tenantId` (it is going away).
 - No parameter properties and no `#private` fields: apps typecheck this source under `erasableSyntaxOnly`.

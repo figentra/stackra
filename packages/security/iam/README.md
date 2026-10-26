@@ -11,34 +11,36 @@ Depends on `@stackra/actions`, `@stackra/container`, `@stackra/contracts`, `@sta
 
 ## What is here
 
-| Entry         | Symbol                                                                                  | Use                                                                        |
-| ------------- | --------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
-| `.`           | `Permissions`, `Permission`                                                             | a model's permission set: one `static readonly <verb> = Permission.Lx`     |
-| `.`           | `Policy`, `Decision`                                                                    | record rules per model, methods named after verbs                          |
-| `.`           | `Role`                                                                                  | a module's system role: `Role({ grants })`                                 |
-| `.`           | `Risk`, `SystemRole`, `AccessReason`                                                    | the L0 to L4 scale, the built-in role codes, why a check decided           |
-| `.`           | `PolicyDecisionPointService`                                                            | `check`, `explain`, `visibility`, `visibleCondition`, `canDelegate`        |
-| `.`           | `IamAccessControlDriver`                                                                | the action pipeline's permission step and `ctx.authorize(record)`          |
-| `.`           | `IamGrantedScopesDriver`                                                                | `@stackra/scope`'s `GrantedScopes`: where a principal holds grants         |
-| `.`           | `MemoryPolicySourceDriver`                                                              | a policy held in memory (tests, local runs)                                |
-| `.`           | `StorePolicySourceDriver`, `MemoryPolicySnapshotStoreDriver`, `decodePolicySnapshot`    | production source over the event-fed store; decode an event's snapshot     |
-| `.`           | `redactFields`, `assertFieldsWritable`, `FieldPermissions`                              | apply `pdp.fieldAccess`: drop hidden fields, refuse read-only writes       |
-| `.`           | `breakGlassGrant`                                                                       | open a time-boxed emergency grant (reason, window, longest duration)       |
-| `.`           | `registerDimensions`, `DimensionRegistration`                                           | which fields carry a dimension another service owns (ADR 0351)             |
-| `.`           | `existenceHit`, `SearchHit`                                                             | full record, existence-only hit, or nothing                                |
-| `./contracts` | `PolicySnapshotStore`, `DimensionValues`, `FieldRule`, `FieldAccess`, `BreakGlassGrant` | the event-fed store, the dimension projection, field and break-glass data  |
-| `.`           | `PermissionSnapshotService`                                                             | the client's UI permissions snapshot                                       |
-| `.`           | `registerPermissions`, `registerRoles`, `registerPolicies`, `connectPolicies`           | what gen's entry tells the runtime                                         |
-| `.`           | `permissionKey`                                                                         | the locked key of a `Permission` static                                    |
-| `./contracts` | `PolicySource`                                                                          | the port snapshots come from                                               |
-| `./node`      | `IamVisibilityFilterDriver`                                                             | `@stackra/database`'s `VisibilityFilter`: visibility rules in reads        |
-| `./node`      | `PostgresPolicySnapshotStoreDriver`                                                     | the durable `PolicySnapshotStore`: one row per tenant and principal        |
-| `.`           | `PolicySnapshotIntakeService`, `PolicySnapshotEvent`                                    | the body of the listener that stores the IAM service's snapshot events     |
-| `./node`      | `registerVisibility`, `VisibilityRegistration`                                          | what gen's entry tells the query filter about each declaring model         |
-| `./contracts` | `PolicySnapshot`, `Grant`, `DenyRule`, `VisibilityRule`, `Audience`, `Capability`       | the policy as data                                                         |
-| `./contracts` | `Audience$`                                                                             | the shipped schema of `Audience`, for a shape field (scope, segment, role) |
-| `./react`     | `usePermission`                                                                         | `const can = usePermission(); can(OrderPermissions.create)`                |
-| `./testing`   | `actors`, `IAM_TESTING_PLUGIN`                                                          | test callers; the plugin that opens the memory policy                      |
+| Entry         | Symbol                                                                                  | Use                                                                           |
+| ------------- | --------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| `.`           | `Permissions`, `Permission`                                                             | a model's permission set: one `static readonly <verb> = Permission.Lx`        |
+| `.`           | `Policy`, `Decision`                                                                    | record rules per model, methods named after verbs                             |
+| `.`           | `Role`                                                                                  | a module's system role: `Role({ grants })`                                    |
+| `.`           | `Risk`, `SystemRole`, `AccessReason`                                                    | the L0 to L4 scale, the built-in role codes, why a check decided              |
+| `.`           | `PolicyDecisionPointService`                                                            | `check`, `explain`, `visibility`, `visibleCondition`, `canDelegate`           |
+| `.`           | `IamAccessControlDriver`                                                                | the action pipeline's permission step and `ctx.authorize(record)`             |
+| `.`           | `IamGrantedScopesDriver`                                                                | `@stackra/scope`'s `GrantedScopes`: where a principal holds grants            |
+| `.`           | `IamRolesAtNodeDriver`                                                                  | the `RolesAtNode` port: roles a principal holds at a node or above, live then |
+| `.`           | `MemoryPolicySourceDriver`                                                              | a policy held in memory (tests, local runs)                                   |
+| `.`           | `StorePolicySourceDriver`, `MemoryPolicySnapshotStoreDriver`, `decodePolicySnapshot`    | production source over the event-fed store; decode an event's snapshot        |
+| `.`           | `redactFields`, `assertFieldsWritable`, `FieldPermissions`                              | apply `pdp.fieldAccess`: drop hidden fields, refuse read-only writes          |
+| `.`           | `breakGlassGrant`                                                                       | open a time-boxed emergency grant (reason, window, longest duration)          |
+| `.`           | `registerDimensions`, `DimensionRegistration`                                           | which fields carry a dimension another service owns (ADR 0351)                |
+| `.`           | `existenceHit`, `SearchHit`                                                             | full record, existence-only hit, or nothing                                   |
+| `./contracts` | `PolicySnapshotStore`, `DimensionValues`, `FieldRule`, `FieldAccess`, `BreakGlassGrant` | the event-fed store, the dimension projection, field and break-glass data     |
+| `.`           | `PermissionSnapshotService`                                                             | the client's UI permissions snapshot                                          |
+| `.`           | `registerPermissions`, `registerRoles`, `registerPolicies`, `connectPolicies`           | what gen's entry tells the runtime                                            |
+| `.`           | `permissionKey`                                                                         | the locked key of a `Permission` static                                       |
+| `./contracts` | `PolicySource`                                                                          | the port snapshots come from                                                  |
+| `./contracts` | `RolesAtNode`                                                                           | the roles a principal holds at a scope node (approval role checks)            |
+| `./node`      | `IamVisibilityFilterDriver`                                                             | `@stackra/database`'s `VisibilityFilter`: visibility rules in reads           |
+| `./node`      | `PostgresPolicySnapshotStoreDriver`                                                     | the durable `PolicySnapshotStore`: one row per tenant and principal           |
+| `.`           | `PolicySnapshotIntakeService`, `PolicySnapshotEvent`                                    | the body of the listener that stores the IAM service's snapshot events        |
+| `./node`      | `registerVisibility`, `VisibilityRegistration`                                          | what gen's entry tells the query filter about each declaring model            |
+| `./contracts` | `PolicySnapshot`, `Grant`, `DenyRule`, `VisibilityRule`, `Audience`, `Capability`       | the policy as data                                                            |
+| `./contracts` | `Audience$`                                                                             | the shipped schema of `Audience`, for a shape field (scope, segment, role)    |
+| `./react`     | `usePermission`                                                                         | `const can = usePermission(); can(OrderPermissions.create)`                   |
+| `./testing`   | `actors`, `IAM_TESTING_PLUGIN`                                                          | test callers; the plugin that opens the memory policy                         |
 
 ## Declaring access
 

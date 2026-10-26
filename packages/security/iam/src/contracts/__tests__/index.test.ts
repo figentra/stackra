@@ -31,6 +31,7 @@ describe("@stackra/iam/contracts", () => {
       "FieldAccess",
       "PolicySnapshotStore",
       "PolicySource",
+      "RolesAtNode",
     ]);
   });
 
