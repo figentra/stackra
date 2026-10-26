@@ -12,12 +12,14 @@
 import { RequestContext } from "@stackra/actions";
 import { ContextStorage } from "@stackra/actions/contracts";
 import { fakeExtensionContext } from "@stackra/actions/testing";
+import { buildConfig } from "@stackra/config";
 import { Container, DiscoveryService, Module, Service } from "@stackra/container";
 import type { Token, Wiring } from "@stackra/container";
 import { ActorKind, Clock, DataClassification, Logger, Realm } from "@stackra/contracts";
 import { discoverWithGen } from "@stackra/gen/testing";
 import { describe, expect, Fake, it } from "@stackra/testing";
 
+import { AccessLogConfig } from "#config/access-log.config";
 import { AccessLogSink } from "#contracts/ports/access-log-sink.port";
 import { AccessLogged } from "#core/decorators/access-logged.decorator";
 import { MemoryAccessLogSinkDriver } from "#core/drivers/memory-access-log-sink.driver";
@@ -75,7 +77,7 @@ const wiring: Wiring = {
       module: "access_log",
       kind: "service",
       provide: AccessLogService,
-      deps: [AccessLogSink, Logger, Clock],
+      deps: [AccessLogSink, Logger, Clock, AccessLogConfig],
     },
     {
       module: "access_log",
@@ -92,6 +94,7 @@ async function boot(): Promise<{ container: Container; sink: MemoryAccessLogSink
   const overrides = new Map<Token, object>([
     [AccessLogSink, sink],
     [Logger, new LoggerFake()],
+    [AccessLogConfig, buildConfig(AccessLogConfig)],
     [RequestContext, new RequestContext(new FixedContextStorage())],
   ]);
   return { container: await Container.create([wiring], { overrides }), sink };

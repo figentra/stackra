@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the `DriverRegistry` entry of `AccessLogSink`, so `DriverName<AccessLogSink>` is `"postgres" | "memory"`.
+ * Purpose: the `DriverRegistry` entry of `AccessLogSink`, so `DriverName<AccessLogSink>` is `"postgres" | "memory" | "outbox"`.
  * Boundary: a module augmentation only; the stand-in for the one gen writes into `#stackra/wiring` (STA-339).
  *           `access-log-options.schema.ts` imports this file so the augmentation travels with the config shape (the schema is exported as `AccessLogConfig$`).
  * Runtime: isomorphic
@@ -10,7 +10,7 @@ import type { ACCESS_LOG_SINK_DRIVERS } from "#core/constants/access-log-sink-dr
 
 declare module "@stackra/container" {
   interface DriverRegistry {
-    /** The driver names of `AccessLogSink` (`postgres`, `memory`). */
+    /** The driver names of `AccessLogSink` (`postgres`, `memory`, `outbox`). */
     "access_log.AccessLogSink": (typeof ACCESS_LOG_SINK_DRIVERS)[number];
   }
 }

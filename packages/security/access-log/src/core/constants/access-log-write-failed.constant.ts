@@ -6,8 +6,8 @@
  *           names the operator text `access_log::errors.access_log_write_failed.message`.
  * Runtime: isomorphic
  * Governing contract: ADR 0231 (snake_case machine codes); ADR 0184 (telemetry); ADR 0212 (open question 1: a failed
- *                     read audit does not block the read).
+ *                     read audit does not block the read); ADR 0409 (except for a class that fails closed).
  */
 
-/** The log event of a swallowed sink failure. */
+/** The log event of a sink failure. */
 export const ACCESS_LOG_WRITE_FAILED = "access_log_write_failed";

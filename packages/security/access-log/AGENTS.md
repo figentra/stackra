@@ -34,7 +34,10 @@ decisions 3, 5 and 6). Member at `packages/security/access-log` (`tier:lib`), in
 - The table is tenant-owned through tenancy's trait and macro (ADR 0323 d1 allows the use); declare no `tenant`
   identifier here (R-59). The migration is a frozen snapshot: literals only, every column `.notNull()` or `.nullable()`
   with a `.comment()` equal to the model field's docblock, raw SQL only through `schema.sql(statement, { inverse })`.
-- A sink failure never fails the logged call: `AccessLogService` logs `access_log_write_failed`.
+- A sink failure is always logged as `access_log_write_failed`. It fails the logged call only for a class that fails
+  closed: a classification in `AccessLogConfig.failClosed` (financial and health by default, configuration, never
+  code) or a facet marked `failClosed: true` (a privileged surface). Every other read is served (ADR 0409).
+- The `outbox` sink sends `AccessRecorded` events to the audit service, which chains them; it never chains itself.
 - No parameter properties and no `#private` fields: services typecheck this source under `erasableSyntaxOnly`.
 
 ## Rules that fail the build

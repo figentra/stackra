@@ -6,11 +6,13 @@
  * Boundary: registration only; no global registry at import time. The decorator is its own metadata key, so the
  *           Explorer and gen look up the same thing, and the conformance test proves they agree. Inherited methods are
  *           not wrapped. The running call's id and actor come from `RequestContext`, which throws outside an action or
- *           query call (a missing context is a bug, never an anonymous read). A synchronous method stays synchronous:
- *           its record is written without being awaited, and `AccessLogService` never rejects.
+ *           query call (a missing context is a bug, never an anonymous read). An async method resolves only once its
+ *           record is written, so for a class that fails closed (ADR 0409) a lost record withholds the result with
+ *           `access_log_write_failed`. A synchronous method stays synchronous: its record is written without being
+ *           awaited, so it cannot be held back (its failure is still logged); a fail-closed read is written async.
  * Runtime: node
  * Governing contract: ADR 0144 as amended by 0294 (Explorers, `src/<entry>/<pkg>.explorer.ts`); ADR 0294 (decisions 6
- *                     and 15); ADR 0212 (decision 5); ADR 0005 (no reflect-metadata).
+ *                     and 15); ADR 0212 (decision 5); ADR 0005 (no reflect-metadata); ADR 0409 (fail closed).
  */
 import type { RequestContext } from "@stackra/actions";
 import { Explorer } from "@stackra/container";
@@ -41,7 +43,7 @@ export class AccessLogExplorer extends Explorer {
   /** Lists the instances whose class carries the facet, with its options. */
   private readonly discovery: DiscoveryService;
 
-  /** Writes each record and swallows a sink failure. */
+  /** Writes each record; rejects only for a class that fails closed. */
   private readonly log: AccessLogService;
 
   /** The running call's id and actor. */
@@ -77,20 +79,21 @@ export class AccessLogExplorer extends Explorer {
           try {
             result = original(...args);
           } catch (error) {
-            void write(args);
+            void write(args).catch(() => undefined);
             throw error;
           }
           if (!(result instanceof Promise)) {
-            void write([...args, result]);
+            // The value is already returned, so only an async method can be held back; the failure is logged.
+            void write([...args, result]).catch(() => undefined);
             return result;
           }
           return result.then(
             async (value: unknown) => {
-              await write([...args, value]);
+              await write([...args, value]); // a fail-closed class rejects here: the value is not served
               return value;
             },
             async (error: unknown) => {
-              await write(args);
+              await write(args).catch(() => undefined); // the call's own error stands
               throw error;
             },
           );

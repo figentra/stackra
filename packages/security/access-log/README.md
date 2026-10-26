@@ -48,9 +48,10 @@ or query call throws, because `RequestContext` has no actor to log.
 | Entry         | Symbol                                                                | Use                                                            |
 | ------------- | --------------------------------------------------------------------- | -------------------------------------------------------------- |
 | `.`           | `AccessLogged`                                                        | the class facet, made with `createDecorator`                   |
-| `.`           | `AccessLogService`                                                    | builds each record, resolves its subjects, swallows failures   |
-| `.`           | `AccessLogConfig`, `AccessLogOptions`, `AccessLogConfig$`             | `sink` (`postgres` or `memory`) and `retentionDays` (400, ≥90) |
+| `.`           | `AccessLogService`                                                    | builds each record; fails open, or closed for `failClosed`     |
+| `.`           | `AccessLogConfig`, `AccessLogOptions`, `AccessLogConfig$`             | `sink`, `retentionDays` (400, ≥90), `failClosed` classes       |
 | `.`           | `MemoryAccessLogSinkDriver`                                           | one chain in memory, for tests and `sink: "memory"`            |
+| `.`           | `OutboxAccessLogSinkDriver`, `AccessRecorded`                         | `sink: "outbox"`: each record to the audit service as an event |
 | `.`           | `linkAccessRecord`, `findChainBreak`                                  | build the next link; find the first broken link of a run       |
 | `.`           | `AccessLogWriteFailedError`, `ACCESS_LOG_WRITE_FAILED`                | the sink's refusal and the log event, one code                 |
 | `./contracts` | `AccessLogSink`                                                       | the port                                                       |

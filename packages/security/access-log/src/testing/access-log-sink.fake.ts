@@ -4,8 +4,8 @@
  *          survives a sink outage.
  * Boundary: built on the `Fake` base of @stackra/testing over the abstract port, so a testing module's
  *           `.override(AccessLogSink, fake)` accepts it. A failing write throws `AccessLogWriteFailedError` after it is
- *           recorded, as a real sink does when its store is down; `AccessLogService` swallows it, so no caller is
- *           refused. It chains nothing: tests of the chain use the memory driver.
+ *           recorded, as a real sink does when its store is down; `AccessLogService` logs it and refuses the caller
+ *           only for a class that fails closed. It chains nothing: tests of the chain use the memory driver.
  * Runtime: isomorphic
  * Governing contract: ADR 0269 (decisions 2 and 3: a package's own fakes in `./testing`); ADR 0266 (decision 2).
  */

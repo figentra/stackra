@@ -5,7 +5,8 @@
  * Boundary: a type in the leaf entry. Every value is a literal, because gen reads decorator arguments statically: the
  *           subject is a field name, never a callback.
  * Runtime: isomorphic
- * Governing contract: ADR 0294 (decisions 6, 8 and 15); ADR 0144 (Explorers); ADR 0134 (classification).
+ * Governing contract: ADR 0294 (decisions 6, 8 and 15); ADR 0144 (Explorers); ADR 0134 (classification); ADR 0409
+ *                     (`failClosed`).
  */
 import type { DataClassification } from "@stackra/contracts";
 
@@ -20,4 +21,10 @@ export interface AccessLoggedOptions {
    * actor, or the actor it acts on behalf of).
    */
   readonly subjects?: string;
+
+  /**
+   * `true` for a privileged surface (break-glass, support impersonation, a staff export): a call whose access record
+   * cannot be written is refused, whatever the classification. Absent, the configured `failClosed` classes decide.
+   */
+  readonly failClosed?: boolean;
 }

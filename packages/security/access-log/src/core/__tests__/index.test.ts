@@ -24,7 +24,9 @@ describe("@stackra/access-log", () => {
       "AccessLogService",
       "AccessLogWriteFailedError",
       "AccessLogged",
+      "AccessRecorded",
       "MemoryAccessLogSinkDriver",
+      "OutboxAccessLogSinkDriver",
       "findChainBreak",
       "linkAccessRecord",
     ]);

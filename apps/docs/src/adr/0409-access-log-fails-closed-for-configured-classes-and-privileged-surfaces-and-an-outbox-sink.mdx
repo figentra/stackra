@@ -1,0 +1,45 @@
+---
+title: "0409 — Access log: fails closed for configured classes and privileged surfaces, and an outbox sink"
+description: "Proposed · 2026-10-26"
+---
+
+<Note>
+  Proposed (STA-821). It amends
+  [0212](/adr/0212-audit-evidence-access-logs-hash-chain-and-retention) open question 1 (a failed
+  read audit never blocks the read). Linear STA-821.
+</Note>
+
+## Context
+
+`AccessLogService` always failed open: a read was served when its access record could not be written. That is right
+for most personal data, but a financial or health read served unlogged breaks the evidence a regulator asks for. The
+read audits also stayed in each service's own table, so the audit service never saw them.
+
+## Decision
+
+1. **Fail closed by class, as configuration.** `AccessLogConfig.failClosed` lists the data classes whose read is
+   refused (`access_log_write_failed`, retryable) when its record cannot be written; the default is `financial` and
+   `health` (the regulated special category). A market pack or deployment changes the list in runway.
+2. **A privileged surface fails closed whatever its class**: `@AccessLogged({ failClosed: true })` on break-glass,
+   impersonation or staff export reads.
+3. **The record decides before the value leaves**: an async method resolves only after its record is written. A
+   synchronous method cannot be held back; a fail-closed read is written async.
+4. **An `outbox` sink.** `OutboxAccessLogSinkDriver` sends each record as `AccessRecorded`
+   (`access_record.recorded`) through the outbox; the audit service chains and stores it.
+5. **One canonical hash.** The chain hash is `@stackra/support`'s `canonicalHash` (ADR 0416), byte for byte the
+   earlier form, so stored chains still verify.
+
+## Consequences
+
+- A sink outage now refuses financial and health reads; operators alert on `access_log_write_failed`.
+- Services that report to the audit service set `sink: outbox`.
+
+## Enforcement
+
+`packages/security/access-log/src/core/services/__tests__/access-log.service.test.ts`,
+`packages/security/access-log/src/core/drivers/__tests__/outbox-access-log-sink.driver.test.ts`,
+`packages/security/access-log/src/core/functions/__tests__/hash-access-link.function.test.ts` (pinned hash).
+
+## Supersedes and sources
+
+Supersedes: none. Sources: STA-821 (services/audit SPEC gap 2); OS-289; STA-827.

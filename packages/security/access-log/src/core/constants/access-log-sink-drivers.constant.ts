@@ -5,8 +5,8 @@
  *           `DriverRegistry` augmentation read it, so the two never drift.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 16: drivers named by file); ADR 0266 (decision 2: a memory driver ships with
- *                     the production one).
+ *                     the production one); ADR 0409 (`outbox`, STA-821).
  */
 
 /** The `AccessLogSink` drivers of this package, by name; `postgres` is the default. */
-export const ACCESS_LOG_SINK_DRIVERS = ["postgres", "memory"] as const;
+export const ACCESS_LOG_SINK_DRIVERS = ["postgres", "memory", "outbox"] as const;

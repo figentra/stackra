@@ -23,6 +23,6 @@ describe("AccessLogOptions", () => {
   });
 
   it("types sink as the AccessLogSink driver names", () => {
-    expectTypeOf<AccessLogOptions["sink"]>().toEqualTypeOf<"postgres" | "memory">();
+    expectTypeOf<AccessLogOptions["sink"]>().toEqualTypeOf<"postgres" | "memory" | "outbox">();
   });
 });
