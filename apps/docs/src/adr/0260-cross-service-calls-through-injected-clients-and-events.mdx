@@ -4,6 +4,21 @@ description: "Accepted, amended by 0294, 0351 · 2026-10-21"
 ---
 
 <Note>
+  Note on decision 4, 2026-10-26 (STA-1229, built by STA-1224): besides the typed subscription,
+  there is one wildcard subscription, and only relays may use it. A relay is a listener whose
+  `handle` parameter is typed `EventEnvelope` from `@stackra/outbox/contracts`. Gen lists it in
+  `registerRelays`, not in `registerListeners`, and the inbox resolves it on `connect`. A relay
+  receives every claimed integration event as the envelope of
+  [0141](/adr/0141-integration-event-names-and-envelope) (`id`, `type`, `occurredAt`, `scope`,
+  `meta` and untyped `data`), never a typed payload, and that includes wire names the service has
+  no class for. It is meant for code that forwards events without reading their fields, such as the
+  webhooks relay. A module that reacts to a particular event types `handle` with that event's class
+  from `#stackra/clients/<service>`, and never filters the envelope by `type` instead. A relay that
+  throws rolls the receipt back and the event is delivered again, so a relay should be a queued
+  listener. The other decisions stand.
+</Note>
+
+<Note>
   Amended 2026-10-24 (STA-479) by
   [0351](/adr/0351-iam-conditions-on-a-dimension-another-service-owns-declared-dimensions-and-projections):
   the read models of decision 7 include the dimension projections gen derives when a module's record
