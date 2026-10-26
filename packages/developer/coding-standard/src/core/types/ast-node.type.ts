@@ -71,6 +71,9 @@ export interface AstNode {
   /** A member expression's object. */
   readonly object?: AstNode;
 
+  /** A member expression's property. */
+  readonly property?: AstNode;
+
   /** A class's `extends` expression. */
   readonly superClass?: AstNode | null;
 
@@ -91,4 +94,16 @@ export interface AstNode {
 
   /** A specifier's local name. */
   readonly local?: AstNode;
+
+  /** A function's or function type's parameters. */
+  readonly params?: readonly AstNode[];
+
+  /** An assignment pattern's target. */
+  readonly left?: AstNode;
+
+  /** A rest element's or spread's argument. */
+  readonly argument?: AstNode;
+
+  /** Whether a member's or property's key is computed (`[key]`). */
+  readonly computed?: boolean;
 }

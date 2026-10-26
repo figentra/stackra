@@ -54,7 +54,7 @@ The package has the one entry `.` (ADR 0127, 2026-10-24 note). Until `stackra ge
 | `disable-needs-reason`        | A disable comment names its rules and gives a reason after `--`                                                 | no  | ADR 0129             |
 | `docblock-shape`              | One line of TSDoc text is written `/** ... */`; a block with a tag is multi-line                                | yes | owner R-11           |
 | `file-contract`               | Every file opens with the `Stackra file contract:` docblock: Purpose, Boundary, Runtime, Governing contract     | no  | owner H              |
-| `no-tenant-vocabulary`        | No `tenant` in an identifier outside `@stackra/tenancy`; use `ScopeRef`                                         | no  | owner H, R-59        |
+| `no-tenant-vocabulary`        | No declaration of a `tenant` identifier outside tenancy and IAM scope code (uses allowed); use `ScopeRef`       | no  | ADR 0323, R-59       |
 | `no-raw-key-literal`          | No string literal in an `icon`, `columnKey`, `routeKey` or `permission(s)` property; use the generated constant | no  | owner R-56, ADR 0322 |
 
 ### What the rules do not check
