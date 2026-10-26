@@ -29,7 +29,7 @@ export class MemoryReviewItemSinkDriver extends Driver(ReviewItemSink) {
     return this.recorded;
   }
 
-  /** Keeps `item`. */
+  /** Keeps `item` in memory, frozen. */
   async record(item: ReviewItem): Promise<void> {
     this.recorded.push(Object.freeze({ ...item }));
   }

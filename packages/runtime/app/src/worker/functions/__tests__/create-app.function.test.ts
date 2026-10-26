@@ -14,6 +14,7 @@ import { ErrorReporter } from "@stackra/errors/contracts";
 import { beforeEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 import { RouterContextProvider } from "react-router";
+import type * as ReactRouter from "react-router";
 import type { ServerBuild } from "react-router";
 
 import { createApp } from "#worker/functions/create-app.function";
@@ -23,7 +24,7 @@ import type { WorkerRequest } from "#worker/types/worker-request.type";
 const routerHandler = vi.fn<(request: Request, context?: unknown) => Promise<Response>>();
 
 vi.mock("react-router", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("react-router")>()),
+  ...(await importOriginal<typeof ReactRouter>()),
   createRequestHandler: () => routerHandler,
 }));
 

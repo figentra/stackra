@@ -8,7 +8,7 @@
  * Governing contract: ADR 0329 (motion layer); ADR 0022 (test placement).
  */
 // @covers sta-430:FR-001
-import type { MotionToken } from "#contracts/types/theme.type";
+import type { MotionToken } from "#contracts/types/motion-token.type";
 import { STACKRA_THEME } from "#core/constants/stackra-theme.constant";
 import { motionTiming } from "#core/functions/motion-timing.function";
 

@@ -9,14 +9,13 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0222 (decision 1).
  */
+import type { GetObjectCommand, ListObjectsV2Command } from "@aws-sdk/client-s3";
 import {
   AbortMultipartUploadCommand,
   CompleteMultipartUploadCommand,
   CreateMultipartUploadCommand,
   DeleteObjectCommand,
-  GetObjectCommand,
   HeadObjectCommand,
-  ListObjectsV2Command,
   PutObjectCommand,
   S3Client,
   UploadPartCommand,
@@ -191,10 +190,6 @@ describe("S3FileSystemDriver", () => {
 
   it("writes a stream shorter than one part as one PUT", async () => {
     const send = answer(() => ({}));
-    async function* rows() {
-      yield "id\n";
-      yield "1\n";
-    }
     await disk().writeStream("exports/x.csv", rows(), { contentType: "text/csv" });
     const [command] = send.mock.calls.map(([sent]) => sent);
     expect(command).toBeInstanceOf(PutObjectCommand);
@@ -242,10 +237,6 @@ describe("S3FileSystemDriver", () => {
     const send = answer((command) =>
       command instanceof CreateMultipartUploadCommand ? { UploadId: "up-2" } : { ETag: '"e"' },
     );
-    async function* broken(): AsyncGenerator<Uint8Array> {
-      yield new Uint8Array(9 * 1024 * 1024);
-      throw new Error("source failed");
-    }
     await expect(disk().writeStream("exports/big.bin", broken())).rejects.toThrow("source failed");
     const last = send.mock.calls.at(-1)?.[0];
     expect(last).toBeInstanceOf(AbortMultipartUploadCommand);
@@ -263,3 +254,23 @@ describe("S3FileSystemDriver", () => {
     await expect(files.readStream("../x")).rejects.toThrow(RangeError);
   });
 });
+
+/**
+ * A CSV stream shorter than one part.
+ *
+ * @yields each chunk in turn.
+ */
+async function* rows() {
+  yield "id\n";
+  yield "1\n";
+}
+
+/**
+ * A stream that fails after one part's worth of bytes.
+ *
+ * @yields each chunk in turn.
+ */
+async function* broken(): AsyncGenerator<Uint8Array> {
+  yield new Uint8Array(9 * 1024 * 1024);
+  throw new Error("source failed");
+}

@@ -8,7 +8,8 @@
  * Runtime: node
  * Governing contract: ADR 0340 (decisions 3 and 4); ADR 0022 (test placement).
  */
-import type { ColorToken, Theme } from "#contracts/types/theme.type";
+import type { ColorToken } from "#contracts/types/color-token.type";
+import type { Theme } from "#contracts/types/theme.type";
 import { STACKRA_THEME } from "#core/constants/stackra-theme.constant";
 import { checkTheme } from "#core/functions/check-theme.function";
 import { oklchToHex } from "#core/functions/oklch-to-hex.function";

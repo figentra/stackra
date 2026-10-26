@@ -16,7 +16,9 @@
  * Governing contract: ADR 0302 (Stackra Design System); ADR 0320 (the Theme Studio); ADR 0340 (decision 4).
  */
 import { MaterialLevel } from "#contracts/enums/material-level.enum";
-import type { ColorToken, Theme, ThemeMaterials } from "#contracts/types/theme.type";
+import type { ColorToken } from "#contracts/types/color-token.type";
+import type { Theme } from "#contracts/types/theme.type";
+import type { ThemeMaterials } from "#contracts/types/theme-materials.type";
 import type { ThemeKnobs } from "#contracts/types/theme-knobs.type";
 import { defineTheme } from "#core/functions/define-theme.function";
 import { deriveAccent } from "#core/functions/derive-accent.function";

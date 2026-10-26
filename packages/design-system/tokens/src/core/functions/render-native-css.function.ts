@@ -19,7 +19,8 @@
  *          (decision 7).
  */
 import { ColorRole } from "#contracts/enums/color-role.enum";
-import type { Theme, TypographyToken } from "#contracts/types/theme.type";
+import type { Theme } from "#contracts/types/theme.type";
+import type { TypographyToken } from "#contracts/types/typography-token.type";
 import { HEROUI_TYPOGRAPHY_TOKENS } from "#core/constants/heroui-typography-tokens.constant";
 
 const SHADOWS = ["surface", "overlay", "field"] as const;
@@ -64,7 +65,9 @@ export function renderNativeCss(theme: Theme): string {
     `@theme {\n  --radius: ${theme.radius.base};\n  --field-radius: ${theme.radius.field};\n}`,
     ...(palette.length === 0
       ? []
-      : [`@theme inline static {\n${palette.map((name) => `  --color-${name}: var(--${name});`).join("\n")}\n}`]),
+      : [
+          `@theme inline static {\n${palette.map((name) => `  --color-${name}: var(--${name});`).join("\n")}\n}`,
+        ]),
     `@layer theme {\n  :root {\n${variant("light")}\n\n${variant("dark")}\n  }\n}`,
     ...HEROUI_TYPOGRAPHY_TOKENS.flatMap(({ type, token }) => {
       const latin = theme.typography[token];

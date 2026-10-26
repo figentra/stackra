@@ -17,7 +17,7 @@
  */
 import { existsSync, readFileSync } from "node:fs";
 
-import type { ColorToken } from "#contracts/types/theme.type";
+import type { ColorToken } from "#contracts/types/color-token.type";
 import { MATERIAL_MODES } from "#core/constants/material-modes.constant";
 import { STACKRA_CONTRAST_PAIRS } from "#core/constants/stackra-contrast-pairs.constant";
 import { STACKRA_THEME } from "#core/constants/stackra-theme.constant";
@@ -51,7 +51,9 @@ const ACHROMATIC = ["accent-foreground", "link", "signal", "signal-foreground"];
  * amendments of ADR 0319 (the steel accent), the owner's light muted 0.49 (2026-10-23), HeroUI's warning hover fix and
  * ADR 0340 (`amber-strong`, the banners and the charts).
  */
-const SNAPSHOT: Readonly<Record<"colors" | "palette", Readonly<Record<string, readonly [string, string]>>>> = {
+const SNAPSHOT: Readonly<
+  Record<"colors" | "palette", Readonly<Record<string, readonly [string, string]>>>
+> = {
   colors: {
     background: ["oklch(0.972 0.004 122)", "oklch(0.158 0.005 248)"],
     foreground: ["oklch(0.158 0.005 248)", "oklch(0.972 0.004 122)"],

@@ -15,7 +15,7 @@ import type { Clock } from "@stackra/contracts";
 import { Duration } from "@stackra/contracts";
 import Valkey from "iovalkey";
 
-import { CacheConfig } from "#config/cache.config";
+import type { CacheConfig } from "#config/cache.config";
 import { Cache } from "#contracts/ports/cache.port";
 import type { CacheNamespace } from "#contracts/ports/cache-namespace.port";
 import type { CacheKey } from "#contracts/types/cache-key.type";

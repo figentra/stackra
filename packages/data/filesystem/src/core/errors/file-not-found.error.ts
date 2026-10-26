@@ -13,7 +13,9 @@ export class FileNotFoundError extends Error {
   /** The normalised key that was asked for. */
   readonly path: string;
 
-  /** @param path - the normalised key that was asked for. */
+  /**
+   * @param path - the normalised key that was asked for.
+   */
   constructor(path: string) {
     super(`No file is stored under "${path}"`);
     this.name = "FileNotFoundError";

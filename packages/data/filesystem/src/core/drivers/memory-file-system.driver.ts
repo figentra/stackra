@@ -9,9 +9,10 @@
  * Governing contract: ADR 0234 (decision 7); ADR 0266 (memory drivers first); ADR 0294 (decision 16).
  */
 import { Driver } from "@stackra/container";
-import { Clock, Duration } from "@stackra/contracts";
+import type { Clock } from "@stackra/contracts";
+import { Duration } from "@stackra/contracts";
 
-import { FilesystemConfig } from "#config/filesystem.config";
+import type { FilesystemConfig } from "#config/filesystem.config";
 import { FileSystem } from "#contracts/ports/file-system.port";
 import type { FileStat } from "#contracts/types/file-stat.type";
 import type { WriteOptions } from "#contracts/types/write-options.type";

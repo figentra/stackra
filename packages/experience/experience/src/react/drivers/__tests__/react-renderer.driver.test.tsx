@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 /**
  * Stackra file contract:
  * Purpose: unit tests of `ReactRendererDriver`: a published document draws its registered web components in order,
@@ -9,6 +8,7 @@
  * Runtime: node (vitest, jsdom)
  * Governing contract: ADR 0022; ADR 0269; ADR 0110 (decisions 4 and 6); ADR 0112 (X5, X9).
  */
+// @vitest-environment jsdom
 import { Port } from "@stackra/contracts";
 import { isRefusal } from "@stackra/errors";
 import { afterEach, describe, expect, it } from "@stackra/testing";
@@ -30,7 +30,10 @@ import { ReactRendererDriver } from "#react/drivers/react-renderer.driver";
 vi.mock("@stackra/clients/react", () => ({ useQuery: () => ({ data: undefined, error: null }) }));
 vi.mock("@stackra/ui/react", () => ({ Skeleton: () => null }));
 
-class HeroSectionBlock extends Block({ category: BlockCategory.Marketing, icon: "sparkles" }) {
+class HeroSectionBlock extends Block({
+  category: BlockCategory.Marketing,
+  icon: "sparkles",
+}) {
   title!: LocalizedText;
 }
 

@@ -8,7 +8,8 @@
  */
 import { describe, expect, it } from "@stackra/testing";
 
-import { isRawBody, rawBody } from "#core/functions/raw-body.function";
+import { isRawBody } from "#core/functions/is-raw-body.function";
+import { rawBody } from "#core/functions/raw-body.function";
 
 describe(rawBody, () => {
   it("marks the body and keeps the filename only when given", () => {

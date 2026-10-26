@@ -11,7 +11,8 @@
  */
 import { ColorRole } from "#contracts/enums/color-role.enum";
 import { MaterialLevel } from "#contracts/enums/material-level.enum";
-import type { ColorToken, Theme } from "#contracts/types/theme.type";
+import type { ColorToken } from "#contracts/types/color-token.type";
+import type { Theme } from "#contracts/types/theme.type";
 import { MATERIAL_PROPERTIES } from "#core/constants/material-properties.constant";
 import { InvalidThemeError } from "#core/errors/invalid-theme.error";
 

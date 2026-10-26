@@ -43,7 +43,10 @@ class EntitySalesQuery extends Query({
   }
 }
 
-class PlainQuery extends Query({ key: "sale.get", actors: [ActorKind.User] }) {
+class PlainQuery extends Query({
+  key: "sale.get",
+  actors: [ActorKind.User],
+}) {
   async handle(): Promise<unknown> {
     return {};
   }

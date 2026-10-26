@@ -180,7 +180,9 @@ export class ActionPipeline {
   /** Where action instances and step ports come from. */
   private readonly resolver: Resolver;
 
-  /** @param resolver - the booted container, a request container or a testing app. */
+  /**
+   * @param resolver - the booted container, a request container or a testing app.
+   */
   constructor(resolver: Resolver) {
     this.resolver = resolver;
   }

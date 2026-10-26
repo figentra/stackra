@@ -8,7 +8,8 @@
  * Governing contract: ADR 0022; ADR 0269; ADR 0212 (decisions 1, 2 and 4); ADR 0098 (decision 7).
  */
 import { Driver } from "@stackra/container";
-import { ActorKind, ApiArea } from "@stackra/contracts";
+import { ActorKind, ApiArea, Realm } from "@stackra/contracts";
+import type { Actor } from "@stackra/contracts";
 import { EventOutbox } from "@stackra/events/contracts";
 import type { RecordedEvent } from "@stackra/events/contracts";
 import { describe, expect, it } from "@stackra/testing";
@@ -31,7 +32,12 @@ describe(OutboxAuditTrailDriver, () => {
     const outbox = new Outbox();
     const trail = new OutboxAuditTrailDriver(outbox);
     expect(trail).toBeInstanceOf(AuditTrail);
-    const actor = { kind: ActorKind.User, id: "usr_1", tenantId: "ten_1" };
+    const actor: Actor = {
+      kind: ActorKind.User,
+      id: "usr_1",
+      realm: Realm.Tenant,
+      tenantId: "ten_1",
+    };
     const at = new Date("2026-10-25T09:00:00.000Z");
     await trail.record({
       call: {

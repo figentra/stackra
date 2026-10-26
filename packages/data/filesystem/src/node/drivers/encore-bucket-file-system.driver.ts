@@ -11,7 +11,7 @@
 import { Driver } from "@stackra/container";
 import { Duration } from "@stackra/contracts";
 
-import { EncoreBucket } from "#contracts/ports/encore-bucket.port";
+import type { EncoreBucket } from "#contracts/ports/encore-bucket.port";
 import { FileSystem } from "#contracts/ports/file-system.port";
 import type { FileStat } from "#contracts/types/file-stat.type";
 import type { WriteOptions } from "#contracts/types/write-options.type";
@@ -29,7 +29,9 @@ import { normalizePrefix } from "#core/functions/normalize-prefix.function";
 export class EncoreBucketFileSystemDriver extends Driver(FileSystem) {
   private readonly bucket: EncoreBucket;
 
-  /** @param bucket - the Encore bucket, bound by the generated Encore app. */
+  /**
+   * @param bucket - the Encore bucket, bound by the generated Encore app.
+   */
   constructor(bucket: EncoreBucket) {
     super();
     this.bucket = bucket;

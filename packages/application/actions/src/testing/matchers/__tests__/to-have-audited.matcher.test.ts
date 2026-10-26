@@ -10,6 +10,7 @@
  */
 import { type Actor, ActorKind, ApiArea, Realm } from "@stackra/contracts";
 import { describe, expect, it } from "@stackra/testing";
+import type { SyncMatcherResult } from "vitest";
 
 import type { AuditEntry } from "#contracts/index";
 import { fakeActionContext } from "#testing/functions/fake-action-context.function";
@@ -32,6 +33,11 @@ const entry: AuditEntry = {
   fields: { sku: "kettle", lines: [{ qty: 2 }] },
 };
 
+/** The matcher's answer, which is synchronous. */
+function verdict(...args: Parameters<typeof toHaveAudited>): SyncMatcherResult {
+  return toHaveAudited(...args) as SyncMatcherResult;
+}
+
 describe(toHaveAudited, () => {
   it("matches the outcome, the code and a subset of fields", () => {
     expect({ audit: entry }).toHaveAudited();
@@ -45,16 +51,16 @@ describe(toHaveAudited, () => {
   });
 
   it("fails with no entry or on anything but a run result", () => {
-    expect(toHaveAudited({ audit: undefined }, {}).pass).toBe(false);
-    expect(toHaveAudited({ audit: undefined }, {}).message()).toMatch(/wrote none/);
-    expect(toHaveAudited(42, {}).message()).toMatch(/run\(\.\.\.\)/);
-    expect(toHaveAudited({ audit: entry }, { code: "x" }).message()).toMatch(/code out_of_stock/);
+    expect(verdict({ audit: undefined }, {}).pass).toBe(false);
+    expect(verdict({ audit: undefined }, {}).message()).toMatch(/wrote none/);
+    expect(verdict(42, {}).message()).toMatch(/run\(\.\.\.\)/);
+    expect(verdict({ audit: entry }, { code: "x" }).message()).toMatch(/code out_of_stock/);
   });
 
   it("matches the fields a fake context recorded, and never an outcome", () => {
     const ctx = fakeActionContext({ actor });
     expect(ctx).not.toHaveAudited();
-    expect(toHaveAudited(ctx, {}).message()).toMatch(/wrote none/);
+    expect(verdict(ctx, {}).message()).toMatch(/wrote none/);
     ctx.audit({ tenantId: "tnt_1", reenabled: ["orders"] });
     expect(ctx).toHaveAudited({ fields: { reenabled: ["orders"] } });
     expect(ctx).not.toHaveAudited({ fields: { tenantId: "tnt_2" } });

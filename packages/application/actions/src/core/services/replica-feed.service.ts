@@ -40,7 +40,9 @@ export class ReplicaFeed extends Service {
   /** Where each partition's changes are kept. */
   private readonly log: ReplicaLog;
 
-  /** @param log - the bound replica log. */
+  /**
+   * @param log - the bound replica log.
+   */
   constructor(log: ReplicaLog) {
     super();
     this.log = log;

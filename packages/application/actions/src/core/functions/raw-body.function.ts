@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: `rawBody(contentType, body, filename?)`, the output of a query whose response is a raw body, and
- *          `isRawBody(value)`, the test a transport runs on a query's output before it writes the JSON envelope.
+ * Purpose: `rawBody(contentType, body, filename?)`, the output of a query whose response is a raw body; `isRawBody`
+ *          is the test a transport runs on it.
  * Boundary: pure. The transport (gen's HTTP target, the edge) owns the headers; this only marks the output.
  * Runtime: isomorphic
  * Governing contract: ADR 0136 (decision 1; Note STA-1248: raw-body query responses).
@@ -23,14 +23,4 @@ export function rawBody(contentType: string, body: string, filename?: string): R
     body,
     ...(filename === undefined ? {} : { filename }),
   });
-}
-
-/**
- * Whether `value` is a `RawBody` a transport must send as is.
- *
- * @example
- * if (isRawBody(output)) return new Response(output.body, { headers: { "content-type": output.contentType } });
- */
-export function isRawBody(value: unknown): value is RawBody {
-  return typeof value === "object" && value !== null && (value as RawBody)["~raw"] === true;
 }

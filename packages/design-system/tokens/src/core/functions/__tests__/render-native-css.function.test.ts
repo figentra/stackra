@@ -11,7 +11,8 @@
  * Governing contract: ADR 0302; ADR 0165 (HeroUI Native and Uniwind on native); ADR 0022 (test placement).
  */
 import { ColorRole } from "#contracts/enums/color-role.enum";
-import type { Theme, TypographyToken } from "#contracts/types/theme.type";
+import type { Theme } from "#contracts/types/theme.type";
+import type { TypographyToken } from "#contracts/types/typography-token.type";
 import { STACKRA_THEME } from "#core/constants/stackra-theme.constant";
 import { contrastRatio } from "#core/functions/contrast-ratio.function";
 import { oklchToHex } from "#core/functions/oklch-to-hex.function";

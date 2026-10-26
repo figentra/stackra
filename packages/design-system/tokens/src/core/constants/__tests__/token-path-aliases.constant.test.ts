@@ -17,29 +17,100 @@ import { aliasThemeDiff } from "#core/functions/alias-theme-diff.function";
 /** Every token path published, by group; a removed or renamed one stays here. */
 const PUBLISHED: Readonly<Record<string, readonly string[]>> = {
   colors: [
-    ...["background", "foreground", "surface", "surface-foreground", "surface-secondary"],
-    ...["surface-secondary-foreground", "surface-tertiary", "surface-tertiary-foreground"],
-    ...["overlay", "overlay-foreground", "muted", "default", "default-foreground", "accent"],
-    ...["accent-foreground", "success", "success-foreground", "warning", "warning-foreground"],
-    ...["danger", "danger-foreground", "field-background", "field-foreground"],
-    ...["field-placeholder", "field-border", "segment", "segment-foreground", "border"],
-    ...["separator", "focus", "link", "backdrop"],
+    "background",
+    "foreground",
+    "surface",
+    "surface-foreground",
+    "surface-secondary",
+    "surface-secondary-foreground",
+    "surface-tertiary",
+    "surface-tertiary-foreground",
+    "overlay",
+    "overlay-foreground",
+    "muted",
+    "default",
+    "default-foreground",
+    "accent",
+    "accent-foreground",
+    "success",
+    "success-foreground",
+    "warning",
+    "warning-foreground",
+    "danger",
+    "danger-foreground",
+    "field-background",
+    "field-foreground",
+    "field-placeholder",
+    "field-border",
+    "segment",
+    "segment-foreground",
+    "border",
+    "separator",
+    "focus",
+    "link",
+    "backdrop",
   ],
   palette: [
-    ...["amber", "ink", "paper", "white", "steel", "steel-deep", "stk-tile", "stk-tile-line"],
-    ...["stk-ink", "graphite-100", "graphite-200", "graphite-300", "graphite-700"],
-    ...["graphite-800", "graphite-900", "accent-hover", "accent-pressed", "accent-soft"],
-    ...["accent-soft-foreground", "signal", "signal-foreground", "cursor", "amber-strong"],
-    ...["warning-hover"],
-    ...["banner-sandbox", "banner-sandbox-foreground", "banner-staging"],
-    ...["banner-staging-foreground", "banner-acting-as", "banner-acting-as-foreground"],
-    ...["chart-1", "chart-2", "chart-3", "chart-4", "chart-5"],
+    "amber",
+    "ink",
+    "paper",
+    "white",
+    "steel",
+    "steel-deep",
+    "stk-tile",
+    "stk-tile-line",
+    "stk-ink",
+    "graphite-100",
+    "graphite-200",
+    "graphite-300",
+    "graphite-700",
+    "graphite-800",
+    "graphite-900",
+    "accent-hover",
+    "accent-pressed",
+    "accent-soft",
+    "accent-soft-foreground",
+    "signal",
+    "signal-foreground",
+    "cursor",
+    "amber-strong",
+    "warning-hover",
+    "banner-sandbox",
+    "banner-sandbox-foreground",
+    "banner-staging",
+    "banner-staging-foreground",
+    "banner-acting-as",
+    "banner-acting-as-foreground",
+    "chart-1",
+    "chart-2",
+    "chart-3",
+    "chart-4",
+    "chart-5",
   ],
   fontFamily: ["sans", "mono", "arabic"],
   typography: [
-    ...["display", "h1", "h2", "h3", "h4", "h5", "h6", "body", "small", "caption", "mono"],
-    ...["label", "display-ar", "h1-ar", "h2-ar", "h3-ar", "h4-ar", "h5-ar", "h6-ar", "body-ar"],
-    ...["small-ar", "caption-ar"],
+    "display",
+    "h1",
+    "h2",
+    "h3",
+    "h4",
+    "h5",
+    "h6",
+    "body",
+    "small",
+    "caption",
+    "mono",
+    "label",
+    "display-ar",
+    "h1-ar",
+    "h2-ar",
+    "h3-ar",
+    "h4-ar",
+    "h5-ar",
+    "h6-ar",
+    "body-ar",
+    "small-ar",
+    "caption-ar",
   ],
   spacing: ["1", "2", "3", "4", "5", "6", "8", "10", "12", "16", "18", "20"],
   radius: ["base", "field", "steps.sm", "steps.lg", "steps.full", "steps.app-tile"],
@@ -54,9 +125,9 @@ const published = Object.entries(PUBLISHED).flatMap(([group, names]) =>
 
 /** Every token path the stackra theme has now. */
 const live = new Set([
-  ...(["colors", "palette", "fontFamily", "typography", "spacing", "shadows", "motion"] as const).flatMap(
-    (group) => Object.keys(STACKRA_THEME[group]).map((name) => `${group}.${name}`),
-  ),
+  ...(
+    ["colors", "palette", "fontFamily", "typography", "spacing", "shadows", "motion"] as const
+  ).flatMap((group) => Object.keys(STACKRA_THEME[group]).map((name) => `${group}.${name}`)),
   "radius.base",
   "radius.field",
   ...Object.keys(STACKRA_THEME.radius.steps).map((name) => `radius.steps.${name}`),
@@ -70,12 +141,13 @@ function resolved(path: string): string {
   const diff = path
     .split(".")
     .reduceRight<unknown>((child, key) => ({ [key]: child }), { probe: true }) as ThemeDiff;
-  const leafOf = (value: unknown, prefix: readonly string[]): readonly string[] => {
-    const entry =
-      typeof value === "object" && value !== null ? Object.entries(value)[0] : undefined;
-    return entry && entry[0] !== "probe" ? leafOf(entry[1], [...prefix, entry[0]]) : prefix;
-  };
   return leafOf(aliasThemeDiff(diff), []).join(".");
+}
+
+/** The path to the first leaf of `value`, below `prefix`; the `probe` leaf ends it. */
+function leafOf(value: unknown, prefix: readonly string[]): readonly string[] {
+  const entry = typeof value === "object" && value !== null ? Object.entries(value)[0] : undefined;
+  return entry && entry[0] !== "probe" ? leafOf(entry[1], [...prefix, entry[0]]) : prefix;
 }
 
 // @covers sta-348:FR-003

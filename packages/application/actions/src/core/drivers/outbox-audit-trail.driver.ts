@@ -10,7 +10,7 @@
  * Governing contract: ADR 0212 (decisions 1, 2 and 4); ADR 0098 (decisions 3 and 7); ADR 0294 (decision 16).
  */
 import { Driver } from "@stackra/container";
-import { EventOutbox } from "@stackra/events/contracts";
+import type { EventOutbox } from "@stackra/events/contracts";
 
 import { AuditTrail } from "#contracts/ports/audit-trail.port";
 import type { AuditEntry } from "#contracts/types/audit-entry.type";
@@ -26,13 +26,15 @@ import { mintEventId } from "#core/functions/mint-event-id.function";
 export class OutboxAuditTrailDriver extends Driver(AuditTrail) {
   private readonly outbox: EventOutbox;
 
-  /** @param outbox - where the audit events are written. */
+  /**
+   * @param outbox - where the audit events are written.
+   */
   constructor(outbox: EventOutbox) {
     super();
     this.outbox = outbox;
   }
 
-  /** See `AuditTrail.record`. */
+  /** Writes `entry` to the outbox as an audit event. */
   async record(entry: AuditEntry): Promise<void> {
     const { call } = entry;
     const event = AuditEntryRecorded.create({

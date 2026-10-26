@@ -14,7 +14,7 @@
 import { Driver } from "@stackra/container";
 import Valkey from "iovalkey";
 
-import { StoresConfig } from "#config/stores.config";
+import type { StoresConfig } from "#config/stores.config";
 import { RateLimitStore } from "#contracts/ports/rate-limit-store.port";
 import type { RateLimitBucket } from "#contracts/types/rate-limit-bucket.type";
 import type { RateLimitDecision } from "#contracts/types/rate-limit-decision.type";
@@ -73,7 +73,7 @@ export class ValkeyRateLimitStoreDriver extends Driver(RateLimitStore) {
     this.client = new Valkey(config.valkeyUrl, { maxRetriesPerRequest: 1 });
   }
 
-  /** See `RateLimitStore.take`. */
+  /** Takes one token from the bucket under `key`; see `RateLimitStore.take`. */
   async take(key: string, bucket: RateLimitBucket, now: Date): Promise<RateLimitDecision> {
     const answer = (await this.client.eval(
       TAKE,

@@ -20,7 +20,7 @@ import type { Bucket } from "@google-cloud/storage";
 import { Driver } from "@stackra/container";
 import { Duration } from "@stackra/contracts";
 
-import { FilesystemConfig } from "#config/filesystem.config";
+import type { FilesystemConfig } from "#config/filesystem.config";
 import { FileSystem } from "#contracts/ports/file-system.port";
 import type { FileStat } from "#contracts/types/file-stat.type";
 import type { WriteOptions } from "#contracts/types/write-options.type";

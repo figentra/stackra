@@ -33,11 +33,13 @@ vi.mock("iovalkey", () => ({
       server.values.set(key, argv[0] as string);
       return null;
     }
+
     async set(...args: unknown[]) {
       server.sets.push(args);
       server.values.set(args[0] as string, args[1] as string);
       return "OK";
     }
+
     async del(key: string) {
       return server.values.delete(key) ? 1 : 0;
     }

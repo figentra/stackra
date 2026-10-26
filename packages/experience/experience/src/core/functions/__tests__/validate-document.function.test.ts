@@ -33,7 +33,10 @@ class EmailTextBlock extends Block({
   text!: string;
 }
 
-class HeroBlock extends Block({ category: BlockCategory.Marketing, icon: "sparkles" }) {}
+class HeroBlock extends Block({
+  category: BlockCategory.Marketing,
+  icon: "sparkles",
+}) {}
 
 registerSchemas([
   [EmailSectionBlock, z.object({})],

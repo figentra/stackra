@@ -31,7 +31,10 @@ class ListEntriesQuery extends queryRef("content.entry.list@1", {
 }) {}
 
 @Renamed("web.hero")
-class HeroSectionBlock extends Block({ category: BlockCategory.Marketing, icon: "sparkles" }) {
+class HeroSectionBlock extends Block({
+  category: BlockCategory.Marketing,
+  icon: "sparkles",
+}) {
   title!: LocalizedText;
 
   subtitle?: LocalizedText;
@@ -42,10 +45,13 @@ class TestimonialsBlock extends Block({
   icon: "quote",
   accepts: ListEntriesQuery,
 }) {
-  title!: LocalizedText;
-
-  @Int({ min: 1, max: 12 })
+  @Int({
+    min: 1,
+    max: 12,
+  })
   limit = 3;
+
+  title!: LocalizedText;
 }
 
 /** A declaration with `options`, run later. */

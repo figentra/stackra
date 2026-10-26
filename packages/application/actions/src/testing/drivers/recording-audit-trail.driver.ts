@@ -29,7 +29,9 @@ export class RecordingAuditTrailDriver extends Driver(AuditTrail) {
   /** Where the test app's own trail is read from. */
   private readonly app: Resolver;
 
-  /** @param app - the testing app, whose bound `AuditTrail` (if any) receives every entry too. */
+  /**
+   * @param app - the testing app, whose bound `AuditTrail` (if any) receives every entry too.
+   */
   constructor(app: Resolver) {
     super();
     this.app = app;

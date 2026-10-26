@@ -21,7 +21,7 @@ class AlwaysLive extends Driver(LiveConfigurationGuard) {
 
 describe("LiveConfigurationGuard", () => {
   it("is a port that refuses live structural writes", async () => {
-    const guard = new AlwaysLive();
+    const guard: LiveConfigurationGuard = new AlwaysLive();
     expect(guard).toBeInstanceOf(LiveConfigurationGuard);
     await expect(guard.check({} as CallDescriptor)).rejects.toMatchObject({
       code: "live_read_only",

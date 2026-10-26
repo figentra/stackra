@@ -16,9 +16,15 @@ import { registerBlocks } from "#core/functions/register-blocks.function";
 import { registeredBlocks } from "#core/functions/registered-blocks.function";
 
 @Renamed("web.hero")
-class HeroSectionBlock extends Block({ category: BlockCategory.Marketing, icon: "sparkles" }) {}
+class HeroSectionBlock extends Block({
+  category: BlockCategory.Marketing,
+  icon: "sparkles",
+}) {}
 
-class CtaBannerBlock extends Block({ category: BlockCategory.Marketing, icon: "megaphone" }) {}
+class CtaBannerBlock extends Block({
+  category: BlockCategory.Marketing,
+  icon: "megaphone",
+}) {}
 
 /** A stand-in component; the registry never calls it. */
 const Component = () => null;

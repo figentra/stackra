@@ -16,7 +16,7 @@ export interface WorkersKvNamespace {
   /** Stores `value` under `key`; KV drops it after `expirationTtl` seconds (at least 60). */
   put(key: string, value: string, options: { readonly expirationTtl: number }): Promise<void>;
 
-  /** Removes `key`. */
+  /** Removes `key` and its value. */
   delete(key: string): Promise<void>;
 
   /** One page of the keys that start with `prefix`, from `cursor` on. */

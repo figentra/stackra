@@ -33,7 +33,10 @@ class PromoBannerCta extends Schema {
   event!: NavigateEvent | ActionEvent;
 }
 
-class PromoBannerBlock extends Block({ category: BlockCategory.Marketing, icon: "megaphone" }) {
+class PromoBannerBlock extends Block({
+  category: BlockCategory.Marketing,
+  icon: "megaphone",
+}) {
   headline!: string;
 
   body?: string;

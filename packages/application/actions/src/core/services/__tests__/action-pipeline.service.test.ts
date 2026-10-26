@@ -278,7 +278,10 @@ class RedeemWorkflow {}
 
 class Confirmed {}
 
-class RedeemPointsAction extends Action({ key: "points.redeem", actors: [ActorKind.User] }) {
+class RedeemPointsAction extends Action({
+  key: "points.redeem",
+  actors: [ActorKind.User],
+}) {
   async handle(input: { points: number }, ctx: ActionContext): Promise<unknown> {
     await ctx.signal(Confirmed, { reference: "r1" }, { reference: "r1" });
     await ctx.dispatch(SendMessageAction, { text: "redeemed" });
@@ -286,7 +289,10 @@ class RedeemPointsAction extends Action({ key: "points.redeem", actors: [ActorKi
   }
 }
 
-class CurrentContextAction extends Action({ key: "order.current", actors: [ActorKind.User] }) {
+class CurrentContextAction extends Action({
+  key: "order.current",
+  actors: [ActorKind.User],
+}) {
   readonly request: RequestContext;
 
   constructor(request: RequestContext) {
@@ -385,7 +391,10 @@ class RecentSalesQuery extends Query({
   }
 }
 
-class NotReplicaQuery extends Query({ key: "sale.plain", actors: [ActorKind.User] }) {
+class NotReplicaQuery extends Query({
+  key: "sale.plain",
+  actors: [ActorKind.User],
+}) {
   async handle(_input: object, ctx: QueryContext): Promise<unknown> {
     return ctx.replica(async () => []);
   }
@@ -1110,7 +1119,7 @@ registerActions([
 
 /** Parks every call unless it names the granted approval. */
 class Approvals extends Driver(ApprovalGate) {
-  readonly seen: unknown[] = [];
+  readonly seen: [string, unknown, string | undefined][] = [];
 
   async check(call: CallDescriptor, input: unknown, approvalId: string | undefined): Promise<void> {
     log.push("approval");
@@ -1249,9 +1258,9 @@ describe("ActionPipeline governance additions", () => {
 
 /** Logs the reservation around the commit, and refuses once `full`. */
 class Seats extends Driver(LimitReservation) {
-  full = false;
-
   readonly keys: string[] = [];
+
+  full = false;
 
   async reserve<T>(call: CallDescriptor, _input: unknown, commit: () => Promise<T>): Promise<T> {
     log.push("reserve");
@@ -1530,12 +1539,18 @@ describe("ActionPipeline.propose (STA-784)", () => {
 });
 
 /** A query that answers with the call's sandbox flag and network client. */
-class WhereQuery extends Query({ key: "call.where", actors: [ActorKind.User] }) {
+class WhereQuery extends Query({
+  key: "call.where",
+  actors: [ActorKind.User],
+}) {
   async handle(
     _input: object,
     ctx: QueryContext,
   ): Promise<Pick<QueryContext, "sandbox" | "client">> {
-    return { sandbox: ctx.sandbox, client: ctx.client };
+    return {
+      ...(ctx.sandbox === undefined ? {} : { sandbox: ctx.sandbox }),
+      ...(ctx.client === undefined ? {} : { client: ctx.client }),
+    };
   }
 }
 

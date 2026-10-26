@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 /**
  * Stackra file contract:
  * Purpose: unit tests of the web `BlockNode`: the component gets the node's props, an `onEvent` that reaches the
@@ -9,6 +8,7 @@
  * Runtime: node (vitest, jsdom)
  * Governing contract: ADR 0022; ADR 0269; ADR 0110 (decisions 2 and 3); ADR 0112 (X9).
  */
+// @vitest-environment jsdom
 import { queryRef } from "@stackra/clients";
 import { afterEach, describe, expect, it } from "@stackra/testing";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
@@ -39,7 +39,10 @@ class ListEntriesQuery extends queryRef("content.entry.list@1", {
   output: z.object({ entries: z.array(z.object({ id: z.string() })) }),
 }) {}
 
-class BannerBlock extends Block({ category: BlockCategory.Marketing, icon: "megaphone" }) {}
+class BannerBlock extends Block({
+  category: BlockCategory.Marketing,
+  icon: "megaphone",
+}) {}
 
 class FeedBlock extends Block({
   category: BlockCategory.Content,

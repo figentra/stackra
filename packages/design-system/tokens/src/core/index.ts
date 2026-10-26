@@ -7,7 +7,8 @@
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel and config-entry decisions.
  */
 export { TokensConfig } from "#config/tokens.config";
-export { MATERIAL_MODES, type MaterialModeFactors } from "#core/constants/material-modes.constant";
+export { MATERIAL_MODES } from "#core/constants/material-modes.constant";
+export type { MaterialModeFactors } from "#contracts/types/material-mode-factors.type";
 export { STACKRA_CONTRAST_PAIRS } from "#core/constants/stackra-contrast-pairs.constant";
 export { STACKRA_THEME } from "#core/constants/stackra-theme.constant";
 export { THEME_JSON_FORMATS } from "#core/constants/theme-json-formats.constant";

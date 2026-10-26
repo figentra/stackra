@@ -9,11 +9,12 @@
  * Governing contract: ADR 0150 (decisions 1, 2 and 4: memory LRU, namespaced keys, single-flight); ADR 0305 (rule 32).
  */
 import { Driver } from "@stackra/container";
-import { Clock, Duration } from "@stackra/contracts";
+import type { Clock } from "@stackra/contracts";
+import { Duration } from "@stackra/contracts";
 
-import { CacheConfig } from "#config/cache.config";
+import type { CacheConfig } from "#config/cache.config";
 import { Cache } from "#contracts/ports/cache.port";
-import { CacheNamespace } from "#contracts/ports/cache-namespace.port";
+import type { CacheNamespace } from "#contracts/ports/cache-namespace.port";
 import type { CacheKey } from "#contracts/types/cache-key.type";
 import { coversKey } from "#core/functions/covers-key.function";
 

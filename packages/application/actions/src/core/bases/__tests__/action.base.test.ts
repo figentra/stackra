@@ -123,10 +123,16 @@ describe("Action", () => {
   });
 
   it("defaults tool as gen does and records distinct effect tags", () => {
-    class FreezeAccountAction extends Action({ ...base, effects: [Effect.Security] }) {
+    class FreezeAccountAction extends Action({
+      ...base,
+      effects: [Effect.Security],
+    }) {
       async handle(): Promise<void> {}
     }
-    class OptedOutAction extends Action({ ...base, tool: false }) {
+    class OptedOutAction extends Action({
+      ...base,
+      tool: false,
+    }) {
       async handle(): Promise<void> {}
     }
     expect(kindOf(FreezeAccountAction)?.options).toMatchObject({

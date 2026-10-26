@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 /**
  * Stackra file contract:
  * Purpose: unit tests of the native `DocumentRenderer`: it renders through the container's `Renderer` with the
@@ -8,6 +7,7 @@
  * Runtime: node (vitest, jsdom)
  * Governing contract: ADR 0022; ADR 0269; ADR 0110 (decisions 3 and 6); ADR 0263.
  */
+// @vitest-environment jsdom
 import { afterEach, describe, expect, it } from "@stackra/testing";
 import { cleanup, render, screen } from "@testing-library/react";
 import { createElement } from "react";

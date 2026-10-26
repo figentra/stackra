@@ -18,7 +18,7 @@ import { Readable } from "node:stream";
 import { Driver } from "@stackra/container";
 import type { Duration } from "@stackra/contracts";
 
-import { FilesystemConfig } from "#config/filesystem.config";
+import type { FilesystemConfig } from "#config/filesystem.config";
 import { FileSystem } from "#contracts/ports/file-system.port";
 import type { FileStat } from "#contracts/types/file-stat.type";
 import type { WriteOptions } from "#contracts/types/write-options.type";
@@ -46,7 +46,9 @@ export class LocalFileSystemDriver extends Driver(FileSystem) {
 
   private readonly base: string | null;
 
-  /** @param config - the folder (`root`, resolved against the working directory) and the public base URL (`url`). */
+  /**
+   * @param config - the folder (`root`, resolved against the working directory) and the public base URL (`url`).
+   */
   constructor(config: FilesystemConfig) {
     super();
     this.root = resolve(config.root);

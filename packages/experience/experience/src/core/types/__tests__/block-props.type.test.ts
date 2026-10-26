@@ -38,7 +38,10 @@ class NavigateEvent extends Schema {
   route!: string;
 }
 
-class FeatureGridBlock extends Block({ category: BlockCategory.Marketing, icon: "layout-grid" }) {
+class FeatureGridBlock extends Block({
+  category: BlockCategory.Marketing,
+  icon: "layout-grid",
+}) {
   title!: LocalizedText;
 
   titleKey!: I18nKey;

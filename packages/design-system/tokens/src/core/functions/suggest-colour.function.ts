@@ -10,7 +10,8 @@
  * Governing contract: ADR 0340 (decision 4).
  */
 import type { ContrastPair } from "#contracts/types/contrast-pair.type";
-import type { ColorToken, Theme } from "#contracts/types/theme.type";
+import type { ColorToken } from "#contracts/types/color-token.type";
+import type { Theme } from "#contracts/types/theme.type";
 import { DEFAULT_CONTRAST_PAIRS } from "#core/constants/default-contrast-pairs.constant";
 import { HEROUI_DERIVED_COLOURS } from "#core/constants/heroui-derived-colours.constant";
 import { oklchToHex } from "#core/functions/oklch-to-hex.function";

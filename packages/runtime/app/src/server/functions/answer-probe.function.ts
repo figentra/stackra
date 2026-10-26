@@ -48,10 +48,11 @@ export async function answerProbe(
   }
   if (path !== "/readyz") return undefined;
 
-  const statuses = await Promise.all(state.indicators.map(statusOf));
-  const body = Object.fromEntries(
-    state.indicators.map((indicator, i) => [indicator.name, statuses[i]!]),
+  const entries = await Promise.all(
+    state.indicators.map(async (indicator) => [indicator.name, await statusOf(indicator)] as const),
   );
+  const body = Object.fromEntries(entries);
+  const statuses = entries.map(([, status]) => status);
   const ready = state.alive() && !statuses.includes(HealthStatus.Down);
   return { status: ready ? 200 : 503, body };
 }

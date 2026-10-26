@@ -17,7 +17,7 @@ import { Driver } from "@stackra/container";
 import type { Duration } from "@stackra/contracts";
 import { app } from "electron";
 
-import { FilesystemConfig } from "#config/filesystem.config";
+import type { FilesystemConfig } from "#config/filesystem.config";
 import { FileSystem } from "#contracts/ports/file-system.port";
 import type { FileStat } from "#contracts/types/file-stat.type";
 import { normalizePath } from "#core/functions/normalize-path.function";
@@ -33,7 +33,9 @@ import { LocalFileSystemDriver } from "#node/drivers/local-file-system.driver";
 export class ElectronFileSystemDriver extends Driver(FileSystem) {
   private readonly local: LocalFileSystemDriver;
 
-  /** @param config - the folder under `userData` (`root`). */
+  /**
+   * @param config - the folder under `userData` (`root`).
+   */
   constructor(config: FilesystemConfig) {
     super();
     // The local driver reads `root` and `url` only; an absolute root keeps it off the working directory.

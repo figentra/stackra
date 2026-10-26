@@ -28,21 +28,26 @@ class MemoryBucket extends EncoreBucket {
       ...(options?.contentType === undefined ? {} : { contentType: options.contentType }),
     });
   }
+
   async download(name: string): Promise<Uint8Array> {
     const object = this.objects.get(name);
     if (object === undefined) throw new Error("object not found");
     return object.data;
   }
+
   async exists(name: string): Promise<boolean> {
     return this.objects.has(name);
   }
+
   async remove(name: string): Promise<void> {
     this.objects.delete(name);
   }
+
   async *list(query: { prefix?: string }): AsyncIterable<{ name: string; size: number }> {
     for (const [name, object] of this.objects)
       if (name.startsWith(query.prefix ?? "")) yield { name, size: object.data.byteLength };
   }
+
   async attrs(name: string): Promise<{ size: number; contentType?: string }> {
     const object = this.objects.get(name);
     if (object === undefined) throw new Error("object not found");
@@ -51,9 +56,11 @@ class MemoryBucket extends EncoreBucket {
       ...(object.contentType === undefined ? {} : { contentType: object.contentType }),
     };
   }
+
   publicUrl(name: string): string {
     return `https://bucket.encore.test/${name}`;
   }
+
   async signedDownloadUrl(name: string, options: { ttl: number }): Promise<{ url: string }> {
     this.lastSigned = { name, ttl: options.ttl };
     return { url: `https://bucket.encore.test/${name}?signed=1` };

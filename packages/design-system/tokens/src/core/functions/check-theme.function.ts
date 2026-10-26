@@ -10,7 +10,8 @@
  * Governing contract: ADR 0340 (decisions 3 and 4); WCAG 2.2 (1.4.3, 1.4.11).
  */
 import type { ContrastPair } from "#contracts/types/contrast-pair.type";
-import type { ColorToken, Theme } from "#contracts/types/theme.type";
+import type { ColorToken } from "#contracts/types/color-token.type";
+import type { Theme } from "#contracts/types/theme.type";
 import type { ThemeFinding } from "#contracts/types/theme-finding.type";
 import { DEFAULT_CONTRAST_PAIRS } from "#core/constants/default-contrast-pairs.constant";
 import { oklchToHex } from "#core/functions/oklch-to-hex.function";

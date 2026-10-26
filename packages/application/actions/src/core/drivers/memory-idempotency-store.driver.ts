@@ -9,7 +9,8 @@
  * Governing contract: ADR 0136 (decision 3); owner decision 2026-10-21 (the store behind a port).
  */
 import { Driver } from "@stackra/container";
-import { Clock, Duration } from "@stackra/contracts";
+import type { Clock } from "@stackra/contracts";
+import { Duration } from "@stackra/contracts";
 
 import { IdempotencyStore } from "#contracts/ports/idempotency-store.port";
 import type { IdempotencyRecord } from "#contracts/types/idempotency-record.type";
@@ -30,7 +31,9 @@ export class MemoryIdempotencyStoreDriver extends Driver(IdempotencyStore) {
 
   private readonly clock: Clock;
 
-  /** @param clock - the time source of expiry. */
+  /**
+   * @param clock - the time source of expiry.
+   */
   constructor(clock: Clock) {
     super();
     this.clock = clock;

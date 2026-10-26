@@ -47,7 +47,8 @@ function readBlockOptions(
     throw new RangeError(
       `Block({ category }) needs a BlockCategory, got ${JSON.stringify(options?.category)}`,
     );
-  if (typeof options.icon !== "string" || options.icon === "")
+  const icon: unknown = options.icon;
+  if (typeof icon !== "string" || icon === "")
     throw new RangeError("Block({ icon }) needs an icon name");
   const { accepts } = options;
   if (accepts !== undefined && (typeof accepts !== "function" || accepts.kind !== "query"))

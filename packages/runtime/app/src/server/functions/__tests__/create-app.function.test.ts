@@ -61,6 +61,7 @@ describe("createApp (server)", () => {
   it("answers the health routes through probe, with the given indicators", async () => {
     class UpIndicator extends HealthIndicator {
       readonly name = "postgres";
+
       async check(): Promise<HealthReport> {
         return { status: HealthStatus.Up };
       }

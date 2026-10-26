@@ -29,7 +29,7 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { Driver } from "@stackra/container";
 import { Duration } from "@stackra/contracts";
 
-import { FilesystemConfig } from "#config/filesystem.config";
+import type { FilesystemConfig } from "#config/filesystem.config";
 import { FileSystem } from "#contracts/ports/file-system.port";
 import { byteChunks } from "#contracts/functions/byte-chunks.function";
 import { concatBytes } from "#contracts/functions/concat-bytes.function";

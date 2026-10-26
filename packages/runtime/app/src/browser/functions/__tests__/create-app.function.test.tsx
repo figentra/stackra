@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 /**
  * Stackra file contract:
  * Purpose: unit tests of the browser `createApp`: both argument forms boot; with routes there is a router and `mount`
@@ -8,6 +7,7 @@
  * Runtime: node (vitest, jsdom)
  * Governing contract: ADR 0022; ADR 0269; ADR 0295 (decisions 7 and 8).
  */
+// @vitest-environment jsdom
 import type { Wiring } from "@stackra/container";
 import { useContainer } from "@stackra/container/react";
 import { afterEach, describe, expect, it } from "@stackra/testing";
@@ -21,7 +21,7 @@ import { createApp } from "#browser/functions/create-app.function";
 import { AppWiring } from "#core/services/app-wiring.service";
 
 vi.mock("react-dom/client", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("react-dom/client")>();
+  const actual = await importOriginal<typeof client>();
   return { ...actual, hydrateRoot: vi.fn(), createRoot: vi.fn(actual.createRoot) };
 });
 

@@ -28,42 +28,49 @@ const server = vi.hoisted(() => ({
   patterns: [] as string[],
 }));
 
-vi.mock("iovalkey", () => {
-  /** A glob of `MATCH` as a regular expression: a backslash makes the next character literal, `*` is anything. */
-  const matcher = (glob: string): RegExp => {
-    const literal = (char: string): string => char.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    let source = "";
-    for (let index = 0; index < glob.length; index += 1) {
-      const char = glob.charAt(index);
-      if (char === "\\") {
-        index += 1;
-        source += literal(glob.charAt(index));
-      } else source += char === "*" ? ".*" : literal(char);
+/** A glob of `MATCH` as a regular expression: a backslash makes the next character literal, `*` is anything. */
+const matcher = vi.hoisted(() => (glob: string): RegExp => {
+  let source = "";
+  for (let index = 0; index < glob.length; index += 1) {
+    let char = glob.charAt(index);
+    if (char === "*") {
+      source += ".*";
+      continue;
     }
-    return new RegExp(`^${source}$`);
-  };
-  return {
-    default: class {
-      constructor(...args: unknown[]) {
-        server.options.push(args);
-      }
-      get = vi.fn(async (key: string) => server.values.get(key) ?? null);
-      set = vi.fn(async (key: string, value: string) => {
-        server.values.set(key, value);
-        return "OK";
-      });
-      del = vi.fn(async (key: string) => (server.values.delete(key) ? 1 : 0));
-      // One key per page, so the driver must follow the cursor.
-      scan = vi.fn(async (cursor: string, _match: string, pattern: string) => {
-        server.patterns.push(pattern);
-        const keys = [...server.values.keys()].filter((key) => matcher(pattern).test(key));
-        const index = Number(cursor);
-        const next = index + 1 >= keys.length ? "0" : String(index + 1);
-        return [next, keys.slice(index, index + 1)];
-      });
-    },
-  };
+    if (char === "\\") {
+      index += 1;
+      char = glob.charAt(index);
+    }
+    source += char.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  }
+  return new RegExp(`^${source}$`);
 });
+
+vi.mock("iovalkey", () => ({
+  default: class {
+    get = vi.fn(async (key: string) => server.values.get(key) ?? null);
+
+    set = vi.fn(async (key: string, value: string) => {
+      server.values.set(key, value);
+      return "OK";
+    });
+
+    del = vi.fn(async (key: string) => (server.values.delete(key) ? 1 : 0));
+
+    // One key per page, so the driver must follow the cursor.
+    scan = vi.fn(async (cursor: string, _match: string, pattern: string) => {
+      server.patterns.push(pattern);
+      const keys = [...server.values.keys()].filter((key) => matcher(pattern).test(key));
+      const index = Number(cursor);
+      const next = index + 1 >= keys.length ? "0" : String(index + 1);
+      return [next, keys.slice(index, index + 1)];
+    });
+
+    constructor(...args: unknown[]) {
+      server.options.push(args);
+    }
+  },
+}));
 
 class ManualClock extends Clock {
   time = Date.parse("2026-10-24T09:00:00.000Z");

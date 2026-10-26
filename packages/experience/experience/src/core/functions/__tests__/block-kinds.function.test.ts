@@ -20,7 +20,10 @@ describe("blockKinds", () => {
       icon: "receipt",
       kinds: [ExperienceKind.PrintDocument],
     }) {}
-    class HeroBlock extends Block({ category: BlockCategory.Marketing, icon: "sparkles" }) {}
+    class HeroBlock extends Block({
+      category: BlockCategory.Marketing,
+      icon: "sparkles",
+    }) {}
     expect(blockKinds(SlipBlock)).toEqual(["print_document"]);
     expect(blockKinds(HeroBlock)).toEqual(["page", "screen"]);
   });

@@ -9,13 +9,18 @@
 import { describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 
+import type { BlockEvent } from "#contracts/types/block-event.type";
 import { dispatchBlockEvent } from "#core/functions/dispatch-block-event.function";
 
 describe("dispatchBlockEvent", () => {
   it("hands each verb to its handler", () => {
     const onNavigate = vi.fn();
     const onAction = vi.fn();
-    const action = { verb: "action", key: "orders.order.create@1", input: { lines: [] } } as const;
+    const action: BlockEvent = {
+      verb: "action",
+      key: "orders.order.create@1",
+      input: { lines: [] },
+    };
     dispatchBlockEvent({ verb: "navigate", route: "create_order" }, { onNavigate, onAction });
     dispatchBlockEvent(action, { onNavigate, onAction });
     expect(onNavigate).toHaveBeenCalledWith("create_order");

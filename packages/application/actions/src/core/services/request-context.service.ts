@@ -28,7 +28,9 @@ export class RequestContext extends Service {
   /** Where the pipeline keeps the running call's context. */
   private readonly storage: ContextStorage;
 
-  /** @param storage - the storage the pipeline runs each call in. */
+  /**
+   * @param storage - the storage the pipeline runs each call in.
+   */
   constructor(storage: ContextStorage) {
     super();
     this.storage = storage;

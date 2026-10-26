@@ -16,7 +16,8 @@
  *          format (2025.10).
  */
 import { MaterialLevel } from "#contracts/enums/material-level.enum";
-import type { ColorToken, Theme } from "#contracts/types/theme.type";
+import type { ColorToken } from "#contracts/types/color-token.type";
+import type { Theme } from "#contracts/types/theme.type";
 
 /** One DTCG token. */
 const value = ($type: string, $value: unknown) => ({ $type, $value });

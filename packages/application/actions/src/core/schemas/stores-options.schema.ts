@@ -30,15 +30,15 @@ import { STORES_CONFIG_SCHEMA } from "#core/constants/stores-config-schema.const
  * }
  */
 export class StoresOptions extends Schema {
+  /** The `valkey` drivers' server (`redis://` or `rediss://`, with its password); empty until the secret is set. */
+  @Secret("ACTIONS_VALKEY_URL")
+  valkeyUrl = "";
+
   /** Where Idempotency-Keys and their outputs are kept. */
   idempotency: DriverName<IdempotencyStore> = "memory";
 
   /** Where the rate limit's token buckets are kept. */
   rateLimit: DriverName<RateLimitStore> = "memory";
-
-  /** The `valkey` drivers' server (`redis://` or `rediss://`, with its password); empty until the secret is set. */
-  @Secret("ACTIONS_VALKEY_URL")
-  valkeyUrl = "";
 
   /** The `valkey` drivers' keys. */
   valkey: {

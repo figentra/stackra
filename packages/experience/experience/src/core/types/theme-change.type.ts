@@ -14,6 +14,6 @@ export interface ThemeChange {
   /** The instant, ISO 8601. */
   readonly at: string;
 
-  /** A note. */
+  /** Why the author made the revision. */
   readonly note?: string;
 }

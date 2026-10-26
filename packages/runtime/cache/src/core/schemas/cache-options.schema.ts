@@ -29,9 +29,6 @@ import { CACHE_CONFIG_SCHEMA } from "#core/constants/cache-config-schema.constan
  * }
  */
 export class CacheOptions extends Schema {
-  /** Which driver runs; names are the driver file prefixes. `memory` keeps values in this process only. */
-  driver: DriverName<Cache> = "memory";
-
   /** Entries the memory driver keeps; past it, the least recently read entry goes. */
   @Int({ min: 1 })
   maxEntries = 10_000;
@@ -39,6 +36,9 @@ export class CacheOptions extends Schema {
   /** The `valkey` driver's server (`redis://` or `rediss://`, with its password); empty until the secret is set. */
   @Secret("CACHE_VALKEY_URL")
   valkeyUrl = "";
+
+  /** Which driver runs; names are the driver file prefixes. `memory` keeps values in this process only. */
+  driver: DriverName<Cache> = "memory";
 
   /** The `valkey` driver's keys. */
   valkey: {

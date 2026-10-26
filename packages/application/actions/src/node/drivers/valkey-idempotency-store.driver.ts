@@ -16,7 +16,7 @@ import { Driver } from "@stackra/container";
 import { Duration } from "@stackra/contracts";
 import Valkey from "iovalkey";
 
-import { StoresConfig } from "#config/stores.config";
+import type { StoresConfig } from "#config/stores.config";
 import { IdempotencyStore } from "#contracts/ports/idempotency-store.port";
 import type { IdempotencyRecord } from "#contracts/types/idempotency-record.type";
 
@@ -57,7 +57,7 @@ export class ValkeyIdempotencyStoreDriver extends Driver(IdempotencyStore) {
     this.client = new Valkey(config.valkeyUrl, { maxRetriesPerRequest: 1 });
   }
 
-  /** See `IdempotencyStore.claim`. */
+  /** Claims `key` for `fingerprint` in Valkey; see `IdempotencyStore.claim`. */
   async claim(
     key: string,
     fingerprint: string,
@@ -76,16 +76,16 @@ export class ValkeyIdempotencyStoreDriver extends Driver(IdempotencyStore) {
     return undefined;
   }
 
-  /** See `IdempotencyStore.complete`. */
+  /** Marks the held `key` done with `output`; see `IdempotencyStore.complete`. */
   async complete(key: string, output: unknown): Promise<void> {
     const fingerprint = this.held.get(key);
     this.held.delete(key);
     if (fingerprint === undefined) return;
     const record: IdempotencyRecord = { fingerprint, done: true, output: output ?? null };
-    await this.client.set(this.prefix + key, JSON.stringify(record), "XX", "KEEPTTL");
+    await this.client.set(this.prefix + key, JSON.stringify(record), "KEEPTTL", "XX");
   }
 
-  /** See `IdempotencyStore.release`. */
+  /** Frees the held `key` after a failed call; see `IdempotencyStore.release`. */
   async release(key: string): Promise<void> {
     this.held.delete(key);
     await this.client.del(this.prefix + key);

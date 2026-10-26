@@ -10,21 +10,19 @@ export { ColorRole } from "#contracts/enums/color-role.enum";
 export { MaterialLevel } from "#contracts/enums/material-level.enum";
 export { MaterialMode } from "#contracts/enums/material-mode.enum";
 export type { MotionTiming } from "#contracts/types/motion-timing.type";
-export type {
-  ColorToken,
-  FontFamilies,
-  FontFamilyName,
-  MaterialLevelToken,
-  ModeShare,
-  MotionToken,
-  ShadowToken,
-  Theme,
-  ThemeColors,
-  ThemeMaterials,
-  ThemeRadius,
-  ThemeShadows,
-  TypographyToken,
-} from "#contracts/types/theme.type";
+export type { ColorToken } from "#contracts/types/color-token.type";
+export type { FontFamilies } from "#contracts/types/font-families.type";
+export type { FontFamilyName } from "#contracts/types/font-family-name.type";
+export type { MaterialLevelToken } from "#contracts/types/material-level-token.type";
+export type { ModeShare } from "#contracts/types/mode-share.type";
+export type { MotionToken } from "#contracts/types/motion-token.type";
+export type { ShadowToken } from "#contracts/types/shadow-token.type";
+export type { Theme } from "#contracts/types/theme.type";
+export type { ThemeColors } from "#contracts/types/theme-colors.type";
+export type { ThemeMaterials } from "#contracts/types/theme-materials.type";
+export type { ThemeRadius } from "#contracts/types/theme-radius.type";
+export type { ThemeShadows } from "#contracts/types/theme-shadows.type";
+export type { TypographyToken } from "#contracts/types/typography-token.type";
 export type { ThemeDiff } from "#contracts/types/theme-diff.type";
 export type { ThemeKnobs } from "#contracts/types/theme-knobs.type";
 export type { ThemeVariables } from "#contracts/types/theme-variables.type";

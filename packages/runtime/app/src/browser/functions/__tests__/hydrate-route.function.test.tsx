@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 /**
  * Stackra file contract:
  * Purpose: unit tests of `hydrateRoute`: the route renders inside its layout's outlet under the named contexts, with
@@ -9,6 +8,7 @@
  * Runtime: node (vitest, jsdom)
  * Governing contract: ADR 0022; ADR 0269; ADR 0295 (decision 10); ADR 0297.
  */
+// @vitest-environment jsdom
 import type { Wiring } from "@stackra/container";
 import { I18nConfig, Locale } from "@stackra/i18n";
 import type { I18nKey } from "@stackra/i18n";
@@ -17,6 +17,7 @@ import { afterEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 import { act } from "@testing-library/react";
 import type { ReactNode } from "react";
+import type * as ReactDomClient from "react-dom/client";
 import type { RootOptions } from "react-dom/client";
 import { Outlet, useMatches } from "react-router";
 
@@ -24,7 +25,7 @@ import { hydrateRoute } from "#browser/functions/hydrate-route.function";
 import type { AppSections } from "#core/types/app-sections.type";
 
 vi.mock("react-dom/client", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("react-dom/client")>();
+  const actual = await importOriginal<typeof ReactDomClient>();
   return {
     ...actual,
     hydrateRoot: vi.fn((root: Element, tree: ReactNode, options?: RootOptions) => {

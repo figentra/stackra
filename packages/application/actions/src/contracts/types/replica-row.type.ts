@@ -18,6 +18,6 @@ export interface ReplicaRow {
   /** The instant the replica's window ages the record by. */
   readonly at: Date;
 
-  /** The record. */
+  /** The record's data, in the query's own row shape. */
   readonly data: Json;
 }

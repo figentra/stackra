@@ -22,6 +22,7 @@ const BaseCacheConfig = CacheConfig;
 
 class HostCacheConfig extends BaseCacheConfig {
   override driver: DriverName<Cache> = "valkey";
+
   override maxEntries = 50_000;
 }
 

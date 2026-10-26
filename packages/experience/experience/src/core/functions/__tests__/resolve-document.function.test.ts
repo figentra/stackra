@@ -31,7 +31,10 @@ class ListEntriesQuery extends queryRef("content.entry.list@1", {
 }) {}
 
 @Renamed("web.hero")
-class HeroSectionBlock extends Block({ category: BlockCategory.Marketing, icon: "sparkles" }) {
+class HeroSectionBlock extends Block({
+  category: BlockCategory.Marketing,
+  icon: "sparkles",
+}) {
   title!: LocalizedText;
 }
 
@@ -43,7 +46,10 @@ class TestimonialsBlock extends Block({
   limit = 3;
 }
 
-class SectionBlock extends Block({ category: BlockCategory.Layout, icon: "layout-grid" }) {}
+class SectionBlock extends Block({
+  category: BlockCategory.Layout,
+  icon: "layout-grid",
+}) {}
 
 registerSchemas([
   [HeroSectionBlock, z.object({ title: z.record(z.string(), z.string()) })],

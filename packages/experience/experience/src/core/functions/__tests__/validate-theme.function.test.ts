@@ -21,7 +21,10 @@ class HeaderBlock extends Block({
   icon: "panel-top",
   kinds: [ExperienceKind.ThemeSection],
 }) {}
-class HeroBlock extends Block({ category: BlockCategory.Marketing, icon: "sparkles" }) {}
+class HeroBlock extends Block({
+  category: BlockCategory.Marketing,
+  icon: "sparkles",
+}) {}
 
 registerSchemas([
   [HeaderBlock, z.object({})],

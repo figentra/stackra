@@ -13,7 +13,8 @@
  * Governing contract: ADR 0340 (decisions 2 to 6).
  */
 import type { LayerPolicy } from "#contracts/types/layer-policy.type";
-import type { ColorToken, Theme } from "#contracts/types/theme.type";
+import type { ColorToken } from "#contracts/types/color-token.type";
+import type { Theme } from "#contracts/types/theme.type";
 import type { ThemeDiff } from "#contracts/types/theme-diff.type";
 import type { ThemeFinding } from "#contracts/types/theme-finding.type";
 import type { ThemeLayer } from "#contracts/types/theme-layer.type";

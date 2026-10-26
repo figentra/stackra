@@ -40,7 +40,7 @@ describe("ReplicaLog", () => {
   });
 
   it("is implemented by a driver", async () => {
-    const driver = new ListDriver();
+    const driver: ReplicaLog = new ListDriver();
     expect(
       await driver.append(
         "p",

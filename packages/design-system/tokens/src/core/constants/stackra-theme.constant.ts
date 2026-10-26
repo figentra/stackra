@@ -15,7 +15,7 @@
  * Governing contract: ADR 0302 (Stackra Design System); ADR 0024 (the brand assets stay all rights reserved); ADR 0340
  *          (decisions 8 and 9).
  */
-import type { ColorToken } from "#contracts/types/theme.type";
+import type { ColorToken } from "#contracts/types/color-token.type";
 import { defineTheme } from "#core/functions/define-theme.function";
 import { oklchToHex } from "#core/functions/oklch-to-hex.function";
 

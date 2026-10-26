@@ -62,7 +62,10 @@ class PlaceOrderAction extends Action({
   }
 }
 
-class BrokenQuery extends Query({ key: "order.broken", actors: [ActorKind.User] }) {
+class BrokenQuery extends Query({
+  key: "order.broken",
+  actors: [ActorKind.User],
+}) {
   async handle(): Promise<never> {
     throw new Error("bug");
   }

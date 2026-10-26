@@ -34,11 +34,13 @@ vi.mock("iovalkey", () => ({
       server.values.set(key, argv[0] as string);
       return null;
     }
+
     async set(...args: unknown[]) {
       server.sets.push(args);
       server.values.set(args[0] as string, args[1] as string);
       return "OK";
     }
+
     async del(key: string) {
       return server.values.delete(key) ? 1 : 0;
     }
@@ -81,8 +83,8 @@ describe(ValkeyIdempotencyStoreDriver, () => {
     expect(server.sets.at(-1)).toEqual([
       "t:idempotency:k1",
       '{"fingerprint":"fp","done":true,"output":{"orderId":"ord_1"}}',
-      "XX",
       "KEEPTTL",
+      "XX",
     ]);
     await store.release("k1");
     expect(server.values.has("t:idempotency:k1")).toBe(false);

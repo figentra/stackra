@@ -12,7 +12,8 @@
  */
 import type { DerivedColour } from "#contracts/types/derived-colour.type";
 import type { PaintedColour } from "#contracts/types/painted-colour.type";
-import type { ColorToken, Theme } from "#contracts/types/theme.type";
+import type { ColorToken } from "#contracts/types/color-token.type";
+import type { Theme } from "#contracts/types/theme.type";
 import { HEROUI_DERIVED_COLOURS } from "#core/constants/heroui-derived-colours.constant";
 import { oklabToSrgb } from "#core/functions/oklab-to-srgb.function";
 import { srgbToOklab } from "#core/functions/srgb-to-oklab.function";

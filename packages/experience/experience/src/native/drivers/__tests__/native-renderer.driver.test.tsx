@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 /**
  * Stackra file contract:
  * Purpose: unit tests of `NativeRendererDriver`: a document draws its registered native components with their props
@@ -10,6 +9,7 @@
  * Runtime: node (vitest, jsdom)
  * Governing contract: ADR 0022; ADR 0269; ADR 0110 (decisions 3, 4 and 6); ADR 0112 (X5, X9).
  */
+// @vitest-environment jsdom
 import { isRefusal } from "@stackra/errors";
 import { afterEach, describe, expect, it } from "@stackra/testing";
 import { registerSchemas } from "@stackra/validation";
@@ -30,7 +30,10 @@ import { NativeRendererDriver } from "#native/drivers/native-renderer.driver";
 vi.mock("@stackra/clients/react", () => ({ useQuery: () => ({ data: undefined, error: null }) }));
 vi.mock("@stackra/ui/native", () => ({ Skeleton: () => null }));
 
-class PromoBannerBlock extends Block({ category: BlockCategory.Marketing, icon: "megaphone" }) {
+class PromoBannerBlock extends Block({
+  category: BlockCategory.Marketing,
+  icon: "megaphone",
+}) {
   headline!: string;
 }
 

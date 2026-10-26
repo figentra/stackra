@@ -16,7 +16,8 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0340 (decision 4); ADR 0319 (the accent steps).
  */
-import type { ColorToken, Theme } from "#contracts/types/theme.type";
+import type { ColorToken } from "#contracts/types/color-token.type";
+import type { Theme } from "#contracts/types/theme.type";
 import type { ThemeDiff } from "#contracts/types/theme-diff.type";
 import { InvalidThemeError } from "#core/errors/invalid-theme.error";
 import { contrastRatio } from "#core/functions/contrast-ratio.function";
@@ -157,7 +158,10 @@ export function deriveAccent(
     palette: {
       "accent-hover": token(step("light", lightL - 0.05), step("dark", darkL - 0.05)),
       "accent-pressed": token(step("light", lightL - 0.1), step("dark", darkL - 0.1)),
-      "accent-soft": token(step("light", page.light - 0.03, 0.25), step("dark", page.dark + 0.13, 0.45)),
+      "accent-soft": token(
+        step("light", page.light - 0.03, 0.25),
+        step("dark", page.dark + 0.13, 0.45),
+      ),
       "accent-soft-foreground": token(
         step("light", lightL - 0.08),
         step("dark", darkL + 0.13, 0.64),

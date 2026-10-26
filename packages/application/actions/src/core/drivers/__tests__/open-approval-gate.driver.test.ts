@@ -14,7 +14,7 @@ import { OpenApprovalGateDriver } from "#core/drivers/open-approval-gate.driver"
 
 describe(OpenApprovalGateDriver, () => {
   it("is an ApprovalGate that needs no approval", async () => {
-    const gate = new OpenApprovalGateDriver();
+    const gate: ApprovalGate = new OpenApprovalGateDriver();
     expect(gate).toBeInstanceOf(ApprovalGate);
     const call = {} as CallDescriptor;
     await expect(gate.check(call, { amount: 1 }, undefined)).resolves.toBeUndefined();

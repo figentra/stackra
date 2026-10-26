@@ -7,7 +7,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0340 (decisions 2 and 4).
  */
-import type { ColorToken } from "#contracts/types/theme.type";
+import type { ColorToken } from "#contracts/types/color-token.type";
 import type { ThemeFinding } from "#contracts/types/theme-finding.type";
 
 /** The theme refused, with why and what would pass. */

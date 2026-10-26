@@ -7,7 +7,7 @@
  * Governing contract: ADR 0022; ADR 0269; ADR 0212 (decision 4).
  */
 import { kindOf } from "@stackra/container";
-import { ActorKind } from "@stackra/contracts";
+import { ActorKind, Realm } from "@stackra/contracts";
 import { describe, expect, it } from "@stackra/testing";
 import { schemaOf } from "@stackra/validation";
 
@@ -25,7 +25,7 @@ describe("AuditEntryRecorded", () => {
       callId: "c1",
       key: "orders.order.create@1",
       effects: [],
-      actor: { kind: ActorKind.User, id: "usr_1" },
+      actor: { kind: ActorKind.User, id: "usr_1", realm: Realm.Tenant },
       outcome: "ok",
       fields: { quantity: 1 },
     });

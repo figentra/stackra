@@ -23,6 +23,6 @@ import type { ReviewItem } from "#contracts/types/review-item.type";
  * }
  */
 export abstract class ReviewItemSink extends Port {
-  /** Records `item`. */
+  /** Records `item` for a reviewer to act on. */
   abstract record(item: ReviewItem): Promise<void>;
 }

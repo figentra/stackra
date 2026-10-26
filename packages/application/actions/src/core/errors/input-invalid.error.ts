@@ -10,4 +10,7 @@
 import { ErrorKind, Refusal } from "@stackra/errors";
 
 /** The input does not match the action's or query's input schema. */
-export class InputInvalidError extends Refusal({ kind: ErrorKind.Validation, retryable: false }) {}
+export class InputInvalidError extends Refusal({
+  kind: ErrorKind.Validation,
+  retryable: false,
+}) {}

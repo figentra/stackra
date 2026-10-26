@@ -31,12 +31,19 @@ const electron = vi.hoisted(() => {
   /** A BrowserWindow that records what it was told. */
   class FakeWindow {
     readonly options: unknown;
+
     readonly listeners: Record<string, (...args: never[]) => unknown> = {};
+
     readonly loadURL = vi.fn(() => Promise.resolve());
+
     readonly show = vi.fn();
+
     readonly focus = vi.fn();
+
     readonly restore = vi.fn();
+
     readonly isMinimized = vi.fn(() => false);
+
     readonly webContents = { openDevTools: vi.fn() };
 
     constructor(options: unknown) {

@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 /**
  * Stackra file contract:
  * Purpose: unit tests of the native `createApp`: it keeps the splash up at once, `Root` renders nothing while it
@@ -10,6 +9,7 @@
  * Runtime: node (vitest, jsdom)
  * Governing contract: ADR 0022; ADR 0269; ADR 0295 (decisions 7, 8 and 10).
  */
+// @vitest-environment jsdom
 import { Module } from "@stackra/container";
 import type { Wiring } from "@stackra/container";
 import { I18nConfig, Locale } from "@stackra/i18n";

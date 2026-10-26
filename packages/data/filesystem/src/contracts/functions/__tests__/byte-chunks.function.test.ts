@@ -32,12 +32,18 @@ describe("byteChunks", () => {
   });
 
   it("encodes the strings of an async iterable as UTF-8", async () => {
-    async function* rows() {
-      yield "id,name\n";
-      yield "";
-      yield new Uint8Array([0x61]);
-    }
     const chunks = await drain(rows());
     expect(chunks.map((chunk) => new TextDecoder().decode(chunk))).toEqual(["id,name\n", "a"]);
   });
 });
+
+/**
+ * CSV rows as strings, an empty string and bytes.
+ *
+ * @yields each chunk in turn.
+ */
+async function* rows() {
+  yield "id,name\n";
+  yield "";
+  yield new Uint8Array([0x61]);
+}

@@ -14,11 +14,17 @@ import { Query } from "#core/bases/query.base";
 import { ACTION_REGISTRY } from "#core/constants/action-registry.constant";
 import { registerActions } from "#core/functions/register-actions.function";
 
-class CancelOrderAction extends Action({ key: "order.cancel", actors: [ActorKind.User] }) {
+class CancelOrderAction extends Action({
+  key: "order.cancel",
+  actors: [ActorKind.User],
+}) {
   async handle(_input: { orderId: string }): Promise<void> {}
 }
 
-class GetOrderQuery extends Query({ key: "order.get", actors: [ActorKind.User] }) {
+class GetOrderQuery extends Query({
+  key: "order.get",
+  actors: [ActorKind.User],
+}) {
   async handle(_input: { orderId: string }): Promise<null> {
     return null;
   }
