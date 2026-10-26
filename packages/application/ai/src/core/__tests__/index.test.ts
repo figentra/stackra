@@ -52,10 +52,16 @@ import type {
 describe("@stackra/ai", () => {
   it("exports exactly the runtime surface", () => {
     expect(Object.keys(entry).sort()).toEqual([
+      "ActionPermission",
+      "Agent",
+      "AgentRuntime",
       "Approval",
       "ApprovalMode",
       "Facts",
+      "MemoryConversationStoreDriver",
+      "MemoryRunStoreDriver",
       "Prompt",
+      "Promptable",
       "Skill",
       "ToolSource",
       "allowFields",

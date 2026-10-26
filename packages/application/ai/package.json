@@ -2,7 +2,7 @@
   "name": "@stackra/ai",
   "version": "0.0.0",
   "private": true,
-  "description": "Stackra AI kinds for a module's ai/ group: the Prompt, Skill and Facts<M> kind bases, the ToolSource and Approval vocabulary of the generated MCP tool table with approvalFor, retrieve(), the retrieval helper for Facts over the @stackra/search ports, and decide(), a typed choice, score or yes/no answer from a model on AI SDK core; plus the approval-mode resolver (resolveApproval, ApprovalMode), the model router by task, region and data class (routeModel, resolveModel), the context field allow-list and redaction, token budgets, layered guardrails, eval runs and the intent router",
+  "description": "Stackra AI kinds for a module's ai/ group: the Prompt, Skill and Facts<M> kind bases, the ToolSource and Approval vocabulary of the generated MCP tool table with approvalFor, retrieve(), the retrieval helper for Facts over the @stackra/search ports, and decide(), a typed choice, score or yes/no answer from a model on AI SDK core; plus the approval-mode resolver (resolveApproval, ApprovalMode) with the AI action permission matrix (ActionPermission, record scope, pack floor), the model router by task, region and data class (routeModel, resolveModel), the context field allow-list and redaction, token budgets, layered guardrails, eval runs and the intent router; the agent runtime (Agent, Promptable, AgentRuntime: prompt, stream, queue, resume) over the ConversationStore and RunStore ports, and in ./node the ADR 0100 tables (conversations, messages, runs, steps, tool calls, approvals, embeddings, A2A tasks) with the Postgres stores and the tenant-key encryption cast",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -19,10 +19,20 @@
   "type": "module",
   "sideEffects": false,
   "imports": {
+    "#contracts/*": [
+      "./src/contracts/*",
+      "./src/contracts/*.ts",
+      "./src/contracts/*/index.ts"
+    ],
     "#core/*": [
       "./src/core/*",
       "./src/core/*.ts",
       "./src/core/*/index.ts"
+    ],
+    "#node/*": [
+      "./src/node/*",
+      "./src/node/*.ts",
+      "./src/node/*/index.ts"
     ]
   },
   "exports": {
@@ -30,6 +40,16 @@
       "@stackra/source": "./src/core/index.ts",
       "types": "./dist/index.d.mts",
       "default": "./dist/index.mjs"
+    },
+    "./contracts": {
+      "@stackra/source": "./src/contracts/index.ts",
+      "types": "./dist/contracts.d.mts",
+      "default": "./dist/contracts.mjs"
+    },
+    "./node": {
+      "@stackra/source": "./src/node/index.ts",
+      "types": "./dist/node.d.mts",
+      "default": "./dist/node.mjs"
     }
   },
   "publishConfig": {
@@ -51,7 +71,11 @@
     "@stackra/actions": "workspace:*",
     "@stackra/container": "workspace:*",
     "@stackra/contracts": "workspace:*",
+    "@stackra/database": "workspace:*",
+    "@stackra/errors": "workspace:*",
+    "@stackra/model": "workspace:*",
     "@stackra/search": "workspace:*",
+    "@stackra/tenancy": "workspace:*",
     "ai": "catalog:",
     "zod": "catalog:"
   },

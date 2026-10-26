@@ -1,0 +1,63 @@
+---
+title: "0398 — The AI action permission matrix: record scope, the pack floor, propose mode and the approver rule"
+description: "Proposed · 2026-10-26"
+---
+
+<Note>
+  Proposed. It extends the approval resolver of
+  [0360](/adr/0360-the-ai-chain-four-layers-one-spine-approval-modes-and-the-never-bypass-floor) and
+  the tool filter of [0155](/adr/0155-queries-are-mcp-tools-and-all-ai-code-is-free), and uses the
+  market-pack floors of
+  [0370](/adr/0370-market-packs-signed-dated-overlaid-data-with-pins-and-legal-floors). Linear
+  STA-784.
+</Note>
+
+## Context
+
+Juristra (JUR-203a), Academorix (A2-24) and the OS (X2-12, J2-6, R3-SO-02) each asked for an AI permission matrix: per
+action, role and record (a matter), four states an admin reads as off, suggest, after approval and on its own, a legal
+floor from the market pack ("at most after a named lawyer approves"), and an approver who holds the right seat, is not
+the requester and has stepped up. The 0360 resolver knew only the platform floor, the organisation's policy and the
+user's preferences.
+
+## Decision
+
+1. **One matrix, four states.** `ActionPermission` is `off`, `suggest`, `after_approval`, `on_its_own`. Rows
+   (`ActionPermissionRow`) are the one record `rule-set:os:ai-action-permissions`, seeded per product and edited by the
+   tenant; a row names an action key and may narrow by role, record (`RecordScope`: a kind, or a kind and an id) and
+   data class. The most specific row wins: a record id, then a record kind, then a role, then a data class.
+2. **The vocabulary maps once.** Off = the tool is not registered for that role and record (the MCP filter drops it,
+   the resolver refuses it). Suggest = propose. After approval = a named approver with the row's approver rule. On its
+   own = allow.
+3. **The resolver order.** IAM, entitlement, environment; then the matrix's off (refuse) and suggest (propose, below
+   every floor because a draft has no effects); then the floors — the platform's and the market pack's, which may also
+   list action keys (`ApprovalFloor.actions`) — where a hit or L3 and L4 needs a named approver; then the matrix's after
+   approval and on its own; then the organisation's policy, the user's preferences and the default by level.
+4. **The MCP filter works by role and record.** `filterTools(tools, access, scope)` asks IAM with the caller's roles
+   and record, drops a tool the matrix sets to off there, and lists an unentitled tool with a `locked: true` marker
+   (not a separate list), answered "requires subscription".
+5. **Propose mode.** `ActionPipeline.propose` runs the steps up to input validation, writes one `usage.recorded` event
+   on the `actions.proposals` meter and returns an `ActionDraft` (key, call id, validated input). Approval,
+   idempotency, the rate limit, interceptors and `handle` never run.
+6. **The approver rule.** `ApproverRule { seatKind, notRequester, stepUp }` is matrix data; `approverRefusal` checks a
+   grant against it (seat kind from entitlements, self-approval through the whole on-behalf-of chain, step-up from
+   identity) and the `ApprovalGate` driver refuses with the code.
+
+## Consequences
+
+- No product writes its own AI permission engine; Juristra's floor list is pack data.
+- `filterTools`' result changes shape (the `locked` list becomes a marker).
+- Suggest-mode work is metered like any other usage; its price is the usage service's data.
+
+## Enforcement
+
+`packages/application/ai/src/core/functions/__tests__/resolve-approval.function.test.ts` (row specificity, floors, pack
+list, suggest); `packages/developer/mcp/src/core/functions/__tests__/filter-tools.function.test.ts`;
+`packages/application/actions/src/core/functions/__tests__/approver-refusal.function.test.ts`; the propose tests of
+`action-pipeline.service.test.ts`. Planned — the OS tasks-approvals driver applying `approverRefusal`; `ui://`
+resources in the MCP listing.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: STA-784; `notes/handover/review-round-2/defaults-applied.md` (X2-12, J2-6, A2-24);
+`notes/handover/review-round-3/defaults-applied.md` (R3-SO-02); `notes/handover/review-round-2/owner-answers.md` (RV-41).

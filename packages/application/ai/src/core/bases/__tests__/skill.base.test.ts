@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: unit and type tests of `Skill`: the called form records the `skill` kind with its frozen tools, keeps an
- *          `examples` field typed by `SkillExample`, takes queries (tools by default) and actions with `tool: true`,
- *          and refuses a query with `tool: false`, an action without `tool: true`, a class of another kind, a non-class
+ *          `examples` field typed by `SkillExample`, takes queries (tools by default) and actions that are tools,
+ *          and refuses a query with `tool: false`, an action that is not a tool (`tool: false`), a class of another kind, a non-class
  *          and a tool listed twice; a bare `extends Skill` fails to compile.
  * Boundary: test only; the skill is the template's `OrdersSupportSkill` with stand-in order classes.
  * Runtime: node (vitest)
@@ -42,7 +42,12 @@ class CancelOrderAction extends Action({
   }
 }
 
-class ArchiveOrderAction extends Action({ key: "order.archive", actors: [ActorKind.User] }) {
+class ArchiveOrderAction extends Action({
+  key: "order.archive",
+  actors: [ActorKind.User],
+  // reason: archiving stays a person's call in this fixture
+  tool: false,
+}) {
   async handle(input: { orderId: string }, _ctx: ActionContext): Promise<{ id: string }> {
     return { id: input.orderId };
   }

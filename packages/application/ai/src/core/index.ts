@@ -2,15 +2,22 @@
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `.` entry of @stackra/ai, which has several public files, until `stackra gen` writes
  *          the entry barrels (STA-339): the kinds, the tool-table vocabulary, `decide` and `retrieve`, the approval-mode
- *          resolver, the model router, the context allow-list and redaction, budgets, guardrails, evals and intents.
+ *          resolver with the permission matrix, the model router, the context allow-list and redaction, budgets,
+ *          guardrails, evals and intents, and the agent runtime (`Agent`, `Promptable`, `AgentRuntime`, the memory
+ *          stores).
  * Boundary: names each re-export and declares nothing. The one entry serves the module's `ai/` group, the generated
  *           tool table and the service that calls a model.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 15); ADR 0127 2026-10-24 note; the STA-347 stand-in barrel decision; ADR 0360.
  */
+export { Agent } from "#core/bases/agent.base";
 export { Facts } from "#core/bases/facts.base";
 export { Prompt } from "#core/bases/prompt.base";
+export { Promptable } from "#core/bases/promptable.base";
 export { Skill } from "#core/bases/skill.base";
+export { MemoryConversationStoreDriver } from "#core/drivers/memory-conversation-store.driver";
+export { MemoryRunStoreDriver } from "#core/drivers/memory-run-store.driver";
+export { ActionPermission } from "#core/enums/action-permission.enum";
 export { ApprovalMode } from "#core/enums/approval-mode.enum";
 export { Approval } from "#core/enums/approval.enum";
 export { ToolSource } from "#core/enums/tool-source.enum";
@@ -26,6 +33,13 @@ export { routeIntent } from "#core/functions/route-intent.function";
 export { routeModel } from "#core/functions/route-model.function";
 export { runEvals } from "#core/functions/run-evals.function";
 export { runGuardrails } from "#core/functions/run-guardrails.function";
+export { AgentRuntime } from "#core/services/agent-runtime.service";
+export type { ActionPermissionRow } from "#core/types/action-permission-row.type";
+export type { AgentClass } from "#core/types/agent-class.type";
+export type { AgentDefinition } from "#core/types/agent-definition.type";
+export type { AgentOptions } from "#core/types/agent-options.type";
+export type { AgentReply } from "#core/types/agent-reply.type";
+export type { AgentStream } from "#core/types/agent-stream.type";
 export type { ApprovalDecision } from "#core/types/approval-decision.type";
 export type { ApprovalFloor } from "#core/types/approval-floor.type";
 export type { ApprovalPolicy } from "#core/types/approval-policy.type";
@@ -47,10 +61,14 @@ export type { Guardrail } from "#core/types/guardrail.type";
 export type { Intent } from "#core/types/intent.type";
 export type { ModelProviderDriver } from "#core/types/model-provider-driver.type";
 export type { ModelRoute } from "#core/types/model-route.type";
+export type { PendingApproval } from "#core/types/pending-approval.type";
+export type { PromptCall } from "#core/types/prompt-call.type";
 export type { PromptClass } from "#core/types/prompt-class.type";
 export type { PromptOptions } from "#core/types/prompt-options.type";
+export type { QueuedRun } from "#core/types/queued-run.type";
 export type { RedactionRule } from "#core/types/redaction-rule.type";
 export type { RegionRule } from "#core/types/region-rule.type";
+export type { ResumeDecision } from "#core/types/resume-decision.type";
 export type { RetrieveOptions } from "#core/types/retrieve-options.type";
 export type { RetrievedPassage } from "#core/types/retrieved-passage.type";
 export type { RouteChoice } from "#core/types/route-choice.type";

@@ -5,7 +5,7 @@
  * Boundary: called only (the tools are required). The instructions are the module asset `<module>::ai/<stem>.md`,
  *           bound by the stem and loaded on demand (progressive disclosure); gen writes them and the tools' locked keys
  *           into the skill table of `#stackra/ai`. When called it refuses a tool that is not an exposed tool (a query
- *           with `tool: false`, an action without `tool: true`, any other class) or that is listed twice; the risk of
+ *           with `tool: false`, an action whose recorded `tool` is false, any other class) or that is listed twice; the risk of
  *           each tool is its permission's and is gen's to check. No state, no dependencies.
  * Runtime: isomorphic
  * Governing contract: ADR 0245 (decision 5, as amended by ADR 0294 and ADR 0305); ADR 0155 (decision 1); ADR 0294
@@ -26,7 +26,7 @@ export interface Skill {
   readonly examples?: readonly SkillExample[];
 }
 
-/** Whether `type` is a query that is a tool or an action with `tool: true`. */
+/** Whether `type` is a query or an action that is a tool (the recorded option, with the default of ADR 0360 d4). */
 function isExposedTool(type: unknown): boolean {
   if (typeof type !== "function") return false;
   const record = kindOf(type);

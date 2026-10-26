@@ -1,0 +1,249 @@
+/**
+ * Stackra file contract:
+ * Purpose: unit tests of `AgentRuntime`: a prompt opens the principal's conversation, stores the prompt and the model's
+ *          messages, records steps and tool calls (hashed input, Idempotency-Key `runId:toolCallId`) and completes; a
+ *          call the gate parks parks the run without storing its placeholder result, and `resume` re-dispatches it with
+ *          the approval id and finishes the loop, or tells the model a denial; `queue` stores a queued run that
+ *          `runQueued` runs; `stream` streams text and settles; a conversation of another principal is refused.
+ * Boundary: test only; the model is AI SDK's `MockLanguageModelV4`, the stores are the memory drivers, and the
+ *           dispatcher, models, instructions and queue are stand-ins.
+ * Runtime: node (vitest)
+ * Governing contract: ADR 0022 (test placement); ADR 0100 (decisions 2, 3, 9 and 10); STA-781.
+ */
+import { Driver } from "@stackra/container";
+import { type Actor, ActorKind, Clock, Realm } from "@stackra/contracts";
+import { ForbiddenError } from "@stackra/errors";
+import { describe, expect, it } from "@stackra/testing";
+import type { LanguageModel } from "ai";
+import { simulateReadableStream } from "ai";
+import { MockLanguageModelV4 } from "ai/test";
+
+import { RunApprovalStatus } from "#contracts/enums/run-approval-status.enum";
+import { RunStatus } from "#contracts/enums/run-status.enum";
+import { ToolCallOutcome } from "#contracts/enums/tool-call-outcome.enum";
+import { AgentModels } from "#contracts/ports/agent-models.port";
+import { AgentQueue } from "#contracts/ports/agent-queue.port";
+import { InstructionSource } from "#contracts/ports/instruction-source.port";
+import { ToolDispatcher } from "#contracts/ports/tool-dispatcher.port";
+import type { AgentTool } from "#contracts/types/agent-tool.type";
+import type { ToolCallContext } from "#contracts/types/tool-call-context.type";
+import type { ToolCallResult } from "#contracts/types/tool-call-result.type";
+import { AGENT_REGISTRY } from "#core/constants/agent-registry.constant";
+import { MemoryConversationStoreDriver } from "#core/drivers/memory-conversation-store.driver";
+import { MemoryRunStoreDriver } from "#core/drivers/memory-run-store.driver";
+import { AgentRuntime } from "#core/services/agent-runtime.service";
+import type { AgentDefinition } from "#core/types/agent-definition.type";
+
+const NOW = new Date("2026-10-26T09:00:00.000Z");
+const human: Actor = {
+  kind: ActorKind.User,
+  id: "usr_1",
+  realm: Realm.Customer,
+  tenantId: "scp_1",
+};
+const actor: Actor = { kind: ActorKind.Agent, id: "agt_1", tenantId: "scp_1", onBehalfOf: human };
+const agent: AgentDefinition = { key: "matter_assistant", task: "chat", tools: [], maxSteps: 4 };
+AGENT_REGISTRY.set(agent.key, agent);
+
+const usage = {
+  inputTokens: { total: 10, noCache: 10, cacheRead: undefined, cacheWrite: undefined },
+  outputTokens: { total: 5, text: 5, reasoning: undefined },
+};
+const text = (value: string) => ({
+  content: [{ type: "text" as const, text: value }],
+  finishReason: { unified: "stop" as const, raw: undefined },
+  usage,
+  warnings: [],
+});
+const toolCall = (toolCallId: string) => ({
+  content: [
+    {
+      type: "tool-call" as const,
+      toolCallId,
+      toolName: "legal_letter_send",
+      input: JSON.stringify({ to: "client" }),
+    },
+  ],
+  finishReason: { unified: "tool-calls" as const, raw: undefined },
+  usage,
+  warnings: [],
+});
+
+class FixedClock extends Clock {
+  now(): Date {
+    return new Date(NOW);
+  }
+}
+
+/** Offers one tool; parks it until it is called with the granted approval. */
+class Dispatcher extends Driver(ToolDispatcher) {
+  readonly calls: ToolCallContext[] = [];
+
+  readonly tool: AgentTool = {
+    name: "legal_letter_send",
+    action: "legal.letter.send@1",
+    inputSchema: { type: "object", properties: { to: { type: "string" } } },
+    mode: "apply",
+  };
+
+  async tools(): Promise<readonly AgentTool[]> {
+    return [this.tool];
+  }
+
+  async call(_tool: AgentTool, _input: unknown, ctx: ToolCallContext): Promise<ToolCallResult> {
+    this.calls.push(ctx);
+    return ctx.approvalId === "apr_1"
+      ? { outcome: ToolCallOutcome.Ok, output: { sent: true } }
+      : { outcome: ToolCallOutcome.ApprovalRequired, approvalId: "apr_1" };
+  }
+}
+
+/** A runtime over memory stores and the given model answers. */
+function setup(model: Exclude<LanguageModel, string>) {
+  const conversations = new MemoryConversationStoreDriver();
+  const runs = new MemoryRunStoreDriver();
+  const dispatcher = new Dispatcher();
+  const queued: string[] = [];
+  const models = new (class extends Driver(AgentModels) {
+    async model(): Promise<Exclude<LanguageModel, string>> {
+      return model;
+    }
+  })();
+  const instructions = new (class extends Driver(InstructionSource) {
+    async instructions(): Promise<string> {
+      return "You help with matters.";
+    }
+  })();
+  const queue = new (class extends Driver(AgentQueue) {
+    async enqueue(runId: string): Promise<void> {
+      queued.push(runId);
+    }
+  })();
+  const runtime = new AgentRuntime(
+    conversations,
+    runs,
+    dispatcher,
+    models,
+    instructions,
+    queue,
+    new FixedClock(),
+  );
+  return { runtime, conversations, runs, dispatcher, queued };
+}
+
+describe(AgentRuntime, () => {
+  it("answers a prompt, storing the conversation and the run's steps", async () => {
+    const { runtime, conversations, runs } = setup(
+      new MockLanguageModelV4({ doGenerate: text("Done.") }),
+    );
+    const reply = await runtime.prompt(agent, "Summarise the matter", { actor });
+    expect(reply).toMatchObject({ status: RunStatus.Completed, text: "Done." });
+    const stored = await conversations.messages(reply.conversationId);
+    expect(stored[0]).toEqual({ role: "user", content: "Summarise the matter" });
+    expect(stored.at(-1)?.role).toBe("assistant");
+    expect(await conversations.get(reply.conversationId)).toMatchObject({ principalId: "usr_1" });
+    expect(runs.steps).toEqual([
+      { runId: reply.runId, index: 0, finishReason: "stop", inputTokens: 10, outputTokens: 5 },
+    ]);
+    expect(await runs.get(reply.runId)).toMatchObject({ status: RunStatus.Completed, steps: 1 });
+  });
+
+  it("parks on a gated tool call and resumes it with the granted approval", async () => {
+    const model = new MockLanguageModelV4({ doGenerate: [toolCall("call_1"), text("Sent it.")] });
+    const { runtime, conversations, runs, dispatcher } = setup(model);
+    const parked = await runtime.prompt(agent, "Send the letter", { actor });
+    expect(parked).toMatchObject({
+      status: RunStatus.WaitingApproval,
+      pending: { approvalId: "apr_1", toolCallId: "call_1", tool: "legal.letter.send@1" },
+    });
+    expect(dispatcher.calls[0]).toMatchObject({
+      actor,
+      runId: parked.runId,
+      toolCallId: "call_1",
+      idempotencyKey: `${parked.runId}:call_1`,
+    });
+    const beforeResume = await conversations.messages(parked.conversationId);
+    expect(beforeResume.some((message) => message.role === "tool")).toBe(false);
+    const [recorded] = await runs.toolCalls(parked.runId);
+    expect(recorded).toMatchObject({ outcome: "approval_required", approvalId: "apr_1" });
+    expect(recorded?.inputHash).toMatch(/^[0-9a-f]{64}$/);
+
+    const done = await runtime.resume(parked.runId, { approvalId: "apr_1", granted: true });
+    expect(done).toMatchObject({ status: RunStatus.Completed, text: "Sent it." });
+    expect(dispatcher.calls[1]).toMatchObject({ approvalId: "apr_1", toolCallId: "call_1" });
+    expect((await runs.approvals(parked.runId)).map(({ status }) => status)).toEqual([
+      RunApprovalStatus.Granted,
+    ]);
+    const results = (await conversations.messages(parked.conversationId)).filter(
+      (message) => message.role === "tool",
+    );
+    expect(results).toHaveLength(1);
+    await expect(
+      runtime.resume(parked.runId, { approvalId: "apr_1", granted: true }),
+    ).rejects.toThrow(RangeError);
+  });
+
+  it("tells the model a denied call was not executed", async () => {
+    const model = new MockLanguageModelV4({
+      doGenerate: [toolCall("call_2"), text("I could not send it.")],
+    });
+    const { runtime, conversations, dispatcher } = setup(model);
+    const parked = await runtime.prompt(agent, "Send the letter", { actor });
+    const done = await runtime.resume(parked.runId, { approvalId: "apr_1", granted: false });
+    expect(done.status).toBe(RunStatus.Completed);
+    expect(dispatcher.calls).toHaveLength(1);
+    const result = (await conversations.messages(parked.conversationId)).find(
+      (message) => message.role === "tool",
+    );
+    expect(JSON.stringify(result)).toContain("approval_denied");
+  });
+
+  it("queues a run that a worker then runs", async () => {
+    const { runtime, runs, queued } = setup(
+      new MockLanguageModelV4({ doGenerate: text("Later.") }),
+    );
+    const { runId } = await runtime.queue(agent, "Do this later", { actor });
+    expect(queued).toEqual([runId]);
+    expect((await runs.get(runId))?.status).toBe(RunStatus.Queued);
+    expect(await runtime.runQueued(runId)).toMatchObject({
+      status: RunStatus.Completed,
+      text: "Later.",
+    });
+    await expect(runtime.runQueued(runId)).rejects.toThrow(RangeError);
+  });
+
+  it("streams the text and settles the run", async () => {
+    const model = new MockLanguageModelV4({
+      doStream: {
+        stream: simulateReadableStream({
+          chunks: [
+            { type: "text-start", id: "t1" },
+            { type: "text-delta", id: "t1", delta: "Hel" },
+            { type: "text-delta", id: "t1", delta: "lo" },
+            { type: "text-end", id: "t1" },
+            { type: "finish", finishReason: { unified: "stop", raw: undefined }, usage },
+          ],
+        }),
+      },
+    });
+    const { runtime } = setup(model);
+    const streaming = await runtime.stream(agent, "Hi", { actor });
+    let streamed = "";
+    for await (const delta of streaming.textStream) streamed += delta;
+    expect(streamed).toBe("Hello");
+    expect(await streaming.reply).toMatchObject({ status: RunStatus.Completed, text: "Hello" });
+  });
+
+  it("refuses another principal's conversation", async () => {
+    const { runtime } = setup(new MockLanguageModelV4({ doGenerate: text("ok") }));
+    const first = await runtime.prompt(agent, "Hi", { actor });
+    const other: Actor = {
+      kind: ActorKind.Agent,
+      id: "agt_1",
+      onBehalfOf: { kind: ActorKind.User, id: "usr_2", realm: Realm.Customer },
+    };
+    await expect(
+      runtime.prompt(agent, "Hi", { actor: other, conversationId: first.conversationId }),
+    ).rejects.toBeInstanceOf(ForbiddenError);
+  });
+});

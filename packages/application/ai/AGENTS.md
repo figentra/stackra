@@ -2,7 +2,9 @@
 
 The AI kinds of a module's `ai/` group (`Prompt`, `Skill`, `Facts<M>`), the tool-table vocabulary (`ToolSource`,
 `Approval`, `approvalFor`) and `decide()` on AI SDK core. Member at `packages/application/ai` (`tier:lib`), in the
-programming model v3.1 shape (ADR 0294, 0305). Entry `.` only (plus `retrieve`, the Facts retrieval helper over the `@stackra/search` ports).
+programming model v3.1 shape (ADR 0294, 0305). Entries `.` (plus `retrieve`, the Facts retrieval helper over the
+`@stackra/search` ports, and the agent runtime), `./contracts` (the runtime's ports and run vocabulary) and `./node` (the
+ADR 0100 tables, the Postgres stores and `TenantKeyCast`; storage home: ADR 0399).
 
 ## Where code goes
 
@@ -12,10 +14,14 @@ programming model v3.1 shape (ADR 0294, 0305). Entry `.` only (plus `retrieve`, 
 | An enum          | `src/core/enums/<name>.enum.ts`             |
 | A function       | `src/core/functions/<name>.function.ts`     |
 | A type           | `src/core/types/<name>.type.ts`             |
+| A port or record | `src/contracts/{ports,enums,types}/`        |
+| A service/driver | `src/core/{services,drivers}/`              |
+| Node-only code   | `src/node/{models,drivers,casts,database}/` |
 | A test           | `__tests__/<name>.<kind>.test.ts` beside it |
 
 ## Entries and barrels
 
+- `src/{core,contracts,node}/index.ts` are stand-in barrels; `./contracts` imports no other entry.
 - `src/core/index.ts` is a stand-in barrel until gen writes the entry barrels (STA-339); add every new public file to
   it and to the export list in `src/core/__tests__/index.test.ts`.
 
@@ -32,6 +38,8 @@ programming model v3.1 shape (ADR 0294, 0305). Entry `.` only (plus `retrieve`, 
 - Configuration, not code: a floor tag, a recipient limit, a provider, a region, a warning share or a redaction pattern
   is data the caller passes (platform floor, market pack, product and tenant settings). The resolver, the router and
   the checks hold only mechanism.
+- Text lives only in conversations, sealed with `TenantKeyCast`; runs, steps and tool calls hold hashes, codes and
+  counts (ADR 0100 decision 9). A tool call is always an action dispatch through `ToolDispatcher` (ADR 0100 d3).
 - Only add a symbol a consumer imports today (the template, a package, or the registry row).
 
 ## Rules that fail the build

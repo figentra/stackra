@@ -3,13 +3,15 @@
  * Purpose: unit tests of `resolveApproval`: the fixed order (IAM, entitlement, environment, floor, policy, user, level),
  *          one test per floor item of ADR 0360 decision 8 as the floor data states it, named approvers at L3 and L4
  *          that no mode relaxes, escalation, the organisation tightening before any relaxing, and bypass only where the
- *          organisation allows it.
+ *          organisation allows it; the permission matrix (most specific row by record, kind, role; off, suggest, after
+ *          approval with its approver rule, on its own) and the market pack's floor.
  * Boundary: test only; the floor here is test data shaped like the platform-floor settings, not a shipped default.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0360 (decisions 5 to 10, enforcement: a test per floor item).
  */
 import { describe, expect, it } from "@stackra/testing";
 
+import { ActionPermission } from "#core/enums/action-permission.enum";
 import { resolveApproval } from "#core/functions/resolve-approval.function";
 import type { ApprovalRequest } from "#core/types/approval-request.type";
 import type { ApprovalRules } from "#core/types/approval-rules.type";
@@ -158,5 +160,58 @@ describe("resolveApproval", () => {
 
   it("refuses a risk outside L0 to L4", () => {
     expect(() => resolveApproval(request({ risk: "L5" }), rules())).toThrow(RangeError);
+  });
+
+  describe("the permission matrix and the pack floor (STA-784)", () => {
+    const FILE = "legal.claim.file@1";
+    const lawyerRule = { seatKind: "lawyer", notRequester: true, stepUp: true };
+    const matter = { kind: "matter", id: "mtr_1" };
+    const matrix: ApprovalRules["matrix"] = [
+      { action: FILE, state: ActionPermission.OnItsOwn },
+      { action: FILE, role: "associate", state: ActionPermission.Suggest },
+      {
+        action: FILE,
+        record: { kind: "matter" },
+        state: ActionPermission.AfterApproval,
+        approver: lawyerRule,
+      },
+      { action: FILE, record: matter, state: ActionPermission.Off },
+    ];
+    const ask = (over: Partial<ApprovalRequest>) =>
+      resolveApproval(request({ action: FILE, ...over }), rules({ matrix }));
+
+    it("picks the most specific row: one record, then a record kind, then a role", () => {
+      expect(ask({ record: matter, roles: ["associate"] })).toEqual({
+        outcome: "refused",
+        step: "matrix",
+      });
+      expect(ask({ record: { kind: "matter", id: "mtr_2" } })).toEqual({
+        outcome: "named_approver",
+        step: "matrix",
+        approver: lawyerRule,
+      });
+      expect(ask({ roles: ["associate"] })).toEqual({ outcome: "propose", step: "matrix" });
+      expect(ask({ risk: "L1" })).toEqual({ outcome: "run", step: "matrix" });
+    });
+
+    it("never lets on its own pass a floor, and honours the pack's legal list", () => {
+      expect(ask({ tags: ["financial"] })).toEqual({ outcome: "named_approver", step: "floor" });
+      const packFloor = { tags: [], tagSets: [], deletes: false, actions: [FILE] };
+      expect(resolveApproval(request({ action: FILE }), rules({ matrix, packFloor }))).toEqual({
+        outcome: "named_approver",
+        step: "floor",
+      });
+      expect(resolveApproval(request({ action: FILE }), rules({ packFloor }))).toEqual({
+        outcome: "named_approver",
+        step: "floor",
+      });
+    });
+
+    it("lets suggest propose under a floor, since a draft has no effects", () => {
+      expect(ask({ roles: ["associate"], tags: ["financial"] })).toEqual({
+        outcome: "propose",
+        step: "matrix",
+      });
+    });
   });
 });

@@ -1,0 +1,51 @@
+---
+title: "0399 — AI runtime storage lives in the ai package's node entry, with tenant-key sealed conversations"
+description: "Proposed · 2026-10-26"
+---
+
+<Note>
+  Proposed. It places the tables of [0100](/adr/0100-ai-model-and-ownership) (decision 10) and
+  implements its decisions 2, 3 and 9. Linear STA-781.
+</Note>
+
+## Context
+
+ADR 0100 names an agent runtime (prompt, stream, queue, resume), conversations encrypted per tenant and eight tables,
+but not where they live: in `@stackra/ai`, or in the OS ai service. Products other than the OS run agents too, and the
+workflow package already ships its tables and models in its own `./node` entry.
+
+## Decision
+
+1. **The package owns the storage.** `@stackra/ai/node` ships the models, the first migration and the Postgres drivers
+   of the `ConversationStore` and `RunStore` ports; any service that installs the package gets the tables. The ai
+   service binds the drivers, the `ToolDispatcher` (tool table, IAM, the matrix and the action pipeline), `AgentModels`
+   (the router over managed or own-key providers), `InstructionSource` (published prompt documents) and `AgentQueue`.
+2. **Names.** The tables are `ai.conversations`, `ai.messages`, `ai.runs`, `ai.steps`, `ai.tool_calls`,
+   `ai.approvals`, `ai.embeddings` and `ai.a2a_tasks`: ADR 0100's `ai_` prefix is the module schema. Each is owned by a
+   tenant under the forced equality policy.
+3. **Text only in messages, sealed.** A message's content is its AI SDK `ModelMessage` as JSON, sealed by
+   `TenantKeyCast` with the `FieldCipher` (the tenant's data key, ADR 0188) and bound to `ai.messages.content` and the
+   owning tenant. Runs, steps and tool calls hold codes, counts and SHA-256 input hashes only.
+4. **The runtime.** `Agent({ key, task, tools, maxSteps })` extends `Promptable`; `AgentRuntime` runs the AI SDK loop,
+   dispatches every tool call through `ToolDispatcher` with the Idempotency-Key `runId:toolCallId`, parks the run on
+   the first call the gate parks (without storing that call's placeholder result) and resumes it with the approval id.
+5. **Out of scope here.** A2A and the MCP gateway; `ai.a2a_tasks` and `ai.embeddings` ship as tables only.
+
+## Consequences
+
+- One schema for every product's agents; the OS ai service holds no table of its own for runs.
+- Updates to a run row are flushed by the caller's unit of work, so a model loop inside one action holds a
+  transaction; short write-now updates come when `@stackra/database` offers them.
+- A conversation sealed for one tenant cannot be opened in another, even by a copy of the row.
+
+## Enforcement
+
+`packages/application/ai/src/node/database/migrations/__tests__/0001-create-ai-tables.migration.test.ts`;
+`packages/application/ai/src/node/casts/__tests__/tenant-key.cast.test.ts`;
+`packages/application/ai/src/core/services/__tests__/agent-runtime.service.test.ts`. Planned — an RLS isolation test
+per AI table (ADR 0100 enforcement) once the database test harness runs.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: STA-781; `notes/handover/stackra-package-needs.md` (`@stackra/ai` row);
+`notes/handover/build-wave10-2026-10-25.md` (ai section).

@@ -7,18 +7,26 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0360 (decisions 6 to 9); ADR 0100 (decision 5).
  */
+import type { ApproverRule } from "@stackra/actions/contracts";
+
 import type { Approval } from "#core/enums/approval.enum";
 import type { ApprovalMode } from "#core/enums/approval-mode.enum";
 import type { ApprovalStep } from "#core/types/approval-step.type";
 
 /** The resolver's answer. */
 export interface ApprovalDecision {
-  /** `refused`, `run`, `escalate`, or the approval the call waits for (`confirm`, `named_approver`). */
-  readonly outcome: "refused" | "run" | "escalate" | Approval;
+  /**
+   * `refused`, `run`, `escalate`, `propose` (run as a draft with no effects), or the approval the call waits for
+   * (`confirm`, `named_approver`).
+   */
+  readonly outcome: "refused" | "run" | "escalate" | "propose" | Approval;
 
   /** The step of the fixed order that decided. */
   readonly step: ApprovalStep;
 
   /** The approval mode that decided, when a mode did. */
   readonly mode?: ApprovalMode;
+
+  /** Who may approve a `named_approver` outcome, when the matching matrix row names it. */
+  readonly approver?: ApproverRule;
 }
