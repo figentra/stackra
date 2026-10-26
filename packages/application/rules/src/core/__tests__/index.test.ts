@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: pins the exports of the `.` entry of @stackra/rules: `Rules`, `evaluate`, `decide`, `guardFloors`,
- *          `OutcomeDispatcher`, `RuleSetPack$`, the three refusals and `RuleSetPublished` at run time, none of `./contracts`' symbols, and the condition, fact and evaluation
+ *          `OutcomeDispatcher`, `RuleOutcome`, `Condition$`, `FactSource$`, `RuleSetPack$`, the three refusals and `RuleSetPublished` at run time, none of `./contracts`' symbols, and the condition, fact and evaluation
  *          types at compile time (a tree and an evaluation typecheck; an abbreviated leaf key and an unknown
  *          operator are refused).
  * Boundary: test only.
@@ -27,9 +27,12 @@ import type {
 describe("@stackra/rules", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(core).sort()).toEqual([
+      "Condition$",
       "ConditionInvalidError",
+      "FactSource$",
       "OutcomeDispatcher",
       "OutcomeInvalidError",
+      "RuleOutcome",
       "RuleSetChangedError",
       "RuleSetPack$",
       "RuleSetPublished",

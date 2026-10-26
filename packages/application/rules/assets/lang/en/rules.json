@@ -8,7 +8,10 @@
     "operator": "Test",
     "remove": "Remove",
     "addCondition": "Add condition",
-    "addGroup": "Add group"
+    "addGroup": "Add group",
+    "outcomes": "Then",
+    "outcome": "Outcome",
+    "addOutcome": "Add outcome"
   },
   "operators": {
     "equals": "is",
@@ -60,6 +63,12 @@
     "too_many_nodes": "This rule has too many conditions.",
     "field_unknown": "Choose a field from the list.",
     "operator_not_allowed": "Choose a test from the list.",
-    "value_invalid": "Enter a value this test accepts."
+    "value_invalid": "Enter a value this test accepts.",
+    "kind_unknown": "Choose an outcome from the list.",
+    "param_unknown": "This outcome does not take this setting.",
+    "param_missing": "Fill in this setting.",
+    "too_many_outcomes": "This rule has too many outcomes.",
+    "past_floor": "The law in this market does not allow this value.",
+    "currency_mismatch": "Use the currency the law in this market sets."
   }
 }

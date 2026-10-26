@@ -7,6 +7,7 @@
  * Governing contract: ADR 0305 (props in `<name>.props.ts`); ADR 0331 (decisions 3 and 8).
  */
 import type { Json } from "@stackra/contracts";
+import type { I18nKey } from "@stackra/i18n";
 import type { ReactNode } from "react";
 
 import type { FactField, Operator } from "#contracts/index";
@@ -24,6 +25,9 @@ export interface OperandEditorProps {
 
   /** True to show the value without letting it change. */
   readonly isReadOnly: boolean;
+
+  /** The label of a one-value or list field in place of "Value" (an outcome parameter's name). */
+  readonly label?: I18nKey;
 
   /** The message of a value the check refused. */
   readonly errorMessage?: ReactNode;

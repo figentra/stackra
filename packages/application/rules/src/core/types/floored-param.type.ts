@@ -3,9 +3,11 @@
  * Purpose: `FlooredParam`, one outcome parameter the floor guard lifted: the outcome kind and parameter, the value the
  *          rule asked for, the floor value it got instead, and the law, market and pack version that set the floor.
  * Boundary: a type only. It names the law so the admin can say "required by law" beside the value; it carries no fact.
+ *           A money parameter's values are `{ minor, currency }`.
  * Runtime: isomorphic
  * Governing contract: config-model sections 3 and 4 (floors, provenance); ADR 0370 (decision 6).
  */
+import type { FloorValue } from "#core/types/floor-value.type";
 
 /** One lifted parameter. */
 export interface FlooredParam {
@@ -16,10 +18,10 @@ export interface FlooredParam {
   readonly param: string;
 
   /** The value the rule set. */
-  readonly from: number;
+  readonly from: FloorValue;
 
   /** The floor value it was lifted (or lowered) to. */
-  readonly to: number;
+  readonly to: FloorValue;
 
   /** The law the pack names for the floor. */
   readonly law: string;

@@ -7,14 +7,17 @@
  *           enum without values, a floor on a parameter that is not a number) is the consumer's bug and throws a
  *           `TypeError` at module load. The checks are the trust boundary for stored rules: a tree of at most 200 nodes
  *           and 8 levels, each leaf a registered field, an operator of its type's set and a value that operator takes
- *           (`fitsOperand`); at most 20 outcomes, each a registered kind with every parameter and a fitting value. It
- *           never evaluates or applies anything.
+ *           (`fitsOperand`, through `conditionProblems`); at most 20 outcomes, each a registered kind with every
+ *           parameter and a fitting value, and, at a save, none past a market floor. It never evaluates or applies
+ *           anything. Outcome kinds come as data or as declared `RuleOutcome` classes.
  * Runtime: isomorphic
  * Governing contract: ADR 0331 (decisions 2, 3, 4, 9 and 10); ADR 0328 (values are built with `create`); ADR 0140
- *                     (field errors by path).
+ *                     (field errors by path); ADR 0425 (decisions 1 to 4); config-model sections 3 and 4.
  */
 import { Enum } from "@stackra/contracts";
 import type { FieldErrors } from "@stackra/errors";
+import type { ResolvedValue } from "@stackra/market-packs";
+import { z } from "zod";
 
 import {
   type FactField,
@@ -25,8 +28,11 @@ import {
 } from "#contracts/index";
 import { ConditionInvalidError } from "#core/errors/condition-invalid.error";
 import { OutcomeInvalidError } from "#core/errors/outcome-invalid.error";
+import { conditionProblems } from "#core/functions/condition-problems.function";
+import { crossedFloor } from "#core/functions/crossed-floor.function";
 import { fitsOperand } from "#core/functions/fits-operand.function";
 import { isRecord } from "#core/functions/is-record.function";
+import { outcomeKindOf } from "#core/functions/outcome-kind-of.function";
 import type { Condition } from "#core/types/condition.type";
 import type { Outcome } from "#core/types/outcome.type";
 import type { RuleField } from "#core/types/rule-field.type";
@@ -38,15 +44,6 @@ const CONSUMER_KEY = /^[a-z][a-z0-9_]*\.[a-z][a-z0-9_]*$/;
 /** A camelCase source or field key of 1 to 63 characters. */
 const KEY = /^[a-z][a-zA-Z0-9]{0,62}$/;
 
-/** The deepest a tree may nest, the root counting as 1. */
-const MAX_DEPTH = 8;
-
-/** The most nodes a tree may hold. */
-const MAX_NODES = 200;
-
-/** The keys a leaf may carry. */
-const LEAF_KEYS = ["field", "operator", "value"] as const;
-
 /** The most outcomes one rule may yield. */
 const MAX_OUTCOMES = 20;
 
@@ -55,10 +52,6 @@ const OUTCOME_KEYS = ["kind", "params"] as const;
 
 /** A market-pack floor key: a dotted lowercase path. */
 const FLOOR_KEY = /^[a-z0-9_]+(\.[a-z0-9_]+)*$/;
-
-/** The path of a child: the parent's path, a dot and the child's segment. */
-const join = (path: string, segment: string): string =>
-  path === "" ? segment : `${path}.${segment}`;
 
 /**
  * Checks one declared field (a fact field or an outcome parameter) at `path`.
@@ -111,10 +104,11 @@ function kindsOf(kinds: readonly OutcomeKind[]): Map<string, OutcomeKind> {
         throw new TypeError(`Rules.create: "${path}": an outcome parameter is never a geo point`);
       if (
         param.floor !== undefined &&
-        (param.type !== FieldType.Number || !FLOOR_KEY.test(param.floor))
+        ((param.type !== FieldType.Number && param.type !== FieldType.Money) ||
+          !FLOOR_KEY.test(param.floor))
       )
         throw new TypeError(
-          `Rules.create: "${path}": only a number parameter names a floor, as a dotted lowercase key`,
+          `Rules.create: "${path}": only a number or money parameter names a floor, as a dotted lowercase key`,
         );
     }
     byKey.set(kind.key, kind);
@@ -178,7 +172,7 @@ export class Rules {
       options.key,
       Object.freeze([...options.sources]),
       fieldsOf(options.sources),
-      kindsOf(options.outcomes ?? []),
+      kindsOf((options.outcomes ?? []).map(outcomeKindOf)),
     );
   }
 
@@ -197,57 +191,28 @@ export class Rules {
    * nothing is. A node reports its first problem only.
    */
   problems(input: unknown): FieldErrors {
-    const errors: Record<string, string> = {};
-    let count = 0;
-    const visit = (node: unknown, path: string, depth: number): void => {
-      const at = path === "" ? "(root)" : path;
-      count += 1;
-      if (count > MAX_NODES) {
-        errors["(root)"] = "too_many_nodes";
-        return;
-      }
-      if (depth > MAX_DEPTH) {
-        errors[at] = "too_deep";
-        return;
-      }
-      const keys =
-        typeof node === "object" && node !== null && !Array.isArray(node) ? Object.keys(node) : [];
-      const [only] = keys;
-      const group = node as Readonly<Record<string, unknown>>;
-      if (keys.length === 1 && (only === "all" || only === "any")) {
-        const children = group[only];
-        if (!Array.isArray(children)) errors[at] = "node_invalid";
-        else
-          (children as readonly unknown[]).forEach((child, index) =>
-            visit(child, join(path, `${only}.${index}`), depth + 1),
-          );
-        return;
-      }
-      if (keys.length === 1 && only === "not") {
-        visit(group["not"], join(path, "not"), depth + 1);
-        return;
-      }
-      if (
-        !isRecord(node, LEAF_KEYS) ||
-        typeof node["field"] !== "string" ||
-        typeof node["operator"] !== "string"
-      ) {
-        errors[at] = "node_invalid";
-        return;
-      }
-      const field = this.byPath.get(node["field"]);
-      const operator = node["operator"];
-      if (field === undefined) errors[at] = "field_unknown";
-      else if (
-        !(Enum.meta(FieldType, field.type).operators as readonly string[]).includes(operator)
-      )
-        errors[at] = "operator_not_allowed";
-      // reason: the line above proved `operator` is a code of the field type's operator set
-      else if (!fitsOperand(field, operator as Operator, node["value"]))
-        errors[at] = "value_invalid";
-    };
-    visit(input, "", 1);
-    return errors;
+    return conditionProblems(input, (path) => this.byPath.get(path));
+  }
+
+  /**
+   * A zod schema of a condition of these fields, for an action's input: it refuses what `problems` reports, each
+   * problem at its node's path, so the field registry is checked at write time by the input validation itself.
+   *
+   * @example
+   * const input = z.object({ condition: SEGMENT_RULES.conditionSchema() });
+   */
+  conditionSchema(): z.ZodType<Condition> {
+    return z
+      .json()
+      .superRefine((value, ctx) => {
+        for (const [path, code] of Object.entries(this.problems(value)))
+          ctx.addIssue({
+            code: "custom",
+            message: code,
+            path: path === "(root)" ? [] : path.split("."),
+          });
+      })
+      .transform((value) => value as Condition) as unknown as z.ZodType<Condition>;
   }
 
   /**
@@ -310,14 +275,43 @@ export class Rules {
   }
 
   /**
-   * `input` as `Outcome`s of these kinds.
+   * Which parameters of checked `outcomes` cross a floor of `floors`, by path (`0.params.days`): `past_floor`, or
+   * `currency_mismatch` for a money amount in another currency than the floor's; `{}` when none does. The rules
+   * studio refuses these at save time; `guardFloors` would move them to the floor at decision time.
    *
-   * @throws OutcomeInvalidError with one field error per refused outcome or parameter (see `outcomeProblems`).
+   * @throws TypeError when a floor's pack value does not fit its parameter (a pack bug).
    */
-  checkOutcomes(input: unknown): Outcome[] {
+  floorProblems(outcomes: readonly Outcome[], floors: readonly ResolvedValue[]): FieldErrors {
+    const byKey = new Map(floors.map((floor) => [floor.key, floor]));
+    const errors: Record<string, string> = {};
+    outcomes.forEach((outcome, index) => {
+      const kind = this.kinds.get(outcome.kind);
+      for (const [name, param] of Object.entries(kind?.params ?? {})) {
+        const floor = param.floor === undefined ? undefined : byKey.get(param.floor);
+        const crossing =
+          floor === undefined ? undefined : crossedFloor(param.type, outcome.params[name], floor);
+        if (crossing !== undefined) errors[`${index}.params.${name}`] = crossing.reason;
+      }
+    });
+    return errors;
+  }
+
+  /**
+   * `input` as `Outcome`s of these kinds; given `floors` (a save in the rules studio), also refused when a parameter
+   * crosses one.
+   *
+   * @throws OutcomeInvalidError with one field error per refused outcome or parameter (see `outcomeProblems` and
+   *         `floorProblems`).
+   */
+  checkOutcomes(input: unknown, floors?: readonly ResolvedValue[]): Outcome[] {
     const fieldErrors = this.outcomeProblems(input);
     if (Object.keys(fieldErrors).length > 0) throw OutcomeInvalidError.create({}, { fieldErrors });
     // reason: `outcomeProblems` found nothing, so every element is a registered kind with fitting parameters
-    return [...(input as readonly Outcome[])];
+    const outcomes = [...(input as readonly Outcome[])];
+    if (floors === undefined) return outcomes;
+    const crossed = this.floorProblems(outcomes, floors);
+    if (Object.keys(crossed).length > 0)
+      throw OutcomeInvalidError.create({}, { fieldErrors: crossed });
+    return outcomes;
   }
 }

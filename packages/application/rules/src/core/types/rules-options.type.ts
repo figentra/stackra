@@ -4,11 +4,12 @@
  *          outcome kinds a match may yield.
  * Boundary: a type only. The key names the consumer and is stored on each of its rule sets, so a rule set is only ever
  *           checked against the fields and outcome kinds it was written for. A consumer without outcomes (a segment)
- *           leaves `outcomes` out.
+ *           leaves `outcomes` out. A declared outcome kind (`RuleOutcome({...})`) is what gen lists in the manifest.
  * Runtime: isomorphic
  * Governing contract: ADR 0331 (decisions 4 and 9).
  */
 import type { FactSource, OutcomeKind } from "#contracts/index";
+import type { RuleOutcomeClass } from "#core/types/rule-outcome-class.type";
 
 /** The options of `Rules.create`. */
 export interface RulesOptions {
@@ -18,6 +19,6 @@ export interface RulesOptions {
   /** The fact sources, each with a distinct key. */
   readonly sources: readonly FactSource[];
 
-  /** The outcome kinds, each with a distinct key; none when left out. */
-  readonly outcomes?: readonly OutcomeKind[];
+  /** The outcome kinds, as data or declared `RuleOutcome` classes, each with a distinct key; none when left out. */
+  readonly outcomes?: readonly (OutcomeKind | RuleOutcomeClass)[];
 }

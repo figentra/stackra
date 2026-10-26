@@ -26,6 +26,9 @@ export const RULE_BUILDER_KEYS = Object.freeze({
         "remove",
         "addCondition",
         "addGroup",
+        "outcomes",
+        "outcome",
+        "addOutcome",
       ],
       operands: ["value", "values", "from", "to", "duration", "latitude", "longitude", "radius"],
       hints: ["money", "date", "many", "duration"],
@@ -33,6 +36,6 @@ export const RULE_BUILDER_KEYS = Object.freeze({
   }).rules,
   /** The label of an operator. */
   operator: (operator: Operator): I18nKey => `rules::operators.${operator}` as I18nKey,
-  /** The message of a problem code from `Rules.problems`. */
+  /** The message of a problem code from `Rules.problems`, `outcomeProblems` or `floorProblems`. */
   problem: (code: string): I18nKey => `rules::problems.${code}` as I18nKey,
 });

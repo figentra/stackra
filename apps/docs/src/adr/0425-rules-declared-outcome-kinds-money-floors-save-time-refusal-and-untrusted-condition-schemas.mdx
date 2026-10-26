@@ -1,0 +1,48 @@
+---
+title: "0425 — Rules: declared outcome kinds, money floors with currency, save-time refusal and untrusted condition schemas"
+description: "Proposed · 2026-10-26"
+---
+
+<Note>
+  Proposed (STA-773, STA-817, STA-768 remainder). It extends
+  [0331](/adr/0331-stackra-rules-one-condition-engine-for-every-rule-consumer).
+</Note>
+
+## Context
+
+Outcome kinds were runtime values (`Rules.create({ outcomes })`), so gen could not list what a rule may yield. Floors
+guarded numbers only, though fee caps and deposit limits are money. A tenant who set an outcome past a floor learned it
+only when the guard moved the value at decision time. Access stores condition trees from untrusted input and had only
+its own shape check, with no way to check another service's fields at write time.
+
+## Decision
+
+1. **Declared outcome kinds.** `class RefundWindow extends RuleOutcome({ key, label, params }) {}`, one per
+   `<name>.outcome.ts` in the module's `rules/` group. `Rules.create` takes the class or the data form. Gen reads the
+   options from source and lists each kind in the manifest's `outcomes` section as `<module>.<key>` with its label and
+   parameters, locked by class.
+2. **Money floors.** A money parameter may name a floor; the pack value is `{ minor, currency }`. A money amount in
+   another currency counts as crossing the floor and is moved to the floor's own amount (the engine never converts).
+   One comparison, `crossedFloor`, serves the guard and the save.
+3. **Save-time refusal.** Given the market's floors, `Rules.checkOutcomes`, `RuleSetService.draft` and the rule builder
+   refuse an outcome past a floor (`past_floor`, `currency_mismatch` at `<index>.params.<name>`) instead of moving it.
+   `guardFloors` stays the final guard at decision time. `RuleBuilder` edits outcomes: a registered kind and a field per
+   parameter.
+4. **Untrusted conditions.** `Condition$` checks a tree's shape (200 nodes, 8 levels, known operators, field paths);
+   `rules.conditionSchema()` checks it against a registry, each problem a zod issue at its node. A service publishes
+   its fields as `FactSource$` documents so another service builds that registry and checks fields at write time.
+
+## Consequences
+
+- The studio, docs and AI tools read outcome kinds from the manifest.
+- Packs carry money floors with their currency; a pack whose floor value does not fit its parameter throws.
+
+## Enforcement
+
+`packages/application/rules/src/core/{functions,values,constants,bases}/__tests__/` and
+`packages/developer/gen/src/core/functions/__tests__/build-manifest.function.test.ts` (the `outcomes` section).
+
+## Supersedes and sources
+
+`Supersedes: none`. Amends 0331 (decisions 4 and 9). Sources: STA-773, STA-817, STA-768; config-model sections 3 and 4;
+ADR 0220; ADR 0370 decision 6.

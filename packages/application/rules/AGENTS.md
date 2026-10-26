@@ -39,6 +39,10 @@ the programming model v3.1 shape (ADR 0294, 0305). Entries `./contracts`, `.`, `
   `OutcomeDispatcher` routes them to the consumer's handlers.
 - Every outcome passes `guardFloors` (config-model section 4): `DecideOptions.floors` stays required. No floor value,
   country or rate is written here; floors come from `@stackra/market-packs`.
+- `crossedFloor` is the one floor comparison: `guardFloors` moves what it reports at decision time and `floorProblems`
+  refuses it at save time, so the two never disagree. A money amount in another currency always crosses (ADR 0425).
+- `conditionProblems` is the one walk of an untrusted tree: `Rules.problems`, `conditionSchema()` and `Condition$` all
+  call it, so shape checks never drift.
 - A seed never overwrites a rule set whose latest revision is the tenant's.
 - No tenant vocabulary (R-59, ADR 0323): rule sets are keyed by the contracts `ScopeRef`.
 - Field error codes are snake_case and never echo a value; explanation steps never carry a fact's value.

@@ -4,7 +4,8 @@
  *          condition against the consumer's `Rules`, numbers the revision after the stored ones and copies the scope,
  *          refuses another consumer's rule set and an invalid condition, and turns a unique violation into
  *          `rule_set_changed`; `publish` stamps the revision and records `RuleSetPublished`; `revision` reads the one
- *          published last or a stated one; `evaluate` runs that revision and names it; a draft stores checked outcomes;
+ *          published last or a stated one; `evaluate` runs that revision and names it; a draft stores checked outcomes
+ *          and refuses one past a floor when the studio passes the floors;
  *          `decide` guards the published revision's outcomes against the floors; `seed` creates and publishes a
  *          template, skips the version it already holds, keeps a tenant's edit and updates a seeded copy; `seedPack`
  *          seeds each template against its consumer's `Rules`.
@@ -283,6 +284,24 @@ describe("RuleSetService outcomes and seeds", () => {
         data: { condition: BIG_CART, outcomes: [refund(30)] },
       }),
     );
+  });
+
+  it("refuses at save time an outcome past the market's floor, writing nothing", async () => {
+    const ruleSet = storedRuleSet();
+    const em = connect(ruleSet);
+    const floors = [
+      {
+        key: "consumer.withdrawal_days",
+        value: 14,
+        market: "eu",
+        version: "1.0.0",
+        floor: { bound: FloorBound.Min, law: "Directive 2011/83/EU" },
+      },
+    ] as ResolvedValue[];
+    await expect(
+      serviceOf().draft(ruleSet.id, RULES, BIG_CART, [refund(7)], floors),
+    ).rejects.toMatchObject({ fieldErrors: { "0.params.days": "past_floor" } });
+    expect(em.create).not.toHaveBeenCalled();
   });
 
   it("decides the published revision with its outcomes guarded against the floors", async () => {

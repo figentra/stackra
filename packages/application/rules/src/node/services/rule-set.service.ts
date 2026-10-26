@@ -21,6 +21,7 @@ import type { Revision } from "@stackra/content/node";
 import type { PublicId, ScopeRef } from "@stackra/contracts";
 import { CrudService, type Repository, UniqueViolation } from "@stackra/database";
 import { NotFoundError } from "@stackra/errors";
+import type { ResolvedValue } from "@stackra/market-packs";
 
 import { SeedResult } from "#contracts/index";
 import {
@@ -70,12 +71,15 @@ export class RuleSetService extends CrudService<RuleSet> {
   }
 
   /**
-   * Stores `condition` and `outcomes`, checked against `rules`, as the rule set's next revision, a draft.
+   * Stores `condition` and `outcomes`, checked against `rules`, as the rule set's next revision, a draft. Given the
+   * market's `floors` (the rules studio's save), an outcome past a floor is refused instead of being moved to it
+   * later, so the tenant sees "required by law" at save time.
    *
    * @returns the new revision's number.
    * @throws NotFoundError when no visible rule set has the id, or it belongs to another consumer.
    * @throws ConditionInvalidError when `condition` does not check against `rules`.
-   * @throws OutcomeInvalidError when `outcomes` do not check against `rules`' outcome kinds.
+   * @throws OutcomeInvalidError when `outcomes` do not check against `rules`' outcome kinds, or one crosses a floor
+   *         (`past_floor`, `currency_mismatch`).
    * @throws RuleSetChangedError when another draft took the number first; a retry takes the next one.
    */
   async draft(
@@ -83,10 +87,11 @@ export class RuleSetService extends CrudService<RuleSet> {
     rules: Rules,
     condition: unknown,
     outcomes: unknown = [],
+    floors?: readonly ResolvedValue[],
   ): Promise<number> {
     const ruleSet = await this.findOneOrFail({ id: ruleSetId });
     if (ruleSet.consumer !== rules.key) throw NotFoundError.create();
-    return this.write(ruleSet, rules.check(condition), rules.checkOutcomes(outcomes));
+    return this.write(ruleSet, rules.check(condition), rules.checkOutcomes(outcomes, floors));
   }
 
   /**

@@ -7,7 +7,8 @@
  *           value when the parent passes one it did not report (a new test, or a removal that moved another leaf into
  *           its place). It reports the value the text reads as: a number, a money amount from `12.50 USD`, an instant
  *           from `2026-10-01` (midnight UTC) or a full ISO 8601 time. Text that reads as no valid value is reported as
- *           written, so the check marks it rather than the builder dropping it.
+ *           written, so the check marks it rather than the builder dropping it. An outcome parameter passes its own
+ *           label in place of "Value".
  * Runtime: react
  * Governing contract: ADR 0331 (decisions 3 and 8); ADR 0220 (money); ADR 0302 (web UI from @stackra/ui).
  */
@@ -122,6 +123,7 @@ export function OperandEditor({
   operator,
   value,
   isReadOnly,
+  label,
   errorMessage,
   onChange,
 }: OperandEditorProps): ReactElement | null {
@@ -139,8 +141,8 @@ export function OperandEditor({
   if (field.type === FieldType.Enum && shape === "one")
     return (
       <Select
-        label={t(KEYS.operands.value)}
-        items={choices.map(([code, label]) => ({ id: code, label: t(label) }))}
+        label={t(label ?? KEYS.operands.value)}
+        items={choices.map(([code, name]) => ({ id: code, label: t(name) }))}
         value={typeof value === "string" ? value : null}
         isReadOnly={isReadOnly}
         isInvalid={isInvalid}
@@ -151,8 +153,8 @@ export function OperandEditor({
   if (field.type === FieldType.Enum && shape === "many")
     return (
       <CheckboxGroup
-        label={t(KEYS.operands.values)}
-        options={choices.map(([code, label]) => ({ value: code, label: t(label) }))}
+        label={t(label ?? KEYS.operands.values)}
+        options={choices.map(([code, name]) => ({ value: code, label: t(name) }))}
         value={Array.isArray(value) ? value.filter((item) => typeof item === "string") : []}
         isReadOnly={isReadOnly}
         isInvalid={isInvalid}
@@ -167,13 +169,13 @@ export function OperandEditor({
       : field.type === FieldType.Money || field.type === FieldType.Date
         ? KEYS.hints[field.type]
         : undefined;
-  const slots = SLOTS[shape];
+  const slots = label !== undefined && SLOTS[shape].length === 1 ? [label] : SLOTS[shape];
   return (
     <>
-      {slots.map((label, index) => (
+      {slots.map((slot, index) => (
         <TextField
-          key={label}
-          label={t(label)}
+          key={slot}
+          label={t(slot)}
           description={index === 0 && hint !== undefined ? t(hint) : undefined}
           value={texts[index] ?? ""}
           isReadOnly={isReadOnly}

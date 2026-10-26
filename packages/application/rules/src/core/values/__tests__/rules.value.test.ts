@@ -5,13 +5,16 @@
  *          outside the type's set, unfitting value, malformed node, too deep, too many nodes) and finds nothing in a
  *          valid tree; `check` returns the tree or throws `ConditionInvalidError` with those field errors; outcome
  *          kinds are registered and misdeclared ones throw; `outcomeProblems` names each refused outcome or parameter
- *          and `checkOutcomes` returns the outcomes or throws `OutcomeInvalidError`.
+ *          and `checkOutcomes` returns the outcomes or throws `OutcomeInvalidError`, also for a parameter past a floor
+ *          at save time (`floorProblems`); `conditionSchema` refuses an unregistered field at its node's path.
  * Boundary: test only; pure.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0331 (decisions 2, 3, 4 and 10).
  */
 import { isRefusal } from "@stackra/errors";
 import type { I18nKey } from "@stackra/i18n";
+import { FloorBound } from "@stackra/market-packs";
+import type { ResolvedValue } from "@stackra/market-packs";
 import { describe, expect, it } from "@stackra/testing";
 
 import { type FactSource, FieldType, Operator } from "#contracts/index";
@@ -191,7 +194,7 @@ describe("Rules outcome kinds", () => {
       withKinds([
         { key: "fee", label, params: { note: { type: FieldType.String, label, floor: "x.y" } } },
       ] as never[]),
-    ).toThrow(/only a number parameter names a floor/);
+    ).toThrow(/only a number or money parameter names a floor/);
   });
 
   it("finds nothing wrong with registered outcomes and returns them", () => {
@@ -227,5 +230,38 @@ describe("Rules outcome kinds", () => {
     expect(() => RETURNS.checkOutcomes([{ kind: "giftWrap", params: {} }])).toThrow(
       OutcomeInvalidError,
     );
+  });
+
+  it("refuses an outcome past a floor at save time, and passes one on the right side", () => {
+    const floors = [
+      {
+        key: "consumer.withdrawal_days",
+        value: 14,
+        market: "eu",
+        version: "1.0.0",
+        floor: { bound: FloorBound.Min, law: "Directive 2011/83/EU" },
+      },
+    ] as ResolvedValue[];
+    const short = [{ kind: "refundWindow", params: { days: 7, note: "short" } }];
+    expect(RETURNS.floorProblems(short, floors)).toEqual({ "0.params.days": "past_floor" });
+    try {
+      RETURNS.checkOutcomes(short, floors);
+      expect.unreachable();
+    } catch (error) {
+      expect((error as OutcomeInvalidError).fieldErrors).toEqual({ "0.params.days": "past_floor" });
+    }
+    const long = [{ kind: "refundWindow", params: { days: 30, note: "long" } }];
+    expect(RETURNS.checkOutcomes(long, floors)).toEqual(long);
+    expect(RETURNS.checkOutcomes(short)).toEqual(short);
+  });
+});
+
+describe("Rules.conditionSchema", () => {
+  it("parses a registered condition and refuses an unknown field at its path", () => {
+    const schema = RULES.conditionSchema();
+    const tree = { all: [{ field: "cart.discount", operator: Operator.IsSet }] };
+    expect(
+      schema.safeParse(tree).error?.issues.map((issue) => [issue.path.join("."), issue.message]),
+    ).toEqual([["all.0", "field_unknown"]]);
   });
 });

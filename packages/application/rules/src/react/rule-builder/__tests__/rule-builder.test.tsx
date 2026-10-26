@@ -3,7 +3,8 @@
  * Purpose: proves `RuleBuilder` offers only the registered fields and the operators of a field's type, reports each
  *          edit as a whole condition (add a condition or a group, change the match mode, negate, remove, change the
  *          field or the operator, type a value read in the field's type), shows a node's problem at the node, shows
- *          the right value after a removal moves a leaf, and offers no edit when read-only.
+ *          the right value after a removal moves a leaf, offers no edit when read-only, and edits outcomes (add one,
+ *          fill a parameter, mark one past a floor) only when the host takes outcome changes.
  * Boundary: unit tier, jsdom. `@stackra/ui/react` is replaced by DOM stand-ins so the test reads plain elements, and
  *           the translation returns the key itself.
  * Runtime: node (vitest)
@@ -11,13 +12,15 @@
  */
 // @vitest-environment jsdom
 import type { I18nKey } from "@stackra/i18n";
+import { FloorBound } from "@stackra/market-packs";
+import type { ResolvedValue } from "@stackra/market-packs";
 import { afterEach, describe, expect, it } from "@stackra/testing";
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { vi } from "vitest";
 
 import { FieldType, Operator } from "#contracts/index";
-import { type Condition, Rules } from "#core/index";
+import { type Condition, type Outcome, Rules } from "#core/index";
 import { RuleBuilder } from "#react/rule-builder/rule-builder";
 
 /** What a stand-in field receives. */
@@ -97,6 +100,19 @@ const RULES = Rules.create({
         items: { type: FieldType.Number, label: label("items") },
         total: { type: FieldType.Money, label: label("total") },
       },
+    },
+  ],
+});
+
+/** A registry with an outcome kind whose days are floored. */
+const RETURNS = Rules.create({
+  key: "shop.returns",
+  sources: [{ key: "cart", fields: { items: { type: FieldType.Number, label: label("items") } } }],
+  outcomes: [
+    {
+      key: "refundWindow",
+      label: label("refund"),
+      params: { days: { type: FieldType.Number, label: label("days"), floor: "consumer.days" } },
     },
   ],
 });
@@ -232,5 +248,61 @@ describe("RuleBuilder", () => {
     expect((screen.getByLabelText("rules::builder.field") as HTMLSelectElement).disabled).toBe(
       true,
     );
+  });
+
+  it("edits outcomes: adds one, fills a parameter and marks a value past a floor", () => {
+    const onOutcomesChange = vi.fn<(next: readonly Outcome[]) => void>();
+    const floors = [
+      {
+        key: "consumer.days",
+        value: 14,
+        market: "eu",
+        version: "1.0.0",
+        floor: { bound: FloorBound.Min, law: "Directive 2011/83/EU" },
+      },
+    ] as ResolvedValue[];
+    const { rerender } = render(
+      <RuleBuilder
+        rules={RETURNS}
+        value={{ all: [] }}
+        onChange={vi.fn()}
+        outcomes={[]}
+        onOutcomesChange={onOutcomesChange}
+        floors={floors}
+      />,
+    );
+    fireEvent.click(screen.getByText("rules::builder.addOutcome"));
+    expect(onOutcomesChange).toHaveBeenLastCalledWith([{ kind: "refundWindow", params: {} }]);
+    rerender(
+      <RuleBuilder
+        rules={RETURNS}
+        value={{ all: [] }}
+        onChange={vi.fn()}
+        outcomes={[{ kind: "refundWindow", params: {} }]}
+        onOutcomesChange={onOutcomesChange}
+        floors={floors}
+      />,
+    );
+    expect(screen.getByText("rules::problems.param_missing")).toBeTruthy();
+    fireEvent.change(screen.getByLabelText("shop::facts.days"), { target: { value: "7" } });
+    expect(onOutcomesChange).toHaveBeenLastCalledWith([
+      { kind: "refundWindow", params: { days: 7 } },
+    ]);
+    rerender(
+      <RuleBuilder
+        rules={RETURNS}
+        value={{ all: [] }}
+        onChange={vi.fn()}
+        outcomes={[{ kind: "refundWindow", params: { days: 7 } }]}
+        onOutcomesChange={onOutcomesChange}
+        floors={floors}
+      />,
+    );
+    expect(screen.getByText("rules::problems.past_floor")).toBeTruthy();
+  });
+
+  it("shows no outcome list without onOutcomesChange", () => {
+    renderBuilder({ all: [ITEMS] });
+    expect(screen.queryByText("rules::builder.outcomes")).toBeNull();
   });
 });
