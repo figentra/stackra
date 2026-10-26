@@ -1,0 +1,47 @@
+---
+title: "0427 — Workflow: the service-acked contract, signal retention, version-pin names and the document-run test helper"
+description: "Proposed · 2026-10-26"
+---
+
+<Note>
+  Proposed (STA-844, STA-773). It gives decision 6 of
+  [0210](/adr/0210-tenancy-recursive-tenant-tree-lifecycle-one-context-and-region) its contract and
+  amends [0152](/adr/0152-workflow-semantics-timeouts-waits-pinned-versions-and-one-graph-format) on
+  retention and naming.
+</Note>
+
+## Context
+
+Tenant provisioning waits until every service acks (0210 decision 6), but `@stackra/workflow` had signals only within
+one service and no await-all. Untaken signals were dropped after a hard-coded seven days. 0152 pins a run to its
+version and keeps the old class, without saying what the old class is called. Document runs had no test helper.
+
+## Decision
+
+1. **Service acked.** `ServiceAcked` is an integration event (`workflow.service.acked.v1`: subject, service member key)
+   that each service records when its part is done. The waiting workflow calls `ServiceAckService.expect(subject,
+services)` in the step that sends the request (so no ack comes first), and waits on the `AllServicesAcked` signal
+   correlated by `{ subject }`. The waiting service's explorer records each ack in `workflow.service_ack_sets` (one
+   versioned row per subject, so two acks at once conflict and the redelivered one completes the set) and holds the
+   signal on the completing ack. The services expected are the caller's configuration.
+2. **Signal retention is configuration.** `workflow.signalRetention` (`7d` by default, `1m` to `90d`) sets how long an
+   untaken signal or held event is kept.
+3. **Version-pin names.** A kept older version lives beside the current class as `<name>.v<n>.workflow.ts` and is
+   named `<Name>V<n>Workflow`, with the same `key` and `version: n`; the current class keeps the plain name.
+4. **Document runs in tests.** `runDocument(document, input, { as, key })` in `./testing` runs an automation document or
+   a plan through the testing app's pipeline and returns its journal record, refusal included.
+
+## Consequences
+
+- Provisioning's list of services is data; adding a service is a configuration change.
+- A gen naming check for decision 3 is still to write.
+
+## Enforcement
+
+`packages/runtime/workflow/src/node/services/__tests__/service-ack.service.test.ts`,
+`src/node/__tests__/workflow.explorer.test.ts`, `src/config/__tests__/workflow.config.test.ts`,
+`src/testing/functions/__tests__/run-document.function.test.ts`. Decision 3: planned — gen's `kind_class_name` check.
+
+## Supersedes and sources
+
+`Supersedes: none`. Amends 0152 (decision 2 naming; held-signal retention). Sources: STA-844 (tenancy SPEC G5), STA-773.

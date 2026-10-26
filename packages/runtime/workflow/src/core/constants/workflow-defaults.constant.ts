@@ -18,7 +18,7 @@ export const WORKFLOW_DEFAULTS = Object.freeze({
   pollMilliseconds: 1000,
   /** The most runs one tick advances. */
   batch: 100,
-  /** How long a signal no run took is held before it is dropped. */
+  /** How long a signal no run took is held before it is dropped, when no `WorkflowConfig` is given. */
   signalHoldMilliseconds: Duration.toMilliseconds(Duration.days(7)),
   /** The context of a run started outside an action call (a `startOn` event, a test). */
   origin: Object.freeze({ locale: "en", timeZone: "UTC", currency: "USD", market: "default" }),

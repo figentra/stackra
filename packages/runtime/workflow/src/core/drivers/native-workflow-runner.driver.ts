@@ -35,7 +35,7 @@ import { ContextStorage, WorkflowRunner } from "@stackra/actions/contracts";
 import type { CallDescriptor } from "@stackra/actions/contracts";
 import { Driver, kindOf } from "@stackra/container";
 import type { AnyClass } from "@stackra/container";
-import { Logger } from "@stackra/contracts";
+import { Duration, Logger } from "@stackra/contracts";
 import type { Clock, Json, PublicId } from "@stackra/contracts";
 import { isRefusal, WorkflowTimedOutError } from "@stackra/errors";
 import { EventBus } from "@stackra/events";
@@ -44,7 +44,9 @@ import { EventOutbox } from "@stackra/events/contracts";
 import type { EventMeta, RecordedEvent } from "@stackra/events/contracts";
 import type { Locks } from "@stackra/locking";
 import { backoffDelay } from "@stackra/queue";
+import { duration } from "@stackra/validation";
 
+import type { WorkflowConfig } from "#config/workflow.config";
 import { BUILDING_BLOCKS } from "#core/constants/building-blocks.constant";
 import { DOCUMENT_WORKFLOW } from "#core/constants/document-workflow.constant";
 import { WORKFLOW_DEFAULTS } from "#core/constants/workflow-defaults.constant";
@@ -251,6 +253,9 @@ export class NativeWorkflowRunnerDriver extends Driver(WorkflowRunner) {
   /** Every time the engine stores. */
   private readonly clock: Clock;
 
+  /** How long an untaken signal is held, in milliseconds (config `workflow.signalRetention`). */
+  private readonly signalRetention: number;
+
   /** Set by `connect`. */
   private resolver: Resolver | undefined;
 
@@ -258,12 +263,17 @@ export class NativeWorkflowRunnerDriver extends Driver(WorkflowRunner) {
    * @param journal - the store config `workflow.journal` picks.
    * @param locks - the run locks.
    * @param clock - the time source.
+   * @param config - the bound configuration; without one a signal is held for the default seven days.
    */
-  constructor(journal: WorkflowJournal, locks: Locks, clock: Clock) {
+  constructor(journal: WorkflowJournal, locks: Locks, clock: Clock, config?: WorkflowConfig) {
     super();
     this.journal = journal;
     this.locks = locks;
     this.clock = clock;
+    this.signalRetention =
+      config === undefined
+        ? WORKFLOW_DEFAULTS.signalHoldMilliseconds
+        : Duration.toMilliseconds(duration(config.signalRetention));
   }
 
   /** Builds workflows and reads the event and context ports from `resolver`; a later call replaces it. */
@@ -400,7 +410,7 @@ export class NativeWorkflowRunnerDriver extends Driver(WorkflowRunner) {
       payload: toJson(payload) as object,
       ...(scope === undefined ? {} : { scope }),
       receivedAt,
-      expiresAt: later(receivedAt, WORKFLOW_DEFAULTS.signalHoldMilliseconds),
+      expiresAt: later(receivedAt, this.signalRetention),
     });
   }
 

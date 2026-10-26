@@ -2,10 +2,10 @@
  * Stackra file contract:
  * Purpose: unit tests of `WorkflowConfig`: a configuration keyed `workflow` (an override keeps the key), its field typed
  *          on the class, built with the shipped default, set by a runway value or a host override, and refusing a
- *          journal nobody ships.
+ *          journal nobody ships; the signal retention defaults to seven days and refuses a duration outside 1m to 90d.
  * Boundary: test only.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0269; ADR 0294 (decision 19); ADR 0146 as amended.
+ * Governing contract: ADR 0022; ADR 0269; ADR 0294 (decision 19); ADR 0146 as amended; ADR 0427 (decision 2).
  */
 import { buildConfig, Config, ConfigInvalidError, configKey } from "@stackra/config";
 import type { DriverName } from "@stackra/container";
@@ -47,5 +47,16 @@ describe("WorkflowConfig", () => {
         values: { journal: "temporal" as DriverName<WorkflowJournal> },
       }),
     ).toThrow(ConfigInvalidError);
+  });
+
+  it("holds signals seven days by default and takes a retention from 1m to 90d", () => {
+    expect(buildConfig(WorkflowConfig).signalRetention).toBe("7d");
+    expect(
+      buildConfig(WorkflowConfig, { values: { signalRetention: "30d" } }).signalRetention,
+    ).toBe("30d");
+    for (const signalRetention of ["10s", "120d", "soon"])
+      expect(() => buildConfig(WorkflowConfig, { values: { signalRetention } })).toThrow(
+        ConfigInvalidError,
+      );
   });
 });

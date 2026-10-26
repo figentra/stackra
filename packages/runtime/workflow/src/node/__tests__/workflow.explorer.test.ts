@@ -5,11 +5,12 @@
  *          origin naming no scope), and refuses a `startOn` workflow when no event bus is bound; it leaves another
  *          engine alone. It subscribes each trigger block: an occurrence is held for waiting runs under the block's
  *          correlation and starts each published automation as its principal, keyed by automation and occurrence; a
- *          coded step waiting for an event no trigger block correlates fails boot.
+ *          coded step waiting for an event no trigger block correlates fails boot. With `ServiceAckService` bound, each
+ *          `ServiceAcked` is recorded and the ack that completes a set holds `AllServicesAcked` for its subject.
  * Boundary: test only; a stand-in container lists fixed instances and binds a recording bus; the engine runs on the
  *           memory journal.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0269; ADR 0144 (explorers); ADR 0101 (0294 note: `startOn`).
+ * Governing contract: ADR 0022; ADR 0269; ADR 0144 (explorers); ADR 0101 (0294 note: `startOn`); ADR 0427 (decision 1).
  */
 import type { WorkflowRunner } from "@stackra/actions/contracts";
 import { Explorer } from "@stackra/container";
@@ -22,14 +23,17 @@ import { describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 
 import {
+  AllServicesAcked,
   BlockKind,
   MemoryWorkflowJournalDriver,
   NativeWorkflowRunnerDriver,
   registerBlocks,
+  ServiceAcked,
   Step,
   Workflow,
 } from "#core/index";
 import { AutomationService } from "#node/services/automation.service";
+import { ServiceAckService } from "#node/services/service-ack.service";
 import { WorkflowExplorer } from "#node/workflow.explorer";
 
 const NOON = new Date(Date.UTC(2026, 9, 25, 12));
@@ -208,5 +212,42 @@ describe("WorkflowExplorer trigger blocks", () => {
         engine(),
       ).onApplicationBootstrap(),
     ).toThrow(/no trigger block correlates/);
+  });
+});
+
+describe("WorkflowExplorer service acks", () => {
+  it("records each ack and holds AllServicesAcked once the last expected service acked", async () => {
+    const subscriptions: [AnyClass, Listener][] = [];
+    const bus = {
+      subscribe: (type: AnyClass, listener: Listener) => subscriptions.push([type, listener]),
+    };
+    const answers: (readonly string[] | undefined)[] = [undefined, ["commerce", "billing"]];
+    const acks = { ack: vi.fn(async () => answers.shift()) };
+    const container = {
+      instances: () => [],
+      has: (token: AnyClass) => token === EventBus || token === ServiceAckService,
+      get: (token: AnyClass) => (token === EventBus ? bus : acks),
+    } as unknown as Container;
+    const runner = engine();
+    const hold = vi.spyOn(runner, "hold").mockResolvedValue(undefined);
+    new WorkflowExplorer(container, runner).onApplicationBootstrap();
+
+    const [, listener] = subscriptions.find(([candidate]) => candidate === ServiceAcked) ?? [];
+    const deliver = (service: string) =>
+      (listener as unknown as { handle(e: object): Promise<void> }).handle(
+        Object.assign(Object.create(ServiceAcked.prototype) as object, {
+          subject: "tnt_1",
+          service,
+        }),
+      );
+    await deliver("billing");
+    expect(hold).not.toHaveBeenCalled();
+    await deliver("commerce");
+    expect(acks.ack).toHaveBeenCalledWith("tnt_1", "commerce");
+    expect(hold).toHaveBeenCalledWith(
+      AllServicesAcked,
+      { subject: "tnt_1", services: ["commerce", "billing"] },
+      { subject: "tnt_1" },
+    );
   });
 });

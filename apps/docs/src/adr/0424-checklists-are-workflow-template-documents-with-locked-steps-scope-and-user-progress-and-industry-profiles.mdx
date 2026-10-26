@@ -1,0 +1,52 @@
+---
+title: "0424 — Checklists are workflow-template documents with locked steps, scope and user progress, and industry profiles"
+description: "Proposed · 2026-10-26"
+---
+
+<Note>
+  Proposed (STA-776). It moves the onboarding checklist engine into `@stackra/workflow` as RV-22
+  decided (editable templates, Stackra engine) and makes industry templates seed-pack profiles.
+</Note>
+
+## Context
+
+Products need onboarding checklists (and later exit and fix lists) that tenants may tailor without losing the steps
+the product requires, that track progress for the whole tenant and for each user, and that start differently for a
+salon and a restaurant. RV-22 made the templates editable and the engine Stackra's; the seed pack now has a
+`checklist-template` record kind and an `industry-template` record kind.
+
+## Decision
+
+1. **A checklist is a seed document.** `ChecklistTemplate$`: key `workflow-template:<product>:<name>` (the onboarding
+   one is `workflow-template:<product>:onboarding`), a semantic version and 1 to 50 steps, each a snake_case key, a
+   lang-key label and description, a `locked` flag and an optional console route. A scope's copy
+   (`workflow.checklists`) moves to a new template version and keeps the scope's customization. A scope may hide or
+   reorder unlocked steps only (`ChecklistCustomization$`); a locked step is refused (`step_locked`) and keeps its
+   template place.
+2. **Progress per scope and per user.** Each step names its audience: `scope` (done once for the tenant or node) or
+   `user` (each user does it). `workflow.checklist_progress` keeps one row per checklist, step and owner (the scope id or
+   the user id); a step is never un-done.
+3. **Completion events.** Completing a step records `ChecklistStepCompleted` once; a completion that leaves every
+   visible step done records `ChecklistCompleted` (per user when the checklist has user steps). They are domain events;
+   a product relays them when another service needs them.
+4. **Industry templates are seed-pack profiles.** An `industry-template` record's checklist part is an
+   `IndustryProfile$`: a customization per checklist key, applied at sign-up by `ChecklistService.applyProfile` and
+   never over a scope's own customization. Its other parts (settings, rule sets, automations) are seeded by their
+   owners.
+5. Steps hold no code: completing one is an action the product's own module calls. The console checklist component is
+   `@stackra/ui`'s, over `ChecklistService.view`.
+
+## Consequences
+
+- Each product seeds its onboarding checklist as data; a new step is a pack release, not a deploy.
+- Locked steps are the product's contract with the tenant: removing one needs a new template version.
+
+## Enforcement
+
+`packages/runtime/workflow/src/core/functions/__tests__/check-customization.function.test.ts`,
+`checklist-view.function.test.ts` and `src/node/services/__tests__/checklist.service.test.ts`. Planned — the seed-pack
+check that every product ships `workflow-template:<product>:onboarding`.
+
+## Supersedes and sources
+
+`Supersedes: none`. Sources: STA-776; RV-22, R1-OS-33, OS-253, C17; ADR 0279; config-model sections 5 and 6.

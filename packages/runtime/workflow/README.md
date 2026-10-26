@@ -33,6 +33,13 @@ steps last first when one fails (ADR 0102, 0151, 0152, 0292).
 | `dryRun`, `DryRun`, `DryRunStep`, `DryRunOutcome`                    | `.`         | what each step would do on a sample input, calling nothing                   |
 | `WorkflowTemplatePack$`, `SeedResult`                                | `.`         | default automations as a versioned seed document                             |
 | `Automation`, `AutomationService`, `AutomationRevision`              | `./node`    | versioned automations: draft, dry run, publish as a principal, seed          |
+| `PublisherAccess`, `MemoryPublisherAccessDriver`, `AutomationPaused` | `.`         | an automation never exceeds its publisher; it pauses when access is lost     |
+| `ServiceAcked`, `AllServicesAcked`                                   | `.`         | the cross-service "service acked" contract and the await-all signal          |
+| `ServiceAckSet`, `ServiceAckService`                                 | `./node`    | the acks a workflow waits for on one subject                                 |
+| `ChecklistTemplate$`, `ChecklistCustomization$`, `IndustryProfile$`  | `.`         | checklist templates, a scope's customization, industry profiles (seed data)  |
+| `ChecklistAudience`, `checklistView`, `checkCustomization`, …        | `.`         | locked steps, scope and user progress, `ChecklistStepCompleted`/`Completed`  |
+| `Checklist`, `ChecklistProgress`, `ChecklistService`                 | `./node`    | the checklist engine: seed, profile, customize, complete, view               |
+| `runDocument`                                                        | `./testing` | runs an automation document or a plan in a test, through the app's pipeline  |
 
 ## Writing a workflow
 
@@ -76,7 +83,8 @@ An action starts it with `ctx.run(RedeemPointsWorkflow, input)`; another action 
 - **Waits**: a `waitFor` step parks the run (`waiting`). `ctx.run` then resolves with `output(run)` over the results so
   far, so the action answers while the run waits durably. A signal is held in the sender's transaction, matched by
   signal, canonical correlation and scope, and taken by the next tick; one that arrives before the run parks, or before
-  the wait times out however late the tick runs, still resumes it. Untaken signals are dropped after seven days.
+  the wait times out however late the tick runs, still resumes it. Untaken signals are dropped after
+  `workflow.signalRetention` (`7d` by default, from `1m` to `90d`).
 - **Timeouts**: the run's `timeout` covers everything; a step's `timeout` bounds its wait, or aborts one attempt's
   `ctx.abortSignal`. `heartbeat` aborts a step that stops calling `ctx.heartbeat(progress)`; a retry reads
   `ctx.progress`.
@@ -93,7 +101,9 @@ An action starts it with `ctx.run(RedeemPointsWorkflow, input)`; another action 
 
 `Workflow({ version: 2 })` ships a changed graph as a new class under the same key. A run records the version it
 started on (`workflow.runs.version`, migration `workflow.0002`) and resumes on that version's class; while no class of
-that version is deployed in a process, the run waits there. Keep the old class until its runs end.
+that version is deployed in a process, the run waits there. Keep the old class until its runs end. The kept class
+lives beside the new one as `<name>.v<n>.workflow.ts` and is named `<Name>V<n>Workflow` (`redeem-points.v1.workflow.ts`
+exports `RedeemPointsV1Workflow` with `version: 1` and the same `key`); the current class keeps the plain name.
 
 ## Event waits
 
@@ -159,7 +169,57 @@ An automation is a document that references blocks and adds no code (ADR 0122):
   way: an ephemeral workflow with no stored record (ADR 0245 decision 8). The run keeps the document, so it resumes on
   that version.
 - A product's seed pack ships default automations as a `WorkflowTemplatePack$` (`{ key, version, templates }`);
-  `seedPack(scope, pack, principal)` publishes each, and a new version never overwrites a tenant's edit.
+  `seedPack(scope, pack, principal)` publishes each as the product's seed principal, and a new version never
+  overwrites a tenant's edit.
+
+## Publisher access
+
+An automation runs as its principal, and its grants are never more than its publisher's (ADR 0153 decision 2):
+
+- `publish(id, revision, principal, publisher)` refuses `automation_exceeds_publisher` (403) when the publisher may not
+  call an action block the revision calls, asked through the `PublisherAccess` port (@stackra/iam binds it).
+- Before a trigger starts a published automation, the publisher's access is checked again. One that lost a block is
+  paused (`pausedAt`, `pause_reason` `publisher_access_lost`, `AutomationPaused`) and starts nothing; publishing it
+  again, by someone with access, resumes it. `recheck()` pauses the same way when a host learns a grant was revoked.
+- A seed is published by its principal, the product's seed principal (ADR 0423).
+
+## Service acks
+
+A workflow that waits for several services (tenant provisioning, ADR 0210 decision 6):
+
+```ts
+async request(run: Run<this>, ctx: StepContext): Promise<boolean> {
+  ctx.record(ProvisioningRequested.create({ tenantId: run.input.tenantId }));
+  return this.acks.expect(run.input.tenantId, this.config.services); // true: nothing to wait for
+}
+
+@Step<ProvisionTenantWorkflow>({
+  waitFor: AllServicesAcked,
+  correlate: (run) => ({ subject: run.input.tenantId }),
+  when: (run) => !run.results.request,
+  timeout: "1h",
+})
+async provisioned(_run: Run<this>, _ctx: StepContext, acked: AllServicesAcked): Promise<string[]> {
+  return acked.services;
+}
+```
+
+Each service records `ServiceAcked.create({ subject, service })` when its part is done. The waiting service's explorer
+hands each one to `ServiceAckService.ack`, and the ack that completes the set holds `AllServicesAcked` for the subject.
+Call `expect` in the step that sends the request, so no ack can come first.
+
+## Checklists
+
+Onboarding (and exit or fix-list) checklists are `checklist-template` seed records: `ChecklistTemplate$` documents keyed
+`workflow-template:<product>:<name>`, each step a lang-key label, a `locked` flag and an audience (`scope` or `user`).
+
+- `ChecklistService.seed(scope, template)` copies the template into the scope; a new version moves it forward and keeps
+  the customization.
+- `applyProfile(scope, profile)` applies an industry profile (`IndustryProfile$`, the `industry-template` record) at
+  sign-up: unlocked steps hidden and reordered, never over a scope's own customization.
+- `customize(id, { hidden, order })` refuses a locked step (`step_locked`): a scope never removes one.
+- `complete(id, step, actor)` records progress once, for the scope or for the user, with `ChecklistStepCompleted`, and
+  `ChecklistCompleted` when every visible step is done; `view(id, userId)` is what the console checklist renders.
 
 ## Running it
 
@@ -183,6 +243,7 @@ its own scope.
 ```ts
 const app = await createTestingModule(CommerceModule).useDrivers("memory").compile();
 const { ok, run } = await runWorkflow(CreateOrderWorkflow, input, { as: actors.customer() });
+const plan = await runDocument(COD_CONFIRMATION, { orderId: "ord_1" }, { as: principal }); // a document run
 await signal(RedemptionConfirmed, payload, correlation);
 await app.workflows.advanceClock("16m");
 expect((await app.workflows.last(RedeemPointsWorkflow)).status).toBe(WorkflowRunStatus.Compensated);
@@ -195,6 +256,5 @@ expect((await app.workflows.last(RedeemPointsWorkflow)).status).toBe(WorkflowRun
 - Staging a run's events until it succeeds (ADR 0102 decision 3): needs a staged state in @stackra/outbox.
 - Workflow hooks (ADR 0102 decision 4); inspect, retry and cancel actions (ADR 0152 decision 4); the Temporal driver
   (Pro, ADR 0292).
-- Pausing an automation when its publisher loses access, and the check that its grants never exceed the publisher's
-  (ADR 0153 decision 2): the publishing action decides the principal it passes.
-- The automation studio editor (`@stackra/builder`) and the sandboxed code step (`@stackra/sandbox`, ADR 0154).
+- The @stackra/iam `PublisherAccess` driver, and the console checklist component.
+- The sandboxed code step (`@stackra/sandbox`, ADR 0154). The automation editor kernel is `@stackra/builder`'s.

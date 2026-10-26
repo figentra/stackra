@@ -14,6 +14,7 @@ describe("@stackra/workflow/testing", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(testing).sort()).toEqual([
       "WORKFLOW_TESTING_PLUGIN",
+      "runDocument",
       "runWorkflow",
       "signal",
     ]);

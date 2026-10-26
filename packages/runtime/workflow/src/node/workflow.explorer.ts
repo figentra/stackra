@@ -4,7 +4,9 @@
  *          reads the plan of every workflow the container built (so a bad `@Step`, undo or `after` fails at boot, not on
  *          the first run, and every workflow is registered for resume), subscribes a starter for each `startOn`
  *          workflow to the event bus, and subscribes each trigger building block: its occurrences are held for the
- *          runs that wait on them (when it correlates), and start the published automations it triggers.
+ *          runs that wait on them (when it correlates), and start the published automations it triggers; and, when
+ *          `ServiceAckService` is bound, subscribes `ServiceAcked`, holding `AllServicesAcked` for the subject once the
+ *          last expected service acked.
  * Boundary: runs once per container, after every singleton is built. It acts only when the bound `WorkflowRunner` is
  *           the native engine; another engine driver wires itself. A starter is an in-process subscription built here,
  *           not a `Listener` kind file, so gen never wires it to every event; the run it starts names no scope and
@@ -17,7 +19,7 @@
  * Governing contract: ADR 0144 (explorers) as amended by 0263; ADR 0294 (decision 6: the kind acts on what decorators
  *                     recorded); ADR 0101 (0294 note: an event starts a workflow only through `startOn`); ADR 0102
  *                     (decision 7: workflows are resolved through the container); ADR 0152 (decision 1: event waits);
- *                     ADR 0122 (decision 3); ADR 0153 (decisions 1 and 2).
+ *                     ADR 0122 (decision 3); ADR 0153 (decisions 1 and 2); ADR 0210 (decision 6); ADR 0427 (decision 1).
  */
 import type { WorkflowRunner } from "@stackra/actions/contracts";
 import { Explorer, kindOf } from "@stackra/container";
@@ -27,11 +29,18 @@ import type { PublicId } from "@stackra/contracts";
 import { EventBus, Listener } from "@stackra/events";
 import type { Event, ListenerContext } from "@stackra/events";
 
-import { BlockKind, buildingBlocks, NativeWorkflowRunnerDriver } from "#core/index";
+import {
+  AllServicesAcked,
+  BlockKind,
+  buildingBlocks,
+  NativeWorkflowRunnerDriver,
+  ServiceAcked,
+} from "#core/index";
 import type { BuildingBlock, RunOrigin } from "#core/index";
 import { WORKFLOW_DEFAULTS } from "#core/constants/workflow-defaults.constant";
 import { planOf } from "#core/functions/plan-of.function";
 import { AutomationService } from "#node/services/automation.service";
+import { ServiceAckService } from "#node/services/service-ack.service";
 
 /** The caller of a run an event without an actor starts. */
 const SYSTEM_ACTOR = Object.freeze({ kind: ActorKind.System, id: "sys_workflow" as PublicId });
@@ -92,6 +101,18 @@ function triggerOf(
         }
       if (failures.length > 0)
         throw new AggregateError(failures, `${block.key}: ${failures.length} automation(s) failed`);
+    }
+  })();
+}
+
+/** A subscription that records each ack and holds `AllServicesAcked` once the set it completes is whole. */
+function ackOf(runner: NativeWorkflowRunnerDriver, acks: ServiceAckService): Listener {
+  return new (class extends Listener {
+    async handle(event: Event): Promise<void> {
+      const { subject, service } = event as ServiceAcked;
+      const services = await acks.ack(subject, service);
+      if (services !== undefined)
+        await runner.hold(AllServicesAcked, { subject, services: [...services] }, { subject });
     }
   })();
 }
@@ -157,5 +178,7 @@ export class WorkflowExplorer extends Explorer {
       : undefined;
     for (const block of triggers)
       bus.subscribe(block.type as AnyClass<Event>, triggerOf(runner, block, automations));
+    if (container.has(ServiceAckService))
+      bus.subscribe(ServiceAcked, ackOf(runner, container.get(ServiceAckService)));
   }
 }

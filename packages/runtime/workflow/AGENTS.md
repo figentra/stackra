@@ -57,6 +57,11 @@ journals, the boot explorer and the in-process test driver (ADR 0101, 0102, 0151
 - A document run keeps its document in `workflow.runs.input`; a coded run resumes only on the class of its pinned
   version (`WORKFLOW_KEYS.versions`).
 - Seeds never overwrite an automation whose latest revision is the tenant's.
+- An automation's grants never exceed its publisher's: `PublisherAccess` is asked at publish and before each trigger
+  starts it; a lost block pauses it (ADR 0423). Never skip the check for a seed: its publisher is the seed principal.
+- Checklist steps, lock flags and industry profiles are seed data; no step is coded here. A customization never hides
+  or reorders a locked step (ADR 0424).
+- `ServiceAckSet` is platform data with no scope policy, like the journal; `expect` runs before the request leaves.
 
 ## Rules that fail the build
 
@@ -74,5 +79,6 @@ journals, the boot explorer and the in-process test driver (ADR 0101, 0102, 0151
 | Signal fields | `workflow.signals.payload` (jsonb)                    | The sender's payload; deleted when taken, dropped after seven days untaken             |
 | Failures      | `workflow.runs.error`, `workflow.steps.error` (jsonb) | The refusal code (`internal` otherwise) and message; never a stack or the step's input |
 | Documents     | `content.revisions.data`, `workflow.runs.input`       | Scope configuration; inputs may hold literal values (a phone, a text); never logged    |
-| Principal     | `workflow.automations.principal` (jsonb)              | The actor kind and public id an automation runs as                                     |
+| Principal     | `workflow.automations.principal`, `publisher` (jsonb) | The actor kind and public id an automation runs as, and who published it               |
+| Progress      | `workflow.checklist_progress` (owner, completed by)   | A user's public id and the completing actor; read only by the scope's own sessions     |
 | Held events   | `workflow.signals.payload` (jsonb)                    | A waitable trigger's occurrence, dropped after seven days untaken                      |

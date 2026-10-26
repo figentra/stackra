@@ -15,7 +15,12 @@ describe("@stackra/workflow/node", () => {
     expect(Object.keys(node).sort()).toEqual([
       "Automation",
       "AutomationService",
+      "Checklist",
+      "ChecklistProgress",
+      "ChecklistService",
       "PostgresWorkflowJournalDriver",
+      "ServiceAckService",
+      "ServiceAckSet",
       "WorkflowExplorer",
     ]);
   });
