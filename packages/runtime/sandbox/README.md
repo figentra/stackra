@@ -3,7 +3,7 @@
 Stackra sandbox: the `Sandbox` service that runs one code step of a tenant's automation in QuickJS-WASM, the only place
 tenant code runs (ADR 0154), and the `SandboxFetchProxy` port its `fetch` goes through.
 
-**Tier:** `tier:lib` (`packages/runtime/sandbox`). Entries `.` and `./contracts`. Depends on `@stackra/contracts`,
+**Tier:** `tier:lib` (`packages/runtime/sandbox`). Entries `.`, `./contracts` and `./node`. Depends on `@stackra/contracts`,
 `@stackra/container`, `@stackra/errors` and `quickjs-emscripten`.
 
 ## What is here
@@ -16,6 +16,9 @@ tenant code runs (ADR 0154), and the `SandboxFetchProxy` port its `fetch` goes t
 | `SandboxRequest`, `SandboxLimits`, `SandboxLimit`, `SandboxResult` | `.`           | the run's input, its bounds and what it gives back                           |
 | `SandboxFetchProxy`                                                | `./contracts` | the audited egress the host binds; the only network a run has                |
 | `SandboxFetchRequest`, `SandboxFetchResponse`                      | `./contracts` | what the proxy receives and answers                                          |
+| `SandboxPool`, `SandboxPoolOptions`                                | `./node`      | runs in a fixed pool of child processes, fetches relayed to the host's proxy |
+| `serveSandboxChild`                                                | `./node`      | the body of a pool process                                                   |
+| `compileTypeScriptStep`                                            | `./node`      | a TypeScript step's types erased, once, when the step is saved               |
 
 ## Running a code step
 
@@ -47,6 +50,25 @@ const { output, logs, codeMs } = await this.sandbox.run({
   them from the tenant's plan; this package holds no tier values.
 - **Metering**: every run reports `codeMs`, in the result or in either refusal's details. The caller records it as
   `automation.code_ms` (ADR 0154 decision 8).
+
+## Process isolation
+
+```ts
+pool.open({ size: settings.sandboxProcesses, graceMs: settings.sandboxGraceMs }); // deployment settings
+const result = await pool.run(request); // same request, result and refusals as Sandbox.run
+await pool.close();
+```
+
+`SandboxPool` keeps `size` child processes, each running one `Sandbox` run at a time, and queues the rest. A guest
+`fetch` is relayed back over IPC to the `SandboxFetchProxy` bound in the host, so egress stays audited in one place. A
+run that outlives its time limit by `graceMs` has its process killed (`sandbox_limit_exceeded`, limit `time`); a process
+that dies mid-run refuses that run only (`sandbox_code_failed`) and is replaced (ADR 0434).
+
+## TypeScript steps
+
+`compileTypeScriptStep(source)` erases the types of a step body with Node's own type stripping and keeps every position,
+so a failure still points at what the tenant wrote. Store both texts and run the JavaScript. TypeScript that needs code
+generated (`enum`, `namespace`, parameter properties) is refused.
 
 ## Network
 

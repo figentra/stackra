@@ -1,0 +1,48 @@
+---
+title: "0434 — Sandbox: a process pool, TypeScript steps, and the Python engine waiting on its dependency"
+description: "Proposed · 2026-10-26"
+---
+
+<Note>
+  Proposed. It continues [0154](/adr/0154-tenant-code-runs-only-in-a-sandboxed-code-step) (decisions
+  1, 2 and 6). Linear STA-720. Release: after launch (round 3 item 28).
+</Note>
+
+## Context
+
+`@stackra/sandbox` runs JavaScript code steps in QuickJS-WASM inside the host process. ADR 0154 also names Python
+(Pyodide), a pool that isolates runs, and TypeScript steps. A WebAssembly engine bug or a runaway allocation in the host
+process would take down every request it serves. Pyodide is not in the repository's catalog, and a package may only
+take versions from it.
+
+## Decision
+
+1. **Python waits on its dependency.** The Pyodide engine runs inside the pool's processes (loaded once per process,
+   since loading takes seconds) with the same `SandboxRequest`, limits and fetch proxy. It is built when the owner adds
+   `pyodide` to the catalog; nothing in the package names a Python language until then.
+2. **A process pool.** `SandboxPool` (`./node`) keeps a fixed number of child processes, each running one `Sandbox` run
+   at a time with a fresh QuickJS runtime, and queues the rest. A guest `fetch` is relayed over IPC to the host's
+   `SandboxFetchProxy`, so egress is audited in one place. A run that outlives its time limit by the grace has its
+   process killed (`sandbox_limit_exceeded`, limit `time`); a process that dies refuses only its run
+   (`sandbox_code_failed`) and is replaced. The size and the grace are deployment settings; every run limit stays the
+   run's own, from the plan catalogue.
+3. **TypeScript steps compile when saved.** `compileTypeScriptStep` erases types with Node's own type stripping, keeping
+   every position, and refuses TypeScript that needs code generated. The step stores both texts and runs the
+   JavaScript; no compiler is a dependency and no type is checked.
+4. **Metering stays the caller's.** Every run reports `codeMs`; whether a `SandboxMeter` port records it inside the
+   package is an open owner question.
+
+## Consequences
+
+- A crash in tenant code or the engine costs one run, not the host.
+- A pool process adds tens of megabytes; the deployment sizes the pool per instance.
+- Python code steps are not available until the catalog entry lands.
+
+## Enforcement
+
+`sandbox-pool.service.test.ts` (real child processes), `ipc-fetch-proxy.driver.test.ts` and
+`compile-typescript-step.function.test.ts` in `packages/runtime/sandbox`. Planned — the Pyodide engine's tests.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: ADR 0154 decision 2; round 3 item 28; OS-232 (limits from the plan catalogue).
