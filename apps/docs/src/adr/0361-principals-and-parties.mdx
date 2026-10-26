@@ -4,6 +4,15 @@ description: "Accepted · 2026-10-25"
 ---
 
 <Note>
+  Note 2026-10-26 (STA-806), package-needs conflict 3: decision 7 is the settled text. The device
+  registry and the pairing ports stay in `@stackra/devices`, never in `@stackra/peripherals`, which
+  holds the peripheral ports only (card terminals included). The hand-over line that placed the
+  registry in peripherals predates this page; fiscal hardware is reached through the fiscal driver's
+  own `FiscalDevice` port over the devices bindings
+  ([0364](/adr/0364-fiscal-e-invoicing-and-till-fiscal-drivers-chosen-by-market-pack-data)).
+</Note>
+
+<Note>
   Amends [0235](/adr/0235-devices-and-iot-minimal-now-full-later) (decision 1: the device registry
   leaves identity, which keeps issuing device credentials; decision 2: `@stackra/devices` and
   `@stackra/peripherals` stay separate) and

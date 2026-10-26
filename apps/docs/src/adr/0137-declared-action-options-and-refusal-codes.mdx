@@ -4,6 +4,13 @@ description: "Accepted, amended by 0305 · 2026-10-20 · amended 2026-10-24 (STA
 ---
 
 <Note>
+  Amendment proposed 2026-10-26 (STA-806) in
+  [0381](/adr/0381-refusal-codes-live-read-only-and-approval-required-and-the-live-configuration-option-names):
+  two more refusal codes, `live_read_only` (`Conflict`) and `approval_required`
+  (`FailedPrecondition`, detail `approvalId`). Until 0381 is accepted, this page stands.
+</Note>
+
+<Note>
   Amended 2026-10-24 (STA-348), with [0215](/adr/0215-entitlements) as amended the same day: the
   second code of decision 3 is `limit_reached`, raised by `LimitReachedError`, not `limit_exceeded`;
   the upgrade hint stands. No client saw the old code. The other decisions stand.

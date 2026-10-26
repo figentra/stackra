@@ -1,0 +1,281 @@
+---
+title: "0384 — Wave 10 owner questions: proposed answers and where each is decided"
+description: "Proposed · 2026-10-26"
+---
+
+<Note>
+  Proposed (STA-806). Each answer below is a proposed default for the owner to accept or change;
+  nothing may rely on it until this ADR is accepted. Answers that the 2026-10-26 review rounds
+  already gave are marked with their id (X2-n from review round 2, R3-SO-n and RV-n from round 3,
+  R4-n from round 4). An answer that needs its own decision links to the ADR that carries it.
+</Note>
+
+## Context
+
+The wave 10 hand-over (`notes/handover/build-wave10-2026-10-25.md`) ends with owner questions per builder. Several were
+answered by later rounds without being fed back (R3-SO-19); others need an ADR, which 0371 to 0383 now propose. The
+build waves that depend on them need one place that says, per question, what the answer is or where it is decided.
+Numbers below are the builder's own question numbers.
+
+## Decision
+
+1. **Payments.**
+
+   | Q   | Answer                                                                                                                                                                                                                                       |
+   | --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+   | 1   | Yes: the managed client in `@stackra/integrations` gets a form-encoded body option; Stripe and OPPWA drop the query-string shortcut (R3-SO-19).                                                                                              |
+   | 2   | Not an owner question: each endpoint is verified against the vendor's sandbox before that pack's launch gate, as a certification row.                                                                                                        |
+   | 3   | No: one provider per pack; the Connection carries `mode: live` or `test`, set by the tenant kind; the `-sandbox` provider codes go (X2-24).                                                                                                  |
+   | 4   | A pack value, `market-pack:<code>.payments.platform.connect-account-type`, not a required empty connection field (X2-24).                                                                                                                    |
+   | 5   | Yes: `CheckoutRequest` carries tax and shipping amounts so a provider that needs them receives them.                                                                                                                                         |
+   | 6   | A refund the provider accepts as pending stays `refund_pending` and counts as refunded only once a lookup or a verified webhook confirms it.                                                                                                 |
+   | 7   | `@stackra/market-packs` resolves; the OS tenancy and markets service fetches packs and binds the pack readers: [0376](/adr/0376-provider-resolution-ports-credential-references-managed-or-own-accounts-and-the-telephony-ports) decision 4. |
+
+2. **Fiscal.**
+
+   | Q   | Answer                                                                                                                                       |
+   | --- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+   | 1   | Confirmed, and it is the rule for every driver family: format identity in code, everything else pack options (X2-19).                        |
+   | 2   | Confirmed: `FiscalService` takes the driver list; gen wires the list.                                                                        |
+   | 3   | Confirmed: fiscal seals are not e-signatures; `FiscalSigner` stays separate, and only hybrid PDF embedding goes through documents.           |
+   | 4   | Confirmed: the registry stays in `@stackra/devices` (Note on 0361 of 2026-10-26); devices bindings speak `tse.*`, `fdm.*` and `rt.*`.        |
+   | 5   | Confirmed as format identity where the format requires negative amounts; where a format leaves it open, it is a pack option.                 |
+   | 6   | E-receipts are a driver option of `eta`; validity polling is a workflow in OS invoicing; both are rows of `launch-gate:eg:commerce` (X2-22). |
+
+3. **Documents.**
+
+   | Q   | Answer                                                                                                      |
+   | --- | ----------------------------------------------------------------------------------------------------------- |
+   | 1   | Default catalog for `docx` and `uqr`; `uqr` is shared with achievements.                                    |
+   | 2   | Not an owner question: checked at the first typecheck after the catalog versions are pinned.                |
+   | 3   | Spelling is a pack document option, amount in words on for `sa`, `ae` and `eg` (X2-20, R3-SO-06, R3-SO-19). |
+   | 4   | Not an owner question: the memory driver returns resolved promises instead of empty `async` methods.        |
+   | 5   | Confirmed: `signer` is a reserved render-data key.                                                          |
+   | 6   | Confirmed: a DOCX of a roll template is refused.                                                            |
+   | 7   | Confirmed: `PdfEngine.print(html, page)`; the driver is headless Chromium in an OS files job (X2-23).       |
+
+4. **Calendar.**
+
+   | Q   | Answer                                                                                                                                             |
+   | --- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+   | 1   | Confirmed: foundation.                                                                                                                             |
+   | 2   | A pack value set by each pack's reviewer; `us` has no uncertain days (R3-SO-19).                                                                   |
+   | 3   | A pack value (R3-SO-19).                                                                                                                           |
+   | 4   | Confirmed: the Expo and Electron apps ship full ICU; no arithmetic fallback.                                                                       |
+   | 5   | Yes: a kept count mode, [0387](/adr/0387-calendar-remainder-every-rrule-part-supported-or-refused-a-kept-count-mode-and-calendar-data-from-packs). |
+   | 6   | Confirmed: a moved or confirmed holiday is a one-off dated rule with the same key in the same year.                                                |
+   | 7   | Confirmed: slots step from the start of each open window.                                                                                          |
+
+5. **Data transfer.**
+
+   | Q   | Answer                                                                                                            |
+   | --- | ----------------------------------------------------------------------------------------------------------------- |
+   | 1   | Default catalog, the 4.4 line.                                                                                    |
+   | 2   | Both stay on by default; the formula guard becomes an export option with a seeded default, not a literal (X2-20). |
+   | 3   | Yes: XLSX moves to `./node`.                                                                                      |
+   | 4   | Yes: the durable driver purges before-images when the undo window closes, under the record's data class.          |
+   | 5   | Yes: one run may feed several targets from several sheets (GRO-207, R3-SO-19).                                    |
+   | 6   | JSON and JSONL are drivers of these ports; the full-tenant export stays its own path.                             |
+
+6. **Achievements.**
+
+   | Q   | Answer                                                                                                      |
+   | --- | ----------------------------------------------------------------------------------------------------------- |
+   | 1   | Confirmed: the hash-only verification index without row-level security is the one allowed cross-scope read. |
+   | 2   | Keep the token on the award row under row-level security so a certificate can be reprinted.                 |
+   | 3   | Confirmed.                                                                                                  |
+   | 4   | Confirmed.                                                                                                  |
+   | 5   | Confirmed: the calling action enforces the platform-floor setting; the package records `grantedBy`.         |
+   | 6   | Confirmed: a period is a caller-chosen key.                                                                 |
+   | 7   | Noted; no decision.                                                                                         |
+   | 8   | Yes: register `awk`, `awd` and `awv` in the manifest.                                                       |
+   | 9   | Integrator steps, not owner questions.                                                                      |
+
+7. **Sandbox.**
+
+   | Q   | Answer                                                                                                               |
+   | --- | -------------------------------------------------------------------------------------------------------------------- |
+   | 1   | Acceptable: the calling action meters `automation.code_ms`; no `SandboxMeter` port.                                  |
+   | 2   | No: the guest stack is an engine limit and stays code (X2-20); time, memory and output come from the plan catalogue. |
+   | 3   | Keep wall-clock time; the rate card prices it.                                                                       |
+   | 4   | Confirmed: `FailedPrecondition`, not retryable.                                                                      |
+   | 5   | Yes: a cap on fetch calls per run, from the plan catalogue beside the other limits.                                  |
+   | 6   | Confirmed: the step's code is the body of an async function of `input`.                                              |
+
+8. **infra-gcp.**
+
+   | Q   | Answer                                                                                                                                                      |
+   | --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+   | 1   | Use the runway `regions` map confirmed for the runway row (R3-SO-19: cloud, location, account, jurisdiction); `providers.gcp` keeps `projects` and `state`. |
+   | 2   | Confirmed: the project number is runway data.                                                                                                               |
+   | 3   | Confirmed: the budget currency is a required runway value.                                                                                                  |
+   | 4   | Confirmed for release 1 (S3-compatible endpoint and the `s3` disk); a native GCS disk only on need.                                                         |
+   | 5   | Confirmed, matching infra-aws; the runway schema refuses a project name that would pass GCP's 30-character service-account limit.                           |
+   | 6   | Yes, both, before the `sa-gcp` launch gate (X2-4).                                                                                                          |
+
+9. **Shipping.**
+
+   | Q   | Answer                                                                                                       |
+   | --- | ------------------------------------------------------------------------------------------------------------ |
+   | 1   | A fifth carrier capability, pickup points and lockers, in `@stackra/shipping`; geocoding stays its own port. |
+   | 2   | Confirmed as the port's normalised vocabulary; labels and which states notify a customer are data.           |
+   | 3   | Confirmed: `Internal`.                                                                                       |
+   | 4   | Confirmed: label stock is printer-setting data.                                                              |
+   | 5   | Confirmed: millimetres, grams, cubic centimetres per kilogram; connectors convert at their edge.             |
+   | 6   | No Stackra change; the OS ADR note and counsel remain.                                                       |
+
+10. **Market packs.**
+
+    | Q   | Answer                                                                                                                                                                                                                                            |
+    | --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+    | 1   | Confirmed (R3-SO-19); Note on 0363 of 2026-10-26.                                                                                                                                                                                                 |
+    | 2   | Ed25519 confirmed; who holds the key and who signs off: [0386](/adr/0386-market-pack-signing-the-platform-release-service-holds-the-key-reviewers-sign-off-per-key).                                                                              |
+    | 3   | Confirmed.                                                                                                                                                                                                                                        |
+    | 4   | A publish check refuses an overlay floor looser than its parent (X2-19); overlays nest to any depth (R3-SO-01).                                                                                                                                   |
+    | 5   | Checklist state moves out of the signed pack into a `launch-gate` record naming the pack version (X2-17).                                                                                                                                         |
+    | 6   | Product sections may sit on any overlay (`us-ca-sf.restaurant`) and overlay their base section (R3-SO-01): [0385](/adr/0385-market-packs-a-pack-per-rule-subject-for-records-that-touch-two-markets-nested-overlays-and-storage-by-content-hash). |
+    | 7   | Confirmed.                                                                                                                                                                                                                                        |
+
+11. **Settings and feature flags.**
+
+    | Q   | Answer                                                                                                                                                         |
+    | --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+    | 1   | [0373](/adr/0373-the-feature-flags-no-plan-targeting-lint-rule).                                                                                               |
+    | 2   | `live_read_only`: [0381](/adr/0381-refusal-codes-live-read-only-and-approval-required-and-the-live-configuration-option-names).                                |
+    | 3   | Confirmed in 0381 decision 3.                                                                                                                                  |
+    | 4   | Acceptable: no released store driver exists outside the package.                                                                                               |
+    | 5   | All four confirmed; who may break glass stays 0359 open question 3.                                                                                            |
+    | 6   | Both confirmed.                                                                                                                                                |
+    | 7   | No: both tables get the tenant policy; the scheduler finds due changes through an ids-only index (tenant, due time, revision), the pattern of 0368 decision 5. |
+    | 8   | Gen wires `SettingsResolver` as the only reader and `SettingsReader` is retired; a lint refuses the reader for a group that declares a floor (X2-15).          |
+
+12. **Rules and workflow.**
+
+    | Q   | Answer                                                                                                                                                                                    |
+    | --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+    | 1   | A standing principal `seed:<product>`; Figentra's seeds skip the dry run: [0374](/adr/0374-seed-packs-the-stackra-seed-pack-command-and-the-stackra-new-template-set) decision 7 (X2-38). |
+    | 2   | Yes, refuse at save as well: [0375](/adr/0375-rule-fact-sources-and-outcome-kinds-as-kinds-modeladdition-options-and-the-edition-bundle-gen-writes) decision 4.                           |
+    | 3   | Yes, money floors (X2-16): 0375 decision 4.                                                                                                                                               |
+    | 4   | Acceptable for release 1; the hold period becomes a platform setting.                                                                                                                     |
+    | 5   | Confirmed.                                                                                                                                                                                |
+    | 6   | [0383](/adr/0383-naming-and-locking-version-pinned-workflow-classes).                                                                                                                     |
+    | 7   | Confirmed: every service that runs automations binds an `IdempotencyStore`.                                                                                                               |
+
+13. **CLI, gen and MCP.**
+
+    | Q   | Answer                                                                                                                                                   |
+    | --- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+    | 1   | `Effect` lives in `@stackra/actions/contracts` (built); the `// reason:` line is confirmed; the actions runtime defaults `tool` as 0360 decision 4 does. |
+    | 2   | 0374 decisions 1 and 2, with the kind registry (X2-36).                                                                                                  |
+    | 3   | 0374 decision 3.                                                                                                                                         |
+    | 4   | No `--tenant`: 0374 decision 6.                                                                                                                          |
+    | 5   | Per record: 0374 decision 5.                                                                                                                             |
+    | 6   | Keep `locked` (left out of the list, answered "requires subscription"); `ui://` resources wait for the surfaces of 0348 decision 2.                      |
+    | 7   | Confirmed.                                                                                                                                               |
+    | 8   | 0374 and 0375.                                                                                                                                           |
+
+14. **Identity, IAM, entitlements, scope, tenancy, licensing, consent and CSP.**
+
+    | Q   | Answer                                                                                                                                                                                                                                                                  |
+    | --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+    | 1   | [0372](/adr/0372-national-digital-id-sign-in-as-zitadel-external-identity-providers).                                                                                                                                                                                   |
+    | 2   | [0382](/adr/0382-the-action-pipeline-gains-an-approval-step-a-rate-limit-step-and-a-reserve-then-commit-hook) decision 4 (built).                                                                                                                                       |
+    | 3   | Drop the `.` re-export in the next release of `@stackra/entitlements`; nothing published depends on it.                                                                                                                                                                 |
+    | 4   | Not an ADR question: STA-154 and STA-209 own the publish timing.                                                                                                                                                                                                        |
+    | 5   | PIN length, attempts, lockout, override window and the step-up window become `settings:platform-floor:*` values seeded in `seed-pack:os` (PIN 4 to 6 digits per O19, X2-20); PBKDF2 iterations, key prefixes and the security headers stay code or deployment defaults. |
+    | 6   | Yes: the keys are registered in the identity section schema of `@stackra/market-packs` (X2-19).                                                                                                                                                                         |
+    | 7   | Confirmed as the default wall policy.                                                                                                                                                                                                                                   |
+    | 8   | Confirmed: the OS tenancy service binds them; the ports stay in `@stackra/tenancy/contracts`.                                                                                                                                                                           |
+    | 9   | Acceptable from the `./ui` entry only, with `@stackra/ui` and `@stackra/i18n` as peer dependencies.                                                                                                                                                                     |
+
+15. **Data packages.**
+
+    | Q   | Answer                                                                                                                                                                   |
+    | --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+    | 1   | Confirmed under 0134's amendment; no dedicated ADR.                                                                                                                      |
+    | 2   | Confirmed: markers in `@stackra/model`, behaviour with the owners named by 0321.                                                                                         |
+    | 3   | [0380](/adr/0380-data-class-effects-for-the-built-in-classes-seeded-as-data-over-a-code-floor).                                                                          |
+    | 4   | 0375 decision 5.                                                                                                                                                         |
+    | 5   | Cross-model search was meant.                                                                                                                                            |
+    | 6   | Both confirmed.                                                                                                                                                          |
+    | 7   | No: the token is a `@Secret` read through `SecretStore` ([0371](/adr/0371-secret-store-drivers-which-deploy-mode-binds-which-and-how-the-bootstrap-credential-arrives)). |
+    | 8   | Confirmed as deployment defaults runway overrides.                                                                                                                       |
+    | 9   | Confirmed.                                                                                                                                                               |
+    | 10  | Confirmed: a device moved to another legal entity keeps nothing of the old one.                                                                                          |
+
+16. **Runtime packages.**
+
+    | Q   | Answer                                                                            |
+    | --- | --------------------------------------------------------------------------------- |
+    | 1   | 0371.                                                                             |
+    | 2   | 0381.                                                                             |
+    | 3   | `structural: true`, 0381 decision 3.                                              |
+    | 4   | Snake_case confirmed (0231); 0099's spelling is read as `external_communication`. |
+    | 5   | 0382 decision 2: fails closed (X2-14).                                            |
+    | 6   | Yes, inside the unit of work (built): 0382 decision 5.                            |
+    | 7   | Confirmed; gen emits them from `encoreCronJobs()`.                                |
+    | 8   | Acceptable for release 1; clients resync a room from its document on reconnect.   |
+    | 9   | Integrator step: add `@aws-sdk/client-secrets-manager` to the default catalog.    |
+
+17. **Notifications, integrations, i18n, validation and support.**
+
+    | Q   | Answer                                                                                           |
+    | --- | ------------------------------------------------------------------------------------------------ |
+    | 1   | One Meta Integration in `@stackra/integrations`, WhatsApp as a role (R3-SO-19): 0376 decision 8. |
+    | 2   | 0376 decision 3: the recipient's Market for SMS, WhatsApp and voice.                             |
+    | 3   | Confirmed; the egress allowlist holds such hosts as validated patterns.                          |
+    | 4   | Confirmed; the Chatwoot signature scheme joins `@stackra/webhooks` (X2-21).                      |
+    | 5   | The subject and public key are configuration; only the private key is a secret.                  |
+    | 6   | Confirmed.                                                                                       |
+    | 7   | Confirmed.                                                                                       |
+    | 8   | Confirmed.                                                                                       |
+    | 9   | 0376.                                                                                            |
+
+18. **Money, pricing, loyalty-kit, peripherals, devices and platform.**
+
+    | Q   | Answer                                                                                                                                                                                     |
+    | --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+    | 1   | Confirmed, no ADR, while a formula is a registered shape whose inputs are data (rate source, weight, making charge), never an expression.                                                  |
+    | 2   | [0379](/adr/0379-the-tax-provider-port-lives-in-stackra-pricing-contracts-and-providers-are-connections): Stripe Tax default, Avalara add-on, own account allowed.                         |
+    | 3   | Confirmed.                                                                                                                                                                                 |
+    | 4   | Yes: gen's capability matrix and the i18n labels add `card_terminal` ([0377](/adr/0377-card-terminals-semi-integrated-over-a-local-link-geidea-network-international-paymob-and-neoleap)). |
+    | 5   | Confirmed; OS ADR 0016 and the devices service adopt the routes.                                                                                                                           |
+    | 6   | `@stackra/app` enters kiosk mode at launch when `kioskOnLaunch` is set; the exit needs a manager override.                                                                                 |
+    | 7   | Open under 0339 open question 3 and STA-475.                                                                                                                                               |
+    | 8   | Conflict 1: GTIN checks move to `@stackra/validation`; the RCN price check digit is verified, not skipped, once it does.                                                                   |
+    | 9   | Tenant settings with seeded defaults (X2-20); customer roles never receive the stamp permission.                                                                                           |
+    | 10  | Notes on 0361 and 0357 of 2026-10-26.                                                                                                                                                      |
+
+19. **AI, registry, panel, UI, experience, builder and runway.**
+
+    | Q   | Answer                                                                                                                                                                                                             |
+    | --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+    | 1   | The ai service owns the `ai_*` tables and conversations; `@stackra/ai` keeps mechanism and ports (an amendment of 0100 decision 10 when accepted).                                                                 |
+    | 2   | No `./turnstile` entry; Turnstile stays in `./react`.                                                                                                                                                              |
+    | 3   | Bypass is limited to sandboxes and always-allow lasts a session (X2-13). Keys: `settings:platform-floor:ai.bypass.scope`, `ai.allow.expiry`, `ai.floor.tags`, `ai.floor.recipient_limit`, `ai.floor.agent_delete`. |
+    | 4   | Confirmed.                                                                                                                                                                                                         |
+    | 5   | Confirmed.                                                                                                                                                                                                         |
+    | 6   | Confirmed.                                                                                                                                                                                                         |
+    | 7   | Confirmed as money mechanism; the rate and fee are fee-schedule data.                                                                                                                                              |
+    | 8   | Confirmed with `regions.us` and the `dedicated` profile (R3-SO-13, R3-SO-19); the integrator copies the schema to `tools/schemas`.                                                                                 |
+    | 9   | Not an ADR question: STA-545 owns gate B.                                                                                                                                                                          |
+
+20. **Values.** This ADR adds no value of its own; each answer names whether its value is seed, pack, settings,
+    rule-set or deployment data where it sets one.
+
+## Consequences
+
+- Each dependent build reads one row instead of the hand-over.
+- An answer the owner changes is a change to one row here and, where linked, to that ADR.
+
+## Enforcement
+
+planned — when this ADR is accepted, each confirmed row becomes the governing contract line of the code it
+confirms. Nothing checks it.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: `notes/handover/build-wave10-2026-10-25.md` (per builder: owner questions);
+`notes/handover/review-round-2/cross.md`; `notes/handover/review-round-3/stackra-os.md` (R3-SO-19);
+`notes/handover/review-round-3/owner-answers.md`; `notes/handover/review-round-4/whole-plan.md`;
+`notes/handover/stackra-package-needs.md` (conflicts to settle).

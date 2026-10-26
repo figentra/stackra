@@ -1,0 +1,78 @@
+---
+title: "0372 — National digital ID sign-in (Nafath, UAE Pass, Egypt digital ID) as ZITADEL external identity providers"
+description: "Proposed · 2026-10-26"
+---
+
+<Note>
+  Proposed (STA-806). It reads with
+  [0206](/adr/0206-zitadel-is-the-identity-provider-and-stackra-identity-is-provider-neutral)
+  (ZITADEL is the provider, identity is provider-neutral),
+  [0207](/adr/0207-authentication-assurance-and-machine-identities) (assurance levels and step-up),
+  [0361](/adr/0361-principals-and-parties) (one ZITADEL instance per region),
+  [0353](/adr/0353-data-residency-a-region-fixed-at-sign-up-a-login-directory-that-only-routes-and-copies-within-a-jurisdiction)
+  (residency) and
+  [0370](/adr/0370-market-packs-signed-dated-overlaid-data-with-pins-and-legal-floors) (market
+  packs). It answers the wave 10 identity builder's question 1.
+</Note>
+
+## Context
+
+Market packs list national digital ID sign-in among their sign-in methods (config-model section 1): Nafath in Saudi
+Arabia, UAE Pass in the UAE and Egypt's digital ID. Wave 10 built only configuration in `@stackra/identity`:
+`externalProviders` (a provider code to a ZITADEL IdP id), the hint scope template
+`urn:zitadel:iam:org:idp:id:{id}`, the pack key `identity.sign_in_providers`, and `SignInOptions` threaded through the
+PKCE and BFF drivers. The row asked for an ADR saying where these providers live and what decides which ones a user
+sees. The alternative of a Stackra driver per national provider was weighed and rejected: 0206 makes ZITADEL the only
+provider and keeps the login path out of our services.
+
+## Decision
+
+1. **External IdPs of ZITADEL.** Each national ID is configured as an external identity provider on the ZITADEL
+   instance of the region that serves its market (0361), using ZITADEL's generic OIDC or SAML provider. No Stackra
+   package and no product service calls a national ID API on the sign-in path; `@stackra/identity` only asks ZITADEL to
+   start the flow at that IdP through the hint scope.
+2. **Brokered when needed.** A national ID that does not speak OIDC or SAML to a relying party of our kind is fronted
+   by a broker the OS identity service operates (an OIDC bridge or a licensed aggregator), registered in ZITADEL as
+   the external IdP. The broker is an OS integration, never a Stackra package.
+3. **Which methods a market offers is pack data.** `identity.sign_in_providers` in the market pack lists the provider
+   codes in display order. `signInProvidersOf` shows only codes that the deployment maps to an IdP id, so a pack can
+   list a provider before its instance is configured. A tenant setting may hide a pack method for its own users; it
+   can never add one the pack does not list. A pack may make one method required for a product (a floor), for example
+   a government edition.
+4. **Ids are deployment configuration.** The code-to-IdP-id map (`IdentityConfig.externalProviders`) differs per
+   instance and lives in the environment's configuration; the client credentials of each IdP live in Infisical and in
+   ZITADEL, never in a pack. The hint scope template is ZITADEL mechanism and stays a code default.
+5. **Assurance from data.** The assurance level a national ID sign-in grants is pack data
+   (`identity.idp_assurance.<code>`), so the step-up rule of 0207 can accept it without a release.
+6. **Linking, not merging.** A national ID sign-in links to an existing account only after the user proves that
+   account (signed in, or a verified identifier) and confirms; accounts are never merged by name. The national ID
+   number, when the IdP returns one, is classified `regulated` (0134) and stored only where verification needs it.
+7. **Sign-in is not verification.** KYC and KYB checks go through the Verification port and the pack key
+   `verification.drivers`; a national ID sign-in may feed that record but does not replace it.
+8. **Residency.** A national IdP is configured only on the instance of its market's region; its claims never leave
+   that region's directory (0353).
+9. **Values.** Pack data: `identity.sign_in_providers`, `identity.idp_assurance.*`, any required-method floor. Settings:
+   a tenant's hidden methods. Deployment configuration: IdP ids per instance. Secrets: IdP client credentials. Nothing
+   here is a rule set or seed data.
+
+## Consequences
+
+- A new national ID is a ZITADEL configuration, a pack edit and (if needed) a broker in OS, not a Stackra release.
+- The login app renders the buttons from data, so a market can turn a method on by publishing a pack version.
+- The OS identity service owns the onboarding with each national ID operator, including any broker agreement.
+
+## Enforcement
+
+planned — `@stackra/identity` tests check that a pack code with no configured IdP id is not offered; the section
+schema of `identity` in `@stackra/market-packs` (review round 2, X2-19) refuses an unknown key. Nothing checks it in CI
+yet.
+
+## Open questions
+
+1. **Protocol per operator.** Whether each operator accepts a direct OIDC or SAML relying party of a SaaS platform, or
+   requires a licensed broker, must be confirmed with that operator before its market's launch gate.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: `notes/handover/build-wave10-2026-10-25.md` (identity builder, not built item 5 and question
+1); `notes/handover/config-model.md` section 1 (sign-in and verification); `packages/security/identity/src/core/functions/sign-in-providers-of.function.ts`.

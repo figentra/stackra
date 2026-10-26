@@ -1,0 +1,83 @@
+---
+title: "0375 — Rule fact sources and outcome kinds as kinds, ModelAddition options, and the edition bundle gen writes"
+description: "Proposed · 2026-10-26"
+---
+
+<Note>
+  Proposed (STA-806). It names the declared forms that
+  [0331](/adr/0331-stackra-rules-one-condition-engine-for-every-rule-consumer) (decisions 4 and 9)
+  and
+  [0336](/adr/0336-edition-additions-typed-fields-on-another-products-models-and-screens-in-its-panel-slots)
+  (decision 1) left open, so gen can collect them, and reads with
+  [0335](/adr/0335-editions-a-product-made-of-another-products-modules-packs-brand-and-entitlement-bundle)
+  and
+  [0350](/adr/0350-additions-across-products-slots-in-app-screens-released-extension-points-rule-facts-and-enhanced-modules).
+  It answers the wave 10 CLI builder's question 8 and the data builder's question 4 (review round 2,
+  X2-25).
+</Note>
+
+## Context
+
+`@stackra/rules` describes fact sources and outcome kinds as plain constants that satisfy `FactSource` and
+`OutcomeKind`. Gen discovers code by kind base, so it cannot find them, and the rule builder cannot list what a
+tenant's installed modules offer. 0336 writes `ModelAddition(Product)({ ... })` but defines no options; wave 10 built
+`ModelAddition(Product)` in `@stackra/model` with none, and did not build the edition bundle output, because the
+edition's `product` section lives in `runway.yaml` (0335 decision 2). Six products now rest on additions and edition
+bundles (X2-25).
+
+## Decision
+
+1. **Fact sources and outcome kinds are kinds.** A consumer module declares a fact source in a new module group, `rules/` (an addition to 0294 decision 13), as
+   `<name>.fact-source.ts`, a class that extends `FactSource({ fields })`, and an outcome kind as
+   `<name>.outcome-kind.ts`, a class that extends `OutcomeKind({ label, params })`. `@stackra/rules` exports both kind
+   bases (registered as `fact_source` and `outcome_kind`); the existing `FactSource` and `OutcomeKind` types become
+   their option types.
+2. **Identities.** Gen derives the key from the file stem, prefixed by the module key (`returns.refundWindow`), and
+   locks it in `stackra.manifest.json` as it does for an action key (0294 decision 20). A stored outcome carries the
+   full key. Two modules can no longer collide on a key.
+3. **Gen collects them.** The manifest records, per module, its fact sources (with the fields an installed edition's
+   addition adds, 0350 decision 3) and its outcome kinds. The rule builder offers a tenant only the fields and kinds of
+   modules installed for it; a stored rule set naming an unknown one fails gen's check and the engine's
+   `checkOutcomes`.
+4. **Floors on parameters.** An outcome parameter of type number or money may name a pack floor key (`floor:`). A money
+   floor is a `{ amount, currency }` pack value compared in the pack currency; a currency mismatch is refused (X2-16).
+   The rules studio refuses an outcome past its floor at save time, and the engine moves it to the floor at evaluation
+   time and reports it in `Decision.floored`.
+5. **`ModelAddition(Base, options?)`.** The kind base stays in `@stackra/model` (`model_addition`). Fields are the
+   class body, as on any model. The one optional options object holds:
+   - `facts`: which addition fields join the base model's fact source: `"all"` (the default), a list of field names, or
+     `"none"`;
+   - `permission`: `"base"` (the default: the fields take the base record's permissions, 0336 decision 3) or a
+     permission key of the edition that guards writing these fields.
+
+   Slots and placements are not options: they stay files in `resources/` and `blocks/` (0336 decision 4). 0336's
+   two-call form is read as this one call.
+
+6. **The edition bundle gen writes.** Gen reads the root `runway.yaml` `product` section through `@stackra/runway`'s
+   schema as a build input (not a deploy step, 0352 decision 5) and writes an `edition` section into the product's
+   manifest: product key, base key and version range, each addition (base model, fields, side table, wire key), each
+   placement, each implemented extension point, and the enhanced modules (0350 decision 5). The registry publishes it
+   with the product (0335 decision 5). How bundles combine on one tenant's bill is the plan-catalogue composition rule
+   (X2-10), owned by the plan-catalogue admin ADR, 0391.
+7. **Values.** A fact source and an outcome kind are code (mechanism). What a rule tests and yields is rule-set data
+   seeded in the product's seed pack and edited in the rules studio. Floor values are pack data. Addition fields are
+   code; the values in them are tenant data.
+
+## Consequences
+
+- A product adds a rule input or outcome by adding a file; the builder shows it to tenants who have that module.
+- Gen can fail an edition whose additions or placements no longer match the base version it builds against.
+- Existing constants that satisfy `FactSource` or `OutcomeKind` move to the new files when the rules package adopts
+  the kind bases.
+
+## Enforcement
+
+planned — gen (STA-340): `fact_source_unknown`, `outcome_kind_unknown`, `outcome_floor_unknown` and the
+`addition_target_missing` and `addition_key_collision` checks of 0336; a `@stackra/rules` test that a money floor with
+another currency is refused.
+
+## Supersedes and sources
+
+Supersedes: none. Amends, when accepted: 0294 (decision 13 gains the `rules/` group), 0331 (decisions 4 and 9 gain a declared form) and 0336 (decision 1's options).
+Sources: `notes/handover/build-wave10-2026-10-25.md` (CLI builder, not built items 2 and 3, question 8; data builder,
+question 4; rules builder, questions 2 and 3); `notes/handover/review-round-2/cross.md` (X2-10, X2-16, X2-25).

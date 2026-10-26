@@ -4,6 +4,14 @@ description: "Accepted, amended by 0294 · 2026-10-20"
 ---
 
 <Note>
+  Amendment proposed 2026-10-26 (STA-806) in
+  [0382](/adr/0382-the-action-pipeline-gains-an-approval-step-a-rate-limit-step-and-a-reserve-then-commit-hook):
+  an approval step after flag, a rate-limit step after idempotency, and the unit of work run inside
+  the `LimitReservation` hook (reserve-then-commit). Until 0382 is accepted, the order of the 0294
+  Note below stands.
+</Note>
+
+<Note>
   Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming), the
   programming model v3: the pipeline order is now tenancy, permission, precondition, entitlement,
   flag, idempotency, interceptors, and then `handle`. Decision 1's order (tenancy, iam, policy,

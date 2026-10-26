@@ -1,0 +1,78 @@
+---
+title: "0380 — Data-class effects for the built-in classes, seeded as data over a code floor"
+description: "Proposed · 2026-10-26"
+---
+
+<Note>
+  Proposed (STA-806). It sets the four effects that
+  [0341](/adr/0341-product-defined-data-classes-and-the-privileged-class) decision 2 left to "the
+  change that ships `DataClass`" for the six classes of
+  [0134](/adr/0134-data-invariants-classification-and-delete-lifecycle) decision 2, and adds a fifth
+  effect for the model region. It answers the wave 10 data builder's question 3.
+</Note>
+
+## Context
+
+0134 gives every field one of six classes (`public`, `internal`, `pii`, `financial`, `secret`, `regulated`) with
+"fixed effects" it never lists. 0341 adds product classes, `privileged`, and four effects: `ai`, `support`, `search`
+and `export`. Wave 10 shipped `DataClass` and the enums (`AiAudience`, `SupportAccess`, `SearchSnippet`,
+`ExportLabel`) with snake_case codes, and only `privileged` with values, because the six are a policy decision. Four
+products answered the same policy in four places (X2-35); the owner's principle makes the values data, while the
+handling of a secret is a safety floor.
+
+## Decision
+
+1. **Effects are seed data in `data-class` records.** `seed-pack:os` holds one `data-class:<key>` record per class with
+   its `ai`, `support`, `search`, `export` and `region` effects. Products seed their own classes in their seed packs.
+   A product or a tenant may tighten a class's effects, never loosen them below the floor of decision 3.
+2. **Seeded values for the built-in classes.**
+
+   | Class        | `ai`            | `support` | `search`     | `export`   | `region`                   |
+   | ------------ | --------------- | --------- | ------------ | ---------- | -------------------------- |
+   | `public`     | `allowed`       | `visible` | `snippet`    | `labelled` | `any`                      |
+   | `internal`   | `allowed`       | `visible` | `snippet`    | `labelled` | `any`                      |
+   | `pii`        | `allowed`       | `visible` | `snippet`    | `labelled` | `in_region`                |
+   | `financial`  | `allowed`       | `visible` | `snippet`    | `labelled` | `in_region`                |
+   | `regulated`  | `tenant_opt_in` | `hidden`  | `no_snippet` | `labelled` | `in_region_zero_retention` |
+   | `privileged` | `tenant_opt_in` | `hidden`  | `no_snippet` | `labelled` | `in_region_zero_retention` |
+   | `secret`     | `never`         | `hidden`  | `no_snippet` | (never)    | (never sent)               |
+
+   Product classes named by the answers are seeded the same way: medical and health as `privileged` (in-region, zero
+   retention, tenant opt-in), safeguarding with `ai: never` (X2-35).
+
+3. **The floor is code.** Code holds the order of strictness of each effect (`never` is stricter than `tenant_opt_in`,
+   which is stricter than `allowed`; `hidden` than `visible`; `no_snippet` than `snippet`; `in_region_zero_retention`
+   than `in_region` than `any`) and one invariant from 0134 decision 5: a `secret` field is never stored in audit,
+   never indexed, never exported, never logged and never given to a model, whatever a record says. The seed loader
+   refuses a `data-class` record that loosens a class below its floor.
+4. **A fifth effect, `region`.** The model router of `@stackra/ai` reads `region` to choose a model provider for a
+   context that holds the class (`any`, `in_region`, `in_region_zero_retention`). It joins the four effects of 0341 in
+   `@stackra/model` and in a product's `DataClass` options.
+5. **Snake_case codes.** The effect values are the snake_case codes of
+   [0231](/adr/0231-naming-and-casing-standard) (`tenant_opt_in`, `no_snippet`); 0341's camelCase spellings are read
+   as these.
+6. **Values.** Seed data: every `data-class` record. Settings: a tenant's tightening (for example turning AI off for
+   `pii`), resolved through the settings cascade with the seeded value as the product default. Rule sets: per-action AI
+   approval modes stay in `rule-set:<product>:ai-approval` ([0360](/adr/0360-the-ai-chain-four-layers-one-spine-approval-modes-and-the-never-bypass-floor)).
+   Code: the strictness order and the secret invariant.
+
+## Consequences
+
+- One table answers what an agent, a support engineer, search and an export may do with each class, and a product
+  cannot weaken it.
+- The AI context builder, support access, the search indexer and the export writer read records, not constants.
+- Adding `region` is a change to `@stackra/model` and the AI router.
+
+## Enforcement
+
+planned — the `data-class` kind's validator in the seed registry
+([0374](/adr/0374-seed-packs-the-stackra-seed-pack-command-and-the-stackra-new-template-set) decision 2) refuses a
+loosened class; a `@stackra/model` test fixes the strictness order; the secret invariant is tested in the audit,
+search and export writers.
+
+## Supersedes and sources
+
+Supersedes: none. Amends, when accepted: 0134 decision 2 (the effects are listed here) and 0341 decision 2 (a fifth
+effect; snake_case codes). Sources: `notes/handover/build-wave10-2026-10-25.md` (data builder, question 3);
+`notes/handover/review-round-2/cross.md` (X2-35); `notes/handover/review-round-4/whole-plan.md` (R4-11, no new class
+for government matters).

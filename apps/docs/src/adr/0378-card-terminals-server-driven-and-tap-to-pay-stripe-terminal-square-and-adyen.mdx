@@ -1,0 +1,54 @@
+---
+title: "0378 — Card terminals, server-driven and Tap to Pay: Stripe Terminal, Square and Adyen"
+description: "Proposed · 2026-10-26"
+---
+
+<Note>
+  Proposed (STA-806). The per-provider decision of
+  [0339](/adr/0339-point-of-sale-peripherals-printers-labels-drawer-scanner-display-and-the-native-bluetooth-driver)
+  open question 1 for terminals the payments service drives through the provider's cloud, and for
+  Tap to Pay on the staff app's phone. The local-link family is
+  [0377](/adr/0377-card-terminals-semi-integrated-over-a-local-link-geidea-network-international-paymob-and-neoleap).
+</Note>
+
+## Context
+
+Wave 10 built a Stripe Terminal driver of `TerminalGateway` on the Stripe Connection: server-driven readers with
+on-reader tipping and cancel-then-reconcile. The owner answered that own-account payments in the US start with Stripe,
+and that Square and Adyen are built when the first design partner needs one (RV-53). Tap to Pay on iPhone and Android
+is a launch item in the US and for Academorix (US-36, RV-45) and needs an Apple entitlement per app bundle (R3-SO-12).
+
+## Decision
+
+1. **The split for this family.** The provider's cloud drives the reader. The `TerminalGateway` driver is the
+   provider's Connection on the server, reached through `PaymentGateways`; `CardTerminal` in `@stackra/peripherals`
+   only records which reader a till uses and reports its state. The till never speaks the reader's protocol.
+2. **Stripe Terminal.** Built. Server-driven readers, on-reader tipping and cancel-then-reconcile, for `us` and `eu`
+   and wherever a pack offers Stripe. Stripe Terminal's Tap to Pay is a `SoftPos` driver of the same family in the
+   Expo staff app, using Stripe's SDK as a native module.
+3. **Square.** Driver `square` (gateway and Terminal) is built when the first design partner on Square hardware signs
+   (RV-53, R4-5); until then a US partner on other hardware moves to certified Stripe readers or waits.
+4. **Adyen.** Driver `adyen` (gateway and terminals through Adyen's cloud terminal API) under the same trigger as
+   Square, for `us` and `eu`.
+5. **Tap to Pay needs an entitlement per app.** Every app bundle that offers Tap to Pay, including each white-label
+   app, holds the platform entitlement for it; `launch-gate:<pack>:<product>` lists it.
+6. **Choice is data.** As in 0377 decision 8: `market-pack:<code>.payments.terminal-providers`, managed or own
+   Connections, tips from settings and rule sets.
+7. **Values.** Pack data: terminal providers per market, `payments.byo-providers` (`us`: Stripe, Square, Adyen,
+   PayPal; `eu`: Stripe, Adyen) and the launch-gate rows. Settings and rule sets: tips. Code: the drivers.
+
+## Consequences
+
+- A US or EU merchant can bring its own Stripe account and readers at launch; Square and Adyen follow demand.
+- White-label apps carry an extra store review step for the Tap to Pay entitlement.
+
+## Enforcement
+
+planned — each driver's conformance suite against the provider's test mode; the launch gate lists each certified
+driver and the Tap to Pay entitlement per app bundle.
+
+## Supersedes and sources
+
+Supersedes: none. Answers 0339 open question 1 for this family. Sources: `notes/handover/build-wave10-2026-10-25.md`
+(payments builder, not built item 1); `notes/handover/review-round-3/owner-answers.md` (RV-53);
+`notes/handover/review-round-3/stackra-os.md` (R3-SO-04, R3-SO-12); `notes/handover/review-round-4/whole-plan.md` (R4-5).

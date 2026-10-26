@@ -3,6 +3,14 @@ title: "0357 — Payments architecture: ports, gateway drivers, a platform layer
 description: "Accepted · 2026-10-25"
 ---
 
+<Note>
+  Note 2026-10-26 (STA-806), package-needs conflict 6 (OS-343 and the Commerce answers): loyalty
+  points stay on `@stackra/loyalty-kit`, which keeps their balances and history. Decision 4's
+  "loyalty" is not a payments-ledger account kind: payments-ledger holds store credit, gift cards
+  and prepaid balances, and a points redemption reaches checkout as a tender whose value loyalty-kit
+  gives. The other decisions stand.
+</Note>
+
 ## Context
 
 Commerce, Muslin, Academorix fees, Juristra invoices and Figentra's own billing all take payments. Academorix (Stripe

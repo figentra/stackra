@@ -1,0 +1,60 @@
+---
+title: "0382 — The action pipeline gains an approval step, a rate-limit step and a reserve-then-commit hook"
+description: "Proposed · 2026-10-26"
+---
+
+<Note>
+  Proposed (STA-806). It amends [0138](/adr/0138-pipeline-order-is-fixed) as amended by
+  [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming), which fixed the
+  order tenancy, permission, precondition, entitlement, flag, idempotency, interceptors, `handle`.
+  It answers the wave 10 identity builder's question 2 and the runtime builder's questions 5 and 6.
+</Note>
+
+## Context
+
+Wave 10 needed three things the fixed order has no slot for. The approval park of
+[0098](/adr/0098-actions-are-the-unit) decision 3 needs a step. A declared `rateLimit`
+([0137](/adr/0137-declared-action-options-and-refusal-codes)) needs a step. And plan limits must be checked at commit
+time, not from a snapshot, so two creates racing at a limit cannot both pass ([0215](/adr/0215-entitlements), owner
+round 3 item 18): the identity builder could not wrap creates in `LimitReservationService` because the pipeline had
+no commit hook. `@stackra/actions` now carries all three (`PipelineStage.Approval`, `PipelineStage.RateLimit`, the
+`LimitReservation` port), and the audit entry of a successful call is written inside the unit of work
+([0212](/adr/0212-audit-evidence-access-logs-hash-chain-and-retention) decision 4).
+
+## Decision
+
+1. **The order.** tenancy (with the `LiveConfigurationGuard` of a structural action), permission, precondition,
+   entitlement, flag, **approval**, idempotency (with a device's offline cap), **rate limit**, interceptors, then
+   `handle`. Nothing reorders it; an app's gate stays a precondition.
+2. **Approval.** The step asks the `ApprovalGate` port with the validated input, the key, the permission, the risk and
+   the effect tags. Which calls need approval and who approves is a rule set the driver evaluates. The step fails
+   closed: an action with no gate bound is an error, and an app with no approvals binds `OpenApprovalGateDriver` on
+   purpose (X2-14). A query is never parked.
+3. **Rate limit.** The area's and the action's token buckets run after idempotency, so a replayed call never spends a
+   token.
+4. **Reserve-then-commit.** The action's unit of work runs inside `LimitReservation.reserve(call, input, commit)`.
+   `@stackra/entitlements` binds it over `LimitReservationService`: for a call that creates a counted model, it holds
+   the limit's lock, checks grant and count, runs the commit and releases. A call that counts against no limit
+   commits as it is; an app with no plan limits binds none and the hook is skipped.
+5. **Audit and usage inside the commit.** A successful call's audit entry and a metered action's usage event are
+   written in its unit of work, so they commit or roll back with the writes; refusal and replay entries are written
+   outside.
+6. **Values.** None in code. Approval rules and approvers are rule sets; limits are plan-catalogue data; rate-limit
+   budgets are settings with platform-floor values; the effect tags are declared per action.
+
+## Consequences
+
+- No action writes reservation or approval code itself.
+- A service without an approval binding does not start an action, which makes the binding a deliberate choice.
+
+## Enforcement
+
+`packages/application/actions/src/core/services/action-pipeline.service.ts` refuses a reordered chain; its tests sit in
+`packages/application/actions/src/core/services/__tests__/`. planned — gen refuses a service that declares
+financial, irreversible, bulk, pii or external-communication actions without an `ApprovalGate` binding.
+
+## Supersedes and sources
+
+Supersedes: none. Amends, when accepted: 0138 decision 1 as amended by 0294. Sources:
+`notes/handover/build-wave10-2026-10-25.md` (identity builder, not built item 4 and question 2; runtime builder,
+questions 5 and 6); `notes/handover/review-round-2/cross.md` (X2-14).

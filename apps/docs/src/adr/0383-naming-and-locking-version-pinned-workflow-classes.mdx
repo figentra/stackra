@@ -1,0 +1,54 @@
+---
+title: "0383 — Naming and locking version-pinned workflow classes"
+description: "Proposed · 2026-10-26"
+---
+
+<Note>
+  Proposed (STA-806). It amends
+  [0152](/adr/0152-workflow-semantics-timeouts-waits-pinned-versions-and-one-graph-format) decision
+  2 (a run is pinned to the version it started on) with the file and class names that
+  [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming) decisions 2 and 20 do
+  not give for an older version. It answers the wave 10 rules and workflow builder's question 6.
+</Note>
+
+## Context
+
+`@stackra/workflow` ships a changed graph as a new class with the same key and `Workflow({ version: n })`; a run
+resumes on the class of the version it started on, so the older class stays deployed until its runs end. Two classes
+then share one key, and 0294 rule R2 names a class from its file, so two files cannot both be `<name>.workflow.ts`.
+Nothing said how the older class is named, how gen derives its key, or when it may be deleted.
+
+## Decision
+
+1. **The current version keeps the plain name.** `<name>.workflow.ts` exports `<Name>Workflow`, holds the highest
+   version, and derives its key as any workflow does.
+2. **An older version gets a version suffix.** A retained version lives beside it as `<name>-v<n>.workflow.ts`,
+   exporting `<Name>V<n>Workflow`, with `Workflow({ key, version: n })`. It writes the key explicitly, the same key the
+   current class derives, because its own file name would derive another.
+3. **Gen checks the set.** For one key: versions are distinct whole numbers; the plain-named class holds the highest;
+   a `-v<n>` class declares exactly version `n`; an explicit key matches a plain-named class's derived key. The
+   manifest locks each key with its deployed versions.
+4. **New runs start on the highest version.** Only resumes use an older class.
+5. **Deleting an older version.** An older class may be removed only when no run pinned to it is open; the workflow
+   journal answers that (`workflow.runs` by key, version and status), and `stackra runway deploy` refuses a release
+   that drops a version with open runs.
+6. **Studio automations are not classes.** An automation document carries its version and the run keeps its document
+   (0245 decision 8), so this naming applies to coded workflows only.
+7. **Values.** None; this is naming and mechanism. Which automations a product ships is seed data
+   (`workflow-template` records).
+
+## Consequences
+
+- A graph change is a copy of the old file to `-v<n>` and an edit of the plain file, a pattern a codemod can do.
+- An old class's lifetime follows its runs, not a guess.
+
+## Enforcement
+
+planned — gen (STA-340): `workflow_version_duplicate`, `workflow_version_not_highest`, `workflow_version_suffix_mismatch`,
+`workflow_key_mismatch`; runway's deploy check against the journal.
+
+## Supersedes and sources
+
+Supersedes: none. Amends, when accepted: 0152 decision 2 and 0294 decision 2 (a version suffix in a workflow file
+stem). Sources: `notes/handover/build-wave10-2026-10-25.md` (rules and workflow builder, question 6);
+`packages/runtime/workflow/README.md` (versions).

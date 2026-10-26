@@ -1,0 +1,65 @@
+---
+title: "0379 — The tax provider port lives in @stackra/pricing/contracts, and tax providers are Connections"
+description: "Proposed · 2026-10-26"
+---
+
+<Note>
+  Proposed (STA-806). It places the port that [0244](/adr/0244-markets-owned-by-pricing) (tax is
+  calculated on the Market, in pricing) implies, and applies
+  [0356](/adr/0356-choosing-a-provider-per-tenant-and-market-through-the-connection-with-a-market-default)
+  and
+  [0376](/adr/0376-provider-resolution-ports-credential-references-managed-or-own-accounts-and-the-telephony-ports)
+  to tax. It answers the wave 10 commerce primitives builder's question 2.
+</Note>
+
+## Context
+
+Wave 10 put a `TaxProvider` port in `@stackra/pricing/contracts`, a rate-table engine (`taxByRates`) and a `memory`
+driver; the US sales-tax provider driver was not built, and the row was marked "new, not filed". A container port is
+bound once per deployment, but which tax engine serves a sale depends on the market and, under "managed or bring your
+own", on the tenant: the 2026-10-26 rounds set Stripe Tax as the managed default and Avalara as an add-on, with a
+tenant's own account allowed (US-46, M3-4, R3-SO-19).
+
+## Decision
+
+1. **Home.** `TaxProvider` stays in `@stackra/pricing/contracts`, because tax is computed on the Market and pricing
+   owns Markets (0244). No new package and no separate tax package.
+2. **Two ways to answer.** A market whose own tables suffice (VAT and GST markets) answers with `taxByRates` over the
+   pack's rate table. A market that needs a provider (US sales tax) answers through a provider. Which one is pack data:
+   `market-pack:<code>.tax.engine` (`rates` or `provider`).
+3. **Providers are Connections.** A tax provider is an Integration whose Connection implements a `TaxGateway`
+   interface (quote, and record and void a finalised transaction where the provider keeps one), in
+   `@stackra/pricing/contracts`. The production `TaxProvider` driver resolves the Connection through `ProviderResolver`
+   under the `tax` capability, so a tenant's own account wins and the managed Connection serves otherwise. Provider
+   drivers live with the integrations connectors, not in pricing.
+4. **First providers.** Stripe Tax is the managed default where a pack's engine is `provider`; Avalara is an add-on and
+   an own-account option. Both are pack and catalogue data (`market-pack:us.providers.tax`, `provider-category:tax`),
+   never code.
+5. **Snapshot on the document.** The quote, the provider and its transaction reference are stored on the order or
+   invoice, so a reprint or a refund never recomputes tax with today's rates.
+6. **A missing rate is an error.** As built: a line whose class has no rate refuses; it is never taxed at zero.
+7. **Values.** Pack data: rate tables, tax engine per market, tax providers, registration thresholds. Catalogue data:
+   `provider-category:tax` modes and the add-on price. Settings: the tenant's tax registrations and product tax
+   classes. Rule sets: tax per line exceptions (config-model section 4). Code: the port, `taxByRates` and the drivers.
+
+## Consequences
+
+- A VAT market needs no provider and no network call to price a sale.
+- A US tenant can bring its own Avalara account without a release.
+- Finalising and refunding an invoice in a provider market adds a provider call, which the invoicing workflow makes.
+
+## Enforcement
+
+planned — `@stackra/pricing` tests: the driver picks `taxByRates` or the resolved Connection from pack data only, and a
+missing rate refuses.
+
+## Open questions
+
+1. **Record and void timing.** Whether recording happens at invoice finalisation or at payment capture is the OS
+   invoicing workflow's choice and is not decided here.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: `notes/handover/build-wave10-2026-10-25.md` (commerce primitives builder, not built item 2,
+question 2); `notes/handover/review-round-3/stackra-os.md` (R3-SO-19: pricing question 2);
+`packages/commerce/pricing/src/contracts/ports/tax-provider.port.ts`.
