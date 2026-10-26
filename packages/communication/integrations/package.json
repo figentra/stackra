@@ -73,6 +73,7 @@
     "@stackra/container": "workspace:*",
     "@stackra/contracts": "workspace:*",
     "@stackra/errors": "workspace:*",
+    "@stackra/market-packs": "workspace:*",
     "@stackra/money": "workspace:*",
     "@stackra/validation": "workspace:*"
   },

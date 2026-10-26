@@ -9,6 +9,7 @@
  * Runtime: node
  * Governing contract: ADR 0294 (decision 15); ADR 0269 (decision 3); the STA-347 stand-in barrel decision.
  */
+export { MemoryPayrollConnector } from "#testing/connectors/memory-payroll.connector";
 export { INTEGRATIONS_TESTING_PLUGIN } from "#testing/constants/integrations-testing-plugin.constant";
 export { fakeIntegrationApi } from "#testing/functions/fake-integration-api.function";
 export { makeConnection } from "#testing/functions/make-connection.function";

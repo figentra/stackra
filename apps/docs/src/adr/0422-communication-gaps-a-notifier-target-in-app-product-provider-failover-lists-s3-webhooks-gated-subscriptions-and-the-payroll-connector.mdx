@@ -1,0 +1,58 @@
+---
+title: "0422 — Communication gaps: a notifier target, in-app product, provider failover lists, S3 webhooks, gated subscriptions and the payroll connector"
+description: "Proposed · 2026-10-26"
+---
+
+<Note>
+  Proposed (STA-836, STA-837, STA-839, STA-826, STA-714 integrations part). It extends
+  [0223](/adr/0223-notifications-channels-cascading-templates-manual-sends-and-preferences),
+  [0356](/adr/0356-choosing-a-provider-per-tenant-and-market-through-the-connection-with-a-market-default)
+  and [0224](/adr/0224-stackra-webhooks).
+</Note>
+
+## Context
+
+The OS notifications and audit services filed gaps: the notifier driver can only reach `messages.message.send@1` with a
+mail-only input; an in-app entry has no product; `ProviderResolver` answers one Connection and reads the market only
+from context; no generic market-pack `ProviderDefaults` driver ships; webhooks have no S3 target and no entitlement
+gate. Payroll needs a connector contract (RV-50: no own payroll).
+
+## Decision
+
+1. **Notifier target.** `NotificationsNotifierDriver` takes a `NotifierTarget`: any action ref and a payload mapper
+   that receives the template key, category, principal, market (from a bound `MarketContext`), data and each rendered
+   channel, and answers the action's input or `null` to skip. The default stays `messages.message.send@1` with the mail.
+2. **In-app product.** `InAppMessage.product` is required, and `InAppStore.list` filters by `product`, for a
+   per-product inbox and the ethical wall.
+3. **Failover list.** `ProviderResolver#candidates` answers every Connection to try: the tenant's own (mode `own`),
+   then the Market's platform ones (mode `managed`), each in pack order. `resolve` is its first entry, loaded lazily.
+   Both take the Market as an argument and fall back to `MarketContext`. Whether an own Connection may fail over to a
+   managed one is the caller's policy. `ProviderChoice.connectionId` is optional: a bring-your-own-only provider is
+   offered with no platform Connection. `MarketPackProviderDefaultsDriver` reads the pack's `providers.<capability>`
+   list (live entries, pack order) through the host's `ProviderPackSource`, as payments' driver does.
+4. **Webhooks.** An endpoint URL `s3://<bucket>/<prefix>?region=` receives each delivery as an object keyed
+   `<prefix>/<type>/<yyyy>/<mm>/<dd>/<eventId>.json`, the signed headers as metadata, written by the `s3`
+   `WebhookObjectSink` with the platform role; a tenant's own bucket grants that role by bucket policy, so no tenant
+   credential is stored. A registration row may name an entitlement; `register` refuses a gated event without the grant
+   and the fan-out rechecks it, through `WebhookEntitlementSource` (fail closed when unbound).
+5. **Payroll.** `IntegrationCategory.Payroll` and `PayrollConnector.pushPayInputs(batch, idempotencyKey)` (hours,
+   sessions, tips, commission per employee, with the provider's employee id and pay code from the tenant's mapping),
+   checked by `assertPayInputs`; `MemoryPayrollConnector` in `./testing`. The ZenHR, Kombo and Gusto connectors and the
+   data-transfer export live with the capability's owner and are not decided here.
+
+## Consequences
+
+- A notifications service with another module or input needs no fork of the driver.
+- Channel gateways stop repeating the ADR 0356 order rule.
+- The audit SIEM stream is gated by plan in one place and can land in a bucket.
+
+## Enforcement
+
+planned — the tests beside each file: `notifications-notifier.driver.test.tsx`, `in-app-store.fake.test.ts`,
+`provider-resolver.service.test.ts`, `market-pack-provider-defaults.driver.test.ts`, `deliver-webhook.action.test.ts`,
+`webhook-endpoint.service.test.ts`, `memory-payroll.connector.test.ts`.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: OS `services/notifications/SPEC.md` gaps 1, 3, 5, 6 and 8; OS `services/audit/SPEC.md`
+gap 7; RV-50; RV-26; R3-SO-05; STA-836; STA-837; STA-839; STA-826; STA-714.

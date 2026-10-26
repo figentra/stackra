@@ -5,7 +5,8 @@
  * Boundary: an `Enum.of` value plus the type of the same name. Gen derives each category's label from the code; a new
  *           shelf is a new member.
  * Runtime: isomorphic
- * Governing contract: ADR 0308 (rule 1: `Integration({ provider, category, ... })`); ADR 0231 (snake_case codes).
+ * Governing contract: ADR 0308 (rule 1: `Integration({ provider, category, ... })`); ADR 0231 (snake_case codes); ADR
+ *                     0422 (decision 5: payroll).
  */
 import { Enum } from "@stackra/contracts";
 
@@ -38,6 +39,8 @@ export const IntegrationCategory = Enum.of({
   Crm: "crm",
   /** Accounting and invoicing. */
   Accounting: "accounting",
+  /** Payroll providers the pay inputs are pushed to (`PayrollConnector`). */
+  Payroll: "payroll",
   /** Product and web analytics. */
   Analytics: "analytics",
   /** Advertising and marketing automation. */

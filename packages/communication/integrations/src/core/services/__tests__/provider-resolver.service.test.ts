@@ -3,13 +3,16 @@
  * Purpose: unit tests of `ProviderResolver` (the ADR 0356 conformance cases): the tenant's own Connection wins; with
  *          none, the Market's platform Connection serves; a provider with no driver is skipped; `accepts` filters;
  *          no Market tries only the tenant's own; nothing fitting refuses; a stored connection or credential reference
- *          reloads the exact Connection.
+ *          reloads the exact Connection; `candidates` answers the ordered failover list (own first, then managed,
+ *          each in the Market's order, a repeated provider once, a BYO-only provider own only) with the mode per
+ *          entry; a Market passed as an argument wins over the running call's.
  * Boundary: test only; the store, the defaults and the Market are in-memory stand-ins.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0269; ADR 0356 (decisions 2 to 5, enforcement).
+ * Governing contract: ADR 0022; ADR 0269; ADR 0356 (decisions 2 to 5, enforcement); ADR 0422 (decision 3).
  */
 import { describe, expect, it } from "@stackra/testing";
 
+import { ProviderMode } from "#contracts/enums/provider-mode.enum";
 import { MarketContext } from "#contracts/ports/market-context.port";
 import { ProviderDefaults } from "#contracts/ports/provider-defaults.port";
 import type { ProviderChoice } from "#contracts/types/provider-choice.type";
@@ -67,11 +70,13 @@ class Store extends ConnectionStore {
 
 class Defaults extends ProviderDefaults {
   private readonly choices: readonly ProviderChoice[];
+  readonly asked: string[] = [];
   constructor(choices: readonly ProviderChoice[]) {
     super();
     this.choices = choices;
   }
-  async providers(): Promise<readonly ProviderChoice[]> {
+  async providers(_capability: string, market: string): Promise<readonly ProviderChoice[]> {
+    this.asked.push(market);
     return this.choices;
   }
 }
@@ -163,5 +168,74 @@ describe("ProviderResolver", () => {
     await expect(resolver.byConnection<Sender>(DRIVERS, "gamma", "conn_g")).rejects.toThrow(
       NoProviderError,
     );
+  });
+
+  it("answers the failover list, own first then managed, with the mode of each", async () => {
+    const alphaTenant = Object.assign(Object.create(AlphaConnection.prototype), {
+      label: "alpha-tenant",
+      fast: true,
+    });
+    const resolver = resolverWith(
+      [
+        [BetaConnection, betaTenant],
+        [AlphaConnection, alphaTenant],
+      ],
+      [...OFFER, { provider: "alpha", connectionId: "conn_a" }],
+    );
+    const list = await resolver.candidates<Sender>("sms", DRIVERS);
+    expect(
+      list.map(({ provider, mode, connection }) => [provider, mode, connection.label]),
+    ).toEqual([
+      ["alpha", ProviderMode.Own, "alpha-tenant"],
+      ["beta", ProviderMode.Own, "beta-tenant"],
+      ["alpha", ProviderMode.Managed, "alpha-platform"],
+      ["beta", ProviderMode.Managed, "beta-platform"],
+    ]);
+    const fast = await resolver.candidates<Sender>("sms", DRIVERS, { accepts: (c) => c.fast });
+    expect(fast.map(({ connection }) => connection.label)).toEqual([
+      "alpha-tenant",
+      "beta-tenant",
+      "alpha-platform",
+    ]);
+  });
+
+  it("offers a BYO-only provider through the tenant's own Connection only", async () => {
+    const resolver = resolverWith([[BetaConnection, betaTenant]], [{ provider: "beta" }]);
+    const list = await resolver.candidates<Sender>("sms", DRIVERS);
+    expect(list.map(({ mode, connection }) => [mode, connection])).toEqual([
+      [ProviderMode.Own, betaTenant],
+    ]);
+    await expect(
+      resolverWith([], [{ provider: "beta" }]).candidates("sms", DRIVERS),
+    ).resolves.toEqual([]);
+  });
+
+  it("takes the Market as an argument over the running call's", async () => {
+    const defaults = new Defaults(OFFER);
+    const resolver = new ProviderResolver(
+      new Store(new Map(), new Map([["conn_a", alphaPlatform]])),
+      defaults,
+      new Market(undefined),
+    );
+    await expect(resolver.resolve<Sender>("sms", DRIVERS, undefined, "ae")).resolves.toBe(
+      alphaPlatform,
+    );
+    await resolver.candidates("sms", DRIVERS, { market: "eg" });
+    expect(defaults.asked).toEqual(["ae", "eg"]);
+    await expect(resolver.resolve<Sender>("sms", DRIVERS, () => false, "ae")).rejects.toMatchObject(
+      {
+        details: { capability: "sms", market: "ae" },
+      },
+    );
+  });
+
+  it("stops at the first accepted Connection when resolving one", async () => {
+    // conn_b is unknown to this store, so loading it would throw; resolve never gets that far.
+    const resolver = new ProviderResolver(
+      new Store(new Map(), new Map([["conn_a", alphaPlatform]])),
+      new Defaults(OFFER),
+      new Market("sa"),
+    );
+    await expect(resolver.resolve<Sender>("sms", DRIVERS)).resolves.toBe(alphaPlatform);
   });
 });
