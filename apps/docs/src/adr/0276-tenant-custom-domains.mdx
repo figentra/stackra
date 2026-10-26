@@ -4,6 +4,16 @@ description: "Accepted · 2026-10-21"
 ---
 
 <Note>
+  Proposed amendment 2026-10-26 (STA-666) by
+  [0437](/adr/0437-the-edge-worker-its-kv-copy-and-the-server-checks): the edge projector writes a
+  tenant host's `host:` row in the edge KV on `tenancy.domain.verified.v1`, and tenant custom
+  domains ship on day 1.
+  [0440](/adr/0440-landing-sites-are-experience-documents-rendered-at-the-edge) (decision 6): a
+  product's own landing host is a second canonical-marked host row, not a redirect; decision 6 here
+  stays for tenants. This page stands as written until those ADRs are accepted.
+</Note>
+
+<Note>
   Specifies the tenant domain flow that [0175](/adr/0175-edge-domains-and-tls) decision 4 and
   [0210](/adr/0210-tenancy-recursive-tenant-tree-lifecycle-one-context-and-region) decision 8 (T3)
   point to. It is the `domains` module of the tenancy service.

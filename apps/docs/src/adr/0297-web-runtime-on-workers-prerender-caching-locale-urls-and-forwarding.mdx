@@ -4,6 +4,17 @@ description: "Accepted, amended by 0305, 0315, 0334 · 2026-10-22"
 ---
 
 <Note>
+  Proposed amendment 2026-10-26 (STA-666) by
+  [0437](/adr/0437-the-edge-worker-its-kv-copy-and-the-server-checks) (decision 6): the OS edge
+  Worker also forwards the signed `x-figentra-tenant`, `x-figentra-product`, `x-figentra-surface`
+  and `x-figentra-realm` headers, with a timestamp, a key id and an HMAC that covers them, the
+  method, the path, a body hash and the request id.
+  [0440](/adr/0440-landing-sites-are-experience-documents-rendered-at-the-edge) renders landing
+  pages at the edge per request from cached documents; decision 3 (cache data, not HTML) still
+  holds. This page stands as written until those ADRs are accepted.
+</Note>
+
+<Note>
   Amended 2026-10-24 (STA-428) by
   [0334](/adr/0334-final-structure-review-round-up-decided-rules-without-an-adr) (rule 12): the
   security headers and the analytics defaults of every web-served app. A CSP with nonces, HSTS,
