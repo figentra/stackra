@@ -1,0 +1,159 @@
+---
+title: "Contracts"
+description: "Every Stackra package's types-only ./contracts entry: which members have one, what the contracts batch added, and the asks for the rest."
+icon: "file-contract"
+---
+
+Each package publishes its public types through a types-only `./contracts` entry
+([ADR 0117](/adr/0117-contracts-placement-and-decorator-ownership) decision 2): request and response shapes, event names
+and versioned payloads ([0141](/adr/0141-integration-event-names-and-envelope),
+[0260](/adr/0260-cross-service-calls-through-injected-clients-and-events)), config keys with their value types (0044, 0146) and DI tokens ([0042](/adr/0042-di-first-with-one-container-per-service),
+[0263](/adr/0263-di-stays-and-gen-writes-the-wiring)). `src/contracts/` is a leaf: it imports nothing from the
+package's other folders, and no symbol is exported from two entries (ADR 0294).
+
+**A dependency is met when its contract exists.** Import the declared name and keep going; a missing name is added as
+a new file in the producer's `src/contracts/` and listed in your report. Existing contract names are never renamed or
+removed.
+
+## Added by the contracts batch (STA-1215)
+
+| Member               | Path                           | Added                                                                                                                                                                                                                                                                                                                                                         |
+| -------------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@stackra/brand-kit` | `packages/developer/brand-kit` | New skeleton (package.json with the `./contracts` export, stand-in barrels, README, AGENTS). Contracts: `BrandOutput`, `Endorsement`, `KitStatus`; types `BrandKit`, `BrandKitParent`, `LocalizedText`, `BrandKitOptions` (config keys), `AssetManifest`, `AssetManifestEntry`, `BrandCheckIssue`, `BrandCheckResult`. The generator is stackra-12 (STA-957). |
+
+No product contracts batch reported a Stackra contract gap (Academorix ACA-637: none; the other product batches had
+not reported when this page was written). Add a row here when one does.
+
+## Members with a `./contracts` entry
+
+The count is the number of `export` lines in `src/contracts/index.ts` (the stand-in barrel until `stackra gen` writes
+the entry barrels, STA-339).
+
+| Member                   | Path                                   | Exports |
+| ------------------------ | -------------------------------------- | ------- |
+| `@stackra-pro/ui`        | `packages/design-system/ui-pro`        | 99      |
+| `@stackra/access-log`    | `packages/security/access-log`         | 4       |
+| `@stackra/achievements`  | `packages/application/achievements`    | 5       |
+| `@stackra/actions`       | `packages/application/actions`         | 38      |
+| `@stackra/ai`            | `packages/application/ai`              | 19      |
+| `@stackra/analytics`     | `packages/cross-cutting/analytics`     | 2       |
+| `@stackra/brand-kit`     | `packages/developer/brand-kit`         | 11      |
+| `@stackra/builder`       | `packages/experience/builder`          | 12      |
+| `@stackra/cache`         | `packages/runtime/cache`               | 2       |
+| `@stackra/clients`       | `packages/application/clients`         | 5       |
+| `@stackra/collaboration` | `packages/experience/collaboration`    | 21      |
+| `@stackra/config`        | `packages/foundation/config`           | 1       |
+| `@stackra/consent`       | `packages/security/consent`            | 5       |
+| `@stackra/data-transfer` | `packages/data/data-transfer`          | 17      |
+| `@stackra/database`      | `packages/data/database`               | 5       |
+| `@stackra/devices`       | `packages/runtime/devices`             | 18      |
+| `@stackra/documents`     | `packages/data/documents`              | 7       |
+| `@stackra/entitlements`  | `packages/security/entitlements`       | 11      |
+| `@stackra/errors`        | `packages/foundation/errors`           | 1       |
+| `@stackra/events`        | `packages/foundation/events`           | 3       |
+| `@stackra/experience`    | `packages/experience/experience`       | 7       |
+| `@stackra/feature-flags` | `packages/state/feature-flags`         | 2       |
+| `@stackra/filesystem`    | `packages/data/filesystem`             | 5       |
+| `@stackra/fiscal`        | `packages/commerce/fiscal`             | 35      |
+| `@stackra/i18n`          | `packages/foundation/i18n`             | 9       |
+| `@stackra/iam`           | `packages/security/iam`                | 13      |
+| `@stackra/icons`         | `packages/design-system/icons`         | 6       |
+| `@stackra/identity`      | `packages/security/identity`           | 23      |
+| `@stackra/integrations`  | `packages/communication/integrations`  | 40      |
+| `@stackra/locking`       | `packages/runtime/locking`             | 2       |
+| `@stackra/logger`        | `packages/foundation/logger`           | 3       |
+| `@stackra/loyalty-kit`   | `packages/commerce/loyalty-kit`        | 11      |
+| `@stackra/media`         | `packages/data/media`                  | 13      |
+| `@stackra/money`         | `packages/commerce/money`              | 3       |
+| `@stackra/navigation`    | `packages/experience/navigation`       | 6       |
+| `@stackra/notifications` | `packages/communication/notifications` | 27      |
+| `@stackra/outbox`        | `packages/runtime/outbox`              | 10      |
+| `@stackra/payments`      | `packages/commerce/payments`           | 48      |
+| `@stackra/peripherals`   | `packages/experience/peripherals`      | 23      |
+| `@stackra/platform`      | `packages/experience/platform`         | 23      |
+| `@stackra/pricing`       | `packages/commerce/pricing`            | 6       |
+| `@stackra/query`         | `packages/state/query`                 | 10      |
+| `@stackra/queue`         | `packages/runtime/queue`               | 6       |
+| `@stackra/realtime`      | `packages/runtime/realtime`            | 15      |
+| `@stackra/rules`         | `packages/application/rules`           | 8       |
+| `@stackra/sandbox`       | `packages/runtime/sandbox`             | 3       |
+| `@stackra/scheduler`     | `packages/runtime/scheduler`           | 4       |
+| `@stackra/scope`         | `packages/security/scope`              | 7       |
+| `@stackra/search`        | `packages/data/search`                 | 12      |
+| `@stackra/segments`      | `packages/application/segments`        | 4       |
+| `@stackra/seo`           | `packages/cross-cutting/seo`           | 2       |
+| `@stackra/settings`      | `packages/state/settings`              | 15      |
+| `@stackra/shipping`      | `packages/commerce/shipping`           | 25      |
+| `@stackra/storage`       | `packages/data/storage`                | 5       |
+| `@stackra/theming`       | `packages/state/theming`               | 1       |
+| `@stackra/tokens`        | `packages/design-system/tokens`        | 19      |
+| `@stackra/ui`            | `packages/design-system/ui`            | 172     |
+| `@stackra/webhooks`      | `packages/communication/webhooks`      | 5       |
+
+## Members without a `./contracts` entry
+
+Their public types are exported from `.` today. Copying them into `src/contracts/` would export one symbol from two
+entries, so the contracts batch does not; the package's owner moves them (types, enums and ports from `src/core/` into
+`src/contracts/`, `core` re-imports through `#contracts/*`) and adds the `./contracts` export. Until then, import
+these names from `.`.
+
+| Member                         | Path                                          | Status                                                                                |
+| ------------------------------ | --------------------------------------------- | ------------------------------------------------------------------------------------- |
+| `@stackra/app`                 | `packages/runtime/app`                        | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export |
+| `@stackra/assets`              | `packages/data/assets`                        | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export |
+| `@stackra/calendar`            | `packages/foundation/calendar`                | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export |
+| `@stackra/cli`                 | `packages/developer/cli`                      | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export |
+| `@stackra/coding-standard`     | `packages/developer/coding-standard`          | none needed: tool configuration or infrastructure, no cross-package types             |
+| `@stackra/commitlint-config`   | `packages/tooling/commitlint`                 | none needed: tool configuration or infrastructure, no cross-package types             |
+| `@stackra/container`           | `packages/foundation/container`               | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export |
+| `@stackra/content`             | `packages/data/content`                       | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export |
+| `@stackra/contracts`           | `packages/foundation/contracts`               | none needed: it is the shared-primitives package (ADR 0117 decision 1)                |
+| `@stackra/coordinator`         | `packages/state/coordinator`                  | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export |
+| `@stackra/csp`                 | `packages/security/csp`                       | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export |
+| `@stackra/devtools-kit`        | `packages/developer/devtools-kit`             | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export |
+| `@stackra/gen`                 | `packages/developer/gen`                      | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export |
+| `@stackra/infra-aws-runtime`   | `packages/infrastructure/infra-aws-runtime`   | none needed: tool configuration or infrastructure, no cross-package types             |
+| `@stackra/infra-aws`           | `packages/infrastructure/infra-aws`           | none needed: tool configuration or infrastructure, no cross-package types             |
+| `@stackra/infra-cloudflare`    | `packages/infrastructure/infra-cloudflare`    | none needed: tool configuration or infrastructure, no cross-package types             |
+| `@stackra/infra-gcp`           | `packages/infrastructure/infra-gcp`           | none needed: tool configuration or infrastructure, no cross-package types             |
+| `@stackra/infra-github`        | `packages/infrastructure/infra-github`        | none needed: tool configuration or infrastructure, no cross-package types             |
+| `@stackra/infra-identity`      | `packages/infrastructure/infra-identity`      | none needed: tool configuration or infrastructure, no cross-package types             |
+| `@stackra/infra-mobile`        | `packages/infrastructure/infra-mobile`        | none needed: tool configuration or infrastructure, no cross-package types             |
+| `@stackra/infra-observability` | `packages/infrastructure/infra-observability` | none needed: tool configuration or infrastructure, no cross-package types             |
+| `@stackra/ledger`              | `packages/commerce/ledger`                    | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export |
+| `@stackra/licensing`           | `packages/security/licensing`                 | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export |
+| `@stackra/market-packs`        | `packages/foundation/market-packs`            | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export |
+| `@stackra/mcp`                 | `packages/developer/mcp`                      | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export |
+| `@stackra/model`               | `packages/data/model`                         | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export |
+| `@stackra/oxlint-config`       | `packages/tooling/oxlint`                     | none needed: tool configuration or infrastructure, no cross-package types             |
+| `@stackra/panel`               | `packages/experience/panel`                   | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export |
+| `@stackra/registry`            | `packages/application/registry`               | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export |
+| `@stackra/renderers`           | `packages/developer/renderers`                | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export |
+| `@stackra/runway`              | `packages/developer/runway`                   | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export |
+| `@stackra/shortcuts`           | `packages/experience/shortcuts`               | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export |
+| `@stackra/skills`              | `packages/developer/skills`                   | none needed: tool configuration or infrastructure, no cross-package types             |
+| `@stackra/state-machine`       | `packages/data/state-machine`                 | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export |
+| `@stackra/state`               | `packages/state/state`                        | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export |
+| `@stackra/support`             | `packages/foundation/support`                 | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export |
+| `@stackra/tenancy`             | `packages/security/tenancy`                   | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export |
+| `@stackra/testing`             | `packages/developer/testing`                  | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export |
+| `@stackra/transport`           | `packages/foundation/transport`               | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export |
+| `@stackra/tsdown-config`       | `packages/tooling/tsdown`                     | none needed: tool configuration or infrastructure, no cross-package types             |
+| `@stackra/typescript-config`   | `packages/tooling/typescript`                 | none needed: tool configuration or infrastructure, no cross-package types             |
+| `@stackra/validation`          | `packages/foundation/validation`              | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export |
+| `@stackra/versioning`          | `packages/communication/versioning`           | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export |
+| `@stackra/vite-plugin`         | `packages/developer/vite-plugin`              | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export |
+| `@stackra/vitest-config`       | `packages/tooling/vitest`                     | none needed: tool configuration or infrastructure, no cross-package types             |
+| `@stackra/workflow`            | `packages/runtime/workflow`                   | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export |
+
+## Services
+
+`services/example` and `services/health` are reference services with no published events or API shapes of their own;
+a service gains `src/contracts/` (its events, request and response shapes) when it publishes one
+([ADR 0260](/adr/0260-cross-service-calls-through-injected-clients-and-events)).
+
+## Integration asks
+
+- Add `build/contracts` to the docs navigation (`apps/docs/src/docs.json`).
+- `@stackra/brand-kit`: root `runway.yaml` placement, the `packages/developer/README.md` row and the catalogue row
+  (stackra-90); build and test configs come with stackra-12.
