@@ -422,8 +422,11 @@ test("runwayKindOf: root, app and Worker members, service members and the scaffo
   assert.equal(isRunwayFile("runway.yaml.md"), false);
 });
 
-/** A stand-in for the built @stackra/runway entry: records its calls and refuses documents with `bad: true`. */
-function stubRunway(placement = []) {
+/**
+ * A stand-in for the built @stackra/runway entry: records its calls and refuses documents with `bad: true`; the root
+ * checks answer `placement`, `ports` and `surfaces`.
+ */
+function stubRunway(placement = [], ports = [], surfaces = []) {
   class RunwayInvalidError extends Error {
     constructor(source, issues) {
       super(source);
@@ -448,14 +451,23 @@ function stubRunway(placement = []) {
       calls.push(["checkPlacement", root.project, services]);
       return placement;
     },
+    checkDevPorts(root, members) {
+      calls.push(["checkDevPorts", root.project, Object.keys(members)]);
+      return ports;
+    },
+    checkSurfaces(root, apps) {
+      calls.push(["checkSurfaces", root.project, apps]);
+      return surfaces;
+    },
   };
 }
 
-test("checkRunwayFiles: each file is parsed for its kind; only the root reaches checkPlacement", () => {
+test("checkRunwayFiles: each file is parsed for its kind; only the root reaches the root checks", () => {
   const files = {
     "runway.yaml": "version: 3\nproject: acme\nenvironments: {}\n",
     "apps/docs/runway.yaml": "version: 3\nenvironments: {}\n",
     "services/commerce/runway.yaml": "version: 3\nenvironments: {}\n",
+    "tools/scaffold/templates/apps/web/runway.yaml": "version: 3\nenvironments: {}\n",
   };
   const runway = stubRunway();
   const out = checkRunwayFiles({
@@ -463,6 +475,7 @@ test("checkRunwayFiles: each file is parsed for its kind; only the root reaches 
     read: (p) => files[p],
     runway,
     services: ["commerce"],
+    apps: ["docs"],
   });
   assert.deepEqual(out, []);
   assert.deepEqual(runway.calls, [
@@ -470,7 +483,39 @@ test("checkRunwayFiles: each file is parsed for its kind; only the root reaches 
     ["checkPlacement", "acme", ["commerce"]],
     ["parseRunway", "app", "apps/docs/runway.yaml"],
     ["parseRunway", "service", "services/commerce/runway.yaml"],
+    ["parseRunway", "app", "tools/scaffold/templates/apps/web/runway.yaml"],
+    ["checkDevPorts", "acme", ["apps/docs", "services/commerce"]],
+    ["checkSurfaces", "acme", ["docs"]],
   ]);
+});
+
+test("checkRunwayFiles: dev port and surface issues name the root file and their code", () => {
+  const files = { "runway.yaml": "version: 3\nproject: acme\nenvironments: {}\n" };
+  const runway = stubRunway(
+    [],
+    [
+      {
+        code: "dev_port_duplicate",
+        port: 4000,
+        owners: ["a on lane 0", "b on lane 10"],
+        message: "dev port 4000 is taken twice: a on lane 0 and b on lane 10",
+      },
+    ],
+    [
+      {
+        path: "surfaces.ops",
+        code: "ops_contributes_only",
+        message: "surfaces.ops takes only contributes",
+      },
+    ],
+  );
+  assert.deepEqual(
+    checkRunwayFiles({ files: Object.keys(files), read: (p) => files[p], runway, services: [] }),
+    [
+      "runway.yaml: dev port 4000 is taken twice: a on lane 0 and b on lane 10 (dev_port_duplicate)",
+      "runway.yaml: surfaces.ops takes only contributes (ops_contributes_only)",
+    ],
+  );
 });
 
 test("checkRunwayFiles: schema issues name file and path; placement issues name the code", () => {

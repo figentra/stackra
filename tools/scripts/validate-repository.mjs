@@ -9,8 +9,10 @@
  *          Every test file anywhere in the repository sits directly in a __tests__/ folder (ADR 0022).
  *          Every JSON config is .jsonc unless its reader cannot take one (MUST_STAY_JSON).
  *          The runway JSON Schemas @stackra/runway ships are byte copies of tools/schemas (checkRunwaySchemas).
- *          Every runway.yaml passes the v3 schema of its kind and the root places each service member, through the
- *          built @stackra/runway (checkRunwayFiles, ADR 0296; unbuilt is a finding in CI and a notice locally).
+ *          Every runway.yaml passes the v3 schema of its kind and the root places each service member, keeps every
+ *          effective dev port distinct across the lanes of every indexed repository (STA-863) and holds the surface,
+ *          mobile and assets rules (ADR 0441), through the built @stackra/runway (checkRunwayFiles, ADR 0296;
+ *          unbuilt is a finding in CI and a notice locally).
  *          Repo-owned YAML has no flow mappings (block style; checkYamlFlowMaps).
  *          Member TS imports carry no file extension and climb at most one folder (checkImports, ADR 0233).
  *          An Expo app locks no orientation and asks for no full screen, and its code never sizes from the device
@@ -460,10 +462,15 @@ export function runwayKindOf(path) {
 /**
  * ADR 0296 enforcement (STA-598): each runway file parses as YAML with no repeated key and passes
  * `runway.parseRunway` for its kind; the root also passes `runway.checkPlacement` against `services`, the service
- * member keys. `runway` is the built `@stackra/runway` entry; `read(path)` returns a repository file's text.
+ * member keys, `runway.checkDevPorts` against every parsed member runway (STA-863: no two effective dev ports collide
+ * on any lane) and `runway.checkSurfaces` against `apps`, the app member keys (ADR 0441). Scaffold templates are
+ * parsed but are not members, so their ports are not counted. `runway` is the built `@stackra/runway` entry;
+ * `read(path)` returns a repository file's text.
  */
-export function checkRunwayFiles({ files, read, runway, services }) {
+export function checkRunwayFiles({ files, read, runway, services, apps = [] }) {
   const out = [];
+  const members = {};
+  let root;
   for (const file of files) {
     const kind = runwayKindOf(file);
     if (!kind) {
@@ -486,10 +493,19 @@ export function checkRunwayFiles({ files, read, runway, services }) {
         out.push(`${file}: ${path || "(document)"}: ${message}`);
       continue;
     }
-    if (kind === "root")
+    if (kind === "root") {
+      root = { file, parsed };
       for (const { code, message } of runway.checkPlacement(parsed, services))
         out.push(`${file}: ${message} (${code})`);
+    } else if (/^(?:apps|workers|services)\//.test(file))
+      members[file.slice(0, -"/runway.yaml".length)] = parsed;
   }
+  if (root)
+    for (const { code, message } of [
+      ...runway.checkDevPorts(root.parsed, members),
+      ...runway.checkSurfaces(root.parsed, apps),
+    ])
+      out.push(`${root.file}: ${message} (${code})`);
   return out;
 }
 
@@ -677,6 +693,10 @@ async function main() {
             .map(({ path }) => relative(ROOT, path))
             .filter((dir) => /^services\/[^/]+$/.test(dir))
             .map((dir) => dir.slice("services/".length)),
+          apps: members
+            .map(({ path }) => relative(ROOT, path))
+            .filter((dir) => /^apps\/[^/]+$/.test(dir))
+            .map((dir) => dir.slice("apps/".length)),
         }),
       );
     else if (process.env.CI)
