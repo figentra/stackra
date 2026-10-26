@@ -16,7 +16,8 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 
 import type { PopoverContractProps } from "#contracts/types/popover-contract-props.type";
 import { Button } from "#react/button/button";
-import { Popover, type PopoverProps } from "#react/popover/popover";
+import { Popover } from "#react/popover/popover";
+import type { PopoverProps } from "#react/popover/popover.props";
 
 const press = (element: HTMLElement) => act(() => element.click());
 const trigger = <Button>Filters</Button>;

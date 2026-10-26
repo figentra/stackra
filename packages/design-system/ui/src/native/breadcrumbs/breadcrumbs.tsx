@@ -13,22 +13,14 @@
  *          (right-to-left).
  */
 import { Fragment } from "react";
-import type { ViewProps } from "react-native";
 import { View } from "react-native";
 
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
 import { useUiText } from "#core/hooks/use-ui-text";
-import type { BreadcrumbsContractProps } from "#contracts/types/breadcrumbs-contract-props.type";
 import { Icon } from "#native/icon/icon";
 import { Link } from "#native/link/link";
 import { Text } from "#native/text/text";
-
-/**
- * Props of the native Breadcrumbs: the shared contract plus the `View`'s own props, passed through. The view's
- * `accessibilityLabel` is the contract's `label`, so the type refuses it.
- */
-export type BreadcrumbsProps = BreadcrumbsContractProps &
-  Omit<ViewProps, keyof BreadcrumbsContractProps | "accessibilityLabel" | "children">;
+import type { BreadcrumbsProps } from "#native/breadcrumbs/breadcrumbs.props";
 
 /**
  * The trail from the root to the current page. Every step but the last that has somewhere to go is a link; the last is

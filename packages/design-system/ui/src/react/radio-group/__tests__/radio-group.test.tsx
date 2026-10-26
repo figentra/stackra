@@ -13,7 +13,8 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 
 import type { ChoiceOption } from "#contracts/types/choice-option.type";
-import { RadioGroup, type RadioGroupProps } from "#react/radio-group/radio-group";
+import { RadioGroup } from "#react/radio-group/radio-group";
+import type { RadioGroupProps } from "#react/radio-group/radio-group.props";
 
 const OPTIONS: readonly ChoiceOption[] = [
   { value: "standard", label: "Standard", description: "5 to 7 days" },

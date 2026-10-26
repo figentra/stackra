@@ -20,7 +20,8 @@ import { Size } from "#contracts/enums/size.enum";
 import { Tone } from "#contracts/enums/tone.enum";
 import type { AvatarContractProps } from "#contracts/types/avatar-contract-props.type";
 import { ICON_SIZES } from "#core/constants/icon-sizes.constant";
-import { Avatar, type AvatarProps } from "#native/avatar/avatar";
+import { Avatar } from "#native/avatar/avatar";
+import type { AvatarProps } from "#native/avatar/avatar.props";
 
 /** The props each stand-in was last handed, by name, as the real component would receive them. */
 const received = vi.hoisted(() => ({ props: {} as Record<string, Record<string, unknown>> }));

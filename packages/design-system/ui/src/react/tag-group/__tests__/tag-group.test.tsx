@@ -19,7 +19,8 @@ import { createRef } from "react";
 import { Size } from "#contracts/enums/size.enum";
 import { TagVariant } from "#contracts/enums/tag-variant.enum";
 import type { TagGroupContractProps } from "#contracts/types/tag-group-contract-props.type";
-import { TagGroup, type TagGroupProps } from "#react/tag-group/tag-group";
+import { TagGroup } from "#react/tag-group/tag-group";
+import type { TagGroupProps } from "#react/tag-group/tag-group.props";
 
 const press = (element: HTMLElement) => act(() => element.click());
 

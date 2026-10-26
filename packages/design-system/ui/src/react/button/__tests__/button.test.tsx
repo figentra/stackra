@@ -16,7 +16,8 @@ import { createRef } from "react";
 import { ButtonVariant } from "#contracts/enums/button-variant.enum";
 import { Size } from "#contracts/enums/size.enum";
 import type { ButtonContractProps } from "#contracts/types/button-contract-props.type";
-import { Button, type ButtonProps } from "#react/button/button";
+import { Button } from "#react/button/button";
+import type { ButtonProps } from "#react/button/button.props";
 
 const press = (element: HTMLElement) => act(() => element.click());
 

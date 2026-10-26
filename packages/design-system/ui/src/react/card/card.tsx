@@ -8,19 +8,12 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0165 (HeroUI v3 on web); ADR 0304; owner decision 6 of STA-350
  *          (thin wrappers).
  */
-import { Card as HeroCard, type CardRootProps } from "@heroui/react";
-import type { ComponentPropsWithRef, ReactElement } from "react";
+import { Card as HeroCard } from "@heroui/react";
+import type { ReactElement } from "react";
 
-import type { CardContractProps } from "#contracts/types/card-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { CardTitle } from "#react/card/card-title";
-
-/** HeroUI's props for a `div` card: its own props plus the `div` attributes, as its generic signature spreads them. */
-type HeroCardProps = CardRootProps<"div"> &
-  Omit<ComponentPropsWithRef<"div">, keyof CardRootProps<"div">>;
-
-/** Props of the web Card: the shared contract plus HeroUI v3's own card props, passed through unchanged. */
-export type CardProps = CardContractProps & Omit<HeroCardProps, keyof CardContractProps>;
+import type { CardProps } from "#react/card/card.props";
 
 /** The card root: HeroUI's, so its `SurfaceContext` still reaches the fields inside a non-transparent card. */
 function CardRoot({ variant, ...rest }: CardProps): ReactElement {

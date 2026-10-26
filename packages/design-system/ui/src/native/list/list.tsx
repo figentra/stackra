@@ -16,21 +16,18 @@
  */
 import { ListGroup } from "heroui-native";
 import { useState } from "react";
-import { FlatList, View, type ViewProps } from "react-native";
+import { FlatList, View } from "react-native";
 
-import type { ListContractProps } from "#contracts/types/list-contract-props.type";
-import type { ListItemData } from "#contracts/types/list-item-contract-props.type";
+import type { ListItemData } from "#contracts/types/list-item-data.type";
 import { keysOfSelection } from "#core/functions/keys-of-selection.function";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { Icon } from "#native/icon/icon";
-import { endContentNode, ListItem } from "#native/list/list-item";
+import { ListItem } from "#native/list/list-item";
+import { endContentNode } from "#native/list/end-content-node.function";
 import { Reveal } from "#native/reveal/reveal";
 import { Separator } from "#native/separator/separator";
 import { Spinner } from "#native/spinner/spinner";
-
-/** Props of the native List: the shared contract plus the props of its root `View`, passed through unchanged. */
-export type ListProps<TItem extends ListItemData = ListItemData> = ListContractProps<TItem> &
-  Omit<ViewProps, keyof ListContractProps | "children" | "accessibilityLabel">;
+import type { ListProps } from "#native/list/list.props";
 
 /** A rule between two rows, inset by the row's padding so it does not touch the surface's edge. */
 function RowSeparator() {

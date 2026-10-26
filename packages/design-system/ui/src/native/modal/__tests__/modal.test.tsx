@@ -20,8 +20,9 @@ import type { ReactNode } from "react";
 
 import type { ModalContractProps } from "#contracts/types/modal-contract-props.type";
 import type { OverlayTitleContractProps } from "#contracts/types/overlay-title-contract-props.type";
-import { Modal, type ModalProps } from "#native/modal/modal";
-import type { ModalTitleProps } from "#native/modal/modal-title";
+import { Modal } from "#native/modal/modal";
+import type { ModalProps } from "#native/modal/modal.props";
+import type { ModalTitleProps } from "#native/modal/modal-title.props";
 
 /** The props each stand-in was last handed, by name, and the back handlers React Native holds. */
 const received = vi.hoisted(() => ({

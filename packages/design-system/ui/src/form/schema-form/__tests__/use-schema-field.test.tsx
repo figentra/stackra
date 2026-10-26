@@ -34,7 +34,7 @@ describe("useSchemaField", () => {
     act(() => form?.setError("quantity", { type: "server", message: "insufficient_stock" }));
     expect(result.current).toMatchObject({ isInvalid: true, errorMessage: "insufficient_stock" });
 
-    act(() => result.current.onChange(3));
+    act(() => result.current.onChange?.(3));
     expect(result.current).toMatchObject({ value: 3, isInvalid: false });
   });
 });

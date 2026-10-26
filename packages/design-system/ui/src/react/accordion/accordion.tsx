@@ -11,21 +11,11 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0165 (UI contract, HeroUI v3 on web); ADR 0313 (decisions 1 and 2);
  *          WAI-ARIA 1.2 accordion pattern; owner decision 6 of STA-350 (thin wrappers).
  */
-import { Accordion as HeroAccordion, type AccordionRootProps } from "@heroui/react";
+import { Accordion as HeroAccordion } from "@heroui/react";
 
-import type { AccordionContractProps } from "#contracts/types/accordion-contract-props.type";
 import { keysOfSelection } from "#core/functions/keys-of-selection.function";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
-
-/**
- * Props of the web Accordion: the shared contract plus HeroUI v3's own accordion props, passed through unchanged.
- * The sections are `items`, never children, and `canExpandMultiple` is HeroUI's `allowsMultipleExpanded`.
- */
-export type AccordionProps = AccordionContractProps &
-  Omit<
-    AccordionRootProps,
-    keyof AccordionContractProps | "children" | "allowsMultipleExpanded" | "onExpandedChange"
-  >;
+import type { AccordionProps } from "#react/accordion/accordion.props";
 
 /**
  * A stack of sections whose titles open and close their content. `expandedKeys` is the list of open ids;

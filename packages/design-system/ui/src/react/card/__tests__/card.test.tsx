@@ -18,8 +18,9 @@ import { HeadingLevel } from "#contracts/enums/heading-level.enum";
 import { SurfaceVariant } from "#contracts/enums/surface-variant.enum";
 import type { CardContractProps } from "#contracts/types/card-contract-props.type";
 import type { CardTitleContractProps } from "#contracts/types/card-title-contract-props.type";
-import type { CardTitleProps } from "#react/card/card-title";
-import { Card, type CardProps } from "#react/card/card";
+import type { CardTitleProps } from "#react/card/card-title.props";
+import { Card } from "#react/card/card";
+import type { CardProps } from "#react/card/card.props";
 
 /** Prints the surface level the context holds, or `none` when no card provided one. */
 function LevelProbe() {

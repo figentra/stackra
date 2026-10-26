@@ -22,7 +22,8 @@ import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { createElement, useState } from "react";
 
 import type { DatePickerContractProps } from "#contracts/types/date-picker-contract-props.type";
-import { DatePicker, type DatePickerProps } from "#react/date-picker/date-picker";
+import { DatePicker } from "#react/date-picker/date-picker";
+import type { DatePickerProps } from "#react/date-picker/date-picker.props";
 
 const MARCH_5 = new CalendarDate(2026, 3, 5);
 const press = (element: HTMLElement) => act(() => element.click());

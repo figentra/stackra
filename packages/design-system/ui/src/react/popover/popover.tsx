@@ -12,19 +12,12 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0312; ADR 0165 (HeroUI v3 on web); WCAG 2.2
  *          SC 2.1.2, 4.1.2.
  */
-import { Popover as HeroPopover, type PopoverContentProps } from "@heroui/react";
+import { Popover as HeroPopover } from "@heroui/react";
 import type { ReactElement } from "react";
 
-import type { PopoverContractProps } from "#contracts/types/popover-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { reactAriaPlacementOf } from "#core/functions/react-aria-placement-of.function";
-
-/** Props of the web Popover: the shared contract plus HeroUI v3's own popover content props, passed through. */
-export type PopoverProps = PopoverContractProps &
-  Omit<
-    PopoverContentProps,
-    keyof PopoverContractProps | "isNonModal" | "shouldCloseOnInteractOutside"
-  >;
+import type { PopoverProps } from "#react/popover/popover.props";
 
 /** A press outside is refused: the popover then closes only from inside, by Escape or by a control of its own. */
 const REFUSE_OUTSIDE = (): boolean => false;

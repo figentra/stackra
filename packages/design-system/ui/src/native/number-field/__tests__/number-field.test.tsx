@@ -19,7 +19,8 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 
 import type { NumberFieldContractProps } from "#contracts/types/number-field-contract-props.type";
-import { NumberField, type NumberFieldProps } from "#native/number-field/number-field";
+import { NumberField } from "#native/number-field/number-field";
+import type { NumberFieldProps } from "#native/number-field/number-field.props";
 
 /** The props each stand-in was last handed, by name, and the stand-ins' own settings. */
 const state = vi.hoisted(() => ({

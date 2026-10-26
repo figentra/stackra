@@ -17,15 +17,27 @@ import type { ReactElement } from "react";
 
 import type { FormFieldBinding } from "#contracts/types/form-field-binding.type";
 import { useSchemaField } from "#form/schema-form/use-schema-field";
-import { ComboBox, type ComboBoxProps } from "#react/combo-box/combo-box";
-import { NumberField, type NumberFieldProps } from "#react/number-field/number-field";
-import { RadioGroup, type RadioGroupProps } from "#react/radio-group/radio-group";
-import { Select, type SelectProps } from "#react/select/select";
-import { Switch, type SwitchProps } from "#react/switch/switch";
-import { TextField, type TextFieldProps } from "#react/text-field/text-field";
+import { ComboBox } from "#react/combo-box/combo-box";
+import type { ComboBoxProps } from "#react/combo-box/combo-box.props";
+import { NumberField } from "#react/number-field/number-field";
+import type { NumberFieldProps } from "#react/number-field/number-field.props";
+import { RadioGroup } from "#react/radio-group/radio-group";
+import type { RadioGroupProps } from "#react/radio-group/radio-group.props";
+import { Select } from "#react/select/select";
+import type { SelectProps } from "#react/select/select.props";
+import { Switch } from "#react/switch/switch";
+import type { SwitchProps } from "#react/switch/switch.props";
+import { TextField } from "#react/text-field/text-field";
+import type { TextFieldProps } from "#react/text-field/text-field.props";
 
-/** What a bound part takes: the field's own props minus what the form binds, plus the field's path. */
-type BoundProps<P> = Omit<P, keyof FormFieldBinding<unknown> | "defaultValue"> & {
+/**
+ * What a bound part takes: the field's own props minus what the form binds, plus the field's path. `isRequired` and
+ * `isDisabled` stay, so the caller's explicit value wins over the binding's.
+ */
+type BoundProps<P> = Omit<
+  P,
+  Exclude<keyof FormFieldBinding<unknown>, "isRequired" | "isDisabled"> | "defaultValue"
+> & {
   /** The field's path in the schema form, such as `lines.0.quantity`. */
   readonly name: string;
 };

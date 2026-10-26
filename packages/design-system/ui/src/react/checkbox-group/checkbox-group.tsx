@@ -16,17 +16,9 @@ import {
   FieldError,
   Label,
 } from "@heroui/react";
-import type { CheckboxGroupProps as HeroCheckboxGroupProps } from "@heroui/react";
 
-import type { CheckboxGroupContractProps } from "#contracts/types/checkbox-group-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
-
-/**
- * Props of the web CheckboxGroup: the shared contract plus HeroUI v3's own group props, passed through unchanged.
- * HeroUI's `children` is refused: the options are the content.
- */
-export type CheckboxGroupProps = CheckboxGroupContractProps &
-  Omit<HeroCheckboxGroupProps, keyof CheckboxGroupContractProps | "children">;
+import type { CheckboxGroupProps } from "#react/checkbox-group/checkbox-group.props";
 
 /**
  * A set of checkboxes that edit one list of keys: the list holds the `value` of every checked option, in the order

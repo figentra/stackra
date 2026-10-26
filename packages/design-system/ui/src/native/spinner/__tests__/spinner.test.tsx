@@ -15,7 +15,8 @@ import { render } from "@testing-library/react";
 import { Size } from "#contracts/enums/size.enum";
 import { TextTone } from "#contracts/enums/text-tone.enum";
 import type { SpinnerContractProps } from "#contracts/types/spinner-contract-props.type";
-import { Spinner, type SpinnerProps } from "#native/spinner/spinner";
+import { Spinner } from "#native/spinner/spinner";
+import type { SpinnerProps } from "#native/spinner/spinner.props";
 
 /** The props the stand-in was last handed, as the real component would receive them. */
 const received = vi.hoisted(() => ({ props: {} as Record<string, unknown> }));

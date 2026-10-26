@@ -11,23 +11,14 @@
  * Governing contract: ADR 0329 (motion layer); ADR 0302 (decision 3); ADR 0303 (decision 7).
  */
 import { motionTiming, STACKRA_THEME } from "@stackra/tokens";
-import type { ViewProps } from "react-native";
 import Animated, { Easing, FadeInDown, ReduceMotion } from "react-native-reanimated";
-
-import type { RevealContractProps } from "#contracts/types/reveal-contract-props.type";
+import type { RevealProps } from "#native/reveal/reveal.props";
 
 const REVEAL = motionTiming(STACKRA_THEME, "reveal");
 const STAGGER = motionTiming(STACKRA_THEME, "stagger");
 
 /** How far the content rises as it fades in, in points. */
 const RISE = 8;
-
-/**
- * Props of the native Reveal: the shared contract plus React Native's view props, passed through. The entrance is
- * the theme's, so Reanimated's `entering` and `exiting` are refused.
- */
-export type RevealProps = RevealContractProps &
-  Omit<ViewProps, keyof RevealContractProps | "entering" | "exiting">;
 
 /** The entrance for a place in the row: the theme's reveal, waiting one stagger step per place. */
 const enteringAt = (index: number) => {

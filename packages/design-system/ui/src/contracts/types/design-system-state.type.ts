@@ -6,7 +6,8 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0302 (decision 3: one API on web and native).
  */
-import type { ColorScheme, ResolvedColorScheme } from "#contracts/enums/color-scheme.enum";
+import type { ColorScheme } from "#contracts/enums/color-scheme.enum";
+import type { ResolvedColorScheme } from "#contracts/types/resolved-color-scheme.type";
 import type { Direction } from "#contracts/enums/direction.enum";
 
 /** The design system state a provider shares with its subtree. */

@@ -16,31 +16,10 @@ import { useIsRTL, useThemeColor } from "heroui-native";
 import type { LucideProps } from "lucide-react-native";
 import type { ComponentType } from "react";
 
-import type { IconContractProps } from "#contracts/types/icon-contract-props.type";
 import { ICON_SIZES } from "#core/constants/icon-sizes.constant";
 import { warnUnknownIcon } from "#core/functions/warn-unknown-icon.function";
 import { UI_ICONS } from "#native/icon/ui-icons.constant";
-
-/** Svg and View props that reach the drawn icon; the contract's props, colour and accessibility stay the wrapper's. */
-type IconPassthroughProps = Omit<
-  LucideProps,
-  | keyof IconContractProps
-  | "color"
-  | "width"
-  | "height"
-  | "absoluteStrokeWidth"
-  | "role"
-  | "aria-label"
-  | "aria-hidden"
-  | "accessible"
-  | "accessibilityLabel"
-  | "accessibilityRole"
-  | "accessibilityElementsHidden"
-  | "importantForAccessibility"
->;
-
-/** Props of the native Icon: the shared contract plus the Svg and View props lucide-react-native takes. */
-export type IconProps = IconContractProps & IconPassthroughProps;
+import type { IconProps } from "#native/icon/icon.props";
 
 /** The mirror: a horizontal flip, put after the caller's style so it cannot be cancelled. */
 const MIRRORED_STYLE = { transform: [{ scaleX: -1 }] } as const;

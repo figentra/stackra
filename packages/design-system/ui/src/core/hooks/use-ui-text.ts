@@ -8,7 +8,8 @@
  * Governing contract: ADR 0080; ADR 0403.
  */
 import { UI_ENGLISH } from "#core/constants/ui-english.constant";
-import { useCatalogueText, type CatalogueText } from "#core/hooks/use-catalogue-text";
+import { useCatalogueText } from "#core/hooks/use-catalogue-text";
+import type { CatalogueText } from "#core/types/catalogue-text.type";
 
 /**
  * The ui translator.

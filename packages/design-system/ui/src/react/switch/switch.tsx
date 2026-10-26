@@ -10,17 +10,9 @@
  *          ADR 0055 (forms); owner decision 6 of STA-350 (thin wrappers).
  */
 import { Description, FieldError, Label, Switch as HeroSwitch } from "@heroui/react";
-import type { SwitchRootProps } from "@heroui/react";
 
-import type { SwitchContractProps } from "#contracts/types/switch-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
-
-/**
- * Props of the web Switch: the shared contract plus HeroUI v3's own switch props, passed through unchanged. HeroUI's
- * `isSelected`, `defaultSelected`, string `value` and `children` are refused: the contract names each of them once.
- */
-export type SwitchProps = SwitchContractProps &
-  Omit<SwitchRootProps, keyof SwitchContractProps | "isSelected" | "defaultSelected" | "children">;
+import type { SwitchProps } from "#react/switch/switch.props";
 
 /**
  * A toggle for a setting that takes effect at once. `label` names it; `description` and `errorMessage` sit under the

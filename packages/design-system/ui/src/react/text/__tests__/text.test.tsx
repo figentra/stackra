@@ -18,7 +18,8 @@ import { Tone } from "#contracts/enums/tone.enum";
 import type { TextContractProps } from "#contracts/types/text-contract-props.type";
 import { TONE_CLASS_NAME } from "#core/constants/tone-class-name.constant";
 import { TYPOGRAPHY_TYPE } from "#core/constants/typography-type.constant";
-import { Text, type TextProps } from "#react/text/text";
+import { Text } from "#react/text/text";
+import type { TextProps } from "#react/text/text.props";
 
 /** The one element a case draws. */
 const element = (container: HTMLElement) => {

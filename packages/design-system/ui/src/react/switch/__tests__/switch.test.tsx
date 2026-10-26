@@ -13,7 +13,8 @@
 // @covers sta-350:FR-082 sta-350:FR-083 sta-350:FR-086 sta-350:FR-087
 import { fireEvent, render, screen } from "@testing-library/react";
 
-import { Switch, type SwitchProps } from "#react/switch/switch";
+import { Switch } from "#react/switch/switch";
+import type { SwitchProps } from "#react/switch/switch.props";
 
 describe("Switch (web)", () => {
   it("is a switch named by its label and starts off", () => {

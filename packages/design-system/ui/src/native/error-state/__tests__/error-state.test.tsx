@@ -20,7 +20,8 @@ import type { ReactNode } from "react";
 import { ErrorKind } from "#contracts/enums/error-kind.enum";
 import type { ErrorStateContractProps } from "#contracts/types/error-state-contract-props.type";
 import { STATE_ICON } from "#core/constants/state-icon.constant";
-import { ErrorState, type ErrorStateProps } from "#native/error-state/error-state";
+import { ErrorState } from "#native/error-state/error-state";
+import type { ErrorStateProps } from "#native/error-state/error-state.props";
 
 /** The props each stand-in was last handed, by name, every View and every Text in order. */
 const received = vi.hoisted(() => ({

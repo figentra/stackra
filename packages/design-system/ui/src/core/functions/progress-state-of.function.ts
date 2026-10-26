@@ -8,32 +8,8 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0302 (decision 3); ADR 0312; WCAG 2.2 SC 4.1.2.
  */
-
-/** What an indicator draws and says. Every field is `undefined` for an indeterminate one. */
-export interface ProgressState {
-  /** The fill from 0 to 100; `undefined` when the value is unknown. */
-  readonly percentage: number | undefined;
-  /** The spoken and shown text of the value, for example "40%". */
-  readonly valueText: string | undefined;
-  /** React Native's `accessibilityValue`: the range, the clamped value and its text. */
-  readonly accessibilityValue:
-    | { readonly min: number; readonly max: number; readonly now: number; readonly text: string }
-    | undefined;
-}
-
-/** The inputs of {@link progressStateOf}. */
-export interface ProgressStateInput {
-  /** The value, or `undefined` for an indeterminate indicator. */
-  readonly value: number | undefined;
-  /** The value that means nothing done. */
-  readonly minValue: number;
-  /** The value that means done. */
-  readonly maxValue: number;
-  /** The caller's own text for the value, used in place of the percentage. */
-  readonly valueLabel: string | undefined;
-  /** The BCP 47 locale the percentage is written in. */
-  readonly locale: string;
-}
+import type { ProgressState } from "#core/types/progress-state.type";
+import type { ProgressStateInput } from "#core/types/progress-state-input.type";
 
 /**
  * The state of one progress indicator.

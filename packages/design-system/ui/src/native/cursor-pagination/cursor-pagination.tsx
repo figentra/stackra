@@ -12,22 +12,14 @@
  *          (right-to-left).
  */
 import { useState } from "react";
-import type { ViewProps } from "react-native";
 import { View } from "react-native";
 
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
 import { useUiText } from "#core/hooks/use-ui-text";
-import type { CursorPaginationContractProps } from "#contracts/types/cursor-pagination-contract-props.type";
 import { Button } from "#native/button/button";
 import { Icon } from "#native/icon/icon";
 import { Text } from "#native/text/text";
-
-/**
- * Props of the native CursorPagination: the shared contract plus the `View`'s own props, passed through. The view's
- * `accessibilityLabel` is the contract's `label`, so the type refuses it.
- */
-export type CursorPaginationProps = CursorPaginationContractProps &
-  Omit<ViewProps, keyof CursorPaginationContractProps | "accessibilityLabel" | "children">;
+import type { CursorPaginationProps } from "#native/cursor-pagination/cursor-pagination.props";
 
 /**
  * Previous and next buttons, or one load-more button, for a list that arrives in cursor pages. The next button is
@@ -57,7 +49,7 @@ export function CursorPagination({
   previousLabel ??= t(keys.previous);
   nextLabel ??= t(keys.next);
   loadMoreLabel ??= t(keys.load_more);
-  countLabel ??= (count) => t(keys.count, { count });
+  countLabel ??= (total) => t(keys.count, { count: total });
   const isPager = mode === "pager";
   // The button that was pressed shows the spinner, the other waits disabled; a load that no press started (an app's own
   // end-reached call) is the next page.

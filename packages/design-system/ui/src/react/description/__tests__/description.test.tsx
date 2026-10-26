@@ -12,7 +12,8 @@ import { render, screen } from "@testing-library/react";
 import { createRef } from "react";
 
 import type { DescriptionContractProps } from "#contracts/types/description-contract-props.type";
-import { Description, type DescriptionProps } from "#react/description/description";
+import { Description } from "#react/description/description";
+import type { DescriptionProps } from "#react/description/description.props";
 
 describe("Description (web)", () => {
   it("renders its text with HeroUI's class", () => {

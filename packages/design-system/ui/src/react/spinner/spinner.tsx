@@ -10,25 +10,10 @@
  *          decision 6 of STA-350 (thin wrappers).
  */
 import { Spinner as HeroSpinner, type SpinnerRootProps } from "@heroui/react";
-import type { ComponentPropsWithRef } from "react";
 
 import type { TextTone } from "#contracts/enums/text-tone.enum";
-import type { SpinnerContractProps } from "#contracts/types/spinner-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
-
-/** HeroUI's props for a `span` spinner: its own props plus the `span` attributes, as its generic signature spreads them. */
-type HeroSpinnerProps = SpinnerRootProps<"span"> &
-  Omit<ComponentPropsWithRef<"span">, keyof SpinnerRootProps<"span">>;
-
-/**
- * Props of the web Spinner: the shared contract plus HeroUI v3's own spinner props, passed through unchanged.
- * HeroUI's `color` is the contract's `tone`, `label` owns the accessible name, and HeroUI draws its own SVG.
- */
-export type SpinnerProps = SpinnerContractProps &
-  Omit<
-    HeroSpinnerProps,
-    keyof SpinnerContractProps | "color" | "aria-label" | "aria-hidden" | "children"
-  >;
+import type { SpinnerProps } from "#react/spinner/spinner.props";
 
 /**
  * HeroUI's colour of each tone and the inline role colour that goes with it. HeroUI has no foreground or muted

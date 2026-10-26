@@ -10,13 +10,10 @@
  * Runtime: react-native
  * Governing contract: ADR 0319 (decision 3); ADR 0320 (decision 7, the material modes and their fallbacks).
  */
-import type { MaterialMode } from "@stackra/tokens/contracts";
 import { isGlassEffectAPIAvailable, isLiquidGlassAvailable } from "expo-glass-effect";
 import { useSyncExternalStore } from "react";
 import { AccessibilityInfo } from "react-native";
-
-/** The modes a native control can draw: Liquid Glass or the opaque surface. */
-export type GlassMaterial = Extract<MaterialMode, "liquid" | "solid">;
+import type { GlassMaterial } from "#native/glass/glass-material.type";
 
 /** The iOS settings that make the material solid. */
 const SOLID_SETTING_EVENTS = ["reduceTransparencyChanged", "darkerSystemColorsChanged"] as const;

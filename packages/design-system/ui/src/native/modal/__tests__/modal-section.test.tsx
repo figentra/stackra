@@ -13,7 +13,9 @@
 import { render } from "@testing-library/react";
 import type { ReactNode } from "react";
 
-import { ModalBody, ModalFooter, ModalHeader } from "#native/modal/modal-section";
+import { ModalBody } from "#native/modal/modal-body";
+import { ModalFooter } from "#native/modal/modal-footer";
+import { ModalHeader } from "#native/modal/modal-header";
 
 /** The props each View stand-in was last handed, in render order. */
 const received = vi.hoisted(() => ({ views: [] as Record<string, unknown>[] }));

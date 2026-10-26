@@ -13,7 +13,8 @@
 import { act, render, screen } from "@testing-library/react";
 
 import type { IconButtonContractProps } from "#contracts/types/icon-button-contract-props.type";
-import { IconButton, type IconButtonProps } from "#react/icon-button/icon-button";
+import { IconButton } from "#react/icon-button/icon-button";
+import type { IconButtonProps } from "#react/icon-button/icon-button.props";
 
 const icon = <i data-testid="icon" />;
 

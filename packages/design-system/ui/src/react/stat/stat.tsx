@@ -10,13 +10,10 @@
  */
 import { type ReactElement, use } from "react";
 
-import type { StatContractProps } from "#contracts/types/stat-contract-props.type";
 import { Chip } from "#react/chip/chip";
 import { DesignSystemContext } from "#react/design-system-provider/design-system-context";
 import { Text } from "#react/text/text";
-
-/** Props of the web Stat: the shared contract. */
-export type StatProps = StatContractProps;
+import type { StatProps } from "#react/stat/stat.props";
 
 /** A labelled headline figure. */
 export function Stat({ label, value, badge }: StatProps): ReactElement {

@@ -22,14 +22,11 @@ import {
   type ReactElement,
 } from "react";
 
-import type { KioskSurfaceContractProps } from "#contracts/types/kiosk-surface-contract-props.type";
 import type { KioskState } from "#contracts/types/kiosk-state.type";
 import { idleTimer } from "#core/functions/idle-timer.function";
 import { DesignSystemContext } from "#react/design-system-provider/design-system-context";
 import { KioskContext } from "#react/kiosk-surface/kiosk-context";
-
-/** Props of the web KioskSurface. */
-export type KioskSurfaceProps = KioskSurfaceContractProps;
+import type { KioskSurfaceProps } from "#react/kiosk-surface/kiosk-surface.props";
 
 /** The input that counts as someone at the kiosk. */
 const ACTIVITY = ["pointerdown", "keydown", "touchstart", "wheel"] as const;

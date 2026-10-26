@@ -7,14 +7,8 @@
  */
 import type { ReactNode } from "react";
 
-import type { IconSlot } from "#contracts/types/icon-slot.type";
 import { Icon } from "#react/icon/icon";
-
-/** Props of SlotIcon. */
-export interface SlotIconProps {
-  /** The slot's value: an icon name or an element; nothing draws nothing. */
-  readonly icon?: IconSlot | undefined;
-}
+import type { SlotIconProps } from "#react/slot-icon/slot-icon.props";
 
 /** Draws an icon slot: an `IconName` becomes an `Icon`, an element is returned unchanged. */
 export function SlotIcon({ icon }: SlotIconProps): ReactNode {

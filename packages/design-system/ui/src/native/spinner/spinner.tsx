@@ -9,35 +9,10 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0304; ADR 0165 (HeroUI Native on native);
  *          owner decision 6 of STA-350 (thin wrappers).
  */
-import {
-  Spinner as HeroSpinner,
-  useThemeColor,
-  type SpinnerProps as HeroSpinnerProps,
-} from "heroui-native";
+import { Spinner as HeroSpinner, useThemeColor } from "heroui-native";
 
-import type { SpinnerContractProps } from "#contracts/types/spinner-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
-
-/**
- * Props of the native Spinner: the shared contract plus HeroUI Native's own spinner props, passed through unchanged.
- * HeroUI's `color` is the contract's `tone`; a spinner is the loading state, so `isLoading` and `children` are
- * refused, and `label` owns the accessible name and `accessibilityState` (HeroUI sets `busy`).
- */
-export type SpinnerProps = SpinnerContractProps &
-  Omit<
-    HeroSpinnerProps,
-    | keyof SpinnerContractProps
-    | "color"
-    | "children"
-    | "isLoading"
-    | "accessibilityLabel"
-    | "aria-label"
-    | "accessible"
-    | "accessibilityElementsHidden"
-    | "importantForAccessibility"
-    | "aria-hidden"
-    | "accessibilityState"
-  >;
+import type { SpinnerProps } from "#native/spinner/spinner.props";
 
 /** The props of a decorative spinner: hidden from VoiceOver and TalkBack alike. */
 const HIDDEN = Object.freeze({

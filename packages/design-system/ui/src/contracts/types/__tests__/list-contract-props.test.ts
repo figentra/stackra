@@ -12,10 +12,8 @@ import type { CollectionContractProps } from "#contracts/types/collection-contra
 import type { CollectionItem } from "#contracts/types/collection-item.type";
 import type { IconSlot } from "#contracts/types/icon-slot.type";
 import type { ListContractProps } from "#contracts/types/list-contract-props.type";
-import type {
-  ListItemContractProps,
-  ListItemData,
-} from "#contracts/types/list-item-contract-props.type";
+import type { ListItemContractProps } from "#contracts/types/list-item-contract-props.type";
+import type { ListItemData } from "#contracts/types/list-item-data.type";
 import type { SelectionContractProps } from "#contracts/types/selection-contract-props.type";
 
 describe("ListContractProps", () => {

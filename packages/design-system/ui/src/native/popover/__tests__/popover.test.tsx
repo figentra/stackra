@@ -17,7 +17,8 @@ import { render } from "@testing-library/react";
 import type { ReactNode } from "react";
 
 import type { PopoverContractProps } from "#contracts/types/popover-contract-props.type";
-import { Popover, type PopoverProps } from "#native/popover/popover";
+import { Popover } from "#native/popover/popover";
+import type { PopoverProps } from "#native/popover/popover.props";
 
 /** The props each stand-in was last handed, by name, as the real component would receive them. */
 const received = vi.hoisted(() => ({

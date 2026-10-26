@@ -7,14 +7,9 @@
  * Runtime: browser
  * Governing contract: ADR 0302 (decision 3); ADR 0312; WCAG 2.2 SC 1.3.1 and 4.1.2.
  */
-import { Modal as HeroModal, type ModalHeadingProps as HeroModalHeadingProps } from "@heroui/react";
+import { Modal as HeroModal } from "@heroui/react";
 import type { ReactElement } from "react";
-
-import type { OverlayTitleContractProps } from "#contracts/types/overlay-title-contract-props.type";
-
-/** Props of the web Modal.Title: the shared contract plus HeroUI v3's own heading props, passed through. */
-export type ModalTitleProps = OverlayTitleContractProps &
-  Omit<HeroModalHeadingProps, keyof OverlayTitleContractProps>;
+import type { ModalTitleProps } from "#react/modal/modal-title.props";
 
 /** The modal's title, a heading at `level` (default 2) that also names the dialog. */
 export function ModalTitle({ level = 2, ...rest }: ModalTitleProps): ReactElement {

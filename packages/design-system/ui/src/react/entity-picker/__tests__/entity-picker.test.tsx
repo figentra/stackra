@@ -20,7 +20,8 @@ import { act, fireEvent, render, screen, waitFor, within } from "@testing-librar
 import type { EntityOption } from "#contracts/types/entity-option.type";
 import type { EntityOptionPage } from "#contracts/types/entity-option-page.type";
 import type { EntityPickerContractProps } from "#contracts/types/entity-picker-contract-props.type";
-import { EntityPicker, type EntityPickerProps } from "#react/entity-picker/entity-picker";
+import { EntityPicker } from "#react/entity-picker/entity-picker";
+import type { EntityPickerProps } from "#react/entity-picker/entity-picker.props";
 
 const press = (element: HTMLElement) => act(() => element.click());
 
@@ -78,8 +79,11 @@ describe("EntityPicker (web)", () => {
         constructor(callback: IntersectionObserverCallback) {
           observed.push(callback);
         }
+
         observe() {}
+
         unobserve() {}
+
         disconnect() {}
       },
     );

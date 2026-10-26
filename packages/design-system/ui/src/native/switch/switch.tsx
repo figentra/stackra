@@ -13,22 +13,11 @@
  *          (forms); owner decision 6 of STA-350 (thin wrappers).
  */
 import { ControlField, Description, FieldError, Label } from "heroui-native";
-import { useState, type ComponentPropsWithRef } from "react";
+import { useState } from "react";
 import { View } from "react-native";
 
-import type { SwitchContractProps } from "#contracts/types/switch-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
-
-/**
- * Props of the native Switch: the shared contract plus HeroUI Native's ControlField props (a pressable row), passed
- * through unchanged. HeroUI Native's `isSelected`, `onSelectedChange` and `children` are refused: the contract names
- * each of them once.
- */
-export type SwitchProps = SwitchContractProps &
-  Omit<
-    ComponentPropsWithRef<typeof ControlField>,
-    keyof SwitchContractProps | "isSelected" | "onSelectedChange" | "children"
-  >;
+import type { SwitchProps } from "#native/switch/switch.props";
 
 /**
  * A toggle for a setting that takes effect at once, in a row that is pressable end to end. `label` names it;

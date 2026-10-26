@@ -14,7 +14,8 @@
 import { render } from "@testing-library/react";
 
 import type { TooltipContractProps } from "#contracts/types/tooltip-contract-props.type";
-import { Tooltip, type TooltipProps } from "#native/tooltip/tooltip";
+import { Tooltip } from "#native/tooltip/tooltip";
+import type { TooltipProps } from "#native/tooltip/tooltip.props";
 
 /** Records each call of the stand-in pressable with the props it was handed. */
 const handed = vi.fn<(props: Record<string, unknown>) => void>();

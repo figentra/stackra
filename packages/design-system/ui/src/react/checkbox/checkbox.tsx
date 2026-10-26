@@ -11,20 +11,9 @@
  *          ADR 0055 (forms); owner decision 6 of STA-350 (thin wrappers).
  */
 import { Checkbox as HeroCheckbox, Description, FieldError, Label } from "@heroui/react";
-import type { CheckboxRootProps } from "@heroui/react";
 
-import type { CheckboxContractProps } from "#contracts/types/checkbox-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
-
-/**
- * Props of the web Checkbox: the shared contract plus HeroUI v3's own checkbox props, passed through unchanged.
- * HeroUI's `isSelected`, `defaultSelected`, string `value` and `children` are refused: the contract names each once.
- */
-export type CheckboxProps = CheckboxContractProps &
-  Omit<
-    CheckboxRootProps,
-    keyof CheckboxContractProps | "isSelected" | "defaultSelected" | "children"
-  >;
+import type { CheckboxProps } from "#react/checkbox/checkbox.props";
 
 /**
  * A box that is checked or not. `label` names it; `description` and `errorMessage` sit under it and are read out

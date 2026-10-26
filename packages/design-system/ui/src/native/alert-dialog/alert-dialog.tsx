@@ -21,29 +21,18 @@
  * Governing contract: ADR 0302 (decision 3, adapted forms); ADR 0303 (decision 7); ADR 0312; ADR 0165 (HeroUI Native
  *          on native); WAI-ARIA `alertdialog`; WCAG 2.2 SC 1.4.1 and 4.1.2.
  */
-import { Dialog, useThemeColor, type DialogContentProps, type ThemeColor } from "heroui-native";
+import { Dialog, useThemeColor, type ThemeColor } from "heroui-native";
 import { LucideProvider } from "lucide-react-native";
 import { useState, type ReactElement } from "react";
 import { View } from "react-native";
 
 import type { Tone } from "#contracts/enums/tone.enum";
-import type { AlertDialogContractProps } from "#contracts/types/alert-dialog-contract-props.type";
 import { FEEDBACK_BY_TONE } from "#core/constants/feedback-by-tone.constant";
 import { ICON_SIZES } from "#core/constants/icon-sizes.constant";
 import { Button } from "#native/button/button";
 import { SlotIcon } from "#native/slot-icon/slot-icon";
 import { Text } from "#native/text/text";
-
-/**
- * Props of the native AlertDialog: the shared contract plus the props of HeroUI Native's dialog content, passed
- * through (`className`, `style`, `animation`). The role is fixed at `alertdialog`, the swipe is the dismissal rules'
- * to decide, and the children are the contract's, so the type refuses them.
- */
-export type AlertDialogProps = AlertDialogContractProps &
-  Omit<
-    DialogContentProps,
-    keyof AlertDialogContractProps | "children" | "role" | "isSwipeable" | "background"
-  >;
+import type { AlertDialogProps } from "#native/alert-dialog/alert-dialog.props";
 
 /** The circle and the icon colour of each tone: HeroUI's soft pair, as the web dialog's icon draws it. */
 const ICON_COLOURS: Readonly<

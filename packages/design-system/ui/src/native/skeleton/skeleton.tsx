@@ -9,24 +9,12 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0165 (HeroUI Native on native); ADR 0304; owner decision 6 of
  *          STA-350 (thin wrappers).
  */
-import {
-  Skeleton as HeroSkeleton,
-  SkeletonGroup as HeroSkeletonGroup,
-  type SkeletonProps as HeroSkeletonProps,
-} from "heroui-native";
+import { Skeleton as HeroSkeleton, SkeletonGroup as HeroSkeletonGroup } from "heroui-native";
 import { useContext } from "react";
 
-import type { SkeletonContractProps } from "#contracts/types/skeleton-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { SkeletonGroupContext } from "#native/skeleton-group/skeleton-group-context";
-
-/**
- * Props of the native Skeleton: the shared contract plus HeroUI Native's own skeleton props, passed through
- * unchanged. `variant` is the contract's `animationType`, and `onLayout` is refused because HeroUI's own handler
- * measures the shimmer: wrap the Skeleton in a `View` to measure it.
- */
-export type SkeletonProps = SkeletonContractProps &
-  Omit<HeroSkeletonProps, keyof SkeletonContractProps | "variant" | "onLayout">;
+import type { SkeletonProps } from "#native/skeleton/skeleton.props";
 
 /**
  * A placeholder for content that is still loading; its shape and size are its `className`. It is an empty box, so

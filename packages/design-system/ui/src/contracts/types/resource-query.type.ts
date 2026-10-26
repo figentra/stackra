@@ -9,7 +9,7 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 1: router-free, the binding is `@stackra/navigation`);
  *          ADR 0318.
  */
-import type { FilterState } from "#contracts/types/filter-value.type";
+import type { FilterState } from "#contracts/types/filter-state.type";
 import type { SortDescriptor } from "#contracts/types/sort-descriptor.type";
 
 /** The search, filters and sort of a resource index. */

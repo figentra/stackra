@@ -14,10 +14,8 @@
 import { render, screen } from "@testing-library/react";
 
 import { LayoutBreakpoint } from "#contracts/enums/layout-breakpoint.enum";
-import {
-  TwoColumnLayout,
-  type TwoColumnLayoutProps,
-} from "#react/two-column-layout/two-column-layout";
+import { TwoColumnLayout } from "#react/two-column-layout/two-column-layout";
+import type { TwoColumnLayoutProps } from "#react/two-column-layout/two-column-layout.props";
 
 describe("TwoColumnLayout (web)", () => {
   it("draws the main column first and the side column second", () => {

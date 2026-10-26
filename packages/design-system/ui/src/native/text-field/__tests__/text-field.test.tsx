@@ -17,11 +17,9 @@ import { createElement, type ReactNode } from "react";
 
 import { TextFieldType } from "#contracts/enums/text-field-type.enum";
 import type { TextFieldContractProps } from "#contracts/types/text-field-contract-props.type";
-import {
-  TEXT_INPUT_TYPE_PROPS,
-  TextField,
-  type TextFieldProps,
-} from "#native/text-field/text-field";
+import { TextField } from "#native/text-field/text-field";
+import { TEXT_INPUT_TYPE_PROPS } from "#native/text-field/text-input-type-props.constant";
+import type { TextFieldProps } from "#native/text-field/text-field.props";
 
 /** The props each stand-in was last handed, by name, as the real component would receive them. */
 const received = vi.hoisted(() => ({ props: {} as Record<string, Record<string, unknown>> }));

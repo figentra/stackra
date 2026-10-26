@@ -13,22 +13,11 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0165 (HeroUI v3 on web); ADR 0055 (forms); ADR 0303; WCAG 2.2
  *          SC 1.3.1.
  */
-import { Fieldset, type FieldsetRootProps } from "@heroui/react";
-import { useId, type ComponentPropsWithoutRef, type ReactElement } from "react";
+import { Fieldset } from "@heroui/react";
+import { useId, type ReactElement } from "react";
 
-import type { FormSectionContractProps } from "#contracts/types/form-section-contract-props.type";
 import { Description } from "#react/description/description";
-
-/**
- * Props of the web FormSection: the shared contract plus HeroUI v3's own fieldset props, passed through. HeroUI's
- * `title` (the HTML tooltip attribute) is replaced by the contract's `title`, the legend.
- */
-export type FormSectionProps = FormSectionContractProps &
-  Omit<
-    FieldsetRootProps<"fieldset"> &
-      Omit<ComponentPropsWithoutRef<"fieldset">, keyof FieldsetRootProps<"fieldset">>,
-    keyof FormSectionContractProps
-  >;
+import type { FormSectionProps } from "#react/form-section/form-section.props";
 
 /** A titled group of related fields. Without a description it is a `fieldset` and its `legend`, nothing more. */
 export function FormSection({

@@ -15,7 +15,8 @@
 import { render, screen } from "@testing-library/react";
 
 import { ScreenEdge } from "#contracts/enums/screen-edge.enum";
-import { Screen, type ScreenProps } from "#react/screen/screen";
+import { Screen } from "#react/screen/screen";
+import type { ScreenProps } from "#react/screen/screen.props";
 
 const TOP = "pt-[env(titlebar-area-height,env(safe-area-inset-top,0px))]";
 const BOTTOM = "pb-[env(safe-area-inset-bottom,0px)]";

@@ -15,12 +15,9 @@
  */
 import { useImperativeHandle, type ReactElement } from "react";
 
-import type { LeaveConfirmationContractProps } from "#contracts/types/leave-confirmation-contract-props.type";
 import { AlertDialog } from "#native/alert-dialog/alert-dialog";
 import { usePendingChoice } from "#native/confirmation/use-pending-choice";
-
-/** Props of the native LeaveConfirmation: the shared contract, which has no element of its own to pass props to. */
-export type LeaveConfirmationProps = LeaveConfirmationContractProps;
+import type { LeaveConfirmationProps } from "#native/leave-confirmation/leave-confirmation.props";
 
 /**
  * Asks "discard your changes?" when the app calls `confirmLeave()` on the `ref`. It does nothing while `when` is

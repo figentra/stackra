@@ -24,10 +24,8 @@
  *          STA-350 (thin wrappers).
  */
 import { Toolbar, buttonVariants } from "@heroui/react";
-import type { ComponentPropsWithoutRef } from "react";
 import { Link as RouterLink } from "react-aria-components";
 
-import type { BulkActionBarContractProps } from "#contracts/types/bulk-action-bar-contract-props.type";
 import type { ResourceAction } from "#contracts/types/resource-action.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { pageActionVariant } from "#core/functions/page-action-variant.function";
@@ -37,13 +35,7 @@ import { usePendingActions } from "#react/bulk-action-bar/use-pending-actions";
 import { Button } from "#react/button/button";
 import { SlotIcon } from "#react/slot-icon/slot-icon";
 import { Text } from "#react/text/text";
-
-/**
- * Props of the web BulkActionBar: the shared contract plus the attributes of its root `div`, passed through. The
- * bar's own children are the actions, so the type refuses them.
- */
-export type BulkActionBarProps = BulkActionBarContractProps &
-  Omit<ComponentPropsWithoutRef<"div">, keyof BulkActionBarContractProps | "children">;
+import type { BulkActionBarProps } from "#react/bulk-action-bar/bulk-action-bar.props";
 
 /** The accessible name of an action: its text, then why it is refused when it is. */
 function nameOf(action: ResourceAction): string | undefined {

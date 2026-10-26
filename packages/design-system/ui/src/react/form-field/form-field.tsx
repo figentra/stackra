@@ -16,14 +16,8 @@
 import type { ReactElement } from "react";
 import { Controller, type FieldPath, type FieldPathValue, type FieldValues } from "react-hook-form";
 
-import type { FormFieldContractProps } from "#contracts/types/form-field-contract-props.type";
 import { bindFormField } from "#core/functions/bind-form-field.function";
-
-/** Props of the web FormField: the shared contract, which is react-hook-form's `Controller` options plus `render`. */
-export type FormFieldProps<
-  TFieldValues extends FieldValues = FieldValues,
-  TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
-> = FormFieldContractProps<TFieldValues, TName>;
+import type { FormFieldProps } from "#react/form-field/form-field.props";
 
 /**
  * A form field bound to react-hook-form. Give it the form's `control` (or sit it inside `FormProvider`), the field's

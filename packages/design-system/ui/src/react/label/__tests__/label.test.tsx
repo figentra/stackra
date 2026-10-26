@@ -13,7 +13,8 @@ import { render, screen } from "@testing-library/react";
 import { createRef } from "react";
 
 import type { LabelContractProps } from "#contracts/types/label-contract-props.type";
-import { Label, type LabelProps } from "#react/label/label";
+import { Label } from "#react/label/label";
+import type { LabelProps } from "#react/label/label.props";
 
 describe("Label (web)", () => {
   it("names the control it is tied to by htmlFor", () => {

@@ -16,7 +16,8 @@ import { render } from "@testing-library/react";
 import type { ReactNode } from "react";
 
 import type { CloseButtonContractProps } from "#contracts/types/close-button-contract-props.type";
-import { CloseButton, type CloseButtonProps } from "#native/close-button/close-button";
+import { CloseButton } from "#native/close-button/close-button";
+import type { CloseButtonProps } from "#native/close-button/close-button.props";
 
 /** The props the stand-in was last handed, as the real component would receive them. */
 const received = vi.hoisted(() => ({ props: {} as Record<string, unknown> }));

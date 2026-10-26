@@ -16,22 +16,17 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0312; ADR 0165 (HeroUI Native on native);
  *          owner decision 6 of STA-350 (thin wrappers); WCAG 2.2 SC 2.1.2, 2.4.3 and 4.1.2.
  */
-import { Dialog, type DialogContentProps as HeroDialogContentProps } from "heroui-native";
+import { Dialog } from "heroui-native";
 import type { ReactElement } from "react";
 
-import type { ModalContractProps } from "#contracts/types/modal-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { BackButtonBlock } from "#native/modal/back-button-block";
 import { ModalClose } from "#native/modal/modal-close";
-import { ModalBody, ModalFooter, ModalHeader } from "#native/modal/modal-section";
+import { ModalBody } from "#native/modal/modal-body";
+import { ModalFooter } from "#native/modal/modal-footer";
+import { ModalHeader } from "#native/modal/modal-header";
 import { ModalTitle } from "#native/modal/modal-title";
-
-/**
- * Props of the native Modal: the shared contract plus HeroUI Native's own dialog content props, passed through.
- * HeroUI Native's `isSwipeable` is the contract's `isDismissable`, so the type refuses it.
- */
-export type ModalProps = ModalContractProps &
-  Omit<HeroDialogContentProps, keyof ModalContractProps | "isSwipeable" | "accessibilityLabel">;
+import type { ModalProps } from "#native/modal/modal.props";
 
 /** The dialog's width by `size`: a cap and centring, or the whole screen. */
 const SIZE_CLASS_NAME = {

@@ -18,24 +18,14 @@
  *          WCAG 2.2 SC 1.3.1, 2.5.8 and 4.1.2.
  */
 import { cn } from "@heroui/react";
-import { useState, type ComponentPropsWithRef, type ReactElement } from "react";
+import { useState, type ReactElement } from "react";
 
-import type { SidebarContractProps } from "#contracts/types/sidebar-contract-props.type";
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
 import { useUiText } from "#core/hooks/use-ui-text";
 import { Icon } from "#react/icon/icon";
 import { IconButton } from "#react/icon-button/icon-button";
 import { NavigationList } from "#react/navigation-list/navigation-list";
-
-/**
- * Props of the web Sidebar: the shared contract plus the root `div`'s own props, passed through. The sidebar's content
- * is `items` and its two slots, so the type refuses JSX children.
- */
-export type SidebarProps = SidebarContractProps &
-  Omit<ComponentPropsWithRef<"div">, keyof SidebarContractProps | "children"> & {
-    /** False to leave out the collapse toggle, for a sidebar drawn inside AppShell's drawer. Defaults to true. */
-    readonly isCollapsible?: boolean | undefined;
-  };
+import type { SidebarProps } from "#react/sidebar/sidebar.props";
 
 /**
  * A side column of navigation. Controlled with `isCollapsed`, uncontrolled with `defaultCollapsed`; both report through

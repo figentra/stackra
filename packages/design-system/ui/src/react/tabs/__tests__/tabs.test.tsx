@@ -16,7 +16,8 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 import { createRef } from "react";
 
 import type { TabsContractProps } from "#contracts/types/tabs-contract-props.type";
-import { Tabs, type TabsProps } from "#react/tabs/tabs";
+import { Tabs } from "#react/tabs/tabs";
+import type { TabsProps } from "#react/tabs/tabs.props";
 
 const ITEMS = [
   { id: "details", label: "Details", content: "Order details", isDisabled: true },

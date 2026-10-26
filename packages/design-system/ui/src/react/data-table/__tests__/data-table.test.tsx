@@ -27,7 +27,8 @@ import { useState, type ReactElement } from "react";
 import type { DataTableContractProps } from "#contracts/types/data-table-contract-props.type";
 import type { ResourceQuery } from "#contracts/types/resource-query.type";
 import type { TableColumn } from "#contracts/types/table-column.type";
-import { DataTable, type DataTableProps } from "#react/data-table/data-table";
+import { DataTable } from "#react/data-table/data-table";
+import type { DataTableProps } from "#react/data-table/data-table.props";
 
 const press = (element: HTMLElement) => act(() => element.click());
 
@@ -80,7 +81,9 @@ describe("DataTable (web)", () => {
       "IntersectionObserver",
       class {
         observe() {}
+
         unobserve() {}
+
         disconnect() {}
       },
     );

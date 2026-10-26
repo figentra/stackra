@@ -15,7 +15,8 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 
 import type { TooltipContractProps } from "#contracts/types/tooltip-contract-props.type";
 import { IconButton } from "#react/icon-button/icon-button";
-import { Tooltip, type TooltipProps } from "#react/tooltip/tooltip";
+import { Tooltip } from "#react/tooltip/tooltip";
+import type { TooltipProps } from "#react/tooltip/tooltip.props";
 
 /** Puts the page in keyboard modality, then focuses the element: React Aria shows a tooltip on keyboard focus only. */
 function focusByKeyboard(element: HTMLElement) {

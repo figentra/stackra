@@ -9,11 +9,8 @@
  */
 import type { ReactElement } from "react";
 
-import type { AiMarkContractProps } from "#contracts/types/ai-mark-contract-props.type";
 import { Icon } from "#react/icon/icon";
-
-/** Props of the web AiMark. */
-export type AiMarkProps = AiMarkContractProps;
+import type { AiMarkProps } from "#react/ai-mark/ai-mark.props";
 
 /** The AI mark, labelled. */
 export function AiMark({ kind, label, isLabelVisible, size = "sm" }: AiMarkProps): ReactElement {

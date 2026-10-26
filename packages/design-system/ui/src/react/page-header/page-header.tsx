@@ -19,23 +19,15 @@
  *          and 5); ADR 0165 (HeroUI v3 on web); WCAG 2.2 SC 1.3.1, 2.4.6, 2.4.8 and 2.5.8.
  */
 import { cn } from "@heroui/react";
-import type { ComponentPropsWithRef, ReactElement } from "react";
+import type { ReactElement } from "react";
 
-import type { PageHeaderContractProps } from "#contracts/types/page-header-contract-props.type";
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
 import { useUiText } from "#core/hooks/use-ui-text";
 import { Breadcrumbs } from "#react/breadcrumbs/breadcrumbs";
 import { Heading } from "#react/heading/heading";
 import { PageActions } from "#react/page-actions/page-actions";
 import { Text } from "#react/text/text";
-
-/**
- * Props of the web PageHeader: the shared contract plus the `header` element's own props, passed through. The
- * element's `aria-label` is the contract's `label` and its `title` attribute gives way to the contract's `title`, so
- * the type refuses the first and replaces the second.
- */
-export type PageHeaderProps = PageHeaderContractProps &
-  Omit<ComponentPropsWithRef<"header">, keyof PageHeaderContractProps | "aria-label" | "children">;
+import type { PageHeaderProps } from "#react/page-header/page-header.props";
 
 /**
  * The top of a page: trail, title with status, description and actions. The title is the page's `h1` unless

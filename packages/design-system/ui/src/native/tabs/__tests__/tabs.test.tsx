@@ -18,7 +18,8 @@ import { act, render } from "@testing-library/react";
 import type { ReactNode } from "react";
 
 import type { TabsContractProps } from "#contracts/types/tabs-contract-props.type";
-import { Tabs, type TabsProps } from "#native/tabs/tabs";
+import { Tabs } from "#native/tabs/tabs";
+import type { TabsProps } from "#native/tabs/tabs.props";
 
 /** The props each stand-in was last handed, and every set of props a trigger and a content were handed. */
 const received = vi.hoisted(() => ({

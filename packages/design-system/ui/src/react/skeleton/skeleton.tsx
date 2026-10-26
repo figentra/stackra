@@ -9,20 +9,12 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0165 (UI contract, HeroUI v3 on web); ADR 0304; owner decision 6 of
  *          STA-350 (thin wrappers).
  */
-import { Skeleton as HeroSkeleton, type SkeletonRootProps } from "@heroui/react";
-import { useContext, type ComponentPropsWithRef } from "react";
+import { Skeleton as HeroSkeleton } from "@heroui/react";
+import { useContext } from "react";
 
-import type { SkeletonContractProps } from "#contracts/types/skeleton-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { SkeletonGroupContext } from "#react/skeleton-group/skeleton-group-context";
-
-/** HeroUI's props for a `div` skeleton: its own props plus the `div` attributes, as its generic signature spreads them. */
-type HeroSkeletonProps = SkeletonRootProps<"div"> &
-  Omit<ComponentPropsWithRef<"div">, keyof SkeletonRootProps<"div">>;
-
-/** Props of the web Skeleton: the shared contract plus HeroUI v3's own skeleton props, passed through unchanged. */
-export type SkeletonProps = SkeletonContractProps &
-  Omit<HeroSkeletonProps, keyof SkeletonContractProps>;
+import type { SkeletonProps } from "#react/skeleton/skeleton.props";
 
 /**
  * A placeholder for content that is still loading; its shape and size are its `className`. It is an empty box, so

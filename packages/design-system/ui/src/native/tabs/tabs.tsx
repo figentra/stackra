@@ -16,23 +16,13 @@
  *          owner decision 6 of STA-350 (thin wrappers).
  */
 import { Tabs as HeroTabs } from "heroui-native";
-import { useState, type ComponentPropsWithRef } from "react";
+import { useState } from "react";
 import { View } from "react-native";
 
-import type { TabsContractProps } from "#contracts/types/tabs-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { Spinner } from "#native/spinner/spinner";
 import { Text } from "#native/text/text";
-
-/**
- * Props of the native Tabs: the shared contract plus HeroUI Native's own tabs props, passed through unchanged. The
- * tabs are `items`, never children, and the selection is a list of ids, never HeroUI's `value`.
- */
-export type TabsProps = TabsContractProps &
-  Omit<
-    ComponentPropsWithRef<typeof HeroTabs>,
-    keyof TabsContractProps | "children" | "value" | "onValueChange"
-  >;
+import type { TabsProps } from "#native/tabs/tabs.props";
 
 /**
  * A scrolling row of tabs over one panel each. The selection is the list of the one selected id;

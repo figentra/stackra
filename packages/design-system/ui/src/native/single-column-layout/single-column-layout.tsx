@@ -9,14 +9,10 @@
  * Governing contract: ADR 0302 (decision 3, adapted forms); ADR 0303 (decision 7); ADR 0317 (decision 7).
  */
 import type { ReactElement } from "react";
-import { View, type ViewProps } from "react-native";
+import { View } from "react-native";
 
-import type { SingleColumnLayoutContractProps } from "#contracts/types/single-column-layout-contract-props.type";
 import { Text } from "#native/text/text";
-
-/** Props of the native SingleColumnLayout: the shared contract plus the `View`'s own props, passed through. */
-export type SingleColumnLayoutProps = SingleColumnLayoutContractProps &
-  Omit<ViewProps, keyof SingleColumnLayoutContractProps>;
+import type { SingleColumnLayoutProps } from "#native/single-column-layout/single-column-layout.props";
 
 /** A screen of one column: its children stacked from top to bottom with a gap. */
 export function SingleColumnLayout({

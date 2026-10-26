@@ -15,7 +15,8 @@ import { render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 
 import type { NavigationItem } from "#contracts/types/navigation-item.type";
-import { Sidebar, type SidebarProps } from "#native/sidebar/sidebar";
+import { Sidebar } from "#native/sidebar/sidebar";
+import type { SidebarProps } from "#native/sidebar/sidebar.props";
 
 vi.mock("react-native", () => ({
   View: ({

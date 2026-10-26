@@ -11,9 +11,7 @@
  *          SC 1.3.1 and 4.1.2.
  */
 import type { NavigationItem } from "#contracts/types/navigation-item.type";
-
-/** How an entry stands to the current place. */
-export type CurrentState = "page" | "ancestor" | "none";
+import type { CurrentState } from "#core/types/current-state.type";
 
 /** True when any descendant of the item is flagged as the current place. */
 function hasCurrentDescendant(item: NavigationItem): boolean {

@@ -14,24 +14,16 @@
  */
 import { GlassView } from "expo-glass-effect";
 import { Button as HeroButton } from "heroui-native";
-import type { ReactNode } from "react";
 import { StyleSheet } from "react-native";
 import { useUniwind } from "uniwind";
 
 import type { ButtonVariant } from "#contracts/enums/button-variant.enum";
 
 import { useGlassMaterial } from "./use-glass-material";
+import type { GlassButtonLook } from "#native/glass/glass-button-look.type";
 
 /** The variants that draw on glass; the web's glass ghost exists only under a pointer. */
 const GLASS_VARIANTS: ReadonlySet<ButtonVariant> = new Set(["secondary", "tertiary", "outline"]);
-
-/** What a glass variant hands HeroUI Native's button. */
-export interface GlassButtonLook {
-  /** The layer HeroUI Native draws behind the content, inside the button's radius. */
-  readonly background: ReactNode;
-  /** Clears the variant's own fill so the layer shows. */
-  readonly className: string;
-}
 
 /** The Liquid Glass layer, filling the HeroUI Native background container in the current colour scheme. */
 function GlassLayer() {

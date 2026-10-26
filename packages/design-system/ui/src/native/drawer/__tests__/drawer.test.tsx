@@ -20,9 +20,12 @@ import type { ReactNode } from "react";
 
 import type { DrawerContractProps } from "#contracts/types/drawer-contract-props.type";
 import type { OverlayTitleContractProps } from "#contracts/types/overlay-title-contract-props.type";
-import { Drawer, type DrawerProps } from "#native/drawer/drawer";
-import type { DrawerTitleProps } from "#native/drawer/drawer-title";
-import { ModalBody, ModalFooter, ModalHeader } from "#native/modal/modal-section";
+import { Drawer } from "#native/drawer/drawer";
+import type { DrawerProps } from "#native/drawer/drawer.props";
+import type { DrawerTitleProps } from "#native/drawer/drawer-title.props";
+import { ModalBody } from "#native/modal/modal-body";
+import { ModalFooter } from "#native/modal/modal-footer";
+import { ModalHeader } from "#native/modal/modal-header";
 
 /** The props each stand-in was last handed, by name, as the real component would receive them. */
 const received = vi.hoisted(() => ({ props: {} as Record<string, Record<string, unknown>> }));

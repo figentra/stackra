@@ -19,7 +19,8 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 
 import type { MenuLeafItem } from "#contracts/types/menu-leaf-item.type";
-import { PageHeader, type PageHeaderProps } from "#native/page-header/page-header";
+import { PageHeader } from "#native/page-header/page-header";
+import type { PageHeaderProps } from "#native/page-header/page-header.props";
 import { RouterContext } from "#native/router-provider/router-context";
 
 /** What the stand-ins were last handed: the Linking mock, the buttons and the menus. */

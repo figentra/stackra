@@ -11,16 +11,12 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0312; ADR 0165 (HeroUI v3 on web); WCAG 2.2
  *          SC 1.4.13, 4.1.2.
  */
-import { Tooltip as HeroTooltip, type TooltipRootProps } from "@heroui/react";
+import { Tooltip as HeroTooltip } from "@heroui/react";
 import type { ReactElement } from "react";
 
-import type { TooltipContractProps } from "#contracts/types/tooltip-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { reactAriaPlacementOf } from "#core/functions/react-aria-placement-of.function";
-
-/** Props of the web Tooltip: the shared contract plus HeroUI v3's own tooltip root props, passed through. */
-export type TooltipProps = TooltipContractProps &
-  Omit<TooltipRootProps, keyof TooltipContractProps>;
+import type { TooltipProps } from "#react/tooltip/tooltip.props";
 
 /**
  * A short label for an element, shown on hover and on keyboard focus. The element keeps its own accessible name; the

@@ -22,7 +22,8 @@ import type { ReactElement } from "react";
 import { RouterProvider } from "react-aria-components";
 
 import type { MenuLeafItem } from "#contracts/types/menu-leaf-item.type";
-import { Section, type SectionProps } from "#react/section/section";
+import { Section } from "#react/section/section";
+import type { SectionProps } from "#react/section/section.props";
 
 const press = (element: HTMLElement) => act(() => element.click());
 

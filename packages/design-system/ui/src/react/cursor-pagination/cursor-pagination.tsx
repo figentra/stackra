@@ -10,24 +10,14 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0313 (decision 4); ADR 0060 (right-to-left);
  *          WCAG 2.2 SC 4.1.3.
  */
-import { useState, type ComponentPropsWithoutRef } from "react";
+import { useState } from "react";
 
-import type { CursorPaginationContractProps } from "#contracts/types/cursor-pagination-contract-props.type";
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
 import { useUiText } from "#core/hooks/use-ui-text";
 import { Button } from "#react/button/button";
 import { Icon } from "#react/icon/icon";
 import { Text } from "#react/text/text";
-
-/**
- * Props of the web CursorPagination: the shared contract plus the `nav` element's own props, passed through. The
- * element's `aria-label` is the contract's `label`, so the type refuses it.
- */
-export type CursorPaginationProps = CursorPaginationContractProps &
-  Omit<
-    ComponentPropsWithoutRef<"nav">,
-    keyof CursorPaginationContractProps | "aria-label" | "children"
-  >;
+import type { CursorPaginationProps } from "#react/cursor-pagination/cursor-pagination.props";
 
 /**
  * Previous and next buttons, or one load-more button, for a list that arrives in cursor pages. The next button is
@@ -56,7 +46,7 @@ export function CursorPagination({
   previousLabel ??= t(UI_KEYS.ui.cursor_pagination.previous);
   nextLabel ??= t(UI_KEYS.ui.cursor_pagination.next);
   loadMoreLabel ??= t(UI_KEYS.ui.cursor_pagination.load_more);
-  countLabel ??= (count) => t(UI_KEYS.ui.cursor_pagination.count, { count });
+  countLabel ??= (total) => t(UI_KEYS.ui.cursor_pagination.count, { count: total });
   const isPager = mode === "pager";
   // The button that was pressed shows the spinner, the other waits disabled; a load that no press started (an app's own
   // end-reached call) is the next page.

@@ -16,7 +16,8 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 
-import { AppShell, type AppShellProps } from "#native/app-shell/app-shell";
+import { AppShell } from "#native/app-shell/app-shell";
+import type { AppShellProps } from "#native/app-shell/app-shell.props";
 
 vi.mock("react-native", () => ({
   View: ({

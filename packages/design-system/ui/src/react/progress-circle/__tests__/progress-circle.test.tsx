@@ -16,7 +16,8 @@ import { createRef } from "react";
 import { Size } from "#contracts/enums/size.enum";
 import { Tone } from "#contracts/enums/tone.enum";
 import type { ProgressCircleContractProps } from "#contracts/types/progress-circle-contract-props.type";
-import { ProgressCircle, type ProgressCircleProps } from "#react/progress-circle/progress-circle";
+import { ProgressCircle } from "#react/progress-circle/progress-circle";
+import type { ProgressCircleProps } from "#react/progress-circle/progress-circle.props";
 
 /** The circumference of HeroUI's ring: radius 16 in a 36-unit box. */
 const CIRCUMFERENCE = 2 * Math.PI * 16;

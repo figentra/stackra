@@ -13,12 +13,12 @@
  * Runtime: browser
  * Governing contract: ADR 0302 (decision 3); ADR 0312 (decision 3); WCAG 2.2 SC 2.5.8, 4.1.3 and 2.1.1.
  */
-import { Toast as HeroToast, type ToastContentValue } from "@heroui/react";
+import { Toast as HeroToast } from "@heroui/react";
 import type { ReactElement } from "react";
-import type { QueuedToast } from "react-aria-components/Toast";
 
 import { liveRegionOf } from "#core/functions/live-region-of.function";
 import { FeedbackIcon } from "#react/feedback-icon/feedback-icon";
+import type { ToastItemProps } from "#react/toast/toast-item.props";
 
 /**
  * The dismiss button's size and visibility: 24 px, and shown whenever the toast is in front or the stack is open. The
@@ -27,14 +27,6 @@ import { FeedbackIcon } from "#react/feedback-icon/feedback-icon";
  */
 const DISMISS_CLASS_NAME =
   "size-6 in-data-[frontmost=true]:pointer-events-auto in-data-[frontmost=true]:opacity-100 in-data-[expanded=true]:pointer-events-auto in-data-[expanded=true]:opacity-100";
-
-/** Props of ToastItem. */
-export interface ToastItemProps {
-  /** The queued toast to draw, with its content as `toast()` stored it. */
-  readonly toast: QueuedToast<ToastContentValue>;
-  /** The accessible name of the dismiss button. */
-  readonly dismissLabel: string;
-}
 
 /** One toast: icon, message, description, action and dismiss button, announced by its tone. */
 export function ToastItem({ toast, dismissLabel }: ToastItemProps): ReactElement {

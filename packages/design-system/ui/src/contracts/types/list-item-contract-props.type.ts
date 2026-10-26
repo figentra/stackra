@@ -10,7 +10,6 @@
  */
 import type { ReactNode } from "react";
 
-import type { CollectionItem } from "#contracts/types/collection-item.type";
 import type { IconSlot } from "#contracts/types/icon-slot.type";
 
 /** Props shared by the web and native `ListItem`. */
@@ -32,6 +31,3 @@ export interface ListItemContractProps {
   /** The accessible name when the title is not a string; also what type-ahead matches. Defaults to the title text. */
   readonly label?: string | undefined;
 }
-
-/** A row as an entry of a list: the row's props and the `id` the list keys it and its selection by. */
-export interface ListItemData extends ListItemContractProps, CollectionItem {}

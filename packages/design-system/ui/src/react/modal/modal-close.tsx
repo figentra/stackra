@@ -8,22 +8,12 @@
  * Runtime: browser
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0312; WCAG 2.2 SC 2.5.8 and 4.1.2.
  */
-import {
-  Modal as HeroModal,
-  type ModalCloseTriggerProps as HeroModalCloseProps,
-} from "@heroui/react";
+import { Modal as HeroModal } from "@heroui/react";
 import type { ReactElement } from "react";
 
-import type { CloseButtonContractProps } from "#contracts/types/close-button-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { SlotIcon } from "#react/slot-icon/slot-icon";
-
-/**
- * Props of the web Modal.Close: the close-button contract plus HeroUI v3's own close-trigger props, passed through.
- * HeroUI's `aria-label` is the contract's `label`, and its children are the contract's `icon`.
- */
-export type ModalCloseProps = CloseButtonContractProps &
-  Omit<HeroModalCloseProps, keyof CloseButtonContractProps | "children" | "aria-label">;
+import type { ModalCloseProps } from "#react/modal/modal-close.props";
 
 /** The button in the modal's corner that closes it. Without an `icon` it draws HeroUI's close mark. */
 export function ModalClose({

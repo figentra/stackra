@@ -9,14 +9,10 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0165 (HeroUI Native on native); ADR 0055 (forms); ADR 0303.
  */
 import { FieldError as HeroFieldError } from "heroui-native";
-import type { ComponentPropsWithRef, ReactElement } from "react";
+import type { ReactElement } from "react";
 
-import type { FieldErrorContractProps } from "#contracts/types/field-error-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
-
-/** Props of the native FieldError: the shared contract plus HeroUI Native's own props, passed through unchanged. */
-export type FieldErrorProps = FieldErrorContractProps &
-  Omit<ComponentPropsWithRef<typeof HeroFieldError>, keyof FieldErrorContractProps>;
+import type { FieldErrorProps } from "#native/field-error/field-error.props";
 
 /**
  * The message under a field. Give it the text as children. Leave `isInvalid` out inside a HeroUI Native field; set it

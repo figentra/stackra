@@ -15,7 +15,8 @@
 import { act, render } from "@testing-library/react";
 import type { ReactNode } from "react";
 
-import { Checkbox, type CheckboxProps } from "#native/checkbox/checkbox";
+import { Checkbox } from "#native/checkbox/checkbox";
+import type { CheckboxProps } from "#native/checkbox/checkbox.props";
 
 /** The props each stand-in was last handed, by name, as the real component would receive them. */
 const received = vi.hoisted(() => ({ props: {} as Record<string, Record<string, unknown>> }));

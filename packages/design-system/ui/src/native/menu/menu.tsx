@@ -16,11 +16,10 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0312; ADR 0165 (HeroUI Native on native); ADR 0060 (right-to-left);
  *          owner decision 6 of STA-350 (thin wrappers).
  */
-import { Menu as HeroMenu, Separator, SubMenu, useIsRTL, type MenuRootProps } from "heroui-native";
+import { Menu as HeroMenu, Separator, SubMenu, useIsRTL } from "heroui-native";
 import { Fragment, use, useState, type ReactNode } from "react";
 import { Text, View } from "react-native";
 
-import type { MenuContractProps } from "#contracts/types/menu-contract-props.type";
 import type { MenuLeafItem } from "#contracts/types/menu-leaf-item.type";
 import { mergeSectionSelection } from "#core/functions/merge-section-selection.function";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
@@ -28,13 +27,7 @@ import { physicalSideOf } from "#core/functions/physical-side-of.function";
 import { Icon } from "#native/icon/icon";
 import { followHref } from "#native/router-provider/follow-href.function";
 import { RouterContext } from "#native/router-provider/router-context";
-
-/**
- * Props of the native Menu: the shared contract plus HeroUI Native's own menu props, passed through unchanged. The app
- * lists actions as `sections`; the only child is the trigger. `presentation` is kept (popover or bottom sheet).
- */
-export type MenuProps = MenuContractProps &
-  Omit<MenuRootProps, keyof MenuContractProps | "children" | "isDefaultOpen">;
+import type { MenuProps } from "#native/menu/menu.props";
 
 // Developer log text, read in the console only, so it stays English (ADR 0080 translates what users see).
 const COULD_NOT_OPEN = "Menu could not open the link of an action";

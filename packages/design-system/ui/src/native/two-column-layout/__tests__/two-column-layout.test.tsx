@@ -13,10 +13,8 @@
 import { render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 
-import {
-  TwoColumnLayout,
-  type TwoColumnLayoutProps,
-} from "#native/two-column-layout/two-column-layout";
+import { TwoColumnLayout } from "#native/two-column-layout/two-column-layout";
+import type { TwoColumnLayoutProps } from "#native/two-column-layout/two-column-layout.props";
 
 vi.mock("react-native", () => ({
   View: ({

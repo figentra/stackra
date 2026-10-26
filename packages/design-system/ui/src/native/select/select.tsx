@@ -14,36 +14,13 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0165 (HeroUI Native on native); ADR 0055 (one field contract); owner
  *          decision 6 of STA-350 (thin wrappers).
  */
-import {
-  cn,
-  Description,
-  FieldError,
-  Label,
-  Select as HeroSelect,
-  type SelectRootProps,
-} from "heroui-native";
+import { cn, Description, FieldError, Label, Select as HeroSelect } from "heroui-native";
 
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import type { SelectContractProps } from "#contracts/types/select-contract-props.type";
 import type { SelectItem } from "#contracts/types/select-item.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
-
-/**
- * Props of the native Select: the shared contract plus HeroUI Native's own select props, passed through unchanged.
- * HeroUI's `value`, `defaultValue` and `onValueChange` are the contract's `value`, `defaultValue` and `onChange`, in
- * keys instead of options; the app lists choices as `items`, never as children, and the selection is always one.
- */
-export type SelectProps = SelectContractProps &
-  Omit<
-    SelectRootProps,
-    | keyof SelectContractProps
-    | "children"
-    | "value"
-    | "defaultValue"
-    | "onValueChange"
-    | "selectionMode"
-  >;
+import type { SelectProps } from "#native/select/select.props";
 
 /** The option HeroUI Native holds for a key: its key and label, or nothing when no choice has that key. */
 function optionOf(items: readonly SelectItem[], key: string | null | undefined) {

@@ -28,26 +28,15 @@ import {
   TextField as HeroTextField,
   useBottomSheetAwareHandlers,
 } from "heroui-native";
-import { useMemo, useState, type ComponentPropsWithRef } from "react";
+import { useMemo, useState } from "react";
 import { Platform, type KeyboardTypeOptions } from "react-native";
 
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
 import { useUiText } from "#core/hooks/use-ui-text";
-import type { NumberFieldContractProps } from "#contracts/types/number-field-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { useDesignSystem } from "#native/design-system-provider/use-design-system";
 import { IconButton } from "#native/icon-button/icon-button";
-
-/**
- * Props of the native NumberField: the shared contract plus HeroUI Native's input props, passed through to the input.
- * The contract's names replace HeroUI's and React Native's: `onChange` for `onChangeText`, `isReadOnly` for `readOnly`
- * and `editable`, `isDisabled` and `isInvalid` for the input's own.
- */
-export type NumberFieldProps = NumberFieldContractProps &
-  Omit<
-    ComponentPropsWithRef<typeof HeroInputGroup.Input>,
-    keyof NumberFieldContractProps | "children" | "onChangeText" | "readOnly" | "editable"
-  >;
+import type { NumberFieldProps } from "#native/number-field/number-field.props";
 
 /** The keyboard that can type every value the field accepts. */
 function keyboardOf(minValue: number | undefined, hasFractions: boolean): KeyboardTypeOptions {

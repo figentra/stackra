@@ -8,10 +8,8 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0312; ADR 0022 (test placement).
  */
 // @covers sta-350:FR-117
-import {
-  progressStateOf,
-  type ProgressStateInput,
-} from "#core/functions/progress-state-of.function";
+import { progressStateOf } from "#core/functions/progress-state-of.function";
+import type { ProgressStateInput } from "#core/types/progress-state-input.type";
 
 const input = (overrides: Partial<ProgressStateInput> = {}): ProgressStateInput => ({
   value: 40,

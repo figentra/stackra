@@ -16,14 +16,11 @@ import { useCallback, useState, type ReactElement } from "react";
 
 import type { ConfirmFunction } from "#contracts/types/confirm-function.type";
 import type { ConfirmationOptions } from "#contracts/types/confirmation-options.type";
-import type { ConfirmationProviderContractProps } from "#contracts/types/confirmation-provider-contract-props.type";
 import { AlertDialog } from "#native/alert-dialog/alert-dialog";
 import { ConfirmationContext } from "#native/confirmation/confirmation-context";
 import { usePendingChoice } from "#native/confirmation/use-pending-choice";
 import { TextField } from "#native/text-field/text-field";
-
-/** Props of the native ConfirmationProvider: the app it wraps. */
-export type ConfirmationProviderProps = ConfirmationProviderContractProps;
+import type { ConfirmationProviderProps } from "#native/confirmation/confirmation-provider.props";
 
 /** Makes `useConfirmation()` available to the app below it and draws the dialog it asks through. */
 export function ConfirmationProvider({ children }: ConfirmationProviderProps): ReactElement {

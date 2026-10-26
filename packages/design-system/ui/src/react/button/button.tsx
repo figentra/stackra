@@ -9,22 +9,11 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0165 (UI contract, HeroUI v3 on web); owner
  *          decision 6 of STA-350 (thin wrappers).
  */
-import { Button as HeroButton, Spinner, type ButtonProps as HeroButtonProps } from "@heroui/react";
+import { Button as HeroButton, Spinner } from "@heroui/react";
 
-import type { ButtonContractProps } from "#contracts/types/button-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { SlotIcon } from "#react/slot-icon/slot-icon";
-
-/**
- * Props of the web Button: the shared contract plus HeroUI v3's own button props, passed through unchanged. HeroUI's
- * `isPending`, `fullWidth`, `isIconOnly` and `aria-label` are the contract's `isLoading`, `isFullWidth`,
- * `IconButton` and `label`, so the type refuses them: one concept, one prop.
- */
-export type ButtonProps = ButtonContractProps &
-  Omit<
-    HeroButtonProps,
-    keyof ButtonContractProps | "isPending" | "fullWidth" | "isIconOnly" | "aria-label"
-  >;
+import type { ButtonProps } from "#react/button/button.props";
 
 /**
  * A button on HeroUI v3. While `isLoading` the press is refused and focus stays on the button; the spinner replaces

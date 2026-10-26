@@ -18,7 +18,8 @@ import type { ReactNode } from "react";
 import { PageSkeletonLayout } from "#contracts/enums/page-skeleton-layout.enum";
 import type { PageSkeletonContractProps } from "#contracts/types/page-skeleton-contract-props.type";
 import { PAGE_SKELETON_ROWS } from "#core/constants/page-skeleton-rows.constant";
-import { PageSkeleton, type PageSkeletonProps } from "#native/page-skeleton/page-skeleton";
+import { PageSkeleton } from "#native/page-skeleton/page-skeleton";
+import type { PageSkeletonProps } from "#native/page-skeleton/page-skeleton.props";
 
 /** The props the group and every bone were handed, and every View, in render order. */
 const received = vi.hoisted(() => ({

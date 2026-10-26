@@ -18,24 +18,13 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0312 (decisions 1 and 2); ADR 0165 (HeroUI v3
  *          on web); ADR 0060 (right-to-left); WCAG 2.2 SC 2.1.2, 2.4.3 and 4.1.2.
  */
-import {
-  Drawer as HeroDrawer,
-  type DrawerDialogProps as HeroDrawerDialogProps,
-} from "@heroui/react";
+import { Drawer as HeroDrawer } from "@heroui/react";
 import type { ReactElement } from "react";
 
-import type { DrawerContractProps } from "#contracts/types/drawer-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { DrawerClose } from "#react/drawer/drawer-close";
 import { DrawerTitle } from "#react/drawer/drawer-title";
-
-/**
- * Props of the web Drawer: the shared contract plus HeroUI v3's own dialog props, passed through to the dialog.
- * HeroUI's `aria-label` is the contract's `label`, and its `left` and `right` edges are the contract's `start` and
- * `end`.
- */
-export type DrawerProps = DrawerContractProps &
-  Omit<HeroDrawerDialogProps, keyof DrawerContractProps | "aria-label">;
+import type { DrawerProps } from "#react/drawer/drawer.props";
 
 /** HeroUI's edge for each logical side: its `left` and `right` are laid out by flexbox, so they are start and end. */
 const EDGE = { start: "left", end: "right", top: "top", bottom: "bottom" } as const;

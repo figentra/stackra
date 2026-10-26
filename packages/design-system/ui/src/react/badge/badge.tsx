@@ -9,39 +9,13 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0165 (HeroUI v3 on web); ADR 0304; ADR 0060; owner decision 6 of
  *          STA-350 (thin wrappers).
  */
-import {
-  Badge as HeroBadge,
-  cn,
-  type BadgeAnchorProps as HeroBadgeAnchorProps,
-  type BadgeRootProps as HeroBadgeRootProps,
-} from "@heroui/react";
+import { Badge as HeroBadge, cn } from "@heroui/react";
 import { useLocale } from "react-aria-components";
-import type { ComponentPropsWithRef } from "react";
 
-import type { BadgeAnchorContractProps } from "#contracts/types/badge-anchor-contract-props.type";
-import type { BadgeContractProps } from "#contracts/types/badge-contract-props.type";
 import { physicalPlacementOf } from "#core/functions/physical-placement-of.function";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
-
-/**
- * Props of the web Badge: the shared contract plus HeroUI v3's own badge props, passed through unchanged. HeroUI's
- * `color` is the contract's `tone`, its physical `placement` is replaced by the logical one, and `label` owns the
- * accessible name, so `aria-label` and `aria-hidden` are refused (a span with no role takes no name).
- */
-export type BadgeProps = BadgeContractProps &
-  Omit<
-    HeroBadgeRootProps<"span"> &
-      Omit<ComponentPropsWithRef<"span">, keyof HeroBadgeRootProps<"span">>,
-    keyof BadgeContractProps | "color" | "aria-label" | "aria-hidden"
-  >;
-
-/** Props of the web Badge.Anchor: the shared contract plus HeroUI v3's anchor props, passed through unchanged. */
-export type BadgeAnchorProps = BadgeAnchorContractProps &
-  Omit<
-    HeroBadgeAnchorProps<"span"> &
-      Omit<ComponentPropsWithRef<"span">, keyof HeroBadgeAnchorProps<"span">>,
-    "children"
-  >;
+import type { BadgeProps } from "#react/badge/badge.props";
+import type { BadgeAnchorProps } from "#react/badge/badge-anchor.props";
 
 /** The badge itself; reached as `Badge`, with the anchor as `Badge.Anchor`. */
 function BadgeRoot({

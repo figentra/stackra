@@ -16,7 +16,8 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { createElement, type ReactNode } from "react";
 
 import type { TextAreaContractProps } from "#contracts/types/text-area-contract-props.type";
-import { TextArea, type TextAreaProps } from "#native/text-area/text-area";
+import { TextArea } from "#native/text-area/text-area";
+import type { TextAreaProps } from "#native/text-area/text-area.props";
 
 /** The props each stand-in was last handed, by name, as the real component would receive them. */
 const received = vi.hoisted(() => ({ props: {} as Record<string, Record<string, unknown>> }));

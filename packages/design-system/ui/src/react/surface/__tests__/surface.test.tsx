@@ -15,7 +15,8 @@ import { createElement, createRef, useContext } from "react";
 
 import { SurfaceVariant } from "#contracts/enums/surface-variant.enum";
 import type { SurfaceContractProps } from "#contracts/types/surface-contract-props.type";
-import { Surface, type SurfaceProps } from "#react/surface/surface";
+import { Surface } from "#react/surface/surface";
+import type { SurfaceProps } from "#react/surface/surface.props";
 
 /** Prints the surface level the context holds, so a test can read what HeroUI components inside would see. */
 function LevelProbe() {

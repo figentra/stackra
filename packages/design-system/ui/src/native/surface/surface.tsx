@@ -9,14 +9,9 @@
  *          (thin wrappers).
  */
 import { Surface as HeroSurface } from "heroui-native";
-import type { ComponentPropsWithRef } from "react";
 
-import type { SurfaceContractProps } from "#contracts/types/surface-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
-
-/** Props of the native Surface: the shared contract plus HeroUI Native's own surface props, passed through unchanged. */
-export type SurfaceProps = SurfaceContractProps &
-  Omit<ComponentPropsWithRef<typeof HeroSurface>, keyof SurfaceContractProps>;
+import type { SurfaceProps } from "#native/surface/surface.props";
 
 /**
  * A background at one of the theme's surface levels. HeroUI Native keeps the level in its surface context, so HeroUI

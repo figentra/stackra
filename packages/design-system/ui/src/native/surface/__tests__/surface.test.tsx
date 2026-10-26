@@ -16,7 +16,8 @@ import type { ReactNode } from "react";
 
 import { SurfaceVariant } from "#contracts/enums/surface-variant.enum";
 import type { SurfaceContractProps } from "#contracts/types/surface-contract-props.type";
-import { Surface, type SurfaceProps } from "#native/surface/surface";
+import { Surface } from "#native/surface/surface";
+import type { SurfaceProps } from "#native/surface/surface.props";
 
 /** The props each stand-in was last handed, by name, as the real component would receive them. */
 const received = vi.hoisted(() => ({ props: {} as Record<string, Record<string, unknown>> }));

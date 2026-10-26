@@ -19,10 +19,8 @@ import { useRef } from "react";
 
 import type { LeaveConfirmationContractProps } from "#contracts/types/leave-confirmation-contract-props.type";
 import type { LeaveConfirmationHandle } from "#contracts/types/leave-confirmation-handle.type";
-import {
-  LeaveConfirmation,
-  type LeaveConfirmationProps,
-} from "#react/leave-confirmation/leave-confirmation";
+import { LeaveConfirmation } from "#react/leave-confirmation/leave-confirmation";
+import type { LeaveConfirmationProps } from "#react/leave-confirmation/leave-confirmation.props";
 
 const registry = defineIconRegistry({ "circle-alert": CircleAlert });
 

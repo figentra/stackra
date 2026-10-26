@@ -7,7 +7,7 @@
  * Governing contract: ADR 0318 (decision 3); ADR 0080.
  */
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
-import type { CatalogueText } from "#core/hooks/use-catalogue-text";
+import type { CatalogueText } from "#core/types/catalogue-text.type";
 import type { FilterChipWords } from "#core/types/filter-chip-words.type";
 
 /**

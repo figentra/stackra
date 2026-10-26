@@ -18,10 +18,8 @@
 import { act, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 
-import {
-  NavigationHeader,
-  type NavigationHeaderProps,
-} from "#native/navigation-header/navigation-header";
+import { NavigationHeader } from "#native/navigation-header/navigation-header";
+import type { NavigationHeaderProps } from "#native/navigation-header/navigation-header.props";
 import { RouterProvider } from "#native/router-provider/router-provider";
 
 vi.mock("react-native", () => ({

@@ -20,7 +20,8 @@ import { BadgeVariant } from "#contracts/enums/badge-variant.enum";
 import { Size } from "#contracts/enums/size.enum";
 import { Tone } from "#contracts/enums/tone.enum";
 import type { BadgeContractProps } from "#contracts/types/badge-contract-props.type";
-import { Badge, type BadgeProps } from "#native/badge/badge";
+import { Badge } from "#native/badge/badge";
+import type { BadgeProps } from "#native/badge/badge.props";
 
 /** The props each stand-in was last handed, by name, as the real component would receive them. */
 const received = vi.hoisted(() => ({ props: {} as Record<string, Record<string, unknown>> }));

@@ -15,7 +15,8 @@ import { render, screen } from "@testing-library/react";
 
 import { HeadingLevel } from "#contracts/enums/heading-level.enum";
 import type { HeadingContractProps } from "#contracts/types/heading-contract-props.type";
-import { Heading, type HeadingProps } from "#react/heading/heading";
+import { Heading } from "#react/heading/heading";
+import type { HeadingProps } from "#react/heading/heading.props";
 
 describe("Heading (web)", () => {
   afterEach(() => {

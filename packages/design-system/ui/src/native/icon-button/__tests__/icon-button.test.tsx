@@ -15,7 +15,8 @@ import { render } from "@testing-library/react";
 import type { ReactNode } from "react";
 
 import type { IconButtonContractProps } from "#contracts/types/icon-button-contract-props.type";
-import { IconButton, type IconButtonProps } from "#native/icon-button/icon-button";
+import { IconButton } from "#native/icon-button/icon-button";
+import type { IconButtonProps } from "#native/icon-button/icon-button.props";
 
 /** The props each stand-in was last handed, by name, as the real component would receive them. */
 const received = vi.hoisted(() => ({ props: {} as Record<string, Record<string, unknown>> }));

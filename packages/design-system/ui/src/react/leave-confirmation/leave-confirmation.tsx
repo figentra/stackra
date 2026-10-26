@@ -16,12 +16,9 @@
  */
 import { useEffect, useImperativeHandle, type ReactElement } from "react";
 
-import type { LeaveConfirmationContractProps } from "#contracts/types/leave-confirmation-contract-props.type";
 import { AlertDialog } from "#react/alert-dialog/alert-dialog";
 import { usePendingChoice } from "#react/confirmation/use-pending-choice";
-
-/** Props of the web LeaveConfirmation: the shared contract, which has no element of its own to pass props to. */
-export type LeaveConfirmationProps = LeaveConfirmationContractProps;
+import type { LeaveConfirmationProps } from "#react/leave-confirmation/leave-confirmation.props";
 
 /**
  * Warns before unsaved work is lost: the browser's own prompt on a tab close or reload, and this dialog when the app

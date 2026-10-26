@@ -20,7 +20,8 @@ import type { ReactNode } from "react";
 
 import type { MenuLeafItem } from "#contracts/types/menu-leaf-item.type";
 import { RouterContext } from "#native/router-provider/router-context";
-import { Section, type SectionProps } from "#native/section/section";
+import { Section } from "#native/section/section";
+import type { SectionProps } from "#native/section/section.props";
 
 /** What the stand-ins were last handed: the Linking mock, the card's props and the menus. */
 const received = vi.hoisted(() => ({

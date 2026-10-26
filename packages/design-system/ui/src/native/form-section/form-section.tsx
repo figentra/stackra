@@ -12,15 +12,11 @@
  *          ADR 0303.
  */
 import type { ReactElement } from "react";
-import { View, type ViewProps } from "react-native";
+import { View } from "react-native";
 
-import type { FormSectionContractProps } from "#contracts/types/form-section-contract-props.type";
 import { Description } from "#native/description/description";
 import { Heading } from "#native/heading/heading";
-
-/** Props of the native FormSection: the shared contract plus the props of a `View`, passed through unchanged. */
-export type FormSectionProps = FormSectionContractProps &
-  Omit<ViewProps, keyof FormSectionContractProps>;
+import type { FormSectionProps } from "#native/form-section/form-section.props";
 
 /** A titled group of related fields, the native form of the web section. */
 export function FormSection({

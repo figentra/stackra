@@ -7,17 +7,9 @@
  * Runtime: browser
  * Governing contract: ADR 0302 (decision 3); ADR 0312; WCAG 2.2 SC 1.3.1 and 4.1.2.
  */
-import {
-  Drawer as HeroDrawer,
-  type DrawerHeadingProps as HeroDrawerHeadingProps,
-} from "@heroui/react";
+import { Drawer as HeroDrawer } from "@heroui/react";
 import type { ReactElement } from "react";
-
-import type { OverlayTitleContractProps } from "#contracts/types/overlay-title-contract-props.type";
-
-/** Props of the web Drawer.Title: the shared contract plus HeroUI v3's own heading props, passed through. */
-export type DrawerTitleProps = OverlayTitleContractProps &
-  Omit<HeroDrawerHeadingProps, keyof OverlayTitleContractProps>;
+import type { DrawerTitleProps } from "#react/drawer/drawer-title.props";
 
 /** The drawer's title, a heading at `level` (default 2) that also names the dialog. */
 export function DrawerTitle({ level = 2, ...rest }: DrawerTitleProps): ReactElement {

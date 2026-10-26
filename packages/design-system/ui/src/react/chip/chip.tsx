@@ -9,22 +9,10 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0165 (UI contract, HeroUI v3 on web); ADR 0304 (decision 3); owner
  *          decision 6 of STA-350 (thin wrappers).
  */
-import { Chip as HeroChip, cn, type ChipRootProps } from "@heroui/react";
-import type { ComponentPropsWithRef } from "react";
+import { Chip as HeroChip, cn } from "@heroui/react";
 
-import type { ChipContractProps } from "#contracts/types/chip-contract-props.type";
 import { SlotIcon } from "#react/slot-icon/slot-icon";
-
-/** HeroUI's props for a `span` chip: its own props plus the `span` attributes, as its generic signature spreads them. */
-type HeroChipProps = ChipRootProps<"span"> &
-  Omit<ComponentPropsWithRef<"span">, keyof ChipRootProps<"span">>;
-
-/**
- * Props of the web Chip: the shared contract plus HeroUI v3's own chip props, passed through unchanged. HeroUI's
- * `color` is the contract's `tone`; `onClick` is refused because a clickable `span` has no keyboard access.
- */
-export type ChipProps = ChipContractProps &
-  Omit<HeroChipProps, keyof ChipContractProps | "color" | "onClick">;
+import type { ChipProps } from "#react/chip/chip.props";
 
 /**
  * A compact, non-interactive label. Every combination of variant, tone and size draws as the same chip on web and

@@ -8,16 +8,8 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0302 (decision 3); ADR 0312; WCAG 2.2 SC 4.1.3 (status messages).
  */
-import type { IconName } from "@stackra/icons/contracts";
 import type { Tone } from "#contracts/enums/tone.enum";
-
-/** The default icon and announcement role of one tone. */
-export interface Feedback {
-  /** The icon drawn when the caller gives none. */
-  readonly icon: IconName;
-  /** `alert` for a message the user must hear now (a failure or a warning), `status` for the rest. */
-  readonly role: "alert" | "status";
-}
+import type { Feedback } from "#core/types/feedback.type";
 
 /** The icon and role of each tone; `default` and `accent` read as information, so they share one icon. */
 export const FEEDBACK_BY_TONE = Object.freeze({

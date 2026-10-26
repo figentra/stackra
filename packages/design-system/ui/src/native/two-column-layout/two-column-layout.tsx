@@ -11,14 +11,10 @@
  * Governing contract: ADR 0302 (decision 3, adapted forms); ADR 0303 (decision 7); ADR 0317 (decisions 6 and 7).
  */
 import type { ReactElement, ReactNode } from "react";
-import { View, type ViewProps } from "react-native";
+import { View } from "react-native";
 
-import type { TwoColumnLayoutContractProps } from "#contracts/types/two-column-layout-contract-props.type";
 import { Text } from "#native/text/text";
-
-/** Props of the native TwoColumnLayout: the shared contract plus the `View`'s own props, passed through. */
-export type TwoColumnLayoutProps = TwoColumnLayoutContractProps &
-  Omit<ViewProps, keyof TwoColumnLayoutContractProps>;
+import type { TwoColumnLayoutProps } from "#native/two-column-layout/two-column-layout.props";
 
 /** A node as the layout can draw it: a string or number goes inside `Text`, any other node as it is. */
 function textual(node: ReactNode): ReactNode {

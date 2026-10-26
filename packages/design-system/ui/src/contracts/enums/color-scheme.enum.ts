@@ -12,6 +12,3 @@ export const ColorScheme = Object.freeze(["light", "dark", "system"] as const);
 
 /** One colour scheme. */
 export type ColorScheme = (typeof ColorScheme)[number];
-
-/** A colour scheme once `system` is resolved: what is on screen. */
-export type ResolvedColorScheme = Exclude<ColorScheme, "system">;

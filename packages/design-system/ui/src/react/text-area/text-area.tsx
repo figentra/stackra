@@ -18,19 +18,10 @@ import {
   Label,
   TextArea as HeroTextArea,
   TextField as HeroTextField,
-  type TextFieldRootProps,
 } from "@heroui/react";
 
-import type { TextAreaContractProps } from "#contracts/types/text-area-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
-
-/**
- * Props of the web TextArea: the shared contract plus HeroUI v3's own text field props, passed through unchanged.
- * HeroUI's `fullWidth` is the contract's `isFullWidth`; `children` is refused because the field draws its own parts,
- * and `type` because an area has no kind of text.
- */
-export type TextAreaProps = TextAreaContractProps &
-  Omit<TextFieldRootProps, keyof TextAreaContractProps | "children" | "fullWidth" | "type">;
+import type { TextAreaProps } from "#react/text-area/text-area.props";
 
 /**
  * A labelled multi-line text field. A field without a visible `label` needs an `aria-label`. Pair `value` with

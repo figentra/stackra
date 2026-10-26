@@ -18,7 +18,8 @@ import { Ellipsis } from "lucide-react";
 
 import type { ActionMenuContractProps } from "#contracts/types/action-menu-contract-props.type";
 import type { MenuSection } from "#contracts/types/menu-section.type";
-import { ActionMenu, type ActionMenuProps } from "#react/action-menu/action-menu";
+import { ActionMenu } from "#react/action-menu/action-menu";
+import type { ActionMenuProps } from "#react/action-menu/action-menu.props";
 
 const press = (element: HTMLElement) => act(() => element.click());
 

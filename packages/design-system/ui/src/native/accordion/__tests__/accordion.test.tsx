@@ -17,7 +17,8 @@ import { act, render } from "@testing-library/react";
 import type { ReactNode } from "react";
 
 import type { AccordionContractProps } from "#contracts/types/accordion-contract-props.type";
-import { Accordion, type AccordionProps } from "#native/accordion/accordion";
+import { Accordion } from "#native/accordion/accordion";
+import type { AccordionProps } from "#native/accordion/accordion.props";
 
 /** The props each stand-in was last handed, and every set of props an item and a text were handed. */
 const received = vi.hoisted(() => ({

@@ -21,7 +21,8 @@ import type { ReactNode } from "react";
 import type { SortDescriptor } from "#contracts/types/sort-descriptor.type";
 import type { TableColumn } from "#contracts/types/table-column.type";
 import type { TableContractProps } from "#contracts/types/table-contract-props.type";
-import { Table, type TableProps } from "#native/table/table";
+import { Table } from "#native/table/table";
+import type { TableProps } from "#native/table/table.props";
 
 /** The props the list, each pressable and each sort button were last handed. */
 const received = vi.hoisted(() => ({

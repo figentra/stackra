@@ -18,7 +18,8 @@ import { act, render } from "@testing-library/react";
 import type { ReactNode } from "react";
 
 import type { TagGroupContractProps } from "#contracts/types/tag-group-contract-props.type";
-import { TagGroup, type TagGroupProps } from "#native/tag-group/tag-group";
+import { TagGroup } from "#native/tag-group/tag-group";
+import type { TagGroupProps } from "#native/tag-group/tag-group.props";
 
 /** The props each stand-in was last handed, and every set of props an item and a remove button were handed. */
 const received = vi.hoisted(() => ({

@@ -6,19 +6,12 @@
  * Runtime: browser
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decisions 6 and 7); ADR 0165 (UI contract); WCAG 2.2 SC 1.3.1.
  */
-import { Typography, type TypographyRootProps } from "@heroui/react";
+import { Typography } from "@heroui/react";
 import { createElement } from "react";
 
-import type { HeadingContractProps } from "#contracts/types/heading-contract-props.type";
 import { TONE_CLASS_NAME } from "#core/constants/tone-class-name.constant";
 import { directionOf } from "#core/functions/direction-of.function";
-
-/**
- * Props of the web Heading: the shared contract plus HeroUI v3 Typography's props except the element choice, which
- * the level owns. HeroUI's `color` and `truncate` are the contract's `tone` and `isTruncated`.
- */
-export type HeadingProps = HeadingContractProps &
-  Omit<TypographyRootProps, keyof HeadingContractProps | "color" | "truncate" | "render">;
+import type { HeadingProps } from "#react/heading/heading.props";
 
 /**
  * A heading: `level` is its place in the document outline and the element (`h1` to `h6`), `type` its look, which

@@ -14,26 +14,12 @@
  */
 import { cn } from "@heroui/react";
 import { IconRegistryProvider } from "@stackra/icons/react";
-import type { IconName } from "@stackra/icons/contracts";
-import type { ComponentPropsWithRef, ReactNode } from "react";
 
-import type { HeadingLevel } from "#contracts/enums/heading-level.enum";
-import type { StateContractProps } from "#contracts/types/state-contract-props.type";
 import { Heading } from "#react/heading/heading";
 import { Icon } from "#react/icon/icon";
 import { STATE_ICONS } from "#react/state-layout/state-icons.constant";
 import { Text } from "#react/text/text";
-
-/** Props of the web StateLayout: the shared state props, the icon and level the caller resolved, and `div` attributes. */
-export type StateLayoutProps = Omit<StateContractProps, "headingLevel"> &
-  Omit<ComponentPropsWithRef<"div">, keyof StateContractProps> & {
-    /** The icon drawn when the caller gave none, by name. */
-    readonly defaultIcon: IconName;
-    /** The title's outline level, already defaulted by the state. */
-    readonly headingLevel: HeadingLevel;
-    /** Extra content between the description and the actions. */
-    readonly children?: ReactNode;
-  };
+import type { StateLayoutProps } from "#react/state-layout/state-layout.props";
 
 /** The icon, title, description, extra content and actions of a state, centred in a column. */
 export function StateLayout({

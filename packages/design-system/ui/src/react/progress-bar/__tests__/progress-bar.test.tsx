@@ -16,7 +16,8 @@ import { createRef } from "react";
 import { Size } from "#contracts/enums/size.enum";
 import { Tone } from "#contracts/enums/tone.enum";
 import type { ProgressBarContractProps } from "#contracts/types/progress-bar-contract-props.type";
-import { ProgressBar, type ProgressBarProps } from "#react/progress-bar/progress-bar";
+import { ProgressBar } from "#react/progress-bar/progress-bar";
+import type { ProgressBarProps } from "#react/progress-bar/progress-bar.props";
 
 const fillOf = (container: HTMLElement) =>
   container.querySelector<HTMLElement>(".progress-bar__fill");

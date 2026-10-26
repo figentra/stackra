@@ -18,7 +18,8 @@ import { Size } from "#contracts/enums/size.enum";
 import { Tone } from "#contracts/enums/tone.enum";
 import type { ProgressCircleContractProps } from "#contracts/types/progress-circle-contract-props.type";
 import { PROGRESS_FILL_ROLE } from "#core/constants/progress-fill-role.constant";
-import { ProgressCircle, type ProgressCircleProps } from "#native/progress-circle/progress-circle";
+import { ProgressCircle } from "#native/progress-circle/progress-circle";
+import type { ProgressCircleProps } from "#native/progress-circle/progress-circle.props";
 
 /** The circumference of the ring: radius 16 in a 36-unit box. */
 const CIRCUMFERENCE = 2 * Math.PI * 16;

@@ -17,7 +17,8 @@ import type { ReactNode } from "react";
 
 import type { ActionMenuContractProps } from "#contracts/types/action-menu-contract-props.type";
 import type { MenuSection } from "#contracts/types/menu-section.type";
-import { ActionMenu, type ActionMenuProps } from "#native/action-menu/action-menu";
+import { ActionMenu } from "#native/action-menu/action-menu";
+import type { ActionMenuProps } from "#native/action-menu/action-menu.props";
 
 /** The props each stand-in was last handed, by name. */
 const received = vi.hoisted(() => ({ props: {} as Record<string, Record<string, unknown>> }));

@@ -16,7 +16,8 @@ import type { ReactNode } from "react";
 
 import { SkeletonAnimation } from "#contracts/enums/skeleton-animation.enum";
 import type { SkeletonContractProps } from "#contracts/types/skeleton-contract-props.type";
-import { Skeleton, type SkeletonProps } from "#native/skeleton/skeleton";
+import { Skeleton } from "#native/skeleton/skeleton";
+import type { SkeletonProps } from "#native/skeleton/skeleton.props";
 import { SkeletonGroupContext } from "#native/skeleton-group/skeleton-group-context";
 
 /** The props each stand-in was last handed, by name, as the real component would receive them. */

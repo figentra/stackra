@@ -14,23 +14,13 @@
  */
 import { View } from "react-native";
 
-import type { ErrorStateContractProps } from "#contracts/types/error-state-contract-props.type";
 import { STATE_ICON } from "#core/constants/state-icon.constant";
 import { errorDetailsOf } from "#core/functions/error-details-of.function";
 import { liveRegionOf } from "#core/functions/live-region-of.function";
 import { Button } from "#native/button/button";
-import { StateLayout, type StateLayoutProps } from "#native/state-layout/state-layout";
+import { StateLayout } from "#native/state-layout/state-layout";
 import { Text } from "#native/text/text";
-
-/**
- * Props of the native ErrorState: the shared contract plus the props of its root `View`, passed through. The role and
- * live region are the component's, never the caller's.
- */
-export type ErrorStateProps = ErrorStateContractProps &
-  Omit<
-    StateLayoutProps,
-    keyof ErrorStateContractProps | "defaultIcon" | "children" | "role" | "aria-live"
-  >;
+import type { ErrorStateProps } from "#native/error-state/error-state.props";
 
 /** A failure, named by its kind, with the error's message (outside production, or when `isMessageShown`), a retry and further actions, announced at once. */
 export function ErrorState({

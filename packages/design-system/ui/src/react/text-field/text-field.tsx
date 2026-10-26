@@ -11,24 +11,10 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0165 (UI contract, HeroUI v3 on web); ADR 0055
  *          (forms: one field contract); owner decision 6 of STA-350 (thin wrappers).
  */
-import {
-  Description,
-  FieldError,
-  Input,
-  Label,
-  TextField as HeroTextField,
-  type TextFieldRootProps,
-} from "@heroui/react";
+import { Description, FieldError, Input, Label, TextField as HeroTextField } from "@heroui/react";
 
-import type { TextFieldContractProps } from "#contracts/types/text-field-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
-
-/**
- * Props of the web TextField: the shared contract plus HeroUI v3's own text field props, passed through unchanged.
- * HeroUI's `fullWidth` is the contract's `isFullWidth`, and `children` is refused because the field draws its own parts.
- */
-export type TextFieldProps = TextFieldContractProps &
-  Omit<TextFieldRootProps, keyof TextFieldContractProps | "children" | "fullWidth">;
+import type { TextFieldProps } from "#react/text-field/text-field.props";
 
 /**
  * A labelled single-line text field. A field without a visible `label` needs an `aria-label`. Pair `value` with

@@ -21,11 +21,10 @@
  *          (thin wrappers).
  */
 import { useState, type ReactElement } from "react";
-import { ScrollView, View, type ViewProps } from "react-native";
+import { ScrollView, View } from "react-native";
 
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
 import { useUiText } from "#core/hooks/use-ui-text";
-import type { FilterBarContractProps } from "#contracts/types/filter-bar-contract-props.type";
 import type { FilterDefinition } from "#contracts/types/filter-definition.type";
 import type { FilterValue } from "#contracts/types/filter-value.type";
 import { clearResourceQueryFilters } from "#core/functions/clear-resource-query-filters.function";
@@ -41,13 +40,7 @@ import { Drawer } from "#native/drawer/drawer";
 import { FilterEditor } from "#native/filter-bar/filter-editor";
 import { SearchField } from "#native/search-field/search-field";
 import { Text } from "#native/text/text";
-
-/**
- * Props of the native FilterBar: the shared contract plus the props of a `View`, passed through to the root. The bar
- * draws its own content, so children are refused.
- */
-export type FilterBarProps = FilterBarContractProps &
-  Omit<ViewProps, keyof FilterBarContractProps | "children">;
+import type { FilterBarProps } from "#native/filter-bar/filter-bar.props";
 
 /** What the sheet shows: nothing (closed), the list of filters to add, or the editor of one filter. */
 type Sheet = { readonly mode: "add" } | { readonly mode: "edit"; readonly id: string } | null;

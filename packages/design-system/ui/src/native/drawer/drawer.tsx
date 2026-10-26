@@ -16,28 +16,17 @@
  * Governing contract: ADR 0302 (decision 3, adapted forms); ADR 0303 (decision 7); ADR 0312; ADR 0165 (HeroUI Native
  *          on native); owner decision 6 of STA-350 (thin wrappers); WCAG 2.2 SC 2.1.2, 2.4.3 and 4.1.2.
  */
-import { BottomSheet, type BottomSheetContentProps as HeroSheetContentProps } from "heroui-native";
+import { BottomSheet } from "heroui-native";
 import type { ReactElement } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import type { DrawerContractProps } from "#contracts/types/drawer-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { DrawerClose } from "#native/drawer/drawer-close";
 import { DrawerTitle } from "#native/drawer/drawer-title";
-import { ModalBody, ModalFooter, ModalHeader } from "#native/modal/modal-section";
-
-/**
- * Props of the native Drawer: the shared contract, narrowed so `placement` is `bottom` only, plus HeroUI Native's own
- * sheet-content props, passed through. HeroUI Native's `enablePanDownToClose` is the contract's `isDismissable`, so
- * the type refuses it.
- */
-export type DrawerProps = Omit<DrawerContractProps, "placement"> & {
-  /** Accepted for the shared call site; a native drawer is always a bottom sheet. */
-  readonly placement?: "bottom" | undefined;
-} & Omit<
-    HeroSheetContentProps,
-    keyof DrawerContractProps | "enablePanDownToClose" | "accessibilityLabel"
-  >;
+import { ModalBody } from "#native/modal/modal-body";
+import { ModalFooter } from "#native/modal/modal-footer";
+import { ModalHeader } from "#native/modal/modal-header";
+import type { DrawerProps } from "#native/drawer/drawer.props";
 
 /** The drawer root: HeroUI Native's bottom-sheet parts in one, holding the caller's parts. */
 function DrawerRoot({

@@ -10,24 +10,11 @@
  * Runtime: browser
  * Governing contract: ADR 0302 (decision 3); ADR 0312 (decision 2); WCAG 2.2 SC 4.1.3 and 2.1.1.
  */
-import {
-  Toast as HeroToast,
-  type ToastProviderProps as HeroToastProviderProps,
-} from "@heroui/react";
+import { Toast as HeroToast } from "@heroui/react";
 import type { ReactElement } from "react";
 
-import type { ToastProviderContractProps } from "#contracts/types/toast-contract-props.type";
 import { ToastItem } from "#react/toast/toast-item";
-
-/**
- * Props of the web ToastProvider: the shared contract plus HeroUI v3's own region props, passed through. HeroUI's
- * `placement` is the contract's `position`; its queue and children are the component's own.
- */
-export type ToastProviderProps = ToastProviderContractProps &
-  Omit<
-    HeroToastProviderProps,
-    keyof ToastProviderContractProps | "placement" | "queue" | "children"
-  >;
+import type { ToastProviderProps } from "#react/toast/toast-provider.props";
 
 /** The toast region: put one near the root of the app, and call `toast()` from anywhere. */
 export function ToastProvider({

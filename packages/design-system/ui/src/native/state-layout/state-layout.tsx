@@ -13,27 +13,13 @@
  *          (decisions 5 and 6); WCAG 2.2 SC 1.3.1 and 1.4.1.
  */
 import { IconRegistryProvider } from "@stackra/icons/native";
-import type { IconName } from "@stackra/icons/contracts";
-import type { ReactNode } from "react";
-import { View, type ViewProps } from "react-native";
+import { View } from "react-native";
 
-import type { HeadingLevel } from "#contracts/enums/heading-level.enum";
-import type { StateContractProps } from "#contracts/types/state-contract-props.type";
 import { Heading } from "#native/heading/heading";
 import { Icon } from "#native/icon/icon";
 import { STATE_ICONS } from "#native/state-layout/state-icons.constant";
 import { Text } from "#native/text/text";
-
-/** Props of the native StateLayout: the shared state props, the icon and level the caller resolved, and `View` props. */
-export type StateLayoutProps = Omit<StateContractProps, "headingLevel"> &
-  Omit<ViewProps, keyof StateContractProps> & {
-    /** The icon drawn when the caller gave none, by name. */
-    readonly defaultIcon: IconName;
-    /** The title's outline level, already defaulted by the state; native uses it only for the title's style. */
-    readonly headingLevel: HeadingLevel;
-    /** Extra content between the description and the actions. */
-    readonly children?: ReactNode;
-  };
+import type { StateLayoutProps } from "#native/state-layout/state-layout.props";
 
 /** The icon, title, description, extra content and actions of a state, centred in a column. */
 export function StateLayout({

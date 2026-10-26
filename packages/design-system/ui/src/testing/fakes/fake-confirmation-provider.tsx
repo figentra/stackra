@@ -5,24 +5,14 @@
  *          consumer's test drives a confirmed or refused action without a dialog.
  * Boundary: the `./testing` entry only; production code never imports it. It fills the same context the real provider
  *           fills, so the code under test runs unchanged.
- * Runtime: browser (tests)
+ * Runtime: browser
  * Governing contract: ADR 0294 (decision 15: the `./testing` entry); ADR 0312; ADR 0269 (test helpers).
  */
-import { useCallback, type ReactElement, type ReactNode } from "react";
+import { useCallback, type ReactElement } from "react";
 
 import type { ConfirmFunction } from "#contracts/types/confirm-function.type";
-import type { ConfirmationOptions } from "#contracts/types/confirmation-options.type";
 import { ConfirmationContext } from "#react/confirmation/confirmation-context";
-
-/** Props of the FakeConfirmationProvider. */
-export interface FakeConfirmationProviderProps {
-  /** What every question is answered: true confirms, false refuses. */
-  readonly answer: boolean;
-  /** Called with each question asked, for the test to inspect. */
-  readonly onAsk?: ((options: ConfirmationOptions) => void) | undefined;
-  /** The code under test. */
-  readonly children?: ReactNode;
-}
+import type { FakeConfirmationProviderProps } from "#testing/fakes/fake-confirmation-provider.props";
 
 /**
  * Answers every confirmation with `answer`.

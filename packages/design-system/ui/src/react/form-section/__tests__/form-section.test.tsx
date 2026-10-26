@@ -13,7 +13,8 @@
 import { render, screen } from "@testing-library/react";
 
 import type { FormSectionContractProps } from "#contracts/types/form-section-contract-props.type";
-import { FormSection, type FormSectionProps } from "#react/form-section/form-section";
+import { FormSection } from "#react/form-section/form-section";
+import type { FormSectionProps } from "#react/form-section/form-section.props";
 import { TextField } from "#react/text-field/text-field";
 
 describe("FormSection (web)", () => {

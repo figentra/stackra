@@ -13,7 +13,7 @@
  */
 import { useThemeColor } from "heroui-native";
 import { useEffect } from "react";
-import { View, type ViewProps } from "react-native";
+import { View } from "react-native";
 import Animated, {
   cancelAnimation,
   createAnimatedComponent,
@@ -27,35 +27,10 @@ import Animated, {
 } from "react-native-reanimated";
 import Svg, { Circle } from "react-native-svg";
 
-import type { ProgressCircleContractProps } from "#contracts/types/progress-circle-contract-props.type";
 import { PROGRESS_FILL_ROLE } from "#core/constants/progress-fill-role.constant";
 import { progressStateOf } from "#core/functions/progress-state-of.function";
 import { useDesignSystem } from "#native/design-system-provider/use-design-system";
-
-/**
- * Props of the native ProgressCircle: the shared contract plus React Native's own view props, passed through to the
- * root. `label`, the value and the busy state own the accessibility props, and the parts are drawn here, so
- * `children` and those props are refused.
- */
-export type ProgressCircleProps = ProgressCircleContractProps &
-  Omit<
-    ViewProps,
-    | keyof ProgressCircleContractProps
-    | "children"
-    | "accessible"
-    | "accessibilityRole"
-    | "accessibilityLabel"
-    | "accessibilityValue"
-    | "accessibilityState"
-    | "role"
-    | "aria-label"
-    | "aria-labelledby"
-    | "aria-busy"
-    | "aria-valuemax"
-    | "aria-valuemin"
-    | "aria-valuenow"
-    | "aria-valuetext"
-  >;
+import type { ProgressCircleProps } from "#native/progress-circle/progress-circle.props";
 
 /** The ring's diameter in points for each size: HeroUI's `size-5`, `size-7` and `size-9` on web. */
 const DIAMETER = Object.freeze({ sm: 20, md: 28, lg: 36 } as const);

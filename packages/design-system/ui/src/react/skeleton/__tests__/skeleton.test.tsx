@@ -14,7 +14,8 @@ import { createRef } from "react";
 
 import { SkeletonAnimation } from "#contracts/enums/skeleton-animation.enum";
 import type { SkeletonContractProps } from "#contracts/types/skeleton-contract-props.type";
-import { Skeleton, type SkeletonProps } from "#react/skeleton/skeleton";
+import { Skeleton } from "#react/skeleton/skeleton";
+import type { SkeletonProps } from "#react/skeleton/skeleton.props";
 import { SkeletonGroup } from "#react/skeleton-group/skeleton-group";
 
 const bonesOf = (container: HTMLElement) => [...container.querySelectorAll(".skeleton")];

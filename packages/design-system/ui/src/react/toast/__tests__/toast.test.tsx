@@ -16,13 +16,12 @@
 import { act, render, screen } from "@testing-library/react";
 
 import { Tone } from "#contracts/enums/tone.enum";
-import type {
-  ToastContractProps,
-  ToastProviderContractProps,
-} from "#contracts/types/toast-contract-props.type";
+import type { ToastContractProps } from "#contracts/types/toast-contract-props.type";
+import type { ToastProviderContractProps } from "#contracts/types/toast-provider-contract-props.type";
 import { FEEDBACK_BY_TONE } from "#core/constants/feedback-by-tone.constant";
 import { toast } from "#react/toast/toast";
-import { ToastProvider, type ToastProviderProps } from "#react/toast/toast-provider";
+import { ToastProvider } from "#react/toast/toast-provider";
+import type { ToastProviderProps } from "#react/toast/toast-provider.props";
 
 /** Watches nothing: jsdom has no layout, and the toast stack only needs the observer to exist. */
 class ResizeObserverStandIn {

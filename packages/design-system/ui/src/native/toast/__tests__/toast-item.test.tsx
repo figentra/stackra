@@ -16,7 +16,8 @@ import type { ReactNode } from "react";
 
 import { Tone } from "#contracts/enums/tone.enum";
 import { FEEDBACK_BY_TONE } from "#core/constants/feedback-by-tone.constant";
-import { ToastItem, type ToastItemProps } from "#native/toast/toast-item";
+import { ToastItem } from "#native/toast/toast-item";
+import type { ToastItemProps } from "#native/toast/toast-item.props";
 
 /** The props each stand-in was last handed, by name, as the real component would receive them. */
 const received = vi.hoisted(() => ({ props: {} as Record<string, Record<string, unknown>> }));

@@ -10,15 +10,10 @@
  * Runtime: browser
  * Governing contract: ADR 0302 (decision 3); ADR 0165 (HeroUI v3 on web); ADR 0055 (forms); ADR 0303.
  */
-import { FieldError as HeroFieldError, type FieldErrorRootProps } from "@heroui/react";
+import { FieldError as HeroFieldError } from "@heroui/react";
 import { useContext, type ContextType, type ReactElement } from "react";
 import { FieldErrorContext } from "react-aria-components";
-
-import type { FieldErrorContractProps } from "#contracts/types/field-error-contract-props.type";
-
-/** Props of the web FieldError: the shared contract plus HeroUI v3's own props, passed through unchanged. */
-export type FieldErrorProps = FieldErrorContractProps &
-  Omit<FieldErrorRootProps, keyof FieldErrorContractProps>;
+import type { FieldErrorProps } from "#react/field-error/field-error.props";
 
 /** What React Aria's validation context holds. */
 type Validation = NonNullable<ContextType<typeof FieldErrorContext>>;

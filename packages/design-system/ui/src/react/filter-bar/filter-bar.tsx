@@ -18,10 +18,9 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0318 (decisions 1 to 4); ADR 0165 (HeroUI v3 on
  *          web); owner decision 6 of STA-350 (thin wrappers); WCAG 2.2 SC 1.3.1, 2.1.1, 2.4.3, 2.5.8, 4.1.2, 4.1.3.
  */
-import { useRef, useState, type ComponentPropsWithRef, type ReactElement } from "react";
+import { useRef, useState, type ReactElement } from "react";
 import { useLocale } from "react-aria-components";
 
-import type { FilterBarContractProps } from "#contracts/types/filter-bar-contract-props.type";
 import type { FilterDefinition } from "#contracts/types/filter-definition.type";
 import type { FilterValue } from "#contracts/types/filter-value.type";
 import type { MenuLeafItem } from "#contracts/types/menu-leaf-item.type";
@@ -39,13 +38,7 @@ import { FilterEditor } from "#react/filter-bar/filter-editor";
 import { Menu } from "#react/menu/menu";
 import { Popover } from "#react/popover/popover";
 import { SearchField } from "#react/search-field/search-field";
-
-/**
- * Props of the web FilterBar: the shared contract plus the props of a `div`, passed through to the root. The bar draws
- * its own content, so children are refused.
- */
-export type FilterBarProps = FilterBarContractProps &
-  Omit<ComponentPropsWithRef<"div">, keyof FilterBarContractProps | "children">;
+import type { FilterBarProps } from "#react/filter-bar/filter-bar.props";
 
 /** The props of one chip, which is one filter shown as a button that opens its editor and a button that removes it. */
 interface FilterChipProps {

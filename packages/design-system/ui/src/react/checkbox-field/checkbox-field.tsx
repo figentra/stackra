@@ -9,15 +9,10 @@
  * Governing contract: ADR 0055 (decision 2); ADR 0165 (decision 2: form adapters in @stackra/ui); ADR 0302
  *                     (decision 3).
  */
-import type { ReactElement, ReactNode } from "react";
+import type { ReactElement } from "react";
 
-import { Checkbox, type CheckboxProps } from "#react/checkbox/checkbox";
-
-/** Props of the web CheckboxField: the Checkbox's own, with the label as `children`. */
-export type CheckboxFieldProps = Omit<CheckboxProps, "label"> & {
-  /** The label, the checkbox's accessible name. */
-  readonly children?: ReactNode;
-};
+import { Checkbox } from "#react/checkbox/checkbox";
+import type { CheckboxFieldProps } from "#react/checkbox-field/checkbox-field.props";
 
 /** A checkbox whose label is its children, ready for a schema form's binding. */
 export function CheckboxField({ children, ...rest }: CheckboxFieldProps): ReactElement {

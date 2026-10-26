@@ -18,21 +18,10 @@
  *          and 7); ADR 0165 (HeroUI v3 on web); ADR 0060; WCAG 2.2 SC 1.4.10 and 2.4.1.
  */
 import { cn } from "@heroui/react";
-import type { ComponentPropsWithoutRef, ReactElement } from "react";
+import type { ReactElement } from "react";
 
 import { ScreenEdge } from "#contracts/enums/screen-edge.enum";
-import type { ScreenContractProps } from "#contracts/types/screen-contract-props.type";
-
-/**
- * Props of the web Screen: the shared contract plus the `main` element's own props, passed through. The element's
- * `aria-label` is the contract's `label`, so the type refuses it. There is no `ref`: the root is a `main` or, when
- * embedded, a `div`, and the two refs differ.
- */
-export type ScreenProps = ScreenContractProps &
-  Omit<ComponentPropsWithoutRef<"main">, keyof ScreenContractProps | "aria-label"> & {
-    /** True when the screen sits inside another page: its root is a `div`, not a second `main` landmark. */
-    readonly isEmbedded?: boolean | undefined;
-  };
+import type { ScreenProps } from "#react/screen/screen.props";
 
 /**
  * The inset classes of each edge, written out in full so Tailwind finds them. The desktop title bar is the top inset

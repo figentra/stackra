@@ -18,25 +18,12 @@
  *          v3 on web); ADR 0055 (forms: one field contract); WCAG 2.2 SC 2.5.8; owner decision 6 of STA-350 (thin
  *          wrappers).
  */
-import {
-  DateField as HeroDateField,
-  Description,
-  FieldError,
-  Label,
-  type DateFieldRootProps,
-} from "@heroui/react";
+import { DateField as HeroDateField, Description, FieldError, Label } from "@heroui/react";
 import type { CalendarDate } from "@internationalized/date";
 import type { DateValue } from "react-aria-components";
 
-import type { DateValueContractProps } from "#contracts/types/date-value-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
-
-/**
- * Props of the web DateField: the shared contract plus HeroUI v3's own date field props, passed through unchanged.
- * HeroUI's `fullWidth` is the contract's `isFullWidth`, and `children` is refused because the field draws its own parts.
- */
-export type DateFieldProps = DateValueContractProps &
-  Omit<DateFieldRootProps<CalendarDate>, keyof DateValueContractProps | "children" | "fullWidth">;
+import type { DateFieldProps } from "#react/date-field/date-field.props";
 
 /**
  * A segment is at least 24 CSS pixels each way: HeroUI's is about 20 pixels high and, with a day or month in two digits,

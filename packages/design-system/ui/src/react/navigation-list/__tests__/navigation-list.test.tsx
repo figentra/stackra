@@ -17,7 +17,8 @@
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 
 import type { NavigationItem } from "#contracts/types/navigation-item.type";
-import { NavigationList, type NavigationListProps } from "#react/navigation-list/navigation-list";
+import { NavigationList } from "#react/navigation-list/navigation-list";
+import type { NavigationListProps } from "#react/navigation-list/navigation-list.props";
 import { RouterProvider } from "#react/index";
 
 const ITEMS: readonly NavigationItem[] = [

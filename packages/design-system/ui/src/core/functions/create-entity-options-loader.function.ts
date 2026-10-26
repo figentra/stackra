@@ -12,47 +12,10 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0302 (decision 3); ADR 0318 (wave 7 vocabulary, decision 2: cursor pages).
  */
-import type { EntityOption } from "#contracts/types/entity-option.type";
 import type { EntityOptionPage } from "#contracts/types/entity-option-page.type";
-
-/** What the picker lists and whether it is waiting for more. */
-export interface EntityOptionsState {
-  /** The records asked for so far, pages joined, a record once. */
-  readonly options: readonly EntityOption[];
-  /** `loading` while the first page of a search is on its way, `error` after a rejection, otherwise `idle`. */
-  readonly status: "idle" | "loading" | "error";
-  /** True while the page after the last one is on its way. */
-  readonly isLoadingMore: boolean;
-  /** True when the last answer named a next cursor. */
-  readonly hasMore: boolean;
-  /**
-   * True once any request has been answered or has failed. Until then a picker cannot tell "nothing found" from "not
-   * asked yet", so it lets its list open empty and asks.
-   */
-  readonly hasAnswered: boolean;
-}
-
-/** The store `createEntityOptionsLoader` returns. */
-export interface EntityOptionsLoader {
-  /** The current state; the same object until something changes. */
-  readonly getState: () => EntityOptionsState;
-  /** Calls `listener` after every change; returns the function that stops it. */
-  readonly subscribe: (listener: () => void) => () => void;
-  /** Asks for the first page of `text`: at once the first time, after the pause when it is not the first. */
-  readonly search: (text: string) => void;
-  /** Asks for the page after the last one; does nothing while a request is on its way or when there is no next page. */
-  readonly loadMore: () => void;
-  /** Stops the pause and drops any answer still on its way; the store is not used after it. */
-  readonly dispose: () => void;
-}
-
-/** What the loader needs from its picker. */
-export interface EntityOptionsLoaderOptions {
-  /** Returns the picker's current `loadOptions`, read at each request. */
-  readonly getLoad: () => (search: string, cursor?: string) => Promise<EntityOptionPage>;
-  /** Returns the pause, in milliseconds, between the last keystroke and the search. */
-  readonly getDebounceMs: () => number;
-}
+import type { EntityOptionsState } from "#core/types/entity-options-state.type";
+import type { EntityOptionsLoader } from "#core/types/entity-options-loader.type";
+import type { EntityOptionsLoaderOptions } from "#core/types/entity-options-loader-options.type";
 
 const INITIAL: EntityOptionsState = Object.freeze({
   options: [],

@@ -17,7 +17,8 @@
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 
 import type { ComboBoxContractProps } from "#contracts/types/combo-box-contract-props.type";
-import { ComboBox, type ComboBoxProps } from "#react/combo-box/combo-box";
+import { ComboBox } from "#react/combo-box/combo-box";
+import type { ComboBoxProps } from "#react/combo-box/combo-box.props";
 
 const press = (element: HTMLElement) => act(() => element.click());
 
@@ -56,8 +57,11 @@ describe("ComboBox (web)", () => {
         constructor(callback: IntersectionObserverCallback) {
           observed.push(callback);
         }
+
         observe() {}
+
         unobserve() {}
+
         disconnect() {}
       },
     );

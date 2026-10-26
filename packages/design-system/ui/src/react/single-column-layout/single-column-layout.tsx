@@ -11,13 +11,8 @@
  *          WCAG 2.2 SC 1.4.10.
  */
 import { cn } from "@heroui/react";
-import type { ComponentPropsWithRef, ReactElement } from "react";
-
-import type { SingleColumnLayoutContractProps } from "#contracts/types/single-column-layout-contract-props.type";
-
-/** Props of the web SingleColumnLayout: the shared contract plus the `div`'s own props, passed through. */
-export type SingleColumnLayoutProps = SingleColumnLayoutContractProps &
-  Omit<ComponentPropsWithRef<"div">, keyof SingleColumnLayoutContractProps>;
+import type { ReactElement } from "react";
+import type { SingleColumnLayoutProps } from "#react/single-column-layout/single-column-layout.props";
 
 /** A page of one column: its children stacked from top to bottom with a gap. */
 export function SingleColumnLayout({ className, ...rest }: SingleColumnLayoutProps): ReactElement {

@@ -10,15 +10,13 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0080; ADR 0268 (R15: ICU, typed keys); ADR 0403 (catalogues in seven languages).
  */
-import { formatMessage, type I18nKey } from "@stackra/i18n";
+import { formatMessage } from "@stackra/i18n";
 // oxlint-disable-next-line no-restricted-imports -- reason: shared React hook of the react and native entries; moving it out of core is owner follow-up (ADR-0004 §1)
 import { useTranslation } from "@stackra/i18n/react";
+import type { CatalogueText } from "#core/types/catalogue-text.type";
 
 /** The merged catalogues `formatMessage` reads. */
 type Messages = Parameters<typeof formatMessage>[0];
-
-/** Formats one key with its ICU values. */
-export type CatalogueText = (key: I18nKey, values?: Readonly<Record<string, unknown>>) => string;
 
 /**
  * The active translator, falling back to `english`.

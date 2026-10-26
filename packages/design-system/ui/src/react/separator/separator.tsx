@@ -7,14 +7,10 @@
  * Runtime: browser
  * Governing contract: ADR 0302 (decision 3); ADR 0165 (HeroUI v3 on web); ADR 0304.
  */
-import { Separator as HeroSeparator, type SeparatorRootProps } from "@heroui/react";
+import { Separator as HeroSeparator } from "@heroui/react";
 
-import type { SeparatorContractProps } from "#contracts/types/separator-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
-
-/** Props of the web Separator: the shared contract plus HeroUI v3's own separator props, passed through unchanged. */
-export type SeparatorProps = SeparatorContractProps &
-  Omit<SeparatorRootProps, keyof SeparatorContractProps>;
+import type { SeparatorProps } from "#react/separator/separator.props";
 
 /**
  * A rule between two groups. Horizontal by default; a vertical one stretches to its row's height. Pass `variant` to

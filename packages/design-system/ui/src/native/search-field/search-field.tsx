@@ -14,18 +14,11 @@
  *          owner decision 6 of STA-350 (thin wrappers).
  */
 import { Description, FieldError, Label, SearchField as HeroSearchField, cn } from "heroui-native";
-import { useState, type ComponentPropsWithRef } from "react";
+import { useState } from "react";
 
-import type { SearchFieldContractProps } from "#contracts/types/search-field-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { Spinner } from "#native/spinner/spinner";
-
-/**
- * Props of the native SearchField: the shared contract plus HeroUI Native's own search field props, passed through
- * unchanged to its root. `children` are composed here, and `value`, `onChange` and the states are the contract's.
- */
-export type SearchFieldProps = SearchFieldContractProps &
-  Omit<ComponentPropsWithRef<typeof HeroSearchField>, keyof SearchFieldContractProps | "children">;
+import type { SearchFieldProps } from "#native/search-field/search-field.props";
 
 /**
  * A search input with a clear button. The visible `label`, `description` and `errorMessage` follow the field's states;

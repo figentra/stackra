@@ -7,20 +7,13 @@
  * Runtime: react-native
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decisions 6 and 7); ADR 0165 (HeroUI Native on native).
  */
-import { Typography, type TypographyParagraphProps } from "heroui-native";
+import { Typography } from "heroui-native";
 
-import type { TextContractProps } from "#contracts/types/text-contract-props.type";
 import { TONE_CLASS_NAME } from "#core/constants/tone-class-name.constant";
 import { TYPOGRAPHY_TYPE } from "#core/constants/typography-type.constant";
 import { isArabic } from "#core/functions/is-arabic.function";
 import { useDesignSystem } from "#native/design-system-provider/use-design-system";
-
-/**
- * Props of the native Text: the shared contract plus HeroUI Native Typography.Paragraph's props, passed through.
- * HeroUI's `color` and `truncate` are the contract's `tone` and `isTruncated`, so the type refuses them.
- */
-export type TextProps = TextContractProps &
-  Omit<TypographyParagraphProps, keyof TextContractProps | "color" | "truncate">;
+import type { TextProps } from "#native/text/text.props";
 
 /**
  * Running text in the theme's type scale. Arabic text, by `lang` or by the screen's locale, takes the theme's `-ar`

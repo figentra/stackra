@@ -12,26 +12,12 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0313; ADR 0165 (HeroUI v3 on web); owner
  *          decision 6 of STA-350 (thin wrappers); WCAG 2.2 SC 2.4.8.
  */
-import { Breadcrumbs as HeroBreadcrumbs, type BreadcrumbsRootProps } from "@heroui/react";
+import { Breadcrumbs as HeroBreadcrumbs } from "@heroui/react";
 
-import type { BreadcrumbsContractProps } from "#contracts/types/breadcrumbs-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
 import { useUiText } from "#core/hooks/use-ui-text";
-
-/**
- * Props of the web Breadcrumbs: the shared contract plus HeroUI v3's own breadcrumbs props, passed through unchanged.
- * The app lists the trail as `items`, so the type refuses JSX children, and HeroUI's `aria-label` is the contract's
- * `label`.
- */
-export type BreadcrumbsProps = BreadcrumbsContractProps &
-  Omit<
-    BreadcrumbsRootProps,
-    keyof BreadcrumbsContractProps | "children" | "aria-label" | "className"
-  > & {
-    /** Extra classes for the list; a string only, because HeroUI merges it into its own slot class. */
-    readonly className?: string | undefined;
-  };
+import type { BreadcrumbsProps } from "#react/breadcrumbs/breadcrumbs.props";
 
 /**
  * The trail from the root to the current page. Every step but the last is a link; the last is the current page, drawn

@@ -13,23 +13,16 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0312; ADR 0165 (UI contract, HeroUI v3 on web); owner decision 6 of
  *          STA-350 (thin wrappers); WCAG 2.2 SC 2.1.1, 4.1.2.
  */
-import { Dropdown, Header, Kbd, Separator, type DropdownRootProps } from "@heroui/react";
+import { Dropdown, Header, Kbd, Separator } from "@heroui/react";
 import { Fragment, useState } from "react";
 
-import type { MenuContractProps } from "#contracts/types/menu-contract-props.type";
 import type { MenuItem } from "#contracts/types/menu-item.type";
 import type { MenuLeafItem } from "#contracts/types/menu-leaf-item.type";
 import { mergeSectionSelection } from "#core/functions/merge-section-selection.function";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { reactAriaPlacementOf } from "#core/functions/react-aria-placement-of.function";
 import { SlotIcon } from "#react/slot-icon/slot-icon";
-
-/**
- * Props of the web Menu: the shared contract plus HeroUI v3's own Dropdown props (`trigger`, for one), passed through
- * unchanged. The app lists actions as `sections`; the only child is the trigger.
- */
-export type MenuProps = MenuContractProps &
-  Omit<DropdownRootProps, keyof MenuContractProps | "children">;
+import type { MenuProps } from "#react/menu/menu.props";
 
 /** The content of one action: its icon, its label with a second line, its shortcut hint and the selection mark. */
 function MenuItemContent({

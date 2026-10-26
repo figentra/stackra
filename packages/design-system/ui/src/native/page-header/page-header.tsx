@@ -19,22 +19,15 @@
  *          2.2 SC 1.3.1, 2.4.6 and 2.5.8.
  */
 import type { ReactElement, ReactNode } from "react";
-import { View, type ViewProps } from "react-native";
+import { View } from "react-native";
 
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
 import { useUiText } from "#core/hooks/use-ui-text";
-import type { PageHeaderContractProps } from "#contracts/types/page-header-contract-props.type";
 import { Breadcrumbs } from "#native/breadcrumbs/breadcrumbs";
 import { Heading } from "#native/heading/heading";
 import { PageActions } from "#native/page-actions/page-actions";
 import { Text } from "#native/text/text";
-
-/**
- * Props of the native PageHeader: the shared contract plus the root `View`'s own props, passed through. The view's
- * `accessibilityLabel` is the contract's `label`, so the type refuses it.
- */
-export type PageHeaderProps = PageHeaderContractProps &
-  Omit<ViewProps, keyof PageHeaderContractProps | "accessibilityLabel" | "children">;
+import type { PageHeaderProps } from "#native/page-header/page-header.props";
 
 /** A node as the header can draw it: a string or number goes inside `Text`, any other node as it is. */
 function textual(node: ReactNode): ReactNode {

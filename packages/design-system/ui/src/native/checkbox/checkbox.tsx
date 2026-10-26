@@ -20,22 +20,11 @@ import {
   FieldError,
   Label,
 } from "heroui-native";
-import { useState, type ComponentPropsWithRef } from "react";
+import { useState } from "react";
 import { View } from "react-native";
 
-import type { CheckboxContractProps } from "#contracts/types/checkbox-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
-
-/**
- * Props of the native Checkbox: the shared contract plus HeroUI Native's ControlField props (a pressable row), passed
- * through unchanged. HeroUI Native's `isSelected`, `onSelectedChange` and `children` are refused: the contract names
- * each of them once.
- */
-export type CheckboxProps = CheckboxContractProps &
-  Omit<
-    ComponentPropsWithRef<typeof ControlField>,
-    keyof CheckboxContractProps | "isSelected" | "onSelectedChange" | "children"
-  >;
+import type { CheckboxProps } from "#native/checkbox/checkbox.props";
 
 /**
  * A box that is checked or not, in a row that is pressable end to end. `label` names it; `description` and

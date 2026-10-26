@@ -13,12 +13,19 @@ import { useEffect, useState } from "react";
 import { useConfirmation } from "#react/confirmation/use-confirmation";
 import { FakeConfirmationProvider } from "#testing/fakes/fake-confirmation-provider";
 
+/** The question the asker puts. */
+const QUESTION = {
+  title: "Cancel the order?",
+  confirmLabel: "Cancel order",
+  cancelLabel: "Keep order",
+} as const;
+
 /** Asks once and shows the answer. */
 function Asker() {
   const confirm = useConfirmation();
   const [answer, setAnswer] = useState<string>("pending");
   useEffect(() => {
-    void confirm({ title: "Cancel the order?" }).then((yes) => setAnswer(String(yes)));
+    void confirm(QUESTION).then((yes) => setAnswer(String(yes)));
   }, [confirm]);
   return <output>{answer}</output>;
 }
@@ -32,7 +39,7 @@ describe("FakeConfirmationProvider", () => {
       </FakeConfirmationProvider>,
     );
     await waitFor(() => expect(screen.getByText("true")).toBeTruthy());
-    expect(onAsk).toHaveBeenCalledWith({ title: "Cancel the order?" });
+    expect(onAsk).toHaveBeenCalledWith(QUESTION);
   });
 
   it("answers no", async () => {

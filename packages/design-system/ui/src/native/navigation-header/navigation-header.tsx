@@ -21,30 +21,18 @@
 // Uniwind adds `className` to React Native's own components, which the root `View` takes.
 /// <reference types="uniwind/types" />
 import { use, type ReactElement, type ReactNode } from "react";
-import { View, type ViewProps } from "react-native";
+import { View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
 import { useUiText } from "#core/hooks/use-ui-text";
-import type { NavigationHeaderContractProps } from "#contracts/types/navigation-header-contract-props.type";
 import { isAbsoluteUrl } from "#core/functions/is-absolute-url.function";
 import { Heading } from "#native/heading/heading";
 import { Icon } from "#native/icon/icon";
 import { IconButton } from "#native/icon-button/icon-button";
 import { RouterContext } from "#native/router-provider/router-context";
 import { Text } from "#native/text/text";
-
-/**
- * Props of the native NavigationHeader: the shared contract, the top inset switch and the root `View`'s own props,
- * passed through. The view's `accessibilityLabel` is the contract's `label`, so the type refuses it.
- */
-export type NavigationHeaderProps = NavigationHeaderContractProps & {
-  /** True to pad the top by the status bar's safe-area inset. Defaults to true. */
-  readonly hasTopInset?: boolean | undefined;
-} & Omit<
-    ViewProps,
-    keyof NavigationHeaderContractProps | "hasTopInset" | "accessibilityLabel" | "children"
-  >;
+import type { NavigationHeaderProps } from "#native/navigation-header/navigation-header.props";
 
 /** The back chevron, mirrored in right-to-left because it points the reading way back. */
 const BACK_ICON = <Icon name="chevron-left" isMirroredInRtl />;

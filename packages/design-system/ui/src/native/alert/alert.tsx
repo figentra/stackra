@@ -12,24 +12,13 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0312 (decisions 1 and 3); WCAG 2.2 SC 1.4.1
  *          and 4.1.3.
  */
-import { Alert as HeroAlert, type AlertRootProps as HeroAlertRootProps } from "heroui-native";
+import { Alert as HeroAlert } from "heroui-native";
 import { View } from "react-native";
 import type { ReactElement } from "react";
 
-import type { AlertContractProps } from "#contracts/types/alert-contract-props.type";
-import type { DistributiveOmit } from "#contracts/types/distributive-omit.type";
 import { liveRegionOf } from "#core/functions/live-region-of.function";
 import { FeedbackIcon } from "#native/feedback-icon/feedback-icon";
-
-/**
- * Props of the native Alert: the shared contract plus HeroUI Native's own alert props, passed through. HeroUI's
- * `status` is the contract's `tone`, and the role and live region are the tone's, never the caller's.
- */
-export type AlertProps = AlertContractProps &
-  DistributiveOmit<
-    HeroAlertRootProps,
-    keyof AlertContractProps | "children" | "status" | "role" | "aria-live"
-  >;
+import type { AlertProps } from "#native/alert/alert.props";
 
 /** An inline message: the tone's icon, the title, the description and the actions, announced by its tone. */
 export function Alert({

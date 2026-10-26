@@ -10,7 +10,8 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0318 (decision 3).
  */
 import type { FilterKind } from "#contracts/enums/filter-kind.enum";
-import type { FilterValue, FilterValueByKind } from "#contracts/types/filter-value.type";
+import type { FilterValue } from "#contracts/types/filter-value.type";
+import type { FilterValueByKind } from "#contracts/types/filter-value-by-kind.type";
 
 /** Says whether `value` has the shape of a value of `kind`. */
 function hasShapeOf(kind: FilterKind, value: unknown): boolean {

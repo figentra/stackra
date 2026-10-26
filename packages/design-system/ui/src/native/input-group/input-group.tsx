@@ -23,22 +23,11 @@ import {
   TextField as HeroTextField,
   Typography,
 } from "heroui-native";
-import type { ComponentPropsWithRef, ReactNode } from "react";
+import type { ReactNode } from "react";
 
-import type { InputGroupContractProps } from "#contracts/types/input-group-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
-import { TEXT_INPUT_TYPE_PROPS } from "#native/text-field/text-field";
-
-/**
- * Props of the native InputGroup: the shared contract plus HeroUI Native's input props, passed through to the input.
- * The contract's names replace HeroUI's and React Native's: `onChange` for `onChangeText`, `isReadOnly` for `readOnly`
- * and `editable`, `isDisabled` and `isInvalid` for the input's own.
- */
-export type InputGroupProps = InputGroupContractProps &
-  Omit<
-    ComponentPropsWithRef<typeof HeroInputGroup.Input>,
-    keyof InputGroupContractProps | "children" | "onChangeText" | "readOnly" | "editable"
-  >;
+import { TEXT_INPUT_TYPE_PROPS } from "#native/text-field/text-input-type-props.constant";
+import type { InputGroupProps } from "#native/input-group/input-group.props";
 
 /** True for what an affix draws as plain text beside the value. */
 const isText = (content: ReactNode) => typeof content === "string" || typeof content === "number";

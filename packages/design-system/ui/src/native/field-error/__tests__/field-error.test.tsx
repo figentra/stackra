@@ -14,7 +14,8 @@ import { render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 
 import type { FieldErrorContractProps } from "#contracts/types/field-error-contract-props.type";
-import { FieldError, type FieldErrorProps } from "#native/field-error/field-error";
+import { FieldError } from "#native/field-error/field-error";
+import type { FieldErrorProps } from "#native/field-error/field-error.props";
 
 /** The props the stand-in was last handed, as the real component would receive them. */
 const received = vi.hoisted(() => ({ props: {} as Record<string, unknown> }));

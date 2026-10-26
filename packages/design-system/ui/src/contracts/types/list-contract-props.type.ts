@@ -9,7 +9,7 @@
  */
 import type { SurfaceVariant } from "#contracts/enums/surface-variant.enum";
 import type { CollectionContractProps } from "#contracts/types/collection-contract-props.type";
-import type { ListItemData } from "#contracts/types/list-item-contract-props.type";
+import type { ListItemData } from "#contracts/types/list-item-data.type";
 import type { SelectionContractProps } from "#contracts/types/selection-contract-props.type";
 
 /** Props shared by the web and native `List`. */

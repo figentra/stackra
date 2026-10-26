@@ -15,7 +15,8 @@ import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { createRef } from "react";
 
 import type { SelectContractProps } from "#contracts/types/select-contract-props.type";
-import { Select, type SelectProps } from "#react/select/select";
+import { Select } from "#react/select/select";
+import type { SelectProps } from "#react/select/select.props";
 
 const press = (element: HTMLElement) => act(() => element.click());
 

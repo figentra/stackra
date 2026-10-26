@@ -15,10 +15,8 @@
 // @covers sta-350:FR-175
 import { act, render, screen } from "@testing-library/react";
 
-import {
-  NavigationHeader,
-  type NavigationHeaderProps,
-} from "#react/navigation-header/navigation-header";
+import { NavigationHeader } from "#react/navigation-header/navigation-header";
+import type { NavigationHeaderProps } from "#react/navigation-header/navigation-header.props";
 
 describe("NavigationHeader (web)", () => {
   it("is a header element, unnamed unless given a label", () => {

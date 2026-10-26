@@ -21,10 +21,9 @@
  *          STA-350 (thin wrappers).
  */
 import { cn } from "@heroui/react";
-import { useEffect, useRef, useState, type ComponentPropsWithoutRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import type { CollectionItem } from "#contracts/types/collection-item.type";
-import type { DataTableContractProps } from "#contracts/types/data-table-contract-props.type";
 import type { MenuLeafItem } from "#contracts/types/menu-leaf-item.type";
 import type { TableColumn } from "#contracts/types/table-column.type";
 import { cellTextOf } from "#core/functions/cell-text-of.function";
@@ -41,14 +40,7 @@ import { EmptyState } from "#react/empty-state/empty-state";
 import { ErrorState } from "#react/error-state/error-state";
 import { PageSkeleton } from "#react/page-skeleton/page-skeleton";
 import { Table } from "#react/table/table";
-
-/**
- * Props of the web DataTable: the shared contract plus the attributes of its root `div`, passed through. The rows and
- * cells are `items` and `renderCell`, so children are refused.
- */
-export type DataTableProps<TItem extends CollectionItem = CollectionItem> =
-  DataTableContractProps<TItem> &
-    Omit<ComponentPropsWithoutRef<"div">, keyof DataTableContractProps | "children">;
+import type { DataTableProps } from "#react/data-table/data-table.props";
 
 /** The id of the row menus' column: the app's columns never use it. */
 const ACTIONS_COLUMN_ID = "data-table-row-actions";

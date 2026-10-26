@@ -19,7 +19,8 @@ import { act, render, screen, within } from "@testing-library/react";
 
 import type { BulkActionBarContractProps } from "#contracts/types/bulk-action-bar-contract-props.type";
 import type { ResourceAction } from "#contracts/types/resource-action.type";
-import { BulkActionBar, type BulkActionBarProps } from "#react/bulk-action-bar/bulk-action-bar";
+import { BulkActionBar } from "#react/bulk-action-bar/bulk-action-bar";
+import type { BulkActionBarProps } from "#react/bulk-action-bar/bulk-action-bar.props";
 
 const press = (element: HTMLElement) => act(() => element.click());
 const offers = () => screen.queryByRole("button", { name: /^Select all/ });

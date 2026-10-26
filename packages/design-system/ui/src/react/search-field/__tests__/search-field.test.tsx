@@ -15,7 +15,8 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 import { createRef } from "react";
 
 import type { SearchFieldContractProps } from "#contracts/types/search-field-contract-props.type";
-import { SearchField, type SearchFieldProps } from "#react/search-field/search-field";
+import { SearchField } from "#react/search-field/search-field";
+import type { SearchFieldProps } from "#react/search-field/search-field.props";
 
 const press = (element: HTMLElement) => act(() => element.click());
 

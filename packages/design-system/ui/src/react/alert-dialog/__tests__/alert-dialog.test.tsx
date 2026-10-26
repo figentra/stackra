@@ -19,7 +19,8 @@ import { CircleAlert, CircleCheck, Info, TriangleAlert } from "lucide-react";
 import type { ReactElement } from "react";
 
 import type { AlertDialogContractProps } from "#contracts/types/alert-dialog-contract-props.type";
-import { AlertDialog, type AlertDialogProps } from "#react/alert-dialog/alert-dialog";
+import { AlertDialog } from "#react/alert-dialog/alert-dialog";
+import type { AlertDialogProps } from "#react/alert-dialog/alert-dialog.props";
 
 const registry = defineIconRegistry({
   info: Info,

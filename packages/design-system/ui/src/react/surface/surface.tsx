@@ -7,22 +7,10 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0165 (HeroUI v3 on web); ADR 0304; owner decision 6 of STA-350
  *          (thin wrappers).
  */
-import { Surface as HeroSurface, type SurfaceRootProps } from "@heroui/react";
-import type { ComponentPropsWithRef } from "react";
+import { Surface as HeroSurface } from "@heroui/react";
 
-import type { SurfaceContractProps } from "#contracts/types/surface-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
-
-/**
- * HeroUI's props for a `div` surface: its own props plus the `div` attributes, as its generic signature spreads them.
- * HeroUI's exported `SurfaceProps` alone leaves the attributes out, so `id`, `role` and `ref` would be refused.
- */
-type HeroSurfaceProps = SurfaceRootProps<"div"> &
-  Omit<ComponentPropsWithRef<"div">, keyof SurfaceRootProps<"div">>;
-
-/** Props of the web Surface: the shared contract plus HeroUI v3's own surface props, passed through unchanged. */
-export type SurfaceProps = SurfaceContractProps &
-  Omit<HeroSurfaceProps, keyof SurfaceContractProps>;
+import type { SurfaceProps } from "#react/surface/surface.props";
 
 /**
  * A background at one of the theme's surface levels. HeroUI keeps the level in `SurfaceContext`, so HeroUI fields

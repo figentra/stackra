@@ -10,15 +10,10 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0165 (HeroUI Native on native); ADR 0304.
  */
 import { Separator as HeroSeparator, useThemeColor, type ThemeColor } from "heroui-native";
-import type { ComponentPropsWithRef } from "react";
 
 import type { SeparatorVariant } from "#contracts/enums/separator-variant.enum";
-import type { SeparatorContractProps } from "#contracts/types/separator-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
-
-/** Props of the native Separator: the shared contract plus HeroUI Native's own separator props, passed through. */
-export type SeparatorProps = SeparatorContractProps &
-  Omit<ComponentPropsWithRef<typeof HeroSeparator>, keyof SeparatorContractProps>;
+import type { SeparatorProps } from "#native/separator/separator.props";
 
 /**
  * The theme colour of each separator level; typed over every level so a new one fails to compile until it has a

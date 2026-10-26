@@ -15,19 +15,15 @@
  *          7); ADR 0313 (decisions 1 and 7); WCAG 2.2 SC 1.3.1 and 2.5.8.
  */
 import type { ReactElement, ReactNode } from "react";
-import { AccessibilityInfo, View, type ViewProps } from "react-native";
+import { AccessibilityInfo, View } from "react-native";
 
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
 import { useUiText } from "#core/hooks/use-ui-text";
-import type { PropertyListContractProps } from "#contracts/types/property-list-contract-props.type";
 import type { PropertyListItem } from "#contracts/types/property-list-item.type";
 import { copyTextOf } from "#core/functions/copy-text-of.function";
 import { IconButton } from "#native/icon-button/icon-button";
 import { Text } from "#native/text/text";
-
-/** Props of the native PropertyList: the shared contract plus the props of a `View`, passed through unchanged. */
-export type PropertyListProps<TItem extends PropertyListItem = PropertyListItem> =
-  PropertyListContractProps<TItem> & Omit<ViewProps, keyof PropertyListContractProps | "children">;
+import type { PropertyListProps } from "#native/property-list/property-list.props";
 
 /** True for a value with nothing to show: missing, empty or `false`; `0` is a value. */
 const isEmpty = (value: ReactNode) => value == null || value === "" || value === false;

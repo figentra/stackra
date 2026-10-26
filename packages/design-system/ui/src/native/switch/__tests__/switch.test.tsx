@@ -15,7 +15,8 @@
 import { act, render } from "@testing-library/react";
 import type { ReactNode } from "react";
 
-import { Switch, type SwitchProps } from "#native/switch/switch";
+import { Switch } from "#native/switch/switch";
+import type { SwitchProps } from "#native/switch/switch.props";
 
 /** The props each stand-in was last handed, by name, as the real component would receive them. */
 const received = vi.hoisted(() => ({ props: {} as Record<string, Record<string, unknown>> }));

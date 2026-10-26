@@ -17,11 +17,10 @@ import type { DatePickerContractProps } from "#contracts/types/date-picker-contr
 import type { DateRangeValue } from "#contracts/types/date-range-value.type";
 import type { DateValueContractProps } from "#contracts/types/date-value-contract-props.type";
 import type { FieldContractProps } from "#contracts/types/field-contract-props.type";
-import type {
-  FilterDefinition,
-  NumberFilterDefinition,
-} from "#contracts/types/filter-definition.type";
-import type { FilterState, FilterValueByKind } from "#contracts/types/filter-value.type";
+import type { FilterDefinition } from "#contracts/types/filter-definition.type";
+import type { NumberFilterDefinition } from "#contracts/types/number-filter-definition.type";
+import type { FilterState } from "#contracts/types/filter-state.type";
+import type { FilterValueByKind } from "#contracts/types/filter-value-by-kind.type";
 import type { MenuLeafItem } from "#contracts/types/menu-leaf-item.type";
 import type { NumberFieldContractProps } from "#contracts/types/number-field-contract-props.type";
 import type { NumberRangeValue } from "#contracts/types/number-range-value.type";

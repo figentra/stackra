@@ -16,7 +16,8 @@ import { act, render } from "@testing-library/react";
 import type { ReactNode } from "react";
 
 import type { SearchFieldContractProps } from "#contracts/types/search-field-contract-props.type";
-import { SearchField, type SearchFieldProps } from "#native/search-field/search-field";
+import { SearchField } from "#native/search-field/search-field";
+import type { SearchFieldProps } from "#native/search-field/search-field.props";
 
 /** The props each stand-in was last handed, by name, as the real component would receive them. */
 const received = vi.hoisted(() => ({ props: {} as Record<string, Record<string, unknown>> }));

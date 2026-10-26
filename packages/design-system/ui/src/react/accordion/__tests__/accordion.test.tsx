@@ -15,7 +15,8 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 import { createRef } from "react";
 
 import type { AccordionContractProps } from "#contracts/types/accordion-contract-props.type";
-import { Accordion, type AccordionProps } from "#react/accordion/accordion";
+import { Accordion } from "#react/accordion/accordion";
+import type { AccordionProps } from "#react/accordion/accordion.props";
 
 const ITEMS = [
   { id: "shipping", title: "Shipping", content: "Ships in two days" },

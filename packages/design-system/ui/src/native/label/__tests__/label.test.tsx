@@ -14,7 +14,8 @@ import { render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 
 import type { LabelContractProps } from "#contracts/types/label-contract-props.type";
-import { Label, type LabelProps } from "#native/label/label";
+import { Label } from "#native/label/label";
+import type { LabelProps } from "#native/label/label.props";
 
 /** The props the stand-in was last handed, as the real component would receive them. */
 const received = vi.hoisted(() => ({ props: {} as Record<string, unknown> }));

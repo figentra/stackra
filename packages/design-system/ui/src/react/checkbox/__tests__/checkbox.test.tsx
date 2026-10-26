@@ -14,7 +14,8 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { useState } from "react";
 
-import { Checkbox, type CheckboxProps } from "#react/checkbox/checkbox";
+import { Checkbox } from "#react/checkbox/checkbox";
+import type { CheckboxProps } from "#react/checkbox/checkbox.props";
 
 function Pair() {
   const [on, setOn] = useState(false);

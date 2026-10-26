@@ -13,30 +13,16 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0313 (decisions 1 and 7); WCAG 2.2 SC 1.3.1,
  *          2.5.8 and 4.1.3.
  */
-import {
-  useEffect,
-  useRef,
-  useState,
-  type ComponentPropsWithoutRef,
-  type ReactElement,
-  type ReactNode,
-} from "react";
+import { useEffect, useRef, useState, type ReactElement, type ReactNode } from "react";
 
-import type { PropertyListContractProps } from "#contracts/types/property-list-contract-props.type";
 import type { PropertyListItem } from "#contracts/types/property-list-item.type";
 import { copyTextOf } from "#core/functions/copy-text-of.function";
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
 import { useUiText } from "#core/hooks/use-ui-text";
 import { IconButton } from "#react/icon-button/icon-button";
-import { Text, type TextProps } from "#react/text/text";
-
-/**
- * Props of the web PropertyList: the shared contract plus the attributes of a `dl`, passed through. The rows are drawn
- * from `items`, so `children` is refused.
- */
-export type PropertyListProps<TItem extends PropertyListItem = PropertyListItem> =
-  PropertyListContractProps<TItem> &
-    Omit<ComponentPropsWithoutRef<"dl">, keyof PropertyListContractProps | "children">;
+import { Text } from "#react/text/text";
+import type { TextProps } from "#react/text/text.props";
+import type { PropertyListProps } from "#react/property-list/property-list.props";
 
 /** The grid of each column count; two columns stack into one below the small breakpoint. */
 const COLUMNS_CLASS_NAME = Object.freeze({

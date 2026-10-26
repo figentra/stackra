@@ -17,11 +17,10 @@
  *          (HeroUI v3 on web); WCAG 2.2 SC 1.3.1, 1.4.1, 2.4.7, 2.5.8 and 4.1.2.
  */
 import { buttonVariants, cn } from "@heroui/react";
-import { useId, type ComponentPropsWithRef, type ReactElement } from "react";
+import { useId, type ReactElement } from "react";
 import { Link as AriaLink } from "react-aria-components";
 
 import type { NavigationItem } from "#contracts/types/navigation-item.type";
-import type { NavigationListContractProps } from "#contracts/types/navigation-list-contract-props.type";
 import { currentStateOf } from "#core/functions/current-state-of.function";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
@@ -29,19 +28,7 @@ import { useUiText } from "#core/hooks/use-ui-text";
 import { Chip } from "#react/chip/chip";
 import { SlotIcon } from "#react/slot-icon/slot-icon";
 import { Tooltip } from "#react/tooltip/tooltip";
-
-/**
- * Props of the web NavigationList: the shared contract plus the `nav`'s own props, passed through. The `nav`'s
- * `aria-label` is the contract's `label`, so the type refuses it.
- */
-export type NavigationListProps = NavigationListContractProps &
-  Omit<
-    ComponentPropsWithRef<"nav">,
-    keyof NavigationListContractProps | "children" | "aria-label"
-  > & {
-    /** True for the icon rail: labels leave the sight (they stay the accessible name) and a tooltip shows each. */
-    readonly isCompact?: boolean | undefined;
-  };
+import type { NavigationListProps } from "#react/navigation-list/navigation-list.props";
 
 /** A zero or empty badge draws nothing. */
 function hasBadge(badge: NavigationItem["badge"]): badge is string | number {

@@ -19,8 +19,9 @@ import type { ReactElement } from "react";
 import type { ModalContractProps } from "#contracts/types/modal-contract-props.type";
 import type { OverlayTitleContractProps } from "#contracts/types/overlay-title-contract-props.type";
 import { Button } from "#react/button/button";
-import { Modal, type ModalProps } from "#react/modal/modal";
-import type { ModalTitleProps } from "#react/modal/modal-title";
+import { Modal } from "#react/modal/modal";
+import type { ModalProps } from "#react/modal/modal.props";
+import type { ModalTitleProps } from "#react/modal/modal-title.props";
 
 const press = (element: HTMLElement) => act(() => element.click());
 

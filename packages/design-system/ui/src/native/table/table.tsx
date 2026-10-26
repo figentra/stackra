@@ -19,39 +19,19 @@
  */
 import { Checkbox as HeroCheckbox } from "heroui-native";
 import { isValidElement, useState, type ReactNode } from "react";
-import { FlatList, Pressable, View, type FlatListProps } from "react-native";
+import { FlatList, Pressable, View } from "react-native";
 
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
 import { useUiText } from "#core/hooks/use-ui-text";
 import type { CollectionItem } from "#contracts/types/collection-item.type";
 import type { TableColumn } from "#contracts/types/table-column.type";
-import type { TableContractProps } from "#contracts/types/table-contract-props.type";
 import { cellTextOf } from "#core/functions/cell-text-of.function";
 import { keysOfSelection } from "#core/functions/keys-of-selection.function";
 import { nextSortDescriptor } from "#core/functions/next-sort-descriptor.function";
 import { Button } from "#native/button/button";
 import { Spinner } from "#native/spinner/spinner";
 import { Text } from "#native/text/text";
-
-/**
- * Props of the native Table: the shared contract plus the props of React Native's `FlatList`, passed through
- * unchanged. The app lists rows as `items` and cells as `renderCell`, so the list's own data, row renderer, key
- * extractor, header, footer, empty component and end-reached callback are refused.
- */
-export type TableProps<TItem extends CollectionItem = CollectionItem> = TableContractProps<TItem> &
-  Omit<
-    FlatListProps<TItem>,
-    | keyof TableContractProps
-    | "data"
-    | "renderItem"
-    | "keyExtractor"
-    | "extraData"
-    | "ListHeaderComponent"
-    | "ListFooterComponent"
-    | "ListEmptyComponent"
-    | "onEndReached"
-    | "children"
-  >;
+import type { TableProps } from "#native/table/table.props";
 
 /** A cell's content: text a child returned is wrapped in `Text`, which React Native needs, and a node stays as given. */
 function CellContent({

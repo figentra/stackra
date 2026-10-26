@@ -9,7 +9,8 @@
 // @covers sta-350:FR-206
 import { CalendarDate } from "@internationalized/date";
 
-import { toCalendarDate, toPlatformDate } from "#native/date-field/platform-date";
+import { toPlatformDate } from "#native/date-field/platform-date";
+import { toCalendarDate } from "#native/date-field/to-calendar-date.function";
 
 describe("platform date", () => {
   it("turns a day into local noon of that day", () => {

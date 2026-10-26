@@ -11,26 +11,8 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0302 (decision 3); ADR 0312.
  */
-
-/** What a pending-choice store holds at one moment; a new object each time it changes, so a reader can compare. */
-export interface PendingChoiceState<TRequest> {
-  /** The latest question asked, kept after it closes; undefined until the first one. */
-  readonly request: TRequest | undefined;
-  /** True while a question waits for an answer. */
-  readonly isOpen: boolean;
-}
-
-/** A store of one pending yes-or-no question. */
-export interface PendingChoiceStore<TRequest> {
-  /** The current state; the same object until something changes. */
-  readonly getState: () => PendingChoiceState<TRequest>;
-  /** Calls `listener` after every change; returns the function that stops it. */
-  readonly subscribe: (listener: () => void) => () => void;
-  /** Opens a question and resolves true for a yes and false for a no; a new question refuses the one before it. */
-  readonly ask: (request: TRequest) => Promise<boolean>;
-  /** Answers the open question, if any, and closes it; with nothing open it does nothing. */
-  readonly settle: (choice: boolean) => void;
-}
+import type { PendingChoiceState } from "#core/types/pending-choice-state.type";
+import type { PendingChoiceStore } from "#core/types/pending-choice-store.type";
 
 /**
  * Creates a store that holds one pending yes-or-no question. Its functions are bound, so they keep their identity and

@@ -20,7 +20,8 @@ import type { ReactNode } from "react";
 import { EmptyReason } from "#contracts/enums/empty-reason.enum";
 import type { EmptyStateContractProps } from "#contracts/types/empty-state-contract-props.type";
 import { STATE_ICON } from "#core/constants/state-icon.constant";
-import { EmptyState, type EmptyStateProps } from "#native/empty-state/empty-state";
+import { EmptyState } from "#native/empty-state/empty-state";
+import type { EmptyStateProps } from "#native/empty-state/empty-state.props";
 
 /** The props each stand-in was last handed, by name, and every View in order. */
 const received = vi.hoisted(() => ({

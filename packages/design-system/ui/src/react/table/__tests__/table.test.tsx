@@ -20,7 +20,8 @@ import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import type { SortDescriptor } from "#contracts/types/sort-descriptor.type";
 import type { TableColumn } from "#contracts/types/table-column.type";
 import type { TableContractProps } from "#contracts/types/table-contract-props.type";
-import { Table, type TableProps } from "#react/table/table";
+import { Table } from "#react/table/table";
+import type { TableProps } from "#react/table/table.props";
 
 const press = (element: HTMLElement) => act(() => element.click());
 
@@ -49,7 +50,9 @@ describe("Table (web)", () => {
       "IntersectionObserver",
       class {
         observe() {}
+
         unobserve() {}
+
         disconnect() {}
       },
     );

@@ -10,34 +10,19 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decisions 5 and 7); ADR 0165 (HeroUI Native on native); owner
  *          decision 6 of STA-350.
  */
-import { LinkButton, type LinkButtonProps } from "heroui-native";
+import { LinkButton } from "heroui-native";
 import { use } from "react";
 
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
 import { useUiText } from "#core/hooks/use-ui-text";
-import type { LinkContractProps } from "#contracts/types/link-contract-props.type";
 import { TONE_CLASS_NAME } from "#core/constants/tone-class-name.constant";
 import { Icon } from "#native/icon/icon";
 import { followHref } from "#native/router-provider/follow-href.function";
 import { RouterContext } from "#native/router-provider/router-context";
+import type { LinkProps } from "#native/link/link.props";
 
 // Developer log text, read in the console only, so it stays English (ADR 0080 translates what users see).
 const COULD_NOT_OPEN = "Link could not open its URL";
-
-/**
- * Props of the native Link: the shared contract plus HeroUI Native's LinkButton props, passed through unchanged. The
- * omitted names are the contract's own (`label`) or the wrapper's (the role, and the state HeroUI computes from
- * `isDisabled`).
- */
-export type LinkProps = LinkContractProps &
-  Omit<
-    LinkButtonProps,
-    | keyof LinkContractProps
-    | "accessibilityRole"
-    | "accessibilityState"
-    | "accessibilityLabel"
-    | "aria-label"
-  >;
 
 /**
  * A text link on HeroUI Native's LinkButton. A press calls `onPress`, then opens `href`: an absolute URL or an

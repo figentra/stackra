@@ -21,7 +21,8 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 
 import type { ResourceAction } from "#contracts/types/resource-action.type";
-import { BulkActionBar, type BulkActionBarProps } from "#native/bulk-action-bar/bulk-action-bar";
+import { BulkActionBar } from "#native/bulk-action-bar/bulk-action-bar";
+import type { BulkActionBarProps } from "#native/bulk-action-bar/bulk-action-bar.props";
 
 /** What the stand-ins were last handed, and the platform calls made. */
 const received = vi.hoisted(() => ({

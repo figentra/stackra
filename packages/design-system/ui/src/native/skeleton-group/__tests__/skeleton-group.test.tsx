@@ -16,7 +16,8 @@ import type { ReactNode } from "react";
 
 import type { SkeletonGroupContractProps } from "#contracts/types/skeleton-group-contract-props.type";
 import { Skeleton } from "#native/skeleton/skeleton";
-import { SkeletonGroup, type SkeletonGroupProps } from "#native/skeleton-group/skeleton-group";
+import { SkeletonGroup } from "#native/skeleton-group/skeleton-group";
+import type { SkeletonGroupProps } from "#native/skeleton-group/skeleton-group.props";
 
 /** The props each stand-in was last handed, by name, as the real component would receive them. */
 const received = vi.hoisted(() => ({ props: {} as Record<string, Record<string, unknown>> }));

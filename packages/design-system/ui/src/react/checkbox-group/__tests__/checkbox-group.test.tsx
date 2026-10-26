@@ -12,7 +12,8 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 
 import type { ChoiceOption } from "#contracts/types/choice-option.type";
-import { CheckboxGroup, type CheckboxGroupProps } from "#react/checkbox-group/checkbox-group";
+import { CheckboxGroup } from "#react/checkbox-group/checkbox-group";
+import type { CheckboxGroupProps } from "#react/checkbox-group/checkbox-group.props";
 
 const OPTIONS: readonly ChoiceOption[] = [
   { value: "email", label: "Email", description: "Weekly digest" },

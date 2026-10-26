@@ -17,7 +17,8 @@ import { createElement, useState } from "react";
 import { TextFieldType } from "#contracts/enums/text-field-type.enum";
 import { TextFieldVariant } from "#contracts/enums/text-field-variant.enum";
 import type { TextFieldContractProps } from "#contracts/types/text-field-contract-props.type";
-import { TextField, type TextFieldProps } from "#react/text-field/text-field";
+import { TextField } from "#react/text-field/text-field";
+import type { TextFieldProps } from "#react/text-field/text-field.props";
 
 /** A field whose value the test keeps in state, so the field is controlled. */
 function Controlled() {

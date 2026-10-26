@@ -20,17 +20,10 @@ import { View } from "react-native";
 
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
 import { useUiText } from "#core/hooks/use-ui-text";
-import type { SectionContractProps } from "#contracts/types/section-contract-props.type";
-import { Card, type CardProps } from "#native/card/card";
+import { Card } from "#native/card/card";
 import { PageActions } from "#native/page-actions/page-actions";
 import { Text } from "#native/text/text";
-
-/**
- * Props of the native Section: the shared contract plus the card's own props, passed through. The card's
- * `accessibilityLabel` is the contract's `label`, so the type refuses it.
- */
-export type SectionProps = SectionContractProps &
-  Omit<CardProps, keyof SectionContractProps | "accessibilityLabel">;
+import type { SectionProps } from "#native/section/section.props";
 
 /** A node as the section can draw it: a string or number goes inside `Text`, any other node as it is. */
 function textual(node: ReactNode): ReactNode {

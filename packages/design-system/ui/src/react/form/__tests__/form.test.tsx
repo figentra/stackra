@@ -15,7 +15,8 @@ import { fireEvent, render, screen } from "@testing-library/react";
 
 import type { FormContractProps } from "#contracts/types/form-contract-props.type";
 import { FieldError } from "#react/field-error/field-error";
-import { Form, type FormProps } from "#react/form/form";
+import { Form } from "#react/form/form";
+import type { FormProps } from "#react/form/form.props";
 
 /** A form with one of each control Enter treats differently, and a spy on its submit. */
 function renderForm(props: Partial<FormProps> = {}) {

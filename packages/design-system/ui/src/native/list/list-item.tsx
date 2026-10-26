@@ -13,30 +13,11 @@
  *          native); WCAG 2.2 SC 2.5.8 (target size).
  */
 import { ListGroup } from "heroui-native";
-import type { ComponentPropsWithRef, ReactNode } from "react";
 import { View } from "react-native";
 
-import type { ListItemContractProps } from "#contracts/types/list-item-contract-props.type";
 import { SlotIcon } from "#native/slot-icon/slot-icon";
-
-/**
- * Props of the native ListItem: the shared contract plus HeroUI Native's `ListGroup.Item` props, passed through
- * unchanged. `onPress` and `isDisabled` are the contract's; HeroUI Native's `disabled` is not a prop.
- */
-export type ListItemProps = ListItemContractProps &
-  Omit<
-    ComponentPropsWithRef<typeof ListGroup.Item>,
-    keyof ListItemContractProps | "children" | "disabled" | "accessibilityLabel"
-  >;
-
-/** End content as the row can draw it: a string or number goes into the description text, any other node as it is. */
-export function endContentNode(endContent: ReactNode): ReactNode {
-  return typeof endContent === "string" || typeof endContent === "number" ? (
-    <ListGroup.ItemDescription>{endContent}</ListGroup.ItemDescription>
-  ) : (
-    endContent
-  );
-}
+import type { ListItemProps } from "#native/list/list-item.props";
+import { endContentNode } from "#native/list/end-content-node.function";
 
 /** A row of a list. Pressable with `onPress`; a disabled pressable row refuses the press, is dimmed and is announced disabled, and a plain row is never dimmed. */
 export function ListItem({

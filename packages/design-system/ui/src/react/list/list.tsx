@@ -16,25 +16,18 @@
  *          (HeroUI v3 on web); WCAG 2.2 SC 4.1.2 and 4.1.3.
  */
 import { ListBox } from "@heroui/react";
-import type { ComponentPropsWithRef } from "react";
 
-import type { ListContractProps } from "#contracts/types/list-contract-props.type";
-import type { ListItemData } from "#contracts/types/list-item-contract-props.type";
+import type { ListItemData } from "#contracts/types/list-item-data.type";
 import { keysOfSelection } from "#core/functions/keys-of-selection.function";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { ListItem } from "#react/list/list-item";
-import { ListItemContent, textValueOf } from "#react/list/list-item-content";
+import { ListItemContent } from "#react/list/list-item-content";
+import { textValueOf } from "#react/list/text-value-of.function";
 import { useEndReached } from "#react/list/use-end-reached";
 import { Reveal } from "#react/reveal/reveal";
 import { Spinner } from "#react/spinner/spinner";
 import { Surface } from "#react/surface/surface";
-
-/**
- * Props of the web List: the shared contract plus the props of its root `div`, passed through unchanged. The root holds
- * the surface, the empty state and the loading spinner, so `aria-busy` is set from `isLoading`, never by the caller.
- */
-export type ListProps<TItem extends ListItemData = ListItemData> = ListContractProps<TItem> &
-  Omit<ComponentPropsWithRef<"div">, keyof ListContractProps | "children" | "aria-busy">;
+import type { ListProps } from "#react/list/list.props";
 
 /**
  * A list of rows. Name it with `label`. Give it `selectionMode` to make it a list box whose rows are selected by

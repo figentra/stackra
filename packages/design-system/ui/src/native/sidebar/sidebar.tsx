@@ -13,18 +13,11 @@
  *          2.2 SC 1.3.1 and 4.1.2.
  */
 import type { ReactElement, ReactNode } from "react";
-import { View, type ViewProps } from "react-native";
+import { View } from "react-native";
 
-import type { SidebarContractProps } from "#contracts/types/sidebar-contract-props.type";
 import { NavigationList } from "#native/navigation-list/navigation-list";
 import { Text } from "#native/text/text";
-
-/**
- * Props of the native Sidebar: the shared contract plus the root `View`'s own props, passed through. The sidebar's
- * content is `items` and its two slots, so the type refuses JSX children.
- */
-export type SidebarProps = SidebarContractProps &
-  Omit<ViewProps, keyof SidebarContractProps | "children">;
+import type { SidebarProps } from "#native/sidebar/sidebar.props";
 
 /** A slot as the column can draw it: a string or number goes inside `Text`, any other node as it is. */
 function slotNode(node: ReactNode): ReactNode {

@@ -46,7 +46,7 @@ describe("useSchemaFormHandle", () => {
       value: 1,
       isInvalid: false,
     });
-    act(() => result.current.field("variantId").onChange("var_9"));
+    act(() => result.current.field("variantId").onChange?.("var_9"));
     expect(result.current.field("variantId").value).toBe("var_9");
   });
 
@@ -59,7 +59,7 @@ describe("useSchemaFormHandle", () => {
         errorMessage: "variant_unavailable",
       }),
     );
-    act(() => result.current.field("variantId").onChange("var_2"));
+    act(() => result.current.field("variantId").onChange?.("var_2"));
     expect(result.current.field("variantId").isInvalid).toBe(false);
   });
 
@@ -74,7 +74,7 @@ describe("useSchemaFormHandle", () => {
     expect(onValid).not.toHaveBeenCalled();
     expect(result.current.field("variantId").errorMessage).toBe("required");
 
-    act(() => result.current.field("variantId").onChange("var_1"));
+    act(() => result.current.field("variantId").onChange?.("var_1"));
     await act(async () => {
       answer = await result.current.handleSubmit(onValid)();
     });

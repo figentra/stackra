@@ -13,13 +13,10 @@
 import { useEffect, useMemo, useRef, type ReactElement } from "react";
 import { AccessibilityInfo, View } from "react-native";
 
-import type { KioskSurfaceContractProps } from "#contracts/types/kiosk-surface-contract-props.type";
 import type { KioskState } from "#contracts/types/kiosk-state.type";
 import { idleTimer } from "#core/functions/idle-timer.function";
 import { KioskContext } from "#native/kiosk-surface/kiosk-context";
-
-/** Props of the native KioskSurface. */
-export type KioskSurfaceProps = KioskSurfaceContractProps;
+import type { KioskSurfaceProps } from "#native/kiosk-surface/kiosk-surface.props";
 
 /**
  * A screen in kiosk mode.

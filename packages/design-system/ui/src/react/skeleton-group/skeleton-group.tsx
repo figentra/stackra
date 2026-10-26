@@ -9,14 +9,10 @@
  * Governing contract: ADR 0302 (decision 3, decision 5: adapted form); ADR 0165; ADR 0304; WCAG 2.2 SC 4.1.3.
  */
 import { cn } from "@heroui/react";
-import { useEffect, useMemo, useRef, type ComponentPropsWithRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 
-import type { SkeletonGroupContractProps } from "#contracts/types/skeleton-group-contract-props.type";
 import { SkeletonGroupContext } from "#react/skeleton-group/skeleton-group-context";
-
-/** Props of the web SkeletonGroup: the shared contract plus the props of its root `div`, passed through. */
-export type SkeletonGroupProps = SkeletonGroupContractProps &
-  Omit<ComponentPropsWithRef<"div">, keyof SkeletonGroupContractProps>;
+import type { SkeletonGroupProps } from "#react/skeleton-group/skeleton-group.props";
 
 /**
  * A region of Skeletons that load together, with one shared state and one sweep. With a `loadingLabel` it names the

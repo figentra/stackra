@@ -20,7 +20,8 @@ import { createElement, useState } from "react";
 import { I18nProvider } from "react-aria-components";
 
 import type { NumberFieldContractProps } from "#contracts/types/number-field-contract-props.type";
-import { NumberField, type NumberFieldProps } from "#react/number-field/number-field";
+import { NumberField } from "#react/number-field/number-field";
+import type { NumberFieldProps } from "#react/number-field/number-field.props";
 
 const press = (element: HTMLElement) => act(() => element.click());
 const key = (element: HTMLElement, name: string) => fireEvent.keyDown(element, { key: name });

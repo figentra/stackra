@@ -18,7 +18,8 @@ import { FormProvider, useForm, type UseFormReturn } from "react-hook-form";
 import type { FormFieldBinding } from "#contracts/types/form-field-binding.type";
 import { Checkbox } from "#react/checkbox/checkbox";
 import { Form } from "#react/form/form";
-import { FormField, type FormFieldProps } from "#react/form-field/form-field";
+import { FormField } from "#react/form-field/form-field";
+import type { FormFieldProps } from "#react/form-field/form-field.props";
 import { RadioGroup } from "#react/radio-group/radio-group";
 import { TextField } from "#react/text-field/text-field";
 

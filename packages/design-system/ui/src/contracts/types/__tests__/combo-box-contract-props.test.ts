@@ -8,11 +8,9 @@
  * Governing contract: ADR 0303 (decision 7); ADR 0022 (test placement).
  */
 // @covers sta-350:FR-077 sta-350:FR-078
-import type {
-  ComboBoxContractProps,
-  MultipleComboBoxContractProps,
-  SingleComboBoxContractProps,
-} from "#contracts/types/combo-box-contract-props.type";
+import type { ComboBoxContractProps } from "#contracts/types/combo-box-contract-props.type";
+import type { MultipleComboBoxContractProps } from "#contracts/types/multiple-combo-box-contract-props.type";
+import type { SingleComboBoxContractProps } from "#contracts/types/single-combo-box-contract-props.type";
 import type { FieldContractProps } from "#contracts/types/field-contract-props.type";
 import type { SelectItem } from "#contracts/types/select-item.type";
 

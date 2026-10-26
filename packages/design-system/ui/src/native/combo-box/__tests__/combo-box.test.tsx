@@ -19,7 +19,8 @@ import { act, render } from "@testing-library/react";
 import type { ReactNode } from "react";
 
 import type { ComboBoxContractProps } from "#contracts/types/combo-box-contract-props.type";
-import { ComboBox, type ComboBoxProps } from "#native/combo-box/combo-box";
+import { ComboBox } from "#native/combo-box/combo-box";
+import type { ComboBoxProps } from "#native/combo-box/combo-box.props";
 
 /** The props each stand-in was last handed, as the real component would receive them. */
 const received = vi.hoisted(() => ({ props: {} as Record<string, Record<string, unknown>> }));

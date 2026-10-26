@@ -16,7 +16,8 @@ import { act, render } from "@testing-library/react";
 import type { ReactNode } from "react";
 
 import type { ChoiceOption } from "#contracts/types/choice-option.type";
-import { RadioGroup, type RadioGroupProps } from "#native/radio-group/radio-group";
+import { RadioGroup } from "#native/radio-group/radio-group";
+import type { RadioGroupProps } from "#native/radio-group/radio-group.props";
 
 /** The props each stand-in was last handed, by name, as the real component would receive them. */
 const received = vi.hoisted(() => ({

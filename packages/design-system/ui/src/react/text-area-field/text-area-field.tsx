@@ -11,10 +11,8 @@
  */
 import type { ReactElement } from "react";
 
-import { TextArea, type TextAreaProps } from "#react/text-area/text-area";
-
-/** Props of the web TextAreaField: the TextArea's own. */
-export type TextAreaFieldProps = TextAreaProps;
+import { TextArea } from "#react/text-area/text-area";
+import type { TextAreaFieldProps } from "#react/text-area-field/text-area-field.props";
 
 /** A multi-line text field ready for a schema form's binding. */
 export function TextAreaField(props: TextAreaFieldProps): ReactElement {

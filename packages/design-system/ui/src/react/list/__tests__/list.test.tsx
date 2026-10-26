@@ -24,8 +24,9 @@ import { createRef, type ReactElement, type ReactNode } from "react";
 
 import { SurfaceVariant } from "#contracts/enums/surface-variant.enum";
 import type { ListContractProps } from "#contracts/types/list-contract-props.type";
-import type { ListItemData } from "#contracts/types/list-item-contract-props.type";
-import { List, type ListProps } from "#react/list/list";
+import type { ListItemData } from "#contracts/types/list-item-data.type";
+import { List } from "#react/list/list";
+import type { ListProps } from "#react/list/list.props";
 
 const registry = defineIconRegistry({ "chevron-right": ChevronRight, user: User });
 
@@ -62,11 +63,14 @@ describe("List (web)", () => {
       "IntersectionObserver",
       class {
         private readonly entry: { fire: () => void; disconnected: boolean };
+
         constructor(callback: (entries: { isIntersecting: boolean }[]) => void) {
           this.entry = { fire: () => callback([{ isIntersecting: true }]), disconnected: false };
           observers.push(this.entry);
         }
+
         observe() {}
+
         disconnect() {
           this.entry.disconnected = true;
         }

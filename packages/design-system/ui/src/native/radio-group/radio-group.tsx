@@ -15,22 +15,11 @@
  *          (forms); owner decision 6 of STA-350 (thin wrappers).
  */
 import { Description, FieldError, Label, Radio, RadioGroup as HeroRadioGroup } from "heroui-native";
-import { useId, useState, type ComponentPropsWithRef } from "react";
+import { useId, useState } from "react";
 import { View } from "react-native";
 
-import type { RadioGroupContractProps } from "#contracts/types/radio-group-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
-
-/**
- * Props of the native RadioGroup: the shared contract plus HeroUI Native's own group props, passed through
- * unchanged. HeroUI Native's `onValueChange` and `children` are refused: the contract names `onChange` and the
- * options are the content.
- */
-export type RadioGroupProps = RadioGroupContractProps &
-  Omit<
-    ComponentPropsWithRef<typeof HeroRadioGroup>,
-    keyof RadioGroupContractProps | "onValueChange" | "children"
-  >;
+import type { RadioGroupProps } from "#native/radio-group/radio-group.props";
 
 /**
  * A set of radios of which at most one is chosen; the group reports the chosen option's `value`. `isDisabled` and

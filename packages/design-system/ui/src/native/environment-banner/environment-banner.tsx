@@ -9,11 +9,8 @@
  */
 import type { ReactElement } from "react";
 
-import type { EnvironmentBannerContractProps } from "#contracts/types/environment-banner-contract-props.type";
 import { Alert } from "#native/alert/alert";
-
-/** Props of the native EnvironmentBanner. */
-export type EnvironmentBannerProps = EnvironmentBannerContractProps;
+import type { EnvironmentBannerProps } from "#native/environment-banner/environment-banner.props";
 
 /** Names the environment the viewer is in, unless it is production. */
 export function EnvironmentBanner({

@@ -7,20 +7,9 @@
  * Runtime: browser
  * Governing contract: ADR 0302 (decision 3); ADR 0304; WCAG 2.2 SC 1.3.1.
  */
-import { Card as HeroCard, type CardTitleProps as HeroCardTitleProps } from "@heroui/react";
-import { createElement, type ComponentPropsWithRef } from "react";
-
-import type { CardTitleContractProps } from "#contracts/types/card-title-contract-props.type";
-
-/**
- * Props of the web Card.Title: the shared contract plus HeroUI v3's own title props, except the element choice, which
- * the level owns.
- */
-export type CardTitleProps = CardTitleContractProps &
-  Omit<
-    HeroCardTitleProps<"h3"> & Omit<ComponentPropsWithRef<"h3">, keyof HeroCardTitleProps<"h3">>,
-    keyof CardTitleContractProps | "render"
-  >;
+import { Card as HeroCard } from "@heroui/react";
+import { createElement } from "react";
+import type { CardTitleProps } from "#react/card/card-title.props";
 
 /**
  * A card's title as a heading at `level` (default 3, below a section's 2), drawn in the card title's own look. HeroUI

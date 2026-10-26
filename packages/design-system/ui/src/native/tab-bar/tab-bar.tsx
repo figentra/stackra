@@ -22,36 +22,25 @@
 // Uniwind adds `className` to React Native's own components, which the root `View` and `Pressable` take.
 /// <reference types="uniwind/types" />
 import { use, type ReactElement } from "react";
-import { Pressable, View, type ViewProps } from "react-native";
+import { Pressable, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
 import { useUiText } from "#core/hooks/use-ui-text";
 import type { NavigationItem } from "#contracts/types/navigation-item.type";
-import type { TabBarContractProps } from "#contracts/types/tab-bar-contract-props.type";
 import { currentStateOf } from "#core/functions/current-state-of.function";
 import { isAbsoluteUrl } from "#core/functions/is-absolute-url.function";
 import { Badge } from "#native/badge/badge";
 import { Icon } from "#native/icon/icon";
 import { RouterContext } from "#native/router-provider/router-context";
 import { Text } from "#native/text/text";
+import type { TabBarProps } from "#native/tab-bar/tab-bar.props";
 
 // Developer log text, read in the console only, so it stays English (ADR 0080 translates what users see).
 const TOO_MANY = "TabBar draws five tabs at most; the rest are left out";
 
 /** The most tabs a phone's tab bar holds: Android's navigation bar limit. */
 const MAX_TABS = 5;
-
-/**
- * Props of the native TabBar: the shared contract plus the root `View`'s own props, passed through. The view's
- * `accessibilityLabel` and `accessibilityRole` are the contract's `label` and the bar's fixed role, so the type
- * refuses them.
- */
-export type TabBarProps = TabBarContractProps &
-  Omit<
-    ViewProps,
-    keyof TabBarContractProps | "accessibilityLabel" | "accessibilityRole" | "children"
-  >;
 
 /** A zero or empty badge draws nothing. */
 function badgeOf(item: NavigationItem): string | number | undefined {

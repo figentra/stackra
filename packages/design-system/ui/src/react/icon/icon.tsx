@@ -15,30 +15,10 @@ import type { LucideProps } from "lucide-react";
 import { useLocale } from "react-aria-components";
 import type { ComponentType } from "react";
 
-import type { IconContractProps } from "#contracts/types/icon-contract-props.type";
 import { ICON_SIZES } from "#core/constants/icon-sizes.constant";
 import { warnUnknownIcon } from "#core/functions/warn-unknown-icon.function";
 import { UI_ICONS } from "#react/icon/ui-icons.constant";
-
-/** SVG attributes that reach the drawn icon; the contract's props, colour and accessible name stay the wrapper's. */
-type IconPassthroughProps = Omit<
-  LucideProps,
-  | keyof IconContractProps
-  | "color"
-  | "width"
-  | "height"
-  | "absoluteStrokeWidth"
-  | "role"
-  | "aria-label"
-  | "aria-hidden"
-  | "title"
->;
-
-/**
- * Props of the web Icon: the shared contract plus the SVG attributes lucide-react takes, passed through unchanged.
- * An icon is not a control: for something pressable use a button that holds an icon.
- */
-export type IconProps = IconContractProps & IconPassthroughProps;
+import type { IconProps } from "#react/icon/icon.props";
 
 /**
  * Draws the icon a name stands for at a Stackra size and tone: the app's registry first, then the few icons this

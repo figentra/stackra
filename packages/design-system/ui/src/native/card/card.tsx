@@ -10,15 +10,11 @@
  *          (thin wrappers).
  */
 import { Card as HeroCard } from "heroui-native";
-import type { ComponentPropsWithRef, ReactElement } from "react";
+import type { ReactElement } from "react";
 
-import type { CardContractProps } from "#contracts/types/card-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { CardTitle } from "#native/card/card-title";
-
-/** Props of the native Card: the shared contract plus HeroUI Native's own card props, passed through unchanged. */
-export type CardProps = CardContractProps &
-  Omit<ComponentPropsWithRef<typeof HeroCard>, keyof CardContractProps>;
+import type { CardProps } from "#native/card/card.props";
 
 /** The card root: HeroUI Native's, so its surface context still reaches the components inside. */
 function CardRoot({ variant, ...rest }: CardProps): ReactElement {

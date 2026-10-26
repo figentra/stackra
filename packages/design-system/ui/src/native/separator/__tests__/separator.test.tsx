@@ -13,10 +13,11 @@
 import { render } from "@testing-library/react";
 import type { SeparatorOrientation } from "heroui-native";
 
-import { Orientation } from "#contracts/enums/orientation.enum";
+import type { Orientation } from "#contracts/enums/orientation.enum";
 import { SeparatorVariant } from "#contracts/enums/separator-variant.enum";
 import type { SeparatorContractProps } from "#contracts/types/separator-contract-props.type";
-import { Separator, type SeparatorProps } from "#native/separator/separator";
+import { Separator } from "#native/separator/separator";
+import type { SeparatorProps } from "#native/separator/separator.props";
 
 /** The props each stand-in was last handed, by name, as the real component would receive them. */
 const received = vi.hoisted(() => ({ props: {} as Record<string, Record<string, unknown>> }));

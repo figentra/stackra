@@ -11,25 +11,14 @@
  * Governing contract: ADR 0329 (motion layer); ADR 0302 (decision 3); ADR 0303 (decision 7).
  */
 import { motionTiming, STACKRA_THEME } from "@stackra/tokens";
-import { motion, useReducedMotion, type HTMLMotionProps } from "motion/react";
-
-import type { RevealContractProps } from "#contracts/types/reveal-contract-props.type";
+import { motion, useReducedMotion } from "motion/react";
+import type { RevealProps } from "#react/reveal/reveal.props";
 
 const REVEAL = motionTiming(STACKRA_THEME, "reveal");
 const STAGGER = motionTiming(STACKRA_THEME, "stagger");
 
 /** How far the content rises as it fades in, in px. */
 const RISE = 8;
-
-/**
- * Props of the web Reveal: the shared contract plus Motion's `div` props, passed through. The motion itself
- * (`initial`, `animate`, `transition`) is the theme's, so those are refused.
- */
-export type RevealProps = RevealContractProps &
-  Omit<
-    HTMLMotionProps<"div">,
-    keyof RevealContractProps | "initial" | "animate" | "transition" | "exit"
-  >;
 
 /** Content that fades in and rises into place when it mounts. */
 export function Reveal({ children, index = 0, isAnimated = true, ...rest }: RevealProps) {

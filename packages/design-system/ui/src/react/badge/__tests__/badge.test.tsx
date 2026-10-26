@@ -21,7 +21,8 @@ import { Size } from "#contracts/enums/size.enum";
 import { Tone } from "#contracts/enums/tone.enum";
 import type { BadgeContractProps } from "#contracts/types/badge-contract-props.type";
 import { physicalPlacementOf } from "#core/functions/physical-placement-of.function";
-import { Badge, type BadgeProps } from "#react/badge/badge";
+import { Badge } from "#react/badge/badge";
+import type { BadgeProps } from "#react/badge/badge.props";
 
 /** Renders a badge under a locale, which is where React Aria reads the direction from. */
 const inLocale = (locale: string, node: ReactNode) =>

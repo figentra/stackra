@@ -10,13 +10,9 @@
 import { useThemeColor } from "heroui-native";
 import { View } from "react-native";
 
-import type { ChipContractProps } from "#contracts/types/chip-contract-props.type";
-import type { StatusBadgeContractProps } from "#contracts/types/status-badge-contract-props.type";
 import { STATUS_DOT_ROLE } from "#core/constants/status-dot-role.constant";
-import { Chip, type ChipProps } from "#native/chip/chip";
-
-/** Props of the native StatusBadge: the shared contract plus the Chip's pass-through props. */
-export type StatusBadgeProps = StatusBadgeContractProps & Omit<ChipProps, keyof ChipContractProps>;
+import { Chip } from "#native/chip/chip";
+import type { StatusBadgeProps } from "#native/status-badge/status-badge.props";
 
 /** The dot's shape: a 6 pt circle, matching the web badge's 6 px. */
 const DOT_SIZE = 6;

@@ -17,7 +17,8 @@ import { createRef } from "react";
 
 import { EmptyReason } from "#contracts/enums/empty-reason.enum";
 import type { EmptyStateContractProps } from "#contracts/types/empty-state-contract-props.type";
-import { EmptyState, type EmptyStateProps } from "#react/empty-state/empty-state";
+import { EmptyState } from "#react/empty-state/empty-state";
+import type { EmptyStateProps } from "#react/empty-state/empty-state.props";
 
 /** The Lucide icon an element draws, by its kebab-case name. */
 const drawsIcon = (container: HTMLElement, name: string) =>

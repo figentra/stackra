@@ -20,8 +20,9 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 
 import type { ListContractProps } from "#contracts/types/list-contract-props.type";
-import type { ListItemData } from "#contracts/types/list-item-contract-props.type";
-import { List, type ListProps } from "#native/list/list";
+import type { ListItemData } from "#contracts/types/list-item-data.type";
+import { List } from "#native/list/list";
+import type { ListProps } from "#native/list/list.props";
 
 /** The props each stand-in was last handed, by name; a row is recorded per title in `rows`. */
 const received = vi.hoisted(() => {

@@ -15,27 +15,11 @@
  *          decision 6 of STA-350 (thin wrappers).
  */
 import { Description, FieldError, Label, TagGroup as HeroTagGroup } from "heroui-native";
-import type { ComponentPropsWithRef } from "react";
 import { useState } from "react";
 
-import type { TagGroupContractProps } from "#contracts/types/tag-group-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { Text } from "#native/text/text";
-
-/**
- * Props of the native TagGroup: the shared contract plus HeroUI Native's own tag group props, passed through
- * unchanged. The app lists tags as `items`, and the selection is the contract's `value`, never HeroUI's selected keys.
- */
-export type TagGroupProps = TagGroupContractProps &
-  Omit<
-    ComponentPropsWithRef<typeof HeroTagGroup>,
-    | keyof TagGroupContractProps
-    | "children"
-    | "selectedKeys"
-    | "defaultSelectedKeys"
-    | "onSelectionChange"
-    | "disabledKeys"
-  >;
+import type { TagGroupProps } from "#native/tag-group/tag-group.props";
 
 /**
  * A row of tags that can be selected and removed. The value is the list of selected keys; `onChange` is called with the

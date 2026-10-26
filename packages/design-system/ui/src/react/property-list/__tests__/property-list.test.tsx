@@ -18,7 +18,8 @@ import { act, fireEvent, render, screen, within } from "@testing-library/react";
 
 import type { PropertyListContractProps } from "#contracts/types/property-list-contract-props.type";
 import type { PropertyListItem } from "#contracts/types/property-list-item.type";
-import { PropertyList, type PropertyListProps } from "#react/property-list/property-list";
+import { PropertyList } from "#react/property-list/property-list";
+import type { PropertyListProps } from "#react/property-list/property-list.props";
 
 const ITEMS: readonly PropertyListItem[] = [
   { id: "customer", label: "Customer", value: "Ada Lovelace" },

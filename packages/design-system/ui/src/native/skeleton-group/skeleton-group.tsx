@@ -8,19 +8,12 @@
  * Runtime: react-native
  * Governing contract: ADR 0302 (decision 3); ADR 0165 (HeroUI Native on native); ADR 0304; WCAG 2.2 SC 4.1.3.
  */
-import { SkeletonGroup as HeroSkeletonGroup, type SkeletonGroupRootProps } from "heroui-native";
+import { SkeletonGroup as HeroSkeletonGroup } from "heroui-native";
 import { StyleSheet, View } from "react-native";
 
-import type { SkeletonGroupContractProps } from "#contracts/types/skeleton-group-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { SkeletonGroupContext } from "#native/skeleton-group/skeleton-group-context";
-
-/**
- * Props of the native SkeletonGroup: the shared contract plus HeroUI Native's own group props, passed through
- * unchanged. `variant` is the contract's `animationType`.
- */
-export type SkeletonGroupProps = SkeletonGroupContractProps &
-  Omit<SkeletonGroupRootProps, keyof SkeletonGroupContractProps | "variant">;
+import type { SkeletonGroupProps } from "#native/skeleton-group/skeleton-group.props";
 
 /**
  * A region of Skeletons that load together with one shared state. With a `loadingLabel` it is read as one busy

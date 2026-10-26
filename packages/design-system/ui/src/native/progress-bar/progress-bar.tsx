@@ -14,7 +14,7 @@
  */
 import { useThemeColor } from "heroui-native";
 import { useEffect, useState } from "react";
-import { View, type LayoutChangeEvent, type ViewProps } from "react-native";
+import { View, type LayoutChangeEvent } from "react-native";
 import Animated, {
   cancelAnimation,
   Easing,
@@ -26,36 +26,11 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 
-import type { ProgressBarContractProps } from "#contracts/types/progress-bar-contract-props.type";
 import { PROGRESS_FILL_ROLE } from "#core/constants/progress-fill-role.constant";
 import { progressStateOf } from "#core/functions/progress-state-of.function";
 import { useDesignSystem } from "#native/design-system-provider/use-design-system";
 import { Text } from "#native/text/text";
-
-/**
- * Props of the native ProgressBar: the shared contract plus React Native's own view props, passed through to the
- * root. `label`, the value and the busy state own the accessibility props, and the parts are drawn here, so
- * `children` and those props are refused.
- */
-export type ProgressBarProps = ProgressBarContractProps &
-  Omit<
-    ViewProps,
-    | keyof ProgressBarContractProps
-    | "children"
-    | "accessible"
-    | "accessibilityRole"
-    | "accessibilityLabel"
-    | "accessibilityValue"
-    | "accessibilityState"
-    | "role"
-    | "aria-label"
-    | "aria-labelledby"
-    | "aria-busy"
-    | "aria-valuemax"
-    | "aria-valuemin"
-    | "aria-valuenow"
-    | "aria-valuetext"
-  >;
+import type { ProgressBarProps } from "#native/progress-bar/progress-bar.props";
 
 /** The track's height in points for each size: HeroUI's `h-1`, `h-2` and `h-3` on web. */
 const TRACK_HEIGHT = Object.freeze({ sm: 4, md: 8, lg: 12 } as const);

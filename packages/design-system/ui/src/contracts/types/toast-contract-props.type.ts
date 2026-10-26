@@ -10,16 +10,8 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0312 (decisions 1 to 3); WCAG 2.2 SC 4.1.3
  *          and 2.2.1.
  */
-import type { ToastPosition } from "#contracts/enums/toast-position.enum";
 import type { FeedbackContractProps } from "#contracts/types/feedback-contract-props.type";
-
-/** The one action a toast can carry, such as "Undo"; pressing it runs `onPress` and then dismisses the toast. */
-export interface ToastAction {
-  /** The button's text in the app's language. */
-  readonly label: string;
-  /** Called when the action is pressed, by pointer, touch or keyboard. */
-  readonly onPress: () => void;
-}
+import type { ToastAction } from "#contracts/types/toast-action.type";
 
 /** The options of one toast, as the second argument of `toast(message, options)`. */
 export interface ToastContractProps extends FeedbackContractProps {
@@ -31,12 +23,4 @@ export interface ToastContractProps extends FeedbackContractProps {
   readonly timeout?: number | undefined;
   /** Called when the toast closes, whether it timed out, was dismissed or was closed from code. */
   readonly onClose?: (() => void) | undefined;
-}
-
-/** The props of `ToastProvider`, which mounts the toast region once near the root of the app. */
-export interface ToastProviderContractProps {
-  /** The accessible name of every toast's dismiss button in the app's language, for example "Dismiss notification". */
-  readonly dismissLabel: string;
-  /** The screen edge toasts appear against, centred. Defaults to `bottom`. */
-  readonly position?: ToastPosition | undefined;
 }

@@ -21,7 +21,8 @@ import type { ReactNode } from "react";
 
 import type { NavigationItem } from "#contracts/types/navigation-item.type";
 import { RouterProvider } from "#native/router-provider/router-provider";
-import { TabBar, type TabBarProps } from "#native/tab-bar/tab-bar";
+import { TabBar } from "#native/tab-bar/tab-bar";
+import type { TabBarProps } from "#native/tab-bar/tab-bar.props";
 
 vi.mock("react-native", () => ({
   View: ({

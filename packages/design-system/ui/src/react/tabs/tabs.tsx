@@ -14,26 +14,11 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0165 (UI contract, HeroUI v3 on web); ADR 0313 (decisions 1, 2, 5);
  *          WAI-ARIA 1.2 tabs pattern; owner decision 6 of STA-350 (thin wrappers).
  */
-import { Tabs as HeroTabs, type TabsRootProps } from "@heroui/react";
+import { Tabs as HeroTabs } from "@heroui/react";
 
-import type { TabsContractProps } from "#contracts/types/tabs-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { Spinner } from "#react/spinner/spinner";
-
-/**
- * Props of the web Tabs: the shared contract plus HeroUI v3's own tabs props, passed through unchanged. The tabs are
- * `items`, never children, and the selection is a list of ids, never HeroUI's `selectedKey`.
- */
-export type TabsProps = TabsContractProps &
-  Omit<
-    TabsRootProps,
-    | keyof TabsContractProps
-    | "children"
-    | "selectedKey"
-    | "defaultSelectedKey"
-    | "onSelectionChange"
-    | "disabledKeys"
-  >;
+import type { TabsProps } from "#react/tabs/tabs.props";
 
 /**
  * A row of tabs over one panel each. The selection is the list of the one selected id; `onSelectionChange` is called

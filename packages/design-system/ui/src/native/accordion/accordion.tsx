@@ -14,27 +14,12 @@
  *          decision 6 of STA-350 (thin wrappers).
  */
 import { Accordion as HeroAccordion } from "heroui-native";
-import { useState, type ComponentPropsWithRef, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 
-import type { AccordionContractProps } from "#contracts/types/accordion-contract-props.type";
 import { keysOfSelection } from "#core/functions/keys-of-selection.function";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { Text } from "#native/text/text";
-
-/**
- * Props of the native Accordion: the shared contract plus HeroUI Native's own accordion props, passed through
- * unchanged. The sections are `items`, never children, and `canExpandMultiple` is HeroUI Native's `selectionMode`.
- */
-export type AccordionProps = AccordionContractProps &
-  Omit<
-    ComponentPropsWithRef<typeof HeroAccordion>,
-    | keyof AccordionContractProps
-    | "children"
-    | "selectionMode"
-    | "value"
-    | "defaultValue"
-    | "onValueChange"
-  >;
+import type { AccordionProps } from "#native/accordion/accordion.props";
 
 /** A string drawn as `Text`, anything else as it is. */
 const asNode = (node: ReactNode, className?: string): ReactNode =>

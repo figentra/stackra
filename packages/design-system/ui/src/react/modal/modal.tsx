@@ -13,20 +13,13 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0312; ADR 0165 (HeroUI v3 on web); owner
  *          decision 6 of STA-350 (thin wrappers); WCAG 2.2 SC 2.1.2, 2.4.3 and 4.1.2.
  */
-import { Modal as HeroModal, type ModalDialogProps as HeroModalDialogProps } from "@heroui/react";
+import { Modal as HeroModal } from "@heroui/react";
 import type { ReactElement } from "react";
 
-import type { ModalContractProps } from "#contracts/types/modal-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { ModalClose } from "#react/modal/modal-close";
 import { ModalTitle } from "#react/modal/modal-title";
-
-/**
- * Props of the web Modal: the shared contract plus HeroUI v3's own dialog props, passed through to the dialog.
- * HeroUI's `aria-label` is the contract's `label`.
- */
-export type ModalProps = ModalContractProps &
-  Omit<HeroModalDialogProps, keyof ModalContractProps | "aria-label">;
+import type { ModalProps } from "#react/modal/modal.props";
 
 /** The modal root: HeroUI's root, backdrop, container and dialog in one, holding the caller's parts. */
 function ModalRoot({

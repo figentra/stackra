@@ -18,7 +18,8 @@ import { TextType } from "#contracts/enums/text-type.enum";
 import type { TextContractProps } from "#contracts/types/text-contract-props.type";
 import { TONE_CLASS_NAME } from "#core/constants/tone-class-name.constant";
 import { TYPOGRAPHY_TYPE } from "#core/constants/typography-type.constant";
-import { Text, type TextProps } from "#native/text/text";
+import { Text } from "#native/text/text";
+import type { TextProps } from "#native/text/text.props";
 
 const screenLocale = vi.hoisted(() => ({ value: "en" }));
 /** The props the last HeroUI Native stand-in was handed, as the real component would receive them. */

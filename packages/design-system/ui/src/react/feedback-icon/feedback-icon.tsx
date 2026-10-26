@@ -11,18 +11,9 @@
  */
 import type { ReactNode } from "react";
 
-import type { Tone } from "#contracts/enums/tone.enum";
-import type { IconSlot } from "#contracts/types/icon-slot.type";
 import { FEEDBACK_BY_TONE } from "#core/constants/feedback-by-tone.constant";
 import { Icon } from "#react/icon/icon";
-
-/** Props of FeedbackIcon. */
-export interface FeedbackIconProps {
-  /** The tone of the message, which picks the default icon. */
-  readonly tone: Tone;
-  /** The caller's icon: a name or an element. Left out, the tone's icon is drawn. */
-  readonly icon?: IconSlot | undefined;
-}
+import type { FeedbackIconProps } from "#react/feedback-icon/feedback-icon.props";
 
 /** Draws a message's icon: an element as given, a name or the tone's default through `Icon` at 16 px. */
 export function FeedbackIcon({ tone, icon }: FeedbackIconProps): ReactNode {

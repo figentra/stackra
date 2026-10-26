@@ -21,7 +21,8 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 
 import type { DateValueContractProps } from "#contracts/types/date-value-contract-props.type";
-import { DateField, type DateFieldProps } from "#native/date-field/date-field";
+import { DateField } from "#native/date-field/date-field";
+import type { DateFieldProps } from "#native/date-field/date-field.props";
 
 const state = vi.hoisted(() => ({
   props: {} as Record<string, Record<string, unknown>>,

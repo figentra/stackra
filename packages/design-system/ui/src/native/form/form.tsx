@@ -12,17 +12,9 @@
  *          ADR 0303.
  */
 import type { ReactElement } from "react";
-import { View, type ViewProps } from "react-native";
+import { View } from "react-native";
 import { type FieldValues, FormProvider, type UseFormReturn } from "react-hook-form";
-
-import type { FormContractProps } from "#contracts/types/form-contract-props.type";
-import type { SchemaFormHandle } from "#form/types/schema-form-handle.type";
-
-/** Props of the native Form: the shared contract, the schema form `T` and the props of a `View`, passed through. */
-export type FormProps<T extends FieldValues = FieldValues> = FormContractProps & {
-  /** The schema form from `useSchemaForm`, provided to the `Field.*` parts inside. */
-  readonly form?: SchemaFormHandle<T> | undefined;
-} & Omit<ViewProps, keyof FormContractProps>;
+import type { FormProps } from "#native/form/form.props";
 
 /** The group that holds a screen's fields and its submit button. */
 export function Form<T extends FieldValues = FieldValues>({

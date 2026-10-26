@@ -14,7 +14,8 @@
 import { act, render, screen, within } from "@testing-library/react";
 
 import type { BreadcrumbItem } from "#contracts/types/breadcrumb-item.type";
-import { Breadcrumbs, type BreadcrumbsProps } from "#react/breadcrumbs/breadcrumbs";
+import { Breadcrumbs } from "#react/breadcrumbs/breadcrumbs";
+import type { BreadcrumbsProps } from "#react/breadcrumbs/breadcrumbs.props";
 import { RouterProvider } from "#react/index";
 
 const TRAIL: readonly BreadcrumbItem[] = [

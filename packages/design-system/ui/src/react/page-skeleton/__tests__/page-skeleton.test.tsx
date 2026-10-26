@@ -17,7 +17,8 @@ import { createRef } from "react";
 import { PageSkeletonLayout } from "#contracts/enums/page-skeleton-layout.enum";
 import type { PageSkeletonContractProps } from "#contracts/types/page-skeleton-contract-props.type";
 import { PAGE_SKELETON_ROWS } from "#core/constants/page-skeleton-rows.constant";
-import { PageSkeleton, type PageSkeletonProps } from "#react/page-skeleton/page-skeleton";
+import { PageSkeleton } from "#react/page-skeleton/page-skeleton";
+import type { PageSkeletonProps } from "#react/page-skeleton/page-skeleton.props";
 
 /** The bones a skeleton drew. */
 const bonesOf = (container: HTMLElement) => [...container.querySelectorAll(".skeleton")];

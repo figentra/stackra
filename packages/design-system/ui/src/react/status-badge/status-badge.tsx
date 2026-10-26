@@ -9,13 +9,9 @@
  */
 import type { CSSProperties } from "react";
 
-import type { StatusBadgeContractProps } from "#contracts/types/status-badge-contract-props.type";
 import { STATUS_DOT_ROLE } from "#core/constants/status-dot-role.constant";
-import { Chip, type ChipProps } from "#react/chip/chip";
-import type { ChipContractProps } from "#contracts/types/chip-contract-props.type";
-
-/** Props of the web StatusBadge: the shared contract plus the Chip's pass-through props. */
-export type StatusBadgeProps = StatusBadgeContractProps & Omit<ChipProps, keyof ChipContractProps>;
+import { Chip } from "#react/chip/chip";
+import type { StatusBadgeProps } from "#react/status-badge/status-badge.props";
 
 /** The dot's shape: a 6 px circle HeroUI's own status sample uses, which never shrinks in a tight row. */
 const DOT_STYLE: CSSProperties = { width: 6, height: 6, borderRadius: 9999, flexShrink: 0 };

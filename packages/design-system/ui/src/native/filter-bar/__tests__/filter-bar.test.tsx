@@ -23,7 +23,8 @@ import { useState, type ReactNode } from "react";
 import type { FilterBarContractProps } from "#contracts/types/filter-bar-contract-props.type";
 import type { FilterDefinition } from "#contracts/types/filter-definition.type";
 import type { ResourceQuery } from "#contracts/types/resource-query.type";
-import { FilterBar, type FilterBarProps } from "#native/filter-bar/filter-bar";
+import { FilterBar } from "#native/filter-bar/filter-bar";
+import type { FilterBarProps } from "#native/filter-bar/filter-bar.props";
 
 /** The props each stand-in was last handed, by name. */
 const received = vi.hoisted(() => ({ props: {} as Record<string, Record<string, unknown>> }));

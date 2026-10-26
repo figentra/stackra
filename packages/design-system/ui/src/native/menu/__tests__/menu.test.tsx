@@ -19,7 +19,8 @@ import type { ReactNode } from "react";
 
 import type { MenuContractProps } from "#contracts/types/menu-contract-props.type";
 import type { MenuSection } from "#contracts/types/menu-section.type";
-import { Menu, type MenuProps } from "#native/menu/menu";
+import { Menu } from "#native/menu/menu";
+import type { MenuProps } from "#native/menu/menu.props";
 import { RouterProvider } from "#native/router-provider/router-provider";
 
 /** What the stand-ins were last handed: by name, and every group, item and icon in draw order. */

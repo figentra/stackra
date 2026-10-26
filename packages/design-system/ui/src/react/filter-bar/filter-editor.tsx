@@ -18,8 +18,6 @@ import type { ReactElement } from "react";
 import { useLocale } from "react-aria-components";
 
 import type { ChoiceOption } from "#contracts/types/choice-option.type";
-import type { FilterDefinition } from "#contracts/types/filter-definition.type";
-import type { FilterValue } from "#contracts/types/filter-value.type";
 import type { SelectItem } from "#contracts/types/select-item.type";
 import { filterChipTextOf } from "#core/functions/filter-chip-text-of.function";
 import { filterValueOfKind } from "#core/functions/filter-value-of-kind.function";
@@ -31,16 +29,7 @@ import { DateField } from "#react/date-field/date-field";
 import { NumberField } from "#react/number-field/number-field";
 import { RadioGroup } from "#react/radio-group/radio-group";
 import { TextField } from "#react/text-field/text-field";
-
-/** Props of {@link FilterEditor}. */
-export interface FilterEditorProps {
-  /** The filter being edited; its kind picks the editor. */
-  readonly definition: FilterDefinition;
-  /** What the query holds for the filter, or `undefined` when it holds nothing. */
-  readonly value: FilterValue | undefined;
-  /** Called with the whole next value, or `undefined` to drop the filter. */
-  readonly onChange: (value: FilterValue | undefined) => void;
-}
+import type { FilterEditorProps } from "#react/filter-bar/filter-editor.props";
 
 /** The radios or checkboxes of a list of short choices. */
 const choicesOf = (options: readonly SelectItem[]): readonly ChoiceOption[] =>

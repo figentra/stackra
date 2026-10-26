@@ -10,14 +10,10 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0165 (HeroUI Native on native); ADR 0055 (forms); ADR 0303.
  */
 import { Label as HeroLabel } from "heroui-native";
-import type { ComponentPropsWithRef, ReactElement } from "react";
+import type { ReactElement } from "react";
 
-import type { LabelContractProps } from "#contracts/types/label-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
-
-/** Props of the native Label: the shared contract plus HeroUI Native's own label props, passed through unchanged. */
-export type LabelProps = LabelContractProps &
-  Omit<ComponentPropsWithRef<typeof HeroLabel>, keyof LabelContractProps>;
+import type { LabelProps } from "#native/label/label.props";
 
 /**
  * The text that names a field. Inside a field it takes the field's states; beside a plain control, pass the states

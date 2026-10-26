@@ -16,7 +16,8 @@ import type { ReactNode } from "react";
 import { Tone } from "#contracts/enums/tone.enum";
 import type { LinkContractProps } from "#contracts/types/link-contract-props.type";
 import { TONE_CLASS_NAME } from "#core/constants/tone-class-name.constant";
-import { Link, type LinkProps } from "#native/link/link";
+import { Link } from "#native/link/link";
+import type { LinkProps } from "#native/link/link.props";
 import { RouterProvider } from "#native/router-provider/router-provider";
 
 const native = vi.hoisted(() => ({

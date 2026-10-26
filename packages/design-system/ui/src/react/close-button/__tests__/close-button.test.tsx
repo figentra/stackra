@@ -12,7 +12,8 @@
 import { act, render, screen } from "@testing-library/react";
 
 import type { CloseButtonContractProps } from "#contracts/types/close-button-contract-props.type";
-import { CloseButton, type CloseButtonProps } from "#react/close-button/close-button";
+import { CloseButton } from "#react/close-button/close-button";
+import type { CloseButtonProps } from "#react/close-button/close-button.props";
 
 describe("CloseButton (web)", () => {
   it("is named by label, never by HeroUI's default", () => {

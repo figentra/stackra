@@ -13,7 +13,8 @@ import { TextField as HeroTextField, Input } from "@heroui/react";
 import { render, screen } from "@testing-library/react";
 
 import type { FieldErrorContractProps } from "#contracts/types/field-error-contract-props.type";
-import { FieldError, type FieldErrorProps } from "#react/field-error/field-error";
+import { FieldError } from "#react/field-error/field-error";
+import type { FieldErrorProps } from "#react/field-error/field-error.props";
 
 describe("FieldError (web)", () => {
   it("shows its message while isInvalid is true, with HeroUI's class", () => {

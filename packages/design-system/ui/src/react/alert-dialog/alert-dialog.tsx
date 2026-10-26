@@ -20,22 +20,13 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0312; ADR 0165 (HeroUI v3 on web); WAI-ARIA
  *          `alertdialog`; WCAG 2.2 SC 1.4.1, 2.1.2 and 4.1.2.
  */
-import { AlertDialog as HeroAlertDialog, type AlertDialogDialogProps } from "@heroui/react";
+import { AlertDialog as HeroAlertDialog } from "@heroui/react";
 import { useId, useState, type ReactElement } from "react";
 
-import type { AlertDialogContractProps } from "#contracts/types/alert-dialog-contract-props.type";
 import { FEEDBACK_BY_TONE } from "#core/constants/feedback-by-tone.constant";
 import { Button } from "#react/button/button";
 import { SlotIcon } from "#react/slot-icon/slot-icon";
-
-/**
- * Props of the web AlertDialog: the shared contract plus React Aria's dialog props, passed to the dialog element
- * (`className`, `id`, `aria-describedby`, `data-*`). HeroUI's `role` is fixed at `alertdialog`, and its children are
- * the contract's `title`, `description` and `children`, so the type refuses both. HeroUI's `status`, which is the
- * contract's `tone`, is not a dialog prop, so the type refuses that as well.
- */
-export type AlertDialogProps = AlertDialogContractProps &
-  Omit<AlertDialogDialogProps, keyof AlertDialogContractProps | "children" | "role">;
+import type { AlertDialogProps } from "#react/alert-dialog/alert-dialog.props";
 
 /**
  * A modal that interrupts the user to confirm or refuse one decision. Confirming calls `onConfirm` and closes it;

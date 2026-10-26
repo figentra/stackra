@@ -15,7 +15,8 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { createElement } from "react";
 
 import type { TextAreaContractProps } from "#contracts/types/text-area-contract-props.type";
-import { TextArea, type TextAreaProps } from "#react/text-area/text-area";
+import { TextArea } from "#react/text-area/text-area";
+import type { TextAreaProps } from "#react/text-area/text-area.props";
 
 describe("TextArea (web)", () => {
   it("is a textarea named by its label, with the description tied to it", () => {

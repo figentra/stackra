@@ -16,7 +16,8 @@ import { createElement, createRef } from "react";
 import { Orientation } from "#contracts/enums/orientation.enum";
 import { SeparatorVariant } from "#contracts/enums/separator-variant.enum";
 import type { SeparatorContractProps } from "#contracts/types/separator-contract-props.type";
-import { Separator, type SeparatorProps } from "#react/separator/separator";
+import { Separator } from "#react/separator/separator";
+import type { SeparatorProps } from "#react/separator/separator.props";
 
 describe("Separator (web)", () => {
   it("is a horizontal rule by default", () => {

@@ -18,17 +18,10 @@
  *          2.2 SC 1.3.1 and 2.5.8.
  */
 import type { ReactElement, ReactNode } from "react";
-import { View, type ViewProps } from "react-native";
+import { View } from "react-native";
 
-import type { AppHeaderContractProps } from "#contracts/types/app-header-contract-props.type";
 import { Text } from "#native/text/text";
-
-/**
- * Props of the native AppHeader: the shared contract plus the root `View`'s own props, passed through. The view's
- * `accessibilityLabel` is the contract's `label`, so the type refuses it.
- */
-export type AppHeaderProps = AppHeaderContractProps &
-  Omit<ViewProps, keyof AppHeaderContractProps | "accessibilityLabel" | "children">;
+import type { AppHeaderProps } from "#native/app-header/app-header.props";
 
 /** A node as the bar can draw it: a string or number goes inside `Text`, any other node as it is. */
 function textual(node: ReactNode, className?: string): ReactNode {

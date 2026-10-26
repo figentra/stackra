@@ -17,33 +17,12 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0318 (decision 9); ADR 0165 (UI contract, HeroUI
  *          v3 on web); ADR 0055 (forms: one field contract); owner decision 6 of STA-350 (thin wrappers).
  */
-import {
-  Description,
-  FieldError,
-  Label,
-  NumberField as HeroNumberField,
-  type NumberFieldRootProps,
-} from "@heroui/react";
+import { Description, FieldError, Label, NumberField as HeroNumberField } from "@heroui/react";
 
-import type { NumberFieldContractProps } from "#contracts/types/number-field-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
 import { useUiText } from "#core/hooks/use-ui-text";
-
-/**
- * Props of the web NumberField: the shared contract plus HeroUI v3's own number field props, passed through unchanged.
- * HeroUI's `fullWidth` is the contract's `isFullWidth`, its two button names are `incrementLabel` and `decrementLabel`,
- * and `children` is refused because the field draws its own parts.
- */
-export type NumberFieldProps = NumberFieldContractProps &
-  Omit<
-    NumberFieldRootProps,
-    | keyof NumberFieldContractProps
-    | "children"
-    | "fullWidth"
-    | "incrementAriaLabel"
-    | "decrementAriaLabel"
-  >;
+import type { NumberFieldProps } from "#react/number-field/number-field.props";
 
 /** React Aria's number for the contract's: `null` is an empty field, which it writes as `NaN`; `undefined` stays left out. */
 const toAriaValue = (value: number | null | undefined): number | undefined =>

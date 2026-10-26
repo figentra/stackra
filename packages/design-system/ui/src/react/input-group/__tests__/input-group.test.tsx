@@ -16,7 +16,8 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { createElement } from "react";
 
 import type { InputGroupContractProps } from "#contracts/types/input-group-contract-props.type";
-import { InputGroup, type InputGroupProps } from "#react/input-group/input-group";
+import { InputGroup } from "#react/input-group/input-group";
+import type { InputGroupProps } from "#react/input-group/input-group.props";
 
 describe("InputGroup (web)", () => {
   it("draws the prefix, the input and the suffix in that order inside one group", () => {

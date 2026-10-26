@@ -17,7 +17,8 @@ import { render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { Platform } from "react-native";
 
-import { Screen, type ScreenProps } from "#native/screen/screen";
+import { Screen } from "#native/screen/screen";
+import type { ScreenProps } from "#native/screen/screen.props";
 
 vi.mock("react-native", () => {
   /** A stand-in that records the props the screen sets as data attributes. */

@@ -15,7 +15,8 @@ import { render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 
 import type { FormSectionContractProps } from "#contracts/types/form-section-contract-props.type";
-import { FormSection, type FormSectionProps } from "#native/form-section/form-section";
+import { FormSection } from "#native/form-section/form-section";
+import type { FormSectionProps } from "#native/form-section/form-section.props";
 
 /** The props the stand-ins were last handed, by name. */
 const received = vi.hoisted(() => ({

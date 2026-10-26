@@ -19,7 +19,8 @@ import type { ReactNode } from "react";
 import { Linking } from "react-native";
 
 import type { NavigationItem } from "#contracts/types/navigation-item.type";
-import { NavigationList, type NavigationListProps } from "#native/navigation-list/navigation-list";
+import { NavigationList } from "#native/navigation-list/navigation-list";
+import type { NavigationListProps } from "#native/navigation-list/navigation-list.props";
 import { RouterContext } from "#native/router-provider/router-context";
 
 vi.mock("react-native", () => ({

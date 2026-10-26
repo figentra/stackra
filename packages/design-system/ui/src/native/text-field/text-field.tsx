@@ -15,47 +15,10 @@
  *          (forms: one field contract); owner decision 6 of STA-350 (thin wrappers).
  */
 import { Description, FieldError, Input, Label, TextField as HeroTextField } from "heroui-native";
-import type { ComponentPropsWithRef } from "react";
-import type { TextInputProps } from "react-native";
 
-import type { TextFieldType } from "#contracts/enums/text-field-type.enum";
-import type { TextFieldContractProps } from "#contracts/types/text-field-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
-
-/**
- * Props of the native TextField: the shared contract plus HeroUI Native's input props, passed through to the input.
- * The contract's names replace HeroUI's and React Native's: `onChange` for `onChangeText`, `isReadOnly` for `readOnly`
- * and `editable`, `isDisabled` and `isInvalid` for the input's own.
- */
-export type TextFieldProps = TextFieldContractProps &
-  Omit<
-    ComponentPropsWithRef<typeof Input>,
-    keyof TextFieldContractProps | "children" | "onChangeText" | "readOnly" | "editable"
-  >;
-
-/**
- * The keyboard, masking and capitalisation each kind of text needs: what the web input's `type` does for free.
- * A caller's own `keyboardType` or `secureTextEntry` is spread after these and wins.
- */
-export const TEXT_INPUT_TYPE_PROPS: Readonly<Record<TextFieldType, TextInputProps>> = Object.freeze(
-  {
-    text: {},
-    email: {
-      keyboardType: "email-address",
-      autoCapitalize: "none",
-      autoComplete: "email",
-      autoCorrect: false,
-    },
-    password: {
-      secureTextEntry: true,
-      autoCapitalize: "none",
-      autoComplete: "password",
-      autoCorrect: false,
-    },
-    tel: { keyboardType: "phone-pad", autoComplete: "tel" },
-    url: { keyboardType: "url", autoCapitalize: "none", autoCorrect: false },
-  },
-);
+import type { TextFieldProps } from "#native/text-field/text-field.props";
+import { TEXT_INPUT_TYPE_PROPS } from "#native/text-field/text-input-type-props.constant";
 
 /**
  * A labelled single-line text field. A field without a string `label` needs an `accessibilityLabel`. Pair `value` with

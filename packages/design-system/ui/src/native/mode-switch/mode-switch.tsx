@@ -7,12 +7,9 @@
  */
 import type { ReactElement } from "react";
 
-import type { ModeSwitchContractProps } from "#contracts/types/mode-switch-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { Switch } from "#native/switch/switch";
-
-/** Props of the native ModeSwitch. */
-export type ModeSwitchProps = ModeSwitchContractProps;
+import type { ModeSwitchProps } from "#native/mode-switch/mode-switch.props";
 
 /** The developer-mode toggle. */
 export function ModeSwitch({

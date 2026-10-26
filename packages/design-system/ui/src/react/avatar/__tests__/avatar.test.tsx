@@ -20,13 +20,16 @@ import { Size } from "#contracts/enums/size.enum";
 import { Tone } from "#contracts/enums/tone.enum";
 import type { AvatarContractProps } from "#contracts/types/avatar-contract-props.type";
 import { ICON_SIZES } from "#core/constants/icon-sizes.constant";
-import { Avatar, type AvatarProps } from "#react/avatar/avatar";
+import { Avatar } from "#react/avatar/avatar";
+import type { AvatarProps } from "#react/avatar/avatar.props";
 
 /** Stands in for `window.Image`, which Radix probes with: it reports `load` or `error` in a microtask. */
 function stubImage(outcome: "load" | "error") {
   class FakeImage extends EventTarget {
     complete = false;
+
     naturalWidth = 0;
+
     set src(_value: string) {
       queueMicrotask(() => {
         if (outcome === "load") {

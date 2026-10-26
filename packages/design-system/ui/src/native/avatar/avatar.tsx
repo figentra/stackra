@@ -9,44 +9,16 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0165 (HeroUI Native on native); ADR 0303 (decision 7); ADR 0304;
  *          owner decision 6 of STA-350 (thin wrappers).
  */
-import {
-  Avatar as HeroAvatar,
-  cn,
-  useThemeColor,
-  type AvatarRootProps,
-  type ThemeColor,
-} from "heroui-native";
+import { Avatar as HeroAvatar, cn, useThemeColor, type ThemeColor } from "heroui-native";
 import { LucideProvider } from "lucide-react-native";
 
-import type { AvatarContractProps } from "#contracts/types/avatar-contract-props.type";
 import { AVATAR_SQUARE_CLASS_NAME } from "#core/constants/avatar-square-class-name.constant";
 import { ICON_SIZES } from "#core/constants/icon-sizes.constant";
 import { initialsOf } from "#core/functions/initials-of.function";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { useDesignSystem } from "#native/design-system-provider/use-design-system";
 import { Icon } from "#native/icon/icon";
-
-/**
- * Props of the native Avatar: the shared contract plus HeroUI Native's own avatar root props, passed through
- * unchanged. HeroUI's `color` is the contract's `tone`, the wrapper builds the children, and `label` owns the
- * accessible name, so `alt` and the raw accessibility props are refused.
- */
-export type AvatarProps = AvatarContractProps &
-  Omit<
-    AvatarRootProps,
-    | keyof AvatarContractProps
-    | "color"
-    | "children"
-    | "alt"
-    | "accessible"
-    | "role"
-    | "accessibilityRole"
-    | "accessibilityLabel"
-    | "aria-label"
-    | "aria-hidden"
-    | "accessibilityElementsHidden"
-    | "importantForAccessibility"
-  >;
+import type { AvatarProps } from "#native/avatar/avatar.props";
 
 /** The props of a decorative avatar: hidden from VoiceOver and TalkBack alike, with no name for HeroUI to invent. */
 const HIDDEN = Object.freeze({

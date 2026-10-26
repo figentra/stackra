@@ -14,18 +14,11 @@
  */
 import { Description, FieldError, Label } from "heroui-native";
 import { useId, useState } from "react";
-import { View, type ViewProps } from "react-native";
+import { View } from "react-native";
 
-import type { CheckboxGroupContractProps } from "#contracts/types/checkbox-group-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { Checkbox } from "#native/checkbox/checkbox";
-
-/**
- * Props of the native CheckboxGroup: the shared contract plus React Native's `View` props, passed through
- * unchanged. `children` is refused: the options are the content.
- */
-export type CheckboxGroupProps = CheckboxGroupContractProps &
-  Omit<ViewProps, keyof CheckboxGroupContractProps | "children">;
+import type { CheckboxGroupProps } from "#native/checkbox-group/checkbox-group.props";
 
 /**
  * A set of checkboxes that edit one list of keys: the list holds the `value` of every checked option, in the order

@@ -18,7 +18,8 @@ import type { ReactNode } from "react";
 
 import type { PropertyListContractProps } from "#contracts/types/property-list-contract-props.type";
 import type { PropertyListItem } from "#contracts/types/property-list-item.type";
-import { PropertyList, type PropertyListProps } from "#native/property-list/property-list";
+import { PropertyList } from "#native/property-list/property-list";
+import type { PropertyListProps } from "#native/property-list/property-list.props";
 
 /** What the stand-ins were last handed, by name. */
 const received = vi.hoisted(() => ({

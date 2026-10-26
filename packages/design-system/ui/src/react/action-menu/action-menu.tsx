@@ -14,26 +14,9 @@
  */
 import type { KeyboardEvent, MouseEvent } from "react";
 
-import type { ActionMenuContractProps } from "#contracts/types/action-menu-contract-props.type";
-import type { MenuContractProps } from "#contracts/types/menu-contract-props.type";
 import { IconButton } from "#react/icon-button/icon-button";
-import { Menu, type MenuProps } from "#react/menu/menu";
-
-/**
- * Props of the web ActionMenu: the shared contract plus the Menu's own pass-through props. The trigger and the
- * selection belong to the component, so the type refuses them.
- */
-export type ActionMenuProps = ActionMenuContractProps &
-  Omit<
-    MenuProps,
-    | keyof ActionMenuContractProps
-    | keyof MenuContractProps
-    | "children"
-    | "selectionMode"
-    | "value"
-    | "defaultValue"
-    | "onChange"
-  >;
+import { Menu } from "#react/menu/menu";
+import type { ActionMenuProps } from "#react/action-menu/action-menu.props";
 
 /** Stops a click that came from the button or the menu from reaching the row the button sits in. */
 const stopClick = (event: MouseEvent<HTMLElement>) => event.stopPropagation();

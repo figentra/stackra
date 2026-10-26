@@ -10,17 +10,8 @@
  */
 import type { ReactElement } from "react";
 
-import type { DateValueContractProps } from "#contracts/types/date-value-contract-props.type";
-import { DateInput, type DateInputPickerProps } from "#native/date-field/date-input";
-
-/** Props of the native DateField: the shared contract plus the platform picker's own props, passed through. */
-export type DateFieldProps = DateValueContractProps &
-  DateInputPickerProps & {
-    /** The field's accessible name when the label is not a string. */
-    readonly accessibilityLabel?: string | undefined;
-    /** Styles the root, as on web. */
-    readonly className?: string | undefined;
-  };
+import { DateInput } from "#native/date-field/date-input";
+import type { DateFieldProps } from "#native/date-field/date-field.props";
 
 /**
  * A labelled field over one day. Pair `value` with `onChange` to control it, or give `defaultValue`; `onChange`

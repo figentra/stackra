@@ -10,12 +10,9 @@
 import { View } from "react-native";
 import type { ReactElement } from "react";
 
-import type { AiMarkContractProps } from "#contracts/types/ai-mark-contract-props.type";
 import { Icon } from "#native/icon/icon";
 import { Text } from "#native/text/text";
-
-/** Props of the native AiMark. */
-export type AiMarkProps = AiMarkContractProps;
+import type { AiMarkProps } from "#native/ai-mark/ai-mark.props";
 
 /** The AI mark, labelled. */
 export function AiMark({ kind, label, isLabelVisible, size = "sm" }: AiMarkProps): ReactElement {

@@ -16,7 +16,8 @@
 import { act, render, screen, within } from "@testing-library/react";
 
 import type { NavigationItem } from "#contracts/types/navigation-item.type";
-import { Sidebar, type SidebarProps } from "#react/sidebar/sidebar";
+import { Sidebar } from "#react/sidebar/sidebar";
+import type { SidebarProps } from "#react/sidebar/sidebar.props";
 
 const ITEMS: readonly NavigationItem[] = [
   { id: "home", label: "Home", href: "/", icon: "house" },

@@ -12,40 +12,12 @@
 // Uniwind adds `className` to React Native's own components, which the anchor `View` takes; HeroUI Native's
 // components already have it.
 /// <reference types="uniwind/types" />
-import { Chip, cn, type ChipProps } from "heroui-native";
-import { View, type StyleProp, type ViewProps, type ViewStyle } from "react-native";
+import { Chip, cn } from "heroui-native";
+import { View, type ViewStyle } from "react-native";
 
 import type { Size } from "#contracts/enums/size.enum";
-import type { BadgeAnchorContractProps } from "#contracts/types/badge-anchor-contract-props.type";
-import type { BadgeContractProps } from "#contracts/types/badge-contract-props.type";
-
-/**
- * Props of the native Badge: the shared contract plus the HeroUI Native Chip props a non-pressable badge can use.
- * HeroUI's `color` is the contract's `tone`; `label` owns the accessibility props; the press-state `style` function
- * is not taken, because the wrapper composes `style` as an array.
- */
-export type BadgeProps = BadgeContractProps &
-  Omit<
-    ChipProps,
-    | keyof BadgeContractProps
-    | "color"
-    | "style"
-    | "disabled"
-    | "pointerEvents"
-    | "onPress"
-    | "onLongPress"
-    | "onPressIn"
-    | "onPressOut"
-    | "accessible"
-    | "accessibilityLabel"
-    | "aria-label"
-  > & {
-    /** Styles drawn after the corner position, so a caller can nudge the badge; a press-state function is not taken. */
-    readonly style?: StyleProp<ViewStyle>;
-  };
-
-/** Props of the native Badge.Anchor: the shared contract plus React Native's view props. */
-export type BadgeAnchorProps = BadgeAnchorContractProps & Omit<ViewProps, "children">;
+import type { BadgeProps } from "#native/badge/badge.props";
+import type { BadgeAnchorProps } from "#native/badge/badge-anchor.props";
 
 /**
  * The web Badge's sizes as classes, copied from `@heroui/styles` 3.2.6 `badge.css` so both runtimes draw the same

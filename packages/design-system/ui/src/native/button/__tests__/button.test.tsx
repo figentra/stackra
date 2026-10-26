@@ -20,7 +20,8 @@ import { ButtonVariant } from "#contracts/enums/button-variant.enum";
 import { Size } from "#contracts/enums/size.enum";
 import type { ButtonContractProps } from "#contracts/types/button-contract-props.type";
 import { ICON_SIZES } from "#core/constants/icon-sizes.constant";
-import { Button, type ButtonProps } from "#native/button/button";
+import { Button } from "#native/button/button";
+import type { ButtonProps } from "#native/button/button.props";
 
 /** The props each stand-in was last handed, by name, as the real component would receive them. */
 const received = vi.hoisted(() => ({ props: {} as Record<string, Record<string, unknown>> }));

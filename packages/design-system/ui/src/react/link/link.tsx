@@ -9,21 +9,14 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decisions 5 and 7); ADR 0165 (HeroUI v3 on web); owner
  *          decision 6 of STA-350.
  */
-import { Link as HeroLink, type LinkProps as HeroLinkProps } from "@heroui/react";
+import { Link as HeroLink } from "@heroui/react";
 import { composeRenderProps } from "react-aria-components";
 
-import type { LinkContractProps } from "#contracts/types/link-contract-props.type";
 import { TONE_CLASS_NAME } from "#core/constants/tone-class-name.constant";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
 import { useUiText } from "#core/hooks/use-ui-text";
-
-/**
- * Props of the web Link: the shared contract plus HeroUI v3's own link props, passed through unchanged. HeroUI's
- * `aria-label` is the contract's `label`, so the type refuses it.
- */
-export type LinkProps = LinkContractProps &
-  Omit<HeroLinkProps, keyof LinkContractProps | "aria-label">;
+import type { LinkProps } from "#react/link/link.props";
 
 /**
  * A text link on HeroUI v3 that navigates through the nearest `RouterProvider`. An internal `href` is a client

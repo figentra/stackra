@@ -13,10 +13,8 @@
 // @covers sta-350:FR-142
 import { act, render, screen, within } from "@testing-library/react";
 
-import {
-  CursorPagination,
-  type CursorPaginationProps,
-} from "#react/cursor-pagination/cursor-pagination";
+import { CursorPagination } from "#react/cursor-pagination/cursor-pagination";
+import type { CursorPaginationProps } from "#react/cursor-pagination/cursor-pagination.props";
 
 vi.mock("#react/icon/icon", () => ({
   Icon: ({ name, isMirroredInRtl }: { name: string; isMirroredInRtl?: boolean }) => (

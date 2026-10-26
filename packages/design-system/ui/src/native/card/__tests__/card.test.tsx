@@ -19,8 +19,9 @@ import { HeadingLevel } from "#contracts/enums/heading-level.enum";
 import { SurfaceVariant } from "#contracts/enums/surface-variant.enum";
 import type { CardContractProps } from "#contracts/types/card-contract-props.type";
 import type { CardTitleContractProps } from "#contracts/types/card-title-contract-props.type";
-import { Card, type CardProps } from "#native/card/card";
-import type { CardTitleProps } from "#native/card/card-title";
+import { Card } from "#native/card/card";
+import type { CardProps } from "#native/card/card.props";
+import type { CardTitleProps } from "#native/card/card-title.props";
 
 /** The props each stand-in was last handed, by name, as the real component would receive them. */
 const received = vi.hoisted(() => ({ props: {} as Record<string, Record<string, unknown>> }));

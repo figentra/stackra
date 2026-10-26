@@ -15,7 +15,8 @@ import { createRef } from "react";
 import { Size } from "#contracts/enums/size.enum";
 import { TextTone } from "#contracts/enums/text-tone.enum";
 import type { SpinnerContractProps } from "#contracts/types/spinner-contract-props.type";
-import { Spinner, type SpinnerProps } from "#react/spinner/spinner";
+import { Spinner } from "#react/spinner/spinner";
+import type { SpinnerProps } from "#react/spinner/spinner.props";
 
 const rootOf = (container: HTMLElement) => container.querySelector<HTMLElement>(".spinner");
 

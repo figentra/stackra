@@ -20,21 +20,9 @@ import {
   TextArea as HeroTextArea,
   TextField as HeroTextField,
 } from "heroui-native";
-import type { ComponentPropsWithRef } from "react";
 
-import type { TextAreaContractProps } from "#contracts/types/text-area-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
-
-/**
- * Props of the native TextArea: the shared contract plus HeroUI Native's text area props, passed through to the input.
- * The contract's names replace HeroUI's and React Native's: `onChange` for `onChangeText`, `isReadOnly` for `readOnly`
- * and `editable`, `isDisabled` and `isInvalid` for the input's own.
- */
-export type TextAreaProps = TextAreaContractProps &
-  Omit<
-    ComponentPropsWithRef<typeof HeroTextArea>,
-    keyof TextAreaContractProps | "children" | "onChangeText" | "readOnly" | "editable"
-  >;
+import type { TextAreaProps } from "#native/text-area/text-area.props";
 
 /**
  * A labelled multi-line text field. A field without a string `label` needs an `accessibilityLabel`. Pair `value` with

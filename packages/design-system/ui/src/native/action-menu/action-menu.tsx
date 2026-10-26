@@ -11,26 +11,9 @@
  * Runtime: react-native
  * Governing contract: ADR 0302 (decision 3); ADR 0312; owner decision 6 of STA-350 (thin wrappers).
  */
-import type { ActionMenuContractProps } from "#contracts/types/action-menu-contract-props.type";
-import type { MenuContractProps } from "#contracts/types/menu-contract-props.type";
 import { IconButton } from "#native/icon-button/icon-button";
-import { Menu, type MenuProps } from "#native/menu/menu";
-
-/**
- * Props of the native ActionMenu: the shared contract plus the Menu's own pass-through props. The trigger and the
- * selection belong to the component, so the type refuses them.
- */
-export type ActionMenuProps = ActionMenuContractProps &
-  Omit<
-    MenuProps,
-    | keyof ActionMenuContractProps
-    | keyof MenuContractProps
-    | "children"
-    | "selectionMode"
-    | "value"
-    | "defaultValue"
-    | "onChange"
-  >;
+import { Menu } from "#native/menu/menu";
+import type { ActionMenuProps } from "#native/action-menu/action-menu.props";
 
 /**
  * A button that opens a menu of grouped actions, for the end of a row or the corner of a section. `label` names the

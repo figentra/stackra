@@ -19,12 +19,11 @@ import {
   InputGroup as HeroInputGroup,
   Label,
   TextField as HeroTextField,
-  type TextFieldRootProps,
 } from "@heroui/react";
 import type { MouseEvent, ReactNode } from "react";
 
-import type { InputGroupContractProps } from "#contracts/types/input-group-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
+import type { InputGroupProps } from "#react/input-group/input-group.props";
 
 /** The click handler an element affix takes so HeroUI's focus-the-input rule skips it; text affixes need none. */
 function ownClicks(content: ReactNode) {
@@ -32,13 +31,6 @@ function ownClicks(content: ReactNode) {
     ? {}
     : { onClick: (event: MouseEvent) => event.stopPropagation() };
 }
-
-/**
- * Props of the web InputGroup: the shared contract plus HeroUI v3's own text field props, passed through unchanged.
- * HeroUI's `fullWidth` is the contract's `isFullWidth`, and `children` is refused because the field draws its own parts.
- */
-export type InputGroupProps = InputGroupContractProps &
-  Omit<TextFieldRootProps, keyof InputGroupContractProps | "children" | "fullWidth">;
 
 /**
  * A labelled text field whose input carries a prefix and a suffix: a slug's `/`, a unit, a currency or a reveal button.

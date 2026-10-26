@@ -15,7 +15,8 @@ import { act, render } from "@testing-library/react";
 import type { ReactNode } from "react";
 
 import type { ChoiceOption } from "#contracts/types/choice-option.type";
-import { CheckboxGroup, type CheckboxGroupProps } from "#native/checkbox-group/checkbox-group";
+import { CheckboxGroup } from "#native/checkbox-group/checkbox-group";
+import type { CheckboxGroupProps } from "#native/checkbox-group/checkbox-group.props";
 
 /** The props each stand-in was last handed, by name, as the real component would receive them. */
 const received = vi.hoisted(() => ({

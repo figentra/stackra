@@ -13,7 +13,8 @@ import { act, render, screen } from "@testing-library/react";
 import { createRef } from "react";
 
 import type { ListItemContractProps } from "#contracts/types/list-item-contract-props.type";
-import { ListItem, type ListItemProps } from "#react/list/list-item";
+import { ListItem } from "#react/list/list-item";
+import type { ListItemProps } from "#react/list/list-item.props";
 
 describe("ListItem (web)", () => {
   it("is a `li` that keeps the caller's props, class and ref", () => {

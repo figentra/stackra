@@ -9,14 +9,7 @@
  */
 import type { Tone } from "#contracts/enums/tone.enum";
 import { FEEDBACK_BY_TONE } from "#core/constants/feedback-by-tone.constant";
-
-/** The attributes that make an element announce its content. */
-export interface LiveRegion {
-  /** `alert` for a message that interrupts, `status` for one that waits. */
-  readonly role: "alert" | "status";
-  /** `assertive` for `alert`, `polite` for `status`; spelt out because not every screen reader infers it from the role. */
-  readonly "aria-live": "assertive" | "polite";
-}
+import type { LiveRegion } from "#core/types/live-region.type";
 
 /**
  * The live-region attributes of a tone.

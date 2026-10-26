@@ -19,18 +19,11 @@
 // Uniwind adds `className` to React Native's own components, which the root `View` and `ScrollView` take.
 /// <reference types="uniwind/types" />
 import type { ReactElement } from "react";
-import { KeyboardAvoidingView, Platform, ScrollView, View, type ViewProps } from "react-native";
+import { KeyboardAvoidingView, Platform, ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { ScreenEdge } from "#contracts/enums/screen-edge.enum";
-import type { ScreenContractProps } from "#contracts/types/screen-contract-props.type";
-
-/**
- * Props of the native Screen: the shared contract plus the root `View`'s own props, passed through. The view's
- * `accessibilityLabel` is the contract's `label`, so the type refuses it.
- */
-export type ScreenProps = ScreenContractProps &
-  Omit<ViewProps, keyof ScreenContractProps | "accessibilityLabel">;
+import type { ScreenProps } from "#native/screen/screen.props";
 
 /**
  * The screen's content in the box the edges leave. A scrolling screen is a `ScrollView`; a fixed one is a `View`

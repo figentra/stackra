@@ -12,23 +12,12 @@
  */
 import { Chip as HeroChip, useThemeColor, type ThemeColor } from "heroui-native";
 import { LucideProvider } from "lucide-react-native";
-import type { ComponentPropsWithRef } from "react";
 
 import type { ChipVariant } from "#contracts/enums/chip-variant.enum";
 import type { Size } from "#contracts/enums/size.enum";
 import type { Tone } from "#contracts/enums/tone.enum";
-import type { ChipContractProps } from "#contracts/types/chip-contract-props.type";
 import { SlotIcon } from "#native/slot-icon/slot-icon";
-
-/**
- * Props of the native Chip: the shared contract plus HeroUI Native's own chip props, passed through unchanged.
- * HeroUI's `color` is the contract's `tone`; the four press handlers are refused, as `onClick` is on web.
- */
-export type ChipProps = ChipContractProps &
-  Omit<
-    ComponentPropsWithRef<typeof HeroChip>,
-    keyof ChipContractProps | "color" | "onPress" | "onPressIn" | "onPressOut" | "onLongPress"
-  >;
+import type { ChipProps } from "#native/chip/chip.props";
 
 /** The size of an icon beside the label of each chip size: the label's own text size in points. */
 const CHIP_ICON_SIZE: Readonly<Record<Size, number>> = Object.freeze({ sm: 12, md: 14, lg: 16 });

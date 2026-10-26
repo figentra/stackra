@@ -19,14 +19,14 @@
  *          0165 (HeroUI v3 on web); WCAG 2.2 SC 1.3.1, 1.4.10, 2.4.1, 2.4.3 and 2.4.7.
  */
 import { cn } from "@heroui/react";
-import { useState, type ComponentPropsWithRef, type MouseEvent, type ReactElement } from "react";
+import { useState, type MouseEvent, type ReactElement } from "react";
 
-import type { AppShellContractProps } from "#contracts/types/app-shell-contract-props.type";
 import type { LayoutBreakpoint } from "#contracts/enums/layout-breakpoint.enum";
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
 import { useUiText } from "#core/hooks/use-ui-text";
 import { Button } from "#react/button/button";
 import { Drawer } from "#react/drawer/drawer";
+import type { AppShellProps } from "#react/app-shell/app-shell.props";
 
 /** The sidebar column's visibility per breakpoint, written out so Tailwind finds each class. */
 const COLUMN_FROM: Record<LayoutBreakpoint, string> = {
@@ -35,19 +35,6 @@ const COLUMN_FROM: Record<LayoutBreakpoint, string> = {
   lg: "hidden lg:block",
   xl: "hidden xl:block",
 };
-
-/**
- * Props of the web AppShell: the shared contract plus the root `div`'s own props, passed through.
- */
-export type AppShellProps = AppShellContractProps &
-  Omit<ComponentPropsWithRef<"div">, keyof AppShellContractProps> & {
-    /** True when the shell sits inside another page: it fills its box and draws no `main` landmark or skip link. */
-    readonly isEmbedded?: boolean | undefined;
-    /** The text of the skip link. Defaults to the `ui` catalogue's phrase in the active locale. */
-    readonly skipLabel?: string | undefined;
-    /** The id of the main region, the skip link's target. Defaults to `main-content`. */
-    readonly mainId?: string | undefined;
-  };
 
 /**
  * The frame of the console: sidebar, header and page, with the sidebar in an off-canvas drawer on a narrow window. Put

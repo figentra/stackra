@@ -21,7 +21,8 @@ import { createElement, useState } from "react";
 import { I18nProvider } from "react-aria-components";
 
 import type { DateValueContractProps } from "#contracts/types/date-value-contract-props.type";
-import { DateField, type DateFieldProps } from "#react/date-field/date-field";
+import { DateField } from "#react/date-field/date-field";
+import type { DateFieldProps } from "#react/date-field/date-field.props";
 
 const MARCH_5 = new CalendarDate(2026, 3, 5);
 const key = (element: HTMLElement, name: string) => fireEvent.keyDown(element, { key: name });

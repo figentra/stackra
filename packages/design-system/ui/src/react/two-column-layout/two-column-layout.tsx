@@ -16,14 +16,10 @@
  *          6); ADR 0060 (right-to-left); WCAG 2.2 SC 1.3.2 and 1.4.10.
  */
 import { cn } from "@heroui/react";
-import type { ComponentPropsWithRef, ReactElement } from "react";
+import type { ReactElement } from "react";
 
-import type { TwoColumnLayoutContractProps } from "#contracts/types/two-column-layout-contract-props.type";
 import { TWO_COLUMN_LAYOUT_CLASS_NAME } from "#core/constants/two-column-layout-class-name.constant";
-
-/** Props of the web TwoColumnLayout: the shared contract plus the root `div`'s own props, passed through. */
-export type TwoColumnLayoutProps = TwoColumnLayoutContractProps &
-  Omit<ComponentPropsWithRef<"div">, keyof TwoColumnLayoutContractProps>;
+import type { TwoColumnLayoutProps } from "#react/two-column-layout/two-column-layout.props";
 
 /** A page of a main column and a side column, stacked below `collapseBelow`. */
 export function TwoColumnLayout({

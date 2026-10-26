@@ -11,14 +11,10 @@
  */
 import { cn } from "@heroui/react";
 
-import type { PageSkeletonContractProps } from "#contracts/types/page-skeleton-contract-props.type";
 import { PAGE_SKELETON_ROWS } from "#core/constants/page-skeleton-rows.constant";
 import { Skeleton } from "#react/skeleton/skeleton";
-import { SkeletonGroup, type SkeletonGroupProps } from "#react/skeleton-group/skeleton-group";
-
-/** Props of the web PageSkeleton: the shared contract plus the attributes of its group's `div`, passed through. */
-export type PageSkeletonProps = PageSkeletonContractProps &
-  Omit<SkeletonGroupProps, keyof PageSkeletonContractProps | "children" | "isLoading">;
+import { SkeletonGroup } from "#react/skeleton-group/skeleton-group";
+import type { PageSkeletonProps } from "#react/page-skeleton/page-skeleton.props";
 
 /** Placeholders for a page, a table, a section or a form, loading as one named region. */
 export function PageSkeleton({

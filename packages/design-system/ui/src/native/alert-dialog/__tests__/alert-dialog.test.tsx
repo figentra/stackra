@@ -19,7 +19,8 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 
 import type { AlertDialogContractProps } from "#contracts/types/alert-dialog-contract-props.type";
-import { AlertDialog, type AlertDialogProps } from "#native/alert-dialog/alert-dialog";
+import { AlertDialog } from "#native/alert-dialog/alert-dialog";
+import type { AlertDialogProps } from "#native/alert-dialog/alert-dialog.props";
 
 /** The props the stand-ins were last handed, by part. */
 const received = vi.hoisted(() => ({

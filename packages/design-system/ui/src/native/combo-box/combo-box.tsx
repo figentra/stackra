@@ -24,28 +24,16 @@ import {
   Label,
   SearchField,
   Select as HeroSelect,
-  type SelectRootProps,
 } from "heroui-native";
 import { useState } from "react";
 import { FlatList } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import type { ComboBoxContractProps } from "#contracts/types/combo-box-contract-props.type";
 import type { SelectItem } from "#contracts/types/select-item.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { Spinner } from "#native/spinner/spinner";
 import { Text } from "#native/text/text";
-
-/**
- * Props of the native ComboBox: the shared contract plus HeroUI Native's own select props, passed through unchanged.
- * HeroUI's `value`, `defaultValue` and `onValueChange` are the contract's `value`, `defaultValue` and `onChange`, in
- * keys instead of options; the app lists choices as `items`, never as children.
- */
-export type ComboBoxProps = ComboBoxContractProps &
-  Omit<
-    SelectRootProps,
-    keyof ComboBoxContractProps | "children" | "value" | "defaultValue" | "onValueChange"
-  >;
+import type { ComboBoxProps } from "#native/combo-box/combo-box.props";
 
 /** The list's bound: the sheet sizes itself to its content, so a long list needs a height to scroll inside. */
 const LIST_STYLE = Object.freeze({ maxHeight: 320 });

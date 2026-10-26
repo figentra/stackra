@@ -11,13 +11,10 @@
 import { type ReactElement, use } from "react";
 import { View } from "react-native";
 
-import type { StatContractProps } from "#contracts/types/stat-contract-props.type";
 import { Chip } from "#native/chip/chip";
 import { DesignSystemContext } from "#native/design-system-provider/design-system-context";
 import { Text } from "#native/text/text";
-
-/** Props of the native Stat: the shared contract. */
-export type StatProps = StatContractProps;
+import type { StatProps } from "#native/stat/stat.props";
 
 /** A labelled headline figure. */
 export function Stat({ label, value, badge }: StatProps): ReactElement {

@@ -10,16 +10,9 @@
  * Governing contract: ADR 0302 (decision 3, decision 5: adapted form); ADR 0303 (decision 7); ADR 0313 (decisions 5
  *          and 6); WCAG 2.2 SC 1.3.1.
  */
-import type { EmptyStateContractProps } from "#contracts/types/empty-state-contract-props.type";
 import { STATE_ICON } from "#core/constants/state-icon.constant";
-import { StateLayout, type StateLayoutProps } from "#native/state-layout/state-layout";
-
-/**
- * Props of the native EmptyState: the shared contract plus the props of its root `View`, passed through. `variant` is
- * refused: an empty state has one look.
- */
-export type EmptyStateProps = EmptyStateContractProps &
-  Omit<StateLayoutProps, keyof EmptyStateContractProps | "defaultIcon" | "children">;
+import { StateLayout } from "#native/state-layout/state-layout";
+import type { EmptyStateProps } from "#native/empty-state/empty-state.props";
 
 /** An icon, a title, a description and the next step, shown in place of nothing to list. */
 export function EmptyState({ reason = "no-data", headingLevel = 2, ...rest }: EmptyStateProps) {

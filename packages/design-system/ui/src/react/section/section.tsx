@@ -18,19 +18,11 @@
 import { cn } from "@heroui/react";
 import { createElement, useId, type ReactElement } from "react";
 
-import type { SectionContractProps } from "#contracts/types/section-contract-props.type";
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
 import { useUiText } from "#core/hooks/use-ui-text";
-import { Card, type CardProps } from "#react/card/card";
+import { Card } from "#react/card/card";
 import { PageActions } from "#react/page-actions/page-actions";
-
-/**
- * Props of the web Section: the shared contract plus the card's own props, passed through. The element's `aria-label`
- * is the contract's `label` and `aria-labelledby` is the title's, so the type refuses both; its `title` attribute gives
- * way to the contract's `title`, and the element is a `section`, so `render` is not a prop here.
- */
-export type SectionProps = SectionContractProps &
-  Omit<CardProps, keyof SectionContractProps | "aria-label" | "aria-labelledby" | "render">;
+import type { SectionProps } from "#react/section/section.props";
 
 /**
  * A titled card: title and description, actions and a body. Draw one per block of a detail page and give it a title

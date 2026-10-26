@@ -15,7 +15,8 @@
 import { render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 
-import { AppHeader, type AppHeaderProps } from "#native/app-header/app-header";
+import { AppHeader } from "#native/app-header/app-header";
+import type { AppHeaderProps } from "#native/app-header/app-header.props";
 
 vi.mock("react-native", () => ({
   View: ({

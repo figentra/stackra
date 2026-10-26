@@ -16,18 +16,13 @@
  *          and 8); WCAG 2.2 SC 1.3.1 and 2.1.2.
  */
 import { useState, type ReactElement, type ReactNode } from "react";
-import { View, type ViewProps } from "react-native";
+import { View } from "react-native";
 
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
 import { useUiText } from "#core/hooks/use-ui-text";
-import type { AppShellContractProps } from "#contracts/types/app-shell-contract-props.type";
 import { Drawer } from "#native/drawer/drawer";
 import { Text } from "#native/text/text";
-
-/**
- * Props of the native AppShell: the shared contract plus the root `View`'s own props, passed through.
- */
-export type AppShellProps = AppShellContractProps & Omit<ViewProps, keyof AppShellContractProps>;
+import type { AppShellProps } from "#native/app-shell/app-shell.props";
 
 /** A node as the container can draw it: a string or number goes inside `Text`, any other node as it is. */
 function textual(node: ReactNode): ReactNode {

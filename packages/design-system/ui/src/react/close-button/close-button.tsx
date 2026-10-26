@@ -6,21 +6,11 @@
  * Runtime: browser
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0165 (UI contract).
  */
-import {
-  CloseButton as HeroCloseButton,
-  type CloseButtonProps as HeroCloseButtonProps,
-} from "@heroui/react";
+import { CloseButton as HeroCloseButton } from "@heroui/react";
 
-import type { CloseButtonContractProps } from "#contracts/types/close-button-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { SlotIcon } from "#react/slot-icon/slot-icon";
-
-/**
- * Props of the web CloseButton: the shared contract plus HeroUI v3's own close-button props, passed through. HeroUI's
- * `aria-label` is the contract's `label`, and its children are the contract's `icon`.
- */
-export type CloseButtonProps = CloseButtonContractProps &
-  Omit<HeroCloseButtonProps, keyof CloseButtonContractProps | "children" | "aria-label">;
+import type { CloseButtonProps } from "#react/close-button/close-button.props";
 
 /** The dismiss button. Without an `icon` it draws HeroUI's close mark. */
 export function CloseButton({ label, icon, isDisabled, onPress, ...rest }: CloseButtonProps) {

@@ -36,7 +36,6 @@ import { AccessibilityInfo, FlatList, Pressable, View } from "react-native";
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
 import { useUiText } from "#core/hooks/use-ui-text";
 import type { EntityOption } from "#contracts/types/entity-option.type";
-import type { EntityPickerContractProps } from "#contracts/types/entity-picker-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { Avatar } from "#native/avatar/avatar";
 import { Drawer } from "#native/drawer/drawer";
@@ -46,14 +45,7 @@ import { ListItem } from "#native/list/list-item";
 import { Spinner } from "#native/spinner/spinner";
 import { TagGroup } from "#native/tag-group/tag-group";
 import { Text } from "#native/text/text";
-
-/** Props of the native EntityPicker: the shared contract in its single or multiple form. */
-export type EntityPickerProps = EntityPickerContractProps & {
-  /** The field's accessible name when the label is not a string. */
-  readonly accessibilityLabel?: string | undefined;
-  /** Styles the root, as on web. */
-  readonly className?: string | undefined;
-};
+import type { EntityPickerProps } from "#native/entity-picker/entity-picker.props";
 
 /** The list's bound: the sheet sizes itself to its content, so a long list needs a height to scroll inside. */
 const LIST_STYLE = Object.freeze({ maxHeight: 320 });

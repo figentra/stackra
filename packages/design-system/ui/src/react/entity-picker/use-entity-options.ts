@@ -10,19 +10,9 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 import type { EntityOptionPage } from "#contracts/types/entity-option-page.type";
-import {
-  createEntityOptionsLoader,
-  type EntityOptionsLoader,
-  type EntityOptionsState,
-} from "#core/functions/create-entity-options-loader.function";
-
-/** What {@link useEntityOptions} returns: the state to draw and the two requests a picker makes. */
-export interface EntityOptions extends EntityOptionsState {
-  /** Asks for the first page of `text`, at once the first time and after the pause later. */
-  readonly search: (text: string) => void;
-  /** Asks for the page after the last one. */
-  readonly loadMore: () => void;
-}
+import { createEntityOptionsLoader } from "#core/functions/create-entity-options-loader.function";
+import type { EntityOptionsLoader } from "#core/types/entity-options-loader.type";
+import type { EntityOptions } from "#react/entity-picker/entity-options.type";
 
 /**
  * Holds the records an EntityPicker lists.

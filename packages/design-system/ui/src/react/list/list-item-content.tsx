@@ -10,18 +10,9 @@
  * Runtime: browser
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decisions 7 and 10); ADR 0313 (text slots); ADR 0060 (RTL).
  */
-import type {
-  ListItemContractProps,
-  ListItemData,
-} from "#contracts/types/list-item-contract-props.type";
+import type { ListItemContractProps } from "#contracts/types/list-item-contract-props.type";
 import { Icon } from "#react/icon/icon";
 import { SlotIcon } from "#react/slot-icon/slot-icon";
-
-/** The text a row is typed ahead by and named with when no `label` is given: the title when it is text, else the id. */
-export function textValueOf(item: ListItemData): string {
-  if (item.label !== undefined) return item.label;
-  return typeof item.title === "string" ? item.title : item.id;
-}
 
 /** Props of {@link ListItemContent}: the row's slots. */
 type ListItemContentProps = Pick<

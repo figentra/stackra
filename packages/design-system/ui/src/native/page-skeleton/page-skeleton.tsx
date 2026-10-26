@@ -12,14 +12,10 @@
  */
 import { View } from "react-native";
 
-import type { PageSkeletonContractProps } from "#contracts/types/page-skeleton-contract-props.type";
 import { PAGE_SKELETON_ROWS } from "#core/constants/page-skeleton-rows.constant";
 import { Skeleton } from "#native/skeleton/skeleton";
-import { SkeletonGroup, type SkeletonGroupProps } from "#native/skeleton-group/skeleton-group";
-
-/** Props of the native PageSkeleton: the shared contract plus HeroUI Native's group props, passed through. */
-export type PageSkeletonProps = PageSkeletonContractProps &
-  Omit<SkeletonGroupProps, keyof PageSkeletonContractProps | "children" | "isLoading">;
+import { SkeletonGroup } from "#native/skeleton-group/skeleton-group";
+import type { PageSkeletonProps } from "#native/page-skeleton/page-skeleton.props";
 
 /** Placeholders for a page, a table, a section or a form, loading as one named region. */
 export function PageSkeleton({

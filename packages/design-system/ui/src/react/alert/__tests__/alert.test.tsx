@@ -16,7 +16,8 @@ import { render, screen } from "@testing-library/react";
 import { Tone } from "#contracts/enums/tone.enum";
 import type { AlertContractProps } from "#contracts/types/alert-contract-props.type";
 import { FEEDBACK_BY_TONE } from "#core/constants/feedback-by-tone.constant";
-import { Alert, type AlertProps } from "#react/alert/alert";
+import { Alert } from "#react/alert/alert";
+import type { AlertProps } from "#react/alert/alert.props";
 
 /** The alert's root element. */
 const rootOf = (container: HTMLElement) =>

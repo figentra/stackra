@@ -10,27 +10,13 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0165 (UI contract, HeroUI v3 on web); ADR 0055 (one field contract);
  *          owner decision 6 of STA-350 (thin wrappers).
  */
-import {
-  Description,
-  FieldError,
-  Label,
-  ListBox,
-  Select as HeroSelect,
-  type SelectRootProps,
-} from "@heroui/react";
+import { Description, FieldError, Label, ListBox, Select as HeroSelect } from "@heroui/react";
 import type { KeyboardEvent } from "react";
 import { Text } from "react-aria-components";
 
-import type { SelectContractProps } from "#contracts/types/select-contract-props.type";
 import type { SelectItem } from "#contracts/types/select-item.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
-
-/**
- * Props of the web Select: the shared contract plus HeroUI v3's own select props, passed through unchanged. HeroUI's
- * `fullWidth` is the contract's `isFullWidth`; the app lists choices as `items`, never as children.
- */
-export type SelectProps = SelectContractProps &
-  Omit<SelectRootProps<SelectItem>, keyof SelectContractProps | "children" | "items" | "fullWidth">;
+import type { SelectProps } from "#react/select/select.props";
 
 /** One choice drawn as a list box item: its label, an optional description under it and the selected check. */
 function SelectOption({ item }: { readonly item: SelectItem }) {

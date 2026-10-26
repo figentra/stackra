@@ -16,8 +16,9 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { createElement, type ReactNode } from "react";
 
 import type { InputGroupContractProps } from "#contracts/types/input-group-contract-props.type";
-import { InputGroup, type InputGroupProps } from "#native/input-group/input-group";
-import { TEXT_INPUT_TYPE_PROPS } from "#native/text-field/text-field";
+import { InputGroup } from "#native/input-group/input-group";
+import type { InputGroupProps } from "#native/input-group/input-group.props";
+import { TEXT_INPUT_TYPE_PROPS } from "#native/text-field/text-input-type-props.constant";
 
 /** The props each stand-in was last handed, by name, as the real component would receive them. */
 const received = vi.hoisted(() => ({ props: {} as Record<string, Record<string, unknown>> }));

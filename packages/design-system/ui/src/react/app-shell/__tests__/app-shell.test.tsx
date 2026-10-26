@@ -16,7 +16,8 @@
 import { act, render, screen, within } from "@testing-library/react";
 import type { ReactElement } from "react";
 
-import { AppShell, type AppShellProps } from "#react/app-shell/app-shell";
+import { AppShell } from "#react/app-shell/app-shell";
+import type { AppShellProps } from "#react/app-shell/app-shell.props";
 import { NavigationList } from "#react/navigation-list/navigation-list";
 
 const press = (element: HTMLElement) => act(() => element.click());

@@ -17,7 +17,8 @@ import { render } from "@testing-library/react";
 import type { ReactNode } from "react";
 
 import type { SelectContractProps } from "#contracts/types/select-contract-props.type";
-import { Select, type SelectProps } from "#native/select/select";
+import { Select } from "#native/select/select";
+import type { SelectProps } from "#native/select/select.props";
 
 /** The props each stand-in was last handed, and every set of props an item was handed, in order. */
 const received = vi.hoisted(() => ({

@@ -18,7 +18,8 @@ import type { ReactNode } from "react";
 import { Tone } from "#contracts/enums/tone.enum";
 import type { AlertContractProps } from "#contracts/types/alert-contract-props.type";
 import { FEEDBACK_BY_TONE } from "#core/constants/feedback-by-tone.constant";
-import { Alert, type AlertProps } from "#native/alert/alert";
+import { Alert } from "#native/alert/alert";
+import type { AlertProps } from "#native/alert/alert.props";
 
 /** The props each stand-in was last handed, by name, as the real component would receive them. */
 const received = vi.hoisted(() => ({ props: {} as Record<string, Record<string, unknown>> }));

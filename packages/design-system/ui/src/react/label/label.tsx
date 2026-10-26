@@ -7,14 +7,11 @@
  * Runtime: browser
  * Governing contract: ADR 0302 (decision 3); ADR 0165 (HeroUI v3 on web); ADR 0055 (forms); ADR 0303.
  */
-import { Label as HeroLabel, type LabelRootProps } from "@heroui/react";
+import { Label as HeroLabel } from "@heroui/react";
 import type { ReactElement } from "react";
 
-import type { LabelContractProps } from "#contracts/types/label-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
-
-/** Props of the web Label: the shared contract plus HeroUI v3's own label props, passed through unchanged. */
-export type LabelProps = LabelContractProps & Omit<LabelRootProps, keyof LabelContractProps>;
+import type { LabelProps } from "#react/label/label.props";
 
 /**
  * The text that names a field. Inside a field it takes the field's states; beside a plain control, pass `htmlFor`

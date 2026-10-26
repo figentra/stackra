@@ -13,7 +13,8 @@ import { render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 
 import type { DescriptionContractProps } from "#contracts/types/description-contract-props.type";
-import { Description, type DescriptionProps } from "#native/description/description";
+import { Description } from "#native/description/description";
+import type { DescriptionProps } from "#native/description/description.props";
 
 /** The props the stand-in was last handed, as the real component would receive them. */
 const received = vi.hoisted(() => ({ props: {} as Record<string, unknown> }));

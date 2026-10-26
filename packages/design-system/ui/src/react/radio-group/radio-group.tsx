@@ -11,17 +11,9 @@
  *          ADR 0055 (forms); owner decision 6 of STA-350 (thin wrappers).
  */
 import { Description, FieldError, Label, Radio, RadioGroup as HeroRadioGroup } from "@heroui/react";
-import type { RadioGroupRootProps } from "@heroui/react";
 
-import type { RadioGroupContractProps } from "#contracts/types/radio-group-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
-
-/**
- * Props of the web RadioGroup: the shared contract plus HeroUI v3's own group props, passed through unchanged.
- * HeroUI's `children` is refused: the options are the content.
- */
-export type RadioGroupProps = RadioGroupContractProps &
-  Omit<RadioGroupRootProps, keyof RadioGroupContractProps | "children">;
+import type { RadioGroupProps } from "#react/radio-group/radio-group.props";
 
 /**
  * A set of radios of which at most one is chosen; the group reports the chosen option's `value`. `isDisabled` and

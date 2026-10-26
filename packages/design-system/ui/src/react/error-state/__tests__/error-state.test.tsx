@@ -16,7 +16,8 @@
 import { act, render, screen } from "@testing-library/react";
 
 import type { ErrorStateContractProps } from "#contracts/types/error-state-contract-props.type";
-import { ErrorState, type ErrorStateProps } from "#react/error-state/error-state";
+import { ErrorState } from "#react/error-state/error-state";
+import type { ErrorStateProps } from "#react/error-state/error-state.props";
 
 /** The Lucide icon an element draws, by its kebab-case name. */
 const drawsIcon = (container: HTMLElement, name: string) =>

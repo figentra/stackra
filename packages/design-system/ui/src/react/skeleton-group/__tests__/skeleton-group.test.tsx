@@ -15,7 +15,8 @@ import { createRef } from "react";
 
 import type { SkeletonGroupContractProps } from "#contracts/types/skeleton-group-contract-props.type";
 import { Skeleton } from "#react/skeleton/skeleton";
-import { SkeletonGroup, type SkeletonGroupProps } from "#react/skeleton-group/skeleton-group";
+import { SkeletonGroup } from "#react/skeleton-group/skeleton-group";
+import type { SkeletonGroupProps } from "#react/skeleton-group/skeleton-group.props";
 
 /** The three classes of the single sweep. */
 const SWEEP = ["skeleton--shimmer", "relative", "overflow-hidden"];

@@ -16,17 +16,8 @@
  *          and 5); ADR 0165 (HeroUI v3 on web); WCAG 2.2 SC 1.3.1, 2.4.1 and 2.5.8.
  */
 import { cn } from "@heroui/react";
-import type { ComponentPropsWithRef, ReactElement } from "react";
-
-import type { AppHeaderContractProps } from "#contracts/types/app-header-contract-props.type";
-
-/**
- * Props of the web AppHeader: the shared contract plus the `header` element's own props, passed through. The
- * element's `aria-label` is the contract's `label` and its `title` attribute gives way to the contract's `title`, so
- * the type refuses the first and replaces the second.
- */
-export type AppHeaderProps = AppHeaderContractProps &
-  Omit<ComponentPropsWithRef<"header">, keyof AppHeaderContractProps | "aria-label" | "children">;
+import type { ReactElement } from "react";
+import type { AppHeaderProps } from "#react/app-header/app-header.props";
 
 /**
  * The top bar of the console: start slot, title, search, end slot and user menu, in that order from the inline start.

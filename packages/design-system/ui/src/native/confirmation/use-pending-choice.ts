@@ -11,15 +11,8 @@
  */
 import { useEffect, useState, useSyncExternalStore } from "react";
 
-import {
-  createPendingChoice,
-  type PendingChoiceState,
-  type PendingChoiceStore,
-} from "#core/functions/create-pending-choice.function";
-
-/** What {@link usePendingChoice} returns: the current state, and the store's `ask` and `settle`. */
-export type PendingChoice<TRequest> = PendingChoiceState<TRequest> &
-  Pick<PendingChoiceStore<TRequest>, "ask" | "settle">;
+import { createPendingChoice } from "#core/functions/create-pending-choice.function";
+import type { PendingChoice } from "#native/confirmation/pending-choice.type";
 
 /**
  * Holds one pending yes-or-no question for the component. `ask` and `settle` keep their identity across renders, so

@@ -15,22 +15,10 @@
  */
 import {
   Dropdown as HeroDropdown,
-  type DropdownItemProps as HeroDropdownItemProps,
   type DropdownMenuProps as HeroDropdownMenuProps,
 } from "@heroui/react";
-import type { ReactElement, ReactNode } from "react";
-
-import type { Tone } from "#contracts/enums/tone.enum";
-
-/** Props of `Dropdown.Item`: HeroUI's item props with the label as children, a `description` and a `color`. */
-export type DropdownItemProps = Omit<HeroDropdownItemProps, "children" | "variant"> & {
-  /** The label of the item. */
-  readonly children?: ReactNode;
-  /** A second, muted line under the label. */
-  readonly description?: ReactNode;
-  /** The tone of the item; `danger` marks a destructive action. Defaults to `default`. */
-  readonly color?: Tone | undefined;
-};
+import type { ReactElement } from "react";
+import type { DropdownItemProps } from "#react/dropdown/dropdown-item.props";
 
 /** The menu in its popover, so a dropdown is written as trigger plus menu. */
 function DropdownMenu<T extends object>(props: HeroDropdownMenuProps<T>): ReactElement {

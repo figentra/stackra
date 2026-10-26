@@ -18,7 +18,8 @@ import { act, fireEvent, render, screen, waitFor, within } from "@testing-librar
 import type { MenuContractProps } from "#contracts/types/menu-contract-props.type";
 import type { MenuSection } from "#contracts/types/menu-section.type";
 import { Button } from "#react/button/button";
-import { Menu, type MenuProps } from "#react/menu/menu";
+import { Menu } from "#react/menu/menu";
+import type { MenuProps } from "#react/menu/menu.props";
 
 const press = (element: HTMLElement) => act(() => element.click());
 

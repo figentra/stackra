@@ -23,26 +23,15 @@ import {
   Tag,
   TagGroup,
   ComboBox as HeroComboBox,
-  type ComboBoxRootProps,
 } from "@heroui/react";
 import { type ReactNode, useId } from "react";
 import { Text as AriaText, type Key } from "react-aria-components";
 
-import type { ComboBoxContractProps } from "#contracts/types/combo-box-contract-props.type";
 import type { SelectItem } from "#contracts/types/select-item.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { Spinner } from "#react/spinner/spinner";
 import { Text } from "#react/text/text";
-
-/**
- * Props of the web ComboBox: the shared contract plus HeroUI v3's own combo box props, passed through unchanged.
- * HeroUI's `fullWidth` is the contract's `isFullWidth`; the app lists choices as `items`, never as children.
- */
-export type ComboBoxProps = ComboBoxContractProps &
-  Omit<
-    ComboBoxRootProps<SelectItem>,
-    keyof ComboBoxContractProps | "children" | "items" | "fullWidth" | "defaultFilter"
-  >;
+import type { ComboBoxProps } from "#react/combo-box/combo-box.props";
 
 /** Props for a remove button that leave its accessible name to React Aria, which words it in the user's language. */
 // A cast: HeroUI types `aria-label` as a string, but its default name is English and `undefined` does not override a

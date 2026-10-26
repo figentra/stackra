@@ -31,23 +31,15 @@ import {
   FieldError,
   Label,
   type CalendarHeaderProps,
-  type DatePickerRootProps,
 } from "@heroui/react";
 import type { CalendarDate } from "@internationalized/date";
 import type { ComponentProps } from "react";
 import { composeRenderProps, type DateValue } from "react-aria-components";
 
-import type { DatePickerContractProps } from "#contracts/types/date-picker-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
 import { useUiText } from "#core/hooks/use-ui-text";
-
-/**
- * Props of the web DatePicker: the shared contract plus HeroUI v3's own date picker props, passed through unchanged.
- * `children` is refused because the picker draws its own parts.
- */
-export type DatePickerProps = DatePickerContractProps &
-  Omit<DatePickerRootProps<CalendarDate>, keyof DatePickerContractProps | "children">;
+import type { DatePickerProps } from "#react/date-picker/date-picker.props";
 
 /**
  * A segment and the calendar button are at least 24 CSS pixels each way: HeroUI's segment is about 20 pixels high and,

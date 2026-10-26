@@ -19,7 +19,8 @@ import { Size } from "#contracts/enums/size.enum";
 import { Tone } from "#contracts/enums/tone.enum";
 import type { ProgressBarContractProps } from "#contracts/types/progress-bar-contract-props.type";
 import { PROGRESS_FILL_ROLE } from "#core/constants/progress-fill-role.constant";
-import { ProgressBar, type ProgressBarProps } from "#native/progress-bar/progress-bar";
+import { ProgressBar } from "#native/progress-bar/progress-bar";
+import type { ProgressBarProps } from "#native/progress-bar/progress-bar.props";
 
 /** What the stand-ins were last handed, and the knobs a test turns. */
 const state = vi.hoisted(() => ({

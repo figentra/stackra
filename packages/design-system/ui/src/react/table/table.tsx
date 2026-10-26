@@ -19,25 +19,17 @@
  *          WCAG 2.2 SC 1.3.1, 2.1.1, 4.1.2, 4.1.3; owner decision 6 of STA-350 (thin wrappers).
  */
 import { Checkbox as HeroCheckbox, Table as HeroTable } from "@heroui/react";
-import type { ComponentPropsWithoutRef, ReactNode } from "react";
+import type { ReactNode } from "react";
 
 import type { CollectionItem } from "#contracts/types/collection-item.type";
 import type { TableColumn } from "#contracts/types/table-column.type";
-import type { TableContractProps } from "#contracts/types/table-contract-props.type";
 import { cellTextOf } from "#core/functions/cell-text-of.function";
 import { keysOfSelection } from "#core/functions/keys-of-selection.function";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
 import { useUiText } from "#core/hooks/use-ui-text";
 import { Spinner } from "#react/spinner/spinner";
-
-/**
- * Props of the web Table: the shared contract plus the `div` props of HeroUI's table root, passed through unchanged
- * (a `className`, a `data-*` attribute, an `id`). The app lists rows as `items` and cells as `renderCell`, so
- * children are refused.
- */
-export type TableProps<TItem extends CollectionItem = CollectionItem> = TableContractProps<TItem> &
-  Omit<ComponentPropsWithoutRef<"div">, keyof TableContractProps | "children">;
+import type { TableProps } from "#react/table/table.props";
 
 /** The class that lines a column's cell text up; `start` is HeroUI's own. */
 const ALIGN_CLASS = Object.freeze({

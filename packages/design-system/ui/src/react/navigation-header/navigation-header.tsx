@@ -17,26 +17,15 @@
  *          5 and 7); ADR 0165 (HeroUI v3 on web); ADR 0060; WCAG 2.2 SC 1.3.1, 2.4.6 and 2.5.8.
  */
 import { cn } from "@heroui/react";
-import type { ComponentPropsWithRef, ReactElement } from "react";
+import type { ReactElement } from "react";
 
-import type { NavigationHeaderContractProps } from "#contracts/types/navigation-header-contract-props.type";
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
 import { useUiText } from "#core/hooks/use-ui-text";
 import { Heading } from "#react/heading/heading";
 import { Icon } from "#react/icon/icon";
 import { IconButton } from "#react/icon-button/icon-button";
 import { Link } from "#react/link/link";
-
-/**
- * Props of the web NavigationHeader: the shared contract plus the `header` element's own props, passed through. The
- * element's `aria-label` is the contract's `label` and its `title` attribute gives way to the contract's `title`, so
- * the type refuses the first and replaces the second.
- */
-export type NavigationHeaderProps = NavigationHeaderContractProps &
-  Omit<
-    ComponentPropsWithRef<"header">,
-    keyof NavigationHeaderContractProps | "aria-label" | "children"
-  >;
+import type { NavigationHeaderProps } from "#react/navigation-header/navigation-header.props";
 
 /** The back chevron, mirrored in right-to-left because it points the reading way back. */
 const BACK_ICON = <Icon name="chevron-left" isMirroredInRtl />;

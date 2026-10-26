@@ -21,8 +21,9 @@ import type { ReactElement } from "react";
 import type { DrawerContractProps } from "#contracts/types/drawer-contract-props.type";
 import type { OverlayTitleContractProps } from "#contracts/types/overlay-title-contract-props.type";
 import { Button } from "#react/button/button";
-import { Drawer, type DrawerProps } from "#react/drawer/drawer";
-import type { DrawerTitleProps } from "#react/drawer/drawer-title";
+import { Drawer } from "#react/drawer/drawer";
+import type { DrawerProps } from "#react/drawer/drawer.props";
+import type { DrawerTitleProps } from "#react/drawer/drawer-title.props";
 
 const press = (element: HTMLElement) => act(() => element.click());
 

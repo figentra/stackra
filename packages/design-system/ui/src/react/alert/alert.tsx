@@ -11,24 +11,12 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0312 (decisions 1 and 3); WCAG 2.2 SC 1.4.1
  *          and 4.1.3.
  */
-import { Alert as HeroAlert, type AlertRootProps as HeroAlertRootProps } from "@heroui/react";
-import type { ComponentPropsWithoutRef, ReactElement } from "react";
+import { Alert as HeroAlert } from "@heroui/react";
+import type { ReactElement } from "react";
 
-import type { AlertContractProps } from "#contracts/types/alert-contract-props.type";
 import { liveRegionOf } from "#core/functions/live-region-of.function";
 import { FeedbackIcon } from "#react/feedback-icon/feedback-icon";
-
-/**
- * Props of the web Alert: the shared contract plus HeroUI v3's own alert props and the attributes of a `div`, passed
- * through. HeroUI's `status` is the contract's `tone`, its `title` (the HTML tooltip) is the contract's `title`, and
- * the role is the tone's, never the caller's.
- */
-export type AlertProps = AlertContractProps &
-  Omit<
-    HeroAlertRootProps<"div"> &
-      Omit<ComponentPropsWithoutRef<"div">, keyof HeroAlertRootProps<"div">>,
-    keyof AlertContractProps | "children" | "status" | "role" | "aria-live"
-  >;
+import type { AlertProps } from "#react/alert/alert.props";
 
 /** An inline message: the tone's icon, the title, the description and the actions, announced by its tone. */
 export function Alert({

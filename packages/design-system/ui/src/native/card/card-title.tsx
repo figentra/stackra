@@ -6,13 +6,8 @@
  * Runtime: react-native
  * Governing contract: ADR 0302 (decision 3); ADR 0304; WCAG 2.2 SC 1.3.1.
  */
-import { Card as HeroCard, type CardTitleProps as HeroCardTitleProps } from "heroui-native";
-
-import type { CardTitleContractProps } from "#contracts/types/card-title-contract-props.type";
-
-/** Props of the native Card.Title: the shared contract plus HeroUI Native's own title props, passed through. */
-export type CardTitleProps = CardTitleContractProps &
-  Omit<HeroCardTitleProps, keyof CardTitleContractProps>;
+import { Card as HeroCard } from "heroui-native";
+import type { CardTitleProps } from "#native/card/card-title.props";
 
 /**
  * A card's title, announced as a heading. `level` keeps the shared contract and is not used: the header role carries

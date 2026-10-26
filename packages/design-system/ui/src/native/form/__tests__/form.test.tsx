@@ -13,7 +13,8 @@ import { render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 
 import type { FormContractProps } from "#contracts/types/form-contract-props.type";
-import { Form, type FormProps } from "#native/form/form";
+import { Form } from "#native/form/form";
+import type { FormProps } from "#native/form/form.props";
 
 /** The props the stand-in was last handed, as the real component would receive them. */
 const received = vi.hoisted(() => ({ props: {} as Record<string, unknown> }));

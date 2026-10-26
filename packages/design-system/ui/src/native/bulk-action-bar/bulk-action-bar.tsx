@@ -20,11 +20,10 @@
  *          owner decision 6 of STA-350 (thin wrappers).
  */
 import { use, useEffect, useState } from "react";
-import { AccessibilityInfo, View, type ViewProps } from "react-native";
+import { AccessibilityInfo, View } from "react-native";
 
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
 import { useUiText } from "#core/hooks/use-ui-text";
-import type { BulkActionBarContractProps } from "#contracts/types/bulk-action-bar-contract-props.type";
 import type { ResourceAction } from "#contracts/types/resource-action.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { pageActionVariant } from "#core/functions/page-action-variant.function";
@@ -35,13 +34,7 @@ import { IconButton } from "#native/icon-button/icon-button";
 import { followHref } from "#native/router-provider/follow-href.function";
 import { RouterContext } from "#native/router-provider/router-context";
 import { Text } from "#native/text/text";
-
-/**
- * Props of the native BulkActionBar: the shared contract plus the props of a `View`, passed through unchanged. The
- * bar's own children are the actions, so the type refuses them.
- */
-export type BulkActionBarProps = BulkActionBarContractProps &
-  Omit<ViewProps, keyof BulkActionBarContractProps | "children">;
+import type { BulkActionBarProps } from "#native/bulk-action-bar/bulk-action-bar.props";
 
 // Developer log text, read in the console only, so it stays English (ADR 0080 translates what users see).
 const COULD_NOT_OPEN = "Bulk action bar could not open the link of an action";

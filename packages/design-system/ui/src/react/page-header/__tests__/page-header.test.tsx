@@ -22,7 +22,8 @@ import type { ReactElement } from "react";
 import { RouterProvider } from "react-aria-components";
 
 import type { MenuLeafItem } from "#contracts/types/menu-leaf-item.type";
-import { PageHeader, type PageHeaderProps } from "#react/page-header/page-header";
+import { PageHeader } from "#react/page-header/page-header";
+import type { PageHeaderProps } from "#react/page-header/page-header.props";
 
 const press = (element: HTMLElement) => act(() => element.click());
 

@@ -25,48 +25,18 @@ import {
   Tag,
   TagGroup,
   ComboBox as HeroComboBox,
-  type ComboBoxRootProps,
 } from "@heroui/react";
 import { type ReactNode, useId, useRef, useState } from "react";
 import { Text as AriaText, type Key } from "react-aria-components";
 
 import type { EntityOption } from "#contracts/types/entity-option.type";
-import type {
-  EntityPickerBaseContractProps,
-  EntityPickerContractProps,
-} from "#contracts/types/entity-picker-contract-props.type";
-import type { FieldContractProps } from "#contracts/types/field-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { Avatar } from "#react/avatar/avatar";
 import { useEntityOptions } from "#react/entity-picker/use-entity-options";
 import { Icon } from "#react/icon/icon";
 import { Spinner } from "#react/spinner/spinner";
 import { Text } from "#react/text/text";
-
-/**
- * Props of the web EntityPicker: the shared contract (single or multiple, told apart by `selectionMode`) plus HeroUI
- * v3's own combo box props, passed through unchanged. The picker owns the list, the typed text and the selection, so
- * HeroUI's names for them are refused.
- */
-export type EntityPickerProps = EntityPickerContractProps &
-  Omit<
-    ComboBoxRootProps<EntityOption>,
-    | keyof EntityPickerBaseContractProps
-    | keyof FieldContractProps<unknown>
-    | "selectionMode"
-    | "removeLabel"
-    | "children"
-    | "items"
-    | "defaultItems"
-    | "fullWidth"
-    | "defaultFilter"
-    | "inputValue"
-    | "defaultInputValue"
-    | "onInputChange"
-    | "formValue"
-    | "allowsCustomValue"
-    | "allowsEmptyCollection"
-  >;
+import type { EntityPickerProps } from "#react/entity-picker/entity-picker.props";
 
 /** The key of the create-new row: a number, which React Aria keeps as one, so it never equals a record's string id. */
 const CREATE_KEY = -1;

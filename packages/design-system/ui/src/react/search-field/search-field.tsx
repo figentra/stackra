@@ -12,27 +12,13 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0055; ADR 0165 (HeroUI v3 on web); owner
  *          decision 6 of STA-350 (thin wrappers).
  */
-import {
-  Description,
-  FieldError,
-  Label,
-  SearchField as HeroSearchField,
-  type SearchFieldRootProps,
-} from "@heroui/react";
+import { Description, FieldError, Label, SearchField as HeroSearchField } from "@heroui/react";
 
-import type { SearchFieldContractProps } from "#contracts/types/search-field-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
 import { useUiText } from "#core/hooks/use-ui-text";
 import { Spinner } from "#react/spinner/spinner";
-
-/**
- * Props of the web SearchField: the shared contract plus HeroUI v3's own search field props, passed through
- * unchanged. HeroUI's `fullWidth` is the contract's `isFullWidth`, its `placeholder` belongs to the input, and its
- * children are composed here.
- */
-export type SearchFieldProps = SearchFieldContractProps &
-  Omit<SearchFieldRootProps, keyof SearchFieldContractProps | "fullWidth" | "children">;
+import type { SearchFieldProps } from "#react/search-field/search-field.props";
 
 /**
  * A search input with a clear button. The visible `label`, `description` and `errorMessage` are tied to the input for

@@ -18,7 +18,8 @@ import { useEffect } from "react";
 import { useForm, type UseFormReturn } from "react-hook-form";
 
 import type { FormFieldBinding } from "#contracts/types/form-field-binding.type";
-import { FormField, type FormFieldProps } from "#native/form-field/form-field";
+import { FormField } from "#native/form-field/form-field";
+import type { FormFieldProps } from "#native/form-field/form-field.props";
 
 /** The values of the form under test. */
 interface Values {

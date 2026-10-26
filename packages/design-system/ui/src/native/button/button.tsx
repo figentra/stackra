@@ -14,34 +14,15 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0165 (HeroUI Native on native); owner
  *          decision 6 of STA-350; ADR 0319 (the glass quiet variants).
  */
-import {
-  Button as HeroButton,
-  Spinner,
-  cn,
-  useThemeColor,
-  type ButtonRootProps,
-  type ThemeColor,
-} from "heroui-native";
+import { Button as HeroButton, Spinner, cn, useThemeColor, type ThemeColor } from "heroui-native";
 import { LucideProvider } from "lucide-react-native";
 
 import type { ButtonVariant } from "#contracts/enums/button-variant.enum";
-import type { ButtonContractProps } from "#contracts/types/button-contract-props.type";
-import type { DistributiveOmit } from "#contracts/types/distributive-omit.type";
 import { ICON_SIZES } from "#core/constants/icon-sizes.constant";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { useGlassButton } from "#native/glass/use-glass-button";
 import { SlotIcon } from "#native/slot-icon/slot-icon";
-
-/**
- * Props of the native Button: the shared contract plus HeroUI Native's own button props, passed through unchanged.
- * The omitted names are the contract's own: `label` is the accessible name, `isDisabled` and `isLoading` own the
- * pressable's `disabled`, and `IconButton` owns `isIconOnly`.
- */
-export type ButtonProps = ButtonContractProps &
-  DistributiveOmit<
-    ButtonRootProps,
-    keyof ButtonContractProps | "isIconOnly" | "accessibilityLabel" | "aria-label" | "disabled"
-  >;
+import type { ButtonProps } from "#native/button/button.props";
 
 /**
  * The theme colour of the label of each variant, from HeroUI Native's button stylesheet. It colours the spinner and

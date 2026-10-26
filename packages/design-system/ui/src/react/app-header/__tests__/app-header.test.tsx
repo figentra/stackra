@@ -14,7 +14,8 @@
 // @covers sta-350:FR-164
 import { render, screen } from "@testing-library/react";
 
-import { AppHeader, type AppHeaderProps } from "#react/app-header/app-header";
+import { AppHeader } from "#react/app-header/app-header";
+import type { AppHeaderProps } from "#react/app-header/app-header.props";
 
 /** A header with every slot filled, each with its own marker text. */
 function full(props: Partial<AppHeaderProps> = {}) {

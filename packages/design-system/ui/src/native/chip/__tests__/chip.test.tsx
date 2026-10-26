@@ -18,7 +18,8 @@ import { ChipVariant } from "#contracts/enums/chip-variant.enum";
 import { Size } from "#contracts/enums/size.enum";
 import { Tone } from "#contracts/enums/tone.enum";
 import type { ChipContractProps } from "#contracts/types/chip-contract-props.type";
-import { Chip, type ChipProps } from "#native/chip/chip";
+import { Chip } from "#native/chip/chip";
+import type { ChipProps } from "#native/chip/chip.props";
 
 /** The props each stand-in was last handed, by name, as the real component would receive them. */
 const received = vi.hoisted(() => ({ props: {} as Record<string, Record<string, unknown>> }));

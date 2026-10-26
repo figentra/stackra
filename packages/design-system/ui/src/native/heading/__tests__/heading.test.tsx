@@ -14,7 +14,8 @@ import type { ReactNode } from "react";
 
 import { HeadingLevel } from "#contracts/enums/heading-level.enum";
 import type { HeadingContractProps } from "#contracts/types/heading-contract-props.type";
-import { Heading, type HeadingProps } from "#native/heading/heading";
+import { Heading } from "#native/heading/heading";
+import type { HeadingProps } from "#native/heading/heading.props";
 
 const screenLocale = vi.hoisted(() => ({ value: "en" }));
 /** The props the last HeroUI Native stand-in was handed, as the real component would receive them. */

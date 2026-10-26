@@ -17,13 +17,12 @@
 import { act, render } from "@testing-library/react";
 import { isValidElement, type ReactElement, type ReactNode } from "react";
 
-import type {
-  ToastContractProps,
-  ToastProviderContractProps,
-} from "#contracts/types/toast-contract-props.type";
+import type { ToastContractProps } from "#contracts/types/toast-contract-props.type";
+import type { ToastProviderContractProps } from "#contracts/types/toast-provider-contract-props.type";
 import { toast } from "#native/toast/toast";
 import { toastBridge } from "#native/toast/toast-bridge";
-import { ToastProvider, type ToastProviderProps } from "#native/toast/toast-provider";
+import { ToastProvider } from "#native/toast/toast-provider";
+import type { ToastProviderProps } from "#native/toast/toast-provider.props";
 
 /** What the stand-ins recorded: the provider's props and the manager it offers. */
 const heroui = vi.hoisted(() => ({

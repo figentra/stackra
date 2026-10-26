@@ -8,7 +8,7 @@
  * Runtime: react-native
  * Governing contract: ADR 0318 (decision 8); FR-206 of STA-350.
  */
-import { CalendarDate } from "@internationalized/date";
+import type { CalendarDate } from "@internationalized/date";
 
 /** The platform `Date` for a day: local noon of that day. */
 export function toPlatformDate(day: CalendarDate): Date {
@@ -17,7 +17,3 @@ export function toPlatformDate(day: CalendarDate): Date {
   date.setFullYear(day.year, day.month - 1, day.day);
   return date;
 }
-
-/** The day a platform `Date` falls on, in local time. */
-export const toCalendarDate = (date: Date): CalendarDate =>
-  new CalendarDate(date.getFullYear(), date.getMonth() + 1, date.getDate());

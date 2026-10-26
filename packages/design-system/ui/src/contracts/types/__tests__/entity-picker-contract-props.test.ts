@@ -10,11 +10,9 @@
 // @covers sta-350:FR-198
 import type { EntityOption } from "#contracts/types/entity-option.type";
 import type { EntityOptionPage } from "#contracts/types/entity-option-page.type";
-import type {
-  EntityPickerContractProps,
-  MultipleEntityPickerContractProps,
-  SingleEntityPickerContractProps,
-} from "#contracts/types/entity-picker-contract-props.type";
+import type { EntityPickerContractProps } from "#contracts/types/entity-picker-contract-props.type";
+import type { MultipleEntityPickerContractProps } from "#contracts/types/multiple-entity-picker-contract-props.type";
+import type { SingleEntityPickerContractProps } from "#contracts/types/single-entity-picker-contract-props.type";
 import type { FieldContractProps } from "#contracts/types/field-contract-props.type";
 
 describe("EntityPickerContractProps", () => {

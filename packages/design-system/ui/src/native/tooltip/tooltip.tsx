@@ -11,11 +11,7 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0312; WCAG 2.2 SC 4.1.2.
  */
 import { cloneElement, type ReactElement } from "react";
-
-import type { TooltipContractProps } from "#contracts/types/tooltip-contract-props.type";
-
-/** Props of the native Tooltip: the shared contract only; there is no HeroUI Native tooltip to pass props to. */
-export type TooltipProps = TooltipContractProps;
+import type { TooltipProps } from "#native/tooltip/tooltip.props";
 
 /** The props of the element a tooltip describes that it reads and sets. */
 interface HintedProps {

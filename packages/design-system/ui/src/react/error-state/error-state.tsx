@@ -12,23 +12,13 @@
  * Governing contract: ADR 0302 (decision 3, decision 5: adapted form); ADR 0303 (decision 7); ADR 0313 (decisions 1
  *          and 6); ADR 0140 (error envelope); WCAG 2.2 SC 1.3.1 and 4.1.3.
  */
-import type { ErrorStateContractProps } from "#contracts/types/error-state-contract-props.type";
 import { STATE_ICON } from "#core/constants/state-icon.constant";
 import { errorDetailsOf } from "#core/functions/error-details-of.function";
 import { liveRegionOf } from "#core/functions/live-region-of.function";
 import { Button } from "#react/button/button";
-import { StateLayout, type StateLayoutProps } from "#react/state-layout/state-layout";
+import { StateLayout } from "#react/state-layout/state-layout";
 import { Text } from "#react/text/text";
-
-/**
- * Props of the web ErrorState: the shared contract plus the attributes of its root `div`, passed through. The role
- * and live region are the component's, never the caller's.
- */
-export type ErrorStateProps = ErrorStateContractProps &
-  Omit<
-    StateLayoutProps,
-    keyof ErrorStateContractProps | "defaultIcon" | "children" | "role" | "aria-live"
-  >;
+import type { ErrorStateProps } from "#react/error-state/error-state.props";
 
 /** A failure, named by its kind, with the error's message (outside production, or when `isMessageShown`), a retry and further actions, announced at once. */
 export function ErrorState({

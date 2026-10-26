@@ -24,12 +24,11 @@
  *          owner decision 6 of STA-350 (thin wrappers).
  */
 import { useState } from "react";
-import { View, type ViewProps } from "react-native";
+import { View } from "react-native";
 
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
 import { useUiText } from "#core/hooks/use-ui-text";
 import type { CollectionItem } from "#contracts/types/collection-item.type";
-import type { DataTableContractProps } from "#contracts/types/data-table-contract-props.type";
 import type { MenuLeafItem } from "#contracts/types/menu-leaf-item.type";
 import type { TableColumn } from "#contracts/types/table-column.type";
 import { cellTextOf } from "#core/functions/cell-text-of.function";
@@ -45,20 +44,7 @@ import { ErrorState } from "#native/error-state/error-state";
 import { PageSkeleton } from "#native/page-skeleton/page-skeleton";
 import { Table } from "#native/table/table";
 import { Text } from "#native/text/text";
-
-/**
- * Props of the native DataTable: the shared contract plus the props of a `View`, passed through. The rows and cells are
- * `items` and `renderCell`, so children are refused.
- */
-export type DataTableProps<TItem extends CollectionItem = CollectionItem> =
-  DataTableContractProps<TItem> &
-    Omit<ViewProps, keyof DataTableContractProps | "children"> & {
-      /**
-       * Whether the rows scroll on their own (the default). Pass `false` when the table sits inside a page's own
-       * `ScrollView`, so the rows lay out in the page and React Native does not warn about nested lists.
-       */
-      readonly scrollEnabled?: boolean;
-    };
+import type { DataTableProps } from "#native/data-table/data-table.props";
 
 /** The id of the row menus' column: the app's columns never use it. */
 const ACTIONS_COLUMN_ID = "data-table-row-actions";

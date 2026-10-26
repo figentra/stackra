@@ -17,7 +17,8 @@ import { ChipVariant } from "#contracts/enums/chip-variant.enum";
 import { Size } from "#contracts/enums/size.enum";
 import { Tone } from "#contracts/enums/tone.enum";
 import type { ChipContractProps } from "#contracts/types/chip-contract-props.type";
-import { Chip, type ChipProps } from "#react/chip/chip";
+import { Chip } from "#react/chip/chip";
+import type { ChipProps } from "#react/chip/chip.props";
 
 describe("Chip (web)", () => {
   it("is a secondary, default, medium chip with its text in the label", () => {

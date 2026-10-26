@@ -15,7 +15,8 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 
 import type { DatePickerContractProps } from "#contracts/types/date-picker-contract-props.type";
-import { DatePicker, type DatePickerProps } from "#native/date-picker/date-picker";
+import { DatePicker } from "#native/date-picker/date-picker";
+import type { DatePickerProps } from "#native/date-picker/date-picker.props";
 
 const state = vi.hoisted(() => ({ props: {} as Record<string, Record<string, unknown>> }));
 

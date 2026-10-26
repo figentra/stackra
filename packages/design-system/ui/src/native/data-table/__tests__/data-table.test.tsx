@@ -23,7 +23,8 @@ import type { ReactNode } from "react";
 
 import type { ResourceQuery } from "#contracts/types/resource-query.type";
 import type { TableColumn } from "#contracts/types/table-column.type";
-import { DataTable, type DataTableProps } from "#native/data-table/data-table";
+import { DataTable } from "#native/data-table/data-table";
+import type { DataTableProps } from "#native/data-table/data-table.props";
 
 /** The props each stand-in was last handed, by name. */
 const received = vi.hoisted(() => ({
