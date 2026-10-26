@@ -42,6 +42,6 @@ export interface SidebarMenuIconContractProps {
 
 /** Props of `Sidebar.Rail` that the Stackra vocabulary names. */
 export interface SidebarRailContractProps {
-  /** The accessible name of the rail button; HeroUI Pro's `aria-label`, which defaults to "Toggle sidebar". */
+  /** The accessible name of the rail button; HeroUI Pro's `aria-label`; `ui_pro::sidebar.toggle` when left out. */
   readonly label?: string | undefined;
 }

@@ -138,6 +138,14 @@ const HOME_TAB_LINKS: PathConfig<HomeStackParamList> = {
         ProWheelPickerGroup: "design-system/pro/wheel-picker-group",
         ProWheelTimePicker: "design-system/pro/wheel-time-picker",
         ProWidget: "design-system/pro/widget",
+        FreeAiMark: "design-system/free/ai-mark",
+        FreeEnvironmentBanner: "design-system/free/environment-banner",
+        FreeModeSwitch: "design-system/free/mode-switch",
+        ProAssistantPanel: "design-system/pro/assistant-panel",
+        ProApprovalCard: "design-system/pro/approval-card",
+        ProPlanView: "design-system/pro/plan-view",
+        ProResourceScheduler: "design-system/pro/resource-scheduler",
+        ProSignatureField: "design-system/pro/signature-field",
       }
     : { Home: "" },
 };

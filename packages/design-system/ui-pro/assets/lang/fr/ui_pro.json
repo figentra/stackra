@@ -38,5 +38,13 @@
   },
   "table_of_contents": {
     "on_this_page": "Sur cette page"
+  },
+  "scheduler": {
+    "move_earlier": "Avancer",
+    "move_later": "Reculer",
+    "move_previous": "Déplacer vers la colonne précédente",
+    "move_next": "Déplacer vers la colonne suivante",
+    "lengthen": "Allonger",
+    "shorten": "Raccourcir"
   }
 }

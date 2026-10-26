@@ -45,4 +45,11 @@ describe("PlanView (web)", () => {
     expect(screen.getByText("3 suppliers")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Approve plan" })).toBeTruthy();
   });
+
+  it("reads the status from the ui_pro catalogue when no words are given", () => {
+    const { container } = render(
+      <PlanView label="Plan" steps={[{ id: "1", title: "Find low items", status: "failed" }]} />,
+    );
+    expect(container.querySelector("[data-step-status]")?.textContent).toContain("(Failed)");
+  });
 });

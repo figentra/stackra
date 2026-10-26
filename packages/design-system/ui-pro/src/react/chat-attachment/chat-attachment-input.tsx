@@ -20,6 +20,8 @@ import type {
   ChatAttachmentInputTriggerContractProps,
 } from "#contracts/types/chat-attachment-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
+import { UI_PRO_KEYS } from "#core/constants/ui-pro-keys.constant";
+import { useUiProText } from "#core/hooks/use-ui-pro-text";
 
 /** Props of the web ChatAttachmentInput: the shared contract plus HeroUI Pro's own, with `disabled` as `isDisabled`. */
 export type ChatAttachmentInputProps = ChatAttachmentInputContractProps &
@@ -43,10 +45,12 @@ function ChatAttachmentInputTrigger({
   isDisabled,
   ...rest
 }: ChatAttachmentInputTriggerProps) {
+  const t = useUiProText();
   return (
     <HeroChatAttachmentInput.Trigger
       {...rest}
-      {...omitUndefined({ "aria-label": label, disabled: isDisabled })}
+      aria-label={label ?? t(UI_PRO_KEYS.ui_pro.chat.attach_files)}
+      {...omitUndefined({ disabled: isDisabled })}
     />
   );
 }

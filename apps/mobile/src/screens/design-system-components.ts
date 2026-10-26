@@ -123,6 +123,14 @@ import { StepperScreen } from "./pro/stepper-screen";
 import { SwipeableTabsScreen } from "./pro/swipeable-tabs-screen";
 import { TableScreen } from "./pro/table-screen";
 import { TimelineScreen } from "./pro/timeline-screen";
+import { AiMarkScreen } from "./free/ai-mark-screen";
+import { EnvironmentBannerScreen } from "./free/environment-banner-screen";
+import { ModeSwitchScreen } from "./free/mode-switch-screen";
+import { AssistantPanelScreen } from "./pro/assistant-panel-screen";
+import { ApprovalCardScreen } from "./pro/approval-card-screen";
+import { PlanViewScreen } from "./pro/plan-view-screen";
+import { ResourceSchedulerScreen } from "./pro/resource-scheduler-screen";
+import { SignatureFieldScreen } from "./pro/signature-field-screen";
 import { TimePickerScreen } from "./pro/time-picker-screen";
 import { ToggleButtonScreen } from "./pro/toggle-button-screen";
 import { ToggleButtonGroupScreen } from "./pro/toggle-button-group-screen";
@@ -142,6 +150,27 @@ export interface DesignSystemComponent extends PageLink {
 /** The components as written, in no particular order. */
 const COMPONENTS: readonly DesignSystemComponent[] = [
   // Free
+  {
+    category: "AI",
+    tier: "Free",
+    title: "AiMark",
+    route: "FreeAiMark",
+    screen: AiMarkScreen,
+  },
+  {
+    category: "Feedback and status",
+    tier: "Free",
+    title: "EnvironmentBanner",
+    route: "FreeEnvironmentBanner",
+    screen: EnvironmentBannerScreen,
+  },
+  {
+    category: "Inputs and forms",
+    tier: "Free",
+    title: "ModeSwitch",
+    route: "FreeModeSwitch",
+    screen: ModeSwitchScreen,
+  },
   { category: "Foundations", tier: "Free", title: "Icon", route: "FreeIcon", screen: IconScreen },
   {
     category: "Foundations",
@@ -542,6 +571,41 @@ const COMPONENTS: readonly DesignSystemComponent[] = [
   },
 
   // Pro
+  {
+    category: "AI",
+    tier: "Pro",
+    title: "AssistantPanel",
+    route: "ProAssistantPanel",
+    screen: AssistantPanelScreen,
+  },
+  {
+    category: "AI",
+    tier: "Pro",
+    title: "ApprovalCard",
+    route: "ProApprovalCard",
+    screen: ApprovalCardScreen,
+  },
+  {
+    category: "AI",
+    tier: "Pro",
+    title: "PlanView",
+    route: "ProPlanView",
+    screen: PlanViewScreen,
+  },
+  {
+    category: "Date and time",
+    tier: "Pro",
+    title: "ResourceScheduler",
+    route: "ProResourceScheduler",
+    screen: ResourceSchedulerScreen,
+  },
+  {
+    category: "Inputs and forms",
+    tier: "Pro",
+    title: "SignatureField",
+    route: "ProSignatureField",
+    screen: SignatureFieldScreen,
+  },
   {
     category: "Actions",
     tier: "Pro",

@@ -135,6 +135,7 @@
     "clean": "rm -rf dist coverage .turbo"
   },
   "dependencies": {
+    "@stackra/i18n": "workspace:*",
     "@stackra/tokens": "workspace:*",
     "@stackra/ui": "workspace:*"
   },

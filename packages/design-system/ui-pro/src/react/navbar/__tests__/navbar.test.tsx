@@ -89,19 +89,19 @@ describe("Navbar (web)", () => {
     expect(large).not.toBe(plain);
   });
 
-  it("names the menu toggle from label, and keeps HeroUI Pro's name without one", () => {
+  it("names the menu toggle from label, and from ui_pro::navbar.open_menu without one", () => {
     const { rerender } = render(
       <Navbar>
-        <Navbar.MenuToggle label="Open menu" />
+        <Navbar.MenuToggle label="Show the menu" />
       </Navbar>,
     );
-    expect(screen.getByRole("button", { name: "Open menu" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Show the menu" })).toBeTruthy();
     rerender(
       <Navbar>
         <Navbar.MenuToggle />
       </Navbar>,
     );
-    expect(screen.getByRole("button", { name: "Toggle navigation menu" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Open menu" })).toBeTruthy();
   });
 
   it("carries HeroUI Pro's own parts", () => {

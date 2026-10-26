@@ -20,6 +20,8 @@ import type {
   NavbarMenuToggleContractProps,
 } from "#contracts/types/navbar-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
+import { UI_PRO_KEYS } from "#core/constants/ui-pro-keys.constant";
+import { useUiProText } from "#core/hooks/use-ui-pro-text";
 
 /** Props of the web Navbar: the shared contract plus HeroUI Pro's own, with `aria-label` renamed `label`. */
 export type NavbarProps = NavbarContractProps &
@@ -36,7 +38,10 @@ export type NavbarMenuToggleProps = NavbarMenuToggleContractProps &
 
 /** The button that opens and closes the menu on a narrow viewport, named by `label`. */
 function NavbarMenuToggle({ label, ...rest }: NavbarMenuToggleProps) {
-  return <HeroNavbar.MenuToggle {...rest} {...omitUndefined({ srLabel: label })} />;
+  const t = useUiProText();
+  return (
+    <HeroNavbar.MenuToggle {...rest} srLabel={label ?? t(UI_PRO_KEYS.ui_pro.navbar.open_menu)} />
+  );
 }
 
 /** The parts of the compound, typed from HeroUI Pro's own so the declaration output can name them. */

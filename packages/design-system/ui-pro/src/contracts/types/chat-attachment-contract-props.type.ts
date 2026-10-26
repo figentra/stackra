@@ -38,7 +38,7 @@ export interface ChatAttachmentInputContractProps {
 
 /** Props of `ChatAttachmentInput.Trigger` that the Stackra vocabulary names. */
 export interface ChatAttachmentInputTriggerContractProps {
-  /** The accessible name of the attach button; HeroUI Pro's `aria-label`. Needed when the button holds only an icon. */
+  /** The accessible name of the attach button; HeroUI Pro's `aria-label`; `ui_pro::chat.attach_files` when left out. */
   readonly label?: string | undefined;
   /** Whether the button is disabled; HeroUI Pro's native `disabled`. */
   readonly isDisabled?: boolean | undefined;

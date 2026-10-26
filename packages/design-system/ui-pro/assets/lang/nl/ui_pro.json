@@ -38,5 +38,13 @@
   },
   "table_of_contents": {
     "on_this_page": "Op deze pagina"
+  },
+  "scheduler": {
+    "move_earlier": "Eerder zetten",
+    "move_later": "Later zetten",
+    "move_previous": "Naar de vorige kolom",
+    "move_next": "Naar de volgende kolom",
+    "lengthen": "Verlengen",
+    "shorten": "Verkorten"
   }
 }

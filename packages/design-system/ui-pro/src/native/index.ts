@@ -7,7 +7,9 @@
  * Governing contract: ADR 0294 (decision 15); ADR 0310 (decision 6); the STA-347 stand-in barrel decision.
  */
 export { Agenda, useAgenda, type AgendaProps } from "#native/agenda/agenda";
+export { ApprovalCard, type ApprovalCardProps } from "#native/approval-card/approval-card";
 export { AreaChart } from "#native/area-chart/area-chart";
+export { AssistantPanel, type AssistantPanelProps } from "#native/assistant-panel/assistant-panel";
 export {
   Autocomplete,
   useAutocomplete,
@@ -70,6 +72,7 @@ export {
   type PhoneNumberFieldProps,
 } from "#native/phone-number-field/phone-number-field";
 export { PieChart } from "#native/pie-chart/pie-chart";
+export { PlanView, type PlanViewProps } from "#native/plan-view/plan-view";
 export {
   ProgressBar,
   useProgressBar,
@@ -92,11 +95,16 @@ export {
 export { RangeCalendar, type RangeCalendarProps } from "#native/range-calendar/range-calendar";
 export { Rating, useRating, type RatingProps } from "#native/rating/rating";
 export {
+  ResourceScheduler,
+  type ResourceSchedulerProps,
+} from "#native/resource-scheduler/resource-scheduler";
+export {
   Segment,
   useSegment,
   type SegmentGroupProps,
   type SegmentProps,
 } from "#native/segment/segment";
+export { SignatureField, type SignatureFieldProps } from "#native/signature-field/signature-field";
 export { SlideButton, type SlideButtonProps } from "#native/slide-button/slide-button";
 export {
   SocialAuthButton,

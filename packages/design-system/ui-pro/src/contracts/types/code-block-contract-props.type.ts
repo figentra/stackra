@@ -17,6 +17,6 @@ export interface CodeBlockContractProps {
 
 /** Props of `CodeBlock.CopyButton` that the Stackra vocabulary names. */
 export interface CodeBlockCopyButtonContractProps {
-  /** The accessible name of the icon-only copy button; HeroUI Pro's `aria-label`, "Copy code" when left out. */
+  /** The accessible name of the icon-only copy button; HeroUI Pro's `aria-label`, `ui_pro::code_block.copy` when left out. */
   readonly label?: string | undefined;
 }

@@ -17,6 +17,6 @@ export interface NavbarContractProps {
 
 /** Props of `Navbar.MenuToggle` that the Stackra vocabulary names. */
 export interface NavbarMenuToggleContractProps {
-  /** The accessible name of the toggle button; HeroUI Pro's `srLabel`, which defaults to "Toggle navigation menu". */
+  /** The accessible name of the toggle button; HeroUI Pro's `srLabel`; `ui_pro::navbar.open_menu` when left out. */
   readonly label?: string | undefined;
 }

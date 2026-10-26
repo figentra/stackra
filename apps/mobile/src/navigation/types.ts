@@ -248,6 +248,22 @@ export type HomeStackParamList = {
   ProWheelTimePicker: undefined;
   /** The Widget page; deep link `stackra://design-system/pro/widget`. */
   ProWidget: undefined;
+  /** The free AiMark page; deep link `stackra://design-system/free/ai-mark`. */
+  FreeAiMark: undefined;
+  /** The free EnvironmentBanner page; deep link `stackra://design-system/free/environment-banner`. */
+  FreeEnvironmentBanner: undefined;
+  /** The free ModeSwitch page; deep link `stackra://design-system/free/mode-switch`. */
+  FreeModeSwitch: undefined;
+  /** The AssistantPanel page; deep link `stackra://design-system/pro/assistant-panel`. */
+  ProAssistantPanel: undefined;
+  /** The ApprovalCard page; deep link `stackra://design-system/pro/approval-card`. */
+  ProApprovalCard: undefined;
+  /** The PlanView page; deep link `stackra://design-system/pro/plan-view`. */
+  ProPlanView: undefined;
+  /** The ResourceScheduler page; deep link `stackra://design-system/pro/resource-scheduler`. */
+  ProResourceScheduler: undefined;
+  /** The SignatureField page; deep link `stackra://design-system/pro/signature-field`. */
+  ProSignatureField: undefined;
 };
 
 /** The routes of the Settings tab's stack and their params. */

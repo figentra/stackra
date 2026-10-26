@@ -47,7 +47,7 @@ describe("CodeBlock (web)", () => {
     await waitFor(() => expect(writeText).toHaveBeenCalledWith("npm i"));
   });
 
-  it("keeps HeroUI Pro's own name on the copy button when no label is given", () => {
+  it("names the copy button from ui_pro::code_block.copy when no label is given", () => {
     render(<CodeBlock.CopyButton code="x" />);
     expect(screen.getByRole("button", { name: "Copy code" })).toBeTruthy();
   });

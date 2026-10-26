@@ -38,5 +38,13 @@
   },
   "table_of_contents": {
     "on_this_page": "Auf dieser Seite"
+  },
+  "scheduler": {
+    "move_earlier": "Früher legen",
+    "move_later": "Später legen",
+    "move_previous": "In die vorige Spalte verschieben",
+    "move_next": "In die nächste Spalte verschieben",
+    "lengthen": "Verlängern",
+    "shorten": "Verkürzen"
   }
 }

@@ -38,5 +38,13 @@
   },
   "table_of_contents": {
     "on_this_page": "في هذه الصفحة"
+  },
+  "scheduler": {
+    "move_earlier": "نقل إلى وقت أبكر",
+    "move_later": "نقل إلى وقت لاحق",
+    "move_previous": "نقل إلى العمود السابق",
+    "move_next": "نقل إلى العمود التالي",
+    "lengthen": "إطالة",
+    "shorten": "تقصير"
   }
 }

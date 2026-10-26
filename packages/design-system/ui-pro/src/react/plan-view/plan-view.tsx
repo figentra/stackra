@@ -11,12 +11,14 @@ import type { ReactElement } from "react";
 
 import type { PlanStepStatus } from "#contracts/enums/plan-step-status.enum";
 import type { PlanViewContractProps } from "#contracts/types/plan-view-contract-props.type";
+import { UI_PRO_KEYS } from "#core/constants/ui-pro-keys.constant";
+import { useUiProText } from "#core/hooks/use-ui-pro-text";
 import { Timeline } from "#react/timeline/timeline";
 
 /** Props of the web PlanView: the contract plus the word read for each status. */
 export type PlanViewProps = PlanViewContractProps & {
-  /** The words read for each status, in the app's language (`Done`, `Running`). */
-  readonly statusLabels: Readonly<Record<PlanStepStatus, string>>;
+  /** The words read for each status; `ui_pro::enums.plan_step_status.*` in the active locale when left out. */
+  readonly statusLabels?: Readonly<Record<PlanStepStatus, string>> | undefined;
 };
 
 /** The Timeline marker tone of each step status. */
@@ -30,6 +32,9 @@ const TONE = Object.freeze({
 
 /** An agent's plan, step by step. */
 export function PlanView({ label, steps, actions, statusLabels }: PlanViewProps): ReactElement {
+  const t = useUiProText();
+  const statusOf = (status: PlanStepStatus): string =>
+    statusLabels?.[status] ?? t(UI_PRO_KEYS.ui_pro.enums.plan_step_status[status]);
   return (
     <div data-slot="plan-view" className="flex flex-col gap-3">
       <Timeline aria-label={label} size="sm">
@@ -40,7 +45,7 @@ export function PlanView({ label, steps, actions, statusLabels }: PlanViewProps)
             <Timeline.Content>
               <p className="text-sm font-medium">
                 {step.title}
-                <span className="sr-only">{` (${statusLabels[step.status]})`}</span>
+                <span className="sr-only">{` (${statusOf(step.status)})`}</span>
               </p>
               {step.detail == null ? null : <p className="text-sm text-muted">{step.detail}</p>}
             </Timeline.Content>

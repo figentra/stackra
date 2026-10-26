@@ -19,7 +19,8 @@ import type {
   CodeBlockContractProps,
   CodeBlockCopyButtonContractProps,
 } from "#contracts/types/code-block-contract-props.type";
-import { omitUndefined } from "#core/functions/omit-undefined.function";
+import { UI_PRO_KEYS } from "#core/constants/ui-pro-keys.constant";
+import { useUiProText } from "#core/hooks/use-ui-pro-text";
 
 /** Props of the web CodeBlock: the shared contract plus HeroUI Pro's own div props, passed through. */
 export type CodeBlockProps = CodeBlockContractProps &
@@ -36,7 +37,13 @@ function CodeBlockRoot(props: CodeBlockProps) {
 
 /** The icon-only button that copies `code` to the clipboard: HeroUI Pro's, named by `label`. */
 function CodeBlockCopyButton({ label, ...rest }: CodeBlockCopyButtonProps) {
-  return <HeroCodeBlock.CopyButton {...rest} {...omitUndefined({ "aria-label": label })} />;
+  const t = useUiProText();
+  return (
+    <HeroCodeBlock.CopyButton
+      {...rest}
+      aria-label={label ?? t(UI_PRO_KEYS.ui_pro.code_block.copy)}
+    />
+  );
 }
 
 /** The parts of the compound, typed from HeroUI Pro's own so the declaration output can name them. */
