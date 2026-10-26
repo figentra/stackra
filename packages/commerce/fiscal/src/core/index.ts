@@ -21,6 +21,7 @@ export { ZATCA_OPTIONS } from "#core/constants/zatca-options.constant";
 export { EtaDriver } from "#core/drivers/eta.driver";
 export { FacturXDriver } from "#core/drivers/factur-x.driver";
 export { FdmDriver } from "#core/drivers/fdm.driver";
+export { MarketPackFiscalPackSourceDriver } from "#core/drivers/market-pack-fiscal-pack-source.driver";
 export { MemoryFiscalJournalDriver } from "#core/drivers/memory-fiscal-journal.driver";
 export { Nf525Driver } from "#core/drivers/nf525.driver";
 export { PeppolDriver } from "#core/drivers/peppol.driver";

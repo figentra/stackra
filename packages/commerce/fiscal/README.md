@@ -37,7 +37,18 @@ Entry barrels are stand-ins until `stackra gen` writes them (STA-339).
 
 ```ts
 import { FiscalChannel } from "@stackra/fiscal/contracts";
-import { FiscalService, TseDriver, ZatcaDriver } from "@stackra/fiscal";
+import {
+  FiscalService,
+  MarketPackFiscalPackSourceDriver,
+  TseDriver,
+  ZatcaDriver,
+} from "@stackra/fiscal";
+import { fetchPacks } from "@stackra/market-packs";
+
+// Production: the fiscal section comes from verified market packs (keys `fiscal.invoice`, `fiscal.till`).
+const packs = new MarketPackFiscalPackSourceDriver(await fetchPacks(store, hashes, trustedKeys), {
+  pins,
+});
 
 const fiscal = new FiscalService(
   [new ZatcaDriver(signer, transport), new TseDriver(device)],
@@ -59,8 +70,8 @@ const status = await fiscal.offlineStatus({ market, channel: FiscalChannel.Till,
 ## Not here
 
 - Tax computation and document numbering: OS invoicing, pricing and `@stackra/database` sequences.
-- The market-pack loader (`FiscalPackSource` is its port here), device pairing (`@stackra/devices`) and PDF rendering
-  (`@stackra/documents`, which binds `HybridPdf`).
+- Pack loading and verification (`@stackra/market-packs`; this package only binds `FiscalPackSource` over it), device
+  pairing (`@stackra/devices`) and PDF rendering (`@stackra/documents`, which binds `HybridPdf`).
 
 ## Tasks
 

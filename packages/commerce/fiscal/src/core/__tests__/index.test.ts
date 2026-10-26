@@ -34,6 +34,7 @@ describe("@stackra/fiscal", () => {
       "FiscalOnboardingRefusedError",
       "FiscalOptionsInvalidError",
       "FiscalService",
+      "MarketPackFiscalPackSourceDriver",
       "MemoryFiscalJournalDriver",
       "NF525_OPTIONS",
       "Nf525Driver",
