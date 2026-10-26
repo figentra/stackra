@@ -8,17 +8,28 @@
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
 import { BUSINESS_CALENDAR_SCHEMA } from "#core/constants/business-calendar-schema.constant";
-import type { BusinessCalendar, HolidayRule } from "#core/index";
+import { PRAYER_METHOD_SCHEMA } from "#core/constants/prayer-method-schema.constant";
+import type {
+  BusinessCalendar,
+  HolidayRule,
+  PrayerDay,
+  PrayerMethod,
+  PrayerPlace,
+} from "#core/index";
 import * as entry from "#core/index";
 
 describe("@stackra/calendar", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(entry).sort()).toEqual([
       "BusinessCalendar$",
+      "ComputedPrayerTimesDriver",
       "CountMode",
       "DayStatus",
+      "HighLatitudeRule",
       "HolidayKind",
       "LeapBirthday",
+      "PrayerMethod$",
+      "PrayerTimes",
       "UncertainDays",
       "addBusinessDays",
       "addWorkingMinutes",
@@ -33,14 +44,19 @@ describe("@stackra/calendar", () => {
       "localDateOf",
       "occurrences",
       "openIntervals",
+      "prayerMethodFromPack",
     ]);
   });
 
   it("exports the shipped schema under its generated name", () => {
     expect(entry.BusinessCalendar$).toBe(BUSINESS_CALENDAR_SCHEMA);
+    expect(entry.PrayerMethod$).toBe(PRAYER_METHOD_SCHEMA);
   });
 
   it("resolves its public types", () => {
     expectTypeOf<BusinessCalendar["holidays"][number]>().toEqualTypeOf<HolidayRule>();
+    expectTypeOf<PrayerMethod["asrFactor"]>().toEqualTypeOf<1 | 2>();
+    expectTypeOf<PrayerDay["fajr"]>().toEqualTypeOf<string>();
+    expectTypeOf<PrayerPlace["elevation"]>().toEqualTypeOf<number | undefined>();
   });
 });
