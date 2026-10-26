@@ -14,15 +14,17 @@ shape (ADR 0294, 0305). No code entry: the package ships `bin.stackra` (`src/nod
 
 ## Where code goes
 
-| You are writing…                         | It goes in…                                                      |
-| ---------------------------------------- | ---------------------------------------------------------------- |
-| A command                                | `src/node/constants/<name>-command.constant.ts`, then `COMMANDS` |
-| A member tool for a layout or target     | `resolveTool` in `src/node/functions/resolve-tool.function.ts`   |
-| Parsing, dispatch, processes, file reads | `src/node/functions/<name>.function.ts`                          |
-| A `stackra new` template                 | `src/node/functions/<kind>-template.function.ts`, pure text      |
-| Seed-pack reading and planning           | `src/node/functions/` (`readSeedPack`, `planSeed`), pure         |
-| Errors and types                         | `src/node/{errors,types}/`                                       |
-| A test                                   | `__tests__/<name>.<kind>.test.ts` beside it                      |
+| You are writing…                         | It goes in…                                                        |
+| ---------------------------------------- | ------------------------------------------------------------------ |
+| A command                                | `src/node/constants/<name>-command.constant.ts`, then `COMMANDS`   |
+| A `stackra check` phase                  | `src/node/constants/<name>-phase.constant.ts`, then `CHECK_PHASES` |
+| A repository check (pure, file-based)    | `@stackra/repo-checks`, called from its phase                      |
+| A member tool for a layout or target     | `resolveTool` in `src/node/functions/resolve-tool.function.ts`     |
+| Parsing, dispatch, processes, file reads | `src/node/functions/<name>.function.ts`                            |
+| A `stackra new` template                 | `src/node/functions/<kind>-template.function.ts`, pure text        |
+| Seed-pack reading and planning           | `src/node/functions/` (`readSeedPack`, `planSeed`), pure           |
+| Errors and types                         | `src/node/{errors,types}/`                                         |
+| A test                                   | `__tests__/<name>.<kind>.test.ts` beside it                        |
 
 ## This package
 
@@ -31,6 +33,9 @@ shape (ADR 0294, 0305). No code entry: the package ships `bin.stackra` (`src/nod
 - `stackra gen` orders gen's passes over the members (STA-1232): pass 1 `generate(root, { pass: "manifests" })` for
   every member, then pass 2 in rounds (the refused members and those with `.stackra/gen/clients`) until a round
   writes nothing; only the last round's refusals print. `--manifests` is pass 1 alone; `--check` is one pass 2 round.
+- `stackra check` phases return findings and never print them; `runCheck` prints. A phase whose tool cannot start
+  returns `skipped: "not installed"`, and a tool that fails without a parsable finding gives one `exit` finding, so a
+  failure is never silent. `validate`, `verify`, `code:check` and `code:fix` are `checkCommand` presets, not new code.
 - Every command writes through its `CliIo`, never `console` or `process.stdout`: `stackra mcp` runs commands with a
   capturing io because standard output carries the protocol.
 - Tools start without a shell; a secret value never passes through this process (`mcp exec` names a location only).

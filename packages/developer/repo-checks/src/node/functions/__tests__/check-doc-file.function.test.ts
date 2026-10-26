@@ -2,14 +2,17 @@
  * Stackra file contract:
  * Purpose: proves the doc-standard check (ADR 0007, amendment 2026-10-21) flags each rule it owns and accepts the
  *          forms the amendment allows. Each case is an inline source file, so the test needs no fixtures on disk.
- * Boundary: exercises checkFile and isInScope; it does not walk the repository.
- * Runtime: node
- * Governing contract: ADR 0007 (amendment 2026-10-21).
+ *          Moved from tools/scripts/__tests__/doc-standard.test.mjs with its cases unchanged.
+ * Boundary: exercises checkDocFile and isDocScoped; it does not walk the repository.
+ * Runtime: node (vitest)
+ * Governing contract: ADR 0007 (amendment 2026-10-21); ADR 0022 (test placement).
  */
 import assert from "node:assert/strict";
-import { test } from "node:test";
 
-import { checkFile, isInScope } from "../doc-standard.mjs";
+import { test } from "@stackra/testing";
+
+import { checkDocFile as checkFile } from "#node/functions/check-doc-file.function";
+import { isDocScoped as isInScope } from "#node/functions/is-doc-scoped.function";
 
 const HEADER = `/**
  * Stackra file contract:
@@ -20,7 +23,7 @@ const HEADER = `/**
  */
 `;
 
-const file = (body) => `${HEADER}${body}`;
+const file = (body: string): string => `${HEADER}${body}`;
 const PATH = "packages/foundation/fixture/src/index.ts";
 
 test("a documented export with documented members has no findings", () => {
@@ -45,13 +48,13 @@ export interface Named {
 
 test("a missing or incomplete contract header is a finding", () => {
   const none = checkFile(PATH, `/** Build a thing from its name. */\nexport const x = 1;\n`);
-  assert.match(none[0], /missing the Stackra file contract header/);
+  assert.match(none[0] ?? "", /missing the Stackra file contract header/);
   const partial = checkFile(
     PATH,
     `/**\n * Stackra file contract:\n * Purpose: only one field.\n * Runtime: node\n */\n/** Make a thing here. */\nexport const x = 1;\n`,
   );
   assert.equal(partial.length, 1, "the header reports its first missing field");
-  assert.match(partial[0], /no "Boundary:" field/);
+  assert.match(partial[0] ?? "", /no "Boundary:" field/);
 });
 
 test("a header whose Runtime is not one of the five values is a finding", () => {
@@ -60,19 +63,19 @@ test("a header whose Runtime is not one of the five values is a finding", () => 
     "/** Make a thing here. */\nexport const x = 1;\n";
   const findings = checkFile(PATH, text);
   assert.equal(findings.length, 1);
-  assert.match(findings[0], /Runtime must be one of/);
+  assert.match(findings[0] ?? "", /Runtime must be one of/);
 });
 
 test("a contract header does not count as the doc block of the first export", () => {
   const findings = checkFile(PATH, `${HEADER}export const first = 1;\n`);
   assert.equal(findings.length, 1);
-  assert.match(findings[0], /export const first has no TSDoc block/);
+  assert.match(findings[0] ?? "", /export const first has no TSDoc block/);
 });
 
 test("an exported function or const without a block is a finding, with its line", () => {
   const findings = checkFile(PATH, file(`\nexport function bare(): void {}\n`));
   assert.equal(findings.length, 1);
-  assert.match(findings[0], /:9: export bare has no TSDoc block/);
+  assert.match(findings[0] ?? "", /:9: export bare has no TSDoc block/);
 });
 
 test("an interface property and a method signature each need a block", () => {
@@ -105,7 +108,7 @@ export type Routes = {
 `),
   );
   assert.equal(findings.length, 1);
-  assert.match(findings[0], /Routes\.Home has no TSDoc block/);
+  assert.match(findings[0] ?? "", /Routes\.Home has no TSDoc block/);
 });
 
 test("public and protected class members need a block; private and #private members do not", () => {
@@ -140,7 +143,10 @@ export const INVOICE_REPOSITORY = defineToken<InvoiceRepository>("billing.Invoic
 `),
   );
   assert.equal(bare.length, 1);
-  assert.match(bare[0], /DI token whose TSDoc must say what resolves to it and who provides it/);
+  assert.match(
+    bare[0] ?? "",
+    /DI token whose TSDoc must say what resolves to it and who provides it/,
+  );
 
   const complete = checkFile(
     PATH,
@@ -157,7 +163,7 @@ export const INVOICE_REPOSITORY = defineToken<InvoiceRepository>("billing.Invoic
 export const INVOICE_REPOSITORY = defineToken<InvoiceRepository>("billing.InvoiceRepository");
 `),
   );
-  assert.match(missing[0], /export const INVOICE_REPOSITORY has no TSDoc block/);
+  assert.match(missing[0] ?? "", /export const INVOICE_REPOSITORY has no TSDoc block/);
 });
 
 test("a type inside a doc tag is rejected, and a described parameter is accepted", () => {
@@ -175,8 +181,8 @@ export function scale(value: number): number {
 `),
   );
   assert.equal(typed.length, 2);
-  assert.match(typed[0], /@param \{ carries a type/);
-  assert.match(typed[1], /@returns \{ carries a type/);
+  assert.match(typed[0] ?? "", /@param \{ carries a type/);
+  assert.match(typed[1] ?? "", /@returns \{ carries a type/);
 
   const described = checkFile(
     PATH,
@@ -197,7 +203,7 @@ export function scale(value: number): number {
 test("a block with no purpose sentence is a finding", () => {
   const findings = checkFile(PATH, file(`\n/** Thing. */\nexport const x = 1;\n`));
   assert.equal(findings.length, 1);
-  assert.match(findings[0], /without a purpose sentence/);
+  assert.match(findings[0] ?? "", /without a purpose sentence/);
 });
 
 test("a package name with an @ mid-sentence is prose, not a tag, so the summary still counts", () => {
@@ -214,7 +220,7 @@ test("a tag at the start of a line ends the summary, so a tag-only block has no 
     file(`\n/**\n * Thing.\n * @remarks Long note here.\n */\nexport const x = 1;\n`),
   );
   assert.equal(findings.length, 1);
-  assert.match(findings[0], /without a purpose sentence/);
+  assert.match(findings[0] ?? "", /without a purpose sentence/);
 });
 
 test("a line comment between the block and the declaration keeps the block attached", () => {

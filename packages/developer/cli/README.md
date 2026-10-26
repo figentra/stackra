@@ -14,7 +14,7 @@ writes, lists what a committed manifest locks, and wires the local developer MCP
 framework (ADR 0127, 2026-10-24 note): a command is data plus one `run` function, parsed with `node:util`.
 
 **Tier:** `tier:lib` (`packages/developer/cli`). No code entry: the package ships the `bin` only. Depends on
-`@stackra/gen`, `@stackra/mcp`, `@stackra/contracts` and `yaml`.
+`@stackra/gen`, `@stackra/mcp`, `@stackra/repo-checks`, `@stackra/contracts` and `yaml`.
 
 ## Commands
 
@@ -28,6 +28,10 @@ framework (ADR 0127, 2026-10-24 note): a command is data plus one `run` function
 | `stackra typecheck`                    | gen, then `tsc --noEmit`                                                                 |
 | `stackra test [--tier unit\|e2e]`      | gen, then vitest (unit), Playwright (web and desktop e2e) or Maestro (native e2e)        |
 | `stackra lint`                         | `oxlint .`                                                                               |
+| `stackra check [flags]`                | the quality gate: every check phase in order at the workspace root (see below)           |
+| `stackra validate`                     | `check --only config,structure,docs,catalogues,spec`                                     |
+| `stackra verify`                       | `check --with-tests`                                                                     |
+| `stackra code:check` / `code:fix`      | `check --only format,lint` (`code:fix` adds `--fix`)                                     |
 | `stackra seed-pack <product>`          | check `seed-pack:<product>` (`--check`) or seed one `--profile` without touching tenants |
 | `stackra settings:diff <pack.yaml>`    | what a settings pack would change at a scope node (`--scope-id`, `--scope-path`)         |
 | `stackra settings:apply <pack.yaml>`   | apply a settings pack to a sandbox node as revisions (`--author`, `--reason`)            |
@@ -45,6 +49,24 @@ Each tool gets `--config .stackra/<tool>.config.ts` when gen wrote it (ADR 0295 
 member-root config otherwise. A task that no tool serves for the member (a desktop target, a service build before the
 Encore target) is refused with the reason, never guessed. Exit codes: 0 success, 1 failure, 2 usage error, 127 a tool
 that cannot start.
+
+## The quality gate
+
+`stackra check` runs the same way in core, in every product, in lefthook and in CI. Phases, in order: `config`,
+`format` (oxfmt), `spelling` (cspell), `secrets` (gitleaks), `structure`, `docs`, `lint` (oxlint), `gen`
+(`stackra gen --check`), `typecheck` (`turbo run typecheck`), `catalogues`, `spec` (the repository's spec gates) and,
+opt-in, `test` (`turbo run test`). The `config`, `structure`, `docs` and `catalogues` checks come from
+`@stackra/repo-checks`. The run stops after the first phase that fails. A phase whose tool is not installed in the
+repository reports `skipped (not installed)`.
+
+Flags: `--fix` (oxfmt writes, oxlint autofixes, `stackra gen` writes, then each checks again), `--affected` (only the
+files changed since `--base`, default `origin/main`, plus staged, unstaged and untracked ones), `--only <phase,…>`,
+`--skip <phase,…>`, `--with-tests`, `--format text|json|github` and `--base <ref>`.
+
+Output: one line per finding, `path:line:col  tool/rule  message  [fixable]`, grouped by phase, then a table of phase,
+status, findings, fixable count and duration. `--format json` prints only the findings array
+(`{ phase, tool, rule, path, line, column, message, severity, fixable, adr }`); `--format github` prints `::error`
+annotations, then the table. The exit code is 1 when any phase has an error-level finding. A warning never fails.
 
 ## Seed packs
 
@@ -75,7 +97,7 @@ since the runner cannot see the holder's market (ADR 0395). Live configuration c
 ## Not here yet
 
 `stackra db diff` and `seed` land with `@stackra/database` in the data wave (ADR 0159 note). `stackra new` makes
-packages, services and seed packs; app kinds stay with `pnpm new` until their templates move here. `validate`,
-`verify`, `structure`, `doctor` and `agents setup` move in from `tools/scripts` and their owning packages as those are
-built (ADR 0282 consequences). Runway deploy locks for a settings apply are runway's (STA-779 hand-off). Figentra-internal
+packages, services and seed packs; app kinds stay with `pnpm new` until their templates move here. `structure`
+(the docs page), `doctor` and `agents setup` move in from `tools/scripts` and their owning packages as those are built
+(ADR 0282 consequences). Runway deploy locks for a settings apply are runway's (STA-779 hand-off). Figentra-internal
 operations never ship here (ADR 0282 decision 4).

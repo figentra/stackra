@@ -1,20 +1,32 @@
+/**
+ * Stackra file contract:
+ * Purpose: unit tests of the catalogue-completeness gate (`checkCatalogues`, `keysOf`, `placeholdersOf`), moved from
+ *          tools/scripts/__tests__/catalogue-completeness.test.mjs with their cases unchanged.
+ * Boundary: test only; catalogues are inline maps, no disk.
+ * Runtime: node (vitest)
+ * Governing contract: ADR 0403; ADR 0022 (test placement).
+ */
 import assert from "node:assert/strict";
-import { test } from "node:test";
 
-import {
-  BASE_LANGUAGES,
-  checkCatalogues,
-  keysOf,
-  placeholdersOf,
-  SEVEN_LANGUAGE_MEMBERS,
-} from "../catalogue-completeness.mjs";
+import { test } from "@stackra/testing";
+
+import { BASE_LANGUAGES } from "#node/constants/base-languages.constant";
+import { SEVEN_LANGUAGE_MEMBERS } from "#node/constants/seven-language-members.constant";
+import { checkCatalogues } from "#node/functions/check-catalogues.function";
+import { keysOf } from "#node/functions/keys-of.function";
+import { placeholdersOf } from "#node/functions/placeholders-of.function";
 
 /** A reader over `files`, a map of path to parsed content (a string is returned as written). */
-const readerOf = (files) => (path) =>
-  typeof files[path] === "string" ? files[path] : JSON.stringify(files[path]);
+const readerOf =
+  (files: Record<string, unknown>) =>
+  (path: string): string => {
+    const value = files[path];
+    return typeof value === "string" ? value : JSON.stringify(value);
+  };
 
 /** Runs the check over `files`. */
-const check = (files) => checkCatalogues(Object.keys(files), readerOf(files));
+const check = (files: Record<string, unknown>): string[] =>
+  checkCatalogues(Object.keys(files), readerOf(files));
 
 const EN = { banner: { title: "Cookies", accept: "Accept" }, retry: "Try again" };
 
@@ -71,8 +83,9 @@ test("a key en lacks, a namespace without en, a missing en and bad JSON fail", (
         try {
           JSON.parse("{ not json");
         } catch (error) {
-          return error.message;
+          return (error as Error).message;
         }
+        return "";
       })()})`,
     ].sort(),
   );

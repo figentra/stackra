@@ -1,28 +1,37 @@
+/**
+ * Stackra file contract:
+ * Purpose: unit tests of the repository structure checks moved from tools/scripts/validate-repository.mjs: member
+ *          manifests, required files, exports, services, test placement, JSON vs JSONC, the runway schemas and files,
+ *          YAML flow maps, imports and the Expo form factor. The cases are the script's own, unchanged.
+ * Boundary: test only; pure functions, no disk.
+ * Runtime: node (vitest)
+ * Governing contract: ADR 0022 (test placement); the ADRs each check names.
+ */
 import assert from "node:assert/strict";
-import { test } from "node:test";
 
-import {
-  check,
-  checkExports,
-  checkFiles,
-  checkImports,
-  checkIosFormFactor,
-  checkJsonConfigs,
-  checkRunwayFiles,
-  checkRunwaySchemas,
-  checkService,
-  checkTestPlacement,
-  checkWindowSizing,
-  checkYamlFlowMaps,
-  expectedName,
-  isExpoAppConfig,
-  isMemberSource,
-  isV2Service,
-  isRepoOwnedYaml,
-  isRunwayFile,
-  runwayKindOf,
-  tierFor,
-} from "../validate-repository.mjs";
+import { test } from "@stackra/testing";
+
+import { checkExports } from "#node/functions/check-exports.function";
+import { checkImports } from "#node/functions/check-imports.function";
+import { checkIosFormFactor } from "#node/functions/check-ios-form-factor.function";
+import { checkJsonConfigs } from "#node/functions/check-json-configs.function";
+import { checkMemberFiles } from "#node/functions/check-member-files.function";
+import { checkMember } from "#node/functions/check-member.function";
+import { checkRunwayFiles } from "#node/functions/check-runway-files.function";
+import { checkRunwaySchemas } from "#node/functions/check-runway-schemas.function";
+import { checkService } from "#node/functions/check-service.function";
+import { checkTestPlacement } from "#node/functions/check-test-placement.function";
+import { checkWindowSizing } from "#node/functions/check-window-sizing.function";
+import { checkYamlFlowMaps } from "#node/functions/check-yaml-flow-maps.function";
+import { expectedName } from "#node/functions/expected-name.function";
+import { isExpoAppConfig } from "#node/functions/is-expo-app-config.function";
+import { isMemberSource } from "#node/functions/is-member-source.function";
+import { isRepoOwnedYaml } from "#node/functions/is-repo-owned-yaml.function";
+import { isRunwayFile } from "#node/functions/is-runway-file.function";
+import { isV2Service } from "#node/functions/is-v2-service.function";
+import { runwayKindOf } from "#node/functions/runway-kind-of.function";
+import { tierFor } from "#node/functions/tier-for.function";
+import type { PackageManifest } from "#node/types/package-manifest.type";
 
 const ok = {
   dir: "packages/foundation/container",
@@ -31,19 +40,19 @@ const ok = {
   tsconfig: { extends: "@stackra/typescript-config/library" },
 };
 
-test("a well-formed member has no findings", () => assert.deepEqual(check(ok), []));
+test("a well-formed member has no findings", () => assert.deepEqual(checkMember(ok), []));
 
 test("a literal version is a finding; a peer range is not", () => {
-  const f = check({
+  const f = checkMember({
     ...ok,
     pkg: { ...ok.pkg, devDependencies: { x: "^1.0.0" }, peerDependencies: { react: ">=19" } },
   });
   assert.equal(f.length, 1);
-  assert.match(f[0], /devDependencies\.x/);
+  assert.match(f[0] ?? "", /devDependencies\.x/);
 });
 
 test("forbidden dependency, wrong name, wrong tier, foreign tsconfig", () => {
-  const f = check({
+  const f = checkMember({
     dir: "apps/console",
     pkg: { name: "console", dependencies: { prisma: "catalog:" } },
     turbo: { extends: ["//"], tags: ["tier:lib"] },
@@ -64,7 +73,7 @@ test("dependencies replaced by Accepted ADRs are forbidden", () => {
     "meilisearch",
     "@opensearch-project/opensearch",
   ]) {
-    const f = check({ ...ok, pkg: { ...ok.pkg, devDependencies: { [dep]: "catalog:" } } });
+    const f = checkMember({ ...ok, pkg: { ...ok.pkg, devDependencies: { [dep]: "catalog:" } } });
     assert.deepEqual(f, [`devDependencies.${dep} is a forbidden dependency`], dep);
   }
 });
@@ -73,7 +82,7 @@ test("the Pro wrapper's folder is ui-pro and its package is @stackra-pro/ui (own
   assert.equal(expectedName("packages/design-system/ui-pro"), "@stackra-pro/ui");
   assert.equal(expectedName("packages/design-system/ui"), "@stackra/ui");
   assert.deepEqual(
-    check({
+    checkMember({
       ...ok,
       dir: "packages/design-system/ui-pro",
       pkg: { name: "@stackra-pro/ui" },
@@ -82,9 +91,19 @@ test("the Pro wrapper's folder is ui-pro and its package is @stackra-pro/ui (own
   );
 });
 
+/** The HeroUI Pro findings of a member at `dir`. */
+const pro = (dir: string, pkg: PackageManifest): string[] =>
+  checkMember({ ...ok, dir, pkg }).filter((m) => /HeroUI Pro|@stackra-pro\/ui /.test(m));
+
+/** The Uniwind Pro findings of a member at `dir`. */
+const uniwind = (dir: string): string[] =>
+  checkMember({
+    ...ok,
+    dir,
+    pkg: { name: "x", dependencies: { uniwind: "catalog:uniwind-pro" } },
+  }).filter((m) => m.includes("Uniwind Pro"));
+
 test("HeroUI Pro reaches only apps and the private @stackra-pro/ui (ADR 0310)", () => {
-  const pro = (dir, pkg) =>
-    check({ ...ok, dir, pkg }).filter((m) => /HeroUI Pro|@stackra-pro\/ui /.test(m));
   const wrapper = {
     name: "@stackra-pro/ui",
     private: true,
@@ -153,20 +172,14 @@ test("HeroUI Pro reaches only apps and the private @stackra-pro/ui (ADR 0310)", 
     exports: { ".": { types: "./dist/index.d.mts", default: "./src/index.ts" } },
   };
   assert.deepEqual(pro(ui, { ...wrapper, publishConfig: onSource }), [exportsFinding]);
-  const uniwind = (dir) =>
-    check({
-      ...ok,
-      dir,
-      pkg: { name: "x", dependencies: { uniwind: "catalog:uniwind-pro" } },
-    }).filter((m) => m.includes("Uniwind Pro"));
   assert.deepEqual(uniwind("packages/design-system/ui"), [
     "dependencies.uniwind is Uniwind Pro: only apps may use catalog:uniwind-pro (ADR 0310)",
   ]);
   assert.deepEqual(uniwind("apps/mobile"), []);
 });
 
-const named = (dir, name) =>
-  check({ ...ok, dir, pkg: { name } }).filter((m) => /package name/.test(m));
+const named = (dir: string, name: string): string[] =>
+  checkMember({ ...ok, dir, pkg: { name } }).filter((m) => /package name/.test(m));
 
 test("names follow placement: packages @stackra, apps @figentra, services @figentra/service-, workers @figentra/worker-", () => {
   assert.equal(named("workers/static", "@figentra/worker-static").length, 0);
@@ -217,17 +230,19 @@ const filesOk = {
   rootLicense: "L",
 };
 
-test("a complete member has no file findings", () => assert.deepEqual(checkFiles(filesOk), []));
+test("a complete member has no file findings", () =>
+  assert.deepEqual(checkMemberFiles(filesOk), []));
 
 test("the HeroUI Pro wrapper skips the npmjs publishConfig, which check replaces; any other package needs it (ADR 0310)", () => {
-  const { publishConfig: _, ...unpublished } = filesOk.pkg;
-  const at = (name) => checkFiles({ ...filesOk, pkg: { ...unpublished, name } });
+  const unpublished = { ...filesOk.pkg, publishConfig: undefined };
+  const at = (name: string): string[] =>
+    checkMemberFiles({ ...filesOk, pkg: { ...unpublished, name } });
   assert.deepEqual(at("@stackra-pro/ui"), []);
   assert.equal(at("@stackra/search").length, 1);
 });
 
 test("missing files, PII, license drift, manifest hygiene", () => {
-  const f = checkFiles({
+  const f = checkMemberFiles({
     ...filesOk,
     files: ["README.md", "AGENTS.md", "LICENSE"],
     agents: "# A",
@@ -240,12 +255,12 @@ test("missing files, PII, license drift, manifest hygiene", () => {
 test("apps and services are UNLICENSED with no LICENSE file (ADR 0195)", () => {
   const app = { dir: "apps/console", pkg: { description: "x", license: "UNLICENSED" } };
   assert.deepEqual(
-    checkFiles({ ...filesOk, ...app, files: ["README.md", "AGENTS.md", "CHANGELOG.md"] }),
+    checkMemberFiles({ ...filesOk, ...app, files: ["README.md", "AGENTS.md", "CHANGELOG.md"] }),
     [],
   );
-  assert.equal(checkFiles({ ...filesOk, ...app }).length, 1);
+  assert.equal(checkMemberFiles({ ...filesOk, ...app }).length, 1);
   assert.equal(
-    checkFiles({
+    checkMemberFiles({
       ...filesOk,
       dir: "services/health",
       files: ["README.md", "AGENTS.md", "CHANGELOG.md"],
@@ -257,7 +272,7 @@ test("apps and services are UNLICENSED with no LICENSE file (ADR 0195)", () => {
 test("sideEffects and exports rules apply to tier:lib only", () => {
   const pkg = { description: "x", license: "MIT", exports: "./dist/a.js" };
   assert.deepEqual(
-    checkFiles({
+    checkMemberFiles({
       ...filesOk,
       dir: "apps/console",
       pkg: { ...pkg, license: "UNLICENSED" },
@@ -265,7 +280,7 @@ test("sideEffects and exports rules apply to tier:lib only", () => {
     }),
     [],
   );
-  assert.deepEqual(checkFiles({ ...filesOk, dir: "packages/tooling/vitest", pkg }), []);
+  assert.deepEqual(checkMemberFiles({ ...filesOk, dir: "packages/tooling/vitest", pkg }), []);
 });
 
 test("checkExports: ADR 0025 dist shape with @stackra/source first; strings are static assets", () => {
@@ -377,7 +392,7 @@ test("checkJsonConfigs: a JSONC-capable *.json config is a finding; MUST_STAY_JS
 });
 
 test("checkRunwaySchemas: each shipped runway schema is a byte copy of its tools/schemas file", () => {
-  const files = {};
+  const files: Record<string, string> = {};
   for (const kind of ["app", "root", "service"]) {
     files[`tools/schemas/runway-${kind}.schema.json`] = `{ "title": "${kind}" }\n`;
     files[`packages/developer/runway/schema/${kind}.json`] = `{ "title": "${kind}" }\n`;
@@ -397,7 +412,7 @@ test("checkRunwaySchemas: each shipped runway schema is a byte copy of its tools
     ],
   );
   assert.match(
-    checkRunwaySchemas((p) => files[p])[0],
+    checkRunwaySchemas((p) => files[p])[0] ?? "",
     /: run `cp tools\/schemas\/runway-root\.schema\.json packages\/developer\/runway\/schema\/root\.json`$/,
   );
 });
@@ -422,50 +437,57 @@ test("runwayKindOf: root, app and Worker members, service members and the scaffo
   assert.equal(isRunwayFile("runway.yaml.md"), false);
 });
 
+/** One schema issue the stub reports. */
+type Issue = { readonly path: string; readonly message: string };
+
 /** A stand-in for the built @stackra/runway entry: records its calls and refuses documents with `bad: true`. */
-function stubRunway(placement = []) {
+function stubRunway(
+  placement: readonly { readonly code: string; readonly message: string }[] = [],
+) {
   class RunwayInvalidError extends Error {
-    constructor(source, issues) {
+    readonly issues: readonly Issue[];
+    constructor(source: string, issues: readonly Issue[]) {
       super(source);
       this.issues = issues;
     }
   }
-  const calls = [];
-  return {
-    calls,
+  const calls: unknown[][] = [];
+  const runway = {
     RunwayInvalidError,
-    parseRunway(kind, document, source) {
+    parseRunway(kind: string, document: unknown, source: string): unknown {
       calls.push(["parseRunway", kind, source]);
-      if (document?.bad)
+      const doc = document as { readonly bad?: boolean; readonly crash?: boolean } | null;
+      if (doc?.bad)
         throw new RunwayInvalidError(source, [
           { path: "environments.dev.member", message: "Unrecognized key" },
           { path: "", message: "Invalid input" },
         ]);
-      if (document?.crash) throw new TypeError("boom");
+      if (doc?.crash) throw new TypeError("boom");
       return document;
     },
-    checkPlacement(root, services) {
-      calls.push(["checkPlacement", root.project, services]);
+    checkPlacement(root: unknown, services: readonly string[]) {
+      calls.push(["checkPlacement", (root as { readonly project?: string }).project, services]);
       return placement;
     },
   };
+  return { calls, runway };
 }
 
 test("checkRunwayFiles: each file is parsed for its kind; only the root reaches checkPlacement", () => {
-  const files = {
+  const files: Record<string, string> = {
     "runway.yaml": "version: 3\nproject: acme\nenvironments: {}\n",
     "apps/docs/runway.yaml": "version: 3\nenvironments: {}\n",
     "services/commerce/runway.yaml": "version: 3\nenvironments: {}\n",
   };
-  const runway = stubRunway();
+  const { calls, runway } = stubRunway();
   const out = checkRunwayFiles({
     files: Object.keys(files),
-    read: (p) => files[p],
+    read: (p) => files[p] ?? "",
     runway,
     services: ["commerce"],
   });
   assert.deepEqual(out, []);
-  assert.deepEqual(runway.calls, [
+  assert.deepEqual(calls, [
     ["parseRunway", "root", "runway.yaml"],
     ["checkPlacement", "acme", ["commerce"]],
     ["parseRunway", "app", "apps/docs/runway.yaml"],
@@ -474,11 +496,11 @@ test("checkRunwayFiles: each file is parsed for its kind; only the root reaches 
 });
 
 test("checkRunwayFiles: schema issues name file and path; placement issues name the code", () => {
-  const files = {
+  const files: Record<string, string> = {
     "runway.yaml": "version: 3\nproject: acme\n",
     "services/commerce/runway.yaml": "bad: true\n",
   };
-  const runway = stubRunway([
+  const { runway } = stubRunway([
     {
       environment: "production",
       code: "member_unplaced",
@@ -489,7 +511,7 @@ test("checkRunwayFiles: schema issues name file and path; placement issues name 
   assert.deepEqual(
     checkRunwayFiles({
       files: Object.keys(files),
-      read: (p) => files[p],
+      read: (p) => files[p] ?? "",
       runway,
       services: ["billing", "commerce"],
     }),
@@ -502,23 +524,26 @@ test("checkRunwayFiles: schema issues name file and path; placement issues name 
 });
 
 test("checkRunwayFiles: a misplaced file, invalid YAML and a repeated key are one finding each; other errors throw", () => {
-  const files = {
+  const files: Record<string, string> = {
     "packages/developer/runway/runway.yaml": "version: 3\n",
     "apps/docs/runway.yaml": "version: [\n",
     "services/commerce/runway.yaml": "version: 3\nversion: 3\n",
   };
-  const runway = stubRunway();
+  const { calls, runway } = stubRunway();
   const out = checkRunwayFiles({
     files: Object.keys(files),
-    read: (p) => files[p],
+    read: (p) => files[p] ?? "",
     runway,
     services: [],
   });
   assert.equal(out.length, 3);
-  assert.match(out[0], /^packages\/developer\/runway\/runway\.yaml: no runway kind applies here/);
-  assert.match(out[1], /^apps\/docs\/runway\.yaml: not valid YAML/);
-  assert.match(out[2], /^services\/commerce\/runway\.yaml: not valid YAML/);
-  assert.deepEqual(runway.calls, []);
+  assert.match(
+    out[0] ?? "",
+    /^packages\/developer\/runway\/runway\.yaml: no runway kind applies here/,
+  );
+  assert.match(out[1] ?? "", /^apps\/docs\/runway\.yaml: not valid YAML/);
+  assert.match(out[2] ?? "", /^services\/commerce\/runway\.yaml: not valid YAML/);
+  assert.deepEqual(calls, []);
   assert.throws(
     () =>
       checkRunwayFiles({
@@ -537,7 +562,10 @@ test("checkYamlFlowMaps: names file and line of a flow mapping; allows block map
     "x.yml:3: flow mapping; write a block mapping (YAML standard, STA-299)",
   ]);
   assert.deepEqual(checkYamlFlowMaps("x.yml", "a: [b, c]\npermissions: {}\nd:\n  e: f\n"), []);
-  assert.equal(checkYamlFlowMaps("x.yml", "a: [")[0].startsWith("x.yml: not valid YAML"), true);
+  assert.equal(
+    (checkYamlFlowMaps("x.yml", "a: [")[0] ?? "").startsWith("x.yml: not valid YAML"),
+    true,
+  );
 });
 
 test("isRepoOwnedYaml: skips generated and vendored YAML", () => {
@@ -554,13 +582,17 @@ test("isRepoOwnedYaml: skips generated and vendored YAML", () => {
     assert.equal(isRepoOwnedYaml(p), false);
 });
 
+/** A double quote, kept out of the import-shaped strings below. */
+const Q = '"';
+
 test("checkImports: flags an extension in a TS import and a relative import climbing two folders", () => {
+  // Built with Q so this file's own source holds no import the check would flag.
   const src = [
-    'import { a } from "./a.js";',
-    'export * from "../b.ts";',
-    'const c = await import("#src/c.tsx");',
-    'vi.mock("../../d");',
-    'import "../../../e";',
+    `import { a } from ${Q}./a.js${Q};`,
+    `export * from ${Q}../b.ts${Q};`,
+    `const c = await import(${Q}#src/c.tsx${Q});`,
+    `vi.mock(${Q}../../d${Q});`,
+    `import ${Q}../../../e${Q};`,
   ].join("\n");
   assert.deepEqual(checkImports("x.ts", src), [
     'x.ts: import "./a.js" names a file extension; drop it (bundler resolution, ADR 0233)',
@@ -603,7 +635,7 @@ test("isMemberSource: member TS only; Node-loaded tooling presets and lint fixtu
 });
 
 /** An Expo app config's text with the given `expo` block. */
-const config = (expo) => JSON.stringify({ expo });
+const config = (expo: unknown): string => JSON.stringify({ expo });
 
 // @covers STA-461
 test("checkIosFormFactor: refuses an orientation lock and a full-screen request; allows none or default", () => {
@@ -612,10 +644,10 @@ test("checkIosFormFactor: refuses an orientation lock and a full-screen request;
   assert.deepEqual(checkIosFormFactor("a/app.json", JSON.stringify({ name: "not expo" })), []);
   const locked = checkIosFormFactor("a/app.json", config({ orientation: "portrait" }));
   assert.equal(locked.length, 1);
-  assert.match(locked[0], /orientation.*portrait.*STA-461/);
+  assert.match(locked[0] ?? "", /orientation.*portrait.*STA-461/);
   const full = checkIosFormFactor("a/app.json", config({ ios: { requireFullScreen: true } }));
   assert.equal(full.length, 1);
-  assert.match(full[0], /requireFullScreen/);
+  assert.match(full[0] ?? "", /requireFullScreen/);
 });
 
 test("checkWindowSizing: refuses Dimensions.get and allows the window hook", () => {

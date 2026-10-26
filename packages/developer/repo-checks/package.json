@@ -1,0 +1,67 @@
+{
+  "name": "@stackra/repo-checks",
+  "version": "0.0.0",
+  "private": true,
+  "description": "The repository checks every Stackra repo runs through `stackra check`: config files, repository structure, the doc standard and lang catalogue completeness, as typed functions over the git file list",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/figentra/stackra.git",
+    "directory": "packages/developer/repo-checks"
+  },
+  "files": [
+    "dist",
+    "src",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "imports": {
+    "#node/*": [
+      "./src/node/*",
+      "./src/node/*.ts",
+      "./src/node/*/index.ts"
+    ]
+  },
+  "exports": {
+    "./node": {
+      "@stackra/source": "./src/node/index.ts",
+      "types": "./dist/node.d.mts",
+      "default": "./dist/node.mjs"
+    }
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true,
+    "registry": "https://registry.npmjs.org/"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc --noEmit",
+    "lint": "oxlint .",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "format": "oxfmt --write .",
+    "format:check": "oxfmt --check .",
+    "clean": "rm -rf dist coverage .turbo"
+  },
+  "dependencies": {
+    "typescript6": "catalog:tooling",
+    "yaml": "catalog:"
+  },
+  "devDependencies": {
+    "@stackra/testing": "workspace:*",
+    "@stackra/tsdown-config": "workspace:*",
+    "@stackra/typescript-config": "workspace:*",
+    "@stackra/vitest-config": "workspace:*",
+    "@types/node": "catalog:",
+    "@vitest/coverage-v8": "catalog:quality",
+    "oxfmt": "catalog:quality",
+    "oxlint": "catalog:quality",
+    "tsdown": "catalog:build",
+    "typescript": "catalog:build",
+    "vitest": "catalog:quality"
+  }
+}

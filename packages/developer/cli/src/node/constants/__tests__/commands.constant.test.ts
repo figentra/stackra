@@ -52,6 +52,12 @@ describe("COMMANDS", () => {
     );
   });
 
+  it("registers check and the check aliases products already call (validate, verify, code:check, code:fix)", () => {
+    expect(names).toEqual(
+      expect.arrayContaining(["check", "validate", "verify", "code:check", "code:fix"]),
+    );
+  });
+
   it("holds no Figentra-internal operation", () => {
     for (const internal of ["linear", "bot", "merge", "secrets", "delegate", "spend"]) {
       expect(names.some((name) => name.split(" ")[0] === internal)).toBe(false);

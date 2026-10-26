@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `COMMANDS`, every command the `stackra` binary has, in help order: new, gen, the member tool commands, the
- *          db commands, the seed-pack command, the settings pack commands, the offline audit check, ls, and the local
- *          MCP and agent-file commands.
+ *          check command and its aliases (validate, verify, code:check, code:fix), the db commands, the seed-pack
+ *          command, the settings pack commands, the offline audit check, ls, and the local MCP and agent-file commands.
  * Boundary: data only. Figentra-internal operations (Linear, bot identities, merge, the secrets inbox, delegation)
  *           are never added here (ADR 0282 decision 4); `stackra db diff` and `seed` land with
  *           `@stackra/database`; infra is `stackra runway infra`, not a command here (ADR 0352).
@@ -23,6 +23,7 @@ import { NEW_COMMAND } from "#node/constants/new-command.constant";
 import { SEED_PACK_COMMAND } from "#node/constants/seed-pack-command.constant";
 import { SETTINGS_APPLY_COMMAND } from "#node/constants/settings-apply-command.constant";
 import { SETTINGS_DIFF_COMMAND } from "#node/constants/settings-diff-command.constant";
+import { checkCommand } from "#node/functions/check-command.function";
 import { toolCommand } from "#node/functions/tool-command.function";
 import type { CliCommand } from "#node/types/cli-command.type";
 
@@ -36,6 +37,31 @@ export const COMMANDS: readonly CliCommand[] = [
   toolCommand("typecheck", "Generate, then type-check the member"),
   toolCommand("test", "Generate, then run the member's tests (--tier unit|e2e)"),
   toolCommand("lint", "Lint the member with oxlint"),
+  checkCommand(
+    "check",
+    "Run the quality gate: config, format, spelling, secrets, structure, docs, lint, gen, …",
+  ),
+  checkCommand(
+    "validate",
+    "Check the repository's shape (config, structure, docs, catalogues, spec)",
+    {
+      only: ["config", "structure", "docs", "catalogues", "spec"],
+    },
+  ),
+  checkCommand("verify", "Run every check phase, tests included (`stackra check --with-tests`)", {
+    withTests: true,
+  }),
+  checkCommand("code:check", "Check formatting and lint (`stackra check --only format,lint`)", {
+    only: ["format", "lint"],
+  }),
+  checkCommand(
+    "code:fix",
+    "Format and apply lint fixes (`stackra check --only format,lint --fix`)",
+    {
+      only: ["format", "lint"],
+      fix: true,
+    },
+  ),
   DB_MIGRATE_COMMAND,
   DB_ROLLBACK_COMMAND,
   SEED_PACK_COMMAND,
