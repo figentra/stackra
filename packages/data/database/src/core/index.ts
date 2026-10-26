@@ -43,6 +43,7 @@ export { jsonPath } from "#core/functions/json-path.function";
 export { operationAction } from "#core/functions/operation-action.function";
 export { operationQuery } from "#core/functions/operation-query.function";
 export { registerEntities } from "#core/functions/register-entities.function";
+export { registerHoldLinks } from "#core/functions/register-hold-links.function";
 export { registerModelPartners } from "#core/functions/register-model-partners.function";
 export { registerSequences } from "#core/functions/register-sequences.function";
 export { repositoryOf } from "#core/functions/repository-of.function";

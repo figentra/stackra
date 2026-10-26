@@ -7,7 +7,7 @@
  *          write lock, `increment` adds in one parameterised statement, `table` builds the cursor read, `sum` and `countDistinct` aggregate, and `metrics` returns a reader. With a
  *          `VisibilityFilter` bound, every read ANDs its conditions for the running call's actor (none outside a
  *          call), and a read with no conditions or no driver is unchanged. With a `HoldRegistry`
- *          connected, `purge` removes only the rows no hold covers. `repath` rewrites a subtree's path prefix in one
+ *          connected, `purge` removes only the rows no hold covers, telling it each row's registered subject links. `repath` rewrites a subtree's path prefix in one
  *          parameterised statement and refuses a path that is not `ltree` or a move under itself.
  * Boundary: test only; a fake `Database` hands out a recording entity manager, so no database runs.
  * Runtime: node (vitest)
@@ -30,11 +30,13 @@ import { CrudService } from "#core/bases/crud-service.base";
 import { ACTIVE_DATABASE } from "#core/constants/active-database.constant";
 import { connectHoldRegistry } from "#core/functions/connect-hold-registry.function";
 import { connectVisibilityFilter } from "#core/functions/connect-visibility-filter.function";
+import { registerHoldLinks } from "#core/functions/register-hold-links.function";
 import { registerModelPartners } from "#core/functions/register-model-partners.function";
 import { sql } from "#core/functions/sql.function";
 import { Database } from "#core/ports/database.port";
 import { Disposal } from "#contracts/enums/disposal.enum";
 import { HoldRegistry } from "#contracts/ports/hold-registry.port";
+import type { HoldLinks } from "#contracts/types/hold-links.type";
 import { VisibilityFilter } from "#contracts/ports/visibility-filter.port";
 import { MetricsReader } from "#core/values/metrics-reader.value";
 
@@ -294,8 +296,11 @@ describe("CrudService.purge with legal holds", () => {
         model: AnyClass<M>,
         ids: readonly string[],
         disposal: Disposal,
+        links?: HoldLinks,
       ): Promise<ReadonlySet<string>> {
-        asked.push([model, [...ids], disposal]);
+        asked.push(
+          links === undefined ? [model, [...ids], disposal] : [model, [...ids], disposal, links],
+        );
         return new Set(ids.filter((id) => id === "ord_2"));
       }
     }
@@ -312,6 +317,26 @@ describe("CrudService.purge with legal holds", () => {
     expect(em.nativeDelete).toHaveBeenCalledWith(Order, {
       $and: [{ status: "paid" }, { id: { $in: ["ord_1"] } }],
     });
+  });
+
+  it("reads the registered subject links and sends them with the ids (STA-1241)", async () => {
+    const em = connect();
+    registerHoldLinks([[Order, ["customerId"]]]);
+    em.find.mockResolvedValueOnce([
+      { id: "ord_1", customerId: "per_7" },
+      { id: "ord_2", customerId: null },
+    ] as never);
+    const { holds, asked } = registry();
+    connectHoldRegistry(holds);
+    try {
+      await new OrderService().purge({ status: "paid" });
+    } finally {
+      registerHoldLinks([[Order, []]]);
+    }
+    expect(em.find.mock.calls[0]?.[2]).toEqual({ fields: ["id", "customerId"] });
+    expect(asked).toEqual([
+      [Order, ["ord_1", "ord_2"], Disposal.Purge, { ord_1: { customerId: "per_7" } }],
+    ]);
   });
 
   it("removes nothing when every match is held", async () => {

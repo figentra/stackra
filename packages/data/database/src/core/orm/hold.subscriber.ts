@@ -6,7 +6,8 @@
  * Boundary: passed as one of `DatabaseOptions.subscribers`; registering it in the generated boot is gen's (STA-339).
  *           It takes no arguments: the registry is the one `connectHoldRegistry` names, and with none connected it
  *           does nothing. Bulk deletes (`purge`, `nativeDelete`) fire no entity event; `CrudService.purge` consults the
- *           registry itself. A soft delete is an update and is not a disposal.
+ *           registry itself. A soft delete is an update and is not a disposal. The row's registered subject links go
+ *           with its id (STA-1241).
  * Runtime: node
  * Governing contract: ADR 0134 (2026-10-24 amendment: every delete path consults the registry); ADR 0096 (decision 4:
  *                     traits run as ORM subscribers).
@@ -14,6 +15,7 @@
 import type { EventArgs, EventSubscriber } from "@mikro-orm/core";
 
 import { disposableIds } from "#core/functions/disposable-ids.function";
+import { holdLinksOf } from "#core/functions/hold-links-of.function";
 import { RecordHeldError } from "#core/errors/record-held.error";
 import { Disposal } from "#contracts/enums/disposal.enum";
 
@@ -32,7 +34,8 @@ export class HoldSubscriber implements EventSubscriber<object> {
   async beforeDelete(args: EventArgs<object>): Promise<void> {
     const [key = "id"] = args.meta.primaryKeys;
     const id = String((args.entity as Record<string, unknown>)[key]);
-    const [free] = await disposableIds(args.meta.class, [id], Disposal.Delete);
+    const links = holdLinksOf(args.meta.class, [args.entity], key);
+    const [free] = await disposableIds(args.meta.class, [id], Disposal.Delete, links);
     if (free === undefined) throw RecordHeldError.create({ model: args.meta.className, id });
   }
 }

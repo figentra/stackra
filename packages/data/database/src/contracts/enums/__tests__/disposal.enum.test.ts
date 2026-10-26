@@ -10,11 +10,12 @@ import { describe, expect, it } from "@stackra/testing";
 import { Disposal } from "#contracts/enums/disposal.enum";
 
 describe("Disposal", () => {
-  it("names the three disposal paths", () => {
-    expect([Disposal.Delete, Disposal.Purge, Disposal.Retention]).toEqual([
+  it("names the four disposal paths, the edit a hold freezes among them", () => {
+    expect([Disposal.Delete, Disposal.Purge, Disposal.Retention, Disposal.Edit]).toEqual([
       "delete",
       "purge",
       "retention",
+      "edit",
     ]);
   });
 });

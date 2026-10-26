@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `HoldSubscriber`: a delete of a free row passes, a delete of a held row is refused with
- *          `RecordHeldError`, and with no registry connected nothing is asked.
+ *          `RecordHeldError`, with no registry connected nothing is asked, and the row's subject links go with its id.
  * Boundary: test only; the ORM event arguments and the registry are stand-ins.
  * Runtime: node (vitest)
  * Governing contract: ADR 0134 (2026-10-24 amendment); ADR 0022; ADR 0269.
@@ -13,6 +13,7 @@ import { vi } from "vitest";
 
 import { RecordHeldError } from "#core/errors/record-held.error";
 import { connectHoldRegistry } from "#core/functions/connect-hold-registry.function";
+import { registerHoldLinks } from "#core/functions/register-hold-links.function";
 import { HoldSubscriber } from "#core/orm/hold.subscriber";
 import { Disposal } from "#contracts/enums/disposal.enum";
 import type { HoldRegistry } from "#contracts/ports/hold-registry.port";
@@ -51,5 +52,19 @@ describe(HoldSubscriber, () => {
     expect(isRefusal(refused, RecordHeldError)).toBe(true);
     await expect(subscriber.beforeDelete(deleting("mat_2"))).resolves.toBeUndefined();
     expect(heldAmong).toHaveBeenCalledWith(Matter, ["mat_1"], Disposal.Delete);
+  });
+
+  it("sends the row's registered subject links (STA-1241)", async () => {
+    const heldAmong = vi.fn(async () => new Set<string>());
+    connectHoldRegistry({ heldAmong } as unknown as HoldRegistry);
+    registerHoldLinks([[Matter, ["id"]]]);
+    try {
+      await new HoldSubscriber().beforeDelete(deleting("mat_3"));
+    } finally {
+      registerHoldLinks([[Matter, []]]);
+    }
+    expect(heldAmong).toHaveBeenCalledWith(Matter, ["mat_3"], Disposal.Delete, {
+      mat_3: { id: "mat_3" },
+    });
   });
 });

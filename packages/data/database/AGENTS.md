@@ -51,6 +51,8 @@ The MikroORM layer on Postgres. Member at `packages/data/database` (`tier:lib`),
 - Legal holds (ADR 0134, 2026-10-24 amendment): every disposal path asks the connected `HoldRegistry` through
   `disposableIds`: `HoldSubscriber` for unit-of-work deletes, `CrudService.purge` for bulk deletes, and retention jobs
   directly. A new bulk delete path calls it too; never decide or lift a hold here (the compliance service does).
+  Subject links come only from `registerHoldLinks` and travel as `HoldLinks`; an edit a hold freezes asks with
+  `Disposal.Edit`; `ServiceHoldRegistryDriver` reaches the holds service only through `HoldChannel` (STA-1241).
 - The yearly period's time zone is the series owner's setting, through the connected `SequenceTimeZone` (ADR 0394);
   never add a time zone constant or read a setting here.
 - The Postgres action stores (`database.idempotency_keys`, `database.rate_limit_buckets`) and the seed ledger

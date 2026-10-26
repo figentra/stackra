@@ -34,10 +34,12 @@ import { SortDirection } from "@stackra/contracts";
 import { NotFoundError } from "@stackra/errors";
 
 import { HOLD_HOST } from "#core/constants/hold-host.constant";
+import { HOLD_LINK_FIELDS } from "#core/constants/hold-link-fields.constant";
 import { LTREE_PATH } from "#core/constants/ltree-path.constant";
 import { columnOf } from "#core/functions/column-of.function";
 import { disposableIds } from "#core/functions/disposable-ids.function";
 import { filterOf } from "#core/functions/filter-of.function";
+import { holdLinksOf } from "#core/functions/hold-links-of.function";
 import { modelOf } from "#core/functions/model-of.function";
 import { quoteIdentifier } from "#core/functions/quote-identifier.function";
 import { visibleFilter } from "#core/functions/visible-filter.function";
@@ -180,7 +182,8 @@ export abstract class CrudService<M extends object> extends Service implements R
 
   /**
    * See `Repository.purge`. With a `HoldRegistry` connected, it removes only the matching rows no legal hold covers
-   * (the registry logs each held one) and counts only those; with none, one statement removes every match.
+   * (the registry logs each held one, and is told each row's registered subject links) and counts only those; with
+   * none, one statement removes every match.
    */
   async purge(where: Where<M>): Promise<number> {
     const em = this.em();
@@ -188,12 +191,12 @@ export abstract class CrudService<M extends object> extends Service implements R
     const filter = filterOf(where);
     if (HOLD_HOST.registry === undefined) return em.nativeDelete(model, filter);
     const [key = "id"] = em.getMetadata(model).primaryKeys;
-    const rows = (await em.find(model, filter, { fields: [key] as never })) as Record<
-      string,
-      unknown
-    >[];
+    const linkFields = HOLD_LINK_FIELDS.get(model) ?? [];
+    const rows = (await em.find(model, filter, {
+      fields: [key, ...linkFields] as never,
+    })) as Record<string, unknown>[];
     const ids = rows.map((row) => String(row[key]));
-    const free = await disposableIds(model, ids, Disposal.Purge);
+    const free = await disposableIds(model, ids, Disposal.Purge, holdLinksOf(model, rows, key));
     if (free.length === 0) return 0;
     // Only the checked ids, so a row inserted after the read is never removed unchecked.
     return em.nativeDelete(model, { $and: [filter, { [key]: { $in: free } }] } as never);

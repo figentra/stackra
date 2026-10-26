@@ -8,12 +8,14 @@
  *           told of. Nothing here decides who may place or lift a hold. With no registry connected, nothing is held.
  * Runtime: node
  * Governing contract: ADR 0134 (2026-10-24 amendment: a `HoldRegistry` port, never a Guard); ADR 0189 (decision 4);
- *                     ADR 0343 (decisions 2, 5 and 7); ADR 0294 (decisions 16 and 23).
+ *                     ADR 0343 (decisions 2, 5 and 7); ADR 0294 (decisions 16 and 23); STA-1241 (subject links, the
+ *                     service-backed driver `ServiceHoldRegistryDriver` over `HoldChannel`).
  */
 import type { AnyClass } from "@stackra/container";
 import { Port } from "@stackra/contracts";
 
 import type { Disposal } from "#contracts/enums/disposal.enum";
+import type { HoldLinks } from "#contracts/types/hold-links.type";
 
 /**
  * The legal holds of the running tenant.
@@ -35,10 +37,13 @@ export abstract class HoldRegistry extends Port {
    * @param model - the model whose rows would be disposed of.
    * @param ids - the primary keys of those rows.
    * @param disposal - how they would be disposed of, for the log.
+   * @param links - each row's subject links (`registerHoldLinks`), so a hold on the linked subject reaches the row;
+   *                absent when the model declares none.
    */
   abstract heldAmong<M extends object>(
     model: AnyClass<M>,
     ids: readonly string[],
     disposal: Disposal,
+    links?: HoldLinks,
   ): Promise<ReadonlySet<string>>;
 }
