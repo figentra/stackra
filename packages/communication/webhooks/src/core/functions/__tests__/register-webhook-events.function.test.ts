@@ -119,6 +119,14 @@ describe(registerWebhookEvents, () => {
         },
       ]),
     ).toThrow(RangeError);
+    expect(() =>
+      registerWebhookEvents([
+        {
+          event: Received,
+          integration: integrationWith("mail-hmac", { ...WEBHOOKS, scheme: SignatureScheme.Hmac }),
+        },
+      ]),
+    ).toThrow("webhooks.signature");
   });
 
   it("refuses a second connection class and a second class for one event type", () => {

@@ -4,8 +4,8 @@
  *          provider event type of which Integration, and which connection class holds a connection URL's secret.
  * Boundary: writes `WEBHOOK_EVENTS` after checking each row, so a wrong row fails at boot rather than on the first
  *           delivery: a webhook event class, an Integration that declares `webhooks` with a `SignatureScheme` code
- *           (the check `@stackra/integrations` leaves to this package, which owns the codes), a connection class, and
- *           one class per provider event type. Registering a row again changes nothing.
+ *           (the check `@stackra/integrations` leaves to this package, which owns the codes) and, for `hmac`, its
+ *           `signature` recipe, a connection class, and one class per provider event type. Registering a row again changes nothing.
  * Runtime: isomorphic
  * Governing contract: ADR 0308 (rules 2, 15 and 16); ADR 0294 (decisions 20 and 25); ADR 0224 (decision 2).
  */
@@ -46,6 +46,10 @@ export function registerWebhookEvents(rows: readonly WebhookEventRegistration[])
     if (!Enum.values(SignatureScheme).includes(webhooks.scheme as SignatureScheme))
       throw new RangeError(
         `${integration.name}: webhooks.scheme takes a SignatureScheme code, got ${JSON.stringify(webhooks.scheme)}`,
+      );
+    if (webhooks.scheme === SignatureScheme.Hmac && webhooks.signature === undefined)
+      throw new TypeError(
+        `${integration.name}: the hmac scheme reads its recipe from webhooks.signature, which is missing`,
       );
     if (connection !== undefined && kindOf(connection)?.kind !== "connection")
       throw new TypeError(`${connection.name} does not extend Connection<Integration>`);

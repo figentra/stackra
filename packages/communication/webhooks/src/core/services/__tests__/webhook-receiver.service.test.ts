@@ -3,8 +3,9 @@
  * Purpose: unit tests of `WebhookReceiver`: a platform delivery verifies against the Integration's `@Secret` field and
  *          a connection's against that connection's secret field, with no fallback either way; a verified delivery is
  *          written to the outbox as its event class, keyed by the webhook id, with the connection in its metadata;
- *          Svix header names verify; an unknown event type is dropped; an unknown Integration, a connection URL of a
- *          platform-only Integration and a bad signature are refused before anything is written.
+ *          Svix header names verify; an `hmac` Integration verifies by its recipe and keys the event by the payload's
+ *          id; an unknown event type is dropped; an unknown Integration, a connection URL of a platform-only
+ *          Integration and a bad signature are refused before anything is written.
  * Boundary: test only; the connection store, the outbox and the clock are in-test fakes, the secret store a map of test
  *           values, and Web Crypto runs for real.
  * Runtime: node (vitest)
@@ -78,6 +79,36 @@ class StatusIntegration extends Integration({
   webhookSecret!: string;
 }
 
+class GatewayIntegration extends Integration({
+  provider: "gateway",
+  category: IntegrationCategory.Payments,
+  levels: [ConnectionLevel.Scope],
+  auth: { type: AuthType.None },
+  webhooks: {
+    scheme: SignatureScheme.Hmac,
+    secret: "{webhookSecret}",
+    eventType: { path: "type" },
+    eventId: { path: "id" },
+    signature: {
+      header: "gateway-signature",
+      parts: { separator: ",", assign: "=", signature: "v1", timestamp: "t" },
+      algorithm: "SHA-256",
+      encoding: "hex",
+      payload: "{timestamp}.{body}",
+      tolerance: "5m",
+    },
+  },
+}) {
+  @Secret("GATEWAY_WEBHOOK_SECRET")
+  webhookSecret!: string;
+}
+
+class PaymentSucceeded extends WebhookEvent<GatewayIntegration>({ type: "payment.succeeded" }) {
+  id!: string;
+
+  type!: string;
+}
+
 class MailArrived extends WebhookEvent<InboxIntegration>({ type: "mail.arrived" }) {
   event!: { name: string };
 
@@ -91,16 +122,20 @@ class StatusChanged extends WebhookEvent<StatusIntegration>({ type: "status.chan
 registerSchemas([
   [MailArrived, z.object({ event: z.object({ name: z.string() }), mailId: z.string() })],
   [StatusChanged, z.object({ event: z.object({ name: z.string() }) })],
+  [PaymentSucceeded, z.object({ id: z.string(), type: z.string() })],
 ]);
 registerWebhookEvents([
   { event: MailArrived, integration: InboxIntegration, connection: InboxConnection },
   { event: StatusChanged, integration: StatusIntegration },
+  { event: PaymentSucceeded, integration: GatewayIntegration },
 ]);
 
 /** Answers the platform's test secrets by name. */
 class TestSecretStore extends SecretStore {
   get(name: string): string | undefined {
-    return name === "INBOX_WEBHOOK_SECRET" || name === "STATUS_WEBHOOK_SECRET"
+    return name === "INBOX_WEBHOOK_SECRET" ||
+      name === "STATUS_WEBHOOK_SECRET" ||
+      name === "GATEWAY_WEBHOOK_SECRET"
       ? PLATFORM_SECRET
       : undefined;
   }
@@ -183,6 +218,37 @@ describe(WebhookReceiver, () => {
       receiver.receive({ integration: InboxIntegration, headers, body: "not json" }),
     ).rejects.toBeInstanceOf(InvalidSignatureError);
     expect(outbox.write).not.toHaveBeenCalled();
+  });
+
+  it("verifies an hmac Integration by its recipe and keys the event by the payload's id", async () => {
+    const { receiver, outbox } = setup();
+    const body = JSON.stringify({ id: "evt_1", type: "payment.succeeded" });
+    const t = String(SENT.getTime() / 1000);
+    const key = await crypto.subtle.importKey(
+      "raw",
+      new TextEncoder().encode(PLATFORM_SECRET),
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["sign"],
+    );
+    const mac = new Uint8Array(
+      await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(`${t}.${body}`)),
+    );
+    const hex = Array.from(mac, (byte) => byte.toString(16).padStart(2, "0")).join("");
+    const event = await receiver.receive({
+      integration: GatewayIntegration,
+      headers: { "gateway-signature": `t=${t},v1=${hex}` },
+      body,
+    });
+    expect(event).toBeInstanceOf(PaymentSucceeded);
+    expect(outbox.write).toHaveBeenCalledWith([{ event, meta: { id: "evt_1", occurredAt: SENT } }]);
+    await expect(
+      receiver.receive({
+        integration: GatewayIntegration,
+        headers: { "gateway-signature": `t=${t},v1=${"0".repeat(64)}` },
+        body,
+      }),
+    ).rejects.toBeInstanceOf(InvalidSignatureError);
   });
 
   it("reads Svix header names and keys the event by the Svix id", async () => {

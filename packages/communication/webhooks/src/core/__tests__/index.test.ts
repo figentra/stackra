@@ -20,6 +20,7 @@ describe("@stackra/webhooks", () => {
       "WebhookReceiver",
       "registerWebhookEvents",
       "signWebhook",
+      "verifyHmacWebhook",
       "verifyWebhook",
     ]);
   });

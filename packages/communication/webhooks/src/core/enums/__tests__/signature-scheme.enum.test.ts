@@ -12,12 +12,13 @@ import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 import { SignatureScheme } from "#core/enums/signature-scheme.enum";
 
 describe("SignatureScheme", () => {
-  it("holds Standard Webhooks", () => {
-    expect(Enum.values(SignatureScheme)).toEqual(["standard_webhooks"]);
+  it("holds Standard Webhooks and the data-driven HMAC scheme", () => {
+    expect(Enum.values(SignatureScheme)).toEqual(["standard_webhooks", "hmac"]);
     expect(SignatureScheme.StandardWebhooks).toBe("standard_webhooks");
+    expect(SignatureScheme.Hmac).toBe("hmac");
   });
 
   it("types a scheme as its code", () => {
-    expectTypeOf<SignatureScheme>().toEqualTypeOf<"standard_webhooks">();
+    expectTypeOf<SignatureScheme>().toEqualTypeOf<"standard_webhooks" | "hmac">();
   });
 });

@@ -36,6 +36,9 @@ Standard Webhooks signing and verification, the inbound receiver of `WebhookEven
   resolves its secret on the connection only, the platform's URL on the Integration's `@Secret` field only; never add a
   fallback between the two.
 - Compare signatures only through `crypto.subtle.verify` (constant time); never compare signature strings.
+- A provider whose signature is an HMAC over the raw body and headers is Integration data: `scheme: "hmac"` with its
+  `webhooks.signature` recipe, verified by `verifyHmacWebhook`. Never add a per-provider verifier for such a scheme;
+  add a `SignatureScheme` code only for a scheme a recipe cannot describe.
 - Secrets are read blind from the `SecretStore` (or the loaded connection) at the moment of signing or verifying and
   kept nowhere: not in a job input, the delivery log, an event, a log line or an error (ADR 0173, ADR 0308 rule 20).
 - A delivery attempt is logged in its own transaction (`WebhookDeliveryService.record`) before the refusal that makes
