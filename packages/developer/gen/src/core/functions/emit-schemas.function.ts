@@ -8,9 +8,12 @@
  * Boundary: pure. Names are qualified by the file (one file per module), so a class name used in two modules never
  *           collides. `?:` compiles to `.exactOptional()`, `Date` to the ISO 8601 codec, `Money` to its codec, an enum
  *           to its codes in source order; a member base is `.extend`ed and a package base's shipped `X$` gets only new
- *           defaults. A reference to a shape declared later in the file is `z.lazy`, so a cycle still loads.
+ *           defaults. A reference to a shape declared later in the file is `z.lazy`, so a cycle still loads. A
+ *           `Translated` field is a locale map decoded through `Translated.of` (`TranslatedStrings` to `{ values }`),
+ *           its `@Str` rules on each text; an `Upload<Bucket>` field is `@stackra/media`'s `Upload.schema`.
  * Runtime: isomorphic
- * Governing contract: ADR 0294 (decision 26: the shape compiler); ADR 0305 (rules 1 and 14); registry v3.1 gap G1.
+ * Governing contract: ADR 0294 (decision 26: the shape compiler); ADR 0305 (rules 1 and 14); registry v3.1 gap G1;
+ *                     ADR 0162 (decision 2); ADR 0222 (decision 2).
  */
 import { generatedHeader } from "#core/functions/generated-header.function";
 import { importLines } from "#core/functions/import-lines.function";
@@ -101,6 +104,16 @@ function zodOf(
     case "duration":
       use(imports, "@stackra/validation", "duration");
       return "z.string().transform(duration)";
+    case "translated": {
+      const text = zodOf(context, { kind: "string" }, rules, []);
+      if (type.form === "strings")
+        return `z.record(z.string(), ${text}).transform((values) => ({ values }))`;
+      use(imports, "@stackra/model", "Translated");
+      return `z.record(z.string(), ${text}).transform((values) => Translated.of(values))`;
+    }
+    case "upload":
+      use(imports, "@stackra/media", "Upload");
+      return "Upload.schema";
     case "brand":
       if (type.brand === "url") {
         use(imports, "@stackra/validation", "url");

@@ -8,11 +8,12 @@
  *          client, which is a class token before its file exists), each with a position and a fix; a
  *          derived shape (`PickType`) and a discriminated union read correctly; and each model's entity facts
  *          (`[OptionalProps]` keys, a one-to-many with its inverse, a `Ref` many-to-one, a `Link` across models,
- *          getters) with `relation_decorator_missing` for a relation gen cannot read.
+ *          getters) with `relation_decorator_missing` for a relation gen cannot read; `Translated`,
+ *          `TranslatedStrings` and `Upload<Bucket>` fields read as the `translated` and `upload` kinds (STA-1218).
  * Boundary: test only; writes the fixture under `.cache/` and opens TypeScript on it.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decision 26, 2026-10-23 item 13, decision 28); ADR 0305
- *                     (rules 6, 13 and 19); ADR 0097 (decision 3).
+ *                     (rules 6, 13 and 19); ADR 0097 (decision 3); ADR 0162 (decision 2); ADR 0222 (decision 2).
  */
 import { join } from "node:path";
 
@@ -374,5 +375,93 @@ describe("createSourceReader on tool reasons", async () => {
 
   it("leaves `toolReason` out when no reason is written", () => {
     expect(options("CloseDrawerAction")?.["toolReason"]).toBeUndefined();
+  });
+});
+
+/** Per-locale and upload fields (STA-1218), with stand-ins for `@stackra/model` and `@stackra/media`. */
+const VOCABULARY_SOURCES: Readonly<Record<string, string>> = {
+  "node_modules/@stackra/model/package.json": JSON.stringify({
+    name: "@stackra/model",
+    types: "./index.d.ts",
+  }),
+  "node_modules/@stackra/model/index.d.ts": [
+    "export declare class Translated {",
+    "  private constructor();",
+    "  readonly values: Readonly<Record<string, string>>;",
+    "}",
+    "",
+  ].join("\n"),
+  "node_modules/@stackra/media/package.json": JSON.stringify({
+    name: "@stackra/media",
+    types: "./index.d.ts",
+  }),
+  "node_modules/@stackra/media/index.d.ts": [
+    'export declare abstract class BucketBase { protected readonly "~kind": "bucket"; }',
+    "export declare function Bucket(options: Readonly<Record<string, unknown>>): abstract new () => BucketBase;",
+    'export type Upload<B extends BucketBase = BucketBase> = { readonly id: string; readonly "~bucket"?: B };',
+    "",
+  ].join("\n"),
+  "src/core/buckets/photos.bucket.ts": [
+    'import { Bucket } from "@stackra/media";',
+    "export class PhotosBucket extends Bucket({}) {}",
+    "",
+  ].join("\n"),
+  "src/core/schemas/listing.schema.ts": [
+    'import type { Upload } from "@stackra/media";',
+    'import type { Translated } from "@stackra/model";',
+    'import { Schema, Str, type TranslatedStrings } from "@stackra/validation";',
+    'import type { PhotosBucket } from "#core/buckets/photos.bucket";',
+    "",
+    "class NotABucket {}",
+    "",
+    "export class Listing extends Schema {",
+    "  @Str({ max: 200 })",
+    "  title!: Translated;",
+    "  description!: Translated | null;",
+    "  label!: TranslatedStrings;",
+    "  photo!: Upload<PhotosBucket>;",
+    "  anything!: Upload;",
+    "  wrong!: Upload<NotABucket>;",
+    "}",
+    "",
+  ].join("\n"),
+};
+
+describe("createSourceReader on translated and upload fields", async () => {
+  const root = writeFixtureMember("vocabulary", VOCABULARY_SOURCES);
+  const host = await openHost(join(root, "tsconfig.json"));
+  const reader = createSourceReader(host, readMemberFacts(root));
+  const shapes = reader.sources.flatMap((file) => reader.shapes(file));
+  for (const file of reader.sources) reader.classes(file);
+  host.close();
+  const listing = shapes.find((shape) => shape.name === "Listing");
+  const field = (name: string) => listing?.fields.find((candidate) => candidate.name === name);
+
+  it("reads Translated and TranslatedStrings as the translated kind, @Str included", () => {
+    expect(field("title")).toMatchObject({
+      type: { kind: "translated", form: "value" },
+      nullable: false,
+      rules: [{ name: "Str", options: { max: 200 } }],
+    });
+    expect(field("description")).toMatchObject({
+      type: { kind: "translated", form: "value" },
+      nullable: true,
+    });
+    expect(field("label")?.type).toEqual({ kind: "translated", form: "strings" });
+  });
+
+  it("reads Upload<Bucket> as the upload kind with its bucket", () => {
+    expect(field("photo")?.type).toEqual({ kind: "upload", bucket: "PhotosBucket" });
+    expect(field("anything")?.type).toEqual({ kind: "upload" });
+  });
+
+  it("refuses an Upload whose argument is not a Bucket class, and nothing else", () => {
+    const subjects = reader.errors
+      .filter((error) => error.code === "shape_unknown_type")
+      .map((error) => error.subject);
+    expect(subjects).toEqual(["Listing.wrong"]);
+    expect(reader.errors.some((error) => error.code === "shape_decorator_type_mismatch")).toBe(
+      false,
+    );
   });
 });

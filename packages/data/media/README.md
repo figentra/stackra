@@ -1,5 +1,14 @@
 # @stackra/media
 
+<!--
+Stackra file contract:
+Purpose: the reader guide of @stackra/media: buckets, the upload flow, `Upload<Bucket>` in shapes and gen's
+         schema for it, variants, configuration, scanning and testing.
+Boundary: documentation only; the code and the ADRs win on any difference.
+Runtime: none
+Governing contract: ADR 0222; ADR 0294 (decision 26); STA-1218 (gen's `upload` shape kind).
+-->
+
 Stackra media: the `Bucket` kind, signed direct uploads that `MediaLibrary` claims into a bucket, the `MediaDisk` port
 with its memory and S3/R2 drivers, the client `Uploader` port with its memory and HTTP drivers, `MediaConfig`, the
 `upload.create` action, `useUpload`, `useImageVariant` and `fakeUpload`.
@@ -58,6 +67,15 @@ The bytes never pass through a service.
    its expiry (`UploadExpiredError`), and a type or size the bucket does not take (`UploadRejectedError`, after deleting
    the file). Otherwise it moves the file to `<visibility>/<bucket key as folders>/<id>.<subtype>` and returns
    `{ id, bucket, path, url, mediaType, size }`. A second claim of the same token finds nothing.
+
+### `Upload<Bucket>` in a shape
+
+An input field typed `Upload<ProductImagesBucket>` is gen's `upload` shape kind. Gen writes `image: Upload.schema` in
+`#stackra/schemas/<module>` and, in the manifest and `openapi.json`, the token object
+`{ type: "object", required: ["id"], properties: { id: <upl_ pattern> } }` with `x-stackra-type: upload` and
+`x-stackra-bucket: ProductImagesBucket`. The argument must be a class that extends `Bucket({...})`; anything else is
+`shape_unknown_type`. A bare `Upload` takes any bucket. The bucket in the type is documentation for clients:
+`MediaLibrary.claim` still checks it at run time.
 
 `bucket: null` (what `useUpload()` sends) takes the member's only registered bucket. A member with several buckets
 names one: `useUpload({ bucket: "catalogue.product_images" })`.

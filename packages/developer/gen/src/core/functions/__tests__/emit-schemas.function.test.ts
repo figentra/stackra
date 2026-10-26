@@ -4,10 +4,12 @@
  *          field type, `.exactOptional()`, `.nullable()` and constant defaults, the `X$Check` assertions, the
  *          `{ input, output }` of each action and query, the config alias, a member base `.extend`ed, a package base
  *          reused through `Base<Name>$`, a later reference made lazy, a sibling module imported, the
- *          `registerSchemas` call of gap G1, and the `registerChanges` call beside it.
+ *          `registerSchemas` call of gap G1, the `registerChanges` call beside it, and the translated and upload
+ *          kinds (STA-1218).
  * Boundary: test only; asserts on the generated source text.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0294 (decision 26); ADR 0305 (rules 1 and 14); registry v3.1 G1.
+ * Governing contract: ADR 0022 (test placement); ADR 0294 (decision 26); ADR 0305 (rules 1 and 14); registry v3.1 G1;
+ *                     ADR 0162; ADR 0222.
  */
 import { describe, expect, it } from "@stackra/testing";
 
@@ -168,5 +170,66 @@ describe("emitSchemas", () => {
     );
     expect(billing).toContain("registerChanges([\n  [InvoiceIssued, InvoiceIssuedChange],\n]);");
     expect(orders).not.toContain("registerChanges");
+  });
+
+  it("decodes a translated field through Translated.of and an upload through Upload.schema", () => {
+    const ir: MemberIR = {
+      ...COMMERCE_IR,
+      shapes: [
+        {
+          name: "Listing",
+          kind: "schema",
+          module: "orders",
+          file: "src/modules/orders/schemas/listing.schema.ts",
+          importPath: "#modules/orders/schemas/listing.schema",
+          fields: [
+            {
+              name: "title",
+              optional: false,
+              nullable: false,
+              type: { kind: "translated", form: "value" },
+              rules: [{ name: "Str", options: { max: 200 } }],
+            },
+            {
+              name: "description",
+              optional: false,
+              nullable: true,
+              type: { kind: "translated", form: "value" },
+              rules: [],
+            },
+            {
+              name: "label",
+              optional: false,
+              nullable: false,
+              type: { kind: "translated", form: "strings" },
+              rules: [],
+            },
+            {
+              name: "photo",
+              optional: false,
+              nullable: false,
+              type: { kind: "upload", bucket: "PhotosBucket" },
+              rules: [],
+            },
+          ],
+          relations: [],
+        },
+      ],
+      enums: [],
+      classes: [],
+    };
+    const content = emitSchemas(ir, "orders");
+    expect(content).toContain('import { Translated } from "@stackra/model";');
+    expect(content).toContain('import { Upload } from "@stackra/media";');
+    expect(content).toContain(
+      "  title: z.record(z.string(), z.string().max(200)).transform((values) => Translated.of(values)),",
+    );
+    expect(content).toContain(
+      "  description: z.record(z.string(), z.string()).transform((values) => Translated.of(values)).nullable(),",
+    );
+    expect(content).toContain(
+      "  label: z.record(z.string(), z.string()).transform((values) => ({ values })),",
+    );
+    expect(content).toContain("  photo: Upload.schema,");
   });
 });

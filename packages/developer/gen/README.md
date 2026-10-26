@@ -6,7 +6,8 @@ Purpose: the package's reader guide: what gen is, its entries and symbols, a run
          service clients included) and what is not here.
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
-Governing contract: ADR 0294; ADR 0295; ADR 0260 (generated clients); ADR 0261; ADR 0263.
+Governing contract: ADR 0294; ADR 0295; ADR 0260 (generated clients); ADR 0261; ADR 0263; ADR 0162 and ADR 0222
+                    (the translated and upload shape kinds).
 -->
 
 The Stackra compiler. Gen reads a member's source through the TypeScript compiler API, derives every identity and
@@ -72,6 +73,23 @@ snake_case code, a position and the fix; when there is one, nothing is written.
   them) and its `listing` (the entitlement reference) land on its entry; a role outside `INTEGRATION_ROLES` is
   `integration_role_unknown`.
 - **Replacements.** Every `@Replaces(Base)` is listed in a `replaces` section.
+
+## Platform field types
+
+Besides `string`, `@Int`/`@Num` numbers, `boolean`, `Date`, enums and the member's own Schema classes, a shape field
+may use these platform types (each read only when declared in a `@stackra/*` package):
+
+| Field type                                     | zod in `#stackra/schemas`                                  | JSON Schema (manifest, openapi.json)                                            |
+| ---------------------------------------------- | ---------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| `PublicId<"ord">`, `Money`, `Duration`, `Json` | `publicId("ord")`, `money()`, `duration`, `json()`         | pattern, `{ minor, currency }`, `format: duration`, any                         |
+| `Url`, `Email`, `CurrencyCode`                 | `url()`, `z.email()`, `currencyCode()`                     | `format: uri`, `format: email`, `^[A-Z]{3}$`                                    |
+| `Translated` (`@stackra/model`)                | locale map `.transform((values) => Translated.of(values))` | `object` of locale tag to string, `x-stackra-type: translated`                  |
+| `TranslatedStrings` (`@stackra/validation`)    | locale map `.transform((values) => ({ values }))`          | the same locale map                                                             |
+| `Upload<Bucket>` (`@stackra/media`)            | `Upload.schema`                                            | `{ id: "upl_…" }`, `x-stackra-type: upload`, `x-stackra-bucket: <Bucket class>` |
+
+`@Str` and `@Trim` on a translated field apply to each locale's text. A model's `Translated` field gets
+`TranslatedType` in its `EntitySchema`, so it loads back as a `Translated`. `Upload<X>` where `X` is not a Bucket class
+is `shape_unknown_type`.
 
 ## What one run writes
 

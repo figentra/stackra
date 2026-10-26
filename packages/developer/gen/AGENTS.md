@@ -6,7 +6,8 @@ Purpose: the agent rules of @stackra/gen: where code goes, entries and barrels, 
          clients included), the rules that fail the build and PII.
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
-Governing contract: ADR 0294; ADR 0295; ADR 0305; ADR 0260 (generated clients); ADR 0263.
+Governing contract: ADR 0294; ADR 0295; ADR 0305; ADR 0260 (generated clients); ADR 0263; ADR 0162 and ADR 0222
+                    (the translated and upload shape kinds).
 -->
 
 The Stackra compiler. Member at `packages/developer/gen` (`tier:lib`), in the programming model v3.1 shape (ADR 0294,
@@ -43,6 +44,10 @@ The Stackra compiler. Member at `packages/developer/gen` (`tier:lib`), in the pr
   (found beside the member by `readServiceManifests`, or in a dependency), never from its source. The source reader
   takes a parameter typed with a class from `CLIENTS_SPECIFIER` as a class token before the file exists; the wiring
   binds it over `ClientTransport`. Keep the one spelling in `CLIENTS_SPECIFIER`.
+- The shape vocabulary is `TypeDesc` (`src/core/types/type-desc.type.ts`). A new platform field type is one
+  `TypeDesc` kind read in `readTypeReference` (only when declared in a `@stackra/*` package) and one case in each of
+  `emitSchemas`, `jsonSchemaOf` and, for a model column, `emitEntities`, with tests. `Translated` and
+  `TranslatedStrings` are `translated`; `Upload<Bucket>` is `upload` and its argument must be a Bucket class.
 - `generateMember` runs every emitter; `generate` (and so `stackra gen`) writes what it returns. A new output is an
   emitter in `src/core/functions/` called from `generateMember`, with its test.
 

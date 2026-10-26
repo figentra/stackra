@@ -1,5 +1,14 @@
 # @stackra/i18n
 
+<!--
+Stackra file contract:
+Purpose: the reader guide of @stackra/i18n: locales, configuration, catalogues and keys, formatting, Arabic text, the
+         ports, the remembered choice, and how per-locale record fields reach shapes and the wire.
+Boundary: documentation only; the code and the ADRs win on any difference.
+Runtime: none
+Governing contract: ADR 0080; ADR 0162 (decision 2); ADR 0294 (decision 26); STA-1218 (gen's `translated` shape kind).
+-->
+
 Stackra i18n: the locale vocabulary, the i18n configuration every member overrides, the ICU message engine over
 namespaced catalogues with regional overlays, the typed key builder gen calls, and the React provider and formatting
 hooks. It replaces i18next (ADR 0080).
@@ -74,6 +83,20 @@ I18n.web.features.title; // "web::features.title": `_` lists a branch's own leav
 
 Messages are ICU: arguments, `plural` (Arabic needs `zero one two few many other`), `select`, `number`, `date`. A key
 with no message after the merge throws: gen refuses missing keys, so the raw key never renders.
+
+## Translated fields in shapes
+
+Catalogue messages are UI text; a record's own per-locale text (a product title, a badge label) is a `Translated`
+value from `@stackra/model`, named by the model's `Translatable([...])` trait (ADR 0162 decision 2). Gen reads such a
+field as its `translated` shape kind:
+
+- `title!: Translated` on a model or a schema compiles to
+  `z.record(z.string(), z.string()).transform((values) => Translated.of(values))`; `@Str` and `@Trim` apply to each
+  locale's text. A model's field also gets `TranslatedType` in its `EntitySchema` (jsonb).
+- `label!: TranslatedStrings` (`@stackra/validation`, structural, for inputs that should not import the model package)
+  takes the same wire form and parses to `{ values }`.
+- On the wire and in `openapi.json` both are an object of locale tag to text (`{ "en": "Shirt", "ar": "قميص" }`),
+  marked `x-stackra-type: translated`. Read a value with `.in(locale)`; it follows the fallback chain.
 
 ## Digits and formatting
 

@@ -8,10 +8,12 @@
  * Boundary: pure. Runtime facts only: property types, the primary key, nullability, versions, `onUpdate`, enum items,
  *           constant defaults, relations with their inverse sides, embedded money and link columns. Column types,
  *           lengths, indexes and foreign keys are the migration's (ADR 0159), so none is written here. A getter is
- *           listed as not persisted, because `EntitySchema<T>` names every field of `T`.
+ *           listed as not persisted, because `EntitySchema<T>` names every field of `T`. A `Translated` field gets
+ *           `@stackra/model`'s `TranslatedType`, so it loads back as a `Translated`.
  * Runtime: isomorphic
  * Governing contract: ADR 0097 (decisions 3 and 5.4: gen emits EntitySchema, no runtime scan); ADR 0294 (decisions
- *                     20 and 28: tables per module schema, links); ADR 0159; the STA-335 entity-schema spike.
+ *                     20 and 28: tables per module schema, links); ADR 0159; the STA-335 entity-schema spike; ADR 0162
+ *                     (decision 2: per-locale columns).
  */
 import { entitiesName } from "#core/functions/entities-name.function";
 import { generatedHeader } from "#core/functions/generated-header.function";
@@ -136,12 +138,15 @@ export function emitEntities(ir: MemberIR, module: string): string | undefined {
         );
         continue;
       }
+      if (field.type.kind === "translated") use("@stackra/model", "TranslatedType");
       const parts =
         field.type.kind === "enum"
           ? ["enum: true", `items: ${JSON.stringify(field.type.values)}`]
-          : [
-              `type: ${JSON.stringify(field.name === "version" && traits.has("Versioned") ? "integer" : ormType(field))}`,
-            ];
+          : field.type.kind === "translated"
+            ? ["type: TranslatedType"]
+            : [
+                `type: ${JSON.stringify(field.name === "version" && traits.has("Versioned") ? "integer" : ormType(field))}`,
+              ];
       if (field.name === "id" && traits.has("HasPublicId")) parts.push("primary: true");
       if (field.name === "updatedAt" && traits.has("Timestamps"))
         parts.push("onUpdate: () => new Date()");

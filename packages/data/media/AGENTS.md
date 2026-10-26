@@ -1,5 +1,14 @@
 # AGENTS — @stackra/media
 
+<!--
+Stackra file contract:
+Purpose: the agent rules of @stackra/media: where code goes, the package rules (the `Upload` wire schema gen relies on
+         included), the rules that fail the build and PII.
+Boundary: documentation only; the code and the ADRs win on any difference.
+Runtime: none
+Governing contract: ADR 0222; ADR 0294; ADR 0305; STA-1218.
+-->
+
 The `Bucket` kind, signed direct uploads and their claim, the media store and uploader ports with their drivers, and
 the React hooks. Member at `packages/data/media` (`tier:lib`), in the programming model v3.1 shape (ADR 0294, 0305).
 Entries `.`, `./contracts`, `./node`, `./react`, `./testing`.
@@ -29,6 +38,9 @@ Entries `.`, `./contracts`, `./node`, `./react`, `./testing`.
 - `claim` refuses before it moves, and deletes a file its bucket does not take. A second claim must find nothing.
 - Stored paths start with the visibility (`public/`, `private/`); the CDN serves `public/` only.
 - No tenant vocabulary (R-59): isolation is the signed token and the unguessable id.
+- `Upload.schema` is the wire schema gen writes for every `Upload<Bucket>` field (gen's `upload` kind, STA-1218), and
+  gen's JSON Schema mirrors it (`{ id: "upl_…" }`). Change the token's wire form only together with gen's
+  `jsonSchemaOf`.
 - `./contracts` imports no other entry; `src/*/index.ts` are stand-in barrels until gen writes them (STA-339).
 
 ## Rules that fail the build

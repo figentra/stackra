@@ -5,7 +5,9 @@
  * Boundary: a type only; the analyser produces it and the zod and JSON Schema emitters consume it. A type the grammar
  *           does not allow never becomes a `TypeDesc`: the analyser reports a `shape_*` error instead.
  * Runtime: isomorphic
- * Governing contract: ADR 0294 (decisions 4 and 26: the TypeScript type is the rule); the STA-335 type-to-schema spike.
+ * Governing contract: ADR 0294 (decisions 4 and 26: the TypeScript type is the rule); the STA-335 type-to-schema spike;
+ *                     ADR 0162 (decision 2: `Translated` per-locale values); ADR 0222 (decision 2: `Upload<Bucket>`
+ *                     tokens).
  */
 
 /** The meaning of one shape field type. */
@@ -21,6 +23,13 @@ export type TypeDesc =
   | { readonly kind: "json" }
   /** `Duration`: a canonical ISO 8601 duration. */
   | { readonly kind: "duration" }
+  /**
+   * A per-locale text: `@stackra/model`'s `Translated` (`value`) or `@stackra/validation`'s structural
+   * `TranslatedStrings` (`strings`). Both are a locale-tag-to-text map on the wire; `@Str` rules apply to each text.
+   */
+  | { readonly kind: "translated"; readonly form: "value" | "strings" }
+  /** `Upload<Bucket>` (`@stackra/media`): an upload token `{ id: "upl_…" }`; `bucket` is the bucket class, if named. */
+  | { readonly kind: "upload"; readonly bucket?: string }
   /** A branded string: `Url`, `Email` or `CurrencyCode`. */
   | { readonly kind: "brand"; readonly brand: "url" | "email" | "currency_code" }
   /** `PublicId<"ord">`. */

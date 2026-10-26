@@ -5,14 +5,16 @@
  *          and constant defaults, integer columns, embedded money), its relations (a one-to-many `mappedBy` its
  *          inverse, a many-to-one `ref` `inversedBy` the other side, a link to another module's model by key), its
  *          getters as not persisted, the module's entity list and its `registerEntities` call; nothing for a module
- *          without a model.
+ *          without a model; a translated field typed with `TranslatedType` (STA-1218).
  * Boundary: test only; runs on the billing IR fixture.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0097 (decisions 3 and 5.4); ADR 0294 (decisions 20 and 28).
+ * Governing contract: ADR 0022 (test placement); ADR 0097 (decisions 3 and 5.4); ADR 0294 (decisions 20 and 28);
+ *                     ADR 0162 (decision 2).
  */
 import { describe, expect, it } from "@stackra/testing";
 
 import { emitEntities } from "#core/functions/emit-entities.function";
+import type { MemberIR } from "#core/types/member-ir.type";
 import { BILLING_IR } from "#core/__tests__/fixtures/billing-ir.fixture";
 import { COMMERCE_IR } from "#core/__tests__/fixtures/commerce-ir.fixture";
 
@@ -79,5 +81,34 @@ describe("emitEntities", () => {
 
   it("writes nothing for a module without a model", () => {
     expect(emitEntities(COMMERCE_IR, "orders")).toBeUndefined();
+  });
+
+  it("types a translated field with TranslatedType", () => {
+    const ir: MemberIR = {
+      ...BILLING_IR,
+      shapes: [
+        {
+          name: "Badge",
+          kind: "model",
+          module: "billing",
+          file: "src/modules/billing/models/badge.model.ts",
+          importPath: "#modules/billing/models/badge.model",
+          fields: [
+            {
+              name: "label",
+              optional: false,
+              nullable: true,
+              type: { kind: "translated", form: "value" },
+              rules: [],
+            },
+          ],
+          relations: [],
+        },
+      ],
+      classes: [],
+    };
+    const content = emitEntities(ir, "billing") ?? "";
+    expect(content).toContain('import { TranslatedType } from "@stackra/model";');
+    expect(content).toContain("    label: { type: TranslatedType, nullable: true },");
   });
 });

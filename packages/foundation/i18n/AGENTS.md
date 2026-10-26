@@ -1,5 +1,14 @@
 # AGENTS — @stackra/i18n
 
+<!--
+Stackra file contract:
+Purpose: the agent rules of @stackra/i18n: where code goes, entries and barrels, the package rules (per-locale record
+         fields included), the rules that fail the build, PII and secrets.
+Boundary: documentation only; the code and the ADRs win on any difference.
+Runtime: none
+Governing contract: ADR 0080; ADR 0162 (decision 2); ADR 0294; STA-1218.
+-->
+
 Locales, the i18n configuration, the ICU engine and the React hooks. Member at `packages/foundation/i18n`
 (`tier:lib`), in the programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts` and `./react`.
 
@@ -41,6 +50,8 @@ Locales, the i18n configuration, the ICU engine and the React hooks. Member at `
 - Configuration, not code: an address layout, a Market's display unit (`DisplayUnit`, imperial over metric storage)
   or digit choice is data passed in. Address and
   country types are `@stackra/validation`'s; do not redeclare them.
+- A record's per-locale text is `@stackra/model`'s `Translated`, not a catalogue key; do not add a second per-locale
+  value type here. Gen's `translated` shape kind (STA-1218) reads `Translated` and `TranslatedStrings` only.
 - `normalizeArabic` is the only Arabic normaliser; callers keep no copy (ADR 0080 note).
 
 ## Rules that fail the build

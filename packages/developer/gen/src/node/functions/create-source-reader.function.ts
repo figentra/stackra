@@ -14,7 +14,9 @@
  * Runtime: node
  * Governing contract: ADR 0294 (decisions 16, 17, 20, 25 and 26); ADR 0305 (rules 1, 5 to 13, 19 and 42 to 46); the
  *                     STA-335 type-to-schema and STA-409 partner spikes; ADR 0260 (decision 3: a parameter typed with a
- *                     `#stackra/clients/<service>` client is its class token).
+ *                     `#stackra/clients/<service>` client is its class token); ADR 0162 (decision 2: `Translated` and
+ *                     `TranslatedStrings` read as the `translated` kind); ADR 0222 (decision 2: `Upload<Bucket>` reads as
+ *                     the `upload` kind, its argument a Bucket class).
  */
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -142,9 +144,10 @@ function leaf(type: TypeDesc): TypeDesc {
       : type;
 }
 
-/** Whether a constraint rule applies to a type. */
+/** Whether a constraint rule applies to a type; `@Str` and `@Trim` on a translated field apply to each locale's text. */
 function fits(rule: FieldRule, type: TypeDesc): boolean {
-  if (rule.name === "Str" || rule.name === "Trim") return type.kind === "string";
+  if (rule.name === "Str" || rule.name === "Trim")
+    return type.kind === "string" || type.kind === "translated";
   if (rule.name === "Int" || rule.name === "Num") return type.kind === "number";
   return type.kind === "array";
 }
@@ -835,6 +838,22 @@ export function createSourceReader(
       if (name === "Url") return { kind: "brand", brand: "url" };
       if (name === "Email") return { kind: "brand", brand: "email" };
       if (name === "CurrencyCode") return { kind: "brand", brand: "currency_code" };
+      if (name === "Translated") return { kind: "translated", form: "value" };
+      if (name === "TranslatedStrings") return { kind: "translated", form: "strings" };
+      if (name === "Upload") {
+        if (args[0] === undefined) return { kind: "upload" };
+        const bucket = args[0].typeName === undefined ? undefined : host.symbolAt(args[0].typeName);
+        const declared = classDeclarationOf(bucket);
+        if (bucket === undefined || declared === undefined || kindInfo(declared)?.kind !== "bucket")
+          return unknownType(
+            node,
+            subject,
+            quiet,
+            `\`${host.text(args[0])}\` in \`${host.text(node)}\` is not a Bucket class`,
+            "name a class that extends Bucket({...}): `Upload<ProductImagesBucket>`",
+          );
+        return { kind: "upload", bucket: host.symbolName(bucket) };
+      }
       if (name === "DriverName" && args[0] !== undefined) {
         const port = args[0].typeName === undefined ? undefined : host.symbolAt(args[0].typeName);
         return {

@@ -3,10 +3,13 @@
  * Purpose: `jsonSchemaOf`, the JSON Schema of one shape as the manifest's `schemas` section records it: one object
  *          with its required fields and properties, enums and shapes by `$ref` to `#/schemas/<module>.<Name>`, rules as
  *          JSON Schema keywords and defaults as their wire values. A shape that extends a member shape is flattened.
+ *          A `Translated` field is a locale-to-text map (`@Str` rules on each text) and an `Upload<Bucket>` field the
+ *          token object `{ id: "upl_…" }`, each marked with `x-stackra-type` (and the bucket with `x-stackra-bucket`).
  * Boundary: pure. A config's shape is never passed here (ADR 0305 rule 34: a schema bound to a Config never reaches a
  *           wire surface); `buildManifest` leaves configs out.
  * Runtime: isomorphic
- * Governing contract: ADR 0294 (decisions 10 and 26); ADR 0158 (openapi.json is a projection of the manifest).
+ * Governing contract: ADR 0294 (decisions 10 and 26); ADR 0158 (openapi.json is a projection of the manifest);
+ *                     ADR 0162 (decision 2); ADR 0222 (decision 2).
  */
 import type { Json } from "@stackra/contracts";
 
@@ -87,6 +90,20 @@ function typeSchema(
       return {};
     case "duration":
       return { type: "string", format: "duration" };
+    case "translated":
+      return {
+        type: "object",
+        additionalProperties: typeSchema({ kind: "string" }, rules, []),
+        "x-stackra-type": "translated",
+      };
+    case "upload":
+      return {
+        type: "object",
+        required: ["id"],
+        properties: { id: typeSchema({ kind: "public_id", prefix: "upl" }, [], []) },
+        "x-stackra-type": "upload",
+        ...(type.bucket === undefined ? {} : { "x-stackra-bucket": type.bucket }),
+      };
     case "brand":
       return type.brand === "currency_code"
         ? { type: "string", pattern: "^[A-Z]{3}$" }
