@@ -38,8 +38,20 @@ mode, and the approver rule `{ seatKind, notRequester, stepUp }` from the rule s
 - **FR-004** `ApproverRule`, `Approver`, `ApproverRefusal` and `approverRefusal` (seat kind, self-approval through the
   on-behalf-of chain, step-up).
 
+## Wave 12: `ui://` resources
+
+- **FR-UI-1** `toolTable` reads `tool.ui` (`ui://<module>/<name>`) and sets the descriptor's `_meta.ui.resourceUri`; any
+  other URI is dropped.
+- **FR-UI-2** `uiResourceTable(manifests)` reads each manifest's `uiResources` section (`uri`, `name`, `description`,
+  `url` of the published single-file bundle, `csp.connectDomains`, `csp.resourceDomains`, `permissions`); the first of
+  a URI wins; a malformed URI or a non-`https:` bundle is left out.
+- **FR-UI-3** `uiResourcesFor(resources, tools)` keeps the resources that a caller's listed tools name.
+- **FR-UI-4** `uiResourceContents(resource, html)` answers `resources/read` with `text/html;profile=mcp-app` and the
+  frame policy under `_meta.ui`; the gateway fetches the bundle (ADR 0348 decision 2).
+- Gen writing `tool.ui` and `uiResources` into the manifest is STA-340's; until then a member writes neither.
+
 ## Not built here
 
 - The OS tasks-approvals `ApprovalGate` driver that reads the rule set and applies `approverRefusal`.
-- `ui://` resources in the MCP listing; the product seed rows (`seed-pack:juristra`, Academorix).
+- The product seed rows (`seed-pack:juristra`, Academorix).
 - Tests, typecheck and build are written but not run (owner mode).

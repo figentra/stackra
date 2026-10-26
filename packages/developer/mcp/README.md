@@ -10,24 +10,26 @@ Stackra repository. `@stackra/cli` wires it to `stackra mcp`, `stackra mcp sync`
 
 ## What is here
 
-| Entry    | Symbol                                    | Use                                                                      |
-| -------- | ----------------------------------------- | ------------------------------------------------------------------------ |
-| `.`      | `parseMcpConfig(document, source?)`       | check a parsed `.mcp.yaml`: its shape, then the rules below              |
-| `.`      | `renderMcpJson(config)`                   | the exact `.mcp.json` text Claude Code reads                             |
-| `.`      | `mcpExecCommand(argv, options?)`          | the command `stackra mcp exec -- <argv>` starts                          |
-| `.`      | `shellCommandLine(argv)`, `secretNamesOf` | the quoted `sh -c` line and the `$NAME` references it expands            |
-| `.`      | `mcpConfigJsonSchema()`                   | the JSON Schema served at `static.stackra.figentra.com/schemas/mcp.json` |
-| `.`      | `McpConfigInvalidError`                   | a `.mcp.yaml` that cannot be used, with every issue                      |
-| `.`      | `toolTable(manifests)`                    | the hosted server's tools, from committed manifests                      |
-| `.`      | `filterTools(tools, access, scope)`       | one caller's tools by role and record, `locked` where the plan lacks one |
-| `.`      | `protectedResourceMetadata(options)`      | the RFC 9728 document of the hosted endpoint                             |
-| `.`      | `wwwAuthenticate(metadataUrl, challenge)` | the `Bearer` challenge of a 401 or 403                                   |
-| `./node` | `syncMcpConfig(root?)`                    | `stackra mcp sync` (the template's `prepare`): write `.mcp.json`         |
-| `./node` | `checkMcpConfig(root?)`                   | `stackra agents check`: is `.mcp.json` what `.mcp.yaml` renders to?      |
-| `./node` | `readMcpConfig(file)`                     | read, YAML-parse and check one `.mcp.yaml`                               |
-| `./node` | `execWithSecrets(argv, options?)`         | `stackra mcp exec --`: start a server with its secrets                   |
-| `./node` | `serveLocalMcp(options)`                  | `stackra mcp`: the local stdio server                                    |
-| `./node` | `McpProtocolError`                        | a JSON-RPC error on the connection                                       |
+| Entry    | Symbol                                        | Use                                                                      |
+| -------- | --------------------------------------------- | ------------------------------------------------------------------------ |
+| `.`      | `parseMcpConfig(document, source?)`           | check a parsed `.mcp.yaml`: its shape, then the rules below              |
+| `.`      | `renderMcpJson(config)`                       | the exact `.mcp.json` text Claude Code reads                             |
+| `.`      | `mcpExecCommand(argv, options?)`              | the command `stackra mcp exec -- <argv>` starts                          |
+| `.`      | `shellCommandLine(argv)`, `secretNamesOf`     | the quoted `sh -c` line and the `$NAME` references it expands            |
+| `.`      | `mcpConfigJsonSchema()`                       | the JSON Schema served at `static.stackra.figentra.com/schemas/mcp.json` |
+| `.`      | `McpConfigInvalidError`                       | a `.mcp.yaml` that cannot be used, with every issue                      |
+| `.`      | `toolTable(manifests)`                        | the hosted server's tools, from committed manifests                      |
+| `.`      | `filterTools(tools, access, scope)`           | one caller's tools by role and record, `locked` where the plan lacks one |
+| `.`      | `uiResourceTable`, `uiResourcesFor`           | the `ui://` resources from manifests; the ones a caller's tools name     |
+| `.`      | `uiResourceContents`, `UI_RESOURCE_MIME_TYPE` | a `ui://` read answer: the bundle and its frame policy                   |
+| `.`      | `protectedResourceMetadata(options)`          | the RFC 9728 document of the hosted endpoint                             |
+| `.`      | `wwwAuthenticate(metadataUrl, challenge)`     | the `Bearer` challenge of a 401 or 403                                   |
+| `./node` | `syncMcpConfig(root?)`                        | `stackra mcp sync` (the template's `prepare`): write `.mcp.json`         |
+| `./node` | `checkMcpConfig(root?)`                       | `stackra agents check`: is `.mcp.json` what `.mcp.yaml` renders to?      |
+| `./node` | `readMcpConfig(file)`                         | read, YAML-parse and check one `.mcp.yaml`                               |
+| `./node` | `execWithSecrets(argv, options?)`             | `stackra mcp exec --`: start a server with its secrets                   |
+| `./node` | `serveLocalMcp(options)`                      | `stackra mcp`: the local stdio server                                    |
+| `./node` | `McpProtocolError`                            | a JSON-RPC error on the connection                                       |
 
 ## `.mcp.yaml` rules
 
@@ -77,7 +79,7 @@ await serveLocalMcp({ version: CLI_VERSION, run: (args) => commands.run(args) })
 
 ## The hosted server core
 
-The hosted gateway (ADR 0155 decision 4, in the OS `ai` service) builds on three pure pieces here; the deployment, the
+The hosted gateway (ADR 0155 decision 4, in the OS `ai` service) builds on four pure pieces here; the deployment, the
 transport and the token check stay in the service.
 
 - `toolTable(manifests)` turns every manifest action with a `tool` entry into a row: the MCP descriptor with its input
@@ -87,6 +89,12 @@ transport and the token check stay in the service.
   record, drops one the AI permission matrix sets to off there, and lists one the tenant is not entitled to with
   `locked: true`, so the gateway answers it with "requires subscription" (ADR 0155 decision 3). The answers come from
   the host's IAM, the `rule-set:os:ai-action-permissions` rows and entitlements.
+- `uiResourceTable(manifests)`, `uiResourcesFor(resources, tools)` and `uiResourceContents(resource, html)` serve the
+  `ui://<module>/<name>` resources of ADR 0348 decision 2 (MCP Apps): a tool names one in its manifest entry
+  (`tool.ui`), which `toolTable` puts in the descriptor's `_meta.ui.resourceUri`; the member that builds the
+  single-file bundle lists it under `uiResources` with its published `https:` URL, its content-security domains and
+  permissions; a caller lists only the resources its listed tools name; a read answers the bundle text as
+  `text/html;profile=mcp-app` with the frame policy under `_meta.ui` (ADR 0348, STA-784). The gateway fetches the bundle.
 - `protectedResourceMetadata({ resource, authorizationServers, ... })` and `wwwAuthenticate(metadataUrl)` publish the
   endpoint as an OAuth protected resource naming the identity provider's issuer (ADR 0348 decision 2, RFC 9728). Every
   URL is the host's configuration.

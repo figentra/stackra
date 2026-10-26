@@ -2,10 +2,11 @@
  * Stackra file contract:
  * Purpose: `HostedTool`, one row of the hosted MCP server's tool table: the MCP descriptor (`name`, `description`,
  *          `inputSchema`, `annotations`) plus what the gateway needs to filter, approve and audit a call (the action
- *          key, the member, the permission, its risk and effect tags).
+ *          key, the member, the permission, its risk and effect tags), and the `ui://` resource it renders in.
  * Boundary: a type only; `toolTable` builds it from committed manifests, never from source.
  * Runtime: isomorphic
- * Governing contract: ADR 0155 (decisions 1 and 4, as amended by ADR 0360 decision 4); ADR 0099 (decisions 2 and 3).
+ * Governing contract: ADR 0155 (decisions 1 and 4, as amended by ADR 0360 decision 4); ADR 0099 (decisions 2 and 3);
+ *                     ADR 0348 (decision 2), STA-784.
  */
 import type { Json } from "@stackra/contracts";
 
@@ -37,4 +38,10 @@ export type HostedTool = {
 
   /** The effect tags the action declares. */
   readonly effects: readonly string[];
+
+  /** The `ui://` resource the tool renders its result in, when it opts into one. */
+  readonly ui?: string;
+
+  /** The MCP descriptor's metadata: `ui.resourceUri` when the tool names a `ui://` resource. */
+  readonly _meta?: { readonly ui: { readonly resourceUri: string } };
 };

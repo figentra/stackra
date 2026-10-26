@@ -9,6 +9,7 @@
  * Governing contract: ADR 0294 (decision 15); ADR 0127 2026-10-24 note; ADR 0282 (decision 5); ADR 0155 (decision 4);
  *                     ADR 0348 (decision 2).
  */
+export { UI_RESOURCE_MIME_TYPE } from "#core/constants/ui-resource-mime-type.constant";
 export { McpConfigInvalidError } from "#core/errors/mcp-config-invalid.error";
 export { filterTools } from "#core/functions/filter-tools.function";
 export { mcpConfigJsonSchema } from "#core/functions/mcp-config-json-schema.function";
@@ -19,6 +20,9 @@ export { renderMcpJson } from "#core/functions/render-mcp-json.function";
 export { secretNamesOf } from "#core/functions/secret-names-of.function";
 export { shellCommandLine } from "#core/functions/shell-command-line.function";
 export { toolTable } from "#core/functions/tool-table.function";
+export { uiResourceContents } from "#core/functions/ui-resource-contents.function";
+export { uiResourceTable } from "#core/functions/ui-resource-table.function";
+export { uiResourcesFor } from "#core/functions/ui-resources-for.function";
 export { wwwAuthenticate } from "#core/functions/www-authenticate.function";
 export type { CommandLine } from "#core/types/command-line.type";
 export type { HostedTool } from "#core/types/hosted-tool.type";
@@ -32,3 +36,4 @@ export type { ProtectedResourceOptions } from "#core/types/protected-resource-op
 export type { ToolAccess } from "#core/types/tool-access.type";
 export type { ToolFilterResult } from "#core/types/tool-filter-result.type";
 export type { ToolScope } from "#core/types/tool-scope.type";
+export type { UiResource } from "#core/types/ui-resource.type";

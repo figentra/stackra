@@ -3,16 +3,18 @@
  * Purpose: `toolTable`, the hosted MCP server's tool table, built from committed manifests: one row per action or
  *          query that carries a `tool` entry (gen writes one for every query and every action a user can perform
  *          unless it says `tool: false` with a reason), with its input schema inlined and gen's derived hints as the
- *          MCP annotations. The first manifest to list a tool name wins, so a hosted package that also passes its own
+ *          MCP annotations, and the `ui://` resource a tool names (`tool.ui`) as its descriptor's `_meta.ui.resourceUri`.
+ *          The first manifest to list a tool name wins, so a hosted package that also passes its own
  *          manifest is not listed twice.
  * Boundary: pure. No permission or entitlement is applied here (that is `filterTools`, per caller); no tool is ever
  *           hand-added or hand-annotated.
  * Runtime: isomorphic
  * Governing contract: ADR 0155 (decisions 1 and 4, as amended by ADR 0360 decision 4 and ADR 0348); ADR 0099
- *                     (decision 3: hints are derived).
+ *                     (decision 3: hints are derived); ADR 0348 (decision 2), STA-784.
  */
 import type { Json, StackraManifest } from "@stackra/contracts";
 
+import { UI_RESOURCE_URI } from "#core/constants/ui-resource-uri.constant";
 import { inlineSchemaRefs } from "#core/functions/inline-schema-refs.function";
 import type { HostedTool } from "#core/types/hosted-tool.type";
 
@@ -41,6 +43,8 @@ export function toolTable(manifests: readonly StackraManifest[]): HostedTool[] {
           : inlineSchemaRefs(action["input"] as Json, manifest, manifests);
       const hints = isObject(tool["hints"]) ? tool["hints"] : {};
       const description = action["description"];
+      const ui =
+        typeof tool["ui"] === "string" && UI_RESOURCE_URI.test(tool["ui"]) ? tool["ui"] : undefined;
       byName.set(tool["name"], {
         name: tool["name"],
         ...(typeof description === "string" ? { description } : {}),
@@ -55,6 +59,7 @@ export function toolTable(manifests: readonly StackraManifest[]): HostedTool[] {
         permission: action.permission,
         risk: action.risk,
         effects: Array.isArray(action["effects"]) ? action["effects"].map(String) : [],
+        ...(ui === undefined ? {} : { ui, _meta: { ui: { resourceUri: ui } } }),
       });
     }
   return [...byName.values()].sort((a, b) => a.name.localeCompare(b.name));
