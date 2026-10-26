@@ -3,7 +3,7 @@
 The MikroORM layer of Stackra on Postgres: `CrudService<M>` with resource-table and metrics reads, repositories, the
 graph reader, the `Migration`, `Macro` and `Seeder` kinds with the migration compiler, the `idx_`/`fk_`/`ck_` naming
 strategy, the unit of work and scope sessions, gapless `Sequence` numbers, `Projection` read models with `asOf` reads, the record-visibility filter seam, and the
-`Factory` and `usePostgres` test helpers.
+`Factory`, `usePostgres` and PGlite memory-driver test helpers.
 
 **Tier:** `tier:lib` (`packages/data/database`), entries `.`, `./contracts`, `./node` and `./testing` (the template's old `./orm` is folded into
 `.`). The only package that imports `@mikro-orm/*` (ADR 0097). Server only: no ORM on a client (ADR 0227, 0256).
@@ -15,7 +15,7 @@ strategy, the unit of work and scope sessions, gapless `Sequence` numbers, `Proj
 | `@stackra/database`           | `src/core/`: node runtime      | `CrudService`, `Repository` (t), `repositoryOf`, `GraphQuery`, `Aggregate`, `MixedCurrencyError`, `Migration`, `MigrationId` (t), `Macro`, `Seeder`, `Blueprint` (t), `SchemaBuilder` (t), `ColumnGroup` (t), `RowLevelSecurityOptions` (t), `Extension`, `compileMigration`, `table`, `sql`, `operationAction`, `operationQuery`, `Database`, `StackraNamingStrategy`, `registerEntities`, `registerModelPartners`, `EntitySchema`, `OptionalProps`, `UniqueViolation`; sequences: `Sequence`, `SequenceService`, `registerSequences`, `formatSequenceNumber`, `SequenceNotReservableError`, `SequenceBlockClosedError`, `SequenceNumberOutOfOrderError`, `SequenceOptions` (t), `SequenceClass` (t), `SequenceRegistration` (t), `SequenceSeries` (t), `SequenceNumber` (t), `SequenceBlock` (t), `SequenceReserveOptions` (t); visibility: `connectVisibilityFilter`; legal holds: `connectHoldRegistry`, `disposableIds`, `HoldSubscriber`, `RecordHeldError`; `connectSequenceTimeZone`; read models: `Projection`, `ProjectionClass` (t), `ProjectionOptions` (t), `ProjectionReadOptions` (t), `ProjectionRow` (t) |
 | `@stackra/database/contracts` | `src/contracts/`: node runtime | `VisibilityFilter`, `HoldRegistry`, `Disposal`, `SequenceTimeZone`, `Where` (t)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | `@stackra/database/node`      | `src/node/`: node runtime      | `PostgresDatabaseDriver`, `DatabaseUnitOfWorkDriver`, `PostgresIdempotencyStoreDriver`, `PostgresRateLimitStoreDriver`, `migrate`, `rollback`, `seedState`, `applySeed`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| `@stackra/database/testing`   | `src/testing/`: tests only     | `Factory`, `Faker` (t), `usePostgres`, `DATABASE_TESTING_PLUGIN` (adds `.seed(...)` and `app.transaction(...)` to the testing module)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| `@stackra/database/testing`   | `src/testing/`: tests only     | `Factory`, `Faker` (t), `usePostgres`, `MemoryDatabaseDriver` (the PGlite `memory` driver of `Database`), `DATABASE_TESTING_PLUGIN` (connects a memory database per testing module and adds `.seed(...)`, `app.transaction(...)` and `app.repository(...)`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 
 Entry barrels are generated, never authored (ADR 0294 decision 15); until `stackra gen` writes them (STA-339),
 `src/core/index.ts`, `src/contracts/index.ts`, `src/node/index.ts` and `src/testing/index.ts` are stand-in barrels.
@@ -257,11 +257,34 @@ schema.create("parties", (t) => {
 
 ## Testing
 
+Two tiers, one API. The unit tier (`.test.ts`) runs on `MemoryDatabaseDriver`: real Postgres compiled to WASM
+([PGlite](https://pglite.dev)) in the test process, the `memory` driver of the `Database` port (ADR 0266, memory first).
+The integration tier (`.int.test.ts`) runs on a Testcontainers Postgres through `usePostgres()`.
+
 ```ts
+import { createTestingModule } from "@stackra/container/testing";
 import { Factory, type Faker, usePostgres } from "@stackra/database/testing";
 
+// unit tier: each compiled testing module gets a fresh in-memory database
+const app = await createTestingModule(CatalogueServiceModule).useDrivers("memory").compile();
+const product = await ProductFactory.new().has(VariantFactory.new()).create();
+expect(await app.repository(Product).count({})).toBe(1);
+
+// integration tier
 usePostgres(); // a Testcontainers Postgres for this .int.test.ts file
 const order = await OrderFactory.new().paid().has(OrderLineFactory.new().count(2)).create();
 ```
 
-Faker and Testcontainers are optional peers of `./testing`; a server never loads them.
+- **Schema.** Before its first query the memory database creates the approved extensions PGlite ships (`ltree`,
+  `pg_trgm`, `citext`, `pgcrypto`; not `vector`) and applies the member's compiled migrations from
+  `.stackra/migrations` under the working directory; a member with none gets the schema created from the registered
+  entities.
+- **Which database.** `DATABASE_TESTING_PLUGIN` connects a fresh memory database on every compile unless another one is
+  connected: `usePostgres()` (connected before the module compiles) or a driver the container built for the module
+  wins. The memory database an earlier module left is closed.
+- **`app.repository(Model)`** is the model's `Repository`, the `repositoryOf(Model)` binding when the wiring has one.
+- **Limits.** PGlite is one connection: a `requiresNew` transaction shares the surrounding session, and tests of
+  concurrent sessions, row-level security under an unprivileged role, or vector columns stay in the integration tier.
+
+Faker, Testcontainers, PGlite (`@electric-sql/pglite`) and `@mikro-orm/pglite` are optional peers of `./testing`; a
+server never loads them.

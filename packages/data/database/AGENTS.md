@@ -10,6 +10,7 @@ The MikroORM layer on Postgres. Member at `packages/data/database` (`tier:lib`),
 | -------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
 | A kind base (`CrudService`, `Migration`, `Macro`, …)                 | `src/core/bases/<name>.base.ts`                                               |
 | The `Factory` base and the other test helpers                        | `src/testing/{bases,constants,types}/`, `*.fixture.ts`                        |
+| The `memory` driver of `Database` (PGlite, unit tier only)           | `src/testing/drivers/memory-database.driver.ts`                               |
 | A port (`Database`, which carries `Database.current()`)              | `src/core/ports/<name>.port.ts`                                               |
 | A port or type with no core dependency (`VisibilityFilter`, `Where`) | `src/contracts/{ports,types}/`                                                |
 | A driver (Postgres, unit of work)                                    | `src/node/drivers/<name>.driver.ts`                                           |
@@ -62,7 +63,10 @@ The MikroORM layer on Postgres. Member at `packages/data/database` (`tier:lib`),
 - Migration rules the compiler enforces (explicit nullability and comments, expand-only adds, online indexes, approved
   extensions, stated raw inverses) change only with ADR 0159 or 0160.
 - Raw SQL only through `sql` and the `$raw` filter, or in a subclass method with a `// raw-sql:` reason (ADR 0160).
-- Faker and Testcontainers are imported by `./testing` only.
+- Faker, Testcontainers, `@electric-sql/pglite` and `@mikro-orm/pglite` are imported by `./testing` only.
+- The unit tier's database is `MemoryDatabaseDriver` (PGlite, ADR 0266 memory first), connected by
+  `DATABASE_TESTING_PLUGIN` on every compile unless another database is connected; keep its `transaction`, `withScope`
+  and `em` the same as `PostgresDatabaseDriver`'s when either changes.
 
 ## Rules that fail the build
 
