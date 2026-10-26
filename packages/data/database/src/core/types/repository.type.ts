@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `Repository<M>`, the reads and writes of one model a class injects as `repositoryOf(M)` when it needs no
- *          service methods: find, count and sum, create in the unit of work, insert now (for a dedup row), and purge.
+ *          service methods: find, count, sum and count-distinct, create in the unit of work, insert now (for a dedup row), and purge.
  * Boundary: a type only; every `CrudService<M>` is one too. Writes made with `create` flush with the caller's unit of
  *           work; `insert` flushes at once in a savepoint (or its own transaction), so a `UniqueViolation` surfaces at
  *           the call and the caller's transaction stays usable.
@@ -48,6 +48,9 @@ export interface Repository<M extends object> {
 
   /** The sum of a numeric field (`points`, or an embedded `total.minor`) over the rows matching `where`; 0 for none. */
   sum(field: string, where?: Where<M>): Promise<number>;
+
+  /** How many distinct non-null values a field (`subjectId`) holds over the rows matching `where`; 0 for none. */
+  countDistinct(field: string, where?: Where<M>): Promise<number>;
 
   /** A new row, written when the caller's unit of work commits. */
   create(data: RequiredEntityData<M>): M;

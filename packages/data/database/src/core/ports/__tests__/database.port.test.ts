@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of the `Database` port: `Database.current()` returns the connected driver and says what to do
- *          when none is connected.
+ *          when none is connected; `onReplica` runs the work as it is on a driver with no replica.
  * Boundary: test only; the driver is a stand-in.
  * Runtime: node (vitest)
  * Governing contract: ADR 0014; ADR 0238; ADR 0022; ADR 0269.
@@ -39,6 +39,10 @@ describe("Database", () => {
     const database = new StandInDatabase();
     ACTIVE_DATABASE.current = database;
     expect(Database.current()).toBe(database);
+  });
+
+  it("runs replica work in the running context by default", async () => {
+    expect(await new StandInDatabase().onReplica(async () => "read")).toBe("read");
   });
 
   it("refuses before a database is connected", () => {

@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: the `Database` port: the connected MikroORM database of a service. It hands out the entity manager of the
  *          running context, runs work in a transaction, runs work inside a scope (the application layer of
- *          row-level isolation), and closes.
+ *          row-level isolation), runs read-only work on a read replica, and closes.
  * Boundary: the ORM itself is MikroORM, which only this package imports (ADR 0097). `Database.current()` is the
  *           connected driver for code that cannot inject it; everything else injects `Database`. A scope is a
  *           contracts `ScopeRef`, a node's id and `ltree` path; levels are deployment data, so none is named here.
@@ -11,7 +11,7 @@
  *           other packages import it from `.`, and contracts holds only ports, enums and types that never import core.
  * Runtime: node
  * Governing contract: ADR 0014; ADR 0097 (decision 2); ADR 0238; ADR 0239; ADR 0327 (decisions 2, 3, 5, 8 and 9);
- *                     `.agents/rules/tenancy.md` (two layers).
+ *                     ADR 0057 (decision 6: read replica); `.agents/rules/tenancy.md` (two layers).
  */
 import type { EntityManager } from "@mikro-orm/postgresql";
 import { Port } from "@stackra/contracts";
@@ -57,6 +57,19 @@ export abstract class Database extends Port {
    * @throws TypeError for a scope path that is not an `ltree` path.
    */
   abstract withScope<T>(scopes: ScopeRef | readonly ScopeRef[], work: () => Promise<T>): Promise<T>;
+
+  /**
+   * Runs read-only `work` on a read replica, in its own read-only transaction carrying the running transaction's
+   * `app.*` settings (the scope and tenant the row-level-security policies read), so isolation holds there too. The
+   * replica lags the primary and never sees the running transaction's uncommitted writes; a write inside `work` fails.
+   * A driver with no replica runs `work` as it is, in the running context, which is what this default does.
+   *
+   * @example
+   * const rows = await database.onReplica(() => this.visits.find({ day: { $gte: from } }));
+   */
+  onReplica<T>(work: () => Promise<T>): Promise<T> {
+    return work();
+  }
 
   /** Closes the connection pool; `Database.current()` throws afterwards. */
   abstract close(): Promise<void>;

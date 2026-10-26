@@ -8,7 +8,7 @@
  *           which gen registers; the entity manager is the running context's, so every method runs inside the
  *           caller's transaction (an action's unit of work) and a query reads on a fork. A hand-written method of the
  *           same name overrides an inherited one. Every read (`find`, `findOne`, `findOneOrFail`, `count`, `sum`,
- *           `table`, `metrics`) ANDs in the bound `VisibilityFilter`'s conditions, on top of row-level security;
+ *           `countDistinct`, `table`, `metrics`) ANDs in the bound `VisibilityFilter`'s conditions, on top of row-level security;
  *           writes and `purge` carry none. `purge` skips every row the connected `HoldRegistry` holds. `repath` moves
  *           a scope subtree's rows to a new path prefix, the step every service takes when a scope node moves.
  * Runtime: node
@@ -113,16 +113,13 @@ export abstract class CrudService<M extends object> extends Service implements R
   }
 
   /** See `Repository.sum`. */
-  async sum(field: string, where: Where<M> = {} as Where<M>): Promise<number> {
-    const em = this.em();
-    const model = this.model();
-    const column = quoteIdentifier(columnOf(em.getMetadata(model), field));
-    const row = (await em
-      .createQueryBuilder(model, "row")
-      .select(raw(`coalesce(sum(row.${column}), 0) as total`))
-      .where((await visibleFilter(model, where)) as QBFilterQuery<M>)
-      .execute("get")) as Record<string, unknown> | undefined;
-    return Number(row?.["total"] ?? 0);
+  sum(field: string, where: Where<M> = {} as Where<M>): Promise<number> {
+    return this.aggregate((column) => `coalesce(sum(${column}), 0)`, field, where);
+  }
+
+  /** See `Repository.countDistinct`. */
+  countDistinct(field: string, where: Where<M> = {} as Where<M>): Promise<number> {
+    return this.aggregate((column) => `count(distinct ${column})`, field, where);
   }
 
   /** See `Repository.create`. */
@@ -250,6 +247,23 @@ export abstract class CrudService<M extends object> extends Service implements R
     return new MetricsReader(this.em(), model, period, options, () =>
       visibleFilter(model, options.where ?? ({} as Where<M>)),
     );
+  }
+
+  /** One aggregate of `field`'s column over the visible rows matching `where`, as a number (0 for no row). */
+  private async aggregate(
+    expression: (column: string) => string,
+    field: string,
+    where: Where<M>,
+  ): Promise<number> {
+    const em = this.em();
+    const model = this.model();
+    const column = `row.${quoteIdentifier(columnOf(em.getMetadata(model), field))}`;
+    const row = (await em
+      .createQueryBuilder(model, "row")
+      .select(raw(`${expression(column)} as total`))
+      .where((await visibleFilter(model, where)) as QBFilterQuery<M>)
+      .execute("get")) as Record<string, unknown> | undefined;
+    return Number(row?.["total"] ?? 0);
   }
 
   /** The entity manager of the running context; a raw query in a subclass method goes through it (ADR 0160). */

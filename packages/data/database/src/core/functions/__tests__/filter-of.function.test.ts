@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of the internal `filterOf` and `columnOf`: a `$raw` fragment becomes its own key and the rest is
- *          unchanged; a scalar or embedded path resolves to its column and anything else is refused.
+ * Purpose: unit tests of the internal `filterOf` and `columnOf`: each `$raw` fragment becomes its own key and the rest
+ *          is unchanged; a scalar or embedded path resolves to its column and anything else is refused.
  * Boundary: test only; the metadata is a hand-made stand-in.
  * Runtime: node (vitest)
  * Governing contract: ADR 0160 (decision 1); ADR 0022; ADR 0269.
@@ -29,6 +29,17 @@ describe(filterOf, () => {
       [raw.key]: [],
     });
     expect(filterOf<{ status: string }>({ status: "paid" })).toEqual({ status: "paid" });
+  });
+
+  it("turns each of several $raw fragments into its own key, so they AND", () => {
+    const first = sql`x > ${1}`;
+    const second = sql`y < ${2}`;
+    expect(filterOf<{ status: string }>({ status: "paid", $raw: [first, second] })).toEqual({
+      status: "paid",
+      [first.key]: [],
+      [second.key]: [],
+    });
+    expect(filterOf<{ status: string }>({ status: "paid", $raw: [] })).toEqual({ status: "paid" });
   });
 
   it("resolves scalar and embedded paths to columns", () => {

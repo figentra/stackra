@@ -2,13 +2,16 @@
  * Stackra file contract:
  * Purpose: `PostgresDatabaseDriver`, the `Database` on Postgres through MikroORM: connects with the generated entities
  *          and the Stackra naming strategy, resolves the entity manager of the running context, runs transactions,
- *          and sets the scope settings row-level security reads.
+ *          sets the scope settings row-level security reads, and runs read-only work on a read replica when the
+ *          runtime handed it one.
  * Boundary: the only file that starts MikroORM. Gen writes every default and enum item into the entities, so default
  *           inference is off; the global entity manager is never used for work (each call gets the context's or a
- *           fork). `connect` makes it `Database.current()` until `close`.
+ *           fork). `connect` makes it `Database.current()` until `close`. Reads stay on the primary
+ *           unless `onReplica` asks (MikroORM's replica preference is off), because the scope settings live in the
+ *           primary's transaction.
  * Runtime: node
  * Governing contract: ADR 0014; ADR 0097; ADR 0238; ADR 0239; ADR 0327 (decisions 3 and 5); ADR 0136 (decision 2); the
- *                     STA-335 entity-schema spike.
+ *                     STA-335 entity-schema spike; ADR 0057 (decision 6: read replica).
  */
 import { RequestContext, TransactionContext, TransactionPropagation } from "@mikro-orm/core";
 import { MikroORM } from "@mikro-orm/postgresql";
@@ -50,6 +53,10 @@ export class PostgresDatabaseDriver extends Driver(Database) {
   static async connect(options: DatabaseOptions): Promise<PostgresDatabaseDriver> {
     const orm = await MikroORM.init({
       clientUrl: options.url,
+      ...(options.replicas === undefined || options.replicas.length === 0
+        ? {}
+        : { replicas: options.replicas.map((clientUrl) => ({ clientUrl })) }),
+      preferReadReplicas: false,
       entities: [...(options.entities ?? REGISTERED_ENTITIES)],
       subscribers: [...(options.subscribers ?? [])],
       namingStrategy: StackraNamingStrategy,
@@ -93,6 +100,37 @@ export class PostgresDatabaseDriver extends Driver(Database) {
       );
       return work();
     });
+  }
+
+  /**
+   * See `Database.onReplica`. With no replica connected it runs `work` in the running context.
+   *
+   * @throws Error when the replica refuses the connection, or `work` writes.
+   */
+  override async onReplica<T>(work: () => Promise<T>): Promise<T> {
+    if ((this.orm.config.get("replicas") ?? []).length === 0) return work();
+    const current = this.em();
+    // raw-sql: pg_settings lists the custom `app.*` settings (scope, tenant) the running transaction carries
+    const settings: readonly { name: string; setting: string }[] = current.isInTransaction()
+      ? await current.execute("select name, setting from pg_settings where name like 'app.%'")
+      : [];
+    const connection = this.orm.em.getConnection("read");
+    return connection.transactional(
+      async (trx) => {
+        const em = this.orm.em.fork();
+        em.setTransactionContext(trx);
+        if (settings.length > 0)
+          // raw-sql: the same set_config withScope writes, replayed in the replica's transaction
+          await connection.execute(
+            `select ${settings.map(() => "set_config(?, ?, true)").join(", ")}`,
+            settings.flatMap(({ name, setting }) => [name, setting]),
+            "all",
+            trx,
+          );
+        return TransactionContext.create(em, work);
+      },
+      { readOnly: true },
+    );
   }
 
   /** See `Database.close`. */

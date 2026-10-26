@@ -5,12 +5,14 @@
  *          and leaves the caller's transaction usable, `table` pages, `withScope` sets `app.scope_id`, `app.scope_path`
  *          and `app.scope_paths`, and the compiled ancestor policy on `scope_path` shows a session only the rows at or
  *          below its granted paths (an unprivileged role sees nothing of another scope's rows, and nothing without a
- *          scope), served from the GiST index.
+ *          scope), served from the GiST index. The `ancestorOf` and `descendantOf` conditions and `countDistinct` read
+ *          real rows, and `onReplica` replays the running scope on a replica connection (the same container stands in
+ *          for the replica).
  * Boundary: integration tier (`.int`): needs Docker for Testcontainers; the container's superuser writes the rows and
  *           an unprivileged role reads them, because a superuser bypasses row-level security.
  * Runtime: node (vitest)
  * Governing contract: ADR 0239; ADR 0327 (decisions 3, 5 and 9); `.agents/rules/tenancy.md` (isolation test);
- *                     ADR 0159; ADR 0182; ADR 0269.
+ *                     ADR 0159; ADR 0182; ADR 0269; ADR 0057 (decision 6).
  */
 import { EntitySchema } from "@mikro-orm/core";
 import { SortDirection } from "@stackra/contracts";
@@ -21,11 +23,16 @@ import { describe, expect, it } from "@stackra/testing";
 import { UniqueViolation } from "#core/index";
 import { CrudService } from "#core/bases/crud-service.base";
 import { Migration } from "#core/bases/migration.base";
+import { ACTIVE_DATABASE } from "#core/constants/active-database.constant";
 import { Extension } from "#core/enums/extension.enum";
+import { ancestorOf } from "#core/functions/ancestor-of.function";
 import { compileMigration } from "#core/functions/compile-migration.function";
+import { descendantOf } from "#core/functions/descendant-of.function";
 import { registerModelPartners } from "#core/functions/register-model-partners.function";
+import { table } from "#core/functions/table.function";
 import type { Blueprint } from "#core/types/blueprint.type";
 import type { SchemaBuilder } from "#core/types/schema-builder.type";
+import { PostgresDatabaseDriver } from "#node/drivers/postgres-database.driver";
 import { usePostgres } from "#testing/use-postgres.fixture";
 
 const acme: ScopeRef = { id: "scp_01ja0000000000000000000001", path: "platform.acme" };
@@ -41,6 +48,8 @@ class Note extends Model.with(HasPublicId("note")) {
 }
 
 class NoteService extends CrudService<Note> {}
+
+const Notes = table("notes.notes", { scopePath: "scope_path" });
 
 registerModelPartners([[NoteService, Note]]);
 
@@ -99,6 +108,11 @@ function readAs(
 async function bodiesIn(scopes: ScopeRef | readonly ScopeRef[]) {
   const { settings, rows } = await readAs(scopes, "select body from notes.notes order by body");
   return { settings, bodies: rows.map((row) => row.body) };
+}
+
+/** The bodies of `rows`, sorted. */
+async function sortedBodies(rows: Promise<readonly { body: string }[]>) {
+  return (await rows).map((note) => note.body).sort();
 }
 
 /** A note row of `scope`. */
@@ -164,5 +178,55 @@ describe("PostgresDatabaseDriver", () => {
     expect(rows.map((row) => String(row["QUERY PLAN"])).join("\n")).toContain(
       "idx_notes_scope_path",
     );
+  });
+
+  it("filters by ltree ancestor and descendant, and counts distinct values", async () => {
+    const notes = new NoteService();
+    expect(
+      await sortedBodies(notes.find({ $raw: ancestorOf(Notes.columns.scopePath, shop.path) })),
+    ).toEqual(["a", "b"]);
+    expect(
+      await sortedBodies(notes.find({ $raw: descendantOf(Notes.columns.scopePath, acme.path) })),
+    ).toEqual(["a", "b"]);
+    expect(
+      await sortedBodies(
+        notes.find({
+          $raw: [
+            descendantOf(Notes.columns.scopePath, acme.path),
+            ancestorOf(Notes.columns.scopePath, acme.path),
+          ],
+        }),
+      ),
+    ).toEqual(["a"]);
+    expect(await notes.countDistinct("scopeId")).toBe(3);
+    expect(await notes.countDistinct("scopeId", { scopeId: acme.id })).toBe(1);
+  });
+
+  it("replays the running scope on a replica and reads there, read only", async () => {
+    const primary = ACTIVE_DATABASE.current;
+    const replicated = await PostgresDatabaseDriver.connect({
+      url: postgres.url,
+      replicas: [postgres.url],
+      entities: [NoteSchema],
+    });
+    try {
+      const read = (sql: string) =>
+        replicated.withScope(shop, () =>
+          replicated.onReplica(async () => {
+            const em = replicated.em();
+            await em.execute("set local role notes_reader");
+            return em.execute(sql);
+          }),
+        );
+      expect((await read("select body from notes.notes")).map((row) => row.body)).toEqual(["b"]);
+      await expect(
+        replicated.withScope(shop, () =>
+          replicated.onReplica(() => replicated.em().execute("update notes.notes set body = body")),
+        ),
+      ).rejects.toThrow(/read-only transaction/);
+    } finally {
+      await replicated.close();
+      ACTIVE_DATABASE.current = primary;
+    }
   });
 });

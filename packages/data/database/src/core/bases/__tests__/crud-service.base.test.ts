@@ -3,7 +3,7 @@
  * Purpose: unit tests of `CrudService`: the model comes from the registered partner (and an unregistered service
  *          says so), every read and write goes to the running context's entity manager with `$raw` turned into a raw
  *          key, `findOneOrFail` refuses with `not_found`, `insert` flushes in a savepoint or its own transaction,
- *          `update` assigns, `table` builds the cursor read, `sum` aggregates, and `metrics` returns a reader. With a
+ *          `update` assigns, `table` builds the cursor read, `sum` and `countDistinct` aggregate, and `metrics` returns a reader. With a
  *          `VisibilityFilter` bound, every read ANDs its conditions for the running call's actor (none outside a
  *          call), and a read with no conditions or no driver is unchanged. With a `HoldRegistry`
  *          connected, `purge` removes only the rows no hold covers. `repath` rewrites a subtree's path prefix in one
@@ -219,6 +219,14 @@ describe(CrudService, () => {
     expect(await new OrderService().sum("createdAt")).toBe(42);
     expect(em.builder.select).toHaveBeenCalledTimes(1);
     expect(new OrderService().metrics(period, { on: "createdAt" })).toBeInstanceOf(MetricsReader);
+  });
+
+  it("counts the distinct values of a field", async () => {
+    const em = connect();
+    expect(await new OrderService().countDistinct("createdAt", { status: "paid" })).toBe(42);
+    const [selected] = em.builder.select.mock.calls[0] as unknown as [{ sql: string }];
+    expect(selected.sql).toBe('count(distinct row."created_at") as total');
+    expect(em.builder.where).toHaveBeenCalledWith({ status: "paid" });
   });
 
   it("names the service whose model gen has not registered", async () => {

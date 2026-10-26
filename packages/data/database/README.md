@@ -53,8 +53,29 @@ const [revenue, series] = await Promise.all([
   running context's, so every write joins the action's unit of work (`DatabaseUnitOfWorkDriver`).
 - `findOneOrFail` refuses with `not_found`; `insert` writes now and throws `UniqueViolation` without spoiling the
   caller's transaction; a money `sum` over two currencies refuses with `mixed_currency`.
-- Raw SQL is one parameterised condition: `{ $raw: sql\`${StockLevels.columns.onHand} <= ${n}\` }`, with columns from
-gen's `table(...)` constants (ADR 0160).
+- Raw SQL is a parameterised condition, or a list of them ANDed: `{ $raw: sql\`${StockLevels.columns.onHand} <= ${n}\` }`,
+with columns from gen's `table(...)` constants (ADR 0160).
+- The operator helpers build those conditions for you, each value a parameter:
+  - `jsonContains(Bookings.columns.resourceIds, [resourceId])`: a jsonb column contains the value (`@>`, GIN-indexable).
+  - `jsonPath(Entries.columns.live, ["slug", locale], slug)`: the value at a jsonb path equals a JSON scalar (`null`
+    also matches an absent path), so a nested read needs no cast of the model's filter type.
+  - `ancestorOf(Connections.columns.scopePath, path)`: an `ltree` column is the path or above it (`@>`).
+  - `descendantOf(Shops.columns.scopePath, path)`: an `ltree` column is the path or below it (`<@`).
+    These narrow a read inside row-level security; they are never isolation (ADR 0327 d9).
+- `countDistinct(field, where?)` counts the distinct non-null values of a field over the visible matching rows
+  (`usage.countDistinct("subjectId", { meterId })`).
+
+### Reads on a replica
+
+```ts
+const visits = await database.onReplica(() => this.visits.find({ day: { $gte: from } }));
+```
+
+- `PostgresDatabaseDriver.connect({ url, replicas })` takes the replicas' connection strings from the runtime
+  (runway's `readReplica`, ADR 0057 d6). Every read stays on the primary unless it runs in `Database.onReplica`.
+- `onReplica(work)` opens a read-only transaction on a replica and replays the running transaction's `app.*` settings
+  (scope and tenant) there, so row-level security holds. The replica lags and never sees the caller's uncommitted
+  writes, so use it for reports and dashboards, never read-your-write paths. With no replica it runs `work` as it is.
 
 ## A migration
 

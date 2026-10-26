@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: `filterOf`, a `Where<M>` as the filter MikroORM takes: a `$raw` fragment becomes the fragment's own key with
- *          no value, which is how MikroORM places a raw condition.
+ * Purpose: `filterOf`, a `Where<M>` as the filter MikroORM takes: each `$raw` fragment becomes the fragment's own key
+ *          with no value, which is how MikroORM places a raw condition (several keys AND).
  * Boundary: internal; changes nothing else in the filter.
  * Runtime: node
  * Governing contract: ADR 0160 (decision 1).
@@ -20,5 +20,9 @@ export function filterOf<M extends object>(where: Where<M>): FilterQuery<M> {
   if (where === null || typeof where !== "object" || Array.isArray(where) || !("$raw" in where))
     return where;
   const { $raw, ...rest } = where;
-  return ($raw === undefined ? rest : { ...rest, [$raw.key]: [] }) as FilterQuery<M>;
+  const fragments = $raw === undefined ? [] : [$raw].flat();
+  return Object.assign(
+    rest,
+    ...fragments.map((fragment) => ({ [fragment.key]: [] })),
+  ) as FilterQuery<M>;
 }

@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
- * Purpose: `Where<M>`, the filter a read takes: MikroORM's typed filter of `M`, plus `$raw` for one parameterised SQL
- *          condition built with the `sql` tag (`{ $raw: sql\`${StockLevels.columns.onHand} <= ${n}\` }`).
+ * Purpose: `Where<M>`, the filter a read takes: MikroORM's typed filter of `M`, plus `$raw` for one or more
+ *          parameterised SQL conditions, ANDed, built with the `sql` tag (`{ $raw: sql\`${StockLevels.columns.onHand} <=
+ *          ${n}\` }`) or the operator helpers (`jsonContains`, `jsonPath`, `ancestorOf`, `descendantOf`).
  * Boundary: a type only; `$raw` is the only door for SQL in a filter, and only a `sql` fragment fits it, so values are
  *           always parameters (ADR 0160).
  * Runtime: node
@@ -11,6 +12,6 @@ import type { FilterQuery, RawQueryFragment } from "@mikro-orm/core";
 
 /** A filter of `M`. */
 export type Where<M extends object> = FilterQuery<M> & {
-  /** One raw condition, built with `sql`. */
-  readonly $raw?: RawQueryFragment;
+  /** One raw condition, or several ANDed, built with `sql` or an operator helper. */
+  readonly $raw?: RawQueryFragment | readonly RawQueryFragment[];
 };
