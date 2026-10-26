@@ -33,7 +33,7 @@ tool configs call so no port, origin or feed URL is typed outside a `runway.yaml
 | `./node`    | `CloudflareKvEdgeStoreDriver`, `RegistryBundlePublisherDriver`                          | not wired yet: reject with `RunwayNotConfiguredError`                       |
 | `./node`    | `runCommand`, `CommandRunner`                                                           | how a provider runs its CLI, with no shell                                  |
 | `.`         | `RunwayKind`, `RunwayEnvironment`, `TopologyMode`, `RequirementEngine`, `CacheEviction` | enums                                                                       |
-| `.`         | `SurfaceKind`, `MobileBuildTrigger`, `AppPublisher`                                     | enums of the app-shell sections and the mobile build job                    |
+| `.`         | `SurfaceKind`, `CanonicalHost`, `MobileBuildTrigger`, `AppPublisher`                    | enums of the app-shell sections and the mobile build job                    |
 | `.`         | `RunwayInvalidError`, `RunwayUnresolvedError`, `RunwayDeployFailedError`                | errors                                                                      |
 | `.`         | `RunwayNotConfiguredError`, `RunwayRefusedError`                                        | a driver with no vendor wired; a release a policy refuses                   |
 | `./node`    | `definesFor(member, environment)`                                                       | the bundler `define` map: public vars and the injected runway facts         |
@@ -81,6 +81,8 @@ surfaces:
     shell: os/landing@1
     content: assets/landing
     host: mezzora
+    ownDomain:
+      production: mezzora.com
   ops:
     contributes: "@mezzora/ops-ui"
 mobile:
@@ -110,10 +112,13 @@ mobile:
 ```
 
 The surfaces are `console`, `landing`, `ops`, `till`, `shopper` and `kiosk`. A surface's `host` is relative to
-`environments.<env>.domains.zone`. A product's own app member (an ADR must allow it, 0436 decision 3) is named in the
+`environments.<env>.domains.zone`. A landing site may also answer at the product's own domain, per environment
+(`ownDomain`); Runway writes both `host:` rows, and the own domain is canonical for search engines unless
+`canonical: platform` (ADR 0440 decision 6). A product's own app member (an ADR must allow it, 0436 decision 3) is named in the
 entry's `app: { member, adr }`. `assets: { root }` is needed only when the tree is not `assets/`. `checkSurfaces` adds
 the rules a JSON Schema cannot state: `ops` takes only `contributes` and no other surface does; only `landing` takes
-`content`; every other surface names its shell line; every path sits under the assets root; no two surfaces share a
+`content`, `ownDomain` and `canonical`, an own domain needs `host` beside it, and `canonical: own` needs an own domain;
+every other surface names its shell line; every path sits under the assets root; no two surfaces share a
 host; an app id ends in `.<product>.<app>`; an `app` names an existing app member.
 
 The Runway steps behind the sections, each over a port:

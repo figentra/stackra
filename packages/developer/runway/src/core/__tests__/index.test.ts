@@ -34,6 +34,7 @@ describe("@stackra/runway", () => {
       "AppPublisher",
       "BrandGenerator",
       "CacheEviction",
+      "CanonicalHost",
       "DeployKind",
       "EdgeStore",
       "ExtensionBundlePublisher",

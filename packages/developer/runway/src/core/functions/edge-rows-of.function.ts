@@ -1,7 +1,9 @@
 /**
  * Stackra file contract:
  * Purpose: `edgeRowsOf(root, environment, signing)`, the KV rows Runway owns for one environment: a `host:` row per
- *          surface host (product, surface, home region, status, realm and canonical host) and, for every host a
+ *          surface host (product, surface, home region, status, realm and canonical host), plus one for the landing
+ *          site's own domain in that environment with the same canonical host (the own domain unless
+ *          `canonical: platform`), and, for every host a
  *          mobile app links, `wellknown:` rows for `apple-app-site-association` and `assetlinks.json` covering every
  *          app that links it.
  * Boundary: pure; `registerPlatformHosts` writes the rows. Platform hosts only: tenant hosts and status changes are
@@ -9,9 +11,11 @@
  *           product's), and its home region is the environment's first region when it lists any.
  * Runtime: isomorphic
  * Governing contract: ADR 0437 (decision 6: Runway writes platform `host:` rows and app-link `wellknown:` rows), ADR
- *                     0436 (decision 11: hosts under the environment's zone), ADR 0439 (decision 2).
+ *                     0436 (decision 11: hosts under the environment's zone), ADR 0439 (decision 2), ADR 0440
+ *                     (decision 6: a product's own landing domain is a second host row, one host canonical).
  */
 import { RunwayUnresolvedError } from "#core/errors/runway-unresolved.error";
+import { CanonicalHost } from "#core/enums/canonical-host.enum";
 import type { RunwayEnvironment } from "#core/enums/runway-environment.enum";
 import type { AppLinkSigning } from "#core/types/app-link-signing.type";
 import type { EdgeRow } from "#core/types/edge-row.type";
@@ -39,18 +43,22 @@ function hostRows(root: RootRunway, environment: RunwayEnvironment): EdgeRow[] {
         "the root runway declares hosts but no product: add product.key",
       );
     const hostname = `${entry.host}.${zone}`;
+    const own = entry.ownDomain?.[environment];
+    const canonical =
+      own !== undefined && (entry.canonical ?? CanonicalHost.Own) === CanonicalHost.Own
+        ? own
+        : hostname;
     const region = scope?.regions?.[0];
-    rows.push({
-      key: `host:${hostname}`,
-      value: JSON.stringify({
-        product: root.product.key,
-        surface,
-        ...(region === undefined ? {} : { region }),
-        status: ACTIVE,
-        realm: TENANT_REALM,
-        canonical: hostname,
-      }),
+    const value = JSON.stringify({
+      product: root.product.key,
+      surface,
+      ...(region === undefined ? {} : { region }),
+      status: ACTIVE,
+      realm: TENANT_REALM,
+      canonical,
     });
+    rows.push({ key: `host:${hostname}`, value });
+    if (own !== undefined) rows.push({ key: `host:${own}`, value });
   }
   return rows;
 }

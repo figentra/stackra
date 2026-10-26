@@ -59,7 +59,7 @@
     },
     "surfaces": {
       "type": "object",
-      "description": "The surfaces this product contributes to (ADR 0441 d3, ADR 0436). Each names the shell line its extension bundle targets, the packages the bundle is built from and its platform host; `ops` takes only `contributes`, and only `landing` takes `content`. A product's own app member serving a surface is named in `app` with the ADR that allows it.",
+      "description": "The surfaces this product contributes to (ADR 0441 d3, ADR 0436). Each names the shell line its extension bundle targets, the packages the bundle is built from and its platform host; `ops` takes only `contributes`, and only `landing` takes `content`, `ownDomain` and `canonical`. A product's own app member serving a surface is named in `app` with the ADR that allows it.",
       "propertyNames": {
         "enum": ["console", "landing", "ops", "till", "shopper", "kiosk"]
       },
@@ -886,6 +886,25 @@
           "$ref": "#/$defs/hostName",
           "description": "The platform host, relative to the environment's zone; Runway writes its `host:` row (ADR 0437 d6).",
           "examples": ["console.mezzora", "mezzora"]
+        },
+        "ownDomain": {
+          "type": "object",
+          "description": "Landing only: the product's own domain per environment. Its site answers there and at `host`, as two `host:` rows (ADR 0440 d6).",
+          "propertyNames": {
+            "$ref": "#/$defs/envName"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/hostName"
+          },
+          "examples": [
+            {
+              "production": "mezzora.com"
+            }
+          ]
+        },
+        "canonical": {
+          "enum": ["platform", "own"],
+          "description": "Landing only: which host is canonical for search engines when `ownDomain` names one for the environment. Defaults to `own` (ADR 0440 d6)."
         },
         "contributes": {
           "$ref": "#/$defs/packageName",

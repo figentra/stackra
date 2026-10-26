@@ -85,6 +85,26 @@ describe("checkSurfaces", () => {
     expect(codes(root)).toEqual(["app_id_pattern mobile.staff.identity.ios.bundleId"]);
   });
 
+  it("keeps the own domain and canonical choice to a landing site beside its platform host", () => {
+    const root = rootWith({
+      surfaces: {
+        console: { shell: "os/console@3", host: "console.mezzora", canonical: "own" },
+        landing: { shell: "os/landing@1", ownDomain: { production: "mezzora.example" } },
+        ops: { contributes: "@mezzora/ops-ui", ownDomain: { production: "ops.example" } },
+      },
+    });
+    expect(codes(root)).toEqual([
+      "own_domain_outside_landing surfaces.console.ownDomain",
+      "own_domain_without_host surfaces.landing.host",
+      "ops_contributes_only surfaces.ops",
+    ]);
+
+    const orphan = rootWith({
+      surfaces: { landing: { shell: "os/landing@1", host: "mezzora", canonical: "own" } },
+    });
+    expect(codes(orphan)).toEqual(["canonical_without_own_domain surfaces.landing.canonical"]);
+  });
+
   it("refuses an app reference to a member that does not exist", () => {
     const root = rootWith({
       surfaces: {

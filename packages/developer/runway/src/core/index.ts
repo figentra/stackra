@@ -15,6 +15,7 @@
  */
 export { AppPublisher } from "#core/enums/app-publisher.enum";
 export { CacheEviction } from "#core/enums/cache-eviction.enum";
+export { CanonicalHost } from "#core/enums/canonical-host.enum";
 export { DeployKind } from "#core/enums/deploy-kind.enum";
 export { MobileBuildTrigger } from "#core/enums/mobile-build-trigger.enum";
 export { RequirementEngine } from "#core/enums/requirement-engine.enum";

@@ -5,7 +5,7 @@
  * Boundary: type only.
  * Runtime: isomorphic
  * Governing contract: ADR 0441 (enforcement), ADR 0436 (decisions 3 and 9, enforcement), ADR 0439 (decision 6,
- *                     enforcement), ADR 0231 (snake_case codes).
+ *                     enforcement), ADR 0440 (decision 6), ADR 0231 (snake_case codes).
  */
 
 /** One surface or mobile failure. */
@@ -14,7 +14,8 @@ export type SurfaceIssue = {
   readonly path: string;
   /**
    * `ops_contributes_only`, `contributes_outside_ops`, `content_outside_landing`, `shell_missing`,
-   * `path_outside_assets`, `host_duplicate`, `app_id_pattern`, `app_member_unknown`.
+   * `path_outside_assets`, `host_duplicate`, `app_id_pattern`, `app_member_unknown`, `own_domain_outside_landing`,
+   * `own_domain_without_host`, `canonical_without_own_domain`.
    */
   readonly code:
     | "ops_contributes_only"
@@ -24,7 +25,10 @@ export type SurfaceIssue = {
     | "path_outside_assets"
     | "host_duplicate"
     | "app_id_pattern"
-    | "app_member_unknown";
+    | "app_member_unknown"
+    | "own_domain_outside_landing"
+    | "own_domain_without_host"
+    | "canonical_without_own_domain";
   /** What is wrong, for `stackra validate` to print. */
   readonly message: string;
 };
