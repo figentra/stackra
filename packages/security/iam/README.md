@@ -32,6 +32,8 @@ Depends on `@stackra/actions`, `@stackra/container`, `@stackra/contracts`, `@sta
 | `.`           | `permissionKey`                                                                         | the locked key of a `Permission` static                                   |
 | `./contracts` | `PolicySource`                                                                          | the port snapshots come from                                              |
 | `./node`      | `IamVisibilityFilterDriver`                                                             | `@stackra/database`'s `VisibilityFilter`: visibility rules in reads       |
+| `./node`      | `PostgresPolicySnapshotStoreDriver`                                                     | the durable `PolicySnapshotStore`: one row per tenant and principal       |
+| `.`           | `PolicySnapshotIntakeService`, `PolicySnapshotEvent`                                    | the body of the listener that stores the IAM service's snapshot events    |
 | `./node`      | `registerVisibility`, `VisibilityRegistration`                                          | what gen's entry tells the query filter about each declaring model        |
 | `./contracts` | `PolicySnapshot`, `Grant`, `DenyRule`, `VisibilityRule`, `Audience`, `Capability`       | the policy as data                                                        |
 | `./react`     | `usePermission`                                                                         | `const can = usePermission(); can(OrderPermissions.create)`               |
@@ -75,7 +77,9 @@ static. An action takes its risk from its permission. A policy whose permission 
    `scope` (`ctx.scope`); a call without one acts at the node its caller's credential names, read from `ScopeTree`,
    or at the root when there is none.
 4. A role's permissions come from its module class (`registerRoles`) or from the snapshot (custom and provisioned
-   roles). A wildcard (`orders.*`, `*`) counts only in a system role.
+   roles). A wildcard (`orders.*`, `*`) counts only in a system role. A selector counts in any role: `@read` holds every
+   registered L0 and L1 permission, `@risk:l2` every one at that risk, each narrowed by a prefix (`orders.@read`); a
+   selector never picks a system or restricted permission, except in a deny (ADR 0407).
 5. An explicit deny beats every grant. A deny with a `@stackra/rules` condition is tested only against a record, and
    denies when the record's model registered no fact source.
 6. Every link of the actor chain must hold the permission: a service and the user it acts for.

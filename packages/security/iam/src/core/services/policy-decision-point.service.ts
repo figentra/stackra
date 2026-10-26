@@ -412,7 +412,7 @@ export class PolicyDecisionPointService extends Service {
     const rule = snapshot.denies.findIndex(
       (deny) =>
         (grant !== undefined || deny.breakable !== true) &&
-        coversPermission(deny.permission, key) &&
+        coversPermission(deny.permission, key, true) &&
         inAudience(deny.audience, snapshot, grants, options.scope) &&
         conditionHolds(deny.condition, options.record, at, this.live, true),
     );

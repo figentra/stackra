@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `MemoryPolicySnapshotStoreDriver`, a `PolicySnapshotStore` held in memory, for tests and local runs.
  * Boundary: process-local and unsynchronised; never a production store. Keeps a snapshot only when its version is
- *           higher than the held one, like every store.
+ *           higher than the held one, like every store, and partitions by tenant like the Postgres store.
  * Runtime: isomorphic
  * Governing contract: ADR 0208 (decisions 1 to 4); ADR 0263 (a driver is named by its class: `memory`).
  */
@@ -19,19 +19,20 @@ import type { PolicySnapshot } from "#contracts/index";
  * await store.write(rana.id, snapshot);
  */
 export class MemoryPolicySnapshotStoreDriver extends Driver(PolicySnapshotStore) {
-  /** Principal to snapshot. */
-  private readonly snapshots = new Map<PublicId, PolicySnapshot>();
+  /** `<tenant>:<principal>` to snapshot; `-` stands for no tenant. */
+  private readonly snapshots = new Map<string, PolicySnapshot>();
 
-  /** The held snapshot of `principal`. */
-  read(principal: PublicId): Promise<PolicySnapshot | undefined> {
-    return Promise.resolve(this.snapshots.get(principal));
+  /** The held snapshot of `principal` in `tenantId`. */
+  read(principal: PublicId, tenantId?: PublicId): Promise<PolicySnapshot | undefined> {
+    return Promise.resolve(this.snapshots.get(`${tenantId ?? "-"}:${principal}`));
   }
 
-  /** Keeps `snapshot` when it is newer. */
-  write(principal: PublicId, snapshot: PolicySnapshot): Promise<boolean> {
-    const held = this.snapshots.get(principal);
+  /** Keeps `snapshot` when it is newer than the one held in the same tenant. */
+  write(principal: PublicId, snapshot: PolicySnapshot, tenantId?: PublicId): Promise<boolean> {
+    const key = `${tenantId ?? "-"}:${principal}`;
+    const held = this.snapshots.get(key);
     if (held !== undefined && held.version >= snapshot.version) return Promise.resolve(false);
-    this.snapshots.set(principal, snapshot);
+    this.snapshots.set(key, snapshot);
     return Promise.resolve(true);
   }
 }

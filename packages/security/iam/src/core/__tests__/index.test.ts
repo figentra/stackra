@@ -41,6 +41,7 @@ describe("@stackra/iam", () => {
       "Permissions",
       "Policy",
       "PolicyDecisionPointService",
+      "PolicySnapshotIntakeService",
       "Risk",
       "Role",
       "StorePolicySourceDriver",

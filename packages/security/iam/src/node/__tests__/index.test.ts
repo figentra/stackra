@@ -16,7 +16,11 @@ import type { VisibilityRegistration } from "#node/index";
 
 describe("@stackra/iam/node", () => {
   it("exports exactly its values", () => {
-    expect(Object.keys(node).sort()).toEqual(["IamVisibilityFilterDriver", "registerVisibility"]);
+    expect(Object.keys(node).sort()).toEqual([
+      "IamVisibilityFilterDriver",
+      "PostgresPolicySnapshotStoreDriver",
+      "registerVisibility",
+    ]);
   });
 
   it("resolves its public type", () => {
