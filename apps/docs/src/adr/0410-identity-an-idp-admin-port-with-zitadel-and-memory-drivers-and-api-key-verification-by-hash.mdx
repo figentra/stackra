@@ -19,6 +19,15 @@ description: "Proposed · 2026-10-26"
   than `IdentityConfig.apiKeyLastUsedSeconds` (60), and a failed write never refuses the key.
 </Note>
 
+<Note>
+  Note 2026-10-26 (STA-1263), additive: `LoginPolicy` gains `externalProviderIds` (the provider-side
+  ids of the market pack's sign-in providers, through `IdentityConfig.externalProviders`) and
+  `secondFactors` (`IdpSecondFactor`: `totp`, `u2f`, `otp_email`, `otp_sms`). When a list is given,
+  `setLoginPolicy` leaves the organisation offering exactly those (the ZITADEL driver adds the
+  missing and removes the others, regional providers as system-owned); a list left out is not
+  touched. This is decision 4 applied to sign-in methods per market (OS identity A3).
+</Note>
+
 ## Context
 
 Nothing in Stackra created a ZITADEL user or machine user, ended a session, ran the OAuth device flow or set an

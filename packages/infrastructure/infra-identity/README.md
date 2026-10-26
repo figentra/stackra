@@ -81,7 +81,7 @@ apps:
 machines:
   identity:
     name: Identity service
-    instanceRoles: [org_manager] # creates each tenant's organisation
+    instanceRoles: [org_manager, user_manager] # tenant organisations, their login policies and users (IdpAdmin)
 users: # the local dev container only
   - userName: dev
     email: dev@acme.example
@@ -143,5 +143,6 @@ Agents run `pulumi preview` at most; `pulumi up` is the owner's. Before the firs
 - creates the provisioner, a machine user with `IAM_OWNER`, and sets its key as the secret stack config value
   `zitadel:jwtProfileJson`;
 - after `up`, creates each machine user's key and imports it into Infisical through `pnpm secrets:import` (ADR 0173);
+  the `identity` machine's token is `@stackra/identity`'s `IDENTITY_IDP_ADMIN_TOKEN` (the `IdpAdmin` ZITADEL driver);
 - turns on token exchange on the instance when an app asks for it;
 - adds the external sign-in providers and uploads the logos (not in this stack).

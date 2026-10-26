@@ -5,16 +5,17 @@
  *          users, secrets and login policy, the OAuth device endpoints); a 409 is `IdpUserExistsError`, a 5xx, a 429 or a
  *          network failure `IdpAdminUnavailableError`, another 4xx an `Error` with no body; ending a gone session
  *          succeeds; ending a user's sessions searches and deletes each; a device poll maps the RFC 8628 errors; a
- *          user's authentication methods come back as unique `amr` codes.
+ *          user's authentication methods come back as unique `amr` codes; a policy's providers and second factors are
+ *          brought to exactly the listed ones.
  * Boundary: test only; a scripted fetch records each request and answers from a queue.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; RFC 8628; ADR 0410 (STA-834); STA-1264.
+ * Governing contract: ADR 0022; RFC 8628; ADR 0410 (STA-834); STA-1264; STA-1263.
  */
 import { buildConfig } from "@stackra/config";
 import { describe, expect, it } from "@stackra/testing";
 
 import { IdpAdminConfig } from "#config/idp-admin.config";
-import { DeviceTokenStatus } from "#contracts/index";
+import { DeviceTokenStatus, IdpSecondFactor } from "#contracts/index";
 import { ZitadelIdpAdminDriver } from "#core/drivers/zitadel-idp-admin.driver";
 import { IdpAdminUnavailableError } from "#core/errors/idp-admin-unavailable.error";
 import { IdpUserExistsError } from "#core/errors/idp-user-exists.error";
@@ -229,5 +230,66 @@ describe(ZitadelIdpAdminDriver, () => {
       method: "GET",
     });
     expect(await idp.listAuthMethods("u_2")).toEqual([]);
+  });
+
+  it("brings the policy's providers and second factors to exactly the listed ones", async () => {
+    const { idp, sent } = driverWith([
+      [200, { policy: { isDefault: false } }],
+      [200, {}],
+      [200, { result: [{ idpId: "idp_old" }, { idpId: "idp_keep" }] }],
+      [200, {}],
+      [404, {}],
+      [200, { result: ["SECOND_FACTOR_TYPE_OTP", "SECOND_FACTOR_TYPE_OTP_SMS"] }],
+      [200, {}],
+      [200, {}],
+    ]);
+    await idp.setLoginPolicy("org_1", {
+      allowUsernamePassword: true,
+      allowRegister: true,
+      allowExternalIdp: true,
+      forceMfa: false,
+      allowPasswordless: true,
+      hidePasswordReset: false,
+      ignoreUnknownUsernames: true,
+      externalProviderIds: ["idp_keep", "idp_new"],
+      secondFactors: [IdpSecondFactor.Totp, IdpSecondFactor.U2f],
+    });
+    expect(
+      sent.map(
+        (request) => `${request.method} ${request.url.replace("https://id.acme.example", "")}`,
+      ),
+    ).toEqual([
+      "GET /management/v1/policies/login",
+      "PUT /management/v1/policies/login",
+      "POST /management/v1/policies/login/idps/_search",
+      "POST /management/v1/policies/login/idps",
+      "DELETE /management/v1/policies/login/idps/idp_old",
+      "POST /management/v1/policies/login/second_factors/_search",
+      "POST /management/v1/policies/login/second_factors",
+      "DELETE /management/v1/policies/login/second_factors/SECOND_FACTOR_TYPE_OTP_SMS",
+    ]);
+    expect(JSON.parse(sent[3]?.body ?? "")).toEqual({
+      idpId: "idp_new",
+      ownerType: "IDP_OWNER_TYPE_SYSTEM",
+    });
+    expect(JSON.parse(sent[6]?.body ?? "")).toEqual({ type: "SECOND_FACTOR_TYPE_U2F" });
+    expect(sent.every((request) => request.headers["x-zitadel-orgid"] === "org_1")).toBe(true);
+  });
+
+  it("leaves providers and second factors alone when the policy does not list them", async () => {
+    const { idp, sent } = driverWith([
+      [200, { policy: { isDefault: true } }],
+      [200, {}],
+    ]);
+    await idp.setLoginPolicy("org_1", {
+      allowUsernamePassword: true,
+      allowRegister: false,
+      allowExternalIdp: false,
+      forceMfa: true,
+      allowPasswordless: false,
+      hidePasswordReset: false,
+      ignoreUnknownUsernames: true,
+    });
+    expect(sent).toHaveLength(2);
   });
 });

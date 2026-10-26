@@ -3,7 +3,8 @@
  * Purpose: `ZitadelIdpAdminDriver`, the ZITADEL driver of `IdpAdmin`: human users through the v2 user service, machine
  *          users and their client secret through the management API, sessions through the v2 session service, the
  *          device flow through the OAuth endpoints (RFC 8628), and an organisation's login policy through the
- *          management API (added the first time, updated after); a user's enrolled authentication methods through the
+ *          management API (added the first time, updated after, then its external providers and second factors brought
+ *          to exactly the listed ones); a user's enrolled authentication methods through the
  *          v2 user service, mapped to RFC 8176 `amr` codes.
  * Boundary: one HTTPS call per step, with the service account token of `IdpAdminConfig` as a bearer token and the
  *           configured timeout. Managed or bring-your-own is the configured URL: the platform's ZITADEL or a tenant's
@@ -11,12 +12,12 @@
  *           (retryable); any other 4xx is a bug and throws an `Error` naming the method, path and status, never a body.
  *           Ending a session that is already gone (404) succeeds. Personal data and secrets are never logged.
  * Runtime: isomorphic (global `fetch`)
- * Governing contract: ADR 0206; ADR 0207; ADR 0235 (decision 1); RFC 8628; ADR 0376; ADR 0410 (STA-834); RFC 8176; STA-1264.
+ * Governing contract: ADR 0206; ADR 0207; ADR 0235 (decision 1); RFC 8628; ADR 0376; ADR 0410 (STA-834); RFC 8176; STA-1264; STA-1263.
  */
 import { Driver } from "@stackra/container";
 
 import type { IdpAdminConfig } from "#config/idp-admin.config";
-import { DeviceTokenStatus, IdpAdmin } from "#contracts/index";
+import { DeviceTokenStatus, IdpAdmin, IdpSecondFactor } from "#contracts/index";
 import type {
   DeviceAuthorization,
   DeviceTokenResult,
@@ -55,6 +56,14 @@ const AMR_OF_METHOD: Readonly<Record<string, string>> = {
   AUTHENTICATION_METHOD_TYPE_U2F: "hwk",
   AUTHENTICATION_METHOD_TYPE_OTP_SMS: "sms",
   AUTHENTICATION_METHOD_TYPE_OTP_EMAIL: "otp",
+};
+
+/** The provider-neutral second factors to ZITADEL's second factor types. */
+const SECOND_FACTOR_TYPE: Readonly<Record<IdpSecondFactor, string>> = {
+  [IdpSecondFactor.Totp]: "SECOND_FACTOR_TYPE_OTP",
+  [IdpSecondFactor.U2f]: "SECOND_FACTOR_TYPE_U2F",
+  [IdpSecondFactor.OtpEmail]: "SECOND_FACTOR_TYPE_OTP_EMAIL",
+  [IdpSecondFactor.OtpSms]: "SECOND_FACTOR_TYPE_OTP_SMS",
 };
 
 /** One request: the method, the path, a JSON or form body, and the organisation it acts in. */
@@ -275,6 +284,76 @@ export class ZitadelIdpAdminDriver extends Driver(IdpAdmin) {
         ignoreUnknownUsernames: policy.ignoreUnknownUsernames,
       },
     });
+    if (policy.externalProviderIds !== undefined)
+      await this.syncProviders(organizationId, policy.externalProviderIds);
+    if (policy.secondFactors !== undefined)
+      await this.syncSecondFactors(organizationId, policy.secondFactors);
+  }
+
+  /** Brings the organisation's login-policy providers to exactly `wanted`: adds the missing, removes the others. */
+  private async syncProviders(organizationId: string, wanted: readonly string[]): Promise<void> {
+    // shortcut: one page of PAGE linked providers; page through when an organisation can link more.
+    const { body } = await this.call({
+      method: "POST",
+      path: "/management/v1/policies/login/idps/_search",
+      organizationId,
+      json: { query: { offset: 0, limit: PAGE } },
+    });
+    const rows = (body as { result?: readonly { idpId?: unknown }[] }).result ?? [];
+    const current = rows
+      .map((row) => row.idpId)
+      .filter((id): id is string => typeof id === "string");
+    for (const idpId of wanted.filter((id) => !current.includes(id)))
+      await this.call({
+        method: "POST",
+        path: "/management/v1/policies/login/idps",
+        organizationId,
+        // The regional providers (national IDs) are configured on the instance, so they are system-owned.
+        json: { idpId, ownerType: "IDP_OWNER_TYPE_SYSTEM" },
+      });
+    for (const idpId of current.filter((id) => !wanted.includes(id)))
+      await this.call(
+        {
+          method: "DELETE",
+          path: `/management/v1/policies/login/idps/${encodeURIComponent(idpId)}`,
+          organizationId,
+        },
+        [404],
+      );
+  }
+
+  /** Brings the organisation's second factors to exactly `wanted`: adds the missing, removes the others. */
+  private async syncSecondFactors(
+    organizationId: string,
+    wanted: readonly IdpSecondFactor[],
+  ): Promise<void> {
+    const { body } = await this.call({
+      method: "POST",
+      path: "/management/v1/policies/login/second_factors/_search",
+      organizationId,
+      json: {},
+    });
+    const result = (body as { result?: unknown }).result;
+    const current = (Array.isArray(result) ? result : []).filter(
+      (type): type is string => typeof type === "string",
+    );
+    const wantedTypes = [...new Set(wanted.map((factor) => SECOND_FACTOR_TYPE[factor]))];
+    for (const type of wantedTypes.filter((wantedType) => !current.includes(wantedType)))
+      await this.call({
+        method: "POST",
+        path: "/management/v1/policies/login/second_factors",
+        organizationId,
+        json: { type },
+      });
+    for (const extra of current.filter((currentType) => !wantedTypes.includes(currentType)))
+      await this.call(
+        {
+          method: "DELETE",
+          path: `/management/v1/policies/login/second_factors/${encodeURIComponent(extra)}`,
+          organizationId,
+        },
+        [404],
+      );
   }
 
   /**

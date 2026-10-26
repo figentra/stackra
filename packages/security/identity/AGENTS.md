@@ -51,6 +51,8 @@ model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./desktop`, `./n
   by `apiKeyLastUsedSeconds`; a failed write never refuses a valid key.
 - `IdpAdmin.listAuthMethods` answers RFC 8176 `amr` codes; which level each reaches is `assuranceByMethod`
   (configuration), never the driver.
+- A login policy's providers and second factors are data (market pack and tenant settings) pushed through
+  `IdpAdmin.setLoginPolicy`; the driver makes the provider match the list exactly and never picks a provider itself.
 - An automation runs as its own principal from `AutomationPrincipals.mint` (ADR 0153), never as its publisher; the port
   mints and revokes, and grants are the workflow package's check.
 - A guardian acting for a minor, a manager override and a step-up grant nothing themselves: the IAM decision point still

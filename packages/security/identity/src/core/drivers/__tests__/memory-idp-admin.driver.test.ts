@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: unit tests of `MemoryIdpAdminDriver`: it is the `IdpAdmin` port; users and machine users are created with a
  *          taken login name refused per organisation; deactivation, removal and ending sessions; the device flow stays
- *          pending until approved or denied; login policies are kept per organisation; enrolled methods are listed once
+ *          pending until approved or denied; login policies are kept per organisation, a left-out provider or factor list keeping the last; enrolled methods are listed once
  *          each and dropped with the user.
  * Boundary: test only.
  * Runtime: node (vitest)
@@ -10,7 +10,7 @@
  */
 import { describe, expect, it } from "@stackra/testing";
 
-import { DeviceTokenStatus, IdpAdmin } from "#contracts/index";
+import { DeviceTokenStatus, IdpAdmin, IdpSecondFactor } from "#contracts/index";
 import type { LoginPolicy } from "#contracts/index";
 import { MemoryIdpAdminDriver } from "#core/drivers/memory-idp-admin.driver";
 import { IdpUserExistsError } from "#core/errors/idp-user-exists.error";
@@ -95,5 +95,23 @@ describe(MemoryIdpAdminDriver, () => {
     expect(await idp.listAuthMethods(userId)).toEqual(["pwd", "otp"]);
     await idp.removeUser(userId);
     expect(await idp.listAuthMethods(userId)).toEqual([]);
+  });
+
+  it("keeps the providers and second factors a later policy leaves out", async () => {
+    const idp = new MemoryIdpAdminDriver();
+    await idp.setLoginPolicy("org_1", {
+      ...POLICY,
+      externalProviderIds: ["idp_nafath"],
+      secondFactors: [IdpSecondFactor.Totp],
+    });
+    await idp.setLoginPolicy("org_1", { ...POLICY, forceMfa: true });
+    expect(idp.policies.get("org_1")).toEqual({
+      ...POLICY,
+      forceMfa: true,
+      externalProviderIds: ["idp_nafath"],
+      secondFactors: [IdpSecondFactor.Totp],
+    });
+    await idp.setLoginPolicy("org_1", { ...POLICY, externalProviderIds: [] });
+    expect(idp.policies.get("org_1")?.externalProviderIds).toEqual([]);
   });
 });

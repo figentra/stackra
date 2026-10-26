@@ -22,6 +22,7 @@ describe("@stackra/identity/contracts", () => {
       "DeviceTokenStatus",
       "Guardianship",
       "IdpAdmin",
+      "IdpSecondFactor",
       "SessionStore",
       "SignInBrowser",
       "StaffPinStore",

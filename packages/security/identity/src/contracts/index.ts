@@ -10,6 +10,7 @@
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision.
  */
 export { DeviceTokenStatus } from "#contracts/enums/device-token-status.enum";
+export { IdpSecondFactor } from "#contracts/enums/idp-second-factor.enum";
 export { VerificationKind } from "#contracts/enums/verification-kind.enum";
 export { VerificationStatus } from "#contracts/enums/verification-status.enum";
 export { ApiKeyStore } from "#contracts/ports/api-key-store.port";

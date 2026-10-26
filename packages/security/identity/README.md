@@ -40,6 +40,7 @@ screen reads, and the claims mapping that turns a provider's token into a Stackr
 | `.`           | `GuardianActingService`, `MemoryGuardianshipDriver`                                                        | a guardian acting for a minor, after the relationship check                             |
 | `.`           | `VerificationService`, `MemoryVerificationDriver`                                                          | KYC and KYB through the providers the market pack lists                                 |
 | `./contracts` | `Verification`, `VerificationKind`, `VerificationStatus`, `StaffPinStore`, `Guardianship`, `SignInOptions` | the verification, PIN and guardianship ports; sign-in extras                            |
+| `./contracts` | `IdpSecondFactor`                                                                                          | the second factors a login policy offers (`totp`, `u2f`, `otp_email`, `otp_sms`)        |
 | `./contracts` | `AutomationPrincipals`, `AutomationPrincipalInput`                                                         | mint and revoke the principal an automation runs as (ADR 0153 decision 2)               |
 | `./native`    | `ExpoSignInBrowserDriver`                                                                                  | Expo: the system authentication session and the app's link                              |
 | `./desktop`   | `ElectronSignInBrowserDriver`                                                                              | Electron main: the system browser and a loopback redirect                               |
@@ -132,7 +133,9 @@ WebCrypto. No `SignInBrowser` driver ships here yet: the Expo and Electron ones 
   policies. `ZitadelIdpAdminDriver` reads `IdpAdminConfig` (key `idp_admin`): the URL of the managed or the tenant's own
   ZITADEL, and the `IDENTITY_IDP_ADMIN_TOKEN` secret. `listAuthMethods(userId)` answers a user's enrolled methods as
   RFC 8176 `amr` codes, so `assuranceOf({ amr: methods }, identity).level` is the level they reach: the security
-  page's MFA enrolment list compares it with the MFA rule's level.
+  page's MFA enrolment list compares it with the MFA rule's level. A `LoginPolicy` may list `externalProviderIds`
+  (the market pack's sign-in providers through `IdentityConfig.externalProviders`) and `secondFactors`
+  (`IdpSecondFactor`); the organisation then offers exactly those, and a list left out is not touched.
 - **Automation principals.** `AutomationPrincipals.mint({ automationId, tenantId, name })` gives an automation its own
   `service` principal (ADR 0153 decision 2), the same one on every publish until `revoke(principalId)`. The identity
   service implements it over its principals table; `MemoryAutomationPrincipalsDriver` serves tests. Its grants are

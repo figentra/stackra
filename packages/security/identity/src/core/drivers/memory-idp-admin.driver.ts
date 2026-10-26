@@ -1,12 +1,12 @@
 /**
  * Stackra file contract:
  * Purpose: `MemoryIdpAdminDriver`, an `IdpAdmin` held in memory, for tests and local runs: users, machine users,
- *          sessions, device flows, login policies and enrolled authentication methods live in maps a test can read back.
+ *          sessions, device flows, login policies (with their providers and second factors) and enrolled authentication methods live in maps a test can read back.
  * Boundary: process-local; never a real provider. Ids and secrets are random; a device flow stays pending until the
  *           test approves or denies it with `approveDevice` / `denyDevice`. `openSession` adds a session to end;
  *           `enrolAuthMethod` adds an `amr` code to a user.
  * Runtime: isomorphic
- * Governing contract: ADR 0263 (a driver is named by its class: `memory`); ADR 0266 (decision 2); ADR 0410 (STA-834).
+ * Governing contract: ADR 0263 (a driver is named by its class: `memory`); ADR 0266 (decision 2); ADR 0410 (STA-834); STA-1263.
  */
 import { Driver } from "@stackra/container";
 
@@ -138,9 +138,16 @@ export class MemoryIdpAdminDriver extends Driver(IdpAdmin) {
     return [...(this.authMethods.get(userId) ?? [])];
   }
 
-  /** See `IdpAdmin.setLoginPolicy`. */
+  /** See `IdpAdmin.setLoginPolicy`; a provider or factor list left out keeps the one set before. */
   async setLoginPolicy(organizationId: string, policy: LoginPolicy): Promise<void> {
-    this.policies.set(organizationId, { ...policy });
+    const before = this.policies.get(organizationId);
+    const providers = policy.externalProviderIds ?? before?.externalProviderIds;
+    const factors = policy.secondFactors ?? before?.secondFactors;
+    this.policies.set(organizationId, {
+      ...policy,
+      ...(providers === undefined ? {} : { externalProviderIds: [...providers] }),
+      ...(factors === undefined ? {} : { secondFactors: [...factors] }),
+    });
   }
 
   /** Adds a user, refusing a login name already taken in the organisation. */

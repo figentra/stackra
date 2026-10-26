@@ -73,6 +73,9 @@ export abstract class IdpAdmin extends Port {
    */
   abstract listAuthMethods(userId: string): Promise<readonly string[]>;
 
-  /** Sets `organizationId`'s login policy to `policy`. */
+  /**
+   * Sets `organizationId`'s login policy to `policy`; when the policy lists `externalProviderIds` or `secondFactors`,
+   * the organisation offers exactly those afterwards.
+   */
   abstract setLoginPolicy(organizationId: string, policy: LoginPolicy): Promise<void>;
 }
