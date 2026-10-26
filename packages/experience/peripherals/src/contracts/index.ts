@@ -7,21 +7,27 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision.
  */
+export { BumpBarKey } from "#contracts/enums/bump-bar-key.enum";
 export { LabelFormat } from "#contracts/enums/label-format.enum";
 export { TerminalState } from "#contracts/enums/terminal-state.enum";
 export { AccessController } from "#contracts/ports/access-controller.port";
 export { BarcodeScanner } from "#contracts/ports/barcode-scanner.port";
+export { BumpBar } from "#contracts/ports/bump-bar.port";
 export { CardTerminal } from "#contracts/ports/card-terminal.port";
 export { CashDrawer } from "#contracts/ports/cash-drawer.port";
 export { CustomerDisplay } from "#contracts/ports/customer-display.port";
+export { KitchenPrinter } from "#contracts/ports/kitchen-printer.port";
 export { LabelPrinter } from "#contracts/ports/label-printer.port";
+export { MenuBoard } from "#contracts/ports/menu-board.port";
 export { ReceiptPrinter } from "#contracts/ports/receipt-printer.port";
 export { Scale } from "#contracts/ports/scale.port";
 export type { CustomerDisplayLine } from "#contracts/types/customer-display-line.type";
 export type { CustomerDisplayView } from "#contracts/types/customer-display-view.type";
 export type { DrawerPin } from "#contracts/types/drawer-pin.type";
 export type { ExitDecision } from "#contracts/types/exit-decision.type";
+export type { KitchenTicket } from "#contracts/types/kitchen-ticket.type";
 export type { Label } from "#contracts/types/label.type";
+export type { MenuBoardView } from "#contracts/types/menu-board-view.type";
 export type { PairedTerminal } from "#contracts/types/paired-terminal.type";
 export type { PrintedLabel } from "#contracts/types/printed-label.type";
 export type { PrintedReceipt } from "#contracts/types/printed-receipt.type";

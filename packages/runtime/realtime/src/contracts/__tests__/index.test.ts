@@ -24,6 +24,7 @@ describe("@stackra/realtime/contracts", () => {
     expect(Object.keys(contracts).sort()).toEqual([
       "RealtimeDriver",
       "RealtimeFanout",
+      "RealtimeLocalRelay",
       "RealtimeTransport",
     ]);
   });

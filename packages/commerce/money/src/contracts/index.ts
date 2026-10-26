@@ -8,5 +8,6 @@
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision.
  */
 export { RateSource } from "#contracts/ports/rate-source.port";
+export type { MoneyAmount } from "#contracts/types/money-amount.type";
 export type { RatePair } from "#contracts/types/rate-pair.type";
 export type { RateSnapshot } from "#contracts/types/rate-snapshot.type";

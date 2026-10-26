@@ -17,12 +17,33 @@ removed.
 
 ## Added by the contracts batch (STA-1215)
 
-| Member               | Path                           | Added                                                                                                                                                                                                                                                                                                                                                         |
-| -------------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@stackra/brand-kit` | `packages/developer/brand-kit` | New skeleton (package.json with the `./contracts` export, stand-in barrels, README, AGENTS). Contracts: `BrandOutput`, `Endorsement`, `KitStatus`; types `BrandKit`, `BrandKitParent`, `LocalizedText`, `BrandKitOptions` (config keys), `AssetManifest`, `AssetManifestEntry`, `BrandCheckIssue`, `BrandCheckResult`. The generator is stackra-12 (STA-957). |
+| Member                 | Path                              | Added                                                                                                                                                                                                                                                                                                                                                         |
+| ---------------------- | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@stackra/brand-kit`   | `packages/developer/brand-kit`    | New skeleton (package.json with the `./contracts` export, stand-in barrels, README, AGENTS). Contracts: `BrandOutput`, `Endorsement`, `KitStatus`; types `BrandKit`, `BrandKitParent`, `LocalizedText`, `BrandKitOptions` (config keys), `AssetManifest`, `AssetManifestEntry`, `BrandCheckIssue`, `BrandCheckResult`. The generator is stackra-12 (STA-957). |
+| `@stackra/money`       | `packages/commerce/money`         | Gap-fill run 1: type `MoneyAmount` (the wire form of `Money`: `minor` + `currency`).                                                                                                                                                                                                                                                                          |
+| `@stackra/calendar`    | `packages/foundation/calendar`    | Gap-fill run 1: new `src/contracts/` with `DayCountMode`; types `PackCalendarRef`, `BusinessDayBoundary`, `HijriSchedule`. The `./contracts` export is an ask (below).                                                                                                                                                                                        |
+| `@stackra/peripherals` | `packages/experience/peripherals` | Gap-fill run 1: ports `KitchenPrinter`, `BumpBar`, `MenuBoard`; enum `BumpBarKey`; types `KitchenTicket`, `MenuBoardView`.                                                                                                                                                                                                                                    |
+| `@stackra/realtime`    | `packages/runtime/realtime`       | Gap-fill run 1: port `RealtimeLocalRelay` (host or find a relay on the local network; answers a `RealtimeTarget`).                                                                                                                                                                                                                                            |
+| `@stackra/app`         | `packages/runtime/app`            | Gap-fill run 1: new `src/contracts/` with `EdgeHeader`, `EdgeKvPrefix`, port `EdgeKvWriter`, type `EdgeSignatureInput`. The `./contracts` export is an ask (below).                                                                                                                                                                                           |
 
-No product contracts batch reported a Stackra contract gap (Academorix ACA-637: none; the other product batches had
-not reported when this page was written). Add a row here when one does.
+## Gap-fill run 1: names the product and peer batches asked for
+
+Product and peer contract batches left `// contract-gap: stackra` placeholders for these names. Each maps to an
+existing export or to a name the run added; replace the placeholder with the import on the right.
+
+| Asked for                                                             | Import                                                                                                                                              |
+| --------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Money (decimal amount + currency), Money wire form, `MoneyAmount`     | `MoneyAmount` from `@stackra/money/contracts` (minor units; `Money.ofMinor` rebuilds it; sub-minor rates use `RateSnapshot` or `UnitPrice`)         |
+| `PackCalendarRef`                                                     | `PackCalendarRef` from `@stackra/calendar/contracts`                                                                                                |
+| Business day past midnight and Hijri schedules                        | night spans already in `BusinessCalendar` (`.`); new `BusinessDayBoundary` and `HijriSchedule` from `@stackra/calendar/contracts`                   |
+| Kitchen ticket printer, bump bar, menu-board display ports            | `KitchenPrinter`, `BumpBar` (+ `BumpBarKey`), `MenuBoard` (+ `KitchenTicket`, `MenuBoardView`) from `@stackra/peripherals/contracts`                |
+| Local-network realtime relay                                          | `RealtimeLocalRelay` from `@stackra/realtime/contracts`                                                                                             |
+| `@stackra/support` units                                              | `QuantityUnit` from `@stackra/support` (`.`; no new name)                                                                                           |
+| `DayCountMode` (not `CountMode`, which is what an RRULE COUNT counts) | `DayCountMode` from `@stackra/calendar/contracts`                                                                                                   |
+| `MarketPackSection`                                                   | `MarketPack` from `@stackra/market-packs` (`.`): a section is a `MarketPack` with `section` set; its schema is `PackSchema`                         |
+| Cloudflare KV writer port (`EdgeKvWriter`)                            | `EdgeKvWriter` (+ `EdgeKvPrefix`) from `@stackra/app/contracts`                                                                                     |
+| API-pipeline check of the signed edge headers                         | `EdgeHeader`, `EdgeSignatureInput` from `@stackra/app/contracts`; the check itself is stackra-65 (STA-963)                                          |
+| Slot and panel contracts (stackra-03/04/06)                           | `SlotRef`, `SlotTree`, `SlotGroup`, `slots`, `PanelRef`, `panels` from `@stackra/panel` (`.`); the typed `Slot` declaration is stackra-03 (STA-952) |
 
 ## Members with a `./contracts` entry
 
@@ -64,17 +85,17 @@ the entry barrels, STA-339).
 | `@stackra/logger`        | `packages/foundation/logger`           | 3       |
 | `@stackra/loyalty-kit`   | `packages/commerce/loyalty-kit`        | 11      |
 | `@stackra/media`         | `packages/data/media`                  | 13      |
-| `@stackra/money`         | `packages/commerce/money`              | 3       |
+| `@stackra/money`         | `packages/commerce/money`              | 4       |
 | `@stackra/navigation`    | `packages/experience/navigation`       | 6       |
 | `@stackra/notifications` | `packages/communication/notifications` | 27      |
 | `@stackra/outbox`        | `packages/runtime/outbox`              | 10      |
 | `@stackra/payments`      | `packages/commerce/payments`           | 48      |
-| `@stackra/peripherals`   | `packages/experience/peripherals`      | 23      |
+| `@stackra/peripherals`   | `packages/experience/peripherals`      | 29      |
 | `@stackra/platform`      | `packages/experience/platform`         | 23      |
 | `@stackra/pricing`       | `packages/commerce/pricing`            | 6       |
 | `@stackra/query`         | `packages/state/query`                 | 10      |
 | `@stackra/queue`         | `packages/runtime/queue`               | 6       |
-| `@stackra/realtime`      | `packages/runtime/realtime`            | 15      |
+| `@stackra/realtime`      | `packages/runtime/realtime`            | 16      |
 | `@stackra/rules`         | `packages/application/rules`           | 8       |
 | `@stackra/sandbox`       | `packages/runtime/sandbox`             | 3       |
 | `@stackra/scheduler`     | `packages/runtime/scheduler`           | 4       |
@@ -97,54 +118,54 @@ entries, so the contracts batch does not; the package's owner moves them (types,
 `src/contracts/`, `core` re-imports through `#contracts/*`) and adds the `./contracts` export. Until then, import
 these names from `.`.
 
-| Member                         | Path                                          | Status                                                                                |
-| ------------------------------ | --------------------------------------------- | ------------------------------------------------------------------------------------- |
-| `@stackra/app`                 | `packages/runtime/app`                        | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export |
-| `@stackra/assets`              | `packages/data/assets`                        | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export |
-| `@stackra/calendar`            | `packages/foundation/calendar`                | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export |
-| `@stackra/cli`                 | `packages/developer/cli`                      | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export |
-| `@stackra/coding-standard`     | `packages/developer/coding-standard`          | none needed: tool configuration or infrastructure, no cross-package types             |
-| `@stackra/commitlint-config`   | `packages/tooling/commitlint`                 | none needed: tool configuration or infrastructure, no cross-package types             |
-| `@stackra/container`           | `packages/foundation/container`               | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export |
-| `@stackra/content`             | `packages/data/content`                       | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export |
-| `@stackra/contracts`           | `packages/foundation/contracts`               | none needed: it is the shared-primitives package (ADR 0117 decision 1)                |
-| `@stackra/coordinator`         | `packages/state/coordinator`                  | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export |
-| `@stackra/csp`                 | `packages/security/csp`                       | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export |
-| `@stackra/devtools-kit`        | `packages/developer/devtools-kit`             | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export |
-| `@stackra/gen`                 | `packages/developer/gen`                      | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export |
-| `@stackra/infra-aws-runtime`   | `packages/infrastructure/infra-aws-runtime`   | none needed: tool configuration or infrastructure, no cross-package types             |
-| `@stackra/infra-aws`           | `packages/infrastructure/infra-aws`           | none needed: tool configuration or infrastructure, no cross-package types             |
-| `@stackra/infra-cloudflare`    | `packages/infrastructure/infra-cloudflare`    | none needed: tool configuration or infrastructure, no cross-package types             |
-| `@stackra/infra-gcp`           | `packages/infrastructure/infra-gcp`           | none needed: tool configuration or infrastructure, no cross-package types             |
-| `@stackra/infra-github`        | `packages/infrastructure/infra-github`        | none needed: tool configuration or infrastructure, no cross-package types             |
-| `@stackra/infra-identity`      | `packages/infrastructure/infra-identity`      | none needed: tool configuration or infrastructure, no cross-package types             |
-| `@stackra/infra-mobile`        | `packages/infrastructure/infra-mobile`        | none needed: tool configuration or infrastructure, no cross-package types             |
-| `@stackra/infra-observability` | `packages/infrastructure/infra-observability` | none needed: tool configuration or infrastructure, no cross-package types             |
-| `@stackra/ledger`              | `packages/commerce/ledger`                    | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export |
-| `@stackra/licensing`           | `packages/security/licensing`                 | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export |
-| `@stackra/market-packs`        | `packages/foundation/market-packs`            | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export |
-| `@stackra/mcp`                 | `packages/developer/mcp`                      | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export |
-| `@stackra/model`               | `packages/data/model`                         | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export |
-| `@stackra/oxlint-config`       | `packages/tooling/oxlint`                     | none needed: tool configuration or infrastructure, no cross-package types             |
-| `@stackra/panel`               | `packages/experience/panel`                   | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export |
-| `@stackra/registry`            | `packages/application/registry`               | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export |
-| `@stackra/renderers`           | `packages/developer/renderers`                | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export |
-| `@stackra/runway`              | `packages/developer/runway`                   | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export |
-| `@stackra/shortcuts`           | `packages/experience/shortcuts`               | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export |
-| `@stackra/skills`              | `packages/developer/skills`                   | none needed: tool configuration or infrastructure, no cross-package types             |
-| `@stackra/state-machine`       | `packages/data/state-machine`                 | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export |
-| `@stackra/state`               | `packages/state/state`                        | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export |
-| `@stackra/support`             | `packages/foundation/support`                 | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export |
-| `@stackra/tenancy`             | `packages/security/tenancy`                   | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export |
-| `@stackra/testing`             | `packages/developer/testing`                  | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export |
-| `@stackra/transport`           | `packages/foundation/transport`               | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export |
-| `@stackra/tsdown-config`       | `packages/tooling/tsdown`                     | none needed: tool configuration or infrastructure, no cross-package types             |
-| `@stackra/typescript-config`   | `packages/tooling/typescript`                 | none needed: tool configuration or infrastructure, no cross-package types             |
-| `@stackra/validation`          | `packages/foundation/validation`              | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export |
-| `@stackra/versioning`          | `packages/communication/versioning`           | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export |
-| `@stackra/vite-plugin`         | `packages/developer/vite-plugin`              | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export |
-| `@stackra/vitest-config`       | `packages/tooling/vitest`                     | none needed: tool configuration or infrastructure, no cross-package types             |
-| `@stackra/workflow`            | `packages/runtime/workflow`                   | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export |
+| Member                         | Path                                          | Status                                                                                                                                                       |
+| ------------------------------ | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `@stackra/app`                 | `packages/runtime/app`                        | ask: owner adds the `./contracts` export, `#contracts/*` import and tsdown entry for the new `src/contracts/` (gap-fill run 1), and moves public types there |
+| `@stackra/assets`              | `packages/data/assets`                        | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export                                                                        |
+| `@stackra/calendar`            | `packages/foundation/calendar`                | ask: owner adds the `./contracts` export, `#contracts/*` import and tsdown entry for the new `src/contracts/` (gap-fill run 1), and moves public types there |
+| `@stackra/cli`                 | `packages/developer/cli`                      | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export                                                                        |
+| `@stackra/coding-standard`     | `packages/developer/coding-standard`          | none needed: tool configuration or infrastructure, no cross-package types                                                                                    |
+| `@stackra/commitlint-config`   | `packages/tooling/commitlint`                 | none needed: tool configuration or infrastructure, no cross-package types                                                                                    |
+| `@stackra/container`           | `packages/foundation/container`               | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export                                                                        |
+| `@stackra/content`             | `packages/data/content`                       | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export                                                                        |
+| `@stackra/contracts`           | `packages/foundation/contracts`               | none needed: it is the shared-primitives package (ADR 0117 decision 1)                                                                                       |
+| `@stackra/coordinator`         | `packages/state/coordinator`                  | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export                                                                        |
+| `@stackra/csp`                 | `packages/security/csp`                       | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export                                                                        |
+| `@stackra/devtools-kit`        | `packages/developer/devtools-kit`             | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export                                                                        |
+| `@stackra/gen`                 | `packages/developer/gen`                      | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export                                                                        |
+| `@stackra/infra-aws-runtime`   | `packages/infrastructure/infra-aws-runtime`   | none needed: tool configuration or infrastructure, no cross-package types                                                                                    |
+| `@stackra/infra-aws`           | `packages/infrastructure/infra-aws`           | none needed: tool configuration or infrastructure, no cross-package types                                                                                    |
+| `@stackra/infra-cloudflare`    | `packages/infrastructure/infra-cloudflare`    | none needed: tool configuration or infrastructure, no cross-package types                                                                                    |
+| `@stackra/infra-gcp`           | `packages/infrastructure/infra-gcp`           | none needed: tool configuration or infrastructure, no cross-package types                                                                                    |
+| `@stackra/infra-github`        | `packages/infrastructure/infra-github`        | none needed: tool configuration or infrastructure, no cross-package types                                                                                    |
+| `@stackra/infra-identity`      | `packages/infrastructure/infra-identity`      | none needed: tool configuration or infrastructure, no cross-package types                                                                                    |
+| `@stackra/infra-mobile`        | `packages/infrastructure/infra-mobile`        | none needed: tool configuration or infrastructure, no cross-package types                                                                                    |
+| `@stackra/infra-observability` | `packages/infrastructure/infra-observability` | none needed: tool configuration or infrastructure, no cross-package types                                                                                    |
+| `@stackra/ledger`              | `packages/commerce/ledger`                    | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export                                                                        |
+| `@stackra/licensing`           | `packages/security/licensing`                 | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export                                                                        |
+| `@stackra/market-packs`        | `packages/foundation/market-packs`            | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export                                                                        |
+| `@stackra/mcp`                 | `packages/developer/mcp`                      | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export                                                                        |
+| `@stackra/model`               | `packages/data/model`                         | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export                                                                        |
+| `@stackra/oxlint-config`       | `packages/tooling/oxlint`                     | none needed: tool configuration or infrastructure, no cross-package types                                                                                    |
+| `@stackra/panel`               | `packages/experience/panel`                   | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export                                                                        |
+| `@stackra/registry`            | `packages/application/registry`               | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export                                                                        |
+| `@stackra/renderers`           | `packages/developer/renderers`                | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export                                                                        |
+| `@stackra/runway`              | `packages/developer/runway`                   | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export                                                                        |
+| `@stackra/shortcuts`           | `packages/experience/shortcuts`               | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export                                                                        |
+| `@stackra/skills`              | `packages/developer/skills`                   | none needed: tool configuration or infrastructure, no cross-package types                                                                                    |
+| `@stackra/state-machine`       | `packages/data/state-machine`                 | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export                                                                        |
+| `@stackra/state`               | `packages/state/state`                        | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export                                                                        |
+| `@stackra/support`             | `packages/foundation/support`                 | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export                                                                        |
+| `@stackra/tenancy`             | `packages/security/tenancy`                   | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export                                                                        |
+| `@stackra/testing`             | `packages/developer/testing`                  | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export                                                                        |
+| `@stackra/transport`           | `packages/foundation/transport`               | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export                                                                        |
+| `@stackra/tsdown-config`       | `packages/tooling/tsdown`                     | none needed: tool configuration or infrastructure, no cross-package types                                                                                    |
+| `@stackra/typescript-config`   | `packages/tooling/typescript`                 | none needed: tool configuration or infrastructure, no cross-package types                                                                                    |
+| `@stackra/validation`          | `packages/foundation/validation`              | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export                                                                        |
+| `@stackra/versioning`          | `packages/communication/versioning`           | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export                                                                        |
+| `@stackra/vite-plugin`         | `packages/developer/vite-plugin`              | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export                                                                        |
+| `@stackra/vitest-config`       | `packages/tooling/vitest`                     | none needed: tool configuration or infrastructure, no cross-package types                                                                                    |
+| `@stackra/workflow`            | `packages/runtime/workflow`                   | ask: owner moves public types into `src/contracts/` and adds the `./contracts` export                                                                        |
 
 ## Services
 
@@ -157,3 +178,7 @@ a service gains `src/contracts/` (its events, request and response shapes) when 
 - Add `build/contracts` to the docs navigation (`apps/docs/src/docs.json`).
 - `@stackra/brand-kit`: root `runway.yaml` placement, the `packages/developer/README.md` row and the catalogue row
   (stackra-90); build and test configs come with stackra-12.
+- `@stackra/calendar` and `@stackra/app`: add the `./contracts` export, the `#contracts/*` import and the tsdown
+  `contracts` entry for the `src/contracts/` the gap-fill run added (package owners; outside the contracts batch's files).
+- `@stackra/app` edge header names `x-figentra-request-id`, `x-figentra-timestamp` and `x-figentra-signature` are a
+  proposal until ADR 0437 lands; stackra-65 confirms them.
