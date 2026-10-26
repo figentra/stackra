@@ -64,6 +64,12 @@ with columns from gen's `table(...)` constants (ADR 0160).
     These narrow a read inside row-level security; they are never isolation (ADR 0327 d9).
 - `countDistinct(field, where?)` counts the distinct non-null values of a field over the visible matching rows
   (`usage.countDistinct("subjectId", { meterId })`).
+- `lock(where)` reads the row again under `select ... for update`, held until the transaction ends, so a second caller
+  waits: a single-flight token refresh locks the connection row, then re-checks the expiry. It needs a transaction.
+- `increment(where, field, by = 1)` adds to a numeric field in one statement (`col = col + ?`), so concurrent hits
+  never lose a count; it returns the rows changed.
+- `update(where, data, { requiresNew: true })` writes now in a transaction of its own that commits even if the
+  caller's rolls back (an attempt counter kept across a failed delivery), as `insert` does.
 
 ### Reads on a replica
 

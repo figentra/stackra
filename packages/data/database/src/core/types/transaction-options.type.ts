@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: `TransactionOptions`, how `Database.transaction(work, options)` and `Repository.insert(data, options)` relate
+ * Purpose: `TransactionOptions`, how `Database.transaction(work, options)` and `Repository.insert(data, options)` and `CrudService.update(where, data, options)` relate
  *          to a transaction already running.
  * Boundary: a type only. Without `requiresNew`, work inside a transaction runs in a savepoint of it.
  * Runtime: node

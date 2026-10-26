@@ -8,15 +8,17 @@
  *           which gen registers; the entity manager is the running context's, so every method runs inside the
  *           caller's transaction (an action's unit of work) and a query reads on a fork. A hand-written method of the
  *           same name overrides an inherited one. Every read (`find`, `findOne`, `findOneOrFail`, `count`, `sum`,
- *           `countDistinct`, `table`, `metrics`) ANDs in the bound `VisibilityFilter`'s conditions, on top of row-level security;
- *           writes and `purge` carry none. `purge` skips every row the connected `HoldRegistry` holds. `repath` moves
+ *           `countDistinct`, `table`, `metrics`, and `lock`, which also takes a row lock) ANDs in the bound
+ *           `VisibilityFilter`'s conditions, on top of row-level security; writes (`increment` among them) and `purge`
+ *           carry none. `purge` skips every row the connected `HoldRegistry` holds. `repath` moves
  *           a scope subtree's rows to a new path prefix, the step every service takes when a scope node moves.
  * Runtime: node
  * Governing contract: ADR 0105 as amended by ADR 0294; ADR 0097 (decision 5.3); ADR 0307 (rules 2 and 16);
  *                     ADR 0305 (rule 5: partner by type argument); ADR 0136 (decision 2); ADR 0333 (decision 4);
- *                     ADR 0134 (2026-10-24 amendment: legal holds); ADR 0411 (subtree move).
+ *                     ADR 0134 (2026-10-24 amendment: legal holds); ADR 0411 (subtree move); STA-1239 (row lock,
+ *                     atomic increment, `update` with `requiresNew`).
  */
-import { TransactionPropagation, raw } from "@mikro-orm/core";
+import { LockMode, TransactionPropagation, raw } from "@mikro-orm/core";
 import type {
   EntityData,
   FindOneOptions,
@@ -122,6 +124,38 @@ export abstract class CrudService<M extends object> extends Service implements R
     return this.aggregate((column) => `count(distinct ${column})`, field, where);
   }
 
+  /**
+   * See `Repository.lock`.
+   *
+   * @throws NotFoundError when no row matches, or none the caller may see.
+   * @throws ValidationError (MikroORM) when no transaction is running.
+   */
+  lock(where: Where<M>): Promise<M> {
+    // `refresh` so a row the unit of work loaded before the wait is read again as the lock holder left it.
+    return this.findOneOrFail(where, {
+      lockMode: LockMode.PESSIMISTIC_WRITE,
+      refresh: true,
+    }) as Promise<M>;
+  }
+
+  /**
+   * See `Repository.increment`.
+   *
+   * @throws TypeError when `by` is not a finite number or `field` is not a single-column field.
+   */
+  increment(where: Where<M>, field: string, by = 1): Promise<number> {
+    if (!Number.isFinite(by)) throw new TypeError(`increment takes a finite step, got ${by}`);
+    const em = this.em();
+    const model = this.model();
+    const column = quoteIdentifier(columnOf(em.getMetadata(model), field));
+    // raw-sql: `col = col + ?` is the one atomic form; read-modify-write loses concurrent steps. The step is a parameter.
+    return em.nativeUpdate(
+      model,
+      filterOf(where),
+      nest(field, raw(`${column} + ?`, [by])) as never,
+    );
+  }
+
   /** See `Repository.create`. */
   create(data: RequiredEntityData<M>): M {
     return this.em().create(this.model(), data);
@@ -166,11 +200,28 @@ export abstract class CrudService<M extends object> extends Service implements R
   }
 
   /**
-   * Changes the one row matching `where`; written when the caller's unit of work commits.
+   * Changes the one row matching `where`; written when the caller's unit of work commits. With `requiresNew` it is read,
+   * changed and written now in a transaction of its own that commits even if the caller's rolls back (an attempt
+   * counter kept across a failed delivery), as `insert` does.
    *
    * @throws NotFoundError when no row matches.
    */
-  async update(where: Where<M>, data: EntityData<M>): Promise<M> {
+  async update(where: Where<M>, data: EntityData<M>, options: TransactionOptions = {}): Promise<M> {
+    if (options.requiresNew === true) {
+      const model = this.model();
+      const filter = await visibleFilter(model, where);
+      return this.em().transactional(
+        async (em) => {
+          const row = await em.findOneOrFail(model, filter, {
+            failHandler: () => NotFoundError.create(),
+          });
+          em.assign(row as M, data as never);
+          await em.flush();
+          return row as M;
+        },
+        { propagation: TransactionPropagation.REQUIRES_NEW },
+      );
+    }
     const row = await this.findOneOrFail(where);
     // reason: assign types its data as MikroORM's DTO union; EntityData<M> is what callers hold and assign takes
     this.em().assign(row as M, data as never);

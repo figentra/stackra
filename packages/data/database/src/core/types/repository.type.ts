@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `Repository<M>`, the reads and writes of one model a class injects as `repositoryOf(M)` when it needs no
- *          service methods: find, count, sum and count-distinct, create in the unit of work, insert now (for a dedup row), and purge.
+ *          service methods: find, count, sum and count-distinct, lock a row, increment atomically, create in the unit of work, insert
+ *          now (for a dedup row), and purge.
  * Boundary: a type only; every `CrudService<M>` is one too. Writes made with `create` flush with the caller's unit of
  *           work; `insert` flushes at once in a savepoint (or its own transaction), so a `UniqueViolation` surfaces at
  *           the call and the caller's transaction stays usable.
@@ -51,6 +52,22 @@ export interface Repository<M extends object> {
 
   /** How many distinct non-null values a field (`subjectId`) holds over the rows matching `where`; 0 for none. */
   countDistinct(field: string, where?: Where<M>): Promise<number>;
+
+  /**
+   * The one row matching `where`, read again and locked (`select ... for update`) until the running transaction ends,
+   * so a second caller waits for the first: a single-flight token refresh locks the connection row, then re-checks
+   * the expiry it reads before refreshing.
+   *
+   * @throws NotFoundError (a `not_found` refusal) when there is none; an error when no transaction is running.
+   */
+  lock(where: Where<M>): Promise<M>;
+
+  /**
+   * Adds `by` (default 1, negative to decrease) to a numeric field (`hits`, or an embedded `total.minor`) of every row
+   * matching `where` in one statement (`col = col + ?`), so concurrent increments never lose a step; returns how many
+   * rows changed. Rows the unit of work already loaded keep their old value until read again.
+   */
+  increment(where: Where<M>, field: string, by?: number): Promise<number>;
 
   /** A new row, written when the caller's unit of work commits. */
   create(data: RequiredEntityData<M>): M;

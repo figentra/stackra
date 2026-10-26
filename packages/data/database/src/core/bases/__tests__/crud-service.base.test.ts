@@ -3,7 +3,8 @@
  * Purpose: unit tests of `CrudService`: the model comes from the registered partner (and an unregistered service
  *          says so), every read and write goes to the running context's entity manager with `$raw` turned into a raw
  *          key, `findOneOrFail` refuses with `not_found`, `insert` flushes in a savepoint or its own transaction,
- *          `update` assigns, `table` builds the cursor read, `sum` and `countDistinct` aggregate, and `metrics` returns a reader. With a
+ *          `update` assigns (now, in its own transaction, with `requiresNew`), `lock` reads again under a pessimistic
+ *          write lock, `increment` adds in one parameterised statement, `table` builds the cursor read, `sum` and `countDistinct` aggregate, and `metrics` returns a reader. With a
  *          `VisibilityFilter` bound, every read ANDs its conditions for the running call's actor (none outside a
  *          call), and a read with no conditions or no driver is unchanged. With a `HoldRegistry`
  *          connected, `purge` removes only the rows no hold covers. `repath` rewrites a subtree's path prefix in one
@@ -13,7 +14,7 @@
  * Governing contract: ADR 0105 as amended by ADR 0294; ADR 0307 (rules 2 and 16); ADR 0333 (decision 4); ADR 0022;
  *                     ADR 0269.
  */
-import { TransactionPropagation } from "@mikro-orm/core";
+import { LockMode, TransactionPropagation } from "@mikro-orm/core";
 import type { OptionalProps } from "@mikro-orm/core";
 import type { EntityManager } from "@mikro-orm/postgresql";
 import { ContextStorage } from "@stackra/actions/contracts";
@@ -63,6 +64,7 @@ const metadata = {
     id: { fieldNames: ["id"] },
     createdAt: { fieldNames: ["created_at"] },
     scopePath: { fieldNames: ["scope_path"] },
+    hits: { fieldNames: ["hits"] },
   },
 };
 
@@ -318,6 +320,60 @@ describe("CrudService.purge with legal holds", () => {
     connectHoldRegistry(registry().holds);
     expect(await new OrderService().purge({ status: "paid" })).toBe(0);
     expect(em.nativeDelete).not.toHaveBeenCalled();
+  });
+});
+
+describe("CrudService row lock, increment and update requiresNew (STA-1239)", () => {
+  it("locks the row for update and reads it again", async () => {
+    const em = connect();
+    await new OrderService().lock({ id: "ord_1" });
+    const options = em.findOneOrFail.mock.calls[0]?.[2] as {
+      lockMode: LockMode;
+      refresh: boolean;
+      failHandler: () => Error;
+    };
+    expect(options.lockMode).toBe(LockMode.PESSIMISTIC_WRITE);
+    expect(options.refresh).toBe(true);
+    expect(isRefusal(options.failHandler(), NotFoundError)).toBe(true);
+  });
+
+  it("increments a field in one statement, the step a parameter", async () => {
+    const em = connect();
+    expect(await new OrderService().increment({ id: "ord_1" }, "hits", 3)).toBe(4);
+    const [model, , data] = em.nativeUpdate.mock.calls[0] as [
+      unknown,
+      object,
+      { hits: { sql: string; params: unknown[] } },
+    ];
+    expect(model).toBe(Order);
+    expect(data.hits.sql).toBe('"hits" + ?');
+    expect(data.hits.params).toEqual([3]);
+  });
+
+  it("refuses a step that is not finite, and a field with no column", async () => {
+    connect();
+    await expect(async () =>
+      new OrderService().increment({ id: "ord_1" }, "hits", Number.NaN),
+    ).rejects.toThrow(TypeError);
+    await expect(async () => new OrderService().increment({ id: "ord_1" }, "nope")).rejects.toThrow(
+      TypeError,
+    );
+  });
+
+  it("updates now in a transaction of its own with requiresNew", async () => {
+    const em = connect();
+    const updated = await new OrderService().update(
+      { id: "ord_1" },
+      { status: "failed" },
+      { requiresNew: true },
+    );
+    expect(updated.status).toBe("failed");
+    expect(em.transactional.mock.calls[0]?.[1]).toEqual({
+      propagation: TransactionPropagation.REQUIRES_NEW,
+    });
+    expect(em.flush).toHaveBeenCalledTimes(1);
+    const options = em.findOneOrFail.mock.calls[0]?.[2] as { failHandler: () => Error };
+    expect(isRefusal(options.failHandler(), NotFoundError)).toBe(true);
   });
 });
 
