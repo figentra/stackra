@@ -2,8 +2,8 @@
  * Stackra file contract:
  * Purpose: the consumer contract of the `.` entry: every value the template imports from `@stackra/runway`
  *          (`baseUrlOf`, `devPorts`, `updateFeed`) and the registry row's schemas check, JSON Schema derivation,
- *          placement, region, surface and dev port checks, deploy steps, enums and errors are exported, nothing else
- *          is (the zod schemas and the facts reader stay internal), and the
+ *          placement, region, surface and dev port checks, deploy and app-shell Runway steps with their ports, enums
+ *          and errors are exported, nothing else is (the zod schemas and the facts reader stay internal), and the
  *          public types resolve.
  * Boundary: test only; imports the stand-in barrel through its `#core` alias.
  * Runtime: node (vitest)
@@ -31,8 +31,13 @@ import type {
 describe("@stackra/runway", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(runway).sort()).toEqual([
+      "AppPublisher",
       "CacheEviction",
       "DeployKind",
+      "EdgeStore",
+      "ExtensionBundlePublisher",
+      "MobileBuildTrigger",
+      "MobileBuilder",
       "RequirementEngine",
       "RunwayCloud",
       "RunwayDeployFailedError",
@@ -40,12 +45,15 @@ describe("@stackra/runway", () => {
       "RunwayInvalidError",
       "RunwayKind",
       "RunwayLockedError",
+      "RunwayNotConfiguredError",
       "RunwayProvider",
+      "RunwayRefusedError",
       "RunwayUnresolvedError",
       "SurfaceKind",
       "TopologyMode",
       "baseUrlOf",
       "brandsOf",
+      "buildMobileApps",
       "checkDevPorts",
       "checkPlacement",
       "checkRegions",
@@ -53,10 +61,14 @@ describe("@stackra/runway", () => {
       "deploy",
       "deployTargets",
       "devPorts",
+      "edgeRowsOf",
+      "mobileBuildRequests",
       "parseRunway",
       "productOf",
       "promote",
+      "publishExtensionBundles",
       "regionsOf",
+      "registerPlatformHosts",
       "rollback",
       "runwayJsonSchema",
       "updateFeed",
