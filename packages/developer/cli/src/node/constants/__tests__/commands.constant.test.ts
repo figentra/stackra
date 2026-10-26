@@ -45,6 +45,8 @@ describe("COMMANDS", () => {
         "db rollback",
         "new",
         "seed-pack",
+        "settings:diff",
+        "settings:apply",
       ]),
     );
   });

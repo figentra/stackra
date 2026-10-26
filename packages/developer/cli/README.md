@@ -20,6 +20,8 @@ framework (ADR 0127, 2026-10-24 note): a command is data plus one `run` function
 | `stackra test [--tier unit\|e2e]`      | gen, then vitest (unit), Playwright (web and desktop e2e) or Maestro (native e2e)        |
 | `stackra lint`                         | `oxlint .`                                                                               |
 | `stackra seed-pack <product>`          | check `seed-pack:<product>` (`--check`) or seed one `--profile` without touching tenants |
+| `stackra settings:diff <pack.yaml>`    | what a settings pack would change at a scope node (`--scope-id`, `--scope-path`)         |
+| `stackra settings:apply <pack.yaml>`   | apply a settings pack to a sandbox node as revisions (`--author`, `--reason`)            |
 | `stackra ls [section]`                 | the identities a committed `stackra.manifest.json` locks (actions, events, permissions…) |
 | `stackra mcp`                          | the local developer MCP over stdio; its tools run these commands in-process              |
 | `stackra mcp sync`                     | render `.mcp.json` from `.mcp.yaml` (the template's `prepare`)                           |
@@ -53,16 +55,18 @@ and `rows`; every row has an `id` and the `answer` id it encodes (`COM-160`), so
   only changes the product default underneath.
 - `stackra new seed-pack <product>` writes the header and the three profile folders.
 
+## Settings packs
+
+`stackra settings:diff <pack.yaml> --scope-id <scp_…> --scope-path <path>` hands the pack to the member's
+`@stackra/settings/node` runner (`settingsDiff`) and prints each row it would change at that node.
+`stackra settings:apply` (with `--author <id>` and an optional `--reason`) makes the node's own values equal the pack
+through `settingsApply`: one sandbox revision per changed group, locks checked, and a group with a legal floor refused,
+since the runner cannot see the holder's market (ADR 0395). Live configuration changes only by promotion.
+
 ## Not here yet
 
-`stackra db migrate` and `stackra db rollback` are pending: the command code is here, but `@stackra/database/node`
-exports no `migrate` and `rollback` yet, so both fail until a follow-up item for `@stackra/database` lands them with the
-`DatabaseRunner` signature (`migrate({ cwd, environment }) -> { applied }`, `rollback(...) -> { reverted }`), where
-`environment` selects the database the call connects to so the production rollback guard protects the right one.
-`stackra seed-pack` needs the same follow-up: `@stackra/database/node` exports no `seedState` and `applySeed` yet, so a
-run (not `--check`) fails until it does, with the `SeedRunner` signature in `src/node/types/seed-runner.type.ts`.
 `stackra db diff` and `seed` land with `@stackra/database` in the data wave (ADR 0159 note). `stackra new` makes
 packages, services and seed packs; app kinds stay with `pnpm new` until their templates move here. `validate`,
 `verify`, `structure`, `doctor` and `agents setup` move in from `tools/scripts` and their owning packages as those are
-built (ADR 0282 consequences). Figentra-internal operations never ship here (ADR 0282
-decision 4).
+built (ADR 0282 consequences). Runway deploy locks for a settings apply are runway's (STA-779 hand-off). Figentra-internal
+operations never ship here (ADR 0282 decision 4).
