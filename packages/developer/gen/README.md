@@ -8,7 +8,7 @@ Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
 Governing contract: ADR 0294; ADR 0295; ADR 0260 (generated clients); ADR 0261; ADR 0263; ADR 0162 and ADR 0222
                     (the translated and upload shape kinds); ADR 0338 (a replica query's `ReplicaPage` output); STA-1290 (the
-                    shipped shape kind).
+                    shipped shape kind); STA-1293 (the i18n target, clients for apps, undeclared packages refused).
 -->
 
 The Stackra compiler. Gen reads a member's source through the TypeScript compiler API, derives every identity and
@@ -34,6 +34,7 @@ the committed manifest is the IR, and source is read behind one host seam, never
 | `.`                   | `emitPrefixes`, `PUBLIC_ID_PREFIXES`                                         | `#stackra/prefixes`; the shared prefix registry (ADR 0135)                          |
 | `.`                   | `emitClients`, `CLIENTS_SPECIFIER`                                           | `#stackra/clients/<service>`: one injectable client per consumed service (ADR 0260) |
 | `.`                   | `emitToolConfigs`                                                            | `.stackra/{tsdown,vitest}.config.ts`, `.stackra/vitest.setup.ts`                    |
+| `.`                   | `emitI18n`                                                                   | `#stackra/i18n`: `I18n` (typed keys of `assets/lang`) and `locales`                 |
 | `.`                   | `openApiOf`                                                                  | `openapi.json`, the projection of the manifest                                      |
 | `.`                   | `actionKey`, `eventName`, `permissionKey`, `modelKey`, `tableName`, ...      | the identity formulas of ADR 0294 decision 20                                       |
 | `.`                   | `integrationKey`, `webhookPath`, `sequenceKey`, `blockKey`, `routeKey`       | integration, webhook, sequence, block and route identities                          |
@@ -124,20 +125,21 @@ OpenAPI document and the generated clients type it. Any other output is `action_
 
 ## What one run writes
 
-| File                                                    | For                  | Holds                                                                                                                                                                                                                                            |
-| ------------------------------------------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `stackra.manifest.json`, `openapi.json`                 | every member         | every locked identity: actions, events, permissions, refusals, models and prefixes, drivers, integrations, sequences, an app's blocks and routes                                                                                                 |
-| `.stackra/gen/schemas/<module>.ts`                      | every member         | `X$`, `X$Check`, `registerSchemas`, `registerChanges`                                                                                                                                                                                            |
-| `.stackra/gen/entities/<module>.ts`                     | a module with models | `[OptionalProps]`, one `EntitySchema` per model, `<MODULE>_ENTITIES`, `registerEntities`                                                                                                                                                         |
-| `.stackra/gen/wiring.ts`, `module.ts`                   | every member         | the container wiring (with `repositoryOf(M)`, `journalOf(M)` and the platform services gen binds) and the member module                                                                                                                          |
-| `.stackra/gen/registrations.ts`                         | package, service     | `registerEntities` (hosted), `registerModelPartners`, `registerEventNames`, `registerJobs`, `registerScheduledJobs`, `registerConnections`, `registerWebhookEvents`, `registerOutboundWebhooks`, `registerSequences`, `registerSearchableModels` |
-| `.stackra/gen/boot.ts`                                  | service              | `boot(container, { url, signal })`: the database with the outbox writer, `segments.connect`, `EventBus#connect` and `InboxService#connect` (disconnected when `signal` aborts), the relay; nothing when `signal` has already aborted             |
-| `.stackra/gen/webhooks.ts`                              | service              | `InboundWebhooksController` on `/webhooks/<module>/<name>/:connectionId`, raw body to `WebhookReceiver`                                                                                                                                          |
-| `.stackra/gen/clients/<service>.ts`                     | a client consumer    | the producer's enums, shapes, refusals and integration events, one `remoteAction`/`remoteQuery` per call, `<Service>Client`                                                                                                                      |
-| `.stackra/gen/prefixes.ts`                              | models with ids      | each public id prefix with the model that mints it                                                                                                                                                                                               |
-| `.stackra/gen/{routes,blocks}/<runtime>.ts`             | app                  | `registerRoutes(routeTable)` (and `registerPanelPages()` on the browser with the panel), `registerBlocks`                                                                                                                                        |
-| `.stackra/entry/*.ts`                                   | every member         | a package's entry barrels; a service's `server` (which hands `createApp` its `boot`), an app's `browser` and `native` entries                                                                                                                    |
-| `.stackra/{tsdown,vitest}.config.ts`, `vitest.setup.ts` | package, service     | the build, the unit tier on the coverage gate, and the setup with registrations, wiring and factory partners                                                                                                                                     |
+| File                                                    | For                                            | Holds                                                                                                                                                                                                                                            |
+| ------------------------------------------------------- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `stackra.manifest.json`, `openapi.json`                 | every member                                   | every locked identity: actions, events, permissions, refusals, models and prefixes, drivers, integrations, sequences, an app's blocks and routes                                                                                                 |
+| `.stackra/gen/schemas/<module>.ts`                      | every member                                   | `X$`, `X$Check`, `registerSchemas`, `registerChanges`                                                                                                                                                                                            |
+| `.stackra/gen/entities/<module>.ts`                     | a module with models                           | `[OptionalProps]`, one `EntitySchema` per model, `<MODULE>_ENTITIES`, `registerEntities`                                                                                                                                                         |
+| `.stackra/gen/wiring.ts`, `module.ts`                   | every member                                   | the container wiring (with `repositoryOf(M)`, `journalOf(M)` and the platform services gen binds) and the member module                                                                                                                          |
+| `.stackra/gen/registrations.ts`                         | package, service                               | `registerEntities` (hosted), `registerModelPartners`, `registerEventNames`, `registerJobs`, `registerScheduledJobs`, `registerConnections`, `registerWebhookEvents`, `registerOutboundWebhooks`, `registerSequences`, `registerSearchableModels` |
+| `.stackra/gen/boot.ts`                                  | service                                        | `boot(container, { url, signal })`: the database with the outbox writer, `segments.connect`, `EventBus#connect` and `InboxService#connect` (disconnected when `signal` aborts), the relay; nothing when `signal` has already aborted             |
+| `.stackra/gen/webhooks.ts`                              | service                                        | `InboundWebhooksController` on `/webhooks/<module>/<name>/:connectionId`, raw body to `WebhookReceiver`                                                                                                                                          |
+| `.stackra/gen/clients/<service>.ts`                     | a client consumer                              | the producer's enums, shapes, refusals and integration events, one `remoteAction`/`remoteQuery` per call, `<Service>Client`                                                                                                                      |
+| `.stackra/gen/i18n.ts`                                  | members with `assets/lang` and `@stackra/i18n` | `I18n = keys({...})` from the base locale (`en`), `locales` from the locale folders; `$comment` notes are not keys                                                                                                                               |
+| `.stackra/gen/prefixes.ts`                              | models with ids                                | each public id prefix with the model that mints it                                                                                                                                                                                               |
+| `.stackra/gen/{routes,blocks}/<runtime>.ts`             | app                                            | `registerRoutes(routeTable)` (and `registerPanelPages()` on the browser with the panel), `registerBlocks`                                                                                                                                        |
+| `.stackra/entry/*.ts`                                   | every member                                   | a package's entry barrels; a service's `server` (which hands `createApp` its `boot`), an app's `browser` and `native` entries                                                                                                                    |
+| `.stackra/{tsdown,vitest}.config.ts`, `vitest.setup.ts` | package, service                               | the build, the unit tier on the coverage gate, and the setup with registrations, wiring, factory partners, `@stackra/database/testing` (when declared) and `await loadMemberSchemas(root)`                                                       |
 
 ## Generated service clients
 
@@ -163,8 +165,13 @@ export class StorefrontService extends Service {
   `ClientTransport` the topology picks (`@stackra/clients/contracts`).
 - **Source.** Discovery reads the producer's committed `stackra.manifest.json` from the folder beside the member
   (`services/catalogue` next to `services/channels`), or from a dependency that ships one. Never the producer's
-  source. A consumed service without a manifest is `client_service_unknown`, and a client imported under another name
-  than `<Service>Client` is `client_name_mismatch`.
+  source. An app (`apps/<app>`) also reads the repo's `services/<service>`. A consumed service without a manifest is
+  `client_service_unknown`, and a client imported under another name than `<Service>Client` is `client_name_mismatch`.
+- **Consumers.** A service is consumed by an injected client, a listener of one of its events, or any own file
+  (tests included) importing from `#stackra/clients/<service>`, so an app's route that reads a query gets the client.
+- **Dependencies.** A generated client or schema that imports a `@stackra/*` package the member does not declare in
+  package.json is refused (`client_dependency_missing`, `schema_dependency_missing`) with the package to add, so gen
+  never writes a file that fails to resolve at runtime.
 - **Cycles.** Services may consume each other's clients in a cycle (catalogue and stock, sales and fulfilment): gen
   runs in two passes. Pass 1 (`stackra gen --manifests`, and the first pass of every `stackra gen`) writes each
   member's manifest without its clients; a consumed service with a folder beside the member is not a refusal there.
@@ -267,7 +274,7 @@ pipeline's.
 ## Not here
 
 Per-target outputs land with the target that owns them: an app's browser clients, navigation trees and the `keys` `toRoot` takes,
-panels, resources and widgets, flags, settings pages, i18n keys, migrations, the rest of the Encore app (the server entry
+panels, resources and widgets, flags, settings pages, the i18n catalogue loaders and the missing-key check, migrations, the rest of the Encore app (the server entry
 hands `boot` to `createApp`, whose `EventBus` and `InboxService` connects make the relays and typed subscribers receive), the Vite, Expo, Metro, Wrangler and electron-builder configs, and the worker and desktop main
 entries. The per-kind registrations of actions, permissions, roles, policies, listeners, extensions, workflows,
 entitlements, buckets and segment subjects come with those targets too.

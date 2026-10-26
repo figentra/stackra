@@ -1,10 +1,10 @@
 /**
  * Stackra file contract:
  * Purpose: `SourceReader`, what `createSourceReader` hands discovery: one reader per kind of record (a kind class, a
- *          shape, an enum, a file's exports) over one opened program, plus the refusals it collected.
+ *          shape, an enum, a file's exports, the client imports) over one opened program, plus the refusals it collected.
  * Boundary: a type only. Every reader returns plain IR records; nodes, symbols and types never leave the reader.
  * Runtime: node
- * Governing contract: ADR 0294 (decisions 16, 20, 25 and 26); ADR 0305 (rules 5 to 13 and 42).
+ * Governing contract: ADR 0294 (decisions 16, 20, 25 and 26); ADR 0305 (rules 5 to 13 and 42); STA-1293 (client imports).
  */
 import type { DeclaredClass } from "#core/types/declared-class.type";
 import type { EnumIR } from "#core/types/enum-ir.type";
@@ -29,6 +29,9 @@ export interface SourceReader {
 
   /** The exported declarations of a file; reports `two_declarations_in_file`. */
   exports(file: TsNode): FileExports;
+
+  /** The services any own source file (tests included) imports from `#stackra/clients/<service>`, by service. */
+  clientImports(): { readonly service: string; readonly file: string }[];
 
   /** Every refusal reported so far. */
   readonly errors: readonly GenError[];

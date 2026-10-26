@@ -48,6 +48,7 @@ describe("@stackra/gen", () => {
       "emitEncoreCronJobs",
       "emitEncoreQueues",
       "emitEntities",
+      "emitI18n",
       "emitMemberModule",
       "emitPackageEntries",
       "emitPrefixes",

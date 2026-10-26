@@ -12,7 +12,8 @@
  *           `Translated` field is a locale map decoded through `Translated.of` (`TranslatedStrings` to `{ values }`),
  *           its `@Str` rules on each text; an `Upload<Bucket>` field is `@stackra/media`'s `Upload.schema`. A bare
  *           `PublicId` checks the format with any prefix; a prefix union is a union of `publicId(prefix)`. A `@stackra/*` type with a shipped `X$` imports that schema
- *           (as `ShippedX$`) instead of compiling the shape again (STA-1290).
+ *           (as `ShippedX$`) instead of compiling the shape again (STA-1290). A `@Field(zod)` hatch brings the imports its
+ *           source uses, and a nullable field is `.nullable()` once, even when the hatch already says it (STA-1293).
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 26: the shape compiler); ADR 0305 (rules 1 and 14); registry v3.1 gap G1;
  *                     ADR 0162 (decision 2); ADR 0222 (decision 2).
@@ -163,6 +164,7 @@ function zodOf(
       return `z.discriminatedUnion(${JSON.stringify(type.discriminator)}, [${members.join(", ")}])`;
     }
     case "hatch":
+      for (const [name, from] of type.imports ?? []) use(imports, from, name);
       return type.source;
   }
 }
@@ -177,7 +179,8 @@ function fieldOf(context: Context, field: FieldIR): string {
   const own = field.rules.filter((rule) => rule.options["each"] !== true);
   const each = field.rules.filter((rule) => rule.options["each"] === true);
   let expression = zodOf(context, field.type, own, each);
-  if (field.nullable) expression += ".nullable()";
+  // A hatch may already end in `.nullable()`; nullable is applied once.
+  if (field.nullable && !expression.endsWith(".nullable()")) expression += ".nullable()";
   if (field.default !== undefined) {
     for (const [name, from] of field.default.imports) use(context.imports, from, name);
     const value = field.default.value;

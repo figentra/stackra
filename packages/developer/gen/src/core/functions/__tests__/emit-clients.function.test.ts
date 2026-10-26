@@ -8,7 +8,8 @@
  *          file and binding the client with its `ClientTransport`; the two passes that break a cycle between services:
  *          a `pending` service skipped, the manifest pass writing the manifest alone while a consumed workspace
  *          service has none yet (and refusing one outside the workspace), and the clients pass writing the clients
- *          alone despite another refusal.
+ *          alone despite another refusal; a service only imported by a file (an app's route) and the refusal of a
+ *          client importing an undeclared `@stackra/*` package (STA-1293).
  * Boundary: test only; the producer is the commerce IR fixture's manifest, the consumer a one-class service IR.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0260 (decisions 2 to 6); ADR 0263 (a class is its own token).
@@ -164,6 +165,40 @@ describe("generateMember with a consumed client", () => {
     expect(wiring).toContain(
       '    { module: "storefront", kind: "service", provide: CommerceClient, deps: [ClientTransport] },',
     );
+  });
+});
+
+describe("clients imported by a file (an app's route, STA-1293)", () => {
+  const app = consumer({
+    layout: "app",
+    classes: [],
+    clientImports: [{ service: "commerce", file: "src/routes/product/product.route.ts" }],
+  });
+
+  it("writes the client file of a service only imported by a file", () => {
+    const { files, errors } = emitClients(app);
+    expect(errors).toEqual([]);
+    expect(files.map((file) => file.path)).toEqual([".stackra/gen/clients/commerce.ts"]);
+  });
+
+  it("refuses an imported service with no committed manifest, at the importing file", () => {
+    const refused = emitClients({ ...app, services: [] });
+    expect(refused.errors.map((error) => [error.code, error.file])).toEqual([
+      ["client_service_unknown", "src/routes/product/product.route.ts"],
+    ]);
+  });
+
+  it("refuses a client that imports a @stackra package the member does not declare", () => {
+    const { files, errors } = generateMember({ ...app, packages: ["@stackra/contracts"] });
+    expect(files).toEqual([]);
+    expect(errors.map((error) => [error.code, error.subject])).toContainEqual([
+      "client_dependency_missing",
+      "@stackra/clients",
+    ]);
+    const clients = generateMember({ ...app, packages: ["@stackra/contracts"] }, undefined, {
+      pass: "clients",
+    });
+    expect(clients.files).toEqual([]);
   });
 });
 

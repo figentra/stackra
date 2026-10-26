@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `readServiceManifests`: a consumed service's committed manifest found in the folder beside
  *          the member (by key or kebab-case folder), once each and sorted, a folder whose manifest names another
- *          member skipped, a service without one left out, and an invalid manifest refused.
+ *          member skipped, a service without one left out, an app's service found in the repo's `services/`, and an invalid
+ *          manifest refused.
  * Boundary: test only; writes small fixtures under `.cache/`.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0260 (decision 3).
@@ -35,6 +36,17 @@ describe("readServiceManifests", () => {
     ).toEqual([
       { member: "catalogue", folder: "catalogue", manifest: catalogue },
       { member: "gift_cards", folder: "gift-cards", manifest: giftCards },
+    ]);
+  });
+
+  it("reads an app's consumed service from the repo's services folder (STA-1293)", () => {
+    const root = writeFixtureMember("apps/web", {});
+    const channels = { member: "channels", package: "@acme/channels", version: "0.1.0" };
+    const path = join(dirname(dirname(root)), "services", "channels", "stackra.manifest.json");
+    mkdirSync(dirname(path), { recursive: true });
+    writeFileSync(path, JSON.stringify(channels));
+    expect(readServiceManifests(root, ["channels"])).toEqual([
+      { member: "channels", folder: "channels", manifest: channels },
     ]);
   });
 

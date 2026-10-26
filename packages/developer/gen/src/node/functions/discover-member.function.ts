@@ -3,14 +3,16 @@
  * Purpose: `discoverMember`, gen's discovery: opens the member's program behind the host seam, reads every kind
  *          class, shape, enum and file export of its own sources (sorted by path), its dependency package names and the
  *          committed manifests of those that ship one, the committed manifests of the services it injects a client
- *          of or listens to an event of (for a member with a relay, every publishing sibling service's; and which of those exist beside it in the workspace), its modules and its authored root module, and fills each `DriverName<Port>` field with the driver names
+ *          of or listens to an event of (for a member with a relay, every publishing sibling service's; and which of those exist beside it in the workspace), the services any of its files imports a client from, its lang catalogues
+ *          (`assets/lang/<locale>/*.json`), its modules and its authored root module, and fills each `DriverName<Port>` field with the driver names
  *          found for that port: the `MemberIR` every gen output is a pure function of.
  * Boundary: reads the member; writes nothing. Refusals are collected into `errors`, never thrown; only an unreadable
  *           package.json, tsconfig or dependency manifest throws. The program is always closed.
  * Runtime: node
  * Governing contract: ADR 0294 (decisions 10, 20, 25 and 26); ADR 0305 (rules 15, 16 and 42); ADR 0090 as amended
  *                     (discovery from the member's folders); ADR 0260 (decisions 3 and 4: clients and events from the
- *                     producer's manifest).
+ *                     producer's manifest); STA-1293 (client imports and lang
+ *                     catalogues).
  */
 import { existsSync, readdirSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -29,6 +31,7 @@ import { createSourceReader } from "#node/functions/create-source-reader.functio
 import { openHost } from "#node/functions/open-host.function";
 import { readDependencyManifests } from "#node/functions/read-dependency-manifests.function";
 import { readMemberFacts } from "#node/functions/read-member-facts.function";
+import { readCatalogues } from "#node/functions/read-catalogues.function";
 import { readPublisherManifests } from "#node/functions/read-publisher-manifests.function";
 import { readServiceManifests } from "#node/functions/read-service-manifests.function";
 
@@ -85,12 +88,17 @@ export async function discoverMember(
       files.push(reader.exports(file));
     }
     const dependencies = readDependencyManifests(facts.root, facts.dependencies);
-    // A service is consumed by an injected client or by a listener of one of its events.
-    const consumed = classes.flatMap((declared) =>
-      [...declared.deps.map((dep) => dep.class.from), declared.handle?.event?.from ?? ""]
-        .filter((from) => from.startsWith(CLIENTS_SPECIFIER))
-        .map((from) => from.slice(CLIENTS_SPECIFIER.length)),
-    );
+    // A service is consumed by an injected client, by a listener of one of its events, or by any file importing it.
+    const clientImports = reader.clientImports();
+    const consumed = [
+      ...classes.flatMap((declared) =>
+        [...declared.deps.map((dep) => dep.class.from), declared.handle?.event?.from ?? ""]
+          .filter((from) => from.startsWith(CLIENTS_SPECIFIER))
+          .map((from) => from.slice(CLIENTS_SPECIFIER.length)),
+      ),
+      ...clientImports.map((imported) => imported.service),
+    ];
+    const catalogues = readCatalogues(facts.root);
     // A relay service hears every integration topic of the product (ADR 0260 decision 4).
     const publishers =
       facts.layout === "service" && classes.some((declared) => declared.handle?.relay === true)
@@ -100,8 +108,10 @@ export async function discoverMember(
     // Consumed services with a folder beside the member: the manifest pass waits for these instead of refusing them.
     const workspaceServices = [...new Set(consumed)]
       .filter((service) =>
-        [service, kebabCase(service)].some((folder) =>
-          existsSync(join(dirname(facts.root), folder, "package.json")),
+        [dirname(facts.root), join(dirname(dirname(facts.root)), "services")].some((parent) =>
+          [service, kebabCase(service)].some((folder) =>
+            existsSync(join(parent, folder, "package.json")),
+          ),
         ),
       )
       .sort();
@@ -172,6 +182,8 @@ export async function discoverMember(
       ...(services.length > 0 ? { services } : {}),
       ...(publishers.length > 0 ? { publishers } : {}),
       ...(workspaceServices.length > 0 ? { workspaceServices } : {}),
+      ...(clientImports.length > 0 ? { clientImports } : {}),
+      ...(catalogues !== undefined ? { catalogues } : {}),
       errors: [...reader.errors],
     };
   } finally {

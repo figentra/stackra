@@ -33,7 +33,13 @@ describe("discoverMember", async () => {
       version: "1.0.0",
       layout: "package",
       modules: ["shop"],
-      packages: [],
+      packages: [
+        "@stackra/clients",
+        "@stackra/contracts",
+        "@stackra/errors",
+        "@stackra/money",
+        "@stackra/validation",
+      ],
     });
     expect(ir.rootModule).toEqual({ name: "ShopModule", from: "#node/shop.module" });
     expect(ir.errors).toEqual([]);

@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `MemberIR`, everything discovery read from one member: its facts, modules, kind classes, shapes, enums,
- *          file exports, the committed manifests of its dependencies and of the services it injects a client of (and, for a relay service, of every publishing sibling), and which
+ *          file exports, its lang catalogues, the services its files import a client from, the committed manifests of its dependencies and of the services it injects a client of (and, for a relay service, of every publishing sibling), and which
  *          of those services exist in the workspace. Every gen output is a pure function of it.
  * Boundary: a type only. The committed `stackra.manifest.json` is the IR other members read (ADR 0127 2026-10-24
  *           note: `ir` folds into gen); this in-memory form never leaves a gen run.
@@ -97,6 +97,18 @@ export interface MemberIR {
    * manifest. The manifest pass skips these instead of refusing them, since their manifests come in the same run.
    */
   readonly workspaceServices?: readonly string[];
+
+  /**
+   * The services any own source file (tests included) imports from `#stackra/clients/<service>`, with the first file
+   * that does, so an app that only reads a client's queries in a route still gets the client file. Absent when none.
+   */
+  readonly clientImports?: readonly { readonly service: string; readonly file: string }[];
+
+  /**
+   * The lang catalogues under `assets/lang/<locale>/<namespace>.json`: locale to namespace to the parsed JSON. The
+   * i18n target writes `#stackra/i18n` from it. Absent when the member has no `assets/lang`.
+   */
+  readonly catalogues?: Readonly<Record<string, Readonly<Record<string, unknown>>>>;
 
   /** What discovery refused. */
   readonly errors: readonly GenError[];

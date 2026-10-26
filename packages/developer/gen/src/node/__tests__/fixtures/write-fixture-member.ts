@@ -1,6 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: `writeFixtureMember`, a real member on disk for discovery tests: package.json with its `imports` map, a
+ * Purpose: `writeFixtureMember`, a real member on disk for discovery tests: package.json with its `imports` map and
+ *          the `@stackra/*` dependencies generated files import, a
  *          tsconfig with decorators on, `stackra.config.ts`, the given source files, and local stand-in packages
  *          (`@stackra/actions`, `@stackra/events`, `@stackra/outbox`) for the kind bases and types whose packages are
  *          not gen's dependencies, with `ReplicaPage` (ADR 0338) for a replica query's output, `Listener` and the
@@ -73,6 +74,13 @@ export function writeFixtureMember(name: string, files: Readonly<Record<string, 
       name: `@fixture/${name}`,
       version: "1.0.0",
       type: "module",
+      // What the generated schemas and clients import, so gen's undeclared-package refusals stay quiet.
+      dependencies: Object.fromEntries(
+        ["clients", "contracts", "errors", "money", "validation"].map((name) => [
+          `@stackra/${name}`,
+          "workspace:*",
+        ]),
+      ),
       imports: Object.fromEntries(
         folders.map((folder) => [
           `#${folder}/*`,

@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `emitToolConfigs`: a package or service gets tsdown with one entry per generated entry file,
  *          Vitest on the decorators preset with the coverage gate, the unit tier only and the generated setup, and the
- *          setup that loads the registrations when they exist, registers the wiring and pairs each factory with its
+ *          setup that loads the registrations when they exist, the database testing entry for a member on
+ *          `@stackra/database`, registers the wiring, awaits the member's schemas and pairs each factory with its
  *          model; no tsdown without entries, and nothing for an app or a worker.
  * Boundary: test only; runs on the IR fixtures.
  * Runtime: node (vitest)
@@ -49,10 +50,22 @@ describe("emitToolConfigs", () => {
   it("loads the registrations, the wiring and the factory partners in the setup", () => {
     const setup = content(".stackra/vitest.setup.ts");
     expect(setup).toContain('import "#stackra/registrations";');
-    expect(setup).toContain('import { registerWiring } from "@stackra/container/testing";');
+    expect(setup).toContain(
+      'import { loadMemberSchemas, registerWiring } from "@stackra/container/testing";',
+    );
     expect(setup).toContain('import { registerModelPartners } from "@stackra/database";');
     expect(setup).toContain("registerWiring(wiring);");
+    expect(setup).toContain(
+      'await loadMemberSchemas(fileURLToPath(new URL("..", import.meta.url)));',
+    );
     expect(setup).toContain("registerModelPartners([\n  [InvoiceFactory, Invoice],\n]);");
+  });
+
+  it("loads the database testing entry only for a member on @stackra/database", () => {
+    expect(content(".stackra/vitest.setup.ts")).toContain('import "@stackra/database/testing";');
+    const bare = emitToolConfigs(COMMERCE_IR, { entries: [], registrations: false });
+    expect(bare[1]?.content).not.toContain("@stackra/database/testing");
+    expect(bare[1]?.content).toContain("await loadMemberSchemas(");
   });
 
   it("leaves out what a member does not have", () => {
@@ -61,7 +74,7 @@ describe("emitToolConfigs", () => {
       ".stackra/vitest.config.ts",
       ".stackra/vitest.setup.ts",
     ]);
-    expect(bare[1]?.content).not.toContain("#stackra/registrations");
+    expect(bare[1]?.content).not.toContain('import "#stackra/registrations";');
     expect(bare[1]?.content).not.toContain("registerModelPartners");
     expect(emitToolConfigs(WEB_APP_IR, { entries: [], registrations: false })).toEqual([]);
     expect(

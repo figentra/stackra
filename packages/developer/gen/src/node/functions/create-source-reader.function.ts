@@ -8,10 +8,11 @@
  *          `#stackra/clients/<service>` by its import, or `EventEnvelope` from `@stackra/outbox` as a relay), refusals, statics and traits; each shape's fields from the declared
  *          type node first and the checker second, with rules and constant defaults; each model's entity facts
  *          (`[OptionalProps]` keys, relations with their target, inverse and options, getters); each `Enum.of` in
- *          source order; and each file's exports.
+ *          source order; each file's exports; and the services any own file (tests included) imports from
+ *          `#stackra/clients/<service>`.
  * Boundary: syntax-first and backend-neutral: every question goes through `TsHost`. Only the member's own source
  *           files under `src/` are read as declarations; a dependency is read only to resolve a kind, an inherited
- *           field or a constant, and its options never (ADR 0294 decision 25). Every refusal is collected with its
+ *           field or a constant, and its options never (ADR 0294 decision 25). A `@Field(zod)` hatch carries the named imports its source uses. Every refusal is collected with its
  *           fix; nothing throws on bad source. Files are sorted by path so output never follows the import graph.
  * Runtime: node
  * Governing contract: ADR 0294 (decisions 16, 17, 20, 25 and 26); ADR 0305 (rules 1, 5 to 13, 19 and 42 to 46); the
@@ -316,6 +317,33 @@ export function createSourceReader(
     }
     importCache.set(path, map);
     return map;
+  };
+
+  /** The named, unaliased value imports of `path` that `source` uses, as `[name, specifier]` (a hatch's imports). */
+  const importsUsedBy = (path: string, source: string): [string, string][] => {
+    const used = new Set(
+      [...source.matchAll(/(?<![.\w$])([A-Za-z_$][\w$]*)/g)].map((match) => match[1]),
+    );
+    const found: [string, string][] = [];
+    for (const statement of byPath.get(path)?.statements ?? []) {
+      if (host.kind(statement) !== "ImportDeclaration") continue;
+      const from = statement.moduleSpecifier?.text;
+      const clause = statement.importClause;
+      // shortcut: a relative, aliased, default or namespace import is not carried; hatches use `#` or package imports.
+      if (
+        from === undefined ||
+        from.startsWith(".") ||
+        clause === undefined ||
+        clause.isTypeOnly === true
+      )
+        continue;
+      for (const element of clause.namedBindings?.elements ?? []) {
+        const name = nameOf(element.name);
+        if (element.propertyName === undefined && element.isTypeOnly !== true && used.has(name))
+          found.push([name, from]);
+      }
+    }
+    return found;
   };
 
   const classDeclarationOf = (symbol: TsSymbol | undefined): TsNode | undefined =>
@@ -1253,10 +1281,9 @@ export function createSourceReader(
           "@Field(zod) needs a reason",
           "add a `// reason: <why no type fits>` line above @Field",
         );
-      type = {
-        kind: "hatch",
-        source: hatch.args[0] === undefined ? "z.unknown()" : host.text(hatch.args[0]),
-      };
+      const source = hatch.args[0] === undefined ? "z.unknown()" : host.text(hatch.args[0]);
+      const imports = importsUsedBy(host.fileName(declaration), source);
+      type = { kind: "hatch", source, ...(imports.length > 0 ? { imports } : {}) };
       nullable =
         declaration.type !== undefined &&
         host.kind(declaration.type) === "UnionType" &&
@@ -2039,6 +2066,23 @@ export function createSourceReader(
   return {
     sources,
     errors,
+    clientImports: () => {
+      const found = new Map<string, string>();
+      const own = all
+        .map((file) => file.fileName ?? "")
+        .filter(isOwn)
+        .sort();
+      for (const path of own)
+        for (const from of importsOf(path).values())
+          if (
+            from.startsWith(CLIENTS_SPECIFIER) &&
+            !found.has(from.slice(CLIENTS_SPECIFIER.length))
+          )
+            found.set(from.slice(CLIENTS_SPECIFIER.length), rel(path));
+      return [...found]
+        .sort(([left], [right]) => (left < right ? -1 : 1))
+        .map(([service, file]) => ({ service, file }));
+    },
     classes: (file) =>
       classNodes(file)
         .map(readClass)

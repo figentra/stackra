@@ -5,7 +5,8 @@
  *          `{ input, output }` of each action and query, the config alias, a member base `.extend`ed, a package base
  *          reused through `Base<Name>$`, a later reference made lazy, a sibling module imported, the
  *          `registerSchemas` call of gap G1, the `registerChanges` call beside it, and the translated and upload
- *          kinds (STA-1218), and a package's shipped `X$` imported as `ShippedX$` (STA-1290).
+ *          kinds (STA-1218), and a package's shipped `X$` imported as `ShippedX$` (STA-1290), and a hatch's imports
+ *          with nullable applied once (STA-1293).
  * Boundary: test only; asserts on the generated source text.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decision 26); ADR 0305 (rules 1 and 14); registry v3.1 G1;
@@ -307,5 +308,44 @@ describe("emitSchemas", () => {
     expect(content).toContain(
       'import { Audience$ as ShippedAudience$ } from "@stackra/iam/contracts";',
     );
+  });
+
+  it("imports what a hatch's source uses and applies nullable once (STA-1293)", () => {
+    const variant: ShapeIR = {
+      name: "VariantInput",
+      kind: "schema",
+      module: "orders",
+      file: "src/modules/orders/schemas/variant-input.schema.ts",
+      importPath: "#modules/orders/schemas/variant-input.schema",
+      fields: [
+        {
+          name: "countryOfOrigin",
+          optional: false,
+          nullable: true,
+          type: {
+            kind: "hatch",
+            source: "countryCode().nullable()",
+            imports: [["countryCode", "@stackra/validation"]],
+          },
+          rules: [],
+          default: { value: null, code: "null", imports: [] },
+        },
+        {
+          name: "region",
+          optional: false,
+          nullable: true,
+          type: { kind: "hatch", source: "z.string()" },
+          rules: [],
+        },
+      ],
+      relations: [],
+    };
+    const content = emitSchemas(
+      { ...COMMERCE_IR, shapes: [variant], enums: [], classes: [] },
+      "orders",
+    );
+    expect(content).toContain("  countryOfOrigin: countryCode().nullable().default(null),");
+    expect(content).toContain("  region: z.string().nullable(),");
+    expect(content).toMatch(/import \{[^}]*\bcountryCode\b[^}]*\} from "@stackra\/validation";/);
   });
 });

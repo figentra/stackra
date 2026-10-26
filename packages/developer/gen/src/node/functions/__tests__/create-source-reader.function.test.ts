@@ -16,6 +16,8 @@
  *          trailing `tool: false, // reason:` comment; and the OS gen pass forms (STA-1283): a bare or prefix-union
  *          `PublicId`, `Readonly<Record>`, an imported regular expression constant and `this.<field>` spreads; and a
  *          field typed with another package's interface, alias or union that ships `X$` read as `shipped` (STA-1290).
+ *          A `@Field(zod)` hatch carries the named imports its source uses, and `clientImports` lists the services any own
+ *          file (tests included) imports a client from (STA-1293).
  * Boundary: test only; writes the fixture under `.cache/` and opens TypeScript on it.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decision 26, 2026-10-23 item 13, decision 28); ADR 0305
@@ -748,5 +750,57 @@ describe("createSourceReader on fields typed with a package's shipped schema", a
   it("still refuses a package type nobody ships a schema for, and only that one", () => {
     const unknown = reader.errors.filter((error) => error.code === "shape_unknown_type");
     expect(unknown.map((error) => error.subject)).toEqual(["Site.plain"]);
+  });
+});
+
+/** A hatch that uses an imported helper, and files that import generated clients (STA-1293). */
+const IMPORT_SOURCES: Readonly<Record<string, string>> = {
+  "src/core/schemas/origin.schema.ts": [
+    'import { countryCode, Field, Schema } from "@stackra/validation";',
+    'import { z as zed } from "zod";',
+    "",
+    "export class Origin extends Schema {",
+    "  // reason: the region check is countryCode()'s",
+    "  @Field(countryCode().nullable())",
+    "  country: string | null = null;",
+    "}",
+    "",
+  ].join("\n"),
+  "src/core/functions/storefront.function.ts": [
+    'import { StorefrontSearchQuery } from "#stackra/clients/channels";',
+    "export const storefront = () => StorefrontSearchQuery;",
+    "",
+  ].join("\n"),
+  "src/core/functions/__tests__/storefront.function.test.ts": [
+    'import { WishlistView } from "#stackra/clients/customers";',
+    'import { StorefrontSearchQuery } from "#stackra/clients/channels";',
+    "export const used = [WishlistView, StorefrontSearchQuery];",
+    "",
+  ].join("\n"),
+};
+
+describe("createSourceReader on hatch and client imports", async () => {
+  const root = writeFixtureMember("imports", IMPORT_SOURCES);
+  const host = await openHost(join(root, "tsconfig.json"));
+  const reader = createSourceReader(host, readMemberFacts(root));
+  const shapes = reader.sources.flatMap((file) => reader.shapes(file));
+  const clientImports = reader.clientImports();
+  host.close();
+
+  it("carries the named imports a hatch's source uses, and only those", () => {
+    const country = shapes.find((shape) => shape.name === "Origin")?.fields[0];
+    expect(country?.nullable).toBe(true);
+    expect(country?.type).toEqual({
+      kind: "hatch",
+      source: "countryCode().nullable()",
+      imports: [["countryCode", "@stackra/validation"]],
+    });
+  });
+
+  it("lists each service any own file imports a client from, tests included, at its first file", () => {
+    expect(clientImports).toEqual([
+      { service: "channels", file: "src/core/functions/__tests__/storefront.function.test.ts" },
+      { service: "customers", file: "src/core/functions/__tests__/storefront.function.test.ts" },
+    ]);
   });
 });

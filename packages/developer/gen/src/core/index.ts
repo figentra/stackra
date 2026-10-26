@@ -33,6 +33,7 @@ export { emitClients } from "#core/functions/emit-clients.function";
 export { emitEncoreCronJobs } from "#core/functions/emit-encore-cron-jobs.function";
 export { emitEncoreQueues } from "#core/functions/emit-encore-queues.function";
 export { emitEntities } from "#core/functions/emit-entities.function";
+export { emitI18n } from "#core/functions/emit-i18n.function";
 export { emitMemberModule } from "#core/functions/emit-member-module.function";
 export { emitPackageEntries } from "#core/functions/emit-package-entries.function";
 export { emitPrefixes } from "#core/functions/emit-prefixes.function";

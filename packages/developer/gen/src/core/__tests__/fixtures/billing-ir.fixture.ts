@@ -295,7 +295,14 @@ export const BILLING_IR: MemberIR = {
   ],
   enums: [],
   files: [],
-  packages: ["@stackra/database", "@stackra/outbox", "@stackra/segments"],
+  packages: [
+    "@stackra/database",
+    "@stackra/outbox",
+    "@stackra/segments",
+    "@stackra/money",
+    "@stackra/validation",
+    "@stackra/versioning",
+  ],
   dependencies: [
     {
       package: "@stackra/segments",

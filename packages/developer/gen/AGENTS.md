@@ -7,7 +7,7 @@ Purpose: the agent rules of @stackra/gen: where code goes, entries and barrels, 
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
 Governing contract: ADR 0294; ADR 0295; ADR 0305; ADR 0260 (generated clients and typed events); ADR 0263; ADR 0162 and ADR 0222
-                    (the translated and upload shape kinds); ADR 0338 (a replica query's `ReplicaPage` output); STA-1290 (the shipped shape kind).
+                    (the translated and upload shape kinds); ADR 0338 (a replica query's `ReplicaPage` output); STA-1290 (the shipped shape kind); STA-1293 (i18n, clients for apps, undeclared packages).
 -->
 
 The Stackra compiler. Member at `packages/developer/gen` (`tier:lib`), in the programming model v3.1 shape (ADR 0294,
@@ -46,7 +46,15 @@ The Stackra compiler. Member at `packages/developer/gen` (`tier:lib`), in the pr
 - Clients (ADR 0260): `#stackra/clients/<service>` is written by `emitClients` from the producer's committed manifest
   (found beside the member by `readServiceManifests`, or in a dependency), never from its source. The source reader
   takes a parameter typed with a class from `CLIENTS_SPECIFIER` as a class token before the file exists; the wiring
-  binds it over `ClientTransport`. Keep the one spelling in `CLIENTS_SPECIFIER`.
+  binds it over `ClientTransport`. Keep the one spelling in `CLIENTS_SPECIFIER`. Any own file (tests included) that
+  imports from it also consumes the service (`SourceReader#clientImports`, `MemberIR.clientImports`), which is how an
+  app gets its clients; an app reads the producer from the repo's `services/` too (STA-1293).
+- Undeclared packages (STA-1293): `undeclaredPackages` refuses a generated client or schema importing a `@stackra/*`
+  package missing from `ir.packages`. When a target starts importing a new platform package, expect members to need
+  that dependency, and update the fixtures (`billing-ir`, `writeFixtureMember`'s package.json) in the same change.
+- i18n (STA-1293): `readCatalogues` reads `assets/lang/<locale>/*.json`; `emitI18n` writes `#stackra/i18n` (`I18n`
+  through `keys()` of `@stackra/i18n`, `locales`) only when the member declares `@stackra/i18n`. A `@Field(zod)` hatch
+  carries the named imports its source uses (`TypeDesc` hatch `imports`); a nullable field gets `.nullable()` once.
 - Cycles between services (ADR 0260, STA-1232): a manifest never depends on a client. `generateMember(ir, previous,
 { pass: "manifests" })` returns the manifest alone and skips (`emitClients`'s `pending`) the consumed services in
   `ir.workspaceServices` (a folder beside the member); `{ pass: "clients" }` returns the client files alone. `generate`

@@ -1,8 +1,9 @@
 /**
  * Stackra file contract:
  * Purpose: `emitClients`, the clients target: one `.stackra/gen/clients/<service>.ts` per service the member injects a
- *          client of (a constructor parameter typed with a class from `#stackra/clients/<service>`) or listens to (a
- *          listener whose `handle` parameter is an event class from there), written from that
+ *          client of (a constructor parameter typed with a class from `#stackra/clients/<service>`), listens to (a
+ *          listener whose `handle` parameter is an event class from there) or imports from there in any file (an
+ *          app's route reading a query), written from that
  *          service's committed `stackra.manifest.json`: its enums, its shapes as `remoteShape` classes, its refusals,
  *          its integration events, one `remoteAction` / `remoteQuery` descriptor per action and query (named after the
  *          producer's class), and the `<Service>Client` class over `ServiceClient` with one member per call
@@ -15,7 +16,7 @@
  *           `pending` and skipped, so a cycle between services never blocks a manifest.
  * Runtime: isomorphic
  * Governing contract: ADR 0260 (decisions 2 to 6 and 10; a cycle between services is allowed at the manifest level); ADR 0141 (`<module>.<name>.v<n>` wire names); ADR 0158 (the manifest is the contract); ADR 0261
- *                     (`#stackra/clients`); ADR 0263 (a class is its own token).
+ *                     (`#stackra/clients`); ADR 0263 (a class is its own token); STA-1293 (clients for apps).
  */
 import type { StackraManifest } from "@stackra/contracts";
 import { Enum } from "@stackra/contracts";
@@ -272,6 +273,10 @@ export function emitClients(
     if (!consumers.has(service)) consumers.set(service, at);
     subscribed.set(service, [...(subscribed.get(service) ?? []), at]);
   }
+  // Any file importing from `#stackra/clients/<service>` (an app's route reading a query) consumes it too.
+  for (const imported of ir.clientImports ?? [])
+    if (!consumers.has(imported.service))
+      consumers.set(imported.service, { file: imported.file, subject: imported.file });
   const files: GeneratedFile[] = [];
   for (const [service, at] of [...consumers].sort(([left], [right]) => (left < right ? -1 : 1))) {
     if (options.pending?.has(service) === true) continue;

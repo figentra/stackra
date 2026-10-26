@@ -2,14 +2,16 @@
  * Stackra file contract:
  * Purpose: `emitToolConfigs`, the tool configs gen writes into `.stackra/` for a package or a service: tsdown with one
  *          entry per generated entry file, Vitest on the decorators preset with the shared coverage gate and the unit
- *          tier, and the Vitest setup that loads the registrations, registers the member's wiring for
- *          `createTestingModule` and pairs each `Factory<M>` with its model.
+ *          tier, and the Vitest setup that loads the registrations and (for a member on `@stackra/database`) its testing
+ *          entry, registers the member's wiring for `createTestingModule`, awaits `loadMemberSchemas` so a test file's
+ *          top-level `X.create(...)` finds its schema, and pairs each `Factory<M>` with its model.
  * Boundary: pure. Paths are relative to the member root, which is where the tools run; Vitest's root is set to it
  *           explicitly. Apps and workers get none here: their Vite, Expo, Metro and Wrangler files come with their
  *           `defineApp` sections. Factory pairs live only in the test setup, so a server never loads a factory.
  * Runtime: isomorphic
  * Governing contract: ADR 0295 (decision 5: gen writes every tool file into `.stackra/`); ADR 0182 (test tiers and
- *                     coverage); ADR 0025 (build output); ADR 0263 (decision 12: testing modules).
+ *                     coverage); ADR 0025 (build output); ADR 0263 (decision 12: testing modules); STA-1293 (the database
+ *                     testing entry and the member's schemas in the setup).
  */
 import { generatedHeader } from "#core/functions/generated-header.function";
 import { importLines } from "#core/functions/import-lines.function";
@@ -82,7 +84,13 @@ export function emitToolConfigs(
   ].join("\n");
 
   const imports = new Map<string, Map<string, boolean>>([
-    ["@stackra/container/testing", new Map([["registerWiring", false]])],
+    [
+      "@stackra/container/testing",
+      new Map([
+        ["loadMemberSchemas", false],
+        ["registerWiring", false],
+      ]),
+    ],
     ["#stackra/wiring", new Map([["wiring", false]])],
   ]);
   const pairs: string[] = [];
@@ -105,10 +113,17 @@ export function emitToolConfigs(
       boundary: "loaded by Vitest before every test file; a server never loads it.",
       runtime: "node",
     }),
+    'import { fileURLToPath } from "node:url";',
+    "",
+    // The memory database driver and `app.repository(...)`, when the member runs on the database.
+    ...(ir.packages?.includes("@stackra/database") === true
+      ? ['import "@stackra/database/testing";']
+      : []),
     ...(generated.registrations ? ['import "#stackra/registrations";'] : []),
     ...importLines(imports),
     "",
     "registerWiring(wiring);",
+    'await loadMemberSchemas(fileURLToPath(new URL("..", import.meta.url)));',
     ...(pairs.length > 0 ? ["registerModelPartners([", ...pairs, "]);"] : []),
     "",
   ].join("\n");

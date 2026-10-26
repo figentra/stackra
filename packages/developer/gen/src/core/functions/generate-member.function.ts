@@ -5,18 +5,22 @@
  *          file and one entity file per module, the wiring, the member module when none is authored, the
  *          registrations, a service's boot and inbound webhook route, a service's Encore CronJobs, broker-delivered
  *          queue topics, integration event topics and (for a relay service) the subscriptions to every product topic, the public id prefixes, an app's route tables and blocks, the public SDKs (TypeScript, Python and PHP) of the actions marked public, one generated client per consumed
- *          service, the package entries or runtime entries, and the tool configs, after the identity checks and,
+ *          service (injected, listened to, or imported by any file, so an app's routes count), `#stackra/i18n` from
+ *          the lang catalogues, the package entries or runtime entries, and the tool configs, after the identity checks and,
  *          against the committed manifest, the `@Renamed` lock.
  * Boundary: pure: returns files, never writes them. Any error (discovery's, the manifest's or the lock's) means no
  *           file at all, so a broken run never leaves half an output behind. Two narrower passes break cycles between
  *           services: the manifest pass (the manifest alone, not blocked by a consumed workspace service whose
- *           manifest is still to come) and the clients pass (the client files alone, from the producers' manifests). Other per-target outputs (navigation
- *           trees, i18n, the rest of the Encore app, ...) are added by their owning targets.
+ *           manifest is still to come) and the clients pass (the client files alone, from the producers' manifests). A client or schema file that imports
+ *           a `@stackra/*` package the member does not declare is refused (`client_dependency_missing`,
+ *           `schema_dependency_missing`). Other per-target outputs (navigation trees, the rest of the Encore app, ...)
+ *           are added by their owning targets.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 10, 22 and 26); ADR 0295 (decisions 5 and 7); ADR 0305 (rules 15, 16 and
  *                     36); ADR 0097 (decision 3); registry v3.1 section 5 (gen-core items 2 to 6 and gap G1); ADR 0148
  *                     (decisions 3, 4 and 6: Encore CronJobs and Pub/Sub in SaaS); ADR 0260 (decision 3: one
- *                     generated client per service; decision 4: the relay hears every event; a cycle between services is allowed at the manifest level).
+ *                     generated client per service; decision 4: the relay hears every event; a cycle between services is allowed at the manifest level); STA-1293 (the i18n target, clients
+ *                     imported by any file, undeclared packages refused).
  */
 import type { StackraManifest } from "@stackra/contracts";
 
@@ -29,6 +33,7 @@ import { emitEncoreCronJobs } from "#core/functions/emit-encore-cron-jobs.functi
 import { emitEncoreEvents } from "#core/functions/emit-encore-events.function";
 import { emitEncoreQueues } from "#core/functions/emit-encore-queues.function";
 import { emitEntities } from "#core/functions/emit-entities.function";
+import { emitI18n } from "#core/functions/emit-i18n.function";
 import { emitMemberModule } from "#core/functions/emit-member-module.function";
 import { emitPackageEntries } from "#core/functions/emit-package-entries.function";
 import { emitPrefixes } from "#core/functions/emit-prefixes.function";
@@ -42,6 +47,7 @@ import { emitWebhooks } from "#core/functions/emit-webhooks.function";
 import { emitWiring } from "#core/functions/emit-wiring.function";
 import { openApiOf } from "#core/functions/open-api-of.function";
 import { schemaModules } from "#core/functions/schema-modules.function";
+import { undeclaredPackages } from "#core/functions/undeclared-packages.function";
 import type { GenError } from "#core/types/gen-error.type";
 import type { GeneratedFile } from "#core/types/generated-file.type";
 import type { MemberIR } from "#core/types/member-ir.type";
@@ -82,7 +88,10 @@ export function generateMember(
     );
     all.push(...checkIdentityLock(previous, manifest, renames));
   }
-  const clients = emitClients(ir);
+  const emitted = emitClients(ir);
+  const undeclared = undeclaredPackages(ir, emitted.files, "client_dependency_missing");
+  const clients =
+    undeclared.length > 0 ? { files: [], errors: [...emitted.errors, ...undeclared] } : emitted;
   if (options.pass === "clients") return { ...clients, manifest };
   if (options.pass === "manifests") {
     // A manifest never depends on a client: services of the same workspace are still to come, so only others refuse.
@@ -105,8 +114,13 @@ export function generateMember(
   )
     files.push({ path: "openapi.json", content: json(openApiOf(manifest)) });
   if (ir.layout === "service" || ir.layout === "app") files.push(...emitSdks(manifest));
-  for (const module of schemaModules(ir))
-    files.push({ path: `.stackra/gen/schemas/${module}.ts`, content: emitSchemas(ir, module) });
+  const schemas = schemaModules(ir).map((module) => ({
+    path: `.stackra/gen/schemas/${module}.ts`,
+    content: emitSchemas(ir, module),
+  }));
+  const missing = undeclaredPackages(ir, schemas, "schema_dependency_missing");
+  if (missing.length > 0) return { files: [], errors: missing, manifest };
+  files.push(...schemas);
   for (const module of [...new Set(ir.shapes.map((shape) => shape.module))].sort()) {
     const entities = emitEntities(ir, module);
     if (entities !== undefined)
@@ -121,6 +135,7 @@ export function generateMember(
     [".stackra/gen/boot.ts", emitBoot(ir)],
     [".stackra/gen/webhooks.ts", emitWebhooks(ir)],
     [".stackra/gen/prefixes.ts", emitPrefixes(manifest)],
+    [".stackra/gen/i18n.ts", emitI18n(ir)?.content],
   ];
   for (const [path, content] of optional) if (content !== undefined) files.push({ path, content });
   for (const encore of [emitEncoreCronJobs(ir, manifest), emitEncoreQueues(ir, manifest)])
