@@ -47,6 +47,7 @@ describe("COMMANDS", () => {
         "seed-pack",
         "settings:diff",
         "settings:apply",
+        "audit:verify",
       ]),
     );
   });

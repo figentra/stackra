@@ -47,6 +47,7 @@
     "@stackra/contracts": "workspace:*",
     "@stackra/gen": "workspace:*",
     "@stackra/mcp": "workspace:*",
+    "@stackra/support": "workspace:*",
     "yaml": "catalog:"
   },
   "devDependencies": {

@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `COMMANDS`, every command the `stackra` binary has, in help order: new, gen, the member tool commands, the
- *          db commands, the seed-pack command, the settings pack commands, ls, and the local MCP and agent-file
- *          commands.
+ *          db commands, the seed-pack command, the settings pack commands, the offline audit check, ls, and the local
+ *          MCP and agent-file commands.
  * Boundary: data only. Figentra-internal operations (Linear, bot identities, merge, the secrets inbox, delegation)
  *           are never added here (ADR 0282 decision 4); `stackra db diff` and `seed` land with
  *           `@stackra/database`; infra is `stackra runway infra`, not a command here (ADR 0352).
@@ -11,6 +11,7 @@
  */
 import { AGENTS_CHECK_COMMAND } from "#node/constants/agents-check-command.constant";
 import { AGENTS_SYNC_COMMAND } from "#node/constants/agents-sync-command.constant";
+import { AUDIT_VERIFY_COMMAND } from "#node/constants/audit-verify-command.constant";
 import { DB_MIGRATE_COMMAND } from "#node/constants/db-migrate-command.constant";
 import { DB_ROLLBACK_COMMAND } from "#node/constants/db-rollback-command.constant";
 import { GEN_COMMAND } from "#node/constants/gen-command.constant";
@@ -40,6 +41,7 @@ export const COMMANDS: readonly CliCommand[] = [
   SEED_PACK_COMMAND,
   SETTINGS_DIFF_COMMAND,
   SETTINGS_APPLY_COMMAND,
+  AUDIT_VERIFY_COMMAND,
   LS_COMMAND,
   MCP_COMMAND,
   MCP_SYNC_COMMAND,

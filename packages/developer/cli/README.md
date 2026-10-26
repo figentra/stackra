@@ -43,8 +43,8 @@ A product's defaults are data, not code (owner principle "configuration, not cod
 product keeps one `seed-pack:<product>` in `seed-packs/<product>/` of its repository: `seed-pack.yaml` (`key`,
 `product`, a semantic `version`) and one YAML document per record under `profiles/minimal`, `profiles/demo` and
 `profiles/test` (ADR 0190). A document has a `kind` (settings, rule-set, workflow-template, studio-template,
-role-template, industry-template, plan-catalogue, price-list, offer, connector-catalogue, brand-kit), the record `key`
-and `rows`; every row has an `id` and the `answer` id it encodes (`COM-160`), so a changed answer changes one row.
+role-template, industry-template, checklist-template, plan-catalogue, price-list, offer, fee-schedule, rate-card,
+connector-catalogue, brand-kit), the record `key` and `rows`; every row has an `id` and the `answer` id it encodes (`COM-160`), so a changed answer changes one row.
 
 - `stackra seed-pack <product> --check` reads the pack and refuses it with every issue (`seed_pack_header`,
   `seed_profile_unknown`, `seed_kind_unknown`, `seed_record_key_missing`, `seed_record_duplicate`,
