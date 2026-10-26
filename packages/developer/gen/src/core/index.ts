@@ -2,14 +2,16 @@
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `.` entry of @stackra/gen, the pure compiler (identities, the manifest and its checks,
  *          the shape compiler, wiring, the member module, entries, the entity files, registrations, boot, the inbound
- *          webhook route, prefixes, an app's route tables and blocks, the tool configs, the openapi projection, the
- *          public id prefix registry and the IR types), until `stackra gen` writes the entry barrels (STA-339).
+ *          webhook route, prefixes, an app's route tables and blocks, the generated service clients, the tool configs,
+ *          the openapi projection, the public id prefix registry and the IR types), until `stackra gen` writes the
+ *          entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. Isomorphic: no file system and no TypeScript host here; those
  *           are `./node`. The case helpers, the import printer and the emitters' path helpers stay internal.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision; ADR 0127 2026-10-24 note (`ir`
  *                     and `source` fold into gen).
  */
+export { CLIENTS_SPECIFIER } from "#core/constants/clients-specifier.constant";
 export { EFFECT_TAGS } from "#core/constants/effect-tags.constant";
 export { GENERATED_NOTICE } from "#core/constants/generated-notice.constant";
 export { INTEGRATION_ROLES } from "#core/constants/integration-roles.constant";
@@ -27,6 +29,7 @@ export { driverName } from "#core/functions/driver-name.function";
 export { egressOf } from "#core/functions/egress-of.function";
 export { emitBlocks } from "#core/functions/emit-blocks.function";
 export { emitBoot } from "#core/functions/emit-boot.function";
+export { emitClients } from "#core/functions/emit-clients.function";
 export { emitEncoreCronJobs } from "#core/functions/emit-encore-cron-jobs.function";
 export { emitEncoreQueues } from "#core/functions/emit-encore-queues.function";
 export { emitEntities } from "#core/functions/emit-entities.function";

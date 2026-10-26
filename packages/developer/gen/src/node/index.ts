@@ -15,6 +15,7 @@ export { compileClassComponents } from "#node/functions/compile-class-components
 export { discoverMember } from "#node/functions/discover-member.function";
 export { generate } from "#node/functions/generate.function";
 export { openHost } from "#node/functions/open-host.function";
+export { readServiceManifests } from "#node/functions/read-service-manifests.function";
 export type { ClassComponentsPlugin } from "#node/types/class-components-plugin.type";
 export type { GenerateResult } from "#node/types/generate-result.type";
 export type { TsHost, TsSymbol, TsType } from "#node/types/ts-host.type";

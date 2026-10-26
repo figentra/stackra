@@ -1,5 +1,14 @@
 # AGENTS — @stackra/gen
 
+<!--
+Stackra file contract:
+Purpose: the agent rules of @stackra/gen: where code goes, entries and barrels, the package rules (generated service
+         clients included), the rules that fail the build and PII.
+Boundary: documentation only; the code and the ADRs win on any difference.
+Runtime: none
+Governing contract: ADR 0294; ADR 0295; ADR 0305; ADR 0260 (generated clients); ADR 0263.
+-->
+
 The Stackra compiler. Member at `packages/developer/gen` (`tier:lib`), in the programming model v3.1 shape (ADR 0294,
 0305). Entries `.`, `./node`, `./testing` and the `./metro-transformer` tool hook (ADR 0127, 2026-10-24 note).
 
@@ -30,6 +39,10 @@ The Stackra compiler. Member at `packages/developer/gen` (`tier:lib`), in the pr
 - A generated registration calls only a function its package exports, with rows from the locked identities, and is
   written only when it has a row. A new public id prefix of a platform package is a reviewed row in
   `PUBLIC_ID_PREFIXES` (ADR 0135 rule 2).
+- Clients (ADR 0260): `#stackra/clients/<service>` is written by `emitClients` from the producer's committed manifest
+  (found beside the member by `readServiceManifests`, or in a dependency), never from its source. The source reader
+  takes a parameter typed with a class from `CLIENTS_SPECIFIER` as a class token before the file exists; the wiring
+  binds it over `ClientTransport`. Keep the one spelling in `CLIENTS_SPECIFIER`.
 - `generateMember` runs every emitter; `generate` (and so `stackra gen`) writes what it returns. A new output is an
   emitter in `src/core/functions/` called from `generateMember`, with its test.
 

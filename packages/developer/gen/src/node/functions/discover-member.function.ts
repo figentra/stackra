@@ -2,18 +2,20 @@
  * Stackra file contract:
  * Purpose: `discoverMember`, gen's discovery: opens the member's program behind the host seam, reads every kind
  *          class, shape, enum and file export of its own sources (sorted by path), its dependency package names and the
- *          committed manifests of those that ship one, its modules and its authored root module, and fills each
- *          `DriverName<Port>` field with the driver names found for that port: the `MemberIR` every gen output is a
- *          pure function of.
+ *          committed manifests of those that ship one, the committed manifests of the services it injects a client
+ *          of, its modules and its authored root module, and fills each `DriverName<Port>` field with the driver names
+ *          found for that port: the `MemberIR` every gen output is a pure function of.
  * Boundary: reads the member; writes nothing. Refusals are collected into `errors`, never thrown; only an unreadable
  *           package.json, tsconfig or dependency manifest throws. The program is always closed.
  * Runtime: node
  * Governing contract: ADR 0294 (decisions 10, 20, 25 and 26); ADR 0305 (rules 15, 16 and 42); ADR 0090 as amended
- *                     (discovery from the member's folders).
+ *                     (discovery from the member's folders); ADR 0260 (decision 3: clients from the producer's
+ *                     manifest).
  */
 import { existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 
+import { CLIENTS_SPECIFIER } from "#core/constants/clients-specifier.constant";
 import { driverName } from "#core/functions/driver-name.function";
 import { folderKey } from "#core/functions/folder-key.function";
 import type { DeclaredClass } from "#core/types/declared-class.type";
@@ -26,6 +28,7 @@ import { createSourceReader } from "#node/functions/create-source-reader.functio
 import { openHost } from "#node/functions/open-host.function";
 import { readDependencyManifests } from "#node/functions/read-dependency-manifests.function";
 import { readMemberFacts } from "#node/functions/read-member-facts.function";
+import { readServiceManifests } from "#node/functions/read-service-manifests.function";
 
 /** A type with every `DriverName<Port>` filled from `names`. */
 function withDrivers(type: TypeDesc, names: ReadonlyMap<string, readonly string[]>): TypeDesc {
@@ -80,6 +83,15 @@ export async function discoverMember(
       files.push(reader.exports(file));
     }
     const dependencies = readDependencyManifests(facts.root, facts.dependencies);
+    const services = readServiceManifests(
+      facts.root,
+      classes.flatMap((declared) =>
+        declared.deps
+          .map((dep) => dep.class.from)
+          .filter((from) => from.startsWith(CLIENTS_SPECIFIER))
+          .map((from) => from.slice(CLIENTS_SPECIFIER.length)),
+      ),
+    );
 
     // Driver names per port class: this member's drivers, then each dependency's.
     const names = new Map<string, Set<string>>();
@@ -144,6 +156,7 @@ export async function discoverMember(
       files,
       packages: facts.dependencies,
       dependencies,
+      ...(services.length > 0 ? { services } : {}),
       errors: [...reader.errors],
     };
   } finally {

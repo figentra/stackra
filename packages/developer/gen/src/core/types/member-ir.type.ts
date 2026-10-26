@@ -1,11 +1,12 @@
 /**
  * Stackra file contract:
  * Purpose: `MemberIR`, everything discovery read from one member: its facts, modules, kind classes, shapes, enums,
- *          file exports and the committed manifests of its dependencies. Every gen output is a pure function of it.
+ *          file exports, the committed manifests of its dependencies and of the services it injects a client of. Every gen output is a pure function of it.
  * Boundary: a type only. The committed `stackra.manifest.json` is the IR other members read (ADR 0127 2026-10-24
  *           note: `ir` folds into gen); this in-memory form never leaves a gen run.
  * Runtime: isomorphic
- * Governing contract: ADR 0294 (decisions 10, 20 and 25); ADR 0295 (decisions 1 and 7); ADR 0305 (rules 15 and 16).
+ * Governing contract: ADR 0294 (decisions 10, 20 and 25); ADR 0295 (decisions 1 and 7); ADR 0305 (rules 15 and 16); ADR 0260
+ *                     (decision 3: clients from the producer's manifest).
  */
 import type { StackraManifest } from "@stackra/contracts";
 
@@ -66,6 +67,15 @@ export interface MemberIR {
   /** The workspace and `@stackra/*` dependencies that commit a manifest, in package.json order. */
   readonly dependencies: readonly {
     readonly package: string;
+    readonly manifest: StackraManifest;
+  }[];
+
+  /**
+   * The committed manifests of the services the member injects a generated client of (`#stackra/clients/<service>`),
+   * found beside the member. Absent in an IR built by hand; the clients target also looks in `dependencies`.
+   */
+  readonly services?: readonly {
+    readonly member: string;
     readonly manifest: StackraManifest;
   }[];
 

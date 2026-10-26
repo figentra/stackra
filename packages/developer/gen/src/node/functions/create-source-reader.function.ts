@@ -13,13 +13,15 @@
  *           fix; nothing throws on bad source. Files are sorted by path so output never follows the import graph.
  * Runtime: node
  * Governing contract: ADR 0294 (decisions 16, 17, 20, 25 and 26); ADR 0305 (rules 1, 5 to 13, 19 and 42 to 46); the
- *                     STA-335 type-to-schema and STA-409 partner spikes.
+ *                     STA-335 type-to-schema and STA-409 partner spikes; ADR 0260 (decision 3: a parameter typed with a
+ *                     `#stackra/clients/<service>` client is its class token).
  */
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 
 import { refusalCode } from "@stackra/errors";
 
+import { CLIENTS_SPECIFIER } from "#core/constants/clients-specifier.constant";
 import { MODEL_TOKENS } from "#core/constants/model-tokens.constant";
 import { folderKey } from "#core/functions/folder-key.function";
 import { platformConstant } from "#core/functions/platform-constant.function";
@@ -1547,6 +1549,10 @@ export function createSourceReader(
     };
     if (type === undefined || host.kind(type) !== "TypeReference" || type.typeName === undefined)
       return refuse();
+    // A generated service client is a class token by its import, before gen has written its file (ADR 0260 d3).
+    const specifier = importsOf(host.fileName(parameter)).get(nameOf(type.typeName));
+    if (specifier?.startsWith(CLIENTS_SPECIFIER) === true)
+      return { class: { name: nameOf(type.typeName), from: specifier } };
     const symbol = host.symbolAt(type.typeName);
     if (symbol === undefined) return refuse();
     const declaration = host.declarations(symbol)[0];

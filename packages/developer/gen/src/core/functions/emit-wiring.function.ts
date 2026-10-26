@@ -6,16 +6,19 @@
  *          the driver table per port with lazy candidates and the `DriverRegistry` augmentation keyed by port key,
  *          the `@Replaces` replacements and the partners read from type arguments, typed `satisfies Wiring`. Gen adds
  *          the bindings no class declares: one per per-model token (`repositoryOf(M)`, `journalOf(M)` with `[Locks]`),
- *          an Integration's `IntegrationRuntime`, the generated inbound webhook route, and the platform services of
+ *          an Integration's `IntegrationRuntime`, each generated service client (`#stackra/clients/<service>`, with the
+ *          `ClientTransport` the topology picks), the generated inbound webhook route, and the platform services of
  *          `PLATFORM_BINDINGS` where they are injected (`RequestContext` where `CustomFieldService` resolves).
  * Boundary: pure. Derived from file paths, base classes and constructor parameter types at build time; no reflection
  *           and no string token. A driver is a lazy import, so a node-only driver never reaches a browser bundle. The
  *           sections other packages own (extension points, seeders, ...) are added by those targets.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 17 and 26); ADR 0263 (gen writes the wiring); ADR 0227 2026-10-24 note
- *                     (build-time wiring from constructor types); registry v3.1 section 5 item 4; ADR 0308; ADR 0224.
+ *                     (build-time wiring from constructor types); registry v3.1 section 5 item 4; ADR 0308; ADR 0224;
+ *                     ADR 0260 (decisions 3 and 6: an injected client over the transport the topology picks).
  */
 import { BINDING_KINDS } from "#core/constants/binding-kinds.constant";
+import { CLIENTS_SPECIFIER } from "#core/constants/clients-specifier.constant";
 import { MODEL_TOKENS } from "#core/constants/model-tokens.constant";
 import { PLATFORM_BINDINGS } from "#core/constants/platform-bindings.constant";
 import { configKeyOf } from "#core/functions/config-key-of.function";
@@ -51,8 +54,12 @@ function depsOf(declared: DeclaredClass): readonly TokenRef[] {
     : declared.deps;
 }
 
-/** The constructor tokens of a platform service gen binds, when `target` is one. */
+/** The one dependency of a generated service client: the transport driver the topology picks (ADR 0260 d6). */
+const CLIENT_TRANSPORT: ClassRef = { name: "ClientTransport", from: "@stackra/clients/contracts" };
+
+/** The constructor tokens of a platform service or a generated client gen binds, when `target` is one. */
 function platformDeps(target: ClassRef): readonly ClassRef[] | undefined {
+  if (target.from.startsWith(CLIENTS_SPECIFIER)) return [CLIENT_TRANSPORT];
   for (const [key, deps] of Object.entries(PLATFORM_BINDINGS)) {
     const [pkg = "", name] = key.split("#");
     if (name === target.name && (target.from === pkg || target.from.startsWith(`${pkg}/`)))

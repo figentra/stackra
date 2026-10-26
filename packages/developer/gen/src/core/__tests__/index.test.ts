@@ -2,8 +2,9 @@
  * Stackra file contract:
  * Purpose: the consumer contract of the `.` entry: the pure compiler (identities, manifest and its checks, shape
  *          compiler, wiring, member module, entries, entities, registrations, boot, webhooks, prefixes, routes, blocks,
- *          tool configs, openapi projection, the prefix registry) is exported and nothing internal is (the case
- *          helpers, the import printer, the platform evaluator, the emitters' path helpers), and the IR types resolve.
+ *          generated service clients, tool configs, openapi projection, the prefix registry) is exported and nothing
+ *          internal is (the case helpers, the import printer, the platform evaluator, the emitters' path helpers), and
+ *          the IR types resolve.
  * Boundary: test only; imports the stand-in barrel through its `#core` alias.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decision 15); ADR 0127 2026-10-24 note.
@@ -25,6 +26,7 @@ import type {
 describe("@stackra/gen", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(gen).sort()).toEqual([
+      "CLIENTS_SPECIFIER",
       "EFFECT_TAGS",
       "GENERATED_NOTICE",
       "INTEGRATION_ROLES",
@@ -42,6 +44,7 @@ describe("@stackra/gen", () => {
       "egressOf",
       "emitBlocks",
       "emitBoot",
+      "emitClients",
       "emitEncoreCronJobs",
       "emitEncoreQueues",
       "emitEntities",

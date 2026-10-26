@@ -4,7 +4,8 @@
  *          `shape_unknown_type` (a literal union, an interface, an inferred enum literal with the annotation fix),
  *          `shape_default_not_constant`, `shape_rule_not_constant`, `shape_hatch_reason_missing`,
  *          `shape_decorator_type_mismatch`, `action_handle_signature`, `two_declarations_in_file`,
- *          `partner_mismatch`, `event_base_abstract` and `token_not_a_class`, each with a position and a fix; a
+ *          `partner_mismatch`, `event_base_abstract` and `token_not_a_class` (never for a `#stackra/clients/*`
+ *          client, which is a class token before its file exists), each with a position and a fix; a
  *          derived shape (`PickType`) and a discriminated union read correctly; and each model's entity facts
  *          (`[OptionalProps]` keys, a one-to-many with its inverse, a `Ref` many-to-one, a `Link` across models,
  *          getters) with `relation_decorator_missing` for a relation gen cannot read.
@@ -81,6 +82,16 @@ const SOURCES: Readonly<Record<string, string>> = {
     "}",
     "",
   ].join("\n"),
+  "src/core/services/catalogue-reader.service.ts": [
+    'import { Service } from "@stackra/container";',
+    'import type { CatalogueClient } from "#stackra/clients/catalogue";',
+    "export class CatalogueReaderService extends Service {",
+    "  constructor(private readonly catalogue: CatalogueClient) {",
+    "    super();",
+    "  }",
+    "}",
+    "",
+  ].join("\n"),
   "src/core/schemas/order-view.schema.ts": [
     'import type { PublicId } from "@stackra/contracts";',
     'import { Schema } from "@stackra/validation";',
@@ -129,8 +140,9 @@ describe("createSourceReader", async () => {
   const host = await openHost(join(root, "tsconfig.json"));
   const reader = createSourceReader(host, readMemberFacts(root));
   const shapes = reader.sources.flatMap((file) => reader.shapes(file));
+  const declared: ReturnType<typeof reader.classes>[number][] = [];
   for (const file of reader.sources) {
-    reader.classes(file);
+    declared.push(...reader.classes(file));
     reader.exports(file);
   }
   host.close();
@@ -156,6 +168,13 @@ describe("createSourceReader", async () => {
     expect(codes).toContain("action_handle_signature UntypedAction");
     expect(codes).toContain("event_base_abstract RawEvent");
     expect(codes).toContain("token_not_a_class BadTokenService.constructor");
+  });
+
+  it("takes a generated client as its class token before its file exists", () => {
+    expect(codes).not.toContain("token_not_a_class CatalogueReaderService.constructor");
+    expect(declared.find((item) => item.name === "CatalogueReaderService")?.deps).toEqual([
+      { class: { name: "CatalogueClient", from: "#stackra/clients/catalogue" } },
+    ]);
   });
 
   it("reads a derived shape and a discriminated union", () => {
