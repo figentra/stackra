@@ -13,6 +13,7 @@
  */
 import { Port } from "@stackra/contracts";
 
+import type { DeviceClaimFacts } from "#contracts/types/device-claim-facts.type";
 import type { DeviceDraft } from "#contracts/types/device-draft.type";
 import type { DeviceListQuery } from "#contracts/types/device-list-query.type";
 import type { PairingCode } from "#contracts/types/pairing-code.type";
@@ -25,7 +26,11 @@ import type { RegisteredDevice } from "#contracts/types/registered-device.type";
  *
  * @example
  * const pairing = await registry.openPairing({ deviceId, at: clock.now(), expiresAt });
- * const device = await registry.claim(input.code, { name: "Till 2", kind: "till", nodeId }, clock.now());
+ * const device = await registry.claim(input.code, { name: "Till 2", kind: "till", nodeId }, clock.now(), {
+ *   tenantId: ctx.tenantId,
+ *   market,
+ *   pairedBy: ctx.principalId,
+ * });
  */
 export abstract class DeviceRegistry extends Port {
   /** Type-only port key, so `DriverName<DeviceRegistry>` narrows to this port's drivers. */
@@ -39,11 +44,16 @@ export abstract class DeviceRegistry extends Port {
   abstract openPairing(request: PairingRequest): Promise<PairingCode>;
 
   /**
-   * Registers the device whose pending code is `code`.
+   * Registers the device whose pending code is `code`, recording `facts` with it (each null when left out).
    *
    * @throws PairingCodeInvalidError when no pending code matches or it expired before `at`.
    */
-  abstract claim(code: string, draft: DeviceDraft, at: Date): Promise<RegisteredDevice>;
+  abstract claim(
+    code: string,
+    draft: DeviceDraft,
+    at: Date,
+    facts?: DeviceClaimFacts,
+  ): Promise<RegisteredDevice>;
 
   /** The pairing's state at `at`; an unknown pairing reads as expired. */
   abstract pairingStatus(pairingId: string, at: Date): Promise<PairingStatus>;

@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `newPairingCode`, a fresh pairing code from `PAIRING_CODE_ALPHABET`, drawn with the platform's
  *          cryptographic random source and rejection sampling, so every character is equally likely.
- * Boundary: internal; reads `globalThis.crypto`, present in Node 20+, browsers and Hermes with the polyfill.
+ * Boundary: public on `.` (a registry driver outside this package draws codes the same way); reads `globalThis.crypto`, present in Node 20+, browsers and Hermes with the polyfill.
  * Runtime: isomorphic
  * Governing contract: ADR 0361 (decision 7: pairing).
  */

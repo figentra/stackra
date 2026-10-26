@@ -35,7 +35,12 @@ programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts` and `.
   registry never issues or revokes a credential: identity does; the devices service calls it.
 - A device's id is its install id (`StoredDeviceIdentityDriver`), minted once and registered at pairing, so it never
   changes. The pairing token lives only in the `secrets` storage area, never in a return value or a log.
-- Device kinds, code lifetimes and who may pair are product data and settings; nothing here fixes them.
+- Device kinds, code lifetimes and who may pair are product data and settings; nothing here fixes them. A kind's
+  `counted` and `fiscalUnit` flags are catalogue data with defaults (true, false); never branch on a kind's key.
+- `PAIRING_CODE_ALPHABET` and `newPairingCode` are public so other registry drivers draw the same codes; the length
+  stays internal.
+- `DeviceRegistry.claim` takes optional `DeviceClaimFacts` (tenant, market, who paired); a driver stores them as
+  given and never resolves them.
 - Firmware, over-the-air updates, fleet dashboards and edge sync are not here (ADR 0235 decision 4); add them only
   with their own issue.
 - No parameter properties and no `#private` fields: apps typecheck this source under `erasableSyntaxOnly`.

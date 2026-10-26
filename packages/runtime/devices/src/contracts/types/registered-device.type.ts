@@ -1,17 +1,19 @@
 /**
  * Stackra file contract:
  * Purpose: `RegisteredDevice`, one device in a tenant's registry: its id (the one its `DeviceIdentity` answers), its
- *          name, kind and node, its standing, and when it was paired, last seen and retired.
+ *          name, kind and node, the claim's facts (tenant, market, who paired it), its standing, and when it was
+ *          paired, last seen and retired.
  * Boundary: a type only; the registry's record, not a credential. The hub reads a calling device's id from its
  *           credential, never from a request body.
  * Runtime: isomorphic
  * Governing contract: ADR 0361 (decision 7); ADR 0235 (decision 1, as amended); ADR 0338 (decision 1: the device id).
  */
 import type { DeviceStatus } from "#contracts/enums/device-status.enum";
+import type { DeviceClaimFacts } from "#contracts/types/device-claim-facts.type";
 import type { DeviceDraft } from "#contracts/types/device-draft.type";
 
 /** A registered device. */
-export interface RegisteredDevice extends DeviceDraft {
+export interface RegisteredDevice extends DeviceDraft, DeviceClaimFacts {
   /** The device's id, the same its `DeviceIdentity` answers. */
   readonly id: string;
 

@@ -16,6 +16,7 @@ export { DeviceIdentity } from "#contracts/ports/device-identity.port";
 export { DevicePairing } from "#contracts/ports/device-pairing.port";
 export { DeviceRegistry } from "#contracts/ports/device-registry.port";
 export { DeviceTelemetry } from "#contracts/ports/device-telemetry.port";
+export type { DeviceClaimFacts } from "#contracts/types/device-claim-facts.type";
 export type { DeviceCommand } from "#contracts/types/device-command.type";
 export type { DeviceDraft } from "#contracts/types/device-draft.type";
 export type { DeviceKind } from "#contracts/types/device-kind.type";

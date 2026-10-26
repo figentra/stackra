@@ -3,7 +3,7 @@
  * Purpose: unit tests of `MemoryDeviceRegistryDriver`: a code opened for an install pairs it under its own id when a
  *          person enters it (case and dashes ignored), once; an expired or unknown code refuses; the pairing state
  *          follows; devices list by filter, are stamped when seen and retire once; a retired device can pair again,
- *          an active one cannot.
+ *          an active one cannot; a claim records its tenant, market and who paired it, each null when left out.
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0361 (decision 7).
@@ -96,5 +96,18 @@ describe("MemoryDeviceRegistryDriver", () => {
     await registry.claim(again.code, { ...till, name: "Till 3" }, later);
     expect(registry.devices).toHaveLength(1);
     expect(await registry.find("dev_1")).toMatchObject({ name: "Till 3", status: "active" });
+  });
+
+  it("records the claim's facts, null when left out", async () => {
+    const registry = new MemoryDeviceRegistryDriver();
+    const facts = { tenantId: "ten_1", market: "sa", pairedBy: "usr_1" };
+    const first = await registry.openPairing({ deviceId: "dev_1", at, expiresAt });
+    expect(await registry.claim(first.code, till, later, facts)).toMatchObject(facts);
+    const second = await registry.openPairing({ deviceId: "dev_2", at, expiresAt });
+    expect(await registry.claim(second.code, till, later)).toMatchObject({
+      tenantId: null,
+      market: null,
+      pairedBy: null,
+    });
   });
 });

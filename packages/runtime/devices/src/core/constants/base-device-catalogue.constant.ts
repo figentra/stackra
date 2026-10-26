@@ -2,7 +2,9 @@
  * Stackra file contract:
  * Purpose: `BASE_DEVICE_CATALOGUE`, the device-catalogue rows Stackra ships as the base every product's seed pack
  *          starts from: a staffed till, a self-service kiosk, a self-checkout lane with its bagging scale, the lane's
- *          customer display, and an entry or exit gate.
+ *          customer display, and an entry or exit gate. The till, kiosk and lane sell, so they count against the
+ *          device limit and are fiscal units; the lane's display rides on its lane and counts for nothing; the gate
+ *          counts but issues no receipts.
  * Boundary: seed data, not behaviour: a product's `seed-pack:<product>` device catalogue adds, edits or drops rows,
  *           and an admin edits them after; `deviceCatalogueOf` reads them. No code compares a kind's key.
  * Runtime: isomorphic
@@ -18,6 +20,8 @@ export const BASE_DEVICE_CATALOGUE: readonly Readonly<Record<string, Json>>[] = 
     key: "till",
     unattended: false,
     customerFacing: false,
+    counted: true,
+    fiscalUnit: true,
     peripherals: [
       "receipt_printer",
       "cash_drawer",
@@ -32,6 +36,8 @@ export const BASE_DEVICE_CATALOGUE: readonly Readonly<Record<string, Json>>[] = 
     key: "kiosk",
     unattended: true,
     customerFacing: true,
+    counted: true,
+    fiscalUnit: true,
     peripherals: ["receipt_printer", "barcode_scanner", "card_terminal"],
   },
   {
@@ -39,6 +45,8 @@ export const BASE_DEVICE_CATALOGUE: readonly Readonly<Record<string, Json>>[] = 
     key: "lane",
     unattended: true,
     customerFacing: true,
+    counted: true,
+    fiscalUnit: true,
     peripherals: ["receipt_printer", "barcode_scanner", "card_terminal", "scale"],
   },
   {
@@ -46,6 +54,8 @@ export const BASE_DEVICE_CATALOGUE: readonly Readonly<Record<string, Json>>[] = 
     key: "lane_display",
     unattended: true,
     customerFacing: true,
+    counted: false,
+    fiscalUnit: false,
     peripherals: [],
   },
   {
@@ -53,6 +63,8 @@ export const BASE_DEVICE_CATALOGUE: readonly Readonly<Record<string, Json>>[] = 
     key: "gate",
     unattended: true,
     customerFacing: true,
+    counted: true,
+    fiscalUnit: false,
     peripherals: ["access_controller"],
   },
 ]);

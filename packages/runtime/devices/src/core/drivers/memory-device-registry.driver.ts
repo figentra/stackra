@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `MemoryDeviceRegistryDriver`, the `DeviceRegistry` driver that keeps devices and pairings in memory: the
  *          `memory` candidate of tests and local runs of the devices service.
- * Boundary: no store; `devices` and `pairings` are inspectable. Codes come from `newPairingCode`; pairing ids from
+ * Boundary: no store; `devices` and `pairings` are inspectable. A claim's facts are stored as given. Codes come from `newPairingCode`; pairing ids from
  *           `crypto.randomUUID`. A code is single use: a claimed or expired one refuses. The constructor takes nothing.
  * Runtime: isomorphic
  * Governing contract: ADR 0361 (decision 7); ADR 0266 (memory drivers first); ADR 0269 (fakes are real drivers).
@@ -12,6 +12,7 @@ import { Driver } from "@stackra/container";
 import { DeviceStatus } from "#contracts/enums/device-status.enum";
 import { PairingState } from "#contracts/enums/pairing-state.enum";
 import { DeviceRegistry } from "#contracts/ports/device-registry.port";
+import type { DeviceClaimFacts } from "#contracts/types/device-claim-facts.type";
 import type { DeviceDraft } from "#contracts/types/device-draft.type";
 import type { DeviceListQuery } from "#contracts/types/device-list-query.type";
 import type { PairingCode } from "#contracts/types/pairing-code.type";
@@ -20,6 +21,9 @@ import type { PairingStatus } from "#contracts/types/pairing-status.type";
 import type { RegisteredDevice } from "#contracts/types/registered-device.type";
 import { PairingCodeInvalidError } from "#core/errors/pairing-code-invalid.error";
 import { newPairingCode } from "#core/functions/new-pairing-code.function";
+
+/** The facts of a claim that names none. */
+const NO_FACTS: DeviceClaimFacts = { tenantId: null, market: null, pairedBy: null };
 
 /** An open or finished pairing. */
 interface Pairing extends PairingCode {
@@ -64,11 +68,17 @@ export class MemoryDeviceRegistryDriver extends Driver(DeviceRegistry) {
   }
 
   /**
-   * Registers the device whose pending code is `code` (case and spaces ignored), or re-activates a retired one.
+   * Registers the device whose pending code is `code` (case and spaces ignored) with the claim's facts, or
+   * re-activates a retired one.
    *
    * @throws PairingCodeInvalidError when no unclaimed, unexpired code matches.
    */
-  async claim(code: string, draft: DeviceDraft, at: Date): Promise<RegisteredDevice> {
+  async claim(
+    code: string,
+    draft: DeviceDraft,
+    at: Date,
+    facts: DeviceClaimFacts = NO_FACTS,
+  ): Promise<RegisteredDevice> {
     const typed = code.replace(/[\s-]/g, "").toUpperCase();
     const pairing = this.pairings.find((candidate) => candidate.code === typed);
     if (pairing === undefined || pairing.claimed || pairing.expiresAt.getTime() <= at.getTime())
@@ -79,6 +89,9 @@ export class MemoryDeviceRegistryDriver extends Driver(DeviceRegistry) {
       name: draft.name,
       kind: draft.kind,
       nodeId: draft.nodeId,
+      tenantId: facts.tenantId,
+      market: facts.market,
+      pairedBy: facts.pairedBy,
       status: DeviceStatus.Active,
       pairedAt: new Date(at.getTime()),
       lastSeenAt: null,

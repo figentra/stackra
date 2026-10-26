@@ -35,6 +35,10 @@ the server's query of a device's last acknowledged sequence. An MQTT driver come
 | `StoredDeviceIdentityDriver`                          | `.`           | `DeviceIdentity`: the install id, minted once in `prefs`         |
 | `StoredDeviceCredentialDriver`                        | `.`           | `DeviceCredential`: the token kept at pairing                    |
 | `PairingCodeInvalidError`, `DEVICE_STORAGE_KEYS`      | `.`           | the registry's refusal; the storage keys the drivers share       |
+| `PAIRING_CODE_ALPHABET`, `newPairingCode`             | `.`           | the code alphabet and generator, for a registry driver elsewhere |
+| `DeviceClaimFacts`                                    | `./contracts` | a claim's `tenantId`, `market` and `pairedBy`, kept on the row   |
+| `DeviceKind`, `BASE_DEVICE_CATALOGUE`                 | both          | catalogue kinds with `counted` and `fiscalUnit`; the base rows   |
+| `deviceCatalogueOf`                                   | `.`           | reads and checks catalogue rows into `DeviceKind`s               |
 | `DeviceAcknowledgedInput`, `DeviceAcknowledgedOutput` | `./node`      | `{ deviceId? }` and `{ sequence: number \| null }`               |
 
 ## Reporting and taking commands
@@ -93,6 +97,7 @@ const device = await registry.claim(
   input.code,
   { name: "Till 2", kind: "till", nodeId },
   clock.now(),
+  { tenantId: ctx.tenantId, market, pairedBy: ctx.principalId }, // optional; each fact null when left out
 );
 await registry.retire(device.id, clock.now()); // then identity revokes the credential
 ```
@@ -100,6 +105,16 @@ await registry.retire(device.id, clock.now()); // then identity revokes the cred
 - The device's id is its install id, registered as is, so the offline queue's order (below) survives pairing.
 - A code is single use; an unknown, used or expired code refuses with `PairingCodeInvalidError`, which never says
   which.
+- A driver over another store draws its codes with `newPairingCode` (from `PAIRING_CODE_ALPHABET`), so every registry
+  accepts the same codes.
+
+## Device kinds
+
+A kind is catalogue data (ADR 0430): `BASE_DEVICE_CATALOGUE` is the seed every product starts from, and
+`deviceCatalogueOf(rows)` checks rows into `DeviceKind`s. Besides `unattended`, `customerFacing` and `peripherals`, a
+row carries `counted` (counts against the plan's `devices` limit; default true) and `fiscalUnit` (registered with the
+market's fiscal mandate during pairing; default false). The devices service reads the flags; nothing here enforces the
+limit or opens a registration.
 
 ## The offline queue's order
 

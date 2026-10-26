@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: the consumer contract of the `.` entry: the registry row's configuration, HTTP drivers, refusals and hub
- *          routes are exported, nothing else is (the ports, `hubSender` and the command-list schema are not).
+ *          routes, pairing code alphabet and generator are exported, nothing else is (the ports, `hubSender` and the
+ *          command-list schema are not).
  * Boundary: test only; imports the stand-in barrel through its `#core` alias.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0294 (decision 15).
@@ -26,10 +27,12 @@ describe("@stackra/devices", () => {
       "HttpDevicePairingDriver",
       "HttpDeviceTelemetryDriver",
       "MemoryDeviceRegistryDriver",
+      "PAIRING_CODE_ALPHABET",
       "PairingCodeInvalidError",
       "StoredDeviceCredentialDriver",
       "StoredDeviceIdentityDriver",
       "deviceCatalogueOf",
+      "newPairingCode",
     ]);
   });
 

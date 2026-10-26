@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `deviceCatalogueOf(rows)`, the device kinds of a device catalogue's rows (`BASE_DEVICE_CATALOGUE` or a
  *          product's seed-pack record), checked: snake_case keys, each once, yes-or-no flags and snake_case peripheral
- *          names.
+ *          names. A row without `counted` counts and one without `fiscalUnit` is not a fiscal unit, so catalogues
+ *          seeded before the flags still read.
  * Boundary: pure; the reader the seed loader and the admin run before a catalogue is stored, as the plan catalogue's
  *           readers are. It refuses a bad row with a RangeError naming it.
  * Runtime: isomorphic
@@ -37,11 +38,13 @@ export function deviceCatalogueOf(
         throw new RangeError(`${where} needs a snake_case key`);
       if (seen.has(key)) throw new RangeError(`${where} repeats ${key}`);
       seen.add(key);
-      const { unattended, customerFacing, peripherals } = row;
+      const { unattended, customerFacing, peripherals, counted = true, fiscalUnit = false } = row;
       if (typeof unattended !== "boolean" || typeof customerFacing !== "boolean")
         throw new RangeError(
           `${where} (${key}) needs unattended and customerFacing as true or false`,
         );
+      if (typeof counted !== "boolean" || typeof fiscalUnit !== "boolean")
+        throw new RangeError(`${where} (${key}) needs counted and fiscalUnit as true or false`);
       if (
         !Array.isArray(peripherals) ||
         !peripherals.every((name) => typeof name === "string" && SNAKE.test(name))
@@ -51,6 +54,8 @@ export function deviceCatalogueOf(
         key,
         unattended,
         customerFacing,
+        counted,
+        fiscalUnit,
         peripherals: Object.freeze([...(peripherals as string[])]),
       });
     }),
