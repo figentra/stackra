@@ -15,6 +15,17 @@ import { z } from "zod";
 
 import { InspectorFieldKind, type InspectorField } from "#contracts/index";
 
+/** The wrapper definition types looked through to the inner schema. */
+const WRAPPERS = new Set([
+  "optional",
+  "nullable",
+  "default",
+  "prefault",
+  "readonly",
+  "catch",
+  "nonoptional",
+]);
+
 /** The kind and enum options of a prop schema, or `undefined` for a shape the inspector does not edit. */
 function describeProp(schema: unknown): Pick<InspectorField, "kind" | "options"> | undefined {
   const isMoney = (object: z.ZodObject): boolean =>
@@ -45,7 +56,9 @@ function describeProp(schema: unknown): Pick<InspectorField, "kind" | "options">
       return current.in instanceof z.ZodObject && isMoney(current.in)
         ? { kind: InspectorFieldKind.Money, options: [] }
         : undefined;
-    // Optional, nullable, default, readonly and catch expose their inner schema as `unwrap()`.
+    // Optional, nullable, default, readonly and catch expose their inner schema as `unwrap()`; so does an array, for
+    // its element, which is why the wrapper is checked by type first.
+    if (!WRAPPERS.has(type ?? "")) return undefined;
     const unwrap = (current as { readonly unwrap?: () => unknown } | null)?.unwrap;
     if (typeof unwrap !== "function") return undefined;
     current = unwrap.call(current);

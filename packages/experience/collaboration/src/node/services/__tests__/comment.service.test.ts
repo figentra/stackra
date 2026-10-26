@@ -73,7 +73,12 @@ function setup() {
         [CommentRevision, "cmr"],
         [CommentMention, "cmn"],
       ]).get(Type);
-      const row = Object.assign(new Type(), { id: `${prefix}_${next}`, createdAt: AT }, data);
+      // A well-formed public id: the events parse their ids.
+      const row = Object.assign(
+        new Type(),
+        { id: `${prefix}_${String(next).padStart(26, "0")}`, createdAt: AT },
+        data,
+      );
       storeOf(Type).push(row);
       return row;
     }),

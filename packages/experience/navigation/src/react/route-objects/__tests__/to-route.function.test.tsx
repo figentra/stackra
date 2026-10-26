@@ -114,7 +114,7 @@ describe("toRoute", () => {
 
   it("follows a route's redirect and a layout's redirect", async () => {
     renderAt("/open?slug=cap");
-    expect(await screen.findByText("product cap ")).toBeTruthy();
+    expect(await screen.findByText("product cap")).toBeTruthy();
     cleanup();
     renderAt("/?signedOut=1");
     expect(await screen.findByText("sign in")).toBeTruthy();

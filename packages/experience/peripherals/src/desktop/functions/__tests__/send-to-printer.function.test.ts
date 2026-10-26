@@ -18,8 +18,8 @@ const node = vi.hoisted(() => ({ createConnection: vi.fn(), open: vi.fn() }));
 vi.mock("node:net", () => ({ createConnection: node.createConnection }));
 vi.mock("node:fs/promises", () => ({ open: node.open, constants: { O_WRONLY: 1 } }));
 
-/** A socket that connects and records the bytes, or fails with `failure`. */
-function socket(failure?: Error) {
+/** `createConnection` hands out a socket that connects and records the bytes, or fails with `failure`. */
+function connectWith(failure?: Error) {
   const fake = Object.assign(new EventEmitter(), {
     sent: [] as Uint8Array[],
     setTimeout: vi.fn(),
@@ -29,7 +29,12 @@ function socket(failure?: Error) {
       done();
     },
   });
-  queueMicrotask(() => (failure ? fake.emit("error", failure) : fake.emit("connect")));
+  // Emitted after the call, once the caller has attached its listeners (the import before it takes longer than a
+  // microtask, so emitting from here would be missed).
+  node.createConnection.mockImplementation(() => {
+    queueMicrotask(() => (failure ? fake.emit("error", failure) : fake.emit("connect")));
+    return fake;
+  });
   return fake;
 }
 
@@ -40,8 +45,7 @@ beforeEach(() => {
 
 describe("sendToPrinter", () => {
   it("sends to a network printer", async () => {
-    const fake = socket();
-    node.createConnection.mockReturnValue(fake);
+    const fake = connectWith();
     await sendToPrinter("tcp://10.0.0.21:9100", Uint8Array.of(1, 2));
     expect(node.createConnection).toHaveBeenCalledWith({ host: "10.0.0.21", port: 9100 });
     expect(fake.sent).toEqual([Uint8Array.of(1, 2)]);
@@ -58,7 +62,7 @@ describe("sendToPrinter", () => {
 
   it("rejects with the connection's error", async () => {
     const refused = Object.assign(new Error("refused"), { code: "ECONNREFUSED" });
-    node.createConnection.mockReturnValue(socket(refused));
+    connectWith(refused);
     await expect(sendToPrinter("tcp://10.0.0.21:9100", Uint8Array.of(1))).rejects.toBe(refused);
   });
 });

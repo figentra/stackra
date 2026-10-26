@@ -57,7 +57,10 @@ describe("registerPanelPages", () => {
     vi.spyOn(console, "error").mockImplementation(() => undefined);
     registerPanelPages()();
     mount();
-    expect(await screen.findByText(/No panel page is registered/)).toBeTruthy();
+    // The router's error page repeats the message in its stack trace; the heading carries it alone.
+    expect(
+      await screen.findByRole("heading", { name: /No panel page is registered/ }),
+    ).toBeTruthy();
     expect(framed).toEqual([]);
   });
 });

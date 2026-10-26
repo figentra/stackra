@@ -66,7 +66,9 @@ describe("routeMeta", () => {
       href: "https://acme.test/store/tee",
     });
     expect(descriptors).toContainEqual({ name: "description", content: "Tee — Acme" });
-    expect(descriptors).toContainEqual({ "script:ld+json": { "@type": "Product", name: "Tee" } });
+    expect(descriptors).toContainEqual({
+      "script:ld+json": { "@context": "https://schema.org", "@type": "Product", name: "Tee" },
+    });
   });
 
   it("refuses without a container to read SeoConfig from", () => {

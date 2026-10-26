@@ -18,7 +18,7 @@ import type { MentionKind } from "#contracts/enums/mention-kind.enum";
  * throw MentionNotAllowedError.create({ kind: MentionKind.ExternalParticipant });
  */
 export class MentionNotAllowedError extends Refusal({
-  kind: ErrorKind.InvalidArgument,
+  kind: ErrorKind.Validation,
   retryable: false,
 }) {
   /** The refused mention's kind. */

@@ -122,7 +122,9 @@ describe("routeAdapter", () => {
       rel: "canonical",
       href: "https://acme.test/store/tee",
     });
-    expect(tags).toContainEqual({ "script:ld+json": { "@type": "Product", name: "Tee" } });
+    expect(tags).toContainEqual({
+      "script:ld+json": { "@context": "https://schema.org", "@type": "Product", name: "Tee" },
+    });
   });
 
   it("renders the page with its data", async () => {

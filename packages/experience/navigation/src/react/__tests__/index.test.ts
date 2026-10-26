@@ -20,8 +20,11 @@ describe("@stackra/navigation/react", () => {
       "Link",
       "NavLink",
       "Outlet",
+      "ReactRouterProvider",
       "RootErrorBoundary",
       "RouteForm",
+      "RouteLeaveConfirmation",
+      "RouteOverlay",
       "registerRoutePages",
       "routeAdapter",
       "routeContext",
@@ -39,6 +42,7 @@ describe("@stackra/navigation/react", () => {
       "useMenu",
       "useNavigate",
       "useNavigation",
+      "useRouteOverlay",
       "useSubmit",
     ]);
   });

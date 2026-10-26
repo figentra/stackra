@@ -20,11 +20,14 @@ describe("PERIPHERALS_CONFIG_SCHEMA", () => {
       labelPrinter: "memory",
       customerDisplay: "memory",
       cardTerminal: "memory",
+      accessController: "memory",
       printerAddress: "",
       labelPrinterAddress: "",
       drawerPin: 2,
       scanKeyGap: "PT0.05S",
       probeOnBoot: false,
+      exitTokenPublicKey: "",
+      exitTokenMaxAge: "PT30M",
     });
   });
 

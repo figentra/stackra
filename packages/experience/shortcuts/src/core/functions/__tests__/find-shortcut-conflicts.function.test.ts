@@ -24,14 +24,15 @@ describe("findShortcutConflicts", () => {
   it("reports the same keys, however they are spelled", () => {
     expect(
       findShortcutConflicts([
-        { key: "console.open_palette", keys: "mod+k" },
-        { key: "loyalty.search", keys: "K+Mod" },
+        { key: "console.open_palette", keys: "mod+shift+k" },
+        // The key must come last; case and modifier order are free.
+        { key: "loyalty.search", keys: "Shift+Mod+K" },
       ]),
     ).toEqual([
       {
         kind: "same",
         shortcuts: ["console.open_palette", "loyalty.search"],
-        keys: ["mod+k", "mod+k"],
+        keys: ["mod+shift+k", "mod+shift+k"],
       },
     ]);
   });

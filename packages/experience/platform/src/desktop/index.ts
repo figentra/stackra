@@ -9,7 +9,7 @@
  * Governing contract: ADR 0294 (decision 15); ADR 0127 2026-10-24 note (`./desktop` entry); registry A13; the
  *                     STA-347 stand-in barrel decision.
  */
-export { Bridge, BridgeBase } from "#desktop/bases/bridge.base";
+export { Bridge, type BridgeBase } from "#desktop/bases/bridge.base";
 export { PickFolderBridge } from "#desktop/bridges/pick-folder.bridge";
 export { SetKioskModeBridge } from "#desktop/bridges/set-kiosk-mode.bridge";
 export { ShowSecondScreenBridge } from "#desktop/bridges/show-second-screen.bridge";

@@ -75,7 +75,9 @@ describe("useInspector", () => {
     act(() => result.current.set("tone", undefined));
     expect(result.current.values).toEqual({ title: "Hello" });
 
+    // Three edits: the tone cleared, the tone set, the title set.
     act(() => {
+      editor.undo();
       editor.undo();
       editor.undo();
     });
