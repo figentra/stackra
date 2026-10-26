@@ -4,14 +4,16 @@
  *          the generated files its runtime needs (a server's registrations; a client's route table and blocks), then
  *          calls `createApp` from the `@stackra/app` subpath of its runtime in the form that subpath takes, and
  *          exports the result. A service gets `server`; an app gets `browser` (web, PWA, the desktop renderer) and
- *          `native` (iOS and Android).
+ *          `native` (iOS and Android). A service's server entry hands `createApp` its `#stackra/boot` when gen writes
+ *          one, so the bus, inbox and relay connect at service start.
  * Boundary: pure; no logic in an entry (boot order, signals and readiness belong to `createApp`). A package gets no
  *           runtime entry; a host imports its module. A worker's and the desktop main process's entries need their
  *           tool facts (the React Router server build, the crash page, the renderer and preload paths), which come
  *           with the Wrangler and electron-builder configs, so gen writes none for them yet.
  * Runtime: isomorphic
  * Governing contract: ADR 0295 (decisions 7 to 9: generated runtime entries, `createApp` per subpath, no service
- *                     factory); ADR 0127 2026-10-24 note (the runtime-target entries).
+ *                     factory); ADR 0127 2026-10-24 note (the runtime-target entries); ADR 0263 (boot runs on the ready
+ *                     container); ADR 0260 (decision 4).
  */
 import { clientRuntimes } from "#core/functions/client-runtimes.function";
 import { generatedHeader } from "#core/functions/generated-header.function";
@@ -47,12 +49,13 @@ export function emitRuntimeEntries(
     )
       .filter((name) => generated.includes(`.stackra/gen/${name}.ts`))
       .map((name) => `import "#stackra/${name}";`);
+    const boots = runtime === "server" && generated.includes(".stackra/gen/boot.ts");
     const call =
       runtime === "browser"
         ? "await createApp(wiring)"
         : runtime === "native"
           ? `createApp(${root.name}, { wiring })`
-          : `await createApp(${root.name}, { wiring })`;
+          : `await createApp(${root.name}, { wiring${boots ? ", boot" : ""} })`;
     const header = generatedHeader({
       from: `stackra.config.ts, the root module and #stackra/wiring`,
       purpose: `the ${runtime} runtime entry of ${ir.package}: builds the app from the root module and the generated wiring.`,
@@ -66,6 +69,7 @@ export function emitRuntimeEntries(
       content: [
         header,
         ...loads,
+        ...(boots ? ['import { boot } from "#stackra/boot";'] : []),
         `import { createApp } from "@stackra/app/${runtime}";`,
         ...(runtime === "browser" ? [] : [`import { ${root.name} } from "${root.from}";`]),
         'import { wiring } from "#stackra/wiring";',

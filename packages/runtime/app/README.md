@@ -1,5 +1,14 @@
 # @stackra/app
 
+<!--
+Stackra file contract:
+Purpose: the reader guide of @stackra/app: `createApp` per runtime target, the generated entries, the shared boot,
+         the client contexts, the server lifecycle (boot, drain, close) and the desktop baseline.
+Boundary: documentation only; the code and the ADRs win on any difference.
+Runtime: none
+Governing contract: ADR 0295 (decisions 7 to 9); ADR 0263; ADR 0260 (decision 4); ADR 0127 2026-10-24 note.
+-->
+
 Stackra app runtime: `createApp` for each runtime target, returning that target's app object, the shared boot from the
 generated wiring, the client `Contexts`, and the `Controller` kind for raw HTTP. Nobody writes `main.ts`: gen writes
 `.stackra/entry/<target>.ts`, which calls `createApp` from the target's subpath (ADR 0295 decisions 7 and 8).
@@ -33,7 +42,7 @@ peers, each loaded only by the entry that needs it.
 
 ```ts
 // services/commerce/.stackra/entry/server.ts
-export const app = await createApp(CommerceModule, { wiring });
+export const app = await createApp(CommerceModule, { wiring, boot });
 
 // apps/web/.stackra/entry/worker.ts
 export const app = await createApp(wiring, {
@@ -88,7 +97,9 @@ root); native `Root` and `hydrateRoute` mount it themselves.
 ## Server
 
 `handlers.run(call)` gives one call a request container and counts it until it settles. `drain()` refuses new calls
-with `AppDrainingError` and waits for those in flight; `close()` drains, then shuts the container down. SIGTERM and
+with `AppDrainingError` and waits for those in flight; `close()` drains, then shuts the container down. With `boot`
+(the generated `#stackra/boot`), `createApp` awaits it once the container is ready, with `DATABASE_URL` and a shutdown
+signal; `close()` aborts that signal after the drain, which disconnects the bus and inbox and stops the relay. SIGTERM and
 SIGINT close and exit 0, or report and exit 1 when shutdown fails.
 
 ## Desktop

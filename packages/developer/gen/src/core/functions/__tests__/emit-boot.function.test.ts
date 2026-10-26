@@ -3,7 +3,8 @@
  * Purpose: unit tests of `emitBoot`: a service that runs the database, the outbox and segments connects them in order
  *          (the bound legal-hold registry and sequence time zone, the database with the hold subscriber and the outbox
  *          writer among its subscribers, then segments, then the bus and inbox connected until the shutdown signal,
- *          then the relay and its work loop on the shutdown signal); each step only when its package is used; no file for a package, an app or a
+ *          then the relay and its work loop on the shutdown signal); a signal already aborted connects nothing, and one
+ *          aborted mid-boot disconnects at once; each step only when its package is used; no file for a package, an app or a
  *          service with nothing to connect.
  * Boundary: test only; runs on the IR fixtures.
  * Runtime: node (vitest)
@@ -39,6 +40,7 @@ describe("emitBoot", () => {
         "  container: Container,",
         "  options: { readonly url: string; readonly signal: AbortSignal },",
         "): Promise<void> {",
+        "  if (options.signal.aborted) return;",
         "  connectHoldRegistry(container.has(HoldRegistry) ? container.get(HoldRegistry) : undefined);",
         "  connectSequenceTimeZone(",
         "    container.has(SequenceTimeZone) ? container.get(SequenceTimeZone) : undefined,",
@@ -49,14 +51,12 @@ describe("emitBoot", () => {
         "  bus.connect(container);",
         "  const inbox = container.get(InboxService);",
         "  inbox.connect(container);",
-        "  options.signal.addEventListener(",
-        '    "abort",',
-        "    () => {",
-        "      bus.disconnect();",
-        "      inbox.disconnect();",
-        "    },",
-        "    { once: true },",
-        "  );",
+        "  const disconnect = (): void => {",
+        "    bus.disconnect();",
+        "    inbox.disconnect();",
+        "  };",
+        "  if (options.signal.aborted) disconnect();",
+        '  else options.signal.addEventListener("abort", disconnect, { once: true });',
         "  const relay = container.get(OutboxRelayService);",
         "  relay.connect(container);",
         "  void relay.work({ signal: options.signal });",
@@ -82,13 +82,11 @@ describe("emitBoot", () => {
       [
         "  const bus = container.get(EventBus);",
         "  bus.connect(container);",
-        "  options.signal.addEventListener(",
-        '    "abort",',
-        "    () => {",
-        "      bus.disconnect();",
-        "    },",
-        "    { once: true },",
-        "  );",
+        "  const disconnect = (): void => {",
+        "    bus.disconnect();",
+        "  };",
+        "  if (options.signal.aborted) disconnect();",
+        '  else options.signal.addEventListener("abort", disconnect, { once: true });',
       ].join("\n"),
     );
     expect(boot).not.toContain("InboxService");

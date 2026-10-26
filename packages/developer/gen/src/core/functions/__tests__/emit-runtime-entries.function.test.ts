@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `emitRuntimeEntries`: a service gets `server`, which loads its registrations when they are
- *          written; an app gets `browser` (web, PWA, desktop renderer) and `native` (iOS, Android), each in the form
+ *          written and hands `createApp` its boot when gen writes one; an app gets `browser` (web, PWA, desktop renderer) and `native` (iOS, Android), each in the form
  *          its `createApp` takes and loading the route table and blocks this run writes; a package and a worker get
  *          none.
  * Boundary: test only; runs on the IR fixtures.
@@ -29,7 +29,17 @@ describe("emitRuntimeEntries", () => {
   });
 
   it("loads only the generated files this run writes", () => {
-    expect(emitRuntimeEntries(COMMERCE_IR)[0]?.content).not.toContain("#stackra/registrations");
+    const content = emitRuntimeEntries(COMMERCE_IR)[0]?.content;
+    expect(content).not.toContain("#stackra/registrations");
+    expect(content).not.toContain("#stackra/boot");
+  });
+
+  it("hands createApp the boot when gen writes one", () => {
+    const content = emitRuntimeEntries(COMMERCE_IR, [".stackra/gen/boot.ts"])[0]?.content;
+    expect(content).toContain('import { boot } from "#stackra/boot";');
+    expect(content).toContain(
+      "export const app = await createApp(CommerceModule, { wiring, boot });",
+    );
   });
 
   it("writes one entry per client runtime of an app's targets", () => {

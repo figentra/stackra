@@ -3,13 +3,15 @@
  * Purpose: `createApp` of the server target: boots the member's root module from the generated wiring and
  *          `process.env`, and returns the `ServerApp` the generated Encore app imports. It owns boot order, readiness,
  *          drain, shutdown and the signal handling: SIGTERM or SIGINT drains, closes and exits 0 (1 when shutdown
- *          fails, after reporting it).
+ *          fails, after reporting it). Once the container is ready it awaits the member's `#stackra/boot` (when given)
+ *          with the process's `DATABASE_URL` and a shutdown signal that `close()` aborts after the drain.
  * Boundary: no HTTP server of its own: Encore (generated into `.stackra/encore`) serves, and reaches the member only
  *           through `handlers`. A boot error rejects, so the entry's top-level await fails the process. The outbox
  *           flush and every other shutdown step are each package's `onApplicationShutdown`, run by `close()`.
  * Runtime: node
  * Governing contract: ADR 0295 (decisions 7 to 9); ADR 0263 (decisions 1, 5 and 12); ADR 0124; ADR 0143 as amended
- *                     by 0263 (lifecycle).
+ *                     by 0263 (lifecycle); ADR 0014 (decision 5: the runtime provides the connection); ADR 0260
+ *                     (decision 4: subscribers and relays receive once boot connects them).
  */
 import type { AnyClass, ModuleClass } from "@stackra/container";
 
@@ -28,12 +30,18 @@ const STOP_SIGNALS = ["SIGTERM", "SIGINT"] as const;
  *
  * @throws ConfigInvalidError or UnresolvedPortError (as a rejection) when boot fails.
  * @example
- * export const app = await createApp(CommerceModule, { wiring });
+ * export const app = await createApp(CommerceModule, { wiring, boot });
  */
 export async function createApp(root: ModuleClass, options: ServerAppOptions): Promise<ServerApp> {
   const { container, reporter, wiring } = await bootApp(options.wiring, {
     roots: [root],
     env: process.env,
+  });
+  const shutdown = new AbortController();
+  // An empty url only matters to a boot that connects the database, whose driver then refuses it.
+  await options.boot?.(container, {
+    url: process.env["DATABASE_URL"] ?? "",
+    signal: shutdown.signal,
   });
 
   const byKind = new Map<string, AnyClass[]>();
@@ -80,6 +88,7 @@ export async function createApp(root: ModuleClass, options: ServerAppOptions): P
     (closing ??= (async () => {
       for (const signal of STOP_SIGNALS) process.off(signal, onSignal);
       await drain();
+      shutdown.abort();
       await container.close();
     })());
 

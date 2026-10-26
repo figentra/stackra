@@ -61,7 +61,9 @@ The Stackra compiler. Member at `packages/developer/gen` (`tier:lib`), in the pr
   emitter in `src/core/functions/` called from `generateMember`, with its test.
 - `emitBoot` is the only place a service's connect calls are written, in order after the container is ready: database,
   segments, `EventBus#connect` and `InboxService#connect` (disconnected when the shutdown signal aborts), then the
-  relay. Without the bus and inbox connects, relays and typed subscribers receive nothing.
+  relay. Without the bus and inbox connects, relays and typed subscribers receive nothing. A signal already aborted
+  connects nothing. The server entry passes `boot` to `createApp` (`@stackra/app/server`), which calls it with
+  `DATABASE_URL` and aborts the signal on `close()`.
 
 ## Rules that fail the build
 

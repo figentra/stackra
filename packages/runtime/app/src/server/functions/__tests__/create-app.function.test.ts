@@ -2,14 +2,15 @@
  * Stackra file contract:
  * Purpose: unit tests of the server `createApp`: the app carries the member key and the bound classes by kind, `run`
  *          gives each call a request container, `drain` waits for calls in flight and then refuses new ones, `close`
- *          drains and shuts the container down once, and SIGTERM closes and exits 0 (1 after reporting a failed
+ *          drains and shuts the container down once, the generated boot gets the ready container, `DATABASE_URL` and
+ *          a signal that only `close` aborts, and SIGTERM closes and exits 0 (1 after reporting a failed
  *          shutdown).
  * Boundary: test only; boots real containers; `process.exit` is mocked and signals are emitted as events.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0269; ADR 0295 (decisions 7 to 9).
+ * Governing contract: ADR 0022; ADR 0269; ADR 0295 (decisions 7 to 9); ADR 0263; ADR 0260 (decision 4).
  */
 import { Module, Service } from "@stackra/container";
-import type { Wiring } from "@stackra/container";
+import type { Container, Wiring } from "@stackra/container";
 import { HealthIndicator, HealthStatus } from "@stackra/contracts";
 import type { HealthReport } from "@stackra/contracts";
 import { isRefusal } from "@stackra/errors";
@@ -110,6 +111,33 @@ describe("createApp (server)", () => {
     await Promise.all([app.close(), app.close()]);
     expect(LedgerService.closed).toBe(1);
     expect(app.ready()).toBe(false);
+  });
+
+  it("boots with the ready container and DATABASE_URL, and aborts the signal on close", async () => {
+    vi.stubEnv("DATABASE_URL", "postgres://localhost/commerce");
+    const seen: { container?: Container; url?: string; signal?: AbortSignal } = {};
+    const app = await createApp(OrdersModule, {
+      wiring,
+      boot: async (container, options) => {
+        seen.container = container;
+        seen.url = options.url;
+        seen.signal = options.signal;
+      },
+    });
+    expect(seen.container?.get(LedgerService)).toBeInstanceOf(LedgerService);
+    expect(seen.url).toBe("postgres://localhost/commerce");
+    expect(seen.signal?.aborted).toBe(false);
+    await app.drain();
+    expect(seen.signal?.aborted).toBe(false);
+    await app.close();
+    expect(seen.signal?.aborted).toBe(true);
+    vi.unstubAllEnvs();
+  });
+
+  it("rejects when the boot fails", async () => {
+    await expect(
+      createApp(OrdersModule, { wiring, boot: () => Promise.reject(new Error("no database")) }),
+    ).rejects.toThrow("no database");
   });
 
   it("closes and exits 0 on SIGTERM, and stops listening once closed", async () => {

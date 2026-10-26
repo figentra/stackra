@@ -21,7 +21,7 @@ export interface ServerApp {
   /** Refuses new calls and resolves once every call in flight has settled; idempotent. */
   drain(): Promise<void>;
 
-  /** Drains, then shuts the container down (each instance's `onApplicationShutdown`, last built first); idempotent. */
+  /** Drains, aborts the boot's shutdown signal, then shuts the container down (each instance's `onApplicationShutdown`, last built first); idempotent. */
   close(): Promise<void>;
 
   /** Answers `GET /healthz` and `GET /readyz`; `undefined` for any other route. */

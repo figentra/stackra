@@ -5,7 +5,8 @@
  *          drivers (or none), `PostgresDatabaseDriver.connect` with the legal-hold subscriber and the outbox writer
  *          among its subscribers, `segments.connect(container)`, `EventBus#connect` and `InboxService#connect` (the
  *          registered listeners and relays, disconnected when the signal aborts), then `relay.connect(container)` and
- *          the relay's `work` loop until the signal aborts.
+ *          the relay's `work` loop until the signal aborts. A signal already aborted when `boot` starts connects
+ *          nothing; one that aborts while the database connects disconnects the bus and inbox at once.
  * Boundary: pure. Each step is written only when the service runs its package (`@stackra/database` or a model,
  *           `@stackra/outbox`, `@stackra/segments`, `@stackra/events`); nothing to connect means no file. The connection string is the
  *           runtime's (the generated Encore app's database), never read here; `@stackra/app/server` calls `boot` once
@@ -58,7 +59,9 @@ export function emitBoot(ir: MemberIR): string | undefined {
     );
   }
   if (outbox)
-    imports.push('import { InboxService, OutboxRelayService, OutboxWriterService } from "@stackra/outbox/node";');
+    imports.push(
+      'import { InboxService, OutboxRelayService, OutboxWriterService } from "@stackra/outbox/node";',
+    );
   if (segments) {
     imports.push('import { SegmentService } from "@stackra/segments/node";');
     steps.push("  container.get(SegmentService).connect(container);");
@@ -71,14 +74,13 @@ export function emitBoot(ir: MemberIR): string | undefined {
     steps.push("  const inbox = container.get(InboxService);", "  inbox.connect(container);");
   if (events)
     steps.push(
-      "  options.signal.addEventListener(",
-      '    "abort",',
-      "    () => {",
-      "      bus.disconnect();",
-      ...(outbox ? ["      inbox.disconnect();"] : []),
-      "    },",
-      "    { once: true },",
-      "  );",
+      "  const disconnect = (): void => {",
+      "    bus.disconnect();",
+      ...(outbox ? ["    inbox.disconnect();"] : []),
+      "  };",
+      // An abort listener added after the abort never fires.
+      "  if (options.signal.aborted) disconnect();",
+      '  else options.signal.addEventListener("abort", disconnect, { once: true });',
     );
   if (outbox)
     steps.push(
@@ -104,6 +106,7 @@ export function emitBoot(ir: MemberIR): string | undefined {
     "  container: Container,",
     "  options: { readonly url: string; readonly signal: AbortSignal },",
     "): Promise<void> {",
+    "  if (options.signal.aborted) return;",
     ...steps,
     "}",
     "",

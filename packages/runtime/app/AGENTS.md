@@ -1,5 +1,14 @@
 # AGENTS — @stackra/app
 
+<!--
+Stackra file contract:
+Purpose: the agent rules of @stackra/app: where code goes, entries and barrels, the package rules (the server boot and
+         shutdown order included) and the rules that fail the build.
+Boundary: documentation only; the code and the ADRs win on any difference.
+Runtime: none
+Governing contract: ADR 0294; ADR 0295; ADR 0305; ADR 0263; ADR 0260 (decision 4); ADR 0251 (decision 3).
+-->
+
 The app runtime: `createApp` per runtime target, the shared boot, the client contexts and the `Controller` kind.
 Member at `packages/runtime/app` (`tier:lib`), in the programming model v3.1 shape (ADR 0294, 0305). Entries `.`,
 `./react`, `./server`, `./worker`, `./browser`, `./native`, `./desktop` (ADR 0295 decision 8; ADR 0127 2026-10-24
@@ -30,6 +39,8 @@ note).
 - `Module`, `Service` and `define*` do not live here (ADR 0127 2026-10-24 note); never add them back.
 - Configuration is built by `bootApp` from the target's raw env and bound under the base class; never read
   `process.env` or `import.meta.env` anywhere else.
+- The server `createApp` awaits `options.boot` once the container is ready and aborts its signal in `close()` after
+  the drain and before `container.close()`; the bus, inbox and relay stop there.
 - Report each unexpected error once through the `ErrorReporter`; never report a refusal.
 - The desktop hardening baseline is not configurable (ADR 0251 decision 3).
 - No parameter properties and no `#private` fields: apps typecheck this source under `erasableSyntaxOnly`.
