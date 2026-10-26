@@ -1,7 +1,7 @@
 # @stackra/contracts
 
 The leaf vocabulary of Stackra: the `Port` and `Enum` bases, actor and id types, `Duration`, the platform enums, the
-core ports `Clock`, `Logger`, `IdentityResolver`, `HealthIndicator`, `KeyProvider`, `FieldCipher` and `Signer`, the manifest type and the four `stackra.config.ts` helpers.
+core ports `Clock`, `Logger`, `IdentityResolver`, `PrincipalDirectory`, `HealthIndicator`, `KeyProvider`, `FieldCipher` and `Signer`, the manifest type and the four `stackra.config.ts` helpers.
 
 **Tier:** `tier:lib` (`packages/foundation/contracts`), entry `.` only, no workspace dependency. Every other Stackra
 package may import it; it imports nothing.
@@ -14,12 +14,20 @@ package may import it; it imports nothing.
 | `Enum`                                                                                                                                    | kind base | `export const X = Enum.of({...})` plus `export type X = Enum.Value<typeof X>` |
 | `Duration`                                                                                                                                | value     | `Duration.minutes(10)` is `"PT10M"`; `parse`, `toMilliseconds`                |
 | `ActorKind`, `ApiArea`, `DataClassification`, `HttpMethod`, `Realm`, `SortDirection`, `Target`, `Tone`, `MigrationRunner`, `HealthStatus` | enums     | the platform's closed sets                                                    |
-| `Clock`, `Logger`, `IdentityResolver`                                                                                                     | ports     | inject by type; drivers live in container, logger and identity                |
+| `Clock`, `Logger`, `IdentityResolver`, `PrincipalDirectory`                                                                               | ports     | inject by type; drivers live in container, logger and identity                |
 | `HealthIndicator`, `KeyProvider`, `FieldCipher`, `Signer`                                                                                 | ports     | a probed dependency; data keys; seal and open a field; sign; drivers below    |
 | `Actor`, `PublicId<P>`, `Branded<T, B>`, `Email`, `Url`, `Json`, `VerifiedPrincipal`, `HealthReport`, `DataKey`                           | types     | the caller, ids and value types the shape compiler knows                      |
 | `brand<B>()`                                                                                                                              | function  | the one constructor of a branded type                                         |
 | `StackraManifest`                                                                                                                         | type      | reading a committed `stackra.manifest.json`                                   |
 | `defineApp`, `defineService`, `definePackage`, `defineWorker`                                                                             | functions | the one call in a member's `stackra.config.ts`                                |
+
+## Data classification and principals
+
+`DataClassification` has five codes: `personal`, `financial`, `health`, `pseudonymous` and `regulated` (identifiers a
+regulator issues or governs, such as a tax registration number or a national id). `IdentityResolver#principalOf`
+returns the verified address, verified phone, locale and time zone of a principal; `PrincipalDirectory#supervisorOf`
+returns who a principal reports to in a scope, or `null`. Both answer at the moment of use, so no caller stores them.
+The canonical JSON of a value and its hash are `canonicalJson` and `canonicalHash` of `@stackra/support`, not here.
 
 ## Enums
 

@@ -39,6 +39,7 @@ export { HealthIndicator } from "#core/ports/health-indicator.port";
 export { IdentityResolver } from "#core/ports/identity-resolver.port";
 export { KeyProvider } from "#core/ports/key-provider.port";
 export { Logger } from "#core/ports/logger.port";
+export { PrincipalDirectory } from "#core/ports/principal-directory.port";
 export { Signer } from "#core/ports/signer.port";
 export { Tracer } from "#core/ports/tracer.port";
 export type { Actor } from "#core/types/actor.type";

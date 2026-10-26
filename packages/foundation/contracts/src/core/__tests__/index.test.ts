@@ -87,6 +87,7 @@ describe("@stackra/contracts", () => {
       "MigrationRunner",
       "NoopTracerDriver",
       "Port",
+      "PrincipalDirectory",
       "Realm",
       "Signer",
       "SortDirection",

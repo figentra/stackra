@@ -32,6 +32,8 @@ The whole package is one `.` entry, so its enums, ports and types sit under `src
 - A kind base assigns no fields in its constructor and keeps no state (0294 decision 25); brands are `declare`d,
   type-only `~kind` and `~brand` keys.
 - `Enum.of` codes are snake_case except a tool-owned value (`HttpMethod`), which keeps the tool's spelling.
+- A new `DataClassification` code is appended, never inserted or renamed: codes are stored, and stored checks
+  (`@stackra/access-log`'s `t.dataClassification`) list them literally.
 - `Duration` values are canonical ISO 8601 strings; keep `Duration.*` pure, because gen evaluates them in defaults.
 
 ## Rules that fail the build
