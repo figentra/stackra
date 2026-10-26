@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `Journal<M>`, the double-entry arithmetic every ledger shares, over one append-only entry model: append once
  *          per (account, reference), the balance as the sum of an account's entries, a debit refused below a balance
- *          floor, set-based reversal cut at the floor, and balanced multi-line postings. A model that names a currency field has every entry and posting in one ISO
+ *          floor, set-based reversal cut at the floor, balanced multi-line postings, and a posting's lines read back by
+ *          reference. A model that names a currency field has every entry and posting in one ISO
  *          4217 currency and every balance per currency (ADR 0220).
  * Boundary: a service over the model's repository; it writes no SQL. Rows are inserted, never updated: the model must
  *           carry `AppendOnly`, and a correction is a reversal. Every write that lowers a balance holds its account's
@@ -15,7 +16,8 @@
  *           name keeps no `Service` suffix (as `Locks` and `GraphQuery`).
  * Runtime: node
  * Governing contract: ADR 0220 (decisions 4 and 5); ADR 0149 (decisions 1 and 2); ADR 0097 (decision 5.3); ADR 0294
- *                     (decisions 16, 17 and 25); ADR 0305 (rule 5: partner by type argument).
+ *                     (decisions 16, 17 and 25); ADR 0305 (rule 5: partner by type argument); STA-1240 (lines by
+ *                     reference).
  */
 import { Service } from "@stackra/container";
 import type { AnyClass } from "@stackra/container";
@@ -182,6 +184,22 @@ export abstract class Journal<M extends object> extends Service {
       whereOf<M>({ [fields.account]: query.account, [fields.reference]: query.reference }),
     );
     return row === null ? null : entryOf<M>(row, fields);
+  }
+
+  /**
+   * Every entry under `reference`, on any account, in the order written (time, then account): a posting's lines, so a
+   * caller can tell a retried posting from a new one before checking a cap or a limit. Empty when none was written.
+   */
+  async lines(reference: string): Promise<JournalEntry<M>[]> {
+    const fields = this.fields();
+    const rows = await this.entries().find(
+      whereOf<M>({ [fields.reference]: reference }),
+      // reason: the order keys are the model's field names read at run time
+      {
+        orderBy: { [fields.at]: SortDirection.Asc, [fields.account]: SortDirection.Asc },
+      } as unknown as Parameters<Repository<M>["find"]>[1],
+    );
+    return rows.map((row) => entryOf<M>(row, fields));
   }
 
   /**

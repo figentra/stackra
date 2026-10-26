@@ -107,6 +107,10 @@ an existing table that is not `concurrently()` (which compiles to its own non-tr
 a new table, an extension outside ADR 0160's five, and a raw `schema.sql` without its `inverse`. A package's `Macro`
 merges into `Blueprint` (gen writes the type) and is installed by name.
 
+Besides `integer` (32-bit), `t.bigint(name)` is a 64-bit count or minor-unit amount outside `money`, and
+`t.decimal(name, precision, scale)` an exact `numeric` reading or bound (precision 1 to 1000, scale 0 to precision);
+money is always `t.money`.
+
 ## Scope isolation
 
 Isolation stays in the database: row-level security, never an application WHERE filter (ADR 0327 d9,

@@ -39,6 +39,18 @@ export interface Blueprint {
   /** A 32-bit `integer`. */
   integer(name: string): ColumnDefinition;
 
+  /**
+   * A 64-bit `bigint`, for a count or minor-unit amount past 2^31 (a ledger amount outside `money`). The ORM reads it
+   * as a string unless the model field maps it to `bigint` or `number`.
+   */
+  bigint(name: string): ColumnDefinition;
+
+  /**
+   * An exact `numeric(precision, scale)`: `precision` digits in all (1 to 1000), `scale` of them after the point (0
+   * to `precision`), for a measured reading or bound; never for money, which is `money`.
+   */
+  decimal(name: string, precision: number, scale: number): ColumnDefinition;
+
   /** A `boolean`. */
   boolean(name: string): ColumnDefinition;
 

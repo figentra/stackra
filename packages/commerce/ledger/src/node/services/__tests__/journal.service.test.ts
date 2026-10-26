@@ -4,7 +4,7 @@
  *          account's entries, refuses a debit below the floor (the model's default, a call's override, or none with
  *          `null`) and reports a retried debit as a duplicate, serialises concurrent debits so they never overdraw,
  *          reverses set-wise once and cuts a reversal at the floor (the loyalty kit's stale-earn expiry can no longer
- *          go negative), posts balanced lines or nothing, and refuses floats and a model without `AppendOnly`. A model with a currency field
+ *          go negative), posts balanced lines or nothing, reads a posting's lines back by reference, and refuses floats and a model without `AppendOnly`. A model with a currency field
  *          keeps one ISO 4217 currency per posting and sums balances per currency.
  * Boundary: test only; the entries live in a memory repository that keeps the model's unique (account, reference)
  *           index, and the locks are the real `Locks` over the memory lock driver.
@@ -383,6 +383,22 @@ describe("Journal", () => {
       ]),
     ).toEqual({ written: false, belowFloor: true });
     expect(entries.rows).toHaveLength(2);
+  });
+
+  it("reads a posting's lines back by reference, on every account (STA-1240)", async () => {
+    const entries = new MemoryEntries("memberId");
+    const journal = journalOver(PointsEntry, entries);
+    expect(await journal.lines("o1")).toEqual([]);
+    await journal.post([
+      { account: "m1", amount: 120, kind: "earn", reference: "o1", at: day(1) },
+      { account: "issued", amount: -120, kind: "earn", reference: "o1", at: day(1), floor: null },
+    ]);
+    await journal.append({ account: "m1", amount: 5, kind: "earn", reference: "o2", at: day(2) });
+
+    expect(await journal.lines("o1")).toEqual([
+      { account: "issued", amount: -120, kind: "earn", reference: "o1", at: day(1) },
+      { account: "m1", amount: 120, kind: "earn", reference: "o1", at: day(1) },
+    ]);
   });
 
   it("refuses an unbalanced posting, a single line and a repeated pair before writing anything", async () => {

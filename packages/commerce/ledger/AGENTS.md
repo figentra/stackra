@@ -31,6 +31,8 @@ programming model v3.1 shape (ADR 0294, 0305). Entries `.` and `./node`.
   lowers a balance always holds its account's lock; never add a debit path that skips it.
 - Floors: the model's default from `@Journaled`, a call's `floor` over it, `null` for none. A reversal is cut at the
   floor, never skipped, so an entry is handled once.
+- `lines(reference)` reads a posting back across accounts (STA-1240). The unique index leads with the scope and account,
+  so a consumer that calls it often gives its model an index on (scope column, reference).
 - Amounts are safe integers (points or minor units). A money model names a `currency` field in `@Journaled`: postings share one
   currency and balances are per currency (ADR 0220).
 - No document numbering: numbers come from the database `Sequence` primitive (ADR 0342) when it ships.

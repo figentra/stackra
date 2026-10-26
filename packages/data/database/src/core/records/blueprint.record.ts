@@ -34,6 +34,9 @@ const PREFIX = /^[a-z]{2,6}$/;
 /** The longest `varchar` Postgres takes. */
 const MAX_VARCHAR = 10_485_760;
 
+/** The largest `numeric` precision Postgres takes. */
+const MAX_NUMERIC_PRECISION = 1000;
+
 /** A custom setting: `<prefix>.<name>`, snake_case. */
 const SETTING = /^[a-z][a-z0-9_]*\.[a-z][a-z0-9_]*$/;
 
@@ -118,6 +121,28 @@ export class BlueprintRecord {
   /** See `Blueprint.integer`. */
   integer(name: string): ColumnDefinition {
     return this.add(new ColumnRecord(name, "integer"));
+  }
+
+  /** See `Blueprint.bigint`. */
+  bigint(name: string): ColumnDefinition {
+    return this.add(new ColumnRecord(name, "bigint"));
+  }
+
+  /**
+   * See `Blueprint.decimal`.
+   *
+   * @throws RangeError for a precision outside 1 to 1000 or a scale outside 0 to the precision.
+   */
+  decimal(name: string, precision: number, scale: number): ColumnDefinition {
+    if (!Number.isInteger(precision) || precision < 1 || precision > MAX_NUMERIC_PRECISION)
+      throw new RangeError(
+        `The precision of ${name} must be a whole number from 1 to 1000, got ${precision}`,
+      );
+    if (!Number.isInteger(scale) || scale < 0 || scale > precision)
+      throw new RangeError(
+        `The scale of ${name} must be a whole number from 0 to ${precision}, got ${scale}`,
+      );
+    return this.add(new ColumnRecord(name, `numeric(${precision}, ${scale})`));
   }
 
   /** See `Blueprint.boolean`. */

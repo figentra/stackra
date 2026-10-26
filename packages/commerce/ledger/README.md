@@ -98,6 +98,9 @@ The lines sum to zero and are at least two (`UnbalancedPostingError` otherwise);
 posting with a line already applied is a duplicate. Each account the posting lowers keeps its line's floor, so a counter
 account lifts it with `floor: null` while the party's account keeps the model's.
 
+`journal.lines(reference)` reads a posting's lines back, on every account, in the order written (empty when none was),
+so a retried top-up is known as a duplicate before its cap is checked.
+
 ## Currency
 
 A money journal names a `currency` field in the facet: `@Journaled({ currency: "currency", floor: 0 })`. Then every entry

@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `compileMigration`: the SQL and inverses of the template's migration shapes (create with
- *          trait, money, enum, link and foreign-key columns; expand steps; online indexes; raw statements with `after`),
+ *          trait, money, bigint, decimal, enum, link and foreign-key columns; expand steps; online indexes; raw statements with `after`),
  *          macros installed by name, the generated equality, equals-or-unset, ancestor and inherited row-level-security policies, the
  *          scope-tree columns with their GiST index, generated columns, and every safety refusal (missing nullability or comment,
  *          NOT NULL without a default, non-concurrent index on an existing table, concurrent index on a new one,
@@ -222,6 +222,37 @@ describe(compileMigration, () => {
       'drop table if exists "loyalty"."accounts"',
       'drop extension if exists "pg_trgm"',
     ]);
+  });
+
+  it("writes bigint and exact decimal columns (STA-1240)", () => {
+    class CreateReadingsMigration extends Migration {
+      up(schema: SchemaBuilder): void {
+        schema.create("readings", (t: Blueprint) => {
+          t.bigint("amount_minor").notNull().comment("Amount in minor units.");
+          t.decimal("value", 12, 4).notNull().comment("The measured value.");
+        });
+      }
+    }
+    const [step] = compileMigration(CreateReadingsMigration, { schema: "meters" }).steps;
+    expect(step?.sql.join("\n")).toContain('"amount_minor" bigint not null');
+    expect(step?.sql.join("\n")).toContain('"value" numeric(12, 4) not null');
+  });
+
+  it.each([
+    ["a precision of 0", 0, 0],
+    ["a precision past 1000", 1001, 2],
+    ["a scale past the precision", 4, 5],
+    ["a negative scale", 4, -1],
+    ["a fractional precision", 4.5, 1],
+  ])("refuses a decimal with %s", (_name, precision, scale) => {
+    class BadDecimalMigration extends Migration {
+      up(schema: SchemaBuilder): void {
+        schema.create("readings", (t: Blueprint) => {
+          t.decimal("value", precision, scale).notNull().comment("The measured value.");
+        });
+      }
+    }
+    expect(() => compileMigration(BadDecimalMigration, { schema: "meters" })).toThrow(RangeError);
   });
 
   it("marks a step irreversible when a raw statement says so", () => {
