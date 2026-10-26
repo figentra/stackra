@@ -57,7 +57,8 @@ describe("loadOgFonts", () => {
   it("throws a failed fetch and tries again on the next call", async () => {
     const fetchMock = vi
       .fn<typeof fetch>()
-      .mockResolvedValue(new Response(new Uint8Array([1])))
+      // A fresh Response per call: a body reads once.
+      .mockImplementation(async () => new Response(new Uint8Array([1])))
       .mockResolvedValueOnce(new Response(null, { status: 503 }));
     vi.stubGlobal("fetch", fetchMock);
     const loadOgFonts = await load();

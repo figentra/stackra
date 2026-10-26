@@ -29,14 +29,14 @@ const WEBHOOKS = {
   eventType: { path: "type" },
 } as const;
 
-/** A fresh Integration with `webhooks`, so each case owns its routing. */
-function integrationWith(provider: string, webhooks: object | undefined = WEBHOOKS) {
+/** A fresh Integration with `webhooks` (none for null), so each case owns its routing. */
+function integrationWith(provider: string, webhooks: object | null = WEBHOOKS) {
   return class extends Integration({
     provider,
     category: IntegrationCategory.Email,
     levels: [ConnectionLevel.Scope],
     auth: { type: AuthType.None },
-    ...(webhooks === undefined ? {} : { webhooks: webhooks as typeof WEBHOOKS }),
+    ...(webhooks === null ? {} : { webhooks: webhooks as typeof WEBHOOKS }),
   }) {};
 }
 
@@ -107,9 +107,7 @@ describe(registerWebhookEvents, () => {
   it("refuses an Integration with no webhooks or an unknown scheme", () => {
     const Received = eventFor("email.received");
     expect(() =>
-      registerWebhookEvents([
-        { event: Received, integration: integrationWith("mail-none", undefined) },
-      ]),
+      registerWebhookEvents([{ event: Received, integration: integrationWith("mail-none", null) }]),
     ).toThrow("declares no webhooks option");
     expect(() =>
       registerWebhookEvents([

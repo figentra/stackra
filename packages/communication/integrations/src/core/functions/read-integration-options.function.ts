@@ -42,9 +42,9 @@ function ensure(ok: boolean, option: string, needs: string): void {
 /** Whether `value` is a non-empty string. */
 const isText = (value: unknown): value is string => typeof value === "string" && value !== "";
 
-/** Whether `value` is an absolute http or https URL. */
+/** Whether `value` is an absolute http or https URL with no `{field}` placeholder (a parser accepts braces in a host). */
 function isHttpUrl(value: unknown): boolean {
-  if (!isText(value) || !URL.canParse(value)) return false;
+  if (!isText(value) || /[{}]/.test(value) || !URL.canParse(value)) return false;
   return ["http:", "https:"].includes(new URL(value).protocol);
 }
 

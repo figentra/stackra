@@ -21,7 +21,7 @@ export class AddRevisionScheduleMigration extends Migration {
       t.string("campaign", 64)
         .nullable()
         .comment("The campaign key that groups scheduled revisions; null for none.");
-      t.index(["scheduled_at"]);
+      t.index(["scheduled_at"]).concurrently();
     });
   }
 }

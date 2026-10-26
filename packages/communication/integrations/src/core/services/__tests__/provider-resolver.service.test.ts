@@ -110,7 +110,8 @@ const betaTenant = Object.assign(Object.create(BetaConnection.prototype), {
 const resolverWith = (
   own: [ConnectionClass, Connection][],
   choices: readonly ProviderChoice[],
-  market: string | undefined = "sa",
+  // null for no Market: an explicit undefined would take the default.
+  market: string | null = "sa",
 ) =>
   new ProviderResolver(
     new Store(
@@ -121,7 +122,7 @@ const resolverWith = (
       ]),
     ),
     new Defaults(choices),
-    new Market(market),
+    new Market(market ?? undefined),
   );
 
 const OFFER: readonly ProviderChoice[] = [
@@ -151,10 +152,10 @@ describe("ProviderResolver", () => {
 
   it("tries only the tenant's own without a Market", async () => {
     await expect(
-      resolverWith([[BetaConnection, betaTenant]], [], undefined).resolve<Sender>("sms", DRIVERS),
+      resolverWith([[BetaConnection, betaTenant]], [], null).resolve<Sender>("sms", DRIVERS),
     ).resolves.toBe(betaTenant);
     await expect(
-      resolverWith([], OFFER, undefined).resolve<Sender>("sms", DRIVERS),
+      resolverWith([], OFFER, null).resolve<Sender>("sms", DRIVERS),
     ).rejects.toMatchObject({
       code: "no_provider",
       details: { capability: "sms" },
@@ -214,8 +215,15 @@ describe("ProviderResolver", () => {
 
   it("takes the Market as an argument over the running call's", async () => {
     const defaults = new Defaults(OFFER);
+    // conn_b too: refusing every Connection walks the whole offer.
     const resolver = new ProviderResolver(
-      new Store(new Map(), new Map([["conn_a", alphaPlatform]])),
+      new Store(
+        new Map(),
+        new Map([
+          ["conn_a", alphaPlatform],
+          ["conn_b", betaPlatform],
+        ]),
+      ),
       defaults,
       new Market(undefined),
     );

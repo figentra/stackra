@@ -65,7 +65,9 @@ async function renderWith(entry: AssetEntry): Promise<string> {
 describe("useAsset", () => {
   it("renders the URL the container's AssetLibrary resolves", async () => {
     expect(await renderWith(Assets.console.public.logo_svg)).toBe(
-      '<img src="https://cdn.test/console/public/logo.svg" alt=""/>',
+      // React 19 hoists a preload hint for each image it renders on the server.
+      '<link rel="preload" as="image" href="https://cdn.test/console/public/logo.svg"/>' +
+        '<img src="https://cdn.test/console/public/logo.svg" alt=""/>',
     );
   });
 
