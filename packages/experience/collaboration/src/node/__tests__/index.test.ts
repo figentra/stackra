@@ -11,6 +11,13 @@ import * as node from "#node/index";
 
 describe("@stackra/collaboration/node", () => {
   it("exports exactly its values", () => {
-    expect(Object.keys(node).sort()).toEqual(["PostgresSnapshotStoreDriver"]);
+    expect(Object.keys(node).sort()).toEqual([
+      "Comment",
+      "CommentMention",
+      "CommentRevision",
+      "CommentService",
+      "CommentThread",
+      "PostgresSnapshotStoreDriver",
+    ]);
   });
 });

@@ -7,19 +7,21 @@
  */
 import { describe, expect, it } from "@stackra/testing";
 
-import { PresenceChannel, SnapshotStore, SyncTransport } from "#contracts/index";
+import { MentionDirectory, PresenceChannel, SnapshotStore, SyncTransport } from "#contracts/index";
 import * as testing from "#testing/index";
 
 describe("@stackra/collaboration/testing", () => {
   it("exports exactly the memory drivers", () => {
     expect(Object.keys(testing).sort()).toEqual([
+      "MemoryMentionDirectoryDriver",
       "MemoryPresenceChannelDriver",
       "MemorySnapshotStoreDriver",
       "MemorySyncTransportDriver",
     ]);
   });
 
-  it("drives the three ports", () => {
+  it("drives the four ports", () => {
+    expect(new testing.MemoryMentionDirectoryDriver()).toBeInstanceOf(MentionDirectory);
     expect(new testing.MemoryPresenceChannelDriver()).toBeInstanceOf(PresenceChannel);
     expect(new testing.MemorySyncTransportDriver()).toBeInstanceOf(SyncTransport);
     expect(new testing.MemorySnapshotStoreDriver()).toBeInstanceOf(SnapshotStore);

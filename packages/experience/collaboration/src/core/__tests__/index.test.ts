@@ -18,10 +18,16 @@ describe("@stackra/collaboration", () => {
       "CollaborationConfig$",
       "CollaborationOptions",
       "CollaborationSession",
+      "CommentCreated",
+      "CommentTombstonedError",
+      "CommentVisibilityNotAllowedError",
       "LiveCollaborationEntitlement",
+      "MentionCreated",
+      "MentionNotAllowedError",
       "RealtimePresenceChannelDriver",
       "RealtimeSyncTransportDriver",
       "SnapshotService",
+      "checkMentions",
     ]);
   });
 
@@ -33,6 +39,8 @@ describe("@stackra/collaboration", () => {
       "MemoryPresenceChannelDriver",
       "yjsReplica",
       "COLLABORATION_CONFIG_SCHEMA",
+      "COMMENT_CREATED_SCHEMA",
+      "MentionDirectory",
     ]) {
       expect(name in collaboration).toBe(false);
     }

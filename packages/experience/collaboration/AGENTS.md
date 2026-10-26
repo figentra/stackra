@@ -33,8 +33,10 @@ programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./re
 
 ## PII
 
-| Data                 | Where               | Handling                                                            |
-| -------------------- | ------------------- | ------------------------------------------------------------------- |
-| Principal public ids | presence peers      | Ids only, in memory for the life of a room. Not stored.             |
-| Cursor positions     | presence peers      | Ephemeral; never stored.                                            |
-| Document content     | replicas, snapshots | Stored by the host's `SnapshotStore` driver under the room's scope. |
+| Data                 | Where                                         | Handling                                                                    |
+| -------------------- | --------------------------------------------- | --------------------------------------------------------------------------- |
+| Principal public ids | presence peers                                | Ids only, in memory for the life of a room. Not stored.                     |
+| Cursor positions     | presence peers                                | Ephemeral; never stored.                                                    |
+| Document content     | replicas, snapshots                           | Stored by the host's `SnapshotStore` driver under the room's scope.         |
+| Comment text         | `collaboration.comments`, `comment_revisions` | Under the scope policy; never in an event or a log; hidden once tombstoned. |
+| Mention targets      | `collaboration.comment_mentions`, events      | Ids and kinds only.                                                         |

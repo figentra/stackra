@@ -2,7 +2,7 @@
   "name": "@stackra/collaboration",
   "version": "0.0.0",
   "private": true,
-  "description": "Stackra collaboration: presence, cursors, the Yjs binding and snapshots over the PresenceChannel, SyncTransport and SnapshotStore ports, gated by LiveCollaborationEntitlement; the CollaborationSession and SnapshotService, CollaborationConfig with its shipped schema, usePresence, useCursors, useSharedDocument and the memory drivers for tests, the realtime PresenceChannel and SyncTransport drivers over @stackra/realtime rooms with the RoomTokens port, and the Postgres SnapshotStore",
+  "description": "Stackra collaboration: presence, cursors, the Yjs binding and snapshots over the PresenceChannel, SyncTransport and SnapshotStore ports, gated by LiveCollaborationEntitlement; the CollaborationSession and SnapshotService, CollaborationConfig with its shipped schema, usePresence, useCursors, useSharedDocument and the memory drivers for tests, the realtime PresenceChannel and SyncTransport drivers over @stackra/realtime rooms with the RoomTokens port, the Postgres SnapshotStore, and comments on any Commentable record: threads, comments with revisions and tombstones, mentions with the MentionDirectory port, the CommentService and the comment-created and mention-created events",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -99,6 +99,8 @@
     "@stackra/database": "workspace:*",
     "@stackra/entitlements": "workspace:*",
     "@stackra/errors": "workspace:*",
+    "@stackra/events": "workspace:*",
+    "@stackra/model": "workspace:*",
     "@stackra/realtime": "workspace:*",
     "@stackra/validation": "workspace:*",
     "zod": "catalog:"

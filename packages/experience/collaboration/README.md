@@ -1,11 +1,14 @@
 # @stackra/collaboration
 
-Stackra collaboration: presence, cursors, the Yjs binding and snapshots for the builder's documents. The code is free;
-live collaboration is unlocked per scope by `LiveCollaborationEntitlement` (ADR 0270 decision 5, ADR 0202).
+Stackra collaboration: presence, cursors, the Yjs binding and snapshots for the builder's documents, and comments on
+any `Commentable` record (threads, revisions, tombstones and mentions, ADR 0433). The code is free; live collaboration
+is unlocked per scope by `LiveCollaborationEntitlement` (ADR 0270 decision 5, ADR 0202). Comments are core and take no
+entitlement.
 
-**Tier:** `tier:lib` (`packages/experience/collaboration`). Entries `.`, `./contracts`, `./react` and `./testing`.
-Depends on `@stackra/contracts`, `@stackra/container`, `@stackra/config`, `@stackra/validation`, `@stackra/errors`,
-`@stackra/entitlements`, `@stackra/realtime` and zod. React and Yjs are optional peers for `./react`.
+**Tier:** `tier:lib` (`packages/experience/collaboration`). Entries `.`, `./contracts`, `./node`, `./react` and
+`./testing`. Depends on `@stackra/contracts`, `@stackra/container`, `@stackra/config`, `@stackra/validation`,
+`@stackra/errors`, `@stackra/entitlements`, `@stackra/realtime`, `@stackra/database`, `@stackra/model`,
+`@stackra/events` and zod. React and Yjs are optional peers for `./react`.
 
 ## What is here
 
@@ -19,6 +22,30 @@ Depends on `@stackra/contracts`, `@stackra/container`, `@stackra/config`, `@stac
 | `./contracts` | `CollaborationRoom`, `PresencePeer`, `DocumentReplica`, `DocumentSnapshot`, ...         | the types they speak; `DocumentReplica` keeps Yjs out of `.`   |
 | `./react`     | `usePresence`, `useCursors`, `useSharedDocument`, `yjsReplica`                          | the hooks and the Yjs binding                                  |
 | `./testing`   | `MemoryPresenceChannelDriver`, `MemorySyncTransportDriver`, `MemorySnapshotStoreDriver` | in-process drivers for tests                                   |
+| `./contracts` | `MentionDirectory`, `CommentVisibility`, `MentionKind`, `ThreadStatus`                  | the mention port the consumer binds; the comment enums         |
+| `./contracts` | `CommentableRef`, `MentionTarget`, `CommentRules`, `CommentView`                        | the comment types                                              |
+| `.`           | `CommentCreated`, `MentionCreated`, `checkMentions`, three refusals                     | events, the mention floors, `comment_tombstoned` and others    |
+| `./node`      | `CommentThread`, `Comment`, `CommentRevision`, `CommentMention`, `CommentService`       | the tables (`collaboration.0002_create_comments`) and service  |
+| `./testing`   | `MemoryMentionDirectoryDriver`                                                          | a fixed set of known mention targets                           |
+
+## Comments
+
+```ts
+const comment = await comments.post(
+  ctx.scope,
+  { record: { model: "legal.matter", id }, body, visibility, mentions, isExternalAuthor },
+  actor.id,
+  { sharedComments: settings.sharedComments, assistantHandle: settings.assistantHandle }, // tenant settings
+);
+await comments.edit(comment.id, body, mentions, actor.id, rules); // keeps a revision, announces added mentions only
+await comments.tombstone(comment.id, actor.id); // text hidden, mentions dropped; refused under a legal hold
+await comments.resolveThread(comment.threadId, actor.id); // a reply reopens it
+```
+
+The floors are code: an external author never posts internal, an external participant is never mentioned on an
+internal comment, the assistant is not mentioned while it has no handle, a tombstone shows no text. Defaults (the level
+a comment takes, whether sharing is open, the handle) are the consumer's settings; who may edit or delete is its
+policy.
 
 ## Collaboration levels
 

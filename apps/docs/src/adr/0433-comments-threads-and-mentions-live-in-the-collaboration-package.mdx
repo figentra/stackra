@@ -1,0 +1,52 @@
+---
+title: "0433 — Comments, threads and mentions live in the collaboration package"
+description: "Proposed · 2026-10-26"
+---
+
+<Note>
+  Proposed. It gives [0225](/adr/0225-realtime-drivers-co-editing-and-the-commentable-trait)
+  decision 3 (`Commentable`) its behaviour, as
+  [0321](/adr/0321-the-trait-inventory-owning-packages-and-schedulable) assigns it to
+  `@stackra/collaboration`. Linear STA-832.
+</Note>
+
+## Context
+
+`Commentable` marks a model whose records take comments, but `@stackra/collaboration` held only presence, cursors and
+snapshots, so the OS collaboration service owns bespoke comment tables (its SPEC, Stackra gap 1). Every product with a
+record page (a matter, a class, an order) needs the same threads, edit history, tombstones and mentions.
+
+## Decision
+
+1. **Threads and comments.** A `CommentThread` hangs on a record by its model key and public id (never a foreign key),
+   optionally anchored inside it, and is open or resolved; a reply reopens it. A `Comment` keeps its author, level,
+   text and mentions; an edit keeps the old text as a `CommentRevision`; a delete leaves a tombstone whose text and
+   mentions no view shows. Tables `collaboration.comment_threads`, `comments`, `comment_revisions` and
+   `comment_mentions`, each under the forced scope policy.
+2. **Levels.** `internal` or `shared` (with the record's external participants). Floors in code: an external author
+   never posts internal; a shared comment is refused while the consumer's `sharedComments` setting is off. The default
+   level and who may edit or delete are the consumer's settings and policy.
+3. **Mentions.** Member, team, role, external participant or the assistant. Floors in code: each target once, an id on
+   every target but the assistant, no external participant on an internal comment, no assistant while the consumer's
+   `assistantHandle` is empty. Whether an id exists is the `MentionDirectory` port's answer, which the consumer binds.
+   Each mention is also a `CommentMention` row for the inbox read.
+4. **Events.** `CommentCreated` (`collaboration.comment.created.v1`) per post and `MentionCreated`
+   (`collaboration.mention.created.v1`) per new target (an edit announces only targets it added); neither carries
+   text. An assistant mention is how the AI sidekick is summoned.
+5. **Holds.** An edit or a tombstone of a comment under a legal hold is refused through `@stackra/database`'s
+   `HoldRegistry` (asked as a delete until an edit disposal exists).
+
+## Consequences
+
+- The OS collaboration service drops its comment tables and binds a `MentionDirectory`; its migration moves the rows.
+- Notification digests, the activity feed and moderation stay the consumer's.
+- The package depends on `@stackra/model` and `@stackra/events`.
+
+## Enforcement
+
+`comment.service.test.ts`, `check-mentions.function.test.ts`, `comment-events.test.ts` and
+`0002-create-comments.migration.test.ts` in `packages/experience/collaboration`.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: OS `services/collaboration/SPEC.md` (gap 1); OS-224, OS-225, OS-226.

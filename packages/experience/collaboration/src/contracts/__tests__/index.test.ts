@@ -13,8 +13,12 @@ import * as contracts from "#contracts/index";
 import type {
   CollaborationCursor,
   CollaborationRoom,
+  CommentableRef,
+  CommentRules,
+  CommentView,
   DocumentReplica,
   DocumentSnapshot,
+  MentionTarget,
   PresenceLink,
   PresenceLinkHandlers,
   PresencePeer,
@@ -25,10 +29,14 @@ import type {
 describe("@stackra/collaboration/contracts", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(contracts).sort()).toEqual([
+      "CommentVisibility",
+      "MentionDirectory",
+      "MentionKind",
       "PresenceChannel",
       "RoomTokens",
       "SnapshotStore",
       "SyncTransport",
+      "ThreadStatus",
     ]);
   });
 
@@ -51,5 +59,9 @@ describe("@stackra/collaboration/contracts", () => {
       readonly savedAt: Date;
     }>();
     expectTypeOf<DocumentReplica["encode"]>().returns.toEqualTypeOf<Uint8Array>();
+    expectTypeOf<CommentableRef>().toEqualTypeOf<{ readonly model: string; readonly id: string }>();
+    expectTypeOf<MentionTarget["id"]>().toEqualTypeOf<string | null>();
+    expectTypeOf<CommentView["body"]>().toEqualTypeOf<string | null>();
+    expectTypeOf<CommentRules["assistantHandle"]>().toEqualTypeOf<string | null>();
   });
 });
