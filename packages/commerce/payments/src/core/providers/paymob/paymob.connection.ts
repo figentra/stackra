@@ -3,7 +3,8 @@
  * Purpose: `PaymobConnection`, one Paymob account and its payments driver: an Intention opened on the Unified
  *          Checkout for the connection's payment-method integrations, lookup by the merchant reference
  *          (transaction inquiry), capture, void and refund of the transaction.
- * Boundary: every call goes through `this.api`. Which payment methods show (cards, wallets, kiosk, instalments) is
+ * Boundary: every call goes through `this.api`. A regional host (KSA, UAE, Oman) is a subclass bound to its own
+ *           Integration that changes only the provider code and the checkout origin. Which payment methods show (cards, wallets, kiosk, instalments) is
  *           the connection's `integrationIds` field (data). Paymob needs the buyer's name, email and phone for its
  *           billing data; without them the checkout is refused, never filled with placeholders. Paymob has no
  *           idempotency header; a lost POST is resolved by the inquiry on the reference.
@@ -22,6 +23,7 @@ import type { CaptureGateway } from "#contracts/types/capture-gateway.type";
 import type { CaptureRequest } from "#contracts/types/capture-request.type";
 import type { CheckoutRequest } from "#contracts/types/checkout-request.type";
 import type { CheckoutSession } from "#contracts/types/checkout-session.type";
+import type { PaymentConnectionMode } from "#contracts/types/payment-connection-mode.type";
 import type { PaymentGateway } from "#contracts/types/payment-gateway.type";
 import type { PaymentTarget } from "#contracts/types/payment-target.type";
 import type { ProviderPayment } from "#contracts/types/provider-payment.type";
@@ -31,9 +33,6 @@ import { InvalidPaymentTransitionError } from "#core/errors/invalid-payment-tran
 import { PaymentFieldRequiredError } from "#core/errors/payment-field-required.error";
 import { totalOf } from "#core/functions/total-of.function";
 import type { PaymobIntegration } from "#core/providers/paymob/paymob.integration";
-
-/** The Unified Checkout page, on the Integration's host. */
-const UNIFIED_CHECKOUT = "https://accept.paymob.com/unifiedcheckout/";
 
 /** A Paymob transaction, the fields the driver reads. */
 interface PaymobTransaction {
@@ -78,9 +77,17 @@ export class PaymobConnection
   /** Where Paymob posts the transaction callback, when the host receives one. */
   notificationUrl?: string;
 
+  /** How the connection reaches the money; `own-key` when absent. */
+  mode?: PaymentConnectionMode;
+
   /** The Integration's provider code. */
   get provider(): string {
     return "paymob";
+  }
+
+  /** The origin of the Unified Checkout page: the Integration's host, which a regional subclass names. */
+  protected get checkoutOrigin(): string {
+    return "https://accept.paymob.com";
   }
 
   /** Hosted checkout, capture and void (on auth-mode integrations). */
@@ -132,7 +139,7 @@ export class PaymobConnection
       redirection_url: request.returnUrl,
       ...(this.notificationUrl === undefined ? {} : { notification_url: this.notificationUrl }),
     });
-    const url = new URL(UNIFIED_CHECKOUT);
+    const url = new URL("/unifiedcheckout/", this.checkoutOrigin);
     url.searchParams.set("publicKey", this.publicKey);
     url.searchParams.set("clientSecret", intention.client_secret);
     return { providerRef: intention.id, kind: SessionKind.Redirect, url: url.toString() };

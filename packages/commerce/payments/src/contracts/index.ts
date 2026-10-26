@@ -1,19 +1,22 @@
 /**
  * Stackra file contract:
- * Purpose: Stand-in barrel: the `./contracts` entry of @stackra/payments (the enums, the three container ports, the
+ * Purpose: Stand-in barrel: the `./contracts` entry of @stackra/payments (the enums, the five container ports, the
  *          gateway port interfaces and the payment types) until `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. The leaf every other entry may import.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision.
  */
 export { ChargeInitiator } from "#contracts/enums/charge-initiator.enum";
+export { ConnectionMode } from "#contracts/enums/connection-mode.enum";
 export { DisputeStatus } from "#contracts/enums/dispute-status.enum";
 export { PaymentCapability } from "#contracts/enums/payment-capability.enum";
 export { PaymentStatus } from "#contracts/enums/payment-status.enum";
 export { SessionKind } from "#contracts/enums/session-kind.enum";
 export { TransferStatus } from "#contracts/enums/transfer-status.enum";
+export { ConnectedAccountLimits } from "#contracts/ports/connected-account-limits.port";
 export { MarketPaymentDefaults } from "#contracts/ports/market-payment-defaults.port";
 export { PaymentGateways } from "#contracts/ports/payment-gateways.port";
+export { PaymentPackSource } from "#contracts/ports/payment-pack-source.port";
 export { PaymentRecords } from "#contracts/ports/payment-records.port";
 export type { CapabilityGateways } from "#contracts/types/capability-gateways.type";
 export type { CaptureGateway } from "#contracts/types/capture-gateway.type";
@@ -23,10 +26,13 @@ export type { CheckoutSession } from "#contracts/types/checkout-session.type";
 export type { Dispute } from "#contracts/types/dispute.type";
 export type { DisputeEvidence } from "#contracts/types/dispute-evidence.type";
 export type { DisputeGateway } from "#contracts/types/dispute-gateway.type";
+export type { LegacyConnectedAccountMode } from "#contracts/types/legacy-connected-account-mode.type";
 export type { MerchantAccount } from "#contracts/types/merchant-account.type";
 export type { MerchantOnboarding } from "#contracts/types/merchant-onboarding.type";
+export type { MethodsGateway } from "#contracts/types/methods-gateway.type";
 export type { PayLink } from "#contracts/types/pay-link.type";
 export type { PaymentAddress } from "#contracts/types/payment-address.type";
+export type { PaymentConnectionMode } from "#contracts/types/payment-connection-mode.type";
 export type { PaymentGateway } from "#contracts/types/payment-gateway.type";
 export type { PaymentLine } from "#contracts/types/payment-line.type";
 export type { PaymentParty } from "#contracts/types/payment-party.type";

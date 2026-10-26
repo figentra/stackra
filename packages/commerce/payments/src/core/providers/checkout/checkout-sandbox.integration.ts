@@ -8,6 +8,8 @@
  */
 import { AuthType, ConnectionLevel, Integration, IntegrationCategory } from "@stackra/integrations";
 
+import { CHECKOUT_WEBHOOKS } from "#core/providers/checkout/checkout-webhooks.constant";
+
 /**
  * Checkout.com, sandbox.
  *
@@ -21,5 +23,6 @@ export class CheckoutSandboxIntegration extends Integration({
   auth: { type: AuthType.ApiKey, header: "Authorization", format: "Bearer {secretKey}" },
   baseUrl: "https://api.sandbox.checkout.com",
   retry: { idempotencyHeader: "Cko-Idempotency-Key" },
+  webhooks: CHECKOUT_WEBHOOKS,
   health: { every: "6h", failAfter: 3 },
 }) {}

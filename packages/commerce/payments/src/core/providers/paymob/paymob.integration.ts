@@ -3,7 +3,7 @@
  * Purpose: `PaymobIntegration`, the description of Paymob's accept.paymob.com API as a payments provider: the
  *          Intention API and the transaction operations, authenticated with `Token <secret key>`.
  * Boundary: description only; credentials live on `PaymobConnection`. Live and test share the host and differ by
- *           key. Paymob's other regional hosts are their own Integrations when added; which one a Market uses is data.
+ *           key. Paymob's regional hosts (KSA, UAE, Oman) are their own Integrations; which one a Market uses is data.
  * Runtime: isomorphic
  * Governing contract: ADR 0308 (rules 1, 4 and 13); ADR 0356 (decision 2); ADR 0357 (decision 2); ADR 0358 (d3).
  */

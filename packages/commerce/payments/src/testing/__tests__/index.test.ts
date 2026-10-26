@@ -12,6 +12,7 @@ import * as testing from "#testing/index";
 describe("@stackra/payments/testing", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(testing).sort()).toEqual([
+      "ConnectedAccountLimitsFake",
       "MarketPaymentDefaultsFake",
       "PaymentGatewayFake",
       "PaymentGatewaysFake",

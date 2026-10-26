@@ -4,13 +4,17 @@
  *          saved-token charges (refusing a merchant-initiated charge without the customer's agreement), terminal
  *          sessions with a tip prompt, capture, void and refund, and the `unknown` state: a call whose answer is
  *          lost marks the payment `unknown`, nothing may act on it until `reconcile` looks it up at the provider or
- *          a manager `resolve`s it with a reason.
- * Boundary: generic over `PaymentGateways` (which provider serves a call is the Connection's and the Market's data)
- *           and `PaymentRecords` (where state lives). It never names a provider, a Market, a fee or a limit; caps,
+ *          a manager `resolve`s it with a reason. On a `connected-account` connection only, a payment above the
+ *          pre-verification cap and a payout while payouts are held are refused; the account's enabled payment
+ *          methods are read from the provider.
+ * Boundary: generic over `PaymentGateways` (which provider serves a call is the Connection's and the Market's data),
+ *           `PaymentRecords` (where state lives) and `ConnectedAccountLimits` (the cap and the hold, from the OS
+ *           verification record). It never names a provider, a Market, a fee or a limit; caps,
  *           approvals and who may resolve by hand are rules and permissions in the calling product. One payment per
  *           merchant reference: a retried charge or terminal session with a used reference returns the record.
  * Runtime: isomorphic
- * Governing contract: ADR 0357 (decisions 1, 2, 5 and 6); ADR 0356 (decision 2); ADR 0294 (decisions 15 to 17).
+ * Governing contract: ADR 0357 (decisions 1, 2, 5 and 6); ADR 0356 (decision 2); ADR 0294 (decisions 15 to 17);
+ *                     R4-6 (the cap and the hold apply to connected accounts only); R4-4 (methods from the account).
  */
 import { Service } from "@stackra/container";
 import type { Clock } from "@stackra/contracts";
@@ -18,9 +22,11 @@ import { NotFoundError } from "@stackra/errors";
 import { Money } from "@stackra/money";
 
 import { ChargeInitiator } from "#contracts/enums/charge-initiator.enum";
+import { ConnectionMode } from "#contracts/enums/connection-mode.enum";
 import { PaymentCapability } from "#contracts/enums/payment-capability.enum";
 import { PaymentStatus } from "#contracts/enums/payment-status.enum";
 import { TransferStatus } from "#contracts/enums/transfer-status.enum";
+import type { ConnectedAccountLimits } from "#contracts/ports/connected-account-limits.port";
 import type { PaymentGateways } from "#contracts/ports/payment-gateways.port";
 import type { PaymentRecords } from "#contracts/ports/payment-records.port";
 import type { CapabilityGateways } from "#contracts/types/capability-gateways.type";
@@ -30,6 +36,7 @@ import type { PayLink } from "#contracts/types/pay-link.type";
 import type { PaymentGateway } from "#contracts/types/payment-gateway.type";
 import type { PaymentRecord } from "#contracts/types/payment-record.type";
 import type { PaymentTarget } from "#contracts/types/payment-target.type";
+import type { PayoutRequest } from "#contracts/types/payout-request.type";
 import type { TerminalRequest } from "#contracts/types/terminal-request.type";
 import type { TerminalSession } from "#contracts/types/terminal-session.type";
 import type { TokenCharge } from "#contracts/types/token-charge.type";
@@ -38,9 +45,12 @@ import { CapabilityUnsupportedError } from "#core/errors/capability-unsupported.
 import { InvalidPaymentTransitionError } from "#core/errors/invalid-payment-transition.error";
 import { MerchantInitiatedNotAllowedError } from "#core/errors/merchant-initiated-not-allowed.error";
 import { PaymentUnknownError } from "#core/errors/payment-unknown.error";
+import { PayoutHeldError } from "#core/errors/payout-held.error";
+import { PreVerificationCapExceededError } from "#core/errors/pre-verification-cap-exceeded.error";
 import { ResolutionReasonRequiredError } from "#core/errors/resolution-reason-required.error";
 import { hasCapability } from "#core/functions/has-capability.function";
 import { isLostAnswer } from "#core/functions/is-lost-answer.function";
+import { modeOf } from "#core/functions/mode-of.function";
 import { totalOf } from "#core/functions/total-of.function";
 
 /** States a manager may settle an `unknown` payment to. */
@@ -72,16 +82,26 @@ export class PaymentService extends Service {
   /** The time a record changes. */
   private readonly clock: Clock;
 
+  /** The cap and the payout hold of a connected account. */
+  private readonly limits: ConnectedAccountLimits;
+
   /**
    * @param gateways - the `connection` driver in a host; a fake in tests.
    * @param records - the host's durable store; the memory driver in tests.
    * @param clock - the container's clock.
+   * @param limits - the host's verification-backed limits; a fake in tests.
    */
-  constructor(gateways: PaymentGateways, records: PaymentRecords, clock: Clock) {
+  constructor(
+    gateways: PaymentGateways,
+    records: PaymentRecords,
+    clock: Clock,
+    limits: ConnectedAccountLimits,
+  ) {
     super();
     this.gateways = gateways;
     this.records = records;
     this.clock = clock;
+    this.limits = limits;
   }
 
   /**
@@ -91,6 +111,7 @@ export class PaymentService extends Service {
    * @throws PaymentUnknownError when the reference's last answer was lost (and when this one is).
    * @throws InvalidPaymentTransitionError when the reference is already paid, held or in use otherwise.
    * @throws NoPaymentProviderError when no provider of the Market serves the request's needs.
+   * @throws PreVerificationCapExceededError when an unverified connected account would take more than its cap.
    */
   async checkout(market: string, request: CheckoutRequest): Promise<CheckoutSession> {
     const existing = await this.records.find(request.reference);
@@ -103,6 +124,7 @@ export class PaymentService extends Service {
       ...(request.captureLater === true ? [PaymentCapability.Capture] : []),
       ...(request.platform === undefined ? [] : [PaymentCapability.Platform]),
     ]);
+    await this.withinCap(gateway, request.reference, totalOf(request));
     const record = await this.save(
       this.fresh(gateway, request.reference, request.amount, request.tip),
     );
@@ -135,6 +157,7 @@ export class PaymentService extends Service {
    *
    * @throws MerchantInitiatedNotAllowedError when the merchant starts a charge the customer did not agree to.
    * @throws PaymentUnknownError when the reference's last answer was lost (and when this one is).
+   * @throws PreVerificationCapExceededError when an unverified connected account would take more than its cap.
    */
   async charge(request: TokenCharge): Promise<PaymentRecord> {
     if (request.initiator === ChargeInitiator.Merchant && !request.method.merchantInitiated)
@@ -150,6 +173,7 @@ export class PaymentService extends Service {
       request.method.connectionId,
     );
     const tokens = this.capable(gateway, PaymentCapability.Tokens);
+    await this.withinCap(gateway, request.reference, request.amount);
     const record = await this.save(this.fresh(gateway, request.reference, request.amount));
     const result = await this.guard(record, () => tokens.charge(request), true);
     return this.save({ ...record, providerRef: result.providerRef, status: result.status });
@@ -160,6 +184,7 @@ export class PaymentService extends Service {
    *
    * @throws PaymentUnknownError when the reference's last answer was lost (and when this one is).
    * @throws InvalidPaymentTransitionError when the reference is in use.
+   * @throws PreVerificationCapExceededError when an unverified connected account would take more than its cap.
    */
   async startTerminal(market: string, request: TerminalRequest): Promise<TerminalSession> {
     const existing = await this.records.find(request.reference);
@@ -170,6 +195,7 @@ export class PaymentService extends Service {
       ...(request.captureLater === true ? [PaymentCapability.Capture] : []),
     ]);
     const terminal = this.capable(gateway, PaymentCapability.Terminal);
+    await this.withinCap(gateway, request.reference, request.amount);
     const record = await this.save({
       ...this.fresh(gateway, request.reference, request.amount),
       terminalId: request.terminalId,
@@ -305,6 +331,40 @@ export class PaymentService extends Service {
   }
 
   /**
+   * Pays `request.amount` out of the funds of connection `connectionId` of `provider`. A `connected-account`
+   * connection whose payouts are held is refused; no other mode is ever held.
+   *
+   * @throws PayoutHeldError when the connected account's payouts are held.
+   * @throws CapabilityUnsupportedError when the provider has no payouts.
+   */
+  async payout(
+    provider: string,
+    connectionId: string,
+    request: PayoutRequest,
+  ): Promise<TransferResult> {
+    const gateway = await this.gateways.byConnection(provider, connectionId);
+    const payouts = this.capable(gateway, PaymentCapability.Payouts);
+    if (
+      modeOf(gateway) === ConnectionMode.ConnectedAccount &&
+      (await this.limits.payoutHeld(gateway.id))
+    )
+      throw PayoutHeldError.create({ reference: request.reference });
+    return payouts.payout(request);
+  }
+
+  /**
+   * The payment methods the account that serves `market` has enabled (wallets, pay-later, bank methods), read from
+   * the provider.
+   *
+   * @returns null when the provider does not report them: its hosted page shows what it has.
+   * @throws NoPaymentProviderError when no provider of the Market takes checkouts.
+   */
+  async paymentMethods(market: string): Promise<readonly string[] | null> {
+    const gateway = await this.gateways.forMarket(market, [PaymentCapability.Checkout]);
+    return hasCapability(gateway, PaymentCapability.Methods) ? gateway.paymentMethods() : null;
+  }
+
+  /**
    * Settles an `unknown` payment by hand, recording who and why. Who may call it is the product's permission.
    *
    * @throws InvalidPaymentTransitionError when the payment is not `unknown`, or `status` is not a settled state.
@@ -377,6 +437,22 @@ export class PaymentService extends Service {
         status: record.status,
         operation,
       });
+  }
+
+  /**
+   * Refuses `amount` on an unverified `connected-account` connection above its cap; any other mode has no cap.
+   *
+   * @throws PreVerificationCapExceededError when the amount is above the cap.
+   */
+  private async withinCap(
+    gateway: PaymentGateway,
+    reference: string,
+    amount: Money,
+  ): Promise<void> {
+    if (modeOf(gateway) !== ConnectionMode.ConnectedAccount) return;
+    const cap = await this.limits.cap(gateway.id);
+    if (cap !== null && (amount.currency !== cap.currency || amount.minor > cap.minor))
+      throw PreVerificationCapExceededError.create({ reference });
   }
 
   /**

@@ -6,6 +6,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 15); ADR 0269; the STA-347 stand-in barrel decision.
  */
+export { ConnectedAccountLimitsFake } from "#testing/connected-account-limits.fake";
 export { MarketPaymentDefaultsFake } from "#testing/market-payment-defaults.fake";
 export { PaymentGatewayFake } from "#testing/payment-gateway.fake";
 export { PaymentGatewaysFake } from "#testing/payment-gateways.fake";

@@ -20,6 +20,7 @@ import type { CaptureGateway } from "#contracts/types/capture-gateway.type";
 import type { CaptureRequest } from "#contracts/types/capture-request.type";
 import type { CheckoutRequest } from "#contracts/types/checkout-request.type";
 import type { CheckoutSession } from "#contracts/types/checkout-session.type";
+import type { PaymentConnectionMode } from "#contracts/types/payment-connection-mode.type";
 import type { PaymentGateway } from "#contracts/types/payment-gateway.type";
 import type { PaymentTarget } from "#contracts/types/payment-target.type";
 import type { ProviderPayment } from "#contracts/types/provider-payment.type";
@@ -82,6 +83,9 @@ export class TabbyConnection
 
   /** The merchant code Tabby issued for this store. */
   merchantCode!: string;
+
+  /** How the connection reaches the money; `own-key` when absent. */
+  mode?: PaymentConnectionMode;
 
   /** The Integration's provider code. */
   get provider(): string {

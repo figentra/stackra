@@ -5,7 +5,9 @@
  *          charges twice) or a manager resolves it with a reason; a merchant-initiated charge needs the token's flag;
  *          capture and refunds move the state and never refund more than was taken; a provider without capture is
  *          refused; a terminal payment keeps its tip and a cancel reads the final state; a pay link is reused until
- *          it expires.
+ *          it expires. On a connected account only, a payment above the pre-verification cap and a held payout are
+ *          refused; other modes never ask for limits; the account's payment methods are read when the provider reports
+ *          them.
  * Boundary: test only; the service runs over the gateway fake, the gateways fake, the memory records and a fixed
  *           clock.
  * Runtime: node (vitest)
@@ -18,6 +20,7 @@ import { Money } from "@stackra/money";
 import { beforeEach, describe, expect, it } from "@stackra/testing";
 
 import { ChargeInitiator } from "#contracts/enums/charge-initiator.enum";
+import { ConnectionMode } from "#contracts/enums/connection-mode.enum";
 import { PaymentCapability } from "#contracts/enums/payment-capability.enum";
 import { PaymentStatus } from "#contracts/enums/payment-status.enum";
 import { MemoryPaymentRecordsDriver } from "#core/drivers/memory-payment-records.driver";
@@ -25,8 +28,11 @@ import { CapabilityUnsupportedError } from "#core/errors/capability-unsupported.
 import { InvalidPaymentTransitionError } from "#core/errors/invalid-payment-transition.error";
 import { MerchantInitiatedNotAllowedError } from "#core/errors/merchant-initiated-not-allowed.error";
 import { PaymentUnknownError } from "#core/errors/payment-unknown.error";
+import { PayoutHeldError } from "#core/errors/payout-held.error";
+import { PreVerificationCapExceededError } from "#core/errors/pre-verification-cap-exceeded.error";
 import { ResolutionReasonRequiredError } from "#core/errors/resolution-reason-required.error";
 import { PaymentService } from "#core/services/payment.service";
+import { ConnectedAccountLimitsFake } from "#testing/connected-account-limits.fake";
 import { PaymentGatewayFake } from "#testing/payment-gateway.fake";
 import { PaymentGatewaysFake } from "#testing/payment-gateways.fake";
 
@@ -64,7 +70,12 @@ describe("PaymentService", () => {
     gateway = PaymentGatewayFake.with();
     records = new MemoryPaymentRecordsDriver();
     clock = new FixedClock();
-    payments = new PaymentService(PaymentGatewaysFake.with([gateway]), records, clock);
+    payments = new PaymentService(
+      PaymentGatewaysFake.with([gateway]),
+      records,
+      clock,
+      ConnectedAccountLimitsFake.with(),
+    );
   });
 
   it("reuses an open checkout and refuses one that was paid", async () => {
@@ -143,7 +154,12 @@ describe("PaymentService", () => {
 
   it("refuses a capture on a provider that takes payment at once", async () => {
     const hosted = PaymentGatewayFake.with({ capabilities: [PaymentCapability.Checkout] });
-    const service = new PaymentService(PaymentGatewaysFake.with([hosted]), records, clock);
+    const service = new PaymentService(
+      PaymentGatewaysFake.with([hosted]),
+      records,
+      clock,
+      ConnectedAccountLimitsFake.with(),
+    );
     const session = await service.checkout("m1", request);
     hosted.settle(session.providerRef, PaymentStatus.Authorized);
     await service.reconcile("ord_1");
@@ -218,5 +234,77 @@ describe("PaymentService", () => {
       expiresAt: new Date("2026-10-28T10:00:00Z"),
     });
     expect(renewed.expiresAt).toEqual(new Date("2026-10-28T10:00:00Z"));
+  });
+
+  describe("connection modes", () => {
+    const cap = Money.ofMinor(5_000, "SAR");
+    const payout = { reference: "po_1", amount, destination: "acct_1" };
+
+    /** A service over one gateway of `mode` whose cap is `cap` and whose payouts are held. */
+    function over(mode: ConnectionMode) {
+      const own = PaymentGatewayFake.with({ mode });
+      const limits = ConnectedAccountLimitsFake.with({
+        caps: { conn_fake: cap },
+        held: ["conn_fake"],
+      });
+      return {
+        limits,
+        service: new PaymentService(PaymentGatewaysFake.with([own]), records, clock, limits),
+      };
+    }
+
+    it("caps an unverified connected account and holds its payouts", async () => {
+      const { service } = over(ConnectionMode.ConnectedAccount);
+      await expect(service.checkout("m1", request)).rejects.toRefuseWith(
+        refusal(PreVerificationCapExceededError, { reference: "ord_1" }),
+      );
+      await expect(
+        service.charge({
+          reference: "chg_1",
+          amount,
+          method,
+          initiator: ChargeInitiator.Customer,
+        }),
+      ).rejects.toRefuseWith(refusal(PreVerificationCapExceededError, { reference: "chg_1" }));
+      expect(await records.find("ord_1")).toBeNull();
+      await expect(
+        service.checkout("m1", { ...request, reference: "ord_small", amount: cap }),
+      ).resolves.toMatchObject({ kind: "redirect" });
+      await expect(service.payout("fake", "conn_fake", payout)).rejects.toRefuseWith(
+        refusal(PayoutHeldError, { reference: "po_1" }),
+      );
+    });
+
+    it("never caps or holds the other modes", async () => {
+      for (const mode of [ConnectionMode.OAuthStandard, ConnectionMode.OwnKey]) {
+        const { service, limits } = over(mode);
+        await expect(
+          service.checkout("m1", { ...request, reference: `ord_${mode}` }),
+        ).resolves.toBeDefined();
+        await expect(service.payout("fake", "conn_fake", payout)).resolves.toMatchObject({
+          status: "succeeded",
+        });
+        expect(limits.asked).toEqual([]);
+      }
+    });
+
+    it("reads the account's payment methods, or null when the provider does not report them", async () => {
+      const wallets = PaymentGatewayFake.with({ methods: ["card", "apple_pay", "klarna"] });
+      const service = new PaymentService(
+        PaymentGatewaysFake.with([wallets]),
+        records,
+        clock,
+        ConnectedAccountLimitsFake.with(),
+      );
+      expect(await service.paymentMethods("m1")).toEqual(["card", "apple_pay", "klarna"]);
+      const hosted = PaymentGatewayFake.with({ capabilities: [PaymentCapability.Checkout] });
+      const plain = new PaymentService(
+        PaymentGatewaysFake.with([hosted]),
+        records,
+        clock,
+        ConnectedAccountLimitsFake.with(),
+      );
+      expect(await plain.paymentMethods("m1")).toBeNull();
+    });
   });
 });

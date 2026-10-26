@@ -25,6 +25,7 @@ import type { CheckoutSession } from "#contracts/types/checkout-session.type";
 import type { Dispute } from "#contracts/types/dispute.type";
 import type { DisputeEvidence } from "#contracts/types/dispute-evidence.type";
 import type { DisputeGateway } from "#contracts/types/dispute-gateway.type";
+import type { PaymentConnectionMode } from "#contracts/types/payment-connection-mode.type";
 import type { PaymentGateway } from "#contracts/types/payment-gateway.type";
 import type { PaymentTarget } from "#contracts/types/payment-target.type";
 import type { ProviderPayment } from "#contracts/types/provider-payment.type";
@@ -104,6 +105,13 @@ export class CheckoutConnection
 
   /** The processing channel every payment is booked on (`pc_…`). */
   processingChannelId!: string;
+
+  /** How the connection reaches the money; `own-key` when absent. */
+  mode?: PaymentConnectionMode;
+
+  /** The webhook's secret key, the Integration's `{webhookSecret}`. */
+  @Secret("CHECKOUT_WEBHOOK_SECRET")
+  webhookSecret?: string;
 
   /** The Integration's provider code. */
   get provider(): string {

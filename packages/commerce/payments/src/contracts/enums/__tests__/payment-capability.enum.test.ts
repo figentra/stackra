@@ -21,6 +21,7 @@ describe("PaymentCapability", () => {
       "disputes",
       "terminal",
       "terminal_tips",
+      "methods",
     ]);
   });
 });

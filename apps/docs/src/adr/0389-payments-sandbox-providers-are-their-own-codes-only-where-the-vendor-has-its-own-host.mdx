@@ -1,0 +1,51 @@
+---
+title: "0389 — Payments: a sandbox provider is its own code only where the vendor has its own host"
+description: "Proposed · 2026-10-26"
+---
+
+<Note>
+  Proposed. It answers the wave 10 hand-over question on sandbox provider naming in
+  `@stackra/payments` (STA-672). It reads with
+  [0359](/adr/0359-modes-and-configuration-environments-display-modes-sandbox-promotion-and-live-records)
+  (decision 11: test-mode gateways in a sandbox),
+  [0356](/adr/0356-choosing-a-provider-per-tenant-and-market-through-the-connection-with-a-market-default)
+  (provider per Market) and
+  [0370](/adr/0370-market-packs-signed-dated-overlaid-data-with-pins-and-legal-floors) (market
+  packs).
+</Note>
+
+## Context
+
+Some vendors serve test mode from a separate host (Checkout.com, HyperPay's OPPWA, Tamara, Fawry); others serve live and
+test from one host and tell them apart by the key (Stripe, Moyasar, Paymob, Tabby). The managed client never leaves an
+Integration's base URL, so a separate host must be a separate Integration, and each Integration has its own provider
+code (`checkout-sandbox`). Paymob's regional hosts (`paymob-ksa`, `paymob-uae`, `paymob-oman`) follow the same rule but
+are live hosts, not sandboxes. The question was whether market-pack data should name the `-sandbox` code for sandbox
+tenants, which would make every pack carry two provider lists. Alternatives weighed: a base-URL placeholder switched by
+a connection field (rejected: one Integration would then reach two hosts, and its egress allowlist would be wider than
+either) and duplicate pack lists (rejected: the two lists drift).
+
+## Decision
+
+1. A vendor with a separate test host has a separate Integration and connection class whose provider code is the live
+   code with `-sandbox` appended. A vendor whose test mode is a key on the live host has no sandbox code; a sandbox
+   tenant's Connection holds a test key on the live code.
+2. Market packs list live provider codes only. When a call runs in a sandbox scope (0359 decision 11), the
+   `MarketPaymentDefaults` driver swaps each listed code for its `-sandbox` code when one is registered in
+   `PAYMENT_CONNECTIONS`, and keeps the live code otherwise. The swap is naming mechanism, not data.
+3. A regional host is never a sandbox: `paymob-ksa` is chosen by pack data per Market like any other live code.
+4. A sandbox Connection is never promoted to live; promotion creates a live Connection (0359).
+
+## Consequences
+
+Packs stay one list per Market. A new vendor with a test host needs both Integrations before it can be used in a
+sandbox. The sandbox swap needs the call's sandbox flag in the driver, which the `market-pack` driver does not read yet.
+
+## Enforcement
+
+planned — a `market-pack-payment-defaults.driver.test.ts` case for a sandbox scope, and a check in
+`payment-connections.constant.test.ts` that every `-sandbox` key has a live key.
+
+## Supersedes and sources
+
+`Supersedes: none`. Sources: notes/handover/build-wave10-2026-10-25.md (`@stackra/payments` owner question 3); STA-672.

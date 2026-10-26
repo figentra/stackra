@@ -9,16 +9,24 @@
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
 import * as contracts from "#contracts/index";
-import type { CapabilityGateways, TokenGateway } from "#contracts/index";
+import type {
+  CapabilityGateways,
+  MethodsGateway,
+  PaymentConnectionMode,
+  TokenGateway,
+} from "#contracts/index";
 
 describe("@stackra/payments/contracts", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(contracts).sort()).toEqual([
       "ChargeInitiator",
+      "ConnectedAccountLimits",
+      "ConnectionMode",
       "DisputeStatus",
       "MarketPaymentDefaults",
       "PaymentCapability",
       "PaymentGateways",
+      "PaymentPackSource",
       "PaymentRecords",
       "PaymentStatus",
       "SessionKind",
@@ -28,5 +36,11 @@ describe("@stackra/payments/contracts", () => {
 
   it("maps each capability to its port", () => {
     expectTypeOf<CapabilityGateways["tokens"]>().toEqualTypeOf<TokenGateway>();
+    expectTypeOf<CapabilityGateways["methods"]>().toEqualTypeOf<MethodsGateway>();
+  });
+
+  it("types the four connection modes", () => {
+    expectTypeOf<"legacy-connected-account:academorix">().toExtend<PaymentConnectionMode>();
+    expectTypeOf<"own-key">().toExtend<PaymentConnectionMode>();
   });
 });

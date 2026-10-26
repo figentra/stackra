@@ -3,7 +3,9 @@
  * Purpose: unit tests of `StripeConnection`: a checkout opens a Checkout Session with the total, the reference and the
  *          hold, save and platform options; a paid session is read through its PaymentIntent with the saved card; a
  *          capture, refund and merchant-initiated charge hit the right endpoints; onboarding needs the account type;
- *          a terminal payment carries its tip; a dispute maps its state.
+ *          a terminal payment carries its tip; a dispute maps its state; POST parameters travel as the body (the
+ *          Integration's form); a connection with an `accountRef` acts on it through `Stripe-Account`; the enabled
+ *          payment methods come from the default payment method configuration.
  * Boundary: test only; the managed client is `fakeIntegrationApi`, so no network is touched.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0357 (decisions 2, 5 and 6).
@@ -45,8 +47,8 @@ describe("StripeConnection", () => {
   it("opens a Checkout Session for amount plus tip", async () => {
     let sent: Readonly<Record<string, unknown>> = {};
     const stripe = connect((r) =>
-      r.post("/v1/checkout/sessions").returns((_p, { query }) => {
-        sent = query;
+      r.post("/v1/checkout/sessions").returns((_p, { body }) => {
+        sent = body as Readonly<Record<string, unknown>>;
         return {
           id: "cs_1",
           url: "https://checkout.stripe.com/c/cs_1",
@@ -116,8 +118,8 @@ describe("StripeConnection", () => {
         .post("/v1/refunds")
         .returns(() => ({ id: "re_1", status: "pending" }))
         .post("/v1/payment_intents")
-        .returns((_p, { query }) => {
-          charged = query;
+        .returns((_p, { body }) => {
+          charged = body as Readonly<Record<string, unknown>>;
           return intent("succeeded", { id: "pi_2" });
         }),
     );
@@ -172,11 +174,11 @@ describe("StripeConnection", () => {
       (r) =>
         r
           .post("/v1/accounts")
-          .returns((_p, { query }) => ({
+          .returns((_p, { body }) => ({
             id: "acct_1",
             charges_enabled: false,
             payouts_enabled: false,
-            type: query.type,
+            type: (body as { readonly type?: string }).type,
           }))
           .post("/v1/account_links")
           .returns(() => ({ url: "https://connect.stripe.com/setup/x" })),
@@ -204,8 +206,8 @@ describe("StripeConnection", () => {
         .post("/v1/payment_intents")
         .returns(() => intent("requires_payment_method", { id: "pi_t" }))
         .post("/v1/terminal/readers/:reader/process_payment_intent")
-        .returns((_p, { query }) => {
-          processed = query;
+        .returns((_p, { body }) => {
+          processed = body as Readonly<Record<string, unknown>>;
           return {};
         })
         .get("/v1/payment_intents/:id")
@@ -256,5 +258,41 @@ describe("StripeConnection", () => {
       paymentRef: "pi_1",
     });
     expect((await stripe.accept("dp_1")).status).toBe(DisputeStatus.Accepted);
+  });
+
+  it("acts on its connected account through Stripe-Account, and only then", async () => {
+    const seen: Array<string | undefined> = [];
+    const routes = (r: FakeIntegrationRoutes) =>
+      r.get("/v1/account").returns((_p, { headers }) => {
+        seen.push(headers["Stripe-Account"]);
+        return { id: "acct_merchant", charges_enabled: true, payouts_enabled: true };
+      });
+    await connect(routes, { mode: "oauth-standard", accountRef: "acct_merchant" }).check();
+    await connect(routes).check();
+    expect(seen).toEqual(["acct_merchant", undefined]);
+  });
+
+  it("reads the enabled payment methods of the default configuration", async () => {
+    const stripe = connect((r) =>
+      r.get("/v1/payment_method_configurations").returns(() => ({
+        data: [
+          { id: "pmc_other", active: true, is_default: false, card: { available: true } },
+          {
+            id: "pmc_default",
+            active: true,
+            is_default: true,
+            card: { available: true, display_preference: { value: "on" } },
+            apple_pay: { available: true, display_preference: { value: "on" } },
+            klarna: { available: true, display_preference: { value: "off" } },
+            ideal: { available: false, display_preference: { value: "on" } },
+          },
+        ],
+      })),
+    );
+    expect(await stripe.paymentMethods()).toEqual(["card", "apple_pay"]);
+    const none = connect((r) =>
+      r.get("/v1/payment_method_configurations").returns(() => ({ data: [] })),
+    );
+    expect(await none.paymentMethods()).toEqual([]);
   });
 });

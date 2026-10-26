@@ -1,0 +1,55 @@
+/**
+ * Stackra file contract:
+ * Purpose: `ConnectedAccountLimitsFake`, the cap and payout hold of connected accounts for tests: no cap and no hold
+ *          unless a test sets them per connection.
+ * Boundary: test support from `./testing`; never bound in production. It records which connections it was asked
+ *           about, so a test can prove another mode never asks.
+ * Runtime: isomorphic
+ * Governing contract: ADR 0269 (fakes in ./testing); R4-6.
+ */
+import type { Money } from "@stackra/money";
+
+import { ConnectedAccountLimits } from "#contracts/ports/connected-account-limits.port";
+
+/**
+ * Settable limits.
+ *
+ * @example
+ * const limits = ConnectedAccountLimitsFake.with({ caps: { conn_1: Money.ofMinor(50_000, "USD") } });
+ */
+export class ConnectedAccountLimitsFake extends ConnectedAccountLimits {
+  /** Caps by connection id. */
+  private readonly caps: Readonly<Record<string, Money>>;
+
+  /** Connections whose payouts are held. */
+  private readonly held: ReadonlySet<string>;
+
+  /** Every connection id the engine asked about, in order. */
+  readonly asked: string[] = [];
+
+  private constructor(caps: Readonly<Record<string, Money>>, held: readonly string[]) {
+    super();
+    this.caps = caps;
+    this.held = new Set(held);
+  }
+
+  /** A fake with `options.caps` and `options.held`; none of either when left out. */
+  static with(
+    options: {
+      readonly caps?: Readonly<Record<string, Money>>;
+      readonly held?: readonly string[];
+    } = {},
+  ): ConnectedAccountLimitsFake {
+    return new ConnectedAccountLimitsFake(options.caps ?? {}, options.held ?? []);
+  }
+
+  async cap(connectionId: string): Promise<Money | null> {
+    this.asked.push(connectionId);
+    return this.caps[connectionId] ?? null;
+  }
+
+  async payoutHeld(connectionId: string): Promise<boolean> {
+    this.asked.push(connectionId);
+    return this.held.has(connectionId);
+  }
+}

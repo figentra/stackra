@@ -20,6 +20,7 @@ import { SessionKind } from "#contracts/enums/session-kind.enum";
 import { TransferStatus } from "#contracts/enums/transfer-status.enum";
 import type { CheckoutRequest } from "#contracts/types/checkout-request.type";
 import type { CheckoutSession } from "#contracts/types/checkout-session.type";
+import type { PaymentConnectionMode } from "#contracts/types/payment-connection-mode.type";
 import type { PaymentGateway } from "#contracts/types/payment-gateway.type";
 import type { PaymentTarget } from "#contracts/types/payment-target.type";
 import type { ProviderPayment } from "#contracts/types/provider-payment.type";
@@ -69,6 +70,9 @@ export class FawryConnection extends Connection<FawryIntegration> implements Pay
 
   /** The ISO 4217 currency the merchant settles in. */
   currency!: string;
+
+  /** How the connection reaches the money; `own-key` when absent. */
+  mode?: PaymentConnectionMode;
 
   /** The Integration's provider code. */
   get provider(): string {

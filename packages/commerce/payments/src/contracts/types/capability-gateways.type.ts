@@ -7,6 +7,7 @@
  */
 import type { CaptureGateway } from "#contracts/types/capture-gateway.type";
 import type { DisputeGateway } from "#contracts/types/dispute-gateway.type";
+import type { MethodsGateway } from "#contracts/types/methods-gateway.type";
 import type { PaymentGateway } from "#contracts/types/payment-gateway.type";
 import type { PayoutGateway } from "#contracts/types/payout-gateway.type";
 import type { PlatformGateway } from "#contracts/types/platform-gateway.type";
@@ -43,4 +44,7 @@ export interface CapabilityGateways {
 
   /** A tip prompt on the terminal. */
   readonly terminal_tips: TerminalGateway;
+
+  /** The account's enabled payment methods. */
+  readonly methods: MethodsGateway;
 }

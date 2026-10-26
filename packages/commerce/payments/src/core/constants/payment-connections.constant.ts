@@ -18,6 +18,9 @@ import { HyperpayConnection } from "#core/providers/hyperpay/hyperpay.connection
 import { HyperpaySandboxConnection } from "#core/providers/hyperpay/hyperpay-sandbox.connection";
 import { MoyasarConnection } from "#core/providers/moyasar/moyasar.connection";
 import { PaymobConnection } from "#core/providers/paymob/paymob.connection";
+import { PaymobKsaConnection } from "#core/providers/paymob/paymob-ksa.connection";
+import { PaymobOmanConnection } from "#core/providers/paymob/paymob-oman.connection";
+import { PaymobUaeConnection } from "#core/providers/paymob/paymob-uae.connection";
 import { StripeConnection } from "#core/providers/stripe/stripe.connection";
 import { TabbyConnection } from "#core/providers/tabby/tabby.connection";
 import { TamaraConnection } from "#core/providers/tamara/tamara.connection";
@@ -35,6 +38,9 @@ export const PAYMENT_CONNECTIONS: Readonly<
   "hyperpay-sandbox": HyperpaySandboxConnection,
   moyasar: MoyasarConnection,
   paymob: PaymobConnection,
+  "paymob-ksa": PaymobKsaConnection,
+  "paymob-oman": PaymobOmanConnection,
+  "paymob-uae": PaymobUaeConnection,
   stripe: StripeConnection,
   tabby: TabbyConnection,
   tamara: TamaraConnection,

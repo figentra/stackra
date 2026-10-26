@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `HyperpayIntegration`, the description of HyperPay's live OPPWA API (eu-prod.oppwa.com) as a payments
- *          provider: an access-token bearer API.
+ *          provider: an access-token bearer API that takes form-encoded bodies.
  * Boundary: description only; credentials live on `HyperpayConnection`. The test host is its own Integration
  *           (`HyperpaySandboxIntegration`); which one a Market or a sandbox uses is data.
  * Runtime: isomorphic
@@ -20,6 +20,7 @@ export class HyperpayIntegration extends Integration({
   category: IntegrationCategory.Payments,
   levels: [ConnectionLevel.Scope],
   auth: { type: AuthType.ApiKey, header: "Authorization", format: "Bearer {accessToken}" },
+  requestBody: "form",
   baseUrl: "https://eu-prod.oppwa.com",
   health: { every: "6h", failAfter: 3 },
 }) {}

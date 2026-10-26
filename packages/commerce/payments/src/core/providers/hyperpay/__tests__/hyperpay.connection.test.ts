@@ -31,8 +31,8 @@ describe("HyperpayConnection", () => {
   it("opens a widget checkout with a pre-authorisation and a registration", async () => {
     let sent: Readonly<Record<string, unknown>> = {};
     const hyperpay = connect((r) =>
-      r.post("/v1/checkouts").returns((_p, { query }) => {
-        sent = query;
+      r.post("/v1/checkouts").returns((_p, { body }) => {
+        sent = body as Readonly<Record<string, unknown>>;
         return { id: "CHK.uat01-vm-tx01" };
       }),
     );
@@ -98,8 +98,8 @@ describe("HyperpayConnection", () => {
   it("charges a registration as a merchant-initiated standing instruction", async () => {
     let sent: Readonly<Record<string, unknown>> = {};
     const hyperpay = connect((r) =>
-      r.post("/v1/registrations/:id/payments").returns((_p, { query }) => {
-        sent = query;
+      r.post("/v1/registrations/:id/payments").returns((_p, { body }) => {
+        sent = body as Readonly<Record<string, unknown>>;
         return {
           id: paymentId,
           paymentType: "DB",

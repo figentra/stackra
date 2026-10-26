@@ -19,6 +19,7 @@ export class HyperpaySandboxIntegration extends Integration({
   category: IntegrationCategory.Payments,
   levels: [ConnectionLevel.Scope],
   auth: { type: AuthType.ApiKey, header: "Authorization", format: "Bearer {accessToken}" },
+  requestBody: "form",
   baseUrl: "https://eu-test.oppwa.com",
   health: { every: "6h", failAfter: 3 },
 }) {}

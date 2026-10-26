@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `PaymentCapability`, what a provider's driver can do beyond a hosted checkout: capture and void, saved
- *          tokens, payouts, the platform layer, disputes, terminal sessions and a tip prompt on the terminal.
+ *          tokens, payouts, the platform layer, disputes, terminal sessions, a tip prompt on the terminal, and reading
+ *          the account's enabled payment methods.
  * Boundary: an `Enum.of` value plus the type of the same name, in the leaf entry. A driver lists its capabilities;
  *           `PaymentGateways#forMarket` keeps only providers that have every capability a call needs, and
  *           `hasCapability` narrows a gateway to the matching port. Codes are snake_case.
@@ -33,6 +34,8 @@ export const PaymentCapability = Enum.of({
   Terminal: "terminal",
   /** Ask for a tip on the terminal before the card is read. */
   TerminalTips: "terminal_tips",
+  /** Read the payment methods the account has enabled (`MethodsGateway`). */
+  Methods: "methods",
 });
 
 /** One of the codes above. */

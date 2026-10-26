@@ -95,6 +95,16 @@ describe("ConnectionPaymentGatewaysDriver", () => {
     );
   });
 
+  it("serves a bring-your-own-only provider from the tenant's Connection and never from a platform one", async () => {
+    const byo = MarketPaymentDefaultsFake.with({ m3: [{ provider: "stripe" }] });
+    const own = new ConnectionPaymentGatewaysDriver(new TestStore([stripeOwn]), byo);
+    expect(await own.forMarket("m3", [PaymentCapability.Checkout])).toBe(stripeOwn);
+    const none = new ConnectionPaymentGatewaysDriver(new TestStore([]), byo);
+    await expect(none.forMarket("m3", [PaymentCapability.Checkout])).rejects.toRefuseWith(
+      refusal(NoPaymentProviderError, { market: "m3", needs: "checkout" }),
+    );
+  });
+
   it("reloads the connection that served a payment", async () => {
     const gateways = new ConnectionPaymentGatewaysDriver(new TestStore([]), defaults);
     expect(await gateways.byConnection("stripe", stripePlatform.id)).toBe(stripePlatform);

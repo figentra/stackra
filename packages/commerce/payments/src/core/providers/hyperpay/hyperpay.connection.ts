@@ -22,6 +22,7 @@ import type { CaptureGateway } from "#contracts/types/capture-gateway.type";
 import type { CaptureRequest } from "#contracts/types/capture-request.type";
 import type { CheckoutRequest } from "#contracts/types/checkout-request.type";
 import type { CheckoutSession } from "#contracts/types/checkout-session.type";
+import type { PaymentConnectionMode } from "#contracts/types/payment-connection-mode.type";
 import type { PaymentGateway } from "#contracts/types/payment-gateway.type";
 import type { PaymentTarget } from "#contracts/types/payment-target.type";
 import type { ProviderPayment } from "#contracts/types/provider-payment.type";
@@ -44,9 +45,6 @@ interface OppwaPayment {
   readonly registrationId?: string;
 }
 
-// shortcut: OPPWA takes form-encoded bodies and the managed client sends JSON only, so every POST carries its
-// parameters in the query string, which OPPWA also reads; move them to a form body once @stackra/integrations has one.
-
 /**
  * A HyperPay entity, as tenant or platform.
  *
@@ -63,6 +61,9 @@ export class HyperpayConnection
 
   /** The entity id payments are booked on. */
   entityId!: string;
+
+  /** How the connection reaches the money; `own-key` when absent. */
+  mode?: PaymentConnectionMode;
 
   /** The Integration's provider code. */
   get provider(): string {
@@ -93,28 +94,26 @@ export class HyperpayConnection
   async checkout(request: CheckoutRequest): Promise<CheckoutSession> {
     const total = totalOf(request);
     const saving = request.saveMethod === true;
-    const checkout = await this.api.post<{ readonly id: string }>("/v1/checkouts", undefined, {
-      query: {
-        entityId: this.entityId,
-        amount: total.toDecimal(),
-        currency: total.currency,
-        paymentType: request.captureLater === true ? "PA" : "DB",
-        merchantTransactionId: request.reference,
-        ...(request.customer?.email === undefined
-          ? {}
-          : { "customer.email": request.customer.email }),
-        ...(request.customer?.name === undefined
-          ? {}
-          : { "customer.givenName": request.customer.name }),
-        ...(saving
-          ? {
-              createRegistration: true,
-              "standingInstruction.mode": "INITIAL",
-              "standingInstruction.type": "UNSCHEDULED",
-              "standingInstruction.source": "CIT",
-            }
-          : {}),
-      },
+    const checkout = await this.api.post<{ readonly id: string }>("/v1/checkouts", {
+      entityId: this.entityId,
+      amount: total.toDecimal(),
+      currency: total.currency,
+      paymentType: request.captureLater === true ? "PA" : "DB",
+      merchantTransactionId: request.reference,
+      ...(request.customer?.email === undefined
+        ? {}
+        : { "customer.email": request.customer.email }),
+      ...(request.customer?.name === undefined
+        ? {}
+        : { "customer.givenName": request.customer.name }),
+      ...(saving
+        ? {
+            createRegistration: true,
+            "standingInstruction.mode": "INITIAL",
+            "standingInstruction.type": "UNSCHEDULED",
+            "standingInstruction.source": "CIT",
+          }
+        : {}),
     });
     return {
       providerRef: checkout.id,
@@ -192,19 +191,16 @@ export class HyperpayConnection
   async charge(request: TokenCharge): Promise<ProviderPayment> {
     const payment = await this.api.post<OppwaPayment>(
       `/v1/registrations/${request.method.token}/payments`,
-      undefined,
       {
-        query: {
-          entityId: this.entityId,
-          amount: request.amount.toDecimal(),
-          currency: request.amount.currency,
-          paymentType: "DB",
-          merchantTransactionId: request.reference,
-          "standingInstruction.mode": "REPEATED",
-          "standingInstruction.type": "UNSCHEDULED",
-          "standingInstruction.source":
-            request.initiator === ChargeInitiator.Merchant ? "MIT" : "CIT",
-        },
+        entityId: this.entityId,
+        amount: request.amount.toDecimal(),
+        currency: request.amount.currency,
+        paymentType: "DB",
+        merchantTransactionId: request.reference,
+        "standingInstruction.mode": "REPEATED",
+        "standingInstruction.type": "UNSCHEDULED",
+        "standingInstruction.source":
+          request.initiator === ChargeInitiator.Merchant ? "MIT" : "CIT",
       },
     );
     return (
@@ -218,12 +214,10 @@ export class HyperpayConnection
 
   /** Runs a back-office operation (`CP`, `RV`, `RF`) on payment `id`. */
   private operate(id: string, paymentType: string, amount?: Money): Promise<OppwaPayment> {
-    return this.api.post<OppwaPayment>(`/v1/payments/${id}`, undefined, {
-      query: {
-        entityId: this.entityId,
-        paymentType,
-        ...(amount === undefined ? {} : { amount: amount.toDecimal(), currency: amount.currency }),
-      },
+    return this.api.post<OppwaPayment>(`/v1/payments/${id}`, {
+      entityId: this.entityId,
+      paymentType,
+      ...(amount === undefined ? {} : { amount: amount.toDecimal(), currency: amount.currency }),
     });
   }
 

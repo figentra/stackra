@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `ConnectionPaymentGatewaysDriver`, the `PaymentGateways` of ADR 0356: for a Market it walks the providers
  *          the Market offers (market-pack data, in order), takes the tenant's own Connection of the first provider
- *          that has every capability the call needs, and otherwise that Market's platform Connection; for a stored
+ *          that has every capability the call needs, and otherwise that Market's platform Connection (a provider with
+ *          none is bring-your-own only, so only a tenant's own Connection serves it); for a stored
  *          payment it reloads the exact connection that served it.
  * Boundary: the driver named `connection`. It reads Connections only through `ConnectionStore` (the store applies the
  *           tenant scope and decrypts credentials) and never names a Market or a provider: both come from
@@ -64,6 +65,7 @@ export class ConnectionPaymentGatewaysDriver extends Driver(PaymentGateways) {
       if (own !== null && serves(own, needs)) return own;
     }
     for (const { choice, type } of offered) {
+      if (choice.connectionId === undefined) continue;
       const platform = await this.store.byId(type, choice.connectionId);
       if (serves(platform, needs)) return platform;
     }

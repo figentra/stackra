@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `PaymentGatewayFake`, an in-memory provider for tests: it implements every gateway port, lets a test act as
  *          the customer (`settle`), and can lose the answer of its next calls (`loseNext`) after acting, which is
- *          exactly the case the `unknown` state exists for.
+ *          exactly the case the `unknown` state exists for. It carries a connection mode and a list of enabled
+ *          payment methods when a test gives them.
  * Boundary: test support from `./testing`; never bound in production. A lost answer throws the managed client's
  *           `ProviderUnavailableError`, so the engine sees what a real driver would raise.
  * Runtime: isomorphic
@@ -24,6 +25,8 @@ import type { Dispute } from "#contracts/types/dispute.type";
 import type { DisputeGateway } from "#contracts/types/dispute-gateway.type";
 import type { MerchantAccount } from "#contracts/types/merchant-account.type";
 import type { MerchantOnboarding } from "#contracts/types/merchant-onboarding.type";
+import type { MethodsGateway } from "#contracts/types/methods-gateway.type";
+import type { PaymentConnectionMode } from "#contracts/types/payment-connection-mode.type";
 import type { PaymentGateway } from "#contracts/types/payment-gateway.type";
 import type { PaymentTarget } from "#contracts/types/payment-target.type";
 import type { PayoutGateway } from "#contracts/types/payout-gateway.type";
@@ -63,7 +66,8 @@ export class PaymentGatewayFake
     PayoutGateway,
     PlatformGateway,
     DisputeGateway,
-    TerminalGateway
+    TerminalGateway,
+    MethodsGateway
 {
   /** The connection id. */
   readonly id: string;
@@ -73,6 +77,12 @@ export class PaymentGatewayFake
 
   /** What the fake says it can do. */
   readonly capabilities: readonly PaymentCapability[];
+
+  /** The connection mode, when the test gives one. */
+  readonly mode?: PaymentConnectionMode;
+
+  /** The payment methods the "account" has enabled. */
+  private readonly methods: readonly string[];
 
   /** Payments by provider id. */
   private readonly held = new Map<string, Held>();
@@ -86,10 +96,18 @@ export class PaymentGatewayFake
   /** Answers still to lose. */
   private lost = 0;
 
-  private constructor(id: string, provider: string, capabilities: readonly PaymentCapability[]) {
+  private constructor(
+    id: string,
+    provider: string,
+    capabilities: readonly PaymentCapability[],
+    methods: readonly string[],
+    mode: PaymentConnectionMode | undefined,
+  ) {
     this.id = id;
     this.provider = provider;
     this.capabilities = capabilities;
+    this.methods = methods;
+    if (mode !== undefined) this.mode = mode;
   }
 
   /** A fake with every capability unless `options.capabilities` narrows it. */
@@ -98,12 +116,16 @@ export class PaymentGatewayFake
       readonly id?: string;
       readonly provider?: string;
       readonly capabilities?: readonly PaymentCapability[];
+      readonly mode?: PaymentConnectionMode;
+      readonly methods?: readonly string[];
     } = {},
   ): PaymentGatewayFake {
     return new PaymentGatewayFake(
       options.id ?? "conn_fake",
       options.provider ?? "fake",
       options.capabilities ?? ALL,
+      options.methods ?? ["card"],
+      options.mode,
     );
   }
 
@@ -258,6 +280,10 @@ export class PaymentGatewayFake
       if (held.terminalId === terminalId && held.payment.status === PaymentStatus.Pending)
         this.put(held.reference, { ...held.payment, status: PaymentStatus.Voided });
     this.answer(undefined);
+  }
+
+  async paymentMethods(): Promise<readonly string[]> {
+    return this.answer(this.methods);
   }
 
   /** Returns `value`, or throws when an answer is due to be lost. */
