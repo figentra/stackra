@@ -46,8 +46,14 @@ generated-key helpers, the native form and the fake (ADR 0307 rules 22 to 24, AD
 - `SettingsReader#get` and `SettingsResolver#get` both lift floors through `liftFloors`; a new read path calls it too.
 - A promotion diff carries the live snapshot it replaced (`previous`) and the sandbox's release; `rollbackOf` re-applies
   `previous` as a new change set, and `apply` refuses an older live release (`promotion_release_too_old`).
-- The `settings:diff`/`settings:apply` runner (`settingsDiff`, `settingsApply`) writes sandbox revisions only and uses
-  `RegisteredFloorGuardDriver`, which refuses any group with a legal floor or not registered in the process.
+- The `settings:diff`/`settings:apply` runner (`settingsDiff`, `settingsApply`) writes sandbox revisions only. With the
+  holder's resolved pack (`market`) it uses `MarketPackSettingFloorSourceDriver`; without it
+  `RegisteredFloorGuardDriver`, which refuses any group with a legal floor. Both refuse a group not registered in the process.
+- Entitlement gates (`@Setting({ entitlement, entitlementValues })`) are checked on every read and write path through
+  `SettingEntitlementSource`, fail closed when unbound; a new read or write path calls `grantedSettingEntitlements` and
+  `unentitledSettingPaths` or `refuseUnentitledSettings` too.
+- No `SettingScope.Tenant`: the tenant level is tenancy's data (`TenancyScopes.Tenant`, ADR 0323). A seeder writes as
+  `settingSystemAuthor(name)`.
 - `Promotable` is homed here (package-needs conflict note, ADR 0359 d6); a kind's driver validates its snapshot.
 - A store driver names each layer's holder (`SettingLayer.holder`) and implements `remove`.
 - Raw SQL lives only in `StoredSettingService` methods, parameterised with `sql`, with a `// raw-sql:` comment (ADR

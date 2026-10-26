@@ -2,13 +2,15 @@
  * Stackra file contract:
  * Purpose: `SettingOptions`, what `@Setting({...})` takes on one field: the levels it narrows to, whether a holder may
  *          pin it for every holder below, whether a change waits for a second approver, whether clients receive it,
- *          whether it is edited in place on live, whether normal mode shows it, and the market-pack key that floors it.
+ *          whether it is edited in place on live, whether normal mode shows it, the market-pack key that floors it, and
+ *          the entitlement that unlocks it or one of its values.
  * Boundary: a type only. Every option is optional: a field without `@Setting` keeps its class's levels, is not
  *           lockable, needs no approval and stays on the server. Gen and the generated settings operations enforce
  *           the options; the decorator only records them.
  * Runtime: isomorphic
  * Governing contract: ADR 0307 (rules 22 and 23); ADR 0213 (decision 5: approval); ADR 0359 (decisions 1, 4 and 5:
- *                     live-editable and essential, declared per field); ADR 0370 (decision 6: floors).
+ *                     live-editable and essential, declared per field); ADR 0370 (decision 6: floors); ADR 0420
+ *                     (decision 1: entitlement-gated settings).
  */
 import type { SettingLevel } from "#core/types/setting-level.type";
 
@@ -34,4 +36,13 @@ export interface SettingOptions {
 
   /** The market-pack key whose legal floor bounds it (`consumer.withdrawal_days`). */
   readonly floor?: string;
+
+  /**
+   * The entitlement that unlocks it (`access.enterprise_support`); without it the default applies and a write is
+   * refused.
+   */
+  readonly entitlement?: string;
+
+  /** The entitlement that unlocks each gated value, keyed by the value as text (`{ unlimited: "access.sso" }`). */
+  readonly entitlementValues?: Readonly<Record<string, string>>;
 }

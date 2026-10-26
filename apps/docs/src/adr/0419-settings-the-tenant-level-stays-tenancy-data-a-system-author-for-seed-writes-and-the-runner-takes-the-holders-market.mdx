@@ -1,0 +1,47 @@
+---
+title: "0419 — Settings: the tenant level stays tenancy's data, a system author for seed writes, and the runner takes the holder's market"
+description: "Proposed · 2026-10-26"
+---
+
+<Note>
+  Proposed (STA-825, STA-779 remainder). It applies
+  [0323](/adr/0323-tenant-vocabulary-lives-only-in-tenancy-and-scopes-use-the-scoperef-port) to the
+  settings levels and extends
+  [0395](/adr/0395-one-live-read-only-code-promotion-rollback-a-minimum-release-and-one-floor-aware-reader)
+  decision 5.
+</Note>
+
+## Context
+
+The template writes `SettingScope.Tenant`, which `@stackra/settings` does not export, so services fell back to
+`SettingScope.Node`. A settings write records its author, a principal's public id, and a seeder has none. The
+`stackra settings:apply` runner refused every group with a legal floor because it could not see the holder's market.
+
+## Decision
+
+1. **No `SettingScope.Tenant`.** ADR 0323 decision 4 keeps the tenant level in tenancy: a settings class writes
+   `TenancyScopes.Tenant` from `@stackra/tenancy` next to `SettingScope.Platform`. The template and its generated
+   files change to that name; settings exports no tenant case.
+2. **A system author.** `settingSystemAuthor(name)` answers `sys_<name>` for a lower snake_case job name (`seed`,
+   `market_pack_seed`), the form the workflow runner and the access log use for a system actor. Seeders and seed packs
+   write with it. A request never chooses it, and four-eyes still applies: a person approves a pending system write.
+3. **The runner takes the market.** `settingsApply({ ..., market })` takes the holder's resolved market pack; with it,
+   `MarketPackSettingFloorSourceDriver` checks the group's floors in force today, and without it the fail-closed
+   `RegisteredFloorGuardDriver` still refuses a floor-bearing group. Both refuse a group not registered in the process.
+
+## Consequences
+
+- A tenant-level setting resolves at the tenant node with no settings-owned tenant word.
+- Seed revisions name who wrote them.
+- The CLI applies a floor-bearing group once it resolves the holder's pack and passes it (`--market`); the flag itself
+  is the CLI's change.
+
+## Enforcement
+
+planned — `packages/state/settings/src/core/functions/__tests__/setting-system-author.function.test.ts` and
+`packages/state/settings/src/core/drivers/__tests__/market-pack-setting-floor-source.driver.test.ts`.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: OS `services/audit/SPEC.md` gap 6; OS `services/notifications/SPEC.md` gap 7; STA-825;
+STA-779.

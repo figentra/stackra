@@ -1,0 +1,41 @@
+---
+title: "0420 — Entitlement-gated settings: a key or a value names the entitlement that unlocks it"
+description: "Proposed · 2026-10-26"
+---
+
+<Note>
+  Proposed (STA-816). It adds a gate to the settings cascade of
+  [0213](/adr/0213-settings-v2-cascade-flags-as-a-kind-yaml-packs-and-revisions) and reads grants as
+  [0215](/adr/0215-entitlements) defines them.
+</Note>
+
+## Context
+
+Access gates the Enterprise values of `SupportSessionService` by hand, because `@Setting` cannot say that a key, or one
+value of it, belongs to a plan. A hand-written gate is missed on some read or write path.
+
+## Decision
+
+1. **Declared on the field.** `@Setting({ entitlement })` names the entitlement that unlocks a key;
+   `@Setting({ entitlementValues: { unlimited: "access.enterprise_support" } })` names the one that unlocks a value
+   (matched by its text, so it fits enum, number and boolean settings). Gen carries both into the key metadata.
+2. **One port, text keys.** `SettingEntitlementSource.granted(entitlements, target)` answers the granted keys. Settings
+   depends on no entitlements package; a deployment binds a driver over `EntitlementSource` (the plan snapshot in SaaS,
+   the licence on-prem). With no source bound every gate stays shut.
+3. **Every path.** On read (`SettingsReader#get` and `read`, `SettingsResolver#get` and `resolve`) a value the plan does
+   not unlock reads as the default, with provenance `entitlement`. Every write (`write`, `applyChange`, an approved or
+   scheduled revision) refuses it with the core `entitlement_required`, one field error per path. The CLI runner knows no
+   plan, so it refuses gated keys.
+
+## Consequences
+
+- A downgrade takes effect on the next read without rewriting stored values; an upgrade brings them back.
+- The admin shows an upgrade path from the `entitlement` provenance and the refusal.
+
+## Enforcement
+
+planned — `packages/state/settings/src/core/services/__tests__/settings-entitlements.service.test.ts`.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: OS `services/access/SPEC.md` gap 3; STA-816.

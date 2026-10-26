@@ -4,17 +4,19 @@
  *          of the target's market pack (platform floor below product default, tenant and user), gives each key its
  *          provenance, and records every write as a revision: refused below a floor, refused on live for a key that
  *          is not live-editable (unless break-glass), held for a second approver when a key needs approval, scheduled
- *          when it takes effect later, applied otherwise.
- * Boundary: a singleton service over four ports (values, floors, revisions, clock), so it never knows where any of them
- *           live. A floor is applied at save time (refused) and at read time (lifted, and reported, so the admin can
- *           tell the holder). A write to a user's own layer is a person's preference and is live-editable. `applyChange`
- *           is the promotion and pack path: it skips the live and approval checks (the promotion action carries its
- *           own approval) but never the floors or the locks. IAM (who may write, approve or break glass) is the calling
- *           action's. `SettingsReader#get` lifts floors the same way (`liftFloors`).
+ *          when it takes effect later, applied otherwise. A key or value gated by an entitlement the holder lacks reads
+ *          as its default (provenance `entitlement`) and is refused on every write (`entitlement_required`).
+ * Boundary: a singleton service over five ports (values, floors, revisions, clock, entitlements), so it never knows
+ *           where any of them live; with no entitlement source bound no gated key is unlocked (fail closed). A floor
+ *           is applied at save time (refused) and at read time (lifted, and reported, so the admin can tell the
+ *           holder). A write to a user's own layer is a person's preference and is live-editable. `applyChange` is the
+ *           promotion and pack path: it skips the live and approval checks (the promotion action carries its own
+ *           approval) but never the entitlements, the floors or the locks. IAM (who may write, approve or break glass)
+ *           is the calling action's. `SettingsReader#get` lifts floors the same way (`liftFloors`).
  * Runtime: isomorphic
  * Governing contract: ADR 0213 (decisions 2 and 5); ADR 0359 (decisions 3 to 5 and 9); ADR 0395 (decision 1: one
  *                     code, `live_read_only`); ADR 0370 (decision 6); ADR
- *                     0363 (decision 4); config-model section 3.
+ *                     0363 (decision 4); config-model section 3; ADR 0420 (decisions 1 to 3).
  */
 import { Service } from "@stackra/container";
 import type { AnyClass } from "@stackra/container";
@@ -23,6 +25,7 @@ import { LiveReadOnlyError } from "@stackra/errors";
 import { validate } from "@stackra/validation";
 
 import {
+  SettingEntitlementSource,
   SettingEnvironment,
   SettingFloorSource,
   SettingRevisionStatus,
@@ -32,16 +35,20 @@ import {
 } from "#contracts/index";
 import type { SettingLayer, SettingRevision, SettingTarget, SettingValue } from "#contracts/index";
 import type { Settings } from "#core/bases/settings.base";
+import { SETTING_KEY_REGISTRY } from "#core/constants/setting-key-registry.constant";
 import { SettingFourEyesError } from "#core/errors/setting-four-eyes.error";
 import { SettingRevisionClosedError } from "#core/errors/setting-revision-closed.error";
 import { crossesFloor } from "#core/functions/crosses-floor.function";
+import { grantedSettingEntitlements } from "#core/functions/granted-setting-entitlements.function";
 import { liftFloors } from "#core/functions/lift-floors.function";
 import { mergeSettingLayers } from "#core/functions/merge-setting-layers.function";
 import { nestSettingValues } from "#core/functions/nest-setting-values.function";
 import { refuseBelowFloors } from "#core/functions/refuse-below-floors.function";
+import { refuseUnentitledSettings } from "#core/functions/refuse-unentitled-settings.function";
 import { settingPageChanges } from "#core/functions/setting-page-changes.function";
 import { settingPathInGroup } from "#core/functions/setting-path-in-group.function";
 import { settingsKeyOf } from "#core/functions/settings-key-of.function";
+import { unentitledSettingPaths } from "#core/functions/unentitled-setting-paths.function";
 import type { ResolvedSetting } from "#core/types/resolved-setting.type";
 import type { SettingChangeSet } from "#core/types/setting-change-set.type";
 import type { SettingWriteOptions } from "#core/types/setting-write-options.type";
@@ -78,23 +85,29 @@ export class SettingsResolver extends Service {
   /** The one source of now. */
   private readonly clock: Clock;
 
+  /** The holder's grants; none bound means no gated key is unlocked. */
+  private readonly entitlements: SettingEntitlementSource | undefined;
+
   /**
    * @param store - the selected value store.
    * @param floorSource - the selected floor source.
    * @param revisions - the selected revision store.
    * @param clock - the clock.
+   * @param entitlements - the selected entitlement source; gen's wiring always passes it.
    */
   constructor(
     store: SettingValueStore,
     floorSource: SettingFloorSource,
     revisions: SettingRevisionStore,
     clock: Clock,
+    entitlements?: SettingEntitlementSource,
   ) {
     super();
     this.store = store;
     this.floorSource = floorSource;
     this.revisions = revisions;
     this.clock = clock;
+    this.entitlements = entitlements;
   }
 
   /**
@@ -106,11 +119,15 @@ export class SettingsResolver extends Service {
    */
   async get<S extends Settings>(type: AnyClass<S>, target: SettingTarget = {}): Promise<S> {
     const group = settingsKeyOf(type);
-    const [layers, floors] = await Promise.all([
+    const keys = SETTING_KEY_REGISTRY.get(group) ?? [];
+    const [layers, floors, granted] = await Promise.all([
       this.store.layers(group, target),
       this.floorSource.floors(group, target),
+      grantedSettingEntitlements(this.entitlements, keys, target),
     ]);
-    const resolved = validate(type, nestSettingValues(mergeSettingLayers(layers).values));
+    const values = { ...mergeSettingLayers(layers).values };
+    for (const path of unentitledSettingPaths(values, keys, granted)) delete values[path];
+    const resolved = validate(type, nestSettingValues(values));
     if (!resolved.success) throw resolved.error;
     return liftFloors(resolved.data, floors);
   }
@@ -120,21 +137,30 @@ export class SettingsResolver extends Service {
     page: SettingsPage,
     target: SettingTarget = {},
   ): Promise<Readonly<Record<string, ResolvedSetting>>> {
-    const [layers, floors] = await Promise.all([
+    const [layers, floors, granted] = await Promise.all([
       this.store.layers(page.key, target),
       this.floorSource.floors(page.key, target),
+      grantedSettingEntitlements(this.entitlements, page.fields, target),
     ]);
     const merged = mergeSettingLayers(layers);
+    const gated = unentitledSettingPaths(merged.values, page.fields, granted);
     const out: Record<string, ResolvedSetting> = {};
     for (const key of page.fields) {
       const path = settingPathInGroup(key);
-      const stored = Object.hasOwn(merged.values, path);
+      const refused = gated.includes(path);
+      const stored = Object.hasOwn(merged.values, path) && !refused;
       const value = stored ? (merged.values[path] ?? null) : key.default;
       const floor = floors.find((candidate) => candidate.path === path) ?? null;
       const lifted = floor !== null && crossesFloor(value, floor);
       out[key.name] = {
         value: lifted ? floor.value : value,
-        source: lifted ? SettingSource.Floor : stored ? SettingSource.Layer : SettingSource.Default,
+        source: lifted
+          ? SettingSource.Floor
+          : refused
+            ? SettingSource.Entitlement
+            : stored
+              ? SettingSource.Layer
+              : SettingSource.Default,
         holder: stored && !lifted ? holderOfPath(layers, path) : null,
         floor,
         locked: merged.locked.includes(path),
@@ -154,6 +180,7 @@ export class SettingsResolver extends Service {
    * @throws TypeError when a break-glass change has no reason.
    * @throws LiveReadOnlyError (`live_read_only`, each refused path as a field error) when, on live and not break-glass,
    *         a written key is not live-editable.
+   * @throws EntitlementRequiredError when a written key or value is gated by an entitlement the holder lacks.
    * @throws SettingBelowFloorError when a value crosses a legal floor.
    * @throws SettingsLockedError when a holder above the target locks a written key.
    */
@@ -179,6 +206,11 @@ export class SettingsResolver extends Service {
           { fieldErrors: Object.fromEntries(readOnly.map((path) => [path, "live_read_only"])) },
         );
     }
+    refuseUnentitledSettings(
+      changes,
+      page.fields,
+      await grantedSettingEntitlements(this.entitlements, page.fields, target),
+    );
     refuseBelowFloors(changes, await this.floorSource.floors(page.key, target));
     const now = this.clock.now();
     const effectiveAt = options.effectiveAt ?? now;
@@ -211,6 +243,7 @@ export class SettingsResolver extends Service {
    * Applies `change` to `group` at `target` now and records it, for a promotion or a pack apply. Floors and locks
    * apply; the live and approval checks are the promotion action's.
    *
+   * @throws EntitlementRequiredError when a written key or value is gated by an entitlement the holder lacks.
    * @throws SettingBelowFloorError when a value crosses a legal floor; nothing is written.
    * @throws SettingsLockedError when a holder above the target locks a written key.
    */
@@ -220,6 +253,12 @@ export class SettingsResolver extends Service {
     change: SettingChangeSet,
     meta: Pick<SettingWriteOptions, "author" | "reason" | "environment">,
   ): Promise<SettingRevision> {
+    const keys = SETTING_KEY_REGISTRY.get(group) ?? [];
+    refuseUnentitledSettings(
+      change.values,
+      keys,
+      await grantedSettingEntitlements(this.entitlements, keys, target),
+    );
     refuseBelowFloors(change.values, await this.floorSource.floors(group, target));
     const previous = await this.previousOf(group, target, [
       ...Object.keys(change.values),
@@ -310,11 +349,17 @@ export class SettingsResolver extends Service {
     return this.revisions.list(group, target);
   }
 
-  /** Writes `revision`'s change to the store, rechecking floors, and marks it applied. */
+  /** Writes `revision`'s change to the store, rechecking entitlements and floors, and marks it applied. */
   private async applyRevision(
     revision: SettingRevision,
     decidedBy: string | null,
   ): Promise<SettingRevision> {
+    const keys = SETTING_KEY_REGISTRY.get(revision.group) ?? [];
+    refuseUnentitledSettings(
+      revision.values,
+      keys,
+      await grantedSettingEntitlements(this.entitlements, keys, revision.target),
+    );
     refuseBelowFloors(
       revision.values,
       await this.floorSource.floors(revision.group, revision.target),

@@ -23,6 +23,7 @@ describe("@stackra/settings/contracts", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(contracts).sort()).toEqual([
       "Promotable",
+      "SettingEntitlementSource",
       "SettingEnvironment",
       "SettingFloorSource",
       "SettingRevisionStatus",

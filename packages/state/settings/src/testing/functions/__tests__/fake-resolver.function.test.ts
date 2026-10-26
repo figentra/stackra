@@ -37,4 +37,11 @@ describe(fakeResolver, () => {
     expect(fake.clock.now().toISOString()).toBe("2026-10-27T09:00:00.000Z");
     await expect(fake.revisions.list("returns", {})).resolves.toEqual([]);
   });
+
+  it("grants the plan's entitlements it is given", async () => {
+    const fake = fakeResolver({ grants: ["access.sso"] });
+    await expect(fake.entitlements.granted(["access.sso", "access.scim"], {})).resolves.toEqual(
+      new Set(["access.sso"]),
+    );
+  });
 });

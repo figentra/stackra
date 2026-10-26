@@ -7,6 +7,7 @@
  * Governing contract: ADR 0269 (testing helpers per package); ADR 0213 (decisions 2 and 5); ADR 0370 (decision 6).
  */
 import type {
+  MemorySettingEntitlementSourceDriver,
   MemorySettingFloorSourceDriver,
   MemorySettingRevisionStoreDriver,
   MemorySettingValueStoreDriver,
@@ -24,6 +25,9 @@ export interface ResolverFake {
 
   /** The market floors; `seed` sets a group's. */
   readonly floors: MemorySettingFloorSourceDriver;
+
+  /** The plan's grants; `grant` unlocks an entitlement-gated key or value. */
+  readonly entitlements: MemorySettingEntitlementSourceDriver;
 
   /** Every revision the resolver recorded. */
   readonly revisions: MemorySettingRevisionStoreDriver;

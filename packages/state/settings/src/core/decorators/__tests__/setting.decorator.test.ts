@@ -6,7 +6,7 @@
  *          secret).
  * Boundary: test only.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0269; ADR 0307 (rules 22 and 23); ADR 0294 (decision 6).
+ * Governing contract: ADR 0022; ADR 0269; ADR 0307 (rules 22 and 23); ADR 0294 (decision 6); ADR 0420.
  */
 import { Secret } from "@stackra/config";
 import { describe, expect, it } from "@stackra/testing";
@@ -58,6 +58,23 @@ describe("Setting", () => {
 
   it("refuses an empty scope list", () => {
     expect(() => Setting({ scopes: [] })).toThrow(/at least one level/);
+  });
+
+  it("records an entitlement gate and refuses a blank or empty one", () => {
+    class AccessSettings extends Settings({ scopes: [SettingScope.Platform] }) {
+      @Setting({ entitlement: "access.sso" })
+      ssoEnforced = false;
+
+      @Setting({ entitlementValues: { unlimited: "access.enterprise_support" } })
+      supportLength = "hour";
+    }
+    expect(Object.fromEntries(Setting.members(AccessSettings))).toEqual({
+      ssoEnforced: { entitlement: "access.sso" },
+      supportLength: { entitlementValues: { unlimited: "access.enterprise_support" } },
+    });
+    expect(() => Setting({ entitlement: " " })).toThrow(RangeError);
+    expect(() => Setting({ entitlementValues: {} })).toThrow(RangeError);
+    expect(() => Setting({ entitlementValues: { unlimited: "" } })).toThrow(RangeError);
   });
 
   it("refuses a scope outside its settings class's", () => {

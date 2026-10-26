@@ -12,6 +12,7 @@ export { SettingEnvironment } from "#contracts/enums/setting-environment.enum";
 export { SettingRevisionStatus } from "#contracts/enums/setting-revision-status.enum";
 export { SettingSource } from "#contracts/enums/setting-source.enum";
 export { Promotable } from "#contracts/ports/promotable.port";
+export { SettingEntitlementSource } from "#contracts/ports/setting-entitlement-source.port";
 export { SettingFloorSource } from "#contracts/ports/setting-floor-source.port";
 export { SettingRevisionStore } from "#contracts/ports/setting-revision-store.port";
 export { SettingValueStore } from "#contracts/ports/setting-value-store.port";

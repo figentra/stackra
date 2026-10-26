@@ -71,9 +71,12 @@ export class OrdersSettings extends Settings({
   named by its path (`orders.cancellation.autoCancelAfterMinutes`).
 - `scopes` are level keys, outermost first. Settings names `platform`, `product`, `node` and `user`; tenancy contributes
   its level as data (`TenancyScopes.Tenant`, ADR 0323), and a deployment may declare more (ADR 0327).
-- `@Setting({ scopes, lockable, approval, client, live, essential, floor })` narrows one field; its scopes must be the
-  class's. `live` marks an operational value edited in place on live (ADR 0359 decision 5), `essential` shows it in
-  normal mode, `floor` names the market-pack key whose legal floor bounds it.
+- `@Setting({ scopes, lockable, approval, client, live, essential, floor, entitlement, entitlementValues })` narrows one
+  field; its scopes must be the class's. `live` marks an operational value edited in place on live (ADR 0359 decision
+  5), `essential` shows it in normal mode, `floor` names the market-pack key whose legal floor bounds it.
+  `entitlement` names the entitlement that unlocks the field, and `entitlementValues` the one that unlocks a value of
+  it (`{ unlimited: "access.enterprise_support" }`), ADR 0420.
+- There is no `SettingScope.Tenant`: the tenant level is `TenancyScopes.Tenant` from `@stackra/tenancy` (ADR 0323).
 - `rules(r)` is the closed set `lessThan`, `atMost`, `greaterThan`, `atLeast` on number paths. Gen compiles the rules,
   the defaults, the bounds and the sections into the group's schema.
 - A credential is never a setting: `@Secret` cannot mark a settings class, gen refuses `secret_in_settings`, and a key
@@ -113,6 +116,10 @@ await this.resolver.write(
   floor rose) reads as the floor, with `source: "floor"`, so the admin can tell the tenant.
 - On live, a key that is not `live` is refused `live_read_only` (the core `LiveReadOnlyError`, one field error per path, ADR 0395); it changes in the sandbox and is promoted. A
   break-glass write needs a reason and is recorded as such. A user's own preferences are always live.
+- Entitlement gates read through `SettingEntitlementSource` (a deployment binds a driver over its plan or licence; the
+  memory driver serves tests). A stored value the plan does not unlock reads as the default with `source:
+"entitlement"`; writing it is refused `entitlement_required`. With no source bound, every gate stays shut.
+- A write no person makes (a seeder, a seed pack) names `settingSystemAuthor("seed")` (`sys_seed`) as its author.
 - Each write is a `SettingRevision`: applied now, `pending` when a key needs `approval` (a second person approves,
   `setting_four_eyes` refuses the author), or `scheduled` for a later `effectiveAt`; the app's scheduler calls
   `applyDue()`.
@@ -142,10 +149,12 @@ applied like any other (ADR 0359 decision 8, ADR 0395).
 ## CLI packs
 
 `stackra settings:diff` and `settings:apply` call `settingsDiff` and `settingsApply` from `./node` in the member's
-folder: a YAML pack against a scope node's own values, applied as sandbox revisions with locks checked. A group whose
-keys carry a legal floor is refused there (the run cannot see the holder's market) and goes through the service or a
-promotion. The test helper `fakeResolver({ values, floors, now })` in `./testing` builds a real resolver over memory
-drivers and a settable clock.
+folder: a YAML pack against a scope node's own values, applied as sandbox revisions with locks checked. `settingsApply`
+takes `market`, the holder's resolved market pack; with it, `MarketPackSettingFloorSourceDriver` checks the group's
+legal floors, and without it a group whose keys carry a legal floor is refused (the run cannot see the holder's market).
+Entitlement-gated keys are refused by the runner, which knows no plan. The test helper
+`fakeResolver({ values, floors, grants, now })` in `./testing` builds a real resolver over memory drivers and a
+settable clock.
 
 ## Testing
 
