@@ -22,7 +22,10 @@ export class EarnVisitInput extends Schema {
   principalId!: string;
 
   /** The visit (an appointment, an order) the stamps are for. */
-  @Str({ min: 1, max: 128 })
+  @Str({
+    min: 1,
+    max: 128,
+  })
   reference!: string;
 }
 

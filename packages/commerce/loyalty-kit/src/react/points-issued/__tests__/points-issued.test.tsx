@@ -13,6 +13,7 @@ import { cleanup, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { vi } from "vitest";
 
+import { PointsIssuedView } from "#core/schemas/points-issued-view.schema";
 import { PointsIssued } from "#react/points-issued/points-issued";
 
 vi.mock("@stackra/ui/react", async () => {
@@ -36,7 +37,12 @@ describe("PointsIssued", () => {
   afterEach(cleanup);
 
   it("renders earned and redeemed from the points-issued view", () => {
-    render(<PointsIssued data={{ earned: 420, redeemed: 60 }} isRefreshing={false} />);
+    render(
+      <PointsIssued
+        data={PointsIssuedView.create({ earned: 420, redeemed: 60 })}
+        isRefreshing={false}
+      />,
+    );
     expect(screen.getByText("loyalty_kit::widgets.points_issued.title")).toBeTruthy();
     expect(screen.getByText("420")).toBeTruthy();
     expect(screen.getByText("−60")).toBeTruthy();

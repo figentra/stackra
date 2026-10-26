@@ -11,7 +11,7 @@ import { registerSchemas, Schema } from "@stackra/validation";
 import { z } from "zod";
 
 /**
- * No fields.
+ * The points-issued query takes no input, so the schema has no fields.
  *
  * @example
  * PointsIssuedInput.create({});

@@ -25,7 +25,10 @@ import { MemorySearchDriver } from "#core/drivers/memory-search.driver";
 import { SearchCursorInvalidError } from "#core/errors/search-cursor-invalid.error";
 import { SearchIndex } from "#core/values/search-index.value";
 
-@Searchable({ text: ["title", "variants.sku"], filters: ["status"] })
+@Searchable({
+  text: ["title", "variants.sku"],
+  filters: ["status"],
+})
 class Product extends Model.with() {
   id = "";
 
@@ -208,12 +211,12 @@ describe(SearchIndex, () => {
 describe("SearchIndex Arabizi, visibility and snippets", () => {
   @Searchable({ text: ["title", "advice"] })
   class Memo extends Model.with() {
+    @Classify(PrivilegedDataClass)
+    advice = "";
+
     id = "";
 
     title = "";
-
-    @Classify(PrivilegedDataClass)
-    advice = "";
   }
 
   const MEMOS = [

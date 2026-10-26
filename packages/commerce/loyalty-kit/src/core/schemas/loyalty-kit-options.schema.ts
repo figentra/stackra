@@ -27,15 +27,6 @@ import { LOYALTY_KIT_CONFIG_SCHEMA } from "#core/constants/loyalty-kit-config-sc
  * }
  */
 export class LoyaltyKitOptions extends Schema {
-  /** Which ledger driver runs; names are the driver file prefixes (`postgres`, `memory`). */
-  ledger: DriverName<LoyaltyLedger> = "postgres";
-
-  /**
-   * Named instances for a host that runs two ledgers while migrating drivers, each injected as
-   * `Named<LoyaltyLedger, "primary">`; empty by default.
-   */
-  ledgers: Record<string, DriverName<LoyaltyLedger>> = {};
-
   /** Minor units one point is worth at redemption: one cent by default. */
   @Int({ min: 1 })
   pointValueMinor = 1;
@@ -45,8 +36,20 @@ export class LoyaltyKitOptions extends Schema {
   earnPerMinor = 0.01;
 
   /** Largest share of an order total points may cover, as a whole percentage. */
-  @Int({ min: 0, max: 100 })
+  @Int({
+    min: 0,
+    max: 100,
+  })
   maxRedeemPercent = 50;
+
+  /** Which ledger driver runs; names are the driver file prefixes (`postgres`, `memory`). */
+  ledger: DriverName<LoyaltyLedger> = "postgres";
+
+  /**
+   * Named instances for a host that runs two ledgers while migrating drivers, each injected as
+   * `Named<LoyaltyLedger, "primary">`; empty by default.
+   */
+  ledgers: Record<string, DriverName<LoyaltyLedger>> = {};
 }
 
 registerSchemas([[LoyaltyKitOptions, LOYALTY_KIT_CONFIG_SCHEMA]]);

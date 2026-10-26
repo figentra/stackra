@@ -19,7 +19,7 @@ const SPAN: TraceSpan = Object.freeze({
 });
 
 /**
- * Traces nothing.
+ * A tracer that records nothing.
  *
  * @example
  * await new NoopTracerDriver().span("job", {}, async () => run());

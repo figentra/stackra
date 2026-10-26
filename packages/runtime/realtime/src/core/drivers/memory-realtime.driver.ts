@@ -12,7 +12,7 @@ import { Driver } from "@stackra/container";
 import { RealtimeDriver } from "#contracts/ports/realtime-driver.port";
 import type { RealtimeBroadcast } from "#contracts/types/realtime-broadcast.type";
 import type { RealtimeMessage } from "#contracts/types/realtime-message.type";
-import { RealtimeHub } from "#core/services/realtime-hub.service";
+import type { RealtimeHub } from "#core/services/realtime-hub.service";
 
 /**
  * Serves in-process listeners.
@@ -24,7 +24,9 @@ import { RealtimeHub } from "#core/services/realtime-hub.service";
 export class MemoryRealtimeDriver extends Driver(RealtimeDriver) {
   private readonly hub: RealtimeHub;
 
-  /** @param hub - the shared channel hub. */
+  /**
+   * @param hub - the shared channel hub.
+   */
   constructor(hub: RealtimeHub) {
     super();
     this.hub = hub;

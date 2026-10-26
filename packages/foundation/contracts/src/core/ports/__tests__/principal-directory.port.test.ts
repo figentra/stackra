@@ -55,8 +55,8 @@ describe("PrincipalDirectory", () => {
   });
 
   it("takes user ids only", async () => {
-    // @ts-expect-error -- an order id is not a user id
     await expect(
+      // @ts-expect-error -- an order id is not a user id
       directory.supervisorOf("ord_01j9z3k4m5n6p7q8r9s0t1v2w3", ACME),
     ).resolves.toBeNull();
   });

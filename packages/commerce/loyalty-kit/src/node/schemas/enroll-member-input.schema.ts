@@ -23,12 +23,12 @@ import { LoyaltyTier } from "#contracts/enums/loyalty-tier.enum";
  * EnrollMemberInput.create({ accountId, principalId: "usr_1", tier: LoyaltyTier.Gold });
  */
 export class EnrollMemberInput extends Schema {
-  /** The account's public id, minted by the client; the path parameter of the endpoint. */
-  accountId!: PublicId<"lac">;
-
   /** The principal public id to enroll. */
   @Str({ min: 1 })
   principalId!: string;
+
+  /** The account's public id, minted by the client; the path parameter of the endpoint. */
+  accountId!: PublicId<"lac">;
 
   /** The starting tier. */
   tier: LoyaltyTier = LoyaltyTier.Bronze;

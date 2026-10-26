@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 /**
  * Stackra file contract:
  * Purpose: unit and type tests of `useSelection(editor)`: the selected ids, re-rendered when the selection changes and
@@ -7,6 +6,7 @@
  * Runtime: node (vitest, jsdom)
  * Governing contract: ADR 0022; ADR 0269; ADR 0270 (decision 4).
  */
+// @vitest-environment jsdom
 import type { AnyClass } from "@stackra/container";
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 import { registerSchemas } from "@stackra/validation";

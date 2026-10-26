@@ -20,12 +20,12 @@ import { z } from "zod";
  * ctx.record(PointsRedeemed.create({ memberId, points, reference }));
  */
 export class PointsRedeemed extends DomainEvent {
-  /** The member debited. */
-  memberId!: string;
-
   /** Points debited, as a positive number. */
   @Int()
   points!: number;
+
+  /** The member debited. */
+  memberId!: string;
 
   /** The redemption's reference. */
   reference!: string;

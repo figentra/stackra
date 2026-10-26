@@ -47,12 +47,12 @@ export class MemoryKeyProviderDriver extends KeyProvider {
     this.currentId = current.id;
   }
 
-  /** See `KeyProvider.current`. */
+  /** The key new data is sealed with. */
   current(): Promise<DataKey> {
     return this.byId(this.currentId);
   }
 
-  /** See `KeyProvider.byId`. */
+  /** The key with this id, for opening data sealed before a rotation. */
   byId(id: string): Promise<DataKey> {
     const key = this.keys.get(id);
     return key === undefined

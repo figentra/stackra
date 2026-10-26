@@ -29,7 +29,9 @@ import type { RealtimeEventRef } from "#core/index";
 export class RealtimeFake extends RealtimeConnection {
   private emitted = 0;
 
-  /** @param status - the starting status; live by default. */
+  /**
+   * @param status - the starting status; live by default.
+   */
   constructor(status: RealtimeStatus = RealtimeStatus.Connected) {
     super(new RealtimeConfig(), new MemoryRealtimeTransportDriver());
     this.setStatus(status);

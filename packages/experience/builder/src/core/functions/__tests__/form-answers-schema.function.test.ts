@@ -87,10 +87,11 @@ describe(formAnswersSchema, () => {
   });
 });
 
-describe(answerSchema, () => {
-  const field = (type: FormFieldType, more: object = {}) =>
-    ({ key: "x", type, label, required: false, ...more }) as Parameters<typeof answerSchema>[0];
+/** A field of `type` with `more` spread over the defaults. */
+const field = (type: FormFieldType, more: object = {}) =>
+  ({ key: "x", type, label, required: false, ...more }) as Parameters<typeof answerSchema>[0];
 
+describe(answerSchema, () => {
   it.each([
     [FormFieldType.Email, "a@b.co", "nope"],
     [FormFieldType.Phone, "+971501234567", "0501234567"],

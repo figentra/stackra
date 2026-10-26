@@ -32,30 +32,32 @@ export class MemoryScopeTreeDriver extends Driver(ScopeTree) {
   /** The entries, in path order. */
   private readonly entries: readonly ScopeEntry[];
 
-  /** @param entries - the nodes this tree holds. */
+  /**
+   * @param entries - the nodes this tree holds.
+   */
   constructor(entries: readonly ScopeEntry[]) {
     super();
     this.entries = [...entries].sort(byPathOrder);
   }
 
-  /** See `ScopeTree.node`. */
+  /** The node with public id `id`, or `undefined` when none is visible. */
   async node(id: PublicId<"scp">): Promise<ScopeEntry | undefined> {
     return this.entries.find((entry) => entry.id === id);
   }
 
-  /** See `ScopeTree.byPath`. */
+  /** The node at `path`, or `undefined` when none is visible. */
   async byPath(path: string): Promise<ScopeEntry | undefined> {
     return this.entries.find((entry) => entry.path === path);
   }
 
-  /** See `ScopeTree.ancestors`. */
+  /** The nodes above `scope`, root first; the node itself is not one of them. */
   async ancestors(scope: ScopeRef): Promise<readonly ScopeEntry[]> {
     return this.entries.filter(
       (entry) => entry.path !== scope.path && isWithinScope(scope.path, entry.path),
     );
   }
 
-  /** See `ScopeTree.descendants`. */
+  /** The nodes below `scope` at any depth, in path order; the node itself is not one of them. */
   async descendants(scope: ScopeRef): Promise<readonly ScopeEntry[]> {
     return this.entries.filter(
       (entry) => entry.path !== scope.path && isWithinScope(entry.path, scope.path),

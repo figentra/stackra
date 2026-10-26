@@ -32,17 +32,17 @@ export function formProblems(input: unknown): FieldErrors {
     return errors;
   }
   const form = parsed.data;
+  const check = (condition: unknown, at: string, through: number): void => {
+    if (condition === undefined) return;
+    const rules = formRules(form, through);
+    if (rules === undefined) {
+      errors[`${at}.when`] = "field_unknown";
+      return;
+    }
+    for (const [path, code] of Object.entries(rules.problems(condition)))
+      errors[path === "(root)" ? `${at}.when` : `${at}.when.${path}`] = code;
+  };
   form.steps.forEach((step, index) => {
-    const check = (condition: unknown, at: string, through: number): void => {
-      if (condition === undefined) return;
-      const rules = formRules(form, through);
-      if (rules === undefined) {
-        errors[`${at}.when`] = "field_unknown";
-        return;
-      }
-      for (const [path, code] of Object.entries(rules.problems(condition)))
-        errors[path === "(root)" ? `${at}.when` : `${at}.when.${path}`] = code;
-    };
     check(step.when, `steps.${index}`, index - 1);
     step.fields.forEach((field, at) => check(field.when, `steps.${index}.fields.${at}`, index));
   });

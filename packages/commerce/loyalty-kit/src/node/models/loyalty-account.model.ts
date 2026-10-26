@@ -27,14 +27,20 @@ import { BelongsToTenant } from "@stackra/tenancy/node";
 import { Classified, Str } from "@stackra/validation";
 
 import { LoyaltyTier } from "#contracts/enums/loyalty-tier.enum";
-import type { AccountNotes } from "#node/schemas/account-notes.schema";
+import { AccountNotes } from "#node/schemas/account-notes.schema";
 
 /** One live account per scope and principal; the traits give the id, scope column, timestamps, version and soft delete. */
-@Index(["tenantId", "memberId"], { unique: true, where: "deleted_at is null" })
+@Index(["tenantId", "memberId"], {
+  unique: true,
+  where: "deleted_at is null",
+})
 @Index(["tenantId", "tier"])
 @Index(["tenantId", "isFrozen"])
 @Index(["tenantId", "createdAt"])
-@Searchable({ text: ["memberId"], filters: ["tier", "isFrozen", "createdAt"] })
+@Searchable({
+  text: ["memberId"],
+  filters: ["tier", "isFrozen", "createdAt"],
+})
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: merged with the [OptionalProps] augmentation below
 export class LoyaltyAccount extends Model.with(
   HasPublicId("lac"),
@@ -58,7 +64,7 @@ export class LoyaltyAccount extends Model.with(
   frozenAt: Date | null = null;
 
   /** Merchant notes; jsonb. */
-  notes: AccountNotes = {};
+  notes: AccountNotes = AccountNotes.create({});
 
   /** Whether points may move; the single rule every action checks before touching the ledger. */
   get canTransact(): boolean {
@@ -68,8 +74,10 @@ export class LoyaltyAccount extends Model.with(
 
 // shortcut: the `[OptionalProps]` augmentation is written by hand so `create` may leave out what the traits and the
 // initializers fill; remove it once gen writes the entity files (STA-339).
+/** Marks the `LoyaltyAccount` fields the model fills itself (`[OptionalProps]`). */
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: the generated `[OptionalProps]` augmentation merges into the model, as gen's entity files do
 export interface LoyaltyAccount {
+  /** The fields a create may leave out, because the traits and the initializers fill them. */
   [OptionalProps]?:
     | "id"
     | "tenantId"

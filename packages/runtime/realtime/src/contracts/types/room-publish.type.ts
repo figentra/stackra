@@ -11,9 +11,9 @@ import type { RoomMessageKind } from "#contracts/types/room-message-kind.type";
 
 /** A message from a member. */
 export interface RoomPublish {
-  /** The kind. */
+  /** The kind of message. */
   readonly t: RoomMessageKind;
 
-  /** The payload. */
+  /** The message payload. */
   readonly data: unknown;
 }

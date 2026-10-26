@@ -21,7 +21,7 @@ import type { FanoutMessage } from "#contracts/types/fanout-message.type";
 export class LocalRealtimeFanoutDriver extends Driver(RealtimeFanout) {
   private readonly receivers = new Set<(message: FanoutMessage) => void>();
 
-  /** See `RealtimeFanout.publish`. */
+  /** Hands `message` to every instance; resolves once the transport has it. */
   publish(message: FanoutMessage): Promise<void> {
     // A macrotask, not a microtask: a microtask queued here runs before the caller's `await` resumes.
     for (const receive of this.receivers)
@@ -35,7 +35,7 @@ export class LocalRealtimeFanoutDriver extends Driver(RealtimeFanout) {
     return Promise.resolve();
   }
 
-  /** See `RealtimeFanout.subscribe`. */
+  /** Calls `receive` with every message any instance publishes from now on. */
   subscribe(receive: (message: FanoutMessage) => void): () => void {
     this.receivers.add(receive);
     return () => {

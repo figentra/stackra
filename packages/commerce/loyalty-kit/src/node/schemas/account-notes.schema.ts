@@ -17,12 +17,12 @@ import { z } from "zod";
  * account.notes = AccountNotes.create({ reason: "review" });
  */
 export class AccountNotes extends Schema {
-  /** The staff member who flagged the account. */
-  flaggedBy?: string;
-
   /** Why it was flagged. */
   @Str({ max: 500 })
   reason?: string;
+
+  /** The staff member who flagged the account. */
+  flaggedBy?: string;
 }
 
 // shortcut: registered here until gen writes the package's #stackra/schemas registration (STA-339).

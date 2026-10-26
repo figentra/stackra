@@ -22,7 +22,9 @@ export class LoyaltyMembersFake extends Fake.of(LoyaltyMembers) {
   /** Principal public ids treated as enrolled. */
   private readonly ids: ReadonlySet<string>;
 
-  /** @param ids - principal public ids treated as enrolled. */
+  /**
+   * @param ids - principal public ids treated as enrolled.
+   */
   constructor(ids: ReadonlySet<string>) {
     super();
     this.ids = ids;

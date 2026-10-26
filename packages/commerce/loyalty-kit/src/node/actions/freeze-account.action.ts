@@ -32,7 +32,9 @@ export class FreezeAccountAction extends Action({
   /** Loads the account and flips the flag. */
   private readonly accounts: AccountService;
 
-  /** @param accounts - loads the account and flips the flag. */
+  /**
+   * @param accounts - loads the account and flips the flag.
+   */
   constructor(accounts: AccountService) {
     super();
     this.accounts = accounts;

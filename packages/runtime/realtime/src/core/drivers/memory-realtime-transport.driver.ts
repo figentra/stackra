@@ -24,6 +24,11 @@ import type { RealtimeTarget } from "#contracts/types/realtime-target.type";
 export class MemoryRealtimeTransportDriver extends Driver(RealtimeTransport) {
   private readonly links = new Set<RealtimeLinkHandlers>();
 
+  /** How many links are open. */
+  get size(): number {
+    return this.links.size;
+  }
+
   /** Opens an in-process link; `onOpen` follows on the next microtask unless it was closed first. */
   open(_target: RealtimeTarget, handlers: RealtimeLinkHandlers): RealtimeLink {
     this.links.add(handlers);
@@ -35,11 +40,6 @@ export class MemoryRealtimeTransportDriver extends Driver(RealtimeTransport) {
         this.links.delete(handlers);
       },
     };
-  }
-
-  /** How many links are open. */
-  get size(): number {
-    return this.links.size;
   }
 
   /** Delivers `message` to every open link. */

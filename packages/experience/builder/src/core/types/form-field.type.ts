@@ -8,5 +8,5 @@
  */
 import type { FormStep } from "#core/types/form-step.type";
 
-/** One field. */
+/** One field of a form step. */
 export type FormField = FormStep["fields"][number];

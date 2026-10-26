@@ -17,9 +17,6 @@ import { z } from "zod";
  * return QuotedRedemption.create({ memberId: member, points: 300, amountMinor: 300, reference: "ord_2" });
  */
 export class QuotedRedemption extends Schema {
-  /** The member who redeems. */
-  memberId!: string;
-
   /** Points that will be debited, capped by balance and percentage. */
   @Int({ min: 0 })
   points!: number;
@@ -27,6 +24,9 @@ export class QuotedRedemption extends Schema {
   /** The discount those points buy, in minor units. */
   @Int({ min: 0 })
   amountMinor!: number;
+
+  /** The member who redeems. */
+  memberId!: string;
 
   /** The caller's reference, the idempotency key of the debit. */
   reference!: string;

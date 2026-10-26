@@ -13,7 +13,7 @@
 import { Service } from "@stackra/container";
 import type { RecordedEvent } from "@stackra/events/contracts";
 
-import { RealtimeDriver } from "#contracts/ports/realtime-driver.port";
+import type { RealtimeDriver } from "#contracts/ports/realtime-driver.port";
 import { broadcastChannel } from "#core/functions/broadcast-channel.function";
 import type { BroadcastRoute } from "#core/types/broadcast-route.type";
 
@@ -31,7 +31,9 @@ import type { BroadcastRoute } from "#core/types/broadcast-route.type";
 export class RealtimeBroadcaster extends Service {
   private readonly driver: RealtimeDriver;
 
-  /** @param driver - the selected server driver. */
+  /**
+   * @param driver - the selected server driver.
+   */
   constructor(driver: RealtimeDriver) {
     super();
     this.driver = driver;

@@ -16,7 +16,10 @@ import { automationProblems } from "#core/functions/automation-problems.function
 
 class LeadCaptured extends DomainEvent {}
 
-class SendWelcomeAction extends Action({ key: "welcome.send", actors: [ActorKind.System] }) {
+class SendWelcomeAction extends Action({
+  key: "welcome.send",
+  actors: [ActorKind.System],
+}) {
   async handle(): Promise<void> {}
 }
 

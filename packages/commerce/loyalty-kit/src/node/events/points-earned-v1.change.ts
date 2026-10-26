@@ -23,13 +23,16 @@ import { PointsEarned } from "#node/events/points-earned.event";
  * @example
  * new PointsEarnedV1Change().up(v1Payload); // a PointsEarned at v2
  */
-export class PointsEarnedV1Change extends Change<PointsEarned>({ from: 1, sunset: "2027-04-01" }) {
-  /** The member credited. */
-  memberId!: string;
-
-  /** Points credited. */
+export class PointsEarnedV1Change extends Change<PointsEarned>({
+  from: 1,
+  sunset: "2027-04-01",
+}) {
+  /** Points credited to the member. */
   @Int()
   points!: number;
+
+  /** The member credited. */
+  memberId!: string;
 
   /** What caused the credit. */
   reference!: string;

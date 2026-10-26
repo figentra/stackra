@@ -95,7 +95,10 @@ describe("Editor", () => {
   });
 
   it("opens against the blocks experience registered", () => {
-    class BannerBlock extends Block({ category: BlockCategory.Marketing, icon: "megaphone" }) {}
+    class BannerBlock extends Block({
+      category: BlockCategory.Marketing,
+      icon: "megaphone",
+    }) {}
     registerBlocks([{ key: "web.banner", block: BannerBlock, component: () => null }]);
     const editor = Editor.create({ root: { block: "web.banner" }, blocks: registeredBlocks() });
     expect(editor.state.root.id).toBe("b0");
@@ -302,7 +305,10 @@ describe("Editor kinds and kits", () => {
     kinds: [ExperienceKind.EmailTemplate],
   }) {}
 
-  class HeroBlock extends Block({ category: BlockCategory.Marketing, icon: "sparkles" }) {}
+  class HeroBlock extends Block({
+    category: BlockCategory.Marketing,
+    icon: "sparkles",
+  }) {}
 
   registerSchemas([
     [MailSectionBlock, z.object({})],

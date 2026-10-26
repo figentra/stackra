@@ -15,10 +15,10 @@
 import { Service } from "@stackra/container";
 import type { RecordedEvent } from "@stackra/events/contracts";
 
-import { RealtimeDriver } from "#contracts/ports/realtime-driver.port";
-import { RealtimeFanout } from "#contracts/ports/realtime-fanout.port";
+import type { RealtimeDriver } from "#contracts/ports/realtime-driver.port";
+import type { RealtimeFanout } from "#contracts/ports/realtime-fanout.port";
 import { broadcastChannel } from "#core/functions/broadcast-channel.function";
-import { RealtimeRooms } from "#core/services/realtime-rooms.service";
+import type { RealtimeRooms } from "#core/services/realtime-rooms.service";
 import type { BroadcastRoute } from "#core/types/broadcast-route.type";
 
 /**

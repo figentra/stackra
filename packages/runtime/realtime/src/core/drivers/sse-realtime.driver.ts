@@ -14,7 +14,7 @@ import { Driver } from "@stackra/container";
 
 import { RealtimeDriver } from "#contracts/ports/realtime-driver.port";
 import type { RealtimeBroadcast } from "#contracts/types/realtime-broadcast.type";
-import { RealtimeHub } from "#core/services/realtime-hub.service";
+import type { RealtimeHub } from "#core/services/realtime-hub.service";
 
 /** How often a comment line keeps an idle stream alive, under the usual 30 to 60 second proxy timeouts. */
 const HEARTBEAT_MS = 25_000;
@@ -37,7 +37,9 @@ export class SseRealtimeDriver extends Driver(RealtimeDriver) {
   /** The hub that holds this driver's sessions. */
   protected readonly hub: RealtimeHub;
 
-  /** @param hub - the shared channel hub. */
+  /**
+   * @param hub - the shared channel hub.
+   */
   constructor(hub: RealtimeHub) {
     super();
     this.hub = hub;

@@ -60,6 +60,18 @@ function find(node: EditorNode, id: string): EditorNode | undefined {
  * editor.problems(); // { "<hero id>.title": "invalid_type", ... }
  */
 export class Editor {
+  /**
+   * Calls `listener` after every state change; the shape `useSyncExternalStore` takes.
+   *
+   * @returns removes the listener.
+   */
+  readonly subscribe = (listener: () => void): (() => void) => {
+    this.listeners.add(listener);
+    return () => {
+      this.listeners.delete(listener);
+    };
+  };
+
   private readonly blocks: ReadonlyMap<string, AnyClass>;
 
   private readonly options: Pick<EditorOptions, "kind" | "kit">;
@@ -100,18 +112,6 @@ export class Editor {
   get state(): EditorState {
     return this.current;
   }
-
-  /**
-   * Calls `listener` after every state change; the shape `useSyncExternalStore` takes.
-   *
-   * @returns removes the listener.
-   */
-  readonly subscribe = (listener: () => void): (() => void) => {
-    this.listeners.add(listener);
-    return () => {
-      this.listeners.delete(listener);
-    };
-  };
 
   /**
    * Calls `listener` with each local change after it is applied, undo and redo included; a co-editor's tree given to

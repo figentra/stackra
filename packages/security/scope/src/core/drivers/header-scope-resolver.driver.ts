@@ -11,8 +11,8 @@
 import { Driver } from "@stackra/container";
 import type { ScopeRef } from "@stackra/contracts";
 
-import { GrantedScopes, ScopeResolver, ScopeTree } from "#contracts/index";
-import type { ScopeRequest } from "#contracts/index";
+import { ScopeResolver } from "#contracts/index";
+import type { ScopeRequest, GrantedScopes, ScopeTree } from "#contracts/index";
 import { isScopePath } from "#core/functions/is-scope-path.function";
 import { isWithinScope } from "#core/functions/is-within-scope.function";
 

@@ -7,7 +7,7 @@
  * Runtime: node
  * Governing contract: ADR 0294 (decisions 4, 13 and 26); ADR 0305 (one declaration per file); the PUT-133 answer.
  */
-import { registerSchemas, Schema } from "@stackra/validation";
+import { Int, registerSchemas, Schema } from "@stackra/validation";
 import { z } from "zod";
 
 /**
@@ -18,15 +18,19 @@ import { z } from "zod";
  */
 export class EarnVisitOutput extends Schema {
   /** Stamps credited by this call. */
+  @Int({ min: 0 })
   stamps!: number;
 
   /** Stamps on the card being filled. */
+  @Int({ min: 0 })
   onCard!: number;
 
   /** Stamps one card holds. */
+  @Int({ min: 1 })
   perCard!: number;
 
   /** Full cards ready to redeem. */
+  @Int({ min: 0 })
   fullCards!: number;
 }
 

@@ -46,7 +46,7 @@ export class MemorySignerDriver extends Signer {
     return new MemorySignerDriver(keyId, keys);
   }
 
-  /** See `Signer.sign`. */
+  /** A detached ES256 signature of `message`. */
   async sign(message: Uint8Array): Promise<Signature> {
     const value = await globalThis.crypto.subtle.sign(
       { name: "ECDSA", hash: "SHA-256" },
@@ -60,7 +60,7 @@ export class MemorySignerDriver extends Signer {
     });
   }
 
-  /** See `Signer.publicKey`. */
+  /** The public key a verifier checks this signer's signatures with. */
   async publicKey(): Promise<SignerPublicKey> {
     const spki = await globalThis.crypto.subtle.exportKey("spki", this.keys.publicKey);
     return Object.freeze({

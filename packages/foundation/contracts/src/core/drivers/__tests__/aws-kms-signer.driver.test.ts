@@ -28,16 +28,16 @@ function derInteger(bytes: Uint8Array): number[] {
  * test registers, which yields the same signature KMS would make over that digest.
  */
 class FakeKms implements AwsKmsApi {
-  reads = 0;
-
-  refuse = false;
-
   readonly keys = crypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, [
     "sign",
     "verify",
   ]);
 
   readonly preimages = new Map<string, Uint8Array>();
+
+  reads = 0;
+
+  refuse = false;
 
   async sign(input: { Message: Uint8Array }): Promise<{ Signature?: Uint8Array }> {
     if (this.refuse) throw new Error("AccessDeniedException");

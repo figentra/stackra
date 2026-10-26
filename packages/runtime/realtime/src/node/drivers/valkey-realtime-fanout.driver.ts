@@ -14,7 +14,7 @@
 import { Driver } from "@stackra/container";
 import Valkey from "iovalkey";
 
-import { RealtimeConfig } from "#config/realtime.config";
+import type { RealtimeConfig } from "#config/realtime.config";
 import { RealtimeFanout } from "#contracts/ports/realtime-fanout.port";
 import type { FanoutMessage } from "#contracts/types/fanout-message.type";
 
@@ -49,12 +49,12 @@ export class ValkeyRealtimeFanoutDriver extends Driver(RealtimeFanout) {
     this.client = new Valkey(config.fanoutValkeyUrl, { maxRetriesPerRequest: 1 });
   }
 
-  /** See `RealtimeFanout.publish`. */
+  /** Hands `message` to every instance; resolves once the transport has it. */
   async publish(message: FanoutMessage): Promise<void> {
     await this.client.publish(this.channel, JSON.stringify(message));
   }
 
-  /** See `RealtimeFanout.subscribe`. */
+  /** Calls `receive` with every message any instance publishes from now on. */
   subscribe(receive: (message: FanoutMessage) => void): () => void {
     this.receivers.add(receive);
     if (this.subscriber === undefined) {

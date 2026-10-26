@@ -8,7 +8,7 @@
  */
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
-import { RealtimeConnection } from "#core/index";
+import type { RealtimeConnection } from "#core/index";
 import * as testing from "#testing/index";
 import type { RealtimeFake } from "#testing/index";
 

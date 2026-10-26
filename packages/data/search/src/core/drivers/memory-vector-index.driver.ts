@@ -49,14 +49,14 @@ export class MemoryVectorIndexDriver extends Driver(VectorIndex) {
   /** The items by id. */
   private readonly items = new Map<string, VectorItem>();
 
-  /** See `VectorIndex.upsert`. */
+  /** Stores each item, replacing an item with the same id. */
   async upsert(items: readonly VectorItem[]): Promise<void> {
     for (const item of items) checkVector(item.vector);
     for (const item of items)
       this.items.set(item.id, Object.freeze({ ...item, vector: Object.freeze([...item.vector]) }));
   }
 
-  /** See `VectorIndex.query`. */
+  /** The `topK` items nearest to `vector`, best first, within the scope and matching the filter. */
   async query(
     vector: readonly number[],
     options: VectorQueryOptions,
@@ -81,7 +81,7 @@ export class MemoryVectorIndexDriver extends Driver(VectorIndex) {
     return hits.slice(0, options.topK);
   }
 
-  /** See `VectorIndex.remove`. */
+  /** Removes the items of `ids`; an unknown id is ignored. */
   async remove(ids: readonly string[]): Promise<void> {
     for (const id of ids) this.items.delete(id);
   }

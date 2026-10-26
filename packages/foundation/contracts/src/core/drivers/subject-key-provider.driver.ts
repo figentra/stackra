@@ -47,12 +47,12 @@ export class SubjectKeyProviderDriver extends KeyProvider {
     this.salt = new Uint8Array(salt);
   }
 
-  /** See `KeyProvider.current`. */
+  /** The key new data is sealed with. */
   async current(): Promise<DataKey> {
     return this.derive(await this.tenant.current());
   }
 
-  /** See `KeyProvider.byId`. */
+  /** The key with this id, for opening data sealed before a rotation. */
   async byId(id: string): Promise<DataKey> {
     return this.derive(await this.tenant.byId(id));
   }

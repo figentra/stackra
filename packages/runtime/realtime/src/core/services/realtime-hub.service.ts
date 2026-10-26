@@ -14,7 +14,7 @@
 import { Service } from "@stackra/container";
 import { Duration } from "@stackra/contracts";
 
-import { RealtimeConfig } from "#config/realtime.config";
+import type { RealtimeConfig } from "#config/realtime.config";
 import type { RealtimeBroadcast } from "#contracts/types/realtime-broadcast.type";
 import type { RealtimeSession } from "#contracts/types/realtime-session.type";
 import { mayReceive } from "#core/functions/may-receive.function";
@@ -51,7 +51,9 @@ export class RealtimeHub extends Service {
 
   private readonly members = new Set<Member>();
 
-  /** @param config - the realms allowed on tenant channels and the token lifetime. */
+  /**
+   * @param config - the realms allowed on tenant channels and the token lifetime.
+   */
   constructor(config: RealtimeConfig) {
     super();
     this.config = config;

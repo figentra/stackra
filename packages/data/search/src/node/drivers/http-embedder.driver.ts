@@ -12,10 +12,10 @@
  * Governing contract: ADR 0221 (decision 1: pgvector lane); ADR 0354 (data stays in the region); ADR 0173 (secrets
  *                     from the runtime secret store); ADR 0294 (decisions 16 and 17); ADR 0404.
  */
-import { SecretStore } from "@stackra/config/contracts";
+import type { SecretStore } from "@stackra/config/contracts";
 import { Driver } from "@stackra/container";
 
-import { SearchConfig } from "#config/search.config";
+import type { SearchConfig } from "#config/search.config";
 import { Embedder } from "#contracts/ports/embedder.port";
 
 /** The texts sent in one request. */

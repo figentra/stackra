@@ -33,7 +33,9 @@ export class ScopeNode extends Model.with(HasPublicId("scp"), Timestamps) {
 
 // shortcut: the `[OptionalProps]` augmentation is written by hand so `CrudService.insert` may leave the trait timestamps
 // out; remove it once gen writes the entity files (STA-339).
+/** Marks the `ScopeNode` fields the model fills itself (`[OptionalProps]`). */
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: the generated `[OptionalProps]` augmentation merges into the model, as gen's entity files do
 export interface ScopeNode {
+  /** The fields an insert may leave out: the trait timestamps. */
   [OptionalProps]?: "createdAt" | "updatedAt";
 }

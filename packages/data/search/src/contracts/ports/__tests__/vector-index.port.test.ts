@@ -17,7 +17,7 @@ import type { VectorHit } from "#contracts/types/vector-hit.type";
 class EchoVectorIndexDriver extends Driver(VectorIndex) {
   async upsert(): Promise<void> {}
 
-  async query(vector: readonly number[]): Promise<readonly VectorHit[]> {
+  async query(vector: readonly number[], _options: unknown): Promise<readonly VectorHit[]> {
     return [{ id: "echo", score: vector[0] ?? 0, text: "", metadata: {} }];
   }
 

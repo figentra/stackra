@@ -51,7 +51,7 @@ export class AwsKmsSignerDriver extends Signer {
     this.keyId = options.keyId ?? options.kmsKeyId;
   }
 
-  /** See `Signer.sign`. */
+  /** A detached ES256 signature of `message`. */
   async sign(message: Uint8Array): Promise<Signature> {
     const digest = new Uint8Array(
       await globalThis.crypto.subtle.digest("SHA-256", new Uint8Array(message)),

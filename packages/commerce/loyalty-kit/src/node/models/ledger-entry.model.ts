@@ -23,7 +23,11 @@ import { LoyaltyAccount } from "#node/models/loyalty-account.model";
 
 /** One ledger entry as a row. */
 @Index(["tenantId", "memberId", "reference"], { unique: true })
-@Journaled({ account: "memberId", amount: "points", floor: 0 })
+@Journaled({
+  account: "memberId",
+  amount: "points",
+  floor: 0,
+})
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: merged with the [OptionalProps] augmentation below
 export class LedgerEntry extends Model.with(HasPublicId("lpe"), BelongsToTenant, AppendOnly) {
   /** The owning account; null until the backfill job fills it (expand step). */
@@ -35,15 +39,18 @@ export class LedgerEntry extends Model.with(HasPublicId("lpe"), BelongsToTenant,
   memberId!: string;
 
   /** Points moved: positive earns, negative redeems; bounded by MAX_POINTS_PER_ENTRY either way. */
-  @Int({ min: -MAX_POINTS_PER_ENTRY, max: MAX_POINTS_PER_ENTRY })
+  @Int({
+    min: -MAX_POINTS_PER_ENTRY,
+    max: MAX_POINTS_PER_ENTRY,
+  })
   points!: number;
-
-  /** Why the row exists. */
-  kind!: EntryKind;
 
   /** The cause (an order id, a campaign id); unique per scope and member. */
   @Str({ max: 120 })
   reference!: string;
+
+  /** Why the row exists. */
+  kind!: EntryKind;
 
   /** When the cause happened, as the caller reported it. */
   at!: Date;
@@ -52,7 +59,9 @@ export class LedgerEntry extends Model.with(HasPublicId("lpe"), BelongsToTenant,
 // shortcut: the `[OptionalProps]` augmentation is written by hand so `Repository.insert` may leave out the minted id,
 // the scope column the trait fills and the account the backfill sets; remove it once gen writes the entity files
 // (STA-339).
+/** Marks the `LedgerEntry` fields the model fills itself (`[OptionalProps]`). */
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: the generated `[OptionalProps]` augmentation merges into the model, as gen's entity files do
 export interface LedgerEntry {
+  /** Insert may leave out the minted id, the scope column and the backfilled account. */
   [OptionalProps]?: "id" | "tenantId" | "account";
 }

@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 /**
  * Stackra file contract:
  * Purpose: unit and type tests of `useSharedEditor(room, options)`: `undefined` until the restore finishes, then the
@@ -10,6 +9,7 @@
  * Runtime: node (vitest, jsdom)
  * Governing contract: ADR 0022; ADR 0269; ADR 0270 (decisions 4, 5 and 6); ADR 0225 (decision 2).
  */
+// @vitest-environment jsdom
 import {
   CollaborationConfig,
   CollaborationSession,

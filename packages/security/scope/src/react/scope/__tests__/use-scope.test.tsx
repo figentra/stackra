@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 /**
  * Stackra file contract:
  * Purpose: unit and type tests of `useScope()`: a client render reads the `ActiveScopeService` the nearest container
@@ -8,6 +7,7 @@
  * Runtime: node (vitest, jsdom)
  * Governing contract: ADR 0022; ADR 0269; ADR 0327 (decision 10); ADR 0295 (decision 10).
  */
+// @vitest-environment jsdom
 import { Container } from "@stackra/container";
 import { ContainerProvider } from "@stackra/container/react";
 import type { ScopeRef } from "@stackra/contracts";

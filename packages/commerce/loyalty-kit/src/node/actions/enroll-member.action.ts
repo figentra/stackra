@@ -40,7 +40,9 @@ export class EnrollMemberAction extends Action({
   /** Creates the account and records `account.enrolled`. */
   private readonly accounts: AccountService;
 
-  /** @param accounts - creates the account and records `account.enrolled`. */
+  /**
+   * @param accounts - creates the account and records `account.enrolled`.
+   */
   constructor(accounts: AccountService) {
     super();
     this.accounts = accounts;

@@ -10,7 +10,7 @@
 import { Port } from "@stackra/contracts";
 
 /**
- * Makes embeddings.
+ * Turns texts into embedding vectors.
  *
  * @example
  * const [vector] = await embedder.embed(["linen shirt"]);

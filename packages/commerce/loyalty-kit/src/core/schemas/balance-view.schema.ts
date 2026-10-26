@@ -21,15 +21,15 @@ import { LoyaltyTier } from "#contracts/enums/loyalty-tier.enum";
  * return BalanceView.create({ memberId, tier, balance: 1_000, nextExpiryAt: null });
  */
 export class BalanceView extends Schema {
+  /** Whole points the member holds. */
+  @Int({ min: 0 })
+  balance!: number;
+
   /** The member the balance belongs to. */
   memberId!: string;
 
   /** The account's tier. */
   tier!: LoyaltyTier;
-
-  /** Whole points the member holds. */
-  @Int({ min: 0 })
-  balance!: number;
 
   /** When the oldest live earned points expire; null when nothing is earned. */
   nextExpiryAt!: Date | null;

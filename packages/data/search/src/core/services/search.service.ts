@@ -25,7 +25,7 @@ import { SearchIndex } from "#core/values/search-index.value";
 const FUSION = 60;
 
 /**
- * Searches models.
+ * Searches models through the configured engine.
  *
  * @example
  * constructor(search: Search) {

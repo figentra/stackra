@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 /**
  * Stackra file contract:
  * Purpose: unit tests of `useDocumentEditor(options)`: one editor for the life of the component, opened from the first
@@ -7,6 +6,7 @@
  * Runtime: node (vitest, jsdom)
  * Governing contract: ADR 0022; ADR 0269; ADR 0426 (decision 3).
  */
+// @vitest-environment jsdom
 import { describe, expect, it } from "@stackra/testing";
 import { act, renderHook } from "@testing-library/react";
 

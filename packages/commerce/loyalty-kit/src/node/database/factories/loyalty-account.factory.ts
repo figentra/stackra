@@ -13,6 +13,7 @@ import type { Attributes } from "@stackra/model";
 
 import { LoyaltyTier } from "#contracts/enums/loyalty-tier.enum";
 import type { LoyaltyAccount } from "#node/models/loyalty-account.model";
+import { AccountNotes } from "#node/schemas/account-notes.schema";
 
 /**
  * An active bronze account for a fresh principal.
@@ -32,7 +33,7 @@ export class LoyaltyAccountFactory extends Factory<LoyaltyAccount> {
     return this.state((faker: Faker) => ({
       isFrozen: true,
       frozenAt: faker.date.recent(),
-      notes: { reason: "review" },
+      notes: AccountNotes.create({ reason: "review" }),
     }));
   }
 

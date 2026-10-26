@@ -79,7 +79,7 @@ export class MemorySearchDriver extends Driver(SearchDriver) {
   private readonly tables = new Map<string, Map<string, StoredDocument>>();
 
   /**
-   * See `SearchDriver.search`.
+   * The ids of the rows of `table` that match `request`, best first, sliced by its offset and limit.
    *
    * @throws TypeError when the request carries a visibility subquery, which only a SQL engine can apply.
    */
@@ -90,7 +90,7 @@ export class MemorySearchDriver extends Driver(SearchDriver) {
   }
 
   /**
-   * See `SearchDriver.facets`.
+   * Per requested path, how many rows matching `request` hold each value, under its record visibility.
    *
    * @throws TypeError when the request carries a visibility subquery, which only a SQL engine can apply.
    */
@@ -108,7 +108,7 @@ export class MemorySearchDriver extends Driver(SearchDriver) {
     );
   }
 
-  /** See `SearchDriver.index`. */
+  /** Stores each document as its row's current one, replacing what was stored. */
   async index(table: SearchTable, documents: readonly SearchDocument[]): Promise<void> {
     const key = keyOf(table);
     const stored = this.tables.get(key) ?? new Map<string, StoredDocument>();
@@ -123,7 +123,7 @@ export class MemorySearchDriver extends Driver(SearchDriver) {
     }
   }
 
-  /** See `SearchDriver.remove`. */
+  /** Removes the documents of `ids`, so no search finds those rows until they are indexed again. */
   async remove(table: SearchTable, ids: readonly string[]): Promise<void> {
     const stored = this.tables.get(keyOf(table));
     for (const id of ids) stored?.delete(id);

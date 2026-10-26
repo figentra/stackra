@@ -19,12 +19,6 @@ import type { ScopeRef } from "@stackra/contracts";
  * headers.set(SCOPE_PATH_HEADER, activeScope.current()?.path ?? "");
  */
 export class ActiveScopeService extends Service {
-  /** The active scope, or `null` before one is chosen. */
-  private scope: ScopeRef | null = null;
-
-  /** Who to call after a change. */
-  private readonly listeners = new Set<() => void>();
-
   /** The active scope, or `null`; the same object until it changes, so it is the snapshot `useSyncExternalStore` compares. */
   readonly current = (): ScopeRef | null => this.scope;
 
@@ -48,4 +42,10 @@ export class ActiveScopeService extends Service {
     // oxlint-disable-next-line unicorn/no-useless-spread -- reason: a copy, so a listener that unsubscribes another mid-loop does not skip it
     for (const listener of [...this.listeners]) listener();
   };
+
+  /** The active scope, or `null` before one is chosen. */
+  private scope: ScopeRef | null = null;
+
+  /** Who to call after a change. */
+  private readonly listeners = new Set<() => void>();
 }

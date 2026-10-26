@@ -28,6 +28,14 @@ const MAX_UNDO = 200;
  * editor.undo();
  */
 export class DocumentEditor<T> {
+  /** Calls `listener` after every change, undo and redo; returns the unsubscribe. */
+  readonly subscribe = (listener: () => void): (() => void) => {
+    this.listeners.add(listener);
+    return () => {
+      this.listeners.delete(listener);
+    };
+  };
+
   /** The kind's check. */
   private readonly check: (document: T) => FieldErrors;
 
@@ -97,14 +105,6 @@ export class DocumentEditor<T> {
   problems(): FieldErrors {
     return this.check(this.current.document);
   }
-
-  /** Calls `listener` after every change, undo and redo; returns the unsubscribe. */
-  readonly subscribe = (listener: () => void): (() => void) => {
-    this.listeners.add(listener);
-    return () => {
-      this.listeners.delete(listener);
-    };
-  };
 
   /** Stores `document` as the state and notifies. */
   private set(document: T): void {

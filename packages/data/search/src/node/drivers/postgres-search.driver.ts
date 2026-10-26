@@ -149,13 +149,17 @@ export class PostgresSearchDriver extends Driver(SearchDriver) {
   /** Each table's vector columns, read once. */
   private readonly vectors = new Map<string, readonly VectorColumn[]>();
 
-  /** @param database - the connected database whose running context each statement joins. */
+  /**
+   * @param database - the connected database whose running context each statement joins.
+   */
   constructor(database: Database) {
     super();
     this.database = database;
   }
 
-  /** See `SearchDriver.search`. */
+  /**
+   * The ids of the rows of `table` that match `request`, best first, sliced by its offset and limit.
+   */
   async search(table: SearchTable, request: SearchRequest): Promise<readonly string[]> {
     const vectors = await this.vectorsOf(table);
     const { sql: narrowing, params: laneParams } = narrowingOf(table, request);
@@ -197,7 +201,9 @@ limit ? offset ?`,
     return rows.map((row) => String(row.id));
   }
 
-  /** See `SearchDriver.facets`. */
+  /**
+   * Per requested path, how many rows matching `request` hold each value, under its record visibility.
+   */
   async facets(table: SearchTable, request: SearchFacetRequest): Promise<SearchFacets> {
     if (request.paths.length === 0) return {};
     const vectors = await this.vectorsOf(table);
@@ -249,7 +255,7 @@ order by path, rank`,
     return facets;
   }
 
-  /** See `SearchDriver.index`. */
+  /** Stores each document as its row's current one, replacing what was stored. */
   async index(table: SearchTable, documents: readonly SearchDocument[]): Promise<void> {
     if (documents.length === 0) return;
     const vectors = await this.vectorsOf(table);
@@ -278,7 +284,7 @@ order by path, rank`,
     }
   }
 
-  /** See `SearchDriver.remove`. */
+  /** Removes the documents of `ids`, so no search finds those rows until they are indexed again. */
   async remove(table: SearchTable, ids: readonly string[]): Promise<void> {
     if (ids.length === 0) return;
     const vectors = await this.vectorsOf(table);

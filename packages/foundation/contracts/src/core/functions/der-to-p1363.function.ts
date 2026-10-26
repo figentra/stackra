@@ -8,6 +8,11 @@
  * Governing contract: ADR 0416; RFC 3279 section 2.2.3; IEEE P1363.
  */
 
+/** Throws the refusal for a malformed DER signature. */
+const fail = (): never => {
+  throw new RangeError("The signature is not a DER ECDSA signature");
+};
+
 /**
  * The `r || s` form of `der`, each integer `size` bytes.
  *
@@ -15,9 +20,6 @@
  * derToP1363(kmsSignature, 32); // 64 bytes
  */
 export function derToP1363(der: Uint8Array, size: number): Uint8Array<ArrayBuffer> {
-  const fail = (): never => {
-    throw new RangeError("The signature is not a DER ECDSA signature");
-  };
   if (der[0] !== 0x30 || der[1] !== der.length - 2) fail();
   const out = new Uint8Array(size * 2);
   let at = 2;

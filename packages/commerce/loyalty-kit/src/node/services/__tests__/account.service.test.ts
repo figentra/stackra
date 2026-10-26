@@ -27,7 +27,7 @@ import { AccountFrozenError } from "#core/errors/account-frozen.error";
 import { memberId } from "#core/functions/member-id.function";
 import { LoyaltyService } from "#core/services/loyalty.service";
 import { AccountEnrolled } from "#node/events/account-enrolled.event";
-import { AccountFrozen } from "#node/events/account-frozen.event";
+import type { AccountFrozen } from "#node/events/account-frozen.event";
 import { PointsEarned } from "#node/events/points-earned.event";
 import type { LoyaltyKitExtensionPoint } from "#node/extensions/loyalty-kit.extension-point";
 import { TierMultiplierExtension } from "#node/extensions/tier-multiplier.extension";

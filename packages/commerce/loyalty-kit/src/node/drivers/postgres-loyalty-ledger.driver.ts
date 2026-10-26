@@ -44,7 +44,9 @@ export class PostgresLoyaltyLedgerDriver extends Driver(LoyaltyLedger) {
   /** The journal over `loyalty_kit.ledger_entries`. */
   private readonly journal: Journal<LedgerEntry>;
 
-  /** @param journal - the journal over `loyalty_kit.ledger_entries`, isolated by the model's policy. */
+  /**
+   * @param journal - the journal over `loyalty_kit.ledger_entries`, isolated by the model's policy.
+   */
   constructor(journal: Journal<LedgerEntry>) {
     super();
     this.journal = journal;

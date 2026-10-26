@@ -49,7 +49,7 @@ describe("MemoryLoyaltyLedgerDriver", () => {
 
     const outcomes = await Promise.all([debit("hold:ord_1"), debit("hold:ord_2")]);
 
-    expect(outcomes.toSorted()).toEqual([DebitOutcome.Uncovered, DebitOutcome.Written]);
+    expect([...outcomes].sort()).toEqual([DebitOutcome.Uncovered, DebitOutcome.Written]);
     expect(await debit("hold:ord_1")).toBe(DebitOutcome.Duplicate);
     expect(await ledger.balance(usr1)).toBe(0);
   });

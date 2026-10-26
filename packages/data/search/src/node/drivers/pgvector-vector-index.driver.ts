@@ -33,13 +33,15 @@ export class PgvectorVectorIndexDriver extends Driver(VectorIndex) {
   /** The connected database. */
   private readonly database: Database;
 
-  /** @param database - the connected database whose running context each statement joins. */
+  /**
+   * @param database - the connected database whose running context each statement joins.
+   */
   constructor(database: Database) {
     super();
     this.database = database;
   }
 
-  /** See `VectorIndex.upsert`. */
+  /** Stores each item, replacing an item with the same id. */
   async upsert(items: readonly VectorItem[]): Promise<void> {
     for (const item of items) checkVector(item.vector);
     const unique = [...new Map(items.map((item) => [item.id, item])).values()];
@@ -62,7 +64,7 @@ on conflict ("id") do update set "scope_id" = excluded."scope_id", "scope_path" 
     );
   }
 
-  /** See `VectorIndex.query`. */
+  /** The `topK` items nearest to `vector`, best first, within the scope and matching the filter. */
   async query(
     vector: readonly number[],
     options: VectorQueryOptions,
@@ -102,7 +104,7 @@ limit ?`,
     }));
   }
 
-  /** See `VectorIndex.remove`. */
+  /** Removes the items of `ids`; an unknown id is ignored. */
   async remove(ids: readonly string[]): Promise<void> {
     if (ids.length === 0) return;
     // raw-sql: a delete by id of rows that are not a model's

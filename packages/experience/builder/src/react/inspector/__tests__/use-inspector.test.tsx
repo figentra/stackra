@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 /**
  * Stackra file contract:
  * Purpose: unit and type tests of `useInspector(editor)`: nothing selected gives no fields, a selected block gives its
@@ -8,6 +7,7 @@
  * Runtime: node (vitest, jsdom)
  * Governing contract: ADR 0022; ADR 0269; ADR 0270 (decision 4).
  */
+// @vitest-environment jsdom
 import type { AnyClass } from "@stackra/container";
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 import { registerSchemas } from "@stackra/validation";

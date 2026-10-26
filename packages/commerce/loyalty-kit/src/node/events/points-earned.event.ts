@@ -23,23 +23,26 @@ import { LoyaltyTier } from "#contracts/enums/loyalty-tier.enum";
  * @example
  * account.record(PointsEarned.create({ memberId, points, reference, tier, balanceAfter }));
  */
-export class PointsEarned extends IntegrationEvent({ name: "points.earned", version: 2 }) {
-  /** The member credited. */
-  memberId!: string;
-
-  /** Points credited. */
+export class PointsEarned extends IntegrationEvent({
+  name: "points.earned",
+  version: 2,
+}) {
+  /** Points credited to the member. */
   @Int()
   points!: number;
+
+  /** The member's balance after the credit. */
+  @Int()
+  balanceAfter!: number;
+
+  /** The member credited. */
+  memberId!: string;
 
   /** What caused the credit (an order id). */
   reference!: string;
 
   /** The member's tier when the credit was made. */
   tier!: LoyaltyTier;
-
-  /** The member's balance after the credit. */
-  @Int()
-  balanceAfter!: number;
 }
 
 // shortcut: registered here until gen writes the package's #stackra/schemas registration (STA-339).

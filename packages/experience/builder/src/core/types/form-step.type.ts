@@ -7,5 +7,5 @@
  */
 import type { FormDocument } from "#core/types/form-document.type";
 
-/** One step. */
+/** One step of a form document. */
 export type FormStep = FormDocument["steps"][number];

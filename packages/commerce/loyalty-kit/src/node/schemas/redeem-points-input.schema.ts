@@ -22,11 +22,17 @@ import { MAX_POINTS_PER_ENTRY } from "#core/constants/max-points-per-entry.const
  */
 export class RedeemPointsInput extends Schema {
   /** Whole points to spend; capped by balance and by the configured percentage. */
-  @Int({ min: 1, max: MAX_POINTS_PER_ENTRY })
+  @Int({
+    min: 1,
+    max: MAX_POINTS_PER_ENTRY,
+  })
   points!: number;
 
   /** Public id of the thing paid for (`ord_…`); a repeated reference debits nothing twice. */
-  @Str({ min: 1, max: 120 })
+  @Str({
+    min: 1,
+    max: 120,
+  })
   reference!: string;
 
   /** The amount still to pay, in minor units, so the percentage cap can be applied. */

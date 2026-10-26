@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 /**
  * Stackra file contract:
  * Purpose: unit and type tests of `useRealtimeConnection()`: `null` while signed out, the status while signed in,
@@ -8,6 +7,7 @@
  * Runtime: node (vitest, jsdom)
  * Governing contract: ADR 0022; ADR 0269; ADR 0225; ADR 0295 (decision 10).
  */
+// @vitest-environment jsdom
 import { Container } from "@stackra/container";
 import { ContainerProvider } from "@stackra/container/react";
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";

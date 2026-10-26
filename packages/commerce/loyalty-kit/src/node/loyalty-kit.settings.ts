@@ -32,7 +32,10 @@ export class LoyaltyKitSettings extends Settings({
   scopes: [SettingScope.Platform, TenancyScopes.Tenant],
 }) {
   /** Months after which unspent earned points expire; bounded, so a typo cannot expire all. */
-  @Int({ min: 1, max: 60 })
+  @Int({
+    min: 1,
+    max: 60,
+  })
   @Setting({ lockable: true })
   expiryMonths = 12;
 
@@ -41,12 +44,18 @@ export class LoyaltyKitSettings extends Settings({
   tiers!: LoyaltyTierSettings;
 
   /** Stamps one visit earns on a stamp card (earning by visit count). */
-  @Int({ min: 1, max: 100 })
+  @Int({
+    min: 1,
+    max: 100,
+  })
   @Setting()
   stampsPerVisit = 1;
 
   /** Stamps one card holds; a full card is one reward. */
-  @Int({ min: 1, max: 1000 })
+  @Int({
+    min: 1,
+    max: 1000,
+  })
   @Setting()
   stampsPerCard = 10;
 

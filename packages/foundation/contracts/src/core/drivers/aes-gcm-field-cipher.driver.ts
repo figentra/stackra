@@ -34,13 +34,15 @@ export class AesGcmFieldCipherDriver extends FieldCipher {
 
   private readonly imported = new Map<string, Promise<CryptoKey>>();
 
-  /** @param keys - the data keys to seal with and open with. */
+  /**
+   * @param keys - the data keys to seal with and open with.
+   */
   constructor(keys: KeyProvider) {
     super();
     this.keys = keys;
   }
 
-  /** See `FieldCipher.seal`. */
+  /** The sealed form of `plain`, bound to `context`. */
   async seal(plain: string, context: string): Promise<string> {
     const { id } = await this.keys.current();
     const iv = globalThis.crypto.getRandomValues(new Uint8Array(IV_BYTES));
@@ -52,7 +54,7 @@ export class AesGcmFieldCipherDriver extends FieldCipher {
     return [VERSION, id, encode(iv), encode(new Uint8Array(sealed))].join(".");
   }
 
-  /** See `FieldCipher.open`. */
+  /** The plain text of `sealed`. */
   async open(sealed: string, context: string): Promise<string> {
     const [version, id, iv, body, ...rest] = sealed.split(".");
     if (

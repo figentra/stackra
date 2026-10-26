@@ -10,8 +10,8 @@
 import { Driver } from "@stackra/container";
 import type { ScopeRef } from "@stackra/contracts";
 
-import { ScopeResolver, ScopeTree } from "#contracts/index";
-import type { ScopeRequest } from "#contracts/index";
+import { ScopeResolver } from "#contracts/index";
+import type { ScopeRequest, ScopeTree } from "#contracts/index";
 import { isScopePath } from "#core/functions/is-scope-path.function";
 
 /**
@@ -24,7 +24,9 @@ export class ClaimScopeResolverDriver extends Driver(ScopeResolver) {
   /** Where the node is looked up. */
   private readonly tree: ScopeTree;
 
-  /** @param tree - the scope tree. */
+  /**
+   * @param tree - the scope tree.
+   */
   constructor(tree: ScopeTree) {
     super();
     this.tree = tree;

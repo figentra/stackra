@@ -11,8 +11,9 @@
 import { Driver } from "@stackra/container";
 import type { ScopeRef } from "@stackra/contracts";
 
-import { ScopeConfig } from "#config/scope.config";
-import { ScopeResolver, ScopeTree } from "#contracts/index";
+import type { ScopeConfig } from "#config/scope.config";
+import type { ScopeTree } from "#contracts/index";
+import { ScopeResolver } from "#contracts/index";
 
 /**
  * The root step.

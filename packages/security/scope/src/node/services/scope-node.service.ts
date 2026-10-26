@@ -19,10 +19,10 @@ import type { ScopeRef } from "@stackra/contracts";
 import { CrudService, sql } from "@stackra/database";
 
 import type { ScopeNodeDraft } from "#contracts/index";
+import type { ScopeConfig } from "#core/index";
 import {
   childLevelsOf,
   isScopePath,
-  ScopeConfig,
   ScopeLabelInvalidError,
   ScopeLevelInvalidError,
   ScopeMoveInvalidError,
@@ -42,7 +42,9 @@ export class ScopeNodeService extends CrudService<ScopeNode> {
   /** The deployment's levels and root. */
   private readonly config: ScopeConfig;
 
-  /** @param config - the deployment's levels and root. */
+  /**
+   * @param config - the deployment's levels and root.
+   */
   constructor(config: ScopeConfig) {
     super();
     this.config = config;

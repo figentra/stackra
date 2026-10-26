@@ -20,7 +20,7 @@ class EchoSearchDriver extends Driver(SearchDriver) {
     return request.words.slice(0, 1);
   }
 
-  async facets(): Promise<SearchFacets> {
+  async facets(_table: unknown, _request: unknown): Promise<SearchFacets> {
     return { status: { active: 1 } };
   }
 

@@ -31,15 +31,19 @@ vi.mock("iovalkey", () => {
       server.published.push([channel, text]);
       return 1;
     }
+
     duplicate() {
       return new Client();
     }
+
     on(_event: string, handler: (channel: string, text: string) => void) {
       server.handlers.push(handler);
     }
+
     async subscribe(channel: string) {
       server.subscribed.push(channel);
     }
+
     disconnect() {
       server.disconnected += 1;
     }

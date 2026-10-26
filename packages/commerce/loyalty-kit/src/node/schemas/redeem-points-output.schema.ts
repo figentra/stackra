@@ -18,7 +18,7 @@ import { z } from "zod";
  * return RedeemPointsOutput.create({ points: 300, amountMinor: 300, balance: 700 });
  */
 export class RedeemPointsOutput extends Schema {
-  /** Points debited. */
+  /** Points debited from the member. */
   @Int({ min: 0 })
   points!: number;
 

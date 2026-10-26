@@ -32,6 +32,18 @@ import { REALTIME_CONFIG_SCHEMA } from "#core/constants/realtime-config-schema.c
  * }
  */
 export class RealtimeOptions extends Schema {
+  /** Seconds in the background before the connection is suspended, when `reconnectOnForeground` is on. */
+  @Int({ min: 0 })
+  backgroundGraceSeconds = 60;
+
+  /** The longest wait between reconnect attempts, in seconds. */
+  @Int({ min: 1 })
+  maxBackoffSeconds = 30;
+
+  /** The `valkey` fan-out's server (`redis://` or `rediss://`, with its password); empty until the secret is set. */
+  @Secret("REALTIME_VALKEY_URL")
+  fanoutValkeyUrl = "";
+
   /** The `RealtimeDriver` a service serves sessions with: `memory` in dev, `sse` or `websocket` deployed. */
   driver: DriverName<RealtimeDriver> = "memory";
 
@@ -47,20 +59,8 @@ export class RealtimeOptions extends Schema {
   /** Suspend the connection after `backgroundGraceSeconds` in the background and reconnect on foreground. */
   reconnectOnForeground = false;
 
-  /** Seconds in the background before the connection is suspended, when `reconnectOnForeground` is on. */
-  @Int({ min: 0 })
-  backgroundGraceSeconds = 60;
-
-  /** The longest wait between reconnect attempts, in seconds. */
-  @Int({ min: 1 })
-  maxBackoffSeconds = 30;
-
   /** The fan-out between a service's instances: `local` for one instance, `valkey` for Valkey pub/sub. */
   fanout: DriverName<RealtimeFanout> = "local";
-
-  /** The `valkey` fan-out's server (`redis://` or `rediss://`, with its password); empty until the secret is set. */
-  @Secret("REALTIME_VALKEY_URL")
-  fanoutValkeyUrl = "";
 
   /** The Valkey pub/sub channel the instances of one service share. */
   fanoutChannel = "realtime:fanout";

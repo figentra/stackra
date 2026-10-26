@@ -16,8 +16,8 @@ import { Service } from "@stackra/container";
 import { Duration } from "@stackra/contracts";
 import { ForbiddenError, isRefusal } from "@stackra/errors";
 
-import { RealtimeConfig } from "#config/realtime.config";
-import { RealtimeFanout } from "#contracts/ports/realtime-fanout.port";
+import type { RealtimeConfig } from "#config/realtime.config";
+import type { RealtimeFanout } from "#contracts/ports/realtime-fanout.port";
 import type { FanoutMessage } from "#contracts/types/fanout-message.type";
 import type { RoomFrame } from "#contracts/types/room-frame.type";
 import type { RoomGrant } from "#contracts/types/room-grant.type";

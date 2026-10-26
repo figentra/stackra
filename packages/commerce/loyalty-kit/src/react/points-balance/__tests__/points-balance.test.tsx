@@ -14,6 +14,7 @@ import type { ReactNode } from "react";
 import { vi } from "vitest";
 
 import { LoyaltyTier } from "#contracts/enums/loyalty-tier.enum";
+import { BalanceView } from "#core/schemas/balance-view.schema";
 import { PointsBalance } from "#react/points-balance/points-balance";
 
 vi.mock("@stackra/ui/react", async () => {
@@ -38,12 +39,13 @@ vi.mock("@stackra/i18n/react", () => ({ useTranslation: () => ({ t: (key: string
 const DAY = 24 * 60 * 60 * 1_000;
 
 /** A gold balance of 1 000 points whose oldest points expire `days` from now. */
-const balance = (days: number) => ({
-  memberId: "usr_1",
-  tier: LoyaltyTier.Gold,
-  balance: 1_000,
-  nextExpiryAt: new Date(Date.now() + days * DAY),
-});
+const balance = (days: number) =>
+  BalanceView.create({
+    memberId: "usr_1",
+    tier: LoyaltyTier.Gold,
+    balance: 1_000,
+    nextExpiryAt: new Date(Date.now() + days * DAY),
+  });
 
 describe("PointsBalance", () => {
   afterEach(cleanup);

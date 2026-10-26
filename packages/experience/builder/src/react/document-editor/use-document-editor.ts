@@ -4,7 +4,7 @@
  *          `DocumentEditor` and re-renders on each change.
  * Boundary: no DOM, so web and React Native surfaces use it alike. The editor is made once per mount: to open another
  *           document, remount with a `key`.
- * Runtime: react
+ * Runtime: isomorphic
  * Governing contract: ADR 0426 (decision 3); ADR 0270 (decision 4).
  */
 import { useState, useSyncExternalStore } from "react";

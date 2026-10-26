@@ -13,7 +13,8 @@
 import type { ScopeRef } from "@stackra/contracts";
 import type { StorageAreaHandle } from "@stackra/storage/contracts";
 
-import { ActiveScopeService, isScopePath } from "#core/index";
+import type { ActiveScopeService } from "#core/index";
+import { isScopePath } from "#core/index";
 import { ACTIVE_SCOPE_STORAGE_KEY } from "#native/constants/active-scope-storage-key.constant";
 
 /** A scope node's public id. */

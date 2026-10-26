@@ -14,13 +14,13 @@ import type { ScopeRef } from "@stackra/contracts";
 
 import { ScopeResolver } from "#contracts/index";
 import type { ScopeRequest } from "#contracts/index";
-import { ClaimScopeResolverDriver } from "#core/drivers/claim-scope-resolver.driver";
-import { HeaderScopeResolverDriver } from "#core/drivers/header-scope-resolver.driver";
-import { RootScopeResolverDriver } from "#core/drivers/root-scope-resolver.driver";
+import type { ClaimScopeResolverDriver } from "#core/drivers/claim-scope-resolver.driver";
+import type { HeaderScopeResolverDriver } from "#core/drivers/header-scope-resolver.driver";
+import type { RootScopeResolverDriver } from "#core/drivers/root-scope-resolver.driver";
 import { ScopeUnresolvedError } from "#core/errors/scope-unresolved.error";
 
 /**
- * The chain.
+ * Resolves the scope from the first step that answers: the header, the token claim, then the root.
  *
  * @example
  * const scope = await chain.resolve({ actor, header: headers.get(SCOPE_PATH_HEADER) ?? undefined, claim });

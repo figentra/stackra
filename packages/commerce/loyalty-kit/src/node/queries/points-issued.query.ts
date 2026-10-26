@@ -37,7 +37,9 @@ export class PointsIssuedQuery extends Query({
   /** The ledger entry repository; `sum` runs in SQL. */
   private readonly rows: Repository<LedgerEntry>;
 
-  /** @param rows - the ledger entry repository. */
+  /**
+   * @param rows - the ledger entry repository.
+   */
   constructor(rows: Repository<LedgerEntry>) {
     super();
     this.rows = rows;

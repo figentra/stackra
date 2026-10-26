@@ -17,7 +17,10 @@ import { z } from "zod";
  */
 export class ExpirePointsInput extends Schema {
   /** How many accounts one run visits; the cron passes 500. */
-  @Int({ min: 1, max: 5_000 })
+  @Int({
+    min: 1,
+    max: 5_000,
+  })
   batchSize = 500;
 }
 

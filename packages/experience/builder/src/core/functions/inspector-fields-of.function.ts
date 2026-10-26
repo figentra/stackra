@@ -26,16 +26,16 @@ const WRAPPERS = new Set([
   "nonoptional",
 ]);
 
+/** Whether `object` is the money shape: `minor` and `currency`. */
+const isMoney = (object: z.ZodObject): boolean =>
+  "minor" in object.shape && "currency" in object.shape;
+
 /** The kind and enum options of a prop schema, or `undefined` for a shape the inspector does not edit. */
 function describeProp(schema: unknown): Pick<InspectorField, "kind" | "options"> | undefined {
-  const isMoney = (object: z.ZodObject): boolean =>
-    "minor" in object.shape && "currency" in object.shape;
   let current = schema;
   for (;;) {
     // By definition type: `z.email()` and `z.url()` are strings that are not `ZodString` instances.
-    const type = (
-      current as { readonly _zod?: { readonly def?: { readonly type?: string } } } | null
-    )?._zod?.def?.type;
+    const type = (current as { readonly def?: { readonly type?: string } } | null)?.def?.type;
     if (type === "string") return { kind: InspectorFieldKind.Text, options: [] };
     if (type === "number") return { kind: InspectorFieldKind.Number, options: [] };
     if (type === "boolean") return { kind: InspectorFieldKind.Boolean, options: [] };

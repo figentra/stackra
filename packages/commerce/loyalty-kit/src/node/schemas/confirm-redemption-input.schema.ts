@@ -19,7 +19,10 @@ import { z } from "zod";
  */
 export class ConfirmRedemptionInput extends Schema {
   /** Public id of the thing paid for (`ord_…`); the path parameter of the endpoint. */
-  @Str({ min: 1, max: 120 })
+  @Str({
+    min: 1,
+    max: 120,
+  })
   reference!: string;
 }
 

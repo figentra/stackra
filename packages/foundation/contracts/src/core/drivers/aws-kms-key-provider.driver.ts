@@ -67,13 +67,13 @@ export class AwsKmsKeyProviderDriver extends KeyProvider {
     this.options = options;
   }
 
-  /** See `KeyProvider.current`. */
+  /** The key new data is sealed with. */
   current(): Promise<DataKey> {
     // The constructor refuses an empty list, so the last key exists.
     return this.byId((this.options.keys.at(-1) as WrappedDataKey).id);
   }
 
-  /** See `KeyProvider.byId`. */
+  /** The key with this id, for opening data sealed before a rotation. */
   byId(id: string): Promise<DataKey> {
     const held = this.unwrapped.get(id);
     if (held !== undefined) return held;

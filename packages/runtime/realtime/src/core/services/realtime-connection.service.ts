@@ -15,8 +15,8 @@
 import { Service } from "@stackra/container";
 import type { TokenSource } from "@stackra/transport";
 
-import { RealtimeConfig } from "#config/realtime.config";
-import { RealtimeTransport } from "#contracts/ports/realtime-transport.port";
+import type { RealtimeConfig } from "#config/realtime.config";
+import type { RealtimeTransport } from "#contracts/ports/realtime-transport.port";
 import type { RealtimeLink } from "#contracts/types/realtime-link.type";
 import type { RealtimeMessage } from "#contracts/types/realtime-message.type";
 import { RealtimeStatus } from "#core/enums/realtime-status.enum";
@@ -33,6 +33,18 @@ import type { RealtimeEventRef } from "#core/types/realtime-event-ref.type";
  * connection.stop(); // on sign-out
  */
 export class RealtimeConnection extends Service {
+  /**
+   * Calls `listener` whenever `state` changes; the shape `useSyncExternalStore` takes.
+   *
+   * @returns removes the listener.
+   */
+  readonly subscribeState = (listener: () => void): (() => void) => {
+    this.stateListeners.add(listener);
+    return () => {
+      this.stateListeners.delete(listener);
+    };
+  };
+
   private readonly config: RealtimeConfig;
 
   private readonly transport: RealtimeTransport;
@@ -71,18 +83,6 @@ export class RealtimeConnection extends Service {
   get state(): RealtimeConnectionState | null {
     return this.current;
   }
-
-  /**
-   * Calls `listener` whenever `state` changes; the shape `useSyncExternalStore` takes.
-   *
-   * @returns removes the listener.
-   */
-  readonly subscribeState = (listener: () => void): (() => void) => {
-    this.stateListeners.add(listener);
-    return () => {
-      this.stateListeners.delete(listener);
-    };
-  };
 
   /**
    * Calls `listener` with each refresh of `event` until the returned function is called.
