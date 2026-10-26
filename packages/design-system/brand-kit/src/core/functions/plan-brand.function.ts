@@ -85,6 +85,7 @@ export function planBrand(kit: BrandKit, theme: Theme, symbolSvg: string): Brand
     {
       kind: "png",
       path: "android/adaptive-monochrome.png",
+      // Android tints the monochrome layer from its alpha alone, so its colour is not brand data.
       svg: iconSvg(symbol, { color: "#FFFFFF", scale: adaptive }),
       width: 1024,
     },
