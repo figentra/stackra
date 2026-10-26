@@ -16,6 +16,7 @@ describe("@stackra/infra-identity", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(core).sort()).toEqual([
       "IdentityAppKind",
+      "IdentityHealthIndicatorDriver",
       "IdentityInfraInvalidError",
       "InstanceRole",
       "identityPlan",

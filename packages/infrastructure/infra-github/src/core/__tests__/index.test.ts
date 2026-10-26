@@ -23,6 +23,7 @@ import type {
 describe("@stackra/infra-github", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(core).sort()).toEqual([
+      "GithubHealthIndicatorDriver",
       "GithubInfraInvalidError",
       "GithubVisibility",
       "githubPlan",

@@ -21,6 +21,7 @@ ADR 0289 decision 9), where the owner runs `pulumi up`; here it is tested under 
 | `.`      | `parseBranchProtection(document, source?)`                                                      | the committed `.github/branch-protection.json`, checked                       |
 | `.`      | `GithubVisibility`                                                                              | enum: `public`, `private` (the default), `internal`                           |
 | `.`      | `GithubInfraInvalidError`                                                                       | every input failure, with its source and each path                            |
+| `.`      | `GithubHealthIndicatorDriver`                                                                   | the `HealthIndicator` driver: the GitHub API answers                          |
 | `.`      | `GithubPlan`, `GithubEnvironment`, `GithubRules`, `RulesetDocument`, `BranchProtectionDocument` | types                                                                         |
 | `./node` | `readGithubRules(directory)`                                                                    | every `rulesets/*.json` and `branch-protection.json` under a `.github` folder |
 | `./node` | `githubStack(plan, rules, config?)`                                                             | the whole GitHub slice in one call; returns the repository and the CI secrets |

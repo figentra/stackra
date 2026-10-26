@@ -14,6 +14,7 @@ Pulumi slice). Depends on `@stackra/contracts`, `@stackra/runway` and `@pulumi/p
 | `.`      | `mobileInfraPlan(root, app, identity)` | the release plan and its owner tasks from the root and mobile runways    |
 | `.`      | `MobileOwnerStep`                      | the manual steps no API takes (enum of snake_case codes)                 |
 | `.`      | `MobileInfraInvalidError`              | every runway or stack config failure at once, with its path              |
+| `.`      | `MobileHealthIndicatorDriver`          | the `HealthIndicator` driver: the EAS update endpoint answers            |
 | `.`      | `MobileInfraPlan`, `MobileIdentity`, … | types                                                                    |
 | `./node` | `mobileStack(plan)`                    | inside the Pulumi program: resolve every `ref:` fact and check its shape |
 
