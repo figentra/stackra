@@ -1,6 +1,6 @@
 # Feature Specification: plan-catalogue admin, the Stackra side
 
-**Feature Branch**: `figentra/sta-666-wave11`
+**Feature Branch**: `figentra/sta-666-wave11`, console in `figentra/sta-666-wave12`
 
 **Created**: 2026-10-26
 
@@ -38,9 +38,20 @@ currency, fee schedules and rate cards; dated versions; changes at renewal (OS-8
 - **FR-005** Readers: `planCatalogueOf` and `tierPlan` (entitlements); `planPriceListsOf`, `planPrice`, `offerOf`,
   `rateCardOf` and `meterCharge` (pricing). Fee schedules reuse `@stackra/registry`'s `FeeSchedule`.
 
+## Console (wave 12)
+
+- **FR-006** `@stackra/panel/react` ships the plan-catalogue admin: `PlanCatalogueAdmin` (one record: the version in
+  force, the history, the proposal form), `CatalogueVersions` (state, in-force mark, discount mark, approve and reject
+  with the second-approver rule from `catalogueDecisionOf`), `CatalogueRowsEditor` (every record kind as fields by
+  value type, so tiers, seat kinds, modules, limits, trials and price lists are all data) and `CatalogueProposalForm`
+  (effective from tomorrow at the earliest in the tenant's zone, discount detected by `isCatalogueDiscount` and not
+  removable, the kind's reader run by `catalogueRowsError` before proposing).
+- Words in `panel::plan_catalogue.*` in the seven languages. New panel dependencies: `@stackra/entitlements`,
+  `@stackra/pricing`, `@internationalized/date` (lockfile not updated here).
+
 ## Not built here
 
-- The OS billing server driver of `CatalogueVersions`, the actions and the `@stackra/panel` resources the consoles
-  render (they live in the OS billing service, outside this package set).
+- The OS billing server driver of `CatalogueVersions` and the actions the console handlers call (they live in the OS
+  billing service, outside this package set); the console app mounts `PlanCatalogueAdmin` per record.
 - `fee-schedule` and `rate-card` are not yet seed-record kinds of `@stackra/cli`.
 - Tests, typecheck and build are written but not run (owner mode).

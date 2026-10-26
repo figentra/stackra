@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `./react` entry of @stackra/panel (the panel shell, the dashboard and its tile, the
- *          action runner, and the route pages it gives navigation) until `stackra gen` writes the entry barrels
+ *          action runner, the route pages it gives navigation, the plan-catalogue admin and the onboarding checklist)
+ *          until `stackra gen` writes the entry barrels
  *          (STA-339).
  * Boundary: names each re-export and declares nothing. The widget body, the KPI view and the panel route page are
  *           internal. The breadcrumb trail is navigation's: `useBreadcrumbs` is re-exported from
@@ -19,6 +20,16 @@ export type { DashboardProps } from "#react/dashboard/dashboard.props";
 export { PanelShell } from "#react/panel-shell/panel-shell";
 export type { PanelShellProps } from "#react/panel-shell/panel-shell.props";
 export { usePanel } from "#react/panel-shell/use-panel";
+export { OnboardingChecklist } from "#react/onboarding-checklist/onboarding-checklist";
+export type { OnboardingChecklistProps } from "#react/onboarding-checklist/onboarding-checklist.props";
+export { CatalogueProposalForm } from "#react/plan-catalogue/catalogue-proposal-form";
+export type { CatalogueProposalFormProps } from "#react/plan-catalogue/catalogue-proposal-form.props";
+export { CatalogueRowsEditor } from "#react/plan-catalogue/catalogue-rows-editor";
+export type { CatalogueRowsEditorProps } from "#react/plan-catalogue/catalogue-rows-editor.props";
+export { CatalogueVersions } from "#react/plan-catalogue/catalogue-versions";
+export type { CatalogueVersionsProps } from "#react/plan-catalogue/catalogue-versions.props";
+export { PlanCatalogueAdmin } from "#react/plan-catalogue/plan-catalogue-admin";
+export type { PlanCatalogueAdminProps } from "#react/plan-catalogue/plan-catalogue-admin.props";
 export { registerPanelPages } from "#react/route-pages/register-panel-pages.function";
 export { WidgetTile } from "#react/widget-tile/widget-tile";
 export type { WidgetTileProps } from "#react/widget-tile/widget-tile.props";

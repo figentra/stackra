@@ -71,10 +71,12 @@
     "clean": "rm -rf dist coverage .turbo"
   },
   "dependencies": {
+    "@internationalized/date": "catalog:frontend",
     "@stackra/actions": "workspace:*",
     "@stackra/clients": "workspace:*",
     "@stackra/container": "workspace:*",
     "@stackra/contracts": "workspace:*",
+    "@stackra/entitlements": "workspace:*",
     "@stackra/errors": "workspace:*",
     "@stackra/experience": "workspace:*",
     "@stackra/i18n": "workspace:*",
@@ -82,6 +84,7 @@
     "@stackra/icons": "workspace:*",
     "@stackra/money": "workspace:*",
     "@stackra/navigation": "workspace:*",
+    "@stackra/pricing": "workspace:*",
     "@stackra/query": "workspace:*",
     "@stackra/ui": "workspace:*",
     "@stackra/validation": "workspace:*",
