@@ -16,7 +16,7 @@ import type { AwsRuntime, AwsRuntimeOptions } from "#node/index";
 
 describe("@stackra/infra-aws-runtime/node", () => {
   it("exports exactly its values, none of them also exported by .", () => {
-    expect(Object.keys(node).sort()).toEqual(["awsRuntime", "readRuntimePlan"]);
+    expect(Object.keys(node).sort()).toEqual(["awsRuntime", "awsRuntimeStack", "readRuntimePlan"]);
     for (const name of Object.keys(node)) expect(Object.keys(core)).not.toContain(name);
   });
 

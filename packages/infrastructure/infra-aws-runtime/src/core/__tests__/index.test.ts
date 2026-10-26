@@ -14,7 +14,12 @@ import type { BucketPlan, CachePlan, QueuePlan, RuntimePlan } from "#core/index"
 
 describe("@stackra/infra-aws-runtime", () => {
   it("exports exactly its values", () => {
-    expect(Object.keys(runtime).sort()).toEqual(["runtimePlan"]);
+    expect(Object.keys(runtime).sort()).toEqual([
+      "AwsRuntimeHealthIndicatorDriver",
+      "planForMembers",
+      "runtimeNetwork",
+      "runtimePlan",
+    ]);
   });
 
   it("types the plan", () => {
