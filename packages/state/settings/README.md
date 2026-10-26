@@ -166,7 +166,8 @@ const app = await createTestingModule(OrdersModule)
 ```
 
 `fakeSettings` runs the real cascade and schema over a memory store, and records each form write as
-`{ page, scope, values }` in `fake.writes`. `fakeResolver({ values, floors, now })` returns a real `SettingsResolver`
+`{ page, scope, values }` in `fake.writes`. `fake.set(OrdersSettings, { acceptingOrders: true })` changes a
+class's values mid-test (seeded, not recorded as a write). `fakeResolver({ values, floors, now })` returns a real `SettingsResolver`
 with its memory drivers and a clock the test moves (`clock.at = …`).
 
 ## Not here

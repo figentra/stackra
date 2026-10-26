@@ -56,6 +56,8 @@ generated-key helpers, the native form and the fake (ADR 0307 rules 22 to 24, AD
   `unentitledSettingPaths` or `refuseUnentitledSettings` too.
 - No `SettingScope.Tenant`: the tenant level is tenancy's data (`TenancyScopes.Tenant`, ADR 0323). A seeder writes as
   `settingSystemAuthor(name)`.
+- `SettingsFake#set(Class, patch)` seeds new values mid-test at the root holder; it is not a write, so it skips
+  locks, floors, entitlements and `fake.writes`. A test of a refusal goes through `write`.
 - `Promotable` is homed here (package-needs conflict note, ADR 0359 d6); a kind's driver validates its snapshot.
 - A store driver names each layer's holder (`SettingLayer.holder`) and implements `remove`.
 - Raw SQL lives only in `StoredSettingService` methods, parameterised with `sql`, with a `// raw-sql:` comment (ADR

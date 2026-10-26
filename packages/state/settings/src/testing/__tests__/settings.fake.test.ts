@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `SettingsFake`: seeded values (a section's fields included) resolve through the real cascade
  *          and schema with every other field at its default, and each page write is recorded as `{ page, scope,
- *          values }` and stored, even when the reader then refuses it.
+ *          values }` and stored, even when the reader then refuses it; `set` changes values mid-test without
+ *          recording a write.
  * Boundary: test only; the schema is registered by hand, as gen's schemas file registers it.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0307 (rules 22 and 24).
@@ -80,5 +81,17 @@ describe(SettingsFake, () => {
     const fake = new SettingsFake();
     await expect(fake.write(PAGE, { acceptingOrders: "yes" })).rejects.toThrow();
     expect(fake.writes).toHaveLength(1);
+  });
+
+  it("takes new values mid-test without recording a write", async () => {
+    const fake = new SettingsFake([[OrdersSettings, { acceptingOrders: false }]]);
+    fake.set(OrdersSettings, { cancellation: { customersMayCancel: false } });
+    expect({ ...(await fake.get(OrdersSettings)) }).toEqual({
+      acceptingOrders: false,
+      cancellation: { autoCancelAfterMinutes: 30, customersMayCancel: false },
+    });
+    expect(fake.set(OrdersSettings, { acceptingOrders: true })).toBe(fake);
+    expect((await fake.get(OrdersSettings)).acceptingOrders).toBe(true);
+    expect(fake.writes).toEqual([]);
   });
 });
