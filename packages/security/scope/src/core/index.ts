@@ -19,6 +19,7 @@ export { MemoryScopeTreeDriver } from "#core/drivers/memory-scope-tree.driver";
 export { RootScopeResolverDriver } from "#core/drivers/root-scope-resolver.driver";
 export { ScopeLabelInvalidError } from "#core/errors/scope-label-invalid.error";
 export { ScopeLevelInvalidError } from "#core/errors/scope-level-invalid.error";
+export { ScopeMoveInvalidError } from "#core/errors/scope-move-invalid.error";
 export { ScopeUnresolvedError } from "#core/errors/scope-unresolved.error";
 export { childLevelsOf } from "#core/functions/child-levels-of.function";
 export { isScopePath } from "#core/functions/is-scope-path.function";

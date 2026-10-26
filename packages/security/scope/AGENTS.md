@@ -16,6 +16,7 @@ active scope (ADR 0327). Member at `packages/security/scope` (`tier:lib`), in th
 | The model, its service, a server driver | `src/node/{models,services,drivers}/`                     |
 | A migration                             | `src/node/database/migrations/<NNNN>-<name>.migration.ts` |
 | An entitlement                          | `src/node/access/<name>.entitlement.ts`                   |
+| An event                                | `src/node/events/<name>.event.ts`                         |
 | A hook                                  | `src/react/scope/`                                        |
 | A test                                  | `__tests__/<name>.<kind>.test.ts` beside it               |
 
@@ -39,6 +40,8 @@ active scope (ADR 0327). Member at `packages/security/scope` (`tier:lib`), in th
 - Levels are data: never an enum column, a check constraint or a code branch per level.
 - Isolation is the database's: never add an application-level `WHERE` filter on scope (ADR 0327 d9).
 - `X-Scope-Path` is untrusted: validate it with `isScopePath` and accept it only within a grant; drop it, never refuse.
+- A subtree move (`ScopeNodeService.move`) re-paths `scope.scope_nodes` itself and records `ScopeMoved`; every other
+  table's rows are re-pathed by the service that owns them, from its listener, through `CrudService.repath` (ADR 0411).
 - Raw SQL lives only in `ScopeNodeService` methods, parameterised with `sql`, with a `// raw-sql:` comment (ADR 0160).
 - No parameter properties and no `#private` fields: apps typecheck this source under `erasableSyntaxOnly`.
 

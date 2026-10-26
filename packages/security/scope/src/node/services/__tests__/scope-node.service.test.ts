@@ -3,18 +3,27 @@
  * Purpose: unit tests of `ScopeNodeService`: the root is added at the first level with the configured root label; a
  *          child's path is its parent's and its label; a level added as data is accepted with no code change; a bad
  *          label, a root with another label, an unknown parent and a level the parent does not take are refused; the
- *          ancestor and descendant reads are parameterised raw `ltree` conditions in path order.
+ *          ancestor and descendant reads are parameterised raw `ltree` conditions in path order; a move re-paths the
+ *          subtree in one statement, takes the new path on the loaded node and records `ScopeMoved`, changes nothing
+ *          when the parent is unchanged, and refuses a move under itself and a level the new parent does not take.
  * Boundary: test only; a fake `Database` hands out a recording entity manager, so no database runs.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0269; ADR 0327 (decisions 2, 3 and 9); ADR 0160.
+ * Governing contract: ADR 0022; ADR 0269; ADR 0327 (decisions 2, 3 and 9); ADR 0160; ADR 0411.
  */
 import { buildConfig } from "@stackra/config";
 import { Database, registerModelPartners } from "@stackra/database";
 import { isRefusal, NotFoundError } from "@stackra/errors";
+import { takeRecordedEvents } from "@stackra/events";
 import { afterEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 
-import { ScopeConfig, ScopeLabelInvalidError, ScopeLevelInvalidError } from "#core/index";
+import {
+  ScopeConfig,
+  ScopeLabelInvalidError,
+  ScopeLevelInvalidError,
+  ScopeMoveInvalidError,
+} from "#core/index";
+import { ScopeMoved } from "#node/events/scope-moved.event";
 import { ScopeNode } from "#node/models/scope-node.model";
 import { ScopeNodeService } from "#node/services/scope-node.service";
 
@@ -38,6 +47,25 @@ function connect(parent?: ScopeNode) {
     create: vi.fn((_model: unknown, data: object) => Object.assign(new ScopeNode(), data)),
     flush: vi.fn(async () => undefined),
     transactional: vi.fn(async (work: (manager: unknown) => Promise<unknown>) => work(em)),
+  };
+  vi.spyOn(Database, "current").mockReturnValue({
+    em: () => em as unknown as ReturnType<Database["em"]>,
+  } as unknown as Database);
+  return em;
+}
+
+/** Connects a recording entity manager whose `findOneOrFail` answers `node`, then `parent`. */
+function connectMove(node: ScopeNode, parent: ScopeNode) {
+  const em = {
+    findOneOrFail: vi
+      .fn(async () => node)
+      .mockResolvedValueOnce(node)
+      .mockResolvedValueOnce(parent),
+    getMetadata: vi.fn(() => ({
+      className: "ScopeNode",
+      properties: { scopePath: { fieldNames: ["scope_path"] } },
+    })),
+    nativeUpdate: vi.fn(async (..._args: unknown[]) => 3),
   };
   vi.spyOn(Database, "current").mockReturnValue({
     em: () => em as unknown as ReturnType<Database["em"]>,
@@ -133,5 +161,50 @@ describe(ScopeNodeService, () => {
     expect(conditionOf(descendants[1])).toContain("scope_path <@ ?::ltree");
     expect(conditionOf(descendants[1])).not.toContain("platform.acme");
     expect(ancestors[2]).toEqual({ orderBy: { scopePath: "asc" } });
+  });
+
+  it("moves a node and its subtree under another parent and records ScopeMoved", async () => {
+    const shop = Object.assign(nodeAt("platform.a.shop", "product"), {
+      id: "scp_01j9z3k4m5n6p7q8r9s0t1v2w5",
+    });
+    const em = connectMove(shop, nodeAt("platform", "platform"));
+    const service = serviceOf();
+    const moved = await service.move(
+      { id: shop.id, path: "platform.a.shop" },
+      { id: "scp_01j9z3k4m5n6p7q8r9s0t1v2w0", path: "platform" },
+    );
+    expect(moved.scopePath).toBe("platform.shop");
+    const data = em.nativeUpdate.mock.calls[0]?.[2] as { scopePath: { params: unknown[] } };
+    expect(data.scopePath.params).toEqual(["platform.shop", "platform.a.shop"]);
+    const [event] = takeRecordedEvents(moved);
+    expect(event).toBeInstanceOf(ScopeMoved);
+    expect(event).toMatchObject({ scopeId: shop.id, from: "platform.a.shop", to: "platform.shop" });
+  });
+
+  it("changes nothing when the node already sits under the parent", async () => {
+    const acme = nodeAt("platform.acme", "product");
+    const em = connectMove(acme, nodeAt("platform", "platform"));
+    const parent = { id: "scp_01j9z3k4m5n6p7q8r9s0t1v2w0", path: "platform" } as const;
+    const moved = await serviceOf().move(
+      { id: "scp_01j9z3k4m5n6p7q8r9s0t1v2w1", path: "platform.acme" },
+      parent,
+    );
+    expect(moved.scopePath).toBe("platform.acme");
+    expect(em.nativeUpdate).not.toHaveBeenCalled();
+    expect(takeRecordedEvents(moved)).toEqual([]);
+  });
+
+  it("refuses a move under itself and a level the new parent does not take", async () => {
+    const scope = { id: "scp_01j9z3k4m5n6p7q8r9s0t1v2w1", path: "platform.acme" } as const;
+    connectMove(nodeAt("platform.acme", "product"), nodeAt("platform.acme.eu", "product"));
+    const loop = await serviceOf()
+      .move(scope, { id: "scp_01j9z3k4m5n6p7q8r9s0t1v2w2", path: "platform.acme.eu" })
+      .catch((error: unknown) => error);
+    expect(isRefusal(loop, ScopeMoveInvalidError)).toBe(true);
+    connectMove(nodeAt("platform.acme", "product"), nodeAt("platform.beta", "product"));
+    const level = await serviceOf()
+      .move(scope, { id: "scp_01j9z3k4m5n6p7q8r9s0t1v2w3", path: "platform.beta" })
+      .catch((error: unknown) => error);
+    expect(isRefusal(level, ScopeLevelInvalidError)).toBe(true);
   });
 });

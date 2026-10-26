@@ -32,6 +32,7 @@ describe("@stackra/scope", () => {
       "ScopeConfig$",
       "ScopeLabelInvalidError",
       "ScopeLevelInvalidError",
+      "ScopeMoveInvalidError",
       "ScopeUnresolvedError",
       "childLevelsOf",
       "isScopePath",

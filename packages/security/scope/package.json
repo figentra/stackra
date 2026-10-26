@@ -1,7 +1,7 @@
 {
   "name": "@stackra/scope",
   "version": "0.0.0",
-  "description": "Stackra scope tree: levels declared as deployment data (ScopeConfig, ScopeConfig$) with their aliases, the ScopeNode model on an ltree path with its migration, the ScopeTree, ScopeResolver and GrantedScopes ports, the resolver chain (X-Scope-Path header, token claim, root), the tree depth entitlement, ActiveScopeService and useScope, rememberActiveScope for device apps (./native), and the scopeRefOf and fakeScopeTree test helpers (./testing)",
+  "description": "Stackra scope tree: levels declared as deployment data (ScopeConfig, ScopeConfig$) with their aliases, the ScopeNode model on an ltree path with its migration and its subtree move (the ScopeMoved event), the ScopeTree, ScopeResolver and GrantedScopes ports, the resolver chain (X-Scope-Path header, token claim, root), the tree depth entitlement, ActiveScopeService and useScope, rememberActiveScope for device apps (./native), and the scopeRefOf and fakeScopeTree test helpers (./testing)",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -109,6 +109,7 @@
     "@stackra/database": "workspace:*",
     "@stackra/entitlements": "workspace:*",
     "@stackra/errors": "workspace:*",
+    "@stackra/events": "workspace:*",
     "@stackra/model": "workspace:*",
     "@stackra/storage": "workspace:*",
     "@stackra/validation": "workspace:*",

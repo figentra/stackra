@@ -23,9 +23,10 @@ its resolver, and imports it; it never re-exports it.
 | `.`           | `SCOPE_PATH_CLAIM`                                                                 | the token claim the claim step reads (identity writes it)            |
 | `.`           | `childLevelsOf`, `isScopePath`, `isWithinScope`, `scopeLevelLabel`                 | the level rule, the path rule, the grant test, a level's lang key    |
 | `.`           | `ScopeUnresolvedError`, `ScopeLevelInvalidError`, `ScopeLabelInvalidError`         | refusals                                                             |
+| `.`           | `ScopeMoveInvalidError`                                                            | the refusal of a move under the node itself                          |
 | `./contracts` | `ScopeTree`, `ScopeResolver`, `GrantedScopes`                                      | the ports                                                            |
 | `./contracts` | `ScopeEntry`, `ScopeLevel`, `ScopeNodeDraft`, `ScopeRequest`                       | types                                                                |
-| `./node`      | `ScopeNode`, `ScopeNodeService`, `PostgresScopeTreeDriver`                         | the node table, adding nodes, the server's `ScopeTree`               |
+| `./node`      | `ScopeNode`, `ScopeNodeService`, `ScopeMoved`, `PostgresScopeTreeDriver`           | the node table, adding and moving nodes, the server's `ScopeTree`    |
 | `./node`      | `ScopeDepthEntitlement`                                                            | the plan right that bounds the tree's depth (declared only)          |
 | `./react`     | `useScope`                                                                         | the active scope in a component, web and native                      |
 | `./native`    | `rememberActiveScope`                                                              | a device app restores its last scope from `prefs` and keeps it       |
@@ -66,6 +67,29 @@ await nodes.add({
 ```
 
 A label is 1 to 63 of `a-z`, `0-9` and `_`; the root's label is `ScopeConfig.root`.
+
+### Moving a subtree
+
+`nodes.move(scope, parent)` moves a node and everything below it under another parent (an organisation that changes
+hands, a tenant that leaves a reseller). It keeps every id and label, rewrites the path prefix of the node and its
+descendants in one statement, and records `ScopeMoved` (`scope.node.moved.v1`, through the outbox). Each service
+re-paths its own `scope_path` rows from its listener, in the same way:
+
+```ts
+export class RepathDocumentsListener extends Listener({ queue: Queues.Default }) {
+  constructor(documents: DocumentService) {
+    super();
+    this.documents = documents;
+  }
+
+  async handle(event: ScopeMoved): Promise<void> {
+    await this.documents.repath(event.from, event.to); // @stackra/database CrudService.repath
+  }
+}
+```
+
+Run the move, and each listener, in a scope that reaches both paths (a grant at a common ancestor). A move under the
+node itself is `scope_move_invalid`; a level the new parent does not take is `scope_level_invalid` (ADR 0411).
 
 ## Resolving a request
 

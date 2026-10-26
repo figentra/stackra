@@ -1,0 +1,47 @@
+---
+title: "0411 — Scope subtree move: the node table re-paths itself and each service re-paths its own rows on ScopeMoved"
+description: "Proposed · 2026-10-26"
+---
+
+<Note>
+  Proposed (STA-841). It extends
+  [0327](/adr/0327-scope-package-owns-the-scope-tree-tenancy-is-a-consumer) decision 3: a node's
+  path changes only through this move. OS tenancy gate A, gap G1.
+</Note>
+
+## Context
+
+`ScopeNodeService` only added nodes. When an organisation changes hands or a tenant leaves a reseller, the tenant row
+was re-parented but its scope node and every `scope_path` row below it kept the old path, so the new organisation's
+grants (an `ancestor` row-level-security match on `app.scope_paths`) never reached them. The rows live in many
+services' databases, so no one statement can move them all.
+
+## Decision
+
+1. **`ScopeNodeService.move(scope, parent)`** keeps every id and label and rewrites the path prefix of the node and its
+   descendants in `scope.scope_nodes` in one statement, in the caller's transaction. A parent that is the node or below
+   it is `scope_move_invalid` (`ScopeMoveInvalidError`, Validation); a level the parent does not take is
+   `scope_level_invalid`; a move to the current parent changes nothing.
+2. **`ScopeMoved`** (`scope.node.moved.v1`, an integration event carrying `scopeId`, `from` and `to`) is recorded on the
+   moved node and leaves through the outbox with the move's commit.
+3. **Each service re-paths its own rows** from its listener with `CrudService.repath(from, to)` (@stackra/database):
+   `set scope_path = to || subpath(scope_path, nlevel(from)) where scope_path <@ from`, both paths parameters, one
+   statement per table, inside the listener's transaction. Re-pathing is idempotent: a redelivered event finds no row
+   under `from`.
+4. **Both the move and each listener run in a scope that reaches both paths** (a grant at a common ancestor), so
+   row-level security lets the rows out of the old subtree and into the new one; there is no bypass.
+
+## Consequences
+
+- Between the node move and a service's listener, that service's rows still carry the old path: a reader in the new
+  organisation does not see them yet (fail closed, never wider).
+- A service with a `scope_path` table must add the listener; the README shows the four lines.
+
+## Enforcement
+
+planned — `packages/security/scope/src/node/services/__tests__/scope-node.service.test.ts` and
+`packages/data/database/src/core/bases/__tests__/crud-service.base.test.ts`.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: services/tenancy SPEC (G1); STA-841.
