@@ -26,6 +26,7 @@ import * as entry from "#core/index";
 describe("@stackra/market-packs", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(entry).sort()).toEqual([
+      "BASE_PACK_SCHEMAS",
       "FilesystemPackStoreDriver",
       "FloorBound",
       "MarketContext",

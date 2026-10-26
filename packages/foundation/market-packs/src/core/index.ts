@@ -6,9 +6,10 @@
  *           helpers stay internal. The schemas are re-exported under their generated names (`MarketPack$`, `SignedPack$`).
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision; ADR 0370; ADR 0385; ADR 0417;
- *                     ADR 0418.
+ *                     ADR 0418; STA-1252 (`BASE_PACK_SCHEMAS`).
  */
 export { MarketPacksConfig } from "#config/market-packs.config";
+export { BASE_PACK_SCHEMAS } from "#core/constants/base-pack-schemas.constant";
 export { MARKET_PACK_SCHEMA as MarketPack$ } from "#core/constants/market-pack-schema.constant";
 export { SIGNED_PACK_SCHEMA as SignedPack$ } from "#core/constants/signed-pack-schema.constant";
 export { MARKET_PACKS_CONFIG_SCHEMA as MarketPacksConfig$ } from "#core/constants/market-packs-config-schema.constant";

@@ -21,21 +21,23 @@ Entry barrels are generated, never authored (ADR 0294 decision 15); until `stack
 
 ## What is here
 
-| Symbol                                                                      | Use                                                                                                           |
-| --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| `MarketPack$`, `MarketPack`, `PackEntry`, `PackValue`                       | the shape of one pack version: market, section, `extends`, version, status, dated entries, reviews, checklist |
-| `SignedPack$`, `SignedPack`, `TrustedKeys`                                  | a pack as shipped: content, SHA-256 hash, Ed25519 signature; the public keys accepted                         |
-| `signPack`, `contentHash`                                                   | the build step: check, hash and sign a reviewed pack                                                          |
-| `verifyPack`, `PackRejectedError`, `PackRejection`                          | the load step: shape, hash and signature checks; a failing pack is refused                                    |
-| `resolvePack`, `ResolveOptions`, `ResolvedPack`, `PackNotFoundError`        | overlays root first, pins per market, accepted statuses, product sections                                     |
-| `valueOf`, `valuesOn`, `ResolvedValue`                                      | the value of a key on a date, with the market and version that set it                                         |
-| `floorsOn`, `FloorBound`                                                    | the legal floors in force, with bound and law, for the settings resolver and rules                            |
-| `factsOn`                                                                   | the values in force as a plain record, a fact source for `@stackra/rules`                                     |
-| `unreviewed`, `launchGate`, `LaunchGate`                                    | reviewer sign-off per key, and the launch checklist per pack and product                                      |
-| `PackStatus`                                                                | `draft`, `beta`, `live`, `retired`                                                                            |
-| `MarketContext`, `MarketRecord`, `PackSubject`, `SubjectMarketMissingError` | `packFor(record, ruleKind)`: the resolved market of the subject the pack names for the rule kind              |
-| `PackStore`, `FilesystemPackStoreDriver`, `fetchPacks`                      | signed packs stored and fetched by content hash, verified on load                                             |
-| `readPackAssets`                                                            | packs shipped as `data/` assets, read through `AssetLibrary` after the manifest hash check                    |
+| Symbol                                                                      | Use                                                                                                                          |
+| --------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `MarketPack$`, `MarketPack`, `PackEntry`, `PackValue`                       | the shape of one pack version: market, section, `extends`, version, status, dated entries, reviews, checklist                |
+| `SignedPack$`, `SignedPack`, `TrustedKeys`                                  | a pack as shipped: content, SHA-256 hash, Ed25519 signature; the public keys accepted                                        |
+| `signPack`, `contentHash`                                                   | the build step: check, hash and sign a reviewed pack                                                                         |
+| `verifyPack`, `PackRejectedError`, `PackRejection`                          | the load step: shape, hash and signature checks; a failing pack is refused                                                   |
+| `resolvePack`, `ResolveOptions`, `ResolvedPack`, `PackNotFoundError`        | overlays root first, pins per market, accepted statuses, product sections                                                    |
+| `valueOf`, `valuesOn`, `ResolvedValue`                                      | the value of a key on a date, with the market and version that set it                                                        |
+| `floorsOn`, `FloorBound`                                                    | the legal floors in force, with bound and law, for the settings resolver and rules                                           |
+| `factsOn`                                                                   | the values in force as a plain record, a fact source for `@stackra/rules`                                                    |
+| `unreviewed`, `launchGate`, `LaunchGate`                                    | reviewer sign-off per key, and the launch checklist per pack and product                                                     |
+| `PackStatus`                                                                | `draft`, `beta`, `live`, `retired`                                                                                           |
+| `MarketContext`, `MarketRecord`, `PackSubject`, `SubjectMarketMissingError` | `packFor(record, ruleKind)`: the resolved market of the subject the pack names for the rule kind                             |
+| `PackStore`, `FilesystemPackStoreDriver`, `fetchPacks`                      | signed packs stored and fetched by content hash, verified on load                                                            |
+| `readPackAssets`                                                            | packs shipped as `data/` assets, read through `AssetLibrary` after the manifest hash check                                   |
+| `PackSchemaRegistry`, `PackSchema`, `PackKeySchema`, `PackIssue`            | the publish check: every key declared by a section schema (a `*` segment declares a family), every value valid               |
+| `BASE_PACK_SCHEMAS`                                                         | the shipped schemas of `notifications.channels.*`, `notifications.prayer_holds`, `providers.*` and `imports.legacy_encoding` |
 
 ## Use
 
@@ -61,6 +63,19 @@ floorsOn(resolved, today); // what no setting may cross, with the law that set i
 `us-ca`, `us-tx`, `us-il`, `us-mi`, `us-fl`), all `draft` with a `counsel_review` checklist item and no sign-offs:
 the federal and state holiday sets, a default working week, `calendar.uncertain_days`, `calendar.leap_birthday`
 and the subject of each rule kind. None of it is served until it is reviewed, signed and promoted.
+
+## Base-pack keys this package declares
+
+`BASE_PACK_SCHEMAS` holds shapes, never values; pass it to `PackSchemaRegistry.create` with the other owners' schemas.
+
+| Key                                 | Value                                                               | Read by                                           |
+| ----------------------------------- | ------------------------------------------------------------------- | ------------------------------------------------- |
+| `notifications.channels.<category>` | channel codes, first tried first (`["whatsapp", "sms", "mail"]`)    | OS notifications `ChannelChainService`            |
+| `notifications.prayer_holds`        | `true` when prayer-time holds default on in the market              | OS notifications `PrayerHoldService`              |
+| `providers.<capability>`            | provider codes or `{ provider, status }`, in the market's order     | `MarketPackProviderDefaultsDriver` (integrations) |
+| `imports.legacy_encoding`           | the WHATWG label a CSV without UTF-8 falls back to (`windows-1256`) | OS data-exchange imports (through the OS loader)  |
+
+Each prefix is as narrow as its keys, so the OS service that owns a section still registers its other keys itself.
 
 ## Rules
 

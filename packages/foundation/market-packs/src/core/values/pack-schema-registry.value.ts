@@ -6,7 +6,9 @@
  * Boundary: a value built with `PackSchemaRegistry.create`, holding no I/O. The schemas are data registered by their
  *           owners (OS for base sections, products for theirs); nothing market-specific is written here. The check
  *           returns every issue and never throws. Each JSON Schema is compiled once, with zod's `fromJSONSchema`.
- *           Refuses a repeated prefix, a key outside its prefix or a key declared twice with a RangeError.
+ *           A `*` segment in a declared key stands for any one segment (`providers.*` declares `providers.sms`); an
+ *           exact key wins over a `*` key and a `*` key is never required. Refuses a repeated prefix, a key outside
+ *           its prefix, a key declared twice or a required `*` key with a RangeError.
  * Runtime: isomorphic
  * Governing contract: ADR 0417 (X2-19: the section schema registry); ADR 0370 (decisions 1 and 4); ADR 0328 (values
  *                     are built with `create`).
@@ -28,6 +30,19 @@ type Declared = {
 /** True when `key` is `prefix` or sits under it. */
 const under = (key: string, prefix: string): boolean =>
   key === prefix || key.startsWith(`${prefix}.`);
+
+/** True when `key` fits `pattern` segment for segment, `*` fitting any one segment. */
+const fits = (key: string, pattern: string): boolean => {
+  const segments = key.split(".");
+  const wanted = pattern.split(".");
+  return (
+    segments.length === wanted.length &&
+    wanted.every((segment, at) => segment === "*" || segment === segments[at])
+  );
+};
+
+/** True when `key` has a `*` segment. */
+const wild = (key: string): boolean => key.split(".").includes("*");
 
 /**
  * The registered section schemas.
@@ -55,8 +70,8 @@ export class PackSchemaRegistry {
   /**
    * A registry over `schemas`.
    *
-   * @throws RangeError when a prefix is registered twice, a key is declared twice or sits outside its prefix, or a
-   *   product section's prefix is outside the section.
+   * @throws RangeError when a prefix is registered twice, a key is declared twice or sits outside its prefix, a `*`
+   *   key is required, or a product section's prefix is outside the section.
    */
   static create(schemas: readonly PackSchema[]): PackSchemaRegistry {
     const prefixes = new Set<string>();
@@ -74,6 +89,8 @@ export class PackSchemaRegistry {
           throw new RangeError(`The key ${declared.key} is outside its prefix ${schema.prefix}`);
         if (keys.has(declared.key))
           throw new RangeError(`The key ${declared.key} is declared twice`);
+        if (declared.required === true && wild(declared.key))
+          throw new RangeError(`The key ${declared.key} has a * segment and cannot be required`);
         keys.set(declared.key, {
           owner: schema,
           check: z.fromJSONSchema(declared.schema),
@@ -105,7 +122,7 @@ export class PackSchemaRegistry {
           key,
           message: `No registered schema covers ${key}`,
         });
-      else if (!prefixOnly && !this.keys.has(key))
+      else if (!prefixOnly && this.declared(key) === undefined)
         issues.push({
           code: PackIssueCode.KeyUndeclared,
           key,
@@ -113,7 +130,7 @@ export class PackSchemaRegistry {
         });
     }
     for (const entry of pack.entries) {
-      const declared = this.keys.get(entry.key);
+      const declared = this.declared(entry.key);
       if (declared === undefined) continue;
       const result = declared.check.safeParse(entry.value);
       if (!result.success)
@@ -136,5 +153,14 @@ export class PackSchemaRegistry {
             message: `A root pack carries ${key}; ${pack.market} has no entry for it`,
           });
     return issues;
+  }
+
+  /** The declaration of `key`: its exact key, else the first `*` key it fits. */
+  private declared(key: string): Declared | undefined {
+    const exact = this.keys.get(key);
+    if (exact !== undefined) return exact;
+    for (const [pattern, declared] of this.keys)
+      if (wild(pattern) && fits(key, pattern)) return declared;
+    return undefined;
   }
 }

@@ -43,7 +43,11 @@ The market-pack loader. Member at `packages/foundation/market-packs` (`tier:lib`
   hashes in `MarketPacksConfig` from `PackStore` and verifies them, the `memory` driver serves packs handed to it. The OS
   loader is a further driver or a host `@Replaces`.
 - **Publish check.** `PackSchemaRegistry` holds the section schemas (JSON Schema per key, registered as data by their
-  owners) and `overlayFloorIssues` refuses an overlay that loosens a parent floor. Both return issues, never throw.
+  owners) and `overlayFloorIssues` refuses an overlay that loosens a parent floor. Both return issues, never throw. A
+  `*` segment in a declared key declares a family whose last part is data (`providers.*`); it is never required.
+- **Base schemas.** `BASE_PACK_SCHEMAS` declares the base keys Stackra packages and OS services read but no OS section
+  owns yet (`notifications.channels.*`, `notifications.prayer_holds`, `providers.*`, `imports.legacy_encoding`). Keep
+  each prefix as narrow as its keys; add a key here only when a consumer reads it, and never a market's value.
 - Trusted public keys are deployment configuration; the private signing key is held by the caller of `signPack`
   and never read, stored or logged here.
 - The content hash covers the pack exactly as shipped (canonical JSON); never hash a parsed copy in `verifyPack`.

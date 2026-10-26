@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `PackSchemaRegistry`: a clean pack has no issue; an unregistered, an undeclared key, a value
  *          its JSON Schema refuses and a required key missing from a root pack are each reported; overlays and other
- *          sections are not asked for required keys; a subject naming a prefix passes; bad registrations are refused.
+ *          sections are not asked for required keys; a subject naming a prefix passes; a `*` key declares a family;
+ *          bad registrations are refused.
  * Boundary: test only. Schemas and packs are made-up fixtures (`xa`, `shop`), not any market's values.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0417.
@@ -127,6 +128,36 @@ describe("PackSchemaRegistry", () => {
     ).toThrow(RangeError);
     expect(() =>
       PackSchemaRegistry.create([{ prefix: "tax", owner: "shop", section: "shop", keys: [] }]),
+    ).toThrow(RangeError);
+  });
+
+  it("declares a family of keys with a * segment, an exact key winning over it", () => {
+    const family = PackSchemaRegistry.create([
+      {
+        prefix: "relay",
+        owner: "os",
+        keys: [
+          { key: "relay.*", schema: { type: "array" } },
+          { key: "relay.fixed", schema: { type: "boolean" } },
+        ],
+      },
+    ]);
+    const issues = family.check(
+      pack([
+        { key: "relay.alpha", value: ["one"], from: "2026-01-01" },
+        { key: "relay.beta", value: "one", from: "2026-01-01" },
+        { key: "relay.fixed", value: true, from: "2026-01-01" },
+        { key: "relay.alpha.deep", value: [], from: "2026-01-01" },
+      ]),
+    );
+    expect(issues.map((issue) => `${issue.code} ${issue.key}`)).toEqual([
+      "key_undeclared relay.alpha.deep",
+      "value_invalid relay.beta",
+    ]);
+    expect(() =>
+      PackSchemaRegistry.create([
+        { prefix: "relay", owner: "os", keys: [{ key: "relay.*", schema: true, required: true }] },
+      ]),
     ).toThrow(RangeError);
   });
 
