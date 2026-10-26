@@ -3,7 +3,8 @@
  * Purpose: unit tests of `InboxService`: a received event is rebuilt from its envelope and runs its listeners once with
  *          its id, time and metadata; a redelivery of the id runs nothing; each receipt runs in the event's scope or in
  *          none; an unknown wire name is refused before any claim; `prune` forgets old ids; a connected relay gets every
- *          claimed envelope once (an unknown wire name included) and a throwing relay rolls the receipt back; a
+ *          claimed envelope once (an unknown wire name included), a throwing relay rolls the receipt back and
+ *          `disconnect` drops the relays; a
  *          consumed service's event class (an `IntegrationEvent` built by its payload schema, as gen writes it into
  *          `#stackra/clients/<service>`) is rebuilt and delivered to its typed listener.
  * Boundary: test only; the memory inbox, the real bus with a fixed clock, and a stand-in database that records the
@@ -168,6 +169,18 @@ describe(InboxService, () => {
       inbox.connect(binding(new FailingRelay()));
       await expect(inbox.receive(envelope())).rejects.toThrow("relay down");
       expect(listener.seen).toHaveLength(0);
+    });
+
+    it("hands nothing to a relay after disconnect, and refuses an unknown wire name again", async () => {
+      const { inbox } = inboxWithListener();
+      const relay = new RecordingRelay();
+      inbox.connect(binding(relay));
+      inbox.disconnect();
+      await expect(inbox.receive(envelope())).resolves.toBe(true);
+      await expect(
+        inbox.receive(envelope({ id: "evt_B", type: "orders.order.shipped.v1" })),
+      ).rejects.toBeInstanceOf(UnknownEventError);
+      expect(relay.seen).toHaveLength(0);
     });
   });
 

@@ -4,7 +4,7 @@
  *          once per drain with its context; a failing listener is recorded and never stops the others or the drain;
  *          an event dispatched by a listener runs in the same drain; `deliver` queues without publishing; metadata
  *          given is kept and the rest defaulted; subscriptions are kept once; `connect` subscribes the registered
- *          listeners a container binds.
+ *          listeners a container binds; `disconnect` removes only those.
  * Boundary: test only; a fixed clock stands in for the Clock port.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0078 (decisions 1 to 4); ADR 0294 (decision 4).
@@ -154,5 +154,24 @@ describe(EventBus, () => {
     const deliveries = await bus.drain();
 
     expect(deliveries.map((delivery) => delivery.listener)).toEqual([bound]);
+  });
+
+  it("disconnects the listeners connect subscribed and keeps direct subscriptions", async () => {
+    const bound = new RecordingListener();
+    const direct = new RecordingListener();
+    registerListeners([[OrderPaid, RecordingListener]]);
+    const container = {
+      has: (type: AnyClass) => type === RecordingListener,
+      get: <T extends object>(_type: AnyClass<T>): T => bound as unknown as T,
+    };
+    const bus = new EventBus(clock);
+    bus.connect(container);
+    bus.subscribe(OrderPaid, direct);
+    bus.disconnect();
+    bus.dispatch(new OrderPaid());
+
+    const deliveries = await bus.drain();
+
+    expect(deliveries.map((delivery) => delivery.listener)).toEqual([direct]);
   });
 });

@@ -16,7 +16,7 @@ backoff retries and dead letters; the inbox runs each received event once.
 | `OutboxWriterService`                                                  | `./node`      | the ORM flush writer, passed as one of `DatabaseOptions.subscribers`           |
 | `OutboxRelayService`                                                   | `./node`      | `connect(container)`, then `work({ signal })` or one `relay()` tick            |
 | `InboxService`                                                         | `./node`      | `receive(envelope)` runs an event's listeners and relays once; `prune(before)` |
-| `InboxService#connect`                                                 | `./node`      | `connect(container)` resolves the registered relays                            |
+| `InboxService#connect`                                                 | `./node`      | `connect(container)` resolves the registered relays; `disconnect()` drops them |
 | `InboxEventPublisherDriver`                                            | `./node`      | the in-process `EventPublisher`: publishes into this service's inbox           |
 | `PostgresOutboxDriver`, `PostgresInboxDriver`                          | `./node`      | the default stores: `outbox.messages` and `outbox.inbox`                       |
 | `OutboxEventOutboxDriver`                                              | `.`           | the driver of @stackra/events' `EventOutbox` port                              |
@@ -119,5 +119,6 @@ A consumer imports the producer's event class from `#stackra/clients/<service>` 
 it; gen registers its wire name with `registerEventNames`, so `InboxService#receive` rebuilds it with its payload
 schema and the bus runs that listener. A relay (the webhooks relay) types `handle` with `EventEnvelope` instead: once
 `connect(container)` has resolved it, it gets every claimed envelope, an unknown wire name included (which is then
-claimed, not refused). A relay that throws rolls the receipt back, so the event is redelivered: make it a queued
+claimed, not refused). The generated boot connects the inbox after the container is ready and calls `disconnect()`
+when the shutdown signal aborts. A relay that throws rolls the receipt back, so the event is redelivered: make it a queued
 listener.

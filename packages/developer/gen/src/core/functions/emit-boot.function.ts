@@ -3,16 +3,19 @@
  * Purpose: `emitBoot`, a service's `#stackra/boot` (`.stackra/gen/boot.ts`): one `boot(container, { url, signal })`
  *          that connects what needs the booted container, in order: the bound `HoldRegistry` and `SequenceTimeZone`
  *          drivers (or none), `PostgresDatabaseDriver.connect` with the legal-hold subscriber and the outbox writer
- *          among its subscribers, `segments.connect(container)`, then `relay.connect(container)` and the relay's
- *          `work` loop until the signal aborts.
+ *          among its subscribers, `segments.connect(container)`, `EventBus#connect` and `InboxService#connect` (the
+ *          registered listeners and relays, disconnected when the signal aborts), then `relay.connect(container)` and
+ *          the relay's `work` loop until the signal aborts.
  * Boundary: pure. Each step is written only when the service runs its package (`@stackra/database` or a model,
- *           `@stackra/outbox`, `@stackra/segments`); nothing to connect means no file. The connection string is the
+ *           `@stackra/outbox`, `@stackra/segments`, `@stackra/events`); nothing to connect means no file. The connection string is the
  *           runtime's (the generated Encore app's database), never read here; `@stackra/app/server` calls `boot` once
  *           it hands the entry its container.
  * Runtime: isomorphic
  * Governing contract: ADR 0014 (decision 5: the runtime provides the connection); ADR 0078 (the outbox relay); ADR
  *                     0332 (segments); ADR 0295 (decision 8: boot order belongs to the runtime); ADR 0134 (2026-10-24
- *                     amendment: every disposal path asks the connected `HoldRegistry`); ADR 0394 (decision 1).
+ *                     amendment: every disposal path asks the connected `HoldRegistry`); ADR 0394 (decision 1); ADR 0263 (the
+ *                     container is ready before anything resolves from it); ADR 0260 (decision 4: typed subscribers
+ *                     and relays receive only once connected).
  */
 import { generatedHeader } from "#core/functions/generated-header.function";
 import type { MemberIR } from "#core/types/member-ir.type";
@@ -34,7 +37,9 @@ export function emitBoot(ir: MemberIR): string | undefined {
     ir.dependencies.some(({ manifest }) => (manifest.models ?? []).length > 0);
   const outbox = uses("@stackra/outbox");
   const segments = uses("@stackra/segments");
-  if (!database && !outbox && !segments) return undefined;
+  // The outbox depends on the bus, so a service with an outbox has one to connect.
+  const events = outbox || uses("@stackra/events");
+  if (!database && !outbox && !segments && !events) return undefined;
 
   const imports = ['import type { Container } from "@stackra/container";'];
   const steps: string[] = [];
@@ -53,11 +58,28 @@ export function emitBoot(ir: MemberIR): string | undefined {
     );
   }
   if (outbox)
-    imports.push('import { OutboxRelayService, OutboxWriterService } from "@stackra/outbox/node";');
+    imports.push('import { InboxService, OutboxRelayService, OutboxWriterService } from "@stackra/outbox/node";');
   if (segments) {
     imports.push('import { SegmentService } from "@stackra/segments/node";');
     steps.push("  container.get(SegmentService).connect(container);");
   }
+  if (events) {
+    imports.push('import { EventBus } from "@stackra/events";');
+    steps.push("  const bus = container.get(EventBus);", "  bus.connect(container);");
+  }
+  if (outbox)
+    steps.push("  const inbox = container.get(InboxService);", "  inbox.connect(container);");
+  if (events)
+    steps.push(
+      "  options.signal.addEventListener(",
+      '    "abort",',
+      "    () => {",
+      "      bus.disconnect();",
+      ...(outbox ? ["      inbox.disconnect();"] : []),
+      "    },",
+      "    { once: true },",
+      "  );",
+    );
   if (outbox)
     steps.push(
       "  const relay = container.get(OutboxRelayService);",
@@ -77,7 +99,7 @@ export function emitBoot(ir: MemberIR): string | undefined {
     header,
     ...imports.sort(),
     "",
-    "/** Connects the legal holds and the database, then the services that resolve classes from the container, then the relay. */",
+    "/** Connects the legal holds and the database, then the services that resolve classes from the container (the bus and inbox until shutdown), then the relay. */",
     "export async function boot(",
     "  container: Container,",
     "  options: { readonly url: string; readonly signal: AbortSignal },",

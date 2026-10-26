@@ -6,9 +6,11 @@
  * Boundary: a listener failure is recorded on its delivery and never reaches the emitter or the other listeners
  *           (ADR 0078 decisions 1 and 2). It runs each delivery once: retries and queues belong to the queue driver
  *           behind a queued listener. It never writes to the outbox and never deduplicates; the inbox does that by
- *           event id. `connect` subscribes the listeners gen registered, resolved from a container.
+ *           event id. `connect` subscribes the listeners gen registered, resolved from a container; `disconnect` (the
+ *           boot calls it on shutdown) removes exactly those, leaving direct `subscribe` calls in place.
  * Runtime: isomorphic
- * Governing contract: ADR 0078 (decisions 1 to 4); ADR 0294 (decisions 4 and 27); ADR 0305 (rule 21).
+ * Governing contract: ADR 0078 (decisions 1 to 4); ADR 0294 (decisions 4 and 27); ADR 0305 (rule 21); ADR 0263 (connected after the
+ *                     container is ready, disconnected on shutdown).
  */
 import { Service } from "@stackra/container";
 import type { AnyClass } from "@stackra/container";
@@ -44,6 +46,9 @@ export class EventBus extends Service {
   /** Subscriptions in subscription order. */
   private readonly subscriptions: Subscription[] = [];
 
+  /** The subscriptions `connect` made, which `disconnect` removes. */
+  private readonly connected: Subscription[] = [];
+
   /** Occurrences waiting for `drain()`, oldest first. */
   private readonly queue: RecordedEvent<Event>[] = [];
 
@@ -78,8 +83,21 @@ export class EventBus extends Service {
     get<T extends object>(type: AnyClass<T>): T;
   }): void {
     for (const [type, listeners] of LISTENER_REGISTRY)
-      for (const listener of listeners)
-        if (container.has(listener)) this.subscribe(type, container.get(listener));
+      for (const listener of listeners) {
+        if (!container.has(listener)) continue;
+        const instance = container.get(listener);
+        if (this.subscriptions.some((known) => known.type === type && known.listener === instance))
+          continue;
+        const subscription = { type, listener: instance };
+        this.subscriptions.push(subscription);
+        this.connected.push(subscription);
+      }
+  }
+
+  /** Removes the subscriptions `connect` made; queued occurrences stay queued. */
+  disconnect(): void {
+    for (const subscription of this.connected.splice(0))
+      this.subscriptions.splice(this.subscriptions.indexOf(subscription), 1);
   }
 
   /**

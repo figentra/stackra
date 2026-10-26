@@ -73,6 +73,10 @@ Another service's event is subscribed to the same way: import its class from `#s
 `instanceof` and `registerListeners` takes it; there is no subscription by wire name. In a test,
 `deliverRemoteEvent(AppApproved, { appId })` builds it through its payload schema.
 
+A service's generated boot (`#stackra/boot`) calls `bus.connect(container)` once the container is ready, which
+subscribes every registered listener the container binds, and `bus.disconnect()` when the shutdown signal aborts,
+which removes exactly those (direct `subscribe` calls stay).
+
 ## Testing
 
 ```ts

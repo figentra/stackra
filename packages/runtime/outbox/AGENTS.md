@@ -35,7 +35,7 @@ model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./node`.
   implicit flush transaction is joined too.
 - The inbox hands every claimed envelope to the relays `registerRelays` named and `connect` resolved, before the bus
   runs the typed listeners; without a relay an unknown wire name is still refused before the claim (ADR 0260
-  decision 4). A relay is never keyed by wire name.
+  decision 4). A relay is never keyed by wire name. The generated boot calls `connect` and, on shutdown, `disconnect`.
 - A driver stores and lists; it never delivers, computes a backoff or reads a clock. The relay passes `now` and the
   retry time.
 - One relay runs a tick at a time (`Locks.tryWith`), so `due` reserves nothing. Every delivery that opens a scope runs

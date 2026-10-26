@@ -10,7 +10,7 @@
  *           received; a claim whose transaction rolls back is released. Every receipt runs inside `withScope`, the
  *           event's scope or none, so a scope never leaks into the next receipt of the same transaction. `drain` runs
  *           everything the bus has queued, as @stackra/events' bus does. Relays (listeners taking an `EventEnvelope`,
- *           resolved by `connect`) get every claimed envelope, a wire name with no class included, so a service with
+ *           resolved by `connect`, dropped by `disconnect` on shutdown) get every claimed envelope, a wire name with no class included, so a service with
  *           a relay claims an unknown event for its relay instead of refusing it. A relay that throws rolls the receipt
  *           back (the claim is released and the event is redelivered), so a relay should be a queued listener.
  * Runtime: node
@@ -80,6 +80,11 @@ export class InboxService extends Service {
         const relay = container.get(type);
         if (!this.relays.includes(relay)) this.relays.push(relay);
       }
+  }
+
+  /** Drops the connected relays (the boot calls it on shutdown); a later receipt sees none. */
+  disconnect(): void {
+    this.relays.splice(0);
   }
 
   /**

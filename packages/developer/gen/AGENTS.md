@@ -59,6 +59,9 @@ The Stackra compiler. Member at `packages/developer/gen` (`tier:lib`), in the pr
   `@stackra/actions` and `REPLICA_CHANGES_SCHEMA` in `@stackra/query`.
 - `generateMember` runs every emitter; `generate` (and so `stackra gen`) writes what it returns. A new output is an
   emitter in `src/core/functions/` called from `generateMember`, with its test.
+- `emitBoot` is the only place a service's connect calls are written, in order after the container is ready: database,
+  segments, `EventBus#connect` and `InboxService#connect` (disconnected when the shutdown signal aborts), then the
+  relay. Without the bus and inbox connects, relays and typed subscribers receive nothing.
 
 ## Rules that fail the build
 
