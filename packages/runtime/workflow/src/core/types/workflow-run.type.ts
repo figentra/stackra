@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `WorkflowRun`, one run as the journal keeps it and `app.workflows.last(W)` returns it: its workflow key and
- *          pinned version, status, input, starting call, scope, failure, times and steps.
+ *          pinned version, the automation it runs (a document run of a stored automation), status, input, starting
+ *          call, scope, failure, times and steps.
  * Boundary: a type only; the input is JSON. The scope is the one the starting call ran in; every step runs in it.
  * Runtime: isomorphic
  * Governing contract: ADR 0102 (decision 1: the journal); ADR 0152 (decision 2: the version pin; decision 4: inspect
@@ -25,6 +26,9 @@ export interface WorkflowRun {
 
   /** The version it started on and resumes on; absent reads as 1 (a run journaled before versions). */
   readonly version?: number;
+
+  /** The automation a document run runs, so the journal lists an automation's runs; absent otherwise. */
+  readonly automation?: PublicId<"wfa">;
 
   /** Where it stands. */
   readonly status: WorkflowRunStatus;

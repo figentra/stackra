@@ -65,6 +65,12 @@ journals, the boot explorer and the in-process test driver (ADR 0101, 0102, 0151
 - A document step's call id is its step key (`<run id>:<step>`, `:<index>` per for-each item), so the events its block
   records name the run as their correlation; `runOfCall` parses it back and `chained` reads the causing run's chain.
   Never give a document step's call another id, or chain depth stops counting.
+- Run start and end are domain events (`WorkflowRunStarted`, `WorkflowRunEnded`), never a callback option or a
+  "hook" (ADR 0294 decision 23). Every path that ends a run goes through the engine's `end`, so each end is announced
+  once; a new terminal status needs `end`, the enum, a migration widening `ck_runs_status` and the ended event's
+  schema.
+- `cancel` never compensates; a status the engine never advances is anything outside `running`, `waiting` and
+  `compensating`.
 - The for-each limit and the chain depth are configuration (`workflow.forEachLimit`, `workflow.maxChainDepth`), never
   constants in code; `WORKFLOW_DEFAULTS` only holds the fallback for an engine built without a config.
 

@@ -4,6 +4,17 @@ description: "Accepted, amended by 0292, 0294 · 2026-10-20"
 ---
 
 <Note>
+  Note 2026-10-26 (STA-1242, stackra-112), decision 4 (operations). The native engine exposes cancel
+  and the run listing the operations need: `cancel(runId, reason)` ends a running or waiting run in a
+  new `cancelled` status (error `workflow_cancelled`), waits for the run's lock, and undoes nothing;
+  the L4 risk is the calling action's. The journal lists an automation's runs
+  (`byAutomation`, newest first). Each run announces its start and end as domain events
+  (`WorkflowRunStarted`, `WorkflowRunEnded`) after its row commits, so a host records and meters runs
+  with a listener; there is no callback option (0294 decision 23). A stored automation pauses for a
+  host's reason through `AutomationService.pause`. Retry of a failed run is still open.
+</Note>
+
+<Note>
   Note 2026-10-26 (STA-1243, stackra-113), decision 6 (loop and recursion guards) for studio
   automations, and the for-each step of OS-232. A document step calls its action block with its step
   key (`<run id>:<step>`) as the call id, so every event the block records carries the run as its

@@ -10,10 +10,12 @@
  *          envelope's scope field and no `scope` key; a tick takes over a run whose runner died; the port methods
  *          delegate. Documents and plans: a document run calls each action block through the pipeline as the run's
  *          caller with resolved inputs and the step key, skips by condition, parks on a trigger block and resumes on
- *          the held occurrence, starts once per key, and refuses an invalid document; a for-each step calls its block once
- *          per item with per-item keys and refuses a list past the configured limit; `chained` continues the chain of
- *          the run a step key names and stops one past the configured depth or a loop; a run resumes on its pinned
- *          version's class and waits while that version is not deployed.
+ *          the held occurrence, starts once per key, and refuses an invalid document; a for-each step calls its block
+ *          once per item with per-item keys and refuses a list past the configured limit; `chained` continues the chain
+ *          of the run a step key names and stops one past the configured depth or a loop; a run resumes on its pinned
+ *          version's class and waits while that version is not deployed. A document run keeps the automation it runs
+ *          and announces it in `WorkflowRunStarted` and `WorkflowRunEnded`; `cancel` ends a waiting run `cancelled`
+ *          (never advanced again, announced) and refuses an ended or unknown one.
  * Boundary: test only; the memory journal and lock driver, a settable clock, a map resolver, recording stand-ins for
  *           the outbox, the bus and the context storage. `backoffDelay` is mocked to zero so a retry does not wait.
  * Runtime: node (vitest)
@@ -48,6 +50,8 @@ import { WorkflowRunStatus } from "#core/enums/workflow-run-status.enum";
 import type { WorkflowConfig } from "#config/workflow.config";
 import { AutomationInvalidError } from "#core/errors/automation-invalid.error";
 import { ForEachItemsInvalidError } from "#core/errors/for-each-items-invalid.error";
+import { WorkflowRunEnded } from "#core/events/workflow-run-ended.event";
+import { WorkflowRunStarted } from "#core/events/workflow-run-started.event";
 import { registerBlocks } from "#core/functions/register-blocks.function";
 import { registerWorkflows } from "#core/functions/register-workflows.function";
 import type { Run } from "#core/types/run.type";
@@ -459,9 +463,15 @@ describe(NativeWorkflowRunnerDriver, () => {
       correlationId: "call-1",
       occurredAt: NOON,
     });
-    expect(dispatched).toHaveLength(1);
-    expect(dispatched[0]?.[0]).toBeInstanceOf(PointsDebited);
-    expect(dispatched[0]?.[1]).not.toHaveProperty("scope");
+    const debited = dispatched.filter(([event]) => event instanceof PointsDebited);
+    expect(debited).toHaveLength(1);
+    expect(debited[0]?.[1]).not.toHaveProperty("scope");
+    expect(dispatched.map(([event]) => (event as object).constructor)).toEqual([
+      WorkflowRunStarted,
+      PointsDebited,
+      WorkflowRunEnded,
+    ]);
+    expect(dispatched.at(-1)?.[0]).toMatchObject({ status: WorkflowRunStatus.Completed });
   });
 
   it("gives a run started without a call scope the session's, for its steps and its events", async () => {
@@ -790,6 +800,52 @@ describe("NativeWorkflowRunnerDriver documents and plans", () => {
 
     const child = await runner.startDocument(plan, {}, ORIGIN, { key: "child", chain: second });
     expect(await runner.chained(`${child}:notify:0`, "wfa_3")).toBeUndefined();
+  });
+
+  it("keeps a run's automation, announces its start and end, and cancels it while it waits", async () => {
+    const automation = "wfa_0000000000000000000000000a";
+    const dispatched: object[] = [];
+    const bus = {
+      dispatch: (event: object) => void dispatched.push(event),
+      drain: async () => [],
+    };
+    const pipeline = { execute: async () => ({ messageId: "msg_1" }) };
+    const { runner, journal } = engineWith([
+      [ActionPipeline, pipeline],
+      [EventBus, bus],
+    ]);
+    const id = await runner.startDocument(
+      COD,
+      { orderId: "ord_1", answer: "pending" },
+      { ...ORIGIN, scope: SCOPE },
+      { automation },
+    );
+    if (id === undefined) throw new Error("no run started");
+
+    expect((await runner.find(id))?.automation).toBe(automation);
+    expect((await journal.byAutomation(automation, 10)).map((run) => run.id)).toEqual([id]);
+    expect(dispatched).toEqual([
+      expect.objectContaining({
+        runId: id,
+        workflow: "workflow.document",
+        automationId: automation,
+      }),
+    ]);
+    expect(dispatched[0]).toBeInstanceOf(WorkflowRunStarted);
+
+    expect(await runner.cancel(id, "Bulk cancel")).toBe(true);
+    const cancelled = await runner.find(id);
+    expect(cancelled).toMatchObject({
+      status: WorkflowRunStatus.Cancelled,
+      error: { code: "workflow_cancelled", message: "Bulk cancel" },
+    });
+    expect(dispatched.at(-1)).toBeInstanceOf(WorkflowRunEnded);
+    expect(dispatched.at(-1)).toMatchObject({ status: WorkflowRunStatus.Cancelled });
+
+    await runner.hold(CodConfirmed, { orderId: "ord_1", answer: "yes" }, "ord_1");
+    expect(await runner.tick(plus(1))).toBe(0);
+    expect(await runner.cancel(id)).toBe(false);
+    expect(await runner.cancel("wfr_missing")).toBe(false);
   });
 
   it("resumes a run on its pinned version, and waits while that version is not deployed", async () => {

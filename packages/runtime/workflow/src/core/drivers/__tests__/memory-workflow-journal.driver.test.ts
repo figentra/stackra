@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `MemoryWorkflowJournalDriver`: it is a `WorkflowJournal`; `save` and `find` keep a copy;
- *          `last` is the latest start, the greater id within one instant; `take` removes the oldest held signal of the
+ *          `last` is the latest start, the greater id within one instant; `byAutomation` lists one
+ *          automation's runs newest first and pages by start; `take` removes the oldest held signal of the
  *          same key, correlation and scope that arrived in time; `due` lists running and compensating runs and waiting
  *          runs whose deadline, wait or signal came; `expire` drops lapsed signals; there is no transaction or scope.
  * Boundary: test only.
@@ -104,6 +105,21 @@ describe(MemoryWorkflowJournalDriver, () => {
     await journal.save(runOf("wfr_c", { startedAt: LATER }));
     expect((await journal.last("RedeemWorkflow"))?.id).toBe("wfr_c");
     expect(await journal.last("OtherWorkflow")).toBeUndefined();
+  });
+
+  it("lists an automation's runs newest first, the greater id within one instant, before a start", async () => {
+    const journal = new MemoryWorkflowJournalDriver();
+    await journal.save(runOf("wfr_a", { automation: "wfa_1" }));
+    await journal.save(runOf("wfr_b", { automation: "wfa_1" }));
+    await journal.save(runOf("wfr_c", { automation: "wfa_1", startedAt: LATER }));
+    await journal.save(runOf("wfr_d", { automation: "wfa_2" }));
+    await journal.save(runOf("wfr_e"));
+    expect((await journal.byAutomation("wfa_1", 10)).map((run) => run.id)).toEqual([
+      "wfr_c",
+      "wfr_b",
+      "wfr_a",
+    ]);
+    expect((await journal.byAutomation("wfa_1", 1, LATER)).map((run) => run.id)).toEqual(["wfr_b"]);
   });
 
   it("takes the oldest matching signal once, of the same scope, arrived in time", async () => {

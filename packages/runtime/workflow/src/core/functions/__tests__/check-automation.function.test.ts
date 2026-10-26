@@ -3,8 +3,9 @@
  * Purpose: unit tests of `checkAutomation` and the shape it parses (`AUTOMATION_DOCUMENT_SCHEMA`): a valid document
  *          comes back with its defaults (version 1, empty inputs); a bad shape is refused path by path; an unknown or
  *          wrong-kind block, a wait on a trigger that does not correlate, a reference to a later step or to an event
- *          outside a wait, an `item` reference outside a for-each step, a for-each list naming `item` or a later step, a
- *          for-each step without a block, and a condition without facts or with an unregistered field are each refused by path.
+ *          outside a wait, an `item` reference outside a for-each step, a for-each list naming `item` or a later step,
+ *          a for-each step without a block, and a condition without facts or with an unregistered field are each
+ *          refused by path.
  * Boundary: test only; the registry is this test file's process state.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0122 (decision 3 and its enforcement); ADR 0331 (decision 10); ADR 0245 (decision

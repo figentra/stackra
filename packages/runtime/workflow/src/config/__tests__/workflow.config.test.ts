@@ -1,9 +1,9 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `WorkflowConfig`: a configuration keyed `workflow` (an override keeps the key), its field typed
- *          on the class, built with the shipped default, set by a runway value or a host override, and refusing a
- *          journal nobody ships; the signal retention defaults to seven days and refuses a duration outside 1m to 90d; the
- *          for-each limit defaults to 1,000 and the chain depth to 3, each refused outside its range.
+ * Purpose: unit tests of `WorkflowConfig`: a configuration keyed `workflow` (an override keeps the key), its field
+ *          typed on the class, built with the shipped default, set by a runway value or a host override, and refusing a
+ *          journal nobody ships; the signal retention defaults to seven days and refuses a duration outside 1m to 90d;
+ *          the for-each limit defaults to 1,000 and the chain depth to 3, each refused outside its range.
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0294 (decision 19); ADR 0146 as amended; ADR 0427 (decision 2).

@@ -6,26 +6,30 @@
  *          timeout comes; retries a step with backoff; times out steps and runs; and on a failure undoes the completed
  *          steps last first. `startDocument` runs an automation document or an agent's plan the same way, each step an
  *          action call through the pipeline as the run's principal (a for-each step one call per item); `chained`
- *          places a triggered run in its event chain and stops a chain past its depth or a cycle. `tick` advances what is due (resumed waits,
- *          timeouts, runs whose runner died), each run on the version it started on; `work` ticks until stopped.
+ *          places a triggered run in its event chain and stops a chain past its depth or a cycle; `cancel` stops a
+ *          running or waiting run. Every run announces its start (`WorkflowRunStarted`) and its end
+ *          (`WorkflowRunEnded`). `tick` advances what is due (resumed waits, timeouts, runs whose runner died), each
+ *          run on the version it started on; `work` ticks until stopped.
  * Boundary: over the `WorkflowJournal` port (Postgres or memory), `Locks` (one runner per run, so a run never advances
  *           twice at once) and the `Clock`; `connect(resolver)` gives it the container that builds workflow instances
  *           and binds `EventOutbox`, `EventBus` and `ContextStorage` (the explorer connects it at boot, the testing
  *           plugin in a test). `run` resolves to the workflow's `output(run)` once the run completes, or once it parks
- *           on a wait (over the results so far, so the calling action answers while the run waits durably), and
- *           rejects with the failing step's error (`workflow_timed_out` for a timeout) after compensating. A sent
- *           signal is held in the sender's transaction and taken by the next tick, never by the sender's call. A
- *           step's integration events go to the outbox in the step's transaction and its domain events to the bus
- *           after it commits, with the run's scope id as the envelope's scope field and no `scope` key; events a model
- *           records reach the outbox through its own flush. Staging the events of a whole run until it succeeds (ADR
- *           0102 decision 3) waits for a staged state in @stackra/outbox. A document run keeps its document in its
- *           input, so it resumes on that version; a coded run resumes on the class registered for its key and
- *           version, and waits (not advanced here) while no such class is deployed in this process. A step may wait
- *           for an event as for a signal: the explorer holds each occurrence of a correlating trigger block. A document
- *           step's call id is its step key, so the events its block records name the run as their correlation; a
- *           trigger that event fires reads the run's chain from it. A for-each step calls its block one item after
- *           another in one attempt, each call keyed `<step key>:<index>` so a retried attempt replays the calls an
- *           idempotent action already made.
+ *           on a wait (over the results so far, so the calling action answers while the run waits durably), and rejects
+ *           with the failing step's error (`workflow_timed_out` for a timeout) after compensating. A sent signal is
+ *           held in the sender's transaction and taken by the next tick, never by the sender's call. A step's
+ *           integration events go to the outbox in the step's transaction and its domain events to the bus after it
+ *           commits, with the run's scope id as the envelope's scope field and no `scope` key; events a model records
+ *           reach the outbox through its own flush. Staging the events of a whole run until it succeeds (ADR 0102
+ *           decision 3) waits for a staged state in @stackra/outbox. A document run keeps its document in its input, so
+ *           it resumes on that version; a coded run resumes on the class registered for its key and version, and waits
+ *           (not advanced here) while no such class is deployed in this process. A step may wait for an event as for a
+ *           signal: the explorer holds each occurrence of a correlating trigger block. A document step's call id is its
+ *           step key, so the events its block records name the run as their correlation; a trigger that event fires
+ *           reads the run's chain from it. A for-each step calls its block one item after another in one attempt, each
+ *           call keyed `<step key>:<index>` so a retried attempt replays the calls an idempotent action already made. A
+ *           document run of a stored automation keeps its id (`WorkflowRun.automation`) so the journal lists an
+ *           automation's runs. The lifecycle events are domain events on the bound `EventBus`, dispatched after the row
+ *           commits; the bus records a failing listener and the run never sees it.
  * Runtime: isomorphic
  * Governing contract: ADR 0102 (decisions 1, 2 and 7); ADR 0151 (decisions 2 and 3: the native driver behind the
  *                     engine port, which is @stackra/actions' `WorkflowRunner`); ADR 0292 (decision 2); ADR 0152 (0294
@@ -60,6 +64,8 @@ import { WORKFLOW_KEYS } from "#core/constants/workflow-keys.constant";
 import { StepStatus } from "#core/enums/step-status.enum";
 import { WorkflowRunStatus } from "#core/enums/workflow-run-status.enum";
 import { ForEachItemsInvalidError } from "#core/errors/for-each-items-invalid.error";
+import { WorkflowRunEnded } from "#core/events/workflow-run-ended.event";
+import { WorkflowRunStarted } from "#core/events/workflow-run-started.event";
 import { checkAutomation } from "#core/functions/check-automation.function";
 import { correlationKey } from "#core/functions/correlation-key.function";
 import { documentPlan } from "#core/functions/document-plan.function";
@@ -333,7 +339,7 @@ export class NativeWorkflowRunnerDriver extends Driver(WorkflowRunner) {
       plan.correlate === undefined
         ? undefined
         : `${plan.key}:${correlationKey(plan.correlate(input as never))}`;
-    const outcome = await this.launch(plan, instance, toJson(input), origin, key);
+    const outcome = await this.launch(plan, instance, toJson(input), origin, key, undefined);
     if (outcome === undefined) return undefined;
     return typeof (instance as { output?: unknown }).output === "function"
       ? invoke(instance, "output", [viewOf(outcome.run)])
@@ -346,7 +352,8 @@ export class NativeWorkflowRunnerDriver extends Driver(WorkflowRunner) {
    * action block through the action pipeline as that caller, so access, approval and audit apply to every step. The
    * run keeps the document, so it resumes on this version. Given `options.key`, a second start of the same key starts
    * nothing (a redelivered trigger); `options.chain` (from `chained`) is kept with the run, so the runs its events
-   * trigger continue the chain.
+   * trigger continue the chain; `options.automation` names the stored automation the run runs, so the journal lists it
+   * (`WorkflowJournal.byAutomation`) and the lifecycle events carry it.
    *
    * @returns the run's id; `undefined` for a key that already has a run.
    * @throws AutomationInvalidError when the document does not check; the failing step's error, or
@@ -356,7 +363,11 @@ export class NativeWorkflowRunnerDriver extends Driver(WorkflowRunner) {
     document: unknown,
     input: unknown,
     origin: RunOrigin,
-    options: { readonly key?: string; readonly chain?: RunChain } = {},
+    options: {
+      readonly key?: string;
+      readonly chain?: RunChain;
+      readonly automation?: PublicId<"wfa">;
+    } = {},
   ): Promise<PublicId<"wfr"> | undefined> {
     const checked = checkAutomation(document);
     this.connected();
@@ -371,13 +382,15 @@ export class NativeWorkflowRunnerDriver extends Driver(WorkflowRunner) {
       run,
       origin,
       options.key === undefined ? undefined : `${DOCUMENT_WORKFLOW}:${options.key}`,
+      options.automation,
     );
     return outcome?.run.id;
   }
 
   /**
-   * Saves a new run of `plan` with `input` and advances it; with `key`, the run's id is derived from it and a key that
-   * already has a run starts nothing. An origin without a `scope` takes the caller's session scope.
+   * Saves a new run of `plan` with `input` (of `automation`, when given), announces it and advances it; with `key`, the
+   * run's id is derived from it and a key that already has a run starts nothing. An origin without a `scope` takes the
+   * caller's session scope.
    *
    * @throws the failing step's error once the completed steps were undone.
    */
@@ -387,6 +400,7 @@ export class NativeWorkflowRunnerDriver extends Driver(WorkflowRunner) {
     input: unknown,
     origin: RunOrigin,
     key: string | undefined,
+    automation: PublicId<"wfa"> | undefined,
   ): Promise<Outcome | undefined> {
     const id = await mintId("wfr", key);
     const scope = await this.journal.currentScope();
@@ -398,6 +412,7 @@ export class NativeWorkflowRunnerDriver extends Driver(WorkflowRunner) {
           id,
           workflow: plan.key,
           version: plan.version,
+          ...(automation === undefined ? {} : { automation }),
           status: WorkflowRunStatus.Running,
           input,
           // A run an event starts has no call scope: its steps run in, and read, the session's.
@@ -410,6 +425,18 @@ export class NativeWorkflowRunnerDriver extends Driver(WorkflowRunner) {
           ...(plan.timeout === undefined ? {} : { deadlineAt: later(startedAt, plan.timeout) }),
           steps: Object.freeze([]),
         }),
+      );
+      await this.publish(
+        [
+          WorkflowRunStarted.create({
+            runId: run.id,
+            workflow: run.workflow,
+            version: run.version ?? 1,
+            ...(automation === undefined ? {} : { automationId: automation }),
+          }),
+        ],
+        run,
+        startedAt,
       );
       const outcome = await this.advance(run, instance, plan, startedAt);
       if (outcome.failed) throw outcome.error;
@@ -469,6 +496,31 @@ export class NativeWorkflowRunnerDriver extends Driver(WorkflowRunner) {
       ...(cause === undefined ? {} : { cause }),
     });
     return undefined;
+  }
+
+  /**
+   * Cancels run `id` (ADR 0152 decision 4: an operation, the calling action's risk): a running or waiting run ends
+   * `cancelled` with `workflow_cancelled` and `reason`, and is never advanced again; its done steps stay done and
+   * nothing is undone. It waits for the run's lock, so a step in flight finishes first.
+   *
+   * @returns whether it cancelled; `false` for an unknown run or one that already ended or is compensating.
+   */
+  async cancel(id: PublicId<"wfr">, reason = "Cancelled"): Promise<boolean> {
+    return this.locks.with(lockKey(id), WORKFLOW_DEFAULTS.lease, async () => {
+      const run = await this.journal.find(id);
+      if (
+        run === undefined ||
+        (run.status !== WorkflowRunStatus.Running && run.status !== WorkflowRunStatus.Waiting)
+      )
+        return false;
+      await this.end({
+        ...run,
+        status: WorkflowRunStatus.Cancelled,
+        error: { code: WORKFLOW_DEFAULTS.cancelled, message: reason },
+        endedAt: this.clock.now(),
+      });
+      return true;
+    });
   }
 
   /** The latest run of `workflow`, for inspection (ADR 0152 decision 4). */
@@ -667,7 +719,7 @@ export class NativeWorkflowRunnerDriver extends Driver(WorkflowRunner) {
     }
     const endedAt = this.instant(now);
     return {
-      run: await this.save({ ...run, status: WorkflowRunStatus.Completed, endedAt }),
+      run: await this.end({ ...run, status: WorkflowRunStatus.Completed, endedAt }),
       failed: false,
     };
   }
@@ -864,11 +916,11 @@ export class NativeWorkflowRunnerDriver extends Driver(WorkflowRunner) {
           status: WorkflowRunStatus.Failed,
           endedAt: this.clock.now(),
         };
-        return { run: await this.save(stuck), failed: true };
+        return { run: await this.end(stuck), failed: true };
       }
     }
     return {
-      run: await this.save({
+      run: await this.end({
         ...run,
         status: WorkflowRunStatus.Compensated,
         endedAt: this.clock.now(),
@@ -993,6 +1045,26 @@ export class NativeWorkflowRunnerDriver extends Driver(WorkflowRunner) {
   private instant(now: Date): Date {
     const clock = this.clock.now();
     return clock.getTime() > now.getTime() ? clock : now;
+  }
+
+  /** Stores `run`, which has ended, and announces its end (`WorkflowRunEnded`). */
+  private async end(run: WorkflowRun): Promise<WorkflowRun> {
+    await this.save(run);
+    await this.publish(
+      [
+        WorkflowRunEnded.create({
+          runId: run.id,
+          workflow: run.workflow,
+          version: run.version ?? 1,
+          ...(run.automation === undefined ? {} : { automationId: run.automation }),
+          status: run.status,
+          ...(run.error === undefined ? {} : { error: run.error }),
+        }),
+      ],
+      run,
+      run.endedAt ?? this.clock.now(),
+    );
+    return run;
   }
 
   /** Stores `run` in a transaction of its own, in its scope, and gives it back. */

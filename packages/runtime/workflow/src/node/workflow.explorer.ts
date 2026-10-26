@@ -1,10 +1,10 @@
 /**
  * Stackra file contract:
  * Purpose: `WorkflowExplorer`, the boot step of the workflow package: it connects the native engine to the container,
- *          reads the plan of every workflow the container built (so a bad `@Step`, undo or `after` fails at boot, not on
- *          the first run, and every workflow is registered for resume), subscribes a starter for each `startOn`
- *          workflow to the event bus, and subscribes each trigger building block: its occurrences are held for the
- *          runs that wait on them (when it correlates), and start the published automations it triggers; and, when
+ *          reads the plan of every workflow the container built (so a bad `@Step`, undo or `after` fails at boot, not
+ *          on the first run, and every workflow is registered for resume), subscribes a starter for each `startOn`
+ *          workflow to the event bus, and subscribes each trigger building block: its occurrences are held for the runs
+ *          that wait on them (when it correlates), and start the published automations it triggers; and, when
  *          `ServiceAckService` is bound, subscribes `ServiceAcked`, holding `AllServicesAcked` for the subject once the
  *          last expected service acked.
  * Boundary: runs once per container, after every singleton is built. It acts only when the bound `WorkflowRunner` is
@@ -12,11 +12,11 @@
  *           not a `Listener` kind file, so gen never wires it to every event; the run it starts names no scope and
  *           takes the session's from the engine. A trigger's listener reads the automations of the delivery's scope
  *           session (`AutomationService.triggered`, when bound) and starts each as its principal, keyed by the
- *           automation and the occurrence so a redelivery starts nothing twice, and placed in its event chain from the
- *           delivery's correlation (`NativeWorkflowRunnerDriver.chained`), so a chain past `workflow.maxChainDepth`
- *           or a loop back to an automation already in it starts nothing; one automation's failure does not stop
- *           the others. A coded step that waits for an event needs a trigger block that correlates it, or boot fails.
- *           The runtime still runs `work` (the worker loop) per service.
+ *           automation and the occurrence so a redelivery starts nothing twice, recorded as that automation's run, and
+ *           placed in its event chain from the delivery's correlation (`NativeWorkflowRunnerDriver.chained`), so a
+ *           chain past `workflow.maxChainDepth` or a loop back to an automation already in it starts nothing; one
+ *           automation's failure does not stop the others. A coded step that waits for an event needs a trigger block
+ *           that correlates it, or boot fails. The runtime still runs `work` (the worker loop) per service.
  * Runtime: node
  * Governing contract: ADR 0144 (explorers) as amended by 0263; ADR 0294 (decision 6: the kind acts on what decorators
  *                     recorded); ADR 0101 (0294 note: an event starts a workflow only through `startOn`); ADR 0102
@@ -100,7 +100,11 @@ function triggerOf(
               ...originOf(ctx, automation.document.key),
               actor: automation.principal,
             }),
-            { key: `${automation.automationId}:${ctx.eventId}`, chain },
+            {
+              key: `${automation.automationId}:${ctx.eventId}`,
+              chain,
+              automation: automation.automationId,
+            },
           );
         } catch (error) {
           failures.push(error);

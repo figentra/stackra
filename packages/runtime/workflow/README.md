@@ -180,6 +180,19 @@ An automation is a document that references blocks and adds no code (ADR 0122):
   passes it to `startDocument(…, { key, chain })`. A start deeper than `workflow.maxChainDepth` (3 by default, up to 20)
   or of an automation already in the chain (a loop) starts nothing and logs `workflow.chain_stopped`. A chain through
   another service's action keeps its depth only while that service propagates the call id as the correlation.
+- **Run lifecycle**: every run records `WorkflowRunStarted` once its first row commits and `WorkflowRunEnded`
+  (`completed`, `compensated`, `failed` or `cancelled`, with its error) once its last does: domain events on the bound
+  `EventBus`, so a host's `Listener` records and meters runs (the OS ledger's `record_start` and `record_outcome`). A
+  failing listener never fails the run. `startDocument(…, { automation })` keeps the automation id on the run
+  (`WorkflowRun.automation`, column `automation_id`, migration `workflow.0007`); the explorer passes it for every
+  triggered run, and `WorkflowJournal.byAutomation(automationId, limit, before?)` lists its runs newest first.
+- **Cancel**: `runner.cancel(runId, reason?)` ends a running or waiting run `cancelled` (error `workflow_cancelled`
+  with the reason) under the run's lock, so a step in flight finishes first; it is never advanced again, its done
+  steps stay done and nothing is undone. It returns `false` for an unknown, ended or compensating run. The calling
+  action carries the risk (ADR 0152 decision 4: cancel is L4); a bulk cancel is a loop over `byAutomation`.
+- **Pause**: `AutomationService.pause(automationId, reason)` stops triggers from starting an automation for a host's
+  snake_case reason (`failure_threshold`, `paused_by_user`) and records `AutomationPaused` with no blocks; it returns
+  `false` when it was already paused. Publishing again resumes it.
 - A product's seed pack ships default automations as a `WorkflowTemplatePack$` (`{ key, version, templates }`);
   `seedPack(scope, pack, principal)` publishes each as the product's seed principal, and a new version never
   overwrites a tenant's edit.
@@ -268,7 +281,7 @@ expect((await app.workflows.last(RedeemPointsWorkflow)).status).toBe(WorkflowRun
 ## Not here
 
 - Staging a run's events until it succeeds (ADR 0102 decision 3): needs a staged state in @stackra/outbox.
-- Workflow hooks (ADR 0102 decision 4); inspect, retry and cancel actions (ADR 0152 decision 4); the Temporal driver
-  (Pro, ADR 0292).
+- Retry of a failed run, and the inspect, retry and cancel actions themselves (ADR 0152 decision 4): the engine has
+  `find`, `byAutomation` and `cancel`; the host's actions call them. The Temporal driver (Pro, ADR 0292).
 - The @stackra/iam `PublisherAccess` driver, and the console checklist component.
 - The sandboxed code step (`@stackra/sandbox`, ADR 0154). The automation editor kernel is `@stackra/builder`'s.

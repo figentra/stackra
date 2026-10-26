@@ -1,10 +1,11 @@
 /**
  * Stackra file contract:
- * Purpose: `WorkflowRunStatus`, where one workflow run stands: running its steps, parked on a wait, finished,
- *          undoing its completed steps after a failure or a timeout, undone, or stuck because an undo itself failed.
+ * Purpose: `WorkflowRunStatus`, where one workflow run stands: running its steps, parked on a wait, finished, undoing
+ *          its completed steps after a failure or a timeout, undone, stuck because an undo itself failed, or cancelled.
  * Boundary: an `Enum.of` value plus the type of the same name; the journal stores the code. Only the engine writes it.
  *          `failed` means an undo failed and an operator must act (ADR 0152 decision 4: retry and cancel are actions);
- *          a run whose failing step was undone cleanly ends `compensated`, the error it failed with kept on the run.
+ *          a run whose failing step was undone cleanly ends `compensated`, the error it failed with kept on the run;
+ *          `cancelled` is a run an operator or its automation's publisher stopped (`workflow_cancelled` on the run).
  * Runtime: isomorphic
  * Governing contract: ADR 0102 (decisions 1 and 2: the journal, the saga); ADR 0152 (decision 1 and its 0294 note:
  *                     waits and timeouts); ADR 0231 (snake_case codes).
@@ -30,6 +31,8 @@ export const WorkflowRunStatus = Enum.of({
   Compensated: "compensated",
   /** An undo failed; the run stays as it is until an operator acts. */
   Failed: "failed",
+  /** Stopped by `cancel` while it ran or waited; its done steps stay done, nothing is undone. */
+  Cancelled: "cancelled",
 });
 
 /** One of the codes above. */

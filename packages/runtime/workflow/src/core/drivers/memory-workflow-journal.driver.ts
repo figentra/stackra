@@ -71,6 +71,25 @@ export class MemoryWorkflowJournalDriver extends Driver(WorkflowJournal) {
     return Promise.resolve(latest === undefined ? undefined : structuredClone(latest));
   }
 
+  /** See `WorkflowJournal.byAutomation`. */
+  byAutomation(
+    automation: PublicId<"wfa">,
+    limit: number,
+    before?: Date,
+  ): Promise<readonly WorkflowRun[]> {
+    const runs = [...this.runs.values()]
+      .filter(
+        (run) =>
+          run.automation === automation &&
+          (before === undefined || run.startedAt.getTime() < before.getTime()),
+      )
+      .sort(
+        (left, right) =>
+          right.startedAt.getTime() - left.startedAt.getTime() || (right.id > left.id ? 1 : -1),
+      );
+    return Promise.resolve(runs.slice(0, limit).map((run) => structuredClone(run)));
+  }
+
   /** See `WorkflowJournal.hold`. */
   hold(signal: HeldSignal): Promise<void> {
     this.signals.push(structuredClone(signal));

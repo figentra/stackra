@@ -5,8 +5,9 @@
  *          `dryRun` reports and records the revision; `publish` refuses a revision without a dry run or past the
  *          publisher's access and otherwise stamps it with the trigger, principal and publisher; `revision` reads the
  *          published one; `triggered` lists the published automations of a block with their documents and pauses one
- *          whose publisher lost access; `recheck` pauses the same; `seed` creates, skips, keeps a tenant's edit and
- *          updates; `seedPack` seeds each template.
+ *          whose publisher lost access; `recheck` pauses the same; `pause` pauses for a host's reason once and refuses
+ *          a reason that is not a code; `seed` creates, skips, keeps a tenant's edit and updates; `seedPack` seeds each
+ *          template.
  * Boundary: test only; a fake `Database` hands out a recording entity manager, so no database runs.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0122 (decision 3); ADR 0153 (decision 2); ADR 0423 (decisions 1 and 2);
@@ -217,6 +218,28 @@ describe(AutomationService, () => {
     connect([other], [storedRevision(other, 1, { document: { ...DOCUMENT, version: 1 } })]);
     expect(await serviceOf().recheck()).toEqual([other.id]);
     expect(other.pauseReason).toBe("publisher_access_lost");
+  });
+
+  it("pauses for a host's reason once, recording AutomationPaused, and refuses a reason that is not a code", async () => {
+    const automation = storedAutomation({ publishedRevision: 1, pausedAt: null });
+    connect([automation]);
+    const record = vi.spyOn(automation, "record");
+
+    expect(await serviceOf().pause(automation.id, "failure_threshold")).toBe(true);
+    expect(automation.pauseReason).toBe("failure_threshold");
+    expect(automation.pausedAt).toBeInstanceOf(Date);
+    expect(record).toHaveBeenCalledWith(
+      expect.objectContaining({
+        automationId: automation.id,
+        reason: "failure_threshold",
+        blocks: [],
+      }),
+    );
+    expect(await serviceOf().pause(automation.id, "paused_by_user")).toBe(false);
+    expect(automation.pauseReason).toBe("failure_threshold");
+    await expect(serviceOf().pause(automation.id, "Too many failures")).rejects.toBeInstanceOf(
+      TypeError,
+    );
   });
 
   it("lists the published automations a trigger starts", async () => {

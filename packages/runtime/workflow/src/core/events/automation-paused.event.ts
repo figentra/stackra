@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
- * Purpose: `AutomationPaused`, recorded when a published automation stops starting runs because its publisher lost
- *          access to an action block it calls (`publisher_access_lost`): the automation, its key, the reason and the
- *          blocks.
+ * Purpose: `AutomationPaused`, recorded when a published automation stops starting runs: because its publisher lost
+ *          access to an action block it calls (`publisher_access_lost`, with those blocks), or because a host paused
+ *          it (`AutomationService.pause`, its own reason such as `failure_threshold`, no blocks).
  * Boundary: a domain event, dispatched in process after the pause commits; the console's automation list and a
  *           notification to the scope's admins listen. It carries no document and no grant. It registers this
  *           package's own schema when the module loads, so `AutomationPaused.create` works with no generated file.
@@ -32,7 +32,7 @@ export class AutomationPaused extends DomainEvent {
   /** Why it paused (`publisher_access_lost`). */
   reason!: string;
 
-  /** The action blocks its publisher may no longer call. */
+  /** The action blocks its publisher may no longer call; empty for a host's pause. */
   blocks!: string[];
 }
 

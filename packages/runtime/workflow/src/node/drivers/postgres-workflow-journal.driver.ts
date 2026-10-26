@@ -8,7 +8,8 @@
  *           through zod. No table has a row-level-security policy (the worker advances every scope's runs); a held
  *           signal is matched to a run of the same scope by its `scope_id`, and `take` locks the row it removes
  *           (`for update skip locked`) so two runners never take one signal. JSON columns are `jsonb`; scope paths are
- *           `ltree`, read back as text. A run's pinned version is `version` (migration 0002; 1 for older rows).
+ *           `ltree`, read back as text. A run's pinned version is `version` (migration 0002; 1 for older rows); the
+ *           automation a run runs is `automation_id` (migration 0007, null for other runs).
  * Runtime: node
  * Governing contract: ADR 0102 (decision 1); ADR 0292 (decision 2); ADR 0160 (raw SQL is parameterised and typed with
  *                     zod); ADR 0142 (drivers behind ports); ADR 0327 (decisions 3 and 9: the scope session).
@@ -33,8 +34,8 @@ const SIGNALS = '"workflow"."signals"';
 
 /** The columns a run is read from. */
 const RUN_COLUMNS =
-  "id, workflow, version, status, input, origin, error, scope_id, scope_path::text as scope_path, started_at, " +
-  "deadline_at, ended_at";
+  "id, workflow, version, automation_id, status, input, origin, error, scope_id, " +
+  "scope_path::text as scope_path, started_at, deadline_at, ended_at";
 
 /** The columns a step is read from. */
 const STEP_COLUMNS =
@@ -52,6 +53,7 @@ const RUN = z.object({
   id: z.string().startsWith("wfr_"),
   workflow: z.string(),
   version: z.number().int().min(1),
+  automation_id: z.string().startsWith("wfa_").nullable(),
   status: z.enum(Enum.values(WorkflowRunStatus) as [WorkflowRunStatus, ...WorkflowRunStatus[]]),
   input: z.unknown(),
   origin: z.record(z.string(), z.unknown()),
@@ -126,6 +128,7 @@ function runOf(row: z.infer<typeof RUN>, steps: readonly z.infer<typeof STEP>[])
     id: row.id as PublicId<"wfr">,
     workflow: row.workflow,
     version: row.version,
+    ...(row.automation_id === null ? {} : { automation: row.automation_id as PublicId<"wfa"> }),
     status: row.status,
     input: row.input,
     origin: row.origin as unknown as RunOrigin,
@@ -192,13 +195,15 @@ export class PostgresWorkflowJournalDriver extends Driver(WorkflowJournal) {
     const em = this.database.em();
     // raw-sql: the journal has no model; one upsert for the run and one for all its steps
     await em.execute(
-      `insert into ${RUNS} (id, workflow, version, status, input, origin, error, scope_id, scope_path, ` +
-        "started_at, deadline_at, ended_at) values (?, ?, ?, ?, ?::jsonb, ?::jsonb, ?::jsonb, ?, ?::ltree, ?, ?, ?) " +
+      `insert into ${RUNS} (id, workflow, version, automation_id, status, input, origin, error, scope_id, ` +
+        "scope_path, started_at, deadline_at, ended_at) " +
+        "values (?, ?, ?, ?, ?, ?::jsonb, ?::jsonb, ?::jsonb, ?, ?::ltree, ?, ?, ?) " +
         "on conflict (id) do update set status = excluded.status, error = excluded.error, ended_at = excluded.ended_at",
       [
         run.id,
         run.workflow,
         run.version ?? 1,
+        run.automation ?? null,
         run.status,
         JSON.stringify(run.input ?? null),
         JSON.stringify(run.origin),
@@ -270,6 +275,32 @@ export class PostgresWorkflowJournalDriver extends Driver(WorkflowJournal) {
         ),
     );
     return row === undefined ? undefined : this.find(row.id as PublicId<"wfr">);
+  }
+
+  /** See `WorkflowJournal.byAutomation`. */
+  async byAutomation(
+    automation: PublicId<"wfa">,
+    limit: number,
+    before?: Date,
+  ): Promise<readonly WorkflowRun[]> {
+    // raw-sql: the journal has no model; served by idx_runs_automation_id_started_at
+    const rows = IDS.parse(
+      await this.database
+        .em()
+        .execute(
+          `select id from ${RUNS} where automation_id = ? and (?::timestamptz is null or started_at < ?) ` +
+            "order by started_at desc, id desc limit ?",
+          [automation, before ?? null, before ?? null, limit],
+        ),
+    );
+    // shortcut: one read per run (its steps included); add a step-less listing read if pages grow past a screen.
+    const runs: WorkflowRun[] = [];
+    for (const row of rows) {
+      // oxlint-disable-next-line no-await-in-loop -- one run after another, in page order
+      const run = await this.find(row.id as PublicId<"wfr">);
+      if (run !== undefined) runs.push(run);
+    }
+    return runs;
   }
 
   /** See `WorkflowJournal.hold`. */

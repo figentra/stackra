@@ -2,8 +2,9 @@
  * Stackra file contract:
  * Purpose: unit tests of `PostgresWorkflowJournalDriver`: a transaction is a new one in the run's scope session;
  *          `currentScope` reads the session settings; `save` upserts the run, then its steps in one batch; `find` reads
- *          the run and its ordered steps back into a record; `last`, `hold`, `take`, `due` and `expire` are bound
- *          statements; every statement binds its values.
+ *          the run and its ordered steps back into a record; `last`, `byAutomation` (newest first, paged by start, its
+ *          automation read back), `hold`, `take`, `due` and `expire` are bound statements; every statement binds its
+ *          values.
  * Boundary: test only; a stand-in database records each statement and the transactions and scopes it opens, and
  *           answers queued rows, so no database runs. The SQL itself runs in the integration tier.
  * Runtime: node (vitest)
@@ -32,6 +33,7 @@ const RUN_ROW = {
   id: "wfr_a",
   workflow: "RedeemWorkflow",
   version: 2,
+  automation_id: null,
   status: "waiting",
   input: { points: 300 },
   origin: { callId: "call-1", key: "points.redeem", actor: { kind: "system", id: "sys_test" } },
@@ -170,7 +172,13 @@ describe(PostgresWorkflowJournalDriver, () => {
     expect(statements[0]?.sql).toContain('insert into "workflow"."runs"');
     expect(statements[0]?.sql).toContain("on conflict (id) do update");
     // a run journaled without a version is pinned to version 1
-    expect(statements[0]?.params.slice(0, 4)).toEqual(["wfr_a", "RedeemWorkflow", 1, "running"]);
+    expect(statements[0]?.params.slice(0, 5)).toEqual([
+      "wfr_a",
+      "RedeemWorkflow",
+      1,
+      null,
+      "running",
+    ]);
     expect(statements[1]?.sql).toContain('insert into "workflow"."steps"');
     expect(statements[1]?.sql).toContain("jsonb_to_recordset(?::jsonb)");
     expect(JSON.parse(String(statements[1]?.params[1]))).toEqual([
@@ -224,6 +232,20 @@ describe(PostgresWorkflowJournalDriver, () => {
       "wfr_a",
     );
     expect(statements[0]?.sql).toContain("order by started_at desc, id desc limit 1");
+    expectBound(statements);
+  });
+
+  it("lists an automation's runs newest first, paged by start, with the automation read back", async () => {
+    const { database, statements } = databaseWith(
+      [{ id: "wfr_a" }],
+      [{ ...RUN_ROW, automation_id: "wfa_1" }],
+      [STEP_ROW],
+    );
+    const runs = await new PostgresWorkflowJournalDriver(database).byAutomation("wfa_1", 20, NOON);
+    expect(runs.map((run) => [run.id, run.automation])).toEqual([["wfr_a", "wfa_1"]]);
+    expect(statements[0]?.sql).toContain("where automation_id = ?");
+    expect(statements[0]?.sql).toContain("order by started_at desc, id desc limit ?");
+    expect(statements[0]?.params).toEqual(["wfa_1", NOON, NOON, 20]);
     expectBound(statements);
   });
 

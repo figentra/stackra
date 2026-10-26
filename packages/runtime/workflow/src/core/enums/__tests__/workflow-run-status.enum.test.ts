@@ -20,13 +20,14 @@ describe("WorkflowRunStatus", () => {
       "compensating",
       "compensated",
       "failed",
+      "cancelled",
     ]);
     expect(WorkflowRunStatus.Compensated).toBe("compensated");
   });
 
   it("types a value as one of the codes", () => {
     expectTypeOf<WorkflowRunStatus>().toEqualTypeOf<
-      "running" | "waiting" | "completed" | "compensating" | "compensated" | "failed"
+      "running" | "waiting" | "completed" | "compensating" | "compensated" | "failed" | "cancelled"
     >();
   });
 });

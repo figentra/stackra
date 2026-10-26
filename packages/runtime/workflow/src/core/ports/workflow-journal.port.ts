@@ -1,8 +1,9 @@
 /**
  * Stackra file contract:
- * Purpose: the `WorkflowJournal` port: the durable store of the native engine. It keeps every run with its steps,
- *          holds sent signals until a run takes them, lists the runs a tick must advance, and opens the transaction
- *          each step commits in. Config `workflow.journal` picks the driver (`postgres`, `memory`).
+ * Purpose: the `WorkflowJournal` port: the durable store of the native engine. It keeps every run with its steps, holds
+ *          sent signals until a run takes them, lists the runs a tick must advance and the runs of one automation, and
+ *          opens the transaction each step commits in. Config `workflow.journal` picks the driver (`postgres`,
+ *          `memory`).
  * Boundary: an abstract class that is its own token, keyed `workflow.WorkflowJournal`. A driver stores and lists; it
  *           never runs a step, computes a backoff or reads a clock: the engine passes every time. `transaction` runs
  *           work in a transaction of its own (a run's steps commit whatever the calling action does) inside a scope's
@@ -10,7 +11,8 @@
  *           in core beside it (its records name the core enums `StepStatus` and `WorkflowRunStatus`).
  * Runtime: isomorphic
  * Governing contract: ADR 0102 (decision 1: the Postgres journal); ADR 0292 (decision 2: the Postgres-journal driver is
- *                     the default); ADR 0142 (drivers behind ports); ADR 0327 (decisions 3 and 9: the scope session).
+ *                     the default); ADR 0142 (drivers behind ports); ADR 0327 (decisions 3 and 9: the scope session);
+ *                     ADR 0152 (decision 4: inspect).
  */
 import { Port } from "@stackra/contracts";
 import type { PublicId, ScopeRef } from "@stackra/contracts";
@@ -44,6 +46,16 @@ export abstract class WorkflowJournal extends Port {
 
   /** The latest run of `workflow` (a registered key), by start time. */
   abstract last(workflow: string): Promise<WorkflowRun | undefined>;
+
+  /**
+   * Up to `limit` runs of `automation`, newest start first (the greater id within one instant), each started before
+   * `before` when it is given, so a caller pages by the last run's `startedAt`.
+   */
+  abstract byAutomation(
+    automation: PublicId<"wfa">,
+    limit: number,
+    before?: Date,
+  ): Promise<readonly WorkflowRun[]>;
 
   /** Holds `signal` in the caller's transaction. */
   abstract hold(signal: HeldSignal): Promise<void>;

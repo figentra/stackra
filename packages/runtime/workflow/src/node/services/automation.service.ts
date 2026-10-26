@@ -1,10 +1,11 @@
 /**
  * Stackra file contract:
- * Purpose: `AutomationService`, the module service over `Automation`, the automation document kind: opens an
- *          automation in a scope, stores a checked document as its next draft revision, dry-runs a revision (which
- *          publishing requires), publishes a revision with the principal it runs as, reads a revision, lists the
- *          published automations a trigger starts (pausing each whose publisher lost access to a block it calls), and
- *          seeds the default automations of a versioned workflow template pack into a scope.
+ * Purpose: `AutomationService`, the module service over `Automation`, the automation document kind: opens an automation
+ *          in a scope, stores a checked document as its next draft revision, dry-runs a revision (which publishing
+ *          requires), publishes a revision with the principal it runs as, reads a revision, lists the published
+ *          automations a trigger starts (pausing each whose publisher lost access to a block it calls), pauses an
+ *          automation for a host's reason (a failure threshold, a person), and seeds the default automations of a
+ *          versioned workflow template pack into a scope.
  * Boundary: a `CrudService<Automation>` that injects `Repository<Revision>` (content's `HasRevisions` table), so every
  *           read and write runs in the caller's transaction and scope session under row-level security. A revision is
  *           never changed: an edit is a new draft, whose document version is its revision number, so a run pins to
@@ -44,6 +45,9 @@ import type { TriggeredAutomation } from "#node/types/triggered-automation.type"
 
 /** The model key an automation's revisions are stored under in `content.revisions`. */
 const MODEL = "workflow.automation";
+
+/** A pause reason: a snake_case code that fits `workflow.automations.pause_reason`. */
+const REASON = /^[a-z][a-z0-9_]{0,62}$/;
 
 /** The pause reason of an automation whose publisher lost access to a block it calls. */
 const ACCESS_LOST = "publisher_access_lost";
@@ -205,6 +209,30 @@ export class AutomationService extends CrudService<Automation> {
       started.push({ automationId: automation.id, document, principal: automation.principal });
     }
     return started;
+  }
+
+  /**
+   * Pauses the automation for `reason` (a snake_case code such as `failure_threshold` or `paused_by_user`), so no
+   * trigger starts it, and records `AutomationPaused` with no blocks. Runs in flight go on (cancel them with the
+   * engine's `cancel`); publishing a revision again resumes it.
+   *
+   * @returns `false` when it was already paused (the first reason stands).
+   * @throws TypeError for a reason that is not a snake_case code of at most 63 characters.
+   * @throws NotFoundError when no visible automation has the id.
+   */
+  async pause(automationId: PublicId<"wfa">, reason: string): Promise<boolean> {
+    if (!REASON.test(reason))
+      throw new TypeError(
+        `AutomationService.pause: a snake_case reason such as "failure_threshold" is required`,
+      );
+    const automation = await this.findOneOrFail({ id: automationId });
+    if (automation.pausedAt !== null) return false;
+    automation.pausedAt = new Date();
+    automation.pauseReason = reason;
+    automation.record(
+      AutomationPaused.create({ automationId, key: automation.key, reason, blocks: [] }),
+    );
+    return true;
   }
 
   /**

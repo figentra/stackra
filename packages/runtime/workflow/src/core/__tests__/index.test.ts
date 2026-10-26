@@ -55,6 +55,8 @@ describe("@stackra/workflow", () => {
       "WorkflowConfig$",
       "WorkflowEngineOptions",
       "WorkflowJournal",
+      "WorkflowRunEnded",
+      "WorkflowRunStarted",
       "WorkflowRunStatus",
       "WorkflowTemplatePack$",
       "buildingBlocks",

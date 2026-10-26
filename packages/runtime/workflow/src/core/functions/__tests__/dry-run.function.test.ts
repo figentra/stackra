@@ -2,8 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `dryRun`: on a sample input each step says whether it would run, be skipped by its condition
  *          (with the explanation) or wait (with the correlation it would wait on), and the input it would send, later
- *          results left as references; a for-each step shows its first item's input and its item count (0 while its list is
- *          a later result); an invalid document is refused before anything is reported.
+ *          results left as references; a for-each step shows its first item's input and its item count (0 while its
+ *          list is a later result); an invalid document is refused before anything is reported.
  * Boundary: test only; pure; the registry is this test file's process state.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0122 (decision 3); ADR 0270 (decision 6); ADR 0331 (decision 7).

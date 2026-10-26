@@ -5,8 +5,9 @@
  *          origin naming no scope), and refuses a `startOn` workflow when no event bus is bound; it leaves another
  *          engine alone. It subscribes each trigger block: an occurrence is held for waiting runs under the block's
  *          correlation and starts each published automation as its principal, keyed by automation and occurrence, with
- *          its event chain, and starts none the chain stops; a coded step waiting for an event no trigger block correlates fails boot. With `ServiceAckService` bound, each
- *          `ServiceAcked` is recorded and the ack that completes a set holds `AllServicesAcked` for its subject.
+ *          its event chain, and starts none the chain stops; a coded step waiting for an event no trigger block
+ *          correlates fails boot. With `ServiceAckService` bound, each `ServiceAcked` is recorded and the ack that
+ *          completes a set holds `AllServicesAcked` for its subject.
  * Boundary: test only; a stand-in container lists fixed instances and binds a recording bus; the engine runs on the
  *           memory journal.
  * Runtime: node (vitest)
@@ -201,7 +202,11 @@ describe("WorkflowExplorer trigger blocks", () => {
       DOCUMENT,
       event,
       expect.objectContaining({ callId: "evt_1", key: "commerce.thanks", actor: PRINCIPAL }),
-      { key: "wfa_1:evt_1", chain: { depth: 1, automations: ["wfa_1"] } },
+      {
+        key: "wfa_1:evt_1",
+        chain: { depth: 1, automations: ["wfa_1"] },
+        automation: "wfa_1",
+      },
     );
   });
 

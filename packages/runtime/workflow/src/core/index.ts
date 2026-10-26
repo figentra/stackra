@@ -5,10 +5,11 @@
  *          configuration and the key registration; the building-block registry, the automation document kind with its
  *          check and dry run, the workflow template pack and their refusals) until `stackra gen` writes the entry
  *          barrels (STA-339).
- * Boundary: names each re-export and declares nothing. The shipped schemas are re-exported under their generated
- *           names (`WorkflowConfig$`, `AutomationDocument$`, `WorkflowTemplatePack$`). The plans, keys, id minting and defaults stay internal. The Postgres journal and the
- *           explorer are `./node`'s, the test driver `./testing`'s. There is no `./contracts`: the journal port and the
- *           run records name the status enums, which the template imports from `.`, so they live here together.
+ * Boundary: names each re-export and declares nothing. The shipped schemas are re-exported under their generated names
+ *           (`WorkflowConfig$`, `AutomationDocument$`, `WorkflowTemplatePack$`). The plans, keys, id minting and
+ *           defaults stay internal. The Postgres journal and the explorer are `./node`'s, the test driver
+ *           `./testing`'s. There is no `./contracts`: the journal port and the run records name the status enums, which
+ *           the template imports from `.`, so they live here together.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision; ADR 0127 2026-10-24 note.
  */
@@ -42,6 +43,8 @@ export { AutomationPaused } from "#core/events/automation-paused.event";
 export { ChecklistCompleted } from "#core/events/checklist-completed.event";
 export { ChecklistStepCompleted } from "#core/events/checklist-step-completed.event";
 export { ServiceAcked } from "#core/events/service-acked.event";
+export { WorkflowRunEnded } from "#core/events/workflow-run-ended.event";
+export { WorkflowRunStarted } from "#core/events/workflow-run-started.event";
 export { buildingBlocks } from "#core/functions/building-blocks.function";
 export { checkAutomation } from "#core/functions/check-automation.function";
 export { checkCustomization } from "#core/functions/check-customization.function";
