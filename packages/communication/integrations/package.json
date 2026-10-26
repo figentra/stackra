@@ -2,7 +2,7 @@
   "name": "@stackra/integrations",
   "version": "0.0.0",
   "private": true,
-  "description": "Stackra integrations: the Integration kind base that describes a provider (roles, levels, the seven auth types including the service-account JWT bearer grant, JSON or form request bodies, a base URL with per-region placeholders, rate limits, retries, webhooks, the app market listing), the Connection kind base for one stored credential set, the ConnectionStore port with its local and hosted drivers, the ProviderResolver that picks a provider per tenant and Market (ADR 0356), the managed client, the Pass kind for wallet passes, accounting journals, the commerce connector and telephony contracts, managed-or-bring-your-own connections with the ManagedProvisioning port and its provider-category, catalogue and provisioning-template seeds (./contracts), and the headless Chatwoot integration",
+  "description": "Stackra integrations: the Integration kind base that describes a provider (roles, levels, the seven auth types including the service-account JWT bearer grant, JSON or form request bodies, a base URL with per-region placeholders, rate limits, retries, webhooks, the app market listing), the Connection kind base for one stored credential set, the ConnectionStore port with its local and hosted drivers, the ConnectionHost driver over the integrations service's generated client, the public OAuth token call, the ProviderResolver that picks a provider per tenant and Market (ADR 0356), the managed client, the Pass kind for wallet passes, accounting journals, the commerce connector and telephony contracts, managed-or-bring-your-own connections with the ManagedProvisioning port and its provider-category, catalogue and provisioning-template seeds (./contracts), and the headless Chatwoot integration",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -69,6 +69,7 @@
   },
   "dependencies": {
     "@stackra/actions": "workspace:*",
+    "@stackra/clients": "workspace:*",
     "@stackra/config": "workspace:*",
     "@stackra/container": "workspace:*",
     "@stackra/contracts": "workspace:*",
@@ -88,6 +89,7 @@
     "oxlint": "catalog:quality",
     "tsdown": "catalog:build",
     "typescript": "catalog:build",
-    "vitest": "catalog:quality"
+    "vitest": "catalog:quality",
+    "zod": "catalog:"
   }
 }

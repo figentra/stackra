@@ -1,9 +1,9 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `HostedConnectionStoreDriver`: connect runs `check()` here and hands the record and the code
- *          exchange's tokens to the host; a loaded OAuth connection asks the host for each access token; a reconnect
- *          disconnects the owner's old connection at the host; byId refuses what the host does not have; disconnect
- *          unsubscribes before the host revokes.
+ *          exchange's tokens and the credentials' expiry to the host; a loaded OAuth connection asks the host for each
+ *          access token; a reconnect disconnects the owner's old connection at the host; byId refuses what the host
+ *          does not have; disconnect unsubscribes before the host revokes.
  * Boundary: test only; the host is an in-memory stand-in recording its calls, `fetch` is stubbed and the context is
  *           fixed.
  * Runtime: node (vitest)
@@ -54,6 +54,8 @@ class MemoryConnectionHost extends ConnectionHost {
 
   readonly disconnected: string[] = [];
 
+  readonly expiries = new Map<string, Date | undefined>();
+
   async list(
     _key: string,
     owners: { readonly scope?: ScopeRef; readonly userId?: PublicId<"usr"> },
@@ -69,9 +71,15 @@ class MemoryConnectionHost extends ConnectionHost {
     return this.records.get(id) ?? null;
   }
 
-  async store(_key: string, record: ConnectionRecord, tokens: OAuthTokens | undefined) {
+  async store(
+    _key: string,
+    record: ConnectionRecord,
+    tokens: OAuthTokens | undefined,
+    credentialsExpireAt?: Date,
+  ) {
     this.records.set(record.id, record);
     this.tokens.set(record.id, tokens);
+    this.expiries.set(record.id, credentialsExpireAt);
   }
 
   async disconnect(_key: string, id: string) {
@@ -161,6 +169,17 @@ describe("HostedConnectionStoreDriver", () => {
       account: { id: "p-1" },
     });
     expect(host.tokens.get(added.id)).toEqual(TOKENS);
+  });
+
+  it("hands the credentials' expiry to the host", async () => {
+    const { host, store } = setup();
+    const credentialsExpireAt = new Date("2027-01-01T00:00:00Z");
+    const added = await store.connect(CrmConnection, {
+      fields: {},
+      tokens: TOKENS,
+      credentialsExpireAt,
+    });
+    expect(host.expiries.get(added.id)).toEqual(credentialsExpireAt);
   });
 
   it("asks the host for each access token of a loaded connection", async () => {

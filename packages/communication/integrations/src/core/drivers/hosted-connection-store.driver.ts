@@ -6,7 +6,8 @@
  * Boundary: the refresh tokens and the client secrets live only in the store host (ADR 0308 rule 12): an OAuth
  *           connection's client asks the host for each fresh access token, and the tokens of a code exchange go
  *           straight to the host after `check()` has run on the access token alone. `check()` and `subscribe()` run
- *           here, before the host stores anything; the host keeps the tombstone and emits the lifecycle events.
+ *           here, before the host stores anything; the host keeps the tombstone and emits the lifecycle events. The
+ *           credentials' expiry of a connect goes to the host with the record, for its expiry alerts.
  * Runtime: isomorphic
  * Governing contract: ADR 0308 (rules 2, 7, 9, 10, 12, 14, 17, 18 and 20).
  */
@@ -121,7 +122,7 @@ export class HostedConnectionStoreDriver extends Driver(ConnectionStore) {
         ),
       input.webhookUrl,
     );
-    await this.host.store(registration.key, record, tokens);
+    await this.host.store(registration.key, record, tokens, input.credentialsExpireAt);
     if (!options.multiple)
       for (const old of await this.host.list(registration.key, owner))
         if (old.id !== record.id && sameOwner(old, record)) await this.disconnect(type, old.id);

@@ -62,6 +62,25 @@ describe("requestToken", () => {
     expect(String(init?.body)).toBe("grant_type=client_credentials&scope=mail.send");
   });
 
+  it("exchanges an authorization code with the endpoint and client as data", async () => {
+    const fetchMock = answerWith(Response.json({ access_token: "at-3", refresh_token: "rt-3" }));
+    await expect(
+      requestToken({
+        ...REQUEST,
+        form: {
+          grant_type: "authorization_code",
+          code: "code-1",
+          redirect_uri: "https://app.example/cb",
+        },
+        authentication: "body",
+      }),
+    ).resolves.toEqual({ accessToken: "at-3", refreshToken: "rt-3" });
+    const body = new URLSearchParams(String(fetchMock.mock.calls[0]?.[1].body));
+    expect(body.get("grant_type")).toBe("authorization_code");
+    expect(body.get("code")).toBe("code-1");
+    expect(body.get("client_secret")).toBe("secret-1");
+  });
+
   it("sends a public client's id as a form field", async () => {
     const fetchMock = answerWith(Response.json({ access_token: "at-2" }));
     await expect(requestToken({ ...REQUEST, clientSecret: undefined })).resolves.toEqual({

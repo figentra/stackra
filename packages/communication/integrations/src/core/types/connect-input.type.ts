@@ -1,11 +1,11 @@
 /**
  * Stackra file contract:
  * Purpose: `ConnectInput<C>`, what `ConnectionStore#connect` takes: the connection's fields, the level it sits at, the
- *          OAuth tokens of a code exchange, and the webhook URL to subscribe.
+ *          OAuth tokens of a code exchange, the webhook URL to subscribe and when the credentials expire.
  * Boundary: a type only. The owner is the running call's (its scope node, or its user), read from `ConnectionContext`,
  *           never input. `check()` runs before anything is stored.
  * Runtime: isomorphic
- * Governing contract: ADR 0308 (rules 2, 9, 14 and 17).
+ * Governing contract: ADR 0308 (rules 2, 9, 14 and 17); ADR 0049 (decision 5).
  */
 import type { ProviderSource } from "#contracts/enums/provider-source.enum";
 import type { Connection } from "#core/bases/connection.base";
@@ -37,4 +37,10 @@ export interface ConnectInput<C extends Connection> {
 
   /** The `ManagedResource` a `managed` connection points at; refused on a `byo` one. */
   readonly resourceId?: string;
+
+  /**
+   * When the credentials stop working (an API key's or a certificate's end); the `hosted` store hands it to the host,
+   * which alerts before it. The `local` store keeps no alerts and ignores it.
+   */
+  readonly credentialsExpireAt?: Date;
 }

@@ -23,7 +23,8 @@ Provider integrations, connections and their store (ADR 0308). Member at `packag
 
 - `src/core/index.ts`, `src/contracts/index.ts` and `src/testing/index.ts` are stand-in barrels until gen writes the entry barrels (STA-339); add
   every new public file to the barrel and to its `__tests__/index.test.ts`.
-- `managedClient`, the placeholder lookup, the token calls, the JWT signer and the registries stay internal. `./testing`
+- `managedClient`, the placeholder lookup, the JWT signer and the registries stay internal; `requestToken` (with
+  `TokenRequest`) is public so a store host shares the one RFC 6749 client. `./testing`
   imports `.`, `./contracts` and `@stackra/container/testing` only (ADR 0269 decision 3). `./contracts` is the leaf: it
   imports `@stackra/contracts` and the `Money` and `Address` types only. `.` reads `valueOf` of `@stackra/market-packs`.
 - Annotate every export whose inferred type would reach an unexported or deep-path type (`ExtensionBase`, `ActionBase`,
@@ -52,6 +53,9 @@ Provider integrations, connections and their store (ADR 0308). Member at `packag
   webhook route for the same provider.
 - `ProviderResolver#candidates` is the one failover order (own, then managed, pack order); a caller never re-derives
   it. Provider lists are pack data under `providers.<capability>`, read by `MarketPackProviderDefaultsDriver`.
+- `ClientConnectionHostDriver` takes the service's refs as configuration (`ConnectionHostCalls`); never hard-code a
+  wire key or route of the integrations service here. `ConnectionHost#store` keeps `credentialsExpireAt` optional and
+  last, so an older host still implements it.
 - `ProviderPackSource` names `ResolvedPack`, so it lives in `src/core/ports`, not `./contracts`.
 - A provider interface a Connection implements (`AccountingProvider`, `VoiceGateway`, the connectors) lives in
   `./contracts/types`; its drivers live with the package that owns the capability.

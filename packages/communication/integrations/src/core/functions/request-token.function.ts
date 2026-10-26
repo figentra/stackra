@@ -1,36 +1,21 @@
 /**
  * Stackra file contract:
- * Purpose: `requestToken`, one call to an OAuth token endpoint (a client credentials grant, a refresh, a JWT bearer
- *          assertion), answered as `OAuthTokens`.
- * Boundary: internal. A 4xx answer is a `ProviderRefusedError` carrying the OAuth error code (`invalid_grant`); no
- *           answer, a 408, a 429, a 5xx or an answer without an access token is a retryable `ProviderUnavailableError`.
- *           The answer body, which holds the tokens, is never put in an error.
+ * Purpose: `requestToken`, one call to an OAuth token endpoint (a code exchange, a client credentials grant, a refresh,
+ *          a JWT bearer assertion), answered as `OAuthTokens`.
+ * Boundary: public from `.`, so a store host (the integrations service's code exchange and refresh) uses the same RFC
+ *           6749 client as the managed client; the endpoint and the client are data (`TokenRequest`). A 4xx answer is
+ *           a `ProviderRefusedError` carrying the OAuth error code (`invalid_grant`); no answer, a 408, a 429, a 5xx or
+ *           an answer without an access token is a retryable `ProviderUnavailableError`. The answer body, which holds
+ *           the tokens, is never put in an error.
  * Runtime: isomorphic
- * Governing contract: ADR 0308 (rules 6, 7 and 20); RFC 6749 (sections 2.3.1, 4.4, 5 and 6).
+ * Governing contract: ADR 0308 (rules 6, 7 and 20); RFC 6749 (sections 2.3.1, 4.1.3, 4.4, 5 and 6).
  */
 import { ProviderRefusedError } from "#core/errors/provider-refused.error";
 import { ProviderUnavailableError } from "#core/errors/provider-unavailable.error";
 import { providerCodeOf } from "#core/functions/provider-code-of.function";
 import { tokenEndpointInit } from "#core/functions/token-endpoint-init.function";
 import type { OAuthTokens } from "#core/types/oauth-tokens.type";
-
-/** One token request. */
-interface TokenRequest {
-  /** The token endpoint. */
-  readonly url: string;
-  /** The grant's form fields (`grant_type`, `refresh_token`, `scope`). */
-  readonly form: Readonly<Record<string, string>>;
-  /** The client id; none for a grant whose assertion names the client (JWT bearer). */
-  readonly clientId?: string | undefined;
-  /** The client secret; none for a public client. */
-  readonly clientSecret?: string | undefined;
-  /** How the client authenticates; `"basic"` when left out. */
-  readonly authentication?: "basic" | "body";
-  /** The provider's code, for the refusals. */
-  readonly provider: string;
-  /** When the request is sent, so `expires_in` becomes an instant. */
-  readonly now: Date;
-}
+import type { TokenRequest } from "#core/types/token-request.type";
 
 /** The JSON object of `text`, or undefined. */
 function jsonOf(text: string): Readonly<Record<string, unknown>> | undefined {
@@ -51,6 +36,7 @@ function jsonOf(text: string): Readonly<Record<string, unknown>> | undefined {
  * @throws ProviderUnavailableError when it does not answer, answers 408, 429 or 5xx, or answers without a token.
  * @example
  * const tokens = await requestToken({ url, form: { grant_type: "client_credentials" }, ...client, provider, now });
+ * const renewed = await requestToken({ url, form: { grant_type: "refresh_token", refresh_token }, ...client, provider, now });
  */
 export async function requestToken(request: TokenRequest): Promise<OAuthTokens> {
   const { provider } = request;

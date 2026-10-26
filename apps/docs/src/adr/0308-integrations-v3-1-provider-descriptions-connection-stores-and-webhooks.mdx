@@ -4,6 +4,15 @@ description: "Accepted, amended by 0348, 0355 · 2026-10-23"
 ---
 
 <Note>
+  Note 2026-10-26 (STA-1236), additive: the store host of rule 12 is reached through
+  `ClientConnectionHostDriver`, which adapts the integrations service's generated client to the
+  `ConnectionHost` port with the service's refs passed as configuration; `ConnectionHost#store`
+  takes an optional credentials' expiry for the host's expiry alerts (ADR 0049 decision 5); and
+  `requestToken`, the one RFC 6749 token call, is public so the store host's code exchange and
+  refresh share it. Rule 20 stands: refresh tokens and client secrets still never leave the host.
+</Note>
+
+<Note>
   Amended 2026-10-25 by
   [0355](/adr/0355-marketplace-one-integration-with-up-to-five-roles-one-app-market-and-open-to-any-developer)
   decision 8 (owner decision OS-127): rule 21's exclusion of third-party publishers is lifted. Any

@@ -4,7 +4,8 @@
  *          writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. The provider-category, catalogue and managed-provisioning
  *           template seeds are exported for the registry and the seeders. The managed client's internals (`managedClient`, the placeholder
- *           lookup, the token calls, the JWT signer) and the registries stay internal. The `ConnectionContext` port is
+ *           lookup, the JWT signer) and the registries stay internal; `requestToken` is public for a store host's code
+ *           exchange and refresh. The `ConnectionContext` port is
  *           exported from `./contracts` only (ADR 0294 decision 15). `PassBase` is exported as a type so a consumer's
  *           `extends Pass({ key })` class has a nameable base in its declaration emit (TS2883, STA-1220).
  * Runtime: isomorphic
@@ -16,6 +17,7 @@ export { Pass, type PassBase } from "#core/bases/pass.base";
 export { MANAGED_PROVISIONING_TEMPLATES } from "#core/constants/managed-provisioning-templates.constant";
 export { PROVIDER_CATALOGUE_SEEDS } from "#core/constants/provider-catalogue-seeds.constant";
 export { PROVIDER_CATEGORY_SEEDS } from "#core/constants/provider-category-seeds.constant";
+export { ClientConnectionHostDriver } from "#core/drivers/client-connection-host.driver";
 export { HostedConnectionStoreDriver } from "#core/drivers/hosted-connection-store.driver";
 export { LocalConnectionStoreDriver } from "#core/drivers/local-connection-store.driver";
 export { MarketPackProviderDefaultsDriver } from "#core/drivers/market-pack-provider-defaults.driver";
@@ -40,6 +42,7 @@ export { credentialRef } from "#core/functions/credential-ref.function";
 export { postJournal } from "#core/functions/post-journal.function";
 export { recordingPlan } from "#core/functions/recording-plan.function";
 export { registerConnections } from "#core/functions/register-connections.function";
+export { requestToken } from "#core/functions/request-token.function";
 export { resolvePlaceholders } from "#core/functions/resolve-placeholders.function";
 export { ConnectionHost } from "#core/ports/connection-host.port";
 export { ConnectionStore } from "#core/ports/connection-store.port";
@@ -53,6 +56,7 @@ export type { AuthOptions } from "#core/types/auth-options.type";
 export type { ConnectInput } from "#core/types/connect-input.type";
 export type { ConnectionClass } from "#core/types/connection-class.type";
 export type { ConnectionFields } from "#core/types/connection-fields.type";
+export type { ConnectionHostCalls } from "#core/types/connection-host-calls.type";
 export type { ConnectionRecord } from "#core/types/connection-record.type";
 export type { ConnectionRegistration } from "#core/types/connection-registration.type";
 export type { ConnectionSubscription } from "#core/types/connection-subscription.type";
@@ -72,4 +76,5 @@ export type { ProviderDrivers } from "#core/types/provider-drivers.type";
 export type { RateLimit } from "#core/types/rate-limit.type";
 export type { RequestOptions } from "#core/types/request-options.type";
 export type { RetryPolicy } from "#core/types/retry-policy.type";
+export type { TokenRequest } from "#core/types/token-request.type";
 export type { WebhookSignature } from "#core/types/webhook-signature.type";

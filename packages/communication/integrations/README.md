@@ -23,6 +23,8 @@ Depends on `@stackra/actions` (the `RateLimitStore`, and `RequestContext` for th
 | `ConnectionStore`                                                                                                       | the port: `find`, `byId`, `list`, `connect`, `disconnect`                                            |
 | `LocalConnectionStoreDriver`, `HostedConnectionStoreDriver`                                                             | `local` (in process, development) and `hosted` (the integrations service holds them)                 |
 | `ConnectionHost`                                                                                                        | the port of the store host behind `hosted`                                                           |
+| `ClientConnectionHostDriver`, `ConnectionHostCalls`                                                                     | the `ConnectionHost` over the integrations service's generated client (the host passes its refs)     |
+| `requestToken`, `TokenRequest`                                                                                          | one OAuth token call (code exchange, refresh, client credentials) with the endpoint as data          |
 | `RequestConnectionContextDriver`                                                                                        | the `request` `ConnectionContext`: the running call's scope and user                                 |
 | `./contracts`: `ConnectionContext`                                                                                      | the port the store drivers read the call's owners from                                               |
 | `IntegrationRuntime`                                                                                                    | builds every Integration and its managed clients; holds and renews OAuth tokens                      |
@@ -170,3 +172,41 @@ record and an array repeats its key.
   payment gateways `@stackra/payments`'; carriers OS integrations connectors behind `@stackra/shipping`.
 - Apple Wallet and Google Wallet drivers, ad-platform and marketplace Integrations: not built yet (see the spec's open
   items).
+
+## The hosted store over the generated client
+
+The host binds `ConnectionHost` to a subclass of `ClientConnectionHostDriver` that passes the integrations service's
+refs from `#stackra/clients/<service>`, so this package names no wire key:
+
+```ts
+export class OsConnectionHostDriver extends ClientConnectionHostDriver {
+  constructor(transport: ClientTransport) {
+    super(transport, {
+      resolve: ResolveConnectionsQuery,
+      load: LoadConnectionQuery,
+      store: StoreConnectionAction,
+      disconnect: DisconnectConnectionAction,
+      token: IssueAccessTokenAction,
+    });
+  }
+}
+```
+
+`ConnectInput.credentialsExpireAt` (an API key's or a certificate's end) reaches the host as the last argument of
+`ConnectionHost#store`, for its expiry alerts. The store host runs its code exchange and refresh with `requestToken`:
+
+```ts
+const tokens = await requestToken({
+  url: connector.tokenUrl,
+  form: {
+    grant_type: "authorization_code",
+    code,
+    redirect_uri: redirectUrl,
+    code_verifier: verifier,
+  },
+  clientId,
+  clientSecret,
+  provider: connector.provider,
+  now: ctx.now(),
+});
+```

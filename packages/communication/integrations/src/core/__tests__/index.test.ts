@@ -3,7 +3,8 @@
  * Purpose: the consumer contract of the `.` entry: every symbol the template imports (`AuthType`, `ConnectedAccount`,
  *          `Connection`, `ConnectionCheckFailedError`, `ConnectionLevel`, `ConnectionStore`, `Integration`,
  *          `IntegrationCategory`, `InvalidSignatureError`, `ProviderRefusedError`, `ProviderUnavailableError`,
- *          `RateLimitScope`) and the registry row's runtime are exported, nothing else is, the internals are not, and
+ *          `RateLimitScope`) and the registry row's runtime, the hosted store's client driver and
+ *          `requestToken` are exported, nothing else is, the internals are not, and
  *          the public types resolve, `PassBase` (type only) among them.
  * Boundary: test only; imports the stand-in barrel through its `#core` alias.
  * Runtime: node (vitest)
@@ -15,12 +16,14 @@ import * as integrations from "#core/index";
 import type {
   AuthOptions,
   ConnectInput,
+  ConnectionHostCalls,
   ConnectionRecord,
   IntegrationApi,
   IntegrationOptions,
   OAuthTokens,
   PassBase,
   RequestOptions,
+  TokenRequest,
 } from "#core/index";
 
 describe("@stackra/integrations", () => {
@@ -29,6 +32,7 @@ describe("@stackra/integrations", () => {
       "AuthType",
       "ChatwootConnection",
       "ChatwootIntegration",
+      "ClientConnectionHostDriver",
       "ConnectedAccount",
       "Connection",
       "ConnectionAmbiguousError",
@@ -64,6 +68,7 @@ describe("@stackra/integrations", () => {
       "postJournal",
       "recordingPlan",
       "registerConnections",
+      "requestToken",
       "resolvePlaceholders",
     ]);
     expect("managedClient" in integrations).toBe(false);
@@ -82,6 +87,11 @@ describe("@stackra/integrations", () => {
     expectTypeOf<ConnectInput<integrations.Connection>["tokens"]>().toEqualTypeOf<
       OAuthTokens | undefined
     >();
+    expectTypeOf<ConnectInput<integrations.Connection>["credentialsExpireAt"]>().toEqualTypeOf<
+      Date | undefined
+    >();
+    expectTypeOf<TokenRequest["url"]>().toEqualTypeOf<string>();
+    expectTypeOf<ConnectionHostCalls>().toHaveProperty("token");
     // `Pass({ key })` returns a class of `PassBase`, so a consumer's declaration emit can name its base (STA-1220).
     expectTypeOf<InstanceType<ReturnType<typeof integrations.Pass>>>().toEqualTypeOf<PassBase>();
   });
