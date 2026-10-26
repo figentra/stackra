@@ -51,6 +51,9 @@ catalog:
   # @stackra/database ./testing: Factory data (MIT) and the usePostgres Testcontainers fixture (MIT, ADR 0269 d3).
   "@faker-js/faker": 10.6.0
   "@testcontainers/postgresql": 12.2.0
+  # @stackra/database ./testing memory driver (ADR 0266): Postgres in WASM and its MikroORM driver; bump the latter with core. Apache-2.0 / MIT.
+  "@electric-sql/pglite": 0.5.8
+  "@mikro-orm/pglite": 7.2.5
   # The server-state cache of @stackra/query (ADR 0079 decision 1); the React adapter is ours. MIT, no dependencies.
   "@tanstack/query-core": 5.104.1
   # AI SDK core for @stackra/ai (ADR 0155, 0100; owner R-67 decide()). Apache-2.0; providers and the MCP gateway live in the ai service.
