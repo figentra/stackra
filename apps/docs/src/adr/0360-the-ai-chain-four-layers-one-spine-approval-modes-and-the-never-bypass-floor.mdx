@@ -192,6 +192,11 @@ region rules and the field allow-list. Nothing checks these rules yet.
   are not recorded here; they are in
   [0359](/adr/0359-modes-and-configuration-environments-display-modes-sandbox-promotion-and-live-records).
 
+## Note 2026-10-26: a trailing reason counts (decision 4)
+
+The `// reason:` of `tool: false` may also trail the option on the same line (`tool: false, // reason: …`), as the
+owner decided on 2026-10-26 (round 3), so existing code is not churned. Gen reads both forms (STA-1283).
+
 ## Supersedes and sources
 
 Supersedes: none. Amends, by Note, [0155](/adr/0155-queries-are-mcp-tools-and-all-ai-code-is-free) decision 1,

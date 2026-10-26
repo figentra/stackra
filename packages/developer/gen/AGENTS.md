@@ -39,7 +39,10 @@ The Stackra compiler. Member at `packages/developer/gen` (`tier:lib`), in the pr
 - Identity formulas live in one place each (ADR 0294 decision 20); other packages call them, never copy them.
 - A generated registration calls only a function its package exports, with rows from the locked identities, and is
   written only when it has a row. A new public id prefix of a platform package is a reviewed row in
-  `PUBLIC_ID_PREFIXES` (ADR 0135 rule 2).
+  `PUBLIC_ID_PREFIXES` (ADR 0135 rule 2). The member named after a prefix owner's module may host that model under its
+  own key (manifest `hosts`, ADR 0294 amendment 2026-10-26).
+- The constant evaluator threads a `this.<field>` resolver (`SelfOf`) through every recursion; never call `constant`
+  point-free (`.map(constant)` would pass the index as the resolver).
 - Clients (ADR 0260): `#stackra/clients/<service>` is written by `emitClients` from the producer's committed manifest
   (found beside the member by `readServiceManifests`, or in a dependency), never from its source. The source reader
   takes a parameter typed with a class from `CLIENTS_SPECIFIER` as a class token before the file exists; the wiring

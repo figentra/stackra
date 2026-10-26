@@ -8,8 +8,9 @@
  * Boundary: pure. A config's shape is never passed here (ADR 0305 rule 34: a schema bound to a Config never reaches a
  *           wire surface); `buildManifest` leaves configs out.
  * Runtime: isomorphic
- * Governing contract: ADR 0294 (decisions 10 and 26); ADR 0158 (openapi.json is a projection of the manifest);
- *                     ADR 0162 (decision 2); ADR 0222 (decision 2).
+ * Governing contract: ADR 0294 (decisions 10 and 26; amendment 2026-10-26: a bare `PublicId` is any prefix, a union
+ *                     its prefixes); ADR 0158 (openapi.json is a projection of the manifest); ADR 0162 (decision 2);
+ *                     ADR 0222 (decision 2).
  */
 import type { Json } from "@stackra/contracts";
 
@@ -109,7 +110,10 @@ function typeSchema(
         ? { type: "string", pattern: "^[A-Z]{3}$" }
         : { type: "string", format: type.brand === "url" ? "uri" : "email" };
     case "public_id":
-      return { type: "string", pattern: `^${type.prefix}_[0-9A-Za-z]{26}$` };
+      return {
+        type: "string",
+        pattern: `^${type.prefixes !== undefined ? `(${type.prefixes.join("|")})` : type.prefix === "" ? "[a-z]{2,6}" : type.prefix}_[0-9A-Za-z]{26}$`,
+      };
     case "enum":
       return type.module === undefined
         ? { type: "string", enum: [...type.values] }

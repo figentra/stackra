@@ -40,4 +40,15 @@ describe("platformConstant", () => {
     expect(platformConstant("Money.of", [12.5, "USD"])).toBeUndefined();
     expect(() => platformConstant("Money.of", ["1.234", "USD"])).toThrow();
   });
+
+  it("evaluates a translated value to its locale map", () => {
+    expect(platformConstant("Translated.of", [{}])).toEqual({
+      value: {},
+      code: "Translated.of({})",
+      imports: [["Translated", "@stackra/model"]],
+    });
+    expect(platformConstant("Translated.of", [{ en: "Shirt" }])?.value).toEqual({ en: "Shirt" });
+    expect(() => platformConstant("Translated.of", [{ en: 1 }])).toThrow(TypeError);
+    expect(() => platformConstant("Translated.of", [["en"]])).toThrow(TypeError);
+  });
 });

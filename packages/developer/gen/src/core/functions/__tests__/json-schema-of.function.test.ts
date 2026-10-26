@@ -127,4 +127,42 @@ describe("jsonSchemaOf", () => {
       "x-stackra-bucket": "PhotosBucket",
     });
   });
+
+  it("describes a bare public id with any prefix and a prefix union", () => {
+    const refs: ShapeIR = {
+      name: "Refs",
+      kind: "schema",
+      module: "orders",
+      file: "src/modules/orders/schemas/refs.schema.ts",
+      importPath: "#modules/orders/schemas/refs.schema",
+      fields: [
+        {
+          name: "principalId",
+          optional: false,
+          nullable: false,
+          type: { kind: "public_id", prefix: "" },
+          rules: [],
+        },
+        {
+          name: "listId",
+          optional: false,
+          nullable: false,
+          type: { kind: "public_id", prefix: "", prefixes: ["crl", "prl"] },
+          rules: [],
+        },
+      ],
+      relations: [],
+    };
+    const schema = jsonSchemaOf(refs, COMMERCE_IR.shapes) as {
+      properties: Record<string, unknown>;
+    };
+    expect(schema.properties["principalId"]).toEqual({
+      type: "string",
+      pattern: "^[a-z]{2,6}_[0-9A-Za-z]{26}$",
+    });
+    expect(schema.properties["listId"]).toEqual({
+      type: "string",
+      pattern: "^(crl|prl)_[0-9A-Za-z]{26}$",
+    });
+  });
 });

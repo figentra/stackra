@@ -15,6 +15,7 @@ import { describe, expect, it } from "@stackra/testing";
 
 import { emitSchemas } from "#core/functions/emit-schemas.function";
 import type { MemberIR } from "#core/types/member-ir.type";
+import type { ShapeIR } from "#core/types/shape-ir.type";
 import { BILLING_IR } from "#core/__tests__/fixtures/billing-ir.fixture";
 import { COMMERCE_IR } from "#core/__tests__/fixtures/commerce-ir.fixture";
 
@@ -231,5 +232,41 @@ describe("emitSchemas", () => {
       "  label: z.record(z.string(), z.string()).transform((values) => ({ values })),",
     );
     expect(content).toContain("  photo: Upload.schema,");
+  });
+
+  it("checks a bare public id's format with any prefix and a prefix union as a union", () => {
+    const refs: ShapeIR = {
+      name: "Refs",
+      kind: "schema",
+      module: "orders",
+      file: "src/modules/orders/schemas/refs.schema.ts",
+      importPath: "#modules/orders/schemas/refs.schema",
+      fields: [
+        {
+          name: "principalId",
+          optional: false,
+          nullable: false,
+          type: { kind: "public_id", prefix: "" },
+          rules: [],
+        },
+        {
+          name: "listId",
+          optional: false,
+          nullable: false,
+          type: { kind: "public_id", prefix: "", prefixes: ["crl", "prl"] },
+          rules: [],
+        },
+      ],
+      relations: [],
+    };
+    const content = emitSchemas(
+      { ...COMMERCE_IR, shapes: [refs], enums: [], classes: [] },
+      "orders",
+    );
+    expect(content).toContain(
+      "  principalId: z.string().regex(/^[a-z]{2,6}_[0-9a-hjkmnp-tv-z]{26}$/i).transform((value) => value as PublicId),",
+    );
+    expect(content).toContain('  listId: z.union([publicId("crl"), publicId("prl")]),');
+    expect(content).toMatch(/import \{[^}]*type PublicId[^}]*\} from "@stackra\/contracts";/);
   });
 });

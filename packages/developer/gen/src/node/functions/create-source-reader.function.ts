@@ -19,7 +19,9 @@
  *                     `#stackra/clients/<service>` client is its class token; decision 4: a listener subscribes to the event class
  *                     its `handle` parameter imports, never to a wire name); ADR 0162 (decision 2: `Translated` and
  *                     `TranslatedStrings` read as the `translated` kind); ADR 0222 (decision 2: `Upload<Bucket>` reads as
- *                     the `upload` kind, its argument a Bucket class).
+ *                     the `upload` kind, its argument a Bucket class); ADR 0294 amendment 2026-10-26 (STA-1283: a bare or
+ *                     prefix-union `PublicId`, `Readonly<Record>`, regex constants, `Translated.of`, `this.<field>`
+ *                     spreads in a default, a trailing `tool: false, // reason:`).
  */
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -105,7 +107,10 @@ const DERIVERS = new Set(["PickType", "OmitType", "PartialType"]);
 
 /** The callees gen evaluates as constants (ADR 0294 decision 26). */
 const PLATFORM_CALLEES =
-  /^(Duration\.(seconds|minutes|hours|days|parse)|Money\.(of|ofMinor|zero))$/;
+  /^(Duration\.(seconds|minutes|hours|days|parse)|Money\.(of|ofMinor|zero)|Translated\.of)$/;
+
+/** How a field initializer reads `this.<name>`: the value an earlier initializer in the chain gave it. */
+type SelfOf = (name: string) => unknown;
 
 /** The fix printed for a field type the grammar does not allow. */
 const FIX_SHAPE =
@@ -160,6 +165,24 @@ function hasNonConstant(value: unknown): boolean {
   if (value === NOT_CONSTANT) return true;
   if (Array.isArray(value)) return value.some(hasNonConstant);
   return typeof value === "object" && value !== null && Object.values(value).some(hasNonConstant);
+}
+
+/** The `public_id` kind of the prefixes a `PublicId<…>` names: one prefix, a union of them, or any (none). */
+function publicIdType(prefixes: readonly string[]): TypeDesc {
+  return prefixes.length === 1
+    ? { kind: "public_id", prefix: prefixes[0] as string }
+    : { kind: "public_id", prefix: "", ...(prefixes.length > 1 ? { prefixes } : {}) };
+}
+
+/** Whether a constant is a plain object: not an array, a class reference or a regular expression. */
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    !Array.isArray(value) &&
+    !("$class" in value) &&
+    !("$regex" in value)
+  );
 }
 
 /** Whether a value, or anything inside it, is a class reference. */
@@ -308,7 +331,7 @@ export function createSourceReader(
   };
 
   // The constant evaluator.
-  const constant = (node: TsNode | undefined): unknown => {
+  const constant = (node: TsNode | undefined, self?: SelfOf): unknown => {
     if (node === undefined) return NOT_CONSTANT;
     switch (host.kind(node)) {
       case "NumericLiteral":
@@ -328,7 +351,7 @@ export function createSourceReader(
         return { $regex: raw.slice(1, end), flags: raw.slice(end + 1) };
       }
       case "PrefixUnaryExpression": {
-        const value = constant(node.operand);
+        const value = constant(node.operand, self);
         return node.operator !== undefined &&
           host.kindName(node.operator) === "MinusToken" &&
           typeof value === "number"
@@ -340,20 +363,37 @@ export function createSourceReader(
       case "SatisfiesExpression":
       case "NonNullExpression":
       case "TypeAssertionExpression":
-        return constant(node.expression);
+        return constant(node.expression, self);
       case "ArrayLiteralExpression": {
-        const items = (node.elements ?? []).map(constant);
+        const items: unknown[] = [];
+        for (const element of node.elements ?? []) {
+          if (host.kind(element) !== "SpreadElement") {
+            items.push(constant(element, self));
+            continue;
+          }
+          // `[...this.levels, X]` in an override extends the base default (owner decisions 2026-10-26, round 3).
+          const spread = constant(element.expression, self);
+          if (!Array.isArray(spread)) return NOT_CONSTANT;
+          items.push(...spread);
+        }
         return items.some((item) => item === NOT_CONSTANT) ? NOT_CONSTANT : items;
       }
       case "ObjectLiteralExpression": {
         const entries: [string, unknown][] = [];
         for (const property of node.properties ?? []) {
           const kind = host.kind(property);
-          if (kind === "PropertyAssignment")
-            entries.push([nameOf(property.name), constant(property.initializer)]);
-          else if (kind === "ShorthandPropertyAssignment")
-            entries.push([nameOf(property.name), constant(property.name)]);
-          else return NOT_CONSTANT;
+          if (kind === "PropertyAssignment") {
+            const key = keyOf(property.name, self);
+            if (key === undefined) return NOT_CONSTANT;
+            entries.push([key, constant(property.initializer, self)]);
+          } else if (kind === "ShorthandPropertyAssignment")
+            entries.push([nameOf(property.name), constant(property.name, self)]);
+          else if (kind === "SpreadAssignment") {
+            // `{ ...this.errors, enabled: true }` in an override extends the base default (owner decisions round 3).
+            const spread = constant(property.expression, self);
+            if (!isPlainObject(spread)) return NOT_CONSTANT;
+            entries.push(...Object.entries(spread));
+          } else return NOT_CONSTANT;
         }
         return entries.some(([, value]) => value === NOT_CONSTANT)
           ? NOT_CONSTANT
@@ -363,11 +403,13 @@ export function createSourceReader(
         if (nameOf(node) === "undefined") return undefined;
         return reference(node);
       case "PropertyAccessExpression":
+        if (node.expression !== undefined && host.kind(node.expression) === "ThisKeyword")
+          return self === undefined ? NOT_CONSTANT : self(nameOf(node.name));
         return reference(node);
       case "CallExpression": {
         const callee = node.expression === undefined ? "" : host.text(node.expression);
         if (!PLATFORM_CALLEES.test(callee)) return NOT_CONSTANT;
-        const args = (node.arguments ?? []).map(constant);
+        const args = (node.arguments ?? []).map((arg) => constant(arg, self));
         if (args.some((arg) => arg === NOT_CONSTANT)) return NOT_CONSTANT;
         try {
           return platformConstant(callee, args)?.value ?? NOT_CONSTANT;
@@ -380,9 +422,24 @@ export function createSourceReader(
     }
   };
 
-  /** A class, a static of a class, or a literal-typed name. */
+  /** The key of an object literal property: its name, or a computed key that is a constant string. */
+  const keyOf = (name: TsNode | undefined, self?: SelfOf): string | undefined => {
+    if (name === undefined || host.kind(name) !== "ComputedPropertyName") return nameOf(name);
+    const key = constant(name.expression, self);
+    return typeof key === "string" ? key : undefined;
+  };
+
+  /** A class, a static of a class, a literal-typed name, or a `const` holding a regular expression literal. */
   const reference = (node: TsNode): unknown => {
     const symbol = host.symbolAt(node);
+    // A shared pattern (`export const METER_CODE = /^[a-z]+$/`) is a constant: patterns belong in a constants file.
+    const variable = symbol === undefined ? undefined : host.valueDeclaration(symbol);
+    if (
+      variable?.initializer !== undefined &&
+      host.kind(variable) === "VariableDeclaration" &&
+      host.kind(variable.initializer) === "RegularExpressionLiteral"
+    )
+      return constant(variable.initializer);
     const declaration = classDeclarationOf(symbol);
     if (symbol !== undefined && declaration !== undefined) {
       const kind = kindInfo(declaration)?.kind;
@@ -424,8 +481,11 @@ export function createSourceReader(
       const name = nameOf(property.name);
       if (!hasNonConstant(value)) options[name] = value;
       // ADR 0360 d4: `tool: false` carries its reason as a `// reason:` line, as `@Field(zod)` does.
+      // A trailing `tool: false, // reason: …` counts too (owner decisions 2026-10-26, round 3).
       if (name === "tool" && value === false) {
-        const reason = /\/\/\s*reason:\s*(.+)/.exec(host.leading(property))?.[1]?.trim();
+        const reason = /\/\/\s*reason:\s*(.+)/
+          .exec(`${host.leading(property)}\n${host.trailing(property)}`)?.[1]
+          ?.trim();
         if (reason) options["toolReason"] = reason;
       }
     }
@@ -812,6 +872,25 @@ export function createSourceReader(
     }
   };
 
+  /**
+   * The prefixes a `PublicId<…>` type argument names: none for a bare `PublicId` or `PublicId<string>` (any prefix), one
+   * for a literal, each member of a union of literals; undefined for any other argument.
+   */
+  const prefixesOf = (arg: TsNode | undefined): string[] | undefined => {
+    if (arg === undefined || host.kind(arg) === "StringKeyword") return [];
+    const members = host.kind(arg) === "UnionType" ? (arg.types ?? []) : [arg];
+    const prefixes = members.map((member) =>
+      host.kind(member) === "LiteralType" &&
+      member.literal !== undefined &&
+      host.kind(member.literal) === "StringLiteral"
+        ? nameOf(member.literal)
+        : undefined,
+    );
+    return prefixes.every((prefix): prefix is string => prefix !== undefined)
+      ? prefixes
+      : undefined;
+  };
+
   const readTypeReference = (node: TsNode, subject: string, quiet: boolean): TypeDesc => {
     const symbol = node.typeName === undefined ? undefined : host.symbolAt(node.typeName);
     if (symbol === undefined) return unknownType(node, subject, quiet);
@@ -821,6 +900,9 @@ export function createSourceReader(
     const path = declaration === undefined ? "" : host.fileName(declaration);
     if (isLib(path)) {
       if (name === "Date") return { kind: "date" };
+      // `Readonly<Record<string, X>>` is the record it wraps.
+      if (name === "Readonly" && args[0] !== undefined)
+        return readSingleType(args[0], subject, quiet);
       if ((name === "Array" || name === "ReadonlyArray") && args[0] !== undefined)
         return { kind: "array", element: elementOf(args[0], subject, quiet) };
       if (
@@ -833,8 +915,10 @@ export function createSourceReader(
       return unknownType(node, subject, quiet);
     }
     if (isStackra(path)) {
-      if (name === "PublicId" && args[0]?.literal !== undefined)
-        return { kind: "public_id", prefix: nameOf(args[0].literal) };
+      if (name === "PublicId") {
+        const prefixes = prefixesOf(args[0]);
+        if (prefixes !== undefined) return publicIdType(prefixes);
+      }
       if (name === "Money") return { kind: "money" };
       if (name === "Json") return { kind: "json" };
       if (name === "Duration") return { kind: "duration" };
@@ -926,14 +1010,17 @@ export function createSourceReader(
       host.symbolName(alias.symbol) === "PublicId" &&
       aliasDeclaration !== undefined &&
       isStackra(host.fileName(aliasDeclaration))
-    )
-      return {
-        type: {
-          kind: "public_id",
-          prefix: String(alias.args[0] === undefined ? "" : host.literal(alias.args[0])),
-        },
-        nullable,
-      };
+    ) {
+      // The same reading as the type node: no literal (the `string` default) is any prefix, a union its prefixes.
+      const [arg] = alias.args;
+      const literals = (arg === undefined ? [] : (host.unionMembers(arg) ?? [arg])).map((member) =>
+        host.literal(member),
+      );
+      const prefixes = literals.every((literal): literal is string => typeof literal === "string")
+        ? literals
+        : [];
+      return { type: publicIdType(prefixes), nullable };
+    }
     if (rest.length === 2 && rest.every((member) => host.typeHas(member, "BooleanLiteral")))
       return { type: { kind: "boolean" }, nullable };
     const [only] = rest;
@@ -1030,7 +1117,12 @@ export function createSourceReader(
   };
 
   /** A field's constant default. */
-  const defaultOf = (init: TsNode, subject: string, quiet: boolean): FieldDefault | undefined => {
+  const defaultOf = (
+    init: TsNode,
+    subject: string,
+    quiet: boolean,
+    self?: SelfOf,
+  ): FieldDefault | undefined => {
     const refuse = (message: string): undefined => {
       if (quiet) return undefined;
       fail(
@@ -1044,7 +1136,7 @@ export function createSourceReader(
     };
     if (host.kind(init) === "CallExpression") {
       const callee = init.expression === undefined ? "" : host.text(init.expression);
-      const args = (init.arguments ?? []).map(constant);
+      const args = (init.arguments ?? []).map((arg) => constant(arg, self));
       if (args.some(hasNonConstant))
         return refuse(`the arguments of \`${host.text(init)}\` are not constants`);
       try {
@@ -1056,7 +1148,7 @@ export function createSourceReader(
         return refuse(`the default \`${host.text(init)}\` is refused: ${(error as Error).message}`);
       }
     }
-    const value = constant(init);
+    const value = constant(init, self);
     if (value === undefined) return undefined;
     if (
       hasNonConstant(value) ||
@@ -1088,6 +1180,7 @@ export function createSourceReader(
     value: TsNode,
     quiet: boolean,
     quietDefault: boolean,
+    self?: SelfOf,
   ): FieldRead => {
     const name = nameOf(declaration.name);
     const subject = `${shape}.${name}`;
@@ -1156,7 +1249,7 @@ export function createSourceReader(
     const initial =
       value.initializer === undefined
         ? undefined
-        : defaultOf(value.initializer, subject, quietDefault);
+        : defaultOf(value.initializer, subject, quietDefault, self);
     const field: FieldIR = {
       name,
       optional: host.isOptional(declaration),
@@ -1182,19 +1275,39 @@ export function createSourceReader(
         !has(member, "ProtectedKeyword"),
     );
 
+  /**
+   * How the initializer of `field` in `chain[at]` reads `this.<name>`: the nearest initializer of `name` at or above
+   * `chain[at]`, strictly above it for `field` itself (`override errors = { ...this.errors }` reads the base's).
+   */
+  const selfOf =
+    (chain: readonly TsNode[], at: number, field: string): SelfOf =>
+    (name) => {
+      for (let index = name === field ? at + 1 : at; index < chain.length; index += 1) {
+        const initializer = propertiesOf(chain[index] as TsNode).find(
+          (property) => nameOf(property.name) === name,
+        )?.initializer;
+        if (initializer !== undefined) return constant(initializer, selfOf(chain, index, name));
+      }
+      return NOT_CONSTANT;
+    };
+
   /** The fields of a chain (base-most declaration holds type and rules, most derived initializer is the default). */
   const fieldsOf = (
     shape: string,
     chain: readonly TsNode[],
     only?: TsNode,
   ): { fields: FieldIR[]; relations: string[] } => {
-    const byName = new Map<string, { declaration: TsNode; value: TsNode }>();
+    const byName = new Map<string, { declaration: TsNode; value: TsNode; at: number }>();
     for (let index = chain.length - 1; index >= 0; index -= 1)
       for (const property of propertiesOf(chain[index] as TsNode)) {
         const name = nameOf(property.name);
         const entry = byName.get(name);
-        if (entry === undefined) byName.set(name, { declaration: property, value: property });
-        else if (property.initializer !== undefined) entry.value = property;
+        if (entry === undefined)
+          byName.set(name, { declaration: property, value: property, at: index });
+        else if (property.initializer !== undefined) {
+          entry.value = property;
+          entry.at = index;
+        }
       }
     const declaredHere =
       only === undefined
@@ -1202,7 +1315,7 @@ export function createSourceReader(
         : new Set(propertiesOf(only).map((property) => nameOf(property.name)));
     const fields: FieldIR[] = [];
     const relations: string[] = [];
-    for (const [name, { declaration, value }] of byName) {
+    for (const [name, { declaration, value, at }] of byName) {
       if (declaredHere !== undefined && !declaredHere.has(name)) continue;
       // A dependency's declaration is read for its type and rules but never reported on: the author cannot fix it.
       const field = readField(
@@ -1211,6 +1324,7 @@ export function createSourceReader(
         value,
         !isOwn(host.fileName(declaration)),
         !isOwn(host.fileName(value)),
+        selfOf(chain, at, name),
       );
       if (field === "relation") relations.push(name);
       else fields.push(field);

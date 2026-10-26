@@ -36,6 +36,12 @@ planned — gen checks prefix length and uniqueness against the manifest. The ru
 
 - Raw UUIDs externally: rejected by 0082 (database ids are never exposed).
 
+## Note 2026-10-26: hosted prefixes (rule 2)
+
+A registered prefix may also be declared by the member that hosts its owner's package (the member named after the
+owner's module), under that member's own model key; the manifest records the hosted key. See ADR 0294 amendment
+2026-10-26, item 6 (STA-1283).
+
 ## Supersedes and sources
 
 Supersedes: none.

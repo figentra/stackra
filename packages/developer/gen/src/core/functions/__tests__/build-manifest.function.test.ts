@@ -468,6 +468,65 @@ describe("buildManifest", () => {
     expect(codes).toContain("override_duplicate OtherAnalyticsConfig");
   });
 
+  it("treats a class that only builds on a package class as no override (ADR 0305 rule 1)", () => {
+    const input = declared("CommerceConfig");
+    const cursor = (name: string): DeclaredClass => ({
+      ...input,
+      kind: "schema",
+      name,
+      base: { name: "CursorInput", from: "@stackra/validation", own: false },
+    });
+    const ir: MemberIR = {
+      ...COMMERCE_IR,
+      classes: [...COMMERCE_IR.classes, cursor("ListNotesInput"), cursor("ListCommentsInput")],
+    };
+    const codes = buildManifest(ir).errors.map((error) => error.code);
+    expect(codes).not.toContain("override_duplicate");
+  });
+
+  it("gives a query its own verb only when its Permissions class declares it", () => {
+    const list = declared("ListOrdersQuery");
+    const permissions = declared("OrderPermissions");
+    const ir: MemberIR = {
+      ...COMMERCE_IR,
+      classes: [
+        ...COMMERCE_IR.classes.filter((item) => item.name !== permissions.name),
+        { ...permissions, statics: { ...permissions.statics, search: "Permission.L1" } },
+        { ...list, name: "SearchOrdersQuery", options: { ...list.options, key: "order.search" } },
+        { ...list, name: "FeedOrdersQuery", options: { ...list.options, key: "order.feed" } },
+      ],
+    };
+    const { manifest: built, errors: refused } = buildManifest(ir);
+    const permissionOf = (name: string): unknown =>
+      (built.actions ?? []).find((entry) => entry["class"] === name)?.["permission"];
+    expect(refused.map((error) => error.code)).not.toContain("permission_unknown");
+    expect(permissionOf("SearchOrdersQuery")).toBe("orders.order.search");
+    expect(permissionOf("FeedOrdersQuery")).toBe("orders.order.read");
+    expect(permissionOf("ListOrdersQuery")).toBe("orders.order.read");
+  });
+
+  it("lets the member named after a package host its model with the package's prefix", () => {
+    const order = declared("Order");
+    const account: DeclaredClass = {
+      ...order,
+      name: "Account",
+      module: "accounts",
+      file: "src/modules/accounts/models/account.model.ts",
+      traits: [{ name: "HasPublicId", args: ["usr"] }],
+    };
+    const identity: MemberIR = { ...COMMERCE_IR, member: "identity", classes: [account] };
+    const { manifest: built, errors: refused } = buildManifest(identity);
+    expect(refused.map((error) => error.code)).not.toContain("prefix_taken");
+    expect(built.models?.find((model) => model.key === "accounts.account")).toMatchObject({
+      publicId: "usr",
+      hosts: "identity.user",
+    });
+    const elsewhere = buildManifest({ ...identity, member: "crm" }).errors;
+    expect(elsewhere.map((error) => `${error.code} ${error.subject}`)).toContain(
+      "prefix_taken Account",
+    );
+  });
+
   describe("tools, effects, listings and replacements", () => {
     const cancel = declared("CancelOrderAction");
     const withClasses = (...classes: DeclaredClass[]): MemberIR => ({

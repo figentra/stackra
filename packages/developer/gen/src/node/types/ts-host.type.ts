@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `TsHost`, the seam between gen's discovery and a TypeScript compiler API: the dozen questions discovery
- *          asks of a program (its files, a node's kind, text and position, the symbol and type at a node, a symbol's
+ *          asks of a program (its files, a node's kind, text, leading and trailing trivia and position, the symbol and type at a node, a symbol's
  *          declarations, a type's alias, union members and literal value), answered by the TypeScript 7 host or the
  *          TypeScript 6 fallback with identical results.
  * Boundary: a type only. Symbols and types stay opaque (`TsSymbol`, `TsType`); only the host that made one reads it.
@@ -46,6 +46,9 @@ export interface TsHost {
 
   /** The trivia before the node (comments and blank lines). */
   leading(node: TsNode): string;
+
+  /** The rest of the line after the node (a trailing `, // reason: …` comment), up to the line break. */
+  trailing(node: TsNode): string;
 
   /** The 1-based line and column of the node's start. */
   position(node: TsNode): { readonly line: number; readonly column: number };

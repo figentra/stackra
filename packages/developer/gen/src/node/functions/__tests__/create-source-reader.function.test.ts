@@ -12,7 +12,9 @@
  *          `TranslatedStrings` and `Upload<Bucket>` fields read as the `translated` and `upload` kinds (STA-1218);
  *          a replica query's `Promise<ReplicaPage>` or `Promise<ReplicaPage<T>>` reads as `replica` (ADR 0338); a
  *          listener's `handle` parameter reads as its event class (its own, or a `#stackra/clients/*` one by its import),
- *          `EventEnvelope` as a relay, and anything else as `listener_handle_signature` (ADR 0260 decision 4).
+ *          `EventEnvelope` as a relay, and anything else as `listener_handle_signature` (ADR 0260 decision 4); a
+ *          trailing `tool: false, // reason:` comment; and the OS gen pass forms (STA-1283): a bare or prefix-union
+ *          `PublicId`, `Readonly<Record>`, an imported regular expression constant and `this.<field>` spreads.
  * Boundary: test only; writes the fixture under `.cache/` and opens TypeScript on it.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decision 26, 2026-10-23 item 13, decision 28); ADR 0305
@@ -443,6 +445,19 @@ const TOOL_SOURCES: Readonly<Record<string, string>> = {
     "}",
     "",
   ].join("\n"),
+  "src/node/actions/hand-over.action.ts": [
+    'import { Action } from "@stackra/actions";',
+    'import { ActorKind } from "@stackra/contracts";',
+    "",
+    "export class HandOverAction extends Action({",
+    '  key: "drawer.hand_over",',
+    "  tool: false, // reason: hands the till to a person",
+    "  actors: [ActorKind.User],",
+    "}) {",
+    "  async handle(): Promise<void> {}",
+    "}",
+    "",
+  ].join("\n"),
 };
 
 describe("createSourceReader on tool reasons", async () => {
@@ -457,6 +472,13 @@ describe("createSourceReader on tool reasons", async () => {
     expect(options("OpenDrawerAction")).toMatchObject({
       tool: false,
       toolReason: "opens a physical cash drawer at the till",
+    });
+  });
+
+  it("reads a trailing `// reason:` comment on the `tool: false` line too", () => {
+    expect(options("HandOverAction")).toMatchObject({
+      tool: false,
+      toolReason: "hands the till to a person",
     });
   });
 
@@ -550,5 +572,88 @@ describe("createSourceReader on translated and upload fields", async () => {
     expect(reader.errors.some((error) => error.code === "shape_decorator_type_mismatch")).toBe(
       false,
     );
+  });
+});
+
+/** The forms the OS gen pass of 2026-10-26 refused that gen now reads (STA-1283). */
+const GEN_PASS_SOURCES: Readonly<Record<string, string>> = {
+  "src/core/constants/meter-code.constant.ts": "export const METER_CODE = /^[a-z_]+$/;\n",
+  "src/core/schemas/grant.schema.ts": [
+    'import type { PublicId } from "@stackra/contracts";',
+    'import { Schema, Str } from "@stackra/validation";',
+    'import { METER_CODE } from "#core/constants/meter-code.constant";',
+    "",
+    "export class Grant extends Schema {",
+    "  principalId!: PublicId;",
+    '  listId!: PublicId<"crl" | "prl">;',
+    "  @Str({ max: 40 })",
+    "  subjectId!: PublicId;",
+    "  labels!: Readonly<Record<string, string>>;",
+    "  @Str({ pattern: METER_CODE })",
+    "  meter!: string;",
+    "}",
+    "",
+  ].join("\n"),
+  "src/core/schemas/base-limits.schema.ts": [
+    'import { Schema } from "@stackra/validation";',
+    "",
+    "export class BaseLimits extends Schema {",
+    '  levels: string[] = ["tenant"];',
+    "  errors: Record<string, boolean> = { enabled: false };",
+    "}",
+    "",
+  ].join("\n"),
+  "src/core/schemas/limits.schema.ts": [
+    'import { BaseLimits } from "#core/schemas/base-limits.schema";',
+    "",
+    "export class Limits extends BaseLimits {",
+    '  override levels = [...this.levels, "location"];',
+    "  override errors = { ...this.errors, sampled: true };",
+    "}",
+    "",
+  ].join("\n"),
+};
+
+describe("createSourceReader on the OS gen pass forms", async () => {
+  const root = writeFixtureMember("gen-pass", GEN_PASS_SOURCES);
+  const host = await openHost(join(root, "tsconfig.json"));
+  const reader = createSourceReader(host, readMemberFacts(root));
+  const shapes = reader.sources.flatMap((file) => reader.shapes(file));
+  for (const file of reader.sources) reader.classes(file);
+  host.close();
+  const field = (shape: string, name: string) =>
+    shapes
+      .find((candidate) => candidate.name === shape)
+      ?.fields.find((candidate) => candidate.name === name);
+
+  it("reads a bare PublicId as any prefix and a prefix union as its prefixes", () => {
+    expect(field("Grant", "principalId")?.type).toEqual({ kind: "public_id", prefix: "" });
+    expect(field("Grant", "listId")?.type).toEqual({
+      kind: "public_id",
+      prefix: "",
+      prefixes: ["crl", "prl"],
+    });
+    expect(reader.errors.some((error) => error.code === "shape_unknown_type")).toBe(false);
+  });
+
+  it("reads a decorated bare PublicId the same way, refusing only the decorator", () => {
+    expect(field("Grant", "subjectId")?.type).toEqual({ kind: "public_id", prefix: "" });
+    const mismatch = reader.errors.find((error) => error.subject === "Grant.subjectId");
+    expect(mismatch?.code).toBe("shape_decorator_type_mismatch");
+    expect(mismatch?.message).toContain("public_id");
+  });
+
+  it("unwraps Readonly<Record> and takes an imported regular expression as a constant", () => {
+    expect(field("Grant", "labels")?.type).toEqual({ kind: "record", value: { kind: "string" } });
+    expect(field("Grant", "meter")?.rules).toEqual([
+      { name: "Str", options: { pattern: { $regex: "^[a-z_]+$", flags: "" } } },
+    ]);
+    expect(reader.errors.some((error) => error.code === "shape_rule_not_constant")).toBe(false);
+  });
+
+  it("extends a base default spread from `this.<field>` in an override", () => {
+    expect(field("Limits", "levels")?.default?.value).toEqual(["tenant", "location"]);
+    expect(field("Limits", "errors")?.default?.value).toEqual({ enabled: false, sampled: true });
+    expect(reader.errors.some((error) => error.code === "shape_default_not_constant")).toBe(false);
   });
 });

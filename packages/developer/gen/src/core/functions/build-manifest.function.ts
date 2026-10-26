@@ -7,7 +7,8 @@
  *          `from`; each Integration's key, connection, webhook path and egress entry (a `{field}` host kept as data);
  *          each sequence's key; an app's block and route
  *          keys; each tool's derived MCP hints and each action's effect tags; each Integration's roles and listing;
- *          the `@Replaces` replacements. It reports the identity checks it can see: `identity_collision`,
+ *          the `@Replaces` replacements; a model a hosting member re-declares with a package's prefix records the
+ *          package model key it hosts (`hosts`). It reports the identity checks it can see: `identity_collision`,
  *          `override_duplicate`, `permission_unknown`, `identity_missing`, the public id prefix checks
  *          `prefix_invalid`, `prefix_taken` and `prefix_duplicate`, `tool_reason_missing`, `effect_unknown`,
  *          `integration_role_unknown`, `egress_invalid`, `sequence_misplaced`, `document_number_unsequenced` and
@@ -20,7 +21,8 @@
  *                     (decision 1: sequence keys); ADR 0270 (decision 3: block keys); ADR 0360 (decisions 4 and 10: user
  *                     actions are tools by default, `tool: false` needs a reason, the `bulk` tag); ADR 0099 (decisions
  *                     2 and 3: effect tags, derived hints); ADR 0355 (decision 1: Integration roles); ADR 0308 (rule
- *                     21: `listing.entitlement`); ADR 0394 (decision 2: a sequence's one home).
+ *                     21: `listing.entitlement`); ADR 0394 (decision 2: a sequence's one home); owner decisions
+ *                     2026-10-26 round 3 (query verbs, hosted prefixes; STA-1283).
  */
 import { Enum } from "@stackra/contracts";
 import type { Json, StackraManifest } from "@stackra/contracts";
@@ -265,10 +267,15 @@ export function buildManifest(ir: MemberIR): {
     const segments = written.split(".");
     const verb = segments.pop() ?? "";
     const model = segments.join(".");
+    // A query reads `<module>.<model>.read` unless its Permissions class declares its own verb (`search`, `feed`):
+    // owner decisions 2026-10-26, round 3.
+    const ownVerb = `${declared.module}.${model}.${verb}`;
     const permission =
       declared.options["permission"] !== undefined
         ? String(jsonOf(declared.options["permission"]))
-        : `${declared.module}.${model}.${kind === "query" ? "read" : verb}`;
+        : kind === "query" && !risks.has(ownVerb)
+          ? `${declared.module}.${model}.read`
+          : ownVerb;
     const risk = risks.get(permission);
     if (risk === undefined)
       fail(
@@ -384,10 +391,14 @@ export function buildManifest(ir: MemberIR): {
   // never a prefix the shared registry gives to another owner (ADR 0135 rule 2).
   const models: Entry[] = [];
   const prefixes = new Map<string, string>();
+  // A member named after a package's module hosts that package's models: it may re-declare one under its own module
+  // key with the package's prefix, and the model records the key it hosts (owner decisions 2026-10-26, round 3).
+  const hostedKeys = new Map<string, string>();
   for (const declared of ir.classes.filter((candidate) => candidate.kind === "model")) {
     const key = modelKey(declared.module, declared.name);
     claim(key, declared);
     const publicId = declared.traits.find((trait) => trait.name === "HasPublicId")?.args[0];
+    let hosts: string | undefined;
     if (typeof publicId === "string") {
       const registered = PUBLIC_ID_PREFIXES[publicId];
       const holder = prefixes.get(publicId);
@@ -398,12 +409,16 @@ export function buildManifest(ir: MemberIR): {
           `the public id prefix \`${publicId}\` is not 2 to 6 lowercase letters`,
           'write a prefix of 2 to 6 lowercase letters, such as `HasPublicId("ord")`',
         );
-      else if (registered !== undefined && registered !== key)
+      else if (
+        registered !== undefined &&
+        registered !== key &&
+        registered.split(".")[0] !== ir.member
+      )
         fail(
           declared,
           "prefix_taken",
           `the public id prefix \`${publicId}\` is registered to ${registered}`,
-          "pick a prefix the registry in @stackra/gen does not list, or move the entry there in a reviewed change",
+          `pick a prefix the registry in @stackra/gen does not list, host the model from the \`${registered.split(".")[0]}\` member, or move the entry in a reviewed change`,
         );
       else if (holder !== undefined)
         fail(
@@ -412,7 +427,13 @@ export function buildManifest(ir: MemberIR): {
           `the public id prefix \`${publicId}\` is also the prefix of ${holder}`,
           "give one of the two models another prefix",
         );
-      else prefixes.set(publicId, key);
+      else {
+        prefixes.set(publicId, key);
+        if (registered !== undefined && registered !== key) {
+          hosts = registered;
+          hostedKeys.set(publicId, registered);
+        }
+      }
     }
     models.push({
       key,
@@ -420,6 +441,7 @@ export function buildManifest(ir: MemberIR): {
       file: declared.file,
       table: tableName(declared.module, declared.name),
       ...(typeof publicId === "string" ? { publicId } : {}),
+      ...(hosts !== undefined ? { hosts } : {}),
       traits: declared.traits.map((trait) => trait.name),
       ...(declared.facets.some((facet) => facet.name === "Searchable" && facet.target === "class")
         ? { searchable: true }
@@ -432,7 +454,11 @@ export function buildManifest(ir: MemberIR): {
       for (const model of manifest.models ?? []) {
         if (typeof model.publicId !== "string") continue;
         const holder = prefixes.get(model.publicId);
-        if (holder !== undefined && holder !== model.key)
+        if (
+          holder !== undefined &&
+          holder !== model.key &&
+          hostedKeys.get(model.publicId) !== model.key
+        )
           errors.push({
             code: "prefix_duplicate",
             file: "package.json",
@@ -623,10 +649,12 @@ export function buildManifest(ir: MemberIR): {
     claim(`config:${configKeyOf(declared.name, ir.member)}`, declared);
   }
 
-  // Overrides: one per base in a member.
+  // Overrides: one per base in a member. An override is a config over a package config, or a class that keeps the
+  // plain name of the package class it extends (ADR 0305 rule 1); `ListXInput extends CursorInput` only builds on it.
   const overridden = new Map<string, DeclaredClass>();
   for (const declared of ir.classes) {
     if (declared.base === undefined || declared.base.own) continue;
+    if (declared.kind !== "config" && declared.name !== declared.base.name) continue;
     const base = `${declared.base.from}#${declared.base.name}`;
     const other = overridden.get(base);
     if (other !== undefined)

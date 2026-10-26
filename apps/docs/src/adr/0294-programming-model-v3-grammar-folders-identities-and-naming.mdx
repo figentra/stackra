@@ -619,6 +619,34 @@ wrongly. Each item names the decision or rule it changes. Everything else stands
     [0264](/adr/0264-declaration-vocabulary-module-keys-define-family-and-kind-folders) and decision 1 of 0295, which
     derive the member key from the package name, read the folder name.
 
+## Amendment 2026-10-26: readings from the OS gen pass (STA-1283)
+
+**Context.** A structural gen pass over Figentra OS (`notes/handover/os/os-genpass-2026-10-26.md`) refused forms that
+the decisions above allow, or that the owner settled on 2026-10-26 (round 3, engineering defaults). Each item names the
+decision it changes. Everything else stands.
+
+**Decision.**
+
+1. **A bare `PublicId` is a shape type (decision 26).** `PublicId` with no argument is a polymorphic reference: the
+   `public_id` kind with any registered prefix (`^[a-z]{2,6}_…`). `PublicId<"crl" | "prl">` is the kind with those
+   prefixes, compiled to a union of `publicId(prefix)`. The type node and the checker read it the same way, with or
+   without a decorator; a rule decorator on it is `shape_decorator_type_mismatch` naming `public_id`.
+2. **`Readonly<Record<string, X>>` is the record it wraps (decision 26).**
+3. **More constants (decision 26).** A `const` whose initializer is a regular expression literal is a constant
+   wherever it is imported from, so a shared pattern lives in a constants file. `Translated.of({...})` joins
+   `Duration.*` and `Money.*` as a platform constructor; its default is the locale map.
+4. **An override may extend its base default (decision 26).** In a field initializer, `...this.<field>` (object or
+   array spread) reads the initializer the class chain gave that field before this class, so
+   `override errors = { ...this.errors, enabled: true }` is a constant. A computed key that is a constant string is
+   allowed in an object default.
+5. **A query's own verb (decision 21).** A query whose written key ends in a verb its Permissions class declares
+   (`audit_record.search` with `static readonly search`) uses that permission; any other query keeps
+   `<module>.<model>.read`. An explicit `permission` option still wins.
+6. **A hosting member may re-declare a package model (decision 20; ADR 0135 rule 2).** The member named after the
+   module of a registered prefix's owner (the `identity` service for `usr`, `identity.user`) may declare a model with
+   that prefix under its own module key. The manifest's model entry records the key it hosts (`hosts`), and a hosted
+   package manifest with the same model is not `prefix_duplicate`.
+
 ## Supersedes and sources
 
 Supersedes: none as a whole. Decision 1 of [0094](/adr/0094-decorators-only-authoring) is superseded, and decision 3 of

@@ -148,6 +148,11 @@ export async function openTsgoHost(tsconfig: string): Promise<TsHost> {
     kindName: (kind) => kinds.get(kind) ?? "Unknown",
     text: (node) => go(node).getText(),
     leading: (node) => go(node).getSourceFile().text.slice(node.pos, go(node).getStart()),
+    trailing: (node) => {
+      const text = go(node).getSourceFile().text;
+      const end = text.indexOf("\n", node.end);
+      return text.slice(node.end, end === -1 ? undefined : end);
+    },
     position: (node) => {
       const file = go(node).getSourceFile();
       const at = file.getLineAndCharacterOfPosition(go(node).getStart(file));

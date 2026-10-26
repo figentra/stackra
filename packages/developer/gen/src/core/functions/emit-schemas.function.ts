@@ -10,7 +10,8 @@
  *           to its codes in source order; a member base is `.extend`ed and a package base's shipped `X$` gets only new
  *           defaults. A reference to a shape declared later in the file is `z.lazy`, so a cycle still loads. A
  *           `Translated` field is a locale map decoded through `Translated.of` (`TranslatedStrings` to `{ values }`),
- *           its `@Str` rules on each text; an `Upload<Bucket>` field is `@stackra/media`'s `Upload.schema`.
+ *           its `@Str` rules on each text; an `Upload<Bucket>` field is `@stackra/media`'s `Upload.schema`. A bare
+ *           `PublicId` checks the format with any prefix; a prefix union is a union of `publicId(prefix)`.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 26: the shape compiler); ADR 0305 (rules 1 and 14); registry v3.1 gap G1;
  *                     ADR 0162 (decision 2); ADR 0222 (decision 2).
@@ -126,8 +127,15 @@ function zodOf(
       use(imports, "@stackra/contracts", "Email", true);
       return "z.email().transform((value) => value as Email)";
     case "public_id":
+      if (type.prefix === "" && type.prefixes === undefined) {
+        use(imports, "@stackra/contracts", "PublicId", true);
+        // Any registered prefix: the format of `publicId(prefix)` in @stackra/validation, prefix left open.
+        return "z.string().regex(/^[a-z]{2,6}_[0-9a-hjkmnp-tv-z]{26}$/i).transform((value) => value as PublicId)";
+      }
       use(imports, "@stackra/validation", "publicId");
-      return `publicId(${JSON.stringify(type.prefix)})`;
+      return type.prefixes === undefined
+        ? `publicId(${JSON.stringify(type.prefix)})`
+        : `z.union([${type.prefixes.map((prefix) => `publicId(${JSON.stringify(prefix)})`).join(", ")}])`;
     case "enum":
       return type.module === undefined
         ? `z.enum(${JSON.stringify(type.values)})`

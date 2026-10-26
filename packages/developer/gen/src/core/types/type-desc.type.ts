@@ -32,8 +32,15 @@ export type TypeDesc =
   | { readonly kind: "upload"; readonly bucket?: string }
   /** A branded string: `Url`, `Email` or `CurrencyCode`. */
   | { readonly kind: "brand"; readonly brand: "url" | "email" | "currency_code" }
-  /** `PublicId<"ord">`. */
-  | { readonly kind: "public_id"; readonly prefix: string }
+  /**
+   * `PublicId<"ord">` (`prefix`); `PublicId<"crl" | "prl">` (`prefixes`, `prefix` empty); a bare `PublicId`, a
+   * polymorphic reference with any registered prefix (`prefix` empty, no `prefixes`).
+   */
+  | {
+      readonly kind: "public_id";
+      readonly prefix: string;
+      readonly prefixes?: readonly string[];
+    }
   /** An `Enum.of` type: its codes in source order, and the module that declares it when it is the member's own. */
   | {
       readonly kind: "enum";

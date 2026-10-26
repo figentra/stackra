@@ -251,6 +251,13 @@ These conventions are used by the template and the apps. They are decided here, 
 - planned — the gen class-component compiler and its lint mapping. The work item is not yet open in Linear, so no
   check exists today.
 
+## Note 2026-10-26: what counts as an override (rule 1)
+
+`override_duplicate` applies to an override as rule 1 defines it: a config over a package config, or a class that
+keeps the plain name of the package class it extends. A class that only builds on a package class
+(`ListNotesInput extends CursorInput`) is not an override, so any number of them may share that base. See ADR 0294
+amendment 2026-10-26 (STA-1283).
+
 ## Supersedes and sources
 
 Supersedes: none as a whole. The rules listed above amend the pages named in the note at the top of this page.

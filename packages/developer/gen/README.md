@@ -65,8 +65,11 @@ snake_case code, a position and the fix; when there is one, nothing is written.
 
 - **Tools by default (ADR 0360 decision 4).** A query, or an action whose `actors` include `user`, gets a `tool`
   entry (`name`, `default`, and the `hints` of ADR 0099 decision 3). `tool: false` on such a class needs a reason on
-  the line above, `// reason: <why an agent may not call it>`; without one gen refuses with `tool_reason_missing`, and
-  with one the entry records it as `toolOff`.
+  the line above, `// reason: <why an agent may not call it>`, or trailing on the same line
+  (`tool: false, // reason: …`); without one gen refuses with `tool_reason_missing`, and with one the entry records it
+  as `toolOff`.
+- **Query permissions.** A query takes `<module>.<model>.read`, unless its Permissions class declares the verb of its
+  key (`audit_record.search` with `static readonly search`): then it takes that one. A `permission` option wins.
 - **Effect tags (ADR 0099 decision 2, ADR 0360 decision 10).** `effects: [...]` is copied into the entry and feeds the
   hints; a tag outside `EFFECT_TAGS` is `effect_unknown`.
 - **Listings (ADR 0355 decision 1, ADR 0308 rule 21).** An Integration's `roles` (plus `webhooks` when it receives
@@ -87,9 +90,23 @@ may use these platform types (each read only when declared in a `@stackra/*` pac
 | `TranslatedStrings` (`@stackra/validation`)    | locale map `.transform((values) => ({ values }))`          | the same locale map                                                             |
 | `Upload<Bucket>` (`@stackra/media`)            | `Upload.schema`                                            | `{ id: "upl_…" }`, `x-stackra-type: upload`, `x-stackra-bucket: <Bucket class>` |
 
+A bare `PublicId` is a polymorphic reference: any registered prefix (`^[a-z]{2,6}_…`), compiled to a format check
+typed `PublicId`. `PublicId<"crl" | "prl">` compiles to a union of `publicId(prefix)`. `Readonly<Record<string, X>>`
+reads as the record.
+
 `@Str` and `@Trim` on a translated field apply to each locale's text. A model's `Translated` field gets
 `TranslatedType` in its `EntitySchema`, so it loads back as a `Translated`. `Upload<X>` where `X` is not a Bucket class
 is `shape_unknown_type`.
+
+Constants and defaults: literals, enum cases, literal-typed `const`s, a `const` holding a regular expression literal
+(a shared pattern imported from a constants file), and the platform constructors `Duration.*`, `Money.of|ofMinor|zero`
+and `Translated.of`. An override may extend its base default with `...this.<field>` (`{ ...this.errors, enabled: true }`,
+`[...this.levels, X]`); gen resolves it from the class chain.
+
+Overrides (ADR 0305 rule 1): a config over a package config, or a class that keeps the plain name of the package class
+it extends. Only one per base in a member (`override_duplicate`); a class that only builds on a package class
+(`ListNotesInput extends CursorInput`) is no override. A model may reuse a registered package prefix only in the member
+named after that package's module (the `identity` service for `usr`); its manifest entry records `hosts`.
 
 An action or query's `handle` answers `Promise<Output>` with a Schema class of the member. A replica query (ADR 0338)
 answers `Promise<ReplicaPage>` (or `ReplicaPage<T>`) from `@stackra/actions` instead: the manifest gives it the output

@@ -131,6 +131,11 @@ export function openTs6Host(tsconfig: string): TsHost {
     kindName: (kind) => kinds.get(kind) ?? "Unknown",
     text: (node) => six(node).getText(),
     leading: (node) => six(node).getSourceFile().text.slice(node.pos, six(node).getStart()),
+    trailing: (node) => {
+      const text = six(node).getSourceFile().text;
+      const end = text.indexOf("\n", node.end);
+      return text.slice(node.end, end === -1 ? undefined : end);
+    },
     position: (node) => {
       const file = six(node).getSourceFile();
       const at = file.getLineAndCharacterOfPosition(six(node).getStart(file));
