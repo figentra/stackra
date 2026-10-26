@@ -16,12 +16,26 @@ import type { PriceTier } from "#core/index";
 describe("@stackra/pricing", () => {
   it("exports exactly the runtime surface", () => {
     expect(Object.keys(entry).sort()).toEqual([
+      "BILLING_PACK_KEYS",
+      "BillingPeriod",
       "GraduatedPrice",
       "MemoryTaxProviderDriver",
+      "OfferBenefitKind",
       "PriceKind",
       "PricePoint",
+      "applyOffers",
+      "billingTermsOf",
       "evaluateFormula",
+      "isCatalogueDiscount",
+      "meterCharge",
+      "offerEligible",
+      "offerOf",
+      "planPrice",
+      "planPriceListsOf",
+      "priceListKey",
+      "rateCardOf",
       "resolvePrice",
+      "stackOffers",
       "taxByRates",
     ]);
   });
