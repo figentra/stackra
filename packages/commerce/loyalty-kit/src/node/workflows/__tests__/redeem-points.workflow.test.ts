@@ -90,7 +90,7 @@ async function engineWith(redeemVerify = passThrough) {
   } as unknown as LoyaltyKitExtensionPoint);
   const runner = new NativeWorkflowRunnerDriver(
     new MemoryWorkflowJournalDriver(),
-    new Locks(new MemoryLockDriver(), clock),
+    new Locks(new MemoryLockDriver(clock), clock),
     clock,
   );
   const resolver: Resolver = {

@@ -31,8 +31,8 @@ describe("CreateAchievementsMigration", () => {
     expect(sql).toContain("ltree");
     expect(sql).toContain('create table "achievements"."award_kinds"');
     expect(sql).toContain('"idx_award_kinds_scope_id_key"');
-    expect(sql).toContain('"levels" jsonb not null');
-    expect(sql).toContain('"is_once_per_period" boolean not null');
+    expect(sql).toContain("\"levels\" jsonb default '[]'::jsonb not null");
+    expect(sql).toContain('"is_once_per_period" boolean default false not null');
     expect(sql).toContain('"rule_set_id" varchar(33) null');
   });
 

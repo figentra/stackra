@@ -24,7 +24,7 @@ export class AddRuleSetSeedsMigration extends Migration {
       t.string("seed_version", 31)
         .nullable()
         .comment("The pack version of the last seeded revision; null for a tenant's own.");
-      t.unique(["scope_id", "consumer", "seed_key"]).where("seed_key is not null");
+      t.unique(["scope_id", "consumer", "seed_key"]).where("seed_key is not null").concurrently();
     });
   }
 }

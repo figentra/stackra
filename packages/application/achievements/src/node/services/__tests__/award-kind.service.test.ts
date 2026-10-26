@@ -13,6 +13,7 @@ import { InputInvalidError } from "@stackra/actions";
 import type { PublicId, ScopeRef } from "@stackra/contracts";
 import { Database, registerModelPartners } from "@stackra/database";
 import { Rules } from "@stackra/rules";
+import { type FactField, type FactSource, FieldType } from "@stackra/rules/contracts";
 import type { RuleSetService } from "@stackra/rules/node";
 import { afterAll, afterEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
@@ -26,7 +27,15 @@ registerModelPartners([[AwardKindService, AwardKind]]);
 const ACME: ScopeRef = { id: "scp_01j9z3k4m5n6p7q8r9s0t1v2w1", path: "platform.acme" };
 const RULE_SET = "rset_01j9z3k4m5n6p7q8r9s0t1v2w3" as PublicId<"rset">;
 const MEMBER = "test.member";
-const RULES = Rules.create({ key: "test.member_award", sources: [] });
+
+/** The one fact source `Rules.create` requires. */
+const SOURCES: FactSource[] = [
+  {
+    key: "member",
+    fields: { sales: { type: FieldType.Number, label: "test::facts.sales" as FactField["label"] } },
+  },
+];
+const RULES = Rules.create({ key: "test.member_award", sources: SOURCES });
 AWARD_RECIPIENTS.set(MEMBER, RULES);
 
 /** A stored kind with `data`. */

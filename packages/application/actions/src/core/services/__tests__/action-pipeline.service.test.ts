@@ -43,7 +43,7 @@ import {
 } from "@stackra/errors";
 import type { RecordedEvent } from "@stackra/events/contracts";
 import { EventOutbox } from "@stackra/events/contracts";
-import { describe, expect, it } from "@stackra/testing";
+import { describe, expect, it, onTestFinished } from "@stackra/testing";
 import { registerSchemas, Schema } from "@stackra/validation";
 import { z } from "zod";
 
@@ -97,6 +97,7 @@ import { OfflineCapReachedError } from "#core/errors/offline-cap-reached.error";
 import { UsageRecorded } from "#core/events/usage-recorded.event";
 import { registerActions } from "#core/functions/register-actions.function";
 import { ActionPipeline } from "#core/services/action-pipeline.service";
+import { ACTION_REGISTRY } from "#core/constants/action-registry.constant";
 import { ReplicaFeed } from "#core/services/replica-feed.service";
 import { RequestContext } from "#core/services/request-context.service";
 import type { RuleEvaluation } from "#core/types/rule-evaluation.type";
@@ -572,6 +573,10 @@ describe(ActionPipeline, () => {
   });
 
   it("hands AccessControl the registered identity and validates the registered input", async () => {
+    // the registry is module-wide: later tests expect the unregistered key "order.create"
+    onTestFinished(() => {
+      ACTION_REGISTRY.delete(CreateOrderAction);
+    });
     registerActions([
       {
         type: CreateOrderAction,

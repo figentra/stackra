@@ -481,7 +481,13 @@ describe("Journal with a currency field", () => {
     const entries = new MemoryEntries("account");
     const journal = journalOver(MoneyEntry, entries);
 
-    expect(await journal.post([money("issued", -5, "EUR"), money("a1", 5, "EUR")])).toMatchObject({
+    expect(
+      await journal.post([
+        // the issuing account lifts the model's floor of zero, as a line of an issue does
+        { ...money("issued", -5, "EUR"), floor: null },
+        money("a1", 5, "EUR"),
+      ]),
+    ).toMatchObject({
       written: true,
     });
     const mixed = await journal

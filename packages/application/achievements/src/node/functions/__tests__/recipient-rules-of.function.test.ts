@@ -8,12 +8,20 @@
  */
 import { InputInvalidError } from "@stackra/actions";
 import { Rules } from "@stackra/rules";
+import { type FactField, type FactSource, FieldType } from "@stackra/rules/contracts";
 import { afterEach, describe, expect, it } from "@stackra/testing";
 
 import { AWARD_RECIPIENTS } from "#node/constants/award-recipients.constant";
 import { recipientRulesOf } from "#node/functions/recipient-rules-of.function";
 
-const RULES = Rules.create({ key: "test.member_award", sources: [] });
+/** The one fact source `Rules.create` requires. */
+const SOURCES: FactSource[] = [
+  {
+    key: "member",
+    fields: { sales: { type: FieldType.Number, label: "test::facts.sales" as FactField["label"] } },
+  },
+];
+const RULES = Rules.create({ key: "test.member_award", sources: SOURCES });
 
 afterEach(() => {
   AWARD_RECIPIENTS.clear();

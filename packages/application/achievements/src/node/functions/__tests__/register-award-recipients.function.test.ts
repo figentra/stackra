@@ -7,14 +7,22 @@
  * Governing contract: ADR 0022; ADR 0269; ADR 0368 (decisions 1 and 4).
  */
 import { Rules } from "@stackra/rules";
+import { type FactField, type FactSource, FieldType } from "@stackra/rules/contracts";
 import { afterEach, describe, expect, it } from "@stackra/testing";
 
 import { AWARD_RECIPIENTS } from "#node/constants/award-recipients.constant";
 import { registerAwardRecipients } from "#node/functions/register-award-recipients.function";
 
+/** The one fact source `Rules.create` requires. */
+const SOURCES: FactSource[] = [
+  {
+    key: "member",
+    fields: { sales: { type: FieldType.Number, label: "test::facts.sales" as FactField["label"] } },
+  },
+];
 /** Two consumers' rules. */
-const MEMBER_RULES = Rules.create({ key: "test.member_award", sources: [] });
-const OTHER_RULES = Rules.create({ key: "test.other_award", sources: [] });
+const MEMBER_RULES = Rules.create({ key: "test.member_award", sources: SOURCES });
+const OTHER_RULES = Rules.create({ key: "test.other_award", sources: SOURCES });
 
 afterEach(() => {
   AWARD_RECIPIENTS.clear();

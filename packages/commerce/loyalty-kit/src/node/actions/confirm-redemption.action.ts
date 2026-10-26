@@ -33,6 +33,8 @@ export class ConfirmRedemptionAction extends Action({
   permission: LoyaltyAccountPermissions.redeem,
   actors: [ActorKind.User, ActorKind.Service],
   endpoint: { method: HttpMethod.Put, path: "/loyalty/redemptions/:reference/confirm" },
+  // reason: a confirmation is the host's, after its own step succeeded, not an agent's
+  tool: false,
 }) {
   /** Sends the signal the redemption's `confirm` step waits for; the engine holds an early one. */
   async handle(

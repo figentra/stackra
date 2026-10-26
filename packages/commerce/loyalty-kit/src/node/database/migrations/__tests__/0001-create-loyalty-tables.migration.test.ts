@@ -32,9 +32,9 @@ describe("CreateLoyaltyTablesMigration", () => {
   it("creates the accounts with every column stated, the search columns and the indexes", () => {
     expect(sql).toContain('create table "loyalty_kit"."loyalty_accounts"');
     expect(sql).toContain('"member_id" varchar(64) not null');
-    expect(sql).toContain('"is_frozen" boolean not null');
+    expect(sql).toContain('"is_frozen" boolean default false not null');
     expect(sql).toContain('"frozen_at" timestamptz null');
-    expect(sql).toContain('"notes" jsonb not null');
+    expect(sql).toContain("\"notes\" jsonb default '{}'::jsonb not null");
     expect(sql).toContain('"search_vector" tsvector null');
     expect(sql).toContain('"idx_loyalty_accounts_search_vector"');
     expect(sql).toContain('"idx_loyalty_accounts_tenant_id_tier"');
