@@ -10,7 +10,9 @@ programming model v3.1 shape (ADR 0294, 0305).
 - Zero `dependencies`, zero `peerDependencies`, no workspace import. Dev dependencies come from catalogs or
   `workspace:*` only.
 - No host globals: no `process`, `window`, `Date.now()`, `new Date()` without an argument, `Math.random()` or host
-  locale and time zone reads. The caller passes the time in.
+  locale and time zone reads. The caller passes the time in. Web Crypto (`crypto.subtle`) is the one platform API
+  used, by `canonicalHash` only.
+- `canonicalJson` is frozen: every audit chain and signed checkpoint hashes its output (ADR 0416). Never change it.
 - A helper is added when a package or service imports it, never ahead of a consumer. Port `str`, `arr`, `async` and
   `object` from the Figentra OS source only then.
 - One declaration per file (ADR 0305); a file opens with the Stackra file contract and every export carries TSDoc.

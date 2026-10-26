@@ -2,7 +2,7 @@
   "name": "@stackra/support",
   "version": "0.0.0",
   "private": true,
-  "description": "Dependency-free pure helpers for Stackra packages and services, grown on demand: time shifts, exact quantities with units, GS1 restricted-circulation GTINs and a Code 128 encoder",
+  "description": "Dependency-free pure helpers for Stackra packages and services, grown on demand: time and calendar-month shifts, exact quantities with units, canonical JSON and its hash, GS1 restricted-circulation GTINs and a Code 128 encoder",
   "license": "MIT",
   "repository": {
     "type": "git",

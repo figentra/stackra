@@ -12,6 +12,13 @@ import * as entry from "#core/index";
 
 describe("@stackra/support", () => {
   it("exports exactly the public runtime symbols", () => {
-    expect(Object.keys(entry).sort()).toEqual(["Quantity", "code128", "restrictedGtin", "time"]);
+    expect(Object.keys(entry).sort()).toEqual([
+      "Quantity",
+      "canonicalHash",
+      "canonicalJson",
+      "code128",
+      "restrictedGtin",
+      "time",
+    ]);
   });
 });

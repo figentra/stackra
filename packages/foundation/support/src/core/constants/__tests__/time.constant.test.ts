@@ -105,14 +105,47 @@ describe("time", () => {
     expect(Object.isFrozen(time)).toBe(true);
   });
 
-  it("offers exactly the add and sub pairs for seconds, minutes, hours and days", () => {
+  it.each([
+    ["2026-01-31T09:30:00.000Z", 1, "2026-02-28T09:30:00.000Z"],
+    ["2028-01-31T09:30:00.000Z", 1, "2028-02-29T09:30:00.000Z"],
+    ["2026-01-15T00:00:00.000Z", 1, "2026-02-15T00:00:00.000Z"],
+    ["2026-11-30T00:00:00.000Z", 3, "2027-02-28T00:00:00.000Z"],
+    ["2026-03-31T00:00:00.000Z", -1, "2026-02-28T00:00:00.000Z"],
+    ["2026-01-31T00:00:00.000Z", -2, "2025-11-30T00:00:00.000Z"],
+    ["2028-02-29T00:00:00.000Z", 12, "2029-02-28T00:00:00.000Z"],
+    ["2026-05-31T00:00:00.000Z", 0, "2026-05-31T00:00:00.000Z"],
+  ] as const)("addMonths(%s, %d) clamps to %s", (from, amount, expected) => {
+    expect(iso(time.addMonths(at(from), amount))).toBe(expected);
+    expect(iso(time.subMonths(at(from), -amount))).toBe(expected);
+  });
+
+  it("shifts months from a fixed anchor without drift and leaves the input alone", () => {
+    const anchor = at("2026-01-31T00:00:00.000Z");
+    const periods = [1, 2, 3].map((n) => iso(time.addMonths(anchor, n)));
+    expect(periods).toEqual([
+      "2026-02-28T00:00:00.000Z",
+      "2026-03-31T00:00:00.000Z",
+      "2026-04-30T00:00:00.000Z",
+    ]);
+    expect(iso(anchor)).toBe("2026-01-31T00:00:00.000Z");
+  });
+
+  it("refuses a fractional or infinite month amount and an invalid date", () => {
+    expect(() => time.addMonths(start, 1.5)).toThrow(RangeError);
+    expect(() => time.subMonths(start, Number.POSITIVE_INFINITY)).toThrow(RangeError);
+    expect(() => time.addMonths(new Date(Number.NaN), 1)).toThrow("time: the date is invalid");
+  });
+
+  it("offers exactly the add and sub pairs for seconds, minutes, hours, days and months", () => {
     expect(Object.keys(time).sort()).toEqual(
       [
         "addDays",
         "addHours",
         "addMinutes",
+        "addMonths",
         "addSeconds",
         "subDays",
+        "subMonths",
         "subHours",
         "subMinutes",
         "subSeconds",

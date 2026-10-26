@@ -8,6 +8,8 @@
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision; ADR 0127 2026-10-24 note.
  */
 export { time } from "#core/constants/time.constant";
+export { canonicalHash } from "#core/functions/canonical-hash.function";
+export { canonicalJson } from "#core/functions/canonical-json.function";
 export { code128 } from "#core/functions/code128.function";
 export { restrictedGtin } from "#core/functions/restricted-gtin.function";
 export type { Code128Symbol } from "#core/types/code128-symbol.type";
