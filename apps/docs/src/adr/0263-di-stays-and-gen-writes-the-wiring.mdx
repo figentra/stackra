@@ -1,7 +1,19 @@
 ---
 title: "0263 — DI stays; gen writes the wiring: same-name tokens, inferred module edges, config layers"
-description: "Accepted, amended by 0294 · 2026-10-21"
+description: "Accepted, amended by 0294 · 2026-10-21 · amended 2026-10-27 (STA-1307)"
 ---
+
+<Note>
+  Amended 2026-10-27 (STA-1307), by an owner decision of that date, in line with
+  [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming) decision 17 and
+  [0145](/adr/0145-tokens-are-define-token-values-and-global-helpers-are-banned) as amended by 0294. Decision 3 is
+  retired: a port has no same-name token. A port is an abstract class and is its own token, as a config class is.
+  Decision 4 is retired: `@Inject` is not used, for named instances or anything else. A named instance is a
+  constructor parameter typed `Named<Port, "x">`, and its token is the `NamedToken<Port, "x">` that `named(Port, "x")`
+  in `@stackra/container` returns. Gen prints that call in the wiring, and a test passes it to `get` or `override`.
+  The port class stays the key, and the name only picks an instance of it, so no string token returns. Decision 13
+  stands.
+</Note>
 
 <Note>
   Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming): decision 2 (a class states

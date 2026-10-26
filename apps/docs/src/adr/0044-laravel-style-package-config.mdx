@@ -8,6 +8,15 @@ description: "Superseded by 0146 · 2026-10-20"
   package configuration is TypeScript, with layered overrides and secret references.
 </Note>
 
+<Note>
+  Amended 2026-10-27 (STA-1307), by an owner decision of that date: Config classes live in `src/config/`, not in a
+  `config/` folder at the member root. Decision 1's path reads `src/config/<name>.config.ts`, and decision 6's folder
+  reads `src/config/`. This matches [0146](/adr/0146-package-configuration-typescript-layers-and-secret-references) as
+  amended,
+  [0295](/adr/0295-build-and-entry-stackra-config-generated-tool-configs-and-entries) decision 4, and the code on
+  disk. The rest of this ADR stays superseded by 0146.
+</Note>
+
 ## Context
 
 Packages need defaults that a product can see, copy and override without forking. [0025](/adr/0025-packages-publish-to-private-registry)

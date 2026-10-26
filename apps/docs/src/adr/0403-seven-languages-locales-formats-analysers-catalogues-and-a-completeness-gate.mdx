@@ -1,7 +1,15 @@
 ---
 title: "0403 — Seven languages: locales, formats, analysers, catalogues and a completeness gate"
-description: "Proposed · 2026-10-26"
+description: "Proposed · 2026-10-26 · amended 2026-10-27 (STA-1307)"
 ---
+
+<Note>
+  Amended 2026-10-27 (STA-1307), by an owner decision of that date: the consequence on message
+  placeholders now states the rule that `tools/scripts/catalogue-completeness.mjs` enforces.
+  Messages are ICU ([0268](/adr/0268-register-answers-thin-items-r1-to-r18) R15, amending
+  [0080](/adr/0080-i18n-is-the-figentra-i18n-port)), and English is the source
+  ([0192](/adr/0192-translation-workflow-and-arabic-defaults) decision 1).
+</Note>
 
 <Note>
   Proposed (STA-788). It amends [0080](/adr/0080-i18n-is-the-figentra-i18n-port) (the closed
@@ -59,7 +67,10 @@ imperial display over metric storage and their own postal formats.
 - A member may list `es`, `it` and `nl` in `I18nConfig.locales`; the fallback rules are unchanged.
 - A 12-hour or Sunday-first market on a European language is a configuration change, not code.
 - A translator who drops a key fails `pnpm validate` with the file and the key.
-- Message placeholders are not compared across locales yet; the review catches a dropped `{name}`.
+- Every translated message names the same ICU placeholders as its `en` source: the argument names, including the ones
+  nested in `plural`, `select` and `selectordinal` options, compared as a set. Quoted text and the plural `#` are not
+  arguments. A translator who drops, adds or renames a `{name}`, or writes a message that does not parse as ICU, fails
+  `pnpm validate` with the file and the key.
 
 ## Enforcement
 

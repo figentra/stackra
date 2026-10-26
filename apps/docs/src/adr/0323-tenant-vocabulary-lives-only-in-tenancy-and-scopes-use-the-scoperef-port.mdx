@@ -1,7 +1,12 @@
 ---
 title: "0323 — Tenant vocabulary lives only in tenancy; other packages use the ScopeRef port"
-description: "Accepted, amended by 0327 · 2026-10-24 · amended 2026-10-24 (STA-348)"
+description: "Accepted, amended by 0327 · 2026-10-24 · amended 2026-10-24 (STA-348) and 2026-10-27 (STA-1307)"
 ---
+
+<Note>
+  Amended 2026-10-27 (STA-1307), by an owner decision of that date: the lint rule of decision 5 is
+  live. The Enforcement section names it. Decisions 1 to 6 stand.
+</Note>
 
 <Note>
   Amended 2026-10-24 (STA-348): the 0327 note below is corrected. `ScopeRef` stays in
@@ -66,8 +71,10 @@ identifiers and types, so each of them depends on tenancy's vocabulary even when
 
 ## Enforcement
 
-- planned — the lint rule of decision 5, which refuses a declaration of a `tenant` identifier outside tenancy and the IAM scope code.
-  It is not written yet.
+- automated — `stackra/no-tenant-vocabulary` (owner decision R-59) in `@stackra/coding-standard`
+  (`packages/developer/coding-standard/src/core/constants/no-tenant-vocabulary-rule.constant.ts`), set to `error` in
+  `packages/tooling/oxlint/src/base.jsonc`. It reports only the name a declaration introduces, outside
+  `@stackra/tenancy` and the IAM scope code. Imports, re-exports, references and member accesses are never reported.
 - planned — the template and existing code conform to decision 6. Nothing checks this today.
 
 ## Supersedes and sources
