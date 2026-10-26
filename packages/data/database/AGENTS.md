@@ -44,6 +44,9 @@ The MikroORM layer on Postgres. Member at `packages/data/database` (`tier:lib`),
   `release`, and nothing that holds a counter lock waits on a held block), so keep that order. `next` and `claim` run
   only inside the caller's transaction. A module never writes its own counter table; a series the primitive cannot
   express extends it here, with an ADR. No Postgres `SEQUENCE` for a document number.
+- Read models (ADR 0163 d1, ADR 0294 d16): `Projection` is the only writer of `database.projection_rows`. A write
+  locks the record's current version, skips one as old as it, closes it and inserts the next; never update a stored
+  version in place, so `asOf` reads stay true. Which events feed a projection is its listeners', never an option.
 - Legal holds (ADR 0134, 2026-10-24 amendment): every disposal path asks the connected `HoldRegistry` through
   `disposableIds`: `HoldSubscriber` for unit-of-work deletes, `CrudService.purge` for bulk deletes, and retention jobs
   directly. A new bulk delete path calls it too; never decide or lift a hold here (the compliance service does).
@@ -75,8 +78,9 @@ The MikroORM layer on Postgres. Member at `packages/data/database` (`tier:lib`),
 
 ## PII
 
-| Data         | Where                             | Handling                                                                                               |
-| ------------ | --------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| None         | —                                 | The connection string is a secret the runtime hands to `connect`; it is never logged.                  |
-| Device ids   | `database.sequence_blocks.holder` | Pseudonymous: a device's public id, never a person's. Kept with the block for the audit of the series. |
-| Void reasons | `database.sequence_voids.reason`  | Operator text for the audit; callers never put personal data in it.                                    |
+| Data           | Where                             | Handling                                                                                               |
+| -------------- | --------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| None           | —                                 | The connection string is a secret the runtime hands to `connect`; it is never logged.                  |
+| Device ids     | `database.sequence_blocks.holder` | Pseudonymous: a device's public id, never a person's. Kept with the block for the audit of the series. |
+| Void reasons   | `database.sequence_voids.reason`  | Operator text for the audit; callers never put personal data in it.                                    |
+| Projected rows | `database.projection_rows.data`   | Whatever the projection owner stores from the source's events; that owner declares and minimises it.   |

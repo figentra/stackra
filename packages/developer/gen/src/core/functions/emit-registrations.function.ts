@@ -3,7 +3,7 @@
  * Purpose: `emitRegistrations`, the member's `#stackra/registrations` (`.stackra/gen/registrations.ts`): it loads the
  *          generated entity and schemas files, then makes every registration call the platform packages wait for,
  *          from the identities the manifest locked: the hosted packages' entity lists, the model partners of each
- *          `CrudService<M>`, the integration events' wire names (its own, and those of the consumed services' events its
+ *          `CrudService<M>` (and of a platform one it injects, from `PLATFORM_PARTNERS`), the integration events' wire names (its own, and those of the consumed services' events its
  *          listeners import from `#stackra/clients/<service>`, so its inbox rebuilds them), each listener with the event
  *          class it reacts to, the relay listeners, the outbound webhooks, the job actions for the queue
  *          and the scheduler, the connections, the webhook events, the sequences and the `@Searchable` models.
@@ -20,6 +20,7 @@
 import type { StackraManifest } from "@stackra/contracts";
 
 import { CLIENTS_SPECIFIER } from "#core/constants/clients-specifier.constant";
+import { PLATFORM_PARTNERS } from "#core/constants/platform-partners.constant";
 import { entitiesName } from "#core/functions/entities-name.function";
 import { generatedHeader } from "#core/functions/generated-header.function";
 import { importLines } from "#core/functions/import-lines.function";
@@ -114,17 +115,28 @@ export function emitRegistrations(ir: MemberIR, manifest: StackraManifest): stri
     }
   }
 
-  call(
-    "registerModelPartners",
-    "@stackra/database",
-    ir.classes
+  // A platform CrudService a class injects (`RuleSetService`) is typed against its package's model.
+  const injected = ir.classes.flatMap((declared) =>
+    declared.deps.filter((dep) => dep.of === undefined && dep.named === undefined),
+  );
+  const platformPartners = Object.entries(PLATFORM_PARTNERS).flatMap(([key, model]) => {
+    const [pkg = "", name = ""] = key.split("#");
+    const service = injected.find(
+      (dep) =>
+        dep.class.name === name && (dep.class.from === pkg || dep.class.from.startsWith(`${pkg}/`)),
+    );
+    return service === undefined ? [] : [`[${ref(service.class)}, ${ref(model)}]`];
+  });
+  call("registerModelPartners", "@stackra/database", [
+    ...ir.classes
       .filter((declared) => declared.kind === "service" && declared.partner !== undefined)
       .map((declared) =>
         declared.partner === undefined
           ? undefined
           : `[${ref({ name: declared.name, from: declared.importPath })}, ${ref({ name: declared.partner.name, from: declared.partner.from })}]`,
       ),
-  );
+    ...platformPartners,
+  ]);
 
   const events = ((manifest.events ?? []) as readonly Entry[]).filter(
     (entry) => entry["kind"] === "integration",

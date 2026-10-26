@@ -5,7 +5,7 @@
  *          and `UniqueViolation` are MikroORM's own, re-exported, so generated entity metadata and `instanceof` checks
  *          use the classes the ORM throws and reads.
  * Boundary: names each re-export and declares nothing. The Postgres and unit-of-work drivers live in `./node`; the
- *           `VisibilityFilter` and `HoldRegistry` ports and the `Where` type live in `./contracts`. The migration records, the registries, the name helpers, the
+ *           `VisibilityFilter` and `HoldRegistry` ports and the `Where` type live in `./contracts`. `Projection` is the read-model kind base (its versions table's migration is found by path). The migration records, the registries, the name helpers, the
  *           block-id minting and the visibility filter function stay internal; the sequence tables' migration is found
  *           by its path (`src/node/database/migrations/`), as every migration is, so it is not re-exported.
  * Runtime: node
@@ -20,6 +20,7 @@ export {
 export { CrudService } from "#core/bases/crud-service.base";
 export { Macro } from "#core/bases/macro.base";
 export { Migration } from "#core/bases/migration.base";
+export { Projection } from "#core/bases/projection.base";
 export { Seeder } from "#core/bases/seeder.base";
 export { Sequence } from "#core/bases/sequence.base";
 export { Aggregate } from "#core/enums/aggregate.enum";
@@ -69,6 +70,10 @@ export type { MigrationId } from "#core/types/migration-id.type";
 export type { MigrationOptions } from "#core/types/migration-options.type";
 export type { OperationActionOptions } from "#core/types/operation-action-options.type";
 export type { OperationQueryOptions } from "#core/types/operation-query-options.type";
+export type { ProjectionClass } from "#core/types/projection-class.type";
+export type { ProjectionOptions } from "#core/types/projection-options.type";
+export type { ProjectionReadOptions } from "#core/types/projection-read-options.type";
+export type { ProjectionRow } from "#core/types/projection-row.type";
 export type { Repository } from "#core/types/repository.type";
 export type { RowLevelSecurityOptions } from "#core/types/row-level-security-options.type";
 export type { SchemaBuilder } from "#core/types/schema-builder.type";

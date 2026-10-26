@@ -4,7 +4,8 @@
  *          binding with its lifetime and constructor tokens (named instances through `named`), the config entry, the
  *          driver table with its selecting field and lazy candidate, the `DriverRegistry` augmentation, replacements,
  *          partners and dependency modules marked `from`, the bindings gen adds (per-model tokens with their
- *          dependencies, an Integration's runtime, the inbound webhook route, the platform services it injects), and
+ *          dependencies, an Integration's runtime, the inbound webhook route, the platform services it injects, the rules node with its revisions repository), a
+ *          projection as a binding, and
  *          the names the container really exports.
  * Boundary: test only; asserts on the generated source text and on @stackra/container's exports.
  * Runtime: node (vitest)
@@ -155,6 +156,64 @@ describe("emitWiring", () => {
       '    { module: "billing", kind: "service", provide: SettingsResolver, deps: [SettingValueStore, SettingFloorSource, SettingRevisionStore, Clock] },',
     ])
       expect(bound).toContain(line);
+  });
+
+  it("binds the rules node where RuleSetService is injected, with content's revisions repository", () => {
+    const ir: MemberIR = {
+      ...BILLING_IR,
+      classes: [
+        ...BILLING_IR.classes,
+        {
+          name: "DunningRulesService",
+          kind: "service",
+          module: "billing",
+          file: "src/modules/billing/services/dunning-rules.service.ts",
+          importPath: "#modules/billing/services/dunning-rules.service",
+          options: {},
+          deps: [{ class: { name: "RuleSetService", from: "@stackra/rules/node" } }],
+          facets: [],
+          methods: [],
+          refusals: [],
+          statics: {},
+          traits: [],
+        },
+      ],
+    };
+    const bound = emitWiring(ir);
+    expect(bound).toContain('import { RuleSetService } from "@stackra/rules/node";');
+    expect(bound).toContain('import { Revision } from "@stackra/content/node";');
+    expect(bound).toContain(
+      '    { module: "billing", kind: "service", provide: RuleSetService, deps: [repositoryOf(Revision)] },',
+    );
+    expect(bound).toContain(
+      '    { module: "billing", kind: "service", provide: repositoryOf(Revision), deps: [] },',
+    );
+  });
+
+  it("binds a Projection class like any other binding kind", () => {
+    const ir: MemberIR = {
+      ...BILLING_IR,
+      classes: [
+        ...BILLING_IR.classes,
+        {
+          name: "InvoiceBook",
+          kind: "projection",
+          module: "billing",
+          file: "src/modules/billing/models/invoice-book.projection.ts",
+          importPath: "#modules/billing/models/invoice-book.projection",
+          options: { key: "invoice_book" },
+          deps: [],
+          facets: [],
+          methods: [],
+          refusals: [],
+          statics: {},
+          traits: [],
+        },
+      ],
+    };
+    expect(emitWiring(ir)).toContain(
+      '    { module: "billing", kind: "projection", provide: InvoiceBook, deps: [] },',
+    );
   });
 
   it("uses names @stackra/container exports", () => {

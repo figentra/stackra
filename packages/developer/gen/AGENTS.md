@@ -76,6 +76,13 @@ The Stackra compiler. Member at `packages/developer/gen` (`tier:lib`), in the pr
   connects nothing. The server entry passes `boot` to `createApp` (`@stackra/app/server`), which calls it with
   `DATABASE_URL` and aborts the signal on `close()`.
 
+- Platform services (ADR 0263): a `@stackra/*` service gen binds where injected is a `PLATFORM_BINDINGS` row; a token
+  may be a per-model token (`{ class: Revision, of: repositoryOf }`). A platform `CrudService<M>` also has a
+  `PLATFORM_PARTNERS` row, so the host's registrations write its model partner (`RuleSetService` over `RuleSet`, the
+  `@stackra/rules` node of ADR 0331). Keep both maps in step.
+- `Projection` (ADR 0294 d16, ADR 0163 d1) is a binding kind declared in `@stackra/database`; gen binds it like a
+  service. Its rows are that package's versions table, so gen writes no entity or migration for it.
+
 ## Rules that fail the build
 
 - A package never imports an app, a service, `encore.dev`/`~encore/*`, or another package's `src/`.

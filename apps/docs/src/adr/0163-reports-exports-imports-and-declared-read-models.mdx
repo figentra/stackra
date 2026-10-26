@@ -1,6 +1,6 @@
 ---
 title: "0163 — Reports, exports, imports and declared read models"
-description: "Accepted, amended by 0260 · 2026-10-20"
+description: "Accepted, amended by 0260 · 2026-10-20 · noted 2026-10-26 (STA-1253)"
 ---
 
 <Note>
@@ -12,6 +12,16 @@ description: "Accepted, amended by 0260 · 2026-10-20"
 <Note>
   Amended by [0260](/adr/0260-cross-service-calls-through-injected-clients-and-events): a consumer's
   read model of another service's data is a `@Projection` fed by that service's integration events.
+</Note>
+
+<Note>
+  Noted 2026-10-26 (STA-1253): the read model of decision 1 is the `Projection<Row>({ key })` kind
+  base in `@stackra/database` (ADR 0294 decision 16, ADR 0305 rule 5), not a decorator. It is a
+  binding; its listeners call `put` and `remove` with the source event's time and its queries call
+  `get` and `list`, now or `asOf` a moment. Rows are versions in `database.projection_rows` under
+  the forced ancestor policy; a write older than the current version is skipped, so a redelivered
+  event never rolls a record back. Which events feed a projection is its listeners', never an
+  option. The other decisions stand.
 </Note>
 
 ## Context

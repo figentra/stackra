@@ -184,6 +184,7 @@ describe("@stackra/database", () => {
       "Migration",
       "MixedCurrencyError",
       "OptionalProps",
+      "Projection",
       "RecordHeldError",
       "Seeder",
       "Sequence",

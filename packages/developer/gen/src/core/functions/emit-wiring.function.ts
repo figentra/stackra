@@ -8,7 +8,8 @@
  *          the bindings no class declares: one per per-model token (`repositoryOf(M)`, `journalOf(M)` with `[Locks]`),
  *          an Integration's `IntegrationRuntime`, each generated service client (`#stackra/clients/<service>`, with the
  *          `ClientTransport` the topology picks), the generated inbound webhook route, and the platform services of
- *          `PLATFORM_BINDINGS` where they are injected (`RequestContext` where `CustomFieldService` resolves).
+ *          `PLATFORM_BINDINGS` where they are injected (`RequestContext` where `CustomFieldService` resolves; `RuleSetService`
+ *          with its `repositoryOf(Revision)`).
  * Boundary: pure. Derived from file paths, base classes and constructor parameter types at build time; no reflection
  *           and no string token. A driver is a lazy import, so a node-only driver never reaches a browser bundle. The
  *           sections other packages own (extension points, seeders, ...) are added by those targets.
@@ -58,7 +59,7 @@ function depsOf(declared: DeclaredClass): readonly TokenRef[] {
 const CLIENT_TRANSPORT: ClassRef = { name: "ClientTransport", from: "@stackra/clients/contracts" };
 
 /** The constructor tokens of a platform service or a generated client gen binds, when `target` is one. */
-function platformDeps(target: ClassRef): readonly ClassRef[] | undefined {
+function platformDeps(target: ClassRef): readonly (ClassRef | TokenRef)[] | undefined {
   if (target.from.startsWith(CLIENTS_SPECIFIER)) return [CLIENT_TRANSPORT];
   for (const [key, deps] of Object.entries(PLATFORM_BINDINGS)) {
     const [pkg = "", name] = key.split("#");
@@ -326,7 +327,7 @@ export function emitWiring(ir: MemberIR): string {
     if (entry === undefined) continue;
     const { module, dep } = entry;
     const factory = dep.of;
-    const deps =
+    const deps: readonly (ClassRef | TokenRef)[] | undefined =
       factory !== undefined
         ? Object.values(MODEL_TOKENS).find(
             (candidate) =>
@@ -338,7 +339,7 @@ export function emitWiring(ir: MemberIR): string {
     const key = `${factory?.name ?? ""}:${dep.class.from}#${dep.class.name}`;
     if (deps === undefined || added.has(key)) continue;
     added.add(key);
-    const tokens = deps.map((target): TokenRef => ({ class: target }));
+    const tokens = deps.map((target): TokenRef => ("class" in target ? target : { class: target }));
     bindingLines.push(
       `    { module: ${JSON.stringify(module)}, kind: "service", provide: ${token(dep)}, deps: ${list(tokens.map(token))} },`,
     );

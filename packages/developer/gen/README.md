@@ -222,6 +222,11 @@ CronJob id (`cron_job_collision`). Effect tags are snake_case (`external_communi
 kind (`class X extends RuleOutcome({ key, label, params })`, `@stackra/rules`) is listed in `outcomes` as
 `<module>.<key>` with its label and parameters, locked by class like a sequence. The boot connects the bound `HoldRegistry` and `SequenceTimeZone` and registers the legal-hold
 subscriber; the wiring binds `SequenceService`, and `SettingsReader` with the market floor source, where injected.
+A service that injects `RuleSetService` (`@stackra/rules/node`) gets the rules node without wiring it by hand: the
+wiring binds it over `repositoryOf(Revision)` (content's revisions table) and the registrations write
+`registerModelPartners([[RuleSetService, RuleSet]])`; the `RuleSet` and `Revision` entities come from the hosted
+packages' entity lists. A `Projection<Row>({ key })` class (`@stackra/database`) is a binding like a service: its
+listeners and queries inject it.
 
 ## Not here
 

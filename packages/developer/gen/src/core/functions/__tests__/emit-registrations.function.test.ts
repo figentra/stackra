@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: unit tests of `emitRegistrations`: the generated entity and schemas files loaded first, then one call per
  *          platform registration with a row each, from the locked identities: the hosted packages' entity lists, the
- *          model partners of each `CrudService<M>`, event wire names, jobs for the queue and the scheduler,
+ *          model partners of each `CrudService<M>` (and of an injected platform one, `RuleSetService`), event wire names, jobs for the queue and the scheduler,
  *          connections, webhook events, outbound webhooks, sequences (a hosted package's imported from its entry) and
  *          searchable models; a listener with the event class it imports (its own, or a consumed service's, whose wire
  *          name comes from the producer's manifest) and a relay listener; no file for an app or a member with nothing
@@ -44,6 +44,29 @@ describe("emitRegistrations", () => {
     );
     expect(billing).toContain("registerModelPartners([\n  [InvoiceService, Invoice],\n]);");
     expect(billing).not.toContain("InvoiceFactory");
+  });
+
+  it("registers the model partner of a platform CrudService a class injects", () => {
+    const rules: DeclaredClass = {
+      name: "DunningRulesService",
+      kind: "service",
+      module: "billing",
+      file: "src/modules/billing/services/dunning-rules.service.ts",
+      importPath: "#modules/billing/services/dunning-rules.service",
+      options: {},
+      deps: [{ class: { name: "RuleSetService", from: "@stackra/rules/node" } }],
+      facets: [],
+      methods: [],
+      refusals: [],
+      statics: {},
+      traits: [],
+    };
+    const content =
+      registrationsOf({ ...BILLING_IR, classes: [...BILLING_IR.classes, rules] }) ?? "";
+    expect(content).toContain(
+      "registerModelPartners([\n  [InvoiceService, Invoice],\n  [RuleSetService, RuleSet],\n]);",
+    );
+    expect(content).toMatch(/import \{[^}]*RuleSet[^}]*\} from "@stackra\/rules\/node";/);
   });
 
   it("registers event names, jobs and outbound webhooks by their locked identities", () => {
