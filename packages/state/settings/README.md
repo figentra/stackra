@@ -22,6 +22,7 @@ Depends on `@stackra/container`, `@stackra/contracts`, `@stackra/database`, `@st
 | `.`           | `SettingsPackService`, `diffSettingsPacks`            | export, diff and apply packs                                     |
 | `.`           | `settingsPackToYaml`, `settingsPackFromYaml`          | the YAML pack file                                               |
 | `.`           | `SettingsPack$`, `SettingsChange$`                    | the pack and diff-row schemas                                    |
+| `./contracts` | `PromotionDiff$`                                      | the shipped schema of `PromotionDiff`, for a shape field         |
 | `.`           | `settingFloorsOf`                                     | market-pack floors matched to setting keys                       |
 | `.`           | `SettingsMode`, `visibleSettingFields`                | developer and normal display modes                               |
 | `.`           | `SettingsPromotableDriver`                            | settings as a promotable kind                                    |

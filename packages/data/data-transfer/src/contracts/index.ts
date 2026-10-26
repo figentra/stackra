@@ -1,13 +1,16 @@
 /**
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `./contracts` entry of @stackra/data-transfer, the leaf entry of its ports
- *          (`TabularReader`, `TabularWriter`, `ImportLedger`), the `ImportRunState` enum and the types their signatures
- *          name, until `stackra gen` writes the entry barrels (STA-339).
+ *          (`TabularReader`, `TabularWriter`, `ImportLedger`), the `ImportRunState` enum, the types their signatures
+ *          name and the shipped `ImportChange$` and `RowError$` (STA-1284), until `stackra gen` writes the entry
+ *          barrels (STA-339).
  * Boundary: names each re-export and declares nothing. The leaf: it imports no other entry of this package. The ports
  *           are exported from here only, never from `.` (ADR 0294 decision 15).
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision.
  */
+export { IMPORT_CHANGE_SCHEMA as ImportChange$ } from "#contracts/constants/import-change-schema.constant";
+export { ROW_ERROR_SCHEMA as RowError$ } from "#contracts/constants/row-error-schema.constant";
 export { ImportRunState } from "#contracts/enums/import-run-state.enum";
 export { ImportLedger } from "#contracts/ports/import-ledger.port";
 export { TabularReader } from "#contracts/ports/tabular-reader.port";

@@ -1,13 +1,14 @@
 /**
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `./contracts` entry of @stackra/settings (the `SettingValueStore`,
- *          `SettingFloorSource`, `SettingRevisionStore` and `Promotable` ports, their enums and types) until
- *          `stackra gen` writes the entry barrels (STA-339).
+ *          `SettingFloorSource`, `SettingRevisionStore` and `Promotable` ports, their enums and types, and the shipped
+ *          `PromotionDiff$`, STA-1284) until `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. The leaf entry: it imports no other entry of this package (ADR
  *           0294 decision 15). `ScopeRef` is @stackra/contracts' and is never re-exported here.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision.
  */
+export { PROMOTION_DIFF_SCHEMA as PromotionDiff$ } from "#contracts/constants/promotion-diff-schema.constant";
 export { SettingEnvironment } from "#contracts/enums/setting-environment.enum";
 export { SettingRevisionStatus } from "#contracts/enums/setting-revision-status.enum";
 export { SettingSource } from "#contracts/enums/setting-source.enum";

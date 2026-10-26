@@ -15,9 +15,11 @@ describe("@stackra/content", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(core).sort()).toEqual([
       "ContentEntryType",
+      "CustomFieldDefinition$",
       "CustomFieldDefinitionInvalidError",
       "CustomFieldTakenError",
       "CustomFieldType",
+      "CustomFieldValue$",
       "CustomFieldsInvalidError",
       "PublicationStatus",
       "checkCustomFieldDefinition",

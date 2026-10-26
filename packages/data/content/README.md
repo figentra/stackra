@@ -15,6 +15,7 @@ and `@stackra/model`.
 | `.`      | `ContentEntryType`                                                                       | the built-in content types (`Faq`, `Testimonial`, `Page`, ...)      |
 | `.`      | `CustomFieldType`                                                                        | the registered field types, with their bounds and choices case data |
 | `.`      | `CustomFieldDefinition`, `CustomFieldChoice`, `CustomFieldValue`                         | the stored definition, a select's choice, a stored value (types)    |
+| `.`      | `CustomFieldDefinition$`, `CustomFieldValue$`                                            | their shipped schemas, for a shape field typed with them            |
 | `.`      | `checkCustomFieldDefinition`, `checkCustomFields`                                        | the two checks: a definition, and a record's values                 |
 | `.`      | `CustomFieldDefinitionInvalidError`, `CustomFieldsInvalidError`, `CustomFieldTakenError` | refusals (400, 400, 409)                                            |
 | `./node` | `HasCustomFields`                                                                        | the trait of a model whose records carry custom fields              |

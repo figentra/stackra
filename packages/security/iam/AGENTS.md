@@ -30,6 +30,8 @@ Permissions, policies, roles and the embedded policy decision point (ADR 0208, 0
   never export them.
 - `SegmentRef` is `@stackra/segments/contracts`' own; import it from there and never redeclare or re-export it.
   segments must never depend on iam.
+- A contracts type a shape field may name ships its schema next to it, exported as `<Type>$` (`Audience$`, built on
+  `@stackra/validation`'s `ScopeRef$`; ADR 0294 decision 26, STA-1284).
 
 ## This package
 

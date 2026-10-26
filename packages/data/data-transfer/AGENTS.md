@@ -23,7 +23,9 @@ Tabular import and export (ADR 0367, ADR 0163 decisions 3 and 4). Member at `pac
 - `src/contracts/index.ts`, `src/core/index.ts` and `src/node/index.ts` are stand-in barrels until gen writes the entry barrels (STA-339);
   add every new public file to one of them and to the export list in that entry's `__tests__/index.test.ts`.
 - Ports, `ImportRunState` and contract types are exported from `./contracts` only. The CSV parser, the decoder, the
-  byte limiter, cell conversions and constants stay internal.
+  byte limiter, cell conversions and constants stay internal. The exception is the shipped schema of a contracts type
+  a shape field may name (`ImportChange$`, `RowError$`), exported from `./contracts` next to its type (ADR 0294
+  decision 26, STA-1284).
 
 ## This package
 

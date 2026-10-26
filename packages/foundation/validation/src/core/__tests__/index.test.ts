@@ -47,6 +47,8 @@ class ContactInput extends Schema {
 describe("@stackra/validation", () => {
   it("exports exactly the runtime surface", () => {
     expect(Object.keys(entry).sort()).toEqual([
+      "Actor$",
+      "Address$",
       "Classified",
       "CursorInput",
       "Field",
@@ -61,6 +63,9 @@ describe("@stackra/validation", () => {
       "PickType",
       "Renamed",
       "Schema",
+      "ScopeRef$",
+      "Signature$",
+      "SignerPublicKey$",
       "Str",
       "TableInput",
       "Trim",

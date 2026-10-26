@@ -5,10 +5,14 @@
  *          `isPublished` and `slugOf`) until `stackra gen` writes
  *          the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. Isomorphic: a browser that imports `ContentEntryType` pulls no
- *           ORM. The definition schema and the field error mapping stay internal.
+ *           ORM. The definition and value schemas are public under their
+ *           generated names (`CustomFieldDefinition$`, `CustomFieldValue$`, STA-1284); the field error mapping stays
+ *           internal.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 15); ADR 0116; the STA-347 stand-in barrel decision.
  */
+export { CUSTOM_FIELD_DEFINITION_SCHEMA as CustomFieldDefinition$ } from "#core/constants/custom-field-definition-schema.constant";
+export { CUSTOM_FIELD_VALUE_SCHEMA as CustomFieldValue$ } from "#core/constants/custom-field-value-schema.constant";
 export { ContentEntryType } from "#core/enums/content-entry-type.enum";
 export { CustomFieldType } from "#core/enums/custom-field-type.enum";
 export { PublicationStatus } from "#core/enums/publication-status.enum";

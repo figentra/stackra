@@ -21,22 +21,23 @@ Entry barrels are generated, never authored (ADR 0294 decision 15); until `stack
 
 ## What is here
 
-| Symbol                                           | Use                                                                                            |
-| ------------------------------------------------ | ---------------------------------------------------------------------------------------------- |
-| `BusinessCalendar$`, `BusinessCalendar`          | the schema and type of calendar data: `timeZone`, `workingWeek`, `holidays`, `uncertainDays`   |
-| `HolidayRule`, `HolidayKind`                     | a holiday entry: `dated` span, yearly `gregorian` date, yearly `nth_weekday` or `hijri` date   |
-| `calendarFromPack`, `PackCalendarOptions`        | the `BusinessCalendar` a resolved market pack gives on a date, with local data laid over it    |
-| `leapBirthdayFromPack`                           | the pack's 29 February rule on a date, for `ageOn`                                             |
-| `hijriOf`, `gregorianOf`, `HijriDate`            | Umm al-Qura to and from the stored ISO date                                                    |
-| `instantOf`, `localDateOf`                       | a local date and time in a zone to an instant, and an instant to its local business day        |
-| `dayStatus`, `DayStatus`                         | `working`, `rest_day`, `holiday` or `uncertain` for one date                                   |
-| `addBusinessDays`, `BusinessDayResult`           | N business days on, with every uncertain day crossed                                           |
-| `openIntervals`, `addWorkingMinutes`             | working hours between two instants; an instant N working minutes on (SLAs, deadlines in hours) |
-| `occurrences`, `RecurrenceOptions`, `Occurrence` | RRULE expansion in a time zone, skipping holidays and flagging uncertain dates                 |
-| `CountMode`                                      | what COUNT counts: every generated date (RFC 5545, the default) or only kept dates             |
-| `findSlots`, `SlotQuery`, `Segment`, `Interval`  | start times a booking fits, with processing gaps that free the resource                        |
-| `ageOn`, `LeapBirthday`                          | age in whole years on a date; the 29 February rule comes from the pack                         |
-| `UncertainDays`, `IsoDate`                       | how an uncertain day counts (calendar data); the `YYYY-MM-DD` date form                        |
+| Symbol                                                  | Use                                                                                            |
+| ------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `BusinessCalendar$`, `BusinessCalendar`                 | the schema and type of calendar data: `timeZone`, `workingWeek`, `holidays`, `uncertainDays`   |
+| `HolidayRule`, `HolidayKind`                            | a holiday entry: `dated` span, yearly `gregorian` date, yearly `nth_weekday` or `hijri` date   |
+| `calendarFromPack`, `PackCalendarOptions`               | the `BusinessCalendar` a resolved market pack gives on a date, with local data laid over it    |
+| `leapBirthdayFromPack`                                  | the pack's 29 February rule on a date, for `ageOn`                                             |
+| `hijriOf`, `gregorianOf`, `HijriDate`                   | Umm al-Qura to and from the stored ISO date                                                    |
+| `instantOf`, `localDateOf`                              | a local date and time in a zone to an instant, and an instant to its local business day        |
+| `dayStatus`, `DayStatus`                                | `working`, `rest_day`, `holiday` or `uncertain` for one date                                   |
+| `addBusinessDays`, `BusinessDayResult`                  | N business days on, with every uncertain day crossed                                           |
+| `openIntervals`, `addWorkingMinutes`                    | working hours between two instants; an instant N working minutes on (SLAs, deadlines in hours) |
+| `occurrences`, `RecurrenceOptions`, `Occurrence`        | RRULE expansion in a time zone, skipping holidays and flagging uncertain dates                 |
+| `CountMode`                                             | what COUNT counts: every generated date (RFC 5545, the default) or only kept dates             |
+| `findSlots`, `SlotQuery`, `Segment`, `Interval`         | start times a booking fits, with processing gaps that free the resource                        |
+| `ageOn`, `LeapBirthday`                                 | age in whole years on a date; the 29 February rule comes from the pack                         |
+| `UncertainDays`, `IsoDate`                              | how an uncertain day counts (calendar data); the `YYYY-MM-DD` date form                        |
+| `IsoDate$`, `HijriDate$`, `WorkingWeek$`, `WorkingWeek` | the shipped schemas a shape field typed `IsoDate`, `HijriDate` or `WorkingWeek` compiles to    |
 
 ## Calendar data
 

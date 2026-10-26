@@ -21,6 +21,8 @@ times ADR 0414.
 - `src/core/index.ts` is a stand-in barrel until gen writes the entry barrels (STA-339); add every new public file to
   it and to the export list in `src/core/__tests__/index.test.ts`. Helpers (day numbers, zone offsets, RRULE parsing,
   range merging, the prayer-time arithmetic `computePrayerDay`) stay internal.
+- Every public type a shape field may name has its shipped schema, exported as `<Type>$` (ADR 0294 decision 26). A
+  part of a type gets its own name (`WorkingWeek`), never an indexed access (STA-1284).
 
 ## This package
 

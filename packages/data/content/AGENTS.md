@@ -22,6 +22,8 @@ at `packages/data/content` (`tier:lib`), in the programming model v3.1 shape (AD
 
 - `src/{core,node}/index.ts` are stand-in barrels until gen writes the entry barrels (STA-339); add every new public
   file to its barrel and to that entry's `index.test.ts`.
+- Every public type a shape field may name has its shipped schema, exported as `<Type>$` (ADR 0294 decision 26,
+  STA-1284).
 - `.` stays isomorphic: nothing under `src/core/` imports @stackra/model, @stackra/database or a Node API, because web
   apps import `ContentEntryType`. `node` imports `core` through `#core/index`.
 - A `./react` entry is added only once React code exists; an entry exists once its folder has a file.

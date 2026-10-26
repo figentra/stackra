@@ -2,13 +2,16 @@
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `.` entry of @stackra/calendar, until `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. The day-number, time-zone, RRULE and range helpers stay
- *           internal; consumers use the functions below. The schema is re-exported under its generated name
- *           (`BusinessCalendar$`).
+ *           internal; consumers use the functions below. The schemas are re-exported under their generated names
+ *           (`BusinessCalendar$`, `PrayerMethod$`, `HijriDate$`, `IsoDate$`, `WorkingWeek$`).
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision; ADR 0366; ADR 0387.
  */
 export { BUSINESS_CALENDAR_SCHEMA as BusinessCalendar$ } from "#core/constants/business-calendar-schema.constant";
 export { PRAYER_METHOD_SCHEMA as PrayerMethod$ } from "#core/constants/prayer-method-schema.constant";
+export { HIJRI_DATE_SCHEMA as HijriDate$ } from "#core/constants/hijri-date-schema.constant";
+export { ISO_DATE_SCHEMA as IsoDate$ } from "#core/constants/iso-date-schema.constant";
+export { WORKING_WEEK_SCHEMA as WorkingWeek$ } from "#core/constants/working-week-schema.constant";
 export { ComputedPrayerTimesDriver } from "#core/drivers/computed-prayer-times.driver";
 export { CountMode } from "#core/enums/count-mode.enum";
 export { DayStatus } from "#core/enums/day-status.enum";
@@ -45,3 +48,4 @@ export type { PrayerPlace } from "#core/types/prayer-place.type";
 export type { RecurrenceOptions } from "#core/types/recurrence-options.type";
 export type { Segment } from "#core/types/segment.type";
 export type { SlotQuery } from "#core/types/slot-query.type";
+export type { WorkingWeek } from "#core/types/working-week.type";

@@ -20,6 +20,7 @@ encoding of a market are inputs the caller reads from settings and market packs.
 | `./contracts` | `TabularReader`, `TabularWriter`, `ImportLedger`                                        | the ports                                                       |
 | `./contracts` | `ImportRunState`                                                                        | `running`, `failed`, `finished`, `reverted`                     |
 | `./contracts` | `ImportTarget`, `ImportChange`, `ImportBatchEntry`, `RowError`, `TabularRow` and others | the types the ports name                                        |
+| `./contracts` | `ImportChange$`, `RowError$`                                                            | their shipped schemas, for a shape field typed with them        |
 | `.`           | `CsvReaderDriver`, `JsonLinesReaderDriver`                                              | read rows                                                       |
 | `.`           | `CsvWriterDriver`, `JsonLinesWriterDriver`, `DatevAsciiWriterDriver`                    | write bytes                                                     |
 | `./node`      | `XlsxReaderDriver`, `XlsxWriterDriver`                                                  | XLSX: every sheet or the chosen ones; several sheets            |

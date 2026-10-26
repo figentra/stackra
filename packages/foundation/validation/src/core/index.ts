@@ -2,8 +2,10 @@
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `.` entry of @stackra/validation, which has several public files, until `stackra gen`
  *          writes the entry barrels (STA-339). The old `./runtime` entry is folded in (owner Q4).
- * Boundary: names each re-export and declares nothing. `Enum` is @stackra/contracts' (Q1); `money` and `currencyCode`
- *           are @stackra/money's (Q5). The registry, the kind lists, the shipped schemas, `deriveShape`, the check
+ * Boundary: names each re-export and declares nothing. The shipped schemas of @stackra/contracts' object types
+ *           (`Actor$`, `ScopeRef$`, `Signature$`, `SignerPublicKey$`) and `Address$` are public, under their generated
+ *           names, because contracts carries no zod (STA-1284). `Enum` is @stackra/contracts' (Q1); `money` and
+ *           `currencyCode` are @stackra/money's (Q5). The registry, the kind lists, the other shipped schemas, `deriveShape`, the check
  *           algorithms (`luhnValid`, `mod97Valid`, `centuryBirthDateValid`) and the code digest stay internal.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision; ADR 0127 2026-10-24 note.
@@ -12,6 +14,11 @@ export { Schema } from "#core/bases/schema.base";
 export { IdentifierCheck } from "#core/enums/identifier-check.enum";
 export { OneTimeCodeResult } from "#core/enums/one-time-code-result.enum";
 export { Page } from "#core/constants/page.constant";
+export { ACTOR_SCHEMA as Actor$ } from "#core/constants/actor-schema.constant";
+export { ADDRESS_SCHEMA as Address$ } from "#core/constants/address-schema.constant";
+export { SCOPE_REF_SCHEMA as ScopeRef$ } from "#core/constants/scope-ref-schema.constant";
+export { SIGNATURE_SCHEMA as Signature$ } from "#core/constants/signature-schema.constant";
+export { SIGNER_PUBLIC_KEY_SCHEMA as SignerPublicKey$ } from "#core/constants/signer-public-key-schema.constant";
 export { Classified } from "#core/decorators/classified.decorator";
 export { Field } from "#core/decorators/field.decorator";
 export { Int } from "#core/decorators/int.decorator";

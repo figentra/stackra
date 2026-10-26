@@ -9,19 +9,24 @@ Depends on `@stackra/contracts`, `@stackra/container` and `zod`; one-time codes 
 
 ## What is here
 
-| Symbol                                                             | Use                                                                     |
-| ------------------------------------------------------------------ | ----------------------------------------------------------------------- |
-| `Schema`                                                           | `class OrderView extends Schema { ... }`; `OrderView.create({ ... })`   |
-| `CursorInput`, `TableInput`, `Page.of(X)`                          | list inputs and the cursor page output                                  |
-| `PickType`, `OmitType`, `PartialType`                              | derive a shape from a shape                                             |
-| `Str`, `Int`, `Num`, `List`, `Trim`, `Field`                       | field rules, each typed against its field                               |
-| `Renamed`, `Classified`                                            | rename marker (class or field) and the privacy class of a field         |
-| `validate`, `schemaOf`, `registerSchemas`                          | check input; read a class's schema; the registry generated schemas fill |
-| `publicId`, `isoDateTime`, `json`, `url`, `duration`, `tableInput` | the runtime helpers generated schemas and clients import                |
-| `Assert`, `Fields`, `Same`                                         | the types of each generated `X$Check`                                   |
-| `FieldDecorator`, `ShapeClass`                                     | the types behind a field decorator and a derived shape class            |
+| Symbol                                                              | Use                                                                                |
+| ------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `Schema`                                                            | `class OrderView extends Schema { ... }`; `OrderView.create({ ... })`              |
+| `CursorInput`, `TableInput`, `Page.of(X)`                           | list inputs and the cursor page output                                             |
+| `PickType`, `OmitType`, `PartialType`                               | derive a shape from a shape                                                        |
+| `Str`, `Int`, `Num`, `List`, `Trim`, `Field`                        | field rules, each typed against its field                                          |
+| `Renamed`, `Classified`                                             | rename marker (class or field) and the privacy class of a field                    |
+| `validate`, `schemaOf`, `registerSchemas`                           | check input; read a class's schema; the registry generated schemas fill            |
+| `publicId`, `isoDateTime`, `json`, `url`, `duration`, `tableInput`  | the runtime helpers generated schemas and clients import                           |
+| `Assert`, `Fields`, `Same`                                          | the types of each generated `X$Check`                                              |
+| `FieldDecorator`, `ShapeClass`                                      | the types behind a field decorator and a derived shape class                       |
+| `Address$`, `ScopeRef$`, `Actor$`, `Signature$`, `SignerPublicKey$` | the shipped schemas of `Address` and of the contracts types a shape field may name |
 
 `Enum` is `@stackra/contracts`'; `money()` and `currencyCode()` are `@stackra/money`'s.
+
+`@stackra/contracts` carries no zod, so the `X$` of its object types (`ScopeRef$`, `Actor$`, `Signature$`,
+`SignerPublicKey$`) ships here. `Address$` is the market-neutral address; `address(format)` checks one Market's format
+(STA-1284).
 
 ## Identifiers, phones, addresses and barcodes
 

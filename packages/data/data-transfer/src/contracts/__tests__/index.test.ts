@@ -28,8 +28,10 @@ import type {
 describe("@stackra/data-transfer/contracts", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(contracts).sort()).toEqual([
+      "ImportChange$",
       "ImportLedger",
       "ImportRunState",
+      "RowError$",
       "TabularReader",
       "TabularWriter",
     ]);

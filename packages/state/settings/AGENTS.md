@@ -24,6 +24,8 @@ generated-key helpers, the native form and the fake (ADR 0307 rules 22 to 24, AD
 - `src/{contracts,core,node,native,testing}/index.ts` are stand-in barrels until gen writes the entry barrels
   (STA-339); add every new public file to its barrel and to that entry's `index.test.ts`.
 - `src/contracts/` is the leaf; `core` imports `contracts`; `node` and `native` import `core`; `testing` imports all.
+- A contracts type a shape field may name ships its schema next to it, exported as `<Type>$` (`PromotionDiff$`; ADR
+  0294 decision 26, STA-1284).
 - The layer, lock, value and key-derivation functions and the key registry are internal: other entries import them by
   path, and no barrel exports them.
 

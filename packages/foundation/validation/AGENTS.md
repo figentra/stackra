@@ -19,6 +19,8 @@ programming model v3.1 shape (ADR 0294, 0305). Entry `.` only.
 
 - `src/core/index.ts` is a stand-in barrel until gen writes the entry barrels (STA-339); add every new public file to
   it and to the export list in `src/core/__tests__/index.test.ts`.
+- A `@stackra/contracts` type a shape field may name gets its shipped schema here, exported as `<Type>$`
+  (`ScopeRef$`), because contracts carries no zod (ADR 0294 decision 26, STA-1284).
 
 ## This package
 

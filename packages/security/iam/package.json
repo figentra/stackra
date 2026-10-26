@@ -98,7 +98,8 @@
     "@stackra/rules": "workspace:*",
     "@stackra/scope": "workspace:*",
     "@stackra/segments": "workspace:*",
-    "@stackra/validation": "workspace:*"
+    "@stackra/validation": "workspace:*",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@stackra/testing": "workspace:*",
