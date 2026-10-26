@@ -20,8 +20,11 @@ import { TurnoverCipherFake } from "#testing/turnover-cipher.fake";
 describe("@stackra/fiscal", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(core).sort()).toEqual([
+      "DeviceOnboardingDriver",
+      "ETA_ONBOARDING_OPTIONS",
       "ETA_OPTIONS",
       "EtaDriver",
+      "EtaOnboardingDriver",
       "FACTUR_X_OPTIONS",
       "FDM_OPTIONS",
       "FacturXDriver",
@@ -31,7 +34,10 @@ describe("@stackra/fiscal", () => {
       "FiscalCredentialMissingError",
       "FiscalDocumentInvalidError",
       "FiscalDriverMissingError",
+      "FiscalOnboardingInputMissingError",
       "FiscalOnboardingRefusedError",
+      "FiscalOnboardingService",
+      "FiscalOnboardingUnsupportedError",
       "FiscalOptionsInvalidError",
       "FiscalService",
       "MarketPackFiscalPackSourceDriver",

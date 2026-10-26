@@ -5,16 +5,17 @@ programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./te
 
 ## Where code goes
 
-| You are writing…                                   | It goes in…                                 |
-| -------------------------------------------------- | ------------------------------------------- |
-| A port, an enum or a type hosts code against       | `src/contracts/{ports,enums,types}/`        |
-| A driver (one mandate) or the memory journal       | `src/core/drivers/<key>.driver.ts`          |
-| A driver's pack-option schema or a format constant | `src/core/constants/`                       |
-| A refusal                                          | `src/core/errors/`                          |
-| A shared format helper (XML, base64, TLV, time)    | `src/core/functions/`                       |
-| The engine or the onboarding                       | `src/core/services/`                        |
-| A fake or fixture                                  | `src/testing/`                              |
-| A test                                             | `__tests__/<name>.<kind>.test.ts` beside it |
+| You are writing…                                   | It goes in…                                   |
+| -------------------------------------------------- | --------------------------------------------- |
+| A port, an enum or a type hosts code against       | `src/contracts/{ports,enums,types}/`          |
+| A driver (one mandate) or the memory journal       | `src/core/drivers/<key>.driver.ts`            |
+| A mandate's till onboarding (`FiscalOnboarding`)   | `src/core/drivers/<key>-onboarding.driver.ts` |
+| A driver's pack-option schema or a format constant | `src/core/constants/`                         |
+| A refusal                                          | `src/core/errors/`                            |
+| A shared format helper (XML, base64, TLV, time)    | `src/core/functions/`                         |
+| The engine or the onboarding                       | `src/core/services/`                          |
+| A fake or fixture                                  | `src/testing/`                                |
+| A test                                             | `__tests__/<name>.<kind>.test.ts` beside it   |
 
 ## This package
 
@@ -28,6 +29,9 @@ programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./te
   `FiscalDevice`.
 - `seal` must work offline. Submission is separate and runs in sequence order; a transport failure is
   `FiscalAuthorityUnavailableError` and leaves the record sealed.
+- A till registration is a `FiscalOnboarding` driver keyed like its `FiscalDriver`: it lists its `inputs`, stores
+  issued values only through `TillCredentials` and returns only `OnboardingStep`. `ZatcaOnboarding` stays in
+  `services/` under its published name.
 - `renderXml` output is hashed by chained formats: never change its canonical form.
 - Every new public file goes in its barrel and that entry's `index.test.ts`.
 
@@ -40,8 +44,9 @@ programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./te
 
 ## PII
 
-| Data                         | Where                          | Handling                                                                                    |
-| ---------------------------- | ------------------------------ | ------------------------------------------------------------------------------------------- |
-| Buyer name and tax number    | `FiscalRecord.payload`         | Required by law on the fiscal document; kept for the pack's retention period, never logged. |
-| Issued CSID token and secret | `TillCredentials` (host store) | Passed straight to the host store, which encrypts them; never returned, logged or exported. |
-| Refusal details              | errors                         | Keys, fields and statuses only.                                                             |
+| Data                                     | Where                                  | Handling                                                                                    |
+| ---------------------------------------- | -------------------------------------- | ------------------------------------------------------------------------------------------- |
+| Buyer name and tax number                | `FiscalRecord.payload`                 | Required by law on the fiscal document; kept for the pack's retention period, never logged. |
+| Issued CSID token and secret             | `TillCredentials` (host store)         | Passed straight to the host store, which encrypts them; never returned, logged or exported. |
+| ETA POS client secret and pre-shared key | `TillCredential.secret`, `.attributes` | Same: host store encrypts; the access token proving them is dropped.                        |
+| Refusal details                          | errors                                 | Keys, fields and statuses only.                                                             |

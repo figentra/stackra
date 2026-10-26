@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `ZatcaOnboarding`: the compliance CSID from a CSR and OTP, the compliance check of a sample
- *          record, the production CSID exchange, the stored credential never returned, and the refusals.
+ *          record, the production CSID exchange, the stored credential never returned, the refusals, and the same
+ *          steps through the `FiscalOnboarding` port.
  * Boundary: test only; the transport and credential store are fakes and the options are samples.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0364 (decision 4).
@@ -10,8 +11,11 @@ import { isRefusal } from "@stackra/errors";
 import { describe, expect, it } from "@stackra/testing";
 
 import { FiscalRecordStatus } from "#contracts/enums/fiscal-record-status.enum";
+import { OnboardingInput } from "#contracts/enums/onboarding-input.enum";
+import { FiscalOnboarding } from "#contracts/ports/fiscal-onboarding.port";
 import type { TransportRequest } from "#contracts/types/transport-request.type";
 import { FiscalCredentialMissingError } from "#core/errors/fiscal-credential-missing.error";
+import { FiscalOnboardingInputMissingError } from "#core/errors/fiscal-onboarding-input-missing.error";
 import { FiscalOnboardingRefusedError } from "#core/errors/fiscal-onboarding-refused.error";
 import { ZatcaOnboarding } from "#core/services/zatca-onboarding.service";
 import { fiscalRecord } from "#testing/fiscal-record.fixture";
@@ -117,5 +121,35 @@ describe("ZatcaOnboarding", () => {
         isRefusal(error, FiscalOnboardingRefusedError) && error.details.status === 400,
     );
     expect(credentials.calls("save")).toEqual([]);
+  });
+
+  it("runs both steps through the FiscalOnboarding port", async () => {
+    const transport = FiscalTransportFake.answering(issued(11), issued(22));
+    const onboarding: FiscalOnboarding = new ZatcaOnboarding(transport, new TillCredentialsFake());
+    expect([onboarding.key, onboarding.inputs]).toEqual(["zatca", ["otp", "csr"]]);
+    expect(
+      await onboarding.register(
+        "till_1",
+        { [OnboardingInput.Otp]: "123456", [OnboardingInput.Csr]: "CSR" },
+        OPTIONS,
+      ),
+    ).toEqual({ unitId: "till_1", stage: "compliance", requestId: "11" });
+    expect(await onboarding.complete("till_1", OPTIONS)).toEqual({
+      unitId: "till_1",
+      stage: "production",
+      requestId: "22",
+    });
+  });
+
+  it("refuses register without the CSR and sends nothing", async () => {
+    const transport = FiscalTransportFake.answering();
+    await expect(
+      new ZatcaOnboarding(transport, new TillCredentialsFake()).register(
+        "till_1",
+        { [OnboardingInput.Otp]: "123456" },
+        OPTIONS,
+      ),
+    ).rejects.toSatisfy((error: unknown) => isRefusal(error, FiscalOnboardingInputMissingError));
+    expect(transport.calls("send")).toEqual([]);
   });
 });

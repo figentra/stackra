@@ -1,13 +1,14 @@
 /**
  * Stackra file contract:
- * Purpose: Stand-in barrel: the `.` entry of @stackra/fiscal (the service, the drivers, the onboarding, the memory
- *          journal, the refusals and the option schemas a pack is checked against) until `stackra gen` writes the
- *          entry barrels (STA-339).
+ * Purpose: Stand-in barrel: the `.` entry of @stackra/fiscal (the service, the drivers, the onboardings and their
+ *          picker, the memory journal, the refusals and the option schemas a pack is checked against) until
+ *          `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. The format helpers (XML, base64, TLV, hashing, time zones)
  *           and the format constants stay internal: no consumer imports them.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision.
  */
+export { ETA_ONBOARDING_OPTIONS } from "#core/constants/eta-onboarding-options.constant";
 export { ETA_OPTIONS } from "#core/constants/eta-options.constant";
 export { FACTUR_X_OPTIONS } from "#core/constants/factur-x-options.constant";
 export { FDM_OPTIONS } from "#core/constants/fdm-options.constant";
@@ -18,7 +19,9 @@ export { RT_OPTIONS } from "#core/constants/rt-options.constant";
 export { TSE_OPTIONS } from "#core/constants/tse-options.constant";
 export { VERIFACTU_OPTIONS } from "#core/constants/verifactu-options.constant";
 export { ZATCA_OPTIONS } from "#core/constants/zatca-options.constant";
+export { DeviceOnboardingDriver } from "#core/drivers/device-onboarding.driver";
 export { EtaDriver } from "#core/drivers/eta.driver";
+export { EtaOnboardingDriver } from "#core/drivers/eta-onboarding.driver";
 export { FacturXDriver } from "#core/drivers/factur-x.driver";
 export { FdmDriver } from "#core/drivers/fdm.driver";
 export { MarketPackFiscalPackSourceDriver } from "#core/drivers/market-pack-fiscal-pack-source.driver";
@@ -35,9 +38,12 @@ export { FiscalChainConflictError } from "#core/errors/fiscal-chain-conflict.err
 export { FiscalCredentialMissingError } from "#core/errors/fiscal-credential-missing.error";
 export { FiscalDocumentInvalidError } from "#core/errors/fiscal-document-invalid.error";
 export { FiscalDriverMissingError } from "#core/errors/fiscal-driver-missing.error";
+export { FiscalOnboardingInputMissingError } from "#core/errors/fiscal-onboarding-input-missing.error";
 export { FiscalOnboardingRefusedError } from "#core/errors/fiscal-onboarding-refused.error";
+export { FiscalOnboardingUnsupportedError } from "#core/errors/fiscal-onboarding-unsupported.error";
 export { FiscalOptionsInvalidError } from "#core/errors/fiscal-options-invalid.error";
 export { FiscalService } from "#core/services/fiscal.service";
+export { FiscalOnboardingService } from "#core/services/fiscal-onboarding.service";
 export { ZatcaOnboarding } from "#core/services/zatca-onboarding.service";
 export type { TaxGroup } from "#core/types/tax-group.type";
 export type { XmlNode } from "#core/types/xml-node.type";

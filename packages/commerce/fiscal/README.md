@@ -10,11 +10,11 @@ certificates, credentials and the network stay with the host behind ports.
 
 ## Entry points
 
-| Import                      | Holds                                                                                                      |
-| --------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| `@stackra/fiscal`           | `FiscalService`, `ZatcaOnboarding`, the ten drivers, `MemoryFiscalJournalDriver`, refusals, option schemas |
-| `@stackra/fiscal/contracts` | the ports, enums and types hosts code against                                                              |
-| `@stackra/fiscal/testing`   | port fakes, `fiscalDocument` and `fiscalRecord` fixtures                                                   |
+| Import                      | Holds                                                                                                                                  |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `@stackra/fiscal`           | `FiscalService`, the ten drivers, the onboardings and `FiscalOnboardingService`, `MemoryFiscalJournalDriver`, refusals, option schemas |
+| `@stackra/fiscal/contracts` | the ports, enums and types hosts code against                                                                                          |
+| `@stackra/fiscal/testing`   | port fakes, `fiscalDocument` and `fiscalRecord` fixtures                                                                               |
 
 Entry barrels are stand-ins until `stackra gen` writes them (STA-339).
 
@@ -66,6 +66,46 @@ const status = await fiscal.offlineStatus({ market, channel: FiscalChannel.Till,
 - Sealing a document twice on one unit returns the stored record, so a retry never signs twice.
 - `submitPending` stops at the first record the authority does not take, keeping order.
 - A CSID per till comes from `ZatcaOnboarding` (`compliance`, `check`, `production`), called by device pairing.
+
+## Onboarding
+
+Device pairing registers a till with its mandate's authority through one `FiscalOnboarding` port, picked by the till
+mandate's driver key:
+
+```ts
+import {
+  DeviceOnboardingDriver,
+  EtaOnboardingDriver,
+  FiscalOnboardingService,
+  ZatcaOnboarding,
+} from "@stackra/fiscal";
+
+const onboardings = new FiscalOnboardingService([
+  new ZatcaOnboarding(transport, credentials),
+  new EtaOnboardingDriver(transport, credentials),
+  new DeviceOnboardingDriver("tse", device, credentials),
+]);
+
+const mandate = (await packs.section(market, now))?.till;
+if (mandate && onboardings.supports(mandate.driver)) {
+  const onboarding = onboardings.for(mandate.driver);
+  onboarding.inputs; // what the pairing screen asks for (`OnboardingInput` codes)
+  await onboarding.register(unitId, answers, mandate.options); // stage `compliance`
+  await onboarding.complete(unitId, mandate.options); // stage `production`
+}
+```
+
+| Key                   | Onboarding               | `register`                                                                                                      | `complete`                     |
+| --------------------- | ------------------------ | --------------------------------------------------------------------------------------------------------------- | ------------------------------ |
+| `zatca`               | `ZatcaOnboarding`        | compliance CSID from the portal OTP and the till's CSR                                                          | production CSID                |
+| `eta`                 | `EtaOnboardingDriver`    | the POS's portal client id, secret and pre-shared key, proved by a token request with its serial and OS version | proves them again              |
+| `tse`, `fdm`, `rt`, … | `DeviceOnboardingDriver` | `<key>.register` on the paired device: serial and certificate                                                   | `<key>.activate` on the device |
+
+- A step returns only the unit, the stage and the request id; issued values go straight to `TillCredentials`.
+- A missing answer is `FiscalOnboardingInputMissingError`, an authority refusal `FiscalOnboardingRefusedError` (nothing
+  stored), a key nothing serves `FiscalOnboardingUnsupportedError`.
+- `nf525`, `rksv` and `verifactu` have no onboarding here: NF525 and Verifactu register nothing per till, and the RKSV
+  FinanzOnline registration is not built yet.
 
 ## Not here
 

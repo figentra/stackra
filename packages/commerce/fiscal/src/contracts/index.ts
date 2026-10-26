@@ -9,11 +9,13 @@
 export { FiscalChannel } from "#contracts/enums/fiscal-channel.enum";
 export { FiscalDocumentKind } from "#contracts/enums/fiscal-document-kind.enum";
 export { FiscalRecordStatus } from "#contracts/enums/fiscal-record-status.enum";
+export { OnboardingInput } from "#contracts/enums/onboarding-input.enum";
 export { PartyKind } from "#contracts/enums/party-kind.enum";
 export { SignatureFormat } from "#contracts/enums/signature-format.enum";
 export { FiscalDevice } from "#contracts/ports/fiscal-device.port";
 export { FiscalDriver } from "#contracts/ports/fiscal-driver.port";
 export { FiscalJournal } from "#contracts/ports/fiscal-journal.port";
+export { FiscalOnboarding } from "#contracts/ports/fiscal-onboarding.port";
 export { FiscalPackSource } from "#contracts/ports/fiscal-pack-source.port";
 export { FiscalSigner } from "#contracts/ports/fiscal-signer.port";
 export { FiscalTransport } from "#contracts/ports/fiscal-transport.port";
@@ -33,6 +35,7 @@ export type { HybridPdfRequest } from "#contracts/types/hybrid-pdf-request.type"
 export type { JournalExport } from "#contracts/types/journal-export.type";
 export type { MarketFiscalSection } from "#contracts/types/market-fiscal-section.type";
 export type { OfflineStatus } from "#contracts/types/offline-status.type";
+export type { OnboardingStep } from "#contracts/types/onboarding-step.type";
 export type { SealContext } from "#contracts/types/seal-context.type";
 export type { SealedPayload } from "#contracts/types/sealed-payload.type";
 export type { SignatureRequest } from "#contracts/types/signature-request.type";

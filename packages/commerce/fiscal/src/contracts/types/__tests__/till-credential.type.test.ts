@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: type tests of `TillCredential`: the two stages and nullable issued values.
+ * Purpose: type tests of `TillCredential`: the two stages, nullable issued values and optional attributes.
  * Boundary: test only; type-level checks with one runtime assertion each.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0364.
@@ -23,5 +23,21 @@ describe("TillCredential", () => {
     // @ts-expect-error -- only compliance or production
     const draft: TillCredential = { ...credential, stage: "draft" };
     expect([credential.stage, draft.stage]).toEqual(["compliance", "draft"]);
+  });
+
+  it("takes string attributes beside the token", () => {
+    const credential: TillCredential = {
+      unitId: "till_1",
+      stage: "production",
+      requestId: null,
+      token: "id",
+      secret: "s",
+      certificate: null,
+      certificateSerial: null,
+      attributes: { device_serial: "SN1" },
+    };
+    // @ts-expect-error -- attribute values are strings
+    const numeric: TillCredential = { ...credential, attributes: { device_serial: 1 } };
+    expect([credential.attributes?.device_serial, numeric.unitId]).toEqual(["SN1", "till_1"]);
   });
 });

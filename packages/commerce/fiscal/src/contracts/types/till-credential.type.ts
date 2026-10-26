@@ -1,9 +1,9 @@
 /**
  * Stackra file contract:
  * Purpose: `TillCredential`, the fiscal credential of one unit: its stage, the authority's request id, the token and
- *          secret the authority issued, and its certificate and serial.
- * Boundary: a type only; kept by the host's `TillCredentials` store, which encrypts the secret at rest. The package
- *           passes the issued values to the store once and never logs or returns them.
+ *          secret the authority issued, its certificate and serial, and the mandate's other registration facts.
+ * Boundary: a type only; kept by the host's `TillCredentials` store, which encrypts the secret and the attributes at
+ *           rest. The package passes the issued values to the store once and never logs or returns them.
  * Runtime: isomorphic
  * Governing contract: ADR 0364 (decision 4).
  */
@@ -24,4 +24,9 @@ export type TillCredential = {
   readonly certificate: string | null;
   /** The signing certificate's serial as the mandate prints it. */
   readonly certificateSerial: string | null;
+  /**
+   * Registration facts the mandate needs beside the token and secret, by snake_case key (an ETA POS's serial, OS
+   * version and pre-shared key); absent when the mandate has none.
+   */
+  readonly attributes?: Readonly<Record<string, string>>;
 };
