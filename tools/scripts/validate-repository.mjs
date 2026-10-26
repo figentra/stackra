@@ -567,9 +567,9 @@ const IMPORT_SPECIFIER =
   /(?:\bfrom\s*|^\s*import\s+|\bimport\s*\(\s*|\bvi\.(?:mock|doMock|importActual)\(\s*)["']([^"'\n]+)["']/gm;
 const TS_EXTENSION = /\.[cm]?[jt]sx?$/;
 const DEEP_RELATIVE = /^(?:\.\.\/){2,}/;
-/** Plain Node loads the tooling presets (they keep `./x.ts`); oxlint's fixtures break the rules on purpose. */
+/** Plain Node loads the tooling presets and the feature-flags lint plugin (they keep `./x.ts`); oxlint's fixtures break the rules on purpose. */
 const IMPORTS_EXEMPT =
-  /^(?:packages\/tooling\/|tools\/scaffold\/templates\/packages\/tooling\/)|\/__tests__\/fixtures\//;
+  /^(?:packages\/tooling\/|packages\/state\/feature-flags\/src\/lint\/|tools\/scaffold\/templates\/packages\/tooling\/)|\/__tests__\/fixtures\//;
 export const isMemberSource = (p) =>
   /^(?:apps|packages|services|workers|tools\/scaffold\/templates)\/.+\.(?:ts|tsx|mts)$/.test(p) &&
   !IMPORTS_EXEMPT.test(p);
@@ -587,7 +587,7 @@ export function checkImports(path, text) {
       out.push(
         `${path}: import "${spec}" names a file extension; drop it (bundler resolution, ADR 0233)`,
       );
-    if (DEEP_RELATIVE.test(spec))
+    if (DEEP_RELATIVE.test(spec) && !spec.endsWith(".json"))
       out.push(
         `${path}: import "${spec}" climbs two or more folders; use the member's # alias (ADR 0233)`,
       );
