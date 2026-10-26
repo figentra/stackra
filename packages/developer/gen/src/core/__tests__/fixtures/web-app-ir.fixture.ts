@@ -6,9 +6,11 @@
  *          on it.
  * Boundary: test data only; never imported by package code.
  * Runtime: node (vitest)
+ * Note: declares GENERATED_IMPORTS so the undeclared-package check on every generated file stays quiet (STA-1296).
  * Governing contract: ADR 0022 (test placement); ADR 0249; ADR 0270 (decision 3); ADR 0294 (decisions 14 and 20).
  */
 import type { MemberIR } from "#core/types/member-ir.type";
+import { GENERATED_IMPORTS } from "#core/__tests__/fixtures/generated-imports.fixture";
 
 /** The web app, read. */
 export const WEB_APP_IR: MemberIR = {
@@ -94,7 +96,7 @@ export const WEB_APP_IR: MemberIR = {
       names: [{ name: "SettingsScreen", typeOnly: false }],
     },
   ],
-  packages: ["@stackra/navigation", "@stackra/panel"],
+  packages: [...GENERATED_IMPORTS],
   dependencies: [],
   errors: [],
 };

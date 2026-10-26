@@ -8,7 +8,8 @@ Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
 Governing contract: ADR 0294; ADR 0295; ADR 0260 (generated clients); ADR 0261; ADR 0263; ADR 0162 and ADR 0222
                     (the translated and upload shape kinds); ADR 0338 (a replica query's `ReplicaPage` output); STA-1290 (the
-                    shipped shape kind); STA-1293 (the i18n target, clients for apps, undeclared packages refused).
+                    shipped shape kind); STA-1293 (the i18n target, clients for apps, undeclared packages refused); STA-1296
+                    (client modules and permission sets, config overrides, the root Vitest shim).
 -->
 
 The Stackra compiler. Gen reads a member's source through the TypeScript compiler API, derives every identity and
@@ -140,6 +141,7 @@ OpenAPI document and the generated clients type it. Any other output is `action_
 | `.stackra/gen/{routes,blocks}/<runtime>.ts`             | app                                            | `registerRoutes(routeTable)` (and `registerPanelPages()` on the browser with the panel), `registerBlocks`                                                                                                                                        |
 | `.stackra/entry/*.ts`                                   | every member                                   | a package's entry barrels; a service's `server` (which hands `createApp` its `boot`), an app's `browser` and `native` entries                                                                                                                    |
 | `.stackra/{tsdown,vitest}.config.ts`, `vitest.setup.ts` | package, service                               | the build, the unit tier on the coverage gate, and the setup with registrations, wiring, factory partners, `@stackra/database/testing` (when declared) and `await loadMemberSchemas(root)`                                                       |
+| `vitest.config.ts` (member root)                        | package, service                               | the gitignored shim re-exporting `.stackra/vitest.config.ts`, since `vitest run` reads only the root; an authored one is refused (`shim_authored`) so its author merges it first                                                                 |
 
 ## Generated service clients
 
@@ -169,9 +171,18 @@ export class StorefrontService extends Service {
   `client_service_unknown`, and a client imported under another name than `<Service>Client` is `client_name_mismatch`.
 - **Consumers.** A service is consumed by an injected client, a listener of one of its events, or any own file
   (tests included) importing from `#stackra/clients/<service>`, so an app's route that reads a query gets the client.
-- **Dependencies.** A generated client or schema that imports a `@stackra/*` package the member does not declare in
-  package.json is refused (`client_dependency_missing`, `schema_dependency_missing`) with the package to add, so gen
-  never writes a file that fails to resolve at runtime.
+- **Modules and permissions.** The client file also exports one client module per producer module
+  (`class ReviewsModule extends moduleRef("channels", "reviews") {}`, for an app's `Module({ imports })`) and one
+  permission set per Permissions class (`class ReviewPermissions extends permissionsRef("reviews.review", [...]) {}`,
+  so `ReviewPermissions.moderate` is `"reviews.review.moderate"`). `./contracts` is types-only (ADR 0117), so these
+  runtime values ship here. The manifest records each permission's `class`; an older manifest derives the name from
+  the key.
+- **Service keys.** `#stackra/clients/compliance-privacy` finds the producer whose manifest member is
+  `compliance_privacy`: the key matches in snake or kebab case, and the file is written under the imported specifier.
+- **Dependencies.** A generated file that imports a `@stackra/*` package the member does not declare in package.json
+  is refused with the package to add (`client_dependency_missing`, `schema_dependency_missing`, and
+  `generated_dependency_missing` for the wiring, the tool configs, the test setup and the entries), so gen never
+  writes a file that fails to resolve at runtime.
 - **Cycles.** Services may consume each other's clients in a cycle (catalogue and stock, sales and fulfilment): gen
   runs in two passes. Pass 1 (`stackra gen --manifests`, and the first pass of every `stackra gen`) writes each
   member's manifest without its clients; a consumed service with a folder beside the member is not a refusal there.

@@ -22,7 +22,8 @@
  *                     actions are tools by default, `tool: false` needs a reason, the `bulk` tag); ADR 0099 (decisions
  *                     2 and 3: effect tags, derived hints); ADR 0355 (decision 1: Integration roles); ADR 0308 (rule
  *                     21: `listing.entitlement`); ADR 0394 (decision 2: a sequence's one home); owner decisions
- *                     2026-10-26 round 3 (query verbs, hosted prefixes; STA-1283).
+ *                     2026-10-26 round 3 (query verbs, hosted prefixes; STA-1283); STA-1296 (each permission names its
+ *                     Permissions class).
  */
 import { Enum } from "@stackra/contracts";
 import type { Json, StackraManifest } from "@stackra/contracts";
@@ -149,7 +150,13 @@ export function buildManifest(ir: MemberIR): {
       const key = permissionKey(declared.module, declared.name, verb);
       claim(key, declared);
       risks.set(key, level[1] ?? "L0");
-      permissions.push({ key, risk: level[1] ?? "L0", ...(level[2] ? { system: true } : {}) });
+      // `class` lets a consumer's generated client name the set as the producer does (`ReviewPermissions`, STA-1296).
+      permissions.push({
+        key,
+        risk: level[1] ?? "L0",
+        class: declared.name,
+        ...(level[2] ? { system: true } : {}),
+      });
     }
   }
   for (const dependency of ir.dependencies)

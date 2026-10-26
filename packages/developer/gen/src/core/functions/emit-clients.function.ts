@@ -5,7 +5,9 @@
  *          listener whose `handle` parameter is an event class from there) or imports from there in any file (an
  *          app's route reading a query), written from that
  *          service's committed `stackra.manifest.json`: its enums, its shapes as `remoteShape` classes, its refusals,
- *          its integration events, one `remoteAction` / `remoteQuery` descriptor per action and query (named after the
+ *          its integration events, one `moduleRef` client module per producer module (`ReviewsModule`, for an app's
+ *          `imports`) and one `permissionsRef` set per Permissions class (`ReviewPermissions.moderate`; ./contracts is
+ *          types-only, ADR 0117), one `remoteAction` / `remoteQuery` descriptor per action and query (named after the
  *          producer's class), and the `<Service>Client` class over `ServiceClient` with one member per call
  *          (`client.product.get.call(input)`).
  * Boundary: pure. The client is a class, so it is its own DI token (`emitWiring` binds it with the `ClientTransport`
@@ -16,7 +18,8 @@
  *           `pending` and skipped, so a cycle between services never blocks a manifest.
  * Runtime: isomorphic
  * Governing contract: ADR 0260 (decisions 2 to 6 and 10; a cycle between services is allowed at the manifest level); ADR 0141 (`<module>.<name>.v<n>` wire names); ADR 0158 (the manifest is the contract); ADR 0261
- *                     (`#stackra/clients`); ADR 0263 (a class is its own token); STA-1293 (clients for apps).
+ *                     (`#stackra/clients`); ADR 0263 (a class is its own token); STA-1293 (clients for apps); STA-1296 (client modules and
+ *                     permission sets).
  */
 import type { StackraManifest } from "@stackra/contracts";
 import { Enum } from "@stackra/contracts";
@@ -162,6 +165,35 @@ function clientFile(service: string, manifest: StackraManifest): string {
     );
   }
 
+  // One client module per producer module and one permission set per Permissions class (STA-1296): `./contracts` is
+  // types-only, so an app imports these runtime values from here (`imports: [ReviewsModule]`, `ReviewPermissions.moderate`).
+  const access: string[] = [];
+  for (const entry of own(manifest.modules)) {
+    use("@stackra/clients", "moduleRef");
+    const name = typeof entry.class === "string" ? entry.class : `${pascalCase(entry.key)}Module`;
+    access.push(
+      `export class ${name} extends moduleRef(${JSON.stringify(manifest.member)}, ${JSON.stringify(entry.key)}) {}`,
+    );
+  }
+  const sets = new Map<string, { readonly prefix: string; readonly verbs: string[] }>();
+  for (const entry of own(manifest.permissions)) {
+    const prefix = entry.key.slice(0, entry.key.lastIndexOf("."));
+    // A manifest written before STA-1296 has no `class`: the name is derived from the key (`reviews.review` → `ReviewPermissions`).
+    const name =
+      typeof entry["class"] === "string"
+        ? entry["class"]
+        : `${pascalCase(prefix.split(".").pop() ?? prefix)}Permissions`;
+    const set = sets.get(name) ?? { prefix, verbs: [] };
+    set.verbs.push(entry.key.slice(prefix.length + 1));
+    sets.set(name, set);
+  }
+  for (const [name, { prefix, verbs }] of sets) {
+    use("@stackra/clients", "permissionsRef");
+    access.push(
+      `export class ${name} extends permissionsRef(${JSON.stringify(prefix)}, ${JSON.stringify(verbs)}) {}`,
+    );
+  }
+
   // One descriptor per call, and the client's members grouped by model.
   const calls: string[] = [];
   const groups = new Map<string, Map<string, string>>();
@@ -201,7 +233,8 @@ function clientFile(service: string, manifest: StackraManifest): string {
   const header = generatedHeader({
     from: `the committed stackra.manifest.json of the ${service} service (${manifest.package})`,
     purpose:
-      `the generated client of the ${service} service: its enums, shapes, refusals, integration events, one ` +
+      `the generated client of the ${service} service: its enums, shapes, refusals, integration events, one client ` +
+      `module per producer module and one permission set per Permissions class, one ` +
       `descriptor per action and query, and ${clientName(service)}, injected through a constructor ` +
       `(\`constructor(private readonly ${camelCase(service)}: ${clientName(service)})\`).`,
     boundary:
@@ -216,6 +249,7 @@ function clientFile(service: string, manifest: StackraManifest): string {
     ...declarations,
     ...(refusals.length > 0 ? [...refusals, ""] : []),
     ...(eventLines.length > 0 ? [...eventLines, ""] : []),
+    ...(access.length > 0 ? [...access, ""] : []),
     ...(calls.length > 0 ? [...calls, ""] : []),
     `/** The ${service} service, injected. */`,
     body.length > 0

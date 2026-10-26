@@ -74,12 +74,29 @@ export function writeFixtureMember(name: string, files: Readonly<Record<string, 
       name: `@fixture/${name}`,
       version: "1.0.0",
       type: "module",
-      // What the generated schemas and clients import, so gen's undeclared-package refusals stay quiet.
+      // What the generated files import, so gen's undeclared-package refusals stay quiet (every file since STA-1296).
+      // `database` and `i18n` stay out: declaring them changes what gen writes.
       dependencies: Object.fromEntries(
-        ["clients", "contracts", "errors", "money", "validation"].map((name) => [
-          `@stackra/${name}`,
-          "workspace:*",
-        ]),
+        [
+          "actions",
+          "app",
+          "clients",
+          "config",
+          "container",
+          "contracts",
+          "errors",
+          "events",
+          "locking",
+          "money",
+          "outbox",
+          "queue",
+          "scheduler",
+          "settings",
+          "testing",
+          "tsdown-config",
+          "validation",
+          "vitest-config",
+        ].map((name) => [`@stackra/${name}`, "workspace:*"]),
       ),
       imports: Object.fromEntries(
         folders.map((folder) => [

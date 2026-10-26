@@ -4,7 +4,9 @@
  *          entry per generated entry file, Vitest on the decorators preset with the shared coverage gate and the unit
  *          tier, and the Vitest setup that loads the registrations and (for a member on `@stackra/database`) its testing
  *          entry, registers the member's wiring for `createTestingModule`, awaits `loadMemberSchemas` so a test file's
- *          top-level `X.create(...)` finds its schema, and pairs each `Factory<M>` with its model.
+ *          top-level `X.create(...)` finds its schema, and pairs each `Factory<M>` with its model; and the root
+ *          `vitest.config.ts` shim that re-exports the generated config, since `vitest run` reads only the member root
+ *          (STA-1296).
  * Boundary: pure. Paths are relative to the member root, which is where the tools run; Vitest's root is set to it
  *           explicitly. Apps and workers get none here: their Vite, Expo, Metro and Wrangler files come with their
  *           `defineApp` sections. Factory pairs live only in the test setup, so a server never loads a factory.
@@ -14,6 +16,7 @@
  *                     testing entry and the member's schemas in the setup).
  */
 import { generatedHeader } from "#core/functions/generated-header.function";
+import { ROOT_VITEST_SHIM } from "#core/constants/root-vitest-shim.constant";
 import { importLines } from "#core/functions/import-lines.function";
 import type { GeneratedFile } from "#core/types/generated-file.type";
 import type { MemberIR } from "#core/types/member-ir.type";
@@ -25,7 +28,7 @@ import type { MemberIR } from "#core/types/member-ir.type";
  * @param generated - the entry files and whether `#stackra/registrations` was written.
  * @example
  * emitToolConfigs(ir, { entries, registrations: true }).map((file) => file.path);
- * // [".stackra/tsdown.config.ts", ".stackra/vitest.config.ts", ".stackra/vitest.setup.ts"]
+ * // [".stackra/tsdown.config.ts", ".stackra/vitest.config.ts", ".stackra/vitest.setup.ts", "vitest.config.ts"]
  */
 export function emitToolConfigs(
   ir: MemberIR,
@@ -128,9 +131,24 @@ export function emitToolConfigs(
     "",
   ].join("\n");
 
+  // Members run `vitest run` from the root, which reads only `vitest.config.ts` there: the shim points it at the
+  // generated config, so the setup above loads (ADR 0295 decision 5; STA-1296).
+  const shim = [
+    generatedHeader({
+      from: ".stackra/vitest.config.ts",
+      purpose: `the root shim of ${ir.package}'s Vitest config: \`vitest run\` reads only the member root.`,
+      boundary:
+        "a re-export only, gitignored; gen refuses to replace an authored vitest.config.ts.",
+      runtime: "node",
+    }),
+    'export { default } from "./.stackra/vitest.config";',
+    "",
+  ].join("\n");
+
   return [
     ...(entries.length > 0 ? [{ path: ".stackra/tsdown.config.ts", content: tsdown }] : []),
     { path: ".stackra/vitest.config.ts", content: vitest },
     { path: ".stackra/vitest.setup.ts", content: setup },
+    { path: ROOT_VITEST_SHIM, content: shim },
   ];
 }

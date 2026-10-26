@@ -23,7 +23,10 @@
  *                     the `upload` kind, its argument a Bucket class); ADR 0294 amendment 2026-10-26 (STA-1283: a bare or
  *                     prefix-union `PublicId`, `Readonly<Record>`, regex constants, `Translated.of`, `this.<field>`
  *                     spreads in a default, a trailing `tool: false, // reason:`); STA-1290 (a field typed with a
- *                     `@stackra/*` class, interface, alias or union whose package ships `X$` reads as `shipped`).
+ *                     `@stackra/*` class, interface, alias or union whose package ships `X$` reads as `shipped`);
+ *                     STA-1296 (a package config override reads its fields' type and `this.<field>` default from the
+ *                     base's `Config({ schema })` options class; `Object.freeze`, shared constants and `I18n` keys
+ *                     read as constants; a shipped `X$` of a declared package not in the program is still found).
  */
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -438,9 +441,12 @@ export function createSourceReader(
       case "PropertyAccessExpression":
         if (node.expression !== undefined && host.kind(node.expression) === "ThisKeyword")
           return self === undefined ? NOT_CONSTANT : self(nameOf(node.name));
-        return reference(node);
+        return i18nKey(node) ?? reference(node);
       case "CallExpression": {
         const callee = node.expression === undefined ? "" : host.text(node.expression);
+        // `Object.freeze({ ... })` (a shared level constant) is the value it freezes (STA-1296).
+        if (callee === "Object.freeze" && node.arguments?.length === 1)
+          return constant(node.arguments[0], self);
         if (!PLATFORM_CALLEES.test(callee)) return NOT_CONSTANT;
         const args = (node.arguments ?? []).map((arg) => constant(arg, self));
         if (args.some((arg) => arg === NOT_CONSTANT)) return NOT_CONSTANT;
@@ -453,6 +459,23 @@ export function createSourceReader(
       default:
         return NOT_CONSTANT;
     }
+  };
+
+  /**
+   * `I18n.<namespace>.<path>` of `#stackra/i18n` as its key, `"<namespace>::<path>"` (the i18n target's contract), so a
+   * default reads it before that target has written the file (STA-1296).
+   */
+  const i18nKey = (node: TsNode): string | undefined => {
+    const path: string[] = [];
+    let at: TsNode = node;
+    while (kindOf(at) === "PropertyAccessExpression" && at.expression !== undefined) {
+      path.unshift(nameOf(at.name));
+      at = at.expression;
+    }
+    if (kindOf(at) !== "Identifier" || path.length < 2) return undefined;
+    if (importsOf(host.fileName(node)).get(nameOf(at)) !== "#stackra/i18n") return undefined;
+    const [namespace, ...rest] = path;
+    return `${namespace}::${rest.join(".")}`;
   };
 
   /** The key of an object literal property: its name, or a computed key that is a constant string. */
@@ -496,7 +519,13 @@ export function createSourceReader(
       }
     }
     const value = host.literal(host.typeAt(node));
-    return value === undefined ? NOT_CONSTANT : value;
+    if (value !== undefined) return value;
+    // A shared constant (`export const TENANT_SCOPE_LEVEL: ScopeLevel = Object.freeze({ ... })`) is its initializer's
+    // value when that is a constant (STA-1296).
+    // shortcut: a `let` binding reads the same as a `const`; lint bans exported `let`, so none reaches here in practice.
+    return variable?.initializer !== undefined && host.kind(variable) === "VariableDeclaration"
+      ? constant(variable.initializer)
+      : NOT_CONSTANT;
   };
 
   /** The options object of a call argument: its constant properties, non-constant ones left out. */
@@ -939,6 +968,60 @@ export function createSourceReader(
         );
       return [];
     });
+  /** The `X$` names the `.` and `./contracts` barrels of package `name` export, read as text, by specifier. */
+  const barrelsOnDisk = (name: string): [string, string[]][] => {
+    let directory = root;
+    let folder = join(directory, "node_modules", name);
+    while (!existsSync(join(folder, "package.json"))) {
+      const parent = dirname(directory);
+      if (parent === directory) return [];
+      directory = parent;
+      folder = join(directory, "node_modules", name);
+    }
+    let exportsMap: Record<string, unknown>;
+    try {
+      const parsed = JSON.parse(readFileSync(join(folder, "package.json"), "utf8")) as {
+        exports?: unknown;
+      };
+      exportsMap =
+        typeof parsed.exports === "object" && parsed.exports !== null
+          ? (parsed.exports as Record<string, unknown>)
+          : {};
+    } catch {
+      return [];
+    }
+    const found: [string, string[]][] = [];
+    for (const [entry, from] of [
+      [".", name],
+      ["./contracts", `${name}/contracts`],
+    ] as const) {
+      const target = exportsMap[entry];
+      const conditions =
+        typeof target === "object" && target !== null ? (target as Record<string, unknown>) : {};
+      const file =
+        typeof target === "string"
+          ? target
+          : (conditions["@stackra/source"] ?? conditions["types"]);
+      if (typeof file !== "string") continue;
+      const path = join(folder, file);
+      if (byPath.has(path) || !existsSync(path)) continue;
+      const text = readFileSync(path, "utf8");
+      const names = [
+        ...[...text.matchAll(/export\s+(?:declare\s+)?const\s+([\w$]+)/g)].map(
+          (match) => match[1] ?? "",
+        ),
+        ...[...text.matchAll(/export\s*\{([^}]*)\}/g)].flatMap((match) =>
+          (match[1] ?? "")
+            .split(",")
+            .map((element) => element.trim())
+            .filter((element) => !element.startsWith("type "))
+            .map((element) => element.split(/\s+as\s+/).pop() ?? ""),
+        ),
+      ].filter((exported) => exported.endsWith("$"));
+      found.push([from, names]);
+    }
+    return found;
+  };
   /** Where `<name>$` ships from: the type's own package first, else the first specifier in sort order. */
   const shippedOf = (name: string, typePath: string): string | undefined => {
     if (shippedIndex === undefined) {
@@ -954,6 +1037,13 @@ export function createSourceReader(
           index.set(exported, (index.get(exported) ?? new Set<string>()).add(from));
         }
       }
+      // A declared package whose barrel the program never loaded (a member importing only @stackra/contracts still
+      // finds `ScopeRef$` in @stackra/validation): its barrels are read from disk (STA-1296).
+      for (const dependency of new Set([...facts.dependencies, "@stackra/validation"]))
+        if (dependency.startsWith("@stackra/"))
+          for (const [from, names] of barrelsOnDisk(dependency))
+            for (const exported of names)
+              index.set(exported, (index.get(exported) ?? new Set<string>()).add(from));
       shippedIndex = index;
     }
     const candidates = [...(shippedIndex.get(`${name}$`) ?? [])].sort();
@@ -1518,6 +1608,26 @@ export function createSourceReader(
     };
   };
 
+  /**
+   * A package config's chain with the options class of its `Config({ schema: X })` base appended: the base config
+   * declares no fields, `X` does, so an override takes the field's type and rules from `X` and reads `this.<field>`
+   * as `X`'s default (STA-1296).
+   */
+  const configChain = (chain: readonly TsNode[]): readonly TsNode[] => {
+    const last = chain.at(-1);
+    const options = last === undefined ? undefined : heritageOf(last)?.call?.arguments?.[0];
+    if (options === undefined || host.kind(options) !== "ObjectLiteralExpression") return chain;
+    const schema = (options.properties ?? []).find(
+      (property) =>
+        host.kind(property) === "PropertyAssignment" && nameOf(property.name) === "schema",
+    )?.initializer;
+    const declaration = classDeclarationOf(
+      schema === undefined ? undefined : host.symbolAt(schema),
+    );
+    if (declaration === undefined) return chain;
+    return [...chain, ...(kindInfo(declaration)?.chain ?? [declaration])];
+  };
+
   // Shapes, cached so a derived shape reads its source once.
   const shapeCache = new Map<TsNode, ShapeIR | null>();
   const readShape = (node: TsNode): ShapeIR | undefined => {
@@ -1543,7 +1653,7 @@ export function createSourceReader(
     const heritage = heritageOf(node);
 
     if (info.base !== undefined && !info.base.own && info.kind === "config") {
-      const { fields, relations } = fieldsOf(name, info.chain, node);
+      const { fields, relations } = fieldsOf(name, configChain(info.chain), node);
       return {
         ...head,
         base: { kind: "package", name: info.base.name, from: info.base.from },

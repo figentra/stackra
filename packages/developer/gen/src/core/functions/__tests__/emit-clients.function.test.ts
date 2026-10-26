@@ -9,7 +9,8 @@
  *          a `pending` service skipped, the manifest pass writing the manifest alone while a consumed workspace
  *          service has none yet (and refusing one outside the workspace), and the clients pass writing the clients
  *          alone despite another refusal; a service only imported by a file (an app's route) and the refusal of a
- *          client importing an undeclared `@stackra/*` package (STA-1293).
+ *          client importing an undeclared `@stackra/*` package (STA-1293); a client module per producer module and a
+ *          permission set per Permissions class, named from the manifest or derived from the key (STA-1296).
  * Boundary: test only; the producer is the commerce IR fixture's manifest, the consumer a one-class service IR.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0260 (decisions 2 to 6); ADR 0263 (a class is its own token).
@@ -99,6 +100,27 @@ describe("emitClients", () => {
     expect(content).toContain('export class OrderPaid extends remoteEvent("orders.order.paid.v1",');
     expect(content.indexOf("const OrderView$")).toBeLessThan(
       content.indexOf("const ListOrdersOutput$"),
+    );
+  });
+
+  it("writes a client module per producer module and a permission set per Permissions class (STA-1296)", () => {
+    expect(content).toContain(
+      'export class OrdersModule extends moduleRef("commerce", "orders") {}',
+    );
+    expect(content).toContain(
+      'export class OrderPermissions extends permissionsRef("orders.order", ["read","create","cancel"]) {}',
+    );
+  });
+
+  it("derives a permission set's name from the key in a manifest that records no class (STA-1296)", () => {
+    const legacy = {
+      ...PRODUCER,
+      permissions: [{ key: "reviews.review.draft_reply", risk: "L1" }],
+    };
+    const written = emitClients(consumer({ services: [{ member: "commerce", manifest: legacy }] }))
+      .files[0]?.content;
+    expect(written).toContain(
+      'export class ReviewPermissions extends permissionsRef("reviews.review", ["draft_reply"]) {}',
     );
   });
 

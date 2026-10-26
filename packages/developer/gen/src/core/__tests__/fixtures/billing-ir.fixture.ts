@@ -9,10 +9,12 @@
  *          webhook, prefix, wiring and tool-config tests run on it.
  * Boundary: test data only; never imported by package code.
  * Runtime: node (vitest)
+ * Note: declares GENERATED_IMPORTS so the undeclared-package check on every generated file stays quiet (STA-1296).
  * Governing contract: ADR 0022 (test placement); ADR 0097; ADR 0141; ADR 0308; ADR 0342.
  */
 import type { DeclaredClass } from "#core/types/declared-class.type";
 import type { MemberIR } from "#core/types/member-ir.type";
+import { GENERATED_IMPORTS } from "#core/__tests__/fixtures/generated-imports.fixture";
 
 /** A kind class of the fixture with every list empty unless given. */
 function declared(
@@ -296,6 +298,7 @@ export const BILLING_IR: MemberIR = {
   enums: [],
   files: [],
   packages: [
+    ...GENERATED_IMPORTS,
     "@stackra/database",
     "@stackra/outbox",
     "@stackra/segments",

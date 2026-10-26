@@ -6,6 +6,7 @@
  *          `@stackra/database`, registers the wiring, awaits the member's schemas and pairs each factory with its
  *          model; no tsdown without entries, and nothing for an app or a worker.
  * Boundary: test only; runs on the IR fixtures.
+ * The root `vitest.config.ts` shim is listed with the tool configs (STA-1296).
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0295 (decision 5); ADR 0182; ADR 0263 (decision 12).
  */
@@ -31,6 +32,7 @@ describe("emitToolConfigs", () => {
       ".stackra/tsdown.config.ts",
       ".stackra/vitest.config.ts",
       ".stackra/vitest.setup.ts",
+      "vitest.config.ts",
     ]);
     expect(content(".stackra/tsdown.config.ts")).toContain(
       'export default library({\n  "server": ".stackra/entry/server.ts",\n});',
@@ -73,6 +75,7 @@ describe("emitToolConfigs", () => {
     expect(bare.map((file) => file.path)).toEqual([
       ".stackra/vitest.config.ts",
       ".stackra/vitest.setup.ts",
+      "vitest.config.ts",
     ]);
     expect(bare[1]?.content).not.toContain('import "#stackra/registrations";');
     expect(bare[1]?.content).not.toContain("registerModelPartners");

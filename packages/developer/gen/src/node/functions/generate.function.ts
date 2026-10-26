@@ -9,7 +9,8 @@
  *          refused writes its manifest if only consumed workspace services stand in the way.
  * Boundary: writes only under the member root; a check writes nothing. A refused run writes nothing but the client
  *           files (when the clients target itself is clean) and the manifest (when the manifest pass is clean). The
- *           committed `stackra.manifest.json` is read first, so its identities stay locked.
+ *           committed `stackra.manifest.json` is read first, so its identities stay locked. An authored root
+ *           `vitest.config.ts` (no generated notice) is refused as `shim_authored`, never overwritten (STA-1296).
  * Runtime: node
  * Governing contract: ADR 0294 (decisions 10 and 22: the committed manifest and `stackra gen --check`); ADR 0295
  *                     (decision 5: generated files are overwritten); ADR 0261; ADR 0260 (a cycle between services is
@@ -20,6 +21,8 @@ import { dirname, join } from "node:path";
 
 import type { StackraManifest } from "@stackra/contracts";
 
+import { GENERATED_NOTICE } from "#core/constants/generated-notice.constant";
+import { ROOT_VITEST_SHIM } from "#core/constants/root-vitest-shim.constant";
 import { generateMember } from "#core/functions/generate-member.function";
 import type { GeneratedFile } from "#core/types/generated-file.type";
 import { discoverMember } from "#node/functions/discover-member.function";
@@ -85,6 +88,29 @@ export async function generate(
     if (manifest?.errors.length === 0) partial.push(...write(root, manifest.files, false));
   }
   if (result.errors.length > 0) return { errors: result.errors, files: [], changed: partial };
+  // An authored root vitest.config.ts is never overwritten by the shim: the author merges it first (STA-1296).
+  const shimPath = join(root, ROOT_VITEST_SHIM);
+  if (
+    result.files.some((file) => file.path === ROOT_VITEST_SHIM) &&
+    existsSync(shimPath) &&
+    !readFileSync(shimPath, "utf8").includes(GENERATED_NOTICE)
+  )
+    return {
+      errors: [
+        {
+          code: "shim_authored",
+          file: ROOT_VITEST_SHIM,
+          line: 0,
+          column: 0,
+          subject: ROOT_VITEST_SHIM,
+          message:
+            "an authored vitest.config.ts sits at the member root, where gen writes the shim of .stackra/vitest.config.ts",
+          fix: "move what it adds into stackra.config.ts or the shared Vitest preset, then delete it so gen writes the shim",
+        },
+      ],
+      files: [],
+      changed: partial,
+    };
   return {
     errors: [],
     files: result.files,

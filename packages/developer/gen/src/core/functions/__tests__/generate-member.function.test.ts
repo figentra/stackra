@@ -6,6 +6,7 @@
  *          of a package (no openapi, entry barrels), no file at all when discovery, the manifest or the identity lock
  *          refuses, and `@Renamed` accepted by the lock.
  * Boundary: test only; runs on the IR fixtures.
+ * The root `vitest.config.ts` shim is listed with the tool configs (STA-1296).
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 10, 22 and 26); ADR 0295 (decision 7).
  */
@@ -36,6 +37,7 @@ describe("generateMember", () => {
       ".stackra/tsdown.config.ts",
       ".stackra/vitest.config.ts",
       ".stackra/vitest.setup.ts",
+      "vitest.config.ts",
     ]);
     expect(JSON.parse(files[0]?.content ?? "{}")).toEqual(JSON.parse(JSON.stringify(manifest)));
     expect(files[0]?.content.endsWith("}\n")).toBe(true);
@@ -63,6 +65,7 @@ describe("generateMember", () => {
       ".stackra/tsdown.config.ts",
       ".stackra/vitest.config.ts",
       ".stackra/vitest.setup.ts",
+      "vitest.config.ts",
     ]);
     const server = files.find((file) => file.path === ".stackra/entry/server.ts")?.content;
     expect(server).toContain('import "#stackra/registrations";');

@@ -50,6 +50,19 @@ describe("readServiceManifests", () => {
     ]);
   });
 
+  it("matches a snake-case member under a kebab-case specifier (STA-1296)", () => {
+    const root = writeFixtureMember("audit", {});
+    const privacy = {
+      member: "compliance_privacy",
+      package: "@acme/compliance-privacy",
+      version: "0.1.0",
+    };
+    sibling(root, "compliance-privacy", JSON.stringify(privacy));
+    expect(readServiceManifests(root, ["compliance-privacy"])).toEqual([
+      { member: "compliance-privacy", folder: "compliance-privacy", manifest: privacy },
+    ]);
+  });
+
   it("refuses an invalid manifest", () => {
     const root = writeFixtureMember("sales", {});
     sibling(root, "broken", "{ nope");

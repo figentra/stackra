@@ -13,7 +13,7 @@
  *           services: the manifest pass (the manifest alone, not blocked by a consumed workspace service whose
  *           manifest is still to come) and the clients pass (the client files alone, from the producers' manifests). A client or schema file that imports
  *           a `@stackra/*` package the member does not declare is refused (`client_dependency_missing`,
- *           `schema_dependency_missing`). Other per-target outputs (navigation trees, the rest of the Encore app, ...)
+ *           `schema_dependency_missing`), and so is any other generated file (`generated_dependency_missing`, STA-1296). Other per-target outputs (navigation trees, the rest of the Encore app, ...)
  *           are added by their owning targets.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 10, 22 and 26); ADR 0295 (decisions 5 and 7); ADR 0305 (rules 15, 16 and
@@ -156,5 +156,17 @@ export function generateMember(
       registrations: files.some((file) => file.path === ".stackra/gen/registrations.ts"),
     }),
   );
+  // Every other generated file is held to the same rule: the wiring's driver entries (`@stackra/content/node`), the
+  // test setup's testing subpaths, the tool configs (STA-1296).
+  const elsewhere = undeclaredPackages(
+    ir,
+    files.filter(
+      (file) =>
+        !file.path.startsWith(".stackra/gen/clients/") &&
+        !file.path.startsWith(".stackra/gen/schemas/"),
+    ),
+    "generated_dependency_missing",
+  );
+  if (elsewhere.length > 0) return { files: [], errors: elsewhere, manifest };
   return { files, errors: [], manifest };
 }

@@ -17,7 +17,9 @@
  *          `PublicId`, `Readonly<Record>`, an imported regular expression constant and `this.<field>` spreads; and a
  *          field typed with another package's interface, alias or union that ships `X$` read as `shipped` (STA-1290).
  *          A `@Field(zod)` hatch carries the named imports its source uses, and `clientImports` lists the services any own
- *          file (tests included) imports a client from (STA-1293).
+ *          file (tests included) imports a client from (STA-1293). A package config override takes its fields from the base's
+ *          `Config({ schema })` options class, reading `this.<field>` spreads, `Object.freeze` constants and `I18n` keys
+ *          as constants, and a shipped `X$` of a declared package the program never loaded is still found (STA-1296).
  * Boundary: test only; writes the fixture under `.cache/` and opens TypeScript on it.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decision 26, 2026-10-23 item 13, decision 28); ADR 0305
@@ -802,5 +804,122 @@ describe("createSourceReader on hatch and client imports", async () => {
       { service: "channels", file: "src/core/functions/__tests__/storefront.function.test.ts" },
       { service: "customers", file: "src/core/functions/__tests__/storefront.function.test.ts" },
     ]);
+  });
+});
+
+/** A package config over an options class, overridden by the member (OS console telemetry, tenancy scope; STA-1296). */
+const OVERRIDE_SOURCES: Readonly<Record<string, string>> = {
+  "node_modules/@stackra/telemetry-fixture/package.json": JSON.stringify({
+    name: "@stackra/telemetry-fixture",
+    exports: { ".": { "@stackra/source": "./index.ts" } },
+  }),
+  "node_modules/@stackra/telemetry-fixture/index.ts": [
+    'import { Config } from "@stackra/config";',
+    'import { Schema } from "@stackra/validation";',
+    "",
+    "export class TelemetryOptions extends Schema {",
+    "  errors: { enabled: boolean; sampleRate: number } = { enabled: false, sampleRate: 1 };",
+    '  levels: string[] = ["platform"];',
+    "  scopes: { key: string }[] = [];",
+    "  hint: string | null = null;",
+    "}",
+    "",
+    "export class TelemetryConfig extends Config({ schema: TelemetryOptions }) {}",
+    "",
+    'export const TENANT_LEVEL: { key: string } = Object.freeze({ key: "tenant" });',
+    "",
+  ].join("\n"),
+  "src/config/telemetry.config.ts": [
+    'import { TENANT_LEVEL, TelemetryConfig as BaseTelemetryConfig } from "@stackra/telemetry-fixture";',
+    'import { I18n } from "#stackra/i18n";',
+    "",
+    "export class TelemetryConfig extends BaseTelemetryConfig {",
+    "  override errors = { ...this.errors, enabled: true };",
+    '  override levels: BaseTelemetryConfig["levels"] = [...this.levels, "tenant"];',
+    "  override scopes = [...this.scopes, TENANT_LEVEL];",
+    "  override hint = I18n.pages.settings.hint;",
+    "}",
+    "",
+  ].join("\n"),
+};
+
+describe("createSourceReader on a package config override", async () => {
+  const root = writeFixtureMember("override", OVERRIDE_SOURCES);
+  const host = await openHost(join(root, "tsconfig.json"));
+  const reader = createSourceReader(host, readMemberFacts(root));
+  const shapes = reader.sources.flatMap((file) => reader.shapes(file));
+  host.close();
+  const field = (name: string) =>
+    shapes
+      .find((candidate) => candidate.name === "TelemetryConfig")
+      ?.fields.find((candidate) => candidate.name === name);
+
+  it("takes each overridden field from the options class, with no type refusal", () => {
+    expect(shapes.find((candidate) => candidate.name === "TelemetryConfig")?.base).toEqual({
+      kind: "package",
+      name: "TelemetryConfig",
+      from: "@stackra/telemetry-fixture",
+    });
+    expect(field("levels")?.type).toEqual({ kind: "array", element: { kind: "string" } });
+    expect(reader.errors.some((error) => error.code === "shape_unknown_type")).toBe(false);
+  });
+
+  it("extends the options class's defaults through `this.<field>` and reads shared constants", () => {
+    expect(field("errors")?.default?.value).toEqual({ enabled: true, sampleRate: 1 });
+    expect(field("levels")?.default?.value).toEqual(["platform", "tenant"]);
+    expect(field("scopes")?.default?.value).toEqual([{ key: "tenant" }]);
+    expect(field("hint")?.default?.value).toBe("pages::settings.hint");
+    expect(reader.errors.some((error) => error.code === "shape_default_not_constant")).toBe(false);
+  });
+});
+
+/** A member that never imports the package shipping the schema of a type it uses (STA-1296). */
+const DISK_SOURCES: Readonly<Record<string, string>> = {
+  "package.json": JSON.stringify({
+    name: "@fixture/ledger",
+    version: "1.0.0",
+    type: "module",
+    dependencies: { "@stackra/ledger-ship-fixture": "workspace:*" },
+  }),
+  "node_modules/@stackra/ledger-kernel-fixture/package.json": JSON.stringify({
+    name: "@stackra/ledger-kernel-fixture",
+    types: "./index.d.ts",
+  }),
+  "node_modules/@stackra/ledger-kernel-fixture/index.d.ts":
+    "export interface Ledger { id: string }\n",
+  "node_modules/@stackra/ledger-ship-fixture/package.json": JSON.stringify({
+    name: "@stackra/ledger-ship-fixture",
+    exports: { ".": { types: "./index.d.ts" } },
+  }),
+  "node_modules/@stackra/ledger-ship-fixture/index.d.ts": [
+    "declare const LEDGER_SCHEMA: unknown;",
+    "export { LEDGER_SCHEMA as Ledger$, type LEDGER_SCHEMA as Hidden$ };",
+    "",
+  ].join("\n"),
+  "src/core/schemas/book.schema.ts": [
+    'import { Schema } from "@stackra/validation";',
+    'import type { Ledger } from "@stackra/ledger-kernel-fixture";',
+    "",
+    "export class Book extends Schema {",
+    "  ledger!: Ledger;",
+    "}",
+    "",
+  ].join("\n"),
+};
+
+describe("createSourceReader on a shipped schema the program never loaded", async () => {
+  const root = writeFixtureMember("ledger", DISK_SOURCES);
+  const host = await openHost(join(root, "tsconfig.json"));
+  const reader = createSourceReader(host, readMemberFacts(root));
+  const shapes = reader.sources.flatMap((file) => reader.shapes(file));
+  host.close();
+
+  it("finds `X$` in a declared package's barrel on disk", () => {
+    expect(shapes[0]?.fields[0]?.type).toEqual({
+      kind: "shipped",
+      name: "Ledger",
+      from: "@stackra/ledger-ship-fixture",
+    });
+    expect(reader.errors.some((error) => error.code === "shape_unknown_type")).toBe(false);
   });
 });

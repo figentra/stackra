@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `readServiceManifests`, the committed `stackra.manifest.json` of each service the member injects a
  *          generated client of, found in the folder beside the member (`services/<service>` next to
- *          `services/<member>`), or for an app in the repo's `services/` (`apps/<app>` reads `services/<service>`), by the service key or its kebab-case folder name: what the clients target writes
+ *          `services/<member>`), or for an app in the repo's `services/` (`apps/<app>` reads `services/<service>`), by the service key or its kebab-case folder name, the manifest's member matched in snake or kebab case (STA-1296): what the clients target writes
  *          `#stackra/clients/<service>` from, with the folder it sits in (where the events target imports its topics).
  * Boundary: reads files only. A service is matched by the manifest's `member`, never by importing its package
  *           (ADR 0010: services never import each other). A service with no manifest is left out, and the clients
@@ -47,7 +47,8 @@ export function readServiceManifests(
             cause: error,
           });
         }
-        if (manifest.member !== service) continue;
+        // The manifest's member is snake case (`compliance_privacy`); the specifier may be kebab (`compliance-privacy`).
+        if (kebabCase(manifest.member) !== kebabCase(service)) continue;
         found.push({ member: service, folder, manifest });
         break search;
       }

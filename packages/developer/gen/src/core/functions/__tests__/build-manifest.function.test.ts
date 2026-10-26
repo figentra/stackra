@@ -52,9 +52,9 @@ describe("buildManifest", () => {
     expect(manifest.$comment).toBe(MANIFEST_NOTICE);
     expect(manifest.member).toBe("commerce");
     expect(manifest.permissions).toEqual([
-      { key: "orders.order.read", risk: "L0" },
-      { key: "orders.order.create", risk: "L1" },
-      { key: "orders.order.cancel", risk: "L2" },
+      { key: "orders.order.read", risk: "L0", class: "OrderPermissions" },
+      { key: "orders.order.create", risk: "L1", class: "OrderPermissions" },
+      { key: "orders.order.cancel", risk: "L2", class: "OrderPermissions" },
     ]);
     expect(manifest.events).toEqual([
       {

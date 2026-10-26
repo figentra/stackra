@@ -7,7 +7,7 @@ Purpose: the agent rules of @stackra/gen: where code goes, entries and barrels, 
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
 Governing contract: ADR 0294; ADR 0295; ADR 0305; ADR 0260 (generated clients and typed events); ADR 0263; ADR 0162 and ADR 0222
-                    (the translated and upload shape kinds); ADR 0338 (a replica query's `ReplicaPage` output); STA-1290 (the shipped shape kind); STA-1293 (i18n, clients for apps, undeclared packages).
+                    (the translated and upload shape kinds); ADR 0338 (a replica query's `ReplicaPage` output); STA-1290 (the shipped shape kind); STA-1293 (i18n, clients for apps, undeclared packages); STA-1296 (client modules and permission sets, config overrides, the root Vitest shim).
 -->
 
 The Stackra compiler. Member at `packages/developer/gen` (`tier:lib`), in the programming model v3.1 shape (ADR 0294,
@@ -49,9 +49,19 @@ The Stackra compiler. Member at `packages/developer/gen` (`tier:lib`), in the pr
   binds it over `ClientTransport`. Keep the one spelling in `CLIENTS_SPECIFIER`. Any own file (tests included) that
   imports from it also consumes the service (`SourceReader#clientImports`, `MemberIR.clientImports`), which is how an
   app gets its clients; an app reads the producer from the repo's `services/` too (STA-1293).
-- Undeclared packages (STA-1293): `undeclaredPackages` refuses a generated client or schema importing a `@stackra/*`
-  package missing from `ir.packages`. When a target starts importing a new platform package, expect members to need
-  that dependency, and update the fixtures (`billing-ir`, `writeFixtureMember`'s package.json) in the same change.
+- Undeclared packages (STA-1293, STA-1296): `undeclaredPackages` refuses any generated file importing a `@stackra/*`
+  package missing from `ir.packages` (clients and schemas first, then every other file as
+  `generated_dependency_missing`). When a target starts importing a new platform package, expect members to need that
+  dependency, and update the fixtures (`GENERATED_IMPORTS`, `writeFixtureMember`'s package.json) in the same change.
+- Client modules and permissions (STA-1296): `emitClients` writes a `moduleRef` class per manifest module and a
+  `permissionsRef` class per Permissions class (the manifest's permission `class`, else derived from the key). Service
+  keys match in snake or kebab case (`readServiceManifests`).
+- Config overrides (STA-1296): a package config's chain is extended with its `Config({ schema })` options class
+  (`configChain`), so an override's field type and `this.<field>` default come from there. `Object.freeze(x)`, a
+  shared `const` with a constant initializer, and `I18n.<ns>.<path>` from `#stackra/i18n` (`"<ns>::<path>"`) are
+  constants. A shipped `X$` is also looked up in the barrels of declared packages the program never loaded.
+- Root shims (ADR 0295 decision 5): `vitest.config.ts` at the member root re-exports `.stackra/vitest.config.ts`
+  (`ROOT_VITEST_SHIM`); `generate` refuses (`shim_authored`) to replace an authored one without the generated notice.
 - i18n (STA-1293): `readCatalogues` reads `assets/lang/<locale>/*.json`; `emitI18n` writes `#stackra/i18n` (`I18n`
   through `keys()` of `@stackra/i18n`, `locales`) only when the member declares `@stackra/i18n`. A `@Field(zod)` hatch
   carries the named imports its source uses (`TypeDesc` hatch `imports`); a nullable field gets `.nullable()` once.
