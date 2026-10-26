@@ -6,7 +6,7 @@
  * Boundary: types only. The bar is controlled only, as `DataTable` is: it keeps no copy of the query, so an app (or
  *           the router binding of a later wave) owns it, mirrors it to the URL and turns it into a request. The bar
  *           edits `search` and `filterValues` and hands the sort through untouched. The words of the add-filter
- *           menu, the clear-all button and the chips are English defaults until i18n ships.
+ *           menu, the clear-all button and the chips come from the `ui` catalogue in the active locale.
  * Runtime: isomorphic
  * Governing contract: ADR 0302 (decision 3: one API on web and native); ADR 0303 (decision 7, props vocabulary);
  *          ADR 0318 (decisions 1 to 3).

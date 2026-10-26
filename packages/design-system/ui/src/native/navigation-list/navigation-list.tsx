@@ -18,6 +18,8 @@ import { ListGroup } from "heroui-native";
 import { use, type ReactElement } from "react";
 import { View, type ViewProps } from "react-native";
 
+import { UI_KEYS } from "#core/constants/ui-keys.constant";
+import { useUiText } from "#core/hooks/use-ui-text";
 import type { NavigationItem } from "#contracts/types/navigation-item.type";
 import type { NavigationListContractProps } from "#contracts/types/navigation-list-contract-props.type";
 import { currentStateOf } from "#core/functions/current-state-of.function";
@@ -26,11 +28,8 @@ import { followHref } from "#native/router-provider/follow-href.function";
 import { RouterContext } from "#native/router-provider/router-context";
 import { Text } from "#native/text/text";
 
-// shortcut: English until @stackra/i18n ships; then the key `ui::navigation-list.label`.
-const STRINGS = {
-  label: "Navigation",
-  couldNotOpen: "Navigation item could not open its URL",
-} as const;
+// Developer log text, read in the console only, so it stays English (ADR 0080 translates what users see).
+const COULD_NOT_OPEN = "Navigation item could not open its URL";
 
 /**
  * Props of the native NavigationList: the shared contract plus the `View`'s own props, passed through. The view's
@@ -100,15 +99,13 @@ function Level({ items, depth, follow }: LevelProps): ReactElement {
  * The places of an app as pressable rows. Name it with `label` when the screen holds more than one. The current place is
  * announced as selected.
  */
-export function NavigationList({
-  items,
-  label = STRINGS.label,
-  ...rest
-}: NavigationListProps): ReactElement {
+export function NavigationList({ items, label, ...rest }: NavigationListProps): ReactElement {
+  const t = useUiText();
+  label ??= t(UI_KEYS.ui.navigation_list.label);
   const navigate = use(RouterContext);
   const follow = (item: NavigationItem) => {
     item.onPress?.();
-    if (item.href !== undefined) followHref(item.href, navigate, STRINGS.couldNotOpen);
+    if (item.href !== undefined) followHref(item.href, navigate, COULD_NOT_OPEN);
   };
   return (
     <View {...rest} role="navigation" accessibilityLabel={label}>

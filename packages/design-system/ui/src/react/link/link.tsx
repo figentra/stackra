@@ -15,9 +15,8 @@ import { composeRenderProps } from "react-aria-components";
 import type { LinkContractProps } from "#contracts/types/link-contract-props.type";
 import { TONE_CLASS_NAME } from "#core/constants/tone-class-name.constant";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
-
-// shortcut: English until @stackra/i18n ships; then the key `ui::link.opens-in-new-tab`.
-const STRINGS = { opensInNewTab: "opens in a new tab" } as const;
+import { UI_KEYS } from "#core/constants/ui-keys.constant";
+import { useUiText } from "#core/hooks/use-ui-text";
 
 /**
  * Props of the web Link: the shared contract plus HeroUI v3's own link props, passed through unchanged. HeroUI's
@@ -38,13 +37,15 @@ export function Link({
   onPress,
   isDisabled,
   label,
-  externalLabel = STRINGS.opensInNewTab,
+  externalLabel,
   className,
   target,
   rel,
   children,
   ...rest
 }: LinkProps) {
+  const t = useUiText();
+  externalLabel ??= t(UI_KEYS.ui.link.opens_in_new_tab);
   // Written out in full: Tailwind finds `text-link` and `underline` here, and `default` has no entry in the map.
   const toneClass = tone === "default" ? "text-link" : TONE_CLASS_NAME[tone];
   const own = underline === "always" ? `${toneClass} underline` : toneClass;

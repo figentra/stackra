@@ -22,6 +22,8 @@
 import { use, useEffect, useState } from "react";
 import { AccessibilityInfo, View, type ViewProps } from "react-native";
 
+import { UI_KEYS } from "#core/constants/ui-keys.constant";
+import { useUiText } from "#core/hooks/use-ui-text";
 import type { BulkActionBarContractProps } from "#contracts/types/bulk-action-bar-contract-props.type";
 import type { ResourceAction } from "#contracts/types/resource-action.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
@@ -41,18 +43,8 @@ import { Text } from "#native/text/text";
 export type BulkActionBarProps = BulkActionBarContractProps &
   Omit<ViewProps, keyof BulkActionBarContractProps | "children">;
 
-// shortcut: English until @stackra/i18n ships; then the keys `ui::bulk-action-bar.label`, `.selected`, `.clear`,
-// `.select-all`, `.select-shown`, `.more-actions`, `.close` and `.could-not-open`.
-const STRINGS = {
-  label: "Bulk actions",
-  selected: (count: number) => `${count} selected`,
-  clear: "Clear selection",
-  selectAll: (total: number) => `Select all ${total}`,
-  selectShown: (count: number) => `Select only the ${count} shown`,
-  moreActions: "More actions",
-  close: "Close",
-  couldNotOpen: "Bulk action bar could not open the link of an action",
-} as const;
+// Developer log text, read in the console only, so it stays English (ADR 0080 translates what users see).
+const COULD_NOT_OPEN = "Bulk action bar could not open the link of an action";
 
 /** How many actions sit in the bar itself; a phone's width holds two beside the count and the clear button. */
 const VISIBLE_ACTIONS = 2;
@@ -76,15 +68,23 @@ export function BulkActionBar({
   totalCount,
   isAllMatchingSelected = false,
   onAllMatchingSelectedChange,
-  label = STRINGS.label,
-  countLabel = STRINGS.selected,
-  clearLabel = STRINGS.clear,
-  selectAllLabel = STRINGS.selectAll,
-  selectShownLabel = STRINGS.selectShown,
-  moreActionsLabel = STRINGS.moreActions,
+  label,
+  countLabel,
+  clearLabel,
+  selectAllLabel,
+  selectShownLabel,
+  moreActionsLabel,
   className,
   ...rest
 }: BulkActionBarProps) {
+  const t = useUiText();
+  const keys = UI_KEYS.ui.bulk_action_bar;
+  label ??= t(keys.label);
+  countLabel ??= (count) => t(keys.selected, { count });
+  clearLabel ??= t(keys.clear);
+  selectAllLabel ??= (total) => t(keys.select_all, { total });
+  selectShownLabel ??= (count) => t(keys.select_shown, { count });
+  moreActionsLabel ??= t(keys.more_actions);
   const navigate = use(RouterContext);
   const { pending, run } = usePendingActions();
   const [isMoreOpen, setIsMoreOpen] = useState(false);
@@ -106,7 +106,7 @@ export function BulkActionBar({
 
   const choose = (action: ResourceAction) => {
     run(action.id, action.onPress);
-    if (action.href) followHref(action.href, navigate, STRINGS.couldNotOpen);
+    if (action.href) followHref(action.href, navigate, COULD_NOT_OPEN);
   };
 
   const buttonFor = (action: ResourceAction, index: number, onChoose: () => void) => (
@@ -159,7 +159,7 @@ export function BulkActionBar({
           <Drawer isOpen={isMoreOpen} onOpenChange={setIsMoreOpen}>
             <Drawer.Header>
               <Drawer.Title>{moreActionsLabel}</Drawer.Title>
-              <Drawer.Close label={STRINGS.close} />
+              <Drawer.Close label={t(UI_KEYS.ui.bulk_action_bar.close)} />
             </Drawer.Header>
             <Drawer.Body>
               {overflow.map((action) => (

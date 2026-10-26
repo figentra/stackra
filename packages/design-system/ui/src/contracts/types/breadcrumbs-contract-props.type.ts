@@ -14,6 +14,6 @@ import type { BreadcrumbItem } from "#contracts/types/breadcrumb-item.type";
 export interface BreadcrumbsContractProps {
   /** The trail from the root to the current page, in order; the last item is the current page. */
   readonly items: readonly BreadcrumbItem[];
-  /** The spoken name of the trail's landmark. Defaults to an English phrase until i18n ships. */
+  /** The spoken name of the trail's landmark. Defaults to the `ui` catalogue's phrase in the active locale. */
   readonly label?: string | undefined;
 }

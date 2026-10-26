@@ -15,19 +15,12 @@ import { useState } from "react";
 import type { ViewProps } from "react-native";
 import { View } from "react-native";
 
+import { UI_KEYS } from "#core/constants/ui-keys.constant";
+import { useUiText } from "#core/hooks/use-ui-text";
 import type { CursorPaginationContractProps } from "#contracts/types/cursor-pagination-contract-props.type";
 import { Button } from "#native/button/button";
 import { Icon } from "#native/icon/icon";
 import { Text } from "#native/text/text";
-
-// shortcut: English until @stackra/i18n ships; then the keys `ui::cursor-pagination.*`.
-const STRINGS = {
-  label: "Pagination",
-  previous: "Previous",
-  next: "Next",
-  loadMore: "Load more",
-  count: (count: number) => `Showing ${count} ${count === 1 ? "item" : "items"}`,
-} as const;
 
 /**
  * Props of the native CursorPagination: the shared contract plus the `View`'s own props, passed through. The view's
@@ -50,14 +43,21 @@ export function CursorPagination({
   count,
   isLoading = false,
   size,
-  label = STRINGS.label,
-  previousLabel = STRINGS.previous,
-  nextLabel = STRINGS.next,
-  loadMoreLabel = STRINGS.loadMore,
-  countLabel = STRINGS.count,
+  label,
+  previousLabel,
+  nextLabel,
+  loadMoreLabel,
+  countLabel,
   className,
   ...rest
 }: CursorPaginationProps) {
+  const t = useUiText();
+  const keys = UI_KEYS.ui.cursor_pagination;
+  label ??= t(keys.label);
+  previousLabel ??= t(keys.previous);
+  nextLabel ??= t(keys.next);
+  loadMoreLabel ??= t(keys.load_more);
+  countLabel ??= (count) => t(keys.count, { count });
   const isPager = mode === "pager";
   // The button that was pressed shows the spinner, the other waits disabled; a load that no press started (an app's own
   // end-reached call) is the next page.

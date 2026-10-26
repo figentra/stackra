@@ -6,8 +6,8 @@
  *          same sentence, so the page is one thing to read on either.
  * Boundary: pure; internal, not in the `.` barrel. It returns only the value part: the chip puts the filter's label
  *           before it. A filter with no value, or one that filters nothing, gives an empty string (the chip of an
- *           editor still open shows its label alone). The English words ("Yes", "No", "From", "Until") are defaults
- *           until i18n ships. A `CalendarDate` is formatted as that calendar day in UTC, so the day never shifts with
+ *           editor still open shows its label alone). The words (yes, no, from, until) come from the caller, which
+ *           translates them (`ui::filter_bar.*`). A `CalendarDate` is formatted as that calendar day in UTC, so the day never shifts with
  *           the time zone of the device.
  * Runtime: isomorphic
  * Governing contract: ADR 0302 (decision 3); ADR 0318 (decision 3); ADR 0060 (right-to-left).
@@ -16,9 +16,7 @@ import type { FilterDefinition } from "#contracts/types/filter-definition.type";
 import type { FilterValue } from "#contracts/types/filter-value.type";
 import { filterValueOfKind } from "#core/functions/filter-value-of-kind.function";
 import { isFilterValueEmpty } from "#core/functions/is-filter-value-empty.function";
-
-// shortcut: English words until @stackra/i18n ships; then the keys `ui::filter-bar.*`.
-const WORDS = { yes: "Yes", no: "No", from: "From", until: "Until" } as const;
+import type { FilterChipWords } from "#core/types/filter-chip-words.type";
 
 /** How many chosen options a chip names before it counts the rest. */
 const NAMED_CHOICES = 2;
@@ -37,12 +35,14 @@ const listOf = (labels: readonly string[], locale: string): string =>
  * @param definition - the filter, which tells the kind, the options, the number format and the boolean words
  * @param value - what the query holds under the filter's `id`, or `undefined` when it holds nothing
  * @param locale - the BCP 47 locale to format numbers, days and lists in
+ * @param words - the translated yes, no, from and until words
  * @returns the value as a short phrase, or an empty string when the filter filters nothing
  */
 export function filterChipTextOf(
   definition: FilterDefinition,
   value: FilterValue | undefined,
   locale: string,
+  words: FilterChipWords,
 ): string {
   if (value === undefined || isFilterValueEmpty(value)) return "";
   switch (definition.kind) {
@@ -78,11 +78,11 @@ export function filterChipTextOf(
       const start = range.start ? format.format(range.start.toDate("UTC")) : null;
       const end = range.end ? format.format(range.end.toDate("UTC")) : null;
       if (start !== null && end !== null) return `${start} – ${end}`;
-      return start !== null ? `${WORDS.from} ${start}` : `${WORDS.until} ${end ?? ""}`;
+      return start !== null ? `${words.from} ${start}` : `${words.until} ${end ?? ""}`;
     }
     case "boolean":
       return filterValueOfKind("boolean", value)
-        ? (definition.trueLabel ?? WORDS.yes)
-        : (definition.falseLabel ?? WORDS.no);
+        ? (definition.trueLabel ?? words.yes)
+        : (definition.falseLabel ?? words.no);
   }
 }

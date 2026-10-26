@@ -21,12 +21,11 @@ import { cn } from "@heroui/react";
 import { useState, type ComponentPropsWithRef, type ReactElement } from "react";
 
 import type { SidebarContractProps } from "#contracts/types/sidebar-contract-props.type";
+import { UI_KEYS } from "#core/constants/ui-keys.constant";
+import { useUiText } from "#core/hooks/use-ui-text";
 import { Icon } from "#react/icon/icon";
 import { IconButton } from "#react/icon-button/icon-button";
 import { NavigationList } from "#react/navigation-list/navigation-list";
-
-// shortcut: English until @stackra/i18n ships; then the keys `ui::sidebar.collapse` and `ui::sidebar.expand`.
-const STRINGS = { collapse: "Collapse sidebar", expand: "Expand sidebar" } as const;
 
 /**
  * Props of the web Sidebar: the shared contract plus the root `div`'s own props, passed through. The sidebar's content
@@ -54,6 +53,7 @@ export function Sidebar({
   className,
   ...rest
 }: SidebarProps): ReactElement {
+  const t = useUiText();
   const [ownCollapsed, setOwnCollapsed] = useState(defaultCollapsed);
   const collapsed = isCollapsed ?? ownCollapsed;
   const toggle = () => {
@@ -83,7 +83,7 @@ export function Sidebar({
       {isCollapsible ? (
         <IconButton
           variant="ghost"
-          label={collapsed ? STRINGS.expand : STRINGS.collapse}
+          label={collapsed ? t(UI_KEYS.ui.sidebar.expand) : t(UI_KEYS.ui.sidebar.collapse)}
           icon={<Icon name={collapsed ? "panel-left-open" : "panel-left-close"} isMirroredInRtl />}
           onPress={toggle}
         />

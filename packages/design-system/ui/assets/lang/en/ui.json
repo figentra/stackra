@@ -104,5 +104,8 @@
     "retry": "Try again",
     "pagination": "{label} pagination",
     "bulk_actions": "{label} actions"
+  },
+  "search_field": {
+    "clear": "Clear search"
   }
 }

@@ -25,6 +25,8 @@ import {
 import type { PropertyListContractProps } from "#contracts/types/property-list-contract-props.type";
 import type { PropertyListItem } from "#contracts/types/property-list-item.type";
 import { copyTextOf } from "#core/functions/copy-text-of.function";
+import { UI_KEYS } from "#core/constants/ui-keys.constant";
+import { useUiText } from "#core/hooks/use-ui-text";
 import { IconButton } from "#react/icon-button/icon-button";
 import { Text, type TextProps } from "#react/text/text";
 
@@ -35,9 +37,6 @@ import { Text, type TextProps } from "#react/text/text";
 export type PropertyListProps<TItem extends PropertyListItem = PropertyListItem> =
   PropertyListContractProps<TItem> &
     Omit<ComponentPropsWithoutRef<"dl">, keyof PropertyListContractProps | "children">;
-
-// shortcut: English until @stackra/i18n ships; then the key `ui::property-list.copied`.
-const STRINGS = { copied: "Copied" } as const;
 
 /** The grid of each column count; two columns stack into one below the small breakpoint. */
 const COLUMNS_CLASS_NAME = Object.freeze({
@@ -62,11 +61,13 @@ export function PropertyList<TItem extends PropertyListItem = PropertyListItem>(
   items,
   columns = 1,
   emptyValue = "–",
-  copiedLabel = STRINGS.copied,
+  copiedLabel,
   onCopy,
   className,
   ...rest
 }: PropertyListProps<TItem>): ReactElement {
+  const t = useUiText();
+  copiedLabel ??= t(UI_KEYS.ui.property_list.copied);
   const [copiedId, setCopiedId] = useState<string | undefined>(undefined);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   useEffect(() => () => clearTimeout(timer.current), []);

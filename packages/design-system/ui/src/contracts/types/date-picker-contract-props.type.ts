@@ -14,6 +14,6 @@ import type { OpenStateContractProps } from "#contracts/types/open-state-contrac
 
 /** Props shared by the web and native `DatePicker`. */
 export interface DatePickerContractProps extends DateValueContractProps, OpenStateContractProps {
-  /** The spoken name of the button that opens the calendar, for example "Choose the due date". Defaults to an English phrase until i18n ships. */
+  /** The spoken name of the button that opens the calendar, for example "Choose the due date". Defaults to the `ui` catalogue's phrase in the active locale. */
   readonly calendarButtonLabel?: string | undefined;
 }

@@ -23,16 +23,10 @@ import { useState, type ComponentPropsWithRef, type MouseEvent, type ReactElemen
 
 import type { AppShellContractProps } from "#contracts/types/app-shell-contract-props.type";
 import type { LayoutBreakpoint } from "#contracts/enums/layout-breakpoint.enum";
+import { UI_KEYS } from "#core/constants/ui-keys.constant";
+import { useUiText } from "#core/hooks/use-ui-text";
 import { Button } from "#react/button/button";
 import { Drawer } from "#react/drawer/drawer";
-
-// shortcut: English until @stackra/i18n ships; then the keys `ui::app-shell.skip`, `ui::app-shell.navigation` and
-// `ui::app-shell.close`.
-const STRINGS = {
-  skip: "Skip to main content",
-  navigation: "Navigation menu",
-  close: "Close",
-} as const;
 
 /** The sidebar column's visibility per breakpoint, written out so Tailwind finds each class. */
 const COLUMN_FROM: Record<LayoutBreakpoint, string> = {
@@ -49,7 +43,7 @@ export type AppShellProps = AppShellContractProps &
   Omit<ComponentPropsWithRef<"div">, keyof AppShellContractProps> & {
     /** True when the shell sits inside another page: it fills its box and draws no `main` landmark or skip link. */
     readonly isEmbedded?: boolean | undefined;
-    /** The text of the skip link. Defaults to an English phrase until i18n ships. */
+    /** The text of the skip link. Defaults to the `ui` catalogue's phrase in the active locale. */
     readonly skipLabel?: string | undefined;
     /** The id of the main region, the skip link's target. Defaults to `main-content`. */
     readonly mainId?: string | undefined;
@@ -70,11 +64,13 @@ export function AppShell({
   defaultOpen = false,
   onOpenChange,
   isEmbedded = false,
-  skipLabel = STRINGS.skip,
+  skipLabel,
   mainId = "main-content",
   className,
   ...rest
 }: AppShellProps): ReactElement {
+  const t = useUiText();
+  skipLabel ??= t(UI_KEYS.ui.app_shell.skip);
   const [ownOpen, setOwnOpen] = useState(defaultOpen);
   const open = isOpen ?? ownOpen;
   const setOpen = (next: boolean) => {
@@ -133,7 +129,12 @@ export function AppShell({
         </div>
       </div>
       {sidebar === undefined ? null : (
-        <Drawer isOpen={open} onOpenChange={setOpen} placement="start" label={STRINGS.navigation}>
+        <Drawer
+          isOpen={open}
+          onOpenChange={setOpen}
+          placement="start"
+          label={t(UI_KEYS.ui.app_shell.navigation)}
+        >
           <Drawer.Body className="p-0">
             {/* The capture phase, because React Aria's press handling stops an entry's click from bubbling. The
                 entries are the keyboard-reachable controls; this only listens. */}
@@ -142,7 +143,7 @@ export function AppShell({
           </Drawer.Body>
           <Drawer.Footer>
             <Button variant="secondary" slot="close">
-              {STRINGS.close}
+              {t(UI_KEYS.ui.app_shell.close)}
             </Button>
           </Drawer.Footer>
         </Drawer>

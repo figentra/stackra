@@ -27,6 +27,8 @@ import {
 
 import type { NumberFieldContractProps } from "#contracts/types/number-field-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
+import { UI_KEYS } from "#core/constants/ui-keys.constant";
+import { useUiText } from "#core/hooks/use-ui-text";
 
 /**
  * Props of the web NumberField: the shared contract plus HeroUI v3's own number field props, passed through unchanged.
@@ -42,10 +44,6 @@ export type NumberFieldProps = NumberFieldContractProps &
     | "incrementAriaLabel"
     | "decrementAriaLabel"
   >;
-
-// shortcut: English defaults until @stackra/i18n ships; then the keys `ui::number-field.increment` and `.decrement`.
-const INCREMENT_LABEL = "Increase";
-const DECREMENT_LABEL = "Decrease";
 
 /** React Aria's number for the contract's: `null` is an empty field, which it writes as `NaN`; `undefined` stays left out. */
 const toAriaValue = (value: number | null | undefined): number | undefined =>
@@ -64,13 +62,16 @@ export function NumberField({
   variant = "primary",
   isFullWidth = true,
   hasSteppers = true,
-  incrementLabel = INCREMENT_LABEL,
-  decrementLabel = DECREMENT_LABEL,
+  incrementLabel,
+  decrementLabel,
   value,
   defaultValue,
   onChange,
   ...rest
 }: NumberFieldProps) {
+  const t = useUiText();
+  incrementLabel ??= t(UI_KEYS.ui.number_field.increment);
+  decrementLabel ??= t(UI_KEYS.ui.number_field.decrement);
   return (
     <HeroNumberField
       {...omitUndefined(rest)}

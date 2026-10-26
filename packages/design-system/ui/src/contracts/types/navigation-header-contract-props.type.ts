@@ -31,6 +31,6 @@ export interface NavigationHeaderContractProps
   readonly onBack?: (() => void) | undefined;
   /** Where the back button leads when it is a link; giving it draws the button, which also calls `onBack` first. */
   readonly backHref?: string | undefined;
-  /** The accessible name of the back button. Defaults to an English phrase until @stackra/i18n ships. */
+  /** The accessible name of the back button. Defaults to `ui::navigation_header.back` in the active locale. */
   readonly backLabel?: string | undefined;
 }

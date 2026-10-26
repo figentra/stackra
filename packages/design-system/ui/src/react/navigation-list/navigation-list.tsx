@@ -24,12 +24,11 @@ import type { NavigationItem } from "#contracts/types/navigation-item.type";
 import type { NavigationListContractProps } from "#contracts/types/navigation-list-contract-props.type";
 import { currentStateOf } from "#core/functions/current-state-of.function";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
+import { UI_KEYS } from "#core/constants/ui-keys.constant";
+import { useUiText } from "#core/hooks/use-ui-text";
 import { Chip } from "#react/chip/chip";
 import { SlotIcon } from "#react/slot-icon/slot-icon";
 import { Tooltip } from "#react/tooltip/tooltip";
-
-// shortcut: English until @stackra/i18n ships; then the key `ui::navigation-list.label`.
-const STRINGS = { label: "Navigation" } as const;
 
 /**
  * Props of the web NavigationList: the shared contract plus the `nav`'s own props, passed through. The `nav`'s
@@ -192,10 +191,12 @@ function Items({ items, isCompact, depth, labelledBy }: ItemsProps): ReactElemen
  */
 export function NavigationList({
   items,
-  label = STRINGS.label,
+  label,
   isCompact = false,
   ...rest
 }: NavigationListProps): ReactElement {
+  const t = useUiText();
+  label ??= t(UI_KEYS.ui.navigation_list.label);
   return (
     <nav {...rest} aria-label={label}>
       <Items items={items} isCompact={isCompact} depth={0} />

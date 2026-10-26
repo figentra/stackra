@@ -104,5 +104,8 @@
     "retry": "Opnieuw proberen",
     "pagination": "Paginering van {label}",
     "bulk_actions": "Acties voor {label}"
+  },
+  "search_field": {
+    "clear": "Zoekopdracht wissen"
   }
 }

@@ -33,8 +33,8 @@ export interface NumberFieldContractProps extends FieldContractProps<number | nu
   readonly formatOptions?: Intl.NumberFormatOptions | undefined;
   /** False to hide the increment and decrement buttons and keep the arrow keys. Defaults to true. */
   readonly hasSteppers?: boolean | undefined;
-  /** The spoken name of the increment button, for example "Add one seat". Defaults to an English word until i18n ships. */
+  /** The spoken name of the increment button, for example "Add one seat". Defaults to the `ui` catalogue's word in the active locale. */
   readonly incrementLabel?: string | undefined;
-  /** The spoken name of the decrement button, for example "Remove one seat". Defaults to an English word until i18n ships. */
+  /** The spoken name of the decrement button, for example "Remove one seat". Defaults to the `ui` catalogue's word in the active locale. */
   readonly decrementLabel?: string | undefined;
 }

@@ -22,6 +22,8 @@ import {
 
 import type { SearchFieldContractProps } from "#contracts/types/search-field-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
+import { UI_KEYS } from "#core/constants/ui-keys.constant";
+import { useUiText } from "#core/hooks/use-ui-text";
 import { Spinner } from "#react/spinner/spinner";
 
 /**
@@ -31,9 +33,6 @@ import { Spinner } from "#react/spinner/spinner";
  */
 export type SearchFieldProps = SearchFieldContractProps &
   Omit<SearchFieldRootProps, keyof SearchFieldContractProps | "fullWidth" | "children">;
-
-// shortcut: an English default until @stackra/i18n ships; then the key `ui::search-field.clear`.
-const CLEAR_LABEL = "Clear search";
 
 /**
  * A search input with a clear button. The visible `label`, `description` and `errorMessage` are tied to the input for
@@ -47,7 +46,7 @@ export function SearchField({
   variant,
   isFullWidth,
   isLoading,
-  clearLabel = CLEAR_LABEL,
+  clearLabel,
   isRequired,
   isInvalid,
   isDisabled,
@@ -60,6 +59,8 @@ export function SearchField({
   name,
   ...rest
 }: SearchFieldProps) {
+  const t = useUiText();
+  clearLabel ??= t(UI_KEYS.ui.search_field.clear);
   return (
     <HeroSearchField
       {...rest}

@@ -16,13 +16,12 @@ import { Fragment } from "react";
 import type { ViewProps } from "react-native";
 import { View } from "react-native";
 
+import { UI_KEYS } from "#core/constants/ui-keys.constant";
+import { useUiText } from "#core/hooks/use-ui-text";
 import type { BreadcrumbsContractProps } from "#contracts/types/breadcrumbs-contract-props.type";
 import { Icon } from "#native/icon/icon";
 import { Link } from "#native/link/link";
 import { Text } from "#native/text/text";
-
-// shortcut: English until @stackra/i18n ships; then the key `ui::breadcrumbs.label`.
-const STRINGS = { label: "Breadcrumbs" } as const;
 
 /**
  * Props of the native Breadcrumbs: the shared contract plus the `View`'s own props, passed through. The view's
@@ -35,12 +34,9 @@ export type BreadcrumbsProps = BreadcrumbsContractProps &
  * The trail from the root to the current page. Every step but the last that has somewhere to go is a link; the last is
  * the current page, drawn as text.
  */
-export function Breadcrumbs({
-  items,
-  label = STRINGS.label,
-  className,
-  ...rest
-}: BreadcrumbsProps) {
+export function Breadcrumbs({ items, label, className, ...rest }: BreadcrumbsProps) {
+  const t = useUiText();
+  label ??= t(UI_KEYS.ui.breadcrumbs.label);
   return (
     <View
       {...rest}

@@ -22,13 +22,12 @@ import { cn } from "@heroui/react";
 import type { ComponentPropsWithRef, ReactElement } from "react";
 
 import type { PageHeaderContractProps } from "#contracts/types/page-header-contract-props.type";
+import { UI_KEYS } from "#core/constants/ui-keys.constant";
+import { useUiText } from "#core/hooks/use-ui-text";
 import { Breadcrumbs } from "#react/breadcrumbs/breadcrumbs";
 import { Heading } from "#react/heading/heading";
 import { PageActions } from "#react/page-actions/page-actions";
 import { Text } from "#react/text/text";
-
-// shortcut: English until @stackra/i18n ships; then the key `ui::page-header.more-actions`.
-const STRINGS = { moreActions: "More actions" } as const;
 
 /**
  * Props of the web PageHeader: the shared contract plus the `header` element's own props, passed through. The
@@ -51,11 +50,13 @@ export function PageHeader({
   actions,
   startContent,
   endContent,
-  moreActionsLabel = STRINGS.moreActions,
+  moreActionsLabel,
   label,
   className,
   ...rest
 }: PageHeaderProps): ReactElement {
+  const t = useUiText();
+  moreActionsLabel ??= t(UI_KEYS.ui.page_header.more_actions);
   return (
     <header
       {...rest}

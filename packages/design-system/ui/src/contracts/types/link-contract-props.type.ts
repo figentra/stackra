@@ -32,6 +32,6 @@ export interface LinkContractProps {
   readonly underline?: LinkUnderline | undefined;
   /** The accessible name when the visible content is not text (an icon-only link), or must be more specific. */
   readonly label?: string | undefined;
-  /** What assistive technology hears for an external link. Defaults to an English phrase until i18n ships. */
+  /** What assistive technology hears for an external link. Defaults to the `ui` catalogue's phrase in the active locale. */
   readonly externalLabel?: string | undefined;
 }

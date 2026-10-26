@@ -26,11 +26,11 @@ export interface BulkActionBarContractProps extends AllMatchingSelectionContract
    * above the selected count. Left out it is false, so a bar used on its own never offers the choice.
    */
   readonly isPageSelected?: boolean | undefined;
-  /** The spoken name of the bar, for example "Order actions". Defaults to an English phrase until i18n ships. */
+  /** The spoken name of the bar, for example "Order actions". Defaults to the `ui` catalogue's phrase in the active locale. */
   readonly label?: string | undefined;
   /** Writes the count as a sentence, for example "3 selected"; it is announced politely. Defaults to English. */
   readonly countLabel?: ((count: number) => string) | undefined;
-  /** The text of the clear button. Defaults to an English word until i18n ships. */
+  /** The text of the clear button. Defaults to the `ui` catalogue's word in the active locale. */
   readonly clearLabel?: string | undefined;
   /** Writes the "select all matching" button, for example "Select all 245". Defaults to English. */
   readonly selectAllLabel?: ((totalCount: number) => string) | undefined;

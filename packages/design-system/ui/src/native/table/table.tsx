@@ -21,6 +21,8 @@ import { Checkbox as HeroCheckbox } from "heroui-native";
 import { isValidElement, useState, type ReactNode } from "react";
 import { FlatList, Pressable, View, type FlatListProps } from "react-native";
 
+import { UI_KEYS } from "#core/constants/ui-keys.constant";
+import { useUiText } from "#core/hooks/use-ui-text";
 import type { CollectionItem } from "#contracts/types/collection-item.type";
 import type { TableColumn } from "#contracts/types/table-column.type";
 import type { TableContractProps } from "#contracts/types/table-contract-props.type";
@@ -50,15 +52,6 @@ export type TableProps<TItem extends CollectionItem = CollectionItem> = TableCon
     | "onEndReached"
     | "children"
   >;
-
-// shortcut: English until @stackra/i18n ships; then the keys `ui::table.sort-by`, `.ascending`, `.descending`,
-// `.loading`.
-const STRINGS = {
-  sortBy: "Sort by",
-  ascending: "ascending",
-  descending: "descending",
-  loading: "Loading",
-} as const;
 
 /** A cell's content: text a child returned is wrapped in `Text`, which React Native needs, and a node stays as given. */
 function CellContent({
@@ -116,7 +109,8 @@ export function Table<TItem extends CollectionItem = CollectionItem>({
   // The selection always runs controlled here: the rows are plain pressables with no state of their own.
   const [own, setOwn] = useState<readonly string[]>(defaultSelectedKeys ?? []);
   const selected = selectedKeys ?? own;
-  const loadingText = loadingLabel ?? STRINGS.loading;
+  const t = useUiText();
+  const loadingText = loadingLabel ?? t(UI_KEYS.ui.table.loading);
   const rowHeaderId = (columns.find((column) => column.isRowHeader) ?? columns[0])?.id;
   const sortableColumns = columns.filter((column) => column.isSortable);
 
@@ -136,7 +130,7 @@ export function Table<TItem extends CollectionItem = CollectionItem>({
 
   const sortLabel = (column: TableColumn) => {
     const direction = sortDescriptor?.column === column.id ? sortDescriptor.direction : undefined;
-    return `${STRINGS.sortBy} ${column.label}${direction ? `, ${STRINGS[direction]}` : ""}`;
+    return `${t(UI_KEYS.ui.table.sort_by)} ${column.label}${direction ? `, ${t(UI_KEYS.ui.table[direction])}` : ""}`;
   };
 
   // A string is wrapped in `Text`, which React Native requires; any other node must be an element, as FlatList asks.
@@ -206,7 +200,7 @@ export function Table<TItem extends CollectionItem = CollectionItem>({
         sortableColumns.length === 0 ? null : (
           <View
             role="toolbar"
-            accessibilityLabel={STRINGS.sortBy}
+            accessibilityLabel={t(UI_KEYS.ui.table.sort_by)}
             className="flex-row flex-wrap gap-2 p-4"
           >
             {sortableColumns.map((column) => {

@@ -19,11 +19,10 @@ import { cn } from "@heroui/react";
 import { createElement, useId, type ReactElement } from "react";
 
 import type { SectionContractProps } from "#contracts/types/section-contract-props.type";
+import { UI_KEYS } from "#core/constants/ui-keys.constant";
+import { useUiText } from "#core/hooks/use-ui-text";
 import { Card, type CardProps } from "#react/card/card";
 import { PageActions } from "#react/page-actions/page-actions";
-
-// shortcut: English until @stackra/i18n ships; then the key `ui::section.more-actions`.
-const STRINGS = { moreActions: "More actions" } as const;
 
 /**
  * Props of the web Section: the shared contract plus the card's own props, passed through. The element's `aria-label`
@@ -42,7 +41,7 @@ export function Section({
   description,
   headingLevel = 2,
   actions,
-  moreActionsLabel = STRINGS.moreActions,
+  moreActionsLabel,
   startContent,
   endContent,
   label,
@@ -50,6 +49,8 @@ export function Section({
   className,
   ...rest
 }: SectionProps): ReactElement {
+  const t = useUiText();
+  moreActionsLabel ??= t(UI_KEYS.ui.section.more_actions);
   const titleId = useId();
   return (
     <Card

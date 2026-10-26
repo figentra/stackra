@@ -104,5 +104,8 @@
     "retry": "حاول مرة أخرى",
     "pagination": "ترقيم صفحات {label}",
     "bulk_actions": "إجراءات {label}"
+  },
+  "search_field": {
+    "clear": "مسح البحث"
   }
 }

@@ -15,6 +15,9 @@ import { CalendarDate } from "@internationalized/date";
 import type { FilterDefinition } from "#contracts/types/filter-definition.type";
 import { filterChipTextOf } from "#core/functions/filter-chip-text-of.function";
 
+/** The words the filter bars pass, in English. */
+const WORDS = { yes: "Yes", no: "No", from: "From", until: "Until" } as const;
+
 const OPTIONS = [
   { id: "paid", label: "Paid" },
   { id: "shipped", label: "Shipped" },
@@ -45,18 +48,20 @@ const FLAG: FilterDefinition = { id: "gift", label: "Gift", kind: "boolean" };
 
 describe("filterChipTextOf", () => {
   it("writes text trimmed", () => {
-    expect(filterChipTextOf(TEXT, "  ada ", "en")).toBe("ada");
+    expect(filterChipTextOf(TEXT, "  ada ", "en", WORDS)).toBe("ada");
   });
 
   it("writes the label of the chosen option, or its key when the option is gone", () => {
-    expect(filterChipTextOf(SELECT, "paid", "en")).toBe("Paid");
-    expect(filterChipTextOf(SELECT, "lost", "en")).toBe("lost");
+    expect(filterChipTextOf(SELECT, "paid", "en", WORDS)).toBe("Paid");
+    expect(filterChipTextOf(SELECT, "lost", "en", WORDS)).toBe("lost");
   });
 
   it("names one or two chosen options and counts the rest", () => {
-    expect(filterChipTextOf(MULTI, ["paid"], "en")).toBe("Paid");
-    expect(filterChipTextOf(MULTI, ["paid", "shipped"], "en")).toBe("Paid, Shipped");
-    expect(filterChipTextOf(MULTI, ["paid", "shipped", "refunded"], "en")).toBe("Paid, Shipped +1");
+    expect(filterChipTextOf(MULTI, ["paid"], "en", WORDS)).toBe("Paid");
+    expect(filterChipTextOf(MULTI, ["paid", "shipped"], "en", WORDS)).toBe("Paid, Shipped");
+    expect(filterChipTextOf(MULTI, ["paid", "shipped", "refunded"], "en", WORDS)).toBe(
+      "Paid, Shipped +1",
+    );
   });
 
   // STA-486 item 1: Hermes has no Intl.ListFormat, and constructing it crashed every native FilterBar.
@@ -65,9 +70,9 @@ describe("filterChipTextOf", () => {
     Reflect.deleteProperty(Intl, "ListFormat");
     try {
       expect(typeof Intl.ListFormat).toBe("undefined");
-      expect(filterChipTextOf(MULTI, ["paid"], "en")).toBe("Paid");
-      expect(filterChipTextOf(MULTI, ["paid", "shipped"], "en")).toBe("Paid, Shipped");
-      expect(filterChipTextOf(MULTI, ["paid", "shipped", "refunded"], "ar")).toBe(
+      expect(filterChipTextOf(MULTI, ["paid"], "en", WORDS)).toBe("Paid");
+      expect(filterChipTextOf(MULTI, ["paid", "shipped"], "en", WORDS)).toBe("Paid, Shipped");
+      expect(filterChipTextOf(MULTI, ["paid", "shipped", "refunded"], "ar", WORDS)).toBe(
         "Paid, Shipped +1",
       );
     } finally {
@@ -80,41 +85,41 @@ describe("filterChipTextOf", () => {
   });
 
   it("writes a number range in the filter's format, and a one-sided bound as at least or at most", () => {
-    expect(filterChipTextOf(NUMBER, { min: 10, max: 99 }, "en")).toBe("$10 – $99");
-    expect(filterChipTextOf(NUMBER, { min: 10, max: null }, "en")).toBe("≥ $10");
-    expect(filterChipTextOf(NUMBER, { min: null, max: 99 }, "en")).toBe("≤ $99");
-    expect(filterChipTextOf(NUMBER, { min: 0, max: null }, "en")).toBe("≥ $0");
+    expect(filterChipTextOf(NUMBER, { min: 10, max: 99 }, "en", WORDS)).toBe("$10 – $99");
+    expect(filterChipTextOf(NUMBER, { min: 10, max: null }, "en", WORDS)).toBe("≥ $10");
+    expect(filterChipTextOf(NUMBER, { min: null, max: 99 }, "en", WORDS)).toBe("≤ $99");
+    expect(filterChipTextOf(NUMBER, { min: 0, max: null }, "en", WORDS)).toBe("≥ $0");
   });
 
   it("writes a day range as that calendar day in the locale, never shifted by a time zone", () => {
     const start = new CalendarDate(2026, 3, 1);
     const end = new CalendarDate(2026, 3, 31);
-    expect(filterChipTextOf(DATES, { start, end }, "en")).toBe("Mar 1, 2026 – Mar 31, 2026");
-    expect(filterChipTextOf(DATES, { start, end: null }, "en")).toBe("From Mar 1, 2026");
-    expect(filterChipTextOf(DATES, { start: null, end }, "en")).toBe("Until Mar 31, 2026");
-    expect(filterChipTextOf(DATES, { start, end }, "ar")).not.toBe(
-      filterChipTextOf(DATES, { start, end }, "en"),
+    expect(filterChipTextOf(DATES, { start, end }, "en", WORDS)).toBe("Mar 1, 2026 – Mar 31, 2026");
+    expect(filterChipTextOf(DATES, { start, end: null }, "en", WORDS)).toBe("From Mar 1, 2026");
+    expect(filterChipTextOf(DATES, { start: null, end }, "en", WORDS)).toBe("Until Mar 31, 2026");
+    expect(filterChipTextOf(DATES, { start, end }, "ar", WORDS)).not.toBe(
+      filterChipTextOf(DATES, { start, end }, "en", WORDS),
     );
   });
 
   it("writes a yes or no in the filter's own words or the defaults", () => {
-    expect(filterChipTextOf(FLAG, true, "en")).toBe("Yes");
-    expect(filterChipTextOf(FLAG, false, "en")).toBe("No");
+    expect(filterChipTextOf(FLAG, true, "en", WORDS)).toBe("Yes");
+    expect(filterChipTextOf(FLAG, false, "en", WORDS)).toBe("No");
     const worded: FilterDefinition = { ...FLAG, trueLabel: "A gift", falseLabel: "Not a gift" };
-    expect(filterChipTextOf(worded, true, "en")).toBe("A gift");
-    expect(filterChipTextOf(worded, false, "en")).toBe("Not a gift");
+    expect(filterChipTextOf(worded, true, "en", WORDS)).toBe("A gift");
+    expect(filterChipTextOf(worded, false, "en", WORDS)).toBe("Not a gift");
   });
 
   it("gives an empty string for no value and for a value that filters nothing", () => {
-    expect(filterChipTextOf(TEXT, undefined, "en")).toBe("");
-    expect(filterChipTextOf(TEXT, " ", "en")).toBe("");
-    expect(filterChipTextOf(MULTI, [], "en")).toBe("");
-    expect(filterChipTextOf(NUMBER, { min: null, max: null }, "en")).toBe("");
-    expect(filterChipTextOf(DATES, { start: null, end: null }, "en")).toBe("");
+    expect(filterChipTextOf(TEXT, undefined, "en", WORDS)).toBe("");
+    expect(filterChipTextOf(TEXT, " ", "en", WORDS)).toBe("");
+    expect(filterChipTextOf(MULTI, [], "en", WORDS)).toBe("");
+    expect(filterChipTextOf(NUMBER, { min: null, max: null }, "en", WORDS)).toBe("");
+    expect(filterChipTextOf(DATES, { start: null, end: null }, "en", WORDS)).toBe("");
   });
 
   it("gives an empty string for a value of the wrong shape rather than throwing", () => {
-    expect(filterChipTextOf(NUMBER, "12", "en")).toBe("");
-    expect(filterChipTextOf(DATES, ["x"], "en")).toBe("");
+    expect(filterChipTextOf(NUMBER, "12", "en", WORDS)).toBe("");
+    expect(filterChipTextOf(DATES, ["x"], "en", WORDS)).toBe("");
   });
 });

@@ -18,12 +18,11 @@
 import { useState, type ReactElement, type ReactNode } from "react";
 import { View, type ViewProps } from "react-native";
 
+import { UI_KEYS } from "#core/constants/ui-keys.constant";
+import { useUiText } from "#core/hooks/use-ui-text";
 import type { AppShellContractProps } from "#contracts/types/app-shell-contract-props.type";
 import { Drawer } from "#native/drawer/drawer";
 import { Text } from "#native/text/text";
-
-// shortcut: English until @stackra/i18n ships; then the keys `ui::app-shell.navigation` and `ui::app-shell.close`.
-const STRINGS = { navigation: "Navigation menu", close: "Close" } as const;
 
 /**
  * Props of the native AppShell: the shared contract plus the root `View`'s own props, passed through.
@@ -50,6 +49,7 @@ export function AppShell({
   className,
   ...rest
 }: AppShellProps): ReactElement {
+  const t = useUiText();
   const [ownOpen, setOwnOpen] = useState(defaultOpen);
   const open = isOpen ?? ownOpen;
   const setOpen = (next: boolean) => {
@@ -62,8 +62,8 @@ export function AppShell({
       {textual(header)}
       <View className="flex-1">{textual(children)}</View>
       {sidebar === undefined ? null : (
-        <Drawer isOpen={open} onOpenChange={setOpen} label={STRINGS.navigation}>
-          <Drawer.Close label={STRINGS.close} />
+        <Drawer isOpen={open} onOpenChange={setOpen} label={t(UI_KEYS.ui.app_shell.navigation)}>
+          <Drawer.Close label={t(UI_KEYS.ui.app_shell.close)} />
           <Drawer.Body>
             {typeof sidebar === "function" ? sidebar({ isInDrawer: true }) : textual(sidebar)}
           </Drawer.Body>

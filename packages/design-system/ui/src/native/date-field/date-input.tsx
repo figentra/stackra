@@ -13,8 +13,8 @@
  *           own `minimumDate` and `maximumDate`. iOS uses a centred dialog, not a sheet, so a field inside a sheet (a
  *           FilterBar's date range) never stacks a second sheet. The input is never editable: the platform picker is how
  *           a day is entered on a phone. Read-only keeps the picker shut but is not announced as disabled. `name` does
- *           not reach the input. "Select a date", "Done", "Cancel" and the refusal are English defaults until i18n
- *           ships. Needs the native `DesignSystemProvider` (locale and scheme) and, on iOS, what the native Modal needs.
+ *           not reach the input. "Select a date", "Done", "Cancel" and the refusal come from the `ui` catalogue in
+ *           the active locale. Needs the native `DesignSystemProvider` (locale and scheme) and, on iOS, what the native Modal needs.
  * Runtime: react-native
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0312 (open state); ADR 0318 (decisions 8 and
  *          10); ADR 0055 (forms); ADR 0165 (HeroUI Native on native); WCAG 2.2 SC 1.3.1, 3.3.1, 4.1.2, 4.1.3.
@@ -32,6 +32,8 @@ import {
 import { useState, type ReactElement } from "react";
 import { AccessibilityInfo, Platform, Pressable, View } from "react-native";
 
+import { UI_KEYS } from "#core/constants/ui-keys.constant";
+import { useUiText } from "#core/hooks/use-ui-text";
 import type { DatePickerContractProps } from "#contracts/types/date-picker-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { Button } from "#native/button/button";
@@ -65,14 +67,6 @@ export type DateInputProps = DatePickerContractProps &
     /** Styles the root, as on web. */
     readonly className?: string | undefined;
   };
-
-// shortcut: English words until @stackra/i18n ships; then the keys `ui::date-field.*`.
-const WORDS = {
-  empty: "Select a date",
-  done: "Done",
-  cancel: "Cancel",
-  unavailable: "That day is not available. Choose another.",
-} as const;
 
 /** The day the picker opens on when the field is empty: today, kept inside the bounds. */
 function startDayOf(minValue?: CalendarDate, maxValue?: CalendarDate): CalendarDate {
@@ -109,6 +103,8 @@ export function DateInput({
   accessibilityLabel,
   ...picker
 }: DateInputProps): ReactElement {
+  const t = useUiText();
+  const WORDS = UI_KEYS.ui.date_field;
   const { locale, resolvedColorScheme } = useDesignSystem();
   const accent = useThemeColor("accent");
   const [ownDay, setOwnDay] = useState<CalendarDate | null>(defaultValue ?? null);
@@ -137,7 +133,7 @@ export function DateInput({
   const pick = (next: CalendarDate) => {
     if (isDateUnavailable?.(next)) {
       setRefused(true);
-      AccessibilityInfo.announceForAccessibility(WORDS.unavailable);
+      AccessibilityInfo.announceForAccessibility(t(WORDS.unavailable));
       // Android's dialog has closed itself; the iOS dialog stays open for another day.
       if (Platform.OS !== "ios") setOpen(false);
       return;
@@ -151,7 +147,7 @@ export function DateInput({
   const isIos = Platform.OS === "ios";
   const refusal = isRefused ? (
     <Text tone="danger" type="small" accessibilityLiveRegion="polite">
-      {WORDS.unavailable}
+      {t(WORDS.unavailable)}
     </Text>
   ) : null;
   const platformPicker = (
@@ -187,12 +183,12 @@ export function DateInput({
           onPress={() => (isLocked ? undefined : setOpen(true))}
           accessibilityRole="button"
           accessibilityLabel={name}
-          accessibilityValue={{ text: text || WORDS.empty }}
+          accessibilityValue={{ text: text || t(WORDS.empty) }}
           // Read-only is not disabled: the field still shows and submits its day.
           accessibilityState={{ disabled: Boolean(isDisabled), expanded: open }}
         >
           <View pointerEvents="none" importantForAccessibility="no-hide-descendants">
-            <Input value={text} placeholder={WORDS.empty} variant={variant} editable={false} />
+            <Input value={text} placeholder={t(WORDS.empty)} variant={variant} editable={false} />
           </View>
         </Pressable>
         {calendarButtonLabel === undefined ? null : (
@@ -226,10 +222,10 @@ export function DateInput({
                 setOpen(false);
               }}
             >
-              {WORDS.cancel}
+              {t(WORDS.cancel)}
             </Button>
             <Button onPress={() => pick(shown ?? day ?? startDayOf(minValue, maxValue))}>
-              {WORDS.done}
+              {t(WORDS.done)}
             </Button>
           </Modal.Footer>
         </Modal>

@@ -18,13 +18,12 @@
 import type { ReactElement, ReactNode } from "react";
 import { View } from "react-native";
 
+import { UI_KEYS } from "#core/constants/ui-keys.constant";
+import { useUiText } from "#core/hooks/use-ui-text";
 import type { SectionContractProps } from "#contracts/types/section-contract-props.type";
 import { Card, type CardProps } from "#native/card/card";
 import { PageActions } from "#native/page-actions/page-actions";
 import { Text } from "#native/text/text";
-
-// shortcut: English until @stackra/i18n ships; then the key `ui::section.more-actions`.
-const STRINGS = { moreActions: "More actions" } as const;
 
 /**
  * Props of the native Section: the shared contract plus the card's own props, passed through. The card's
@@ -44,13 +43,15 @@ export function Section({
   description,
   headingLevel = 2,
   actions,
-  moreActionsLabel = STRINGS.moreActions,
+  moreActionsLabel,
   startContent,
   endContent,
   label,
   children,
   ...rest
 }: SectionProps): ReactElement {
+  const t = useUiText();
+  moreActionsLabel ??= t(UI_KEYS.ui.section.more_actions);
   const name = label ?? (typeof title === "string" ? title : undefined);
   return (
     <Card role="group" {...(name ? { accessibilityLabel: name } : {})} {...rest}>

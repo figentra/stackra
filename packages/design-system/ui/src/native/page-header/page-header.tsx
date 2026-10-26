@@ -21,14 +21,13 @@
 import type { ReactElement, ReactNode } from "react";
 import { View, type ViewProps } from "react-native";
 
+import { UI_KEYS } from "#core/constants/ui-keys.constant";
+import { useUiText } from "#core/hooks/use-ui-text";
 import type { PageHeaderContractProps } from "#contracts/types/page-header-contract-props.type";
 import { Breadcrumbs } from "#native/breadcrumbs/breadcrumbs";
 import { Heading } from "#native/heading/heading";
 import { PageActions } from "#native/page-actions/page-actions";
 import { Text } from "#native/text/text";
-
-// shortcut: English until @stackra/i18n ships; then the key `ui::page-header.more-actions`.
-const STRINGS = { moreActions: "More actions" } as const;
 
 /**
  * Props of the native PageHeader: the shared contract plus the root `View`'s own props, passed through. The view's
@@ -54,11 +53,13 @@ export function PageHeader({
   actions,
   startContent,
   endContent,
-  moreActionsLabel = STRINGS.moreActions,
+  moreActionsLabel,
   label,
   className,
   ...rest
 }: PageHeaderProps): ReactElement {
+  const t = useUiText();
+  moreActionsLabel ??= t(UI_KEYS.ui.page_header.more_actions);
   return (
     <View
       {...rest}

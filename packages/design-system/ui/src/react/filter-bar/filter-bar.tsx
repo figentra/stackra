@@ -12,8 +12,8 @@
  *           and focus then goes to the add-filter button, because the chip it was on is gone; removing a chip and
  *           clear-all do the same. A polite status line tells assistive technology how many filters are applied. It
  *           builds on `Popover`, `Menu`, `SearchField`, `Button` and `CloseButton` of earlier waves and, through
- *           `FilterEditor`, on NumberField and DateField, leaf groups of this wave (ADR 0318 decision 4). The English
- *           words are defaults until i18n ships.
+ *           `FilterEditor`, on NumberField and DateField, leaf groups of this wave (ADR 0318 decision 4). The
+ *           words come from the `ui` catalogue in the active locale.
  * Runtime: browser
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0318 (decisions 1 to 4); ADR 0165 (HeroUI v3 on
  *          web); owner decision 6 of STA-350 (thin wrappers); WCAG 2.2 SC 1.3.1, 2.1.1, 2.4.3, 2.5.8, 4.1.2, 4.1.3.
@@ -30,6 +30,9 @@ import { filterChipTextOf } from "#core/functions/filter-chip-text-of.function";
 import { isFilterValueEmpty } from "#core/functions/is-filter-value-empty.function";
 import { isResourceQueryFiltered } from "#core/functions/is-resource-query-filtered.function";
 import { queryWithFilter } from "#core/functions/query-with-filter.function";
+import { UI_KEYS } from "#core/constants/ui-keys.constant";
+import { useUiText } from "#core/hooks/use-ui-text";
+import { filterChipWordsOf } from "#core/functions/filter-chip-words-of.function";
 import { Button } from "#react/button/button";
 import { CloseButton } from "#react/close-button/close-button";
 import { FilterEditor } from "#react/filter-bar/filter-editor";
@@ -43,22 +46,6 @@ import { SearchField } from "#react/search-field/search-field";
  */
 export type FilterBarProps = FilterBarContractProps &
   Omit<ComponentPropsWithRef<"div">, keyof FilterBarContractProps | "children">;
-
-// shortcut: English until @stackra/i18n ships; then the keys `ui::filter-bar.*`.
-const STRINGS = {
-  filters: "Filters",
-  add: "Add filter",
-  clearAll: "Clear all",
-  clearSearch: "Clear search",
-  remove: (label: string) => `Remove filter ${label}`,
-  landmark: (searchLabel: string) => `${searchLabel}, filters`,
-  applied: (count: number) =>
-    count === 0
-      ? "No filters applied"
-      : count === 1
-        ? "1 filter applied"
-        : `${count} filters applied`,
-} as const;
 
 /** The props of one chip, which is one filter shown as a button that opens its editor and a button that removes it. */
 interface FilterChipProps {
@@ -88,7 +75,8 @@ function FilterChip({
   onChange,
   onRemove,
 }: FilterChipProps): ReactElement {
-  const summary = filterChipTextOf(definition, value, locale);
+  const t = useUiText();
+  const summary = filterChipTextOf(definition, value, locale, filterChipWordsOf(t));
   return (
     <div role="group" aria-label={definition.label} className="inline-flex items-center gap-1">
       <Popover
@@ -105,7 +93,10 @@ function FilterChip({
       >
         <FilterEditor definition={definition} value={value} onChange={onChange} />
       </Popover>
-      <CloseButton label={STRINGS.remove(definition.label)} onPress={onRemove} />
+      <CloseButton
+        label={t(UI_KEYS.ui.filter_bar.remove, { label: definition.label })}
+        onPress={onRemove}
+      />
     </div>
   );
 }
@@ -123,6 +114,7 @@ export function FilterBar({
   "aria-label": ariaLabel,
   ...rest
 }: FilterBarProps): ReactElement {
+  const t = useUiText();
   const { locale } = useLocale();
   const [editingId, setEditingId] = useState<string | null>(null);
   const addButton = useRef<HTMLButtonElement>(null);
@@ -154,19 +146,26 @@ export function FilterBar({
     <div
       {...rest}
       role="search"
-      aria-label={ariaLabel ?? STRINGS.landmark(searchLabel)}
+      aria-label={ariaLabel ?? t(UI_KEYS.ui.filter_bar.landmark, { label: searchLabel })}
       className={["flex flex-wrap items-center gap-2", rest.className].filter(Boolean).join(" ")}
     >
       <SearchField
         aria-label={searchLabel}
-        clearLabel={STRINGS.clearSearch}
+        clearLabel={t(UI_KEYS.ui.filter_bar.clear_search)}
         value={query.search}
         onChange={(search) => onQueryChange({ ...query, search })}
         className="min-w-56 flex-1"
         {...(searchPlaceholder === undefined ? {} : { placeholder: searchPlaceholder })}
       />
       <Menu
-        sections={[{ id: "filters", title: STRINGS.filters, isTitleHidden: true, items: addable }]}
+        sections={[
+          {
+            id: "filters",
+            title: t(UI_KEYS.ui.filter_bar.filters),
+            isTitleHidden: true,
+            items: addable,
+          },
+        ]}
         onAction={setEditingId}
         align="start"
       >
@@ -177,7 +176,7 @@ export function FilterBar({
           startIcon="plus"
           isDisabled={addable.length === 0}
         >
-          {STRINGS.add}
+          {t(UI_KEYS.ui.filter_bar.add)}
         </Button>
       </Menu>
       {chipIds.map((id) => {
@@ -214,11 +213,11 @@ export function FilterBar({
             focusAddButton();
           }}
         >
-          {STRINGS.clearAll}
+          {t(UI_KEYS.ui.filter_bar.clear_all)}
         </Button>
       ) : null}
       <span role="status" className="sr-only">
-        {STRINGS.applied(appliedIds.length)}
+        {t(UI_KEYS.ui.filter_bar.applied, { count: appliedIds.length })}
       </span>
     </div>
   );

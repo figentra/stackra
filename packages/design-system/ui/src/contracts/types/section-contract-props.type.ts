@@ -26,7 +26,7 @@ export interface SectionContractProps
   extends TitledContractProps, LandmarkContractProps, ShellSlotsContractProps {
   /** The section's actions in priority order: the first is primary, three at most show and the rest go in a menu. */
   readonly actions?: readonly MenuLeafItem[] | undefined;
-  /** The accessible name of the ActionMenu button the overflowing actions go in. Defaults to an English phrase. */
+  /** The accessible name of the ActionMenu button the overflowing actions go in. Defaults to the `ui` catalogue's phrase in the active locale. */
   readonly moreActionsLabel?: string | undefined;
   /** The body of the section. */
   readonly children?: ReactNode;

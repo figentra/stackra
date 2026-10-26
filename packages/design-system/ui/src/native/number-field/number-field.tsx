@@ -13,8 +13,8 @@
  *           with the same `NumberParser` React Aria's web field uses, so a value reads the same on both runtimes,
  *           Arabic digits, percent and currency included. A percent field steps by 0.01 unless `step` is given, as on
  *           web. Inside a sheet the input moves the sheet clear of the keyboard (HeroUI Native's sheet-aware handlers).
- *           `className` styles the root; `name` does not reach the input. "Increase" and "Decrease" are English
- *           defaults until i18n ships. Needs the native `DesignSystemProvider`, which holds the locale.
+ *           `className` styles the root; `name` does not reach the input. "Increase" and "Decrease" come from the `ui`
+ *           catalogue in the active locale. Needs the native `DesignSystemProvider`, which holds the locale.
  * Runtime: react-native
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0318 (decision 9); ADR 0055 (forms: one
  *          field contract); ADR 0165 (HeroUI Native on native); WCAG 2.2 SC 1.3.1, 4.1.2.
@@ -31,6 +31,8 @@ import {
 import { useMemo, useState, type ComponentPropsWithRef } from "react";
 import { Platform, type KeyboardTypeOptions } from "react-native";
 
+import { UI_KEYS } from "#core/constants/ui-keys.constant";
+import { useUiText } from "#core/hooks/use-ui-text";
 import type { NumberFieldContractProps } from "#contracts/types/number-field-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { useDesignSystem } from "#native/design-system-provider/use-design-system";
@@ -46,9 +48,6 @@ export type NumberFieldProps = NumberFieldContractProps &
     ComponentPropsWithRef<typeof HeroInputGroup.Input>,
     keyof NumberFieldContractProps | "children" | "onChangeText" | "readOnly" | "editable"
   >;
-
-// shortcut: English words until @stackra/i18n ships; then the keys `ui::number-field.*`.
-const WORDS = { increment: "Increase", decrement: "Decrease" } as const;
 
 /** The keyboard that can type every value the field accepts. */
 function keyboardOf(minValue: number | undefined, hasFractions: boolean): KeyboardTypeOptions {
@@ -82,8 +81,8 @@ export function NumberField({
   step,
   formatOptions,
   hasSteppers = true,
-  incrementLabel = WORDS.increment,
-  decrementLabel = WORDS.decrement,
+  incrementLabel,
+  decrementLabel,
   // `name` is the form adapter's key; a native text input has no form to submit under it.
   name: _name,
   className,
@@ -92,6 +91,9 @@ export function NumberField({
   onBlur,
   ...rest
 }: NumberFieldProps) {
+  const t = useUiText();
+  incrementLabel ??= t(UI_KEYS.ui.number_field.increment);
+  decrementLabel ??= t(UI_KEYS.ui.number_field.decrement);
   const { locale } = useDesignSystem();
   // Inside a sheet the keyboard must move the sheet; outside one these handlers do nothing.
   const sheet = useBottomSheetAwareHandlers();

@@ -12,8 +12,8 @@
  *           whose value filters nothing has no chip once its sheet closes (ADR 0318 decision 3). The sheet is the
  *           Drawer of wave 4, so it is HeroUI Native's inset style by the owner's decision of 2026-10-24, and it is never
  *           stacked on another sheet: "add" and "edit" are two contents of one. Strings are always wrapped in `Text`,
- *           which React Native requires. Native has no focus to move after a chip goes. The English words are defaults
- *           until i18n ships. Builds on earlier waves and, through `FilterEditor`, on NumberField and DateField, leaf
+ *           which React Native requires. Native has no focus to move after a chip goes. The words are defaults
+ *           from the `ui` catalogue in the active locale. Builds on earlier waves and, through `FilterEditor`, on NumberField and DateField, leaf
  *           groups of this wave (ADR 0318 decision 4). Needs the native `DesignSystemProvider`.
  * Runtime: react-native
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0318 (decisions 1 to 4 and 10); ADR 0165 (HeroUI
@@ -23,11 +23,14 @@
 import { useState, type ReactElement } from "react";
 import { ScrollView, View, type ViewProps } from "react-native";
 
+import { UI_KEYS } from "#core/constants/ui-keys.constant";
+import { useUiText } from "#core/hooks/use-ui-text";
 import type { FilterBarContractProps } from "#contracts/types/filter-bar-contract-props.type";
 import type { FilterDefinition } from "#contracts/types/filter-definition.type";
 import type { FilterValue } from "#contracts/types/filter-value.type";
 import { clearResourceQueryFilters } from "#core/functions/clear-resource-query-filters.function";
 import { filterChipTextOf } from "#core/functions/filter-chip-text-of.function";
+import { filterChipWordsOf } from "#core/functions/filter-chip-words-of.function";
 import { isFilterValueEmpty } from "#core/functions/is-filter-value-empty.function";
 import { isResourceQueryFiltered } from "#core/functions/is-resource-query-filtered.function";
 import { queryWithFilter } from "#core/functions/query-with-filter.function";
@@ -45,17 +48,6 @@ import { Text } from "#native/text/text";
  */
 export type FilterBarProps = FilterBarContractProps &
   Omit<ViewProps, keyof FilterBarContractProps | "children">;
-
-// shortcut: English until @stackra/i18n ships; then the keys `ui::filter-bar.*`.
-const STRINGS = {
-  add: "Add filter",
-  done: "Done",
-  clearAll: "Clear all",
-  clearSearch: "Clear search",
-  allApplied: "Every filter is applied.",
-  remove: (label: string) => `Remove filter ${label}`,
-  landmark: (searchLabel: string) => `${searchLabel}, filters`,
-} as const;
 
 /** What the sheet shows: nothing (closed), the list of filters to add, or the editor of one filter. */
 type Sheet = { readonly mode: "add" } | { readonly mode: "edit"; readonly id: string } | null;
@@ -76,6 +68,7 @@ export function FilterBar({
   accessibilityLabel,
   ...rest
 }: FilterBarProps): ReactElement {
+  const t = useUiText();
   const { locale } = useDesignSystem();
   const [sheet, setSheet] = useState<Sheet>(null);
 
@@ -97,7 +90,12 @@ export function FilterBar({
   const close = () => setSheet(null);
 
   const renderChip = (definition: FilterDefinition) => {
-    const summary = filterChipTextOf(definition, query.filterValues[definition.id], locale);
+    const summary = filterChipTextOf(
+      definition,
+      query.filterValues[definition.id],
+      locale,
+      filterChipWordsOf(t),
+    );
     return (
       <View key={definition.id} className="flex-row items-center gap-1">
         <Button
@@ -109,7 +107,7 @@ export function FilterBar({
           {summary === "" ? definition.label : `${definition.label}: ${summary}`}
         </Button>
         <CloseButton
-          label={STRINGS.remove(definition.label)}
+          label={t(UI_KEYS.ui.filter_bar.remove, { label: definition.label })}
           hitSlop={HIT_SLOP}
           onPress={() => {
             setFilter(definition.id, undefined);
@@ -126,12 +124,14 @@ export function FilterBar({
     <View
       {...rest}
       accessibilityRole="search"
-      accessibilityLabel={accessibilityLabel ?? STRINGS.landmark(searchLabel)}
+      accessibilityLabel={
+        accessibilityLabel ?? t(UI_KEYS.ui.filter_bar.landmark, { label: searchLabel })
+      }
       className={["gap-2", rest.className].filter(Boolean).join(" ")}
     >
       <SearchField
         accessibilityLabel={searchLabel}
-        clearLabel={STRINGS.clearSearch}
+        clearLabel={t(UI_KEYS.ui.filter_bar.clear_search)}
         value={query.search}
         onChange={(search) => onQueryChange({ ...query, search })}
         {...(searchPlaceholder === undefined ? {} : { placeholder: searchPlaceholder })}
@@ -148,7 +148,7 @@ export function FilterBar({
           isDisabled={addable.length === 0}
           onPress={() => setSheet({ mode: "add" })}
         >
-          {STRINGS.add}
+          {t(UI_KEYS.ui.filter_bar.add)}
         </Button>
         {chipIds.map((id) => {
           const definition = definitionOf(id);
@@ -163,7 +163,7 @@ export function FilterBar({
               onQueryChange(clearResourceQueryFilters(query));
             }}
           >
-            {STRINGS.clearAll}
+            {t(UI_KEYS.ui.filter_bar.clear_all)}
           </Button>
         ) : null}
       </ScrollView>
@@ -172,15 +172,15 @@ export function FilterBar({
         onOpenChange={(isOpen) => {
           if (!isOpen) close();
         }}
-        label={editing?.label ?? STRINGS.add}
+        label={editing?.label ?? t(UI_KEYS.ui.filter_bar.add)}
       >
         <Drawer.Header>
-          <Drawer.Title>{editing?.label ?? STRINGS.add}</Drawer.Title>
+          <Drawer.Title>{editing?.label ?? t(UI_KEYS.ui.filter_bar.add)}</Drawer.Title>
         </Drawer.Header>
         <Drawer.Body>
           {editing === undefined ? (
             addable.length === 0 ? (
-              <Text tone="muted">{STRINGS.allApplied}</Text>
+              <Text tone="muted">{t(UI_KEYS.ui.filter_bar.all_applied)}</Text>
             ) : (
               addable.map((filter) => (
                 <Button
@@ -205,7 +205,7 @@ export function FilterBar({
         </Drawer.Body>
         <Drawer.Footer>
           <Button variant="primary" onPress={close}>
-            {STRINGS.done}
+            {t(UI_KEYS.ui.filter_bar.done)}
           </Button>
         </Drawer.Footer>
       </Drawer>

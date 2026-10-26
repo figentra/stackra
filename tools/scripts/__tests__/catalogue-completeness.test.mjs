@@ -5,6 +5,7 @@ import {
   BASE_LANGUAGES,
   checkCatalogues,
   keysOf,
+  placeholdersOf,
   SEVEN_LANGUAGE_MEMBERS,
 } from "../catalogue-completeness.mjs";
 
@@ -89,4 +90,36 @@ test("a framework UI member ships all seven base languages", () => {
     `${member}/assets/lang/nl: missing; this member ships all seven languages`,
   ]);
   assert.equal(BASE_LANGUAGES.length, 7);
+});
+
+test("placeholdersOf names every ICU argument, nested ones too, and nothing else", () => {
+  assert.deepEqual(placeholdersOf("Remove filter {label}"), ["label"]);
+  assert.deepEqual(
+    placeholdersOf("{count, plural, =0 {None} one {# item of {owner}} other {# items}}"),
+    ["count", "owner"],
+  );
+  assert.deepEqual(placeholdersOf("Quote '{this}' and {that}"), ["that"]);
+  assert.deepEqual(placeholdersOf("{total, number, ::currency/EUR}"), ["total"]);
+  assert.deepEqual(placeholdersOf("Plain text"), []);
+  assert.equal(placeholdersOf("{count, plural, one {x}"), null);
+});
+
+test("a translation that renames, drops or breaks a placeholder fails", () => {
+  const en = { remove: "Remove {name}", count: "{count, plural, one {# row} other {# rows}}" };
+  assert.deepEqual(
+    check({
+      "packages/a/x/assets/lang/en/x.json": en,
+      "packages/a/x/assets/lang/de/x.json": {
+        remove: "{Name} entfernen",
+        count: "{count, plural, one {# Zeile} other {# Zeilen}}",
+      },
+      "packages/a/x/assets/lang/fr/x.json": { remove: "Retirer", count: "{count, plural, one {#}" },
+      "packages/a/x/assets/lang/es-US/x.json": { remove: "Quitar {name}" },
+    }),
+    [
+      "packages/a/x/assets/lang/de/x.json: key remove has placeholders {Name}, en has {name}",
+      "packages/a/x/assets/lang/fr/x.json: key remove has placeholders none, en has {name}",
+      "packages/a/x/assets/lang/fr/x.json: key count is not a valid ICU message",
+    ],
+  );
 });

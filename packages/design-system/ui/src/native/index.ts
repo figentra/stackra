@@ -67,6 +67,8 @@ export {
   type LeaveConfirmationProps,
 } from "#native/leave-confirmation/leave-confirmation";
 export { Link, type LinkProps } from "#native/link/link";
+export { KioskSurface, type KioskSurfaceProps } from "#native/kiosk-surface/kiosk-surface";
+export { useKiosk } from "#native/kiosk-surface/use-kiosk";
 export { List, type ListProps } from "#native/list/list";
 export { ListItem, type ListItemProps } from "#native/list/list-item";
 export { Menu, type MenuProps } from "#native/menu/menu";

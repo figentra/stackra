@@ -104,5 +104,8 @@
     "retry": "Riprova",
     "pagination": "Paginazione di {label}",
     "bulk_actions": "Azioni su {label}"
+  },
+  "search_field": {
+    "clear": "Cancella ricerca"
   }
 }

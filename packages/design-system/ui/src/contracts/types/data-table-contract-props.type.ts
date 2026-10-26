@@ -55,7 +55,7 @@ export interface DataTableContractProps<TItem extends CollectionItem = Collectio
   readonly isMessageShown?: boolean | undefined;
   /** Called by the error state's retry button; left out, the error state has no button. */
   readonly onRetry?: (() => void) | undefined;
-  /** The text of the retry button. Defaults to an English word until i18n ships. */
+  /** The text of the retry button. Defaults to the `ui` catalogue's word in the active locale. */
   readonly retryLabel?: string | undefined;
   /** The level of the empty and error states' titles, so the page keeps one outline. Defaults to 3. */
   readonly headingLevel?: HeadingLevel | undefined;

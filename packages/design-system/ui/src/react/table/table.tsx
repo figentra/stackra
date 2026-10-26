@@ -27,6 +27,8 @@ import type { TableContractProps } from "#contracts/types/table-contract-props.t
 import { cellTextOf } from "#core/functions/cell-text-of.function";
 import { keysOfSelection } from "#core/functions/keys-of-selection.function";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
+import { UI_KEYS } from "#core/constants/ui-keys.constant";
+import { useUiText } from "#core/hooks/use-ui-text";
 import { Spinner } from "#react/spinner/spinner";
 
 /**
@@ -36,9 +38,6 @@ import { Spinner } from "#react/spinner/spinner";
  */
 export type TableProps<TItem extends CollectionItem = CollectionItem> = TableContractProps<TItem> &
   Omit<ComponentPropsWithoutRef<"div">, keyof TableContractProps | "children">;
-
-// shortcut: English until @stackra/i18n ships; then the keys `ui::table.loading` and `ui::table.selection-column`.
-const STRINGS = { loading: "Loading", selectionColumn: "Selection" } as const;
 
 /** The class that lines a column's cell text up; `start` is HeroUI's own. */
 const ALIGN_CLASS = Object.freeze({
@@ -109,8 +108,9 @@ export function Table<TItem extends CollectionItem = CollectionItem>({
   maxHeight = "24rem",
   ...rest
 }: TableProps<TItem>) {
+  const t = useUiText();
   const isMultiple = selectionMode === "multiple";
-  const loadingText = loadingLabel ?? STRINGS.loading;
+  const loadingText = loadingLabel ?? t(UI_KEYS.ui.table.loading);
   // React Aria wants one row header, whose cell names the row; the first column is it unless the app picked one.
   const rowHeaderId = (columns.find((column) => column.isRowHeader) ?? columns[0])?.id;
   const hasEmptyState = emptyState !== undefined && emptyState !== null && emptyState !== false;
@@ -161,7 +161,7 @@ export function Table<TItem extends CollectionItem = CollectionItem>({
               {isMultiple ? (
                 <HeroTable.Column className={`w-10 pe-0 ${isStickyHeader ? STICKY_CLASS : ""}`}>
                   {/* The box names itself; the text keeps the header from being an empty one for a checker. */}
-                  <span className="sr-only">{STRINGS.selectionColumn}</span>
+                  <span className="sr-only">{t(UI_KEYS.ui.table.selection_column)}</span>
                   <SelectionCheckbox />
                 </HeroTable.Column>
               ) : null}

@@ -7,8 +7,8 @@
  * Boundary: internal to `FilterBar`, not in the `./react` barrel. It holds no state: it shows the value it is given and
  *           reports each change whole, so the bar's query is the only copy (ADR 0318 decision 2). A value of the wrong
  *           shape shows as an empty editor. Fields are named by the filter's label (a group) or by their own word, and
- *           the popover's title names the dialog. The words "Minimum", "Maximum", "From" and "Until" are English
- *           defaults until i18n ships. It builds on NumberField and DateField, which are leaf groups of the same wave
+ *           the popover's title names the dialog. The words "Minimum", "Maximum", "From" and "Until" come from the `ui`
+ *           catalogue in the active locale. It builds on NumberField and DateField, which are leaf groups of the same wave
  *           (ADR 0318 decision 4), so this file needs both on the branch.
  * Runtime: browser
  * Governing contract: ADR 0302 (decision 3); ADR 0318 (decisions 3 and 4); ADR 0055 (forms); WCAG 2.2 SC 1.3.1, 2.1.1,
@@ -23,6 +23,9 @@ import type { FilterValue } from "#contracts/types/filter-value.type";
 import type { SelectItem } from "#contracts/types/select-item.type";
 import { filterChipTextOf } from "#core/functions/filter-chip-text-of.function";
 import { filterValueOfKind } from "#core/functions/filter-value-of-kind.function";
+import { UI_KEYS } from "#core/constants/ui-keys.constant";
+import { useUiText } from "#core/hooks/use-ui-text";
+import { filterChipWordsOf } from "#core/functions/filter-chip-words-of.function";
 import { CheckboxGroup } from "#react/checkbox-group/checkbox-group";
 import { DateField } from "#react/date-field/date-field";
 import { NumberField } from "#react/number-field/number-field";
@@ -39,9 +42,6 @@ export interface FilterEditorProps {
   readonly onChange: (value: FilterValue | undefined) => void;
 }
 
-// shortcut: English words until @stackra/i18n ships; then the keys `ui::filter-bar.*`.
-const WORDS = { minimum: "Minimum", maximum: "Maximum", from: "From", until: "Until" } as const;
-
 /** The radios or checkboxes of a list of short choices. */
 const choicesOf = (options: readonly SelectItem[]): readonly ChoiceOption[] =>
   options.map((option) => ({
@@ -55,6 +55,7 @@ const choicesOf = (options: readonly SelectItem[]): readonly ChoiceOption[] =>
  * The editor of one filter. Every change is reported at once, so the table behind it narrows while the user edits.
  */
 export function FilterEditor({ definition, value, onChange }: FilterEditorProps): ReactElement {
+  const t = useUiText();
   const { locale } = useLocale();
   switch (definition.kind) {
     case "text":
@@ -75,7 +76,7 @@ export function FilterEditor({ definition, value, onChange }: FilterEditorProps)
         <div className="grid gap-3">
           <NumberField
             {...shared}
-            label={WORDS.minimum}
+            label={t(UI_KEYS.ui.filter_bar.minimum)}
             value={range.min}
             minValue={definition.minValue}
             maxValue={range.max ?? definition.maxValue}
@@ -83,7 +84,7 @@ export function FilterEditor({ definition, value, onChange }: FilterEditorProps)
           />
           <NumberField
             {...shared}
-            label={WORDS.maximum}
+            label={t(UI_KEYS.ui.filter_bar.maximum)}
             value={range.max}
             minValue={range.min ?? definition.minValue}
             maxValue={definition.maxValue}
@@ -120,14 +121,14 @@ export function FilterEditor({ definition, value, onChange }: FilterEditorProps)
       return (
         <div className="grid gap-3">
           <DateField
-            label={WORDS.from}
+            label={t(UI_KEYS.ui.filter_bar.from)}
             value={range.start}
             minValue={definition.minValue}
             maxValue={range.end ?? definition.maxValue}
             onChange={(start) => onChange({ ...range, start })}
           />
           <DateField
-            label={WORDS.until}
+            label={t(UI_KEYS.ui.filter_bar.until)}
             value={range.end}
             minValue={range.start ?? definition.minValue}
             maxValue={definition.maxValue}
@@ -142,8 +143,14 @@ export function FilterEditor({ definition, value, onChange }: FilterEditorProps)
         <RadioGroup
           aria-label={definition.label}
           options={[
-            { value: "true", label: filterChipTextOf(definition, true, locale) },
-            { value: "false", label: filterChipTextOf(definition, false, locale) },
+            {
+              value: "true",
+              label: filterChipTextOf(definition, true, locale, filterChipWordsOf(t)),
+            },
+            {
+              value: "false",
+              label: filterChipTextOf(definition, false, locale, filterChipWordsOf(t)),
+            },
           ]}
           value={answer === undefined ? "" : String(answer)}
           onChange={(next) => onChange(next === "true")}

@@ -20,13 +20,12 @@ import { cn } from "@heroui/react";
 import type { ComponentPropsWithRef, ReactElement } from "react";
 
 import type { NavigationHeaderContractProps } from "#contracts/types/navigation-header-contract-props.type";
+import { UI_KEYS } from "#core/constants/ui-keys.constant";
+import { useUiText } from "#core/hooks/use-ui-text";
 import { Heading } from "#react/heading/heading";
 import { Icon } from "#react/icon/icon";
 import { IconButton } from "#react/icon-button/icon-button";
 import { Link } from "#react/link/link";
-
-// shortcut: English until @stackra/i18n ships; then the key `ui::navigation-header.back`.
-const STRINGS = { back: "Back" } as const;
 
 /**
  * Props of the web NavigationHeader: the shared contract plus the `header` element's own props, passed through. The
@@ -52,13 +51,15 @@ export function NavigationHeader({
   hasLargeTitle = false,
   onBack,
   backHref,
-  backLabel = STRINGS.back,
+  backLabel,
   startContent,
   endContent,
   label,
   className,
   ...rest
 }: NavigationHeaderProps): ReactElement {
+  const t = useUiText();
+  backLabel ??= t(UI_KEYS.ui.navigation_header.back);
   const heading = (
     <Heading
       level={headingLevel}

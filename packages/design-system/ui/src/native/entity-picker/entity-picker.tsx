@@ -15,8 +15,8 @@
  *           sheet clear of the keyboard (HeroUI Native's sheet-aware handlers). The picker holds whole records, so a
  *           chosen record keeps its label when a later search no longer lists it. A rejected `onCreate` picks nothing;
  *           the app reports it (ADR 0139). The avatars are decorative: the label beside them names the record. `name`
- *           binds a form adapter and submits nothing on its own. "Search" and "Close" are English defaults until i18n
- *           ships.
+ *           binds a form adapter and submits nothing on its own. "Search" and "Close" come from the `ui` catalogue in
+ *           the active locale.
  * Runtime: react-native
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0318 (decisions 2 and 10); ADR 0055 (forms);
  *          ADR 0165 (HeroUI Native on native); WCAG 2.2 SC 1.3.1, 4.1.2, 4.1.3.
@@ -33,6 +33,8 @@ import {
 import { useEffect, useState, type ReactElement, type ReactNode } from "react";
 import { AccessibilityInfo, FlatList, Pressable, View } from "react-native";
 
+import { UI_KEYS } from "#core/constants/ui-keys.constant";
+import { useUiText } from "#core/hooks/use-ui-text";
 import type { EntityOption } from "#contracts/types/entity-option.type";
 import type { EntityPickerContractProps } from "#contracts/types/entity-picker-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
@@ -52,9 +54,6 @@ export type EntityPickerProps = EntityPickerContractProps & {
   /** Styles the root, as on web. */
   readonly className?: string | undefined;
 };
-
-// shortcut: English words until @stackra/i18n ships; then the keys `ui::entity-picker.*`.
-const WORDS = { search: "Search", close: "Close" } as const;
 
 /** The list's bound: the sheet sizes itself to its content, so a long list needs a height to scroll inside. */
 const LIST_STYLE = Object.freeze({ maxHeight: 320 });
@@ -113,6 +112,7 @@ function SheetSearch({
  * `defaultValue`; `onChange` receives the record (or `null`), or the list of records in multiple mode.
  */
 export function EntityPicker(props: EntityPickerProps): ReactElement {
+  const t = useUiText();
   const {
     label,
     description,
@@ -254,7 +254,7 @@ export function EntityPicker(props: EntityPickerProps): ReactElement {
         <Drawer.Body>
           <SheetSearch
             value={text}
-            placeholder={WORDS.search}
+            placeholder={t(UI_KEYS.ui.entity_picker.search)}
             onChange={(next) => {
               setText(next);
               options.search(next);
@@ -305,7 +305,7 @@ export function EntityPicker(props: EntityPickerProps): ReactElement {
             />
           )}
         </Drawer.Body>
-        <Drawer.Close label={WORDS.close} />
+        <Drawer.Close label={t(UI_KEYS.ui.entity_picker.close)} />
       </Drawer>
     </HeroTextField>
   );

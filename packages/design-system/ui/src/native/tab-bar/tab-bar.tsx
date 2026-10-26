@@ -25,6 +25,8 @@ import { use, type ReactElement } from "react";
 import { Pressable, View, type ViewProps } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { UI_KEYS } from "#core/constants/ui-keys.constant";
+import { useUiText } from "#core/hooks/use-ui-text";
 import type { NavigationItem } from "#contracts/types/navigation-item.type";
 import type { TabBarContractProps } from "#contracts/types/tab-bar-contract-props.type";
 import { currentStateOf } from "#core/functions/current-state-of.function";
@@ -34,11 +36,8 @@ import { Icon } from "#native/icon/icon";
 import { RouterContext } from "#native/router-provider/router-context";
 import { Text } from "#native/text/text";
 
-// shortcut: English until @stackra/i18n ships; then the keys `ui::tab-bar.label` and `ui::tab-bar.too-many`.
-const STRINGS = {
-  label: "Tabs",
-  tooMany: "TabBar draws five tabs at most; the rest are left out",
-} as const;
+// Developer log text, read in the console only, so it stays English (ADR 0080 translates what users see).
+const TOO_MANY = "TabBar draws five tabs at most; the rest are left out";
 
 /** The most tabs a phone's tab bar holds: Android's navigation bar limit. */
 const MAX_TABS = 5;
@@ -109,17 +108,13 @@ function Tab({ item, follow }: TabProps): ReactElement {
  * The phone's bottom tab bar: one tab for each of the first five items. Name it with `label` when the screen holds
  * more than one. The current tab is announced as selected.
  */
-export function TabBar({
-  items,
-  label = STRINGS.label,
-  className,
-  style,
-  ...rest
-}: TabBarProps): ReactElement {
+export function TabBar({ items, label, className, style, ...rest }: TabBarProps): ReactElement {
+  const t = useUiText();
+  label ??= t(UI_KEYS.ui.tab_bar.label);
   const navigate = use(RouterContext);
   const insets = useSafeAreaInsets();
   if (items.length > MAX_TABS && process.env.NODE_ENV !== "production") {
-    console.warn(STRINGS.tooMany);
+    console.warn(TOO_MANY);
   }
   const follow = (item: NavigationItem) => {
     item.onPress?.();

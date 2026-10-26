@@ -31,6 +31,8 @@ import type { BulkActionBarContractProps } from "#contracts/types/bulk-action-ba
 import type { ResourceAction } from "#contracts/types/resource-action.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { pageActionVariant } from "#core/functions/page-action-variant.function";
+import { UI_KEYS } from "#core/constants/ui-keys.constant";
+import { useUiText } from "#core/hooks/use-ui-text";
 import { usePendingActions } from "#react/bulk-action-bar/use-pending-actions";
 import { Button } from "#react/button/button";
 import { SlotIcon } from "#react/slot-icon/slot-icon";
@@ -42,16 +44,6 @@ import { Text } from "#react/text/text";
  */
 export type BulkActionBarProps = BulkActionBarContractProps &
   Omit<ComponentPropsWithoutRef<"div">, keyof BulkActionBarContractProps | "children">;
-
-// shortcut: English until @stackra/i18n ships; then the keys `ui::bulk-action-bar.label`, `.selected`, `.clear`,
-// `.select-all` and `.select-shown`.
-const STRINGS = {
-  label: "Bulk actions",
-  selected: (count: number) => `${count} selected`,
-  clear: "Clear selection",
-  selectAll: (total: number) => `Select all ${total}`,
-  selectShown: (count: number) => `Select only the ${count} shown`,
-} as const;
 
 /** The accessible name of an action: its text, then why it is refused when it is. */
 function nameOf(action: ResourceAction): string | undefined {
@@ -72,15 +64,21 @@ export function BulkActionBar({
   totalCount,
   isAllMatchingSelected = false,
   onAllMatchingSelectedChange,
-  label = STRINGS.label,
-  countLabel = STRINGS.selected,
-  clearLabel = STRINGS.clear,
-  selectAllLabel = STRINGS.selectAll,
-  selectShownLabel = STRINGS.selectShown,
+  label,
+  countLabel,
+  clearLabel,
+  selectAllLabel,
+  selectShownLabel,
   // Native only: web draws every action and has no overflow.
   moreActionsLabel: _moreActionsLabel,
   ...rest
 }: BulkActionBarProps) {
+  const t = useUiText();
+  label ??= t(UI_KEYS.ui.bulk_action_bar.label);
+  countLabel ??= (count) => t(UI_KEYS.ui.bulk_action_bar.selected, { count });
+  clearLabel ??= t(UI_KEYS.ui.bulk_action_bar.clear);
+  selectAllLabel ??= (total) => t(UI_KEYS.ui.bulk_action_bar.select_all, { total });
+  selectShownLabel ??= (count) => t(UI_KEYS.ui.bulk_action_bar.select_shown, { count });
   const { pending, run } = usePendingActions();
   // Choosing all matching makes the total the count; the keys are then only the rows on screen.
   const count = isAllMatchingSelected && totalCount !== undefined ? totalCount : selectedCount;

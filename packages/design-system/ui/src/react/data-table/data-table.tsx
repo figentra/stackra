@@ -30,6 +30,8 @@ import type { TableColumn } from "#contracts/types/table-column.type";
 import { cellTextOf } from "#core/functions/cell-text-of.function";
 import { clearResourceQueryFilters } from "#core/functions/clear-resource-query-filters.function";
 import { isResourceQueryFiltered } from "#core/functions/is-resource-query-filtered.function";
+import { UI_KEYS } from "#core/constants/ui-keys.constant";
+import { useUiText } from "#core/hooks/use-ui-text";
 import { ActionMenu } from "#react/action-menu/action-menu";
 import { BulkActionBar } from "#react/bulk-action-bar/bulk-action-bar";
 import { usePendingActions } from "#react/bulk-action-bar/use-pending-actions";
@@ -48,29 +50,8 @@ export type DataTableProps<TItem extends CollectionItem = CollectionItem> =
   DataTableContractProps<TItem> &
     Omit<ComponentPropsWithoutRef<"div">, keyof DataTableContractProps | "children">;
 
-// shortcut: English until @stackra/i18n ships; then the keys `ui::data-table.*`.
-const STRINGS = {
-  loading: "Loading",
-  actionsColumn: "Actions",
-  rowActions: (name: string) => `Actions for ${name}`,
-  working: "Working",
-  noDataTitle: "Nothing here yet",
-  noDataDescription: "Records will appear here once they exist.",
-  noResultsTitle: "No results",
-  noResultsDescription: "No record matches the search and filters. Try changing or clearing them.",
-  clearFilters: "Clear filters",
-  errorTitle: "The records could not be loaded",
-  retry: "Try again",
-  pagination: (label: string) => `${label} pagination`,
-  bulkActions: (label: string) => `${label} actions`,
-} as const;
-
-/** The column of the row menus: the app's columns never use this id. */
-const ACTIONS_COLUMN: TableColumn = Object.freeze({
-  id: "data-table-row-actions",
-  label: STRINGS.actionsColumn,
-  align: "end",
-});
+/** The id of the row menus' column: the app's columns never use it. */
+const ACTIONS_COLUMN_ID = "data-table-row-actions";
 
 /**
  * A resource index on the contract of the web `Table`: the rows, the query that fetched them, the actions on a row and
@@ -107,16 +88,25 @@ export function DataTable<TItem extends CollectionItem = CollectionItem>({
   errorKind,
   isMessageShown,
   onRetry,
-  retryLabel = STRINGS.retry,
+  retryLabel,
   headingLevel = 3,
-  paginationLabel = STRINGS.pagination(label),
-  bulkActionsLabel = STRINGS.bulkActions(label),
+  paginationLabel,
+  bulkActionsLabel,
   totalCount,
   isAllMatchingSelected = false,
   onAllMatchingSelectedChange,
   className,
   ...rest
 }: DataTableProps<TItem>) {
+  const t = useUiText();
+  retryLabel ??= t(UI_KEYS.ui.data_table.retry);
+  paginationLabel ??= t(UI_KEYS.ui.data_table.pagination, { label });
+  bulkActionsLabel ??= t(UI_KEYS.ui.data_table.bulk_actions, { label });
+  const actionsColumn: TableColumn = {
+    id: ACTIONS_COLUMN_ID,
+    label: t(UI_KEYS.ui.data_table.actions_column),
+    align: "end",
+  };
   const container = useRef<HTMLDivElement>(null);
   const { pending, run } = usePendingActions();
   // The selection is kept here only so the bar can count it; a controlled `selectedKeys` always wins.
@@ -152,23 +142,25 @@ export function DataTable<TItem extends CollectionItem = CollectionItem>({
       return {
         ...action,
         // A pending action is refused like a disabled one, and says why where a description would go.
-        ...(isPending ? { isDisabled: true, disabledReason: STRINGS.working } : {}),
+        ...(isPending
+          ? { isDisabled: true, disabledReason: t(UI_KEYS.ui.data_table.working) }
+          : {}),
         onPress: () => run(key, action.onPress),
       };
     });
 
   const cellOf = (item: TItem, column: TableColumn) => {
-    if (column.id === ACTIONS_COLUMN.id) {
+    if (column.id === ACTIONS_COLUMN_ID) {
       const menuItems = menuItemsOf(item);
       if (menuItems.length === 0) return null;
       const name = cellTextOf(item, rowHeaderId) || item.id;
       return (
         <ActionMenu
-          label={STRINGS.rowActions(name)}
+          label={t(UI_KEYS.ui.data_table.row_actions, { name })}
           sections={[
             {
               id: "row-actions",
-              title: STRINGS.actionsColumn,
+              title: t(UI_KEYS.ui.data_table.actions_column),
               isTitleHidden: true,
               items: menuItems,
             },
@@ -184,14 +176,14 @@ export function DataTable<TItem extends CollectionItem = CollectionItem>({
         <EmptyState
           reason="no-results"
           headingLevel={headingLevel}
-          title={STRINGS.noResultsTitle}
-          description={STRINGS.noResultsDescription}
+          title={t(UI_KEYS.ui.data_table.no_results_title)}
+          description={t(UI_KEYS.ui.data_table.no_results_description)}
           actions={
             <Button
               variant="secondary"
               onPress={() => onQueryChange(clearResourceQueryFilters(query))}
             >
-              {STRINGS.clearFilters}
+              {t(UI_KEYS.ui.data_table.clear_filters)}
             </Button>
           }
         />
@@ -200,8 +192,8 @@ export function DataTable<TItem extends CollectionItem = CollectionItem>({
         <EmptyState
           reason="no-data"
           headingLevel={headingLevel}
-          title={STRINGS.noDataTitle}
-          description={STRINGS.noDataDescription}
+          title={t(UI_KEYS.ui.data_table.no_data_title)}
+          description={t(UI_KEYS.ui.data_table.no_data_description)}
         />
       ));
 
@@ -232,7 +224,7 @@ export function DataTable<TItem extends CollectionItem = CollectionItem>({
       ) : null}
       {hasError ? (
         <ErrorState
-          title={STRINGS.errorTitle}
+          title={t(UI_KEYS.ui.data_table.error_title)}
           headingLevel={headingLevel}
           kind={errorKind}
           error={error}
@@ -240,12 +232,15 @@ export function DataTable<TItem extends CollectionItem = CollectionItem>({
           retry={onRetry ? { label: retryLabel, onPress: onRetry } : undefined}
         />
       ) : isLoading && !hasRows ? (
-        <PageSkeleton layout="table" loadingLabel={loadingLabel ?? STRINGS.loading} />
+        <PageSkeleton
+          layout="table"
+          loadingLabel={loadingLabel ?? t(UI_KEYS.ui.data_table.loading)}
+        />
       ) : (
         <Table
           label={label}
           items={items}
-          columns={rowActions ? [...columns, ACTIONS_COLUMN] : columns}
+          columns={rowActions ? [...columns, actionsColumn] : columns}
           renderCell={cellOf}
           variant={variant}
           isStickyHeader={isStickyHeader}

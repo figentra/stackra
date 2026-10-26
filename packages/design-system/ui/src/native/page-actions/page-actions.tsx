@@ -27,8 +27,8 @@ import { followHref } from "#native/router-provider/follow-href.function";
 import { RouterContext } from "#native/router-provider/router-context";
 import { Text } from "#native/text/text";
 
-// shortcut: English until @stackra/i18n ships; then the key `ui::page-actions.could-not-open`.
-const STRINGS = { couldNotOpen: "Link could not open its URL" } as const;
+// Developer log text, read in the console only, so it stays English (ADR 0080 translates what users see).
+const COULD_NOT_OPEN = "Link could not open its URL";
 
 /** Props of {@link PageActions}. */
 interface PageActionsProps {
@@ -55,7 +55,7 @@ function ActionButton({
   const navigate = use(RouterContext);
   const follow = () => {
     action.onPress?.();
-    if (action.href) followHref(action.href, navigate, STRINGS.couldNotOpen);
+    if (action.href) followHref(action.href, navigate, COULD_NOT_OPEN);
   };
   return (
     <Button

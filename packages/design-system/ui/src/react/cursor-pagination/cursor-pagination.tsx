@@ -13,18 +13,11 @@
 import { useState, type ComponentPropsWithoutRef } from "react";
 
 import type { CursorPaginationContractProps } from "#contracts/types/cursor-pagination-contract-props.type";
+import { UI_KEYS } from "#core/constants/ui-keys.constant";
+import { useUiText } from "#core/hooks/use-ui-text";
 import { Button } from "#react/button/button";
 import { Icon } from "#react/icon/icon";
 import { Text } from "#react/text/text";
-
-// shortcut: English until @stackra/i18n ships; then the keys `ui::cursor-pagination.*`.
-const STRINGS = {
-  label: "Pagination",
-  previous: "Previous",
-  next: "Next",
-  loadMore: "Load more",
-  count: (count: number) => `Showing ${count} ${count === 1 ? "item" : "items"}`,
-} as const;
 
 /**
  * Props of the web CursorPagination: the shared contract plus the `nav` element's own props, passed through. The
@@ -50,14 +43,20 @@ export function CursorPagination({
   count,
   isLoading = false,
   size,
-  label = STRINGS.label,
-  previousLabel = STRINGS.previous,
-  nextLabel = STRINGS.next,
-  loadMoreLabel = STRINGS.loadMore,
-  countLabel = STRINGS.count,
+  label,
+  previousLabel,
+  nextLabel,
+  loadMoreLabel,
+  countLabel,
   className,
   ...rest
 }: CursorPaginationProps) {
+  const t = useUiText();
+  label ??= t(UI_KEYS.ui.cursor_pagination.label);
+  previousLabel ??= t(UI_KEYS.ui.cursor_pagination.previous);
+  nextLabel ??= t(UI_KEYS.ui.cursor_pagination.next);
+  loadMoreLabel ??= t(UI_KEYS.ui.cursor_pagination.load_more);
+  countLabel ??= (count) => t(UI_KEYS.ui.cursor_pagination.count, { count });
   const isPager = mode === "pager";
   // The button that was pressed shows the spinner, the other waits disabled; a load that no press started (an app's own
   // end-reached call) is the next page.

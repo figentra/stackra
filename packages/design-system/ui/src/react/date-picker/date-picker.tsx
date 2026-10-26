@@ -39,6 +39,8 @@ import { composeRenderProps, type DateValue } from "react-aria-components";
 
 import type { DatePickerContractProps } from "#contracts/types/date-picker-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
+import { UI_KEYS } from "#core/constants/ui-keys.constant";
+import { useUiText } from "#core/hooks/use-ui-text";
 
 /**
  * Props of the web DatePicker: the shared contract plus HeroUI v3's own date picker props, passed through unchanged.
@@ -46,9 +48,6 @@ import { omitUndefined } from "#core/functions/omit-undefined.function";
  */
 export type DatePickerProps = DatePickerContractProps &
   Omit<DatePickerRootProps<CalendarDate>, keyof DatePickerContractProps | "children">;
-
-// shortcut: an English default until @stackra/i18n ships; then the key `ui::date-picker.calendar`.
-const CALENDAR_BUTTON_LABEL = "Choose a date";
 
 /**
  * A segment and the calendar button are at least 24 CSS pixels each way: HeroUI's segment is about 20 pixels high and,
@@ -91,7 +90,7 @@ export function DatePicker({
   errorMessage,
   variant = "primary",
   isFullWidth = true,
-  calendarButtonLabel = CALENDAR_BUTTON_LABEL,
+  calendarButtonLabel,
   minValue,
   maxValue,
   isDateUnavailable,
@@ -102,6 +101,8 @@ export function DatePicker({
   className,
   ...rest
 }: DatePickerProps) {
+  const t = useUiText();
+  calendarButtonLabel ??= t(UI_KEYS.ui.date_picker.calendar);
   // The picker hands its bounds to the calendar through context, but HeroUI's calendar always passes bounds of its own
   // (1900 to 2099) as props, and props win over context, so the calendar must be given the bounds itself.
   const bounds = omitUndefined({ minValue, maxValue });

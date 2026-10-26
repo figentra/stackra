@@ -64,9 +64,9 @@ export interface DateRangeFilterDefinition extends FilterDefinitionBase<"date-ra
 
 /** A filter on a yes or no flag. */
 export interface BooleanFilterDefinition extends FilterDefinitionBase<"boolean"> {
-  /** The text of the yes choice and of the chip when it is picked. Defaults to an English word until i18n ships. */
+  /** The text of the yes choice and of the chip when it is picked. Defaults to the `ui` catalogue's word in the active locale. */
   readonly trueLabel?: string | undefined;
-  /** The text of the no choice and of the chip when it is picked. Defaults to an English word until i18n ships. */
+  /** The text of the no choice and of the chip when it is picked. Defaults to the `ui` catalogue's word in the active locale. */
   readonly falseLabel?: string | undefined;
 }
 

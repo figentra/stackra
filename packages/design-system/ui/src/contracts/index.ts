@@ -18,6 +18,7 @@ export { ColorScheme, type ResolvedColorScheme } from "#contracts/enums/color-sc
 export { ControlVariant } from "#contracts/enums/control-variant.enum";
 export { Direction } from "#contracts/enums/direction.enum";
 export { DisplayMode } from "#contracts/enums/display-mode.enum";
+export { KioskReach } from "#contracts/enums/kiosk-reach.enum";
 export { EmptyReason } from "#contracts/enums/empty-reason.enum";
 export { ErrorKind } from "#contracts/enums/error-kind.enum";
 export { FilterKind } from "#contracts/enums/filter-kind.enum";
@@ -145,6 +146,8 @@ export type { MenuLeafItem } from "#contracts/types/menu-leaf-item.type";
 export type { MenuSection } from "#contracts/types/menu-section.type";
 export type { ModalContractProps } from "#contracts/types/modal-contract-props.type";
 export type { ModeSwitchContractProps } from "#contracts/types/mode-switch-contract-props.type";
+export type { KioskState } from "#contracts/types/kiosk-state.type";
+export type { KioskSurfaceContractProps } from "#contracts/types/kiosk-surface-contract-props.type";
 export type { NavigationHeaderContractProps } from "#contracts/types/navigation-header-contract-props.type";
 export type { NavigationItem } from "#contracts/types/navigation-item.type";
 export type { NavigationListContractProps } from "#contracts/types/navigation-list-contract-props.type";

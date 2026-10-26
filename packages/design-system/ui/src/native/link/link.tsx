@@ -13,17 +13,16 @@
 import { LinkButton, type LinkButtonProps } from "heroui-native";
 import { use } from "react";
 
+import { UI_KEYS } from "#core/constants/ui-keys.constant";
+import { useUiText } from "#core/hooks/use-ui-text";
 import type { LinkContractProps } from "#contracts/types/link-contract-props.type";
 import { TONE_CLASS_NAME } from "#core/constants/tone-class-name.constant";
 import { Icon } from "#native/icon/icon";
 import { followHref } from "#native/router-provider/follow-href.function";
 import { RouterContext } from "#native/router-provider/router-context";
 
-// shortcut: English until @stackra/i18n ships; then the key `ui::link.opens-in-browser`.
-const STRINGS = {
-  opensInBrowser: "opens in your browser",
-  couldNotOpen: "Link could not open its URL",
-} as const;
+// Developer log text, read in the console only, so it stays English (ADR 0080 translates what users see).
+const COULD_NOT_OPEN = "Link could not open its URL";
 
 /**
  * Props of the native Link: the shared contract plus HeroUI Native's LinkButton props, passed through unchanged. The
@@ -53,15 +52,17 @@ export function Link({
   tone = "default",
   underline = "always",
   label,
-  externalLabel = STRINGS.opensInBrowser,
+  externalLabel,
   children,
   accessibilityHint,
   ...rest
 }: LinkProps) {
+  const t = useUiText();
+  externalLabel ??= t(UI_KEYS.ui.link.opens_in_browser);
   const navigate = use(RouterContext);
   const follow = () => {
     onPress?.();
-    if (href) followHref(href, navigate, STRINGS.couldNotOpen, isExternal);
+    if (href) followHref(href, navigate, COULD_NOT_OPEN, isExternal);
   };
   // Written out in full: Uniwind finds `text-link` and `underline` here, and `default` has no entry in the map.
   const toneClass = tone === "default" ? "text-link" : TONE_CLASS_NAME[tone];

@@ -69,6 +69,8 @@ export {
   type LeaveConfirmationProps,
 } from "#react/leave-confirmation/leave-confirmation";
 export { Link, type LinkProps } from "#react/link/link";
+export { KioskSurface, type KioskSurfaceProps } from "#react/kiosk-surface/kiosk-surface";
+export { useKiosk } from "#react/kiosk-surface/use-kiosk";
 export { List, type ListProps } from "#react/list/list";
 export { ListItem, type ListItemProps } from "#react/list/list-item";
 export { Menu, type MenuProps } from "#react/menu/menu";

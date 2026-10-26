@@ -30,6 +30,6 @@ export interface PageHeaderContractProps
   readonly status?: ReactNode | undefined;
   /** The page's actions in priority order: the first is primary, three at most show and the rest go in an ActionMenu. */
   readonly actions?: readonly MenuLeafItem[] | undefined;
-  /** The accessible name of the ActionMenu button the overflowing actions go in. Defaults to an English phrase. */
+  /** The accessible name of the ActionMenu button the overflowing actions go in. Defaults to the `ui` catalogue's phrase in the active locale. */
   readonly moreActionsLabel?: string | undefined;
 }

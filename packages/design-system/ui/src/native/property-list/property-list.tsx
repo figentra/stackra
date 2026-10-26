@@ -17,6 +17,8 @@
 import type { ReactElement, ReactNode } from "react";
 import { AccessibilityInfo, View, type ViewProps } from "react-native";
 
+import { UI_KEYS } from "#core/constants/ui-keys.constant";
+import { useUiText } from "#core/hooks/use-ui-text";
 import type { PropertyListContractProps } from "#contracts/types/property-list-contract-props.type";
 import type { PropertyListItem } from "#contracts/types/property-list-item.type";
 import { copyTextOf } from "#core/functions/copy-text-of.function";
@@ -27,9 +29,6 @@ import { Text } from "#native/text/text";
 export type PropertyListProps<TItem extends PropertyListItem = PropertyListItem> =
   PropertyListContractProps<TItem> & Omit<ViewProps, keyof PropertyListContractProps | "children">;
 
-// shortcut: English until @stackra/i18n ships; then the key `ui::property-list.copied`.
-const STRINGS = { copied: "Copied" } as const;
-
 /** True for a value with nothing to show: missing, empty or `false`; `0` is a value. */
 const isEmpty = (value: ReactNode) => value == null || value === "" || value === false;
 
@@ -38,11 +37,13 @@ export function PropertyList<TItem extends PropertyListItem = PropertyListItem>(
   items,
   columns: _columns,
   emptyValue = "–",
-  copiedLabel = STRINGS.copied,
+  copiedLabel,
   onCopy,
   className,
   ...rest
 }: PropertyListProps<TItem>): ReactElement {
+  const t = useUiText();
+  copiedLabel ??= t(UI_KEYS.ui.property_list.copied);
   return (
     <View role="list" className={["gap-4", className].filter(Boolean).join(" ")} {...rest}>
       {items.map((item) => {

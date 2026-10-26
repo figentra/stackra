@@ -19,7 +19,7 @@ export interface PropertyListContractProps<TItem extends PropertyListItem = Prop
   readonly columns?: 1 | 2 | undefined;
   /** What shows in place of an empty value. Defaults to an en dash; pass words ("Not set") when a dash would not say enough. */
   readonly emptyValue?: ReactNode;
-  /** Spoken, and on web also drawn as a check, after a value is copied, for example "Copied". Defaults to an English word until i18n ships, so a copy is never silent. */
+  /** Spoken, and on web also drawn as a check, after a value is copied, for example "Copied". Defaults to the `ui` catalogue's word in the active locale, so a copy is never silent. */
   readonly copiedLabel?: string | undefined;
   /**
    * Called with the row and its text once the text is on the clipboard. On web the list writes the clipboard itself; on

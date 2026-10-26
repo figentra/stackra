@@ -30,14 +30,14 @@ export interface CursorPaginationContractProps {
   readonly isLoading?: boolean | undefined;
   /** The height and text size of the buttons. Defaults to `md`. */
   readonly size?: Size | undefined;
-  /** The spoken name of the pagination landmark. Defaults to an English phrase until i18n ships. */
+  /** The spoken name of the pagination landmark. Defaults to the `ui` catalogue's phrase in the active locale. */
   readonly label?: string | undefined;
-  /** The text of the previous button. Defaults to an English word until i18n ships. */
+  /** The text of the previous button. Defaults to the `ui` catalogue's word in the active locale. */
   readonly previousLabel?: string | undefined;
-  /** The text of the next button. Defaults to an English word until i18n ships. */
+  /** The text of the next button. Defaults to the `ui` catalogue's word in the active locale. */
   readonly nextLabel?: string | undefined;
-  /** The text of the load-more button. Defaults to an English phrase until i18n ships. */
+  /** The text of the load-more button. Defaults to the `ui` catalogue's phrase in the active locale. */
   readonly loadMoreLabel?: string | undefined;
-  /** Writes the count as a sentence, for example "Showing 20 orders". Defaults to an English phrase. */
+  /** Writes the count as a sentence, for example "Showing 20 orders". Defaults to the `ui` catalogue's phrase in the active locale. */
   readonly countLabel?: ((count: number) => string) | undefined;
 }

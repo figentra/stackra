@@ -24,6 +24,8 @@ import { use, type ReactElement, type ReactNode } from "react";
 import { View, type ViewProps } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { UI_KEYS } from "#core/constants/ui-keys.constant";
+import { useUiText } from "#core/hooks/use-ui-text";
 import type { NavigationHeaderContractProps } from "#contracts/types/navigation-header-contract-props.type";
 import { isAbsoluteUrl } from "#core/functions/is-absolute-url.function";
 import { Heading } from "#native/heading/heading";
@@ -31,9 +33,6 @@ import { Icon } from "#native/icon/icon";
 import { IconButton } from "#native/icon-button/icon-button";
 import { RouterContext } from "#native/router-provider/router-context";
 import { Text } from "#native/text/text";
-
-// shortcut: English until @stackra/i18n ships; then the key `ui::navigation-header.back`.
-const STRINGS = { back: "Back" } as const;
 
 /**
  * Props of the native NavigationHeader: the shared contract, the top inset switch and the root `View`'s own props,
@@ -69,7 +68,7 @@ export function NavigationHeader({
   hasLargeTitle = false,
   onBack,
   backHref,
-  backLabel = STRINGS.back,
+  backLabel,
   startContent,
   endContent,
   label,
@@ -78,6 +77,8 @@ export function NavigationHeader({
   style,
   ...rest
 }: NavigationHeaderProps): ReactElement {
+  const t = useUiText();
+  backLabel ??= t(UI_KEYS.ui.navigation_header.back);
   const insets = useSafeAreaInsets();
   const navigate = use(RouterContext);
   const goBack = () => {

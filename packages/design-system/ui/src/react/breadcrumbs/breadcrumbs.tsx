@@ -16,9 +16,8 @@ import { Breadcrumbs as HeroBreadcrumbs, type BreadcrumbsRootProps } from "@hero
 
 import type { BreadcrumbsContractProps } from "#contracts/types/breadcrumbs-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
-
-// shortcut: English until @stackra/i18n ships; then the key `ui::breadcrumbs.label`.
-const STRINGS = { label: "Breadcrumbs" } as const;
+import { UI_KEYS } from "#core/constants/ui-keys.constant";
+import { useUiText } from "#core/hooks/use-ui-text";
 
 /**
  * Props of the web Breadcrumbs: the shared contract plus HeroUI v3's own breadcrumbs props, passed through unchanged.
@@ -38,12 +37,9 @@ export type BreadcrumbsProps = BreadcrumbsContractProps &
  * The trail from the root to the current page. Every step but the last is a link; the last is the current page, drawn
  * as text and announced as such.
  */
-export function Breadcrumbs({
-  items,
-  label = STRINGS.label,
-  className,
-  ...rest
-}: BreadcrumbsProps) {
+export function Breadcrumbs({ items, label, className, ...rest }: BreadcrumbsProps) {
+  const t = useUiText();
+  label ??= t(UI_KEYS.ui.breadcrumbs.label);
   return (
     <nav aria-label={label}>
       <HeroBreadcrumbs

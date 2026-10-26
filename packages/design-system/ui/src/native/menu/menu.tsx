@@ -36,8 +36,8 @@ import { RouterContext } from "#native/router-provider/router-context";
 export type MenuProps = MenuContractProps &
   Omit<MenuRootProps, keyof MenuContractProps | "children" | "isDefaultOpen">;
 
-// shortcut: English until @stackra/i18n ships; then the key `ui::menu.link-could-not-open`.
-const STRINGS = { couldNotOpen: "Menu could not open the link of an action" } as const;
+// Developer log text, read in the console only, so it stays English (ADR 0080 translates what users see).
+const COULD_NOT_OPEN = "Menu could not open the link of an action";
 
 /** The icon of an action: a name is drawn in the item's tone, an element as given. */
 function MenuItemIcon({ item }: { readonly item: MenuLeafItem }): ReactNode {
@@ -106,7 +106,7 @@ export function Menu({
   const isSelectable = selectionMode !== "none";
   const choose = (item: MenuLeafItem) => {
     item.onPress?.();
-    if (item.href) followHref(item.href, navigate, STRINGS.couldNotOpen);
+    if (item.href) followHref(item.href, navigate, COULD_NOT_OPEN);
     onAction?.(item.id);
   };
   const body = sections.map((section, index) => {
