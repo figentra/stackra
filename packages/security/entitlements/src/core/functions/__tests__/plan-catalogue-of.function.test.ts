@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `planCatalogueOf`: seat kinds, modules, tiers (sorted by rank, `null` limits unlimited) and
- *          trials are read from rows; malformed rows, duplicates and unknown references are refused by row id.
+ *          trials are read from rows; other record kinds are kept in `extras`; malformed rows, duplicates and unknown references are refused by row id.
  * Boundary: test only; the rows stand in for a `plan-catalogue:<product>` seed record.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0391 (decisions 1 and 5).
@@ -48,12 +48,19 @@ describe("planCatalogueOf", () => {
     expect(catalogue.seatKinds).toEqual([{ key: "full" }, { key: "provider" }]);
     expect(catalogue.modules).toEqual([{ key: "payroll" }]);
     expect(catalogue.trials).toEqual([{ tier: "pro", days: 14, cardRequired: false }]);
+    expect(catalogue.extras).toEqual({});
+  });
+
+  it("keeps rows of other record kinds untouched in extras", () => {
+    const policy = { id: "policy-seats", record: "limit_policy", key: "seats", grace: 14 };
+    const catalogue = planCatalogueOf([...CATALOGUE_ROWS, policy]);
+    expect(catalogue.extras).toEqual({ limit_policy: [policy] });
+    expect(catalogue.tiers).toHaveLength(2);
+    expect(Object.isFrozen(catalogue.extras.limit_policy)).toBe(true);
   });
 
   it("refuses bad rows by id", () => {
-    expect(() => planCatalogueOf([{ id: "x", record: "coupon" }])).toThrow(
-      /row x has unknown record/,
-    );
+    expect(() => planCatalogueOf([{ id: "x" }])).toThrow(/row x needs text record/);
     expect(() => planCatalogueOf([{ id: "x", record: "tier", key: "pro", rank: -1 }])).toThrow(
       RangeError,
     );

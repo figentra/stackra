@@ -3,7 +3,7 @@ Stackra file contract:
 Purpose: the agent rules of @stackra/entitlements: where code goes, entries and barrels, package rules.
 Boundary: documentation of packages/security/entitlements only.
 Runtime: none
-Governing contract: ADR 0215; ADR 0294; STA-1225 (grant by key).
+Governing contract: ADR 0215; ADR 0294; STA-1225 (grant by key); stackra-117 (STA-1247).
 -->
 
 # AGENTS — @stackra/entitlements
@@ -30,7 +30,10 @@ The `Entitlement` kind, its ports and the plan driver of the pipeline's entitlem
   public file to its barrel and to that entry's `index.test.ts`.
 - `EntitlementUsage` lives in `src/contracts/ports/` and is exported only from `./contracts`. `EntitlementSource`
   lives in `src/contracts/ports/` (its signature names the structural `EntitlementRef` and `EntitlementKey`) and is
-  re-exported from `.` and `src/core/ports/` for old imports. `ENTITLEMENT_REGISTRY` stays internal.
+  re-exported from `.` and `src/core/ports/` for old imports. `ENTITLEMENT_REGISTRY` stays internal; `isLimitGrant`
+  and `limitOf` are public (stackra-117), so a service reuses them instead of repeating them.
+- `planCatalogueOf` never refuses an unknown record kind: it keeps such rows in `extras`. Parse a new kind in the
+  service that owns it, not here.
 - `EntitlementSource#grant` takes a class or a key (STA-1225). A driver turns either into the key with
   `entitlementKey`, never by its own lookup, so a class and its key always answer the same record.
 

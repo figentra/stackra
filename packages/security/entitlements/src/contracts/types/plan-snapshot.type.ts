@@ -1,11 +1,11 @@
 /**
  * Stackra file contract:
  * Purpose: `PlanSnapshot`, the effective plan of one scope as the plan service composes it (plan, add-ons, overrides,
- *          trials): the grant of each entitlement by its locked key and the allowance of each seat kind by its key.
+ *          trials): the grant of each entitlement by its locked key and the allowance of each seat kind by its key, and when its paid plan began.
  * Boundary: a type only. The keys and the values are catalogue data (`plan-catalogue:<product>`): seat kinds such as a
  *           provider seat or a support seat are records, never code. A key absent here is not in the plan.
  * Runtime: isomorphic
- * Governing contract: ADR 0215 (decisions 1, 3 and 5); ADR 0242 (decision 2: seats); owner XP-1 (seat kinds).
+ * Governing contract: ADR 0215 (decisions 1, 3 and 5); ADR 0242 (decision 2: seats); owner XP-1 (seat kinds); owner R1-OS-40 (paid-plan age, stackra-117).
  */
 import type { LimitGrant } from "#contracts/types/limit-grant.type";
 
@@ -19,4 +19,7 @@ export interface PlanSnapshot {
 
   /** Seat kind key (`provider`, `support`) to its allowance: a count or a soft limit. */
   readonly seats: Readonly<Record<string, number | LimitGrant>>;
+
+  /** When the scope's current unbroken paid plan began; absent on a free plan or a trial (`paidPlanDays`). */
+  readonly paidSince?: Date;
 }

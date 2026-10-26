@@ -2,21 +2,23 @@
  * Stackra file contract:
  * Purpose: `planCatalogueOf`, the `PlanCatalogue` a `plan-catalogue:<product>` version's rows hold. Each row names its
  *          `record`: `seat_kind` `{ key }`, `module` `{ key }`, `tier` `{ key, rank, features, limits, seats, modules }`
- *          or `trial` `{ tier, days, cardRequired }`.
+ *          or `trial` `{ tier, days, cardRequired }`. A row of any other record kind (`limit_policy`) is kept untouched
+ *          in `extras` under its kind, so one version can hold a service's own rows beside the plan's.
  * Boundary: pure; it reads untrusted admin and seed rows, so a malformed row, a duplicate key, or a tier or trial that
  *           names an unknown seat kind, module or tier is a `RangeError` naming the row id. A `null` limit is
  *           unlimited. The admin calls it before every proposal, so a bad version is never stored.
  * Runtime: isomorphic
- * Governing contract: ADR 0391 (decisions 1 and 5); config-model section 2.
+ * Governing contract: ADR 0391 (decisions 1 and 5); config-model section 2; stackra-117 (open catalogue records).
  */
 import type { Json } from "@stackra/contracts";
 
+import type { CatalogueRow } from "#core/types/catalogue-row.type";
 import type { PlanCatalogue } from "#core/types/plan-catalogue.type";
 import type { PlanTier } from "#core/types/plan-tier.type";
 import type { TrialTerms } from "#core/types/trial-terms.type";
 
 /** A row as stored. */
-type Row = Readonly<Record<string, Json>>;
+type Row = CatalogueRow;
 
 /** The row's text field, or a `RangeError`. */
 function text(row: Row, field: string): string {
@@ -68,7 +70,7 @@ function unique(seen: Set<string>, key: string, row: Row): void {
 /**
  * The catalogue `rows` hold.
  *
- * @throws RangeError for a malformed row, a duplicate key, or a reference to an unknown seat kind, module or tier.
+ * @throws RangeError for a row with no `record`, a malformed row, a duplicate key, or a reference to an unknown seat kind, module or tier.
  * @example
  * const catalogue = planCatalogueOf((await admin.inForce("plan-catalogue:commerce", termStart))!.rows);
  */
@@ -78,6 +80,8 @@ export function planCatalogueOf(rows: readonly Row[]): PlanCatalogue {
   const tierKeys = new Set<string>();
   const tiers: PlanTier[] = [];
   const trials: TrialTerms[] = [];
+  // a null prototype, so an untrusted `__proto__` record kind stays a plain key
+  const extras: Record<string, Row[]> = Object.create(null);
   for (const row of rows) {
     const record = text(row, "record");
     if (record === "seat_kind") unique(seatKinds, text(row, "key"), row);
@@ -105,8 +109,7 @@ export function planCatalogueOf(rows: readonly Row[]): PlanCatalogue {
           cardRequired: row.cardRequired,
         }),
       );
-    } else
-      throw new RangeError(`planCatalogueOf: row ${String(row.id)} has unknown record ${record}`);
+    } else (extras[record] ??= []).push(Object.freeze({ ...row }));
   }
   for (const tier of tiers) {
     for (const kind of Object.keys(tier.seats))
@@ -124,5 +127,8 @@ export function planCatalogueOf(rows: readonly Row[]): PlanCatalogue {
     seatKinds: Object.freeze([...seatKinds].map((key) => Object.freeze({ key }))),
     modules: Object.freeze([...modules].map((key) => Object.freeze({ key }))),
     trials: Object.freeze(trials),
+    extras: Object.freeze(
+      Object.fromEntries(Object.entries(extras).map(([kind, held]) => [kind, Object.freeze(held)])),
+    ),
   });
 }

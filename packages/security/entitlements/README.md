@@ -30,6 +30,9 @@ An entitlement is a commercial right. It is never a release switch (that is a fl
 | `.`           | `EntitlementValueService`                                                               | reads a value entitlement's number (`EntitlementKind.Value`) from the plan |
 | `.`           | `SeatMeterService`, `MemorySeatLedgerDriver`, `SeatLimitReachedError`                   | the seat-kind meter: assign, release, usage per kind                       |
 | `.`           | `limitAllows`                                                                           | whether one more fits a count or a soft limit at a time                    |
+| `.`           | `isLimitGrant`, `limitOf`                                                               | whether a grant is a usable limit; the allowance a refusal names           |
+| `.`           | `planCatalogueOf`, `CatalogueRow`                                                       | parse a plan-catalogue version; other record kinds land in `extras`        |
+| `./contracts` | `CapLiftFacts`; `.` `paidPlanDays`                                                      | the R1-OS-40 cap-lift facts; the paid-plan age from `PlanSnapshot`         |
 | `./contracts` | `EntitlementUsage`                                                                      | the port a limit's current count comes from (the data layer implements it) |
 | `.`           | `PlanEntitlementCheckDriver`                                                            | the driver of `EntitlementCheck`, the pipeline's entitlement step          |
 | `.`           | `LimitReachedError`                                                                     | `limit_reached`: the refusal of a create past the plan's limit             |
@@ -126,6 +129,20 @@ limit gates gets that reservation around its unit of work, with no code in the a
 A value entitlement (`EntitlementKind.Value`, ADR 0408) is a plain number the plan sets that counts no model, such as
 the audit visible window in days: `await values.valueOf(AuditWindowDaysEntitlement, scope.id)` answers it from the
 effective plan, or `undefined` when the plan does not set it.
+
+## Plan catalogue records
+
+`planCatalogueOf(rows)` reads the `seat_kind`, `module`, `tier` and `trial` rows of a `plan-catalogue:<product>`
+version and checks every reference. A row of any other record kind (a `limit_policy` row) is not refused: it is kept
+untouched in `catalogue.extras[<record>]`, in row order, for the service that owns that kind to parse. A row with no
+`record` is still a `RangeError`.
+
+## Cap-lift facts
+
+`CapLiftFacts` (`./contracts`) is the input of a trust-cap rule set (R1-OS-40): `kybPassed` from the verification
+service, `domainVerified` from tenancy (`tenancy.domain.verified.v1`), and `paidPlanDays`, which this package answers
+with `paidPlanDays(snapshot, now)` over the plan service's optional `PlanSnapshot.paidSince`. The days that lift a
+cap are rule-set data.
 
 ## Seat kinds
 

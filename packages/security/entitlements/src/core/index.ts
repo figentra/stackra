@@ -2,13 +2,15 @@
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `.` entry of @stackra/entitlements (the `Entitlement` kind, its ports, the plan driver
  *          of the pipeline's entitlement step and its limit reservation, the value-entitlement reader, the registration
- *          gen calls, the by-class-or-key `isEntitled` check, `LimitReachedError`, and the plan-catalogue admin of ADR 0391) until `stackra gen` writes the entry barrels (STA-339).
- * Boundary: names each re-export and declares nothing. The registry, `isLimitGrant` and `limitOf` stay internal.
+ *          gen calls, the by-class-or-key `isEntitled` check, the limit-grant helpers `isLimitGrant` and `limitOf`, `paidPlanDays`,
+ *          `LimitReachedError`, and the plan-catalogue admin of ADR 0391) until `stackra gen` writes the entry barrels (STA-339).
+ * Boundary: names each re-export and declares nothing. The registry stays internal; `isLimitGrant` and `limitOf` are public
+ *           (stackra-117) so a service's own ledger reuses them instead of repeating them.
  *           `EntitlementSource` now lives in `./contracts` and is still re-exported here so existing imports keep
  *           working; new code imports it from `./contracts`. `EntitlementKey` is re-exported
  *           the same way, for `./testing`, which imports `.` only.
  * Runtime: isomorphic
- * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision.
+ * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision; stackra-117 (STA-1247).
  */
 export { Entitlement } from "#core/bases/entitlement.base";
 export { MemoryCatalogueVersionsDriver } from "#core/drivers/memory-catalogue-versions.driver";
@@ -25,7 +27,10 @@ export { SeatLimitReachedError } from "#core/errors/seat-limit-reached.error";
 export { SecondApproverRequiredError } from "#core/errors/second-approver-required.error";
 export { entitlementKey } from "#core/functions/entitlement-key.function";
 export { isEntitled } from "#core/functions/is-entitled.function";
+export { isLimitGrant } from "#core/functions/is-limit-grant.function";
 export { limitAllows } from "#core/functions/limit-allows.function";
+export { limitOf } from "#core/functions/limit-of.function";
+export { paidPlanDays } from "#core/functions/paid-plan-days.function";
 export { planCatalogueOf } from "#core/functions/plan-catalogue-of.function";
 export { registerEntitlements } from "#core/functions/register-entitlements.function";
 export { tierPlan } from "#core/functions/tier-plan.function";
@@ -37,6 +42,7 @@ export { PlanCatalogueService } from "#core/services/plan-catalogue.service";
 export { SeatMeterService } from "#core/services/seat-meter.service";
 export type { CatalogueModule } from "#core/types/catalogue-module.type";
 export type { CatalogueProposal } from "#core/types/catalogue-proposal.type";
+export type { CatalogueRow } from "#core/types/catalogue-row.type";
 export type { CatalogueSeedRecord } from "#core/types/catalogue-seed-record.type";
 export type { EntitlementClass } from "#core/types/entitlement-class.type";
 export type { EntitlementKey } from "#contracts/types/entitlement-key.type";
