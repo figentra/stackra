@@ -13,6 +13,7 @@ export { Rounding } from "#core/enums/rounding.enum";
 export { currencyCode } from "#core/functions/currency-code.function";
 export { decimalProduct } from "#core/functions/decimal-product.function";
 export { money } from "#core/functions/money.function";
+export { roundCash } from "#core/functions/round-cash.function";
 export type { CashRoundingRule } from "#core/types/cash-rounding-rule.type";
 export type { CurrencyCode } from "#core/types/currency-code.type";
 export { CashRounding } from "#core/values/cash-rounding.value";

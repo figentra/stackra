@@ -24,6 +24,7 @@ describe("@stackra/money", () => {
       "currencyCode",
       "decimalProduct",
       "money",
+      "roundCash",
     ]);
   });
 
