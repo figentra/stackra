@@ -11,6 +11,8 @@
  * Governing contract: ADR 0188 (decision 2: data keys per environment and tenant); ADR 0173 (nobody reads a value);
  *                     registry gaps R-27 and R-36 (owner decision 23).
  */
+import { base64urlDecode as decode } from "#core/functions/base64url-decode.function";
+import { base64urlEncode as encode } from "#core/functions/base64url-encode.function";
 import { FieldCipher } from "#core/ports/field-cipher.port";
 import type { KeyProvider } from "#core/ports/key-provider.port";
 
@@ -19,19 +21,6 @@ const VERSION = "v1";
 
 /** The IV length AES-GCM is specified for: 12 bytes. */
 const IV_BYTES = 12;
-
-/** Bytes as base64url without padding. */
-function encode(bytes: Uint8Array): string {
-  let text = "";
-  for (const byte of bytes) text += String.fromCharCode(byte);
-  return btoa(text).replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/, "");
-}
-
-/** base64url text as bytes. */
-function decode(text: string): Uint8Array<ArrayBuffer> {
-  const binary = atob(text.replaceAll("-", "+").replaceAll("_", "/"));
-  return Uint8Array.from(binary, (char) => char.charCodeAt(0));
-}
 
 /**
  * Seals fields with AES-256-GCM.

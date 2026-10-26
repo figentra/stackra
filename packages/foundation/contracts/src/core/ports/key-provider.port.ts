@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: the KeyProvider port: hands out the data keys of envelope encryption, the current one to seal with and any
  *          earlier one by id to open with.
- * Boundary: an abstract class that is its own token; a KMS driver ships with its infra package, the memory driver
+ * Boundary: an abstract class that is its own token; the memory, AWS KMS (per tenant) and per-subject drivers ship
  *           here. It never lists keys.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 16 and 17), ADR 0173 (nobody reads a value); registry gaps R-27 and R-36

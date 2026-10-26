@@ -1,25 +1,25 @@
 # @stackra/contracts
 
 The leaf vocabulary of Stackra: the `Port` and `Enum` bases, actor and id types, `Duration`, the platform enums, the
-core ports `Clock`, `Logger`, `IdentityResolver`, `HealthIndicator`, `KeyProvider` and `FieldCipher`, the manifest type and the four `stackra.config.ts` helpers.
+core ports `Clock`, `Logger`, `IdentityResolver`, `HealthIndicator`, `KeyProvider`, `FieldCipher` and `Signer`, the manifest type and the four `stackra.config.ts` helpers.
 
 **Tier:** `tier:lib` (`packages/foundation/contracts`), entry `.` only, no workspace dependency. Every other Stackra
 package may import it; it imports nothing.
 
 ## What is here
 
-| Symbol                                                                                                                                    | Kind      | Use                                                                                       |
-| ----------------------------------------------------------------------------------------------------------------------------------------- | --------- | ----------------------------------------------------------------------------------------- |
-| `Port`                                                                                                                                    | kind base | `abstract class X extends Port`: a contract a driver implements; its token                |
-| `Enum`                                                                                                                                    | kind base | `export const X = Enum.of({...})` plus `export type X = Enum.Value<typeof X>`             |
-| `Duration`                                                                                                                                | value     | `Duration.minutes(10)` is `"PT10M"`; `parse`, `toMilliseconds`                            |
-| `ActorKind`, `ApiArea`, `DataClassification`, `HttpMethod`, `Realm`, `SortDirection`, `Target`, `Tone`, `MigrationRunner`, `HealthStatus` | enums     | the platform's closed sets                                                                |
-| `Clock`, `Logger`, `IdentityResolver`                                                                                                     | ports     | inject by type; drivers live in container, logger and identity                            |
-| `HealthIndicator`, `KeyProvider`, `FieldCipher`                                                                                           | ports     | a probed dependency; envelope-encryption data keys; seal and open a field; no driver here |
-| `Actor`, `PublicId<P>`, `Branded<T, B>`, `Email`, `Url`, `Json`, `VerifiedPrincipal`, `HealthReport`, `DataKey`                           | types     | the caller, ids and value types the shape compiler knows                                  |
-| `brand<B>()`                                                                                                                              | function  | the one constructor of a branded type                                                     |
-| `StackraManifest`                                                                                                                         | type      | reading a committed `stackra.manifest.json`                                               |
-| `defineApp`, `defineService`, `definePackage`, `defineWorker`                                                                             | functions | the one call in a member's `stackra.config.ts`                                            |
+| Symbol                                                                                                                                    | Kind      | Use                                                                           |
+| ----------------------------------------------------------------------------------------------------------------------------------------- | --------- | ----------------------------------------------------------------------------- |
+| `Port`                                                                                                                                    | kind base | `abstract class X extends Port`: a contract a driver implements; its token    |
+| `Enum`                                                                                                                                    | kind base | `export const X = Enum.of({...})` plus `export type X = Enum.Value<typeof X>` |
+| `Duration`                                                                                                                                | value     | `Duration.minutes(10)` is `"PT10M"`; `parse`, `toMilliseconds`                |
+| `ActorKind`, `ApiArea`, `DataClassification`, `HttpMethod`, `Realm`, `SortDirection`, `Target`, `Tone`, `MigrationRunner`, `HealthStatus` | enums     | the platform's closed sets                                                    |
+| `Clock`, `Logger`, `IdentityResolver`                                                                                                     | ports     | inject by type; drivers live in container, logger and identity                |
+| `HealthIndicator`, `KeyProvider`, `FieldCipher`, `Signer`                                                                                 | ports     | a probed dependency; data keys; seal and open a field; sign; drivers below    |
+| `Actor`, `PublicId<P>`, `Branded<T, B>`, `Email`, `Url`, `Json`, `VerifiedPrincipal`, `HealthReport`, `DataKey`                           | types     | the caller, ids and value types the shape compiler knows                      |
+| `brand<B>()`                                                                                                                              | function  | the one constructor of a branded type                                         |
+| `StackraManifest`                                                                                                                         | type      | reading a committed `stackra.manifest.json`                                   |
+| `defineApp`, `defineService`, `definePackage`, `defineWorker`                                                                             | functions | the one call in a member's `stackra.config.ts`                                |
 
 ## Enums
 
@@ -59,7 +59,14 @@ host's wiring like any driver:
 
 - `AesGcmFieldCipherDriver`: AES-256-GCM over a `KeyProvider`, `v1.<keyId>.<iv>.<ciphertext>`, the context as
   additional data, so a value opens only where it was sealed and a rotated key still opens old rows.
-- `MemoryKeyProviderDriver`: data keys handed to it in process; the KMS driver ships with its infra package.
+- `MemoryKeyProviderDriver`: data keys handed to it in process.
+- `AwsKmsKeyProviderDriver`: one tenant's data keys, stored wrapped and unwrapped by AWS KMS bound to the tenant and key
+  id (`wrapTenantKey` makes a new one); the KMS key is the environment's managed key or the tenant's own ARN. The host
+  passes the SDK's `KMS` client (any `AwsKmsApi`); this package takes no SDK dependency.
+- `SubjectKeyProviderDriver`: a key per data subject, HKDF-derived from the tenant's key and the subject's own salt;
+  destroying the salt crypto-shreds that subject only.
+- `MemorySignerDriver`, `AwsKmsSignerDriver`: the `Signer` port (ES256); KMS signs digests so the private key never
+  leaves it. `verifySignature` checks a signature offline against a `SignerPublicKey`.
 - `NoopTracerDriver`: the default `Tracer`; the OTLP tracer ships with the telemetry runtime.
 
 ## Member definitions

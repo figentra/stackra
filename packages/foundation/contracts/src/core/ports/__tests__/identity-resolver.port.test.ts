@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: unit and type tests of the `IdentityResolver` port: it is a `Port`; an implementation resolves a user id
- *          to a verified address and a verified address back to its principal; the signatures take user ids and
- *          addresses only.
+ *          to a verified address or to the whole principal (phone, locale, time zone) and a verified address back to
+ *          its principal; the signatures take user ids and addresses only.
  * Boundary: test only; imports the subject through its `#core` alias and the runner through @stackra/testing.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0206 (identity).
@@ -29,6 +29,12 @@ class MemoryIdentity extends IdentityResolver {
     return person.email;
   }
 
+  override async principalOf(principalId: PublicId<"usr">): Promise<VerifiedPrincipal> {
+    const person = this.people.find((candidate) => candidate.id === principalId);
+    if (!person) throw new Error(`No verified address for ${principalId}`);
+    return person;
+  }
+
   override async principalByVerifiedEmail(email: Email): Promise<VerifiedPrincipal | null> {
     const wanted = email.toLowerCase();
     return this.people.find((candidate) => candidate.email.toLowerCase() === wanted) ?? null;
@@ -39,6 +45,14 @@ const SARA: VerifiedPrincipal = {
   id: "usr_01j9z3k4m5n6p7q8r9s0t1v2w3",
   email: "sara@acme.example",
   locale: "ar",
+  phone: "+201001234567",
+  timeZone: "Africa/Cairo",
+};
+
+const OMAR: VerifiedPrincipal = {
+  id: "usr_01j9z3k4m5n6p7q8r9s0t1v2w4",
+  email: "omar@acme.example",
+  locale: "en",
 };
 
 describe("IdentityResolver", () => {
@@ -51,6 +65,19 @@ describe("IdentityResolver", () => {
     const identity: IdentityResolver = new MemoryIdentity([SARA]);
     await expect(identity.emailOf(SARA.id)).resolves.toBe("sara@acme.example");
     await expect(identity.emailOf("usr_unknown")).rejects.toThrow(/No verified address/);
+  });
+
+  it("resolves the whole principal: verified phone, locale and time zone when known", async () => {
+    const identity: IdentityResolver = new MemoryIdentity([SARA, OMAR]);
+    await expect(identity.principalOf(SARA.id)).resolves.toMatchObject({
+      phone: "+201001234567",
+      locale: "ar",
+      timeZone: "Africa/Cairo",
+    });
+    const omar = await identity.principalOf(OMAR.id);
+    expect(omar.phone).toBeUndefined();
+    expect(omar.timeZone).toBeUndefined();
+    await expect(identity.principalOf("usr_unknown")).rejects.toThrow(/No verified address/);
   });
 
   it("finds the principal behind a verified address, or nobody", async () => {

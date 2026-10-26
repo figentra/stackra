@@ -13,6 +13,9 @@ import * as contracts from "#core/index";
 import type {
   Actor,
   AppDefinition,
+  AwsKmsApi,
+  AwsKmsKeyProviderOptions,
+  AwsKmsSignerOptions,
   Branded,
   DataKey,
   Email,
@@ -22,18 +25,24 @@ import type {
   PublicId,
   ScopeRef,
   ServiceDefinition,
+  Signature,
+  SignerPublicKey,
   StackraManifest,
   TraceAttributes,
   TraceSpan,
   Url,
   VerifiedPrincipal,
   WorkerDefinition,
+  WrappedDataKey,
 } from "#core/index";
 
 /** Every type the entry exports; this alias fails to compile if one stops resolving. */
 type EntryTypes = [
   Actor,
   AppDefinition,
+  AwsKmsApi,
+  AwsKmsKeyProviderOptions,
+  AwsKmsSignerOptions,
   Branded<string, "x">,
   DataKey,
   Email,
@@ -43,12 +52,15 @@ type EntryTypes = [
   PublicId<"usr">,
   ScopeRef,
   ServiceDefinition,
+  Signature,
+  SignerPublicKey,
   StackraManifest,
   TraceAttributes,
   TraceSpan,
   Url,
   VerifiedPrincipal,
   WorkerDefinition,
+  WrappedDataKey,
 ];
 
 describe("@stackra/contracts", () => {
@@ -57,6 +69,8 @@ describe("@stackra/contracts", () => {
       "ActorKind",
       "AesGcmFieldCipherDriver",
       "ApiArea",
+      "AwsKmsKeyProviderDriver",
+      "AwsKmsSignerDriver",
       "Clock",
       "DataClassification",
       "Duration",
@@ -69,11 +83,14 @@ describe("@stackra/contracts", () => {
       "KeyProvider",
       "Logger",
       "MemoryKeyProviderDriver",
+      "MemorySignerDriver",
       "MigrationRunner",
       "NoopTracerDriver",
       "Port",
       "Realm",
+      "Signer",
       "SortDirection",
+      "SubjectKeyProviderDriver",
       "Target",
       "Tone",
       "Tracer",
@@ -82,6 +99,8 @@ describe("@stackra/contracts", () => {
       "definePackage",
       "defineService",
       "defineWorker",
+      "verifySignature",
+      "wrapTenantKey",
     ]);
   });
 
