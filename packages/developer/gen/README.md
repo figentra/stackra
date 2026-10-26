@@ -228,6 +228,16 @@ wiring binds it over `repositoryOf(Revision)` (content's revisions table) and th
 packages' entity lists. A `Projection<Row>({ key })` class (`@stackra/database`) is a binding like a service: its
 listeners and queries inject it.
 
+## Public SDKs
+
+An action or query marked `public: true` (OS ADR 0039 d2; Stackra ADR 0217, 2026-10-26 note) is written to the
+manifest as `public`; one with no endpoint is refused (`public_without_endpoint`). `emitSdks` writes, for a service or
+app with a public entry, `.stackra/sdks/typescript/index.ts` (typed from the reachable schemas),
+`.stackra/sdks/python/<member>_client.py` (standard library) and `.stackra/sdks/php/<Member>Client.php` (no
+dependency): one method per public entry, with the bearer token, `Stackra-Version` and `Idempotency-Key` headers and
+the ADR 0140 envelope as `ApiError`. Only public entries are ever written; packaging and publishing are the release
+pipeline's.
+
 ## Not here
 
 Per-target outputs land with the target that owns them: an app's browser clients, navigation trees and the `keys` `toRoot` takes,

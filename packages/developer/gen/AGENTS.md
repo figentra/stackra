@@ -83,6 +83,10 @@ The Stackra compiler. Member at `packages/developer/gen` (`tier:lib`), in the pr
 - `Projection` (ADR 0294 d16, ADR 0163 d1) is a binding kind declared in `@stackra/database`; gen binds it like a
   service. Its rows are that package's versions table, so gen writes no entity or migration for it.
 
+- Public API (OS ADR 0039 d2 and d3): only a manifest entry with `public: true` reaches `emitSdks`; never publish by
+  `area`. SDKs come from the manifest, never from `openapi.json` (ADR 0158). A new language is one function in
+  `emit-sdks.function.ts` with its test; package names and registries stay the release pipeline's.
+
 ## Rules that fail the build
 
 - A package never imports an app, a service, `encore.dev`/`~encore/*`, or another package's `src/`.

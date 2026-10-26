@@ -55,6 +55,7 @@ describe("@stackra/gen", () => {
       "emitRoutes",
       "emitRuntimeEntries",
       "emitSchemas",
+      "emitSdks",
       "emitToolConfigs",
       "emitWebhooks",
       "emitWiring",

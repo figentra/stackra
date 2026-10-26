@@ -40,6 +40,7 @@ export { emitRegistrations } from "#core/functions/emit-registrations.function";
 export { emitRoutes } from "#core/functions/emit-routes.function";
 export { emitRuntimeEntries } from "#core/functions/emit-runtime-entries.function";
 export { emitSchemas } from "#core/functions/emit-schemas.function";
+export { emitSdks } from "#core/functions/emit-sdks.function";
 export { emitToolConfigs } from "#core/functions/emit-tool-configs.function";
 export { emitWebhooks } from "#core/functions/emit-webhooks.function";
 export { emitWiring } from "#core/functions/emit-wiring.function";

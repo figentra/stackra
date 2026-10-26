@@ -4,7 +4,7 @@
  *          committed `stackra.manifest.json` (and `openapi.json` for a service or app with endpoints), one schemas
  *          file and one entity file per module, the wiring, the member module when none is authored, the
  *          registrations, a service's boot and inbound webhook route, a service's Encore CronJobs, broker-delivered
- *          queue topics, integration event topics and (for a relay service) the subscriptions to every product topic, the public id prefixes, an app's route tables and blocks, one generated client per consumed
+ *          queue topics, integration event topics and (for a relay service) the subscriptions to every product topic, the public id prefixes, an app's route tables and blocks, the public SDKs (TypeScript, Python and PHP) of the actions marked public, one generated client per consumed
  *          service, the package entries or runtime entries, and the tool configs, after the identity checks and,
  *          against the committed manifest, the `@Renamed` lock.
  * Boundary: pure: returns files, never writes them. Any error (discovery's, the manifest's or the lock's) means no
@@ -36,6 +36,7 @@ import { emitRegistrations } from "#core/functions/emit-registrations.function";
 import { emitRoutes } from "#core/functions/emit-routes.function";
 import { emitRuntimeEntries } from "#core/functions/emit-runtime-entries.function";
 import { emitSchemas } from "#core/functions/emit-schemas.function";
+import { emitSdks } from "#core/functions/emit-sdks.function";
 import { emitToolConfigs } from "#core/functions/emit-tool-configs.function";
 import { emitWebhooks } from "#core/functions/emit-webhooks.function";
 import { emitWiring } from "#core/functions/emit-wiring.function";
@@ -103,6 +104,7 @@ export function generateMember(
     (manifest.actions ?? []).some((action) => typeof action["endpoint"] === "object")
   )
     files.push({ path: "openapi.json", content: json(openApiOf(manifest)) });
+  if (ir.layout === "service" || ir.layout === "app") files.push(...emitSdks(manifest));
   for (const module of schemaModules(ir))
     files.push({ path: `.stackra/gen/schemas/${module}.ts`, content: emitSchemas(ir, module) });
   for (const module of [...new Set(ir.shapes.map((shape) => shape.module))].sort()) {

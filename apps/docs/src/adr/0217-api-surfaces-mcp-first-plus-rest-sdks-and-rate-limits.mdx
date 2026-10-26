@@ -1,7 +1,17 @@
 ---
 title: "0217 — API surfaces: MCP first plus REST, SDKs and rate limits"
-description: "Accepted, amended by 0274, 0278, 0294, 0348 · 2026-10-20"
+description: "Accepted, amended by 0274, 0278, 0294, 0348 · 2026-10-20 · noted 2026-10-26 (STA-1254)"
 ---
+
+<Note>
+  Noted 2026-10-26 (STA-1254), for Figentra OS ADR 0039 decisions 2 and 3: an action or query is
+  published to third parties only when its options say `public: true`, which gen records in the
+  manifest as `public` and refuses without an endpoint (`public_without_endpoint`). Gen writes the
+  SDKs from the manifest's public entries only, in TypeScript, Python and PHP (decision 1 named
+  TypeScript and Python), into `.stackra/sdks/`; which languages a release ships is the release
+  pipeline's setting. `area: public` (no session) is a different thing and publishes nothing. The
+  other decisions stand.
+</Note>
 
 <Note>
   Amended 2026-10-24 (STA-474) by

@@ -6,7 +6,7 @@
  *          sequence keys, an app's block and route keys), the module graph, the facets, the schemas without a
  *          config's schema, merged package sections marked `from`, and the checks `identity_collision`,
  *          `override_duplicate`, `permission_unknown`, `identity_missing`, `prefix_invalid`, `prefix_taken` and
- *          `prefix_duplicate`; the v3 tool default with `tool_reason_missing`, effect tags with `effect_unknown`,
+ *          `prefix_duplicate`; the v3 tool default with `tool_reason_missing`, the public flag with `public_without_endpoint`, effect tags with `effect_unknown`,
  *          Integration roles and listing with `integration_role_unknown`, the `@Replaces` section, and a replica
  *          query's `ReplicaPage` output schema (ADR 0338).
  * Boundary: test only; runs on the commerce IR fixture.
@@ -486,6 +486,22 @@ describe("buildManifest", () => {
       const entry = built.actions?.find((action) => action.class === "CancelOrderAction");
       expect(entry?.["tool"]).toBeUndefined();
       expect(entry?.["toolOff"]).toBe("needs a card reader");
+    });
+
+    it("marks a public action and refuses one with no endpoint to publish", () => {
+      const published = { ...cancel, options: { ...cancel.options, public: true } };
+      const { manifest: built, errors: found } = buildManifest(withClasses(published));
+      expect(found).toEqual([]);
+      expect(
+        built.actions?.find((action) => action.class === "CancelOrderAction")?.["public"],
+      ).toBe(true);
+      expect(
+        buildManifest(withClasses(cancel)).manifest.actions?.find(
+          (action) => action.class === "CancelOrderAction",
+        )?.["public"],
+      ).toBeUndefined();
+      const hidden = { ...published, options: { ...published.options, endpoint: false } };
+      expect(codesOf(withClasses(hidden))).toContain("public_without_endpoint CancelOrderAction");
     });
 
     it("keeps a system-only action off the tool list without a reason", () => {

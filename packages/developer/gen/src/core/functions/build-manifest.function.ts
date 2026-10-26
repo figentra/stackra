@@ -340,6 +340,17 @@ export function buildManifest(ir: MemberIR): {
     for (const option of ["idempotency", "rateLimit", "cache", "area", "job"])
       if (declared.options[option] !== undefined) entry[option] = jsonOf(declared.options[option]);
     if (declared.options["auth"] === false) entry["auth"] = false;
+    // OS ADR 0039 d2: only an entry marked public forms the published REST and MCP API and its SDKs.
+    if (declared.options["public"] === true) {
+      entry["public"] = true;
+      if (endpoint === undefined)
+        fail(
+          declared,
+          "public_without_endpoint",
+          `${kind} is marked \`public\` but has no endpoint to publish`,
+          "remove `endpoint: false` (or give it actors with a route), or drop `public: true`",
+        );
+    }
     if (endpoint !== undefined) entry["endpoint"] = { ...endpoint };
     else if (declared.options["endpoint"] === false) entry["endpoint"] = false;
     if (toolEnabled)
