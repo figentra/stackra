@@ -1,6 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `COMMANDS`: names are unique and cover what the template's scripts call today, no
+ * Purpose: unit tests of `COMMANDS`: names are unique and cover what the template's scripts call today (and the
+ *          registry item commands add and publish, ADR 0453), no
  *          Figentra-internal operation is present, and every command has help text.
  * Boundary: test only.
  * Runtime: node (vitest)
@@ -48,6 +49,8 @@ describe("COMMANDS", () => {
         "settings:diff",
         "settings:apply",
         "audit:verify",
+        "add",
+        "publish",
       ]),
     );
   });

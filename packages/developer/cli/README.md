@@ -6,7 +6,8 @@ Purpose: the package's reader guide: the `stackra` binary, its commands (gen's t
          here.
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
-Governing contract: ADR 0083; ADR 0282 decision 3; ADR 0294; ADR 0260; ADR 0349 (member names).
+Governing contract: ADR 0083; ADR 0282 decision 3; ADR 0294; ADR 0260; ADR 0349 (member names); ADR 0453 (add,
+                    publish).
 -->
 
 The `stackra` binary (ADR 0083, ADR 0282 decision 3). It runs gen, runs each member's tools against the configs gen
@@ -14,7 +15,8 @@ writes, lists what a committed manifest locks, and wires the local developer MCP
 framework (ADR 0127, 2026-10-24 note): a command is data plus one `run` function, parsed with `node:util`.
 
 **Tier:** `tier:lib` (`packages/developer/cli`). No code entry: the package ships the `bin` only. Depends on
-`@stackra/gen`, `@stackra/mcp`, `@stackra/repo-checks`, `@stackra/contracts` and `yaml`.
+`@stackra/gen`, `@stackra/mcp`, `@stackra/repo-checks`, `@stackra/skills` (its `./contracts`), `@stackra/contracts`
+and `yaml`.
 
 ## Commands
 
@@ -42,6 +44,8 @@ framework (ADR 0127, 2026-10-24 note): a command is data plus one `run` function
 | `stackra mcp exec [--env] [--path] --` | start an MCP server with its secrets, expanded by its own shell under `infisical run`    |
 | `stackra agents sync`                  | write the project's generated agent files (`.mcp.json`)                                  |
 | `stackra agents check`                 | fail when `.mcp.json` drifted from `.mcp.yaml`                                           |
+| `stackra add <kind> <name>[@version]`  | install a registry skill, agent, MCP server, plugin or package (see below)               |
+| `stackra publish [--dry-run]`          | check the member's `stackra.kind` and name, then `pnpm publish` to the Stackra registry  |
 
 At the workspace root (a folder with `pnpm-workspace.yaml`), `dev`, `build`, `start`, `typecheck`, `test` and `lint`
 run `turbo run <task>` (`test:e2e` for `--tier e2e`); each member's script calls `stackra <task>` again.
@@ -60,6 +64,31 @@ Each tool gets `--config .stackra/<tool>.config.ts` when gen wrote it (ADR 0295 
 member-root config otherwise. A task that no tool serves for the member (a desktop target, a service build before the
 Encore target) is refused with the reason, never guessed. Exit codes: 0 success, 1 failure, 2 usage error, 127 a tool
 that cannot start.
+
+## Registry items
+
+The Stackra registry (ADR 0453) holds packages and items of four more kinds, each an npm tarball whose `package.json`
+carries `"stackra": { "kind": … }` (the shapes and schemas are `@stackra/skills/contracts`).
+`stackra add <kind> <name>[@version|@tag]` looks up `@stackra/<kind>-<name>`, then `@stackra-pro/<kind>-<name>`, in
+the catalogue API, checks the tarball against its integrity, and installs it:
+
+| Kind      | Goes to                                                                 |
+| --------- | ----------------------------------------------------------------------- |
+| `skill`   | `.agents/skills/<name>/` (the tarball must hold `SKILL.md`)             |
+| `agent`   | `.agents/agents/<name>.md` (from the tarball's `agent.md`)              |
+| `mcp`     | `mcpServers.<name>` in `.mcp.yaml`, from `stackra.mcp`; then `mcp sync` |
+| `plugin`  | `.agents/plugins/<name>/`                                               |
+| `package` | `pnpm add @stackra/<name>` (or `@stackra-pro/<name>`); pinned by pnpm   |
+
+Every non-package install is pinned by name, version, integrity and target in `stackra-items.lock.yaml` at the
+workspace root. A target that exists but is not in the lock (a hand-written skill of the same name) is refused, never
+overwritten. The registry is a setting: `--registry`, else `STACKRA_REGISTRY`, else the `@stackra:registry` line of
+the workspace `.npmrc`, else `https://npm.stackra.figentra.com/`. `@stackra-pro` items read `STACKRA_LICENCE_TOKEN`.
+
+`stackra publish` refuses a member whose `stackra` field is invalid, whose scope is not `@stackra` or `@stackra-pro`,
+whose name is not `@<scope>/<kind>-<name>` for its kind (or is, for a package), or that lacks `SKILL.md` (skill) or
+`agent.md` (agent); then it runs `pnpm publish --registry <registry>`. Only the release workflow publishes, with the
+token of its OIDC exchange (ADR 0453 decision 6); the registry Worker runs the licence and provenance checks.
 
 ## The quality gate
 
@@ -127,6 +156,10 @@ through `settingsApply`: one sandbox revision per changed group, locks checked, 
 since the runner cannot see the holder's market (ADR 0395). Live configuration changes only by promotion.
 
 ## Not here yet
+
+`stackra add` does not list or search the catalogue yet (`GET /-/stackra/v1/catalogue`), and `stackra publish` does
+not attach the provenance bundle; the release workflow does (stackra-185). `stackra whoami` (entitlements) is not
+built.
 
 `stackra db diff` and `seed` land with `@stackra/database` in the data wave (ADR 0159 note). `stackra new` makes
 packages, services and seed packs; app kinds stay with `pnpm new` until their templates move here. `structure`

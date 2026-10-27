@@ -3,7 +3,8 @@
  * Purpose: `COMMANDS`, every command the `stackra` binary has, in help order: new, gen, the member tool commands (`dev`
  *          with its `--surface` mode, ADR 0436 decision 6), the
  *          check command and its aliases (validate, verify, code:check, code:fix), the db commands, the seed-pack
- *          command, the settings pack commands, the offline audit check, ls, and the local MCP and agent-file commands.
+ *          command, the settings pack commands, the offline audit check, ls, the local MCP and agent-file commands,
+ *          and the registry item commands (add, publish; ADR 0453).
  * Boundary: data only. Figentra-internal operations (Linear, bot identities, merge, the secrets inbox, delegation)
  *           are never added here (ADR 0282 decision 4); `stackra db diff` and `seed` land with
  *           `@stackra/database`; infra is `stackra runway infra`, not a command here (ADR 0352).
@@ -21,11 +22,14 @@ import { MCP_COMMAND } from "#node/constants/mcp-command.constant";
 import { MCP_EXEC_COMMAND } from "#node/constants/mcp-exec-command.constant";
 import { MCP_SYNC_COMMAND } from "#node/constants/mcp-sync-command.constant";
 import { NEW_COMMAND } from "#node/constants/new-command.constant";
+import { PUBLISH_COMMAND } from "#node/constants/publish-command.constant";
 import { SEED_PACK_COMMAND } from "#node/constants/seed-pack-command.constant";
 import { SETTINGS_APPLY_COMMAND } from "#node/constants/settings-apply-command.constant";
 import { SETTINGS_DIFF_COMMAND } from "#node/constants/settings-diff-command.constant";
 import { DEV_COMMAND } from "#node/dev-surface/constants/dev-command.constant";
+import { addCommand } from "#node/functions/add-command.function";
 import { checkCommand } from "#node/functions/check-command.function";
+import { httpCatalogueClient } from "#node/functions/http-catalogue-client.function";
 import { toolCommand } from "#node/functions/tool-command.function";
 import type { CliCommand } from "#node/types/cli-command.type";
 
@@ -76,4 +80,6 @@ export const COMMANDS: readonly CliCommand[] = [
   MCP_EXEC_COMMAND,
   AGENTS_SYNC_COMMAND,
   AGENTS_CHECK_COMMAND,
+  addCommand(httpCatalogueClient),
+  PUBLISH_COMMAND,
 ];

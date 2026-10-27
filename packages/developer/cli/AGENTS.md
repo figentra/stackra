@@ -7,7 +7,7 @@ Purpose: the agent rules of @stackra/cli: where code goes, the package rules (ge
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
 Governing contract: ADR 0083; ADR 0282; ADR 0294; ADR 0260 (a cycle between services is allowed at the manifest level);
-                    ADR 0349 (member names).
+                    ADR 0349 (member names); ADR 0453 (registry items).
 -->
 
 The `stackra` binary (ADR 0083, 0282). Member at `packages/developer/cli` (`tier:lib`), in the programming model v3.1
@@ -15,18 +15,19 @@ shape (ADR 0294, 0305). No code entry: the package ships `bin.stackra` (`src/nod
 
 ## Where code goes
 
-| You are writing…                          | It goes in…                                                        |
-| ----------------------------------------- | ------------------------------------------------------------------ |
-| A command                                 | `src/node/constants/<name>-command.constant.ts`, then `COMMANDS`   |
-| `stackra dev --surface` (product surface) | `src/node/dev-surface/` (its constants, functions, types, tests)   |
-| A `stackra check` phase                   | `src/node/constants/<name>-phase.constant.ts`, then `CHECK_PHASES` |
-| A repository check (pure, file-based)     | `@stackra/repo-checks`, called from its phase                      |
-| A member tool for a layout or target      | `resolveTool` in `src/node/functions/resolve-tool.function.ts`     |
-| Parsing, dispatch, processes, file reads  | `src/node/functions/<name>.function.ts`                            |
-| A `stackra new` template                  | `src/node/functions/<kind>-template.function.ts`, pure text        |
-| Seed-pack reading and planning            | `src/node/functions/` (`readSeedPack`, `planSeed`), pure           |
-| Errors and types                          | `src/node/{errors,types}/`                                         |
-| A test                                    | `__tests__/<name>.<kind>.test.ts` beside it                        |
+| You are writing…                           | It goes in…                                                                |
+| ------------------------------------------ | -------------------------------------------------------------------------- |
+| A command                                  | `src/node/constants/<name>-command.constant.ts`, then `COMMANDS`           |
+| `stackra dev --surface` (product surface)  | `src/node/dev-surface/` (its constants, functions, types, tests)           |
+| A `stackra check` phase                    | `src/node/constants/<name>-phase.constant.ts`, then `CHECK_PHASES`         |
+| A repository check (pure, file-based)      | `@stackra/repo-checks`, called from its phase                              |
+| A member tool for a layout or target       | `resolveTool` in `src/node/functions/resolve-tool.function.ts`             |
+| Parsing, dispatch, processes, file reads   | `src/node/functions/<name>.function.ts`                                    |
+| A `stackra new` template                   | `src/node/functions/<kind>-template.function.ts`, pure text                |
+| Seed-pack reading and planning             | `src/node/functions/` (`readSeedPack`, `planSeed`), pure                   |
+| Registry item install, lock, publish check | `src/node/functions/` (`installItem`, `readItemsLock`, `checkItemPackage`) |
+| Errors and types                           | `src/node/{errors,types}/`                                                 |
+| A test                                     | `__tests__/<name>.<kind>.test.ts` beside it                                |
 
 ## This package
 
@@ -57,6 +58,10 @@ shape (ADR 0294, 0305). No code entry: the package ships `bin.stackra` (`src/nod
   0349 decision 2) and writes `@stackra/*` versions in the form it returns; a template never hard-codes a scope.
   Templates write nothing under `src/`, and `--over` never writes an existing file (it prints `lineDiff`), nor
   `CHANGELOG.md` or `runway.yaml`; keep both true when a template grows.
+- `stackra add` reaches the registry only through a `CatalogueClient` (`httpCatalogueClient` in `COMMANDS`, a fake in
+  tests), checks every tarball against its integrity, never writes outside its kind's target (ADR 0453 decision 11),
+  never overwrites a target the items lock does not pin, and never prints the licence token. The registry origin is a
+  setting (`registryOrigin`), never a literal in a command; the item shapes are `@stackra/skills/contracts`.
 - Never add a Figentra-internal operation (Linear, bot identities, merge, secrets inbox, delegation, spend): ADR 0282
   decision 4.
 
