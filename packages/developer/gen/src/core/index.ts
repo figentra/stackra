@@ -11,7 +11,8 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision; ADR 0127 2026-10-24 note (`ir`
  *                     and `source` fold into gen); ADR 0438 (the slot and fill IR types, stackra-03); ADR 0436 (surface targets, the
- *                     extension bundle manifest and `modulepreloadOf`, stackra-04).
+ *                     extension bundle manifest and `modulepreloadOf`, stackra-04); ADR 0336 (`additionsOf`,
+ *                     `AdditionEntry`, stackra-64).
  */
 export { DocsConfig } from "#core/bases/docs-config.base";
 export { CLIENTS_SPECIFIER } from "#core/constants/clients-specifier.constant";
@@ -23,6 +24,7 @@ export { INTEGRATION_ROLES } from "#core/constants/integration-roles.constant";
 export { MANIFEST_NOTICE } from "#core/constants/manifest-notice.constant";
 export { PUBLIC_ID_PREFIXES } from "#core/constants/public-id-prefixes.constant";
 export { actionKey } from "#core/functions/action-key.function";
+export { additionsOf } from "#core/functions/additions-of.function";
 export { blockKey } from "#core/functions/block-key.function";
 export { buildManifest } from "#core/functions/build-manifest.function";
 export { checkIdentityLock } from "#core/functions/check-identity-lock.function";
@@ -71,6 +73,7 @@ export { tableName } from "#core/functions/table-name.function";
 export { toolHints } from "#core/functions/tool-hints.function";
 export { toolName } from "#core/functions/tool-name.function";
 export { webhookPath } from "#core/functions/webhook-path.function";
+export type { AdditionEntry } from "#core/types/addition-entry.type";
 export type { ClassRef } from "#core/types/class-ref.type";
 export type { ClassValue } from "#core/types/class-value.type";
 export type { DeclaredClass } from "#core/types/declared-class.type";

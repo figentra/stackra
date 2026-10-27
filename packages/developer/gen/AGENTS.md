@@ -7,7 +7,7 @@ Purpose: the agent rules of @stackra/gen: where code goes, entries and barrels, 
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
 Governing contract: ADR 0294; ADR 0295; ADR 0305; ADR 0260 (generated clients and typed events); ADR 0263; ADR 0162 and ADR 0222
-                    (the translated and upload shape kinds); ADR 0338 (a replica query's `ReplicaPage` output); STA-1290 (the shipped shape kind); STA-1293 (i18n, clients for apps, undeclared packages); STA-1296 (client modules and permission sets, config overrides, the root Vitest shim); STA-1298 (package lang namespaces in `I18n`, `i18n_key_missing`, `i18n_namespace_clash`); STA-1309 (catalogue loaders); STA-1306 (the quality-gate refusals); STA-1316 (the docs site); STA-1322 (the Encore app file); STA-1251 (`searchable_semantic_ai_never`); ADR 0438 (shell slots and fills, stackra-03); ADR 0436 (surface targets, `modulepreloadOf`, stackra-04).
+                    (the translated and upload shape kinds); ADR 0338 (a replica query's `ReplicaPage` output); STA-1290 (the shipped shape kind); STA-1293 (i18n, clients for apps, undeclared packages); STA-1296 (client modules and permission sets, config overrides, the root Vitest shim); STA-1298 (package lang namespaces in `I18n`, `i18n_key_missing`, `i18n_namespace_clash`); STA-1309 (catalogue loaders); STA-1306 (the quality-gate refusals); STA-1316 (the docs site); STA-1322 (the Encore app file); STA-1251 (`searchable_semantic_ai_never`); ADR 0438 (shell slots and fills, stackra-03); ADR 0436 (surface targets, `modulepreloadOf`, stackra-04); ADR 0336 (model additions, stackra-64).
 -->
 
 The Stackra compiler. Member at `packages/developer/gen` (`tier:lib`), in the programming model v3.1 shape (ADR 0294,
@@ -146,6 +146,11 @@ The Stackra compiler. Member at `packages/developer/gen` (`tier:lib`), in the pr
   `@stackra/rules` node of ADR 0331). Keep both maps in step.
 - `Projection` (ADR 0294 d16, ADR 0163 d1) is a binding kind declared in `@stackra/database`; gen binds it like a
   service. Its rows are that package's versions table, so gen writes no entity or migration for it.
+- Model additions (ADR 0336, stackra-64): `ModelAddition` is a `KIND_BASES` row (`model_addition`, a shape kind, file
+  `model-addition`, suffix `Addition`); its partner is the base (the call's value argument, as `Driver(Port)`).
+  `additionsOf` is the one place that matches the base in the dependencies' `models` and names the side table
+  (`tableName` of the addition class). The base always comes from a released package, never from source. Keep the
+  `base-matches-suffix` lint table of `@stackra/coding-standard` in step when it learns the suffix.
 - `agent` and `pass` (STA-903) are binding kinds: a row in `BINDING_KINDS`, `KIND_FILES` and `KIND_BASES` each, and a
   written, locked `key`. An Agent with no constructor gets `AgentRuntime` (its deps are a `PLATFORM_BINDINGS` row).
 - Entitlement keys come from `entitlementKey(module, class)` only, and must equal `@stackra/entitlements`'s runtime

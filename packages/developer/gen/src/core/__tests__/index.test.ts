@@ -3,7 +3,7 @@
  * Purpose: the consumer contract of the `.` entry: the pure compiler (identities, manifest and its checks, shape
  *          compiler, wiring, member module, entries, entities, registrations, boot, webhooks, prefixes, routes, blocks,
  *          generated service clients, tool configs, openapi projection, the prefix registry, the surface targets and
- *          the bundle modulepreload list) is exported and nothing
+ *          the bundle modulepreload list, the model additions section) is exported and nothing
  *          internal is (the case helpers, the import printer, the platform evaluator, the emitters' path helpers), and
  *          the IR types resolve.
  * Boundary: test only; imports the stand-in barrel through its `#core` alias.
@@ -37,6 +37,7 @@ describe("@stackra/gen", () => {
       "MANIFEST_NOTICE",
       "PUBLIC_ID_PREFIXES",
       "actionKey",
+      "additionsOf",
       "blockKey",
       "buildManifest",
       "checkIdentityLock",

@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: the consumer contract of the `.` entry: exactly the registry row's surface is exported (the template imports
  *          nothing from @stackra/registry): catalogue validation, the review state, developer sandboxes, fee schedules
- *          and partner payouts, and the edition install plan; the type exports resolve.
+ *          and partner payouts, the edition install plan and the edition bundle check; the type exports resolve.
  * Boundary: test only; imports the stand-in barrel through its `#core` alias and the runner through @stackra/testing.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0127 2026-10-24 note.
@@ -14,6 +14,7 @@ import type {
   CatalogueDiagnostic,
   CatalogueDiagnosticCode,
   DeliverableEventRow,
+  EditionBundleIssue,
   EditionInstallIssue,
   EditionInstallPlan,
   InstallableModule,
@@ -36,6 +37,7 @@ describe("@stackra/registry", () => {
       "PerkRedemptionKind",
       "ReviewState",
       "canTransitionReview",
+      "checkEditionBundle",
       "computePartnerPayout",
       "deliverableEvents",
       "perkEligible",
@@ -61,6 +63,7 @@ describe("@stackra/registry", () => {
   it("types the review, payout and edition install surface", () => {
     expectTypeOf(entry.planEditionInstall).returns.toEqualTypeOf<EditionInstallPlan>();
     expectTypeOf<EditionInstallPlan["issues"][number]>().toEqualTypeOf<EditionInstallIssue>();
+    expectTypeOf(entry.checkEditionBundle).returns.toEqualTypeOf<readonly EditionBundleIssue[]>();
     expectTypeOf(entry.planEditionInstall)
       .parameter(1)
       .toEqualTypeOf<readonly InstallableModule[]>();

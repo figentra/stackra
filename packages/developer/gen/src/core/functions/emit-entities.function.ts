@@ -4,14 +4,15 @@
  *          `#stackra/entities/<module>`): the `[OptionalProps]` augmentation of each model (every trait field, and
  *          every field or relation with an initializer, so a create may leave them out), one `EntitySchema` per model
  *          in the module's Postgres schema, the module's list `<MODULE>_ENTITIES`, and the `registerEntities` call that
- *          hands them to the database.
+ *          hands them to the database; and one side-table `EntitySchema` per model addition of the module (ADR 0336
+ *          decision 2: the base record's id as primary key, the addition's fields as columns, in the module's schema).
  * Boundary: pure. Runtime facts only: property types, the primary key, nullability, versions, `onUpdate`, enum items,
  *           constant defaults, relations with their inverse sides, embedded money and link columns. Column types,
  *           lengths, indexes and foreign keys are the migration's (ADR 0159), so none is written here. A getter is
  *           listed as not persisted, because `EntitySchema<T>` names every field of `T`. A `Translated` field gets
  *           `@stackra/model`'s `TranslatedType`, so it loads back as a `Translated`.
  * Runtime: isomorphic
- * Governing contract: ADR 0097 (decisions 3 and 5.4: gen emits EntitySchema, no runtime scan); ADR 0294 (decisions
+ * Governing contract: ADR 0336 (decision 2, stackra-64); ADR 0097 (decisions 3 and 5.4: gen emits EntitySchema, no runtime scan); ADR 0294 (decisions
  *                     20 and 28: tables per module schema, links); ADR 0159; the STA-335 entity-schema spike; ADR 0162
  *                     (decision 2: per-locale columns).
  */
@@ -59,7 +60,10 @@ function ormType(field: FieldIR): string {
  */
 export function emitEntities(ir: MemberIR, module: string): string | undefined {
   const models = ir.shapes.filter((shape) => shape.kind === "model" && shape.module === module);
-  if (models.length === 0) return undefined;
+  const additions = ir.shapes.filter(
+    (shape) => shape.kind === "model_addition" && shape.module === module,
+  );
+  if (models.length === 0 && additions.length === 0) return undefined;
   const imports = new Map<string, Map<string, boolean>>();
   const local = new Map<string, string>();
   const use = (from: string, name: string, typeOnly = false): void => {
@@ -106,30 +110,11 @@ export function emitEntities(ir: MemberIR, module: string): string | undefined {
           candidate.target.name === owner.name,
       )?.name;
 
-  const augmentations: string[] = [];
-  const schemas: string[] = [];
   let money = false;
-  for (const shape of models) {
-    const declared = ir.classes.find(
-      (candidate) => candidate.kind === "model" && candidate.name === shape.name,
-    );
-    const traits = new Set((declared?.traits ?? []).map((trait) => trait.name));
-    const className = ref({ name: shape.name, from: shape.importPath });
-    const optional = shape.entity?.optional ?? [];
-    if (optional.length > 0) {
-      use("@stackra/database", "OptionalProps", true);
-      augmentations.push(
-        `declare module ${JSON.stringify(shape.importPath)} {`,
-        `  interface ${shape.name} {`,
-        `    [OptionalProps]?: ${optional.map((name) => JSON.stringify(name)).join(" | ")};`,
-        "  }",
-        "}",
-        "",
-      );
-    }
-
+  /** The column properties of `fields`, given the model's `traits`. */
+  const fieldProperties = (fields: readonly FieldIR[], traits: ReadonlySet<string>): string[] => {
     const properties: string[] = [];
-    for (const field of shape.fields) {
+    for (const field of fields) {
       const nullable = field.nullable || field.optional ? ", nullable: true" : "";
       if (field.type.kind === "money") {
         money = true;
@@ -157,6 +142,31 @@ export function emitEntities(ir: MemberIR, module: string): string | undefined {
         parts.push(`default: ${JSON.stringify(value)}`);
       properties.push(`    ${field.name}: { ${parts.join(", ")} },`);
     }
+    return properties;
+  };
+
+  const augmentations: string[] = [];
+  const schemas: string[] = [];
+  for (const shape of models) {
+    const declared = ir.classes.find(
+      (candidate) => candidate.kind === "model" && candidate.name === shape.name,
+    );
+    const traits = new Set((declared?.traits ?? []).map((trait) => trait.name));
+    const className = ref({ name: shape.name, from: shape.importPath });
+    const optional = shape.entity?.optional ?? [];
+    if (optional.length > 0) {
+      use("@stackra/database", "OptionalProps", true);
+      augmentations.push(
+        `declare module ${JSON.stringify(shape.importPath)} {`,
+        `  interface ${shape.name} {`,
+        `    [OptionalProps]?: ${optional.map((name) => JSON.stringify(name)).join(" | ")};`,
+        "  }",
+        "}",
+        "",
+      );
+    }
+
+    const properties = fieldProperties(shape.fields, traits);
     for (const relation of shape.entity?.relations ?? []) {
       const nullable = relation.nullable ? ", nullable: true" : "";
       if (relation.kind === "link") {
@@ -211,6 +221,24 @@ export function emitEntities(ir: MemberIR, module: string): string | undefined {
       "",
     );
   }
+  // Side tables (ADR 0336 decision 2): keyed one to one by the base record's id, in this module's schema. The
+  // addition class has no `id` of its own, so the row type adds it and the schema is named, not classed.
+  for (const shape of additions) {
+    const className = ref({ name: shape.name, from: shape.importPath });
+    schemas.push(
+      `/** The side table of \`${modelKey(module, shape.name)}\` (${shape.file}), keyed by the base record's id. */`,
+      `export const ${shape.name}Schema = new EntitySchema<${className} & { id: string }>({`,
+      `  name: ${JSON.stringify(modelKey(module, shape.name))},`,
+      `  schema: ${JSON.stringify(module)},`,
+      `  tableName: ${JSON.stringify(plural(snakeCase(shape.name)))},`,
+      "  properties: {",
+      '    id: { type: "string", primary: true },',
+      ...fieldProperties(shape.fields, new Set()),
+      "  },",
+      "});",
+      "",
+    );
+  }
   if (money) use("@stackra/model", "MoneySchema");
 
   const list = entitiesName(module);
@@ -231,7 +259,7 @@ export function emitEntities(ir: MemberIR, module: string): string | undefined {
     ...augmentations,
     ...schemas,
     `/** Every entity of module \`${module}\`. */`,
-    `export const ${list}: readonly EntitySchema[] = [${[...(money ? ["MoneySchema"] : []), ...models.map((shape) => `${shape.name}Schema`)].join(", ")}];`,
+    `export const ${list}: readonly EntitySchema[] = [${[...(money ? ["MoneySchema"] : []), ...[...models, ...additions].map((shape) => `${shape.name}Schema`)].join(", ")}];`,
     "",
     `registerEntities(${list});`,
     "",

@@ -3,7 +3,8 @@ Stackra file contract:
 Purpose: the agent rules of @stackra/entitlements: where code goes, entries and barrels, package rules.
 Boundary: documentation of packages/security/entitlements only.
 Runtime: none
-Governing contract: ADR 0215; ADR 0294; STA-1225 (grant by key); stackra-117 (STA-1247).
+Governing contract: ADR 0215; ADR 0294; STA-1225 (grant by key); stackra-117 (STA-1247); ADR 0335 (edition bundles,
+                    stackra-64).
 -->
 
 # AGENTS — @stackra/entitlements
@@ -50,6 +51,8 @@ The `Entitlement` kind, its ports and the plan driver of the pipeline's entitlem
   read in `PlanEntitlementCheckDriver.check`; never read the descriptor's `scopeId`. The ports keep the id until
   `@stackra/collaboration`, which passes its room's scope id, moves to the `ScopeRef` with them.
 - Seat kinds, allowances, grace dates and ceilings are plan-catalogue data; never name a seat kind or a number in code.
+- Edition bundles (ADR 0335 d6): an edition's base entitlements reach its tiers only through `bundleEditionCatalogue`;
+  never grant a base module by name in a driver, and never sell an unbundled one.
 - A check that must never pass a limit holds the limit's lock (`LimitReservationService`, `SeatMeterService`).
 - No parameter properties and no `#private` fields: apps typecheck this source under `erasableSyntaxOnly`.
 

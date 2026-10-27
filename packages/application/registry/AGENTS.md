@@ -1,3 +1,11 @@
+<!--
+Stackra file contract:
+Purpose: the agent rules of @stackra/registry: where code goes, entries, package rules and PII.
+Boundary: documentation of packages/application/registry only; the code and the ADRs win on any difference.
+Runtime: none
+Governing contract: ADR 0294; ADR 0305; ADR 0335 (edition records, stackra-64).
+-->
+
 # AGENTS — @stackra/registry
 
 Module catalogue validation for a registry service. Member at `packages/application/registry` (`tier:lib`), in the
@@ -27,11 +35,13 @@ programming model v3.1 shape (ADR 0294, 0305). Entry `.` only.
   class, optional, so older manifests still pass.
 - `deliverableEvents` is the only place that turns `webhook` and `dataClasses` into a payload shape; any personal-data
   class makes it thin.
-- `validateCatalogue`, `canTransitionReview`, `planEditionInstall` and `deliverableEvents` are pure and never throw on untrusted input. Any new check keeps the output independent of input
+- `validateCatalogue`, `canTransitionReview`, `planEditionInstall`, `checkEditionBundle` and `deliverableEvents` are pure and never throw on untrusted input. Any new check keeps the output independent of input
   order: walk manifests in the sorted order, and compare strings by code unit, never with `localeCompare`.
 - A new diagnostic code is a new case of `CatalogueDiagnosticCode`, snake_case.
 - Configuration, not code: fee rates, sandbox counts and lifetimes, and review rules are records and settings the
   service passes in; only the transitions, the arithmetic and the install order live here.
+- Editions: the base relation is written once in the edition's root runway (`product.edition`, stackra-06); the
+  registry only copies it into `EditionBundle`. Packs and role presets are record keys, never module keys or code.
 - Only add a symbol a consumer imports today (the template, a package, or the registry row).
 - A `perk` listing never installs (ADR 0393): it is redeemed by code, link or lead. The offer rule sets in
   `assets/data/rule-sets/` are seeds in the `@stackra/rules` `RuleSetPack$` shape; this package never imports

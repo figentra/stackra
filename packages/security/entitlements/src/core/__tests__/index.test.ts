@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: the consumer contract of the `.` entry: every value the template imports from `@stackra/entitlements`
  *          (`Entitlement`, `EntitlementKind`, `EntitlementSource`, `LimitReachedError`) and the registry row's plan
- *          driver, usage port and registration, and the limit-grant helpers (stackra-117) are exported, nothing else is, the registry stays internal, and the
+ *          driver, usage port and registration, the limit-grant helpers (stackra-117) and the edition bundling (stackra-64) are exported, nothing else is, the registry stays internal, and the
  *          public types resolve.
  * Boundary: test only; imports the stand-in barrel through its `#core` alias.
  * Runtime: node (vitest)
@@ -43,6 +43,7 @@ describe("@stackra/entitlements", () => {
       "SeatLimitReachedError",
       "SeatMeterService",
       "SecondApproverRequiredError",
+      "bundleEditionCatalogue",
       "entitlementKey",
       "isEntitled",
       "isLimitGrant",

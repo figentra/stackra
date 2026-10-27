@@ -16,7 +16,7 @@
  * Governing contract: ADR 0294 (decisions 10, 20 and 22: identities from the manifest); ADR 0097 (decision 5.4);
  *                     ADR 0305 (rule 5: partners); ADR 0141; ADR 0308 (rules 2 and 15); ADR 0224; ADR 0221
  *                     (decision 5); ADR 0342 (decision 5: registered sequences); ADR 0260 (decision 4: typed
- *                     subscriptions by import; a relay is the one all-events listener); ADR 0215 and STA-903 (entitlement rows).
+ *                     subscriptions by import; a relay is the one all-events listener); ADR 0215 and STA-903 (entitlement rows); ADR 0336 (a model addition module loads its side-table entities).
  */
 import type { StackraManifest } from "@stackra/contracts";
 
@@ -92,7 +92,11 @@ export function emitRegistrations(ir: MemberIR, manifest: StackraManifest): stri
 
   const loads = [
     ...[
-      ...new Set(ir.shapes.filter((shape) => shape.kind === "model").map((shape) => shape.module)),
+      ...new Set(
+        ir.shapes
+          .filter((shape) => shape.kind === "model" || shape.kind === "model_addition")
+          .map((shape) => shape.module),
+      ),
     ]
       .sort()
       .map((module) => `import "#stackra/entities/${module}";`),

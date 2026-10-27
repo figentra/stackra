@@ -13,7 +13,7 @@ Governing contract: ADR 0294; ADR 0295; ADR 0260 (generated clients); ADR 0261; 
                     namespaces merged into `I18n`, missing keys and namespace clashes refused); STA-1251
                     (`searchable_semantic_ai_never`); ADR 0438 (shell slots and
                     fills, stackra-03); ADR 0436 (surface targets and the extension bundle's modulepreload list,
-                    stackra-04).
+                    stackra-04); ADR 0336 (model additions, stackra-64).
 -->
 
 The Stackra compiler. Gen reads a member's source through the TypeScript compiler API, derives every identity and
@@ -146,6 +146,20 @@ first). Refusals: `docs_source_misplaced` (a `docs.json`, `README.md` or stray f
   counted model's `create` actions, and an action or query naming it in an `entitlement` option is gated by it. The
   registrations file calls `registerEntitlements` with one row per entitlement, so `PlanSnapshotEntitlementSource`
   resolves every registered class. A class thunk option (`counts: () => Till`) is read as its class.
+
+## Model additions (ADR 0336)
+
+An edition's `ModelAddition(Base)` class in `models/<base>.model-addition.ts` (`ProductAddition`) is the
+`model_addition` kind; its fields are a shape (`ProductAddition$`). `additionsOf` lists each in the manifest's
+`additions` section: key, class, file, the base model key read from the base's released manifest, the package it comes
+from, the side table `<module>.<addition>s` (`fashion.product_additions`), the wire key (the module key) and the field
+names. The module's entity file writes a side-table `EntitySchema` per addition, keyed by the base record's `id`.
+Refusals: `addition_base_source` (base imported from source), `addition_target_missing` (no released manifest declares
+the base) and `addition_key_collision` (two additions on one base under one wire key, another edition's included).
+
+Not built yet: the side table's migration (the edition writes it: the base id as primary key, `t.belongsToTenant()`,
+`after:` the base's), nesting the fields on the base's queries and actions, the layer 2b panel placements and the
+field-level `@Renamed` check against the base version.
 
 ## Platform field types
 

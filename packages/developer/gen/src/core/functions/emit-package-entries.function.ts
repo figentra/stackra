@@ -10,7 +10,8 @@
  *           with nothing to export is not written. No symbol is exported from two entries.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 15: entry folders; the barrels are generated); ADR 0295 (decision 7); ADR
- *                     0305 (rules 16 and 18); ADR 0127 2026-10-24 note (the allowed entries).
+ *                     0305 (rules 16 and 18); ADR 0127 2026-10-24 note (the allowed entries); ADR 0336 (a module of
+ *                     model additions re-exports its side-table entities).
  */
 import { entitiesName } from "#core/functions/entities-name.function";
 import { entryOf } from "#core/functions/entry-of.function";
@@ -93,7 +94,11 @@ export function emitPackageEntries(ir: MemberIR): GeneratedFile[] {
     lines.get("node")?.push(exportLine([{ name: root.name, typeOnly: false }], root.from));
   // A host registers a package's entity schemas from here (`registerEntities([...SCOPE_ENTITIES])`).
   for (const module of [
-    ...new Set(ir.shapes.filter((shape) => shape.kind === "model").map((shape) => shape.module)),
+    ...new Set(
+      ir.shapes
+        .filter((shape) => shape.kind === "model" || shape.kind === "model_addition")
+        .map((shape) => shape.module),
+    ),
   ].sort())
     lines
       .get("node")

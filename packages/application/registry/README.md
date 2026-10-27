@@ -1,3 +1,12 @@
+<!--
+Stackra file contract:
+Purpose: the reader guide of @stackra/registry: catalogue validation, the app market records, edition records and the
+         edition install plan.
+Boundary: documentation of packages/application/registry only; the code and the ADRs win on any difference.
+Runtime: none
+Governing contract: ADR 0109; ADR 0335 (as amended by ADR 0349); ADR 0355 (decision 8).
+-->
+
 # @stackra/registry
 
 Stackra module catalogue validation: the checks a registry service runs on the `stackra.manifest.json` files CI
@@ -23,6 +32,7 @@ decision 8: the review state, developer sandboxes, fee schedules and partner pay
 | `AppReview`, `DeveloperSandbox`                        | the review record of an app version; a developer's sandbox and the apps under test in it                                     |
 | `FeeSchedule`, `PartnerPayout`, `computePartnerPayout` | a partner fee schedule (basis points plus a fixed fee), one period's payout, and the fee and net of a gross under a schedule |
 | `EditionBundle`, `planEditionInstall`                  | an edition's base, own modules and bundled base modules; the install order, inert contributions and issues for one tenant    |
+| `checkEditionBundle`, `EditionBundleIssue`             | an edition's bundle against its base's released modules, before the registry lists it                                        |
 
 ## Use
 
@@ -95,6 +105,15 @@ dependency order (ties in code-unit order), leaving installed ones out. A depend
 in (`missing_dependency`): a base module the edition does not bundle is not available to its tenants. A module that
 only `enhances` another installs without it and its contribution is listed as inert until that module is present.
 Any issue (`unknown_module`, `missing_dependency`, `dependency_cycle`) stops the whole plan.
+
+## Edition records
+
+`EditionBundle` is the registry's record of an edition (ADR 0335): its product key, the base and version range from the
+root runway's `product.edition` (written there once, stackra-06; copied here, never edited here), its own modules, the
+base modules it bundles, and the range packs (`packs`) and role presets (`rolePresets`) it seeds, as record keys. Packs
+and presets are data the seeding service owns; the record only names them. `checkEditionBundle(bundle, base)` takes the
+modules of the base's released manifests in the version range (the caller resolves the range) and refuses
+`base_unknown` (none), `bundled_module_unknown` and `module_key_taken` (ADR 0349), in code-unit order.
 
 ## Order
 

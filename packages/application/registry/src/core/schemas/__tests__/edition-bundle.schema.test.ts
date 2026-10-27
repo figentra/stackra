@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `EditionBundle`: the shipped schema is registered, a bundle parses, and a module listed twice
- *          or a key that is not snake_case fails.
+ *          or a key that is not snake_case fails; range packs and role
+ *          presets are optional record keys, each once (stackra-64).
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0335 (decisions 2, 5 and 6).
@@ -30,5 +31,21 @@ describe("EditionBundle", () => {
       false,
     );
     expect(validate(EditionBundle, { ...bundle, modules: ["FashionSizes"] }).success).toBe(false);
+  });
+
+  it("takes range packs and role presets as record keys, each once", () => {
+    const seeded = {
+      ...bundle,
+      packs: ["range:fashion-basics"],
+      rolePresets: ["role-preset:stylist"],
+    };
+    expect(validate(EditionBundle, seeded).success).toBe(true);
+    expect(validate(EditionBundle, { ...seeded, packs: ["Range Basics"] }).success).toBe(false);
+    expect(
+      validate(EditionBundle, {
+        ...seeded,
+        rolePresets: ["role-preset:stylist", "role-preset:stylist"],
+      }).success,
+    ).toBe(false);
   });
 });

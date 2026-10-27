@@ -5,7 +5,8 @@
  * Boundary: names each re-export and declares nothing. The shipped schema constants and the review transition table
  *           stay internal.
  * Runtime: isomorphic
- * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision; ADR 0127 2026-10-24 note.
+ * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision; ADR 0127 2026-10-24 note; ADR
+ *                     0335 (`checkEditionBundle`, stackra-64).
  */
 export { CatalogueDiagnosticCode } from "#core/enums/catalogue-diagnostic-code.enum";
 export { DeliverablePayload } from "#core/enums/deliverable-payload.enum";
@@ -13,6 +14,7 @@ export { ListingRole } from "#core/enums/listing-role.enum";
 export { PerkRedemptionKind } from "#core/enums/perk-redemption-kind.enum";
 export { ReviewState } from "#core/enums/review-state.enum";
 export { canTransitionReview } from "#core/functions/can-transition-review.function";
+export { checkEditionBundle } from "#core/functions/check-edition-bundle.function";
 export { computePartnerPayout } from "#core/functions/compute-partner-payout.function";
 export { deliverableEvents } from "#core/functions/deliverable-events.function";
 export { perkEligible } from "#core/functions/perk-eligible.function";
@@ -29,6 +31,7 @@ export { PartnerPayout } from "#core/schemas/partner-payout.schema";
 export { PerkListing } from "#core/schemas/perk-listing.schema";
 export type { CatalogueDiagnostic } from "#core/types/catalogue-diagnostic.type";
 export type { DeliverableEventRow } from "#core/types/deliverable-event-row.type";
+export type { EditionBundleIssue } from "#core/types/edition-bundle-issue.type";
 export type { EditionInstallIssue } from "#core/types/edition-install-issue.type";
 export type { EditionInstallPlan } from "#core/types/edition-install-plan.type";
 export type { InstallableModule } from "#core/types/installable-module.type";

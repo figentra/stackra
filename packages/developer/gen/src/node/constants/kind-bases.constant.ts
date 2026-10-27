@@ -7,7 +7,8 @@
  * Runtime: node
  * Governing contract: ADR 0294 (decision 16: the kind table); ADR 0305 (rules 2, 3 and 19); ADR 0308 (integrations
  *                     and connections); ADR 0342 (sequences); ADR 0425
- *                     (decision 1: rule outcome kinds); ADR 0399 (Agent) and ADR 0348 (decision 5: Pass), STA-903.
+ *                     (decision 1: rule outcome kinds); ADR 0399 (Agent) and ADR 0348 (decision 5: Pass), STA-903;
+ *                     ADR 0336 (decision 1: `ModelAddition`, stackra-64).
  */
 
 /** Kind base name to kind code. */
@@ -42,6 +43,7 @@ export const KIND_BASES: Readonly<Record<string, string>> = Object.freeze({
   Menu: "menu",
   Migration: "migration",
   Model: "model",
+  ModelAddition: "model_addition",
   Module: "module",
   Notification: "notification",
   Page: "schema",

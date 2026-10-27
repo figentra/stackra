@@ -25,6 +25,8 @@
  *          (ADR 0438, stackra-03). It lists in `surfaces` each surface a shell dependency's slots sit on, with the
  *          shell line the member targets there (`targets: "console@3"`, from that shell's major) and the shell
  *          package, for the extension-bundle build and the registry's compatibility check (ADR 0436, stackra-04).
+ *          It lists each model addition in `additions` (`additionsOf`: base key, side table, wire key, fields) with
+ *          `addition_base_source`, `addition_target_missing` and `addition_key_collision` (ADR 0336, stackra-64).
  * Boundary: pure. A config's schema never reaches the manifest (ADR 0305 rule 34). Sections owned by later targets
  *           (ui, settings, migrations, infra, ...) are written by those targets when they land.
  * Runtime: isomorphic
@@ -47,6 +49,7 @@ import { MANIFEST_NOTICE } from "#core/constants/manifest-notice.constant";
 import { PUBLIC_ID_PREFIXES } from "#core/constants/public-id-prefixes.constant";
 import { REPLICA_PAGE_SCHEMA } from "#core/constants/replica-page-schema.constant";
 import { actionKey } from "#core/functions/action-key.function";
+import { additionsOf } from "#core/functions/additions-of.function";
 import { blockKey } from "#core/functions/block-key.function";
 import { camelCase } from "#core/functions/camel-case.function";
 import { configKeyOf } from "#core/functions/config-key-of.function";
@@ -1009,6 +1012,10 @@ export function buildManifest(ir: MemberIR): {
   // The shell line it targets on each surface (ADR 0436, stackra-04).
   const surfaces: Entry[] = surfacesOf(ir).map((target) => ({ ...target }));
 
+  // The model additions with their side tables and wire keys, and their refusals (ADR 0336, stackra-64).
+  const additions = additionsOf(ir);
+  errors.push(...additions.errors);
+
   const manifest: Entry = {
     $comment: MANIFEST_NOTICE,
     member: ir.member,
@@ -1026,6 +1033,9 @@ export function buildManifest(ir: MemberIR): {
     ...(slots.length > 0 ? { slots } : {}),
     ...(fills.length > 0 ? { fills } : {}),
     ...(surfaces.length > 0 ? { surfaces } : {}),
+    ...(additions.additions.length > 0
+      ? { additions: additions.additions as unknown as Json }
+      : {}),
     schemas,
   };
   return { manifest: manifest as unknown as StackraManifest, errors };

@@ -9,7 +9,7 @@
  *           `port` is a noun kind here.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (R1 to R3, decision 16: the kind table); ADR 0305 (rules 1 to 3); STA-903 (`agent`,
- *                     `pass`).
+ *                     `pass`); ADR 0336 (decision 1: `<base>.model-addition.ts`, `<Base>Addition`).
  */
 
 /** Kind code to its file suffix and class-name suffix. */
@@ -44,6 +44,7 @@ export const KIND_FILES: Readonly<
   menu: { file: "menu", suffix: "Menu" },
   migration: { file: "migration", suffix: "Migration" },
   model: { file: "model", suffix: "" },
+  model_addition: { file: "model-addition", suffix: "Addition" },
   module: { file: "module", suffix: "Module" },
   notification: { file: "notification", suffix: "Notification" },
   panel: { file: "panel", suffix: "Panel" },

@@ -3,7 +3,7 @@ Stackra file contract:
 Purpose: the reader guide of @stackra/entitlements: entries, declaring, the pipeline check, grant by class or key, sources, testing.
 Boundary: documentation of packages/security/entitlements only.
 Runtime: none
-Governing contract: ADR 0215; ADR 0294; STA-1225 (grant by key).
+Governing contract: ADR 0215; ADR 0294; STA-1225 (grant by key); ADR 0335 (edition bundles, stackra-64).
 -->
 
 # @stackra/entitlements
@@ -149,6 +149,15 @@ effective plan, or `undefined` when the plan does not set it.
 version and checks every reference. A row of any other record kind (a `limit_policy` row) is not refused: it is kept
 untouched in `catalogue.extras[<record>]`, in row order, for the service that owns that kind to parse. A row with no
 `record` is still a `RangeError`.
+
+## Edition bundles
+
+An edition sells the base modules it bundles in its own plan ladder (ADR 0335 decision 6). The bundle is catalogue data
+(`EditionEntitlementBundle`: the base key, the base module entitlements every tier includes, and per-tier additions).
+`bundleEditionCatalogue(edition, bundle, base)` returns the edition's catalogue with those modules sold and included
+by each tier, so `tierPlan` grants them like the edition's own; a base module outside the bundle never appears, so a
+scope on an edition plan cannot hold it. A bundled module the base does not sell, or an unknown tier, is a
+`RangeError`.
 
 ## Cap-lift facts
 

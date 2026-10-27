@@ -3,7 +3,7 @@
  * Purpose: `createSourceReader`, discovery's analyser over one opened program: it reads each class's kind from the
  *          base its `extends` clause names (bare, called, `Model.with`, `Page.of`, `Widget.place`, an own or a
  *          package class), its options as constants (a class thunk, `counts: () => Till`, as its class), its partner from the heritage type argument (`Point["slot"]`
- *          included), its constructor tokens, facets, `handle` signature (a `ReplicaPage` output from a `@stackra/*`
+ *          included; the value argument of `Driver(Port)`, `Widget.place` and `ModelAddition(Base)`, ADR 0336), its constructor tokens, facets, `handle` signature (a `ReplicaPage` output from a `@stackra/*`
  *          package reads as `replica`, ADR 0338; a listener's parameter is its event class, one from
  *          `#stackra/clients/<service>` by its import, or `EventEnvelope` from `@stackra/outbox` as a relay), refusals, statics and traits; each shape's fields from the declared
  *          type node first and the checker second, with rules and constant defaults; each model's entity facts
@@ -1866,7 +1866,7 @@ export function createSourceReader(
         slot = nameOf(first.indexType?.literal);
       }
       target = target.typeName ?? target;
-    } else if (kind === "driver" || heritage.method === "place")
+    } else if (kind === "driver" || kind === "model_addition" || heritage.method === "place")
       target = heritage.call?.arguments?.[0];
     if (target === undefined) return undefined;
     const symbol = host.symbolAt(target);
@@ -2153,7 +2153,7 @@ export function createSourceReader(
       heritage.method === "with" ||
       heritage.method === "of"
         ? undefined
-        : info.kind === "driver" || heritage.method === "place"
+        : info.kind === "driver" || info.kind === "model_addition" || heritage.method === "place"
           ? heritage.call.arguments?.[1]
           : heritage.call.arguments?.[0];
     const options = optionsOf(optionsArgument);
