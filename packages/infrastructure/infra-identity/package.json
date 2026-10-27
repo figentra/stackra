@@ -1,7 +1,7 @@
 {
   "name": "@stackra/infra-identity",
   "version": "0.0.0",
-  "private": true,
+  "private": false,
   "description": "Identity infrastructure over ZITADEL: the seed (zitadel/seed.yaml) that names the staff organisation, the project and its roles, one OIDC client per app, the machine users and the branding; the plan of one ZITADEL instance read from the root runway and the seed; and its Pulumi slice, which creates them with the baseline token and sign-in policies",
   "keywords": [
     "identity",
@@ -60,8 +60,7 @@
   },
   "publishConfig": {
     "access": "public",
-    "provenance": true,
-    "registry": "https://registry.npmjs.org/"
+    "provenance": true
   },
   "scripts": {
     "build": "tsdown",

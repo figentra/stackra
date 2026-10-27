@@ -24,3 +24,10 @@ permission.
 
 These software licenses cover Archify's embedded runtime and templates, not
 ownership of a user's authored content, business data, or source repository.
+
+Stackra distribution
+This directory is published unchanged in substance as the agent-skill item
+@stackra/skill-archify on the Stackra registry (https://npm.stackra.figentra.com/,
+ADR 0453 decision 11) by Figentra (https://figentra.com). It keeps the
+Apache License, Version 2.0, and this NOTICE; Figentra claims no authorship of
+Archify and adds only the package.json item fields (name, stackra, publishConfig).

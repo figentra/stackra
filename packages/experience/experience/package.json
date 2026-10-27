@@ -1,7 +1,7 @@
 {
   "name": "@stackra/experience",
   "version": "0.0.0",
-  "private": true,
+  "private": false,
   "description": "Stackra experience: the Block({ category, icon }) kind, LocalizedText and BlockProps, the L2 document format and its validator, the Renderer port, the web and native DocumentRenderer that resolve each document node to a registered block, and the edge render of a published document to HTML in a Worker, and the node renderer of email templates and print documents (PDF through @stackra/documents)",
   "keywords": [
     "blocks",
@@ -101,8 +101,7 @@
   },
   "publishConfig": {
     "access": "public",
-    "provenance": true,
-    "registry": "https://registry.npmjs.org/"
+    "provenance": true
   },
   "scripts": {
     "build": "tsdown",

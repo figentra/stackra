@@ -1,7 +1,7 @@
 {
   "name": "@stackra/brand-kit",
   "version": "0.0.0",
-  "private": true,
+  "private": false,
   "description": "Stackra brand kit: the generic brand generator that reads <repo>/assets/brand/kit.json and writes tokens, HeroUI CSS, app and adaptive icons, splash screens, favicons, the web manifest and store-screenshot frames, with a deterministic --check and an asset manifest of every generated file",
   "keywords": [
     "app-icons",
@@ -66,8 +66,7 @@
   },
   "publishConfig": {
     "access": "public",
-    "provenance": true,
-    "registry": "https://registry.npmjs.org/"
+    "provenance": true
   },
   "scripts": {
     "build": "tsdown",

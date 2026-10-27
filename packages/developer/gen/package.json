@@ -1,7 +1,7 @@
 {
   "name": "@stackra/gen",
   "version": "0.0.0",
-  "private": true,
+  "private": false,
   "description": "The Stackra compiler: discovery on the TypeScript 7 API with a TypeScript 6 fallback, derived identities and the committed manifest, the shape compiler, wiring, the member module and entries, the openapi projection, the class-component compiler and the manifest contract helpers",
   "keywords": [
     "codegen",
@@ -79,8 +79,7 @@
   },
   "publishConfig": {
     "access": "public",
-    "provenance": true,
-    "registry": "https://registry.npmjs.org/"
+    "provenance": true
   },
   "scripts": {
     "build": "tsdown",

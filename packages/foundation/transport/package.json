@@ -1,7 +1,7 @@
 {
   "name": "@stackra/transport",
   "version": "0.0.0",
-  "private": true,
+  "private": false,
   "description": "Stackra HTTP client pipeline: middleware for bearer auth, retry, timeout, the Idempotency-Key and Stackra-Version headers, NDJSON and server-sent-event readers, and a streaming Expo fetch",
   "keywords": [
     "expo",
@@ -62,8 +62,7 @@
   },
   "publishConfig": {
     "access": "public",
-    "provenance": true,
-    "registry": "https://registry.npmjs.org/"
+    "provenance": true
   },
   "scripts": {
     "build": "tsdown",

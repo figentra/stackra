@@ -1,7 +1,7 @@
 {
   "name": "@stackra/filesystem",
   "version": "0.0.0",
-  "private": true,
+  "private": false,
   "description": "Stackra server disks: the FileSystem port with memory, local, Encore bucket, S3/R2 and Google Cloud Storage drivers, the Electron main-process driver, and FilesystemConfig with its shipped schema",
   "keywords": [
     "data",
@@ -83,8 +83,7 @@
   },
   "publishConfig": {
     "access": "public",
-    "provenance": true,
-    "registry": "https://registry.npmjs.org/"
+    "provenance": true
   },
   "scripts": {
     "build": "tsdown",

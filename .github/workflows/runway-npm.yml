@@ -1,14 +1,21 @@
 # Stackra file contract:
 # Purpose: Runway's `npm` provider, a public reusable workflow (ADR 0168 decision 1): with pending changesets it opens
-#          or updates the "version packages" PR; on that PR's merge it publishes every package with "private": false
-#          to npmjs with provenance through npm trusted publishing (ADR 0177, 2026-10-21 amendment), then signs the
+#          or updates the "version packages" PR; on that PR's merge it publishes every workspace package with
+#          "private": false to the Stackra registry (the `registry` input, ADR 0453) with provenance, then signs the
 #          CycloneDX SBOM keylessly with cosign and attaches it to each GitHub release it created. A Trivy filesystem
-#          scan of the lockfile blocks the publish on a critical vulnerability that has a fix (ADR 0174). npm checks
-#          the CALLING workflow, so each package's trusted publisher names the caller (`release.yml` here).
+#          scan of the lockfile blocks the publish on a critical vulnerability that has a fix (ADR 0174). Every tarball
+#          is made by `pnpm publish` (or `pnpm pack` for the dry run), so the workspace `.pnpmfile.mjs` beforePacking
+#          hook strips the repo-only `imports` map and `@stackra/source` condition first.
+# Boundary: publishes only to `registry`; never to npmjs (the optional mirror of ADR 0453 decision 16 is off and not
+#           built here) and never with a long-lived token. Selecting what is published is the caller's (`build-args`).
+# Runtime: GitHub Actions
 # Secrets: the GitHub App id and key the version PR is pushed with (a PR pushed with GITHUB_TOKEN would not trigger
-#          the caller's gate), passed by the caller. npm needs no token. Only with `bootstrap` (ADR 0289 decision
-#          11, the first publish of a package, owner-only) is NPM_BOOTSTRAP_TOKEN read from Infisical /ci over OIDC;
-#          `~/.npmrc` refers to it by name and the value stays in the publish step's environment.
+#          the caller's gate), passed by the caller. No registry token exists: per package the job exchanges its
+#          GitHub ID token (audience `npm:<registry host>`) at the registry's OIDC endpoint for a publish token bound to
+#          that one name (ADR 0453 decision 6, the workflow-run form), masks it and passes it as NODE_AUTH_TOKEN;
+#          `~/.npmrc` names the variable, never the value. The registry matches the CALLING workflow, ref and
+#          environment, so the trusted publisher row names the caller (`release.yml`, `refs/heads/main`, `release`).
+# Governing contract: ADR 0453 (decisions 6, 7 and 9); ADR 0168; ADR 0174; ADR 0177 (PK4, PK5); ADR 0019.
 # Owner: release-operations
 name: Runway npm
 
@@ -28,29 +35,15 @@ on:
         type: string
         required: true
       dry-run:
-        description: Run `pnpm -r publish --dry-run` instead of the version PR and the publish.
+        description: Pack and run `pnpm -r publish --dry-run` instead of the version PR and the publish.
         type: boolean
         default: false
-      bootstrap:
-        description: The first publish of a package (OP2) with NPM_BOOTSTRAP_TOKEN from Infisical /ci.
-        type: boolean
-        default: false
-      infisical-identity-id:
-        description: The Infisical machine identity id that may read NPM_BOOTSTRAP_TOKEN (only read with `bootstrap`).
+      registry:
+        description: >-
+          The npm-compatible registry packages publish to, an https URL ending in /. The caller passes its root
+          runway's `providers.npm.registry`; this default is the Stackra registry (ADR 0453).
         type: string
-        default: ""
-      infisical-project-id:
-        description: The Infisical project (workspace) id, not a secret.
-        type: string
-        default: ""
-      infisical-domain:
-        description: The Infisical instance.
-        type: string
-        default: https://eu.infisical.com
-      infisical-env:
-        description: The Infisical environment that holds `/ci`.
-        type: string
-        default: prod
+        default: https://npm.stackra.figentra.com/
     secrets:
       app-id:
         description: The GitHub App id the version PR and the tags are pushed as.
@@ -77,7 +70,7 @@ jobs:
     permissions:
       contents: write # push the version-PR branch and the version tags
       pull-requests: write # open and update the version PR
-      id-token: write # npm trusted publishing and provenance; the Infisical login for a bootstrap
+      id-token: write # the registry's OIDC exchange and the Sigstore provenance of each tarball
     outputs:
       published: ${{ steps.changesets.outputs.published }}
       packages: ${{ steps.changesets.outputs.publishedPackages }}
@@ -121,7 +114,7 @@ jobs:
           # shellcheck disable=SC2086 # word splitting of the argument list is the point
           pnpm install $INSTALL_ARGS
 
-      # Only what is published is built; each package's dist must exist before `changeset publish`.
+      # Only what is published is built; each package's dist must exist before it is packed.
       - name: Build
         env:
           BUILD_ARGS: ${{ inputs.build-args }}
@@ -130,51 +123,66 @@ jobs:
           # shellcheck disable=SC2086 # word splitting of the argument list is the point
           pnpm turbo run build $BUILD_ARGS
 
+      - name: Registry
+        env:
+          REGISTRY: ${{ inputs.registry }}
+        run: |
+          case "$REGISTRY" in https://*/) ;; *) echo "::error::registry must be an https URL ending in /"; exit 1 ;; esac
+          host="${REGISTRY#https://}"
+          # A reference, not a value: pnpm expands ${NODE_AUTH_TOKEN} from the publish step's environment.
+          # shellcheck disable=SC2016 # the literal ${…} is the point
+          printf '//%s:_authToken=${NODE_AUTH_TOKEN}\n' "$host" >> ~/.npmrc
+          # The one script `changeset publish` is replaced by, so each package gets its own short-lived token.
+          cat > "$RUNNER_TEMP/registry-publish.sh" <<'SH'
+          set -euo pipefail
+          host="${REGISTRY#https://}"
+          pnpm -r ls --depth -1 --json |
+            jq -r '.[] | select(.private != true) | [.name, .version, .path] | @tsv' |
+            while IFS=$'\t' read -r name version dir; do
+              encoded="${name/\//%2f}"
+              # Versions are immutable (ADR 0453 decision 7): one already there is skipped, never republished.
+              if curl -fsS -o /dev/null "${REGISTRY}${encoded}/${version}"; then
+                echo "skip ${name}@${version}: already on the registry"
+                continue
+              fi
+              id_token="$(curl -fsS -H "Authorization: bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" \
+                "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=npm:${host%/}" | jq -r '.value')"
+              echo "::add-mask::${id_token}"
+              NODE_AUTH_TOKEN="$(curl -fsS -X POST -H "Authorization: Bearer ${id_token}" \
+                "${REGISTRY}-/npm/v1/oidc/token/exchange/package/${encoded}" | jq -r '.token')"
+              echo "::add-mask::${NODE_AUTH_TOKEN}"
+              export NODE_AUTH_TOKEN
+              (cd "$dir" && pnpm publish --no-git-checks --access public --provenance --registry "$REGISTRY")
+              unset NODE_AUTH_TOKEN
+              git tag "${name}@${version}"
+              # changesets/action reads this line to push the tag and create the GitHub release.
+              echo "New tag: ${name}@${version}"
+            done
+          SH
+
+      # Packs every published package through the beforePacking hook; nothing leaves the runner.
       - name: Publish dry run
         if: inputs.dry-run
-        run: pnpm -r publish --dry-run --no-git-checks
-
-      # OP2 (ADR 0289 decision 11): a package's first publish cannot use trusted publishing, because npm has no
-      # package to attach the publisher to yet. The owner's 7-day publish-only token is read for this run only.
-      - name: Bootstrap token (Infisical OIDC)
-        if: inputs.bootstrap && !inputs.dry-run
-        uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
-        with:
-          method: oidc
-          identity-id: ${{ inputs.infisical-identity-id }}
-          domain: ${{ inputs.infisical-domain }}
-          project-id: ${{ inputs.infisical-project-id }}
-          env-slug: ${{ inputs.infisical-env }}
-          secret-path: /ci
-          secret-name: NPM_BOOTSTRAP_TOKEN
-          export-type: env
-
-      # Writes a reference, not the value: pnpm expands ${NPM_BOOTSTRAP_TOKEN} from the environment when it publishes.
-      - name: Bootstrap auth
-        if: inputs.bootstrap && !inputs.dry-run
-        run: |
-          test -n "${NPM_BOOTSTRAP_TOKEN:-}" || { echo "::error::NPM_BOOTSTRAP_TOKEN is not in Infisical /ci"; exit 1; }
-          # shellcheck disable=SC2016 # the literal ${…} is the point
-          echo '//registry.npmjs.org/:_authToken=${NPM_BOOTSTRAP_TOKEN}' >> ~/.npmrc
+        env:
+          REGISTRY: ${{ inputs.registry }}
+        run: pnpm -r publish --dry-run --no-git-checks --registry "$REGISTRY"
 
       # ADR 0025 / 0119 D7: automation prepares, the owner decides. With pending changesets this opens or updates the
       # "chore(release): version packages" PR (`pnpm changeset:version` also refreshes the lockfile); the owner merges
-      # it. On the merge run `changeset publish` (pnpm native publish) publishes every package with "private": false
-      # to npmjs with provenance and tags it; the action pushes the tags and creates the GitHub releases.
+      # it. On the merge run the registry script above publishes every package with "private": false to `registry`
+      # with provenance and tags it; the action pushes the tags and creates the GitHub releases.
       - name: Version PR / publish
         id: changesets
         if: ${{ !inputs.dry-run }}
         uses: changesets/action@ae32849d5ba541f9ae29e40e22a623bc13562f51 # v2.1.2
         with:
           version-script: pnpm changeset:version
-          publish-script: pnpm changeset publish
+          publish-script: bash ${{ runner.temp }}/registry-publish.sh
           pr-title: "chore(release): version packages"
           commit-message: "chore(release): version packages"
           github-token: ${{ steps.bot.outputs.token }}
         env:
-          # pnpm 12's native publish resolves workspace:/catalog: versions and does the OIDC exchange and provenance
-          # itself. No NPM_TOKEN exists anywhere (ADR 0177 amendment); a bootstrap run authenticates through ~/.npmrc.
-          NPM_CONFIG_REGISTRY: https://registry.npmjs.org/
+          REGISTRY: ${{ inputs.registry }}
           NPM_CONFIG_PROVENANCE: "true"
 
   # Runs only after a publish: the SBOM of what was installed, signed keylessly with this job's OIDC identity, kept as

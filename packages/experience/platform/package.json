@@ -1,7 +1,7 @@
 {
   "name": "@stackra/platform",
   "version": "0.0.0",
-  "private": true,
+  "private": false,
   "description": "Stackra platform: the Platform capability port with its typed refusal, the push, captcha, kiosk-mode and second-screen ports, the desktop, PWA and push configurations, memory, web, Electron (platform, kiosk mode, second screen), Expo (platform and push) and Turnstile (Worker and Node) drivers, the Bridge kind and its kiosk and second-screen bridges, the service-worker handlers, the React hooks and fakePlatform",
   "keywords": [
     "electron",
@@ -147,8 +147,7 @@
   },
   "publishConfig": {
     "access": "public",
-    "provenance": true,
-    "registry": "https://registry.npmjs.org/"
+    "provenance": true
   },
   "scripts": {
     "build": "tsdown",

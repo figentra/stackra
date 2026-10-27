@@ -1,7 +1,7 @@
 {
   "name": "@stackra/theming",
   "version": "0.0.0",
-  "private": true,
+  "private": false,
   "description": "Stackra theming: the colour scheme a user picks (light, dark, system), persisted per device and resolved against the system preference, the ThemingConfig look over @stackra/tokens themes with its shipped schema, the SystemColorScheme port with its memory, browser and appearance drivers, useColorScheme and fakeColorScheme",
   "keywords": [
     "appearance",
@@ -107,8 +107,7 @@
   },
   "publishConfig": {
     "access": "public",
-    "provenance": true,
-    "registry": "https://registry.npmjs.org/"
+    "provenance": true
   },
   "scripts": {
     "build": "tsdown",

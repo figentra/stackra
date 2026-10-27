@@ -1,7 +1,7 @@
 {
   "name": "@stackra/analytics",
   "version": "0.0.0",
-  "private": true,
+  "private": false,
   "description": "Stackra product analytics delivery: AnalyticsEvent instances sent through the AnalyticsDriver port only once the visitor's consent category is granted, a bounded ordered queue for events fired before the decision that is sent on acceptance and dropped on refusal (ADR 0298), the AnalyticsConfig configuration with its shipped schema, the none, memory and PostHog drivers (and a native PostHog driver that flushes when the app goes to the background), the React useAnalytics hook and the fakeAnalytics test helper",
   "keywords": [
     "analytics",
@@ -95,8 +95,7 @@
   },
   "publishConfig": {
     "access": "public",
-    "provenance": true,
-    "registry": "https://registry.npmjs.org/"
+    "provenance": true
   },
   "scripts": {
     "build": "tsdown",

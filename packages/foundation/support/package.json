@@ -1,7 +1,7 @@
 {
   "name": "@stackra/support",
   "version": "0.0.0",
-  "private": true,
+  "private": false,
   "description": "Dependency-free pure helpers for Stackra packages and services, grown on demand: time and calendar-month shifts, exact quantities with units, canonical JSON and its hash, GS1 restricted-circulation GTINs and a Code 128 encoder",
   "keywords": [
     "barcode",
@@ -51,8 +51,7 @@
   },
   "publishConfig": {
     "access": "public",
-    "provenance": true,
-    "registry": "https://registry.npmjs.org/"
+    "provenance": true
   },
   "scripts": {
     "build": "tsdown",

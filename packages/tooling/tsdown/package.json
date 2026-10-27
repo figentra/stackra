@@ -1,7 +1,7 @@
 {
   "name": "@stackra/tsdown-config",
   "version": "0.1.0",
-  "private": true,
+  "private": false,
   "description": "Shared tsdown build preset for libraries: ESM, dts, sourcemaps, tree-shaking, optional legacy-decorator transform.",
   "keywords": [
     "build",
@@ -38,6 +38,10 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     }
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
   },
   "scripts": {
     "format": "oxfmt --write .",

@@ -1,7 +1,7 @@
 {
   "name": "@stackra/money",
   "version": "0.0.0",
-  "private": true,
+  "private": false,
   "description": "Money in minor units with ISO 4217 currency codes, rounding modes, exact allocation, the money codecs generated schemas import, exchange and metal rates with the RateSource port, cash rounding and 6-decimal unit prices",
   "keywords": [
     "allocation",
@@ -61,8 +61,7 @@
   },
   "publishConfig": {
     "access": "public",
-    "provenance": true,
-    "registry": "https://registry.npmjs.org/"
+    "provenance": true
   },
   "scripts": {
     "build": "tsdown",

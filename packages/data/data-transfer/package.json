@@ -1,7 +1,7 @@
 {
   "name": "@stackra/data-transfer",
   "version": "0.0.0",
-  "private": true,
+  "private": false,
   "description": "Stackra data transfer: streaming CSV, JSON Lines and (in ./node) XLSX readers and writers, encoding detection with a market-pack fallback, Arabic header normalisation, column mapping and mapping profiles, preview, per-row errors, resumable single- and multi-sheet imports with a ledger, a whole-run revert and before-image purge, and payroll pay-input exports (CSV, XLSX, DATEV ASCII) from per-provider profiles, and a streaming zip writer with deflate and ZIP64",
   "keywords": [
     "csv",
@@ -71,8 +71,7 @@
   },
   "publishConfig": {
     "access": "public",
-    "provenance": true,
-    "registry": "https://registry.npmjs.org/"
+    "provenance": true
   },
   "scripts": {
     "build": "tsdown",

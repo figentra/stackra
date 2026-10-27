@@ -1,7 +1,7 @@
 {
   "name": "@stackra/feature-flags",
   "version": "0.0.0",
-  "private": true,
+  "private": false,
   "description": "Stackra feature flags: the Flag({ default, expires, removalIssue, scopes }) kind, typed flag refs, the FlagProvider port with its config and PostHog drivers, the FlagReader, FeatureFlagsConfig with its shipped schema, useFlag and fakeFlags, and the feature-flags oxlint plugin with its no-plan-targeting rule",
   "keywords": [
     "experiments",
@@ -94,8 +94,7 @@
   },
   "publishConfig": {
     "access": "public",
-    "provenance": true,
-    "registry": "https://registry.npmjs.org/"
+    "provenance": true
   },
   "scripts": {
     "build": "tsdown",

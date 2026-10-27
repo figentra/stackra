@@ -5,7 +5,7 @@
  *          exports, repository and publishConfig.
  * Boundary: pure: the caller passes the top-level entry names and the texts it read.
  * Runtime: node
- * Governing contract: ADR 0195 (decision 7); ADR 0177 (amendment 2026-10-21); ADR 0025.
+ * Governing contract: ADR 0195 (decision 7); ADR 0177 (amendment 2026-10-21); ADR 0025; ADR 0453 (the registry).
  */
 import { PRO_WRAPPER } from "#node/constants/pro-wrapper.constant";
 import { checkExports } from "#node/functions/check-exports.function";
@@ -44,7 +44,7 @@ export function checkMemberFiles(member: {
   if (tierFor(dir) === "tier:lib") {
     if (pkg.sideEffects !== false) out.push("package.json sideEffects must be false");
     out.push(...checkExports(pkg.exports));
-    // ADR 0177 amendment 2026-10-21: @stackra/* publishes to npmjs, public, with provenance.
+    // ADR 0453: @stackra/* publishes to the Stackra registry, public, with provenance.
     // npm provenance rejects a package whose repository.url differs from the signing repository.
     if (
       pkg.repository?.url !== "git+https://github.com/figentra/stackra.git" ||
@@ -57,12 +57,11 @@ export function checkMemberFiles(member: {
     // ADR 0310: the HeroUI Pro wrapper publishes only to the restricted channel, which `checkMember` requires instead.
     if (
       pkg.name !== PRO_WRAPPER.name &&
-      (pc.access !== "public" ||
-        pc.provenance !== true ||
-        pc.registry !== "https://registry.npmjs.org/")
+      (pc.access !== "public" || pc.provenance !== true || "registry" in pc)
     )
+      // ADR 0453: the release workflow's `registry` input is the one place the registry is set, never a member.
       out.push(
-        'package.json publishConfig must be { "access": "public", "provenance": true, "registry": "https://registry.npmjs.org/" } (ADR 0177)',
+        'package.json publishConfig must be { "access": "public", "provenance": true } with no registry (ADR 0453)',
       );
   }
   return out;

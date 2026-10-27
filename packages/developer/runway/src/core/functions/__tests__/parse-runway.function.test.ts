@@ -7,7 +7,8 @@
  *          topology needs groups and lists a member once; the root's environments, `secrets` and `destinations` are
  *          closed while its provider and target blocks and the member size blocks stay open; the config layer selects
  *          the Postgres action stores by name; a var reference names
- *          exactly one origin; a version other than 3, a misspelt environment, a duplicated secret and an inverted
+ *          exactly one origin; the npm provider's registry is an https URL ending in / and its scope an npm scope;
+ *          a version other than 3, a misspelt environment, a duplicated secret and an inverted
  *          instance range fail with their paths.
  * Boundary: test only; the fixtures mirror the template's `runway.yaml` files, trimmed.
  * Runtime: node (vitest)
@@ -209,6 +210,19 @@ describe("parseRunway", () => {
     expect(() =>
       parseRunway("root", { ...ROOT, providers: { gcp: { projects: { prod: ["acme-prod"] } } } }),
     ).toThrow(/providers\.gcp\.projects\.prod/);
+  });
+
+  it("types the npm provider: an https registry ending in / and an npm scope (ADR 0453)", () => {
+    const npm = { registry: "https://npm.stackra.figentra.com/", scope: "@stackra" };
+    expect(parseRunway("root", { ...ROOT, providers: { npm } }).providers?.npm).toEqual(npm);
+    expect(
+      issuePaths(() =>
+        parseRunway("root", {
+          ...ROOT,
+          providers: { npm: { registry: "http://npm.stackra.figentra.com", scope: "stackra" } },
+        }),
+      ).sort(),
+    ).toEqual(["providers.npm.registry", "providers.npm.scope"]);
   });
 
   it("selects the Postgres action stores by name in the config layer, root and member alike", () => {

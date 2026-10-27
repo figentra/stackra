@@ -239,6 +239,24 @@
               }
             }
           }
+        },
+        "npm": {
+          "type": "object",
+          "description": "Where the repository's packages publish (ADR 0453 decision 6); the release workflow's `registry` input carries it.",
+          "properties": {
+            "registry": {
+              "type": "string",
+              "pattern": "^https://.+/$",
+              "description": "The npm-compatible registry URL, ending in /.",
+              "examples": ["https://npm.stackra.figentra.com/"]
+            },
+            "scope": {
+              "type": "string",
+              "pattern": "^@[a-z0-9][a-z0-9-]*$",
+              "description": "The npm scope the repository publishes (never renamed, ADR 0453).",
+              "examples": ["@stackra"]
+            }
+          }
         }
       },
       "additionalProperties": {

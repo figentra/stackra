@@ -1,7 +1,7 @@
 {
   "name": "@stackra/i18n",
   "version": "0.0.0",
-  "private": true,
+  "private": false,
   "description": "Stackra i18n: the Locale (seven languages and their overlays), NumberingSystem, HourCycle, LocaleUrlStrategy, LengthUnit and DisplayUnit enums, per-locale week start and clock (localeFormat), the I18nConfig configuration, the ICU message engine over namespaced catalogues with regional overlays, the typed key builder gen calls, the Arabic normaliser, digit switching, address, country, length and quantity formatting, the translation, geocoding and address-autocomplete ports (./contracts), and the React provider and formatting hooks",
   "keywords": [
     "arabic",
@@ -77,8 +77,7 @@
   },
   "publishConfig": {
     "access": "public",
-    "provenance": true,
-    "registry": "https://registry.npmjs.org/"
+    "provenance": true
   },
   "scripts": {
     "build": "tsdown",

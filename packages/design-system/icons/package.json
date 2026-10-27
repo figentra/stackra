@@ -1,7 +1,7 @@
 {
   "name": "@stackra/icons",
   "version": "0.0.0",
-  "private": true,
+  "private": false,
   "description": "IconName contract and per-platform icon registries for the Stackra Design System",
   "keywords": [
     "design-system",
@@ -133,8 +133,7 @@
   },
   "publishConfig": {
     "access": "public",
-    "provenance": true,
-    "registry": "https://registry.npmjs.org/"
+    "provenance": true
   },
   "scripts": {
     "build": "tsdown",

@@ -1,7 +1,7 @@
 {
   "name": "@stackra/cache",
   "version": "0.0.0",
-  "private": true,
+  "private": false,
   "description": "Stackra cache: the Cache port with keys scoped per call namespace and single-flight loads, CacheKey.of, the CacheNamespace port, the CacheConfig configuration with its shipped schema, and the memory, storage, Valkey and Workers KV drivers",
   "keywords": [
     "cache",
@@ -84,8 +84,7 @@
   },
   "publishConfig": {
     "access": "public",
-    "provenance": true,
-    "registry": "https://registry.npmjs.org/"
+    "provenance": true
   },
   "scripts": {
     "build": "tsdown",

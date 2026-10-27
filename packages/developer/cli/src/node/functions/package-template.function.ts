@@ -5,8 +5,9 @@
  *          packages: package.json (the `#src` and `#assets` imports, the `./assets/*` export, `@stackra/*` at
  *          `options.stackraVersion`, scripts that call `stackra <task>`), tsconfig.json, turbo.jsonc,
  *          `stackra.config.ts` with one `definePackage({})`, `assets/.gitkeep`, README.md, AGENTS.md and CHANGELOG.md.
- *          Only a `@stackra/*` package gets the MIT licence, the repository link and the npmjs `publishConfig`; a
- *          product or scoped package is `UNLICENSED` and publishes nowhere until its product decides (ADR 0349 d4).
+ *          Only a `@stackra/*` package gets the MIT licence, the repository link and the `publishConfig` (no
+ *          registry: the workspace `.npmrc` scope mapping sets it, ADR 0453); a product or scoped package is
+ *          `UNLICENSED` and publishes nowhere until its product decides (ADR 0349 d4).
  *          No root module, entry barrel or tool config: a member with no root module is one module keyed by its
  *          folder, gen writes the barrels and the tool configs into `.stackra/`, and an entry is exported with its
  *          first file.
@@ -80,7 +81,6 @@ export function packageTemplate(options: TemplateOptions): readonly TemplateFile
       publishConfig: {
         access: "public",
         provenance: true,
-        registry: "https://registry.npmjs.org/",
       },
     }),
     scripts: {

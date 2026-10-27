@@ -1,7 +1,7 @@
 {
   "name": "@stackra/versioning",
   "version": "0.0.0",
-  "private": true,
+  "private": false,
   "description": "Stackra versioning: the Change kind base for integration event versions and dated response changes, the transforms that serve an older version (downgrade, upgrade), and the Stackra-Version resolution with its Deprecation and Sunset headers",
   "keywords": [
     "api-versioning",
@@ -50,8 +50,7 @@
   },
   "publishConfig": {
     "access": "public",
-    "provenance": true,
-    "registry": "https://registry.npmjs.org/"
+    "provenance": true
   },
   "scripts": {
     "build": "tsdown",

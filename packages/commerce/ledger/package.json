@@ -1,7 +1,7 @@
 {
   "name": "@stackra/ledger",
   "version": "0.0.0",
-  "private": true,
+  "private": false,
   "description": "Stackra ledger: double-entry primitives over an append-only entry model. Journal<M> appends once per (account, reference), derives balances from entries, refuses a debit below a balance floor, reverses entries set-wise (clamped at the floor) and posts balanced multi-line entries; the @Journaled class facet maps a model's fields; journalOf(Model) is the class token gen wires (both in ./node); the @Journaled facet also names the currency field, so postings share one currency and balances are per currency",
   "keywords": [
     "accounting",
@@ -60,8 +60,7 @@
   },
   "publishConfig": {
     "access": "public",
-    "provenance": true,
-    "registry": "https://registry.npmjs.org/"
+    "provenance": true
   },
   "scripts": {
     "build": "tsdown",

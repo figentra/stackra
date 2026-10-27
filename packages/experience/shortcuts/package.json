@@ -1,7 +1,7 @@
 {
   "name": "@stackra/shortcuts",
   "version": "0.0.0",
-  "private": true,
+  "private": false,
   "description": "Stackra shortcuts: the Shortcut({ keys, group }) kind, key parsing with chord sequences, the conflict detector, the open ShortcutContext, the palette list, key hints, the keyboard bindings and runShortcut",
   "keywords": [
     "command-palette",
@@ -69,8 +69,7 @@
   },
   "publishConfig": {
     "access": "public",
-    "provenance": true,
-    "registry": "https://registry.npmjs.org/"
+    "provenance": true
   },
   "scripts": {
     "build": "tsdown",

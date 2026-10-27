@@ -1,7 +1,7 @@
 {
   "name": "@stackra/access-log",
   "version": "0.0.0",
-  "private": true,
+  "private": false,
   "description": "Stackra access log: the @AccessLogged class facet and its Explorer, which write one access record per call of a marked action, query or service to the AccessLogSink port; a per-tenant SHA-256 hash chain over the records (linkAccessRecord, findChainBreak); memory and Postgres sinks; the append-only AccessLogEntry table with its migration and the t.dataClassification() macro; the retention job; and the sink fake and toHaveLoggedAccess matcher for tests",
   "keywords": [
     "access-log",
@@ -85,8 +85,7 @@
   },
   "publishConfig": {
     "access": "public",
-    "provenance": true,
-    "registry": "https://registry.npmjs.org/"
+    "provenance": true
   },
   "scripts": {
     "build": "tsdown",

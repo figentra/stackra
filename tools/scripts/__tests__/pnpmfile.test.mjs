@@ -1,10 +1,11 @@
 /**
  * Stackra file contract:
- * Purpose: hold the workspace `.pnpmfile.mjs` to its contract: the packed manifest loses its `#` `imports` map, a
- *          `dist` that still imports a `#` specifier fails the pack, and a `#` specifier in a comment does not.
+ * Purpose: hold the workspace `.pnpmfile.mjs` to its contract: the packed manifest loses its `#` `imports` map and
+ *          its `@stackra/source` export condition, a `dist` that still imports a `#` specifier fails the pack, and a
+ *          `#` specifier in a comment does not.
  * Boundary: writes throwaway member folders under the OS temp directory and removes them.
  * Runtime: node
- * Governing contract: ADR 0177 (PK4 release checks); ADR 0022 (tests live in tests folders).
+ * Governing contract: ADR 0177 (PK4 release checks); ADR 0453 (registry publish); ADR 0022 (tests live in tests folders).
  */
 import assert from "node:assert/strict";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
@@ -64,4 +65,46 @@ test("beforePacking refuses a dist that still imports a # specifier", () => {
 test("beforePacking leaves a manifest without an imports map as it is", () => {
   const plain = { name: "@stackra/y" };
   assert.equal(hooks.beforePacking(plain, "/nowhere"), plain);
+});
+
+test("beforePacking drops the @stackra/source condition at any depth and keeps the rest", () => {
+  const sourced = {
+    name: "@stackra/z",
+    exports: {
+      ".": {
+        "@stackra/source": "./src/index.ts",
+        types: "./dist/index.d.mts",
+        default: "./dist/index.mjs",
+      },
+      "./node": {
+        import: { "@stackra/source": "./src/node/index.ts", default: "./dist/node.mjs" },
+      },
+      "./package.json": "./package.json",
+    },
+  };
+  assert.deepEqual(hooks.beforePacking(sourced, "/nowhere"), {
+    name: "@stackra/z",
+    exports: {
+      ".": { types: "./dist/index.d.mts", default: "./dist/index.mjs" },
+      "./node": { import: { default: "./dist/node.mjs" } },
+      "./package.json": "./package.json",
+    },
+  });
+  assert.equal(sourced.exports["."]["@stackra/source"], "./src/index.ts"); // not mutated
+});
+
+test("beforePacking drops both the imports map and the source condition in one pass", () => {
+  const dir = member('import { a } from "./a.mjs";\nexport { a };\n');
+  try {
+    const both = {
+      ...pkg,
+      exports: { ".": { "@stackra/source": "./src/index.ts", default: "./dist/index.mjs" } },
+    };
+    assert.deepEqual(hooks.beforePacking(both, dir), {
+      name: "@stackra/x",
+      exports: { ".": { default: "./dist/index.mjs" } },
+    });
+  } finally {
+    rmSync(dir, { recursive: true });
+  }
 });

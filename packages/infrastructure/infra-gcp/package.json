@@ -1,7 +1,7 @@
 {
   "name": "@stackra/infra-gcp",
   "version": "0.0.0",
-  "private": true,
+  "private": false,
   "description": "Pulumi programs for the free GCP foundation read from the root runway (ADR 0354): per environment a provider pinned to its project and region with cost labels, the data key, the files bucket (media CORS, versioning, CMEK), the GitHub Workload Identity deploy service account and, from the project's first environment, the monthly billing budget with its alert topic",
   "keywords": [
     "budgets",
@@ -72,8 +72,7 @@
   },
   "publishConfig": {
     "access": "public",
-    "provenance": true,
-    "registry": "https://registry.npmjs.org/"
+    "provenance": true
   },
   "scripts": {
     "build": "tsdown",

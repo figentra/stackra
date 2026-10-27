@@ -1,7 +1,7 @@
 {
   "name": "@stackra/documents",
   "version": "0.0.0",
-  "private": true,
+  "private": false,
   "description": "Stackra documents: one print-document template model rendered to HTML, PDF (through the PdfEngine port) and DOCX, with bilingual layouts, bidi isolation, Arabic shaping for devices that cannot shape, QR codes, amounts in words, signed form PDFs with a content hash, the ESignatureProvider port and its Documenso connector",
   "keywords": [
     "bidi",
@@ -60,8 +60,7 @@
   },
   "publishConfig": {
     "access": "public",
-    "provenance": true,
-    "registry": "https://registry.npmjs.org/"
+    "provenance": true
   },
   "scripts": {
     "build": "tsdown",

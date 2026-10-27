@@ -1,7 +1,7 @@
 {
   "name": "@stackra/events",
   "version": "0.0.0",
-  "private": true,
+  "private": false,
   "description": "Stackra events: the DomainEvent, IntegrationEvent, WebhookEvent and AnalyticsEvent kind bases, the Listener kind base, the in-process EventBus, event recording kept off the aggregate, the EventOutbox and RegionBus ports and the event testing helpers",
   "keywords": [
     "analytics",
@@ -71,8 +71,7 @@
   },
   "publishConfig": {
     "access": "public",
-    "provenance": true,
-    "registry": "https://registry.npmjs.org/"
+    "provenance": true
   },
   "scripts": {
     "build": "tsdown",

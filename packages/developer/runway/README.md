@@ -8,7 +8,7 @@ Boundary: documentation only; the event topics and subscriptions are gen's outpu
 Runtime: none
 Governing contract: ADR 0296; ADR 0352; ADR 0400; ADR 0444 (the tools stack block); ADR 0148 (decisions 3 and 6);
                     ADR 0260 (decision 4); ADR 0441 (decision 3: surfaces, mobile); ADR 0439 (the mobile job); ADR 0436;
-                    STA-863 (lanes).
+                    STA-863 (lanes); ADR 0453 (decision 6: `providers.npm.registry`).
 -->
 
 Runway format version 3 as code: the schemas of the root runway (WHERE things run and how they are packed) and of the
@@ -57,6 +57,11 @@ It never holds `member`, `deployable`, `isolate`, `group`, `cpu`, `memory` or `i
 root runway states where members run: providers, destinations, shared pools, defaults and each environment's
 `topology`. In a grouped environment every service member sits in exactly one group, or in the `default` group;
 `checkPlacement` reports what is not.
+
+`providers.npm` is typed: `registry` (an `https://` URL ending in `/`) is where the repository's packages publish,
+and `scope` the npm scope it owns. For Stackra that is `https://npm.stackra.figentra.com/` and `@stackra` (ADR 0453);
+the release workflow's `registry` input carries the same value to `runway-npm.yml`, and no member's `publishConfig`
+names a registry.
 
 ```ts
 import { checkPlacement } from "@stackra/runway";

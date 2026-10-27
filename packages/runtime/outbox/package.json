@@ -1,7 +1,7 @@
 {
   "name": "@stackra/outbox",
   "version": "0.0.0",
-  "private": true,
+  "private": false,
   "description": "Stackra outbox: the transactional outbox (integration events and watched row changes written in the producer's transaction by an ORM flush writer), the relay that publishes them one runner at a time under a lock with backoff retries and dead letters, inbox deduplication by event id, the OutboxDriver, InboxDriver and EventPublisher ports with memory and Postgres drivers, the EventOutbox driver, and the change-consumer seam search and segments react through, the broker EventPublisher driver, and the Postgres stores of the offline queue (device sequences, offline caps and the scoped replica change log)",
   "keywords": [
     "change-data-capture",
@@ -74,8 +74,7 @@
   },
   "publishConfig": {
     "access": "public",
-    "provenance": true,
-    "registry": "https://registry.npmjs.org/"
+    "provenance": true
   },
   "scripts": {
     "build": "tsdown",

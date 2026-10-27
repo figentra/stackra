@@ -1,7 +1,7 @@
 {
   "name": "@stackra/typescript-config",
   "version": "0.1.0",
-  "private": true,
+  "private": false,
   "description": "Shared tsconfig presets. A workspace extends exactly one role preset and adds no compiler options of its own.",
   "keywords": [
     "compiler-options",
@@ -48,6 +48,10 @@
     "./tooling": "./src/tooling.json",
     "./desktop": "./src/desktop.json",
     "./service-worker": "./src/service-worker.json"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
   },
   "scripts": {
     "format": "oxfmt --write .",

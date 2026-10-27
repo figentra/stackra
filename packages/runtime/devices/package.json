@@ -1,7 +1,7 @@
 {
   "name": "@stackra/devices",
   "version": "0.0.0",
-  "private": true,
+  "private": false,
   "description": "Stackra devices: the DeviceTelemetry, DeviceCommands, DeviceCredential, DeviceIdentity and DevicePairing ports a device app reports, takes commands, pairs and orders its offline calls through, the DeviceRegistry port with its memory driver, the stored identity and credential drivers, the DevicesConfig configuration with its shipped schema, the HTTP drivers over @stackra/transport, and the server's devices.device.acknowledged query",
   "keywords": [
     "device-pairing",
@@ -74,8 +74,7 @@
   },
   "publishConfig": {
     "access": "public",
-    "provenance": true,
-    "registry": "https://registry.npmjs.org/"
+    "provenance": true
   },
   "scripts": {
     "build": "tsdown",

@@ -1,7 +1,7 @@
 {
   "name": "@stackra/navigation",
   "version": "0.0.0",
-  "private": true,
+  "private": false,
   "description": "Stackra navigation: the Route, Layout and Menu kinds, typed route refs and contexts, chrome config, the React Router 7 and React Navigation adapters, the root error boundary and router-aware links",
   "keywords": [
     "experience",
@@ -101,8 +101,7 @@
   },
   "publishConfig": {
     "access": "public",
-    "provenance": true,
-    "registry": "https://registry.npmjs.org/"
+    "provenance": true
   },
   "scripts": {
     "build": "tsdown",

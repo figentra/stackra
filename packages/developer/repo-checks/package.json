@@ -1,7 +1,7 @@
 {
   "name": "@stackra/repo-checks",
   "version": "0.0.0",
-  "private": true,
+  "private": false,
   "description": "The repository checks every Stackra repo runs through `stackra check`: config files, repository structure, the doc standard and lang catalogue completeness, as typed functions over the git file list",
   "keywords": [
     "developer",
@@ -48,8 +48,7 @@
   },
   "publishConfig": {
     "access": "public",
-    "provenance": true,
-    "registry": "https://registry.npmjs.org/"
+    "provenance": true
   },
   "scripts": {
     "build": "tsdown",

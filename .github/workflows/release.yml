@@ -1,14 +1,17 @@
 # Stackra file contract:
-# Purpose: release on every push to main (and workflow_dispatch with `dry_run` or `bootstrap`) through Runway's `npm`
-#          provider, runway-npm.yml: with pending changesets it opens or updates the "version packages" PR as
-#          stackra-bot; on that PR's merge it publishes the public packages to npmjs with provenance, then attaches a
-#          signed CycloneDX SBOM to each release. The job runs in the protected `release` environment, which needs a
+# Purpose: release on every push to main (and workflow_dispatch with `dry_run`) through Runway's `npm` provider,
+#          runway-npm.yml: with pending changesets it opens or updates the "version packages" PR as stackra-bot; on that
+#          PR's merge it publishes the public @stackra/* packages to the Stackra registry with provenance, then attaches
+#          a signed CycloneDX SBOM to each release. The job runs in the protected `release` environment, which needs a
 #          required reviewer's approval: a run shows "waiting" until the owner approves it, by design (runbook, release).
-#          npm trusted publishing checks THIS file's name, so every package's trusted publisher names `release.yml`.
+#          The registry's trusted publisher row names THIS file, `refs/heads/main` and the `release` environment.
+# Boundary: the registry URL is set here once (`registry`, the root runway's `providers.npm.registry`); no member's
+#           publishConfig names one. Never npmjs, never Keygen (ADR 0453).
+# Runtime: GitHub Actions
+# Governing contract: ADR 0453 (decision 6); ADR 0168; ADR 0177 (PK5, the fixed version group).
 # Owner: release-operations
 # Secrets: STACKRA_BOT_APP_ID / STACKRA_BOT_PRIVATE_KEY (repository secrets, the stackra-bot app token, owner
-#          decision A1), passed to the provider. npm publishing uses GitHub OIDC; no npm token, except the owner's
-#          one-time NPM_BOOTSTRAP_TOKEN in Infisical /ci, read only by a `bootstrap` dispatch (ADR 0289 decision 11).
+#          decision A1), passed to the provider. Publishing uses GitHub OIDC exchanged at the registry; no token.
 name: Release
 
 on:
@@ -18,10 +21,6 @@ on:
     inputs:
       dry_run:
         description: "Run `pnpm -r publish --dry-run` (no version PR, no publish) in the release environment"
-        type: boolean
-        default: false
-      bootstrap:
-        description: "First publish of a package (OP2): use NPM_BOOTSTRAP_TOKEN from Infisical /ci"
         type: boolean
         default: false
 
@@ -46,12 +45,11 @@ jobs:
       # in are not installed; none of them is published.
       install-args: >-
         --frozen-lockfile --filter=!@figentra/mobile --filter=!@figentra/playground --filter=!@stackra-pro/ui
-      # Only what is published: the packages. The private HeroUI Pro wrapper (ADR 0310) is never published here.
+      # Only what is published: the packages. The private HeroUI Pro wrapper (ADR 0310, 0461) is never published here.
       build-args: --filter=./packages/** --filter=!@stackra-pro/ui
       dry-run: ${{ inputs.dry_run == true }}
-      bootstrap: ${{ inputs.bootstrap == true }}
-      infisical-identity-id: ${{ vars.INFISICAL_CI_IDENTITY_ID }}
-      infisical-project-id: dd4724f4-7b9a-46ae-a899-b34af2d626b2 # .infisical.yaml workspace id, not a secret
+      # The one place the registry is set: runway.yaml `providers.npm.registry` (ADR 0453).
+      registry: https://npm.stackra.figentra.com/
     secrets:
       app-id: ${{ secrets.STACKRA_BOT_APP_ID }}
       app-private-key: ${{ secrets.STACKRA_BOT_PRIVATE_KEY }}

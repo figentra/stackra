@@ -214,7 +214,7 @@ const filesOk = {
       url: "git+https://github.com/figentra/stackra.git",
       directory: "packages/data/search",
     },
-    publishConfig: { access: "public", provenance: true, registry: "https://registry.npmjs.org/" },
+    publishConfig: { access: "public", provenance: true },
     exports: {
       ".": {
         "@stackra/source": "./src/index.ts",
@@ -239,6 +239,20 @@ test("the HeroUI Pro wrapper skips the npmjs publishConfig, which check replaces
     checkMemberFiles({ ...filesOk, pkg: { ...unpublished, name } });
   assert.deepEqual(at("@stackra-pro/ui"), []);
   assert.equal(at("@stackra/search").length, 1);
+});
+
+test("a member's publishConfig names no registry: the release workflow's input sets it (ADR 0453)", () => {
+  const pinned = {
+    ...filesOk.pkg,
+    publishConfig: {
+      access: "public",
+      provenance: true,
+      registry: "https://npm.stackra.figentra.com/",
+    },
+  };
+  assert.deepEqual(checkMemberFiles({ ...filesOk, pkg: pinned }), [
+    'package.json publishConfig must be { "access": "public", "provenance": true } with no registry (ADR 0453)',
+  ]);
 });
 
 test("missing files, PII, license drift, manifest hygiene", () => {

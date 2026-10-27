@@ -1,7 +1,7 @@
 {
   "name": "@stackra/app",
   "version": "0.0.0",
-  "private": true,
+  "private": false,
   "description": "Stackra app runtime: createApp per runtime target (server, worker, browser, native, desktop) returning that target's app object, the shared boot from the generated wiring, the client Contexts, and the Controller kind for raw HTTP",
   "keywords": [
     "application",
@@ -118,8 +118,7 @@
   },
   "publishConfig": {
     "access": "public",
-    "provenance": true,
-    "registry": "https://registry.npmjs.org/"
+    "provenance": true
   },
   "scripts": {
     "build": "tsdown",

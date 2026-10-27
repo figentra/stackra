@@ -36,6 +36,8 @@ STA-339, STA-340), so today's code and `validate-repository.mjs` still show the 
 
 Done = `pnpm verify` green (format, lint, typecheck, test, build, validate, boundaries, knip). Conventional commits.
 
+Scope: every package is `@stackra/*` (free) or `@stackra-pro/*` (Pro, ADR 0461), never renamed and never another npm scope; publishing goes only to the Stackra registry (`https://npm.stackra.figentra.com/`, ADR 0453) from `.github/workflows/release.yml`, never npmjs or Keygen.
+
 <!-- BEGIN generated from .agents/rules by tools/scripts/agents-sync.mjs — edit the sources, not this block -->
 
 ## Repository rules

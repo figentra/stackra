@@ -1,7 +1,7 @@
 {
   "name": "@stackra/oxlint-config",
   "version": "0.1.0",
-  "private": true,
+  "private": false,
   "description": "Shared oxlint presets. A workspace's .oxlintrc.jsonc extends exactly one role preset and declares no rules of its own.",
   "keywords": [
     "code-style",
@@ -37,6 +37,10 @@
     "./boundaries": "./src/boundaries.jsonc",
     "./decorators": "./src/decorators.jsonc",
     "./react": "./src/react.jsonc"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
   },
   "scripts": {
     "format": "oxfmt --write .",

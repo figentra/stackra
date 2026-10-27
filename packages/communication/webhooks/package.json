@@ -1,7 +1,7 @@
 {
   "name": "@stackra/webhooks",
   "version": "0.0.0",
-  "private": true,
+  "private": false,
   "description": "Stackra webhooks: Standard Webhooks signing and verification (HMAC-SHA256, webhook-id, webhook-timestamp, webhook-signature, a five-minute tolerance, dual-secret rotation), provider HMAC signatures verified from the Integration's recipe data (Stripe, Checkout.com), SignatureScheme, the WebhookReceiver that verifies an inbound provider webhook against the secret its Integration names and routes it to its WebhookEvent class through the outbox, and outbound delivery of webhook integration events to the endpoints a scope registers as a queue job with retries, a delivery log and automatic disable, plus the deliverWebhook test helper",
   "keywords": [
     "communication",
@@ -80,8 +80,7 @@
   },
   "publishConfig": {
     "access": "public",
-    "provenance": true,
-    "registry": "https://registry.npmjs.org/"
+    "provenance": true
   },
   "scripts": {
     "build": "tsdown",

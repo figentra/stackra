@@ -1,7 +1,7 @@
 {
   "name": "@stackra/renderers",
   "version": "0.0.0",
-  "private": true,
+  "private": false,
   "description": "The renderer layer shared by Stackra and Vellum: pure functions that write the neutral agent documents of @stackra/skills into each assistant's own layout (Claude Code, OpenCode, Kiro, Cursor and AGENTS.md)",
   "keywords": [
     "agents-md",
@@ -49,8 +49,7 @@
   },
   "publishConfig": {
     "access": "public",
-    "provenance": true,
-    "registry": "https://registry.npmjs.org/"
+    "provenance": true
   },
   "scripts": {
     "build": "tsdown",

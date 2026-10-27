@@ -1,7 +1,7 @@
 {
   "name": "@stackra/tokens",
   "version": "0.0.0",
-  "private": true,
+  "private": false,
   "description": "Stackra Design System tokens: the theme schema, the default stackra theme and its HeroUI web and Uniwind native CSS.",
   "keywords": [
     "css-variables",
@@ -94,8 +94,7 @@
   },
   "publishConfig": {
     "access": "public",
-    "provenance": true,
-    "registry": "https://registry.npmjs.org/"
+    "provenance": true
   },
   "scripts": {
     "build": "tsdown",

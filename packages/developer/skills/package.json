@@ -1,7 +1,7 @@
 {
   "name": "@stackra/skills",
   "version": "0.0.0",
-  "private": true,
+  "private": false,
   "description": "The agent-neutral source of Stackra's open conventions: skills and rules written once as Markdown with frontmatter, the parser of that format, and the loader the renderers and `stackra agents setup` read",
   "keywords": [
     "ai-agents",
@@ -72,8 +72,7 @@
   },
   "publishConfig": {
     "access": "public",
-    "provenance": true,
-    "registry": "https://registry.npmjs.org/"
+    "provenance": true
   },
   "scripts": {
     "build": "tsdown",

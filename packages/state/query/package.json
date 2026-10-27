@@ -1,7 +1,7 @@
 {
   "name": "@stackra/query",
   "version": "0.0.0",
-  "private": true,
+  "private": false,
   "description": "Stackra server state on the client: the TanStack Query cache refetched live on its queries' invalidation events, the offline mutation queue with idempotency keys, per-device order, caps and conflict records, bounded replicas with an as-of time, the offline lock that wipes a revoked or long-offline device, the offline map, QueryConfig with its shipped schema, useMutationQueue, useReplica and fakeQueue",
   "keywords": [
     "cache",
@@ -86,8 +86,7 @@
   },
   "publishConfig": {
     "access": "public",
-    "provenance": true,
-    "registry": "https://registry.npmjs.org/"
+    "provenance": true
   },
   "scripts": {
     "build": "tsdown",

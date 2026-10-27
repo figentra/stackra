@@ -1,7 +1,7 @@
 {
   "name": "@stackra/commitlint-config",
   "version": "0.1.0",
-  "private": true,
+  "private": false,
   "description": "Shared commitlint preset: conventional commits, the house type list and lengths, and the opt-in refs-issue-key rule (the issue-tracker prefix is the rule's value).",
   "keywords": [
     "commit-messages",
@@ -37,6 +37,10 @@
       "types": "./dist/preset.d.ts",
       "default": "./dist/preset.js"
     }
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
   },
   "scripts": {
     "format": "oxfmt --write .",

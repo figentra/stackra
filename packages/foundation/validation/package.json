@@ -1,7 +1,7 @@
 {
   "name": "@stackra/validation",
   "version": "0.0.0",
-  "private": true,
+  "private": false,
   "description": "Stackra shapes and field rules: the Schema kind base, CursorInput, TableInput, Page.of, PickType/OmitType/PartialType, typed field decorators, @Renamed, @Classified, the codecs generated schemas import and validate over the schema registry",
   "keywords": [
     "codecs",
@@ -51,8 +51,7 @@
   },
   "publishConfig": {
     "access": "public",
-    "provenance": true,
-    "registry": "https://registry.npmjs.org/"
+    "provenance": true
   },
   "scripts": {
     "build": "tsdown",

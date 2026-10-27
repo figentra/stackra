@@ -1,7 +1,7 @@
 {
   "name": "@stackra/segments",
   "version": "0.0.0",
-  "private": true,
+  "private": false,
   "description": "Stackra segments: named audiences over any subject model, dynamic (a @stackra/rules rule set) or manual (a static list), with membership materialised per segment and subject, recomputed on the subject's row changes through the outbox, on an hourly per-scope schedule and on a newly published revision, and membership-entered and membership-left integration events for every change",
   "keywords": [
     "application",
@@ -80,8 +80,7 @@
   },
   "publishConfig": {
     "access": "public",
-    "provenance": true,
-    "registry": "https://registry.npmjs.org/"
+    "provenance": true
   },
   "scripts": {
     "build": "tsdown",

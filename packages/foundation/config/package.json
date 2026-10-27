@@ -1,7 +1,7 @@
 {
   "name": "@stackra/config",
   "version": "0.0.0",
-  "private": true,
+  "private": false,
   "description": "Stackra configuration: the Config({ schema, env }) kind base, @Secret field references resolved blind through the SecretStore port, config layering, public env hydration, the env value parsers, useConfig and the testing module's withConfig and withSecrets, and the Infisical and AWS Secrets Manager SecretStore drivers",
   "keywords": [
     "aws-secrets-manager",
@@ -95,8 +95,7 @@
   },
   "publishConfig": {
     "access": "public",
-    "provenance": true,
-    "registry": "https://registry.npmjs.org/"
+    "provenance": true
   },
   "scripts": {
     "build": "tsdown",

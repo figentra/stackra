@@ -1,7 +1,7 @@
 {
   "name": "@stackra/infra-observability",
   "version": "0.0.0",
-  "private": true,
+  "private": false,
   "description": "Pulumi programs for telemetry read from the root runway (ADR 0184): the Better Stack OpenTelemetry source every service exports OTLP to, its hot log retention and the S3 cold archive, a Better Stack heartbeat per cron, outbox relay and worker in each deployed environment, the Sentry team, projects, DSN keys and new-issue alerts of the app members, and the service-level indicators of every service",
   "keywords": [
     "better-stack",
@@ -61,8 +61,7 @@
   },
   "publishConfig": {
     "access": "public",
-    "provenance": true,
-    "registry": "https://registry.npmjs.org/"
+    "provenance": true
   },
   "scripts": {
     "build": "tsdown",

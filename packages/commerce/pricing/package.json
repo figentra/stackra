@@ -1,7 +1,7 @@
 {
   "name": "@stackra/pricing",
   "version": "0.0.0",
-  "private": true,
+  "private": false,
   "description": "Pricing on @stackra/money: price points, graduated tiers, the pure price evaluation over price lists by currency, Market, sales channel and date with fixed, graduated and formula prices, the tax rate-table engine and the TaxProvider port",
   "keywords": [
     "commerce",
@@ -60,8 +60,7 @@
   },
   "publishConfig": {
     "access": "public",
-    "provenance": true,
-    "registry": "https://registry.npmjs.org/"
+    "provenance": true
   },
   "scripts": {
     "build": "tsdown",

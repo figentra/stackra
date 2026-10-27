@@ -5,7 +5,7 @@ Stackra file contract:
 Purpose: the agent rules of @stackra/runway: where code goes, the schema, deploy, secrets and event fan-out rules, PII.
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
-Governing contract: ADR 0296; ADR 0352; ADR 0002 (2026-10-27 amendment, the `mintlify` provider); ADR 0400; ADR 0444 (`providers.tools`); ADR 0441; ADR 0439 (the mobile job); STA-863; ADR 0260 (decision 4: the relay fan-out
+Governing contract: ADR 0296; ADR 0352; ADR 0002 (2026-10-27 amendment, the `mintlify` provider); ADR 0400; ADR 0444 (`providers.tools`); ADR 0441; ADR 0439 (the mobile job); ADR 0453 (`providers.npm`); STA-863; ADR 0260 (decision 4: the relay fan-out
                     is gen's).
 -->
 
@@ -36,6 +36,8 @@ Runway format version 3 (ADR 0296) as code. Member at `packages/developer/runway
   `eas build`, `eas update` or a push of a docs deploy branch: tests use fake command runners; a real run is the deploy workflow's (ADR 0352 d6).
 - The `mintlify` provider publishes a docs app's generated `.stackra/site/` to `targets.mintlify.branch`; it reads
   no Mintlify key (the GitHub app deploys the branch) and never pushes `src/` (ADR 0002 amendment, STA-1316).
+- `providers.npm.registry` is the one registry setting (ADR 0453): never hard-code a registry URL in code or a
+  member's `publishConfig`; the release workflow passes it to `runway-npm.yml` as its `registry` input.
 - Provider settings are runway data (`targets.<destination>`, `environments.<env>.encore|mobile`, a dedicated
   deployment's own blocks); a provider never hard-codes a branch, channel or profile.
 - Event fan-out is gen's (`.stackra/encore/<member>/events.ts` and a relay service's `relay.ts`), never a runway key:

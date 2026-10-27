@@ -1,7 +1,7 @@
 {
   "name": "@stackra/coordinator",
   "version": "0.0.0",
-  "private": true,
+  "private": false,
   "description": "Stackra tab coordination: leader election between the tabs and windows of one device through Web Locks, with a BroadcastChannel heartbeat fallback and an in-memory fallback, the leader flag as a @stackra/state signal, and withTabLock for one task at a time",
   "keywords": [
     "broadcast-channel",
@@ -49,8 +49,7 @@
   },
   "publishConfig": {
     "access": "public",
-    "provenance": true,
-    "registry": "https://registry.npmjs.org/"
+    "provenance": true
   },
   "scripts": {
     "build": "tsdown",

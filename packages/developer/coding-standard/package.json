@@ -1,7 +1,7 @@
 {
   "name": "@stackra/coding-standard",
   "version": "0.0.0",
-  "private": true,
+  "private": false,
   "description": "The Stackra house lint rules as one oxlint JS plugin: the code conventions and v3.1 grammar checks oxlint lacks",
   "keywords": [
     "code-conventions",
@@ -48,8 +48,7 @@
   },
   "publishConfig": {
     "access": "public",
-    "provenance": true,
-    "registry": "https://registry.npmjs.org/"
+    "provenance": true
   },
   "scripts": {
     "build": "tsdown",
