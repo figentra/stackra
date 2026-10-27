@@ -7,12 +7,16 @@
  *           `TypeError`). Which unit a Market sells or shows in is market-pack data, never a default here. No
  *           dependency, no host global.
  * Runtime: isomorphic
+ *           `roundTo` and `priceMinor` round once, to a caller-given step or to whole minor units, by a caller-given
+ *           mode (both settings or market-pack values); money stays a big integer of minor units, never a float.
  * Governing contract: ADR 0305 (one declaration per file); COM-76 (sell by weight, length or volume); COM-77 (unit
- *                     price where the Market requires it).
+ *                     price where the Market requires it); STA-934 (rounding per unit, weighed prices).
  */
 import { QUANTITY_UNITS } from "#core/constants/quantity-units.constant";
 import { parseDecimal } from "#core/functions/parse-decimal.function";
 import { rational } from "#core/functions/rational.function";
+import { roundRational } from "#core/functions/round-rational.function";
+import type { QuantityRounding } from "#core/types/quantity-rounding.type";
 import type { QuantityUnit } from "#core/types/quantity-unit.type";
 import type { Rational } from "#core/types/rational.type";
 
@@ -111,6 +115,39 @@ export class Quantity {
     const { num, den } = per.to(this.unit).amount;
     if (num === 0n) throw new RangeError("Quantity: cannot divide by a zero quantity");
     return rational(this.amount.num * den, this.amount.den * num);
+  }
+
+  /**
+   * This rounded to a whole multiple of `step`, in this unit (a scale's division: `1.237 kg` to `5 g` is `1.235 kg`).
+   *
+   * @param step - the increment, of this dimension and above zero; it is a setting or market-pack value.
+   * @param mode - `half_up` (default), `down` or `up`.
+   * @throws RangeError when `step` is zero or negative; TypeError when it measures another dimension.
+   */
+  roundTo(step: Quantity, mode: QuantityRounding = "half_up"): Quantity {
+    const size = step.to(this.unit).amount;
+    if (size.num <= 0n) throw new RangeError("Quantity: the rounding step must be above zero");
+    const count = roundRational(this.ratio(step), mode);
+    return new Quantity(rational(count * size.num, size.den), this.unit);
+  }
+
+  /**
+   * The price of this quantity in whole minor units, given `pricePerMinor` minor units per `per`, rounded once
+   * (`1.235 kg` at `1299` per `1 kg` is `1604`). Money never passes through a float.
+   *
+   * @param pricePerMinor - minor units per `per`: a big integer or a safe integer.
+   * @param mode - `half_up` (default), `down` or `up`; the Market's rule is the caller's.
+   * @throws RangeError when the price is not a whole number or `per` is zero; TypeError on another dimension.
+   */
+  priceMinor(
+    pricePerMinor: bigint | number,
+    per: Quantity,
+    mode: QuantityRounding = "half_up",
+  ): bigint {
+    if (typeof pricePerMinor === "number" && !Number.isSafeInteger(pricePerMinor))
+      throw new RangeError(`Quantity: a price must be whole minor units, got ${pricePerMinor}`);
+    const { num, den } = this.ratio(per);
+    return roundRational(rational(num * BigInt(pricePerMinor), den), mode);
   }
 
   /** Negative, zero or positive as this is less than, equal to or more than `other`. */

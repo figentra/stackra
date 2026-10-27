@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: unit tests of `Quantity`: exact conversion inside a dimension (yards to metres, pounds to grams, and back
  *          without drift), refusal across dimensions and of float amounts, arithmetic, ratio, comparison and the one
- *          rounding in `toDecimal`.
+ *          rounding in `toDecimal`; `roundTo` a step and `priceMinor` in whole minor units (STA-934).
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269; COM-76.
@@ -56,5 +56,23 @@ describe("Quantity", () => {
 
   it("is frozen", () => {
     expect(Object.isFrozen(Quantity.of(1, "piece"))).toBe(true);
+  });
+
+  it("rounds to a step in each mode", () => {
+    const weight = Quantity.of("1.237", "kg");
+    expect(weight.roundTo(Quantity.of(5, "g")).toString()).toBe("1.235 kg");
+    expect(weight.roundTo(Quantity.of(5, "g"), "up").toString()).toBe("1.24 kg");
+    expect(weight.roundTo(Quantity.of(5, "g"), "down").toString()).toBe("1.235 kg");
+    expect(Quantity.of("-0.0125", "kg").roundTo(Quantity.of(5, "g")).toString()).toBe("-0.015 kg");
+    expect(() => weight.roundTo(Quantity.of(0, "g"))).toThrow(RangeError);
+    expect(() => weight.roundTo(Quantity.of(1, "m"))).toThrow(TypeError);
+  });
+
+  it("prices in whole minor units without floats", () => {
+    expect(Quantity.of("1.235", "kg").priceMinor(1299n, Quantity.of(1, "kg"))).toBe(1604n);
+    expect(Quantity.of(250, "g").priceMinor(399, Quantity.of(100, "g"))).toBe(998n);
+    expect(Quantity.of(250, "g").priceMinor(399, Quantity.of(100, "g"), "down")).toBe(997n);
+    expect(() => Quantity.of(1, "kg").priceMinor(12.5, Quantity.of(1, "kg"))).toThrow(RangeError);
+    expect(() => Quantity.of(1, "kg").priceMinor(1n, Quantity.of(0, "kg"))).toThrow(RangeError);
   });
 });

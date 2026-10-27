@@ -17,7 +17,9 @@ describe("@stackra/support", () => {
       "canonicalHash",
       "canonicalJson",
       "code128",
+      "oneTimeCode",
       "restrictedGtin",
+      "signedToken",
       "time",
     ]);
   });
