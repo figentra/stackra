@@ -642,7 +642,7 @@ overrides:
   '@mintlify/previewing>is-online': 12.0.2
   is-online>public-ip: 8.0.0
 
-packageExtensionsChecksum: sha256-5vBt1XqgO7JcxrZsfPrjP5TWObYLUNg6mN/iGHTiS9I=
+packageExtensionsChecksum: sha256-jp9FqFPPLPeAuCzAm+dMRKWIcmL64hagsyJLfHf3Zkc=
 
 importers:
 
@@ -882,7 +882,7 @@ importers:
     dependencies:
       '@heroui-pro/react':
         specifier: catalog:frontend
-        version: 1.0.0-beta.10(b33f646b496fd343eb0a07caa0f6c6ca)
+        version: 1.0.0-beta.10(321581678541b144e2dd06b8afe04594)
       '@heroui/react':
         specifier: catalog:frontend
         version: 3.2.6(@internationalized/date@3.12.4)(@react-aria/ssr@3.10.1(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(@react-aria/utils@3.34.1(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(@react-spectrum/provider@3.11.1(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-aria-components@1.22.1(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(react-aria@3.53.1(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(tailwind-merge@3.7.0)(tailwindcss@4.3.3)
@@ -3119,6 +3119,16 @@ importers:
         version: 4.6.7
 
   packages/design-system/icons:
+    dependencies:
+      '@stackra/config':
+        specifier: workspace:*
+        version: link:../../foundation/config
+      '@stackra/container':
+        specifier: workspace:*
+        version: link:../../foundation/container
+      '@stackra/validation':
+        specifier: workspace:*
+        version: link:../../foundation/validation
     devDependencies:
       '@stackra/tsdown-config':
         specifier: workspace:*
@@ -3185,6 +3195,16 @@ importers:
         version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0)(vite@8.3.4(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/design-system/tokens:
+    dependencies:
+      '@stackra/config':
+        specifier: workspace:*
+        version: link:../../foundation/config
+      '@stackra/container':
+        specifier: workspace:*
+        version: link:../../foundation/container
+      '@stackra/validation':
+        specifier: workspace:*
+        version: link:../../foundation/validation
     devDependencies:
       '@stackra/tsdown-config':
         specifier: workspace:*
@@ -3219,6 +3239,12 @@ importers:
 
   packages/design-system/ui:
     dependencies:
+      '@stackra/config':
+        specifier: workspace:*
+        version: link:../../foundation/config
+      '@stackra/container':
+        specifier: workspace:*
+        version: link:../../foundation/container
       '@stackra/i18n':
         specifier: workspace:*
         version: link:../../foundation/i18n
@@ -3337,6 +3363,12 @@ importers:
 
   packages/design-system/ui-pro:
     dependencies:
+      '@stackra/config':
+        specifier: workspace:*
+        version: link:../../foundation/config
+      '@stackra/container':
+        specifier: workspace:*
+        version: link:../../foundation/container
       '@stackra/i18n':
         specifier: workspace:*
         version: link:../../foundation/i18n
@@ -3346,10 +3378,13 @@ importers:
       '@stackra/ui':
         specifier: workspace:*
         version: link:../ui
+      '@stackra/validation':
+        specifier: workspace:*
+        version: link:../../foundation/validation
     devDependencies:
       '@heroui-pro/react':
         specifier: catalog:frontend
-        version: 1.0.0-beta.10(b33f646b496fd343eb0a07caa0f6c6ca)
+        version: 1.0.0-beta.10(321581678541b144e2dd06b8afe04594)
       '@heroui/react':
         specifier: catalog:frontend
         version: 3.2.6(@internationalized/date@3.12.4)(@react-aria/ssr@3.10.1(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(@react-aria/utils@3.34.1(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(@react-spectrum/provider@3.11.1(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-aria-components@1.22.1(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(react-aria@3.53.1(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(tailwind-merge@3.7.0)(tailwindcss@4.3.3)
@@ -4898,6 +4933,9 @@ importers:
 
   packages/foundation/calendar:
     dependencies:
+      '@stackra/container':
+        specifier: workspace:*
+        version: link:../container
       '@stackra/contracts':
         specifier: workspace:*
         version: link:../contracts
@@ -5532,6 +5570,9 @@ importers:
       '@pulumi/aws':
         specifier: catalog:infra
         version: 7.50.0(supports-color@10.2.2)(typescript@7.0.2)
+      '@stackra/container':
+        specifier: workspace:*
+        version: link:../../foundation/container
       '@stackra/contracts':
         specifier: workspace:*
         version: link:../../foundation/contracts
@@ -5584,6 +5625,9 @@ importers:
       '@pulumi/aws':
         specifier: catalog:infra
         version: 7.50.0(supports-color@10.2.2)(typescript@7.0.2)
+      '@stackra/container':
+        specifier: workspace:*
+        version: link:../../foundation/container
       '@stackra/contracts':
         specifier: workspace:*
         version: link:../../foundation/contracts
@@ -5633,6 +5677,9 @@ importers:
       '@pulumi/cloudflare':
         specifier: catalog:infra
         version: 6.22.0(supports-color@10.2.2)(typescript@7.0.2)
+      '@stackra/container':
+        specifier: workspace:*
+        version: link:../../foundation/container
       '@stackra/contracts':
         specifier: workspace:*
         version: link:../../foundation/contracts
@@ -5685,6 +5732,9 @@ importers:
       '@pulumi/gcp':
         specifier: catalog:infra
         version: 9.37.1(supports-color@10.2.2)(typescript@7.0.2)
+      '@stackra/container':
+        specifier: workspace:*
+        version: link:../../foundation/container
       '@stackra/contracts':
         specifier: workspace:*
         version: link:../../foundation/contracts
@@ -5740,6 +5790,9 @@ importers:
       '@pulumi/pulumi':
         specifier: catalog:infra
         version: 3.268.0(supports-color@10.2.2)(typescript@7.0.2)
+      '@stackra/container':
+        specifier: workspace:*
+        version: link:../../foundation/container
       '@stackra/contracts':
         specifier: workspace:*
         version: link:../../foundation/contracts
@@ -5792,6 +5845,9 @@ importers:
       '@pulumiverse/zitadel':
         specifier: catalog:infra
         version: 0.2.0(supports-color@10.2.2)(typescript@7.0.2)
+      '@stackra/container':
+        specifier: workspace:*
+        version: link:../../foundation/container
       '@stackra/contracts':
         specifier: workspace:*
         version: link:../../foundation/contracts
@@ -5844,6 +5900,9 @@ importers:
       '@pulumi/pulumi':
         specifier: catalog:infra
         version: 3.268.0(supports-color@10.2.2)(typescript@7.0.2)
+      '@stackra/container':
+        specifier: workspace:*
+        version: link:../../foundation/container
       '@stackra/contracts':
         specifier: workspace:*
         version: link:../../foundation/contracts
@@ -5893,6 +5952,9 @@ importers:
       '@pulumiverse/sentry':
         specifier: catalog:infra
         version: 0.0.9(supports-color@10.2.2)(typescript@7.0.2)
+      '@stackra/container':
+        specifier: workspace:*
+        version: link:../../foundation/container
       '@stackra/contracts':
         specifier: workspace:*
         version: link:../../foundation/contracts
@@ -9731,6 +9793,7 @@ packages:
       '@tiptap/react': '>=3.23.6'
       '@tiptap/starter-kit': '>=3.23.6'
       '@tiptap/suggestion': '>=3.23.6'
+      '@types/react': '>=19.0.0'
       embla-carousel: '>=8.6.0'
       embla-carousel-react: '>=8.6.0'
       maplibre-gl: '>=6.0.0'
@@ -9769,6 +9832,8 @@ packages:
       '@tiptap/starter-kit':
         optional: true
       '@tiptap/suggestion':
+        optional: true
+      '@types/react':
         optional: true
       embla-carousel:
         optional: true
@@ -24296,7 +24361,7 @@ snapshots:
       protobufjs: 7.6.6
       yargs: 17.7.3
 
-  '@heroui-pro/react@1.0.0-beta.10(b33f646b496fd343eb0a07caa0f6c6ca)':
+  '@heroui-pro/react@1.0.0-beta.10(321581678541b144e2dd06b8afe04594)':
     dependencies:
       '@heroui/react': 3.2.6(@internationalized/date@3.12.4)(@react-aria/ssr@3.10.1(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(@react-aria/utils@3.34.1(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(@react-spectrum/provider@3.11.1(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-aria-components@1.22.1(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(react-aria@3.53.1(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(tailwind-merge@3.7.0)(tailwindcss@4.3.3)
       '@heroui/styles': 3.2.6(tailwind-merge@3.7.0)(tailwindcss@4.3.3)
@@ -24323,6 +24388,7 @@ snapshots:
       '@tiptap/react': 3.32.0(@floating-ui/dom@1.8.0)(@tiptap/core@3.32.0(@tiptap/pm@3.32.0))(@tiptap/pm@3.32.0)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       '@tiptap/starter-kit': 3.32.0
       '@tiptap/suggestion': 3.32.0(@floating-ui/dom@1.8.0)(@tiptap/core@3.32.0(@tiptap/pm@3.32.0))(@tiptap/pm@3.32.0)
+      '@types/react': 19.3.0
       embla-carousel: 8.6.0
       embla-carousel-react: 8.6.0(react@19.3.0)
       maplibre-gl: 6.14.0
@@ -36040,6 +36106,7 @@ snapshots:
   react-native-worklets@0.10.1(@babel/core@7.29.7(supports-color@10.2.2))(@react-native/metro-config@0.88.0(@babel/core@7.29.7(supports-color@10.2.2))(supports-color@10.2.2))(react-native@0.86.3(@babel/core@7.29.7(supports-color@10.2.2))(@react-native/metro-config@0.88.0(@babel/core@7.29.7(supports-color@10.2.2))(supports-color@10.2.2))(@types/react@19.3.0)(react@19.3.0)(supports-color@10.2.2))(react@19.3.0)(supports-color@10.2.2):
     dependencies:
       '@babel/core': 7.29.7(supports-color@10.2.2)
+      '@babel/generator': 7.29.8
       '@babel/plugin-transform-arrow-functions': 7.29.7(@babel/core@7.29.7(supports-color@10.2.2))
       '@babel/plugin-transform-class-properties': 7.29.7(@babel/core@7.29.7(supports-color@10.2.2))(supports-color@10.2.2)
       '@babel/plugin-transform-classes': 7.29.7(@babel/core@7.29.7(supports-color@10.2.2))(supports-color@10.2.2)
@@ -36049,6 +36116,7 @@ snapshots:
       '@babel/plugin-transform-template-literals': 7.29.7(@babel/core@7.29.7(supports-color@10.2.2))
       '@babel/plugin-transform-unicode-regex': 7.29.7(@babel/core@7.29.7(supports-color@10.2.2))
       '@babel/preset-typescript': 7.29.7(@babel/core@7.29.7(supports-color@10.2.2))(supports-color@10.2.2)
+      '@babel/traverse': 7.29.10(supports-color@10.2.2)
       '@babel/types': 7.29.8
       '@react-native/metro-config': 0.88.0(@babel/core@7.29.7(supports-color@10.2.2))(supports-color@10.2.2)
       convert-source-map: 2.0.0
@@ -36062,6 +36130,7 @@ snapshots:
   react-native-worklets@0.10.1(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.88.0(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(react-native@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.88.0(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3)(supports-color@8.1.1):
     dependencies:
       '@babel/core': 7.29.7(supports-color@8.1.1)
+      '@babel/generator': 7.29.8
       '@babel/plugin-transform-arrow-functions': 7.29.7(@babel/core@7.29.7(supports-color@8.1.1))
       '@babel/plugin-transform-class-properties': 7.29.7(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1)
       '@babel/plugin-transform-classes': 7.29.7(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1)
@@ -36071,6 +36140,7 @@ snapshots:
       '@babel/plugin-transform-template-literals': 7.29.7(@babel/core@7.29.7(supports-color@8.1.1))
       '@babel/plugin-transform-unicode-regex': 7.29.7(@babel/core@7.29.7(supports-color@8.1.1))
       '@babel/preset-typescript': 7.29.7(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1)
+      '@babel/traverse': 7.29.10(supports-color@8.1.1)
       '@babel/types': 7.29.8
       '@react-native/metro-config': 0.88.0(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1)
       convert-source-map: 2.0.0
@@ -36083,6 +36153,7 @@ snapshots:
   react-native-worklets@0.10.1(@babel/core@8.0.7)(@react-native/metro-config@0.88.0(@babel/core@8.0.7)(supports-color@10.2.2))(react-native@0.86.3(@babel/core@8.0.7)(@react-native/metro-config@0.88.0(@babel/core@8.0.7)(supports-color@10.2.2))(@types/react@19.3.0)(react@19.3.0)(supports-color@10.2.2))(react@19.3.0)(supports-color@10.2.2):
     dependencies:
       '@babel/core': 8.0.7
+      '@babel/generator': 7.29.8
       '@babel/plugin-transform-arrow-functions': 7.29.7(@babel/core@8.0.7)
       '@babel/plugin-transform-class-properties': 7.29.7(@babel/core@8.0.7)(supports-color@10.2.2)
       '@babel/plugin-transform-classes': 7.29.7(@babel/core@8.0.7)(supports-color@10.2.2)
@@ -36092,6 +36163,7 @@ snapshots:
       '@babel/plugin-transform-template-literals': 7.29.7(@babel/core@8.0.7)
       '@babel/plugin-transform-unicode-regex': 7.29.7(@babel/core@8.0.7)
       '@babel/preset-typescript': 7.29.7(@babel/core@8.0.7)(supports-color@10.2.2)
+      '@babel/traverse': 7.29.10(supports-color@10.2.2)
       '@babel/types': 7.29.8
       '@react-native/metro-config': 0.88.0(@babel/core@8.0.7)(supports-color@10.2.2)
       convert-source-map: 2.0.0
