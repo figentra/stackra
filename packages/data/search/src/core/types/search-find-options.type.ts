@@ -1,12 +1,16 @@
 /**
  * Stackra file contract:
  * Purpose: `SearchFindOptions<M>`, what `search.in(Model).find(phrase, options)` takes: exact filters on the facet's
- *          filter fields, how many rows, the relations to load on them, and the locale whose synonym sets apply.
+ *          filter fields, how many rows, the relations to load on them, the locale whose synonym sets apply, and the
+ *          per-query Arabizi switch.
  * Boundary: a type only. A filter key is a path the model's `@Searchable` lists under `filters`; `SearchIndex` refuses
  *           any other with a `TypeError`. `undefined` members are allowed, so a query passes its input's optional
  *           fields through as they are.
+ *           The Arabizi switch only adds or drops an alternative spelling, so turning it off narrows a search (a code
+ *           field, an English-only list) and never widens what record visibility allows.
  * Runtime: isomorphic
- * Governing contract: ADR 0221 (decision 1); cursor pagination in the HTTP conventions (limit 1 to 100, default 20).
+ * Governing contract: ADR 0221 (decision 1); cursor pagination in the HTTP conventions (limit 1 to 100, default 20);
+ *                     OS-173 (Arabizi expansion); STA-1251 (the per-query switch).
  */
 import type { SearchFilterValue } from "#contracts/index";
 
@@ -20,6 +24,9 @@ export interface SearchFindOptions<M extends object> {
 
   /** The phrase's locale (`ar-SA`): only that language's synonym sets apply; every language's when absent. */
   readonly locale?: string | undefined;
+
+  /** Whether an Arabizi word (`7abibi`) also matches its Arabic spelling; on when absent. */
+  readonly arabizi?: boolean | undefined;
 
   /** Relations of `M` to load on the returned rows. */
   readonly populate?: readonly Extract<keyof M, string>[] | undefined;

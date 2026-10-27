@@ -21,7 +21,8 @@
  *          `Config({ schema })` options class, reading `this.<field>` spreads, `Object.freeze` constants and `I18n` keys
  *          as constants, and a shipped `X$` of a declared package the program never loaded is still found (STA-1296).
  *          `kind_base_name_reserved`, `partner_mismatch` for a same-stem kind (a Resource), `secret_name_missing` and
- *          each file's exported class names (STA-1306).
+ *          each file's exported class names (STA-1306). A `@Classify(Class)` facet carries its data class's constant
+ *          effects as `options.dataClass` (STA-1251).
  * Boundary: test only; writes the fixture under `.cache/` and opens TypeScript on it.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decision 26, 2026-10-23 item 13, decision 28); ADR 0305
@@ -1025,5 +1026,55 @@ describe("createSourceReader on the quality-gate forms (STA-1306)", async () => 
     expect(
       exported.find((file) => file.file === "src/core/services/plain.service.ts")?.classes,
     ).toEqual(["PlainService"]);
+  });
+});
+
+/** A model whose field carries a product data class, with stand-ins for `DataClass`, `Classify` and `Searchable`. */
+const DATA_CLASS_SOURCES: Readonly<Record<string, string>> = {
+  ...MODEL_STAND_IN,
+  "node_modules/@stackra/model/index.d.ts": [
+    MODEL_STAND_IN["node_modules/@stackra/model/index.d.ts"] ?? "",
+    "export type DecoratorFunction = (target: object, key?: string) => void;",
+    'export declare const AiAudience: { readonly Never: "never"; readonly Allowed: "allowed" };',
+    "export declare function DataClass(options: { readonly key: string; readonly ai: string }): abstract new () => object;",
+    "export declare function Classify(dataClass: abstract new () => object): DecoratorFunction;",
+    "export declare function Searchable(options: { readonly text: readonly string[] }): DecoratorFunction;",
+    "",
+  ].join("\n"),
+  "src/node/models/clinical-note.data-class.ts": [
+    'import { AiAudience, DataClass } from "@stackra/model";',
+    "",
+    'export class ClinicalNoteDataClass extends DataClass({ key: "clinical_note", ai: AiAudience.Never }) {}',
+    "",
+  ].join("\n"),
+  "src/node/models/case-note.model.ts": [
+    'import { Classify, HasPublicId, Model, Searchable } from "@stackra/model";',
+    'import { ClinicalNoteDataClass } from "#node/models/clinical-note.data-class";',
+    "",
+    '@Searchable({ text: ["body"] })',
+    'export class CaseNote extends Model.with(HasPublicId("csn")) {',
+    "  @Classify(ClinicalNoteDataClass)",
+    "  body!: string;",
+    "}",
+    "",
+  ].join("\n"),
+};
+
+describe("createSourceReader on data classes", async () => {
+  const root = writeFixtureMember("data-classes", DATA_CLASS_SOURCES);
+  const host = await openHost(join(root, "tsconfig.json"));
+  const reader = createSourceReader(host, readMemberFacts(root));
+  const classes = reader.sources.flatMap((file) => reader.classes(file));
+  host.close();
+
+  it("carries the data class's constant effects on a @Classify facet (STA-1251)", () => {
+    const facet = classes
+      .find((declared) => declared.name === "CaseNote")
+      ?.facets.find((candidate) => candidate.name === "Classify");
+    expect(facet?.member).toBe("body");
+    expect(facet?.options).toMatchObject({
+      $class: "ClinicalNoteDataClass",
+      dataClass: { key: "clinical_note", ai: "never" },
+    });
   });
 });

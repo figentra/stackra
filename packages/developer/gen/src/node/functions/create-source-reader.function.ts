@@ -28,7 +28,9 @@
  *                     base's `Config({ schema })` options class; `Object.freeze`, shared constants and `I18n` keys
  *                     read as constants; a shipped `X$` of a declared package not in the program is still found);
  *                     STA-1306 (`kind_base_name_reserved`, `secret_name_missing`, `partner_mismatch` for every
- *                     same-stem kind, and each file's exported class names for `kind_unregistered_base`).
+ *                     same-stem kind, and each file's exported class names for `kind_unregistered_base`);
+ *                     STA-1251 (a `@Classify(Class)` facet carries its data class's constant effects as
+ *                     `options.dataClass`, read from the `DataClass({...})` its chain extends, own or a package's).
  */
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -705,14 +707,45 @@ export function createSourceReader(
         /(^|[^\w])Decorator\s*</.test(host.text(declaration.type)));
     if (!made) return undefined;
     const value = use.args[0] === undefined ? undefined : constant(use.args[0]);
+    // `@Classify(Class)` carries its data class's effects, so a check can read `ai` without the class (STA-1251).
+    const effects = use.name === "Classify" ? dataClassOf(use.args[0]) : undefined;
     return {
       name: use.name,
       kind: snakeCase(use.name),
       target,
       ...(member !== undefined ? { member } : {}),
-      options: hasNonConstant(value) ? undefined : value,
+      options: hasNonConstant(value)
+        ? undefined
+        : effects === undefined || typeof value !== "object" || value === null
+          ? value
+          : { ...value, dataClass: effects },
       from: refOf(use.local, symbol).from,
     };
+  };
+
+  /**
+   * The constant effects (`{ key, ai, support, search, export }`) of the data class `node` names: the argument of the
+   * `DataClass({...})` from `@stackra/*` its chain extends; undefined when it is no data class or they are not constant.
+   */
+  const dataClassOf = (node: TsNode | undefined): Record<string, unknown> | undefined => {
+    let declaration = classDeclarationOf(node === undefined ? undefined : host.symbolAt(node));
+    for (const seen = new Set<TsNode>(); declaration !== undefined && !seen.has(declaration);) {
+      seen.add(declaration);
+      const heritage = heritageOf(declaration);
+      const symbol = heritage === undefined ? undefined : host.symbolAt(heritage.target);
+      if (heritage === undefined || symbol === undefined) return undefined;
+      const [first] = host.declarations(symbol);
+      if (
+        host.symbolName(symbol) === "DataClass" &&
+        first !== undefined &&
+        isStackra(host.fileName(first))
+      ) {
+        const effects = constant(heritage.call?.arguments?.[0]);
+        return isPlainObject(effects) && !hasNonConstant(effects) ? effects : undefined;
+      }
+      declaration = classDeclarationOf(symbol);
+    }
+    return undefined;
   };
 
   /** Whether `name`, as seen from `path`, is a refusal class. */

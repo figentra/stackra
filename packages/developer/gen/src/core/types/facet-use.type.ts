@@ -6,7 +6,7 @@
  *           `Class.method` names, which is what the facet's Explorer wraps.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 6: decorators are facets made by createDecorator); ADR 0144 as amended by
- *                     0263 (Explorers and conformance).
+ *                     0263 (Explorers and conformance); STA-1251 (`dataClass` on a `@Classify` facet).
  */
 
 /** One decorator application. */
@@ -23,7 +23,10 @@ export interface FacetUse {
   /** The decorated member, for a field or method facet. */
   readonly member?: string;
 
-  /** The constant argument it was called with; `undefined` for a bare decorator. */
+  /**
+   * The constant argument it was called with; `undefined` for a bare decorator. A `@Classify(Class)` facet also carries
+   * `dataClass`, its data class's constant effects (`{ key, ai, support, search, export }`), when they are constants.
+   */
   readonly options: unknown;
 
   /** The module specifier it was imported from. */

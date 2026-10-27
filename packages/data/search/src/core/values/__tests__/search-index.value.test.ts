@@ -3,7 +3,7 @@
  * Purpose: unit tests of `SearchIndex`: indexing loads the facet's relations and stores normalised documents under the
  *          model's table; `find` and `page` return loaded rows in rank order with the next cursor; filters, limits and
  *          cursors are checked; a phrase with no word reads nothing; `remove` and `reindex` reach the driver; an Arabizi word
- *          carries its Arabic alternative, a word of one of the index's synonym sets (settings data, per language)
+ *          carries its Arabic alternative unless the read turns Arabizi off (STA-1251), a word of one of the index's synonym sets (settings data, per language)
  *          finds the rows of the other words, record visibility reaches the driver before ranking and before facet
  *          counting, facets count filter values over the matches (or every row for an empty phrase), and a privileged
  *          field is excerpted only for the record's team.
@@ -252,6 +252,16 @@ describe("SearchIndex Arabizi, visibility and snippets", () => {
     const search = vi.spyOn(driver, "search");
     expect(await index.find("7abibi")).toEqual([MEMOS[0]]);
     expect(search.mock.calls[0]?.[1].alternatives).toEqual({ "7abibi": ["حبيبي"] });
+  });
+
+  it("leaves the Arabic spelling out when the read turns Arabizi off", async () => {
+    const { driver, index } = await memos();
+    const search = vi.spyOn(driver, "search");
+    const facets = vi.spyOn(driver, "facets");
+    expect(await index.find("7abibi", { arabizi: false })).toEqual([]);
+    expect(search.mock.calls[0]?.[1].alternatives).toBeUndefined();
+    await index.facets("7abibi", { paths: [], arabizi: false });
+    expect(facets.mock.calls[0]?.[1].alternatives).toBeUndefined();
   });
 
   it("hands the driver the visibility subquery before it ranks", async () => {

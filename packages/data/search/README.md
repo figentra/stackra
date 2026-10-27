@@ -1,5 +1,13 @@
 # @stackra/search
 
+<!--
+Stackra file contract:
+Purpose: the reader-facing guide of @stackra/search: entries, searching, indexing, the columns, vector retrieval (the fixed-dimension HNSW index), visibility, Arabizi and global search, and what is not here.
+Boundary: documentation only; the code and the ADRs win on any difference.
+Runtime: none
+Governing contract: ADR 0221; ADR 0160; ADR 0294; ADR 0404; STA-1251 (word helpers, Arabizi switch, across filters, HNSW).
+-->
+
 Stackra search: Postgres hybrid search over a model's `@Searchable` index (ADR 0221). A query injects `Search` and asks
 `search.in(Product)` for ranked rows; the index lives in the model's own table, in the columns the `t.searchable(...)`
 migration macro writes, so a search runs in the caller's transaction under the same row-level security as the data.
@@ -20,6 +28,8 @@ A `VectorIndex` stores embedded passages for semantic retrieval (pgvector in Pos
 | `.`           | `SearchConfig`, `SearchConfig$`, `SearchOptions`                      | `search.driver`: `postgres` (default) or `memory`                  |
 | `.`           | `SearchSettings`                                                      | `search.synonyms`: synonym sets per index and language (settings)  |
 | `.`           | `SearchCursorInvalidError`                                            | refusal of a cursor no page gave (`search_cursor_invalid`, 400)    |
+| `.`           | `searchWordsOf`, `arabiziOf`                                          | the index's one normalisation, and an Arabizi word's Arabic form   |
+| `.`           | `SearchAcrossOptions`                                                 | `across`'s limit, per-model filters, locale and Arabizi switch     |
 | `./contracts` | `SearchDriver`                                                        | the port                                                           |
 | `./contracts` | `SearchDocument`, `SearchRequest`, `SearchTable`, `SearchFilterValue` | what a driver stores and is asked                                  |
 | `./contracts` | `VectorIndex`, `Embedder`                                             | the vector ports @stackra/ai retrieves through                     |
@@ -123,8 +133,21 @@ const hits = await index.query(query ?? [], { topK: 5, scope, filter: { source: 
 `PgvectorVectorIndexDriver` keeps passages in `search.vector_items` (migration `search.0002_create_vector_items`: the
 `vector` and `ltree` extensions, the table under the forced scope policy). It runs in the caller's transaction and scope
 session (`Database.withScope`), so row-level security limits every read and write to the granted scopes; a query also
-narrows to the rows at or below its `scope`. The embedding column has no fixed dimension, so a query scans the scope's
-rows exactly (no HNSW index yet); every passage of one deployment comes from one embedder. `MemoryVectorIndexDriver`
+narrows to the rows at or below its `scope`. The driver works at one fixed dimension, `search.embedder.dimensions`: it
+refuses a vector of any other size, stores `vector(n)` and queries `"embedding"::vector(n)` among the rows of that
+dimension, which is the expression and predicate of a partial HNSW index by cosine distance. Migration
+`search.0004_create_vector_hnsw_index` ships that index for the default 1024; a deployment whose embedder returns
+another size adds the same statement at its `n` in its own migration (pgvector indexes up to 2000 dimensions):
+
+```ts
+schema.sql(
+  `create index if not exists "vector_items_embedding_hnsw_768" on "search"."vector_items" using hnsw (("embedding"::vector(768)) vector_cosine_ops) where vector_dims("embedding") = 768`,
+  { inverse: `drop index if exists "search"."vector_items_embedding_hnsw_768"` },
+);
+```
+
+HNSW filters after the scan, so a narrow scope or metadata filter can return fewer than `topK`; pgvector's
+`hnsw.iterative_scan` is the fix when a deployment sees it. Every passage of one deployment comes from one embedder. `MemoryVectorIndexDriver`
 does the same in memory. `HttpEmbedderDriver` (`./node`) calls an OpenAI-compatible `/embeddings` endpoint in the
 tenant's region (`search.embedder: { url, model, dimensions, tokenSecret }`; the bearer token is read through the runtime's
 `SecretStore` under the `tokenSecret` name, never from the environment), so the text never leaves it; it checks
@@ -138,7 +161,10 @@ every vector's size against `dimensions`. Provider-specific drivers live with th
 - Record visibility (ADR 0333) bounds a search before it ranks: `SearchIndex` hands the driver the subquery of the
   visible keys (`visibleKeysQuery` of `@stackra/database`), which the Postgres driver ANDs into both lanes. The memory
   driver refuses a request that carries one.
-- An Arabizi word (`7abibi`) also matches its Arabic spelling (`حبيبي`), as a prefix alternative.
+- An Arabizi word (`7abibi`) also matches its Arabic spelling (`حبيبي`), as a prefix alternative. `find`, `page`,
+  `facets` and `across` take `arabizi: false` to turn that off for one read (a code field, an English-only list).
+- `searchWordsOf(text)` and `arabiziOf(word)` are exported, so a caller that stores or compares search text folds it
+  exactly as the index does, never with its own copy.
 - Synonyms are settings data, edited per scope with no deploy: `search.synonyms` (`SearchSettings`) holds one set per
   line, `<index> <language>: term, term[, term...]`, where the index is the model's table, bare or schema-qualified,
   and `#` starts a comment line:
@@ -150,15 +176,17 @@ every vector's size against `dimensions`. Provider-specific drivers live with th
   ```
 
   A set is an equivalence: each word finds the rows of the others. `find`, `page` and `facets` take `locale` (`ar-SA`),
-  and only that language's sets apply; with none, every language's sets apply (`across` passes none). The sets join
+  and only that language's sets apply; with none, every language's sets apply (`across` passes its `locale`). The sets join
   each phrase word as alternatives in both lanes: ORed prefixes in full-text, and in trigram one more phrase per
   alternative (that word swapped), at most eight phrases. A term that normalises to several words is left out, and a
   word carries at most eight synonyms. The setting's schema refuses a line that is not a set, a comment or blank.
 
 - `index.snippets(rows, phrase, { isTeamMember })` excerpts each row's own text fields; a field whose data class says
   `no_snippet` (`PrivilegedDataClass`) is excerpted only for the record's team, which IAM answers.
-- `search.across([Customer, Matter], phrase, { limit })` fuses several models' results by reciprocal rank (the
-  palette's global search).
+- `search.across([Customer, Matter], phrase, { limit, filters, locale, arabizi })` fuses several models' results by
+  reciprocal rank (the palette's global search). `filters` is a `Map` from a model class to its own filters
+  (`new Map([[Product, { status: ProductStatus.Active }]])`), since each model lists its own filter paths; a model with
+  no entry is read unfiltered.
 
 ## Not here
 
@@ -169,3 +197,6 @@ every vector's size against `dimensions`. Provider-specific drivers live with th
 - The vector lane in the hybrid `Search` ranking (the `VectorIndex` stands alone for now); the versioned index swap,
   the palette UI and the public search API of ADR 0221 are later work.
 - An OpenSearch driver: built behind the same port when ADR 0221 d9's trigger is met.
+- `@Searchable({ semantic: true })`: the option belongs to `SearchableOptions` in `@stackra/model`, which this
+  package does not own; gen already refuses it over a field whose data class says `ai: never`
+  (`searchable_semantic_ai_never`), and semantic indexing through the `Embedder` lands with the option (STA-1251).

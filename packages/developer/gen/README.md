@@ -10,7 +10,8 @@ Governing contract: ADR 0294; ADR 0295; ADR 0260 (generated clients); ADR 0261; 
                     (the translated and upload shape kinds); ADR 0338 (a replica query's `ReplicaPage` output); STA-1290 (the
                     shipped shape kind); STA-1293 (the i18n target, clients for apps, undeclared packages refused); STA-1296
                     (client modules and permission sets, config overrides, the root Vitest shim); STA-1298 (package lang
-                    namespaces merged into `I18n`, missing keys and namespace clashes refused).
+                    namespaces merged into `I18n`, missing keys and namespace clashes refused); STA-1251
+                    (`searchable_semantic_ai_never`).
 -->
 
 The Stackra compiler. Gen reads a member's source through the TypeScript compiler API, derives every identity and
@@ -77,6 +78,13 @@ edges (`empty_module`, `sibling_not_exported`, `module_cycle`), `migration_numbe
 (`tool_reason_missing`). The whole-member ones (`checkConventions`) refuse the full run only, so `stackra gen --manifests`
 still writes the manifest; the reader's (`kind_base_name_reserved`, `secret_name_missing`, `partner_mismatch`) refuse
 both.
+
+`searchable_semantic_ai_never` (`checkSemanticSearch`, full pass only, STA-1251) refuses a model whose
+`@Searchable({ semantic: true })` lists a text field (its own, an own base model's, or a dotted path through a relation
+to an own model) whose `@Classify` data class says `ai: never`: semantic search embeds the text through a model
+provider, which ADR 0380 forbids for that class. The reader puts the data class's constant effects on the `@Classify`
+facet (`options.dataClass`). `SearchableOptions` in `@stackra/model` has no `semantic` field yet, so the check refuses
+nothing until it does.
 
 An event's wire name is always `<module>.<name>.v<n>` (`orders.order.paid.v1`): there is no member-level or
 service-key-prefixed wire name, and a `name` that starts with the module or member key is refused

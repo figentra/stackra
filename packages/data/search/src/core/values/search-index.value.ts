@@ -10,14 +10,14 @@
  *           narrowing added. A cursor is the next page's offset; a page past the driver's candidate window is empty.
  *           Record visibility (ADR 0333) is handed to the driver as a key subquery, so it bounds the rows before
  *           they are ranked or counted (a facet count never includes a row the caller may not see). An Arabizi word
- *           also matches its Arabic spelling, and a word in one of the index's synonym sets (`search.synonyms`, read per
+ *           also matches its Arabic spelling unless the read turns `arabizi` off, and a word in one of the index's synonym sets (`search.synonyms`, read per
  *           call through the `SettingsReader` `Search` passes, in the read's language or every language) also matches
  *           the other words of the set. A snippet never shows a `no_snippet` field outside the record's team.
  * Runtime: node
  * Governing contract: ADR 0221 (decisions 1, 2, 3 and 7); ADR 0294 (decision 6: `@Searchable` is a class facet);
  *                     cursor pagination in the HTTP conventions; ADR 0327 (decision 9: isolation in the database); ADR 0333
  *                     (amendment); ADR 0341 (decision 2); OS-173; ADR 0404 (facets); ADR 0403 (per-language synonyms);
- *                     ADR 0307 (rules 22 to 24).
+ *                     ADR 0307 (rules 22 to 24); STA-1251 (the per-query Arabizi switch).
  */
 import type { AnyClass } from "@stackra/container";
 import { visibleKeysQuery } from "@stackra/database";
@@ -154,7 +154,7 @@ export class SearchIndex<M extends object> {
     const filters = options.filters ?? {};
     this.checkFilters([...options.paths, ...Object.keys(filters)]);
     const visible = await visibleKeysQuery(this.model);
-    const { words, alternatives } = await this.wordsOf(phrase, options.locale);
+    const { words, alternatives } = await this.wordsOf(phrase, options.locale, options.arabizi);
     return this.driver.facets(this.shape().table, {
       words,
       filters,
@@ -258,7 +258,7 @@ export class SearchIndex<M extends object> {
     const limit = this.limitOf(options.limit);
     const filters = options.filters ?? {};
     this.checkFilters(Object.keys(filters));
-    const { words, alternatives } = await this.wordsOf(phrase, options.locale);
+    const { words, alternatives } = await this.wordsOf(phrase, options.locale, options.arabizi);
     if (words.length === 0) return { items: [], hasMore: false };
     const visible = await visibleKeysQuery(this.model);
     const { table, key } = this.shape();
@@ -303,11 +303,13 @@ export class SearchIndex<M extends object> {
 
   /**
    * The phrase's distinct normalised words, capped, and each word's alternatives: its Arabic spelling when it is
-   * Arabizi, and the other words of the index's synonym sets in `locale`'s language (every language when absent).
+   * Arabizi and `arabizi` is not `false`, and the other words of the index's synonym sets in `locale`'s language
+   * (every language when absent).
    */
   private async wordsOf(
     phrase: string,
     locale: string | undefined,
+    arabizi: boolean | undefined,
   ): Promise<{
     readonly words: readonly string[];
     readonly alternatives: Readonly<Record<string, readonly string[]>>;
@@ -316,7 +318,7 @@ export class SearchIndex<M extends object> {
     const synonyms = await this.synonymsOf(words, locale);
     const alternatives = Object.fromEntries(
       words.flatMap((word) => {
-        const arabic = arabiziOf(word);
+        const arabic = arabizi === false ? undefined : arabiziOf(word);
         const others = [
           ...new Set([...(arabic === undefined ? [] : [arabic]), ...(synonyms.get(word) ?? [])]),
         ];

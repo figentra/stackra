@@ -1,5 +1,13 @@
 # AGENTS — @stackra/search
 
+<!--
+Stackra file contract:
+Purpose: the agent rules of @stackra/search: where code goes, entries and barrels, the package rules, the rules that fail the build and PII.
+Boundary: documentation only; the code and the ADRs win on any difference.
+Runtime: none
+Governing contract: ADR 0221; ADR 0160; ADR 0294; ADR 0404; STA-1251 (word helpers, Arabizi switch, across filters, HNSW).
+-->
+
 Hybrid search over a model's `@Searchable` index: the `SearchDriver` port, the `Search` reader, the memory and
 Postgres drivers, the `t.searchable(...)` macro and the text-function migration (ADR 0221). Member at
 `packages/data/search` (`tier:lib`), in the programming model v3.1 shape (ADR 0294, 0305). Entries `.`,
@@ -47,7 +55,15 @@ Postgres drivers, the `t.searchable(...)` macro and the text-function migration 
   `visibleKeysQuery`'s subquery as `SearchRequest.visible`, and a driver applies it in every lane or refuses (ADR 0333).
 - Snippets read the field's data class: a `no_snippet` field is excerpted only when the caller says the user is on the
   record's team; team membership is IAM's answer, never decided here (ADR 0341).
-- Raw SQL only in `PostgresSearchDriver`, every value bound, identifiers quoted, configuration names from
+- `searchWordsOf` and `arabiziOf` are public (`.`): callers fold search text with them, never a copy. The Arabizi
+  alternative is on unless a read passes `arabizi: false`; it only adds a spelling, so the switch narrows and never
+  widens.
+- `Search.across` filters are per model (`Map<model, filters>`), each checked by that model's `SearchIndex`.
+- `PgvectorVectorIndexDriver` works at the one dimension `search.embedder.dimensions`: it refuses other sizes and
+  queries `"embedding"::vector(n)` where `vector_dims("embedding") = n`, the partial HNSW index's exact expression and
+  predicate (migration 0004 for 1024). Change the query and the index together; `n` is interpolated only as the checked
+  configured integer.
+- Raw SQL only in `PostgresSearchDriver` and `PgvectorVectorIndexDriver`, every value bound, identifiers quoted, configuration names from
   `TEXT_SEARCH_CONFIGS`, each statement with a `// raw-sql:` reason (ADR 0160).
 - Extensions only through `schema.createExtension` from the approved list (ADR 0160, ADR 0334 rule 3): no `unaccent`.
 - No parameter properties and no `#private` fields: services typecheck this source under `erasableSyntaxOnly`.
