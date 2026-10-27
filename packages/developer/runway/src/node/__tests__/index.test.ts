@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: the consumer contract of the `./node` entry: the template's Vite configs import `definesFor` and
- *          `devServer` from `@stackra/runway/node`; with `readRunway` those are its only values, none of them shared
- *          with `.`, and `DevServerOptions` resolves.
+ *          `devServer` from `@stackra/runway/node`; with `readRunway`, `runCommand` and the three provider drivers those
+ *          are its only values, none of them shared with `.`, and `DevServerOptions` resolves.
  * Boundary: test only; imports the stand-in barrels through their aliases.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0294 (decision 15).
@@ -18,6 +18,7 @@ describe("@stackra/runway/node", () => {
     expect(Object.keys(node).sort()).toEqual([
       "EasProviderDriver",
       "EncoreCloudProviderDriver",
+      "MintlifyProviderDriver",
       "definesFor",
       "devServer",
       "readRunway",

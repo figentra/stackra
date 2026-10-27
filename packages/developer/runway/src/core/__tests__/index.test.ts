@@ -72,7 +72,9 @@ describe("@stackra/runway", () => {
     expectTypeOf<RunwayFacts["lane"]>().toEqualTypeOf<number>();
     expectTypeOf<RunwayIssue["path"]>().toEqualTypeOf<string>();
     expectTypeOf<PlacementIssue["subject"]>().toEqualTypeOf<string>();
-    expectTypeOf<RegionIssue["code"]>().toEqualTypeOf<"unknown_region" | "cloud_unconfigured">();
+    expectTypeOf<RegionIssue["code"]>().toEqualTypeOf<
+      "unknown_region" | "cloud_unconfigured" | "unknown_account"
+    >();
     expectTypeOf(runway.regionsOf).returns.toEqualTypeOf<RunwayRegion[]>();
     expectTypeOf<RunwayRegion["cloud"]>().toEqualTypeOf<"aws" | "gcp">();
   });
