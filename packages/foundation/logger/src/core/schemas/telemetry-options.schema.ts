@@ -12,7 +12,7 @@
  * Governing contract: ADR 0184 (telemetry); ADR 0183 (budgets with numbers); ADR 0071 (privacy); ADR 0294 (decisions
  *                     19 and 26).
  */
-import { registerSchemas, Schema } from "@stackra/validation";
+import { Field, registerSchemas, Schema } from "@stackra/validation";
 
 import { TELEMETRY_CONFIG_SCHEMA } from "#core/constants/telemetry-config-schema.constant";
 
@@ -26,10 +26,9 @@ import { TELEMETRY_CONFIG_SCHEMA } from "#core/constants/telemetry-config-schema
  * }
  */
 export class TelemetryOptions extends Schema {
-  /** The error reporter's public DSN; the host feeds it from its env configuration. */
-  dsn: string | null = null;
-
   /** Error and crash reporting. */
+  // reason: a nested object a host override replaces whole; the shipped schema already states its rule
+  @Field(TELEMETRY_CONFIG_SCHEMA.shape.errors)
   errors: {
     /** Whether errors are reported at all. */
     enabled: boolean;
@@ -40,12 +39,16 @@ export class TelemetryOptions extends Schema {
   } = { enabled: false, sampleRate: 1, nativeCrashes: false };
 
   /** Distributed tracing settings. */
+  // reason: a nested object a host override replaces whole; the shipped schema already states its rule
+  @Field(TELEMETRY_CONFIG_SCHEMA.shape.traces)
   traces: {
     /** The share of sessions or requests traced, 0 to 1. */
     sampleRate: number;
   } = { sampleRate: 0 };
 
   /** Session replay around an error. */
+  // reason: a nested object a host override replaces whole; the shipped schema already states its rule
+  @Field(TELEMETRY_CONFIG_SCHEMA.shape.replay)
   replay: {
     /** The share of errored sessions replayed, 0 to 1. */
     onErrorSampleRate: number;
@@ -54,12 +57,16 @@ export class TelemetryOptions extends Schema {
   } = { onErrorSampleRate: 0, consent: null };
 
   /** Core Web Vitals from real sessions. */
+  // reason: a nested object a host override replaces whole; the shipped schema already states its rule
+  @Field(TELEMETRY_CONFIG_SCHEMA.shape.vitals)
   vitals: {
     /** Whether vitals are collected. */
     enabled: boolean;
   } = { enabled: false };
 
   /** The quality budgets of ADR 0183. */
+  // reason: a nested object a host override replaces whole; the shipped schema already states its rule
+  @Field(TELEMETRY_CONFIG_SCHEMA.shape.budgets)
   budgets: {
     /** Largest Contentful Paint, milliseconds. */
     lcpMs: number;
@@ -76,6 +83,8 @@ export class TelemetryOptions extends Schema {
   } = { lcpMs: 2500, inpMs: 200, cls: 0.1, entryKb: 200, routeKb: 100, coldStartMs: 2000 };
 
   /** What the e2e tier measures with Lighthouse. */
+  // reason: a nested object a host override replaces whole; the shipped schema already states its rule
+  @Field(TELEMETRY_CONFIG_SCHEMA.shape.lighthouse)
   lighthouse: {
     /** The paths measured, each starting with `/`; none by default. */
     paths: string[];
@@ -84,6 +93,9 @@ export class TelemetryOptions extends Schema {
     /** The lowest category scores accepted, 0 to 1. */
     minScores: { performance: number; accessibility: number; seo: number };
   } = { paths: [], runs: 3, minScores: { performance: 0.9, accessibility: 1, seo: 1 } };
+
+  /** The error reporter's public DSN; the host feeds it from its env configuration. */
+  dsn: string | null = null;
 }
 
 registerSchemas([[TelemetryOptions, TELEMETRY_CONFIG_SCHEMA]]);

@@ -9,7 +9,7 @@
  * Governing contract: ADR 0147 (decision 1: per-module levels, sampling, redaction); ADR 0294 (decisions 19 and 26);
  *                     ADR 0305 (rule 34).
  */
-import { Num, registerSchemas, Schema } from "@stackra/validation";
+import { Field, Num, registerSchemas, Schema } from "@stackra/validation";
 
 import { LOGGING_CONFIG_SCHEMA } from "#core/constants/logging-config-schema.constant";
 import { LogLevel } from "#contracts/enums/log-level.enum";
@@ -30,17 +30,19 @@ export class LoggingOptions extends Schema {
   })
   sampleRate = 1;
 
+  /** What is masked besides the built-in credential and personal-data names. */
+  // reason: a nested object a host override replaces whole; the shipped schema already states its rule
+  @Field(LOGGING_CONFIG_SCHEMA.shape.redaction)
+  redaction: {
+    /** Field names masked wherever they appear (`customerId` also matches `customer_id`, `stripeCustomerId`). */
+    extraFields: string[];
+  } = { extraFields: [] };
+
   /** The lowest level written for a channel with no level of its own. */
   level: LogLevel = LogLevel.Info;
 
   /** Channel (the event's module key, `orders`) to the lowest level written for it. */
   channels: Record<string, LogLevel> = {};
-
-  /** What is masked besides the built-in credential and personal-data names. */
-  redaction: {
-    /** Field names masked wherever they appear (`customerId` also matches `customer_id`, `stripeCustomerId`). */
-    extraFields: string[];
-  } = { extraFields: [] };
 }
 
 registerSchemas([[LoggingOptions, LOGGING_CONFIG_SCHEMA]]);

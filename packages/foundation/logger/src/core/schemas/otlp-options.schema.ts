@@ -10,7 +10,7 @@
  * Governing contract: ADR 0184 (decisions 1 and 2: OTLP everywhere); ADR 0147 (decision 1: OTLP is the production
  *                     default); ADR 0173 (secrets by name); ADR 0294 (decisions 19 and 26).
  */
-import { registerSchemas, Schema } from "@stackra/validation";
+import { Int, registerSchemas, Schema } from "@stackra/validation";
 
 import { OTLP_CONFIG_SCHEMA } from "#core/constants/otlp-config-schema.constant";
 
@@ -24,6 +24,18 @@ import { OTLP_CONFIG_SCHEMA } from "#core/constants/otlp-config-schema.constant"
  * }
  */
 export class OtlpOptions extends Schema {
+  /** Records sent in one request; a full batch is sent at once. */
+  @Int
+  batchSize = 100;
+
+  /** The longest a record waits before its batch is sent, in milliseconds. */
+  @Int
+  flushIntervalMs = 2000;
+
+  /** Records held while the collector is slow; past it, the oldest are dropped. */
+  @Int
+  maxQueue = 2000;
+
   /** The collector's base URL (`https://otlp.example.test`); logs go to `<endpoint>/v1/logs`. Empty sends nothing. */
   endpoint = "";
 
@@ -32,15 +44,6 @@ export class OtlpOptions extends Schema {
 
   /** The SCREAMING_SNAKE name of the secret holding the collector's headers (`k=v,k2=v2`); none when unset. */
   headersSecret = "OTEL_EXPORTER_OTLP_HEADERS";
-
-  /** Records sent in one request; a full batch is sent at once. */
-  batchSize = 100;
-
-  /** The longest a record waits before its batch is sent, in milliseconds. */
-  flushIntervalMs = 2000;
-
-  /** Records held while the collector is slow; past it, the oldest are dropped. */
-  maxQueue = 2000;
 }
 
 registerSchemas([[OtlpOptions, OTLP_CONFIG_SCHEMA]]);
