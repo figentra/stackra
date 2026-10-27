@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: the consumer contract of the `.` entry: the constants, the memory driver, the format enum, the six
- *          refusals and the public functions are exported and nothing else is (no internal helper, no port); the
+ * Purpose: the consumer contract of the `.` entry: the constants, the memory and gotenberg drivers, the hybrid PDF
+ *          binding, the format enum, the seven refusals and the public functions are exported and nothing else is (no internal helper, no port); the
  *          public types resolve.
  * Boundary: test only; imports the stand-in barrel through its `#core` alias.
  * Runtime: node (vitest)
@@ -13,6 +13,7 @@ import * as documents from "#core/index";
 import type {
   CurrencyWords,
   DocumentTemplate,
+  GotenbergEndpoint,
   ImageAsset,
   ParsedDocumentTemplate,
   QrMatrix,
@@ -32,13 +33,19 @@ describe("@stackra/documents", () => {
       "DOCUMENT_TEMPLATE_SCHEMA",
       "DocumentFormat",
       "DocumentValueError",
+      "GotenbergPdfAssemblerDriver",
+      "GotenbergPdfEngineDriver",
+      "HybridPdfBinding",
       "InvalidDocumentTemplateError",
+      "LABEL_PURPOSE",
       "MemoryESignatureDriver",
       "PRINT_DOCUMENT_KIND",
+      "PdfEngineFailedError",
       "SignatureEnvelopeClosedError",
       "SignatureEnvelopeNotFoundError",
       "SignatureNotCompleteError",
       "contentHashOf",
+      "encodeEan13",
       "encodeQr",
       "parseDocumentTemplate",
       "renderDocument",
@@ -53,6 +60,7 @@ describe("@stackra/documents", () => {
     ]);
     expect("PdfEngine" in documents).toBe(false);
     expect("readPath" in documents).toBe(false);
+    expect("postGotenbergForm" in documents).toBe(false);
   });
 
   it("resolves its public types", () => {
@@ -61,11 +69,12 @@ describe("@stackra/documents", () => {
       "single" | "side-by-side" | "stacked"
     >();
     expectTypeOf<CurrencyWords["exponent"]>().toEqualTypeOf<number>();
+    expectTypeOf<GotenbergEndpoint["timeoutMs"]>().toEqualTypeOf<number>();
     expectTypeOf<ImageAsset["mediaType"]>().toEqualTypeOf<"image/png" | "image/jpeg">();
     expectTypeOf<QrMatrix>().toEqualTypeOf<readonly (readonly boolean[])[]>();
     expectTypeOf<RenderedDocument["format"]>().toEqualTypeOf<documents.DocumentFormat>();
     expectTypeOf<ResolvedBlock["type"]>().toEqualTypeOf<
-      "text" | "table" | "qr" | "image" | "signature" | "amount-in-words"
+      "text" | "table" | "qr" | "barcode" | "image" | "signature" | "amount-in-words"
     >();
     expectTypeOf<ResolvedDocument["blocks"]>().toEqualTypeOf<readonly ResolvedBlock[]>();
     expectTypeOf<SignedForm["signedAt"]>().toEqualTypeOf<string>();

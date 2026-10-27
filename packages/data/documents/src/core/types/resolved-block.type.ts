@@ -17,7 +17,7 @@ type Align = "start" | "center" | "end";
 export type ResolvedBlock =
   | {
       readonly type: "text";
-      readonly role: "title" | "heading" | "body" | "note";
+      readonly role: "title" | "heading" | "body" | "note" | "struck";
       readonly align: Align;
       readonly texts: readonly (readonly TextPart[])[];
     }
@@ -30,6 +30,15 @@ export type ResolvedBlock =
       readonly type: "qr";
       readonly matrix: QrMatrix;
       readonly sizeMm: number;
+      readonly align: Align;
+    }
+  | {
+      readonly type: "barcode";
+      readonly modules: readonly boolean[];
+      readonly text: string;
+      readonly showText: boolean;
+      readonly widthMm: number;
+      readonly heightMm: number;
       readonly align: Align;
     }
   | {

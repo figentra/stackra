@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
- * Purpose: `DOCUMENT_TEMPLATE_SCHEMA`, the zod schema of a print template: page, one or two locales with their
- *          direction, the bilingual layout and the blocks (text, table, QR, image, signature, amount in words).
+ * Purpose: `DOCUMENT_TEMPLATE_SCHEMA`, the zod schema of a print template: an optional purpose code (`label.shelf`),
+ *          page, one or two locales with their direction, the bilingual layout and the blocks (text, table, QR,
+ *          EAN-13 barcode, image, signature, amount in words).
  * Boundary: templates are studio data a tenant edits (ADR 0270 decision 1), so this is the trust boundary: no markup,
  *           no CSS and no code, only text with `{{path}}` placeholders and paths into the render data. A font is a
  *           family name only. `single` takes one locale; `side-by-side` and `stacked` take two, the first one primary.
@@ -28,7 +29,7 @@ const PATH = z.string().regex(/^[\w$-]+(\.[\w$-]+)*$/u);
 const BLOCK = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("text"),
-    role: z.enum(["title", "heading", "body", "note"]).default("body"),
+    role: z.enum(["title", "heading", "body", "note", "struck"]).default("body"),
     text: LOCALIZED_TEXT,
     align: ALIGN,
   }),
@@ -42,6 +43,15 @@ const BLOCK = z.discriminatedUnion("type", [
     value: z.string().min(1),
     sizeMm: MILLIMETRES,
     errorCorrection: z.enum(["L", "M", "Q", "H"]).default("M"),
+    align: ALIGN,
+  }),
+  z.object({
+    type: z.literal("barcode"),
+    symbology: z.literal("ean-13"),
+    value: z.string().min(1),
+    widthMm: MILLIMETRES,
+    heightMm: MILLIMETRES,
+    showText: z.boolean().default(true),
     align: ALIGN,
   }),
   z.object({
@@ -74,6 +84,10 @@ export const DOCUMENT_TEMPLATE_SCHEMA = z
   .object({
     kind: z.literal(PRINT_DOCUMENT_KIND),
     name: z.string().min(1),
+    purpose: z
+      .string()
+      .regex(/^[a-z][a-z0-9-]*(\.[a-z][a-z0-9-]*)*$/u)
+      .optional(),
     version: z.string().min(1),
     page: z.object({
       widthMm: MILLIMETRES,

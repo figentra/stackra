@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `DOCUMENT_TEMPLATE_SCHEMA`: defaults, the locale count of each layout, repeated locales, a
- *          font that could break out of CSS, and a path that is not a path.
+ *          font that could break out of CSS, a path that is not a path, the purpose code and the barcode block.
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0365.
@@ -50,5 +50,31 @@ describe("DOCUMENT_TEMPLATE_SCHEMA", () => {
     expect(DOCUMENT_TEMPLATE_SCHEMA.safeParse({ ...BASE, kind: "page" }).success).toBe(false);
     const image = [{ type: "image", image: "../x", widthMm: 10, heightMm: 10 }];
     expect(DOCUMENT_TEMPLATE_SCHEMA.safeParse({ ...BASE, blocks: image }).success).toBe(false);
+  });
+
+  it("takes a dotted purpose code and refuses another shape", () => {
+    expect(DOCUMENT_TEMPLATE_SCHEMA.parse({ ...BASE, purpose: "label.short-dated" }).purpose).toBe(
+      "label.short-dated",
+    );
+    expect(DOCUMENT_TEMPLATE_SCHEMA.safeParse({ ...BASE, purpose: "Label Shelf" }).success).toBe(
+      false,
+    );
+  });
+
+  it("fills the barcode defaults and refuses another symbology", () => {
+    const barcode = {
+      type: "barcode",
+      symbology: "ean-13",
+      value: "{{gtin}}",
+      widthMm: 30,
+      heightMm: 12,
+    };
+    expect(DOCUMENT_TEMPLATE_SCHEMA.parse({ ...BASE, blocks: [barcode] }).blocks[0]).toEqual({
+      ...barcode,
+      showText: true,
+      align: "start",
+    });
+    const other = [{ ...barcode, symbology: "code-39" }];
+    expect(DOCUMENT_TEMPLATE_SCHEMA.safeParse({ ...BASE, blocks: other }).success).toBe(false);
   });
 });

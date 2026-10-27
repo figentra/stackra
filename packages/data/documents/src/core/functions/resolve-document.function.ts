@@ -1,9 +1,10 @@
 /**
  * Stackra file contract:
  * Purpose: `resolveDocument`, a checked template filled with one set of render data: placeholders, table rows, QR
- *          codes, images, signatures and amounts in words, per locale, ready for any renderer.
+ *          codes, EAN-13 barcodes, images, signatures and amounts in words, per locale, ready for any renderer.
  * Boundary: the render data is the caller's (an order, a form submission, a market pack's currency names), read by
- *           path only. Every missing or unusable value throws `DocumentValueError` with its path; a block with no
+ *           path only. Every missing or unusable value throws `DocumentValueError` with its path (a QR or barcode
+ *           value the encoder cannot take names the block's `value`); a block with no
  *           text for one of the template's locales throws `InvalidDocumentTemplateError`. Nothing is fetched.
  * Runtime: isomorphic
  * Governing contract: ADR 0365 (decisions 2 and 3).
@@ -11,6 +12,7 @@
 import { CURRENCY_WORDS_SCHEMA } from "#core/constants/currency-words-schema.constant";
 import { DocumentValueError } from "#core/errors/document-value.error";
 import { InvalidDocumentTemplateError } from "#core/errors/invalid-document-template.error";
+import { encodeEan13 } from "#core/functions/encode-ean13.function";
 import { encodeQr } from "#core/functions/encode-qr.function";
 import { fillPlaceholders } from "#core/functions/fill-placeholders.function";
 import { formatValue } from "#core/functions/format-value.function";
@@ -18,6 +20,7 @@ import { readPath } from "#core/functions/read-path.function";
 import { spellAmount } from "#core/functions/spell-amount.function";
 import type { ImageAsset } from "#core/types/image-asset.type";
 import type { ParsedDocumentTemplate } from "#core/types/parsed-document-template.type";
+import type { QrMatrix } from "#core/types/qr-matrix.type";
 import type { ResolvedBlock } from "#core/types/resolved-block.type";
 import type { ResolvedDocument } from "#core/types/resolved-document.type";
 
@@ -118,10 +121,29 @@ export function resolveDocument(
         const text = fillPlaceholders(block.value, data, primary)
           .map((part) => part.text)
           .join("");
+        let matrix: QrMatrix;
+        try {
+          // uqr throws a bare error on a lone surrogate or on more data than a QR code holds.
+          matrix = encodeQr(text, block.errorCorrection);
+        } catch {
+          throw DocumentValueError.create({ path: `${at}.value`, reason: "invalid" });
+        }
+        return { type: "qr", matrix, sizeMm: block.sizeMm, align: block.align };
+      }
+      case "barcode": {
+        const text = fillPlaceholders(block.value, data, primary)
+          .map((part) => part.text)
+          .join("");
+        const symbol = encodeEan13(text);
+        if (symbol === undefined)
+          throw DocumentValueError.create({ path: `${at}.value`, reason: "invalid" });
         return {
-          type: "qr",
-          matrix: encodeQr(text, block.errorCorrection),
-          sizeMm: block.sizeMm,
+          type: "barcode",
+          modules: symbol.modules,
+          text: symbol.text,
+          showText: block.showText,
+          widthMm: block.widthMm,
+          heightMm: block.heightMm,
           align: block.align,
         };
       }

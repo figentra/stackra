@@ -1,6 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `encodeQrPng`: a valid PNG signature and header of the scaled size.
+ * Purpose: unit tests of `encodeQrPng`: a valid PNG signature and header of the scaled size, square or one barcode
+ *          row.
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0365.
@@ -25,5 +26,12 @@ describe("encodeQrPng", () => {
     expect(view.getUint32(20)).toBe(6);
     expect(png[24]).toBe(8);
     expect(new TextDecoder().decode(png.subarray(png.length - 8, png.length - 4))).toBe("IEND");
+  });
+
+  it("writes a one-row matrix (a barcode) as wide as its modules", async () => {
+    const png = await encodeQrPng([[true, false, true, true, false]], 2);
+    const view = new DataView(png.buffer, png.byteOffset);
+    expect(view.getUint32(16)).toBe(10);
+    expect(view.getUint32(20)).toBe(2);
   });
 });

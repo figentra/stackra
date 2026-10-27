@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `renderHtml`, a resolved document as one self-contained HTML page with print CSS: the page size and margin
  *          of the template, `dir` and `lang` on every localized element, values isolated in `<bdi>`, the bilingual
- *          layout (side by side or stacked), QR codes as inline SVG and images as `data:` URLs.
+ *          layout (side by side or stacked), QR codes and EAN-13 barcodes as inline SVG, struck text as `<s>` and
+ *          images as `data:` URLs.
  * Boundary: pure: no fetch, no script, no external stylesheet; every text is escaped. Shaping and reordering are left
  *           to the engine that displays or prints the page (`PdfEngine`). Fonts are family names from the template
  *           (the brand kit), with the generic `sans-serif` after them.
@@ -17,7 +18,7 @@ import type { ResolvedDocument } from "#core/types/resolved-document.type";
 import type { TextPart } from "#core/types/text-part.type";
 
 /** The HTML element of each text role. */
-const ROLE_TAGS = { title: "h1", heading: "h2", body: "p", note: "small" } as const;
+const ROLE_TAGS = { title: "h1", heading: "h2", body: "p", note: "small", struck: "s" } as const;
 
 /** The page's style sheet. */
 function styleOf(document: ResolvedDocument): string {
@@ -31,7 +32,7 @@ function styleOf(document: ResolvedDocument): string {
     `@page{size:${page.widthMm}mm ${height};margin:${page.marginMm}mm}`,
     "*{box-sizing:border-box}",
     "body{margin:0;font-family:sans-serif;font-size:10pt;color:#000;background:#fff}",
-    "h1,h2,p,small,figure{display:block;margin:0 0 2mm}",
+    "h1,h2,p,small,s,figure{display:block;margin:0 0 2mm}",
     "h1{font-size:1.6em}h2{font-size:1.2em}small{font-size:.8em}",
     ".start{text-align:start}.center{text-align:center}.end{text-align:end}",
     ".pair{display:grid;grid-template-columns:1fr 1fr;gap:4mm}",
@@ -74,6 +75,15 @@ function qrSvg(matrix: QrMatrix, sizeMm: number): string {
     }),
   );
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${matrix.length} ${matrix.length}" width="${sizeMm}mm" height="${sizeMm}mm" shape-rendering="crispEdges"><path fill="#000" d="${path}"/></svg>`;
+}
+
+/** Barcode bars as an SVG stretched to `widthMm` by `heightMm`, one unit per module. */
+function barcodeSvg(modules: readonly boolean[], widthMm: number, heightMm: number): string {
+  let path = "";
+  modules.forEach((isDark, x) => {
+    if (isDark) path += `M${x} 0h1v1h-1z`;
+  });
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${modules.length} 1" width="${widthMm}mm" height="${heightMm}mm" preserveAspectRatio="none" shape-rendering="crispEdges"><path fill="#000" d="${path}"/></svg>`;
 }
 
 /** An inline image. */
@@ -119,6 +129,8 @@ export function renderHtml(document: ResolvedDocument): string {
         }
         case "qr":
           return `<figure class="${block.align}">${qrSvg(block.matrix, block.sizeMm)}</figure>`;
+        case "barcode":
+          return `<figure class="${block.align}">${barcodeSvg(block.modules, block.widthMm, block.heightMm)}${block.showText ? `<p dir="ltr">${escapeHtml(block.text)}</p>` : ""}</figure>`;
         case "image":
           return `<figure class="${block.align}">${imageHtml(block.image, block.widthMm, block.heightMm, "")}</figure>`;
         case "signature":

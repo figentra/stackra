@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: `encodeQrPng`, a QR matrix as an 8-bit greyscale PNG, each module a square of pixels, for DOCX (which
- *          embeds raster images only).
+ * Purpose: `encodeQrPng`, a module matrix (a QR code, or the one row of a barcode) as an 8-bit greyscale PNG, each
+ *          module a square of pixels, for DOCX (which embeds raster images only).
  * Boundary: internal to this package (`renderDocx`); not exported from the entry. Compression is the platform's
  *           `CompressionStream("deflate")` (zlib), present in Node, browsers and Workers; the CRC is computed here.
  * Runtime: isomorphic
@@ -38,19 +38,20 @@ function chunk(type: string, data: Uint8Array): Uint8Array {
 }
 
 /**
- * The PNG of `matrix`, `scale` pixels per module.
+ * The PNG of `matrix`, `scale` pixels per module; its width is the first row's, so a barcode is one row.
  *
  * @example
  * const png = await encodeQrPng(encodeQr(text, "M"), 8);
  */
 export async function encodeQrPng(matrix: QrMatrix, scale: number): Promise<Uint8Array> {
-  const side = matrix.length * scale;
-  const raw = new Uint8Array(side * (side + 1));
-  for (let y = 0; y < side; y += 1) {
+  const width = (matrix[0]?.length ?? 0) * scale;
+  const height = matrix.length * scale;
+  const raw = new Uint8Array(height * (width + 1));
+  for (let y = 0; y < height; y += 1) {
     const row = matrix[Math.floor(y / scale)] ?? [];
-    raw[y * (side + 1)] = 0; // filter: none
-    for (let x = 0; x < side; x += 1)
-      raw[y * (side + 1) + 1 + x] = row[Math.floor(x / scale)] ? 0 : 255;
+    raw[y * (width + 1)] = 0; // filter: none
+    for (let x = 0; x < width; x += 1)
+      raw[y * (width + 1) + 1 + x] = row[Math.floor(x / scale)] ? 0 : 255;
   }
   const deflated = new Uint8Array(
     await new Response(
@@ -59,8 +60,8 @@ export async function encodeQrPng(matrix: QrMatrix, scale: number): Promise<Uint
   );
   const header = new Uint8Array(13);
   const view = new DataView(header.buffer);
-  view.setUint32(0, side);
-  view.setUint32(4, side);
+  view.setUint32(0, width);
+  view.setUint32(4, height);
   header.set([8, 0, 0, 0, 0], 8); // 8-bit greyscale, deflate, adaptive filtering, no interlace
   const parts = [
     new Uint8Array(SIGNATURE),

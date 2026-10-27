@@ -13,7 +13,7 @@ export interface PdfPage {
   readonly widthMm: number;
 
   /** The page height; absent for a continuous roll. */
-  readonly heightMm?: number;
+  readonly heightMm?: number | undefined;
 
   /** The margin on every side. */
   readonly marginMm: number;

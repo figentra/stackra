@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `renderDocx`, a resolved document as a Word file: the template's page and margins, right-to-left
  *          paragraphs and runs for right-to-left locales (Word shapes and reorders them), the bilingual layout as a
- *          borderless two-column table or stacked paragraphs, tables, QR codes as PNG and inline images.
+ *          borderless two-column table or stacked paragraphs, tables, QR codes and EAN-13 barcodes as PNG, struck
+ *          text and inline images.
  * Boundary: a DOCX page needs a height, so a roll template (no `heightMm`) throws `InvalidDocumentTemplateError`.
  *           Writing is `docx`'s; the output goes through base64 so it runs wherever `docx` runs, Node or browser.
  * Runtime: isomorphic
@@ -36,7 +37,7 @@ const TWIPS_PER_MM = 1440 / 25.4;
 /** CSS pixels in a millimetre; `docx` sizes images in pixels at 96 per inch. */
 const PIXELS_PER_MM = 96 / 25.4;
 
-/** Pixels per QR module in the embedded PNG; enough to stay sharp at print sizes. */
+/** Pixels per QR or barcode module in the embedded PNG; enough to stay sharp at print sizes. */
 const QR_SCALE = 8;
 
 /** The logical alignment as Word's. */
@@ -57,7 +58,7 @@ function paragraphOf(
   parts: readonly TextPart[],
   look: Look,
   align: keyof typeof ALIGNMENTS,
-  role: "title" | "heading" | "body" | "note",
+  role: "title" | "heading" | "body" | "note" | "struck",
 ): Paragraph {
   return new Paragraph({
     bidirectional: look.isRtl,
@@ -74,6 +75,7 @@ function paragraphOf(
           rightToLeft: look.isRtl,
           ...(look.font === undefined ? {} : { font: look.font }),
           ...(role === "note" ? { size: 16 } : {}),
+          ...(role === "struck" ? { strike: true } : {}),
         }),
     ),
   });
@@ -212,6 +214,27 @@ export async function renderDocx(document: ResolvedDocument): Promise<Uint8Array
             block.sizeMm,
             block.align,
           ),
+        );
+        break;
+      case "barcode":
+        children.push(
+          imageParagraph(
+            await encodeQrPng([block.modules], QR_SCALE),
+            "png",
+            block.widthMm,
+            block.heightMm,
+            block.align,
+          ),
+          ...(block.showText
+            ? [
+                paragraphOf(
+                  [{ text: block.text, isValue: false }],
+                  { isRtl: false },
+                  block.align,
+                  "body",
+                ),
+              ]
+            : []),
         );
         break;
       case "image":
