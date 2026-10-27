@@ -4,11 +4,13 @@
  *          position is reported; the position takes the constant gen emits (`Icons.House`, a typed key object).
  * Boundary: reads object properties named `icon`, `columnKey`, `routeKey`, `permission` and `permissions` (an array
  *           of literals counts per element). A file named `*.generated.*` or under `generated/` is exempt, because
- *           gen writes the constants there. A `*.constant.*` file is exempt too: it is the definition of a module's
- *           own constant (ADR 0322 decision 3 leaves the `constants/` group unchanged), where a property named
- *           `permissions` is a member of that constant (`IDENTITY_CLAIMS.permissions`, a claim name) and an `icon`
- *           is a platform default typed `IconName`, not a declaration that names a generated key. No autofix: the
- *           constant's name is gen's.
+ *           gen writes the constants there. In a `*.constant.*` file, only the module's own constant definition is
+ *           exempt (ADR 0322 decision 3 leaves the `constants/` group unchanged): a literal inside the plain object
+ *           or array initializer of an exported top-level SCREAMING_SNAKE `const` (through `as const`, `satisfies`
+ *           and `Object.freeze`), where `permissions` is a member of that constant (`IDENTITY_CLAIMS.permissions`, a
+ *           claim name) and an `icon` is a platform default typed `IconName`. A literal anywhere else in a constant
+ *           file (a call argument, a function, a non-exported or lower-case binding) is still reported. No autofix:
+ *           the constant's name is gen's.
  * Runtime: isomorphic
  * Governing contract: owner decision R-56 (2026-10-24 final review, supersedes R-15); registry v3.1 (notes);
  *                     ADR 0322 (generated key constants).
@@ -19,6 +21,36 @@ import type { Rule } from "#core/types/rule.type";
 const POSITIONS = new Set(["icon", "columnKey", "routeKey", "permission", "permissions"]);
 const GENERATED_FILE = /(?:\.generated\.|(?:^|[\\/])generated[\\/])/;
 const CONSTANT_FILE = /\.constant\.[cm]?[jt]sx?$/;
+const CONSTANT_NAME = /^[A-Z][A-Z0-9_]*$/;
+/** The nodes a constant's data initializer is built from; anything else (a call, a function) ends the definition. */
+const DATA_NODES = new Set([
+  "Property",
+  "ObjectExpression",
+  "ArrayExpression",
+  "TSAsExpression",
+  "TSSatisfiesExpression",
+]);
+
+/** Whether `node` is `Object.freeze(...)`. */
+const isFreeze = (node: AstNode): boolean =>
+  node.type === "CallExpression" &&
+  node.callee?.type === "MemberExpression" &&
+  node.callee.object?.name === "Object" &&
+  node.callee.property?.name === "freeze";
+
+/** Whether `property` sits in the data initializer of an exported top-level SCREAMING_SNAKE `const`. */
+const inConstantDefinition = (property: AstNode): boolean => {
+  let node: AstNode | null | undefined = property;
+  while (node && (DATA_NODES.has(node.type) || isFreeze(node))) node = node.parent;
+  const declaration = node?.parent;
+  return (
+    node?.type === "VariableDeclarator" &&
+    CONSTANT_NAME.test(node.id?.name ?? "") &&
+    declaration?.kind === "const" &&
+    declaration.parent?.type === "ExportNamedDeclaration" &&
+    declaration.parent.parent?.type === "Program"
+  );
+};
 
 /** Whether `node` is a string literal. */
 const isString = (node: AstNode | null | undefined): node is AstNode =>
@@ -46,11 +78,13 @@ export const NO_RAW_KEY_LITERAL_RULE: Rule = {
     schema: [],
   },
   create(context) {
-    if (GENERATED_FILE.test(context.filename) || CONSTANT_FILE.test(context.filename)) return {};
+    if (GENERATED_FILE.test(context.filename)) return {};
+    const isConstantFile = CONSTANT_FILE.test(context.filename);
     return {
       Property(node) {
         const position = keyName(node);
         if (position === undefined || !POSITIONS.has(position)) return;
+        if (isConstantFile && inConstantDefinition(node)) return;
         const value = node.value as AstNode | undefined;
         const literals = value?.type === "ArrayExpression" ? (value.elements ?? []) : [value];
         for (const literal of literals) {

@@ -1320,7 +1320,7 @@ export function createSourceReader(
         numberKinds(own) === 0
           ? "a number field needs @Int or @Num"
           : "a number field takes @Int or @Num, not both",
-        "add @Int() for whole numbers or @Num() for decimals above the field",
+        "add @Int for whole numbers or @Num for decimals above the field",
       );
     const inner = leaf(target);
     const isContainer = target.kind === "array" || target.kind === "record";

@@ -19,10 +19,10 @@ describe("formatGenError", () => {
       column: 3,
       subject: "X.count",
       message: "a number field needs @Int or @Num",
-      fix: "add @Int()",
+      fix: "add @Int",
     };
     expect(formatGenError(error)).toBe(
-      "src/node/schemas/x.schema.ts:4:3 error shape_number_kind X.count: a number field needs @Int or @Num\n  fix: add @Int()",
+      "src/node/schemas/x.schema.ts:4:3 error shape_number_kind X.count: a number field needs @Int or @Num\n  fix: add @Int",
     );
     expect(
       formatGenError({ ...error, line: 0, column: 0 }).startsWith(

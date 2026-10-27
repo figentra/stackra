@@ -34,7 +34,7 @@ describe("runGen", () => {
           column: 3,
           subject: "X.count",
           message: "a number field needs @Int or @Num",
-          fix: "add @Int()",
+          fix: "add @Int",
         },
       ],
       files: [],
@@ -45,7 +45,7 @@ describe("runGen", () => {
     expect(output()).toContain(
       "packages/x/src/node/schemas/x.schema.ts:4:3 error shape_number_kind X.count",
     );
-    expect(output()).toContain("fix: add @Int()");
+    expect(output()).toContain("fix: add @Int");
     expect(output()).toContain("nothing was written");
   });
 
