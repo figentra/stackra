@@ -92,7 +92,7 @@ export class AssetLibrary extends Service {
       const actual = Array.from(new Uint8Array(digest), (byte) =>
         byte.toString(16).padStart(2, "0"),
       ).join("");
-      if (actual !== entry.hash) throw new AssetHashMismatchError(entry.key, entry.hash, actual);
+      if (actual !== entry.hash) throw AssetHashMismatchError.create({ key: entry.key, expected: entry.hash, actual });
     }
   }
 

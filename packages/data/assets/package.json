@@ -75,6 +75,7 @@
   "dependencies": {
     "@stackra/container": "workspace:*",
     "@stackra/contracts": "workspace:*",
+    "@stackra/errors": "workspace:*",
     "@stackra/filesystem": "workspace:*"
   },
   "devDependencies": {
