@@ -18,8 +18,19 @@ import { OgKind } from "#core/enums/og-kind.enum";
 /** The options of `SeoConfig`. */
 export class SeoOptions extends Schema {
   /** The page title template: `%s` is the page title and `{siteName}` the site's name. */
-  @Str({ min: 2, max: 200, pattern: /%s/ })
+  @Str({
+    min: 2,
+    max: 200,
+    pattern: /%s/,
+  })
   titleTemplate = "%s";
+
+  /** URLs per sitemap page; a longer source is split into numbered pages. The protocol's ceiling is 50,000. */
+  @Int({
+    min: 1,
+    max: 50_000,
+  })
+  sitemapPageSize = 10_000;
 
   /**
    * `robots.txt` groups by user agent: `*` is every crawler, another key adds that crawler's own group. A rule in
@@ -28,10 +39,6 @@ export class SeoOptions extends Schema {
   robots: Record<string, { allow: string[]; disallow: string[] }> = {
     "*": { allow: ["/"], disallow: [] },
   };
-
-  /** URLs per sitemap page; a longer source is split into numbered pages. The protocol's ceiling is 50,000. */
-  @Int({ min: 1, max: 50_000 })
-  sitemapPageSize = 10_000;
 
   /** Search parameters that turn a page into `noindex`. */
   noindexParams: string[] = [];

@@ -30,11 +30,13 @@ vi.mock("@resvg/resvg-wasm/index_bg.wasm", () => ({ default: engines.resvg }));
 vi.mock("@resvg/resvg-wasm", () => ({
   initWasm: engines.initWasm,
   Resvg: class {
+    render = () => ({ asPng: () => new Uint8Array([137, 80, 78, 71]) });
+
+    free = engines.free;
+
     constructor(_svg: string, options: unknown) {
       engines.options.push(options);
     }
-    render = () => ({ asPng: () => new Uint8Array([137, 80, 78, 71]) });
-    free = engines.free;
   },
 }));
 vi.mock("#core/functions/load-og-fonts.function", () => ({ loadOgFonts: vi.fn(async () => []) }));

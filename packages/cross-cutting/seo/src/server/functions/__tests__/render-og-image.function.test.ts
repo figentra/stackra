@@ -26,11 +26,13 @@ vi.mock("satori", () => ({ default: engines.satori }));
 vi.mock("@resvg/resvg-wasm", () => ({
   initWasm: engines.initWasm,
   Resvg: class {
+    render = engines.render;
+
+    free = engines.free;
+
     constructor(_svg: string, options: unknown) {
       engines.options.push(options);
     }
-    render = engines.render;
-    free = engines.free;
   },
 }));
 vi.mock("node:fs/promises", () => ({ readFile: engines.readFile }));
