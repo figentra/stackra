@@ -12,12 +12,12 @@ import { describe, expect, it } from "@stackra/testing";
 
 import { FiscalRecordStatus } from "#contracts/enums/fiscal-record-status.enum";
 import { OnboardingInput } from "#contracts/enums/onboarding-input.enum";
-import { FiscalOnboarding } from "#contracts/ports/fiscal-onboarding.port";
+import type { FiscalOnboarding } from "#contracts/ports/fiscal-onboarding.port";
 import type { TransportRequest } from "#contracts/types/transport-request.type";
 import { FiscalCredentialMissingError } from "#core/errors/fiscal-credential-missing.error";
 import { FiscalOnboardingInputMissingError } from "#core/errors/fiscal-onboarding-input-missing.error";
 import { FiscalOnboardingRefusedError } from "#core/errors/fiscal-onboarding-refused.error";
-import { ZatcaOnboarding } from "#core/services/zatca-onboarding.service";
+import { ZatcaOnboarding } from "#core/drivers/zatca-onboarding.driver";
 import { fiscalRecord } from "#testing/fiscal-record.fixture";
 import { FiscalTransportFake } from "#testing/fiscal-transport.fake";
 import { TillCredentialsFake } from "#testing/till-credentials.fake";

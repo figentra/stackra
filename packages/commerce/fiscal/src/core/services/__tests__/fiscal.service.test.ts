@@ -43,7 +43,9 @@ class TestClock extends Clock {
 /** A driver that records its calls and answers submissions from a queue. */
 class RecordingDriver extends FiscalDriver {
   readonly key: string;
+
   readonly sealed: SealContext[] = [];
+
   readonly answers: (SubmissionOutcome | "unavailable")[] = [];
 
   constructor(key: string) {
@@ -127,7 +129,7 @@ describe("FiscalService#seal", () => {
   it("reads the pack on the document's issue date", async () => {
     const { service, packs } = setup();
     await service.seal(fiscalDocument(), till);
-    expect(packs.calls("section")).toEqual([{ market: "xx", on: fiscalDocument().issuedAt }]);
+    expect(packs.asked).toEqual([{ market: "xx", on: fiscalDocument().issuedAt }]);
   });
 
   it("returns the stored record when the document was already sealed", async () => {

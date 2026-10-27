@@ -8,7 +8,7 @@
  * Governing contract: ADR 0364 (decision 4); ADR 0294 (decisions 16 and 20); ADR 0140; ADR 0328 (`create`).
  */
 import { ErrorKind, Refusal } from "@stackra/errors";
-import { Int, Str } from "@stackra/validation";
+import { Int } from "@stackra/validation";
 
 /**
  * Not retryable with the same input: the operator asks for a new OTP or a new CSR.
@@ -20,11 +20,10 @@ export class FiscalOnboardingRefusedError extends Refusal({
   kind: ErrorKind.FailedPrecondition,
   retryable: false,
 }) {
-  /** The unit being onboarded. */
-  @Str()
-  unitId!: string;
-
   /** The authority's HTTP status. */
-  @Int()
+  @Int({ min: 0 })
   status!: number;
+
+  /** The unit being onboarded. */
+  unitId!: string;
 }

@@ -9,7 +9,6 @@
  * Governing contract: ADR 0364; ADR 0294 (decisions 16 and 20); ADR 0140 (envelope and kinds); ADR 0328 (`create`).
  */
 import { ErrorKind, Refusal } from "@stackra/errors";
-import { Str } from "@stackra/validation";
 
 /**
  * Not retryable: the pack must be corrected and republished.
@@ -22,10 +21,8 @@ export class FiscalOptionsInvalidError extends Refusal({
   retryable: false,
 }) {
   /** The driver whose schema refused the options. */
-  @Str()
   driver!: string;
 
   /** The schema issues as `path: message`, joined by "; ". */
-  @Str()
   issues!: string;
 }

@@ -15,8 +15,6 @@ describe("TurnoverCipherFake", () => {
     const cipher = new TurnoverCipherFake();
     expect(cipher).toBeInstanceOf(TurnoverCipher);
     expect(await cipher.encrypt("u", "R-1", 5)).toBe(btoa("u:R-1:5"));
-    expect(cipher.calls("encrypt")).toEqual([
-      { unitId: "u", receiptNumber: "R-1", turnoverMinor: 5 },
-    ]);
+    expect(cipher.inputs).toEqual([{ unitId: "u", receiptNumber: "R-1", turnoverMinor: 5 }]);
   });
 });

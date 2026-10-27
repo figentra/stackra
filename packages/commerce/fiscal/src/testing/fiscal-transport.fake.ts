@@ -23,7 +23,9 @@ export class FiscalTransportFake extends Fake.of(FiscalTransport) {
   /** Responses still to give. */
   private readonly queue: TransportResponse[];
 
-  /** @param queue - responses to give, in order. */
+  /**
+   * @param queue - responses to give, in order.
+   */
   constructor(queue: TransportResponse[]) {
     super();
     this.queue = queue;

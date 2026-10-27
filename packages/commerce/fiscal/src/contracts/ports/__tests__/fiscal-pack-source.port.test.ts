@@ -20,7 +20,7 @@ class OneMarket extends FiscalPackSource {
 
 describe("FiscalPackSource", () => {
   it("is a port that answers per market", async () => {
-    const packs = new OneMarket();
+    const packs: FiscalPackSource = new OneMarket();
     expect(packs).toBeInstanceOf(Port);
     expect(await packs.section("xx", new Date(0))).toEqual({ invoice: null, till: null });
     expect(await packs.section("yy", new Date(0))).toBeNull();

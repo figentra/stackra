@@ -50,7 +50,9 @@ export class RtDriver extends Driver(FiscalDriver) {
   /** The till's paired recorder. */
   private readonly device: FiscalDevice;
 
-  /** @param device - the paired recorder binding. */
+  /**
+   * @param device - the paired recorder binding.
+   */
   constructor(device: FiscalDevice) {
     super();
     this.device = device;

@@ -4,12 +4,13 @@
  *          driver the pack names, seals the document onto the unit's chain (offline-capable, idempotent per
  *          document), submits pending records in order when the authority is reachable, reports how far a unit is
  *          behind against the pack's reporting window, and exports the journal.
- * Boundary: a plain class the host builds with every driver it registers, because the driver is chosen per call from
+ * Boundary: a `Service` the host builds with every driver it registers, because the driver is chosen per call from
  *           pack data rather than bound once. It names no market and holds no value of its own: windows and options
  *           are pack data, the time is the `Clock`'s. A pack with no mandate in a channel means nothing is sealed.
  * Runtime: isomorphic
  * Governing contract: ADR 0364 (decisions 1, 2, 3 and 7); ADR 0363 (decisions 3 and 4).
  */
+import { Service } from "@stackra/container";
 import type { Clock } from "@stackra/contracts";
 
 import type { FiscalDriver } from "#contracts/ports/fiscal-driver.port";
@@ -36,7 +37,7 @@ const HOUR = 3_600_000;
  * const fiscal = new FiscalService([new ZatcaDriver(signer, transport), new TseDriver(device)], packs, journal, clock);
  * const record = await fiscal.seal(document, { market: "sa", channel: FiscalChannel.Till, unitId: "till_1" });
  */
-export class FiscalService {
+export class FiscalService extends Service {
   /** Registered drivers by key. */
   private readonly drivers: ReadonlyMap<string, FiscalDriver>;
 
@@ -61,6 +62,7 @@ export class FiscalService {
     journal: FiscalJournal,
     clock: Clock,
   ) {
+    super();
     this.drivers = new Map(drivers.map((driver) => [driver.key, driver]));
     this.packs = packs;
     this.journal = journal;

@@ -54,7 +54,7 @@ class EchoDriver extends FiscalDriver {
 
 describe("FiscalDriver", () => {
   it("is a port with a key and the three operations", async () => {
-    const driver = new EchoDriver();
+    const driver: FiscalDriver = new EchoDriver();
     const context = { unitId: "u", options: {} };
     expect(driver).toBeInstanceOf(Port);
     expect(driver.key).toBe("echo");

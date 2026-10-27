@@ -52,7 +52,9 @@ export class FdmDriver extends Driver(FiscalDriver) {
   /** The till's paired module. */
   private readonly device: FiscalDevice;
 
-  /** @param device - the paired module binding. */
+  /**
+   * @param device - the paired module binding.
+   */
   constructor(device: FiscalDevice) {
     super();
     this.device = device;

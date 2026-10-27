@@ -9,7 +9,7 @@
  * Governing contract: ADR 0364; ADR 0294 (decisions 16 and 20); ADR 0140 (envelope and kinds); ADR 0328 (`create`).
  */
 import { ErrorKind, Refusal } from "@stackra/errors";
-import { Int, Str } from "@stackra/validation";
+import { Int } from "@stackra/validation";
 
 /**
  * Retryable: the record stays sealed and the next `submitPending` tries again.
@@ -21,11 +21,10 @@ export class FiscalAuthorityUnavailableError extends Refusal({
   kind: ErrorKind.Unavailable,
   retryable: true,
 }) {
-  /** The driver that submitted. */
-  @Str()
-  driver!: string;
-
   /** The HTTP status, or 0 when a device answered in a shape the driver does not know. */
-  @Int()
+  @Int({ min: 0 })
   status!: number;
+
+  /** The driver that submitted. */
+  driver!: string;
 }

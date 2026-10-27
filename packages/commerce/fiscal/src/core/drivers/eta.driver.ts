@@ -14,9 +14,9 @@ import { Driver } from "@stackra/container";
 import type { Money } from "@stackra/money";
 import { z } from "zod";
 
-import { FiscalDocumentKind } from "#contracts/enums/fiscal-document-kind.enum";
+import type { FiscalDocumentKind } from "#contracts/enums/fiscal-document-kind.enum";
 import { FiscalRecordStatus } from "#contracts/enums/fiscal-record-status.enum";
-import { PartyKind } from "#contracts/enums/party-kind.enum";
+import type { PartyKind } from "#contracts/enums/party-kind.enum";
 import { SignatureFormat } from "#contracts/enums/signature-format.enum";
 import { FiscalDriver } from "#contracts/ports/fiscal-driver.port";
 import type { FiscalSigner } from "#contracts/ports/fiscal-signer.port";

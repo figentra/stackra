@@ -8,7 +8,6 @@
  * Governing contract: ADR 0364; ADR 0294 (decisions 16 and 20); ADR 0140 (envelope and kinds); ADR 0328 (`create`).
  */
 import { ErrorKind, Refusal } from "@stackra/errors";
-import { Str } from "@stackra/validation";
 
 /**
  * Not retryable: the host completes the document and seals again.
@@ -21,10 +20,8 @@ export class FiscalDocumentInvalidError extends Refusal({
   retryable: false,
 }) {
   /** The driver that needs the field. */
-  @Str()
   driver!: string;
 
   /** The missing field as a dotted path into the document. */
-  @Str()
   field!: string;
 }

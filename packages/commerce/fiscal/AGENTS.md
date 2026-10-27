@@ -5,17 +5,17 @@ programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./te
 
 ## Where code goes
 
-| You are writing…                                   | It goes in…                                   |
-| -------------------------------------------------- | --------------------------------------------- |
-| A port, an enum or a type hosts code against       | `src/contracts/{ports,enums,types}/`          |
+| You are writing…                                     | It goes in…                                   |
+| ---------------------------------------------------- | --------------------------------------------- |
+| A port, an enum or a type hosts code against         | `src/contracts/{ports,enums,types}/`          |
 | A driver (one mandate), the memory driver or journal | `src/core/drivers/<key>.driver.ts`            |
-| A mandate's till onboarding (`FiscalOnboarding`)   | `src/core/drivers/<key>-onboarding.driver.ts` |
-| A driver's pack-option schema or a format constant | `src/core/constants/`                         |
-| A refusal                                          | `src/core/errors/`                            |
-| A shared format helper (XML, base64, TLV, time)    | `src/core/functions/`                         |
-| The engine or the onboarding                       | `src/core/services/`                          |
-| A fake or fixture                                  | `src/testing/`                                |
-| A test                                             | `__tests__/<name>.<kind>.test.ts` beside it   |
+| A mandate's till onboarding (`FiscalOnboarding`)     | `src/core/drivers/<key>-onboarding.driver.ts` |
+| A driver's pack-option schema or a format constant   | `src/core/constants/`                         |
+| A refusal                                            | `src/core/errors/`                            |
+| A shared format helper (XML, base64, TLV, time)      | `src/core/functions/`                         |
+| The engine or the onboarding registry                | `src/core/services/`                          |
+| A fake or fixture                                    | `src/testing/`                                |
+| A test                                               | `__tests__/<name>.<kind>.test.ts` beside it   |
 
 ## This package
 
@@ -30,8 +30,8 @@ programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./te
 - `seal` must work offline. Submission is separate and runs in sequence order; a transport failure is
   `FiscalAuthorityUnavailableError` and leaves the record sealed.
 - A till registration is a `FiscalOnboarding` driver keyed like its `FiscalDriver`: it lists its `inputs`, stores
-  issued values only through `TillCredentials` and returns only `OnboardingStep`. `ZatcaOnboarding` stays in
-  `services/` under its published name.
+  issued values only through `TillCredentials` and returns only `OnboardingStep`. `ZatcaOnboarding` lives in
+  `drivers/zatca-onboarding.driver.ts` and keeps its published name.
 - `MemoryFiscalDriver` (key `memory`) is for tests and development only: it signs nothing and reaches no authority,
   so no market pack names it. It reads no options.
 - `renderXml` output is hashed by chained formats: never change its canonical form.

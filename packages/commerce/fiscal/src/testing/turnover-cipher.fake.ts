@@ -17,9 +17,17 @@ import { toBase64 } from "#core/functions/to-base64.function";
  * await new TurnoverCipherFake().encrypt("till_1", "R-1", 3500); // base64 of "till_1:R-1:3500"
  */
 export class TurnoverCipherFake extends Fake.of(TurnoverCipher) {
+  /** Every input, whole and in order; `calls("encrypt")` holds only the unit ids. */
+  readonly inputs: {
+    readonly unitId: string;
+    readonly receiptNumber: string;
+    readonly turnoverMinor: number;
+  }[] = [];
+
   /** Recorded, then the readable stand-in. */
   async encrypt(unitId: string, receiptNumber: string, turnoverMinor: number): Promise<string> {
-    this.record("encrypt", { unitId, receiptNumber, turnoverMinor });
+    this.record("encrypt", unitId);
+    this.inputs.push({ unitId, receiptNumber, turnoverMinor });
     return toBase64(`${unitId}:${receiptNumber}:${turnoverMinor}`);
   }
 }

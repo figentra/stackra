@@ -16,7 +16,7 @@ describe("FiscalDeviceFake", () => {
     expect(device).toBeInstanceOf(FiscalDevice);
     expect(await device.call("u", "ping", {})).toEqual({ ok: true });
     await expect(device.call("u", "other", {})).rejects.toThrow(/no answer/);
-    expect(device.calls("call")).toEqual([
+    expect(device.sent).toEqual([
       { unitId: "u", command: "ping", payload: {} },
       { unitId: "u", command: "other", payload: {} },
     ]);

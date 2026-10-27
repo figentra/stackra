@@ -54,7 +54,7 @@ describe("TseDriver#seal", () => {
     const device = tse();
     const sealed = await new TseDriver(device).seal(fiscalDocument(), context);
     const processData = "Beleg^24.00_11.00_0.00_0.00_0.00^35.00:Bar";
-    expect(device.calls("call")).toEqual([
+    expect(device.sent).toEqual([
       {
         unitId: "till_1",
         command: "tse.transaction",

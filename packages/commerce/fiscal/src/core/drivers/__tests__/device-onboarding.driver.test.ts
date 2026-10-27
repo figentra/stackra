@@ -33,7 +33,7 @@ describe("DeviceOnboardingDriver", () => {
       requestId: null,
     });
     expect((await onboarding.complete("till_1")).stage).toBe("production");
-    expect(device.calls("call")).toEqual([
+    expect(device.sent).toEqual([
       { unitId: "till_1", command: "tse.register", payload: { unitId: "till_1" } },
       { unitId: "till_1", command: "tse.activate", payload: { unitId: "till_1" } },
     ]);

@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `FiscalPackSourceFake`, a `FiscalPackSource` that answers from a fixed map of market sections and records
- *          every question.
+ *          every question in `asked`.
  * Boundary: built on `Fake` of @stackra/testing; the date is recorded but not used, so a test that needs a dated
  *           change swaps the map with `set`.
  * Runtime: isomorphic
@@ -20,10 +20,15 @@ import type { MarketFiscalSection } from "#contracts/types/market-fiscal-section
  * const packs = FiscalPackSourceFake.with({ xx: { invoice: null, till } });
  */
 export class FiscalPackSourceFake extends Fake.of(FiscalPackSource) {
+  /** Every question, whole and in order; `calls("section")` holds only the market codes. */
+  readonly asked: { readonly market: string; readonly on: Date }[] = [];
+
   /** Sections by market code. */
   private readonly sections: Map<string, MarketFiscalSection>;
 
-  /** @param sections - sections by market code. */
+  /**
+   * @param sections - sections by market code.
+   */
   constructor(sections: Map<string, MarketFiscalSection>) {
     super();
     this.sections = sections;
@@ -41,7 +46,8 @@ export class FiscalPackSourceFake extends Fake.of(FiscalPackSource) {
 
   /** Recorded, then answered from the map. */
   async section(market: string, on: Date): Promise<MarketFiscalSection | null> {
-    this.record("section", { market, on });
+    this.record("section", market);
+    this.asked.push({ market, on });
     return this.sections.get(market) ?? null;
   }
 }

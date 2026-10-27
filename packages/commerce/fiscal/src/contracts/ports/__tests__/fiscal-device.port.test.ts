@@ -19,7 +19,7 @@ class EchoDevice extends FiscalDevice {
 
 describe("FiscalDevice", () => {
   it("is a port that relays a command to the unit's device", async () => {
-    const device = new EchoDevice();
+    const device: FiscalDevice = new EchoDevice();
     expect(device).toBeInstanceOf(Port);
     expect(await device.call("u", "tse.export", {})).toEqual({
       unitId: "u",

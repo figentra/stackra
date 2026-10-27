@@ -34,6 +34,7 @@ export { RtDriver } from "#core/drivers/rt.driver";
 export { TseDriver } from "#core/drivers/tse.driver";
 export { VerifactuDriver } from "#core/drivers/verifactu.driver";
 export { ZatcaDriver } from "#core/drivers/zatca.driver";
+export { ZatcaOnboarding } from "#core/drivers/zatca-onboarding.driver";
 export { FiscalAuthorityUnavailableError } from "#core/errors/fiscal-authority-unavailable.error";
 export { FiscalChainConflictError } from "#core/errors/fiscal-chain-conflict.error";
 export { FiscalCredentialMissingError } from "#core/errors/fiscal-credential-missing.error";
@@ -45,7 +46,6 @@ export { FiscalOnboardingUnsupportedError } from "#core/errors/fiscal-onboarding
 export { FiscalOptionsInvalidError } from "#core/errors/fiscal-options-invalid.error";
 export { FiscalService } from "#core/services/fiscal.service";
 export { FiscalOnboardingService } from "#core/services/fiscal-onboarding.service";
-export { ZatcaOnboarding } from "#core/services/zatca-onboarding.service";
 export type { TaxGroup } from "#core/types/tax-group.type";
 export type { XmlNode } from "#core/types/xml-node.type";
 export type { ZonedTime } from "#core/types/zoned-time.type";

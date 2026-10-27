@@ -58,7 +58,9 @@ export class VerifactuDriver extends Driver(FiscalDriver) {
   /** Reaches the authority with the issuer's certificate. */
   private readonly transport: FiscalTransport;
 
-  /** @param transport - the host's HTTP binding. */
+  /**
+   * @param transport - the host's HTTP binding.
+   */
   constructor(transport: FiscalTransport) {
     super();
     this.transport = transport;

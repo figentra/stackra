@@ -58,7 +58,9 @@ export class TseDriver extends Driver(FiscalDriver) {
   /** The till's paired TSE. */
   private readonly device: FiscalDevice;
 
-  /** @param device - the paired TSE binding. */
+  /**
+   * @param device - the paired TSE binding.
+   */
   constructor(device: FiscalDevice) {
     super();
     this.device = device;

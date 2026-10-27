@@ -45,7 +45,9 @@ export class Nf525Driver extends Driver(FiscalDriver) {
   /** Signs with the till's key. */
   private readonly signer: FiscalSigner;
 
-  /** @param signer - the till's raw signer. */
+  /**
+   * @param signer - the till's raw signer.
+   */
   constructor(signer: FiscalSigner) {
     super();
     this.signer = signer;

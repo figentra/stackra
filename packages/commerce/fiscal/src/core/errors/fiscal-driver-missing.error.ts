@@ -9,7 +9,6 @@
  * Governing contract: ADR 0364; ADR 0294 (decisions 16 and 20); ADR 0140 (envelope and kinds); ADR 0328 (`create`).
  */
 import { ErrorKind, Refusal } from "@stackra/errors";
-import { Str } from "@stackra/validation";
 
 /**
  * Not retryable until the host registers the driver or the pack changes.
@@ -22,14 +21,11 @@ export class FiscalDriverMissingError extends Refusal({
   retryable: false,
 }) {
   /** The market-pack code. */
-  @Str()
   market!: string;
 
   /** The channel the pack was read for. */
-  @Str()
   channel!: string;
 
   /** The driver key the pack names. */
-  @Str()
   driver!: string;
 }

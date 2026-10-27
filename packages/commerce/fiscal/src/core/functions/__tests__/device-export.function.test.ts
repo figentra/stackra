@@ -25,7 +25,7 @@ describe("deviceExport", () => {
       encoding: "base64",
       content: "AAA=",
     });
-    expect(device.calls("call")).toEqual([
+    expect(device.sent).toEqual([
       {
         unitId: "till_1",
         command: "x.export",
@@ -42,6 +42,6 @@ describe("deviceExport", () => {
   it("returns an empty file without asking when there are no records", async () => {
     const device = FiscalDeviceFake.with({});
     expect((await deviceExport(device, "x.export", [], "till_1", "x")).content).toBe("");
-    expect(device.calls("call")).toEqual([]);
+    expect(device.sent).toEqual([]);
   });
 });

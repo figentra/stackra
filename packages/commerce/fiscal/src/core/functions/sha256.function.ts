@@ -13,6 +13,7 @@
  * toHex(await sha256("abc")); // "ba7816bf…"
  */
 export async function sha256(input: string | Uint8Array): Promise<Uint8Array> {
-  const bytes = typeof input === "string" ? new TextEncoder().encode(input) : input;
+  // The copy gives Web Crypto an ArrayBuffer-backed view; a caller's view may sit on a SharedArrayBuffer.
+  const bytes = typeof input === "string" ? new TextEncoder().encode(input) : new Uint8Array(input);
   return new Uint8Array(await globalThis.crypto.subtle.digest("SHA-256", bytes));
 }

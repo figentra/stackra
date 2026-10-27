@@ -13,7 +13,7 @@ import { DeviceOnboardingDriver } from "#core/drivers/device-onboarding.driver";
 import { EtaOnboardingDriver } from "#core/drivers/eta-onboarding.driver";
 import { FiscalOnboardingUnsupportedError } from "#core/errors/fiscal-onboarding-unsupported.error";
 import { FiscalOnboardingService } from "#core/services/fiscal-onboarding.service";
-import { ZatcaOnboarding } from "#core/services/zatca-onboarding.service";
+import { ZatcaOnboarding } from "#core/drivers/zatca-onboarding.driver";
 import { FiscalDeviceFake } from "#testing/fiscal-device.fake";
 import { FiscalTransportFake } from "#testing/fiscal-transport.fake";
 import { TillCredentialsFake } from "#testing/till-credentials.fake";

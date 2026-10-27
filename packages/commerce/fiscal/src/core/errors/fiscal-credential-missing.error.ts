@@ -9,7 +9,6 @@
  * Governing contract: ADR 0364; ADR 0294 (decisions 16 and 20); ADR 0140 (envelope and kinds); ADR 0328 (`create`).
  */
 import { ErrorKind, Refusal } from "@stackra/errors";
-import { Str } from "@stackra/validation";
 
 /**
  * Not retryable until the unit is onboarded.
@@ -22,10 +21,8 @@ export class FiscalCredentialMissingError extends Refusal({
   retryable: false,
 }) {
   /** The unit without the credential. */
-  @Str()
   unitId!: string;
 
   /** The driver that needs it. */
-  @Str()
   driver!: string;
 }

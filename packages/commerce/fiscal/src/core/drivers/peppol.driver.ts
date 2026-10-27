@@ -52,7 +52,9 @@ export class PeppolDriver extends Driver(FiscalDriver) {
   /** Reaches the access point with the tenant's credential. */
   private readonly transport: FiscalTransport;
 
-  /** @param transport - the host's HTTP binding. */
+  /**
+   * @param transport - the host's HTTP binding.
+   */
   constructor(transport: FiscalTransport) {
     super();
     this.transport = transport;

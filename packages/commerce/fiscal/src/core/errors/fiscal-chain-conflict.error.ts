@@ -7,7 +7,7 @@
  * Governing contract: ADR 0364; ADR 0294 (decisions 16 and 20); ADR 0140 (envelope and kinds); ADR 0328 (`create`).
  */
 import { ErrorKind, Refusal } from "@stackra/errors";
-import { Int, Str } from "@stackra/validation";
+import { Int } from "@stackra/validation";
 
 /**
  * Retryable: sealing again reads the new tail.
@@ -19,11 +19,10 @@ export class FiscalChainConflictError extends Refusal({
   kind: ErrorKind.Conflict,
   retryable: true,
 }) {
-  /** The unit whose chain was taken. */
-  @Str()
-  unitId!: string;
-
   /** The sequence both tried to take. */
-  @Int()
+  @Int({ min: 0 })
   sequence!: number;
+
+  /** The unit whose chain was taken. */
+  unitId!: string;
 }

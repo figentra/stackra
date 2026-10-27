@@ -40,7 +40,7 @@ describe("FdmDriver#seal", () => {
   it("sends the totals per slot and returns the module's marks", async () => {
     const device = FiscalDeviceFake.with({ "fdm.sign": ANSWER });
     const sealed = await new FdmDriver(device).seal(fiscalDocument(), context);
-    expect(device.calls("call")).toEqual([
+    expect(device.sent).toEqual([
       {
         unitId: "till_1",
         command: "fdm.sign",

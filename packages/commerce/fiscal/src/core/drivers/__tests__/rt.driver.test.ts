@@ -38,7 +38,7 @@ describe("RtDriver#seal", () => {
   it("sends the document and returns the recorder's marks", async () => {
     const device = FiscalDeviceFake.with({ "rt.document": ANSWER });
     const sealed = await new RtDriver(device).seal(fiscalDocument(), context);
-    const [call] = device.calls("call") as { payload: Record<string, unknown> }[];
+    const [call] = device.sent;
     expect(call?.payload).toMatchObject({
       documentType: "1",
       number: "INV-0001",

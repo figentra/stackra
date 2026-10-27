@@ -2,11 +2,13 @@
  * Stackra file contract:
  * Purpose: `FiscalOnboardingService`, the one place a till mandate's driver key picks its `FiscalOnboarding`: device
  *          pairing asks whether a mandate needs registration, which inputs to ask for, and gets the onboarding to run.
- * Boundary: a plain class over the onboardings the host registers (ZATCA, ETA, the device mandates, its own). Which
+ * Boundary: a `Service` over the onboardings the host registers (ZATCA, ETA, the device mandates, its own). Which
  *           key a market uses is pack data; this never branches on a market.
  * Runtime: isomorphic
  * Governing contract: ADR 0364 (decisions 4 and 5).
  */
+import { Service } from "@stackra/container";
+
 import type { FiscalOnboarding } from "#contracts/ports/fiscal-onboarding.port";
 import { FiscalOnboardingUnsupportedError } from "#core/errors/fiscal-onboarding-unsupported.error";
 
@@ -21,12 +23,15 @@ import { FiscalOnboardingUnsupportedError } from "#core/errors/fiscal-onboarding
  * ]);
  * const step = await onboardings.for(mandate.driver).register(unitId, answers, mandate.options);
  */
-export class FiscalOnboardingService {
+export class FiscalOnboardingService extends Service {
   /** Registered onboardings by key. */
   private readonly onboardings: ReadonlyMap<string, FiscalOnboarding>;
 
-  /** @param onboardings - every onboarding the host offers; a later one with the same key replaces an earlier one. */
+  /**
+   * @param onboardings - every onboarding the host offers; a later one with the same key replaces an earlier one.
+   */
   constructor(onboardings: readonly FiscalOnboarding[]) {
+    super();
     this.onboardings = new Map(onboardings.map((onboarding) => [onboarding.key, onboarding]));
   }
 

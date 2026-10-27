@@ -15,6 +15,7 @@ import type { OnboardingStep } from "#contracts/types/onboarding-step.type";
 /** A mandate that registers on the code alone. */
 class CodeOnly extends FiscalOnboarding {
   readonly key = "code-only";
+
   readonly inputs = [OnboardingInput.Otp];
 
   async register(unitId: string): Promise<OnboardingStep> {

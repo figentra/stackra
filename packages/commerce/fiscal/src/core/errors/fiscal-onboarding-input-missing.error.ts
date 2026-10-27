@@ -8,7 +8,6 @@
  * Governing contract: ADR 0364 (decision 4); ADR 0294 (decisions 16 and 20); ADR 0140; ADR 0328 (`create`).
  */
 import { ErrorKind, Refusal } from "@stackra/errors";
-import { Str } from "@stackra/validation";
 
 /**
  * Not retryable with the same answers: the operator fills the named input.
@@ -21,14 +20,11 @@ export class FiscalOnboardingInputMissingError extends Refusal({
   retryable: false,
 }) {
   /** The unit being onboarded. */
-  @Str()
   unitId!: string;
 
   /** The driver key of the onboarding. */
-  @Str()
   driver!: string;
 
   /** The `OnboardingInput` code left empty. */
-  @Str()
   input!: string;
 }

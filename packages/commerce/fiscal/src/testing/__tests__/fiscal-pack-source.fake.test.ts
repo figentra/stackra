@@ -20,6 +20,6 @@ describe("FiscalPackSourceFake", () => {
     expect(await packs.section("yy", on)).toBeNull();
     packs.set("yy", { invoice: null, till: null });
     expect(await packs.section("yy", on)).not.toBeNull();
-    expect(packs.calls("section")).toHaveLength(3);
+    expect(packs.asked).toHaveLength(3);
   });
 });

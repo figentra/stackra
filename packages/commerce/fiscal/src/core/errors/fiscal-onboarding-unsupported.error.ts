@@ -7,7 +7,6 @@
  * Governing contract: ADR 0364 (decision 4); ADR 0294 (decisions 16 and 20); ADR 0140; ADR 0328 (`create`).
  */
 import { ErrorKind, Refusal } from "@stackra/errors";
-import { Str } from "@stackra/validation";
 
 /**
  * Not retryable until the host registers an onboarding for the driver or the pack changes.
@@ -20,6 +19,5 @@ export class FiscalOnboardingUnsupportedError extends Refusal({
   retryable: false,
 }) {
   /** The driver key the till mandate names. */
-  @Str()
   driver!: string;
 }
