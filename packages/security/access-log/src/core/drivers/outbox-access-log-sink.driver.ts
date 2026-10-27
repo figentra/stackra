@@ -12,7 +12,7 @@
  * Governing contract: ADR 0212 (decisions 1, 3, 4 and 5); ADR 0141; ADR 0294 (decision 16); ADR 0409; STA-821.
  */
 import { Driver } from "@stackra/container";
-import { EventOutbox } from "@stackra/events/contracts";
+import type { EventOutbox } from "@stackra/events/contracts";
 
 import { AccessLogSink } from "#contracts/ports/access-log-sink.port";
 import type { AccessRecord } from "#contracts/types/access-record.type";
@@ -31,7 +31,9 @@ export class OutboxAccessLogSinkDriver extends Driver(AccessLogSink) {
   /** Where the events are written. */
   private readonly outbox: EventOutbox;
 
-  /** @param outbox - the service's event outbox. */
+  /**
+   * @param outbox - the service's event outbox.
+   */
   constructor(outbox: EventOutbox) {
     super();
     this.outbox = outbox;

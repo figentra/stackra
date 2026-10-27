@@ -27,7 +27,9 @@ export class AccessLogSinkFake extends Fake.of(AccessLogSink) {
   /** Whether every write throws after it is recorded. */
   private readonly failing: boolean;
 
-  /** @param failing - when true, every write throws after it is recorded. */
+  /**
+   * @param failing - when true, every write throws after it is recorded.
+   */
   constructor(failing = false) {
     super();
     this.failing = failing;

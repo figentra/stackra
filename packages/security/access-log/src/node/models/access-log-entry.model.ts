@@ -33,6 +33,24 @@ export class AccessLogEntry extends Model.with(HasPublicId("acl"), BelongsToTena
   @Str({ max: 200 })
   target!: string;
 
+  /** The record's position in its tenant's hash chain, from 1. */
+  @Int({ min: 1 })
+  sequence!: number;
+
+  /** The hash of the record before it in the chain. */
+  @Str({
+    min: 64,
+    max: 64,
+  })
+  previousHash!: string;
+
+  /** SHA-256 of the previous hash, the sequence and the record. */
+  @Str({
+    min: 64,
+    max: 64,
+  })
+  hash!: string;
+
   /** The data classification the class declared. */
   classification!: DataClassification;
 
@@ -44,18 +62,6 @@ export class AccessLogEntry extends Model.with(HasPublicId("acl"), BelongsToTena
 
   /** When the access was recorded. */
   at!: Date;
-
-  /** The record's position in its tenant's hash chain, from 1. */
-  @Int({ min: 1 })
-  sequence!: number;
-
-  /** The hash of the record before it in the chain. */
-  @Str({ min: 64, max: 64 })
-  previousHash!: string;
-
-  /** SHA-256 of the previous hash, the sequence and the record. */
-  @Str({ min: 64, max: 64 })
-  hash!: string;
 }
 
 // shortcut: the `[OptionalProps]` augmentation is written by hand so `Repository.insert` may leave out the tenant the

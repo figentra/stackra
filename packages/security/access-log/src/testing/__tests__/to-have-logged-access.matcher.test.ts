@@ -45,8 +45,9 @@ describe("toHaveLoggedAccess", () => {
     expect(fake).not.toHaveLoggedAccess({ target: "CustomerReads.view", actorId: "usr_other" });
   });
 
-  it("fails on a sink it cannot read", () => {
-    const result = toHaveLoggedAccess({}, { target: "CustomerReads.view" });
+  it("fails on a sink it cannot read", async () => {
+    // a matcher's result type allows a promise; this one answers at once
+    const result = await toHaveLoggedAccess({}, { target: "CustomerReads.view" });
     expect(result.pass).toBe(false);
     expect(result.message()).toContain("memory access-log sink");
   });

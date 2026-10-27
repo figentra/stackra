@@ -27,12 +27,12 @@ import { ACCESS_LOG_CONFIG_SCHEMA } from "#core/constants/access-log-config-sche
  * }
  */
 export class AccessLogOptions extends Schema {
-  /** Which sink driver runs; the names are the driver file prefixes (`postgres`, `memory`). */
-  sink: DriverName<AccessLogSink> = "postgres";
-
   /** Days a record is kept before `PurgeAccessLogAction` deletes it; at least 90. */
   @Int({ min: 90 })
   retentionDays = 400;
+
+  /** Which sink driver runs; the names are the driver file prefixes (`postgres`, `memory`). */
+  sink: DriverName<AccessLogSink> = "postgres";
 
   /**
    * The data classes whose read is refused when its access record cannot be written (fail closed); every other class

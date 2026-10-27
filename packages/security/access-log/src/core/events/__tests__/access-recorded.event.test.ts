@@ -14,7 +14,7 @@ import { AccessRecorded } from "#core/events/access-recorded.event";
 
 const FIELDS = {
   callId: "call_1",
-  actor: { kind: ActorKind.Service, id: "svc_support" },
+  actor: { kind: ActorKind.Service, id: "svc_support" as const },
   target: "Tenants.view",
   classification: DataClassification.Pseudonymous,
   subjects: ["usr_1"],

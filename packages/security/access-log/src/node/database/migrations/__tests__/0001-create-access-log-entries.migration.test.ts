@@ -22,7 +22,7 @@ describe("CreateAccessLogEntriesMigration", () => {
     macros: [BelongsToTenantMacro, DataClassificationMacro],
   });
   const sql = steps.flatMap((step) => step.sql).join("\n");
-  const inverse = steps.flatMap((step) => step.inverse).join("\n");
+  const inverse = steps.flatMap((step) => (step.inverse === false ? [] : step.inverse)).join("\n");
 
   it("is one transactional step that names no other member's migration", () => {
     expect(after).toEqual([]);

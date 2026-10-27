@@ -66,8 +66,16 @@ class FixedContextStorage extends ContextStorage {
   }
 }
 
-/** Records every log line. */
-class LoggerFake extends Fake.of(Logger) {}
+/** Records every log line; the methods are left to the spies (`declare` satisfies the abstract members). */
+class LoggerFake extends Fake.of(Logger) {
+  declare debug: Logger["debug"];
+
+  declare info: Logger["info"];
+
+  declare warn: Logger["warn"];
+
+  declare error: Logger["error"];
+}
 
 const wiring: Wiring = {
   member: "access_log",
