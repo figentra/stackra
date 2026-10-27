@@ -11,6 +11,7 @@
 import { base64urlEncode } from "#core/functions/base64url-encode.function";
 import { Signer } from "#core/ports/signer.port";
 import type { Signature } from "#core/types/signature.type";
+import type { SignerKeyPair } from "#core/types/signer-key-pair.type";
 import type { SignerPublicKey } from "#core/types/signer-public-key.type";
 
 /** The Web Crypto algorithm of ES256. */
@@ -26,14 +27,14 @@ const ES256 = { name: "ECDSA", namedCurve: "P-256" } as const;
 export class MemorySignerDriver extends Signer {
   private readonly keyId: string;
 
-  private readonly keys: CryptoKeyPair;
+  private readonly keys: SignerKeyPair;
 
   /**
    * @param keyId - the id written into each signature.
    * @param keys - an ECDSA P-256 key pair whose public key is extractable.
    * @throws RangeError when the id is empty.
    */
-  constructor(keyId: string, keys: CryptoKeyPair) {
+  constructor(keyId: string, keys: SignerKeyPair) {
     super();
     if (keyId === "") throw new RangeError("MemorySignerDriver needs a key id");
     this.keyId = keyId;

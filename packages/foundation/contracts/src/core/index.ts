@@ -57,6 +57,7 @@ export type { PublicId } from "#core/types/public-id.type";
 export type { ScopeRef } from "#core/types/scope-ref.type";
 export type { ServiceDefinition } from "#core/types/service-definition.type";
 export type { Signature } from "#core/types/signature.type";
+export type { SignerKeyPair } from "#core/types/signer-key-pair.type";
 export type { SignerPublicKey } from "#core/types/signer-public-key.type";
 export type { StackraManifest } from "#core/types/stackra-manifest.type";
 export type { TraceAttributes } from "#core/types/trace-attributes.type";
