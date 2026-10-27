@@ -12,13 +12,14 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0298 (decisions 1, 2 and 5); ADR 0305 (rule 20); ADR 0294 (decisions 16, 17 and 26).
  */
-import { ConsentLedger, ConsentStatus } from "@stackra/consent";
+import type { ConsentLedger } from "@stackra/consent";
+import { ConsentStatus } from "@stackra/consent";
 import { type AnyClass, kindOf, Service } from "@stackra/container";
 import type { Event } from "@stackra/events";
 import { schemaOf } from "@stackra/validation";
 
-import { AnalyticsConfig } from "#config/analytics.config";
-import { AnalyticsDriver } from "#contracts/ports/analytics-driver.port";
+import type { AnalyticsConfig } from "#config/analytics.config";
+import type { AnalyticsDriver } from "#contracts/ports/analytics-driver.port";
 import type { AnalyticsDelivery } from "#contracts/types/analytics-delivery.type";
 import { AnalyticsState } from "#core/enums/analytics-state.enum";
 

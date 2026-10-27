@@ -12,7 +12,7 @@
  */
 import { AppState } from "react-native";
 
-import { AnalyticsConfig } from "#config/analytics.config";
+import type { AnalyticsConfig } from "#config/analytics.config";
 import type { AnalyticsDelivery } from "#contracts/types/analytics-delivery.type";
 import { PosthogAnalyticsDriver as CorePosthogAnalyticsDriver } from "#core/drivers/posthog-analytics.driver";
 
@@ -32,20 +32,15 @@ const BUFFER_LIMIT = 1000;
 export class PosthogAnalyticsDriver extends CorePosthogAnalyticsDriver {
   private readonly buffer: AnalyticsDelivery[] = [];
 
-  /** @param config - holds the PostHog project key and host and the ingest origin. */
+  /**
+   * @param config - holds the PostHog project key and host and the ingest origin.
+   */
   constructor(config: AnalyticsConfig) {
     super(config);
     // The driver lives as long as the app, so the subscription is never removed.
     AppState.addEventListener("change", (state) => {
       if (state === "background") this.flush().catch(() => undefined);
     });
-  }
-
-  /** A random per-launch key; Hermes has no global Web Crypto, and this id needs no cryptographic strength. */
-  protected override anonymousId(): string {
-    return Array.from({ length: 4 }, () =>
-      Math.random().toString(16).slice(2, 10).padEnd(8, "0"),
-    ).join("-");
   }
 
   /**
@@ -56,6 +51,13 @@ export class PosthogAnalyticsDriver extends CorePosthogAnalyticsDriver {
   override send(deliveries: readonly AnalyticsDelivery[]): Promise<void> {
     this.buffer.push(...deliveries);
     return this.buffer.length >= FLUSH_AT ? this.flush() : Promise.resolve();
+  }
+
+  /** A random per-launch key; Hermes has no global Web Crypto, and this id needs no cryptographic strength. */
+  protected override anonymousId(): string {
+    return Array.from({ length: 4 }, () =>
+      Math.random().toString(16).slice(2, 10).padEnd(8, "0"),
+    ).join("-");
   }
 
   /** Sends everything buffered as one batch; on failure puts it back in front, within the buffer limit. */

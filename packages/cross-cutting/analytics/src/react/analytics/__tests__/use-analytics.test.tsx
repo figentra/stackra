@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 /**
  * Stackra file contract:
  * Purpose: unit tests of `useAnalytics`: it returns the `AnalyticsClient` the nearest container binds, the same
@@ -8,6 +7,7 @@
  * Runtime: browser (vitest, jsdom)
  * Governing contract: ADR 0022; ADR 0269; ADR 0298 (decision 5); ADR 0295 (decision 10).
  */
+// @vitest-environment jsdom
 import { ConsentCategory } from "@stackra/consent";
 import { Container } from "@stackra/container";
 import { ContainerProvider } from "@stackra/container/react";

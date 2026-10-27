@@ -13,7 +13,7 @@
  */
 import { Driver } from "@stackra/container";
 
-import { AnalyticsConfig } from "#config/analytics.config";
+import type { AnalyticsConfig } from "#config/analytics.config";
 import { AnalyticsDriver } from "#contracts/ports/analytics-driver.port";
 import type { AnalyticsDelivery } from "#contracts/types/analytics-delivery.type";
 
@@ -30,7 +30,9 @@ export class PosthogAnalyticsDriver extends Driver(AnalyticsDriver) {
 
   private distinctId: string | null = null;
 
-  /** @param config - holds the PostHog project key and host and the ingest origin. */
+  /**
+   * @param config - holds the PostHog project key and host and the ingest origin.
+   */
   constructor(config: AnalyticsConfig) {
     super();
     this.config = config;
