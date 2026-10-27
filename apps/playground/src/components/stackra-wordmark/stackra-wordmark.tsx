@@ -4,18 +4,22 @@
  *          light, steel on dark, the brand's artwork colours) and can draw it filled or as a hairline outline.
  * Boundary: the artwork only, always decorative here (`aria-hidden`): the caller names the page in text. Copied from
  *          apps/docs/src/assets/brand/logos/stackra-wordmark-light.svg (an app may not import another app); re-copy it
- *          when the wordmark changes. The wordmark never animates (brand rule).
+ *          when the wordmark changes; the beam-S is the brand's redraw (86ec08a, ADR 0463 decision 4). The wordmark
+ *          never animates (brand rule).
  * Runtime: browser
  * Governing contract: ADR 0302 (decision 5); ADR 0320 (glass and the showcase stage); the stackra brand kit.
  */
 import type { StackraWordmarkProps } from "./stackra-wordmark.props";
 
-/** The bar and stem of the beam-S, as rectangles: x, y, width, height. */
-const BEAM: readonly (readonly [number, number, number, number])[] = [
-  [26.05, 24.9, 7.1, 53.2],
-  [33.15, 24.9, 18.95, 7.1],
-  [7.1, 71, 18.95, 7.1],
-];
+/**
+ * The beam-S as redrawn by the brand (figentra/brand 86ec08a, `beam-s.mjs`): three beams joined by two posts. The path
+ * is the brand's, baseline at 0; `BEAM_AT` places it on this artwork's baseline instead of moving every point.
+ */
+const BEAM =
+  "M45 -53.2L10.65 -53.2C4.768 -53.2 0 -48.432 0 -42.55L0 -33.7C0 -27.818 4.768 -23.05 10.65 -23.05L34.35 -23.05C36.311 -23.05 37.9 -21.461 37.9 -19.5L37.9 -10.65C37.9 -8.689 36.311 -7.1 34.35 -7.1L0 -7.1L0 0L34.35 0C40.232 0 45 -4.768 45 -10.65L45 -19.5C45 -25.382 40.232 -30.15 34.35 -30.15L10.65 -30.15C8.689 -30.15 7.1 -31.739 7.1 -33.7L7.1 -42.55C7.1 -44.511 8.689 -46.1 10.65 -46.1L45 -46.1Z";
+
+/** Where the beam-S sits in this artwork: its left edge and baseline. */
+const BEAM_AT = "translate(7.1 78.1)";
 
 /** The letters `tackra`, one path. */
 const LETTERS =
@@ -34,9 +38,7 @@ export function StackraWordmark({ variant = "fill", className }: StackraWordmark
         };
   return (
     <svg viewBox="0 0 397.9 86.4" aria-hidden="true" focusable="false" className={className}>
-      {BEAM.map(([x, y, width, height]) => (
-        <rect key={`${x}-${y}`} x={x} y={y} width={width} height={height} {...paint} />
-      ))}
+      <path transform={BEAM_AT} d={BEAM} {...paint} />
       <path d={LETTERS} {...paint} />
     </svg>
   );

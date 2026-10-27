@@ -1,3 +1,5 @@
+<!-- Stackra file contract. Purpose: the @stackra/tokens package guide (the theme schema, the stackra theme and its CSS). Boundary: documentation of packages/design-system/tokens only. Runtime: documentation. Governing contract: ADR 0302, ADR 0340, ADR 0463. -->
+
 # @stackra/tokens
 
 Stackra Design System tokens: the theme schema, the default stackra theme and its HeroUI web and Uniwind native CSS.
@@ -155,9 +157,20 @@ retired it. The kit's token reports sit in `assets/data/stackra/` (`resolved`, `
 sources); the tests hold the theme to them: the resolved colours, every WCAG minimum in the contrast report, and an
 achromatic link and signal. Every hex is derived from its oklch value; the kit's own hex labels for the HeroUI base roles
 (surfaces, status colours, borders) did not match their oklch and are not used. The contrast report was computed from
-the oklch values, so it holds. The accent is the brand's **steel blue** (ADR 0319): `accent`, its hover, pressed and soft
-steps and `focus` take the wordmark's hue (248), with paper on it at 5.49:1 (light) and ink at 7.88:1 (dark); the link
-and the signal stay neutral. On the web the quiet button variants (secondary, tertiary, outline, ghost on hover) and the
+the oklch values, so it holds. The accent is the brand's **neutral steel** (ADR 0463, brand rules §31, superseding ADR 0319's
+steel blue): oklch hue 252 at chroma 0.03 or less, copied from the brand's `brands/stackra/tokens` and held to its hex
+values by the theme test; the link and the signal stay neutral.
+
+| Role                     | Light                             | Dark                              |
+| ------------------------ | --------------------------------- | --------------------------------- |
+| `accent`, `focus`        | `#647282` `oklch(0.546 0.03 252)` | `#A7B6C7` `oklch(0.77 0.03 252)`  |
+| `accent-hover`           | `#576574` `oklch(0.5 0.03 252)`   | `#97A6B7` `oklch(0.72 0.03 252)`  |
+| `accent-pressed`         | `#495766` `oklch(0.45 0.03 252)`  | `#8897A8` `oklch(0.67 0.03 252)`  |
+| `accent-soft`            | `#E6ECF3` `oklch(0.94 0.012 252)` | `#262C33` `oklch(0.29 0.015 252)` |
+| `accent-soft-foreground` | `#3C4958` `oklch(0.4 0.03 252)`   | `#CED9E5` `oklch(0.88 0.02 252)`  |
+
+Paper on the accent is 4.53:1 (light) and ink on the dark accent 9.42:1; `accent-soft-foreground` on `accent-soft` is
+7.72:1 and 9.85:1. Being near grey, the accent is no longer a hue-separation subject (ADR 0463 decision 2). On the web the quiet button variants (secondary, tertiary, outline, ghost on hover) and the
 close button sit on the control fill (the thick level, floored at the frosted floor, with no backdrop filter); the primary stays solid in the accent. The kit predates HeroUI's `segment` role, so the theme aliases it
 to white in light and graphite-700 in dark.
 

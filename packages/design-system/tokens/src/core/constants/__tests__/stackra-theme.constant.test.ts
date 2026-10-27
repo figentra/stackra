@@ -1,18 +1,20 @@
 /**
  * Stackra file contract:
- * Purpose: proves the stackra theme carries the approved brand kit, as amended by ADR 0319 and ADR 0340.
+ * Purpose: proves the stackra theme carries the approved brand kit, as amended by ADR 0319, ADR 0340 and ADR 0463.
  *          - Its colours equal a frozen in-code snapshot of the kit's resolved tokens (ADR 0340 decision 8), with the
- *            steel-blue accent family of ADR 0319, the neutral `amber-strong` name and decision 9's banner and chart
- *            tokens; a change to any colour changes the snapshot on purpose.
+ *            neutral steel accent family of ADR 0463 (brand rules §31), the neutral `amber-strong` name and decision
+ *            9's banner and chart tokens; a change to any colour changes the snapshot on purpose.
  *          - Every pair in `STACKRA_CONTRAST_PAIRS` (the kit's WCAG minimums, moved into code) holds in both schemes.
- *          - The link, the signal and the accent's label stay achromatic, and the amended steps are steel blue.
- *          - The banners stand apart from the status colours and the accent.
+ *          - The link, the signal and the accent's label stay achromatic, and the amended steps are neutral steel
+ *            (hue 252, chroma 0.03 or less) with the brand's hex values.
+ *          - The banners stand apart from the status colours; the accent, being near grey, carries no hue a status
+ *            could be read as (ADR 0463 decision 2).
  *          - Every hex is the sRGB of its oklch.
  *          - The fonts moved with the theme beside their OFL licences.
  * Boundary: in-memory theme, and the fonts in assets/public/fonts; contrast is computed from the oklch values through
  *          sRGB, as the kit's contrast report was.
  * Runtime: node
- * Governing contract: ADR 0302; ADR 0340 (decisions 8 and 9); ADR 0024 (fonts keep the SIL OFL); ADR 0022 (test
+ * Governing contract: ADR 0302; ADR 0340 (decisions 8 and 9); ADR 0463; ADR 0024 (fonts keep the SIL OFL); ADR 0022 (test
  *          placement).
  */
 import { existsSync, readFileSync } from "node:fs";
@@ -33,7 +35,7 @@ const tokenOf = (name: string): ColorToken | undefined =>
   (STACKRA_THEME.colors as Readonly<Record<string, ColorToken>>)[name] ??
   STACKRA_THEME.palette[name];
 
-/** The tokens ADR 0319 moves off the kit's neutral accent onto the brand's steel blue. */
+/** The tokens ADR 0319 moved off the kit's neutral accent, which ADR 0463 sets to the brand's neutral steel. */
 const STEEL_ACCENT = new Set([
   "accent",
   "accent-hover",
@@ -43,12 +45,12 @@ const STEEL_ACCENT = new Set([
   "focus",
 ]);
 
-/** The accent family members the kit's separation report holds achromatic, which ADR 0319 leaves so. */
+/** The accent family members the kit's separation report holds achromatic, which ADR 0319 and 0463 leave so. */
 const ACHROMATIC = ["accent-foreground", "link", "signal", "signal-foreground"];
 
 /**
  * Every colour of the stackra theme, light then dark, frozen (ADR 0340 decision 8): the kit's resolved tokens with the
- * amendments of ADR 0319 (the steel accent), the owner's light muted 0.49 (2026-10-23), HeroUI's warning hover fix and
+ * amendments of ADR 0463 (the neutral steel accent, superseding ADR 0319 decision 1), the owner's light muted 0.49 (2026-10-23), HeroUI's warning hover fix and
  * ADR 0340 (`amber-strong`, the banners and the charts).
  */
 const SNAPSHOT: Readonly<
@@ -68,7 +70,7 @@ const SNAPSHOT: Readonly<
     muted: ["oklch(0.49 0.01 250)", "oklch(0.72 0.008 250)"],
     default: ["oklch(0.935 0.004 110)", "oklch(0.285 0.007 250)"],
     "default-foreground": ["oklch(0.158 0.005 248)", "oklch(0.972 0.004 122)"],
-    accent: ["oklch(0.5 0.12 248)", "oklch(0.72 0.11 248)"],
+    accent: ["oklch(0.546 0.03 252)", "oklch(0.77 0.03 252)"],
     "accent-foreground": ["oklch(0.972 0.004 122)", "oklch(0.158 0.005 248)"],
     success: ["oklch(0.5 0.13 135)", "oklch(0.72 0.15 135)"],
     "success-foreground": ["oklch(1 0 0)", "oklch(0.158 0.005 248)"],
@@ -84,7 +86,7 @@ const SNAPSHOT: Readonly<
     "segment-foreground": ["oklch(0.158 0.005 248)", "oklch(0.972 0.004 122)"],
     border: ["oklch(0.885 0.005 110)", "oklch(0.35 0.008 250)"],
     separator: ["oklch(0.92 0.004 110)", "oklch(0.27 0.007 250)"],
-    focus: ["oklch(0.5 0.12 248)", "oklch(0.72 0.11 248)"],
+    focus: ["oklch(0.546 0.03 252)", "oklch(0.77 0.03 252)"],
     link: ["oklch(0.158 0.005 248)", "oklch(0.972 0.004 122)"],
     backdrop: ["oklch(0.158 0.005 248 / 0.4)", "oklch(0.08 0.004 248 / 0.6)"],
   },
@@ -104,10 +106,10 @@ const SNAPSHOT: Readonly<
     "graphite-700": ["oklch(0.38 0.009 248)", "oklch(0.38 0.009 248)"],
     "graphite-800": ["oklch(0.3 0.009 248)", "oklch(0.3 0.009 248)"],
     "graphite-900": ["oklch(0.265 0.008 248)", "oklch(0.265 0.008 248)"],
-    "accent-hover": ["oklch(0.45 0.12 248)", "oklch(0.67 0.11 248)"],
-    "accent-pressed": ["oklch(0.4 0.11 248)", "oklch(0.62 0.11 248)"],
-    "accent-soft": ["oklch(0.94 0.03 248)", "oklch(0.29 0.05 248)"],
-    "accent-soft-foreground": ["oklch(0.42 0.12 248)", "oklch(0.85 0.07 248)"],
+    "accent-hover": ["oklch(0.5 0.03 252)", "oklch(0.72 0.03 252)"],
+    "accent-pressed": ["oklch(0.45 0.03 252)", "oklch(0.67 0.03 252)"],
+    "accent-soft": ["oklch(0.94 0.012 252)", "oklch(0.29 0.015 252)"],
+    "accent-soft-foreground": ["oklch(0.4 0.03 252)", "oklch(0.88 0.02 252)"],
     signal: ["oklch(0.158 0.005 248)", "oklch(0.972 0.004 122)"],
     "signal-foreground": ["oklch(0.972 0.004 122)", "oklch(0.158 0.005 248)"],
     "amber-strong": ["oklch(0.47 0.095 75)", "oklch(0.83 0.15 82)"],
@@ -218,17 +220,19 @@ describe("STACKRA_THEME", () => {
   });
 
   // @covers sta-348:FR-005
-  it("draws the environment banners apart from the status colours and the accent (ADR 0340 decision 9)", () => {
+  // ADR 0463 decision 2: the neutral steel accent sits at the grey edge (chroma 0.03), where ADR 0340 decision 5 reads
+  // no hue, so it is no longer a separation subject; it carries no hue a status could be mistaken for.
+  it("draws the environment banners apart from the status colours (ADR 0340 decision 9)", () => {
     const banners = ["banner-sandbox", "banner-staging", "banner-acting-as"];
     for (const name of banners) {
       expect(tokenOf(name), name).toBeDefined();
       expect(tokenOf(`${name}-foreground`), name).toBeDefined();
     }
     expect(
-      checkSeparation(STACKRA_THEME, [
-        { subject: "accent", from: ["danger", "warning", "success", ...banners] },
-        ...banners.map((subject) => ({ subject, from: ["danger", "warning", "success"] })),
-      ]),
+      checkSeparation(
+        STACKRA_THEME,
+        banners.map((subject) => ({ subject, from: ["danger", "warning", "success"] })),
+      ),
     ).toEqual([]);
     expect(Object.keys(STACKRA_THEME.palette).filter((name) => name.startsWith("chart-"))).toEqual([
       "chart-1",
@@ -240,19 +244,37 @@ describe("STACKRA_THEME", () => {
   });
 
   // @covers sta-425:FR-001 sta-425:P-001
-  it("gives the accent the brand's steel blue, with paper or ink on it at 4.5:1 or more (ADR 0319)", () => {
+  it("gives the accent the brand's neutral steel, with paper or ink on it at 4.5:1 or more (ADR 0463)", () => {
     for (const name of STEEL_ACCENT) {
       const token = tokenOf(name);
       for (const mode of ["light", "dark"] as const) {
         const [, chroma, hue] =
           token?.[mode].match(/oklch\(([\d.]+) ([\d.]+) ([\d.]+)\)/)?.slice(1) ?? [];
-        expect(Number(hue), `${name} ${mode}`).toBe(248);
-        expect(Number(chroma), `${name} ${mode}`).toBeGreaterThanOrEqual(0.03);
+        expect(Number(hue), `${name} ${mode}`).toBe(252);
+        expect(Number(chroma), `${name} ${mode}`).toBeGreaterThan(0);
+        expect(Number(chroma), `${name} ${mode}`).toBeLessThanOrEqual(0.03);
       }
     }
+    // The brand's own hex values (figentra/brand brands/stackra/tokens/theme.json, rules §31), so the derived hex and
+    // the brand kit cannot drift apart.
+    expect(
+      Object.fromEntries(
+        [...STEEL_ACCENT].map((name) => [name, [tokenOf(name)?.hexLight, tokenOf(name)?.hexDark]]),
+      ),
+    ).toEqual({
+      accent: ["#647282", "#A7B6C7"],
+      "accent-hover": ["#576574", "#97A6B7"],
+      "accent-pressed": ["#495766", "#8897A8"],
+      "accent-soft": ["#E6ECF3", "#262C33"],
+      "accent-soft-foreground": ["#3C4958", "#CED9E5"],
+      focus: ["#647282", "#A7B6C7"],
+    });
     const { accent, "accent-foreground": on, background } = STACKRA_THEME.colors;
     expect(contrastRatio(on.hexLight, accent.hexLight)).toBeGreaterThanOrEqual(4.5);
     expect(contrastRatio(on.hexDark, accent.hexDark)).toBeGreaterThanOrEqual(4.5);
+    // The ratios the brand records (rules §31): paper on the accent 4.53:1, ink on the dark accent 9.42:1.
+    expect(contrastRatio(on.hexLight, accent.hexLight)).toBeCloseTo(4.53, 1);
+    expect(contrastRatio(on.hexDark, accent.hexDark)).toBeCloseTo(9.42, 1);
     // The focus ring stands 3:1 from the page in both modes (WCAG 2.2 SC 1.4.11).
     expect(
       contrastRatio(STACKRA_THEME.colors.focus.hexLight, background.hexLight),

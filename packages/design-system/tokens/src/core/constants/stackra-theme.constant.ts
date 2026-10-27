@@ -6,14 +6,14 @@
  *          to `STACKRA_CONTRAST_PAIRS` (ADR 0340 decision 8). One documented deviation: light `muted` is 0.49, not the
  *          kit's 0.5 (owner decision 2026-10-23). Each hex is derived from its oklch value (`oklchToHex`), never
  *          typed, so the two cannot disagree.
- * Boundary: data only. The accent is the brand's steel blue (ADR 0319): the accent, its hover, pressed and soft
- *          steps and the focus ring take the wordmark's hue (248) at a chroma a control can carry, with paper or ink on
- *          it at 4.5:1 or more; the link and the signal stay neutral. Graphite carries the neutral states and,
- *          as an alias, the dark `segment` role. The environment banners and the chart set are ADR 0340 decision 9's
+ * Boundary: data only. The accent is the brand's neutral steel (ADR 0463, superseding ADR 0319 decision 1; brand
+ *          rules §31): the accent, its hover, pressed and soft steps and the focus ring sit at oklch hue 252 and chroma
+ *          0.03 or less, with paper or ink on the accent at 4.5:1 or more; the link and the signal stay neutral.
+ *          Graphite carries the neutral states and, as an alias, the dark `segment` role. The environment banners and the chart set are ADR 0340 decision 9's
  *          tokens. The theme names no product or family (decision 8): the amber bar a mark draws is `amber-strong`.
  * Runtime: isomorphic
  * Governing contract: ADR 0302 (Stackra Design System); ADR 0024 (the brand assets stay all rights reserved); ADR 0340
- *          (decisions 8 and 9).
+ *          (decisions 8 and 9); ADR 0463 (the neutral steel accent; ADR 0319 decisions 2 and 3 stand).
  */
 import type { ColorToken } from "#contracts/types/color-token.type";
 import { defineTheme } from "#core/functions/define-theme.function";
@@ -35,10 +35,11 @@ const FOREGROUND = color("oklch(0.158 0.005 248)", "oklch(0.972 0.004 122)");
 const INVERSE = color("oklch(0.972 0.004 122)", "oklch(0.158 0.005 248)");
 const MUTED = color("oklch(0.49 0.01 250)", "oklch(0.72 0.008 250)");
 const ON_STATUS = color("oklch(1 0 0)", "oklch(0.158 0.005 248)");
-// ADR 0319: the brand accent, steel blue on the wordmark's hue. Paper on it is 5.49:1 (light), ink on it 7.88:1 (dark).
-const ACCENT = color("oklch(0.5 0.12 248)", "oklch(0.72 0.11 248)");
+// ADR 0463 (brand rules §31): neutral steel, #647282 light and #A7B6C7 dark. Paper on it is 4.53:1 (light), ink on it
+// 9.42:1 (dark).
+const ACCENT = color("oklch(0.546 0.03 252)", "oklch(0.77 0.03 252)");
 
-/** The stackra theme: a steel-blue accent, Geist and IBM Plex Sans Arabic, a 4px spacing step and a 0.25rem radius. */
+/** The stackra theme: a neutral steel accent, Geist and IBM Plex Sans Arabic, a 4px spacing step and a 0.25rem radius. */
 export const STACKRA_THEME = defineTheme({
   name: "stackra",
   colors: {
@@ -93,10 +94,10 @@ export const STACKRA_THEME = defineTheme({
     "graphite-700": color(GRAPHITE_700, GRAPHITE_700),
     "graphite-800": color("oklch(0.3 0.009 248)", "oklch(0.3 0.009 248)"),
     "graphite-900": color("oklch(0.265 0.008 248)", "oklch(0.265 0.008 248)"),
-    "accent-hover": color("oklch(0.45 0.12 248)", "oklch(0.67 0.11 248)"),
-    "accent-pressed": color("oklch(0.4 0.11 248)", "oklch(0.62 0.11 248)"),
-    "accent-soft": color("oklch(0.94 0.03 248)", "oklch(0.29 0.05 248)"),
-    "accent-soft-foreground": color("oklch(0.42 0.12 248)", "oklch(0.85 0.07 248)"),
+    "accent-hover": color("oklch(0.5 0.03 252)", "oklch(0.72 0.03 252)"),
+    "accent-pressed": color("oklch(0.45 0.03 252)", "oklch(0.67 0.03 252)"),
+    "accent-soft": color("oklch(0.94 0.012 252)", "oklch(0.29 0.015 252)"),
+    "accent-soft-foreground": color("oklch(0.4 0.03 252)", "oklch(0.88 0.02 252)"),
     signal: FOREGROUND,
     "signal-foreground": INVERSE,
     // ADR 0340 decision 8: amber that stands 3:1 off the page in each scheme, under a neutral name (was `cursor`;

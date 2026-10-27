@@ -5,11 +5,15 @@
   "source": "../guidelines/index.html",
   "extends": "@figentra/figentra-brand",
   "tier": "light-sub-brand",
+  "tagline": {
+    "en": "One backend, every surface.",
+    "ar": "أساس واحد، لكل واجهة."
+  },
   "decided": {
     "wordmark": "Beam-S (R2 wide arms): stackra in Geist Mono 500, -0.04em, the s drawn as a beam, steel, static; a real s below 24px. S3 Path was superseded 2026-09-26. Brand System, Lockups.",
     "tile": "O1 st tile for small sizes: beam-S and t from 32px, a real s at 16px; no stack icon.",
-    "colour": "Steel (steel on dark, steel-deep on light) colours the wordmark and the tile letters; since ADR 0319 its hue, at a control's chroma, is also the UI accent.",
-    "accent": "Amended 2026-10-24 (owner), ADR 0319: the accent is steel blue on the wordmark's hue (248): accent oklch(0.5 0.12 248) light and oklch(0.72 0.11 248) dark, with its hover, pressed and soft steps and focus; paper or ink on it at 4.5:1 or more. Link and signal stay neutral. Was: no accent colour, the accent family on ink, paper and a graphite ramp (accepted 2026-09-29), under which a light sub-brand could point the accent family at achromatic neutrals (oklch chroma < 0.02).",
+    "colour": "Steel (steel on dark, steel-deep on light) colours the wordmark and the tile letters; since ADR 0463 (brand rules §31) a neutral steel at hue 252 is also the UI accent.",
+    "accent": "Amended 2026-10-28 (owner), brand rules §31, ADR 0463 (supersedes ADR 0319 decision 1): the accent is neutral steel, oklch hue 252 at chroma 0.03: accent #647282 oklch(0.546 0.03 252) light and #A7B6C7 oklch(0.77 0.03 252) dark; hover #576574 / #97A6B7; pressed #495766 / #8897A8; soft #E6ECF3 / #262C33; soft-foreground #3C4958 / #CED9E5; focus is the accent. Paper on the accent 4.53:1, ink on the dark accent 9.42:1. Link and signal stay neutral; Stackra owns no hue (amber stays Figentra's). Was, 2026-10-24 (owner), ADR 0319: the accent is steel blue on the wordmark's hue (248): accent oklch(0.5 0.12 248) light and oklch(0.72 0.11 248) dark, with its hover, pressed and soft steps and focus; paper or ink on it at 4.5:1 or more. Link and signal stay neutral. Was: no accent colour, the accent family on ink, paper and a graphite ramp (accepted 2026-09-29), under which a light sub-brand could point the accent family at achromatic neutrals (oklch chroma < 0.02).",
     "motion": "Decided 2026-09-29 (user): keep the Brand System. The wordmark is static; the logo animation fades the frame and only the figentra_ bar in the signature blinks.",
     "endorsement": "by figentra_ — the figentra_ bar (cursor) appears in the signature only; the Latin name leads in both locales.",
     "cursor": "Inherited unchanged (amber); never used as a cursor on Stackra surfaces, never after the stackra name.",

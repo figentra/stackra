@@ -1,3 +1,5 @@
+<!-- Stackra file contract. Purpose: agent rules for @stackra/tokens. Boundary: packages/design-system/tokens only. Runtime: documentation. Governing contract: ADR 0294, ADR 0302, ADR 0463. -->
+
 # AGENTS — @stackra/tokens
 
 Stackra Design System tokens: the theme schema, the default stackra theme and its HeroUI web and Uniwind native CSS. Member at `packages/design-system/tokens` (`tier:lib`), in the programming model v3 shape
@@ -37,6 +39,9 @@ extending the kind's base class. The group table is the docs page `standards/str
 - A theme value changes in `src/core/constants/stackra-theme.constant.ts` only, then
   `pnpm --filter @stackra/tokens exec vitest run -u` rewrites `assets/public/themes/stackra/{web,native}.css`; never
   edit those files by hand. The tests hold the theme to the brand kit reports in `assets/data/stackra/`.
+- The accent family (`accent`, hover, pressed, soft, soft-foreground, `focus`) is the brand's: figentra/brand
+  `brands/stackra/tokens/{theme.json,heroui/web.css}` (rules §31, ADR 0463). Copy its oklch values; the theme test
+  holds the derived hex to the brand's hex, so a recomputed or retuned value fails. A new brand pick means a new ADR.
 - Colour roles are HeroUI's variable names, verified against `@heroui/styles` and `heroui-native`; add one only when
   HeroUI adds it, in `src/contracts/enums/color-role.enum.ts`, and give every theme a value for it.
 - `.` and `./contracts` export stand-in barrels (`src/core/index.ts`, `src/contracts/index.ts`); a new public file is
