@@ -14,7 +14,8 @@ The `stackra` binary (ADR 0083, ADR 0282 decision 3). It runs gen, runs each mem
 writes, lists what a committed manifest locks, and wires the local developer MCP. It folds the old `console` CLI
 framework (ADR 0127, 2026-10-24 note): a command is data plus one `run` function, parsed with `node:util`.
 
-**Tier:** `tier:lib` (`packages/developer/cli`). No code entry: the package ships the `bin` only. Depends on
+**Tier:** `tier:lib` (`packages/developer/cli`). No code entry: the package ships the `bin` only, and its `exports` map
+holds `./package.json` alone, so `import "@stackra/cli"` is refused by Node and by bundlers. Depends on
 `@stackra/gen`, `@stackra/mcp`, `@stackra/repo-checks`, `@stackra/skills` (its `./contracts`), `@stackra/contracts`
 and `yaml`.
 

@@ -11,7 +11,8 @@ Governing contract: ADR 0083; ADR 0282; ADR 0294; ADR 0260 (a cycle between serv
 -->
 
 The `stackra` binary (ADR 0083, 0282). Member at `packages/developer/cli` (`tier:lib`), in the programming model v3.1
-shape (ADR 0294, 0305). No code entry: the package ships `bin.stackra` (`src/node/stackra.ts`) only.
+shape (ADR 0294, 0305). No code entry: the package ships `bin.stackra` (`src/node/stackra.ts`) only; `exports` holds
+`./package.json` alone, so importing the package is refused (attw and the B4 smoke check that, ADR 0177 PK4).
 
 ## Where code goes
 

@@ -43,6 +43,9 @@
       "./src/node/*/index.ts"
     ]
   },
+  "exports": {
+    "./package.json": "./package.json"
+  },
   "publishConfig": {
     "access": "public",
     "provenance": true,
