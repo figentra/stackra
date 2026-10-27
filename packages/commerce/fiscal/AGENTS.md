@@ -34,7 +34,7 @@ programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./te
 - `seal` must work offline. Submission is separate and runs in sequence order; a transport failure is
   `FiscalAuthorityUnavailableError` and leaves the record sealed.
 - A till registration is a `FiscalOnboarding` driver keyed like its `FiscalDriver`: it lists its `inputs`, stores
-  issued values only through `TillCredentials` and returns only `OnboardingStep`. `ZatcaOnboarding` lives in
+  issued values only through `TillCredentials` and returns only `OnboardingStep`. `ZatcaOnboardingDriver` lives in
   `drivers/zatca-onboarding.driver.ts` and keeps its published name.
 - `MemoryFiscalDriver` (key `memory`) is for tests and development only: it signs nothing and reaches no authority,
   so no market pack names it. It reads no options.

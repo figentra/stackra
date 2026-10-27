@@ -3,8 +3,9 @@
  * Purpose: `ClientConnectionHostDriver`, the `ConnectionHost` over the integrations service's generated client: `list`
  *          calls resolve, `get` load, `store` store (with the credentials' expiry), `disconnect` disconnect and
  *          `accessToken` token.
- * Boundary: the refs are configuration (`ConnectionHostCalls`): the host subclasses this driver and passes the refs
- *           gen wrote into `#stackra/clients/<service>`, so no wire key or route is named here. Refusals and transport
+ * Boundary: the refs are configuration (`ConnectionHostCalls`): the host subclasses this abstract driver and declares
+ *           `calls` with the refs gen wrote into `#stackra/clients/<service>`, so no wire key or route is named here.
+ *           The constructor takes the transport only (a class token, ADR 0294 rule 17). Refusals and transport
  *           failures pass through unchanged (a `ClientError`); a load with no record answers null. Refresh tokens and
  *           client secrets never cross: the service answers records and access tokens only (ADR 0308 rule 20).
  * Runtime: isomorphic
@@ -27,28 +28,28 @@ import type { OAuthTokens } from "#core/types/oauth-tokens.type";
  * @example
  * // the host's driver, over the refs gen wrote
  * export class OsConnectionHostDriver extends ClientConnectionHostDriver {
- *   constructor(transport: ClientTransport) {
- *     super(transport, {
- *       resolve: ResolveConnectionsQuery,
- *       load: LoadConnectionQuery,
- *       store: StoreConnectionAction,
- *       disconnect: DisconnectConnectionAction,
- *       token: IssueAccessTokenAction,
- *     });
- *   }
+ *   protected override readonly calls = {
+ *     resolve: ResolveConnectionsQuery,
+ *     load: LoadConnectionQuery,
+ *     store: StoreConnectionAction,
+ *     disconnect: DisconnectConnectionAction,
+ *     token: IssueAccessTokenAction,
+ *   };
  * }
  */
-export class ClientConnectionHostDriver extends Driver(ConnectionHost) {
+export abstract class ClientConnectionHostDriver extends Driver(ConnectionHost) {
+  /** The service's generated refs, declared by the host's subclass. */
+  protected abstract readonly calls: ConnectionHostCalls;
+
   /** The integrations service's client. */
   private readonly client: ConnectionHostClient;
 
   /**
    * @param transport - the transport topology picked for calls to the integrations service.
-   * @param calls - the service's generated refs.
    */
-  constructor(transport: ClientTransport, calls: ConnectionHostCalls) {
+  constructor(transport: ClientTransport) {
     super();
-    this.client = new ConnectionHostClient(transport, calls);
+    this.client = new ConnectionHostClient(transport);
   }
 
   /** The connections of integration `key` that the scope or user in `owners` holds. */
@@ -56,7 +57,7 @@ export class ClientConnectionHostDriver extends Driver(ConnectionHost) {
     key: string,
     owners: { readonly scope?: ScopeRef; readonly userId?: PublicId<"usr"> },
   ): Promise<readonly ConnectionRecord[]> {
-    const answer = (await this.client.resolve({
+    const answer = (await this.client.call(this.calls.resolve, {
       integrationKey: key,
       ...(owners.scope === undefined ? {} : { scope: owners.scope }),
       ...(owners.userId === undefined ? {} : { userId: owners.userId }),
@@ -66,7 +67,7 @@ export class ClientConnectionHostDriver extends Driver(ConnectionHost) {
 
   /** The connection `id` of integration `key`, or `null` when there is none. */
   async get(key: string, id: string): Promise<ConnectionRecord | null> {
-    const answer = (await this.client.load({ integrationKey: key, id })) as {
+    const answer = (await this.client.call(this.calls.load, { integrationKey: key, id })) as {
       readonly record?: ConnectionRecord;
     };
     return answer.record ?? null;
@@ -79,7 +80,7 @@ export class ClientConnectionHostDriver extends Driver(ConnectionHost) {
     tokens: OAuthTokens | undefined,
     credentialsExpireAt?: Date,
   ): Promise<void> {
-    await this.client.store({
+    await this.client.call(this.calls.store, {
       integrationKey: key,
       record,
       ...(tokens === undefined ? {} : { tokens }),
@@ -89,12 +90,12 @@ export class ClientConnectionHostDriver extends Driver(ConnectionHost) {
 
   /** Disconnects the connection `id` of integration `key`. */
   async disconnect(key: string, id: string): Promise<void> {
-    await this.client.disconnect({ id, integrationKey: key });
+    await this.client.call(this.calls.disconnect, { id, integrationKey: key });
   }
 
   /** A current access token of the connection `id`, refreshed by the service when due. */
   async accessToken(key: string, id: string): Promise<string> {
-    const answer = (await this.client.token({ integrationKey: key, id })) as {
+    const answer = (await this.client.call(this.calls.token, { integrationKey: key, id })) as {
       readonly accessToken: string;
     };
     return answer.accessToken;

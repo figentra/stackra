@@ -18,22 +18,23 @@ type Answer = { mergedInto: string | null; erasedAt: Date | null } | Error;
 
 /** A host driver over a stub client; `asked` lists the ids it read. */
 class HostDriver extends PartiesLoyaltyMembersDriver {
-  readonly asked: string[];
+  readonly asked: string[] = [];
+
+  protected override readonly parties: PartiesLoyaltyMembersDriver["parties"];
 
   constructor(answer: Answer) {
-    const asked: string[] = [];
-    super({
+    super();
+    this.parties = {
       person: {
         get: {
           call: async ({ id }) => {
-            asked.push(id);
+            this.asked.push(id);
             if (answer instanceof Error) throw answer;
             return answer;
           },
         },
       },
-    });
-    this.asked = asked;
+    };
   }
 }
 

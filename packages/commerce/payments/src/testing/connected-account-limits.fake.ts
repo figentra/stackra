@@ -22,15 +22,14 @@ export class ConnectedAccountLimitsFake extends ConnectedAccountLimits {
   readonly asked: string[] = [];
 
   /** Caps by connection id. */
-  private readonly caps: Readonly<Record<string, Money>>;
+  private caps: Readonly<Record<string, Money>> = {};
 
   /** Connections whose payouts are held. */
-  private readonly held: ReadonlySet<string>;
+  private held: ReadonlySet<string> = new Set();
 
-  private constructor(caps: Readonly<Record<string, Money>>, held: readonly string[]) {
+  // A constructor takes class tokens only (ADR 0294 rule 17), so `with` fills the fields.
+  private constructor() {
     super();
-    this.caps = caps;
-    this.held = new Set(held);
   }
 
   /** A fake with `options.caps` and `options.held`; none of either when left out. */
@@ -40,7 +39,10 @@ export class ConnectedAccountLimitsFake extends ConnectedAccountLimits {
       readonly held?: readonly string[];
     } = {},
   ): ConnectedAccountLimitsFake {
-    return new ConnectedAccountLimitsFake(options.caps ?? {}, options.held ?? []);
+    const fake = new ConnectedAccountLimitsFake();
+    fake.caps = options.caps ?? {};
+    fake.held = new Set(options.held ?? []);
+    return fake;
   }
 
   /** The cap set for `connectionId`, or null; records the question. */

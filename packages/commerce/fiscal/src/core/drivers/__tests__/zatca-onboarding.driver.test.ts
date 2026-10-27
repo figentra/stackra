@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `ZatcaOnboarding`: the compliance CSID from a CSR and OTP, the compliance check of a sample
+ * Purpose: unit tests of `ZatcaOnboardingDriver`: the compliance CSID from a CSR and OTP, the compliance check of a sample
  *          record, the production CSID exchange, the stored credential never returned, the refusals, and the same
  *          steps through the `FiscalOnboarding` port.
  * Boundary: test only; the transport and credential store are fakes and the options are samples.
@@ -17,7 +17,7 @@ import type { TransportRequest } from "#contracts/types/transport-request.type";
 import { FiscalCredentialMissingError } from "#core/errors/fiscal-credential-missing.error";
 import { FiscalOnboardingInputMissingError } from "#core/errors/fiscal-onboarding-input-missing.error";
 import { FiscalOnboardingRefusedError } from "#core/errors/fiscal-onboarding-refused.error";
-import { ZatcaOnboarding } from "#core/drivers/zatca-onboarding.driver";
+import { ZatcaOnboardingDriver } from "#core/drivers/zatca-onboarding.driver";
 import { fiscalRecord } from "#testing/fiscal-record.fixture";
 import { FiscalTransportFake } from "#testing/fiscal-transport.fake";
 import { TillCredentialsFake } from "#testing/till-credentials.fake";
@@ -40,11 +40,11 @@ const issued = (requestID: number) => ({
   body: JSON.stringify({ requestID, binarySecurityToken: "TOKEN", secret: "SECRET" }),
 });
 
-describe("ZatcaOnboarding", () => {
+describe("ZatcaOnboardingDriver", () => {
   it("stores a compliance CSID and returns only its public facts", async () => {
     const transport = FiscalTransportFake.answering(issued(11));
     const credentials = new TillCredentialsFake();
-    const result = await new ZatcaOnboarding(transport, credentials).compliance(
+    const result = await new ZatcaOnboardingDriver(transport, credentials).compliance(
       "till_1",
       "CSR",
       "123456",
@@ -67,7 +67,7 @@ describe("ZatcaOnboarding", () => {
 
   it("checks a sample record against the compliance endpoint", async () => {
     const transport = FiscalTransportFake.answering({ status: 200, headers: {}, body: "{}" });
-    const outcome = await new ZatcaOnboarding(transport, new TillCredentialsFake()).check(
+    const outcome = await new ZatcaOnboardingDriver(transport, new TillCredentialsFake()).check(
       "till_1",
       fiscalRecord(),
       OPTIONS,
@@ -83,7 +83,7 @@ describe("ZatcaOnboarding", () => {
   it("exchanges the compliance CSID for a production CSID", async () => {
     const transport = FiscalTransportFake.answering(issued(11), issued(22));
     const credentials = new TillCredentialsFake();
-    const onboarding = new ZatcaOnboarding(transport, credentials);
+    const onboarding = new ZatcaOnboardingDriver(transport, credentials);
     await onboarding.compliance("till_1", "CSR", "123456", OPTIONS);
     expect(await onboarding.production("till_1", OPTIONS)).toEqual({
       unitId: "till_1",
@@ -100,10 +100,10 @@ describe("ZatcaOnboarding", () => {
 
   it("refuses a production request without a compliance CSID", async () => {
     await expect(
-      new ZatcaOnboarding(FiscalTransportFake.answering(), new TillCredentialsFake()).production(
-        "till_1",
-        OPTIONS,
-      ),
+      new ZatcaOnboardingDriver(
+        FiscalTransportFake.answering(),
+        new TillCredentialsFake(),
+      ).production("till_1", OPTIONS),
     ).rejects.toSatisfy((error: unknown) => isRefusal(error, FiscalCredentialMissingError));
   });
 
@@ -115,7 +115,12 @@ describe("ZatcaOnboarding", () => {
     });
     const credentials = new TillCredentialsFake();
     await expect(
-      new ZatcaOnboarding(transport, credentials).compliance("till_1", "CSR", "000000", OPTIONS),
+      new ZatcaOnboardingDriver(transport, credentials).compliance(
+        "till_1",
+        "CSR",
+        "000000",
+        OPTIONS,
+      ),
     ).rejects.toSatisfy(
       (error: unknown) =>
         isRefusal(error, FiscalOnboardingRefusedError) && error.details.status === 400,
@@ -125,7 +130,10 @@ describe("ZatcaOnboarding", () => {
 
   it("runs both steps through the FiscalOnboarding port", async () => {
     const transport = FiscalTransportFake.answering(issued(11), issued(22));
-    const onboarding: FiscalOnboarding = new ZatcaOnboarding(transport, new TillCredentialsFake());
+    const onboarding: FiscalOnboarding = new ZatcaOnboardingDriver(
+      transport,
+      new TillCredentialsFake(),
+    );
     expect([onboarding.key, onboarding.inputs]).toEqual(["zatca", ["otp", "csr"]]);
     expect(
       await onboarding.register(
@@ -144,7 +152,7 @@ describe("ZatcaOnboarding", () => {
   it("refuses register without the CSR and sends nothing", async () => {
     const transport = FiscalTransportFake.answering();
     await expect(
-      new ZatcaOnboarding(transport, new TillCredentialsFake()).register(
+      new ZatcaOnboardingDriver(transport, new TillCredentialsFake()).register(
         "till_1",
         { [OnboardingInput.Otp]: "123456" },
         OPTIONS,

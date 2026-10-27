@@ -17,7 +17,7 @@ const FORMAT = { encoding: AudioEncoding.Linear16, sampleRate: 16_000, channels:
 describe("MemoryAudioDeviceDriver", () => {
   it("replays its chunks and keeps what it plays", async () => {
     const chunks = [new Uint8Array([1, 2]), new Uint8Array([3])];
-    const device = new MemoryAudioDeviceDriver(chunks);
+    const device = MemoryAudioDeviceDriver.with(chunks);
     expect(device).toBeInstanceOf(AudioDevice);
     const heard: Uint8Array[] = [];
     for await (const chunk of device.capture(FORMAT)) heard.push(chunk);
@@ -30,7 +30,7 @@ describe("MemoryAudioDeviceDriver", () => {
     const controller = new AbortController();
     controller.abort();
     const heard: Uint8Array[] = [];
-    for await (const chunk of new MemoryAudioDeviceDriver([new Uint8Array([1])]).capture(
+    for await (const chunk of MemoryAudioDeviceDriver.with([new Uint8Array([1])]).capture(
       FORMAT,
       controller.signal,
     ))

@@ -16,7 +16,9 @@ import type { NotifierTarget } from "#node/types/notifier-target.type";
  * The default target.
  *
  * @example
- * new NotificationsNotifierDriver(transport, i18n, assets, MESSAGES_NOTIFIER_TARGET);
+ * class MessagesNotifierDriver extends NotificationsNotifierDriver {
+ *   protected override readonly target = MESSAGES_NOTIFIER_TARGET;
+ * }
  */
 export const MESSAGES_NOTIFIER_TARGET: NotifierTarget<typeof SEND_MESSAGE_ACTION> = Object.freeze({
   action: SEND_MESSAGE_ACTION,

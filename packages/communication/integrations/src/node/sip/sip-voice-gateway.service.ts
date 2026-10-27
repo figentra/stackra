@@ -103,16 +103,22 @@ interface Dialog {
  * Calls over a SIP trunk.
  *
  * @example
- * const sip = new SipVoiceGateway(trunkOptions, secrets, host);
+ * export class ShopSipVoiceGateway extends SipVoiceGateway {
+ *   protected override readonly options = trunkOptions;
+ *   protected override readonly host = callHost;
+ * }
+ * const sip = new ShopSipVoiceGateway(secrets);
  * await sip.start(); // listen for incoming calls, register
  * const placed = await sip.call(outbound);
  */
-export class SipVoiceGateway extends Service implements VoiceGateway {
-  private readonly options: SipTrunkOptions;
+export abstract class SipVoiceGateway extends Service implements VoiceGateway {
+  /** The trunk's configuration, declared by the host's subclass. */
+  protected abstract readonly options: SipTrunkOptions;
+
+  /** Speech, meter, sessions and the call webhook post, declared by the host's subclass. */
+  protected abstract readonly host: SipCallHost;
 
   private readonly secrets: SecretStore;
-
-  private readonly host: SipCallHost;
 
   private readonly dialogs = new Map<string, Dialog>();
 
@@ -129,15 +135,11 @@ export class SipVoiceGateway extends Service implements VoiceGateway {
   private refresh: ReturnType<typeof setTimeout> | undefined;
 
   /**
-   * @param options - the trunk's configuration.
    * @param secrets - where the digest credentials are read by name.
-   * @param host - speech, meter, sessions and the call webhook post.
    */
-  constructor(options: SipTrunkOptions, secrets: SecretStore, host: SipCallHost) {
+  constructor(secrets: SecretStore) {
     super();
-    this.options = options;
     this.secrets = secrets;
-    this.host = host;
   }
 
   /**
@@ -676,7 +678,7 @@ export class SipVoiceGateway extends Service implements VoiceGateway {
   /** Joins the call's RTP leg to the far end. */
   private connect(dialog: Dialog, far: UdpPeer, encoding: AudioEncoding): void {
     if (dialog.rtp === undefined) return;
-    dialog.device = new RtpAudioDeviceDriver(dialog.rtp, far, encoding);
+    dialog.device = RtpAudioDeviceDriver.over(dialog.rtp, far, encoding);
   }
 
   /** Takes the dialog from a 2xx to our INVITE and ACKs it. */

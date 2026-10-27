@@ -11,7 +11,8 @@
  *                     (STA-1360).
  */
 import { IntegrationEvent } from "@stackra/events";
-import { registerSchemas } from "@stackra/validation";
+import { Field, registerSchemas } from "@stackra/validation";
+import { z } from "zod";
 
 import type { NotificationChannel } from "#contracts/enums/notification-channel.enum";
 import type { NotificationDeliveryEvent } from "#contracts/types/notification-delivery-event.type";
@@ -29,6 +30,11 @@ export class DeliveryRecorded
   extends IntegrationEvent({ name: "delivery.recorded" })
   implements NotificationDeliveryEvent
 {
+  /** Its status after this event. */
+  // reason: the status codes are the `NotificationDeliveryEvent` literal union, which ships no enum and no `X$`
+  @Field(z.enum(["sent", "delivered", "failed", "revoked"]))
+  status!: NotificationDeliveryEvent["status"];
+
   /** The delivery's idempotency key. */
   deliveryId!: string;
 
@@ -37,9 +43,6 @@ export class DeliveryRecorded
 
   /** The provider code that carried it. */
   provider!: string;
-
-  /** Its status after this event. */
-  status!: NotificationDeliveryEvent["status"];
 
   /** When it happened, ISO 8601. */
   at!: string;

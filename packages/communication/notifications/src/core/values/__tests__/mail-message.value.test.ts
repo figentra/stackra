@@ -11,7 +11,7 @@ import { describe, expect, it } from "@stackra/testing";
 
 import { MailMessage } from "#core/values/mail-message.value";
 
-const I18n = keys({ orders: { order_receipt: { mail: ["subject"] } } });
+const I18n = keys({ notifications: { templates: { content_free: ["subject"] } } });
 
 describe("MailMessage", () => {
   it("starts without a subject", () => {
@@ -23,11 +23,11 @@ describe("MailMessage", () => {
   it("returns a new frozen message from subject", () => {
     const empty = new MailMessage();
     const values = { id: "ord_1" };
-    const mail = empty.subject(I18n.orders.order_receipt.mail.subject, values);
+    const mail = empty.subject(I18n.notifications.templates.content_free.subject, values);
     values.id = "changed";
     expect(mail).not.toBe(empty);
     expect(empty.subjectKey).toBeNull();
-    expect(mail.subjectKey).toBe("orders::order_receipt.mail.subject");
+    expect(mail.subjectKey).toBe("notifications::templates.content_free.subject");
     expect(mail.subjectValues).toEqual({ id: "ord_1" });
     expect(Object.isFrozen(mail)).toBe(true);
     expect(Object.isFrozen(mail.subjectValues)).toBe(true);

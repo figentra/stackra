@@ -4,7 +4,8 @@
  *          ADR 0356 (the tenant's own Connection, else the Market's platform default), sent once per idempotency key.
  * Boundary: the provider choice is `ProviderResolver`'s, over the host's connection class per provider code
  *           (`drivers`: the vendor Connections live in the OS integrations service, R3-8, so the host subclasses this
- *           driver and passes its map); the send log is `SendLog` (keys and ids only), because these
+ *           abstract driver and declares its map as `drivers`; the constructor takes class tokens only, ADR 0294
+ *           rule 17); the send log is `SendLog` (keys and ids only), because these
  *           providers have no idempotency header.
  *           Each outcome (sent, or failed on a provider refusal) is recorded as `DeliveryRecorded` through the
  *           optional `EventOutbox` (stackra-207); a repeated key records nothing again.
@@ -32,15 +33,15 @@ import { recordDelivery } from "#core/functions/record-delivery.function";
  * @example
  * const id = await transport.send(sms, delivery.commandKey);
  */
-export class ConnectionSmsTransportDriver extends Driver(SmsTransport) {
+export abstract class ConnectionSmsTransportDriver extends Driver(SmsTransport) {
+  /** The host's connection class per provider code (each key its Integration's `provider`), declared by its subclass. */
+  protected abstract readonly drivers: ProviderDrivers<SmsSender>;
+
   /** Picks the provider. */
   private readonly resolver: ProviderResolver;
 
   /** Remembers sent keys. */
   private readonly log: SendLog;
-
-  /** The host's connection class per provider code. */
-  private readonly drivers: ProviderDrivers<SmsSender>;
 
   /** Where delivery outcomes are recorded; none records nothing. */
   private readonly outbox: EventOutbox | undefined;
@@ -51,21 +52,13 @@ export class ConnectionSmsTransportDriver extends Driver(SmsTransport) {
   /**
    * @param resolver - the integrations provider resolver.
    * @param log - the send log.
-   * @param drivers - the host's connection class per provider code (each key its Integration's `provider`).
    * @param outbox - the service's event outbox, which receives one `DeliveryRecorded` per outcome; none records nothing.
    * @param clock - the clock that stamps an outcome; the system time when absent.
    */
-  constructor(
-    resolver: ProviderResolver,
-    log: SendLog,
-    drivers: ProviderDrivers<SmsSender>,
-    outbox?: EventOutbox,
-    clock?: Clock,
-  ) {
+  constructor(resolver: ProviderResolver, log: SendLog, outbox?: EventOutbox, clock?: Clock) {
     super();
     this.resolver = resolver;
     this.log = log;
-    this.drivers = drivers;
     this.outbox = outbox;
     this.clock = clock;
   }

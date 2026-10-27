@@ -101,6 +101,7 @@
     "@stackra/database": "workspace:*",
     "@stackra/errors": "workspace:*",
     "@stackra/events": "workspace:*",
+    "@stackra/iam": "workspace:*",
     "@stackra/integrations": "workspace:*",
     "@stackra/model": "workspace:*",
     "@stackra/queue": "workspace:*",

@@ -27,7 +27,9 @@ import { BelongsToTenant } from "@stackra/tenancy/node";
 import { Classified, Str } from "@stackra/validation";
 
 import { LoyaltyTier } from "#contracts/enums/loyalty-tier.enum";
-import { AccountNotes } from "#node/schemas/account-notes.schema";
+// Loaded for its schema registration, which the value import used to bring.
+import "#node/schemas/account-notes.schema";
+import type { AccountNotes } from "#node/schemas/account-notes.schema";
 
 /** One live account per scope and principal; the traits give the id, scope column, timestamps, version and soft delete. */
 @Index(["tenantId", "memberId"], {
@@ -63,8 +65,9 @@ export class LoyaltyAccount extends Model.with(
   /** When the account was frozen; null while active. */
   frozenAt: Date | null = null;
 
-  /** Merchant notes; jsonb. */
-  notes: AccountNotes = AccountNotes.create({});
+  /** Merchant notes; jsonb, empty until staff flag the account. */
+  // A default is a constant gen can read (ADR 0294 rule 27), so the empty notes are `{}`, not `AccountNotes.create({})`.
+  notes: AccountNotes = {} as AccountNotes;
 
   /** Whether points may move; the single rule every action checks before touching the ledger. */
   get canTransact(): boolean {

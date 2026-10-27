@@ -12,7 +12,8 @@
  */
 import "#core/types/notifier-driver-name.type";
 import type { DriverName } from "@stackra/container";
-import { registerSchemas, Schema } from "@stackra/validation";
+import { Field, registerSchemas, Schema } from "@stackra/validation";
+import { z } from "zod";
 
 import { NOTIFICATIONS_CONFIG_SCHEMA } from "#core/constants/notifications-config-schema.constant";
 import type { Notifier } from "#core/ports/notifier.port";
@@ -27,17 +28,19 @@ import type { Notifier } from "#core/ports/notifier.port";
  */
 export class NotificationsOptions extends Schema {
   /**
-   * The `Notifier` driver: `memory` keeps deliveries in the process for dev and tests; `notifications` (`./node`)
-   * queues rendered mail on the notifications service.
-   */
-  driver: DriverName<Notifier> = "memory";
-
-  /**
    * The built-in target of the `notifications` driver: `messages` (`messages.message.send@1`, mail only) or
    * `delivery` (`delivery.message.send@1`: category, data, market and mail, and address recipients). A host that
    * passes its own `NotifierTarget` overrides it.
    */
+  // reason: two built-in target codes, a literal union with no enum and no `X$`
+  @Field(z.enum(["messages", "delivery"]))
   target: "messages" | "delivery" = "messages";
+
+  /**
+   * The `Notifier` driver: `memory` keeps deliveries in the process for dev and tests; `notifications` (`./node`)
+   * queues rendered mail on the notifications service.
+   */
+  driver: DriverName<Notifier> = "memory";
 
   /**
    * The category codes (`NotificationCategory` or a `messageCategory`, snake_case) a recipient cannot mute and quiet

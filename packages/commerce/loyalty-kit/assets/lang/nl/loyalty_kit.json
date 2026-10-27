@@ -15,6 +15,11 @@
       "adjust": "Gecorrigeerd",
       "hold": "Gereserveerd",
       "release": "Vrijgegeven"
+    },
+    "debit_outcome": {
+      "written": "Geboekt",
+      "duplicate": "Dubbel",
+      "uncovered": "Niet gedekt"
     }
   },
   "resources": {

@@ -177,13 +177,12 @@ otherwise the Market's platform Connection. A stored payment always goes back to
 Sandboxes use the `-sandbox` providers (their own Integrations and hosts), chosen by the same data.
 
 The connection class per provider code is the host's: the OS integrations service owns the vendor Connections and
-subclasses the driver with its map.
+subclasses the abstract driver, declaring its map as `drivers` (the constructor takes class tokens only, ADR 0294
+rule 17).
 
 ```ts
 export class OsPaymentGatewaysDriver extends ConnectionPaymentGatewaysDriver {
-  constructor(store: ConnectionStore, defaults: MarketPaymentDefaults) {
-    super(store, defaults, PAYMENT_CONNECTIONS); // provider code to the OS's vendor connection class
-  }
+  protected override readonly drivers = PAYMENT_CONNECTIONS; // provider code to the OS's vendor connection class
 }
 ```
 

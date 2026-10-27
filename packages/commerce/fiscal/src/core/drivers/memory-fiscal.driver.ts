@@ -27,7 +27,7 @@ import { toHex } from "#core/functions/to-hex.function";
  * Seals offline with a hash chain and accepts every submission.
  *
  * @example
- * new FiscalService([new MemoryFiscalDriver()], packs, new MemoryFiscalJournalDriver(), clock);
+ * FiscalService.with([new MemoryFiscalDriver()], packs, new MemoryFiscalJournalDriver(), clock);
  */
 export class MemoryFiscalDriver extends Driver(FiscalDriver) {
   /** The key a pack names. */

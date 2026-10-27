@@ -10,7 +10,7 @@
  */
 import { z } from "zod";
 
-/** Options of `ZatcaDriver` and `ZatcaOnboarding`. */
+/** Options of `ZatcaDriver` and `ZatcaOnboardingDriver`. */
 export const ZATCA_OPTIONS = z.object({
   /** Where simplified invoices are reported. */
   reportingUrl: z.url(),

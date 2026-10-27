@@ -13,7 +13,7 @@ import { DeviceOnboardingDriver } from "#core/drivers/device-onboarding.driver";
 import { EtaOnboardingDriver } from "#core/drivers/eta-onboarding.driver";
 import { FiscalOnboardingUnsupportedError } from "#core/errors/fiscal-onboarding-unsupported.error";
 import { FiscalOnboardingService } from "#core/services/fiscal-onboarding.service";
-import { ZatcaOnboarding } from "#core/drivers/zatca-onboarding.driver";
+import { ZatcaOnboardingDriver } from "#core/drivers/zatca-onboarding.driver";
 import { FiscalDeviceFake } from "#testing/fiscal-device.fake";
 import { FiscalTransportFake } from "#testing/fiscal-transport.fake";
 import { TillCredentialsFake } from "#testing/till-credentials.fake";
@@ -24,10 +24,10 @@ const device = FiscalDeviceFake.with({});
 
 describe("FiscalOnboardingService", () => {
   it("picks the onboarding a mandate's driver key names", () => {
-    const zatca = new ZatcaOnboarding(transport, credentials);
+    const zatca = new ZatcaOnboardingDriver(transport, credentials);
     const eta = new EtaOnboardingDriver(transport, credentials);
-    const tse = new DeviceOnboardingDriver("tse", device, credentials);
-    const onboardings = new FiscalOnboardingService([zatca, eta, tse]);
+    const tse = DeviceOnboardingDriver.for("tse", device, credentials);
+    const onboardings = FiscalOnboardingService.with([zatca, eta, tse]);
     expect([
       onboardings.for("zatca"),
       onboardings.for("eta-receipt"),
@@ -37,16 +37,18 @@ describe("FiscalOnboardingService", () => {
   });
 
   it("lets a later onboarding with the same key replace an earlier one", () => {
-    const own = new DeviceOnboardingDriver("zatca", device, credentials);
+    const own = DeviceOnboardingDriver.for("zatca", device, credentials);
     expect(
-      new FiscalOnboardingService([new ZatcaOnboarding(transport, credentials), own]).for("zatca"),
+      FiscalOnboardingService.with([new ZatcaOnboardingDriver(transport, credentials), own]).for(
+        "zatca",
+      ),
     ).toBe(own);
   });
 
   it("refuses a driver key nothing serves", () => {
     let caught: unknown;
     try {
-      new FiscalOnboardingService([]).for("nf525");
+      FiscalOnboardingService.with([]).for("nf525");
     } catch (error) {
       caught = error;
     }

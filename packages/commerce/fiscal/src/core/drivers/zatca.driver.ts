@@ -71,7 +71,7 @@ const isSimplified = (document: FiscalDocument): boolean =>
  * Seals and submits ZATCA Phase 2 invoices for one unit's CSID.
  *
  * @example
- * new FiscalService([new ZatcaDriver(signer, transport)], packs, journal, clock);
+ * FiscalService.with([new ZatcaDriver(signer, transport)], packs, journal, clock);
  */
 export class ZatcaDriver extends Driver(FiscalDriver) {
   /** The key a pack names. */

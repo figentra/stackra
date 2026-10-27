@@ -104,7 +104,9 @@ async function driverWith(ticket: unknown, outbox?: OutboxFake) {
   const log = new Log();
   const { secrets, p256dh, auth } = await keys();
   return {
-    driver: new DevicePushTransportDriver(expo, secrets, tokens, log, new FixedClock(), outbox),
+    driver: new (class extends DevicePushTransportDriver {
+      protected override readonly expo = expo;
+    })(secrets, tokens, log, new FixedClock(), outbox),
     tokens,
     log,
     p256dh,

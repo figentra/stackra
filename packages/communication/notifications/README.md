@@ -123,36 +123,24 @@ chat ports are there for the same split, and provider drivers stay with their in
 
 The `notifications` driver renders the subject and the `.mail.tsx` body, then queues its target action through
 `@stackra/clients` once per principal. The default target (`MESSAGES_NOTIFIER_TARGET`) is `messages.message.send@1`
-(`{ mail, to: { principalId }, subject, html, text }`). A host whose service has another module or input passes its own
-`NotifierTarget`: any action ref and a payload mapper that receives a `NotifierMessage` (template key, category,
-principal, market from the bound `MarketContext`, the data and each rendered channel) and answers the action's input, or
-`null` to skip that principal (ADR 0422):
+(`{ mail, to: { principalId }, subject, html, text }`). A host whose service has another module or input declares its
+own `NotifierTarget` as the `target` member of a subclass (the constructor takes class tokens only): any action ref and
+a payload mapper that receives a `NotifierMessage` (template key, category, principal, market from the bound
+`MarketContext`, the data and each rendered channel) and answers the action's input, or `null` to skip that principal
+(ADR 0422):
 
 ```ts
 export class CrmNotifierDriver extends NotificationsNotifierDriver {
-  constructor(
-    transport: ClientTransport,
-    i18n: I18nConfig,
-    assets: AssetLibrary,
-    market: MarketContext,
-  ) {
-    super(
-      transport,
-      i18n,
-      assets,
-      {
-        action: SEND_NOTICE_ACTION,
-        payload: ({ template, principalId, category, market, channels }) => ({
-          template,
-          principalId,
-          category,
-          market,
-          mail: channels.mail,
-        }),
-      },
+  protected override readonly target: NotifierTarget<typeof SEND_NOTICE_ACTION> = {
+    action: SEND_NOTICE_ACTION,
+    payload: ({ template, principalId, category, market, channels }) => ({
+      template,
+      principalId,
+      category,
       market,
-    );
-  }
+      mail: channels.mail,
+    }),
+  };
 }
 ```
 
@@ -212,14 +200,13 @@ Market's platform Connection, both data.
 | voice (`VoiceGateway` of `@stackra/integrations/contracts`) | `ProviderResolver.resolve("voice", <host's map>)` | Twilio                                          |
 
 The vendor Integrations and Connections live in the OS integrations service (owner decision R3-8), so the host passes
-them: each `Connection*TransportDriver` takes the host's connection class per provider code as its third argument, and
-`DevicePushTransportDriver` the host's Expo Integration as its first.
+them: each `Connection*TransportDriver` is abstract and the host's subclass declares its connection class per provider
+code as `drivers`, and `DevicePushTransportDriver` its Expo Integration as `expo`. Constructors take class tokens only
+(ADR 0294 rule 17), so gen can wire them.
 
 ```ts
 export class OsSmsTransportDriver extends ConnectionSmsTransportDriver {
-  constructor(resolver: ProviderResolver, log: SendLog) {
-    super(resolver, log, SMS_CONNECTIONS); // provider code to the OS's vendor connection class
-  }
+  protected override readonly drivers = SMS_CONNECTIONS; // provider code to the OS's vendor connection class
 }
 ```
 
@@ -247,11 +234,7 @@ The outbox is an optional trailing constructor argument (`outbox`, then `clock` 
 after the clock on `DevicePushTransportDriver`). Without one, nothing is recorded:
 
 ```ts
-export class OsSmsTransportDriver extends ConnectionSmsTransportDriver {
-  constructor(resolver: ProviderResolver, log: SendLog, outbox: EventOutbox, clock: Clock) {
-    super(resolver, log, SMS_CONNECTIONS, outbox, clock);
-  }
-}
+const sms = new OsSmsTransportDriver(resolver, log, outbox, clock);
 ```
 
 ### Vendor drivers moved (STA-1281)

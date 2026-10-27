@@ -178,11 +178,12 @@ function driver(
   const assets = {
     resolve: (entry: AssetEntry) => ({ ...entry, url: `https://cdn.example/${entry.file}` }),
   };
-  const notifier = new NotificationsNotifierDriver(
+  const notifier = new (class extends NotificationsNotifierDriver {
+    protected override readonly target = target;
+  })(
     transport,
     new SaudiI18nConfig(),
     assets as unknown as AssetLibrary,
-    target,
     new SaudiMarketContext(),
     config,
   );

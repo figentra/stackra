@@ -43,7 +43,7 @@ const FDM_ANSWER = z.object({
  * Signs receipts through the till's fiscal data module.
  *
  * @example
- * new FiscalService([new FdmDriver(device)], packs, journal, clock);
+ * FiscalService.with([new FdmDriver(device)], packs, journal, clock);
  */
 export class FdmDriver extends Driver(FiscalDriver) {
   /** The key a pack names. */

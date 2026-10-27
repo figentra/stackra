@@ -8,8 +8,8 @@
  * Boundary: the driver named `connection`. It reads Connections only through `ConnectionStore` (the store applies the
  *           tenant scope and decrypts credentials) and never names a Market or a provider: both come from
  *           `MarketPaymentDefaults`. The connection class per provider code is the host's (`drivers`): the vendor
- *           Integrations live in the OS integrations service (owner decision R3-8), so the host subclasses this driver
- *           and passes its map. A provider code with no class in the map is skipped.
+ *           Integrations live in the OS integrations service (owner decision R3-8), so the host subclasses this abstract
+ *           driver and declares its map as `drivers`; the constructor takes class tokens only (ADR 0294 rule 17). A provider code with no class in the map is skipped.
  * Runtime: isomorphic
  * Governing contract: ADR 0356 (decisions 2 to 5); ADR 0357 (decision 2); ADR 0308 (rule 9); owner decision R3-8
  *                     (vendor drivers in OS integrations, STA-1281).
@@ -41,36 +41,28 @@ const serves = (gateway: PaymentGateway, needs: readonly PaymentCapability[]): b
  * @example
  * // the host's driver, over the vendor connection classes it owns
  * export class OsPaymentGatewaysDriver extends ConnectionPaymentGatewaysDriver {
- *   constructor(store: ConnectionStore, defaults: MarketPaymentDefaults) {
- *     super(store, defaults, PAYMENT_CONNECTIONS);
- *   }
+ *   protected override readonly drivers = PAYMENT_CONNECTIONS;
  * }
  * const gateway = await gateways.forMarket(market, [PaymentCapability.Checkout]);
  */
-export class ConnectionPaymentGatewaysDriver extends Driver(PaymentGateways) {
+export abstract class ConnectionPaymentGatewaysDriver extends Driver(PaymentGateways) {
+  /** The host's connection class per provider code (each key its Integration's `provider`), declared by its subclass. */
+  protected abstract readonly drivers: ProviderDrivers<PaymentGateway>;
+
   /** Where Connections are found. */
   private readonly store: ConnectionStore;
 
   /** The Market's providers and platform Connections, from data. */
   private readonly defaults: MarketPaymentDefaults;
 
-  /** The host's connection class per provider code. */
-  private readonly drivers: ProviderDrivers<PaymentGateway>;
-
   /**
    * @param store - the integrations connection store bound in the host.
    * @param defaults - the market-pack answer of which providers a Market offers.
-   * @param drivers - the host's connection class per provider code (each key its Integration's `provider`).
    */
-  constructor(
-    store: ConnectionStore,
-    defaults: MarketPaymentDefaults,
-    drivers: ProviderDrivers<PaymentGateway>,
-  ) {
+  constructor(store: ConnectionStore, defaults: MarketPaymentDefaults) {
     super();
     this.store = store;
     this.defaults = defaults;
-    this.drivers = drivers;
   }
 
   /** The own Connection that serves `needs` first, else the Market's platform one. */

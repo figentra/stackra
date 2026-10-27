@@ -13,6 +13,10 @@
       "in_app": "داخل التطبيق",
       "chat": "الدردشة",
       "voice": "مكالمة صوتية"
+    },
+    "template_variant": {
+      "full": "كامل",
+      "content_free": "دون محتوى"
     }
   },
   "templates": {

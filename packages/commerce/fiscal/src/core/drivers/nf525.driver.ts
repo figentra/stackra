@@ -36,7 +36,7 @@ import { zonedTime } from "#core/functions/zoned-time.function";
  * Signs tickets on the till's software chain.
  *
  * @example
- * new FiscalService([new Nf525Driver(signer)], packs, journal, clock);
+ * FiscalService.with([new Nf525Driver(signer)], packs, journal, clock);
  */
 export class Nf525Driver extends Driver(FiscalDriver) {
   /** The key a pack names. */

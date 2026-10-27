@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `MemoryAudioDeviceDriver`, the in-memory `AudioDevice`: its microphone yields the chunks it was given, its
  *          speaker keeps what was played, for local development and tests of a lane or kiosk flow.
- * Boundary: the driver named `memory`. No real audio; a device driver (platform microphone, peripherals bridge) is the
+ * Boundary: the driver named `memory`. Its constructor takes no data (ADR 0294 rule 17: classes are the only tokens), so
+ *           the chunks are pushed onto `heard` or given to `with`. No real audio; a device driver (platform microphone, peripherals bridge) is the
  *           production binding and lives with the device.
  * Runtime: isomorphic
  * Governing contract: ADR 0376 (decision 7: the device-audio driver); ADR 0294 (decision 16).
@@ -16,7 +17,7 @@ import type { AudioFormat } from "#contracts/voice/audio-format.type";
  * A device whose microphone replays given chunks.
  *
  * @example
- * const device = new MemoryAudioDeviceDriver([pcmChunk]);
+ * const device = MemoryAudioDeviceDriver.with([pcmChunk]);
  * await speech.sayOn(device, greeting, request, session);
  * device.played; // the synthesised chunks
  */
@@ -24,15 +25,17 @@ export class MemoryAudioDeviceDriver extends Driver(AudioDevice) {
   /** What the speaker played, in order. */
   readonly played: Uint8Array[] = [];
 
-  /** What the microphone hears, chunk by chunk. */
-  private readonly heard: readonly Uint8Array[];
+  /** What the microphone hears, chunk by chunk: the chunks `capture` yields. */
+  readonly heard: Uint8Array[] = [];
 
   /**
+   * A device whose microphone hears `heard`.
    * @param heard - the chunks `capture` yields.
    */
-  constructor(heard: readonly Uint8Array[] = []) {
-    super();
-    this.heard = heard;
+  static with(heard: readonly Uint8Array[]): MemoryAudioDeviceDriver {
+    const device = new MemoryAudioDeviceDriver();
+    device.heard.push(...heard);
+    return device;
   }
 
   /**

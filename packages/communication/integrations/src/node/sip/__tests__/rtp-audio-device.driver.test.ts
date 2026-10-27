@@ -58,7 +58,7 @@ async function* chunks(...parts: Uint8Array[]): AsyncGenerator<Uint8Array> {
 describe("RtpAudioDeviceDriver", () => {
   it("captures the agreed payload type until aborted", async () => {
     const socket = new FakeSocket();
-    const device = new RtpAudioDeviceDriver(socket, FAR, AudioEncoding.Alaw);
+    const device = RtpAudioDeviceDriver.over(socket, FAR, AudioEncoding.Alaw);
     const stop = new AbortController();
     const heard: Uint8Array[] = [];
     const done = (async () => {
@@ -75,7 +75,7 @@ describe("RtpAudioDeviceDriver", () => {
 
   it("plays audio as paced 20 ms packets", async () => {
     const socket = new FakeSocket();
-    const device = new RtpAudioDeviceDriver(socket, FAR, AudioEncoding.Mulaw);
+    const device = RtpAudioDeviceDriver.over(socket, FAR, AudioEncoding.Mulaw);
     await device.play(chunks(new Uint8Array(100), new Uint8Array(250)), device.format);
     expect(socket.sent.map((sent) => [sent.address, sent.port])).toEqual([
       [FAR.address, FAR.port],
@@ -95,7 +95,7 @@ describe("RtpAudioDeviceDriver", () => {
 
   it("refuses another format and closes its socket", async () => {
     const socket = new FakeSocket();
-    const device = new RtpAudioDeviceDriver(socket, FAR, AudioEncoding.Alaw);
+    const device = RtpAudioDeviceDriver.over(socket, FAR, AudioEncoding.Alaw);
     await expect(
       device.play(chunks(), { encoding: AudioEncoding.Linear16, sampleRate: 16000, channels: 1 }),
     ).rejects.toThrow(RangeError);
@@ -107,7 +107,7 @@ describe("RtpAudioDeviceDriver", () => {
   });
 
   it("refuses linear16 as a call codec", () => {
-    expect(() => new RtpAudioDeviceDriver(new FakeSocket(), FAR, AudioEncoding.Linear16)).toThrow(
+    expect(() => RtpAudioDeviceDriver.over(new FakeSocket(), FAR, AudioEncoding.Linear16)).toThrow(
       RangeError,
     );
   });

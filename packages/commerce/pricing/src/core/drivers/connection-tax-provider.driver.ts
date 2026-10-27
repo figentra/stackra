@@ -5,7 +5,9 @@
  *          call; a Market whose engine is `provider` is taxed by the `TaxGateway` Connection `ProviderResolver` picks
  *          under the `tax` capability (the scope's own account first, else the Market's managed one, Stripe Tax for
  *          `us` by pack data). `record` and `void` reach the same Connection again for a finalised sale.
- * Boundary: names no vendor: the connection class per provider code (`drivers`) comes from the host, and the Stripe
+ * Boundary: names no vendor: the connection class per provider code (`drivers`) and the pack reader (`tables`) are
+ *           declared by the host's subclass of this abstract driver (its constructor takes class tokens only, ADR 0294
+ *           rule 17), and the Stripe
  *           Tax, Avalara and TaxJar Connections are OS integrations code (ADR 0443 decision 7). A provider quote's
  *           `source` and a recorded transaction id are `<provider>:<connectionId>:<provider's id>`, so the stored
  *           quote names the account that computed it (decision 5). A quote from a table records nothing (null).
@@ -31,30 +33,30 @@ const CAPABILITY = "tax";
  *
  * @example
  * // TAX_CONNECTIONS: the host's provider code to Connection class map, from OS integrations
- * const tax = new ConnectionTaxProviderDriver(resolver, TAX_CONNECTIONS, tables);
+ * export class OsTaxProviderDriver extends ConnectionTaxProviderDriver {
+ *   protected override readonly drivers = TAX_CONNECTIONS;
+ *   protected override readonly tables = packTaxTables;
+ * }
+ * const tax = new OsTaxProviderDriver(resolver);
  * const quote = await tax.quote(request); // quote.source "stripe-tax:conn_…:taxcalc_…" in `us`, "sa@2.3.0" in `sa`
  * const transaction = await tax.record(quote, "inv_42");
  */
-export class ConnectionTaxProviderDriver extends Driver(TaxProvider) {
+export abstract class ConnectionTaxProviderDriver extends Driver(TaxProvider) {
+  /** The connection class per provider code (each key its Integration's `provider`), declared by the host. */
+  protected abstract readonly drivers: ProviderDrivers<TaxGateway>;
+
+  /** The Market's engine and own table, from pack data (null when its engine is `provider`), declared by the host. */
+  protected abstract readonly tables: TaxTables;
+
   /** Picks the provider. */
   private readonly resolver: ProviderResolver;
 
-  /** The connection class per provider code. */
-  private readonly drivers: ProviderDrivers<TaxGateway>;
-
-  /** The Market's engine and own table, from pack data. */
-  private readonly tables: TaxTables;
-
   /**
    * @param resolver - the integrations provider resolver.
-   * @param drivers - the connection class per provider code (each key its Integration's `provider`).
-   * @param tables - the Market's own table, or null when its pack's engine is `provider`.
    */
-  constructor(resolver: ProviderResolver, drivers: ProviderDrivers<TaxGateway>, tables: TaxTables) {
+  constructor(resolver: ProviderResolver) {
     super();
     this.resolver = resolver;
-    this.drivers = drivers;
-    this.tables = tables;
   }
 
   /**

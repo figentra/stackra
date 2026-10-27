@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the consumer contract of the `./node` entry: the outbound delivery job, its input, the fan-out listener, the
+ * Purpose: the consumer contract of the `./node` entry: the outbound delivery job, its input and permissions, the fan-out listener, the
  *          two models with their services and the outbound registration are its values, and nothing else.
  * Boundary: test only; imports the stand-in barrel through its `#node` alias.
  * Runtime: node (vitest)
@@ -20,6 +20,7 @@ describe("@stackra/webhooks/node", () => {
       "S3WebhookObjectSinkDriver",
       "SendWebhooksListener",
       "WebhookDelivery",
+      "WebhookDeliveryPermissions",
       "WebhookDeliveryService",
       "WebhookEndpoint",
       "WebhookEndpointService",

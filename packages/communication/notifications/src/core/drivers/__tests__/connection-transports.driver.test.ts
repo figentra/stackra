@@ -28,6 +28,24 @@ const MAIL_CONNECTIONS = {} as ProviderDrivers<MailSender>;
 const SMS_CONNECTIONS = {} as ProviderDrivers<SmsSender>;
 const WHATSAPP_CONNECTIONS = {} as ProviderDrivers<WhatsAppSender>;
 
+/** The host's mail driver over `drivers`. */
+const MailOver = (drivers: ProviderDrivers<MailSender>) =>
+  class extends ConnectionMailTransportDriver {
+    protected override readonly drivers = drivers;
+  };
+
+/** The host's sms driver over `drivers`. */
+const SmsOver = (drivers: ProviderDrivers<SmsSender>) =>
+  class extends ConnectionSmsTransportDriver {
+    protected override readonly drivers = drivers;
+  };
+
+/** The host's whatsapp driver over `drivers`. */
+const WhatsAppOver = (drivers: ProviderDrivers<WhatsAppSender>) =>
+  class extends ConnectionWhatsAppTransportDriver {
+    protected override readonly drivers = drivers;
+  };
+
 class MemorySendLog extends SendLog {
   readonly sent = new Map<string, string>();
 
@@ -57,7 +75,7 @@ describe("connection transports", () => {
     let sends = 0;
     const { resolver, asked } = resolverOf({ sendMail: async () => `em_${(sends += 1)}` });
     const log = new MemorySendLog();
-    const transport = new ConnectionMailTransportDriver(resolver, log, MAIL_CONNECTIONS);
+    const transport = new (MailOver(MAIL_CONNECTIONS))(resolver, log);
     const mail = {
       to: "a@b.example",
       from: "o@acme.example",
@@ -75,7 +93,7 @@ describe("connection transports", () => {
 
   it("asks for sms and whatsapp with their driver maps", async () => {
     const sms = resolverOf({ sendSms: async () => "sm_1" });
-    await new ConnectionSmsTransportDriver(sms.resolver, new MemorySendLog(), SMS_CONNECTIONS).send(
+    await new (SmsOver(SMS_CONNECTIONS))(sms.resolver, new MemorySendLog()).send(
       { to: "+966500000001", from: "A", text: "t" },
       "k",
     );
@@ -83,11 +101,10 @@ describe("connection transports", () => {
     expect(sms.asked[0]?.[1]).toBe(SMS_CONNECTIONS);
     const whatsapp = resolverOf({ sendWhatsApp: async () => "wa_1" });
     await expect(
-      new ConnectionWhatsAppTransportDriver(
-        whatsapp.resolver,
-        new MemorySendLog(),
-        WHATSAPP_CONNECTIONS,
-      ).send({ to: "+966500000001", text: "t" }, "k"),
+      new (WhatsAppOver(WHATSAPP_CONNECTIONS))(whatsapp.resolver, new MemorySendLog()).send(
+        { to: "+966500000001", text: "t" },
+        "k",
+      ),
     ).resolves.toBe("wa_1");
     expect(whatsapp.asked).toEqual([["whatsapp", WHATSAPP_CONNECTIONS]]);
     expect(whatsapp.asked[0]?.[1]).toBe(WHATSAPP_CONNECTIONS);
@@ -112,10 +129,9 @@ describe("connection transports", () => {
     const outbox = new OutboxFake();
     const mailDrivers = { resend: ResendStandIn } as unknown as ProviderDrivers<MailSender>;
     const smsDrivers = { twilio: TwilioStandIn } as unknown as ProviderDrivers<SmsSender>;
-    const mail = new ConnectionMailTransportDriver(
+    const mail = new (MailOver(mailDrivers))(
       resolverOf(new ResendStandIn()).resolver,
       new MemorySendLog(),
-      mailDrivers,
       outbox,
       clock,
     );
@@ -127,10 +143,9 @@ describe("connection transports", () => {
       { to: "a@b.example", from: "o@acme.example", subject: "S", html: "", text: "" },
       "k1",
     );
-    const sms = new ConnectionSmsTransportDriver(
+    const sms = new (SmsOver(smsDrivers))(
       resolverOf(new TwilioStandIn()).resolver,
       new MemorySendLog(),
-      smsDrivers,
       outbox,
       clock,
     );

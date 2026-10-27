@@ -68,7 +68,7 @@ const number = (money: Money): number => Number(money.toDecimal());
  * The `eta-receipt` driver: builds, chains, submits and polls B2C receipts per POS.
  *
  * @example
- * new FiscalService([new EtaDriver(signer, transport), new EtaReceiptDriver(transport, credentials)], packs, journal, clock);
+ * FiscalService.with([new EtaDriver(signer, transport), new EtaReceiptDriver(transport, credentials)], packs, journal, clock);
  */
 export class EtaReceiptDriver extends Driver(FiscalDriver) {
   /** The key a pack names. */

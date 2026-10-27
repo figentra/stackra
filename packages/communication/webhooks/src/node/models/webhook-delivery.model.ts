@@ -13,10 +13,15 @@
 import type { PublicId } from "@stackra/contracts";
 import type { OptionalProps } from "@stackra/database";
 import { HasPublicId, Model, Timestamps } from "@stackra/model";
+import { Int } from "@stackra/validation";
 
 /** One delivery attempt. Traits add `id` and the timestamps; the indexes are the migration's. */
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: merged with the [OptionalProps] augmentation below
 export class WebhookDelivery extends Model.with(HasPublicId("whd"), Timestamps) {
+  /** The endpoint's HTTP status; `null` when it did not answer. */
+  @Int
+  responseStatus!: number | null;
+
   /** The endpoint the attempt was sent to. */
   endpointId!: PublicId<"whe">;
 
@@ -31,9 +36,6 @@ export class WebhookDelivery extends Model.with(HasPublicId("whd"), Timestamps) 
 
   /** The event's wire name (`orders.order.paid.v1`). */
   eventType!: string;
-
-  /** The endpoint's HTTP status; `null` when it did not answer. */
-  responseStatus!: number | null;
 
   /** Whether the endpoint answered with a 2xx. */
   isDelivered!: boolean;

@@ -4,7 +4,8 @@
  *          on a date from verified market packs, overlays resolved, reading the pack keys `fiscal.invoice` and
  *          `fiscal.till`.
  * Boundary: the host builds it once at start-up from the packs `fetchPacks` verified and the tenant's resolve options
- *           (pins, accepted statuses). A market the packs do not know answers `null`, as the port says; a key with no
+ *           (pins, accepted statuses): its subclass declares `packs` (and `options`), or `with` does; the constructor
+ *           takes class tokens only (ADR 0294 rule 17). A market the packs do not know answers `null`, as the port says; a key with no
  *           entry in force is a `null` channel. A value of the wrong shape is refused with
  *           `FiscalOptionsInvalidError`. The date is read as its UTC calendar day.
  * Runtime: isomorphic
@@ -31,24 +32,30 @@ import { FiscalOptionsInvalidError } from "#core/errors/fiscal-options-invalid.e
  * Reads the fiscal section from market packs.
  *
  * @example
- * const packs = new MarketPackFiscalPackSourceDriver(await fetchPacks(store, hashes, keys), { pins });
+ * const packs = MarketPackFiscalPackSourceDriver.with(await fetchPacks(store, hashes, keys), { pins });
  * await packs.section("xx", new Date());
  */
-export class MarketPackFiscalPackSourceDriver extends Driver(FiscalPackSource) {
-  /** The verified pack versions. */
-  private readonly packs: readonly MarketPack[];
+export abstract class MarketPackFiscalPackSourceDriver extends Driver(FiscalPackSource) {
+  /** The verified pack versions, declared by the host's subclass. */
+  protected abstract readonly packs: readonly MarketPack[];
 
-  /** Pins and accepted statuses. */
-  private readonly options: ResolveOptions;
+  /** Pins and accepted statuses; `live` only unless the host's subclass overrides it. */
+  protected readonly options: ResolveOptions = {};
 
   /**
+   * A source over `packs`, for a host that builds it by hand.
    * @param packs - the verified pack versions.
    * @param options - pins and accepted statuses; `live` only when left out.
    */
-  constructor(packs: readonly MarketPack[], options: ResolveOptions = {}) {
-    super();
-    this.packs = packs;
-    this.options = options;
+  static with(
+    packs: readonly MarketPack[],
+    options: ResolveOptions = {},
+  ): MarketPackFiscalPackSourceDriver {
+    return new (class extends MarketPackFiscalPackSourceDriver {
+      protected override readonly packs = packs;
+
+      protected override readonly options = options;
+    })();
   }
 
   /** The fiscal section in force for `market` on `on`, or `null` for an unknown market. */

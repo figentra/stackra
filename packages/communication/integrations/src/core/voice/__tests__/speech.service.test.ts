@@ -194,7 +194,7 @@ describe("SpeechService", () => {
   it("synthesises on a device's speaker and meters the seconds produced", async () => {
     const { meter, metered } = recordingMeter();
     const service = new SpeechService(storeWith(), new Regions(), meter);
-    const device = new MemoryAudioDeviceDriver([new Uint8Array(16)]);
+    const device = MemoryAudioDeviceDriver.with([new Uint8Array(16)]);
     await service.sayOn(device, "abcd", request, { drivers: DRIVERS, usage });
     expect(device.played).toHaveLength(4);
     const heard: Transcript[] = [];

@@ -7,7 +7,8 @@
  *           authenticates with the service-account JWT bearer grant (`AuthType.OAuth2JwtBearer`, scope
  *           `https://www.googleapis.com/auth/wallet_object.issuer`); the vendor Integration itself is an OS connector
  *           (R3-8), so this driver never builds a request or holds a token. The save link is signed with the key read
- *           by name from the `SecretStore` at each call and never logged. Not yet certified against a live issuer
+ *           by name from the `SecretStore` at each call and never logged. Abstract: the host's subclass declares `api`
+ *           and `options`, and the constructor takes only the injected `SecretStore` (ADR 0294 rule 17). Not yet certified against a live issuer
  *           account (STA-791 acceptance: the save link works).
  * Runtime: node
  * Governing contract: ADR 0348 (decision 5); ADR 0308 (rules 6 and 13); RFC 7523; Google Wallet API "Save link".
@@ -34,21 +35,27 @@ const SAVE_URL = "https://pay.google.com/gp/v/save/";
  * Issues Google Wallet passes.
  *
  * @example
- * const google = new GoogleWalletPassDriver(googleWallet.api, secrets, options);
- * const { saveUrl } = await google.issue(request);
+ * export class ShopGoogleWalletPassDriver extends GoogleWalletPassDriver {
+ *   protected override readonly api = googleWallet.api;
+ *   protected override readonly options = { issuerId, classId, serviceAccountEmail };
+ * }
+ * const { saveUrl } = await new ShopGoogleWalletPassDriver(secrets).issue(request);
  */
-export class GoogleWalletPassDriver extends Driver(WalletPassIssuer) {
-  private readonly api: IntegrationApi;
+export abstract class GoogleWalletPassDriver extends Driver(WalletPassIssuer) {
+  /** The Google Wallet Integration's API, declared by the host's subclass. */
+  protected abstract readonly api: IntegrationApi;
+
+  /** The deployment's Google Wallet data, declared by the host's subclass. */
+  protected abstract readonly options: GoogleWalletOptions;
 
   private readonly secrets: SecretStore;
 
-  private readonly options: GoogleWalletOptions;
-
-  constructor(api: IntegrationApi, secrets: SecretStore, options: GoogleWalletOptions) {
+  /**
+   * @param secrets - holds the issuer's signing key.
+   */
+  constructor(secrets: SecretStore) {
     super();
-    this.api = api;
     this.secrets = secrets;
-    this.options = options;
   }
 
   /**

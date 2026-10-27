@@ -15,7 +15,7 @@ import type { MarketFiscalSection } from "#contracts/types/market-fiscal-section
  * Answers what a market's pack says about fiscal documents on a date, overlays resolved.
  *
  * @example
- * const packs: FiscalPackSource = new MarketPackFiscalPackSourceDriver(verifiedPacks, { pins });
+ * const packs: FiscalPackSource = MarketPackFiscalPackSourceDriver.with(verifiedPacks, { pins });
  */
 export abstract class FiscalPackSource extends Port {
   /** Type-only port key. */

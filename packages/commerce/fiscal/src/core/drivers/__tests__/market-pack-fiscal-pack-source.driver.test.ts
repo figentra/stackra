@@ -50,7 +50,7 @@ const packs = [
 ];
 
 describe("MarketPackFiscalPackSourceDriver", () => {
-  const source = new MarketPackFiscalPackSourceDriver(packs);
+  const source = MarketPackFiscalPackSourceDriver.with(packs);
 
   it("is a FiscalPackSource that reads both channels through overlays and dates", async () => {
     expect(source).toBeInstanceOf(FiscalPackSource);
@@ -70,7 +70,7 @@ describe("MarketPackFiscalPackSourceDriver", () => {
 
   it("keeps a guest-check document mode and refuses an unknown one", async () => {
     const checked = { ...till, checkDocument: "per_part" };
-    const modes = new MarketPackFiscalPackSourceDriver([
+    const modes = MarketPackFiscalPackSourceDriver.with([
       pack("xc", [{ key: "fiscal.till", value: checked, from: "2026-01-01" }]),
       pack("xd", [
         { key: "fiscal.till", value: { ...till, checkDocument: "per_seat" }, from: "2026-01-01" },

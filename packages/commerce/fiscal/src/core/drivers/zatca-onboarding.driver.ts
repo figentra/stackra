@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: `ZatcaOnboarding`, a CSID per till: the unit's compliance CSID from its CSR and the taxpayer's one-time
+ * Purpose: `ZatcaOnboardingDriver`, a CSID per till: the unit's compliance CSID from its CSR and the taxpayer's one-time
  *          password, the compliance check of sample invoices, and the production CSID that replaces it.
  * Boundary: the `zatca` driver of `FiscalOnboarding` over `FiscalTransport` and `TillCredentials`; `register` and
  *           `complete` are `compliance` and `production` behind the port's generic answers. The CSR is made by the host's signer, so the
@@ -51,7 +51,7 @@ const INPUTS = [OnboardingInput.Otp, OnboardingInput.Csr] as const;
  * await onboarding.check("till_1", sampleRecord, pack.till.options);
  * await onboarding.production("till_1", pack.till.options);
  */
-export class ZatcaOnboarding extends Driver(FiscalOnboarding) {
+export class ZatcaOnboardingDriver extends Driver(FiscalOnboarding) {
   /** The key a till mandate names. */
   readonly key = DRIVER;
 

@@ -15,6 +15,11 @@
       "adjust": "Ajustés",
       "hold": "Réservés",
       "release": "Libérés"
+    },
+    "debit_outcome": {
+      "written": "Enregistré",
+      "duplicate": "Doublon",
+      "uncovered": "Non couvert"
     }
   },
   "resources": {

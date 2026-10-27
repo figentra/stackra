@@ -13,6 +13,10 @@
       "in_app": "In de app",
       "chat": "Chat",
       "voice": "Spraakoproep"
+    },
+    "template_variant": {
+      "full": "Volledig",
+      "content_free": "Zonder inhoud"
     }
   },
   "templates": {

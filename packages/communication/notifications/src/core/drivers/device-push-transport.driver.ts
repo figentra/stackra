@@ -7,7 +7,8 @@
  * Boundary: the VAPID key pair and contact are platform secrets read by name (`WEB_PUSH_VAPID_PUBLIC_KEY`,
  *           `WEB_PUSH_VAPID_PRIVATE_KEY`, `WEB_PUSH_VAPID_SUBJECT`), never logged. A Web Push goes only to an https
  *           endpoint, the browser's own push service. Sends are logged by key in `SendLog`. The Expo Integration is a
- *           vendor connector in the OS integrations service (R3-8): the host subclasses this driver and passes it.
+ *           vendor connector in the OS integrations service (R3-8): the host subclasses this abstract driver and
+ *           declares it as `expo`; the constructor takes class tokens only (ADR 0294 rule 17).
  *           Each outcome (sent, revoked, or failed on a provider refusal) is recorded as `DeliveryRecorded` through
  *           the optional `EventOutbox` (stackra-207).
  * Runtime: isomorphic
@@ -47,9 +48,12 @@ const REVOKED = "revoked";
  * @example
  * const outcome = await push.send({ target, title, body, ttlSeconds: 3600 }, delivery.commandKey);
  */
-export class DevicePushTransportDriver extends Driver(PushTransport) {
-  /** Expo's push service: the host's Expo Integration, of which only the managed client is used. */
-  private readonly expo: { readonly api: IntegrationApi };
+export abstract class DevicePushTransportDriver extends Driver(PushTransport) {
+  /**
+   * Expo's push service: the host's Expo Integration (provider `expo`, base URL `https://exp.host`), of which only the
+   * managed client is used; declared by the host's subclass.
+   */
+  protected abstract readonly expo: { readonly api: IntegrationApi };
 
   /** The VAPID secrets. */
   private readonly secrets: SecretStore;
@@ -67,7 +71,6 @@ export class DevicePushTransportDriver extends Driver(PushTransport) {
   private readonly outbox: EventOutbox | undefined;
 
   /**
-   * @param expo - the host's Expo Integration (provider `expo`, base URL `https://exp.host`).
    * @param secrets - the secret store.
    * @param tokens - the push target store.
    * @param log - the send log.
@@ -75,7 +78,6 @@ export class DevicePushTransportDriver extends Driver(PushTransport) {
    * @param outbox - the service's event outbox, which receives one `DeliveryRecorded` per outcome; none records nothing.
    */
   constructor(
-    expo: { readonly api: IntegrationApi },
     secrets: SecretStore,
     tokens: PushTokenStore,
     log: SendLog,
@@ -83,7 +85,6 @@ export class DevicePushTransportDriver extends Driver(PushTransport) {
     outbox?: EventOutbox,
   ) {
     super();
-    this.expo = expo;
     this.secrets = secrets;
     this.tokens = tokens;
     this.log = log;

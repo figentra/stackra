@@ -3,7 +3,7 @@
  * Purpose: the `notifications` driver of the `Notifier` port: prepares each notification, renders its mail (subject and
  *          `.mail.tsx` body) and queues one call of its target action per recipient. The target is configurable: any
  *          service's action and a payload mapper that receives the template key, the category, the principal, the
- *          market and each rendered channel. A host's own target wins; otherwise config `notifications.target` picks
+ *          market and each rendered channel. A host's subclass's `target` wins; otherwise config `notifications.target` picks
  *          the built-in one: `messages` (`messages.message.send@1` with the mail, the default) or `delivery`
  *          (`delivery.message.send@1` with the category code, data, market and mail).
  * Boundary: a recipient is a principal or, when the target has an `addressPayload`, a mail address with no account:
@@ -11,7 +11,8 @@
  *           the target addresses one person. A message the mapper answers `null` for is skipped. The mail body comes
  *           from `registerNotificationMails`; the subject and body are rendered once per notification, in the default
  *           locale. The market is the bound `MarketContext`'s, read once per notification. A redelivered queued call
- *           is harmless: the target action derives its Idempotency-Key from the input.
+ *           is harmless: the target action derives its Idempotency-Key from the input. The constructor takes class
+ *           tokens only (ADR 0294 rule 17), so a host target is a member, not an argument.
  * Runtime: node
  * Governing contract: ADR 0223 (as amended by ADR 0294 and ADR 0270); ADR 0260 (decision 4: queued calls); ADR 0266
  *                     (decision 5: config picks the driver); ADR 0134 (no address leaves the producer); ADR 0422
@@ -54,20 +55,22 @@ const TARGETS = { messages: MESSAGES_NOTIFIER_TARGET, delivery: DELIVERY_NOTIFIE
  *
  * // a host whose service is not `messages`
  * export class CrmNotifierDriver extends NotificationsNotifierDriver {
- *   constructor(transport: ClientTransport, i18n: I18nConfig, assets: AssetLibrary, market: MarketContext) {
- *     super(transport, i18n, assets, { action: SEND_NOTICE_ACTION, payload: toNotice }, market);
- *   }
+ *   protected override readonly target = { action: SEND_NOTICE_ACTION, payload: toNotice };
  * }
  */
 export class NotificationsNotifierDriver extends Driver(Notifier) {
+  /**
+   * The action queued per recipient and its payload mappers; a host's subclass overrides it, else config
+   * `notifications.target` names the built-in one (`messages` when absent).
+   */
+  // oxlint-disable-next-line typescript/no-explicit-any -- reason: each target's input is its own action's
+  protected readonly target: NotifierTarget<any> | undefined = undefined;
+
   /** The target service's client. */
   private readonly client: NotificationsClient;
 
-  /** Maps one message to the target action's input. */
-  private readonly payload: NotifierTarget["payload"];
-
-  /** Maps a message to a mail address to the target action's input; absent when the target takes principals only. */
-  private readonly addressPayload: NotifierTarget["addressPayload"];
+  /** The notifications configuration; its `target` names the built-in target. */
+  private readonly config: NotificationsConfig | undefined;
 
   /** The running call's Market, when the host binds one. */
   private readonly market: MarketContext | undefined;
@@ -85,8 +88,6 @@ export class NotificationsNotifierDriver extends Driver(Notifier) {
    * @param transport - the transport topology picked for calls to the notifications service.
    * @param i18n - the member's i18n configuration.
    * @param assets - the published assets.
-   * @param target - the action queued per recipient and its payload mappers; config `notifications.target`'s when
-   *                 absent.
    * @param market - the running call's Market, passed to the mapper; none when the host binds no `MarketContext`.
    * @param config - the notifications configuration; its `target` names the built-in target (`messages` when
    *                 absent).
@@ -95,17 +96,12 @@ export class NotificationsNotifierDriver extends Driver(Notifier) {
     transport: ClientTransport,
     i18n: I18nConfig,
     assets: AssetLibrary,
-    // oxlint-disable-next-line typescript/no-explicit-any -- reason: each target's input is its own action's
-    target?: NotifierTarget<any>,
     market?: MarketContext,
     config?: NotificationsConfig,
   ) {
     super();
-    // oxlint-disable-next-line typescript/no-explicit-any -- reason: each target's input is its own action's
-    const chosen: NotifierTarget<any> = target ?? TARGETS[config?.target ?? "messages"];
-    this.client = new NotificationsClient(transport, chosen.action);
-    this.payload = chosen.payload;
-    this.addressPayload = chosen.addressPayload;
+    this.client = new NotificationsClient(transport);
+    this.config = config;
     this.i18n = i18n;
     this.assets = assets;
     this.market = market;
@@ -119,6 +115,8 @@ export class NotificationsNotifierDriver extends Driver(Notifier) {
    * @throws ClientError when a mapped payload breaks the target action's input; the calls before it are queued.
    */
   async notify(notification: Notification, event: object): Promise<void> {
+    // oxlint-disable-next-line typescript/no-explicit-any -- reason: each target's input is its own action's
+    const chosen: NotifierTarget<any> = this.target ?? TARGETS[this.config?.target ?? "messages"];
     const deliveries = await prepareNotification(notification, event);
     const [first] = deliveries;
     if (first === undefined) return;
@@ -129,7 +127,7 @@ export class NotificationsNotifierDriver extends Driver(Notifier) {
         throw new TypeError(
           `${name} names a scope recipient; the notifications driver addresses one person at a time`,
         );
-      if (this.addressPayload === undefined)
+      if (chosen.addressPayload === undefined)
         throw new TypeError(
           `${name} names a mail address; the configured target takes principals only (use notifications.target: delivery)`,
         );
@@ -150,9 +148,9 @@ export class NotificationsNotifierDriver extends Driver(Notifier) {
     for (const to of recipients) {
       const input =
         "email" in to
-          ? this.addressPayload?.({ ...base, email: to.email } satisfies NotifierAddressMessage)
-          : this.payload({ ...base, principalId: to.principalId } satisfies NotifierMessage);
-      if (input !== null && input !== undefined) await this.client.send.queue(input);
+          ? chosen.addressPayload?.({ ...base, email: to.email } satisfies NotifierAddressMessage)
+          : chosen.payload({ ...base, principalId: to.principalId } satisfies NotifierMessage);
+      if (input !== null && input !== undefined) await this.client.send(chosen.action).queue(input);
     }
   }
 

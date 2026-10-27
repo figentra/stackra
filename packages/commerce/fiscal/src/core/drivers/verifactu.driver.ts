@@ -49,7 +49,7 @@ const tagText = (body: string, tag: string): string | null =>
  * Seals and sends billing records for one issuer's system installation.
  *
  * @example
- * new FiscalService([new VerifactuDriver(transport)], packs, journal, clock);
+ * FiscalService.with([new VerifactuDriver(transport)], packs, journal, clock);
  */
 export class VerifactuDriver extends Driver(FiscalDriver) {
   /** The key a pack names. */

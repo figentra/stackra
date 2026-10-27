@@ -3,8 +3,9 @@
  * Purpose: `AppleWalletPassDriver`, the Apple Wallet `WalletPassIssuer`: `pass.json` from the request
  *          (`applePassJson`), the brand-kit images, then the signed `.pkpass` bundle (`buildPkpass`) through the host's
  *          `CmsSigner`.
- * Boundary: no network; the bundle is returned, the host serves or sends it. The host constructs it with its signer
- *           and the deployment's `AppleWalletOptions`. Not yet certified on a device against a registered pass type
+ * Boundary: no network; the bundle is returned, the host serves or sends it. Abstract: the host's subclass declares
+ *           the deployment's `AppleWalletOptions` as `options`, and the constructor takes only the injected `CmsSigner`
+ *           (ADR 0294 rule 17: classes are the only tokens). Not yet certified on a device against a registered pass type
  *           (STA-791 acceptance: a signed .pkpass opens on iOS).
  * Runtime: node
  * Governing contract: ADR 0348 (decision 5); ADR 0294 (decision 25: drivers extend `Driver(Port)`).
@@ -23,18 +24,23 @@ import type { WalletPassRequest } from "#node/pass/wallet-pass-request.type";
  * Issues signed Apple Wallet passes.
  *
  * @example
- * const apple = new AppleWalletPassDriver(new PkijsCmsSignerDriver(secrets), options);
- * const { file } = await apple.issue(request);
+ * export class ShopAppleWalletPassDriver extends AppleWalletPassDriver {
+ *   protected override readonly options = { passTypeIdentifier, teamIdentifier, organizationName };
+ * }
+ * const { file } = await new ShopAppleWalletPassDriver(signer).issue(request);
  */
-export class AppleWalletPassDriver extends Driver(WalletPassIssuer) {
+export abstract class AppleWalletPassDriver extends Driver(WalletPassIssuer) {
+  /** The deployment's Apple Wallet data, declared by the host's subclass. */
+  protected abstract readonly options: AppleWalletOptions;
+
   private readonly signer: CmsSigner;
 
-  private readonly options: AppleWalletOptions;
-
-  constructor(signer: CmsSigner, options: AppleWalletOptions) {
+  /**
+   * @param signer - signs the bundle's manifest with the pass-type certificate.
+   */
+  constructor(signer: CmsSigner) {
     super();
     this.signer = signer;
-    this.options = options;
   }
 
   /**

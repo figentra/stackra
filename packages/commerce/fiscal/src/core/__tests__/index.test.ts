@@ -61,7 +61,7 @@ describe("@stackra/fiscal", () => {
       "XadesEnvelopeSignerDriver",
       "ZATCA_OPTIONS",
       "ZatcaDriver",
-      "ZatcaOnboarding",
+      "ZatcaOnboardingDriver",
     ]);
   });
 

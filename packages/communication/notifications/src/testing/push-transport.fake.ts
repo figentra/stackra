@@ -14,7 +14,7 @@ import type { OutboundPush, PushOutcome } from "#contracts/index";
  * A push transport a test reads back.
  *
  * @example
- * const push = new PushTransportFake(["ExponentPushToken[gone]"]);
+ * const push = PushTransportFake.with(["ExponentPushToken[gone]"]);
  * await push.send({ target, title, body, ttlSeconds: 60 }, "k1");
  */
 export class PushTransportFake extends PushTransport {
@@ -25,14 +25,17 @@ export class PushTransportFake extends PushTransport {
   >();
 
   /** Expo tokens or Web Push endpoints the fake reports gone. */
-  private readonly gone: ReadonlySet<string>;
+  private readonly gone = new Set<string>();
 
   /**
+   * A fake that answers `revoked` for `gone`. A static, not a constructor argument: a constructor takes class tokens
+   * only (ADR 0294 rule 17).
    * @param gone - the devices to answer `revoked` for.
    */
-  constructor(gone: readonly string[] = []) {
-    super();
-    this.gone = new Set(gone);
+  static with(gone: readonly string[]): PushTransportFake {
+    const fake = new PushTransportFake();
+    for (const device of gone) fake.gone.add(device);
+    return fake;
   }
 
   /** Keeps `push` and returns its outcome; a repeated key returns the first outcome. */

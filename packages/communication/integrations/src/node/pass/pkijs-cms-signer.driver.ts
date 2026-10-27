@@ -3,8 +3,9 @@
  * Purpose: `PkijsCmsSignerDriver`, the `CmsSigner` over pkijs and Web Crypto: a detached CMS `SignedData` (SHA-256,
  *          RSASSA-PKCS1-v1_5) with the content-type, signing-time and message-digest signed attributes, the signer
  *          identified by issuer and serial, and the signer certificate plus its chain attached.
- * Boundary: reads the PEM certificate, key and chain from the `SecretStore` by the names in `CmsSignerSecrets` at
- *           each call; the key is imported non-extractable and never logged or put in an error (a missing secret is
+ * Boundary: reads the PEM certificate, key and chain from the `SecretStore` by the names in `names` at each call
+ *           (the Apple Wallet names unless a subclass overrides them; the constructor takes class tokens only, ADR 0294
+ *           rule 17); the key is imported non-extractable and never logged or put in an error (a missing secret is
  *           refused by its name only). RSA keys only (Apple pass-type keys are RSA); an HSM or KMS is another
  *           driver of the port. pkijs and asn1js are new catalog entries (stackra-90).
  * Runtime: node
@@ -39,17 +40,23 @@ function derOf(pem: string): Uint8Array<ArrayBuffer> {
  * Signs with a certificate and key held as secrets.
  *
  * @example
- * const signer = new PkijsCmsSignerDriver(secrets, APPLE_WALLET_SIGNER_SECRETS);
+ * const signer = new PkijsCmsSignerDriver(secrets); // the Apple Wallet secret names
+ * class OtherSignerDriver extends PkijsCmsSignerDriver {
+ *   protected override readonly names = { certificate: "OTHER_CERT", key: "OTHER_KEY", chain: [] };
+ * }
  */
 export class PkijsCmsSignerDriver extends Driver(CmsSigner) {
+  /** The secret names of the certificate, key and chain; a subclass overrides them for another signer. */
+  protected readonly names: CmsSignerSecrets = APPLE_WALLET_SIGNER_SECRETS;
+
   private readonly secrets: SecretStore;
 
-  private readonly names: CmsSignerSecrets;
-
-  constructor(secrets: SecretStore, names: CmsSignerSecrets = APPLE_WALLET_SIGNER_SECRETS) {
+  /**
+   * @param secrets - holds the certificate, key and chain under `names`.
+   */
+  constructor(secrets: SecretStore) {
     super();
     this.secrets = secrets;
-    this.names = names;
   }
 
   /**

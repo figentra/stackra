@@ -33,10 +33,15 @@ const request: WalletPassRequest = {
 
 const options = { passTypeIdentifier: "pass.x", teamIdentifier: "T", organizationName: "Acme" };
 
+/** The host's subclass, declaring its options. */
+class TestAppleWalletPassDriver extends AppleWalletPassDriver {
+  protected override readonly options = options;
+}
+
 describe("AppleWalletPassDriver", () => {
   it("issues a signed .pkpass", async () => {
     const signer = new FixedCmsSignerDriver();
-    const driver = new AppleWalletPassDriver(signer, options);
+    const driver = new TestAppleWalletPassDriver(signer);
     expect(driver).toBeInstanceOf(WalletPassIssuer);
     const pass = await driver.issue(request);
     expect(pass).toMatchObject({
@@ -48,7 +53,7 @@ describe("AppleWalletPassDriver", () => {
   });
 
   it("refuses a request without icon.png", async () => {
-    const driver = new AppleWalletPassDriver(new FixedCmsSignerDriver(), options);
+    const driver = new TestAppleWalletPassDriver(new FixedCmsSignerDriver());
     await expect(driver.issue({ ...request, images: {} })).rejects.toThrow(TypeError);
   });
 });

@@ -17,18 +17,20 @@ import type { ProviderChoice } from "#contracts/types/provider-choice.type";
  */
 export class MarketPaymentDefaultsFake extends MarketPaymentDefaults {
   /** Providers by Market. */
-  private readonly markets: Readonly<Record<string, readonly ProviderChoice[]>>;
+  private markets: Readonly<Record<string, readonly ProviderChoice[]>> = {};
 
-  private constructor(markets: Readonly<Record<string, readonly ProviderChoice[]>>) {
+  // A constructor takes class tokens only (ADR 0294 rule 17), so `with` fills the fields.
+  private constructor() {
     super();
-    this.markets = markets;
   }
 
   /** A fake over `markets`. */
   static with(
     markets: Readonly<Record<string, readonly ProviderChoice[]>>,
   ): MarketPaymentDefaultsFake {
-    return new MarketPaymentDefaultsFake(markets);
+    const fake = new MarketPaymentDefaultsFake();
+    fake.markets = markets;
+    return fake;
   }
 
   /** The providers set for `market`, or none. */

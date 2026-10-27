@@ -92,7 +92,7 @@ const party = (value: FiscalParty) => ({
  * Builds, seals and submits documents for one issuer.
  *
  * @example
- * new FiscalService([new EtaDriver(signer, transport)], packs, journal, clock);
+ * FiscalService.with([new EtaDriver(signer, transport)], packs, journal, clock);
  */
 export class EtaDriver extends Driver(FiscalDriver) {
   /** The key a pack names. */

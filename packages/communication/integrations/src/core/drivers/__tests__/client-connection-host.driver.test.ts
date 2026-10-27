@@ -58,10 +58,15 @@ class StubTransport extends ClientTransport {
   async queue(): Promise<void> {}
 }
 
+/** The host's subclass, declaring the refs. */
+class TestConnectionHostDriver extends ClientConnectionHostDriver {
+  protected override readonly calls = CALLS;
+}
+
 /** A driver over a stub answering `answers`. */
 function setup(answers: Readonly<Record<string, unknown>> = {}) {
   const transport = new StubTransport(answers);
-  return { transport, host: new ClientConnectionHostDriver(transport, CALLS) };
+  return { transport, host: new TestConnectionHostDriver(transport) };
 }
 
 describe("ClientConnectionHostDriver", () => {

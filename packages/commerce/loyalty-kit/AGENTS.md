@@ -47,8 +47,8 @@ model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./node`, `./reac
 - A programme is the settings group at a scope (ADR 0454): both earn paths read `isActive`; the earn rate, the point
   value and the redemption cap are the `earnPerMinor`, `pointValueMinor` and `maxRedeemPercent` settings (STA-1323).
   Config holds none of them and `LoyaltyService` takes them as arguments; never add a config fallback for a rate.
-- `PartiesLoyaltyMembersDriver` stays abstract and types the parties client by the one call it makes
-  (`person.get`); never add an OS package dependency for it, and never treat a failure other than `not_found` as
+- `PartiesLoyaltyMembersDriver` stays abstract and types the parties client (its abstract `parties`, which the host's
+  subclass injects) by the one call it makes (`person.get`); never add an OS package dependency for it, and never treat a failure other than `not_found` as
   "not a member" (a redemption fails closed).
 - Tier rules live behind `LoyaltyTierPolicy` (the `threshold` driver by default); the listener only applies the answer
   and only raises a tier. Never put a tier rule in the listener.

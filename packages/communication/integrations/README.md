@@ -134,16 +134,17 @@ A module's `Pass({ key })` kind builds `PassContent`; a `WalletPassIssuer` drive
 | `GoogleWalletPassDriver`, `GoogleWalletOptions`, `googleWalletObject`         | the `genericObject` written through the Google Wallet Integration's `api` (JWT bearer) and the save link |
 
 ```ts
+// The issuers are abstract: the host's subclass declares its deployment data; constructors take class tokens only.
+class ShopAppleWalletPassDriver extends AppleWalletPassDriver {
+  protected override readonly options = { passTypeIdentifier, teamIdentifier, organizationName };
+}
+class ShopGoogleWalletPassDriver extends GoogleWalletPassDriver {
+  protected override readonly api = googleWallet.api;
+  protected override readonly options = { issuerId, serviceAccountEmail };
+}
 const signer = new PkijsCmsSignerDriver(secrets); // APPLE_WALLET_PASS_CERTIFICATE, _KEY, APPLE_WALLET_WWDR_CERTIFICATE
-const apple = new AppleWalletPassDriver(signer, {
-  passTypeIdentifier,
-  teamIdentifier,
-  organizationName,
-});
-const google = new GoogleWalletPassDriver(googleWallet.api, secrets, {
-  issuerId,
-  serviceAccountEmail,
-});
+const apple = new ShopAppleWalletPassDriver(signer);
+const google = new ShopGoogleWalletPassDriver(secrets);
 const request = {
   kind: "loyalty_card",
   content: await pass.content(card),
@@ -221,11 +222,24 @@ call's codec, `handover` by REFER, `hang_up` by BYE. Instructions come from the 
 it ends. The carrier's platform Connection (OS connector) delegates to it.
 
 ```ts
-const sip = new SipVoiceGateway(
-  { host, publicAddress, codecs: ["alaw", "mulaw"], keepPlus: true, ringSeconds: 30, inbound },
-  secrets, // SIP_TRUNK_USERNAME and SIP_TRUNK_PASSWORD, read by name
-  { speech: speechService, meter: voiceMeter, session: (reference) => sessionOf(reference), post },
-);
+// Abstract: the host's subclass declares the trunk and the call host; the constructor takes the SecretStore only.
+class ShopSipVoiceGateway extends SipVoiceGateway {
+  protected override readonly options = {
+    host,
+    publicAddress,
+    codecs: ["alaw", "mulaw"],
+    keepPlus: true,
+    ringSeconds: 30,
+    inbound,
+  };
+  protected override readonly host = {
+    speech: speechService,
+    meter: voiceMeter,
+    session: (reference) => sessionOf(reference),
+    post,
+  };
+}
+const sip = new ShopSipVoiceGateway(secrets); // SIP_TRUNK_USERNAME and SIP_TRUNK_PASSWORD, read by name
 await sip.start(); // binds 5060, registers when `register` is set
 const placed = await sip.call(outbound);
 ```
@@ -403,20 +417,19 @@ record and an array repeats its key.
 
 ## The hosted store over the generated client
 
-The host binds `ConnectionHost` to a subclass of `ClientConnectionHostDriver` that passes the integrations service's
-refs from `#stackra/clients/<service>`, so this package names no wire key:
+The host binds `ConnectionHost` to a subclass of the abstract `ClientConnectionHostDriver` that declares the
+integrations service's refs from `#stackra/clients/<service>` as `calls`, so this package names no wire key. The
+constructor takes only the injected `ClientTransport` (ADR 0294 rule 17: classes are the only tokens):
 
 ```ts
 export class OsConnectionHostDriver extends ClientConnectionHostDriver {
-  constructor(transport: ClientTransport) {
-    super(transport, {
-      resolve: ResolveConnectionsQuery,
-      load: LoadConnectionQuery,
-      store: StoreConnectionAction,
-      disconnect: DisconnectConnectionAction,
-      token: IssueAccessTokenAction,
-    });
-  }
+  protected override readonly calls = {
+    resolve: ResolveConnectionsQuery,
+    load: LoadConnectionQuery,
+    store: StoreConnectionAction,
+    disconnect: DisconnectConnectionAction,
+    token: IssueAccessTokenAction,
+  };
 }
 ```
 

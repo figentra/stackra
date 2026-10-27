@@ -27,7 +27,7 @@ driver, which reaches the SDK only through the app's `StripeTerminalBridge` port
 
 Not here. A vendor is a connector in the OS integrations service: its `<Code>Integration` and `<Code>Connection`
 (implementing `PaymentGateway` and the optional ports, `capabilities`, `provider`) live there and join the host's map
-passed to `ConnectionPaymentGatewaysDriver`. Write it against `@stackra/payments/contracts` only; change a port here
+declared as `drivers` on its subclass of `ConnectionPaymentGatewaysDriver`. Write it against `@stackra/payments/contracts` only; change a port here
 when a vendor needs one, additively. Square, Adyen and PayPal (STA-687, certification pending) are mapped to
 the ports in README "Square, Adyen and PayPal"; `cancelTerminal` gets the session's `providerRef` for them.
 

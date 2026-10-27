@@ -15,6 +15,11 @@
       "adjust": "Rettificati",
       "hold": "Trattenuti",
       "release": "Rilasciati"
+    },
+    "debit_outcome": {
+      "written": "Registrato",
+      "duplicate": "Duplicato",
+      "uncovered": "Non coperto"
     }
   },
   "resources": {

@@ -49,7 +49,7 @@ const CANCELLATION = toBase64("STO");
  * Signs receipts on the till's chain through its signature unit.
  *
  * @example
- * new FiscalService([new RksvDriver(signer, cipher, credentials)], packs, journal, clock);
+ * FiscalService.with([new RksvDriver(signer, cipher, credentials)], packs, journal, clock);
  */
 export class RksvDriver extends Driver(FiscalDriver) {
   /** The key a pack names. */

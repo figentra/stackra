@@ -46,8 +46,11 @@ await loyalty.release(member, orderId, at);
 
 // the host's one obligation: the members port's only driver; an OS host subclasses the parties one with its client
 export class OsLoyaltyMembersDriver extends PartiesLoyaltyMembersDriver {
+  protected override readonly parties: PartiesClient;
+
   constructor(parties: PartiesClient) {
-    super(parties);
+    super();
+    this.parties = parties;
   }
 }
 ```

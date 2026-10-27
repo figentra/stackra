@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: Stand-in barrel: the `./node` entry of @stackra/webhooks (outbound delivery: the endpoint and delivery-log
+ * Purpose: Stand-in barrel: the `./node` entry of @stackra/webhooks (outbound delivery: the delivery permissions, the endpoint and delivery-log
  *          models with their services, the delivery job with its input, the `s3` object sink of S3 endpoints, the
  *          `model` endpoint store and delivery log over those tables, the
  *          fan-out listener and the outbound registration) until `stackra gen` writes the entry barrels and the generated `WebhooksModule` (STA-339).
@@ -11,6 +11,7 @@
  * Governing contract: ADR 0294 (decision 15); ADR 0127 2026-10-24 note (an entry exists once its folder has a file);
  *                     the STA-347 stand-in barrel decision.
  */
+export { WebhookDeliveryPermissions } from "#node/access/webhook-delivery.permissions";
 export { DeliverWebhookAction } from "#node/actions/deliver-webhook.action";
 export { ModelWebhookDeliveryLogDriver } from "#node/drivers/model-webhook-delivery-log.driver";
 export { ModelWebhookEndpointStoreDriver } from "#node/drivers/model-webhook-endpoint-store.driver";

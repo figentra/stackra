@@ -68,7 +68,11 @@ function setup(table: TaxRateTable | null) {
       return connection;
     },
   } as unknown as ProviderResolver;
-  const driver = new ConnectionTaxProviderDriver(resolver, drivers, { table: async () => table });
+  const driver = new (class extends ConnectionTaxProviderDriver {
+    protected override readonly drivers = drivers;
+
+    protected override readonly tables = { table: async () => table };
+  })(resolver);
   return { driver, asked, connection };
 }
 

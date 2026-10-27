@@ -40,7 +40,7 @@ class RecordingClientTransport extends ClientTransport {
 describe("NotificationsClient", () => {
   it("queues messages.message.send@1 with the input", async () => {
     const transport = new RecordingClientTransport();
-    await new NotificationsClient(transport, SEND_MESSAGE_ACTION).send.queue(INPUT);
+    await new NotificationsClient(transport).send(SEND_MESSAGE_ACTION).queue(INPUT);
     expect(transport.queued).toHaveLength(1);
     expect(transport.queued[0]).toMatchObject({
       key: "messages.message.send@1",
@@ -52,8 +52,10 @@ describe("NotificationsClient", () => {
 
   it("refuses an input the service would refuse", async () => {
     const transport = new RecordingClientTransport();
-    const client = new NotificationsClient(transport, SEND_MESSAGE_ACTION);
-    await expect(client.send.queue({ ...INPUT, mail: "Order-Receipt" })).rejects.toThrow();
+    const client = new NotificationsClient(transport);
+    await expect(
+      client.send(SEND_MESSAGE_ACTION).queue({ ...INPUT, mail: "Order-Receipt" }),
+    ).rejects.toThrow();
     expect(transport.queued).toEqual([]);
   });
 });

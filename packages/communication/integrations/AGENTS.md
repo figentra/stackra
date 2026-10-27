@@ -78,7 +78,8 @@ Provider integrations, connections and their store (ADR 0308). Member at `packag
 - `IntegrationWebhooks` is data only: `scheme` stays a string (the codes are `@stackra/webhooks`'), `signature` is
   an HMAC body recipe and `recipe` (`WebhookSchemeRecipe`) the data of a non-HMAC scheme; `@stackra/webhooks`'
   `registerWebhookEvents` checks the fields each scheme needs. Never put a vendor's recipe values here.
-- `ClientConnectionHostDriver` takes the service's refs as configuration (`ConnectionHostCalls`); never hard-code a
+- `ClientConnectionHostDriver` is abstract: the host's subclass declares the service's refs as `calls`
+  (`ConnectionHostCalls`), and its constructor takes only class tokens; never hard-code a
   wire key or route of the integrations service here. `ConnectionHost#store` keeps `credentialsExpireAt` optional and
   last, so an older host still implements it.
 - `ProviderPackSource` names `ResolvedPack`, so it lives in `src/core/ports`, not `./contracts`.

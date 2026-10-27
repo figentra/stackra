@@ -20,7 +20,9 @@ import type { NotifierTarget } from "#node/types/notifier-target.type";
  *
  * @example
  * // runway: notifications.target: delivery
- * new NotificationsNotifierDriver(transport, i18n, assets, DELIVERY_NOTIFIER_TARGET, market);
+ * class DeliveryNotifierDriver extends NotificationsNotifierDriver {
+ *   protected override readonly target = DELIVERY_NOTIFIER_TARGET;
+ * }
  */
 export const DELIVERY_NOTIFIER_TARGET: NotifierTarget<typeof SEND_DELIVERY_MESSAGE_ACTION> =
   Object.freeze({

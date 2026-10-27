@@ -15,6 +15,11 @@
       "adjust": "معدّلة",
       "hold": "محجوزة",
       "release": "مُعادة"
+    },
+    "debit_outcome": {
+      "written": "مُسجَّل",
+      "duplicate": "مُكرَّر",
+      "uncovered": "غير مُغطّى"
     }
   },
   "resources": {

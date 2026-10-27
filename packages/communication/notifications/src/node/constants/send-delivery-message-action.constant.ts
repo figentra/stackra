@@ -18,7 +18,7 @@ import { z } from "zod";
  * The remote action `delivery.message.send@1`.
  *
  * @example
- * new NotificationsClient(transport, SEND_DELIVERY_MESSAGE_ACTION).send.queue(input);
+ * new NotificationsClient(transport).send(SEND_DELIVERY_MESSAGE_ACTION).queue(input);
  */
 export const SEND_DELIVERY_MESSAGE_ACTION = remoteAction("delivery.message.send@1", {
   input: z.object({

@@ -37,7 +37,7 @@ export { TseDriver } from "#core/drivers/tse.driver";
 export { VerifactuDriver } from "#core/drivers/verifactu.driver";
 export { XadesEnvelopeSignerDriver } from "#core/drivers/xades-envelope-signer.driver";
 export { ZatcaDriver } from "#core/drivers/zatca.driver";
-export { ZatcaOnboarding } from "#core/drivers/zatca-onboarding.driver";
+export { ZatcaOnboardingDriver } from "#core/drivers/zatca-onboarding.driver";
 export { FiscalAuthorityUnavailableError } from "#core/errors/fiscal-authority-unavailable.error";
 export { FiscalChainConflictError } from "#core/errors/fiscal-chain-conflict.error";
 export { FiscalCredentialMissingError } from "#core/errors/fiscal-credential-missing.error";

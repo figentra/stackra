@@ -115,7 +115,12 @@ await tax.quote(request); // the TaxProvider the market pack names (a provider d
 ```ts
 import { ConnectionTaxProviderDriver } from "@stackra/pricing";
 
-const tax = new ConnectionTaxProviderDriver(resolver, TAX_CONNECTIONS, tables); // TAX_CONNECTIONS: OS integrations
+// Abstract: the host's subclass declares its maps; the constructor takes class tokens only (ADR 0294 rule 17).
+class OsTaxProviderDriver extends ConnectionTaxProviderDriver {
+  protected override readonly drivers = TAX_CONNECTIONS; // OS integrations
+  protected override readonly tables = tables;
+}
+const tax = new OsTaxProviderDriver(resolver);
 const quote = await tax.quote(request); // `sa`: its own table; `us`: the resolved `tax` Connection (Stripe Tax)
 const transaction = await tax.record(quote, invoice.id); // null for a table quote
 await tax.void(transaction); // a refund or a cancelled invoice

@@ -13,6 +13,10 @@
       "in_app": "In der App",
       "chat": "Chat",
       "voice": "Sprachanruf"
+    },
+    "template_variant": {
+      "full": "Vollständig",
+      "content_free": "Ohne Inhalt"
     }
   },
   "templates": {

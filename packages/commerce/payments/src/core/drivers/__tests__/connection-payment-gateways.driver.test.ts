@@ -95,24 +95,25 @@ const defaults = MarketPaymentDefaultsFake.with({
   ],
 });
 
+/** The host's driver, over the stand-in map. */
+class TestPaymentGatewaysDriver extends ConnectionPaymentGatewaysDriver {
+  protected override readonly drivers = DRIVERS;
+}
+
 describe("ConnectionPaymentGatewaysDriver", () => {
   it("takes the tenant's own Connection when it serves the call", async () => {
-    const gateways = new ConnectionPaymentGatewaysDriver(
-      new TestStore([cardOwn]),
-      defaults,
-      DRIVERS,
-    );
+    const gateways = new TestPaymentGatewaysDriver(new TestStore([cardOwn]), defaults);
     expect(await gateways.forMarket("m1", [PaymentCapability.Capture])).toBe(cardOwn);
   });
 
   it("falls back to the Market's platform Connection in Market order", async () => {
-    const gateways = new ConnectionPaymentGatewaysDriver(new TestStore([]), defaults, DRIVERS);
+    const gateways = new TestPaymentGatewaysDriver(new TestStore([]), defaults);
     expect(await gateways.forMarket("m1", [PaymentCapability.Checkout])).toBe(voucherPlatform);
     expect(await gateways.forMarket("m1", [PaymentCapability.Capture])).toBe(cardPlatform);
   });
 
   it("refuses a Market with no provider that serves the call", async () => {
-    const gateways = new ConnectionPaymentGatewaysDriver(new TestStore([]), defaults, DRIVERS);
+    const gateways = new TestPaymentGatewaysDriver(new TestStore([]), defaults);
     await expect(gateways.forMarket("m2", [PaymentCapability.Checkout])).rejects.toRefuseWith(
       refusal(NoPaymentProviderError, { market: "m2", needs: "checkout" }),
     );
@@ -120,16 +121,16 @@ describe("ConnectionPaymentGatewaysDriver", () => {
 
   it("serves a bring-your-own-only provider from the tenant's Connection and never from a platform one", async () => {
     const byo = MarketPaymentDefaultsFake.with({ m3: [{ provider: "card" }] });
-    const own = new ConnectionPaymentGatewaysDriver(new TestStore([cardOwn]), byo, DRIVERS);
+    const own = new TestPaymentGatewaysDriver(new TestStore([cardOwn]), byo);
     expect(await own.forMarket("m3", [PaymentCapability.Checkout])).toBe(cardOwn);
-    const none = new ConnectionPaymentGatewaysDriver(new TestStore([]), byo, DRIVERS);
+    const none = new TestPaymentGatewaysDriver(new TestStore([]), byo);
     await expect(none.forMarket("m3", [PaymentCapability.Checkout])).rejects.toRefuseWith(
       refusal(NoPaymentProviderError, { market: "m3", needs: "checkout" }),
     );
   });
 
   it("reloads the connection that served a payment", async () => {
-    const gateways = new ConnectionPaymentGatewaysDriver(new TestStore([]), defaults, DRIVERS);
+    const gateways = new TestPaymentGatewaysDriver(new TestStore([]), defaults);
     expect(await gateways.byConnection("card", "conn_00000000000000000000000002")).toBe(
       cardPlatform,
     );

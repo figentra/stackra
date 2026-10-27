@@ -25,7 +25,7 @@ describe("DeviceOnboardingDriver", () => {
       "tse.activate": REGISTERED,
     });
     const credentials = new TillCredentialsFake();
-    const onboarding = new DeviceOnboardingDriver("tse", device, credentials);
+    const onboarding = DeviceOnboardingDriver.for("tse", device, credentials);
     expect([onboarding.key, onboarding.inputs]).toEqual(["tse", []]);
     expect(await onboarding.register("till_1")).toEqual({
       unitId: "till_1",
@@ -47,7 +47,7 @@ describe("DeviceOnboardingDriver", () => {
   it("refuses a registration the device declines and stores nothing", async () => {
     const credentials = new TillCredentialsFake();
     await expect(
-      new DeviceOnboardingDriver(
+      DeviceOnboardingDriver.for(
         "rt",
         FiscalDeviceFake.with({ "rt.register": { registered: false, serial: "RT-1" } }),
         credentials,
@@ -58,7 +58,7 @@ describe("DeviceOnboardingDriver", () => {
 
   it("treats an answer of another shape as unavailable", async () => {
     await expect(
-      new DeviceOnboardingDriver(
+      DeviceOnboardingDriver.for(
         "fdm",
         FiscalDeviceFake.with({ "fdm.register": { ok: true } }),
         new TillCredentialsFake(),
@@ -68,7 +68,7 @@ describe("DeviceOnboardingDriver", () => {
 
   it("refuses complete before register", async () => {
     await expect(
-      new DeviceOnboardingDriver(
+      DeviceOnboardingDriver.for(
         "tse",
         FiscalDeviceFake.with({}),
         new TillCredentialsFake(),

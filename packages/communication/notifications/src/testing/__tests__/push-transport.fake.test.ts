@@ -14,7 +14,7 @@ import { WhatsAppTransportFake } from "#testing/whatsapp-transport.fake";
 
 describe("push and WhatsApp fakes", () => {
   it("stand in for their ports and send once per key", async () => {
-    const push = new PushTransportFake(["ExponentPushToken[gone]"]);
+    const push = PushTransportFake.with(["ExponentPushToken[gone]"]);
     expect(push).toBeInstanceOf(PushTransport);
     const message = {
       target: { kind: "expo", token: "ExponentPushToken[a]" },

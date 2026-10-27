@@ -29,6 +29,7 @@ import { parseSdp } from "#node/sip/parse-sdp.function";
 import { parseSip } from "#node/sip/parse-sip.function";
 import { rtpPayload } from "#node/sip/rtp-payload.function";
 import { sipHeaders } from "#node/sip/sip-headers.function";
+import type { SipCallHost } from "#node/sip/sip-call-host.type";
 import type { SipMessage } from "#node/sip/sip-message.type";
 import type { SipTrunkOptions } from "#node/sip/sip-trunk-options.type";
 import { SipVoiceGateway } from "#node/sip/sip-voice-gateway.service";
@@ -179,24 +180,25 @@ function hostOf(answers: Readonly<Record<string, readonly CallInstruction[]>>) {
     },
   } as unknown as VoiceMeter;
   let opened = 0;
-  const gateway = new SipVoiceGateway(
-    OPTIONS,
-    { get: (name: string) => SECRETS[name] } as unknown as SecretStore,
-    {
-      speech,
-      meter,
-      session: (reference) => ({ drivers: {}, usage: { reference } }) as never,
-      post: async (url, params): Promise<string> => {
-        posts.push({ url, params });
-        const steps = answers[url];
-        return steps === undefined ? "" : gateway.answer(steps).body;
-      },
-      openUdp: async () => {
-        opened += 1;
-        return opened === 1 ? signalling : rtp;
-      },
+  const callHost: SipCallHost = {
+    speech,
+    meter,
+    session: (reference) => ({ drivers: {}, usage: { reference } }) as never,
+    post: async (url, params): Promise<string> => {
+      posts.push({ url, params });
+      const steps = answers[url];
+      return steps === undefined ? "" : gateway.answer(steps).body;
     },
-  );
+    openUdp: async () => {
+      opened += 1;
+      return opened === 1 ? signalling : rtp;
+    },
+  };
+  const gateway: SipVoiceGateway = new (class extends SipVoiceGateway {
+    protected override readonly options = OPTIONS;
+
+    protected override readonly host = callHost;
+  })({ get: (name: string) => SECRETS[name] } as unknown as SecretStore);
   return { gateway, signalling, rtp, posts, metered, said };
 }
 

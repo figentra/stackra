@@ -12,6 +12,7 @@ import { describe, expect, it } from "@stackra/testing";
 
 import { ProviderRefusedError } from "#core/errors/provider-refused.error";
 import type { IntegrationApi } from "#core/types/integration-api.type";
+import type { GoogleWalletOptions } from "#node/pass/google-wallet-options.type";
 import { GoogleWalletPassDriver } from "#node/pass/google-wallet-pass.driver";
 import type { WalletPassRequest } from "#node/pass/wallet-pass-request.type";
 
@@ -66,6 +67,19 @@ const request: WalletPassRequest = {
 
 const options = { issuerId: "338", serviceAccountEmail: "wallet@example.iam.gserviceaccount.com" };
 
+/** The host's subclass over `api` and `walletOptions`, built with `secrets`. */
+function driverOf(
+  api: IntegrationApi,
+  secrets: SecretStore,
+  walletOptions: GoogleWalletOptions = options,
+): GoogleWalletPassDriver {
+  return new (class extends GoogleWalletPassDriver {
+    protected override readonly api = api;
+
+    protected override readonly options = walletOptions;
+  })(secrets);
+}
+
 /** The bytes of a base64url part. */
 function decode(part: string): Uint8Array<ArrayBuffer> {
   return Uint8Array.from(atob(part.replaceAll("-", "+").replaceAll("_", "/")), (c) =>
@@ -94,11 +108,7 @@ describe("GoogleWalletPassDriver", () => {
   it("inserts the object and signs a save link that names it", async () => {
     const { pem, publicKey } = await rsaKey();
     const api = fakeApi();
-    const driver = new GoogleWalletPassDriver(
-      api,
-      secretsOf({ GOOGLE_WALLET_ISSUER_KEY: pem }),
-      options,
-    );
+    const driver = driverOf(api, secretsOf({ GOOGLE_WALLET_ISSUER_KEY: pem }));
     const pass = await driver.issue(request);
     expect(api.calls).toEqual(["POST /walletobjects/v1/genericObject"]);
     expect(pass).toMatchObject({
@@ -130,11 +140,7 @@ describe("GoogleWalletPassDriver", () => {
   it("updates the object when it exists", async () => {
     const { pem } = await rsaKey();
     const api = fakeApi(409);
-    await new GoogleWalletPassDriver(
-      api,
-      secretsOf({ GOOGLE_WALLET_ISSUER_KEY: pem }),
-      options,
-    ).issue(request);
+    await driverOf(api, secretsOf({ GOOGLE_WALLET_ISSUER_KEY: pem })).issue(request);
     expect(api.calls).toEqual([
       "POST /walletobjects/v1/genericObject",
       "PUT /walletobjects/v1/genericObject/338.lya_1",
@@ -142,14 +148,14 @@ describe("GoogleWalletPassDriver", () => {
   });
 
   it("rethrows any other refusal", async () => {
-    const driver = new GoogleWalletPassDriver(fakeApi(400), secretsOf({}), options);
+    const driver = driverOf(fakeApi(400), secretsOf({}));
     await expect(driver.issue(request)).rejects.toSatisfy((error) =>
       ProviderRefusedError.is(error, { status: 400 }),
     );
   });
 
   it("refuses a missing key secret by name", async () => {
-    const driver = new GoogleWalletPassDriver(fakeApi(), secretsOf({}), {
+    const driver = driverOf(fakeApi(), secretsOf({}), {
       ...options,
       keySecret: "MY_KEY",
     });

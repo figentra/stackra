@@ -21,16 +21,18 @@ import { NoPaymentProviderError } from "#core/errors/no-payment-provider.error";
  */
 export class PaymentGatewaysFake extends PaymentGateways {
   /** The gateways, in preference order. */
-  private readonly gateways: readonly PaymentGateway[];
+  private gateways: readonly PaymentGateway[] = [];
 
-  private constructor(gateways: readonly PaymentGateway[]) {
+  // A constructor takes class tokens only (ADR 0294 rule 17), so `with` fills the fields.
+  private constructor() {
     super();
-    this.gateways = gateways;
   }
 
   /** A fake over `gateways`. */
   static with(gateways: readonly PaymentGateway[]): PaymentGatewaysFake {
-    return new PaymentGatewaysFake(gateways);
+    const fake = new PaymentGatewaysFake();
+    fake.gateways = gateways;
+    return fake;
   }
 
   /** The first gateway that has every capability in `needs`. */

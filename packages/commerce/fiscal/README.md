@@ -50,11 +50,11 @@ import {
 import { fetchPacks } from "@stackra/market-packs";
 
 // Production: the fiscal section comes from verified market packs (keys `fiscal.invoice`, `fiscal.till`).
-const packs = new MarketPackFiscalPackSourceDriver(await fetchPacks(store, hashes, trustedKeys), {
+const packs = MarketPackFiscalPackSourceDriver.with(await fetchPacks(store, hashes, trustedKeys), {
   pins,
 });
 
-const fiscal = new FiscalService(
+const fiscal = FiscalService.with(
   [new ZatcaDriver(signer, transport), new TseDriver(device)],
   packs,
   journal,
@@ -69,7 +69,7 @@ const status = await fiscal.offlineStatus({ market, channel: FiscalChannel.Till,
 - `seal` reads the pack in force on the issue date; `null` means the market asks nothing in that channel.
 - Sealing a document twice on one unit returns the stored record, so a retry never signs twice.
 - `submitPending` stops at the first record the authority does not take, keeping order.
-- A CSID per till comes from `ZatcaOnboarding` (`compliance`, `check`, `production`), called by device pairing.
+- A CSID per till comes from `ZatcaOnboardingDriver` (`compliance`, `check`, `production`), called by device pairing.
 
 ## Validity polling
 
@@ -117,13 +117,13 @@ import {
   DeviceOnboardingDriver,
   EtaOnboardingDriver,
   FiscalOnboardingService,
-  ZatcaOnboarding,
+  ZatcaOnboardingDriver,
 } from "@stackra/fiscal";
 
-const onboardings = new FiscalOnboardingService([
-  new ZatcaOnboarding(transport, credentials),
+const onboardings = FiscalOnboardingService.with([
+  new ZatcaOnboardingDriver(transport, credentials),
   new EtaOnboardingDriver(transport, credentials),
-  new DeviceOnboardingDriver("tse", device, credentials),
+  DeviceOnboardingDriver.for("tse", device, credentials),
 ]);
 
 const mandate = (await packs.section(market, now))?.till;
@@ -137,7 +137,7 @@ if (mandate && onboardings.supports(mandate.driver)) {
 
 | Key                   | Onboarding               | `register`                                                                                                      | `complete`                     |
 | --------------------- | ------------------------ | --------------------------------------------------------------------------------------------------------------- | ------------------------------ |
-| `zatca`               | `ZatcaOnboarding`        | compliance CSID from the portal OTP and the till's CSR                                                          | production CSID                |
+| `zatca`               | `ZatcaOnboardingDriver`  | compliance CSID from the portal OTP and the till's CSR                                                          | production CSID                |
 | `eta-receipt`         | `EtaOnboardingDriver`    | the POS's portal client id, secret and pre-shared key, proved by a token request with its serial and OS version | proves them again              |
 | `tse`, `fdm`, `rt`, … | `DeviceOnboardingDriver` | `<key>.register` on the paired device: serial and certificate                                                   | `<key>.activate` on the device |
 

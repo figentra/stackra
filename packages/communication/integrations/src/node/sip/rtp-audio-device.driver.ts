@@ -3,7 +3,8 @@
  * Purpose: `RtpAudioDeviceDriver`, a SIP call's media leg as an `AudioDevice`: `capture` yields the caller's G.711
  *          audio from incoming RTP, `play` sends audio as 20 ms RTP packets paced in real time, so `SpeechService`'s
  *          `listenOn` and `sayOn` run a call like a lane microphone.
- * Boundary: the driver named `rtp`, one per call, made by `SipVoiceGateway` once the codec and far address are agreed;
+ * Boundary: the driver named `rtp`, one per call, made by `SipVoiceGateway` with `over` once the codec and far address
+ *           are agreed;
  *           it owns the call's RTP socket and closes it in `close`. Audio is passed through and never stored or
  *           logged. Only the agreed codec at 8000 Hz mono is taken; audio arriving while nothing captures is dropped.
  *           No jitter buffer, RTCP or symmetric-RTP latching.
@@ -31,18 +32,17 @@ const PACKET_MS = 20;
  * A call's audio over RTP.
  *
  * @example
- * const device = new RtpAudioDeviceDriver(socket, far, AudioEncoding.Alaw);
+ * const device = RtpAudioDeviceDriver.over(socket, far, AudioEncoding.Alaw);
  * await speech.sayOn(device, greeting, { speech: voice, format: device.format }, session);
  */
 export class RtpAudioDeviceDriver extends Driver(AudioDevice) {
-  /** The format both directions carry. */
-  readonly format: AudioFormat;
+  private socket!: UdpSocket;
 
-  private readonly socket: UdpSocket;
+  private far!: UdpPeer;
 
-  private readonly far: UdpPeer;
+  private payloadType!: number;
 
-  private readonly payloadType: number;
+  private agreed!: AudioFormat;
 
   private readonly ssrc = globalThis.crypto.getRandomValues(new Uint32Array(1))[0] ?? 1;
 
@@ -56,23 +56,31 @@ export class RtpAudioDeviceDriver extends Driver(AudioDevice) {
   private closed = false;
 
   /**
+   * The media leg of one call. A static, not the constructor, because its arguments are per-call data, not class
+   * tokens (ADR 0294 rule 17).
    * @param socket - the call's bound RTP socket.
    * @param far - where the far end takes RTP (its SDP).
    * @param encoding - the agreed G.711 codec.
    * @throws RangeError when `encoding` has no RTP payload type.
    */
-  constructor(socket: UdpSocket, far: UdpPeer, encoding: AudioEncoding) {
-    super();
+  static over(socket: UdpSocket, far: UdpPeer, encoding: AudioEncoding): RtpAudioDeviceDriver {
     const codec = RTP_PAYLOAD_TYPES[encoding];
     if (codec === undefined) throw new RangeError(`${encoding} is not carried over RTP here`);
-    this.socket = socket;
-    this.far = far;
-    this.payloadType = codec.type;
-    this.format = { encoding, sampleRate: 8000, channels: 1 };
+    const device = new RtpAudioDeviceDriver();
+    device.socket = socket;
+    device.far = far;
+    device.payloadType = codec.type;
+    device.agreed = { encoding, sampleRate: 8000, channels: 1 };
     socket.on("message", (data) => {
       const got = rtpPayload(data);
-      if (got?.payloadType === this.payloadType) this.sink?.(got.payload);
+      if (got?.payloadType === device.payloadType) device.sink?.(got.payload);
     });
+    return device;
+  }
+
+  /** The format both directions carry. */
+  get format(): AudioFormat {
+    return this.agreed;
   }
 
   /**

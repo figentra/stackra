@@ -3,8 +3,9 @@
  * Purpose: `DeviceOnboardingDriver`, unit registration for till mandates whose authority identity lives in a fiscal
  *          device (a TSE, a fiscal data module, a telematic recorder): `register` has the device register the till as
  *          its client and report its serial and certificate, `complete` has it activate that registration.
- * Boundary: a `FiscalOnboarding` driver over `FiscalDevice` and `TillCredentials`, built once per device mandate with
- *           that mandate's key (`tse`, `fdm`, `rt`). Commands are `<key>.register` and `<key>.activate`; the host's
+ * Boundary: a `FiscalOnboarding` driver over `FiscalDevice` and `TillCredentials`, one per device mandate: a subclass
+ *           declares that mandate's `key` (`tse`, `fdm`, `rt`), or `DeviceOnboardingDriver.for` does; the constructor
+ *           takes class tokens only (ADR 0294 rule 17). Commands are `<key>.register` and `<key>.activate`; the host's
  *           device binding speaks the device's own protocol and any authority portal behind it. Answers are checked
  *           by `parseDeviceAnswer`. The operator types nothing, so `inputs` is empty.
  * Runtime: isomorphic
@@ -36,11 +37,10 @@ const ANSWER = z.object({
  * Registers a till with its paired fiscal device.
  *
  * @example
- * const onboardings = new FiscalOnboardingService([new DeviceOnboardingDriver("tse", device, credentials)]);
+ * const onboardings = FiscalOnboardingService.with([DeviceOnboardingDriver.for("tse", device, credentials)]);
  */
-export class DeviceOnboardingDriver extends Driver(FiscalOnboarding) {
-  /** The key a till mandate names. */
-  readonly key: string;
+export abstract class DeviceOnboardingDriver extends Driver(FiscalOnboarding) {
+  // `key`, the port's abstract member, is the device mandate's driver key: a subclass (or `for`) declares it.
 
   /** Nothing to type: the device knows its own identity. */
   readonly inputs: readonly OnboardingInput[] = [];
@@ -52,15 +52,29 @@ export class DeviceOnboardingDriver extends Driver(FiscalOnboarding) {
   private readonly credentials: TillCredentials;
 
   /**
+   * @param device - the paired device binding.
+   * @param credentials - the till credential store.
+   */
+  constructor(device: FiscalDevice, credentials: TillCredentials) {
+    super();
+    this.device = device;
+    this.credentials = credentials;
+  }
+
+  /**
+   * The onboarding of the device mandate `key`, for a host that builds it by hand.
    * @param key - the device mandate's driver key, the same its `FiscalDriver` has.
    * @param device - the paired device binding.
    * @param credentials - the till credential store.
    */
-  constructor(key: string, device: FiscalDevice, credentials: TillCredentials) {
-    super();
-    this.key = key;
-    this.device = device;
-    this.credentials = credentials;
+  static for(
+    key: string,
+    device: FiscalDevice,
+    credentials: TillCredentials,
+  ): DeviceOnboardingDriver {
+    return new (class extends DeviceOnboardingDriver {
+      override readonly key = key;
+    })(device, credentials);
   }
 
   /**

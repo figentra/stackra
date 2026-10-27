@@ -13,6 +13,10 @@
       "in_app": "In the app",
       "chat": "Chat",
       "voice": "Voice call"
+    },
+    "template_variant": {
+      "full": "Full",
+      "content_free": "Content-free"
     }
   },
   "templates": {

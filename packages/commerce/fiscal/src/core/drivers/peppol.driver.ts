@@ -43,7 +43,7 @@ import { zonedTime } from "#core/functions/zoned-time.function";
  * Builds Peppol UBL and hands it to an access point.
  *
  * @example
- * new FiscalService([new PeppolDriver(transport)], packs, journal, clock);
+ * FiscalService.with([new PeppolDriver(transport)], packs, journal, clock);
  */
 export class PeppolDriver extends Driver(FiscalDriver) {
   /** The key a pack names. */

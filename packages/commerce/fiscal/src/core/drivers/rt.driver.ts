@@ -41,7 +41,7 @@ const RT_ANSWER = z.object({
  * Records documents through the till's telematic recorder.
  *
  * @example
- * new FiscalService([new RtDriver(device)], packs, journal, clock);
+ * FiscalService.with([new RtDriver(device)], packs, journal, clock);
  */
 export class RtDriver extends Driver(FiscalDriver) {
   /** The key a pack names. */

@@ -4,7 +4,8 @@
  *          person there (`parties.person.get@1` finds it, and it is neither merged away nor erased).
  * Boundary: abstract, so it is never bound as it stands: the generated `PartiesClient` lives in the host
  *           (`#stackra/clients/parties`, ADR 0260 decision 3) and a package cannot import it, so the host subclasses
- *           this driver and passes its client (the payments `connection` driver pattern). The client is typed by the
+ *           this driver and declares its client as `parties`, injected into its own constructor (a class token, ADR 0294
+ *           rule 17). The client is typed by the
  *           one call it makes, so no OS package is a dependency. Only a not-found refusal answers "not a member";
  *           every other failure (unreachable service, forbidden) throws, so a redemption fails closed.
  * Runtime: node
@@ -22,19 +23,17 @@ import type { MemberId } from "#contracts/types/member-id.type";
  * @example
  * // the host's driver, over the client gen wrote for it
  * export class OsLoyaltyMembersDriver extends PartiesLoyaltyMembersDriver {
+ *   protected override readonly parties: PartiesClient;
+ *
  *   constructor(parties: PartiesClient) {
- *     super(parties);
+ *     super();
+ *     this.parties = parties;
  *   }
  * }
  */
 export abstract class PartiesLoyaltyMembersDriver extends Driver(LoyaltyMembers) {
-  /** The host's parties client. */
-  private readonly parties: ConstructorParameters<typeof PartiesLoyaltyMembersDriver>[0];
-
-  /**
-   * @param parties - the generated `PartiesClient` of the host, typed by the one call this driver makes.
-   */
-  constructor(parties: {
+  /** The host's generated `PartiesClient`, typed by the one call this driver makes. */
+  protected abstract readonly parties: {
     readonly person: {
       readonly get: {
         call(input: { readonly id: string }): Promise<{
@@ -43,10 +42,7 @@ export abstract class PartiesLoyaltyMembersDriver extends Driver(LoyaltyMembers)
         }>;
       };
     };
-  }) {
-    super();
-    this.parties = parties;
-  }
+  };
 
   /** A live person is a member; an unknown, merged-away or erased one is not. */
   async isMember(principalId: MemberId): Promise<boolean> {

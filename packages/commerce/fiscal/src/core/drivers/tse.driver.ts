@@ -49,7 +49,7 @@ const TSE_ANSWER = z.object({
  * Signs receipts through the till's TSE.
  *
  * @example
- * new FiscalService([new TseDriver(device)], packs, journal, clock);
+ * FiscalService.with([new TseDriver(device)], packs, journal, clock);
  */
 export class TseDriver extends Driver(FiscalDriver) {
   /** The key a pack names. */

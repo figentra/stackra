@@ -114,7 +114,7 @@ const setup = (window: number | null = null) => {
   });
   const journal = new MemoryFiscalJournalDriver();
   const clock = new TestClock();
-  const service = new FiscalService([tillDriver, invoiceDriver], packs, journal, clock);
+  const service = FiscalService.with([tillDriver, invoiceDriver], packs, journal, clock);
   return { service, tillDriver, invoiceDriver, packs, journal, clock };
 };
 
@@ -233,7 +233,7 @@ describe("FiscalService#pollSubmitted", () => {
     const driver = new PollingDriver("till-driver");
     driver.answers.push(handed, handed);
     const journal = new MemoryFiscalJournalDriver();
-    const service = new FiscalService(
+    const service = FiscalService.with(
       [driver],
       FiscalPackSourceFake.with({ xx: { invoice: null, till: mandate("till-driver") } }),
       journal,
@@ -287,7 +287,7 @@ const paidPart = (id: string, line: FiscalLine) => ({
 });
 const sample: FiscalCheck = { document: wholeCheck, parts: [paidPart("part-1", widget)] };
 const checkService = (checkDocument?: CheckDocumentMode) =>
-  new FiscalService(
+  FiscalService.with(
     [new RecordingDriver("till-driver")],
     FiscalPackSourceFake.with({
       xx: {

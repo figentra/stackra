@@ -5,8 +5,9 @@
  *          document), seals a guest check's documents under the pack's check mode, submits pending records in order
  *          when the authority is reachable, polls submitted records for the authority's verdict, reports how far a
  *          unit is behind against the pack's reporting window, and exports the journal.
- * Boundary: a `Service` the host builds with every driver it registers, because the driver is chosen per call from
- *           pack data rather than bound once. It names no market and holds no value of its own: windows and options
+ * Boundary: a `Service` over every driver the host registers (its subclass's `drivers`, or `FiscalService.with`),
+ *           because the driver is chosen per call from pack data rather than bound once. The constructor takes class
+ *           tokens only (ADR 0294 rule 17). It names no market and holds no value of its own: windows and options
  *           are pack data, the time is the `Clock`'s. A pack with no mandate in a channel means nothing is sealed.
  * Runtime: isomorphic
  * Governing contract: ADR 0364 (decisions 1, 2, 3 and 7); ADR 0363 (decisions 3 and 4).
@@ -38,12 +39,15 @@ const HOUR = 3_600_000;
  * Seals, submits and exports fiscal records for any market a pack covers.
  *
  * @example
- * const fiscal = new FiscalService([new ZatcaDriver(signer, transport), new TseDriver(device)], packs, journal, clock);
+ * const fiscal = FiscalService.with([new ZatcaDriver(signer, transport), new TseDriver(device)], packs, journal, clock);
  * const record = await fiscal.seal(document, { market: "sa", channel: FiscalChannel.Till, unitId: "till_1" });
  */
-export class FiscalService extends Service {
-  /** Registered drivers by key. */
-  private readonly drivers: ReadonlyMap<string, FiscalDriver>;
+export abstract class FiscalService extends Service {
+  /** Every driver the host offers, declared by its subclass; a later one with the same key replaces an earlier one. */
+  protected abstract readonly drivers: readonly FiscalDriver[];
+
+  /** Registered drivers by key, built on first use. */
+  private byKey: ReadonlyMap<string, FiscalDriver> | undefined;
 
   /** Reads the pack's fiscal section. */
   private readonly packs: FiscalPackSource;
@@ -55,22 +59,33 @@ export class FiscalService extends Service {
   private readonly clock: Clock;
 
   /**
+   * @param packs - the market-pack source.
+   * @param journal - the journal.
+   * @param clock - the clock.
+   */
+  constructor(packs: FiscalPackSource, journal: FiscalJournal, clock: Clock) {
+    super();
+    this.packs = packs;
+    this.journal = journal;
+    this.clock = clock;
+  }
+
+  /**
+   * A service over `drivers`, for a host that builds it by hand.
    * @param drivers - every driver the host offers; a later one with the same key replaces an earlier one.
    * @param packs - the market-pack source.
    * @param journal - the journal.
    * @param clock - the clock.
    */
-  constructor(
+  static with(
     drivers: readonly FiscalDriver[],
     packs: FiscalPackSource,
     journal: FiscalJournal,
     clock: Clock,
-  ) {
-    super();
-    this.drivers = new Map(drivers.map((driver) => [driver.key, driver]));
-    this.packs = packs;
-    this.journal = journal;
-    this.clock = clock;
+  ): FiscalService {
+    return new (class extends FiscalService {
+      protected override readonly drivers = drivers;
+    })(packs, journal, clock);
   }
 
   /**
@@ -274,7 +289,8 @@ export class FiscalService extends Service {
 
   /** The registered driver with a key. */
   private driver(target: FiscalTarget, key: string): FiscalDriver {
-    const driver = this.drivers.get(key);
+    this.byKey ??= new Map(this.drivers.map((registered) => [registered.key, registered]));
+    const driver = this.byKey.get(key);
     if (!driver)
       throw FiscalDriverMissingError.create({
         market: target.market,
