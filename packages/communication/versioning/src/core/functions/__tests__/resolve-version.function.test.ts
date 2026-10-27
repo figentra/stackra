@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `resolveVersion`: the header wins over the pin, the pin over the fallback; the newest version
  *          carries no header, an older one `Deprecation` (its successor's day) and `Sunset` (the earliest sunset after
- *          it); an unknown or empty header and a stale pin are refused as unsupported, a version past its sunset as
+ *          it, capped by the support window after its successor, which alone sunsets and retires a version that no
+ *          change follows); a bad support window throws; an unknown or empty header and a stale pin are refused as unsupported, a version past its sunset as
  *          sunset, and a fallback outside `supported` throws; one supported date and no change is the dormant case.
  * Boundary: test only; registers dated changes the way gen does.
  * Runtime: node (vitest)
@@ -101,6 +102,40 @@ describe("resolveVersion", () => {
     expect(resolveVersion({ ...config, now: new Date("2028-02-29T23:59:59Z") }).version).toBe(
       "2026-10-01",
     );
+  });
+
+  it("serves a version no change follows until its support window ends, then retires it", () => {
+    const window = { supported: ["2026-10-01", "2027-01-31"], fallback: "2026-10-01" };
+    expect(resolveVersion({ ...window, now: new Date("2027-06-01T00:00:00Z") })).toEqual({
+      version: "2026-10-01",
+      headers: { Deprecation: "@1801353600", Sunset: "Mon, 31 Jan 2028 00:00:00 GMT" },
+    });
+    // the window is configuration: 6 months from 31 January clamps to 31 July
+    expect(
+      resolveVersion({ ...window, supportMonths: 6, now: new Date("2027-06-01T00:00:00Z") })
+        .headers,
+    ).toEqual({ Deprecation: "@1801353600", Sunset: "Sat, 31 Jul 2027 00:00:00 GMT" });
+    const error = thrown(() =>
+      resolveVersion({ ...window, supportMonths: 6, now: new Date("2027-07-31T00:00:00Z") }),
+    );
+    expect(isRefusal(error, VersionSunsetError)).toBe(true);
+    expect((error as VersionSunsetError).details).toEqual({
+      version: "2026-10-01",
+      sunset: "2027-07-31",
+    });
+  });
+
+  it("takes the window when it ends before a change's sunset", () => {
+    const june = new Date("2027-06-01T00:00:00Z");
+    expect(resolveVersion({ ...config, supportMonths: 6, now: june }).headers).toEqual({
+      Deprecation: "@1803859200",
+      Sunset: "Wed, 01 Sep 2027 00:00:00 GMT",
+    });
+  });
+
+  it("throws on a support window that is not a whole number of months above 0", () => {
+    for (const supportMonths of [0, -1, 1.5, Number.NaN])
+      expect(() => resolveVersion({ ...config, supportMonths })).toThrow(TypeError);
   });
 
   it("throws when the fallback is not supported", () => {

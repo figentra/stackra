@@ -5,21 +5,23 @@ an integration event adds one `Change<Subject>({ from, sunset })` class beside i
 The class's fields are the old shape. While only the latest version exists, the package does nothing.
 
 **Tier:** `tier:lib` (`packages/communication/versioning`). Entry `.` only. Depends on `@stackra/contracts`,
-`@stackra/container`, `@stackra/validation`, `@stackra/errors` and `@stackra/events`.
+`@stackra/container`, `@stackra/validation`, `@stackra/errors`, `@stackra/events` and `@stackra/support`.
 
 ## What is here
 
-| Symbol                                                                                               | Use                                                                                          |
-| ---------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| `Change`                                                                                             | the kind base: an event change (`from: 1`) or a dated response change (`from: "2027-03-01"`) |
-| `registerChanges`                                                                                    | links each subject to its changes; gen emits the call                                        |
-| `downgrade`                                                                                          | shapes a current value for an older dated version or event version (`down`)                  |
-| `upgrade`                                                                                            | reads an old integration event payload as the current version (`up`)                         |
-| `resolveVersion`                                                                                     | picks a request's version: `Stackra-Version` header, then the pin, then the fallback         |
-| `VERSIONING_HEADERS`                                                                                 | `Stackra-Version`, `Deprecation`, `Sunset`                                                   |
-| `UnsupportedVersionError`                                                                            | a version the service does not serve (400)                                                   |
-| `VersionSunsetError`                                                                                 | a version past its sunset (412)                                                              |
-| `ChangeOptions`, `ChangeClass`, `ChangeBase`, `EventChangeBase`, `VersionRequest`, `ResolvedVersion` | types                                                                                        |
+| Symbol                                                                                               | Use                                                                                               |
+| ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| `Change`                                                                                             | the kind base: an event change (`from: 1`) or a dated response change (`from: "2027-03-01"`)      |
+| `registerChanges`                                                                                    | links each subject to its changes; gen emits the call                                             |
+| `downgrade`                                                                                          | shapes a current value for an older dated version or event version (`down`)                       |
+| `upgrade`                                                                                            | reads an old integration event payload as the current version (`up`)                              |
+| `resolveVersion`                                                                                     | picks a request's version: `Stackra-Version` header, then the pin, then the fallback              |
+| `applyVersionHeaders`                                                                                | writes the resolved `Deprecation` and `Sunset` on a response and adds `Stackra-Version` to `Vary` |
+| `VERSIONING_HEADERS`                                                                                 | `Stackra-Version`, `Deprecation`, `Sunset`                                                        |
+| `VERSION_SUPPORT_MONTHS`                                                                             | the default support window after a successor ships (12 calendar months, ADR 0118)                 |
+| `UnsupportedVersionError`                                                                            | a version the service does not serve (400)                                                        |
+| `VersionSunsetError`                                                                                 | a version past its sunset (412)                                                                   |
+| `ChangeOptions`, `ChangeClass`, `ChangeBase`, `EventChangeBase`, `VersionRequest`, `ResolvedVersion` | types                                                                                             |
 
 ## An event version
 
@@ -78,11 +80,21 @@ const resolved = resolveVersion({
   pin: apiKey.version, // set when the key or OAuth app was created
   supported: versioning.supported,
   fallback: versioning.fallback,
+  supportMonths: versioning.supportMonths, // optional; 12 when left out
   now: clock.now(),
 });
-const body = downgrade(OrderView, view, resolved.version);
-// resolved.headers: { Deprecation: "@1803859200", Sunset: "Wed, 01 Mar 2028 00:00:00 GMT" } for a 2026-10-01 caller
+const response = Response.json(downgrade(OrderView, view, resolved.version));
+applyVersionHeaders(response.headers, resolved);
+// a 2026-10-01 caller: Deprecation: @1803859200, Sunset: Wed, 01 Mar 2028 00:00:00 GMT, Vary: Stackra-Version
 ```
+
+## Deprecated, then retired
+
+A dated version is deprecated from the day its successor ships and served until its sunset: the earlier of the end of
+its support window (`supportMonths` calendar months after the successor, 12 by default, a setting of the service) and
+the earliest `sunset` of the dated changes after it. A version that no change follows still gets both headers and is
+still retired at the end of the window. From the sunset day on, `resolveVersion` refuses it with `VersionSunsetError`
+(412) before the call runs; a version not in `supported` at all is refused with `UnsupportedVersionError` (400).
 
 Each change converts straight from the subject's current shape, as its types say, so one change serves one old
 version and no chain is walked. When the subject changes again, the compiler points at every older change's `down`

@@ -10,9 +10,11 @@
  */
 export { Change } from "#core/bases/change.base";
 export type { ChangeBase, EventChangeBase } from "#core/bases/change.base";
+export { VERSION_SUPPORT_MONTHS } from "#core/constants/version-support-months.constant";
 export { VERSIONING_HEADERS } from "#core/constants/versioning-headers.constant";
 export { UnsupportedVersionError } from "#core/errors/unsupported-version.error";
 export { VersionSunsetError } from "#core/errors/version-sunset.error";
+export { applyVersionHeaders } from "#core/functions/apply-version-headers.function";
 export { downgrade } from "#core/functions/downgrade.function";
 export { registerChanges } from "#core/functions/register-changes.function";
 export { resolveVersion } from "#core/functions/resolve-version.function";

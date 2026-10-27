@@ -26,6 +26,11 @@ Dated API versions and versioned integration events (ADR 0118, 0141, 0305). Memb
 - `Change` is called only, with the subject as the type argument; `from` says the form (a whole version is an event
   change with `up` and `down`, a date is a dated response change with `down` only).
 - Each change converts straight from and to the subject's current shape; never walk a chain of changes.
+- A version's sunset is the earlier of its support window (`supportMonths` after its successor, default
+  `VERSION_SUPPORT_MONTHS`) and the earliest dated change sunset after it; the window is configuration, never a literal
+  in a service.
+- The gateway calls `resolveVersion` once per request and `applyVersionHeaders` once per response; nothing else here
+  touches HTTP.
 - Requests are never transformed (ADR 0118 decision 2). Paths never carry a version.
 - No parameter properties and no `#private` fields; the source keeps to erasable syntax.
 
