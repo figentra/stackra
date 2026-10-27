@@ -5,7 +5,9 @@
  *          @stackra/repo-checks, which holds every check this script used to carry (catalog versions, names by
  *          placement, tier tags, presets, required files, forbidden dependencies, service shape, test placement,
  *          JSON vs JSONC, runway schemas and files, YAML flow maps, imports, the Expo form factor, window sizing and the
- *          lang catalogues). `stackra check --only config,structure,catalogues` runs the same checks.
+ *          lang catalogues). `stackra check --only config,structure,catalogues` runs the same checks. Also runs the
+ *          package-cycle check (`package-cycles.mjs`) and the architecture map drift check (apps/docs
+ *          `scripts/architecture-map`), STA-1373.
  *          Prints the findings as `<dir>: <finding>` and exits 1; prints nothing on success.
  * Boundary: a thin wrapper; the checks themselves are @stackra/repo-checks'.
  * Runtime: node
@@ -15,6 +17,8 @@
  */
 import { fileURLToPath } from "node:url";
 
+import { architectureMapFindings } from "../../apps/docs/scripts/architecture-map/architecture-map.mjs";
+import { packageCycleFindings } from "./package-cycles.mjs";
 import { checks } from "./repo-checks.mjs";
 
 export const {
@@ -57,6 +61,8 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
       ci: Boolean(process.env.CI),
       warn: (text) => console.warn(text),
     })),
+    ...packageCycleFindings(ROOT),
+    ...architectureMapFindings(ROOT),
   ];
   for (const { dir, text } of findings) console.error(`${dir || "."}: ${text}`);
   if (findings.length) {

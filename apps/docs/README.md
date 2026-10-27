@@ -6,7 +6,7 @@ Purpose: the README of @figentra/docs, the Stackra docs site: its source layout,
          files it carries.
 Boundary: this member only; the site's pages are under src/docs, its configuration in src/config/docs.config.ts.
 Runtime: none
-Governing contract: ADR 0002 (2026-10-27 amendment); ADR 0299; ADR 0452; ADR 0024 (brand NOTICE); stackra-177.
+Governing contract: ADR 0002 (2026-10-27 amendment); ADR 0299; ADR 0452; ADR 0024 (brand NOTICE); stackra-177; STA-1373.
 -->
 
 The Stackra documentation site, built with [Mintlify](https://mintlify.com). You write the source; `stackra gen`
@@ -19,6 +19,7 @@ assembles the site Mintlify reads into `.stackra/site/` (gitignored, never edite
 | `src/assets/`               | logo, favicon and the brand kit (`brand/`); a page references a file as `/assets/<path>`                      |
 | `src/snippets/`             | reusable MDX snippets                                                                                         |
 | `scripts/system-map/`       | the system map renderer and writer (outside `src/`: gen allows only pages, assets, snippets and config there) |
+| `scripts/architecture-map/` | the architecture map generator, its archify candidate and the drift check `pnpm validate` runs                |
 
 | Command                                   | Does                                                              |
 | ----------------------------------------- | ----------------------------------------------------------------- |
@@ -49,6 +50,23 @@ node scripts/system-map/write-system-map.ts <system.graph.json>
 Flows are declared once, in each repo's `stackra.flows.json`; a new flow or service appears on the next run. The pages
 need navigation entries (`{ folder: "system-map" }`, `{ folder: "system-map/flows" }` and one per
 `system-map/services/<repo>`) the first time they are written; until then gen refuses them as unlisted.
+
+## Architecture map
+
+`scripts/architecture-map/architecture-map.mjs` (STA-1373) draws the workspace with the vendored archify skill: one
+region per tier, a box per app, service and worker member, a box per library and config category (runtimes as the
+sublabel), and the client call edges of the root `stackra.graph.json`. It reads each member's `package.json` `stackra`
+field and `turbo.jsonc` tags. From the repository root:
+
+```sh
+node apps/docs/scripts/architecture-map/architecture-map.mjs
+```
+
+writes the candidate `scripts/architecture-map/architecture-map.yaml` and renders `src/assets/architecture-map.html`
+(archify `finalize`, which needs a browser for its browser check); commit both. `pnpm validate` fails when the committed
+candidate differs from what the script writes now (the parsed YAML is compared, so oxfmt's layout does not count). The page
+is `guides/architecture-map`. archify only draws: the rules stay in validate, oxlint, turbo boundaries and gen. Until
+the testing session first runs the command, both files are placeholders and the drift check fails.
 
 ## Brand files
 

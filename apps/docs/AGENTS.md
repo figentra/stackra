@@ -5,7 +5,7 @@ Stackra file contract:
 Purpose: the agent notes of @figentra/docs: the docs layout, its checks, the system map and the personal data it holds.
 Boundary: this member only; the project rules are in the root AGENTS.md.
 Runtime: none
-Governing contract: ADR 0002 (2026-10-27 amendment); ADR 0452; root AGENTS.md; stackra-177.
+Governing contract: ADR 0002 (2026-10-27 amendment); ADR 0452; root AGENTS.md; stackra-177; STA-1373.
 -->
 
 Mintlify documentation site. Tier tag `tier:app`.
@@ -30,6 +30,16 @@ Mintlify documentation site. Tier tag `tier:app`.
   `stackra.flows.json` and run the writer again.
 - Read the graph only through `@stackra/gen`'s exported types (`SystemGraph`, `GraphNode`, `GraphFlow`, `GraphEdge`).
 - Tests sit in `scripts/system-map/__tests__/`. The console renderer is later work (OS console).
+
+## Architecture map (`scripts/architecture-map/`)
+
+- `architecture-map.mjs` generates `architecture-map.yaml` (an archify architecture candidate) from the members'
+  `stackra` field, `turbo.jsonc` tags and the root `stackra.graph.json`, and renders `src/assets/architecture-map.html`
+  with `.agents/skills/archify`. Both files are generated: never edit them; run
+  `node apps/docs/scripts/architecture-map/architecture-map.mjs` from the root and commit both.
+- `pnpm validate` fails when the committed candidate drifts. Tests are in `tools/scripts/__tests__/architecture-map.test.mjs`
+  (node:test, run by `pnpm validate`).
+- The map draws; it never decides. A rule goes in validate, oxlint, turbo boundaries or gen, not in the generator.
 
 ## Rules that fail the build
 

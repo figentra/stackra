@@ -49,6 +49,7 @@ export class StackraDocsConfig extends DocsConfig {
             "guides/standards",
             "guides/catalogs",
             "guides/testing",
+            "guides/architecture-map",
           ],
         },
         { group: "Build", pages: [{ folder: "build" }] },

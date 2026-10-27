@@ -1,0 +1,7 @@
+# Stackra file contract:
+# Purpose: PLACEHOLDER for the archify architecture candidate of the Stackra architecture map (STA-1373).
+# Boundary: never edit it; run `node apps/docs/scripts/architecture-map/architecture-map.mjs` from the repository root
+#           and commit it with apps/docs/src/assets/architecture-map.html. pnpm validate fails until then.
+# Runtime: none
+# Governing contract: ADR 0452; STA-1373.
+placeholder: "PLACEHOLDER, not the architecture map: STA-1373 was built where nothing runs; the testing session generates the real map on ci-box."

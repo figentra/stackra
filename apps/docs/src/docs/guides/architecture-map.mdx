@@ -1,0 +1,45 @@
+---
+title: "Architecture map"
+description: "Every member by tier, category and runtime, and the client calls between services, drawn from the repository."
+icon: "network"
+---
+
+{/* Stackra file contract: Purpose: the architecture map page, embedding the archify rendering of the workspace (tiers, categories, runtimes, service client calls) and saying which check holds each rule. Boundary: shows the generated map; the generator is apps/docs/scripts/architecture-map/architecture-map.mjs and every rule is held by validate, oxlint, turbo boundaries or gen, never by the map. Runtime: docs. Governing contract: ADR 0003; ADR 0452; STA-1373. */}
+
+The map is generated, never drawn by hand. It reads each member's `package.json` `stackra` field and `turbo.jsonc`
+tags (tier, category, runtimes) and the client call edges of the repository's `stackra.graph.json` (the system graph
+gen writes, [ADR 0452](/adr/0452-the-system-graph-a-member-graph-per-gen-run-a-repo-graph-and-one-merge-step)). App, service and worker members get a box each; library and
+config packages get one box per category. Package dependencies between libraries are not drawn: turbo boundaries
+already hold their direction.
+
+<iframe
+  src="/assets/architecture-map.html"
+  title="Stackra architecture map"
+  style={{ width: "100%", height: "760px", border: "0" }}
+/>
+
+[Open the map on its own page](/assets/architecture-map.html).
+
+## Regenerate it
+
+```bash
+node apps/docs/scripts/architecture-map/architecture-map.mjs
+```
+
+The command writes `apps/docs/scripts/architecture-map/architecture-map.yaml` (the archify candidate, YAML; archify gets a JSON copy) and renders it
+with the vendored archify skill into `apps/docs/src/assets/architecture-map.html`; commit both. `pnpm validate` fails
+when the committed candidate differs from what the generator writes now, so a new member, a changed tier or runtime,
+or a new client call needs a regenerated map in the same change.
+
+## What enforces the architecture
+
+archify only draws. Each rule is held by a check that fails:
+
+| Rule                                                           | Check                                                        |
+| -------------------------------------------------------------- | ------------------------------------------------------------ |
+| No package cycle (dependencies, dev, peer and optional)        | `pnpm validate` (`tools/scripts/package-cycles.mjs`)         |
+| Tier direction: config → lib → app and service                 | `turbo boundaries`, and the tier tags `pnpm validate` checks |
+| No file cycle inside a package                                 | oxlint `import/no-cycle`                                     |
+| No deep import, no service-to-service or app-to-service import | oxlint `no-restricted-imports` (`boundaries.jsonc`)          |
+| The kind grammar                                               | `stackra gen` refusals                                       |
+| The map matches the repository                                 | `pnpm validate` (`architecture-map.mjs` drift check)         |
