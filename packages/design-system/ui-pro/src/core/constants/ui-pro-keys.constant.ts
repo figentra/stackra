@@ -3,7 +3,8 @@
  * Purpose: `UI_PRO_KEYS`, the typed keys of this package's own texts in `assets/lang/<locale>/ui_pro.json`: the
  *          status words of approvals, plan steps and scheduler views, and the default names of the chat, code block,
  *          navbar, sidebar, table-of-contents and rich-text-editor link buttons, and
- *          the screen-reader actions of a scheduler booking, and where a workflow canvas node leads.
+ *          the screen-reader actions of a scheduler booking and a floor-plan item, the seat count and suggestion of a
+ *          table, the KDS words (bump, recall, rush, allergy, held, all day), and where a workflow canvas node leads.
  * Boundary: internal; the web and native entries import it by path. Each key exists in every base locale this package
  *           ships, which the catalogue-completeness check proves.
  * Runtime: isomorphic
@@ -26,6 +27,19 @@ export const UI_PRO_KEYS = keys({
     table_of_contents: ["on_this_page"],
     rich_text_editor: ["link"],
     scheduler: ["move_earlier", "move_later", "move_previous", "move_next", "lengthen", "shorten"],
+    floor_plan: [
+      "seats",
+      "move_up",
+      "move_down",
+      "move_start",
+      "move_end",
+      "widen",
+      "narrow",
+      "taller",
+      "shorter",
+    ],
+    live_table_map: ["suggested"],
+    kds: ["bump", "recall", "rush", "allergy", "held", "all_day"],
     workflow_canvas: ["leads_to"],
   },
 });

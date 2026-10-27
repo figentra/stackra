@@ -50,6 +50,28 @@
     "lengthen": "Alargar",
     "shorten": "Acortar"
   },
+  "floor_plan": {
+    "seats": "Asientos: {count}",
+    "move_up": "Mover arriba",
+    "move_down": "Mover abajo",
+    "move_start": "Mover hacia el inicio",
+    "move_end": "Mover hacia el final",
+    "widen": "Ensanchar",
+    "narrow": "Estrechar",
+    "taller": "Hacer más alto",
+    "shorter": "Hacer más bajo"
+  },
+  "live_table_map": {
+    "suggested": "Sugerida"
+  },
+  "kds": {
+    "bump": "Listo",
+    "recall": "Recuperar",
+    "rush": "Urgente",
+    "allergy": "Alergia",
+    "held": "Retenido",
+    "all_day": "Total del día"
+  },
   "workflow_canvas": {
     "leads_to": "Lleva a {steps}"
   }

@@ -50,6 +50,28 @@
     "lengthen": "Make longer",
     "shorten": "Make shorter"
   },
+  "floor_plan": {
+    "seats": "Seats: {count}",
+    "move_up": "Move up",
+    "move_down": "Move down",
+    "move_start": "Move toward the start",
+    "move_end": "Move toward the end",
+    "widen": "Make wider",
+    "narrow": "Make narrower",
+    "taller": "Make taller",
+    "shorter": "Make shorter"
+  },
+  "live_table_map": {
+    "suggested": "Suggested"
+  },
+  "kds": {
+    "bump": "Bump",
+    "recall": "Recall",
+    "rush": "Rush",
+    "allergy": "Allergy",
+    "held": "Held",
+    "all_day": "All day"
+  },
   "workflow_canvas": {
     "leads_to": "Leads to {steps}"
   }

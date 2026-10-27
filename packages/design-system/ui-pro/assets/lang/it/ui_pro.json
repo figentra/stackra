@@ -50,6 +50,28 @@
     "lengthen": "Allunga",
     "shorten": "Accorcia"
   },
+  "floor_plan": {
+    "seats": "Posti: {count}",
+    "move_up": "Sposta su",
+    "move_down": "Sposta giù",
+    "move_start": "Sposta verso l’inizio",
+    "move_end": "Sposta verso la fine",
+    "widen": "Allarga",
+    "narrow": "Restringi",
+    "taller": "Rendi più alto",
+    "shorter": "Rendi più basso"
+  },
+  "live_table_map": {
+    "suggested": "Suggerito"
+  },
+  "kds": {
+    "bump": "Pronto",
+    "recall": "Richiama",
+    "rush": "Urgente",
+    "allergy": "Allergia",
+    "held": "In attesa",
+    "all_day": "Totale del giorno"
+  },
   "workflow_canvas": {
     "leads_to": "Porta a {steps}"
   }

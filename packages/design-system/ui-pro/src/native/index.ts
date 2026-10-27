@@ -42,7 +42,13 @@ export { FlipCard, useFlipCard, useFlipCardAnimation } from "#native/flip-card/f
 export type { FlipCardProps } from "#native/flip-card/flip-card.props";
 export { FloatingActionButton } from "#native/floating-action-button/floating-action-button";
 export type { FloatingActionButtonProps } from "#native/floating-action-button/floating-action-button.props";
+export { FloorPlanEditor } from "#native/floor-plan-editor/floor-plan-editor";
+export type { FloorPlanEditorProps } from "#native/floor-plan-editor/floor-plan-editor.props";
+export { KdsBoard } from "#native/kds-board/kds-board";
+export type { KdsBoardProps } from "#native/kds-board/kds-board.props";
 export { LineChart } from "#native/line-chart/line-chart";
+export { LiveTableMap } from "#native/live-table-map/live-table-map";
+export type { LiveTableMapProps } from "#native/live-table-map/live-table-map.props";
 export { MorphButton } from "#native/morph-button/morph-button";
 export type { MorphButtonProps } from "#native/morph-button/morph-button.props";
 export { MorphTabs, useMorphTabs, useMorphTabsTrigger } from "#native/morph-tabs/morph-tabs";

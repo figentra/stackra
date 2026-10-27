@@ -50,6 +50,28 @@
     "lengthen": "إطالة",
     "shorten": "تقصير"
   },
+  "floor_plan": {
+    "seats": "المقاعد: {count}",
+    "move_up": "نقل لأعلى",
+    "move_down": "نقل لأسفل",
+    "move_start": "نقل نحو البداية",
+    "move_end": "نقل نحو النهاية",
+    "widen": "توسيع",
+    "narrow": "تضييق",
+    "taller": "زيادة الطول",
+    "shorter": "تقليل الطول"
+  },
+  "live_table_map": {
+    "suggested": "مقترحة"
+  },
+  "kds": {
+    "bump": "تم",
+    "recall": "استرجاع",
+    "rush": "مستعجل",
+    "allergy": "حساسية",
+    "held": "معلّق",
+    "all_day": "إجمالي اليوم"
+  },
   "workflow_canvas": {
     "leads_to": "يؤدي إلى {steps}"
   }

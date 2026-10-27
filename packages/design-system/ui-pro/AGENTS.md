@@ -52,9 +52,13 @@ extending the kind's base class. The group table is the docs page `standards/str
   `src/react/<name>/` over `@heroui-pro/react` or `src/native/<name>/` over `heroui-native-pro`, each with
   `__tests__/`. The `@stackra/ui` props vocabulary (ADR 0303 decision 7) maps onto HeroUI Pro's names; every other prop
   passes through. Compound parts are HeroUI Pro's own, typed in a parts interface.
-- A composition (`AssistantPanel`, `ApprovalCard`, `PlanView`, `ResourceScheduler`, `SignatureField`, `WorkflowCanvas`) is built from
+- A composition (`AssistantPanel`, `ApprovalCard`, `PlanView`, `ResourceScheduler`, `SignatureField`, `WorkflowCanvas`,
+  `FloorPlanEditor`, `LiveTableMap`, `KdsBoard`) is built from
   this package's wrappers and `@stackra/ui`, with its pure math in `src/core/functions/` (internal, tested); use it
   only where HeroUI Pro has no component. Every drag has a keyboard way (WCAG 2.5.7).
+- The restaurant compositions take every business value as data: table statuses with their words and tones, the KDS
+  age steps (`ageTones`, a setting) and the clock (`now`, so the board holds no timer). Never a status list, an age
+  threshold or restaurant data here (STA-962).
 - Names follow the grammar: Pro `Command` is `ActionPalette` (ADR 0294 decision 23); `FloatingToc` and `Fab` are
   `FloatingTableOfContents` and `FloatingActionButton`, because identifiers take no abbreviations.
 - Verify every HeroUI Pro and HeroUI Native Pro API against the installed `.d.ts` or the Pro MCP before using it; never

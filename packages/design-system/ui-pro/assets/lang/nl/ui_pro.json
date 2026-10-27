@@ -50,6 +50,28 @@
     "lengthen": "Verlengen",
     "shorten": "Verkorten"
   },
+  "floor_plan": {
+    "seats": "Plaatsen: {count}",
+    "move_up": "Omhoog verplaatsen",
+    "move_down": "Omlaag verplaatsen",
+    "move_start": "Naar het begin verplaatsen",
+    "move_end": "Naar het einde verplaatsen",
+    "widen": "Breder maken",
+    "narrow": "Smaller maken",
+    "taller": "Hoger maken",
+    "shorter": "Lager maken"
+  },
+  "live_table_map": {
+    "suggested": "Voorgesteld"
+  },
+  "kds": {
+    "bump": "Klaar",
+    "recall": "Terughalen",
+    "rush": "Spoed",
+    "allergy": "Allergie",
+    "held": "Aangehouden",
+    "all_day": "Dagtotaal"
+  },
   "workflow_canvas": {
     "leads_to": "Leidt naar {steps}"
   }

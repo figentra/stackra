@@ -33,7 +33,8 @@ component with nothing in the vocabulary to map (most charts, Markdown, Timeline
 
 ## Compositions
 
-Six web components are the package's own compositions, not one HeroUI Pro component each:
+Nine web components are the package's own compositions, not one HeroUI Pro component each (the scheduler, the
+signature field, the floor-plan editor, the live table map and the KDS board also ship on native):
 
 | Component           | Built on                                     | Use                                                                                                                                                                   |
 | ------------------- | -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -43,10 +44,19 @@ Six web components are the package's own compositions, not one HeroUI Pro compon
 | `ResourceScheduler` | its own markup (HeroUI Pro has no scheduler) | a day or week of bookings per staff, room or chair; drag or arrow keys to move, Shift or the bottom edge to resize, snapped; processing gaps leave the resource free  |
 | `SignatureField`    | its own SVG box, `@stackra/ui`'s `TextField` | sign by drawing or by typing a name (the keyboard way); reports SVG path data or the name                                                                             |
 | `WorkflowCanvas`    | its own markup and SVG (no Pro graph)        | an automation as a graph: trigger and steps in flow columns, arrows with branch conditions, run status per step; arrow keys walk the graph, pressing selects (OS-230) |
+| `FloorPlanEditor`   | its own markup (no Pro floor plan)           | one area's tables (rectangular or round, with seats), walls and labels on a grid; drag or arrow keys to move, Shift or the corner to resize, snapped to cells         |
+| `LiveTableMap`      | the plan's markup, `@stackra/ui`'s `Chip`    | the plan read-only: each table's status word in its tone, the caller's lines (time, waiter, party, spend), a suggested table ringed; a press reports the table        |
+| `KdsBoard`          | cards, `@stackra/ui`'s `Button` and `Chip`   | kitchen tickets oldest first, aged in the caller's tones; rush, allergy and held flags; line bump, ticket bump, recall, all-day counts; a station or the expo         |
 
 The scheduler and the signature field propose and report only, and the workflow canvas only selects (the caller maps an automation document onto its nodes and edges and edits the step): the caller saves a moved booking, and binding a
 signature to a document is `@stackra/documents`' e-signature port. Opening hours, the working week (`days`) and the
 step (`slotMinutes`) are the caller's data, never defaults here.
+
+The restaurant compositions carry no restaurant data (STA-962). The floor-plan editor proposes a moved or resized
+item; one editor is one area, and the zoom is `cellSize`. The live map shows the statuses, words, tones and lines the
+caller passes (a pack, kept live by realtime). The KDS board ages tickets against the caller's `now` with the age
+steps from a setting (`ageTones`); bumps and recalls are the caller's to save, and a bump bar reaches it as the screen
+maps it (`@stackra/peripherals`).
 
 ## Own words (catalogue)
 
