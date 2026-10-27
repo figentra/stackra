@@ -14,6 +14,8 @@
 import type { PublicId } from "@stackra/contracts";
 import type { OptionalProps } from "@stackra/database";
 import { HasPublicId, Model, Timestamps, Translatable, type Translated } from "@stackra/model";
+import { Field } from "@stackra/validation";
+import { z } from "zod";
 
 import type { CustomFieldDefinition, CustomFieldType } from "#core/index";
 
@@ -24,6 +26,12 @@ export class CustomField extends Model.with(
   Timestamps,
   Translatable(["label"]),
 ) {
+  /** The type's choices and bounds, as `checkCustomFieldDefinition` accepted them. */
+  // reason: checkCustomFieldDefinition checks the whole definition before it is stored, and the refinements of
+  // CustomFieldDefinition$ cannot be picked down to these three fields
+  @Field(z.custom<Pick<CustomFieldDefinition, "choices" | "min" | "max">>())
+  rules: Pick<CustomFieldDefinition, "choices" | "min" | "max"> = {};
+
   /** The scope node the field is defined at. */
   scopeId!: PublicId<"scp">;
 
@@ -47,9 +55,6 @@ export class CustomField extends Model.with(
 
   /** Whether every record must carry a value. */
   required = false;
-
-  /** The type's choices and bounds, as `checkCustomFieldDefinition` accepted them. */
-  rules: Pick<CustomFieldDefinition, "choices" | "min" | "max"> = {};
 }
 
 /** The insert-optional fields of `CustomField`, merged into the model class (MikroORM `[OptionalProps]`). */

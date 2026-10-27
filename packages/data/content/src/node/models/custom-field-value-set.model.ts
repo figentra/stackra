@@ -12,12 +12,19 @@
 import type { PublicId } from "@stackra/contracts";
 import type { OptionalProps } from "@stackra/database";
 import { HasPublicId, Model, Timestamps } from "@stackra/model";
+import { Field } from "@stackra/validation";
+import { z } from "zod";
 
-import type { CustomFieldValue } from "#core/index";
+import { type CustomFieldValue, CustomFieldValue$ } from "#core/index";
 
 /** The values of one record. Traits add `id` and the timestamps; the indexes are the migration's. */
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: merged with the [OptionalProps] augmentation below
 export class CustomFieldValueSet extends Model.with(HasPublicId("cfv"), Timestamps) {
+  /** The record's values, keyed by field key. */
+  // reason: CustomFieldValue is a union this package ships as CustomFieldValue$
+  @Field(z.record(z.string(), CustomFieldValue$))
+  values!: Readonly<Record<string, CustomFieldValue>>;
+
   /** The scope node of the record. */
   scopeId!: PublicId<"scp">;
 
@@ -29,9 +36,6 @@ export class CustomFieldValueSet extends Model.with(HasPublicId("cfv"), Timestam
 
   /** The record's public id. */
   recordId!: string;
-
-  /** The record's values, keyed by field key. */
-  values!: Readonly<Record<string, CustomFieldValue>>;
 }
 
 /** The insert-optional fields of `CustomFieldValueSet`, merged into the model class (MikroORM `[OptionalProps]`). */

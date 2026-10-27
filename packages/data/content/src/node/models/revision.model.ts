@@ -15,10 +15,21 @@
 import type { PublicId } from "@stackra/contracts";
 import type { OptionalProps } from "@stackra/database";
 import { HasPublicId, Model, Timestamps } from "@stackra/model";
+import { Field, Int } from "@stackra/validation";
+import { z } from "zod";
 
 /** A revision of one record. Traits add `id` and the timestamps; the indexes are the migration's. */
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: merged with the [OptionalProps] augmentation below
 export class Revision extends Model.with(HasPublicId("rev"), Timestamps) {
+  /** The revision's number for its record, from 1. */
+  @Int({ min: 1 })
+  number!: number;
+
+  /** The record's content at this revision, as JSON; never changed once written. */
+  // reason: the record's snapshot is whatever its model holds, kept as written; Json would make every caller narrow it
+  @Field(z.record(z.string(), z.unknown()))
+  data!: Readonly<Record<string, unknown>>;
+
   /** The scope node of the record. */
   scopeId!: PublicId<"scp">;
 
@@ -30,12 +41,6 @@ export class Revision extends Model.with(HasPublicId("rev"), Timestamps) {
 
   /** The record's public id. */
   recordId!: string;
-
-  /** The revision's number for its record, from 1. */
-  number!: number;
-
-  /** The record's content at this revision, as JSON; never changed once written. */
-  data!: Readonly<Record<string, unknown>>;
 
   /** When the revision was last published; null for a draft. */
   publishedAt: Date | null = null;
