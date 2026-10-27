@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 /**
  * Stackra file contract:
  * Purpose: unit and type tests of `useColorScheme()`: a client render reads the chosen and resolved scheme of the
@@ -9,6 +8,7 @@
  * Runtime: node (vitest, jsdom)
  * Governing contract: ADR 0022; ADR 0269; ADR 0060; ADR 0295 (decision 10).
  */
+// @vitest-environment jsdom
 import { buildConfig } from "@stackra/config";
 import { Container } from "@stackra/container";
 import { ContainerProvider } from "@stackra/container/react";

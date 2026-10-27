@@ -15,11 +15,11 @@
  */
 import { Service } from "@stackra/container";
 import type { StorageAreaHandle } from "@stackra/storage/contracts";
-import { Storage } from "@stackra/storage/contracts";
+import type { Storage } from "@stackra/storage/contracts";
 import type { ColorScheme } from "@stackra/ui/contracts";
 
-import { ThemingConfig } from "#config/theming.config";
-import { SystemColorScheme } from "#contracts/ports/system-color-scheme.port";
+import type { ThemingConfig } from "#config/theming.config";
+import type { SystemColorScheme } from "#contracts/ports/system-color-scheme.port";
 import type { ColorSchemeState } from "#core/types/color-scheme-state.type";
 
 /** Where the choice is kept in the `prefs` area. */
@@ -35,49 +35,6 @@ const SCHEME_KEY = "theming.scheme";
  * colorScheme.setScheme(ColorScheme.Dark);
  */
 export class ColorSchemeService extends Service {
-  private readonly config: ThemingConfig;
-
-  private readonly prefs: StorageAreaHandle;
-
-  private readonly system: SystemColorScheme;
-
-  private readonly listeners = new Set<() => void>();
-
-  private stopWatchingSystem: (() => void) | undefined;
-
-  private current: ColorSchemeState;
-
-  private readonly first: ColorSchemeState;
-
-  /**
-   * @param config - the schemes on offer and the first one.
-   * @param storage - the client storage whose `prefs` area keeps the choice.
-   * @param system - the system preference `system` resolves to.
-   * @throws RangeError when `defaultScheme` is not one of `schemes`.
-   */
-  constructor(config: ThemingConfig, storage: Storage, system: SystemColorScheme) {
-    super();
-    if (!config.schemes.includes(config.defaultScheme))
-      throw new RangeError(
-        `ThemingConfig.defaultScheme "${config.defaultScheme}" is not one of its schemes (${config.schemes.join(", ")})`,
-      );
-    this.config = config;
-    this.prefs = storage.prefs;
-    this.system = system;
-    this.current = this.read();
-    const scheme = config.defaultScheme;
-    this.first = Object.freeze({
-      scheme,
-      resolved: scheme === "system" ? "light" : scheme,
-      setScheme: this.setScheme,
-    });
-  }
-
-  /** The chosen scheme. */
-  get scheme(): ColorScheme {
-    return this.state().scheme;
-  }
-
   /**
    * Chooses `scheme`, keeps it in `prefs` and notifies subscribers when what is on screen changes.
    *
@@ -125,12 +82,55 @@ export class ColorSchemeService extends Service {
     };
   };
 
+  private readonly config: ThemingConfig;
+
+  private readonly prefs: StorageAreaHandle;
+
+  private readonly system: SystemColorScheme;
+
+  private readonly listeners = new Set<() => void>();
+
+  private stopWatchingSystem: (() => void) | undefined;
+
+  private current: ColorSchemeState;
+
+  private readonly first: ColorSchemeState;
+
   /** Re-reads the choice and the preference and notifies subscribers when the snapshot changed. */
   private readonly refresh = (): void => {
     if (!this.sync()) return;
     // oxlint-disable-next-line unicorn/no-useless-spread -- reason: a copy, so a listener that unsubscribes another mid-loop does not skip it
     for (const listener of [...this.listeners]) listener();
   };
+
+  /**
+   * @param config - the schemes on offer and the first one.
+   * @param storage - the client storage whose `prefs` area keeps the choice.
+   * @param system - the system preference `system` resolves to.
+   * @throws RangeError when `defaultScheme` is not one of `schemes`.
+   */
+  constructor(config: ThemingConfig, storage: Storage, system: SystemColorScheme) {
+    super();
+    if (!config.schemes.includes(config.defaultScheme))
+      throw new RangeError(
+        `ThemingConfig.defaultScheme "${config.defaultScheme}" is not one of its schemes (${config.schemes.join(", ")})`,
+      );
+    this.config = config;
+    this.prefs = storage.prefs;
+    this.system = system;
+    this.current = this.read();
+    const scheme = config.defaultScheme;
+    this.first = Object.freeze({
+      scheme,
+      resolved: scheme === "system" ? "light" : scheme,
+      setScheme: this.setScheme,
+    });
+  }
+
+  /** The chosen scheme. */
+  get scheme(): ColorScheme {
+    return this.state().scheme;
+  }
 
   /**
    * Replaces the snapshot when the choice or its resolution changed.
