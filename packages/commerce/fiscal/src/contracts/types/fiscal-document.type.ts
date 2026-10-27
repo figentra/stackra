@@ -4,7 +4,8 @@
  *          computed lines, tenders and totals.
  * Boundary: a type only; built by the host (OS invoicing, a till) from its own records. `number` comes from the
  *           host's sequence per legal entity, branch or device; this package never numbers documents. Amounts are
- *           positive; the kind says whether a note reduces or adds.
+ *           positive; the kind says whether a note reduces or adds. `suppliedAt` is optional and additive
+ *           (stackra-31): a host whose supply date differs from the issue date states it.
  * Runtime: isomorphic
  * Governing contract: ADR 0364 (decisions 8 and 9); ADR 0220 (money).
  */
@@ -25,6 +26,8 @@ export type FiscalDocument = {
   readonly kind: FiscalDocumentKind;
   /** When it was issued. */
   readonly issuedAt: Date;
+  /** When the goods or services were supplied, when that differs from `issuedAt`; drivers that print it fall back. */
+  readonly suppliedAt?: Date;
   /** The document currency. */
   readonly currency: CurrencyCode;
   /** The issuer of the document, the seller. */

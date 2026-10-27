@@ -8,7 +8,8 @@
  *           envelopes `ext:UBLExtensions` and `cac:Signature`, both outside the hash, at the sealing time it is
  *           handed; `XadesEnvelopeSignerDriver` is that signer over a host key). Endpoints, version, profile, tax
  *           currency, payment-means codes and time zone are pack options; the type codes and transaction flags are
- *           the mandate's format.
+ *           the mandate's format. A standard invoice states its supply date (`cac:Delivery`, BR-KSA-15):
+ *           `suppliedAt`, or the issue date when the host gives none (stackra-31 certification desk check).
  * Runtime: isomorphic
  * Governing contract: ADR 0364 (decisions 1 to 4 and 8); ADR 0363 (decision 3).
  */
@@ -122,8 +123,19 @@ export class ZatcaDriver extends Driver(FiscalDriver) {
     // The first invoice of a unit chains to the mandate's seed: base64 of the hex SHA-256 of "0".
     const previousHash = context.previous?.hash ?? toBase64(toHex(await sha256("0")));
     const local = zonedTime(document.issuedAt, options.timeZone);
+    const supplyDate = document.suppliedAt
+      ? zonedTime(document.suppliedAt, options.timeZone).date
+      : local.date;
     const unsigned = renderXml(
-      this.invoice(document, options, local, simplified, context.sequence, previousHash),
+      this.invoice(
+        document,
+        options,
+        local,
+        supplyDate,
+        simplified,
+        context.sequence,
+        previousHash,
+      ),
     );
     const hash = toBase64(await sha256(unsigned));
     const signed = await this.signer.sign({
@@ -201,6 +213,7 @@ export class ZatcaDriver extends Driver(FiscalDriver) {
     document: FiscalDocument,
     options: z.output<typeof ZATCA_OPTIONS>,
     local: { readonly date: string; readonly time: string },
+    supplyDate: string,
     simplified: boolean,
     counter: number,
     previousHash: string,
@@ -254,6 +267,9 @@ export class ZatcaDriver extends Driver(FiscalDriver) {
       xmlElement("cac:AccountingSupplierParty", {}, ublParty(document.seller, false)),
       document.buyer &&
         xmlElement("cac:AccountingCustomerParty", {}, ublParty(document.buyer, false)),
+      simplified
+        ? null
+        : xmlElement("cac:Delivery", {}, xmlElement("cbc:ActualDeliveryDate", {}, supplyDate)),
       ...document.payments.map((payment, index) =>
         xmlElement(
           "cac:PaymentMeans",

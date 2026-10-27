@@ -16,7 +16,7 @@ certificates, credentials and the network stay with the host behind ports.
 | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `@stackra/fiscal`           | `FiscalService`, the eleven drivers, the XAdES envelope signer, the onboardings and `FiscalOnboardingService`, the `memory` driver and journal, refusals, option schemas |
 | `@stackra/fiscal/contracts` | the ports, enums and types hosts code against                                                                                                                            |
-| `@stackra/fiscal/testing`   | port fakes (with `FiscalSigningKeyFake`), `fiscalDocument` and `fiscalRecord` fixtures                                                                                   |
+| `@stackra/fiscal/testing`   | port fakes (with `FiscalSigningKeyFake`), `fiscalDocument` and `fiscalRecord` fixtures, the certification harness (`runCertification`, `certificationCases`)             |
 
 Entry barrels are stand-ins until `stackra gen` writes them (STA-339).
 
@@ -150,9 +150,31 @@ if (mandate && onboardings.supports(mandate.driver)) {
 
 ## Certification
 
-Not certified against any authority sandbox yet (stackra-31): the ZATCA PIH seed and XAdES digests, the ETA receipt
-UUID and QR layout, the DSFinV-K QR, the RKSV layout, the Verifactu fingerprint and the SOAP namespaces are written from
-the published specifications.
+**Status: certification pending for every driver** (owner decision D3, 2026-10-27). No authority sandbox access exists
+yet, so nothing has been run against ZATCA, AEAT, ETA or any other authority. What exists is the harness and recorded
+reference cases built from the published specifications (stackra-31):
+
+| Case (`certificationCases()`) | Specification fixed value it asserts                                                                |
+| ----------------------------- | --------------------------------------------------------------------------------------------------- |
+| `zatca.simplified-first`      | PIH seed (base64 of the SHA-256 hex of "0"), profile, `0200000`/388, ICV, TLV QR tags 1 to 5 layout |
+| `zatca.standard-supply-date`  | `0100000`/388 and the supply date (`cac:Delivery`, BR-KSA-15)                                       |
+| `verifactu.huella-first`      | AEAT's published `Huella` example 1 (`3C464DAF…`), the QR URL, the schema namespaces                |
+| `verifactu.huella-chained`    | AEAT's published `Huella` example 2 (`F7B94CFD…`) chained to example 1                              |
+| `tse.dsfinv-k-qr`             | DSFinV-K `Kassenbeleg-V1` process data and the twelve-field V0 receipt QR                           |
+| `rksv.start-receipt`          | RKSV machine-readable code fields and the start receipt's chain value (SHA-256 of the register id)  |
+| `eta-receipt.first-receipt`   | empty `previousUUID` on a POS's first receipt, receipt v1.2, the share-URL QR                       |
+
+Each case's pack options carry the authority's published sandbox (simulation, pre-production) endpoints.
+`runCertification(case)` runs it offline on recorded answers and returns every mismatch;
+`runCertification(case, { sandbox, ports })` takes the issued endpoints, the registered seller and buyer from config and
+the host's real ports, and submits. The `.int` tier (`certification.int.test.ts`) runs the configured cases when
+`STACKRA_FISCAL_SANDBOX` holds the sandbox config (from Infisical on ci-box). Plain fetch serves the header-credential
+case (ETA e-receipt); Verifactu (mutual TLS), ZATCA (XAdES with the CSID key), RKSV (signature unit) and TSE (device) run
+from the host's suite with its bindings. A driver leaves certification pending only after its sandbox run passes; each
+fix that run forces is recorded against its case here.
+
+Desk-check fixes so far: ZATCA standard invoices now state the supply date (`FiscalDocument.suppliedAt`, falling back to
+the issue date), which BR-KSA-15 requires. The AEAT fingerprint examples and ZATCA's QR example reproduce exactly.
 
 ## Not here
 

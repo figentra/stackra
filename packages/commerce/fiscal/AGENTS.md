@@ -18,6 +18,7 @@ programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./te
 | A host-side signer built over a narrower host port   | `src/core/drivers/<name>-signer.driver.ts`    |
 | The engine or the onboarding registry                | `src/core/services/`                          |
 | A fake or fixture                                    | `src/testing/`                                |
+| A certification case (one authority's spec values)   | `src/testing/certification-cases.fixture.ts`  |
 | A test                                               | `__tests__/<name>.<kind>.test.ts` beside it   |
 
 ## This package
@@ -47,6 +48,11 @@ programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./te
 - `XadesEnvelopeSignerDriver` builds the ZATCA XAdES envelope over the host's `FiscalSigningKey`; the signing time comes
   in `SignatureRequest.signedAt` (the driver passes `SealContext.now`), never from a clock.
 - `HybridPdf` is bound by `@stackra/documents` (`HybridPdfBinding`, by shape); never add a dependency on documents here.
+- Certification is pending for every driver (owner decision D3). A change to a driver's format keeps its case in
+  `certificationCases()` passing; a value a case asserts comes from the published specification named in its
+  `source`, never from the driver's own output. A fix forced by a sandbox run lands with a case that pins it, and the
+  README's Certification section records it.
+- `FiscalDocument.suppliedAt` is optional; ZATCA prints it on a standard invoice and falls back to the issue date.
 - Every new public file goes in its barrel and that entry's `index.test.ts`.
 
 ## Rules that fail the build

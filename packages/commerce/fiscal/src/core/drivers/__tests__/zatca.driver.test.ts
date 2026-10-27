@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `ZatcaDriver`: the UBL invoice, the counter and previous-hash chain, the hash over the
- *          unsigned XML, the XAdES request, the TLV QR placed in the signed XML, the refusals, reporting and clearance,
- *          and the export.
+ *          unsigned XML, the XAdES request, the TLV QR placed in the signed XML, the supply date of a standard invoice,
+ *          the refusals, reporting and clearance, and the export.
  * Boundary: test only; the signer and transport are fakes, and the options are samples (ADR 0363 decision 9).
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0364.
@@ -134,6 +134,23 @@ describe("ZatcaDriver#seal", () => {
     expect(sealed.marks.simplified).toBe("false");
     expect(sealed.payload).toContain('name="0100000"');
     expect(tlv(sealed.qr ?? "")[9]).toBeUndefined();
+  });
+
+  it("states the supply date of a standard invoice and none on a simplified one", async () => {
+    const driver = new ZatcaDriver(new FiscalSignerFake(), FiscalTransportFake.answering());
+    const standard = await driver.seal(fiscalDocument(), context);
+    const supplied = await driver.seal(
+      fiscalDocument({ suppliedAt: new Date("2026-02-27T10:00:00Z") }),
+      context,
+    );
+    const simplified = await driver.seal(receipt, context);
+    expect(standard.payload).toContain(
+      "<cac:Delivery><cbc:ActualDeliveryDate>2026-03-01</cbc:ActualDeliveryDate></cac:Delivery>",
+    );
+    expect(supplied.payload).toContain(
+      "<cbc:ActualDeliveryDate>2026-02-27</cbc:ActualDeliveryDate>",
+    );
+    expect(simplified.payload).not.toContain("<cac:Delivery>");
   });
 
   it.each([
