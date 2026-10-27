@@ -75,6 +75,7 @@
     "vite-plugin-pwa": "catalog:frontend"
   },
   "devDependencies": {
+    "@stackra/container": "workspace:*",
     "@stackra/testing": "workspace:*",
     "@stackra/tsdown-config": "workspace:*",
     "@stackra/typescript-config": "workspace:*",
