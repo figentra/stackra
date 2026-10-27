@@ -29,7 +29,9 @@ export class RecomputeSegmentsAction extends Action({
   /** Recomputes and queues. */
   private readonly segments: SegmentService;
 
-  /** @param segments - the segment service. */
+  /**
+   * @param segments - the segment service.
+   */
   constructor(segments: SegmentService) {
     super();
     this.segments = segments;
