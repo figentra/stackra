@@ -22,6 +22,8 @@ and `awsRuntime`).
 - Test Pulumi code under `pulumi.runtime.setMocks` only. Never run `pulumi up`, `pulumi destroy` or a preview
   against a real account, and never call a cloud API.
 - No secret is created or read here (ADR 0173). Encryption at rest and in transit stays on for every resource.
+- The health driver's target is `InfraAwsRuntimeConfig` (`src/config/infra-aws-runtime.config.ts`, key `infra_aws_runtime`), injected by type:
+  the runway's `config.infra_aws_runtime` sets it. Never a constructor options object (gen's `token_not_a_class`).
 
 ## PII
 

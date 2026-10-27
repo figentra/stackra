@@ -16,6 +16,8 @@ describe("@stackra/infra-aws-runtime", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(runtime).sort()).toEqual([
       "AwsRuntimeHealthIndicatorDriver",
+      "InfraAwsRuntimeConfig",
+      "InfraAwsRuntimeConfig$",
       "planForMembers",
       "runtimeNetwork",
       "runtimePlan",
