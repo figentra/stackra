@@ -313,6 +313,15 @@ overrides:
 # without a linked peer TypeScript finds the hoisted @types/react of the mobile catalog (19.2.18), so a consumer on the
 # frontend catalog (19.3.0) sees two unrelated `Ref` types (TS2322 in ui-pro's NumberValue).
 packageExtensions:
+  # react-native-worklets 0.10.1's Babel plugin requires @babel/generator and @babel/traverse without declaring them,
+  # so it resolves pnpm's hidden-hoisted copies: the Babel 8 ones of catalog:build. Babel 8's generator cannot print the
+  # Babel 7 AST Metro hands it (TSFunctionType `parameters`), and every Reanimated worklet with a function type fails
+  # the mobile build with "Cannot read properties of undefined (reading 'length')". Pin them to Babel 7, the major of
+  # the @babel/core peer Metro runs; drop this when worklets declares them itself.
+  react-native-worklets:
+    dependencies:
+      "@babel/generator": ^7.29.0
+      "@babel/traverse": ^7.29.0
   "@heroui-pro/react":
     peerDependencies:
       "@types/react": ">=19.0.0"

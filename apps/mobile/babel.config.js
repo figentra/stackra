@@ -15,12 +15,18 @@ const flowStripTypes = require.resolve("@babel/plugin-transform-flow-strip-types
   paths: [path.dirname(require.resolve("babel-preset-expo/package.json"))],
 });
 
+// The override test is a function, not a RegExp: Expo's Metro transformer loads this config without a filename to
+// build its cache key, and Babel throws on a string/RegExp pattern then (the React Native preset tests the same way).
+const isTypeScriptSource = (filename) => typeof filename === "string" && /\.tsx?$/.test(filename);
+
 module.exports = function (api) {
   api.cache(true);
   return {
     presets: ["babel-preset-expo"],
-    // Reanimated 4 worklets (used by heroui-native); must be listed explicitly.
-    plugins: ["react-native-worklets/plugin"],
-    overrides: [{ test: /\.tsx?$/, plugins: [[flowStripTypes, { allowDeclareFields: true }]] }],
+    // No `react-native-worklets/plugin` here: babel-preset-expo adds it whenever the package is installed, and a
+    // second copy re-runs the worklet transform on its own output and crashes on Reanimated's sources.
+    overrides: [
+      { test: isTypeScriptSource, plugins: [[flowStripTypes, { allowDeclareFields: true }]] },
+    ],
   };
 };
