@@ -13,7 +13,7 @@ import { kindOf } from "@stackra/container";
 import { keys } from "@stackra/i18n";
 import { describe, expect, it } from "@stackra/testing";
 
-import { Notification, NotificationBase } from "#core/bases/notification.base";
+import { Notification } from "#core/bases/notification.base";
 import { NotificationCategory } from "#core/enums/notification-category.enum";
 import type { NotificationCategory as Category } from "#core/enums/notification-category.enum";
 import type { MailMessage } from "#core/values/mail-message.value";
@@ -66,7 +66,7 @@ describe("Notification", () => {
 
   it("keeps instanceof and constructor dependencies", () => {
     const receipt = new OrderReceiptNotification(new Orders());
-    expect(receipt).toBeInstanceOf(NotificationBase);
+    expect(receipt).toBeInstanceOf(Notification);
     expect(receipt.recipients(new OrderPaid())).toEqual([
       Recipient.principal("usr_01j9z3k4m5n6p7q8r9s0t1v2w3"),
     ]);

@@ -4,9 +4,10 @@
  *          the type of its parameter is the trigger, an optional `data(event)` reads what every channel renders once,
  *          and each channel is a method the class declares (`mail(data, mail)`); a channel with no method is not sent.
  * Boundary: called only (a category is required, so a bare `extends Notification` fails to compile). The options are
- *           checked and recorded in the kind registry. A binding: dependencies are constructor parameters. Only
- *           `recipients` is declared on the base: `data` and the channel methods are found by name, so a subclass
- *           writes them without `override`. The key, the trigger, the queue and the mail body are derived by gen.
+ *           checked and recorded in the kind registry. A binding: dependencies are constructor parameters. The instance
+ *           base `NotificationBase` is file-local; `Notification` names its instances. Only `recipients` is declared on
+ *           the base: `data` and the channel methods are found by name, so a subclass writes them without `override`.
+ *           The key, the trigger, the queue and the mail body are derived by gen.
  * Runtime: isomorphic
  *           An optional `messageCategory` (snake_case) is recorded beside the category for the delivery target.
  * Governing contract: ADR 0294 (decisions 3, 16, 20 and 25); ADR 0223 (as amended by ADR 0294); ADR 0305 (rule 3);
@@ -20,7 +21,7 @@ import type { NotificationOptions } from "#core/types/notification-options.type"
 import type { Recipient } from "#core/values/recipient.value";
 
 /** The instance side every notification shares. */
-export abstract class NotificationBase {
+abstract class NotificationBase {
   /** Type-only kind brand, so a class of another kind cannot stand in for a notification. */
   declare readonly "~kind": "notification";
 
