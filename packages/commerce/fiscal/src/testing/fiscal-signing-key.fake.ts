@@ -29,7 +29,7 @@ const SAMPLE: SigningCertificate = {
  *
  * @example
  * const key = new FiscalSigningKeyFake();
- * key.calls("sign"); // every { unitId, message }
+ * key.calls("sign"); // every unitId asked to sign
  */
 export class FiscalSigningKeyFake extends Fake.of(FiscalSigningKey) {
   /** The facts answered for every unit; `null` for a unit with no certificate. */
@@ -45,7 +45,7 @@ export class FiscalSigningKeyFake extends Fake.of(FiscalSigningKey) {
 
   /** Recorded, then a stable signature over the unit and the message. */
   async sign(unitId: string, message: Uint8Array): Promise<string> {
-    this.record("sign", { unitId, message });
+    this.record("sign", unitId);
     return toBase64(await sha256(`${unitId}|${toHex(message)}`));
   }
 

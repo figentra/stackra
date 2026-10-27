@@ -256,7 +256,10 @@ export class EtaDriver extends Driver(FiscalDriver) {
    * @throws FiscalOptionsInvalidError when the pack has no `statusUrl`.
    * @throws FiscalAuthorityUnavailableError when the authority cannot be reached.
    */
-  async poll(record: FiscalRecord, context: DriverContext): Promise<SubmissionOutcome | null> {
+  override async poll(
+    record: FiscalRecord,
+    context: DriverContext,
+  ): Promise<SubmissionOutcome | null> {
     const options = parseOptions(ETA_OPTIONS, context.options, this.key);
     if (!options.statusUrl)
       throw FiscalOptionsInvalidError.create({

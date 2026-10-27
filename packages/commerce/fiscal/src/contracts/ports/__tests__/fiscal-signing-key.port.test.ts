@@ -18,7 +18,7 @@ class LengthKey extends FiscalSigningKey {
     return String(message.length);
   }
 
-  async certificate(): Promise<SigningCertificate | null> {
+  async certificate(_unitId: string): Promise<SigningCertificate | null> {
     return null;
   }
 }

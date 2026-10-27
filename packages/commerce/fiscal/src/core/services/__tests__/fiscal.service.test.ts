@@ -212,7 +212,7 @@ describe("FiscalService#submitPending", () => {
 class PollingDriver extends RecordingDriver {
   readonly verdicts: (SubmissionOutcome | null | "unavailable")[] = [];
 
-  async poll(): Promise<SubmissionOutcome | null> {
+  override async poll(): Promise<SubmissionOutcome | null> {
     const verdict = this.verdicts.shift() ?? null;
     if (verdict === "unavailable")
       throw FiscalAuthorityUnavailableError.create({ driver: this.key, status: 503 });

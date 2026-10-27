@@ -50,8 +50,9 @@ describe("XadesEnvelopeSignerDriver", () => {
     expect(signed).toContain("<xades:SigningTime>2026-03-01T09:30:00</xades:SigningTime>");
     expect(signed).toContain(`<ds:SignatureValue>${result.value}</ds:SignatureValue>`);
     expect(signed).toContain("<ds:X509SerialNumber>1234567890</ds:X509SerialNumber>");
-    const [call] = key.calls("sign") as { unitId: string; message: Uint8Array }[];
-    expect(call?.message).toEqual(fromBase64(digest));
+    expect(key.calls("sign")).toEqual(["till_1"]);
+    // the fake signs deterministically over unit and message, so this proves the message was the invoice hash
+    expect(result.value).toBe(await new FiscalSigningKeyFake().sign("till_1", fromBase64(digest)));
     expect([result.publicKey, result.certificateSignature]).toEqual([
       toBase64("public-key"),
       toBase64("certificate-signature"),

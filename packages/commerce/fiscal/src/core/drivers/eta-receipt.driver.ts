@@ -246,7 +246,10 @@ export class EtaReceiptDriver extends Driver(FiscalDriver) {
    * @returns the verdict, or `null` while the receipt is still being validated.
    * @throws FiscalAuthorityUnavailableError when the authority cannot be reached.
    */
-  async poll(record: FiscalRecord, context: DriverContext): Promise<SubmissionOutcome | null> {
+  override async poll(
+    record: FiscalRecord,
+    context: DriverContext,
+  ): Promise<SubmissionOutcome | null> {
     const options = parseOptions(ETA_RECEIPT_OPTIONS, context.options, this.key);
     const response = assertAnswered(
       await this.transport.send({
