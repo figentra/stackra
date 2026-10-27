@@ -6,7 +6,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0207 (decision 1).
  */
-import type { AssuranceLevel } from "#core/enums/assurance-level.enum";
+import type { AssuranceLevel } from "@stackra/contracts";
 
 /** A session's assurance. */
 export interface Assurance {

@@ -26,7 +26,6 @@ export { Searchable } from "#core/decorators/searchable.decorator";
 export { Visibility } from "#core/decorators/visibility.decorator";
 export { AiAudience } from "#core/enums/ai-audience.enum";
 export { ExportLabel } from "#core/enums/export-label.enum";
-export { MeterKind } from "#core/enums/meter-kind.enum";
 export { OnDelete } from "#core/enums/on-delete.enum";
 export { SearchSnippet } from "#core/enums/search-snippet.enum";
 export { SupportAccess } from "#core/enums/support-access.enum";

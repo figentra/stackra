@@ -13,9 +13,9 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0216 (decisions 1, 2 and 4); ADR 0156 (enforcement: token budgets); STA-1377 (stackra-219).
  */
-import { MeterKind, UsageRecorded } from "@stackra/actions";
+import { UsageRecorded } from "@stackra/actions";
+import { type Clock, MeterKind } from "@stackra/contracts";
 import { Service } from "@stackra/container";
-import type { Clock } from "@stackra/contracts";
 import type { EventOutbox, RecordedEvent } from "@stackra/events/contracts";
 
 import { AI_METERS } from "#core/constants/ai-meters.constant";

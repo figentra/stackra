@@ -130,7 +130,6 @@ describe("@stackra/model", () => {
       "ManyToMany",
       "ManyToOne",
       "Meter",
-      "MeterKind",
       "Model",
       "ModelAddition",
       "MoneySchema",

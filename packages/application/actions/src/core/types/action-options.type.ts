@@ -16,9 +16,8 @@
  *                     (`approval`); ADR 0406 (`stepUp`).
  */
 import type { AnyClass } from "@stackra/container";
-import type { ActorKind, ApiArea } from "@stackra/contracts";
+import type { ActorKind, ApiArea, AssuranceLevel } from "@stackra/contracts";
 
-import type { AssuranceLevel } from "#contracts/enums/assurance-level.enum";
 import type { Interceptor } from "#core/bases/interceptor.base";
 import type { Precondition } from "#core/bases/precondition.base";
 import type { Idempotency } from "#core/enums/idempotency.enum";

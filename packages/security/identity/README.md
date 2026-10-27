@@ -30,7 +30,7 @@ screen reads, and the claims mapping that turns a provider's token into a Stackr
 | `./contracts` | `SessionStore`                                                                                               | the port of a flow (`load`, `signIn`, `signOut`, `accessToken`)                                |
 | `./contracts` | `SignInBrowser`                                                                                              | the platform step of PKCE: open the hosted sign-in, hand back the redirect                     |
 | `./contracts` | `SessionUser`                                                                                                | the signed-in user: id, address, name, permissions, memberships                                |
-| `.`           | `AssuranceLevel`, `assuranceOf`, `requireAssurance`, `stepUpSignIn`, `StepUpRequiredError`                   | step-up: the session's level and age, the refusal, the re-authentication                       |
+| `.`           | `assuranceOf`, `requireAssurance`, `stepUpSignIn`, `StepUpRequiredError`                   | step-up: the session's level and age, the refusal, the re-authentication                       |
 | `.`           | `signInProvidersOf`, `externalSignIn`                                                                        | a market's external sign-in providers (pack data) and the hint that sends sign-in there        |
 | `.`           | `StaffPinService`, `StorageStaffPinStoreDriver`, `MemoryStaffPinStoreDriver`                                 | staff PIN quick-switch and manager override on a shared device                                 |
 | `.`           | `ApiKeyKind`, `mintApiKey`, `parseApiKey`, `checkPublishableKey`, `isOriginAllowed`                          | secret and publishable keys; the origin-bound Storefront key                                   |
@@ -122,7 +122,7 @@ WebCrypto. No `SignInBrowser` driver ships here yet: the Expo and Electron ones 
 
 ## Step-up, external providers, PINs, keys, guardians and verification
 
-- **Step-up.** `requireAssurance(assuranceOf(claims, identity), AssuranceLevel.Aal2, identity, now)` refuses
+- **Step-up.** (`AssuranceLevel` is `@stackra/contracts`'.) `requireAssurance(assuranceOf(claims, identity), AssuranceLevel.Aal2, identity, now)` refuses
   `step_up_required` when the level is lower or the authentication is older than `stepUpMaxAgeMinutes`; the client then
   calls `session.signIn(stepUpSignIn())`. Which actions need it is rule and settings data.
 - **App approval** (GitHub Mobile style). `AppApprovalService.request({ purpose, requester, loginHint })` answers a

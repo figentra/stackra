@@ -11,9 +11,9 @@
  */
 import { createDecorator, DecoratorTarget } from "@stackra/container";
 import type { AnyClass, DecoratorFunction } from "@stackra/container";
+import { MeterKind } from "@stackra/contracts";
 
 import { MODEL_KINDS } from "#core/constants/model-kinds.constant";
-import { MeterKind } from "#core/enums/meter-kind.enum";
 import type { MeterOptions } from "#core/types/meter-options.type";
 
 /** A meter key: snake_case segments joined by dots. */

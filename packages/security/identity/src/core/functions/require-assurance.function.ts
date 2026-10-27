@@ -7,10 +7,9 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0207 (decision 1); owner round 3 #15 (step-up); PUT-37 (step-up actions as settings).
  */
-import { Enum } from "@stackra/contracts";
+import { AssuranceLevel, Enum } from "@stackra/contracts";
 
 import type { IdentityConfig } from "#config/identity.config";
-import { AssuranceLevel } from "#core/enums/assurance-level.enum";
 import { StepUpRequiredError } from "#core/errors/step-up-required.error";
 import type { Assurance } from "#core/types/assurance.type";
 

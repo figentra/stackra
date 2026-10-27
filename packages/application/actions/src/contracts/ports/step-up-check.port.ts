@@ -10,9 +10,8 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0207 (decision 1); ADR 0406; STA-814.
  */
-import { Port } from "@stackra/contracts";
+import { type AssuranceLevel, Port } from "@stackra/contracts";
 
-import type { AssuranceLevel } from "#contracts/enums/assurance-level.enum";
 import type { CallAssurance } from "#contracts/types/call-assurance.type";
 import type { CallDescriptor } from "#contracts/types/call-descriptor.type";
 

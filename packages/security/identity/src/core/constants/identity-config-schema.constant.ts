@@ -14,12 +14,11 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 26: a package ships its own `X$`); ADR 0206 (decision 8); ADR 0241; ADR 0277.
  */
-import { Enum, Target } from "@stackra/contracts";
+import { AssuranceLevel, Enum, Target } from "@stackra/contracts";
 import { url } from "@stackra/validation";
 import { z } from "zod";
 
 import { ApiKeyKind } from "#core/enums/api-key-kind.enum";
-import { AssuranceLevel } from "#core/enums/assurance-level.enum";
 import { AuthFlow } from "#core/enums/auth-flow.enum";
 
 /** An OAuth scope token (RFC 6749 section 3.3): no space, quote or backslash. */

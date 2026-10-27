@@ -13,17 +13,15 @@
  *                     `effects`); STA-813 (`approval`); ADR 0406 (`stepUp`).
  */
 import { createKind } from "@stackra/container";
-import { ActorKind, Enum } from "@stackra/contracts";
+import { ActorKind, AssuranceLevel, Enum, MeterKind } from "@stackra/contracts";
 import { duration } from "@stackra/validation";
 
-import { AssuranceLevel } from "#contracts/enums/assurance-level.enum";
 import { Effect } from "#contracts/enums/effect.enum";
 import { Precondition } from "#core/bases/precondition.base";
 import { RULE_VERSION_PATTERN } from "#core/constants/rule-version-pattern.constant";
 import { ConflictResolution } from "#core/enums/conflict-resolution.enum";
 import { Idempotency } from "#core/enums/idempotency.enum";
 import { IdMinting } from "#core/enums/id-minting.enum";
-import { MeterKind } from "#core/enums/meter-kind.enum";
 import { OfflineMode } from "#core/enums/offline-mode.enum";
 import { OfflinePrecondition } from "#core/enums/offline-precondition.enum";
 import { readCallOptions } from "#core/functions/read-call-options.function";

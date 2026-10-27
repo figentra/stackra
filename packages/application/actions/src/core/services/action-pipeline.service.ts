@@ -42,10 +42,12 @@ import { kindOf, type AnyClass } from "@stackra/container";
 import {
   type ActorKind,
   type ApiArea,
+  type AssuranceLevel,
   Clock,
   Duration,
   type Json,
   Logger,
+  MeterKind,
   mintPublicId,
 } from "@stackra/contracts";
 import {
@@ -59,7 +61,6 @@ import { EventOutbox } from "@stackra/events/contracts";
 import { duration, validate } from "@stackra/validation";
 
 import { RateLimitConfig } from "#config/rate-limit.config";
-import type { AssuranceLevel } from "#contracts/enums/assurance-level.enum";
 import { ReviewReason } from "#contracts/enums/review-reason.enum";
 import { AccessControl } from "#contracts/ports/access-control.port";
 import { ApprovalGate } from "#contracts/ports/approval-gate.port";
@@ -95,7 +96,6 @@ import { CALL_DEFAULTS } from "#core/constants/call-defaults.constant";
 import { IDEMPOTENCY_TTL } from "#core/constants/idempotency-ttl.constant";
 import { PROPOSAL_METER } from "#core/constants/proposal-meter.constant";
 import { Idempotency } from "#core/enums/idempotency.enum";
-import { MeterKind } from "#core/enums/meter-kind.enum";
 import { DeviceSequenceOutOfOrderError } from "#core/errors/device-sequence-out-of-order.error";
 import { IdempotencyKeyRequiredError } from "#core/errors/idempotency-key-required.error";
 import { InputInvalidError } from "#core/errors/input-invalid.error";

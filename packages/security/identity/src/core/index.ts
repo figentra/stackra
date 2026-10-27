@@ -39,7 +39,6 @@ export { SessionOfflineSessionDriver } from "#core/drivers/session-offline-sessi
 export { StorageStaffPinStoreDriver } from "#core/drivers/storage-staff-pin-store.driver";
 export { ZitadelIdpAdminDriver } from "#core/drivers/zitadel-idp-admin.driver";
 export { ApiKeyKind } from "#core/enums/api-key-kind.enum";
-export { AssuranceLevel } from "#core/enums/assurance-level.enum";
 export { AuthFlow } from "#core/enums/auth-flow.enum";
 export { SessionStatus } from "#core/enums/session-status.enum";
 export { SignInMethod } from "#core/enums/sign-in-method.enum";

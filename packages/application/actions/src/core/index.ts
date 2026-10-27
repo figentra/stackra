@@ -29,7 +29,6 @@ export { OutboxAuditTrailDriver } from "#core/drivers/outbox-audit-trail.driver"
 export { ConflictResolution } from "#core/enums/conflict-resolution.enum";
 export { IdMinting } from "#core/enums/id-minting.enum";
 export { Idempotency } from "#core/enums/idempotency.enum";
-export { MeterKind } from "#core/enums/meter-kind.enum";
 export { OfflineMode } from "#core/enums/offline-mode.enum";
 export { OfflinePrecondition } from "#core/enums/offline-precondition.enum";
 export { PipelineStage } from "#core/enums/pipeline-stage.enum";

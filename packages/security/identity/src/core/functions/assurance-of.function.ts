@@ -8,10 +8,9 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0207 (decision 1: the AAL in the token); RFC 8176; OpenID Connect Core (`auth_time`).
  */
-import { Enum } from "@stackra/contracts";
+import { AssuranceLevel, Enum } from "@stackra/contracts";
 
 import type { IdentityConfig } from "#config/identity.config";
-import { AssuranceLevel } from "#core/enums/assurance-level.enum";
 import type { Assurance } from "#core/types/assurance.type";
 
 /** The levels, weakest first. */

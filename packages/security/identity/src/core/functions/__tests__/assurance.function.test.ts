@@ -8,10 +8,10 @@
  * Governing contract: ADR 0022; ADR 0207 (decision 1); RFC 8176.
  */
 import { buildConfig } from "@stackra/config";
+import { AssuranceLevel } from "@stackra/contracts";
 import { describe, expect, it } from "@stackra/testing";
 
 import { IdentityConfig } from "#config/identity.config";
-import { AssuranceLevel } from "#core/enums/assurance-level.enum";
 import { StepUpRequiredError } from "#core/errors/step-up-required.error";
 import { assuranceOf } from "#core/functions/assurance-of.function";
 import { requireAssurance } from "#core/functions/require-assurance.function";

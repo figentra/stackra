@@ -41,7 +41,8 @@ ADR 0100 tables, the Postgres stores and `ScopeKeyCast`; storage home: ADR 0399)
   gateway.
 - Never write a tool: tools are actions and queries, derived by gen. `Skill` checks only that each listed class is an
   exposed tool; the risk comes from the permission and is gen's check.
-- Import `@stackra/actions` for types only, except `UsageRecorded` and `MeterKind` in `AiMeter`; the runtime check
+- Import `@stackra/actions` for types only, except `UsageRecorded` in `AiMeter` (`MeterKind` is
+  `@stackra/contracts`'); the runtime check
   reads the kind registry through `@stackra/container`.
 - A provider key is a secret name resolved at run time; no key, value or `.env` read here (ADR 0100 decision 14).
 - No `tenant` vocabulary (R-59); no `enum`, no `#private` fields, no parameter properties.

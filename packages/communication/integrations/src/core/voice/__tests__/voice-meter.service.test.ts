@@ -7,8 +7,7 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0216 (decision 2); R3-SO-11.
  */
-import { MeterKind } from "@stackra/actions";
-import { Clock } from "@stackra/contracts";
+import { Clock, MeterKind } from "@stackra/contracts";
 import { EventOutbox } from "@stackra/events/contracts";
 import type { RecordedEvent } from "@stackra/events/contracts";
 import { describe, expect, it } from "@stackra/testing";

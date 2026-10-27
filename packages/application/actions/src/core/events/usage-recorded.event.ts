@@ -10,12 +10,10 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0216 (decisions 1, 2 and 4); ADR 0141; ADR 0294 (decisions 5 and 16).
  */
-import { Enum } from "@stackra/contracts";
+import { Enum, MeterKind } from "@stackra/contracts";
 import { IntegrationEvent } from "@stackra/events";
 import { Num, registerSchemas } from "@stackra/validation";
 import { z } from "zod";
-
-import { MeterKind } from "#core/enums/meter-kind.enum";
 
 /**
  * One metered call's usage.

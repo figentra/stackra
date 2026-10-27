@@ -7,9 +7,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0216 (decisions 1, 2 and 6).
  */
-import type { Duration } from "@stackra/contracts";
-
-import type { MeterKind } from "#core/enums/meter-kind.enum";
+import type { Duration, MeterKind } from "@stackra/contracts";
 
 /** One meter a model declares. */
 export interface MeterOptions {

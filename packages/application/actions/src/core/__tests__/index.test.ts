@@ -63,7 +63,6 @@ describe("@stackra/actions", () => {
       "MemoryRateLimitStoreDriver",
       "MemoryReplicaLogDriver",
       "MemoryReviewItemSinkDriver",
-      "MeterKind",
       "OfflineCapReachedError",
       "OfflineMode",
       "OfflinePrecondition",

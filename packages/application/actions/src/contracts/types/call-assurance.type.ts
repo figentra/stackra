@@ -9,7 +9,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0207 (decision 1); ADR 0406; STA-814.
  */
-import type { AssuranceLevel } from "#contracts/enums/assurance-level.enum";
+import type { AssuranceLevel } from "@stackra/contracts";
 
 /** The verified assurance of one call. */
 export interface CallAssurance {

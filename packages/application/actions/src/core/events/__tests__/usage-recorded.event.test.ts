@@ -7,10 +7,10 @@
  * Governing contract: ADR 0022; ADR 0269; ADR 0216 (decisions 1 and 4).
  */
 import { kindOf } from "@stackra/container";
+import { MeterKind } from "@stackra/contracts";
 import { describe, expect, it } from "@stackra/testing";
 import { schemaOf } from "@stackra/validation";
 
-import { MeterKind } from "#core/enums/meter-kind.enum";
 import { UsageRecorded } from "#core/events/usage-recorded.event";
 
 describe("UsageRecorded", () => {

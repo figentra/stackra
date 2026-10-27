@@ -9,9 +9,9 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0376 (decision 7); R3-SO-11; RV-51; ADR 0216 (decisions 1, 2 and 4).
  */
-import { MeterKind, UsageRecorded } from "@stackra/actions";
+import { UsageRecorded } from "@stackra/actions";
+import { type Clock, MeterKind } from "@stackra/contracts";
 import { Service } from "@stackra/container";
-import type { Clock } from "@stackra/contracts";
 import type { EventOutbox } from "@stackra/events/contracts";
 
 import type { ProviderCall } from "#contracts/types/provider-call.type";

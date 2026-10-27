@@ -20,7 +20,7 @@ Depends on `@stackra/contracts`, `@stackra/container`, `@stackra/validation`, `@
 
 | Import           | Holds                     | Exports                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | ---------------- | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@stackra/model` | `src/core/`: node runtime | `Model`, traits (`HasPublicId`, `Timestamps`, `UserStamps`, `Versioned`, `SoftDeletes`, `AppendOnly`, `HasCorrections`, `Commentable`, `HasAttachments`, `Taggable`, `Translatable`, `HasEncryptedFields`), `currentRows`, `Model.global`, `ModelAddition`, `DataClass`, `PrivilegedDataClass`, `Classify`, `DocumentNumber`, `AiAudience`, `SupportAccess`, `SearchSnippet`, `ExportLabel`, `Meter`, `MeterKind`, `createTrait`, `traitsOf`, `encryptedFieldsOf`, `EncryptedFieldsSubscriber`, `Index`, `Searchable`, `Visibility`, `ManyToOne`, `OneToMany`, `ManyToMany`, `OnDelete`, `Collection`, `Ref`, `Link`, `Translated`, `Attributes`, `LinkType`, `TranslatedType`, `MoneySchema` |
+| `@stackra/model` | `src/core/`: node runtime | `Model`, traits (`HasPublicId`, `Timestamps`, `UserStamps`, `Versioned`, `SoftDeletes`, `AppendOnly`, `HasCorrections`, `Commentable`, `HasAttachments`, `Taggable`, `Translatable`, `HasEncryptedFields`), `currentRows`, `Model.global`, `ModelAddition`, `DataClass`, `PrivilegedDataClass`, `Classify`, `DocumentNumber`, `AiAudience`, `SupportAccess`, `SearchSnippet`, `ExportLabel`, `Meter`, `createTrait`, `traitsOf`, `encryptedFieldsOf`, `EncryptedFieldsSubscriber`, `Index`, `Searchable`, `Visibility`, `ManyToOne`, `OneToMany`, `ManyToMany`, `OnDelete`, `Collection`, `Ref`, `Link`, `Translated`, `Attributes`, `LinkType`, `TranslatedType`, `MoneySchema` |
 
 Entry barrels are generated, never authored (ADR 0294 decision 15); until `stackra gen` writes them (STA-339),
 `src/core/index.ts` is a stand-in barrel.
@@ -130,7 +130,7 @@ export class AdviceNote extends Model.with(HasPublicId("adv")) {
   body!: string;
 }
 
-@Meter({ key: "matters.active", kind: MeterKind.Count }) // usage.recorded.v1 through the outbox (ADR 0216)
+@Meter({ key: "matters.active", kind: MeterKind.Count }) // MeterKind from @stackra/contracts; usage.recorded.v1 via the outbox
 export class Matter extends Model.with(HasPublicId("mat")) {}
 ```
 

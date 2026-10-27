@@ -12,7 +12,7 @@
  *                     0338 (decision 5); ADR 0337 (decisions 4 and 5).
  */
 import { kindOf } from "@stackra/container";
-import { ActorKind, ApiArea, HttpMethod } from "@stackra/contracts";
+import { ActorKind, ApiArea, HttpMethod, MeterKind } from "@stackra/contracts";
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
 import { Effect } from "#contracts/enums/effect.enum";
@@ -22,7 +22,6 @@ import { Precondition } from "#core/bases/precondition.base";
 import { ConflictResolution } from "#core/enums/conflict-resolution.enum";
 import { Idempotency } from "#core/enums/idempotency.enum";
 import { IdMinting } from "#core/enums/id-minting.enum";
-import { MeterKind } from "#core/enums/meter-kind.enum";
 import { OfflineMode } from "#core/enums/offline-mode.enum";
 import { OfflinePrecondition } from "#core/enums/offline-precondition.enum";
 import type { ActionClass } from "#core/types/action-class.type";

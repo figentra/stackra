@@ -9,7 +9,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0216 (decisions 1, 2 and 4).
  */
-import type { MeterKind } from "#core/enums/meter-kind.enum";
+import type { MeterKind } from "@stackra/contracts";
 
 /** A metered action's meter. */
 export interface ActionMeter {

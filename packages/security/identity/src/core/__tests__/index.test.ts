@@ -25,7 +25,6 @@ describe("@stackra/identity", () => {
       "AppApprovalRejectedError",
       "AppApprovalRequested",
       "AppApprovalService",
-      "AssuranceLevel",
       "AuthFlow",
       "BffSessionStoreDriver",
       "GuardianActingService",

@@ -1,17 +1,17 @@
 /**
  * Stackra file contract:
  * Purpose: the consumer contract of the `./contracts` entry: the twenty-one ports of the pipeline's steps and stores and
- *          the `ReviewReason`, `Effect`, `ApproverRefusal`, `AssuranceLevel` and `CallOriginKind` enums are exported, nothing else is as a value, and the exchanged types resolve.
+ *          the `ReviewReason`, `Effect`, `ApproverRefusal` and `CallOriginKind` enums are exported, nothing else is as a value,
+ *          and the exchanged types resolve (`AssuranceLevel` is @stackra/contracts', STA-1383).
  * Boundary: test only; imports the stand-in barrel through its `#contracts` alias.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0294 (decision 15).
  */
-import type { Actor, Json } from "@stackra/contracts";
+import type { Actor, AssuranceLevel, Json } from "@stackra/contracts";
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
 import * as contracts from "#contracts/index";
 import type {
-  AssuranceLevel,
   AuditEntry,
   CallAssurance,
   CallClient,
@@ -37,7 +37,6 @@ describe("@stackra/actions/contracts", () => {
       "AccessControl",
       "ApprovalGate",
       "ApproverRefusal",
-      "AssuranceLevel",
       "AuditTrail",
       "CallOriginKind",
       "ContextStorage",

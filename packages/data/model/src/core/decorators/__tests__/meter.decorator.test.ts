@@ -7,12 +7,11 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0216 (decisions 1 and 2).
  */
-import { Duration } from "@stackra/contracts";
+import { Duration, MeterKind } from "@stackra/contracts";
 import { describe, expect, it } from "@stackra/testing";
 
 import { Model } from "#core/bases/model.base";
 import { Meter } from "#core/decorators/meter.decorator";
-import { MeterKind } from "#core/enums/meter-kind.enum";
 
 @Meter({
   key: "matters.active",

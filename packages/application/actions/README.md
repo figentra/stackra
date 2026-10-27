@@ -83,7 +83,8 @@ event and its success audit entry, all inside the `LimitReservation` when one is
 `afterCommit` work. A refusal's audit entry is written after the rollback. A step whose port nobody binds is skipped,
 except permission, which fails closed. Approval runs only when an `ApprovalGate` is bound; an action that declares
 `approval: true` fails closed without one (ADR 0397 as amended by STA-813). An action that declares
-`stepUp: AssuranceLevel.Aal2` is checked right after the permission by the bound `StepUpCheck` (a driver over
+`stepUp: AssuranceLevel.Aal2` (`AssuranceLevel` and the meter's `MeterKind` are `@stackra/contracts`', shared with
+identity and model) is checked right after the permission by the bound `StepUpCheck` (a driver over
 `@stackra/identity`'s `requireAssurance`) against `CallOptions.assurance` (`amr`, `authTime`, `level` from the verified
 token), and fails closed without one; handlers read the same facts as `ctx.assurance`.
 

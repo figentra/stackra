@@ -15,13 +15,11 @@
  * Governing contract: ADR 0206 (decision 8); ADR 0241 (decisions 2 and 4); ADR 0277; ADR 0173 (secrets are names);
  *                     ADR 0294 (decisions 19 and 26).
  */
-import { Target } from "@stackra/contracts";
-import type { Url } from "@stackra/contracts";
+import { AssuranceLevel, Target, type Url } from "@stackra/contracts";
 import { Field, Int, registerSchemas, Schema } from "@stackra/validation";
 
 import { IDENTITY_CONFIG_SCHEMA } from "#core/constants/identity-config-schema.constant";
 import { ApiKeyKind } from "#core/enums/api-key-kind.enum";
-import { AssuranceLevel } from "#core/enums/assurance-level.enum";
 import { AuthFlow } from "#core/enums/auth-flow.enum";
 
 /**
