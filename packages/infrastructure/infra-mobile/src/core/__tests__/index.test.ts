@@ -39,7 +39,7 @@ describe("@stackra/infra-mobile", () => {
     >();
     expectTypeOf(mobile.mobileInfraPlan).returns.toEqualTypeOf<MobileInfraPlan>();
     expectTypeOf(mobile.storeAccountsOf).parameters.toEqualTypeOf<
-      [app: MobileApp, connected?: readonly StoreConnection[]]
+      [app: MobileApp, connected?: readonly StoreConnection[] | undefined]
     >();
     expectTypeOf(mobile.storeAccountsOf).returns.toEqualTypeOf<readonly MobileStoreAccount[]>();
   });

@@ -20,10 +20,12 @@ import type { ServiceRunway } from "#core/types/service-runway.type";
 
 /** The dev port fields a member runway's dev environment may hold. */
 type MemberDevPorts = {
-  port?: number;
-  devConsolePort?: number;
-  desktop?: { remoteDebugPort?: number; pkceLoopbackPort?: number };
-  mobile?: { metroPort?: number };
+  port?: number | undefined;
+  devConsolePort?: number | undefined;
+  desktop?:
+    | { remoteDebugPort?: number | undefined; pkceLoopbackPort?: number | undefined }
+    | undefined;
+  mobile?: { metroPort?: number | undefined } | undefined;
 };
 
 /** An infra field that holds a port: `port`, `grpcPort`, `uiPort`, …, and the Encore `dashboard`. */

@@ -122,13 +122,13 @@ describe("parseRunway surfaces and mobile", () => {
     const entry = (panel: unknown) =>
       withSurfaces({ ops: { contributes: { package: "@figentra/x-ops", panels: [panel] } } });
     expect(issuePaths(entry({ key: "a", block: "os/table", component: "./Panel.tsx" }))).toEqual([
-      "surfaces.ops.contributes",
+      "surfaces.ops.contributes.panels.0",
     ]);
     expect(issuePaths(entry({ key: "a", block: "./Panel.tsx" }))).toEqual([
-      "surfaces.ops.contributes",
+      "surfaces.ops.contributes.panels.0.block",
     ]);
     expect(issuePaths(entry({ key: "a", block: "@figentra/x-ops#Panel" }))).toEqual([
-      "surfaces.ops.contributes",
+      "surfaces.ops.contributes.panels.0.block",
     ]);
   });
 
