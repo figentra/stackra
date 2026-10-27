@@ -39,7 +39,6 @@
   },
   "devDependencies": {
     "@stackra/cli": "workspace:*",
-    "@stackra/contracts": "workspace:*",
     "@stackra/testing": "workspace:*",
     "@stackra/typescript-config": "workspace:*",
     "@types/node": "catalog:",

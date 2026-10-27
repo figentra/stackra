@@ -101,9 +101,11 @@
       "project": ["src/**/*.ts"],
     },
     "apps/docs": {
-      // Mintlify content is MDX rendered by the `mint` CLI; there is no JS entry.
-      "entry": [],
-      "project": [],
+      // Pages are MDX; gen reads src/config/docs.config.ts, and scripts/ holds the system-map writer (ADR 0002, 177).
+      "entry": ["src/config/docs.config.ts", "scripts/**/*.ts"],
+      "project": ["src/**/*.ts", "scripts/**/*.ts"],
+      // `stackra dev` and `stackra lint` run the member's own `mint` (cli resolve-tool), so no script names it.
+      "ignoreDependencies": ["mint"],
     },
   },
   // `mint`: Swift's Mint runner, a fallback in lefthook's generated hooks.

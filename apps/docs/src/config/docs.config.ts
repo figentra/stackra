@@ -20,8 +20,8 @@ export class StackraDocsConfig extends DocsConfig {
   override readonly description =
     "Stackra — the @stackra/* packages, apps and services, and how to work in the monorepo.";
 
-  /** The brand colours: primary on light, light on dark, and the dark accent (Stackra steel). */
-  override readonly colors = { primary: "#0B0D0F", light: "#F5F6F3", dark: "#E2E9F0" };
+  /** The brand colours: primary on light, light on dark, and the accent (Stackra steel-500, 3:1 or better on both backgrounds). */
+  override readonly colors = { primary: "#0B0D0F", light: "#F5F6F3", dark: "#647384" };
 
   /** The light and dark logos, paths under src/assets, linking home. */
   override readonly logo = { light: "logo/light.svg", dark: "logo/dark.svg", href: "/" };
