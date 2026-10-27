@@ -186,6 +186,9 @@ catalogs:
     '@aws-sdk/s3-request-presigner':
       specifier: 3.1149.0
       version: 3.1149.0
+    '@electric-sql/pglite':
+      specifier: 0.5.8
+      version: 0.5.8
     '@faker-js/faker':
       specifier: 10.6.0
       version: 10.6.0
@@ -193,6 +196,9 @@ catalogs:
       specifier: 8.4.0
       version: 8.4.0
     '@mikro-orm/core':
+      specifier: 7.2.5
+      version: 7.2.5
+    '@mikro-orm/pglite':
       specifier: 7.2.5
       version: 7.2.5
     '@mikro-orm/postgresql':
@@ -1256,6 +1262,9 @@ importers:
       '@stackra/errors':
         specifier: workspace:*
         version: link:../../foundation/errors
+      '@stackra/events':
+        specifier: workspace:*
+        version: link:../../foundation/events
       '@stackra/i18n':
         specifier: workspace:*
         version: link:../../foundation/i18n
@@ -1375,6 +1384,12 @@ importers:
 
   packages/application/rules:
     dependencies:
+      '@stackra/actions':
+        specifier: workspace:*
+        version: link:../actions
+      '@stackra/ai':
+        specifier: workspace:*
+        version: link:../ai
       '@stackra/container':
         specifier: workspace:*
         version: link:../../foundation/container
@@ -1981,6 +1996,9 @@ importers:
       '@stackra/actions':
         specifier: workspace:*
         version: link:../../application/actions
+      '@stackra/clients':
+        specifier: workspace:*
+        version: link:../../application/clients
       '@stackra/config':
         specifier: workspace:*
         version: link:../../foundation/config
@@ -2036,6 +2054,9 @@ importers:
       vitest:
         specifier: catalog:quality
         version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.3)(vite@8.3.4(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+      zod:
+        specifier: 'catalog:'
+        version: 4.6.7
 
   packages/communication/notifications:
     dependencies:
@@ -2133,6 +2154,9 @@ importers:
       '@stackra/events':
         specifier: workspace:*
         version: link:../../foundation/events
+      '@stackra/support':
+        specifier: workspace:*
+        version: link:../../foundation/support
       '@stackra/validation':
         specifier: workspace:*
         version: link:../../foundation/validation
@@ -2459,6 +2483,9 @@ importers:
       '@stackra/actions':
         specifier: workspace:*
         version: link:../../application/actions
+      '@stackra/container':
+        specifier: workspace:*
+        version: link:../../foundation/container
       '@stackra/contracts':
         specifier: workspace:*
         version: link:../../foundation/contracts
@@ -2478,9 +2505,6 @@ importers:
         specifier: 'catalog:'
         version: 4.6.7
     devDependencies:
-      '@stackra/container':
-        specifier: workspace:*
-        version: link:../../foundation/container
       '@stackra/testing':
         specifier: workspace:*
         version: link:../../developer/testing
@@ -2594,9 +2618,15 @@ importers:
         specifier: workspace:*
         version: link:../model
     devDependencies:
+      '@electric-sql/pglite':
+        specifier: 'catalog:'
+        version: 0.5.8
       '@faker-js/faker':
         specifier: 'catalog:'
         version: 10.6.0
+      '@mikro-orm/pglite':
+        specifier: 'catalog:'
+        version: 7.2.5(@mikro-orm/core@7.2.5)
       '@stackra/testing':
         specifier: workspace:*
         version: link:../../developer/testing
@@ -2913,6 +2943,9 @@ importers:
       '@stackra/outbox':
         specifier: workspace:*
         version: link:../../runtime/outbox
+      '@stackra/settings':
+        specifier: workspace:*
+        version: link:../../state/settings
       '@stackra/validation':
         specifier: workspace:*
         version: link:../../foundation/validation
@@ -3474,6 +3507,46 @@ importers:
         specifier: catalog:quality
         version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0)(vite@8.3.4(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
+  packages/developer/brand-kit:
+    dependencies:
+      '@stackra/contracts':
+        specifier: workspace:*
+        version: link:../../foundation/contracts
+    devDependencies:
+      '@stackra/testing':
+        specifier: workspace:*
+        version: link:../testing
+      '@stackra/tsdown-config':
+        specifier: workspace:*
+        version: link:../../tooling/tsdown
+      '@stackra/typescript-config':
+        specifier: workspace:*
+        version: link:../../tooling/typescript
+      '@stackra/vitest-config':
+        specifier: workspace:*
+        version: link:../../tooling/vitest
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.4
+      '@vitest/coverage-v8':
+        specifier: catalog:quality
+        version: 5.0.3(vitest@5.0.5)
+      oxfmt:
+        specifier: catalog:quality
+        version: 0.71.0
+      oxlint:
+        specifier: catalog:quality
+        version: 1.86.0
+      tsdown:
+        specifier: catalog:build
+        version: 0.23.1(oxc-resolver@11.24.2)(typescript@7.0.2)
+      typescript:
+        specifier: catalog:build
+        version: 7.0.2
+      vitest:
+        specifier: catalog:quality
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.3)(vite@8.3.4(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+
   packages/developer/cli:
     dependencies:
       '@stackra/contracts':
@@ -3485,6 +3558,9 @@ importers:
       '@stackra/mcp':
         specifier: workspace:*
         version: link:../mcp
+      '@stackra/repo-checks':
+        specifier: workspace:*
+        version: link:../repo-checks
       '@stackra/support':
         specifier: workspace:*
         version: link:../../foundation/support
@@ -3764,6 +3840,49 @@ importers:
         specifier: catalog:quality
         version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.3)(vite@8.3.4(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
+  packages/developer/repo-checks:
+    dependencies:
+      typescript6:
+        specifier: catalog:tooling
+        version: typescript@6.0.3
+      yaml:
+        specifier: 'catalog:'
+        version: 2.9.1
+    devDependencies:
+      '@stackra/testing':
+        specifier: workspace:*
+        version: link:../testing
+      '@stackra/tsdown-config':
+        specifier: workspace:*
+        version: link:../../tooling/tsdown
+      '@stackra/typescript-config':
+        specifier: workspace:*
+        version: link:../../tooling/typescript
+      '@stackra/vitest-config':
+        specifier: workspace:*
+        version: link:../../tooling/vitest
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.4
+      '@vitest/coverage-v8':
+        specifier: catalog:quality
+        version: 5.0.3(vitest@5.0.5)
+      oxfmt:
+        specifier: catalog:quality
+        version: 0.71.0
+      oxlint:
+        specifier: catalog:quality
+        version: 1.86.0
+      tsdown:
+        specifier: catalog:build
+        version: 0.23.1(oxc-resolver@11.24.2)(typescript@7.0.2)
+      typescript:
+        specifier: catalog:build
+        version: 7.0.2
+      vitest:
+        specifier: catalog:quality
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.3)(vite@8.3.4(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+
   packages/developer/runway:
     dependencies:
       '@stackra/container':
@@ -3870,9 +3989,6 @@ importers:
       '@playwright/test':
         specifier: catalog:e2e
         version: 1.64.1
-      '@stackra/navigation':
-        specifier: workspace:*
-        version: link:../../experience/navigation
       '@stackra/tsdown-config':
         specifier: workspace:*
         version: link:../../tooling/tsdown
@@ -5827,6 +5943,58 @@ importers:
         specifier: catalog:quality
         version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.3)(vite@8.3.4(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
+  packages/infrastructure/infra-tools:
+    dependencies:
+      '@pulumi/aws':
+        specifier: catalog:infra
+        version: 7.50.0(supports-color@10.2.2)(typescript@7.0.2)
+      '@stackra/contracts':
+        specifier: workspace:*
+        version: link:../../foundation/contracts
+      '@stackra/runway':
+        specifier: workspace:*
+        version: link:../../developer/runway
+      zod:
+        specifier: 'catalog:'
+        version: 4.6.7
+    devDependencies:
+      '@pulumi/pulumi':
+        specifier: catalog:infra
+        version: 3.268.0(supports-color@10.2.2)(typescript@7.0.2)
+      '@stackra/testing':
+        specifier: workspace:*
+        version: link:../../developer/testing
+      '@stackra/tsdown-config':
+        specifier: workspace:*
+        version: link:../../tooling/tsdown
+      '@stackra/typescript-config':
+        specifier: workspace:*
+        version: link:../../tooling/typescript
+      '@stackra/vitest-config':
+        specifier: workspace:*
+        version: link:../../tooling/vitest
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.4
+      '@vitest/coverage-v8':
+        specifier: catalog:quality
+        version: 5.0.3(vitest@5.0.5)
+      oxfmt:
+        specifier: catalog:quality
+        version: 0.71.0
+      oxlint:
+        specifier: catalog:quality
+        version: 1.86.0
+      tsdown:
+        specifier: catalog:build
+        version: 0.23.1(oxc-resolver@11.24.2)(typescript@7.0.2)
+      typescript:
+        specifier: catalog:build
+        version: 7.0.2
+      vitest:
+        specifier: catalog:quality
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.3)(vite@8.3.4(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+
   packages/runtime/app:
     dependencies:
       '@stackra/config':
@@ -6818,6 +6986,9 @@ importers:
       '@stackra/validation':
         specifier: workspace:*
         version: link:../../foundation/validation
+      zod:
+        specifier: 'catalog:'
+        version: 4.6.7
     devDependencies:
       '@stackra/testing':
         specifier: workspace:*
@@ -6891,6 +7062,9 @@ importers:
       '@stackra/errors':
         specifier: workspace:*
         version: link:../../foundation/errors
+      '@stackra/events':
+        specifier: workspace:*
+        version: link:../../foundation/events
       '@stackra/iam':
         specifier: workspace:*
         version: link:../iam
@@ -6997,6 +7171,9 @@ importers:
       '@stackra/errors':
         specifier: workspace:*
         version: link:../../foundation/errors
+      '@stackra/support':
+        specifier: workspace:*
+        version: link:../../foundation/support
       '@stackra/transport':
         specifier: workspace:*
         version: link:../../foundation/transport
@@ -7702,6 +7879,10 @@ importers:
         version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.3)(vite@8.3.4(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/tooling/oxlint:
+    dependencies:
+      '@stackra/coding-standard':
+        specifier: workspace:*
+        version: link:../../developer/coding-standard
     devDependencies:
       '@stackra/typescript-config':
         specifier: workspace:*
@@ -9061,6 +9242,9 @@ packages:
     resolution: {integrity: sha512-XQsZgjm2EcVUiZQf11UBJQfmZeEmOW8DpI1gsFeln6w0ae0ii4dMQEQ0kjl6DspdWX1aGY1/loyXnP0JS06e/A==}
     engines: {node: '>=0.8.0'}
 
+  '@electric-sql/pglite@0.5.8':
+    resolution: {integrity: sha512-n9tsbUOhwx2epK1V0ZG9Ar4SHWUju04dhmzZXiSBXwBoleOvIfals33NAaWgagQVAL4Rbvx/Ptsu3P+pA09f6Q==}
+
   '@electron-internal/extract-zip@1.0.6':
     resolution: {integrity: sha512-/aQLgFDdCSnwChfUwqekSmE1q2dCTzhUy5saIHBb5vyYn5LzWaKPaIz1wM0lDMCZYBoIG4svJNvAJb6vkI8BuA==}
     engines: {node: '>=22.12.0'}
@@ -10349,6 +10533,12 @@ packages:
     peerDependenciesMeta:
       dataloader:
         optional: true
+
+  '@mikro-orm/pglite@7.2.5':
+    resolution: {integrity: sha512-H/Gof+Fu5sGJ9cC9Vt2vkIRtD06pRQxR+c9OaQbHKY6mbwGER1Lx95oYdxbH5YeRgfHDyX+k8y2hg6Ps6mXrpQ==}
+    engines: {node: '>= 22.17.0'}
+    peerDependencies:
+      '@mikro-orm/core': 7.2.5
 
   '@mikro-orm/postgresql@7.2.5':
     resolution: {integrity: sha512-2mDdd3DBQLxtLIyzkNahwxeZdDeSbQjwnp26JRnElXkq6u/X5AUwBagbrf/iu9m3a83GvkP6xxOnGL4bPeAJNA==}
@@ -22810,6 +23000,8 @@ snapshots:
     dependencies:
       '@types/hammerjs': 2.0.46
 
+  '@electric-sql/pglite@0.5.8': {}
+
   '@electron-internal/extract-zip@1.0.6': {}
 
   '@electron/get@5.1.0(supports-color@10.2.2)':
@@ -24817,6 +25009,16 @@ snapshots:
       react: 19.2.3
 
   '@mikro-orm/core@7.2.5': {}
+
+  '@mikro-orm/pglite@7.2.5(@mikro-orm/core@7.2.5)':
+    dependencies:
+      '@electric-sql/pglite': 0.5.8
+      '@mikro-orm/core': 7.2.5
+      '@mikro-orm/sql': 7.2.5(@mikro-orm/core@7.2.5)
+      kysely: 0.29.6
+      postgres-array: 3.0.4
+      postgres-date: 2.1.0
+      postgres-interval: 4.1.0
 
   '@mikro-orm/postgresql@7.2.5(@mikro-orm/core@7.2.5)':
     dependencies:
