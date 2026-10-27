@@ -12,6 +12,7 @@ import type { SortDirection } from "@stackra/contracts";
 
 import { Schema } from "#core/bases/schema.base";
 import { TABLE_INPUT_SCHEMA } from "#core/constants/table-input-schema.constant";
+import { Field } from "#core/decorators/field.decorator";
 import { registerSchemas } from "#core/functions/register-schemas.function";
 
 /**
@@ -21,17 +22,23 @@ import { registerSchemas } from "#core/functions/register-schemas.function";
  * export class ListOrdersInput extends TableInput {}
  */
 export class TableInput extends Schema {
-  /** The opaque cursor of the page to read; absent for the first page. */
-  cursor?: string;
-
   /** How many rows to return: one of the table's page sizes. */
+  // reason: a closed set of page sizes, which no typed decorator says; the shipped schema already states its rule
+  @Field(TABLE_INPUT_SCHEMA.shape.limit)
   limit: 20 | 50 | 100 = 20;
 
   /** The sort key and direction; absent means the table's default sort. */
+  // reason: gen narrows it to the sortable keys of the bound resource table; the shipped schema already states its rule
+  @Field(TABLE_INPUT_SCHEMA.shape.sort)
   sort?: { key: string; direction: SortDirection };
 
   /** The filter values by filter key; empty means no filter. */
+  // reason: gen narrows it to the filters of the bound resource table; the shipped schema already states its rule
+  @Field(TABLE_INPUT_SCHEMA.shape.filter)
   filter: Record<string, unknown> = {};
+
+  /** The opaque cursor of the page to read; absent for the first page. */
+  cursor?: string;
 }
 
 registerSchemas([[TableInput, TABLE_INPUT_SCHEMA]]);
