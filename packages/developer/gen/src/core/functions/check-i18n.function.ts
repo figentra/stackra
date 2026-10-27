@@ -15,7 +15,8 @@
  * Governing contract: ADR 0268 (R15: typed keys, every key exists in the base locale); ADR 0294 (decision 22: a refusal
  *                     carries its fix); STA-1298.
  */
-import { i18nTree, type I18nNode } from "#core/functions/i18n-tree.function";
+import { i18nTree } from "#core/functions/i18n-tree.function";
+import type { I18nNode } from "#core/types/i18n-node.type";
 import { snakeCase } from "#core/functions/snake-case.function";
 import type { GenError } from "#core/types/gen-error.type";
 import type { MemberIR } from "#core/types/member-ir.type";

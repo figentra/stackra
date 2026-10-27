@@ -9,18 +9,10 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0260 (decision 2: the manifest is the one contract source); ADR 0158; ADR 0294 (decision 26).
  */
+import type { ZodPrintContext } from "#core/types/zod-print-context.type";
 
 /** A JSON Schema node as the manifest records it. */
 type Schema = Readonly<Record<string, unknown>>;
-
-/** What the printer needs from the emitter that calls it. */
-export interface ZodPrintContext {
-  /** Records one import of the printed file. */
-  readonly use: (from: string, name: string) => void;
-
-  /** The zod expression of a `$ref` target (`#/schemas/<module>.<Name>`), or `undefined` when it is not local. */
-  readonly ref: (target: string) => string | undefined;
-}
 
 /** A public id pattern as `jsonSchemaOf` writes it. */
 const PUBLIC_ID = /^\^([a-z]+)_\[0-9A-Za-z\]\{26\}\$$/;

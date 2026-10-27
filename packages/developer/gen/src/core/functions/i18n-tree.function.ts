@@ -10,17 +10,9 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0268 (R15: typed keys); ADR 0231 (`<module>::<path>` lookups); STA-1293; STA-1298.
  */
+import type { I18nNamespace } from "#core/types/i18n-namespace.type";
+import type { I18nNode } from "#core/types/i18n-node.type";
 import type { MemberIR } from "#core/types/member-ir.type";
-
-/** A `keys(...)` node: a leaf list, or children by segment with the leaves under `_`. */
-export type I18nNode = readonly string[] | { readonly [segment: string]: I18nNode };
-
-/** One namespace of the tree: its node, the package that ships it (absent for the member's own) and its base locale. */
-export interface I18nNamespace {
-  readonly node: I18nNode;
-  readonly package?: string;
-  readonly base: string;
-}
 
 /** The `I18nNode` of one catalogue branch. */
 function nodeOf(branch: Readonly<Record<string, unknown>>): I18nNode {

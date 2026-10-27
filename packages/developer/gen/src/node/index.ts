@@ -20,5 +20,7 @@ export { readServiceManifests } from "#node/functions/read-service-manifests.fun
 export { watchDocsSite } from "#node/functions/watch-docs-site.function";
 export type { ClassComponentsPlugin } from "#node/types/class-components-plugin.type";
 export type { GenerateResult } from "#node/types/generate-result.type";
-export type { TsHost, TsSymbol, TsType } from "#node/types/ts-host.type";
+export type { TsHost } from "#node/types/ts-host.type";
+export type { TsSymbol } from "#node/types/ts-symbol.type";
+export type { TsType } from "#node/types/ts-type.type";
 export type { TsNode } from "#node/types/ts-node.type";

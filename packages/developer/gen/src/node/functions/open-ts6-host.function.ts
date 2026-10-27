@@ -13,7 +13,9 @@ import { createRequire } from "node:module";
 import { dirname, resolve } from "node:path";
 
 import { kindNames } from "#node/functions/kind-names.function";
-import type { TsHost, TsSymbol, TsType } from "#node/types/ts-host.type";
+import type { TsHost } from "#node/types/ts-host.type";
+import type { TsSymbol } from "#node/types/ts-symbol.type";
+import type { TsType } from "#node/types/ts-type.type";
 import type { TsNode } from "#node/types/ts-node.type";
 
 /** A TypeScript 6 node: the shared shape plus the methods gen calls. */

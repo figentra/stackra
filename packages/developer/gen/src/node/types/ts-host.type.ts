@@ -4,25 +4,16 @@
  *          asks of a program (its files, a node's kind, text, leading and trailing trivia and position, the symbol and type at a node, a symbol's
  *          declarations, a type's alias, union members and literal value), answered by the TypeScript 7 host or the
  *          TypeScript 6 fallback with identical results.
- * Boundary: a type only. Symbols and types stay opaque (`TsSymbol`, `TsType`); only the host that made one reads it.
- *           A symbol is always returned de-aliased, so an import resolves to the declared class or constant.
+ * Boundary: a type only. Symbols and types stay opaque (`TsSymbol`, `TsType`, each in its own file); only the host
+ *           that made one reads it. A symbol is always returned de-aliased, so an import resolves to the declared
+ *           class or constant.
  * Runtime: node
  * Governing contract: ADR 0294 (decision 26: one host seam over the TypeScript 7 API with a TypeScript 6 fallback,
  *                     no ts-morph); ADR 0305 (rules 42 and 45).
  */
 import type { TsNode } from "#node/types/ts-node.type";
-
-/** An opaque checker symbol. */
-export type TsSymbol = {
-  /** The brand that keeps a symbol from passing as a type. */
-  readonly "~tsSymbol": true;
-};
-
-/** An opaque checker type. */
-export type TsType = {
-  /** The brand that keeps a type from passing as a symbol. */
-  readonly "~tsType": true;
-};
+import type { TsSymbol } from "#node/types/ts-symbol.type";
+import type { TsType } from "#node/types/ts-type.type";
 
 /** One opened TypeScript program. */
 export interface TsHost {

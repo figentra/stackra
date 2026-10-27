@@ -64,7 +64,9 @@ import { SHAPE_DECORATORS } from "#node/constants/shape-decorators.constant";
 import { SHAPE_KINDS } from "#node/constants/shape-kinds.constant";
 import type { MemberFacts } from "#node/types/member-facts.type";
 import type { SourceReader } from "#node/types/source-reader.type";
-import type { TsHost, TsSymbol, TsType } from "#node/types/ts-host.type";
+import type { TsHost } from "#node/types/ts-host.type";
+import type { TsSymbol } from "#node/types/ts-symbol.type";
+import type { TsType } from "#node/types/ts-type.type";
 import type { TsNode } from "#node/types/ts-node.type";
 
 /** What a class's `extends` clause names. */
