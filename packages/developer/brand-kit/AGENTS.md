@@ -27,9 +27,8 @@ shape (ADR 0294, 0305). Entries `./contracts` and `.`. ADR 0441 (as amended).
 
 ## Still missing (skeleton)
 
-`tsconfig.json`, `tsdown.config.ts`, `vitest.config.ts`, `turbo.jsonc`, `stackra.config.ts`, `CHANGELOG.md`, `LICENSE`
-and the runway member file come with stackra-12 (STA-957). Root `runway.yaml`, the category README and the catalogue
-row are integration asks (stackra-90).
+`CHANGELOG.md`, `LICENSE` and the runway member file come with stackra-12 (STA-957), with the generator. Root
+`runway.yaml`, the category README and the catalogue row are integration asks (stackra-90).
 
 ## Rules that fail the build
 
