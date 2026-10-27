@@ -36,7 +36,10 @@ class RecordRedemptionListener extends Listener {
   }
 }
 
-class QueuedListener extends Listener({ queue: "default", retry: { attempts: 3 } }) {
+class QueuedListener extends Listener({
+  queue: "default",
+  retry: { attempts: 3 },
+}) {
   async handle(_event: PointsRedeemed): Promise<void> {}
 }
 

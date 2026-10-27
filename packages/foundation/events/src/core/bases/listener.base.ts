@@ -5,7 +5,7 @@
  *          type of its `handle` parameter, which gen reads and registers with `registerListeners`.
  * Boundary: a binding: its dependencies are its constructor parameters, wired by gen. One listener has one `handle`;
  *           a second reaction is a second listener, so each retries and fails alone. `ListenerBase` is the instance
- *           side (its abstract `handle` must be implemented); it is not exported from the entry.
+ *           side (its abstract `handle` must be implemented), named outside this file by the type `Listener`.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 4, 16 and 25; amendment item 5); ADR 0305 (rule 2); ADR 0078 (decision 4).
  */
@@ -15,8 +15,8 @@ import type { ListenerClass } from "#core/types/listener-class.type";
 import type { ListenerContext } from "#core/types/listener-context.type";
 import type { ListenerOptions } from "#core/types/listener-options.type";
 
-/** The instance side every listener shares. */
-export abstract class ListenerBase {
+/** The instance side every listener shares; not exported, `Listener` is its type. */
+abstract class ListenerBase {
   /** Type-only kind brand, so a class of another kind cannot stand in for a listener. */
   declare readonly "~kind": "listener";
 

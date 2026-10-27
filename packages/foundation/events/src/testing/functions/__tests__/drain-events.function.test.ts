@@ -15,7 +15,7 @@ import "#testing/index";
 import { currentHarness } from "#testing/functions/current-harness.function";
 import { dispatch } from "#testing/functions/dispatch.function";
 import { drainEvents } from "#testing/functions/drain-events.function";
-import { OutboxFake } from "#testing/outbox.fake";
+import type { OutboxFake } from "#testing/outbox.fake";
 
 class StockLow extends DomainEvent {}
 

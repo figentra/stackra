@@ -58,7 +58,9 @@ export class EventBus extends Service {
   /** Every delivery made, oldest first. */
   private readonly history: ListenerDelivery[] = [];
 
-  /** @param clock - the Clock port. */
+  /**
+   * @param clock - the Clock port.
+   */
   constructor(clock: Clock) {
     super();
     this.clock = clock;
