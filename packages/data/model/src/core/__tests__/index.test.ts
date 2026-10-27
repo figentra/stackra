@@ -77,10 +77,10 @@ class Variant extends Model.with(HasPublicId("var"), Timestamps) {
 
 @Index(["total.minor"])
 class Order extends Model.with(HasPublicId("ord"), Timestamps, UserStamps, Versioned) {
-  total!: Money;
-
   @OneToMany(() => OrderLine, (line) => line.order, { orphanRemoval: true })
   lines = new Collection<OrderLine>(this);
+
+  total!: Money;
 }
 
 class OrderLine extends Model.with(HasPublicId("oln")) {
@@ -94,7 +94,10 @@ class OrderLine extends Model.with(HasPublicId("oln")) {
   quantity!: number;
 }
 
-@Index(["memberId"], { unique: true, where: "deleted_at is null" })
+@Index(["memberId"], {
+  unique: true,
+  where: "deleted_at is null",
+})
 class LoyaltyAccount extends Model.with(HasPublicId("lac"), SoftDeletes) {
   @Str({ max: 64 })
   memberId!: string;

@@ -39,7 +39,9 @@ export class EncryptedFieldsSubscriber implements EventSubscriber<object> {
   /** Per entity, each field this subscriber sealed: its plain text and the sealed value it wrote in its place. */
   private readonly written = new WeakMap<object, Map<string, readonly [string, string]>>();
 
-  /** @param cipher - the cipher the host binds, a KMS-backed driver in production. */
+  /**
+   * @param cipher - the cipher the host binds, a KMS-backed driver in production.
+   */
   constructor(cipher: FieldCipher) {
     this.cipher = cipher;
   }

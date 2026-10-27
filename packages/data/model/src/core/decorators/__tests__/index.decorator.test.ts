@@ -13,7 +13,10 @@ import { Model } from "#core/bases/model.base";
 import { Index } from "#core/decorators/index.decorator";
 
 @Index(["customerId"])
-@Index(["scopeId", "memberId"], { unique: true, where: "deleted_at is null" })
+@Index(["scopeId", "memberId"], {
+  unique: true,
+  where: "deleted_at is null",
+})
 @Index(["scopeId", "total.minor"])
 class Order extends Model.with() {
   scopeId!: string;

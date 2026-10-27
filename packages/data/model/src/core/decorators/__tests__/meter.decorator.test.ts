@@ -14,8 +14,16 @@ import { Model } from "#core/bases/model.base";
 import { Meter } from "#core/decorators/meter.decorator";
 import { MeterKind } from "#core/enums/meter-kind.enum";
 
-@Meter({ key: "matters.active", kind: MeterKind.Count })
-@Meter({ key: "storage.bytes", kind: MeterKind.Sum, field: "sizeBytes", window: Duration.days(30) })
+@Meter({
+  key: "matters.active",
+  kind: MeterKind.Count,
+})
+@Meter({
+  key: "storage.bytes",
+  kind: MeterKind.Sum,
+  field: "sizeBytes",
+  window: Duration.days(30),
+})
 class Matter extends Model {
   sizeBytes = 0;
 }
@@ -37,13 +45,22 @@ describe(Meter, () => {
     expect(() => Meter({ key: "m", kind: MeterKind.Max })).toThrow(/needs a field/);
     expect(() => Meter({ key: "m", kind: MeterKind.Last, field: "Bad-name" })).toThrow(/camelCase/);
     expect(() => {
-      @Meter({ key: "m", kind: MeterKind.Count })
-      @Meter({ key: "m", kind: MeterKind.Count })
+      @Meter({
+        key: "m",
+        kind: MeterKind.Count,
+      })
+      @Meter({
+        key: "m",
+        kind: MeterKind.Count,
+      })
       class Twice extends Model {}
       return Twice;
     }).toThrow(/declared twice/);
     expect(() => {
-      @Meter({ key: "m", kind: MeterKind.Count })
+      @Meter({
+        key: "m",
+        kind: MeterKind.Count,
+      })
       class NotAModel {}
       return NotAModel;
     }).toThrow(TypeError);
