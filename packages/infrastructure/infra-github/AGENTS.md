@@ -28,6 +28,8 @@ Entries `.` (isomorphic plan and checks) and `./node` (the file reader and the P
 - `ref:` values name an id, never a secret; `resolveRef` stays internal to `./node`.
 - A ruleset setting the provider cannot apply while it is on fails `parseRuleset`; keep the checks in step with the
   provider's schema.
+- The health driver's target is `InfraGithubConfig` (`src/config/infra-github.config.ts`, key `infra_github`), injected by type:
+  the runway's `config.infra_github` sets it. Never a constructor options object (gen's `token_not_a_class`).
 
 ## PII
 

@@ -2,13 +2,16 @@
  * Stackra file contract:
  * Purpose: unit tests of `GithubHealthIndicatorDriver`: a `HealthIndicator` named `github` that GETs its target, reports `up` with
  *          a latency, maps the answer's status, and reports `down` (never throws) when the request fails.
- * Boundary: test only; `fetch` is a fake, nothing leaves the process.
+ * Boundary: test only; the global `fetch` is stubbed, nothing leaves the process.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 16 and 17); registry gaps R-27 and R-36.
  */
+import { buildConfig } from "@stackra/config";
 import { HealthIndicator } from "@stackra/contracts";
-import { describe, expect, it } from "@stackra/testing";
+import { afterEach, describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 
+import { InfraGithubConfig } from "#config/infra-github.config";
 import { GithubHealthIndicatorDriver } from "#core/drivers/github-health-indicator.driver";
 
 /** The URLs the fake fetch was asked for. */
@@ -21,8 +24,13 @@ function indicatorAnswering(status: number | null): GithubHealthIndicatorDriver 
     if (status === null) throw new TypeError("fetch failed");
     return new Response(null, { status });
   }) as typeof globalThis.fetch;
-  return new GithubHealthIndicatorDriver({ fetch });
+  vi.stubGlobal("fetch", fetch);
+  return new GithubHealthIndicatorDriver(buildConfig(InfraGithubConfig));
 }
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
 
 describe("GithubHealthIndicatorDriver", () => {
   it("is a named health indicator that GETs its target", async () => {
@@ -49,5 +57,9 @@ describe("GithubHealthIndicatorDriver", () => {
       status: "down",
       detail: `${new URL("https://api.github.com/").host} did not answer (TypeError)`,
     });
+  });
+
+  it("refuses a malformed target", () => {
+    expect(() => buildConfig(InfraGithubConfig, { values: { api: "http://api" } })).toThrow();
   });
 });

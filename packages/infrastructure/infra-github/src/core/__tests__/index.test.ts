@@ -26,6 +26,8 @@ describe("@stackra/infra-github", () => {
       "GithubHealthIndicatorDriver",
       "GithubInfraInvalidError",
       "GithubVisibility",
+      "InfraGithubConfig",
+      "InfraGithubConfig$",
       "githubPlan",
       "parseBranchProtection",
       "parseRuleset",
