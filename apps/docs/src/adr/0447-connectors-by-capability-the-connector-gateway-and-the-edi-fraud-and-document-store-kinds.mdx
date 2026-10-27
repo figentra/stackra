@@ -1,0 +1,81 @@
+---
+title: "0447 — Connectors by capability: the connector gateway and the EDI, fraud and document-store kinds"
+description: "Proposed · 2026-10-27"
+---
+
+<Note>
+  Proposed (STA-1021, batch stackra-40). It carries out STA-904 (the 3PL port), the port part of
+  STA-795 (EDI), owner decisions R3-SO-03 and R3-SO-07, the Commerce module catalogue's five
+  `integrations` gaps and the restaurant catalogue's open question on food-delivery and courier
+  shelves. It builds on
+  [0355](/adr/0355-marketplace-one-integration-with-up-to-five-roles-one-app-market-and-open-to-any-developer)
+  (one Integration, five roles, connector kinds),
+  [0356](/adr/0356-choosing-a-provider-per-tenant-and-market-through-the-connection-with-a-market-default)
+  (the provider per tenant and Market) and
+  [0376](/adr/0376-provider-resolution-ports-credential-references-managed-or-own-accounts-and-the-telephony-ports).
+</Note>
+
+## Context
+
+`@stackra/integrations` declared the commerce connector interfaces (`FulfilmentProviderConnector`,
+`SalesChannelConnector`, `ProductFeedConnector`) but no way for a module to reach a Connection it does not define:
+`ProviderResolver` takes a `ProviderDrivers` map, and only the package that wrote the connection classes could build
+one. Vendor connectors now live in the OS integrations service (0443), so no consuming module ever defines them.
+Commerce reported five gaps against the package: no 3PL Connection lookup (warehouse), no gateway resolving channel
+and feed connectors, a `SalesChannelConnector` without the delivery-app and marketplace operations, no EDI kind with
+no lookup by capability (purchasing), and no fraud-scoring port (orders). The products need shelves for food
+delivery, couriers, electronic shelf labels, scales and court systems, and Juristra a document-store connector.
+
+## Decision
+
+1. **Shelves.** `IntegrationCategory` gains `edi`, `fraud`, `food_delivery`, `courier`, `document_management`, `esl`,
+   `scales` and `court`. A shelf is where the marketplace lists a provider; the providers on it are Connection classes
+   in OS integrations. A court-system connector is a Connection on the `court` shelf, never a framework of its own.
+2. **Lookup by capability.** `connectionsOf(capability)` reads the connection registry gen fills and answers the
+   classes whose Integration declares the connector kind, or sits on the shelf, keyed by provider code (a
+   `ProviderDrivers` map). Two Integrations of one provider code are refused (0355 decision 1). `ConnectorGateway`
+   passes that map to `ProviderResolver` with the kind's code as the capability, so a Market's providers per kind are
+   pack data under `providers.<kind>` and the 0356 rule (own first, then managed) is unchanged. A named provider
+   narrows the map to it; an unregistered one is `NoProviderError`.
+3. **Sales channels.** `SalesChannelConnector` keeps its five required methods and gains optional ones: `reject`,
+   `cancel`, `setPrepTime`, `setMenu` (sections, items, modifier groups), `setAvailability`, `setListings` and
+   `returns`. A channel implements the ones it has (a delivery app a menu and prep times, a marketplace listings and
+   returns); a caller filters with `accepts`. `ChannelOrder` gains `paymentMethod` (`prepaid`, `cash_on_delivery`,
+   `card_on_delivery`).
+4. **EDI.** The `edi` connector kind names `EdiConnector`: send a canonical document once per idempotency key, receive
+   the documents held for us, acknowledge each. The canonical set is order, order response, despatch advice, invoice
+   and acknowledgement, as the network's JSON; the network (managed: Figentra's account named per pack; own: the
+   chain's) does the EDIFACT, X12 or GS1 XML codecs and AS2 (R3-SO-07). Partners and mappings are per-Connection data.
+5. **Fraud scoring.** The `fraud_scoring` kind names `FraudScoringConnector`: `score` (idempotent on the reference)
+   and `outcome` (feedback). A `FraudScore` (`score` 0 to 100, `decision`, `reasons`) is a fact value as it stands;
+   the consuming module registers the `fraud` fact source (0331) and the tenant's rules decide holds. Nothing in
+   integrations thresholds on it.
+6. **Document stores.** The `document_store` kind names `DocumentStoreConnector` (list a folder, fetch a document,
+   file a document or a new version once per key) for iManage, NetDocuments and SharePoint. It is a connector kind,
+   not a sixth role: 0355 keeps five.
+
+## Consequences
+
+- OS integrations builds the vendor Connections on these contracts (stackra-45 for EDI connectors; the managed EDI
+  network driver is stackra-46); market packs list them under `providers.<kind>`.
+- Commerce resolves 3PL, channel, feed, EDI and accounting Connections through `ConnectorGateway` or
+  `connectionsOf`; restaurant products filter delivery apps with `accepts`.
+- `./testing` ships `MemoryFulfilmentProvider` beside `MemoryPayrollConnector`.
+
+## Enforcement
+
+- Unit tests of `connectionsOf`, `ConnectorGateway`, the enums and the memory 3PL; the barrels' export lists.
+- The package's AGENTS.md: a new kind names one interface; never import another package's connection class.
+
+## Alternatives
+
+- **One base class per kind** (`FulfilmentProviderConnection extends Connection`): gen binds a connection to its
+  Integration by `extends Connection<XIntegration>` and its name, so an intermediate base would break that binding.
+  Rejected; the interface plus `connectionsOf` gives the same typing.
+- **Separate interfaces per channel feature**: more names for one channel to implement and the gateway to resolve.
+  Rejected for optional methods.
+
+## Supersedes and sources
+
+Supersedes nothing. Sources: STA-904, STA-795, STA-1021; R3-SO-03, R3-SO-07; ADR 0218 decision 5, 0308, 0348
+decision 5, 0355, 0356, 0376; Commerce `apps/docs/src/build/module-catalogue.mdx` (integrations gaps).

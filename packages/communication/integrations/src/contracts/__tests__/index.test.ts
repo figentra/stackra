@@ -15,7 +15,10 @@ describe("@stackra/integrations/contracts", () => {
   it("exports exactly its ports and enums", () => {
     expect(Object.keys(contracts).sort()).toEqual([
       "CallStatus",
+      "ChannelPaymentMethod",
       "ConnectionContext",
+      "EdiDocumentType",
+      "FraudDecision",
       "ManagedProvisioning",
       "MarketContext",
       "MobileStore",

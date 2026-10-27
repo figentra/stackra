@@ -1,12 +1,16 @@
 /**
  * Stackra file contract:
- * Purpose: `ConnectorKind`, the commerce connector kinds an Integration with the connector role may declare: a carrier,
- *          a fulfilment provider, a sales channel (a marketplace or another shop) and a product feed.
+ * Purpose: `ConnectorKind`, the connector kinds an Integration with the connector role may declare: a carrier, a
+ *          fulfilment provider, a sales channel (a marketplace, a delivery app or another shop), a product feed, an EDI
+ *          network, a fraud scorer and a document store.
  * Boundary: an `Enum.of` value plus the type of the same name. Each kind names the interface its Connection implements:
- *           `CarrierGateway` of `@stackra/shipping`, and `FulfilmentProviderConnector`, `SalesChannelConnector` and
- *           `ProductFeedConnector` of `./contracts`. Which connectors a Market lists is data (`connector-catalogue`).
+ *           `CarrierGateway` of `@stackra/shipping`, and `FulfilmentProviderConnector`, `SalesChannelConnector`,
+ *           `ProductFeedConnector`, `EdiConnector`, `FraudScoringConnector` and `DocumentStoreConnector` of
+ *           `./contracts`. A kind is a capability `connectionsOf` looks up; it is not a sixth `IntegrationRole`.
+ *           Which connectors a Market lists is data (`connector-catalogue`).
  * Runtime: isomorphic
- * Governing contract: ADR 0355 (decisions 1 and 6); ADR 0218 (decision 3); COM-147, COM-301; COM-296.
+ * Governing contract: ADR 0355 (decisions 1 and 6); ADR 0218 (decision 3); ADR 0447 (decisions 2 to 5); COM-147,
+ *                     COM-301; COM-296; R3-SO-07.
  */
 import { Enum } from "@stackra/contracts";
 
@@ -25,6 +29,12 @@ export const ConnectorKind = Enum.of({
   SalesChannel: "sales_channel",
   /** A catalogue we publish our products to (`ProductFeedConnector`). */
   ProductFeed: "product_feed",
+  /** Purchase orders in; order responses, despatch advice and invoices out, through an EDI network (`EdiConnector`). */
+  Edi: "edi",
+  /** Scores an order or a payment for fraud (`FraudScoringConnector`). */
+  FraudScoring: "fraud_scoring",
+  /** A document management system we list, fetch and file documents in (`DocumentStoreConnector`). */
+  DocumentStore: "document_store",
 });
 
 /** One of the codes above. */

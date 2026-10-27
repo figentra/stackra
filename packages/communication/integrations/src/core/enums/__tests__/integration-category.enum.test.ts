@@ -4,7 +4,8 @@
  *          integration uses, all snake_case.
  * Boundary: test only.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0308 (rule 1); ADR 0231 (snake_case codes).
+ * Governing contract: ADR 0022 (test placement); ADR 0308 (rule 1); ADR 0231 (snake_case codes); ADR 0447 (decision
+ *                     1).
  */
 import { Enum } from "@stackra/contracts";
 import { describe, expect, it } from "@stackra/testing";
@@ -30,6 +31,28 @@ describe("IntegrationCategory", () => {
 
   it("has the app stores shelf of D14", () => {
     expect(IntegrationCategory.AppStores).toBe("app_stores");
+  });
+
+  it("has the connector shelves of ADR 0447", () => {
+    expect([
+      IntegrationCategory.Edi,
+      IntegrationCategory.Fraud,
+      IntegrationCategory.FoodDelivery,
+      IntegrationCategory.Courier,
+      IntegrationCategory.DocumentManagement,
+      IntegrationCategory.Esl,
+      IntegrationCategory.Scales,
+      IntegrationCategory.Court,
+    ]).toEqual([
+      "edi",
+      "fraud",
+      "food_delivery",
+      "courier",
+      "document_management",
+      "esl",
+      "scales",
+      "court",
+    ]);
   });
 
   it("keeps every code snake_case and unique", () => {

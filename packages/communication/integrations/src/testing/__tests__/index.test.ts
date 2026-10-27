@@ -16,6 +16,7 @@ describe("@stackra/integrations/testing", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(testing).sort()).toEqual([
       "INTEGRATIONS_TESTING_PLUGIN",
+      "MemoryFulfilmentProvider",
       "MemoryPayrollConnector",
       "fakeIntegrationApi",
       "makeConnection",

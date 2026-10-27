@@ -1,5 +1,15 @@
 # @stackra/integrations
 
+<!--
+Stackra file contract:
+Purpose: the package's reader guide: Integrations, Connections and their stores, the provider resolver, the connector
+         contracts (commerce, EDI, fraud scoring, document stores) and the gateway that resolves them, and what is not
+         here.
+Boundary: documentation only; the code and the ADRs win on any difference.
+Runtime: none
+Governing contract: ADR 0308; ADR 0355; ADR 0356; ADR 0376; ADR 0447.
+-->
+
 Provider integrations (ADR 0308). An **Integration** describes a provider once, the same for every scope and user:
 where its connections sit, how a call authenticates (six auth types), its base URL, rate limits, retries, health
 schedule and webhook verification. A **Connection** is one stored credential set for it, supplied or granted by a scope
@@ -40,6 +50,13 @@ Depends on `@stackra/actions` (the `RateLimitStore`, and `RequestContext` for th
 | `credentialRef`, `./contracts`: `CredentialRef`                                                                         | a stored reference to a Connection in the integrations vault, never the secret                       |
 | `postJournal`, `assertBalanced`, `UnbalancedJournalError`, `./contracts`: `AccountingProvider`                          | balanced journals, posted once per idempotency key                                                   |
 | `./contracts`: `SalesChannelConnector`, `ProductFeedConnector`, `FulfilmentProviderConnector`                           | what a commerce connector's Connection implements (carriers: `@stackra/shipping`)                    |
+| `connectionsOf`                                                                                                         | the registered connection classes of a connector kind or category, by provider code (ADR 0447)       |
+| `ConnectorGateway`, `ConnectorQuery`                                                                                    | the Connection of a connector kind (3PL, channel, feed, EDI, fraud, documents), by provider or pick  |
+| `./contracts`: `ChannelMenu`, `ChannelModifierGroup`, `ChannelListing`, `ChannelReturn`, `ChannelPaymentMethod`         | the delivery-app and marketplace extensions of `SalesChannelConnector` and `ChannelOrder`            |
+| `./contracts`: `EdiConnector`, `EdiDocument`, `EdiDocumentType`                                                         | canonical EDI documents through a managed or own EDI network (R3-SO-07)                              |
+| `./contracts`: `FraudScoringConnector`, `FraudScore`, `FraudDecision`                                                   | a fraud score, shaped as the `fraud` facts a rule tests                                              |
+| `./contracts`: `DocumentStoreConnector`, `StoredDocument`, `DocumentFile`                                               | iManage, NetDocuments, SharePoint: list, fetch and file documents                                    |
+| `./testing`: `MemoryFulfilmentProvider`                                                                                 | the memory 3PL: one fulfilment per reference, `ship` plays the warehouse                             |
 | `./contracts`: `PayrollConnector`, `PayInput`, `PayInputKind`; `assertPayInputs`; `./testing`: `MemoryPayrollConnector` | pay inputs (hours, sessions, tips, commission) pushed to the tenant's payroll provider               |
 | `MarketPackProviderDefaultsDriver`, `ProviderPackSource`, `./contracts`: `ProviderMode`; `ProviderCandidate`            | the market-pack `ProviderDefaults` for every capability, and the failover list's own-or-managed mode |
 | `./contracts`: `VoiceGateway`, `CallInstruction`, `CallStatus`, `RecordingConsent`; `recordingPlan`                     | the telephony port per Market; recording from the pack's consent rule                                |
@@ -155,6 +172,33 @@ const platform = await resolver.candidates<VerificationProvider>("verification",
 list in force today (`providers.sms: [unifonic, { provider: taqnyat, status: planned }]`), live entries only, and asks
 the host's `ProviderPackSource` for each provider's platform Connection; a provider with none is offered to tenants
 that bring their own.
+
+## Connectors by capability (ADR 0447)
+
+A module that needs a Connection it does not define (an accounting export, an EDI network, a 3PL) looks it up by
+capability. `connectionsOf(kind)` reads the registry gen fills and answers a `ProviderDrivers` map;
+`ConnectorGateway` passes it to `ProviderResolver`, so the ADR 0356 rule still picks the Connection.
+
+```ts
+const threePl = await gateway.fulfilment(); // the tenant's own 3PL, else the Market's managed one
+await threePl.create(request);
+
+const app = await gateway.channel({
+  provider: order.channel, // the channel the order came from
+  accepts: (channel) => channel.setPrepTime !== undefined,
+});
+await app.setPrepTime?.(order.externalId, 20);
+```
+
+The Market's providers per kind are pack data under `providers.<kind>` (`providers.fulfilment_provider`,
+`providers.edi`, `providers.fraud_scoring`). The optional `SalesChannelConnector` methods (menu, modifiers,
+availability, prep time, reject, cancel, returns, listings) exist only on channels that support them; filter with
+`accepts`. A `FraudScore` is a fact value as it stands (`fraud.score`, `fraud.decision`, `fraud.reasons`); the consuming
+module registers the `fraud` fact source and the tenant's rules hold or cancel.
+
+The shelves `food_delivery`, `courier`, `edi`, `fraud`, `document_management`, `esl`, `scales` and `court` list the
+OS connectors built on these contracts; a court-system connector is a Connection class on the `court` shelf, never a
+framework of its own.
 
 ## Payroll
 

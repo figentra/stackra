@@ -6,7 +6,8 @@
  * Boundary: names each re-export and declares nothing. The provider-category, catalogue and managed-provisioning
  *           template seeds are exported for the registry and the seeders. The managed client's internals (`managedClient`, the placeholder
  *           lookup, the JWT signer) and the registries stay internal; `requestToken` is public for a store host's code
- *           exchange and refresh. The `ConnectionContext` port is
+ *           exchange and refresh, and `connectionsOf` is the public read of the connection registry by capability
+ *           (ADR 0447). The `ConnectionContext` port is
  *           exported from `./contracts` only (ADR 0294 decision 15). `PassBase` is exported as a type so a consumer's
  *           `extends Pass({ key })` class has a nameable base in its declaration emit (TS2883, STA-1220).
  * Runtime: isomorphic
@@ -40,6 +41,7 @@ export { ProviderUnavailableError } from "#core/errors/provider-unavailable.erro
 export { UnbalancedJournalError } from "#core/errors/unbalanced-journal.error";
 export { assertBalanced } from "#core/functions/assert-balanced.function";
 export { assertPayInputs } from "#core/functions/assert-pay-inputs.function";
+export { connectionsOf } from "#core/functions/connections-of.function";
 export { credentialRef } from "#core/functions/credential-ref.function";
 export { postJournal } from "#core/functions/post-journal.function";
 export { recordingPlan } from "#core/functions/recording-plan.function";
@@ -49,6 +51,7 @@ export { resolvePlaceholders } from "#core/functions/resolve-placeholders.functi
 export { ConnectionHost } from "#core/ports/connection-host.port";
 export { ConnectionStore } from "#core/ports/connection-store.port";
 export { ProviderPackSource } from "#core/ports/provider-pack-source.port";
+export { ConnectorGateway } from "#core/services/connector-gateway.service";
 export { IntegrationRuntime } from "#core/services/integration-runtime.service";
 export { ProviderResolver } from "#core/services/provider-resolver.service";
 export { ConnectedAccount } from "#core/values/connected-account.value";
@@ -61,6 +64,7 @@ export type { ConnectionRecord } from "#core/types/connection-record.type";
 export type { ConnectionRegistration } from "#core/types/connection-registration.type";
 export type { ConnectionSubscription } from "#core/types/connection-subscription.type";
 export type { ConnectionWebhooks } from "#core/types/connection-webhooks.type";
+export type { ConnectorQuery } from "#core/types/connector-query.type";
 export type { HealthCheck } from "#core/types/health-check.type";
 export type { IntegrationApi } from "#core/types/integration-api.type";
 export type { IntegrationClass } from "#core/types/integration-class.type";

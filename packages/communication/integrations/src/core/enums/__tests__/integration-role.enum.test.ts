@@ -3,7 +3,8 @@
  * Purpose: unit tests of `IntegrationRole` and `ConnectorKind`: their codes, in order.
  * Boundary: test only.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0355 (decision 1); ADR 0231.
+ * Governing contract: ADR 0022; ADR 0355 (decision 1); ADR 0231; ADR 0447 (the edi, fraud-scoring and document-store
+ *                     kinds).
  */
 import { Enum } from "@stackra/contracts";
 import { describe, expect, it } from "@stackra/testing";
@@ -25,6 +26,9 @@ describe("IntegrationRole and ConnectorKind", () => {
       "fulfilment_provider",
       "sales_channel",
       "product_feed",
+      "edi",
+      "fraud_scoring",
+      "document_store",
     ]);
   });
 });

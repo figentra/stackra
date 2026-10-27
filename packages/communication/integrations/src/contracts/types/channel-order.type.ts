@@ -5,11 +5,13 @@
  * Boundary: a type only. The buyer's contact and address arrive only when the channel shares them and our order needs
  *           them to ship; the connector passes them through without storing.
  * Runtime: isomorphic
- * Governing contract: ADR 0355 (decisions 1 and 6); COM-301; ADR 0134 (personal data).
+ * Governing contract: ADR 0355 (decisions 1 and 6); COM-301; ADR 0134 (personal data); ADR 0447 (decision 3: the
+ *                     payment method).
  */
 import type { Money } from "@stackra/money";
 import type { Address } from "@stackra/validation";
 
+import type { ChannelPaymentMethod } from "#contracts/enums/channel-payment-method.enum";
 import type { ChannelOrderLine } from "#contracts/types/channel-order-line.type";
 
 /** An imported order. */
@@ -34,4 +36,7 @@ export interface ChannelOrder {
 
   /** Whether the channel ships it itself (we only hand over stock). */
   readonly fulfilledByChannel: boolean;
+
+  /** How the buyer pays; prepaid when the channel does not say. */
+  readonly paymentMethod?: ChannelPaymentMethod;
 }

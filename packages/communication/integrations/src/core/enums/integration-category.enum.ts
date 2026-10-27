@@ -6,7 +6,9 @@
  *           shelf is a new member.
  * Runtime: isomorphic
  * Governing contract: ADR 0308 (rule 1: `Integration({ provider, category, ... })`); ADR 0231 (snake_case codes); ADR
- *                     0422 (decision 5: payroll); app-shells D14 (app stores).
+ *                     0422 (decision 5: payroll); app-shells D14 (app stores); ADR 0447 (decision 1: the connector
+ *                     shelves `edi`, `fraud`, `food_delivery`, `courier`, `document_management`, `esl`, `scales` and
+ *                     `court`).
  */
 import { Enum } from "@stackra/contracts";
 
@@ -49,6 +51,22 @@ export const IntegrationCategory = Enum.of({
   Marketing: "marketing",
   /** Model and AI providers. */
   Ai: "ai",
+  /** EDI networks that carry purchase orders, despatch advice and invoices with trading partners (`EdiConnector`). */
+  Edi: "edi",
+  /** Fraud scoring of orders and payments (`FraudScoringConnector`). */
+  Fraud: "fraud",
+  /** Food delivery apps that take orders for a restaurant or store (`SalesChannelConnector`). */
+  FoodDelivery: "food_delivery",
+  /** Couriers and last-mile delivery fleets booked per order. */
+  Courier: "courier",
+  /** Document management systems a firm files its matters in (`DocumentStoreConnector`). */
+  DocumentManagement: "document_management",
+  /** Electronic shelf labels a store pushes prices and stock to. */
+  Esl: "esl",
+  /** Weighing scales that price and label goods sold by weight. */
+  Scales: "scales",
+  /** Court systems that take filings and report case events. */
+  Court: "court",
   /** Anything no other shelf fits. */
   Other: "other",
 });

@@ -1,5 +1,14 @@
 # AGENTS — @stackra/integrations
 
+<!--
+Stackra file contract:
+Purpose: the agent rules of @stackra/integrations: where code goes, entries and barrels, the package rules (connector
+         kinds and the capability lookup included) and PII.
+Boundary: documentation only; the code and the ADRs win on any difference.
+Runtime: none
+Governing contract: ADR 0294; ADR 0305; ADR 0308; ADR 0355; ADR 0356; ADR 0447.
+-->
+
 Provider integrations, connections and their store (ADR 0308). Member at `packages/communication/integrations`
 (`tier:lib`), in the programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts` and `./testing`.
 
@@ -71,6 +80,16 @@ Provider integrations, connections and their store (ADR 0308). Member at `packag
   owns and shares its records in `LOCAL_CONNECTIONS`, so `useDrivers("memory")` resolves a port that has `local` and
   `hosted`. Keep it a pure delegate; behaviour changes go in the local store.
 
+- Connectors by capability (ADR 0447): a connector kind (`ConnectorKind`) names one interface in `./contracts`; a new
+  kind is a new member, never a sixth `IntegrationRole`. Resolve a kind's Connection through `ConnectorGateway` (or
+  `connectionsOf` plus `ProviderResolver`), never by importing another package's connection class. A capability a
+  channel may lack is an optional method on its interface, checked with `accepts`.
+- A shelf (`IntegrationCategory`) is where the marketplace lists a provider; court, EDI, food-delivery, courier, ESL,
+  scales, fraud and document-management connectors are Connection classes in OS integrations on those shelves, never
+  a framework of their own here.
+- A fraud score is a fact for the tenant's rules; nothing here holds, cancels or thresholds on it.
+- EDI is canonical JSON through a network provider (R3-SO-07): no EDIFACT, X12 or AS2 codec in this package.
+
 ## PII
 
 | Data                    | Where                                      | Handling                                                                                       |
@@ -78,4 +97,6 @@ Provider integrations, connections and their store (ADR 0308). Member at `packag
 | Connection credentials  | connection `@Secret` fields, store records | In memory (local) or encrypted by the store host (hosted); never enumerable, logged or echoed. |
 | OAuth tokens            | `IntegrationRuntime`, `ConnectionHost`     | In memory per credential; in hosted mode refresh tokens never leave the store host.            |
 | Provider answers        | managed client                             | Returned to the caller only; never stored or logged here.                                      |
+| Fraud score requests    | `FraudScoreRequest`                        | Contact, IP, device and addresses travel for one score; never stored or logged here.           |
+| Documents               | `DocumentFile`                             | Bytes held in memory for one call; never stored or logged here.                                |
 | Connected account label | `ConnectedAccount`, store records          | The provider's account id and name or domain, shown to the owner in the console.               |
