@@ -7,7 +7,7 @@ Purpose: the agent rules of @stackra/gen: where code goes, entries and barrels, 
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
 Governing contract: ADR 0294; ADR 0295; ADR 0305; ADR 0260 (generated clients and typed events); ADR 0263; ADR 0162 and ADR 0222
-                    (the translated and upload shape kinds); ADR 0338 (a replica query's `ReplicaPage` output); STA-1290 (the shipped shape kind); STA-1293 (i18n, clients for apps, undeclared packages); STA-1296 (client modules and permission sets, config overrides, the root Vitest shim); STA-1298 (package lang namespaces in `I18n`, `i18n_key_missing`, `i18n_namespace_clash`); STA-1309 (catalogue loaders).
+                    (the translated and upload shape kinds); ADR 0338 (a replica query's `ReplicaPage` output); STA-1290 (the shipped shape kind); STA-1293 (i18n, clients for apps, undeclared packages); STA-1296 (client modules and permission sets, config overrides, the root Vitest shim); STA-1298 (package lang namespaces in `I18n`, `i18n_key_missing`, `i18n_namespace_clash`); STA-1309 (catalogue loaders); STA-1306 (the quality-gate refusals).
 -->
 
 The Stackra compiler. Member at `packages/developer/gen` (`tier:lib`), in the programming model v3.1 shape (ADR 0294,
@@ -149,6 +149,25 @@ The Stackra compiler. Member at `packages/developer/gen` (`tier:lib`), in the pr
 - Public API (OS ADR 0039 d2 and d3): only a manifest entry with `public: true` reaches `emitSdks`; never publish by
   `area`. SDKs come from the manifest, never from `openapi.json` (ADR 0158). A new language is one function in
   `emit-sdks.function.ts` with its test; package names and registries stay the release pipeline's.
+
+## Quality-gate refusals (STA-1306)
+
+The gen refusals of the 2026-10-27 coverage audit, section 4. Each carries its fix; none is applied for you.
+
+- `checkConventions` (core, full pass only, never the manifest pass): `kind_suffix_mismatch`, `kind_unregistered_base`
+  (from `FileExports.classes`), `kind_class_name` (from `KIND_FILES`; a service may drop `Service`, names compare
+  without case), `empty_module`, `sibling_not_exported` (an injected service only), `module_cycle`,
+  `migration_numbering` (per `database/migrations/` folder, from 0001 without gaps), `event_name_shape` (an
+  integration event's `name` is `<aggregate>.<verb>`) and `override_legacy_name` (under `src/overrides/`).
+- The reader: `kind_base_name_reserved` (a model named after a `KIND_BASES` name), `secret_name_missing` (`@Secret`
+  without a SCREAMING_SNAKE literal) and `partner_mismatch` for `Resource`, `Factory`, `StateMachine` and `Facts`
+  (same-stem subject; `CrudService` keeps its own subject, as many services name a domain word).
+- `checkI18n`: `i18n_key_missing` also for a derived enum label `<module>::enums.<enum>.<code>` missing from a
+  base-language locale that ships the module's namespace.
+- `generate`: `shim_authored` for an authored root `tsdown.config.ts` too (one that imports
+  `./.stackra/tsdown.config` is kept), and `tool_reason_missing` for a root `*.extend.ts` outside the closed set
+  (vite, expo, metro, desktop, pwa) or without a `Reason:` header. Owned-key changes in a hatch are not checked: gen
+  does not apply hatches yet. Keep `KIND_FILES` in step with `KIND_BASES` and the coding-standard lint table.
 
 ## Rules that fail the build
 

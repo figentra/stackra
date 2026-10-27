@@ -20,4 +20,7 @@ export interface FileExports {
 
   /** The exported names; `typeOnly` for a type alias or an interface. */
   readonly names: readonly { readonly name: string; readonly typeOnly: boolean }[];
+
+  /** The exported class names, when there is one: `kind_unregistered_base` checks those in a kind file (STA-1306). */
+  readonly classes?: readonly string[];
 }

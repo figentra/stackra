@@ -118,7 +118,18 @@ describe("emitI18n", () => {
   });
 
   it("is written by generateMember", () => {
-    const { files, errors } = generateMember({ ...COMMERCE_IR, catalogues: CATALOGUES });
+    // The orders namespace carries OrderStatus's derived labels, which checkI18n requires (STA-1306).
+    const labelled: MemberIR["catalogues"] = {
+      ...CATALOGUES,
+      en: {
+        ...CATALOGUES?.["en"],
+        orders: {
+          title: "Orders",
+          enums: { order_status: { pending: "Pending", paid: "Paid", cancelled: "Cancelled" } },
+        },
+      },
+    };
+    const { files, errors } = generateMember({ ...COMMERCE_IR, catalogues: labelled });
     expect(errors).toEqual([]);
     expect(files.map((written) => written.path)).toContain(".stackra/gen/i18n.ts");
   });

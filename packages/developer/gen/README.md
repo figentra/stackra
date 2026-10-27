@@ -67,6 +67,15 @@ tokens. A dependency is described by its committed manifest, never by its `.d.ts
 `manifest_unshipped` when it does not (STA-1308). Every refusal carries a
 snake_case code, a position and the fix; when there is one, nothing is written.
 
+The quality-gate refusals (STA-1306) hold the conventions gen can see: a kind class's file suffix and name
+(`kind_suffix_mismatch`, `kind_unregistered_base`, `kind_class_name`, `kind_base_name_reserved`), module files and
+edges (`empty_module`, `sibling_not_exported`, `module_cycle`), `migration_numbering`, `override_legacy_name`,
+`event_name_shape`, `secret_name_missing`, `partner_mismatch` for every same-stem kind, derived enum labels
+(`i18n_key_missing`), an authored `tsdown.config.ts` (`shim_authored`) and unknown or unexplained `*.extend.ts` hatches
+(`tool_reason_missing`). The whole-member ones (`checkConventions`) refuse the full run only, so `stackra gen --manifests`
+still writes the manifest; the reader's (`kind_base_name_reserved`, `secret_name_missing`, `partner_mismatch`) refuse
+both.
+
 An event's wire name is always `<module>.<name>.v<n>` (`orders.order.paid.v1`): there is no member-level or
 service-key-prefixed wire name, and a `name` that starts with the module or member key is refused
 (`event_name_prefixed`, STA-1255).

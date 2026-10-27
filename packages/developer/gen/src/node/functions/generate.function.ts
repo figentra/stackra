@@ -13,13 +13,17 @@
  *           files (when the clients target itself is clean) and the manifest (when the manifest pass is clean). The
  *           committed `stackra.manifest.json` is read first, so its identities stay locked. An authored root
  *           `vitest.config.ts` (no generated notice) is never overwritten: one that imports `./.stackra/vitest.config`
- *           is kept and the shim skipped; any other is refused as `shim_authored` (STA-1296, STA-1297).
+ *           is kept and the shim skipped; any other is refused as `shim_authored` (STA-1296, STA-1297), and so is an
+ *           authored root `tsdown.config.ts` that does not import `./.stackra/tsdown.config` when gen writes one
+ *           (STA-1306). A root `*.extend.ts` hatch outside the closed set (vite, expo, metro, desktop, pwa) or without
+ *           a `Reason:` header is refused as `tool_reason_missing` (STA-1306); whether a hatch changes an owned key is
+ *           not checked, since gen does not apply hatches yet.
  * Runtime: node
  * Governing contract: ADR 0294 (decisions 10 and 22: the committed manifest and `stackra gen --check`); ADR 0295
  *                     (decision 5: generated files are overwritten); ADR 0261; ADR 0260 (a cycle between services is
  *                     allowed at the manifest level).
  */
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 
 import type { StackraManifest } from "@stackra/contracts";
@@ -27,6 +31,7 @@ import type { StackraManifest } from "@stackra/contracts";
 import { GENERATED_NOTICE } from "#core/constants/generated-notice.constant";
 import { ROOT_VITEST_SHIM } from "#core/constants/root-vitest-shim.constant";
 import { generateMember } from "#core/functions/generate-member.function";
+import type { GenError } from "#core/types/gen-error.type";
 import type { GeneratedFile } from "#core/types/generated-file.type";
 import { discoverMember } from "#node/functions/discover-member.function";
 import type { GenerateResult } from "#node/types/generate-result.type";
@@ -34,8 +39,64 @@ import type { GenerateResult } from "#node/types/generate-result.type";
 /** The committed manifest at the member root. */
 const MANIFEST_FILE = "stackra.manifest.json";
 
-/** An authored root config that imports the generated one (`./.stackra/vitest.config`, with or without `.ts`). */
-const MERGES_GENERATED_VITEST = /["']\.\/\.stackra\/vitest\.config(?:\.ts)?["']/;
+/** The tool configs gen writes under `.stackra/` that an authored root config may only merge, never replace. */
+const TOOL_CONFIGS = ["vitest", "tsdown"] as const;
+
+/** The closed set of code hatches at the member root (ADR 0295 decision 6, `desktop` after ADR 0326, `pwa`). */
+const HATCHES = new Set(["vite", "expo", "metro", "desktop", "pwa"]);
+
+/** The comments a file opens with, and the `Reason:` header a hatch carries among them. */
+const LEADING_COMMENTS = /^\s*(?:\/\*[\s\S]*?\*\/\s*|\/\/[^\n]*\n\s*)*/;
+const LEADING_REASON = /\breason:/i;
+
+/** An authored root config that imports the generated one (`./.stackra/<tool>.config`, with or without `.ts`). */
+const mergesGenerated = (tool: string, source: string): boolean =>
+  new RegExp(`["']\\./\\.stackra/${tool}\\.config(?:\\.ts)?["']`).test(source);
+
+/** One whole-file refusal at the member root. */
+const refusal = (code: string, file: string, message: string, fix: string): GenError => ({
+  code,
+  file,
+  line: 0,
+  column: 0,
+  subject: file,
+  message,
+  fix,
+});
+
+/**
+ * The `*.extend.ts` hatches at `root` that gen refuses (`tool_reason_missing`, STA-1306): one outside the closed set,
+ * or one that does not open with a `Reason:` header. Whether a hatch changes an owned key is not checked yet.
+ */
+function hatchErrors(root: string): GenError[] {
+  const errors: GenError[] = [];
+  for (const file of readdirSync(root)
+    .filter((name) => name.endsWith(".extend.ts"))
+    .sort()) {
+    const tool = file.slice(0, -".extend.ts".length);
+    if (!HATCHES.has(tool))
+      errors.push(
+        refusal(
+          "tool_reason_missing",
+          file,
+          `${file} is not a code hatch gen knows: the closed set is ${[...HATCHES].map((name) => `${name}.extend.ts`).join(", ")}`,
+          "move the setting into its typed section of stackra.config.ts, or into one of the known hatches",
+        ),
+      );
+    else if (
+      !LEADING_REASON.test(LEADING_COMMENTS.exec(readFileSync(join(root, file), "utf8"))?.[0] ?? "")
+    )
+      errors.push(
+        refusal(
+          "tool_reason_missing",
+          file,
+          `${file} does not open with a \`Reason:\` header`,
+          `open ${file} with a comment saying why stackra.config.ts cannot express it: \`// Reason: <why>\``,
+        ),
+      );
+  }
+  return errors;
+}
 
 /** The paths of `files` that differ from disk under `root`, written unless `check`. */
 function write(root: string, files: readonly GeneratedFile[], check: boolean): string[] {
@@ -119,33 +180,34 @@ export async function generate(
         changed: partial,
       };
   }
-  // An authored root vitest.config.ts is never overwritten by the shim. One that merges the generated config is kept
-  // and the shim is not written; any other is refused (STA-1296, STA-1297).
-  const shimPath = join(root, ROOT_VITEST_SHIM);
-  const authored =
-    result.files.some((file) => file.path === ROOT_VITEST_SHIM) && existsSync(shimPath)
-      ? readFileSync(shimPath, "utf8")
-      : undefined;
-  if (authored !== undefined && !authored.includes(GENERATED_NOTICE)) {
-    if (!MERGES_GENERATED_VITEST.test(authored))
-      return {
-        errors: [
-          {
-            code: "shim_authored",
-            file: ROOT_VITEST_SHIM,
-            line: 0,
-            column: 0,
-            subject: ROOT_VITEST_SHIM,
-            message:
-              "an authored vitest.config.ts sits at the member root and does not import ./.stackra/vitest.config, so the generated setup never loads",
-            fix: 'import the generated config and merge it: `import generated from "./.stackra/vitest.config"; export default mergeConfig(generated, { ... })`, or delete the file so gen writes the shim',
-          },
-        ],
-        files: [],
-        changed: partial,
-      };
-    result = { ...result, files: result.files.filter((file) => file.path !== ROOT_VITEST_SHIM) };
+  // An authored root tool config is never overwritten. One that merges the generated config is kept (and the vitest
+  // shim is not written); any other is refused (STA-1296, STA-1297; every generated tool config since STA-1306). A
+  // code hatch outside the closed set or without its `Reason:` header is refused too.
+  const errors = hatchErrors(root);
+  let files = result.files;
+  for (const tool of TOOL_CONFIGS) {
+    const config = `${tool}.config.ts`;
+    if (
+      !files.some((file) => file.path === `.stackra/${config}`) ||
+      !existsSync(join(root, config))
+    )
+      continue;
+    const authored = readFileSync(join(root, config), "utf8");
+    if (authored.includes(GENERATED_NOTICE)) continue;
+    if (!mergesGenerated(tool, authored))
+      errors.push(
+        refusal(
+          "shim_authored",
+          config,
+          `an authored ${config} sits at the member root and does not import ./.stackra/${tool}.config, so the generated config never loads`,
+          `import the generated config and merge it: \`import generated from "./.stackra/${tool}.config"\` and extend it, or delete the file${tool === "vitest" ? " so gen writes the shim" : ""}`,
+        ),
+      );
+    else if (config === ROOT_VITEST_SHIM)
+      files = files.filter((file) => file.path !== ROOT_VITEST_SHIM);
   }
+  if (errors.length > 0) return { errors, files: [], changed: partial };
+  result = { ...result, files };
   return {
     errors: [],
     files: result.files,

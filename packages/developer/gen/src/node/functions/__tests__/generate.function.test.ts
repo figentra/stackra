@@ -6,7 +6,9 @@
  *          manifest yet gets its manifest alone (with `pass: "manifests"`, or as what a refused run still writes); the root `vitest.config.ts` shim is written,
  *          an authored one that merges `./.stackra/vitest.config` is kept (STA-1297), and any other is refused as
  *          `shim_authored` (STA-1296); a check fails `manifest_unshipped` when a package's `files` leaves the manifest
- *          out, and reports a missing manifest as stale (STA-1308).
+ *          out, and reports a missing manifest as stale (STA-1308); an authored root tsdown.config.ts that does not
+ *          merge the generated one is `shim_authored`, and a `*.extend.ts` hatch outside the closed set or without its
+ *          `Reason:` header is `tool_reason_missing` (STA-1306).
  * Boundary: test only; writes the shop fixture under `.cache/` and runs gen on it.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 10 and 22); ADR 0295 (decision 5).
@@ -132,6 +134,44 @@ describe("generate's root Vitest shim (STA-1296)", () => {
     expect(result.files.map((file) => file.path)).not.toContain("vitest.config.ts");
     expect(readFileSync(join(root, "vitest.config.ts"), "utf8")).toBe(authored);
     expect(existsSync(join(root, ".stackra/vitest.config.ts"))).toBe(true);
+  });
+});
+
+describe("generate's tool configs and code hatches (STA-1306)", () => {
+  it("refuses an authored root tsdown.config.ts that does not merge the generated one", async () => {
+    const root = writeFixtureMember("shop", {
+      ...SHOP_SOURCES,
+      "tsdown.config.ts": "export default {};\n",
+    });
+    const result = await generate(root);
+    expect(result.errors.map((error) => `${error.code} ${error.file}`)).toEqual([
+      "shim_authored tsdown.config.ts",
+    ]);
+    expect(existsSync(join(root, ".stackra/gen/wiring.ts"))).toBe(false);
+  });
+
+  it("keeps an authored root tsdown.config.ts that imports the generated one", async () => {
+    const root = writeFixtureMember("shop", {
+      ...SHOP_SOURCES,
+      "tsdown.config.ts":
+        'import generated from "./.stackra/tsdown.config";\n\nexport default generated;\n',
+    });
+    expect((await generate(root)).errors).toEqual([]);
+  });
+
+  it("refuses a hatch outside the closed set or without its Reason: header", async () => {
+    const root = writeFixtureMember("shop", {
+      ...SHOP_SOURCES,
+      "metro.extend.ts": "export default {};\n",
+      "webpack.extend.ts": "// Reason: legacy loader\nexport default {};\n",
+      "vite.extend.ts":
+        "/**\n * Reason: the PWA plugin needs a custom manifest path.\n */\nexport default {};\n",
+    });
+    const result = await generate(root);
+    expect(result.errors.map((error) => `${error.code} ${error.file}`)).toEqual([
+      "tool_reason_missing metro.extend.ts",
+      "tool_reason_missing webpack.extend.ts",
+    ]);
   });
 });
 

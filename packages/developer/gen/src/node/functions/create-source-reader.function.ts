@@ -26,7 +26,9 @@
  *                     `@stackra/*` class, interface, alias or union whose package ships `X$` reads as `shipped`);
  *                     STA-1296 (a package config override reads its fields' type and `this.<field>` default from the
  *                     base's `Config({ schema })` options class; `Object.freeze`, shared constants and `I18n` keys
- *                     read as constants; a shipped `X$` of a declared package not in the program is still found).
+ *                     read as constants; a shipped `X$` of a declared package not in the program is still found);
+ *                     STA-1306 (`kind_base_name_reserved`, `secret_name_missing`, `partner_mismatch` for every
+ *                     same-stem kind, and each file's exported class names for `kind_unregistered_base`).
  */
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -93,6 +95,17 @@ interface DecoratorUse {
 
 /** A field read from its declaration, or a relation left to the entity emitter. */
 type FieldRead = FieldIR | "relation";
+
+/** A secret name: SCREAMING_SNAKE words, as `@Secret` of `@stackra/config` checks it. */
+const SECRET_NAME = /^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$/;
+
+/** The kinds typed against their same-stem subject (`OrderResource` is `Resource<Order>`), with their class suffix. */
+const STEM_PARTNERED: Readonly<Record<string, string>> = {
+  facts: "Facts",
+  factory: "Factory",
+  resource: "Resource",
+  state_machine: "StateMachine",
+};
 
 /** The constraint decorators, which the shape compiler applies itself. */
 const RULES = new Set(["Str", "Int", "Num", "List", "Trim"]);
@@ -1417,6 +1430,21 @@ export function createSourceReader(
     }
     const renamed = decorators.find((use) => use.name === "Renamed");
     const renamedTo = renamed === undefined ? undefined : constant(renamed.args[0]);
+    // `@Secret` always names its secret, as a SCREAMING_SNAKE literal (ADR 0294 amendment 2, STA-1306).
+    const secret = decorators.find((use) => use.name === "Secret");
+    const secretName = secret?.args[0] === undefined ? undefined : constant(secret.args[0]);
+    if (
+      !quiet &&
+      secret !== undefined &&
+      (typeof secretName !== "string" || !SECRET_NAME.test(secretName))
+    )
+      fail(
+        secret.node,
+        subject,
+        "secret_name_missing",
+        "@Secret does not name its secret with a SCREAMING_SNAKE literal",
+        'write `@Secret("<PROVIDER>_<PURPOSE>")`, such as `@Secret("RESEND_API_KEY")`; the value comes from the secret store',
+      );
     const initial =
       value.initializer === undefined
         ? undefined
@@ -1851,6 +1879,16 @@ export function createSourceReader(
         `the type argument of a WebhookEvent must be an Integration, not a ${partner.kind}`,
         "type the event against the Integration that verifies it",
       );
+    // Every other kind typed against its same-stem subject (ADR 0305 rules 5 and 6, STA-1306).
+    const suffix = STEM_PARTNERED[kind];
+    if (suffix !== undefined && partner.name !== name.slice(0, -suffix.length))
+      fail(
+        at,
+        name,
+        "partner_mismatch",
+        `${name} is typed against ${partner.name}, not its same-stem subject ${name.slice(0, -suffix.length) || "(none)"}`,
+        `name it ${partner.name}${suffix}, or type it against the class its stem names`,
+      );
     if (kind === "extension" && partner.slot === undefined)
       fail(
         at,
@@ -2047,6 +2085,15 @@ export function createSourceReader(
         "`Event` is the abstract base of the four event kinds",
         "extend DomainEvent, IntegrationEvent, WebhookEvent or AnalyticsEvent",
       );
+    // Kind base names are reserved: a model named `Policy` would shadow the base (ADR 0305 rule 4, STA-1306).
+    if (info.kind === "model" && KIND_BASES[name] !== undefined)
+      fail(
+        node.name ?? node,
+        name,
+        "kind_base_name_reserved",
+        `the model ${name} takes the name of the ${name} kind base`,
+        `rename the model (\`${name}Record\`, or the domain word it stands for); kind base names are reserved`,
+      );
     const heritage = heritageOf(node) as Heritage;
     const direct = info.chain.length === 1;
     const optionsArgument =
@@ -2230,6 +2277,7 @@ export function createSourceReader(
     exports: (file) => {
       const path = file.fileName ?? "";
       const names = new Map<string, boolean>();
+      const classes: string[] = [];
       const record = (name: string, typeOnly: boolean): void => {
         names.set(name, typeOnly && (names.get(name) ?? true));
       };
@@ -2241,7 +2289,10 @@ export function createSourceReader(
             record(nameOf(declaration.name), false);
         else if (kind === "InterfaceDeclaration" || kind === "TypeAliasDeclaration")
           record(nameOf(statement.name), true);
-        else if (statement.name !== undefined) record(nameOf(statement.name), false);
+        else if (statement.name !== undefined) {
+          record(nameOf(statement.name), false);
+          if (kind === "ClassDeclaration") classes.push(nameOf(statement.name));
+        }
       }
       const isIndex = /\/index\.tsx?$/.test(path);
       if (names.size > 1 && !isIndex)
@@ -2258,6 +2309,7 @@ export function createSourceReader(
         importPath: importPathOf(path),
         folder: parts.length > 2 ? (parts[1] ?? "") : "",
         names: [...names].map(([name, typeOnly]) => ({ name, typeOnly })),
+        ...(classes.length > 0 ? { classes } : {}),
       };
     },
   };

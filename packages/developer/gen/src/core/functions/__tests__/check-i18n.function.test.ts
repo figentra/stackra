@@ -3,7 +3,8 @@
  * Purpose: unit tests of `checkI18n` and `i18nTree`: a declared package's namespace merged beside the member's, a key
  *          reference found in either (a branch or a leaf), `i18n_key_missing` for a key or namespace no catalogue ships,
  *          `i18n_namespace_clash` for a namespace shipped twice, nothing checked without `@stackra/i18n`, and
- *          `generateMember` refusing on either code.
+ *          `generateMember` refusing on either code; a derived enum label `<module>::enums.<enum>.<code>` missing from a
+ *          base-language locale (STA-1306).
  * Boundary: test only; pure IR in, refusals out.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0268 (R15); STA-1298.
@@ -92,6 +93,27 @@ describe("checkI18n", () => {
     expect(errors[0]?.fix).toContain(
       `rename ${IR.package}'s assets/lang/<locale>/loyalty_kit.json`,
     );
+  });
+
+  it("refuses a derived enum label missing from a base-language locale that ships the module (STA-1306)", () => {
+    const errors = checkI18n({
+      ...COMMERCE_IR,
+      catalogues: {
+        en: { orders: { enums: { order_status: { pending: "Pending", paid: "Paid" } } } },
+        ar: {
+          orders: {
+            enums: { order_status: { pending: "معلق", paid: "مدفوع", cancelled: "ملغى" } },
+          },
+        },
+        // A regional overlay holds only what differs, and a locale without the namespace is not checked.
+        "ar-SA": { orders: {} },
+        fr: { carts: { title: "Paniers" } },
+      },
+    });
+    expect(errors.map((error) => [error.code, error.file, error.subject])).toEqual([
+      ["i18n_key_missing", "assets/lang/en/orders.json", "orders::enums.order_status.cancelled"],
+    ]);
+    expect(errors[0]?.fix).toBe('add "enums.order_status.cancelled" to assets/lang/en/orders.json');
   });
 
   it("checks nothing for a member without @stackra/i18n", () => {

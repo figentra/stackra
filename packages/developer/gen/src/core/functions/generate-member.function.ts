@@ -14,7 +14,8 @@
  *           manifest is still to come) and the clients pass (the client files alone, from the producers' manifests). A client or schema file that imports
  *           a `@stackra/*` package the member does not declare is refused (`client_dependency_missing`,
  *           `schema_dependency_missing`), and so is any other generated file (`generated_dependency_missing`, STA-1296), and so is a lang namespace clash
- *           or a key no merged catalogue ships (`i18n_namespace_clash`, `i18n_key_missing`, STA-1298). Other per-target outputs (navigation trees, the rest of the Encore app, ...)
+ *           or a key no merged catalogue ships (`i18n_namespace_clash`, `i18n_key_missing`, STA-1298), and so is a broken
+ *           convention (`checkConventions`, STA-1306) on the full pass only. Other per-target outputs (navigation trees, the rest of the Encore app, ...)
  *           are added by their owning targets.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 10, 22 and 26); ADR 0295 (decisions 5 and 7); ADR 0305 (rules 15, 16 and
@@ -26,6 +27,7 @@
 import type { StackraManifest } from "@stackra/contracts";
 
 import { buildManifest } from "#core/functions/build-manifest.function";
+import { checkConventions } from "#core/functions/check-conventions.function";
 import { checkI18n } from "#core/functions/check-i18n.function";
 import { checkIdentityLock } from "#core/functions/check-identity-lock.function";
 import { emitBlocks } from "#core/functions/emit-blocks.function";
@@ -106,8 +108,9 @@ export function generateMember(
           manifest,
         };
   }
-  // The i18n target refuses a namespace clash and a key no merged catalogue ships (STA-1298).
-  all.push(...clients.errors, ...checkI18n(ir));
+  // The i18n target refuses a namespace clash and a key no merged catalogue ships (STA-1298); the quality-gate
+  // conventions refuse here too, never in the manifest pass, so `stackra gen --manifests` still writes (STA-1306).
+  all.push(...clients.errors, ...checkI18n(ir), ...checkConventions(ir, manifest));
   if (all.length > 0) return { files: [], errors: all, manifest };
 
   const files: GeneratedFile[] = [{ path: "stackra.manifest.json", content: json(manifest) }];

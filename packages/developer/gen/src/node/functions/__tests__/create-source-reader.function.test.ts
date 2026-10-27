@@ -20,6 +20,8 @@
  *          file (tests included) imports a client from (STA-1293). A package config override takes its fields from the base's
  *          `Config({ schema })` options class, reading `this.<field>` spreads, `Object.freeze` constants and `I18n` keys
  *          as constants, and a shipped `X$` of a declared package the program never loaded is still found (STA-1296).
+ *          `kind_base_name_reserved`, `partner_mismatch` for a same-stem kind (a Resource), `secret_name_missing` and
+ *          each file's exported class names (STA-1306).
  * Boundary: test only; writes the fixture under `.cache/` and opens TypeScript on it.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decision 26, 2026-10-23 item 13, decision 28); ADR 0305
@@ -922,5 +924,106 @@ describe("createSourceReader on a shipped schema the program never loaded", asyn
       from: "@stackra/ledger-ship-fixture",
     });
     expect(reader.errors.some((error) => error.code === "shape_unknown_type")).toBe(false);
+  });
+});
+
+/** The quality-gate forms the reader refuses (STA-1306), with stand-ins for `@stackra/panel` and `@stackra/config`. */
+const GATE_SOURCES: Readonly<Record<string, string>> = {
+  ...MODEL_STAND_IN,
+  "node_modules/@stackra/panel/package.json": JSON.stringify({
+    name: "@stackra/panel",
+    types: "./index.d.ts",
+  }),
+  "node_modules/@stackra/panel/index.d.ts": [
+    'export declare abstract class ResourceBase { protected readonly "~kind": "resource"; }',
+    "export declare function Resource<M extends object>(options?: object): abstract new () => ResourceBase;",
+    "",
+  ].join("\n"),
+  "node_modules/@stackra/config/package.json": JSON.stringify({
+    name: "@stackra/config",
+    types: "./index.d.ts",
+  }),
+  "node_modules/@stackra/config/index.d.ts":
+    "export declare function Secret(name: string): (target: object, key: string) => void;\n",
+  "src/node/models/customer.model.ts": [
+    'import { HasPublicId, Model } from "@stackra/model";',
+    "",
+    'export class Customer extends Model.with(HasPublicId("cus")) {}',
+    "",
+  ].join("\n"),
+  "src/node/models/policy.model.ts": [
+    'import { HasPublicId, Model } from "@stackra/model";',
+    "",
+    'export class Policy extends Model.with(HasPublicId("pol")) {}',
+    "",
+  ].join("\n"),
+  "src/node/resources/customer.resource.ts": [
+    'import { Resource } from "@stackra/panel";',
+    'import { Customer } from "#node/models/customer.model";',
+    "",
+    "export class CustomerResource extends Resource<Customer>({}) {}",
+    "",
+  ].join("\n"),
+  "src/node/resources/order.resource.ts": [
+    'import { Resource } from "@stackra/panel";',
+    'import { Customer } from "#node/models/customer.model";',
+    "",
+    "export class OrderResource extends Resource<Customer>({}) {}",
+    "",
+  ].join("\n"),
+  "src/core/schemas/vault-options.schema.ts": [
+    'import { Secret } from "@stackra/config";',
+    'import { Schema } from "@stackra/validation";',
+    "",
+    'const NAME = String("RESEND_API_KEY");',
+    "",
+    "export class VaultOptions extends Schema {",
+    '  @Secret("RESEND_API_KEY")',
+    "  named!: string;",
+    "",
+    "  @Secret(NAME)",
+    "  computed!: string;",
+    "",
+    '  @Secret("resend-key")',
+    "  lower!: string;",
+    "}",
+    "",
+  ].join("\n"),
+  "src/core/services/plain.service.ts": "export class PlainService {}\n",
+};
+
+describe("createSourceReader on the quality-gate forms (STA-1306)", async () => {
+  const root = writeFixtureMember("gate", GATE_SOURCES);
+  const host = await openHost(join(root, "tsconfig.json"));
+  const reader = createSourceReader(host, readMemberFacts(root));
+  for (const file of reader.sources) {
+    reader.classes(file);
+    reader.shapes(file);
+  }
+  const exported = reader.sources.map((file) => reader.exports(file));
+  host.close();
+  const codes = [...new Set(reader.errors.map((error) => `${error.code} ${error.subject}`))];
+
+  it("refuses a model named after a kind base", () => {
+    expect(codes).toContain("kind_base_name_reserved Policy");
+    expect(codes.filter((code) => code.startsWith("kind_base_name_reserved"))).toHaveLength(1);
+  });
+
+  it("refuses a resource typed against another stem's model, and only that one", () => {
+    expect(codes).toContain("partner_mismatch OrderResource");
+    expect(codes).not.toContain("partner_mismatch CustomerResource");
+  });
+
+  it("refuses a @Secret whose name is not a SCREAMING_SNAKE literal", () => {
+    expect(codes.filter((code) => code.startsWith("secret_name_missing")).sort()).toEqual([
+      "secret_name_missing VaultOptions.computed",
+      "secret_name_missing VaultOptions.lower",
+    ]);
+  });
+
+  it("lists each file's exported classes, kind or not", () => {
+    expect(
+      exported.find((file) => file.file === "src/core/services/plain.service.ts")?.classes,
+    ).toEqual(["PlainService"]);
   });
 });
