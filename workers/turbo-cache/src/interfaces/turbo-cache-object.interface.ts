@@ -9,7 +9,7 @@
 
 /** An R2 object's metadata, as `head` answers it. */
 export interface TurboCacheObject {
-  /** Bytes stored. */
+  /** The artifact's stored length in bytes, answered as its Content-Length and as its size in a query. */
   readonly size: number;
   /** When the object was written; older than the TTL setting is a miss. */
   readonly uploaded: Date;

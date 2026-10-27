@@ -11,8 +11,11 @@ import type { TurboCacheObject } from "./turbo-cache-object.interface";
 
 /** The R2 bucket binding. */
 export interface TurboCacheBucket {
+  /** Reads an artifact's metadata without its body, for the HEAD and query routes; `null` when absent. */
   head(key: string): Promise<TurboCacheObject | null>;
+  /** Reads an artifact's metadata and body stream, for the GET route; `null` when absent. */
   get(key: string): Promise<TurboCacheObjectBody | null>;
+  /** Stores an uploaded artifact body under `key`, with turbo's tag and duration as custom metadata. */
   put(
     key: string,
     value: ReadableStream,

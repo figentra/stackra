@@ -4,9 +4,10 @@ Cloudflare Worker members, one workspace member each
 ([ADR 0284](../apps/docs/src/adr/0284-hosted-static-files-one-cloudflare-static-assets-worker.mdx)). A Worker is
 deployed, so it reuses the app tier: `tier:app` in its `turbo.jsonc`.
 
-| Worker             | Package                   | What it is                                                                                |
-| ------------------ | ------------------------- | ----------------------------------------------------------------------------------------- |
-| [`static`](static) | `@figentra/worker-static` | `stackra-static`: the hosted static files at `static.stackra.figentra.com` (`/schemas/…`) |
+| Worker                       | Package                        | What it is                                                                                     |
+| ---------------------------- | ------------------------------ | ---------------------------------------------------------------------------------------------- |
+| [`static`](static)           | `@figentra/worker-static`      | `stackra-static`: the hosted static files at `static.stackra.figentra.com` (`/schemas/…`)      |
+| [`turbo-cache`](turbo-cache) | `@figentra/worker-turbo-cache` | `stackra-turbo-cache`: the Turborepo remote cache, turbo's v8 artifacts API over R2 (ADR 0026) |
 
 ## Rules
 

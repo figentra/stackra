@@ -41,6 +41,7 @@ Agents never run `pulumi` and never call Cloudflare. The programs run in the pri
 | `./node` | `edgeWorker`                                                             | the OS edge Worker's KV, routes, rollout and locked origins        |
 | `./node` | `loginDirectoryWorker`                                                   | the login directory Worker's global KV namespace and routes        |
 | `./node` | `registryWorker`                                                         | the Stackra registry's R2, D1, KV and custom domain (ADR 0453)     |
+| `./node` | `turboCache`                                                             | the Turborepo remote cache's R2 bucket, expiry and custom domain   |
 | `./node` | `resolveRef(value)`                                                      | a runway value, with `ref:<key>.<path>` read from the stack config |
 
 ## The two inputs

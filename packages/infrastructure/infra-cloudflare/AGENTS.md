@@ -19,6 +19,7 @@ service uses. Member at `packages/infrastructure/infra-cloudflare`
 | A test                                     | `__tests__/<name>.<kind>.test.ts` beside it |
 | A Pulumi mock helper                       | `src/node/functions/__tests__/fixtures/`    |
 | The Stackra registry Worker's resources    | `src/node/registry/` (ADR 0453)             |
+| The Turborepo remote cache's resources     | `src/node/turbo-cache/` (ADR 0026)          |
 
 ## Rules
 
