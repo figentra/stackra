@@ -18,6 +18,7 @@ import { renderToString } from "react-dom/server";
 import { RealtimeConnection, RealtimeStatus } from "#core/index";
 import type { RealtimeConnectionState } from "#core/index";
 import { useRealtimeConnection } from "#react/realtime/use-realtime-connection";
+import { fakeRealtime } from "#testing/functions/fake-realtime.function";
 import { RealtimeFake } from "#testing/realtime.fake";
 
 /** A provider over a container that binds `connection` as the `RealtimeConnection`. */
@@ -50,7 +51,7 @@ describe("useRealtimeConnection", () => {
   });
 
   it("renders on the server from the same snapshot", async () => {
-    const Wrapper = await wrapperFor(new RealtimeFake(RealtimeStatus.Connecting));
+    const Wrapper = await wrapperFor(fakeRealtime({ status: RealtimeStatus.Connecting }));
     expect(
       renderToString(
         <Wrapper>

@@ -19,7 +19,7 @@
 import { Secret } from "@stackra/config";
 import type { DriverName } from "@stackra/container";
 import { Duration, Realm } from "@stackra/contracts";
-import { Int, registerSchemas, Schema } from "@stackra/validation";
+import { Field, Int, registerSchemas, Schema } from "@stackra/validation";
 
 import type { RealtimeDriver } from "#contracts/ports/realtime-driver.port";
 import type { RealtimeFanout } from "#contracts/ports/realtime-fanout.port";
@@ -64,6 +64,28 @@ export class RealtimeOptions extends Schema {
   @Int({ min: 100 })
   localRelayProbeMs = 1500;
 
+  /** The caps of collaboration rooms (ADR 0346 decision 6); a member over one is dropped with `room_limit_reached`. */
+  // reason: a nested driver option a host override replaces whole; the shipped config schema holds its rules
+  @Field(REALTIME_CONFIG_SCHEMA.shape.rooms)
+  rooms: {
+    /** Members per room: on this instance, or on all of them with `countAcrossInstances`. */
+    maxMembers: number;
+    /** Count `maxMembers` over every instance (their counts arrive through the fan-out), not this one alone. */
+    countAcrossInstances: boolean;
+    /** The largest message payload, in bytes. */
+    maxMessageBytes: number;
+    /** Messages one member may send per second. */
+    maxMessagesPerSecond: number;
+    /** Seconds a member may stay silent before it is closed. */
+    idleCloseSeconds: number;
+  } = {
+    maxMembers: 50,
+    countAcrossInstances: true,
+    maxMessageBytes: 65_536,
+    maxMessagesPerSecond: 20,
+    idleCloseSeconds: 60,
+  };
+
   /** The `RealtimeDriver` a service serves sessions with: `memory` in dev, `sse` or `websocket` deployed. */
   driver: DriverName<RealtimeDriver> = "memory";
 
@@ -84,26 +106,6 @@ export class RealtimeOptions extends Schema {
 
   /** The Valkey pub/sub channel the instances of one service share. */
   fanoutChannel = "realtime:fanout";
-
-  /** The caps of collaboration rooms (ADR 0346 decision 6); a member over one is dropped with `room_limit_reached`. */
-  rooms: {
-    /** Members per room: on this instance, or on all of them with `countAcrossInstances`. */
-    maxMembers: number;
-    /** Count `maxMembers` over every instance (their counts arrive through the fan-out), not this one alone. */
-    countAcrossInstances: boolean;
-    /** The largest message payload, in bytes. */
-    maxMessageBytes: number;
-    /** Messages one member may send per second. */
-    maxMessagesPerSecond: number;
-    /** Seconds a member may stay silent before it is closed. */
-    idleCloseSeconds: number;
-  } = {
-    maxMembers: 50,
-    countAcrossInstances: true,
-    maxMessageBytes: 65_536,
-    maxMessagesPerSecond: 20,
-    idleCloseSeconds: 60,
-  };
 
   /** The venue relay's driver: `lan` serves and probes over the local network (`./node`). */
   localRelay: DriverName<RealtimeLocalRelay> = "lan";

@@ -20,5 +20,7 @@ import { RealtimeFake } from "#testing/realtime.fake";
  * await act(() => realtime.emit(OrderPaid, { orderId }));
  */
 export function fakeRealtime(options: { readonly status?: RealtimeStatus } = {}): RealtimeFake {
-  return new RealtimeFake(options.status);
+  const fake = new RealtimeFake();
+  if (options.status !== undefined) fake.setStatus(options.status);
+  return fake;
 }

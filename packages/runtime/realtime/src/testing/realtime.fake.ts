@@ -1,8 +1,9 @@
 /**
  * Stackra file contract:
  * Purpose: `RealtimeFake`, the test double of `RealtimeConnection`: a connection that starts signed in and live (or
- *          at the status a test asks for), on which a test emits a consumed event (`fake.emit(OrderPaid, {...})`) and
- *          moves the status (`fake.setStatus(RealtimeStatus.Disconnected)`), bound in place of `RealtimeConnection`.
+ *          at the status `fakeRealtime({ status })` asks for), on which a test emits a consumed event
+ *          (`fake.emit(OrderPaid, {...})`) and moves the status (`fake.setStatus(RealtimeStatus.Disconnected)`), bound
+ *          in place of `RealtimeConnection`. Its constructor takes nothing (ADR 0294 decision 17).
  * Boundary: a real `RealtimeConnection` (so `instanceof` holds and the hooks read it unchanged) over the default
  *           configuration and the memory transport, so a `start` in the code under test opens no network. `emit`
  *           delivers the data-free message the real broadcast would: the payload argument is accepted so a test reads
@@ -29,12 +30,10 @@ import type { RealtimeEventRef } from "#core/index";
 export class RealtimeFake extends RealtimeConnection {
   private emitted = 0;
 
-  /**
-   * @param status - the starting status; live by default.
-   */
-  constructor(status: RealtimeStatus = RealtimeStatus.Connected) {
+  /** A live connection; `setStatus` (or `fakeRealtime({ status })`) moves it elsewhere. */
+  constructor() {
     super(new RealtimeConfig(), new MemoryRealtimeTransportDriver());
-    this.setStatus(status);
+    this.setStatus(RealtimeStatus.Connected);
   }
 
   /**

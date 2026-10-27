@@ -11,6 +11,7 @@ import { describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 
 import { RealtimeConnection, RealtimeStatus } from "#core/index";
+import { fakeRealtime } from "#testing/functions/fake-realtime.function";
 import { RealtimeFake } from "#testing/realtime.fake";
 
 class OrderPaid {
@@ -26,7 +27,7 @@ describe("RealtimeFake", () => {
     const fake = new RealtimeFake();
     expect(fake).toBeInstanceOf(RealtimeConnection);
     expect(fake.state).toEqual({ status: RealtimeStatus.Connected });
-    expect(new RealtimeFake(RealtimeStatus.Disconnected).state).toEqual({
+    expect(fakeRealtime({ status: RealtimeStatus.Disconnected }).state).toEqual({
       status: RealtimeStatus.Disconnected,
     });
   });
