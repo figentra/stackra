@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: unit tests of `resolveTemplate`: the nearest scope's override wins over the code default; the locale chain
  *          comes before the scope chain; a restricted record takes only the content-free variant and never falls back
- *          to the full one.
+ *          to the full one, nor gets one that reads a restricted field (STA-964).
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0223 (decision 3).
@@ -13,6 +13,7 @@ import { NotificationChannel } from "#contracts/enums/notification-channel.enum"
 import { TemplateVariant } from "#contracts/enums/template-variant.enum";
 import type { NotificationTemplate } from "#contracts/types/notification-template.type";
 import { NoTemplateError } from "#core/errors/no-template.error";
+import { RestrictedFieldError } from "#core/errors/restricted-field.error";
 import { resolveTemplate } from "#core/functions/resolve-template.function";
 
 const template = (
@@ -58,6 +59,16 @@ describe("resolveTemplate", () => {
     );
     expect(() => resolveTemplate([template("ar")], { ...query, restricted: true })).toThrow(
       NoTemplateError,
+    );
+  });
+
+  it("refuses a content-free template that reads a restricted field", () => {
+    const leaky: NotificationTemplate = {
+      ...template("ar", undefined, TemplateVariant.ContentFree),
+      content: { body: "{kind}: {client_name}" },
+    };
+    expect(() => resolveTemplate([leaky], { ...query, restricted: true })).toThrow(
+      RestrictedFieldError,
     );
   });
 });

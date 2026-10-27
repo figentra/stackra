@@ -3,7 +3,8 @@
  * Purpose: Stand-in barrel: the `.` entry of @stackra/notifications, which has several public files, until
  *          `stackra gen` writes the entry barrels (STA-339). The vendor Integrations and Connections and the
  *          provider maps moved to the OS integrations service (R3-8, STA-1281). The inbound WhatsApp drivers
- *          (`memory`, `meta`) and Meta's signature recipe are here (ADR 0448).
+ *          (`memory`, `meta`) and Meta's signature recipe are here (ADR 0448). The content-free check and the
+ *          mandatory-category answer are here (STA-964).
  * Boundary: names each re-export and declares nothing. `MailTransport` and `OutboundMail` are not here: they are
  *           exported from `./contracts` only (ADR 0294 decision 15). `MailMessage` is a type here: the Notifier builds
  *           it. The shipped schema is re-exported under its generated name (`NotificationsConfig$`).
@@ -14,6 +15,7 @@
  */
 export { NotificationsConfig } from "#config/notifications.config";
 export { Notification } from "#core/bases/notification.base";
+export { CONTENT_FREE_FIELDS } from "#core/constants/content-free-fields.constant";
 export { META_WHATSAPP_WEBHOOK_SIGNATURE } from "#core/constants/meta-whatsapp-webhook-signature.constant";
 export { NOTIFICATIONS_CONFIG_SCHEMA as NotificationsConfig$ } from "#core/constants/notifications-config-schema.constant";
 export { ConnectionMailTransportDriver } from "#core/drivers/connection-mail-transport.driver";
@@ -25,6 +27,9 @@ export { MemoryWhatsAppInboundDriver } from "#core/drivers/memory-whatsapp-inbou
 export { MetaWhatsAppInboundDriver } from "#core/drivers/meta-whatsapp-inbound.driver";
 export { NotificationCategory } from "#core/enums/notification-category.enum";
 export { NoTemplateError } from "#core/errors/no-template.error";
+export { RestrictedFieldError } from "#core/errors/restricted-field.error";
+export { assertContentFree } from "#core/functions/assert-content-free.function";
+export { canMute } from "#core/functions/can-mute.function";
 export { dueEscalations } from "#core/functions/due-escalations.function";
 export { resolveTemplate } from "#core/functions/resolve-template.function";
 export { sendAfter } from "#core/functions/send-after.function";

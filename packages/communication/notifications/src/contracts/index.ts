@@ -3,7 +3,7 @@
  * Purpose: Stand-in barrel: the `./contracts` entry of @stackra/notifications, the leaf entry with the channel ports
  *          (`MailTransport`, `SmsTransport`, `WhatsAppTransport`, `PushTransport`, `InAppStore`, `ChatTransport`), the
  *          inbound `WhatsAppInbound` port (ADR 0448), the
- *          service ports (`PushTokenStore`, `SendLog`, `TemplateOverrides`), the provider interfaces and the types they
+ *          `ContentFreeData` (STA-964), the service ports (`PushTokenStore`, `SendLog`, `TemplateOverrides`), the provider interfaces and the types they
  *          exchange, until `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. The leaf: it imports no other entry of this package. Each is
  *           exported here only, never from `.` (ADR 0294 decision 15).
@@ -22,6 +22,7 @@ export { SmsTransport } from "#contracts/ports/sms-transport.port";
 export { TemplateOverrides } from "#contracts/ports/template-overrides.port";
 export { WhatsAppInbound } from "#contracts/ports/whatsapp-inbound.port";
 export { WhatsAppTransport } from "#contracts/ports/whatsapp-transport.port";
+export type { ContentFreeData } from "#contracts/types/content-free-data.type";
 export type { EscalationState } from "#contracts/types/escalation-state.type";
 export type { EscalationStep } from "#contracts/types/escalation-step.type";
 export type { InboundWhatsApp } from "#contracts/types/inbound-whatsapp.type";

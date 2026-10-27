@@ -19,7 +19,8 @@
     "content_free": {
       "subject": "Vous avez une nouvelle notification",
       "body": "Un message vous attend. Connectez-vous pour le lire.",
-      "title": "Nouvelle notification"
+      "title": "Nouvelle notification",
+      "record": "Vous avez une mise à jour concernant {kind}. Connectez-vous pour la lire : {link}"
     },
     "footer": {
       "sent_by": "Envoyé par {sender}",

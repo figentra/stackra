@@ -19,7 +19,8 @@
     "content_free": {
       "subject": "Hai una nuova notifica",
       "body": "C’è qualcosa che ti aspetta. Accedi per leggerlo.",
-      "title": "Nuova notifica"
+      "title": "Nuova notifica",
+      "record": "C’è un aggiornamento su {kind}. Accedi per leggerlo: {link}"
     },
     "footer": {
       "sent_by": "Inviato da {sender}",

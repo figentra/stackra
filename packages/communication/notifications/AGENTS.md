@@ -5,7 +5,7 @@ Stackra file contract:
 Purpose: the rules an agent follows when it changes @stackra/notifications.
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
-Governing contract: ADR 0086; ADR 0223; ADR 0294; ADR 0305; ADR 0448.
+Governing contract: ADR 0086; ADR 0223; ADR 0294; ADR 0305; ADR 0448; STA-964.
 -->
 
 Messages to people (ADR 0086, 0223 as amended by 0294; R-26). Member at `packages/communication/notifications`
@@ -68,6 +68,10 @@ Messages to people (ADR 0086, 0223 as amended by 0294; R-26). Member at `package
   payload decoding only (like `twiml`); its Integration and Connection stay in OS integrations (R3-8).
 - An in-app entry always names its product; a store driver filters `list` by it.
 - A restricted record never falls back from the content-free template to the full one.
+- A content-free template reads only `CONTENT_FREE_FIELDS` (`kind`, `link`); `assertContentFree` refuses anything else
+  and `resolveTemplate` runs it. Widen that allowlist only with an ADR; never add a record field to it (STA-964).
+- Mandatory categories are configuration (`NotificationsConfig.mandatoryCategories`, set per pack); `canMute` and
+  `sendAfter` take the list as an argument and never default one (ACA-539).
 
 ## PII
 

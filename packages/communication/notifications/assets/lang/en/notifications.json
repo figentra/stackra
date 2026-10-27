@@ -19,7 +19,8 @@
     "content_free": {
       "subject": "You have a new notification",
       "body": "Something is waiting for you. Sign in to read it.",
-      "title": "New notification"
+      "title": "New notification",
+      "record": "You have an update on a {kind}. Sign in to read it: {link}"
     },
     "footer": {
       "sent_by": "Sent by {sender}",

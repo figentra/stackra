@@ -3,7 +3,8 @@
  * Purpose: the consumer contract of the `.` entry: the template's `Notification`, `NotificationCategory`, `Notifier`
  *          and `Recipient` values and `MailMessage` type, plus the registry row's configuration and memory driver
  *          (gen's wiring imports `MemoryNotifierDriver` from here), and the inbound WhatsApp drivers with Meta's signature
- *          recipe (ADR 0448) are exported, nothing else is.
+ *          recipe (ADR 0448), and the content-free check and mandatory-category answer (STA-964) are exported, nothing
+ *          else is.
  * Boundary: test only; imports the stand-in barrel through its `#core` alias.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0294 (decision 15).
@@ -17,6 +18,7 @@ import type { MailMessage, NotificationDelivery } from "#core/index";
 describe("@stackra/notifications", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(notifications).sort()).toEqual([
+      "CONTENT_FREE_FIELDS",
       "ConnectionMailTransportDriver",
       "ConnectionSmsTransportDriver",
       "ConnectionWhatsAppTransportDriver",
@@ -33,6 +35,9 @@ describe("@stackra/notifications", () => {
       "NotificationsOptions",
       "Notifier",
       "Recipient",
+      "RestrictedFieldError",
+      "assertContentFree",
+      "canMute",
       "dueEscalations",
       "resolveTemplate",
       "sendAfter",

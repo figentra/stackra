@@ -19,7 +19,8 @@
     "content_free": {
       "subject": "Sie haben eine neue Benachrichtigung",
       "body": "Es wartet etwas auf Sie. Melden Sie sich an, um es zu lesen.",
-      "title": "Neue Benachrichtigung"
+      "title": "Neue Benachrichtigung",
+      "record": "Es gibt eine Neuigkeit zu {kind}. Melden Sie sich an, um sie zu lesen: {link}"
     },
     "footer": {
       "sent_by": "Gesendet von {sender}",

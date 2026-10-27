@@ -19,7 +19,8 @@
     "content_free": {
       "subject": "U hebt een nieuwe melding",
       "body": "Er staat iets voor u klaar. Log in om het te lezen.",
-      "title": "Nieuwe melding"
+      "title": "Nieuwe melding",
+      "record": "Er is een update over {kind}. Log in om die te lezen: {link}"
     },
     "footer": {
       "sent_by": "Verzonden door {sender}",

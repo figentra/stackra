@@ -5,7 +5,7 @@ Stackra file contract:
 Purpose: the package's reader guide: notifications, channels and providers, inbound WhatsApp, templates and testing.
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
-Governing contract: ADR 0086; ADR 0223; ADR 0294; ADR 0356; ADR 0448.
+Governing contract: ADR 0086; ADR 0223; ADR 0294; ADR 0356; ADR 0448; STA-964.
 -->
 
 Messages to people (ADR 0086, 0223 as amended by 0294). A notification is a class beside the model it concerns,
@@ -31,7 +31,7 @@ optional peer, needed by `./node`, `./react` and `./testing` only.
 | `.`           | `MailMessage` (type)                                                           | what `mail(data, mail)` returns: `mail.subject(key, values)`           |
 | `.`           | `Notifier`                                                                     | the port gen's listener calls: `notify(notification, event)`           |
 | `.`           | `MemoryNotifierDriver`                                                         | the `memory` driver: keeps deliveries for tests and dev                |
-| `.`           | `NotificationsConfig`, `NotificationsConfig$`, `NotificationsOptions`          | key `notifications`: `driver`, `target` (`messages`, `delivery`)       |
+| `.`           | `NotificationsConfig`, `NotificationsConfig$`, `NotificationsOptions`          | key `notifications`: `driver`, `target`, `mandatoryCategories`         |
 | `.`           | `NotificationDelivery`, `NotificationOptions`, `NotifierDriverName`            | types                                                                  |
 | `./contracts` | `MailTransport`, `OutboundMail` (type)                                         | the port a mail provider driver implements (`Driver(MailTransport)`)   |
 | `./contracts` | `SmsTransport`, `OutboundSms` (type)                                           | the port an SMS provider driver implements                             |
@@ -267,15 +267,43 @@ META_WHATSAPP_WEBHOOK_SIGNATURE, ... }`, so `@stackra/webhooks` checks `x-hub-si
 
 ## Templates, quiet hours and escalation
 
-| Symbol                                                | Use                                                                                       |
-| ----------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| `resolveTemplate(candidates, query)`                  | the cascade: locale chain first, then the nearest scope's override, then the code default |
-| `TemplateVariant`, `TemplateOverrides`                | a restricted record takes only the content-free variant; no fallback to the full one      |
-| `sendAfter({ category, mandatory, quietHours, now })` | the send time: now for a mandatory category or outside quiet hours, else the window's end |
-| `dueEscalations(steps, state, now)`                   | the escalation steps due for an unacknowledged notification                               |
+| Symbol                                                | Use                                                                                        |
+| ----------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `resolveTemplate(candidates, query)`                  | the cascade: locale chain first, then the nearest scope's override, then the code default  |
+| `TemplateVariant`, `TemplateOverrides`                | a restricted record takes only the content-free variant; no fallback to the full one       |
+| `assertContentFree(template)`, `RestrictedFieldError` | refuses a content-free template that reads more than `kind` and `link` (`ContentFreeData`) |
+| `canMute(category, mandatory)`                        | false for a mandatory or transactional category: preferences cannot mute it                |
+| `sendAfter({ category, mandatory, quietHours, now })` | the send time: now for a mandatory category or outside quiet hours, else the window's end  |
+| `dueEscalations(steps, state, now)`                   | the escalation steps due for an unacknowledged notification                                |
 
 The mandatory categories, quiet hours, channel order and escalation steps are data (settings floors, settings, rule
 sets), never defaults here.
+
+### Content-free templates (STA-964)
+
+A record of a restricted data class (a privileged matter, a safeguarding notice, a clinical record) renders only its
+content-free variant, and that variant reads nothing of the record: its kind, as a label in the recipient's language,
+and a link that opens it after sign-in (`ContentFreeData`, the fields in `CONTENT_FREE_FIELDS`). `resolveTemplate`
+checks the template it returns, and the notifications service calls `assertContentFree` when a studio override is
+saved, so `{kind} for {client_name}` is refused with `RestrictedFieldError` (`restricted_field`, the field named).
+The default wording is `templates.content_free.record` (`You have an update on a {kind}. Sign in to read it: {link}`).
+A mail document reference is checked where it is authored, not here.
+
+### Mandatory categories (ACA-539)
+
+A pack lists the categories a recipient cannot mute and quiet hours never hold, as configuration:
+
+```ts
+export class NotificationsConfig extends BaseNotificationsConfig {
+  override mandatoryCategories = ["emergency_broadcast", "pickup"];
+}
+
+canMute(notification.messageCategory ?? notification.category, config.mandatoryCategories); // false: no mute switch
+sendAfter({ category, mandatory: config.mandatoryCategories, quietHours, now }); // now, even at 23:00
+```
+
+Codes are `NotificationCategory` cases or a delivery service's `messageCategory` codes (snake_case); none is
+mandatory by default, and a transactional notification is never mutable either way.
 
 ## Testing
 

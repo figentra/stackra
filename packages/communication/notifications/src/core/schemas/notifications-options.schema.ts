@@ -1,13 +1,14 @@
 /**
  * Stackra file contract:
  * Purpose: `NotificationsOptions`, the shape of `NotificationsConfig`: which `Notifier` driver sends, and which
- *          built-in target the `notifications` driver queues on (`messages` or `delivery`).
+ *          built-in target the `notifications` driver queues on (`messages` or `delivery`), and the categories a
+ *          recipient cannot mute and quiet hours never hold (`mandatoryCategories`).
  * Boundary: a shape class; it registers this package's own schema (`NOTIFICATIONS_CONFIG_SCHEMA`) for itself when the
  *           module loads, so `buildConfig(NotificationsConfig)` validates with no generated file. Runway sets the
  *           driver per environment (`notifications.driver`); code never names a production driver (ADR 0266).
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 4, 19 and 26); ADR 0266 (decisions 1 and 5); ADR 0422 (as
- *                     amended by STA-1235).
+ *                     amended by STA-1235); ACA-539, STA-964 (mandatory categories).
  */
 import "#core/types/notifier-driver-name.type";
 import type { DriverName } from "@stackra/container";
@@ -37,6 +38,13 @@ export class NotificationsOptions extends Schema {
    * passes its own `NotifierTarget` overrides it.
    */
   target: "messages" | "delivery" = "messages";
+
+  /**
+   * The category codes (`NotificationCategory` or a `messageCategory`, snake_case) a recipient cannot mute and quiet
+   * hours never hold: emergency broadcast, pickup, a legal notice. Set per pack (runway `config.notifications`); none
+   * here. Pass it to `canMute` and `sendAfter`.
+   */
+  mandatoryCategories: string[] = [];
 }
 
 registerSchemas([[NotificationsOptions, NOTIFICATIONS_CONFIG_SCHEMA]]);

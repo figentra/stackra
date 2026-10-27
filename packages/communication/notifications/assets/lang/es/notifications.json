@@ -19,7 +19,8 @@
     "content_free": {
       "subject": "Tiene una notificación nueva",
       "body": "Tiene algo pendiente. Inicie sesión para leerlo.",
-      "title": "Notificación nueva"
+      "title": "Notificación nueva",
+      "record": "Tiene una novedad sobre {kind}. Inicie sesión para leerla: {link}"
     },
     "footer": {
       "sent_by": "Enviado por {sender}",
