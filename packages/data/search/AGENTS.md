@@ -78,6 +78,7 @@ Postgres drivers, the `t.searchable(...)` macro and the text-function migration 
   `SEARCH_CONFORMANCE_CASES` (a fresh table per case, id sets not order); the memory driver must keep passing it
   (`run-search-conformance.function.test.ts`). Changing a case changes every recorded fixture of the Pro drivers.
 - This package never imports `@stackra-pro/*` (ADR 0077 d4, ADR 0461).
+- `SearchHealthIndicatorDriver` is the `HealthIndicator` driver: it searches `health.table` for one id with no words, bounded by `health.timeout`; `health.critical: false` reports `degraded` instead of `down`. It reports the error's name, never its message.
 
 ## Rules that fail the build
 

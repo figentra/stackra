@@ -2,6 +2,7 @@
  * Stackra file contract:
  * Purpose: `QUEUE_CONFIG_SCHEMA`, the zod schema this package ships for `QueueConfig` (exported as `QueueConfig$`):
  *          which driver stores the jobs.
+ *          The `health` field tunes `QueueHealthIndicatorDriver` for `/readyz`.
  * Boundary: the stand-in for what gen writes for this package. Every field has a default, so `.parse({})` gives the
  *           full defaults and a host's generated `QueueConfig$` can `.extend` it. The default equals `QueueOptions`'
  *           initializer (tested). No credential: the Postgres driver uses the service's own database connection.
@@ -10,9 +11,11 @@
  */
 import { z } from "zod";
 
+import { HEALTH_CHECK_SCHEMA } from "#core/constants/health-check-schema.constant";
 import { QUEUE_DRIVERS } from "#core/constants/queue-drivers.constant";
 
 /** The shipped `QueueConfig$`. */
 export const QUEUE_CONFIG_SCHEMA = z.object({
   driver: z.enum(QUEUE_DRIVERS).default("postgres"),
+  health: HEALTH_CHECK_SCHEMA,
 });

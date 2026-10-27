@@ -3,6 +3,7 @@
  * Purpose: Stand-in barrel: the `.` entry of @stackra/realtime (the configuration with its shipped schema, the status,
  *          the server hub and broadcaster, the live-query refresh routes, the client connection, and the drivers of
  *          both ports) until `stackra gen` writes the entry barrels (STA-339).
+ *          `RealtimeHealthIndicatorDriver` is the `/readyz` probe.
  * Boundary: names each re-export and declares nothing. The shipped schema is re-exported under the generated name
  *           (`RealtimeConfig$`) a host's generated schemas extend. The ports are the `./contracts` entry's and are not
  *           re-exported here (one symbol, one entry). Every driver ships from here: they use web-standard APIs only,
@@ -19,6 +20,7 @@ export { LocalRealtimeFanoutDriver } from "#core/drivers/local-realtime-fanout.d
 export { MemoryRealtimeDriver } from "#core/drivers/memory-realtime.driver";
 export { MemoryRealtimeFanoutDriver } from "#core/drivers/memory-realtime-fanout.driver";
 export { MemoryRealtimeTransportDriver } from "#core/drivers/memory-realtime-transport.driver";
+export { RealtimeHealthIndicatorDriver } from "#core/drivers/realtime-health-indicator.driver";
 export { SseRealtimeDriver } from "#core/drivers/sse-realtime.driver";
 export { WebSocketRealtimeDriver } from "#core/drivers/web-socket-realtime.driver";
 export { WebsocketRealtimeTransportDriver } from "#core/drivers/websocket-realtime-transport.driver";

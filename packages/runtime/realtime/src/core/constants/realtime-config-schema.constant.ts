@@ -4,6 +4,7 @@
  *          `RealtimeConfig$`): the server driver, the realtime origin, the realms allowed on tenant channels, the
  *          subscribe token's lifetime, the client's background and reconnect behaviour, the fan-out between instances,
  *          the room caps and the venue's local-network relay.
+ *          The `health` field tunes `RealtimeHealthIndicatorDriver` for `/readyz`.
  * Boundary: the stand-in for what gen writes for this package. Every field has a default, so `.parse({})` gives the
  *           full defaults and a host's generated `RealtimeConfig$` extends it (`shape.x.unwrap().default(...)`). The
  *           defaults equal `RealtimeOptions`' initializers (tested). No object-level refinement, so `.extend(...)`
@@ -13,6 +14,8 @@
  */
 import { Duration, Enum, Realm } from "@stackra/contracts";
 import { z } from "zod";
+
+import { HEALTH_CHECK_SCHEMA } from "#core/constants/health-check-schema.constant";
 
 /** An origin without a path (`https://api.acme.example`), or empty for the page origin. */
 const ORIGIN = /^(https?:\/\/[^/\s]+)?$/;
@@ -60,4 +63,5 @@ export const REALTIME_CONFIG_SCHEMA = z.object({
   localRelayAddress: z.string().default(""),
   localRelayPeers: z.array(z.string().regex(/^https?:\/\/[^/\s]+$/)).default(() => []),
   localRelayProbeMs: z.number().int().min(100).default(1500),
+  health: HEALTH_CHECK_SCHEMA,
 });

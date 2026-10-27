@@ -35,6 +35,7 @@ v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./node`, `./desktop`.
   Electron file handles, the S3 GET body, the GCS download). It settles only after the file is found, so not-found
   rejects the call, never the stream.
 - One disk per member; named disks, uploads and tenant file records belong elsewhere (README, "Not here").
+- `FilesystemHealthIndicatorDriver` is the `HealthIndicator` driver: it asks the disk whether `health.path` exists (a missing path is an answer), bounded by `health.timeout`; `health.critical: false` reports `degraded` instead of `down`. It reports the error's name, never its message.
 
 ## Rules that fail the build
 

@@ -105,6 +105,18 @@ none is due. Redrive a dead letter with `queue.redrive(id)`; it runs again with 
   publishes it again. Nothing is polled: `reserve` answers no job. A unique key is not held on the broker: a unique
   job pushed twice runs twice.
 
+## Health check
+
+`QueueHealthIndicatorDriver` (`.`) is this package's `HealthIndicator` driver, named `queue`: it lists at most one dead letter. Bind it and
+`@stackra/app`'s `/readyz` runs it with the other bound indicators. `health` in this package's config tunes it:
+
+| Field      | Default | Meaning                                                                   |
+| ---------- | ------- | ------------------------------------------------------------------------- |
+| `timeout`  | `PT2S`  | How long the probe may take before it counts as failed.                   |
+| `critical` | `true`  | A failed probe is `down` and fails `/readyz`; `false` reports `degraded`. |
+
+A failed probe never throws; its detail names the error type only.
+
 ## Testing
 
 ```ts

@@ -101,3 +101,15 @@ other keyspaces, confirmed in the 1.58 types), but this package has no driver ov
   (`CacheKey.of(Product, id)` covering every locale's view) without a separate key index.
 
 A service on Encore that needs a shared cache uses the `valkey` driver.
+
+## Health check
+
+`CacheHealthIndicatorDriver` (`.`) is this package's `HealthIndicator` driver, named `cache`: it reads one key that is never written. Bind it and
+`@stackra/app`'s `/readyz` runs it with the other bound indicators. `health` in this package's config tunes it:
+
+| Field      | Default | Meaning                                                                   |
+| ---------- | ------- | ------------------------------------------------------------------------- |
+| `timeout`  | `PT2S`  | How long the probe may take before it counts as failed.                   |
+| `critical` | `true`  | A failed probe is `down` and fails `/readyz`; `false` reports `degraded`. |
+
+A failed probe never throws; its detail names the error type only.

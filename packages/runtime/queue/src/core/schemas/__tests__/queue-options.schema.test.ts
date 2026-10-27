@@ -20,7 +20,10 @@ describe("QueueOptions", () => {
 
   it("has an initializer equal to the shipped default", () => {
     expect({ ...new QueueOptions() }).toEqual(QUEUE_CONFIG_SCHEMA.parse({}));
-    expect(QUEUE_CONFIG_SCHEMA.parse({})).toEqual({ driver: "postgres" });
+    expect(QUEUE_CONFIG_SCHEMA.parse({})).toEqual({
+      driver: "postgres",
+      health: { timeout: "PT2S", critical: true },
+    });
   });
 
   it("types driver as the QueueDriver driver names", () => {

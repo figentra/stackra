@@ -3,7 +3,8 @@
  * Purpose: Stand-in barrel: the `.` entry of @stackra/database until `stackra gen` writes the entry barrels (STA-339).
  *          The template's old `./orm` entry is folded in (ADR 0127 2026-10-24 note): `EntitySchema`, `OptionalProps`
  *          and `UniqueViolation` are MikroORM's own, re-exported, so generated entity metadata and `instanceof` checks
- *          use the classes the ORM throws and reads.
+ *          use the classes the ORM throws and reads. `DatabaseConfig` (with `DatabaseConfig$` and `DatabaseOptions`)
+ *          holds the health probe's settings.
  * Boundary: names each re-export and declares nothing. The Postgres and unit-of-work drivers live in `./node`; the
  *           `VisibilityFilter` and `HoldRegistry` ports and the `Where` type live in `./contracts`. `Projection` is the read-model kind base (its versions table's migration is found by path). The migration records, the registries, the name helpers, the
  *           block-id minting and the visibility filter function stay internal; the sequence tables' migration is found
@@ -17,12 +18,14 @@ export {
   OptionalProps,
   UniqueConstraintViolationException as UniqueViolation,
 } from "@mikro-orm/core";
+export { DatabaseConfig } from "#config/database.config";
 export { CrudService } from "#core/bases/crud-service.base";
 export { Macro } from "#core/bases/macro.base";
 export { Migration } from "#core/bases/migration.base";
 export { Projection } from "#core/bases/projection.base";
 export { Seeder } from "#core/bases/seeder.base";
 export { Sequence } from "#core/bases/sequence.base";
+export { DATABASE_CONFIG_SCHEMA as DatabaseConfig$ } from "#core/constants/database-config-schema.constant";
 export { Aggregate } from "#core/enums/aggregate.enum";
 export { Extension } from "#core/enums/extension.enum";
 export { MixedCurrencyError } from "#core/errors/mixed-currency.error";
@@ -53,6 +56,7 @@ export { visibleKeysQuery } from "#core/functions/visible-keys-query.function";
 export { HoldSubscriber } from "#core/orm/hold.subscriber";
 export { StackraNamingStrategy } from "#core/orm/stackra.naming-strategy";
 export { Database } from "#core/ports/database.port";
+export { DatabaseOptions } from "#core/schemas/database-options.schema";
 export { GraphQuery } from "#core/services/graph-query.service";
 export { SequenceService } from "#core/services/sequence.service";
 export type { Blueprint } from "#core/types/blueprint.type";

@@ -2,6 +2,7 @@
  * Stackra file contract:
  * Purpose: `CacheOptions`, the shape of `CacheConfig`: which driver runs, how many entries the memory driver keeps
  *          before it drops the least recently read one, the Valkey server and key prefix, and the Workers KV binding.
+ *          `health` tunes `CacheHealthIndicatorDriver`, the `/readyz` probe.
  * Boundary: a shape class; it registers this package's own schema (`CACHE_CONFIG_SCHEMA`) for itself when the module
  *           loads, so `buildConfig(CacheConfig)` validates with no generated file. `valkey` and `workers` are nested
  *           objects a host override replaces whole. The Valkey URL carries the password, so it is the
@@ -14,6 +15,7 @@ import "#core/types/cache-driver-names.type";
 
 import { Secret } from "@stackra/config";
 import type { DriverName } from "@stackra/container";
+import { Duration } from "@stackra/contracts";
 import { Field, Int, registerSchemas, Schema } from "@stackra/validation";
 
 import type { Cache } from "#contracts/ports/cache.port";
@@ -52,6 +54,16 @@ export class CacheOptions extends Schema {
     /** The binding name the namespace is bound under in the Worker's wrangler config. */
     binding: string;
   } = { binding: "CACHE" };
+
+  /** How `CacheHealthIndicatorDriver` probes the cache for `/readyz`. */
+  // reason: a nested option a host override replaces whole; the shipped config schema holds its rules
+  @Field(CACHE_CONFIG_SCHEMA.shape.health)
+  health: {
+    /** How long the probe may take. */
+    timeout: Duration;
+    /** Whether a failed probe fails readiness; `false` reports `degraded` instead. */
+    critical: boolean;
+  } = { timeout: Duration.seconds(2), critical: true };
 
   /** Which driver runs; names are the driver file prefixes. `memory` keeps values in this process only. */
   driver: DriverName<Cache> = "memory";

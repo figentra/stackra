@@ -2,6 +2,7 @@
  * Stackra file contract:
  * Purpose: `SEARCH_CONFIG_SCHEMA`, the zod schema this package ships for `SearchConfig` (exported as `SearchConfig$`):
  *          which driver runs.
+ *          The `health` field tunes `SearchHealthIndicatorDriver` for `/readyz`.
  * Boundary: the stand-in for what gen writes for this package. Every field has a default, so `.parse({})` gives the
  *           full defaults and a host's generated `SearchConfig$` can `.extend` it. The default equals `SearchOptions`'
  *           initializer (tested). No credential: the Postgres driver uses the service's own database connection.
@@ -11,6 +12,7 @@
  */
 import { z } from "zod";
 
+import { HEALTH_CHECK_SCHEMA } from "#core/constants/health-check-schema.constant";
 import { SEARCH_DRIVERS } from "#core/constants/search-drivers.constant";
 
 /** The shipped `SearchConfig$`. */
@@ -28,4 +30,5 @@ export const SEARCH_CONFIG_SCHEMA = z.object({
         .default(null),
     })
     .default(() => ({ url: null, model: "", dimensions: 1024, tokenSecret: null })),
+  health: HEALTH_CHECK_SCHEMA,
 });

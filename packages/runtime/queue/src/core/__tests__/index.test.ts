@@ -27,6 +27,7 @@ describe("@stackra/queue", () => {
       "MemoryQueueDriver",
       "QueueConfig",
       "QueueConfig$",
+      "QueueHealthIndicatorDriver",
       "QueueJobDispatcherDriver",
       "QueueOptions",
       "QueueService",

@@ -19,6 +19,7 @@ describe("@stackra/cache", () => {
     expect(Object.keys(cache).sort()).toEqual([
       "CacheConfig",
       "CacheConfig$",
+      "CacheHealthIndicatorDriver",
       "CacheKey",
       "CacheOptions",
       "MemoryCacheDriver",

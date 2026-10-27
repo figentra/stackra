@@ -3,6 +3,7 @@
  * Purpose: Stand-in barrel: the `.` entry of @stackra/queue (`Backoff` and `queues` for the template, the queue service,
  *          the memory driver, the `JobDispatcher` driver, the job registration, the refusals, and the configuration
  *          with its shape and shipped schema) until `stackra gen` writes the entry barrels (STA-339).
+ *          `QueueHealthIndicatorDriver` is the `/readyz` probe.
  * Boundary: names each re-export and declares nothing. The shipped schema is re-exported under its generated name
  *           (`QueueConfig$`). The defaults, the job registry, the job plan and the driver-name list stay internal. The
  *           port is `./contracts`'; the worker and the Postgres driver are `./node`'s. Nothing here touches a database.
@@ -15,6 +16,7 @@ export { BROKER_CONFIG_SCHEMA as BrokerConfig$ } from "#core/constants/broker-co
 export { QUEUE_CONFIG_SCHEMA as QueueConfig$ } from "#core/constants/queue-config-schema.constant";
 export { MemoryBrokerPublisherDriver } from "#core/drivers/memory-broker-publisher.driver";
 export { MemoryQueueDriver } from "#core/drivers/memory-queue.driver";
+export { QueueHealthIndicatorDriver } from "#core/drivers/queue-health-indicator.driver";
 export { QueueJobDispatcherDriver } from "#core/drivers/queue-job-dispatcher.driver";
 export { TopicBrokerPublisherDriver } from "#core/drivers/topic-broker-publisher.driver";
 export { Backoff } from "#core/enums/backoff.enum";

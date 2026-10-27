@@ -70,6 +70,7 @@ note).
 - The route session is loaded per request container on the Worker and never kept on a singleton: one visitor's session
   must never reach another request. `session` and `identity` are the only `RouteServices` members this package adds.
 - No parameter properties and no `#private` fields: apps typecheck this source under `erasableSyntaxOnly`.
+- `/readyz` runs the given `health` plus `container.getAll(HealthIndicator)`, resolved once after boot (`create-app.function.ts`); `answerProbe` owns the timeout and the body (a status per name, never a detail).
 
 ## Rules that fail the build
 

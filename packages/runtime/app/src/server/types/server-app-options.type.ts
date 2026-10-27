@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `ServerAppOptions`, the second argument of `createApp` from `@stackra/app/server`: the member's generated
- *          wiring, its generated boot and the health indicators `/readyz` runs.
+ *          wiring, its generated boot and the health indicators `/readyz` runs besides the bound ones.
  * Boundary: a type only. The environment is the process's own; nothing else is configurable here.
  * Runtime: node
  * Governing contract: ADR 0295 (decision 7); registry gap R-27; ADR 0263 (the container is ready before boot).
@@ -25,6 +25,9 @@ export interface ServerAppOptions {
     options: { readonly url: string; readonly signal: AbortSignal },
   ) => Promise<void>;
 
-  /** The dependencies `GET /readyz` checks; none means ready as soon as booted. */
+  /**
+   * Indicators `GET /readyz` checks besides every `HealthIndicator` the container binds; with neither, the app is
+   * ready as soon as booted.
+   */
   readonly health?: readonly HealthIndicator[];
 }

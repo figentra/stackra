@@ -33,6 +33,7 @@ driver).
 - `./worker` code reads Worker bindings only through `workerBinding` (`src/worker/functions/`), which tests mock.
 - No tenant word here (final review R-59): scoping goes through `CacheNamespace`.
 - No parameter properties and no `#private` fields: apps typecheck this source under `erasableSyntaxOnly`.
+- `CacheHealthIndicatorDriver` is the `HealthIndicator` driver: it reads one key that is never written, bounded by `health.timeout`; `health.critical: false` reports `degraded` instead of `down`. It reports the error's name, never its message.
 
 ## Rules that fail the build
 

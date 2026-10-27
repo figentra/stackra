@@ -223,6 +223,20 @@ and checks one rule: every word required, word prefixes, alternatives, exact fil
 driver says `appliesVisibility: true`. Ranking between matches is the engine's, so cases compare id sets. The suite
 uses no test framework and never throws for a miss: a thrown error becomes that case's mismatch.
 
+## Health check
+
+`SearchHealthIndicatorDriver` (`.`) is this package's `HealthIndicator` driver, named `search`: it searches `health.table` for one id with no words. Bind it and
+`@stackra/app`'s `/readyz` runs it with the other bound indicators. `health` in this package's config tunes it:
+
+| Field        | Default | Meaning                                                                              |
+| ------------ | ------- | ------------------------------------------------------------------------------------ |
+| `timeout`    | `PT2S`  | How long the probe may take before it counts as failed.                              |
+| `critical`   | `true`  | A failed probe is `down` and fails `/readyz`; `false` reports `degraded`.            |
+| `table`      | `""`    | The table the probe searches, `schema.table` or `table`; empty refuses to construct. |
+| `primaryKey` | `id`    | That table's primary key column.                                                     |
+
+A failed probe never throws; its detail names the error type only.
+
 ## Not here
 
 - Phrase synonyms (`t shirt` for `tee`) and one-way synonyms (`tv => television`): sets are single words and

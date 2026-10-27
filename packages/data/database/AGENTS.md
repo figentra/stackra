@@ -80,6 +80,7 @@ The MikroORM layer on Postgres. Member at `packages/data/database` (`tier:lib`),
 - The unit tier's database is `MemoryDatabaseDriver` (PGlite, ADR 0266 memory first), connected by
   `DATABASE_TESTING_PLUGIN` on every compile unless another database is connected; keep its `transaction`, `withScope`
   and `em` the same as `PostgresDatabaseDriver`'s when either changes.
+- `DatabaseHealthIndicatorDriver` is the `HealthIndicator` driver: it runs `select 1`, bounded by `health.timeout`; `health.critical: false` reports `degraded` instead of `down`. It reports the error's name, never its message.
 
 ## Rules that fail the build
 

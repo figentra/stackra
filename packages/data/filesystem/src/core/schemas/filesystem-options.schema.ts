@@ -3,6 +3,7 @@
  * Purpose: `FilesystemOptions`, the shape of `FilesystemConfig`: which disk runs, where the local disk keeps its files,
  *          the base URL public files are served from, the S3/R2 bucket and the
  *          GCS bucket.
+ *          `health` tunes `FilesystemHealthIndicatorDriver`, the `/readyz` probe.
  * Boundary: a shape class; it registers this package's own schema (`FILESYSTEM_CONFIG_SCHEMA`) for itself when the
  *           module loads, so `buildConfig(FilesystemConfig)` validates with no generated file. `s3` and `gcs` are nested
  *           objects a host override replaces whole, merging the base value explicitly. Deploy-time values only; no credential.
@@ -12,6 +13,7 @@
 import "#core/types/file-system-driver-names.type";
 
 import type { DriverName } from "@stackra/container";
+import { Duration } from "@stackra/contracts";
 import { Field, registerSchemas, Schema } from "@stackra/validation";
 
 import type { FileSystem } from "#contracts/ports/file-system.port";
@@ -50,6 +52,18 @@ export class FilesystemOptions extends Schema {
     /** The project the client bills to; `null` reads it from the environment's credentials. */
     projectId: string | null;
   } = { bucket: "", projectId: null };
+
+  /** How `FilesystemHealthIndicatorDriver` probes the disk for `/readyz`. */
+  // reason: a nested option a host override replaces whole; the shipped config schema holds its rules
+  @Field(FILESYSTEM_CONFIG_SCHEMA.shape.health)
+  health: {
+    /** How long the probe may take. */
+    timeout: Duration;
+    /** Whether a failed probe fails readiness; `false` reports `degraded` instead. */
+    critical: boolean;
+    /** The path the probe asks the disk about; it need not exist. */
+    path: string;
+  } = { timeout: Duration.seconds(2), critical: true, path: ".health" };
 
   /** Which driver runs; names are the driver file prefixes. `memory` is safe everywhere and keeps nothing. */
   disk: DriverName<FileSystem> = "memory";

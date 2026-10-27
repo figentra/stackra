@@ -40,6 +40,7 @@ describe("@stackra/realtime", () => {
       "RealtimeConfig",
       "RealtimeConfig$",
       "RealtimeConnection",
+      "RealtimeHealthIndicatorDriver",
       "RealtimeHub",
       "RealtimeOptions",
       "RealtimeRelay",

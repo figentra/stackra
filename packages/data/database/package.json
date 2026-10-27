@@ -35,6 +35,10 @@
   "type": "module",
   "sideEffects": false,
   "imports": {
+    "#config/*": [
+      "./src/config/*",
+      "./src/config/*.ts"
+    ],
     "#contracts/*": [
       "./src/contracts/*",
       "./src/contracts/*.ts",
@@ -96,10 +100,13 @@
     "@mikro-orm/core": "catalog:",
     "@mikro-orm/postgresql": "catalog:",
     "@stackra/actions": "workspace:*",
+    "@stackra/config": "workspace:*",
     "@stackra/container": "workspace:*",
     "@stackra/contracts": "workspace:*",
     "@stackra/errors": "workspace:*",
-    "@stackra/model": "workspace:*"
+    "@stackra/model": "workspace:*",
+    "@stackra/validation": "workspace:*",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@electric-sql/pglite": "catalog:",

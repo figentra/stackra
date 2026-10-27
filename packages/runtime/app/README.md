@@ -118,6 +118,16 @@ with `AppDrainingError` and waits for those in flight; `close()` drains, then sh
 signal; `close()` aborts that signal after the drain, which disconnects the bus and inbox and stops the relay. SIGTERM and
 SIGINT close and exit 0, or report and exit 1 when shutdown fails.
 
+### Readiness
+
+`GET /readyz` runs every `HealthIndicator` the container binds (the health drivers of `@stackra/database`,
+`cache`, `queue`, `realtime`, `filesystem` and `search`, and the infra packages' drivers) plus the `health` given to
+`createApp`, each capped at three seconds. It answers 200 when none is `down` and 503 otherwise, with each indicator's
+status by name, so the body says which dependency failed (`{ "database": "down", "cache": "up" }`); an indicator's
+detail is never in the body. A dependency marked `health.critical: false` in its package config reports `degraded`,
+which stays ready. A deploy check that reads `/readyz` (runway's `verify`) therefore fails a deploy whose critical
+dependency does not answer; pointing `verify` at it is runway's side, not this package's.
+
 ### Request guards
 
 `RequestGuard` is an extension point built on the container's multi-binding (`getAll`, ADR 0457): a module binds a

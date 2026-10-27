@@ -30,6 +30,7 @@ describe("@stackra/search", () => {
       "SearchConfig",
       "SearchConfig$",
       "SearchCursorInvalidError",
+      "SearchHealthIndicatorDriver",
       "SearchIndex",
       "SearchOptions",
       "SearchSettings",

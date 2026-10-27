@@ -3,6 +3,7 @@
  * Purpose: `FILESYSTEM_CONFIG_SCHEMA`, the zod schema this package ships for `FilesystemConfig` (exported as
  *          `FilesystemConfig$`): the disk, the local root, the public base URL, the S3/R2 bucket and the
  *          Google Cloud Storage bucket.
+ *          The `health` field tunes `FilesystemHealthIndicatorDriver` for `/readyz`.
  * Boundary: the stand-in for what gen writes for this package. Every field and every nested field has a default, so
  *           `.parse({})` gives the full defaults, `.shape.s3.parse(undefined)` gives the nested default and a host's
  *           generated `FilesystemConfig$` extends it with `Base$.shape.<field>.unwrap().default(...)`. The defaults
@@ -15,6 +16,7 @@
 import { z } from "zod";
 
 import { FILE_SYSTEM_DISKS } from "#core/constants/file-system-disks.constant";
+import { HEALTH_CHECK_SCHEMA } from "#core/constants/health-check-schema.constant";
 
 /** The shipped `FilesystemConfig$`. */
 export const FILESYSTEM_CONFIG_SCHEMA = z.object({
@@ -35,4 +37,5 @@ export const FILESYSTEM_CONFIG_SCHEMA = z.object({
       projectId: z.string().min(1).nullable().default(null),
     })
     .default(() => ({ bucket: "", projectId: null })),
+  health: HEALTH_CHECK_SCHEMA,
 });

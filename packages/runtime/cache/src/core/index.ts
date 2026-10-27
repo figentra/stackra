@@ -2,6 +2,7 @@
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `.` entry of @stackra/cache, which has several public files, until `stackra gen`
  *          writes the entry barrels (STA-339).
+ *          `CacheHealthIndicatorDriver` is the `/readyz` probe.
  * Boundary: names each re-export and declares nothing. `Cache` and `CacheNamespace` are not here: they are exported
  *           from `./contracts` only (ADR 0294 decision 15; registry conflict A3). The shipped schema is re-exported
  *           under its generated name (`CacheConfig$`). `coversKey` and `storedCache` stay internal.
@@ -11,6 +12,7 @@
 export { CacheConfig } from "#config/cache.config";
 export { CACHE_CONFIG_SCHEMA as CacheConfig$ } from "#core/constants/cache-config-schema.constant";
 export { CacheKey } from "#core/constants/cache-key.constant";
+export { CacheHealthIndicatorDriver } from "#core/drivers/cache-health-indicator.driver";
 export { MemoryCacheDriver } from "#core/drivers/memory-cache.driver";
 export { SharedCacheNamespaceDriver } from "#core/drivers/shared-cache-namespace.driver";
 export { StorageCacheDriver } from "#core/drivers/storage-cache.driver";

@@ -39,6 +39,7 @@ The realtime hub, the broadcaster, the client connection and the drivers of both
   compared in constant time, and keeps nothing.
 - `memory` RealtimeFanout (STA-1308): `MemoryRealtimeFanoutDriver` delivers like `local` (a macrotask after `publish`)
   and keeps `published` for assertions. `RealtimeFanoutName` lists `memory`; keep it in step with the drivers.
+- `RealtimeHealthIndicatorDriver` is the `HealthIndicator` driver: it publishes a zero member count for the probe room `health:probe` through the `RealtimeFanout`, which every receiver drops, bounded by `health.timeout`; `health.critical: false` reports `degraded` instead of `down`. It reports the error's name, never its message.
 
 ## Rules that fail the build
 

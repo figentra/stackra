@@ -4,7 +4,8 @@
  *          gives each call a request container, `drain` waits for calls in flight and then refuses new ones, `close`
  *          drains and shuts the container down once, the generated boot gets the ready container, `DATABASE_URL` and
  *          a signal that only `close` aborts, SIGTERM closes and exits 0 (1 after reporting a failed
- *          shutdown), and `guard` runs the contributed `RequestGuard`s by order and stops at the first refusal.
+ *          shutdown), `guard` runs the contributed `RequestGuard`s by order and stops at the first refusal, and
+ *          `/readyz` runs the given indicators and every bound `HealthIndicator`, failing with the down one named.
  * Boundary: test only; boots real containers; `process.exit` is mocked and signals are emitted as events.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0295 (decisions 7 to 9); ADR 0263; ADR 0260 (decision 4); ADR 0457.
@@ -73,6 +74,33 @@ describe("createApp (server)", () => {
     await app.drain();
     expect((await app.probe("GET", "/healthz"))?.status).toBe(503);
     expect((await app.probe("GET", "/readyz"))?.status).toBe(503);
+    await app.close();
+  });
+
+  it("runs every bound HealthIndicator in /readyz and names the one that is down", async () => {
+    class DatabaseIndicator extends HealthIndicator {
+      readonly name = "database";
+
+      async check(): Promise<HealthReport> {
+        return { status: HealthStatus.Down, detail: "db.internal refused" };
+      }
+    }
+    class CacheIndicator extends HealthIndicator {
+      readonly name = "cache";
+
+      async check(): Promise<HealthReport> {
+        return { status: HealthStatus.Up };
+      }
+    }
+    const bound: Wiring = {
+      ...wiring,
+      bindings: [...(wiring.bindings ?? []), { module: "orders", provide: DatabaseIndicator }],
+    };
+    const app = await createApp(OrdersModule, { wiring: bound, health: [new CacheIndicator()] });
+    expect(await app.probe("GET", "/readyz")).toEqual({
+      status: 503,
+      body: { cache: "up", database: "down" },
+    });
     await app.close();
   });
 

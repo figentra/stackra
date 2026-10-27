@@ -30,6 +30,7 @@ describe("CacheOptions", () => {
       valkeyUrl: "",
       valkey: { keyPrefix: "cache:" },
       workers: { binding: "CACHE" },
+      health: { timeout: "PT2S", critical: true },
     });
   });
 

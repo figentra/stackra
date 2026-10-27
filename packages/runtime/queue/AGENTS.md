@@ -48,6 +48,7 @@ Member at `packages/runtime/queue` (`tier:lib`), in the programming model v3.1 s
 - A broker publisher never imports `encore.dev`: generated topics reach the `topic` driver as structural objects
   through `registerBrokerTopics`. `BROKER_PUBLISHERS` names each driver by its file prefix.
 - No parameter properties and no `#private` fields: services typecheck this source under `erasableSyntaxOnly`.
+- `QueueHealthIndicatorDriver` is the `HealthIndicator` driver: it lists at most one dead letter, bounded by `health.timeout`; `health.critical: false` reports `degraded` instead of `down`. It reports the error's name, never its message.
 
 ## Rules that fail the build
 

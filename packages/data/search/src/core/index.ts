@@ -5,6 +5,7 @@
  *          settings group (synonym sets), the cursor refusal, and the word helpers `searchWordsOf` (the one
  *          normalisation) and `arabiziOf` (an Arabizi word's Arabic spelling) until `stackra gen` writes the entry
  *          barrels (STA-339).
+ *          `SearchHealthIndicatorDriver` is the `/readyz` probe.
  * Boundary: names each re-export and declares nothing. The shipped schema is re-exported under its generated name
  *           (`SearchConfig$`). The word helpers are public so a caller that stores or compares search text (an OS
  *           service's own lookup column) folds it the way the index does, never with a copy (STA-1251). The document
@@ -17,6 +18,7 @@ export { SearchConfig } from "#config/search.config";
 export { SEARCH_CONFIG_SCHEMA as SearchConfig$ } from "#core/constants/search-config-schema.constant";
 export { MemorySearchDriver } from "#core/drivers/memory-search.driver";
 export { MemoryVectorIndexDriver } from "#core/drivers/memory-vector-index.driver";
+export { SearchHealthIndicatorDriver } from "#core/drivers/search-health-indicator.driver";
 export { SearchCursorInvalidError } from "#core/errors/search-cursor-invalid.error";
 export { arabiziOf } from "#core/functions/arabizi-of.function";
 export { searchWordsOf } from "#core/functions/search-words-of.function";

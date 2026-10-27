@@ -18,6 +18,7 @@ describe("@stackra/filesystem", () => {
       "FileNotFoundError",
       "FilesystemConfig",
       "FilesystemConfig$",
+      "FilesystemHealthIndicatorDriver",
       "FilesystemOptions",
       "MemoryFileSystemDriver",
     ]);

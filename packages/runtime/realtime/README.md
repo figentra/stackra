@@ -111,6 +111,18 @@ export class RealtimeConfig extends BaseRealtimeConfig {
 
 The origin comes from the host's env configuration (`realtimeOrigin` feeds `realtime.origin`).
 
+## Health check
+
+`RealtimeHealthIndicatorDriver` (`.`) is this package's `HealthIndicator` driver, named `realtime`: it publishes a zero member count for the probe room `health:probe` through the `RealtimeFanout`, which every receiver drops. Bind it and
+`@stackra/app`'s `/readyz` runs it with the other bound indicators. `health` in this package's config tunes it:
+
+| Field      | Default | Meaning                                                                   |
+| ---------- | ------- | ------------------------------------------------------------------------- |
+| `timeout`  | `PT2S`  | How long the probe may take before it counts as failed.                   |
+| `critical` | `true`  | A failed probe is `down` and fails `/readyz`; `false` reports `degraded`. |
+
+A failed probe never throws; its detail names the error type only.
+
 ## Testing
 
 ```ts

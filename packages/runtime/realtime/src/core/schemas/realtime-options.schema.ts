@@ -5,6 +5,7 @@
  *          origin, whether the connection is suspended in the background and resumed on foreground, the grace before
  *          it suspends, and the longest wait between reconnect attempts. Venue fields: the local-network relay's driver,
  *          port, advertised address, the peers a device probes and how long it waits for one.
+ *          `health` tunes `RealtimeHealthIndicatorDriver`, the `/readyz` probe.
  * Boundary: a shape class; it registers this package's own schema (`REALTIME_CONFIG_SCHEMA`) for itself when the
  *           module loads. One configuration serves both sides, so a service and an app override the fields they use.
  *           The origin comes from the host's env configuration (`realtimeOrigin`), so this shape has no env map. The
@@ -85,6 +86,16 @@ export class RealtimeOptions extends Schema {
     maxMessagesPerSecond: 20,
     idleCloseSeconds: 60,
   };
+
+  /** How `RealtimeHealthIndicatorDriver` probes the realtime fan-out for `/readyz`. */
+  // reason: a nested option a host override replaces whole; the shipped config schema holds its rules
+  @Field(REALTIME_CONFIG_SCHEMA.shape.health)
+  health: {
+    /** How long the probe may take. */
+    timeout: Duration;
+    /** Whether a failed probe fails readiness; `false` reports `degraded` instead. */
+    critical: boolean;
+  } = { timeout: Duration.seconds(2), critical: true };
 
   /** The `RealtimeDriver` a service serves sessions with: `memory` in dev, `sse` or `websocket` deployed. */
   driver: DriverName<RealtimeDriver> = "memory";

@@ -108,6 +108,19 @@ export class FilesystemConfig extends BaseFilesystemConfig {
 A nested object is replaced whole, so an override spreads a base instance's value (tsc refuses `this.<field>` in
 the field's own initializer).
 
+## Health check
+
+`FilesystemHealthIndicatorDriver` (`.`) is this package's `HealthIndicator` driver, named `filesystem`: it asks the disk whether `health.path` exists (a missing path is an answer). Bind it and
+`@stackra/app`'s `/readyz` runs it with the other bound indicators. `health` in this package's config tunes it:
+
+| Field      | Default   | Meaning                                                                   |
+| ---------- | --------- | ------------------------------------------------------------------------- |
+| `timeout`  | `PT2S`    | How long the probe may take before it counts as failed.                   |
+| `critical` | `true`    | A failed probe is `down` and fails `/readyz`; `false` reports `degraded`. |
+| `path`     | `.health` | The path the probe asks about; it need not exist.                         |
+
+A failed probe never throws; its detail names the error type only.
+
 ## Not here
 
 - Named disks (`Named<FileSystem, "public">` with per-disk settings): one disk per member for now.

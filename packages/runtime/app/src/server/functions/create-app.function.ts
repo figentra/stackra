@@ -5,7 +5,9 @@
  *          drain, shutdown and the signal handling: SIGTERM or SIGINT drains, closes and exits 0 (1 when shutdown
  *          fails, after reporting it). Once the container is ready it awaits the member's `#stackra/boot` (when given)
  *          with the process's `DATABASE_URL` and a shutdown signal that `close()` aborts after the drain.
- *          `handlers.guard` runs the contributed `RequestGuard`s on an inbound request.
+ *          `handlers.guard` runs the contributed `RequestGuard`s on an inbound request. `/readyz` runs the given
+ *          `health` indicators plus every `HealthIndicator` the container binds (each package's health driver),
+ *          resolved once after boot.
  * Boundary: no HTTP server of its own: Encore (generated into `.stackra/encore`) serves, and reaches the member only
  *           through `handlers`. A boot error rejects, so the entry's top-level await fails the process. The outbox
  *           flush and every other shutdown step are each package's `onApplicationShutdown`, run by `close()`.
@@ -15,6 +17,7 @@
  *                     (decision 4: subscribers and relays receive once boot connects them); ADR 0457 (request guards).
  */
 import type { AnyClass, ModuleClass } from "@stackra/container";
+import { HealthIndicator } from "@stackra/contracts";
 
 import { bootApp } from "#core/functions/boot-app.function";
 import { RequestGuard } from "#server/bases/request-guard.base";
@@ -102,7 +105,10 @@ export async function createApp(root: ModuleClass, options: ServerAppOptions): P
   for (const signal of STOP_SIGNALS) process.once(signal, onSignal);
 
   const ready = (): boolean => draining === undefined;
-  const indicators = options.health ?? [];
+  // A Set, so an indicator both given and bound runs once.
+  const indicators = [
+    ...new Set([...(options.health ?? []), ...container.getAll(HealthIndicator)]),
+  ];
 
   return {
     key: wiring.member,

@@ -1,6 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `SearchOptions`, the shape of `SearchConfig`: which search driver runs.
+ *          `health` tunes `SearchHealthIndicatorDriver`, the `/readyz` probe.
  * Boundary: a shape class; it registers this package's own schema (`SEARCH_CONFIG_SCHEMA`) for itself when the module
  *           loads, so `buildConfig(SearchConfig)` validates with no generated file. Deploy-time values only.
  * Runtime: isomorphic
@@ -10,6 +11,7 @@
 import "#core/types/search-driver-names.type";
 
 import type { DriverName } from "@stackra/container";
+import { Duration } from "@stackra/contracts";
 import { Field, registerSchemas, Schema } from "@stackra/validation";
 
 import type { SearchDriver } from "#contracts/ports/search-driver.port";
@@ -41,6 +43,20 @@ export class SearchOptions extends Schema {
     /** The secret holding the bearer token, read through `SecretStore`; `null` for an endpoint that needs none. */
     tokenSecret: string | null;
   } = { url: null, model: "", dimensions: 1024, tokenSecret: null };
+
+  /** How `SearchHealthIndicatorDriver` probes the search engine for `/readyz`. */
+  // reason: a nested option a host override replaces whole; the shipped config schema holds its rules
+  @Field(SEARCH_CONFIG_SCHEMA.shape.health)
+  health: {
+    /** How long the probe may take. */
+    timeout: Duration;
+    /** Whether a failed probe fails readiness; `false` reports `degraded` instead. */
+    critical: boolean;
+    /** The searchable table the probe searches, `schema.table` or `table`; empty until runway names one. */
+    table: string;
+    /** That table's primary key column. */
+    primaryKey: string;
+  } = { timeout: Duration.seconds(2), critical: true, table: "", primaryKey: "id" };
 
   /** Which driver runs: `postgres` keeps the index in the model's own table; `memory` keeps it in the process. */
   driver: DriverName<SearchDriver> = "postgres";
