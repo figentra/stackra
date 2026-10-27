@@ -53,7 +53,9 @@ describe("electLeader", () => {
       "BroadcastChannel",
       class {
         addEventListener(): void {}
+
         postMessage(): void {}
+
         close(): void {}
       },
     );
