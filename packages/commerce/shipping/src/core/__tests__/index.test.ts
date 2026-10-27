@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the contract of the `.` entry: exactly the functions and refusals at runtime, and that they compose: a
+ * Purpose: the contract of the `.` entry: exactly the functions, refusals and memory drivers at runtime, and that they compose: a
  *          quote's parcel weighed, a label checked and batched, events normalised.
  * Boundary: test only; imports the stand-in barrels through their `#core` and `#contracts` aliases and the runner
  *           through @stackra/testing.
@@ -16,6 +16,8 @@ describe("@stackra/shipping", () => {
   it("exports exactly the runtime surface", () => {
     expect(Object.keys(entry).sort()).toEqual([
       "LabelDocumentInvalidError",
+      "MemoryDistanceMatrixDriver",
+      "MemoryRouteSolverDriver",
       "NoCarrierError",
       "batchZpl",
       "chargeableWeight",

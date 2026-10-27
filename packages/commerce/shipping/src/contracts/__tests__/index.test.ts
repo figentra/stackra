@@ -1,12 +1,12 @@
 /**
  * Stackra file contract:
- * Purpose: the contract of the `./contracts` entry: exactly the enums and the port at runtime, and the shape of every
- *          type it exports (required and optional fields, read-only fields, and the gateway interfaces a connector's
- *          Connection implements).
+ * Purpose: the contract of the `./contracts` entry: exactly the enums and the ports at runtime, and the shape of every
+ *          type it exports (required and optional fields, read-only fields, the gateway interfaces a connector's
+ *          Connection implements, pickup points, return labels and the routing request and result types).
  * Boundary: test only; imports the stand-in barrel through its `#contracts` alias and the runner through
  *           @stackra/testing.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0269; ADR 0294 (decision 15); ADR 0369.
+ * Governing contract: ADR 0022; ADR 0269; ADR 0294 (decision 15); ADR 0369; R3-SO-09.
  */
 import { Enum } from "@stackra/contracts";
 import { Money } from "@stackra/money";
@@ -25,10 +25,17 @@ import type {
   Parcel,
   Pickup,
   PickupGateway,
+  PickupPoint,
+  PickupPointGateway,
+  PickupPointSearch,
   PickupRequest,
   RateGateway,
   RateQuote,
   RateRequest,
+  ReturnLabelGateway,
+  ReturnLabelRequest,
+  RoutePlan,
+  RouteProblem,
   Shipment,
   ShippingAddress,
   ShippingParty,
@@ -36,9 +43,11 @@ import type {
   TrackingGateway,
   TrackingMap,
   TrackingTimeline,
+  TravelMatrix,
+  TravelMatrixRequest,
 } from "#contracts/index";
 
-const { CarrierCapability, LabelFormat, TrackingState } = entry;
+const { CarrierCapability, LabelFormat, PickupPointKind, TrackingState } = entry;
 
 const address: ShippingAddress = { lines: ["Line 1"], city: "City", country: "ZZ" };
 const party: ShippingParty = { name: "Name", address };
@@ -50,7 +59,10 @@ describe("@stackra/shipping/contracts", () => {
     expect(Object.keys(entry).sort()).toEqual([
       "CarrierCapability",
       "CarrierGateways",
+      "DistanceMatrix",
       "LabelFormat",
+      "PickupPointKind",
+      "RouteSolver",
       "TrackingState",
     ]);
   });
@@ -159,6 +171,8 @@ describe("@stackra/shipping/contracts", () => {
     expectTypeOf<CapabilityGateways["labels"]>().toEqualTypeOf<LabelGateway>();
     expectTypeOf<CapabilityGateways["pickups"]>().toEqualTypeOf<PickupGateway>();
     expectTypeOf<CapabilityGateways["tracking"]>().toEqualTypeOf<TrackingGateway>();
+    expectTypeOf<CapabilityGateways["pickup_points"]>().toEqualTypeOf<PickupPointGateway>();
+    expectTypeOf<CapabilityGateways["returns"]>().toEqualTypeOf<ReturnLabelGateway>();
     expectTypeOf<keyof CapabilityGateways>().toEqualTypeOf<CarrierCapabilityCode>();
   });
 
@@ -192,5 +206,100 @@ describe("@stackra/shipping/contracts", () => {
       await connection.quote({ origin: address, destination: address, parcels: [parcel] }),
     ).toEqual([]);
     expect(await connection.track("s1")).toEqual([]);
+  });
+
+  it("searches pickup points and buys return labels", async () => {
+    const search: PickupPointSearch = {
+      near: address,
+      radiusM: 2_000,
+      limit: 5,
+      kinds: [PickupPointKind.Locker],
+      parcels: [parcel],
+    };
+    const point: PickupPoint = {
+      pointId: "pt_1",
+      kind: PickupPointKind.Locker,
+      name: "Locker",
+      address,
+      distanceM: 350,
+      hours: ["24/7"],
+    };
+    const connection: CarrierGateway & PickupPointGateway & ReturnLabelGateway = {
+      id: "con_1",
+      provider: "carrier_a",
+      capabilities: [CarrierCapability.PickupPoints, CarrierCapability.Returns],
+      searchPickupPoints: async () => [point],
+      createReturnLabel: async (request) => ({
+        shipmentId: request.reference,
+        trackingNumbers: [],
+        service: request.service,
+        labels: [label],
+      }),
+      cancelReturnLabel: async () => undefined,
+    };
+    const request: ReturnLabelRequest = {
+      reference: "ret_1",
+      service: "return",
+      shipper: party,
+      recipient: party,
+      parcels: [parcel],
+      format: LabelFormat.Pdf,
+      pickupPointId: point.pointId,
+      outboundShipmentId: "s1",
+    };
+    expect((await connection.searchPickupPoints(search))[0]?.pointId).toBe("pt_1");
+    expect((await connection.createReturnLabel(request)).shipmentId).toBe("ret_1");
+    // @ts-expect-error -- a point has a kind
+    const kindless: PickupPoint = { pointId: "pt_2", name: "Shop", address };
+    expect(kindless.name).toBe("Shop");
+  });
+
+  it("shapes travel matrices and route problems and plans", () => {
+    const at = { latitude: 1, longitude: 2 };
+    const request: TravelMatrixRequest = {
+      origins: [at],
+      destinations: [at, at],
+      profile: "van",
+      departAt: "2026-10-25T09:00:00Z",
+    };
+    const matrix: TravelMatrix = { durationsS: [[0, null]], distancesM: [[0, null]] };
+    const problem: RouteProblem = {
+      vehicles: [
+        {
+          vehicleId: "v1",
+          start: at,
+          end: at,
+          shift: { from: "2026-10-25T08:00:00Z", to: "2026-10-25T16:00:00Z" },
+          capacity: { chilled: 10 },
+        },
+      ],
+      stops: [{ stopId: "o1", location: at, demand: { chilled: 2 }, serviceS: 120 }],
+      profile: request.profile,
+    };
+    const plan: RoutePlan = {
+      routes: [
+        {
+          vehicleId: "v1",
+          visits: [
+            { stopId: "o1", arriveAt: "2026-10-25T08:00:00Z", departAt: "2026-10-25T08:02:00Z" },
+          ],
+          distanceM: 0,
+          durationS: 120,
+        },
+      ],
+      unassigned: [],
+    };
+    expect([matrix.durationsS[0]?.[1], problem.stops.length, plan.routes[0]?.durationS]).toEqual([
+      null,
+      1,
+      120,
+    ]);
+    // @ts-expect-error -- a vehicle has a shift
+    const shiftless: RouteProblem["vehicles"][number] = {
+      vehicleId: "v2",
+      start: at,
+      capacity: {},
+    };
+    expect(shiftless.vehicleId).toBe("v2");
   });
 });

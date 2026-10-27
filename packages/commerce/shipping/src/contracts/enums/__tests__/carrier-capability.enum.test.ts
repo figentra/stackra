@@ -12,6 +12,13 @@ import { CarrierCapability } from "#contracts/enums/carrier-capability.enum";
 
 describe("CarrierCapability", () => {
   it("has its snake_case codes in order", () => {
-    expect(Enum.values(CarrierCapability)).toEqual(["rates", "labels", "pickups", "tracking"]);
+    expect(Enum.values(CarrierCapability)).toEqual([
+      "rates",
+      "labels",
+      "pickups",
+      "tracking",
+      "pickup_points",
+      "returns",
+    ]);
   });
 });

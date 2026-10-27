@@ -1,11 +1,12 @@
 /**
  * Stackra file contract:
  * Purpose: `LabelRequest`, what buying a label needs: the caller's idempotency reference, the chosen service, both
- *          parties, the parcels, the document format and stock, and the optional amounts and customs lines.
+ *          parties, the parcels, the document format and stock, and the optional amounts, customs lines and the pickup
+ *          point or locker to deliver to.
  * Boundary: a type in the leaf entry. `reference` makes a retried call return the same shipment instead of buying a
  *           second label; a connector passes it to the carrier or keeps its own map.
  * Runtime: isomorphic
- * Governing contract: ADR 0369 (decisions 2, 3 and 5).
+ * Governing contract: ADR 0369 (decisions 2, 3 and 5; open question 1, COM-156).
  */
 import type { Money } from "@stackra/money";
 
@@ -51,4 +52,10 @@ export interface LabelRequest {
 
   /** The customs declaration, for a cross-border shipment. */
   readonly customs?: readonly CustomsItem[];
+
+  /**
+   * The carrier's pickup point or locker to deliver to, from `PickupPointGateway.searchPickupPoints`; the recipient
+   * collects there instead of at `recipient.address`.
+   */
+  readonly pickupPointId?: string;
 }
