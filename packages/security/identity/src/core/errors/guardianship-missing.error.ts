@@ -9,7 +9,7 @@
 import { ErrorKind, Refusal } from "@stackra/errors";
 
 /**
- * The refusal.
+ * The refusal for a guardian acting for someone they may not act for here.
  *
  * @example
  * throw GuardianshipMissingError.create();

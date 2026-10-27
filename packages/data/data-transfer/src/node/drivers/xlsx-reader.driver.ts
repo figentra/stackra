@@ -29,7 +29,7 @@ import { cellText } from "#node/functions/cell-text.function";
  */
 export class XlsxReaderDriver extends Driver(TabularReader) {
   /**
-   * See `TabularReader.read`.
+   * Implements `TabularReader.read`, documented there.
    *
    * @yields One row at a time.
    */

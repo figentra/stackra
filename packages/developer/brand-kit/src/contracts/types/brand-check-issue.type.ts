@@ -20,6 +20,6 @@ export interface BrandCheckIssue {
   /** The kit or output path concerned. */
   readonly path: string;
 
-  /** Human-readable detail. */
+  /** A human-readable detail of the issue. */
   readonly message: string;
 }

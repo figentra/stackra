@@ -23,7 +23,7 @@ export interface AppApprovalChallenge {
   /** Sign-in or step-up. */
   readonly purpose: AppApprovalPurpose;
 
-  /** Who asked. */
+  /** The device and person that asked for the approval. */
   readonly requester: AppApprovalRequester;
 
   /** The rate-limit key of the target: the normalised login hint, else the principal, else the requesting device. */

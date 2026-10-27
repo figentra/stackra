@@ -11,7 +11,7 @@ import type { LabelRequest } from "#contracts/types/label-request.type";
 import type { Shipment } from "#contracts/types/shipment.type";
 
 /**
- * Labels.
+ * The carrier gateway that creates shipping labels and cancels shipments.
  *
  * @example
  * const shipment = await gateway.createLabel(request);

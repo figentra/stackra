@@ -8,7 +8,7 @@
  */
 
 /**
- * Tap-to-pay readiness.
+ * Whether this device is ready to take tap-to-pay payments, and why not.
  *
  * @example
  * const { ready, reason } = await softPos.readiness();

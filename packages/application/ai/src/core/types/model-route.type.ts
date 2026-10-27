@@ -10,7 +10,7 @@
  *                     (decisions 13 to 15).
  */
 
-/** One route. */
+/** One model route: for a task type, the provider, model and the regions it is served in. */
 export interface ModelRoute {
   /** The task type it serves (`chat`, `embed`, `classify`). */
   readonly task: string;

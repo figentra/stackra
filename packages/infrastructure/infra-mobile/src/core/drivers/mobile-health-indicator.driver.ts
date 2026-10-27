@@ -14,13 +14,14 @@ import { Duration, HealthIndicator, HealthStatus } from "@stackra/contracts";
 import type { HealthReport } from "@stackra/contracts";
 
 /**
- * Checks eas.
+ * The `eas` health indicator: probes the dependency with one bounded GET and maps the answer to a status.
  *
  * @example
  * const indicator = new MobileHealthIndicatorDriver({ projectId: "0b1c2d3e-4f50-6172-8394-a5b6c7d8e9f0" });
  * await indicator.check(); // { status: "up", latency: "PT0.12S" }
  */
 export class MobileHealthIndicatorDriver extends Driver(HealthIndicator) {
+  /** The indicator's name in a health report. */
   override readonly name = "eas";
 
   private readonly url: string;

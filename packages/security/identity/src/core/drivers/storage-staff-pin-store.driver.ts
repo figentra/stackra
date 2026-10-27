@@ -69,7 +69,7 @@ export class StorageStaffPinStoreDriver extends Driver(StaffPinStore) {
     return Promise.resolve(credentialOf(this.storage.secrets.get(keyOf(device, principal))));
   }
 
-  /** Writes `credential`. */
+  /** Stores `credential`, replacing the staff member's previous one. */
   put(credential: StaffPinCredential): Promise<void> {
     const { lockedUntil, ...rest } = credential;
     this.storage.secrets.set(keyOf(credential.device, credential.principal), {

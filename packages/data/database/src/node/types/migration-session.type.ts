@@ -8,8 +8,9 @@
  */
 import type { MigrationFile } from "#node/types/migration-file.type";
 
-/** What the callback works with. */
+/** What `openMigrationSession` hands its callback. */
 export interface MigrationSession {
+  /** The member's compiled migration files, in order. */
   readonly files: readonly MigrationFile[];
 
   /** Runs `sql`; `wrap` puts it in one transaction. */

@@ -9,7 +9,7 @@
 import type { BrandOutput } from "#contracts/enums/brand-output.enum";
 
 /**
- * Generator options.
+ * The config keys of one generator run, from CLI flags or a Runway step's input.
  *
  * @example
  * const options: BrandKitOptions = { root: ".", check: true };

@@ -7,5 +7,5 @@
  * Governing contract: ADR 0348 (decision 2); STA-784.
  */
 
-/** `text/html;profile=mcp-app`. */
+/** The MIME type of an MCP app UI resource, `text/html;profile=mcp-app`. */
 export const UI_RESOURCE_MIME_TYPE = "text/html;profile=mcp-app";

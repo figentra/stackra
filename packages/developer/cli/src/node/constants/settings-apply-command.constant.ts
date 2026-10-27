@@ -19,7 +19,7 @@ import { loadSettingsRunner } from "#node/functions/load-settings-runner.functio
 import { settingsScope } from "#node/functions/settings-scope.function";
 import type { CliCommand } from "#node/types/cli-command.type";
 
-/** `stackra settings:apply`. */
+/** The `stackra settings:apply` command. */
 export const SETTINGS_APPLY_COMMAND: CliCommand = {
   name: "settings:apply",
   summary: "Apply a settings pack to a sandbox scope node, recording each change as a revision",

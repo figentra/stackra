@@ -15,7 +15,7 @@ import * as gcp from "@pulumi/gcp";
 import * as pulumi from "@pulumi/pulumi";
 
 /**
- * The addresses.
+ * Reserves the deployment's static regional egress addresses and exports their public addresses.
  *
  * @param args.count - how many addresses (`shared.network.egress.staticIps`).
  * @example

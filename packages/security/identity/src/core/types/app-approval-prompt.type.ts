@@ -12,13 +12,13 @@ import type { AppApprovalPurpose, AppApprovalRequester } from "#contracts/index"
 
 /** One pending challenge, as the app sees it. */
 export interface AppApprovalPrompt {
-  /** The challenge. */
+  /** The challenge id the approver answers. */
   readonly id: string;
 
   /** Sign-in or step-up. */
   readonly purpose: AppApprovalPurpose;
 
-  /** Who asked. */
+  /** The device and person that asked for the approval. */
   readonly requester: AppApprovalRequester;
 
   /** The numbers to pick from; empty when the app scanned the QR code. */

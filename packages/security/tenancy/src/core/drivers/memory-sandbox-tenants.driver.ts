@@ -21,7 +21,7 @@ export class MemorySandboxTenantsDriver extends Driver(SandboxTenants) {
   /** Sandbox id to sandbox, in insertion order. */
   private readonly sandboxes = new Map<PublicId<"scp">, SandboxTenant>();
 
-  /** Records `sandbox`. */
+  /** Records `sandbox`, replacing one with the same id. */
   save(sandbox: SandboxTenant): Promise<void> {
     this.sandboxes.set(sandbox.id, Object.freeze({ ...sandbox }));
     return Promise.resolve();

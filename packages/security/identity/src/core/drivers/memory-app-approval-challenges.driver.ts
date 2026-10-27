@@ -28,7 +28,7 @@ export class MemoryAppApprovalChallengesDriver extends Driver(AppApprovalChallen
   /** Principal to its bound devices. */
   private readonly devices = new Map<string, Set<string>>();
 
-  /** Writes `challenge`. */
+  /** Stores `challenge`, replacing one with the same id. */
   put(challenge: AppApprovalChallenge): Promise<void> {
     this.challenges.set(challenge.id, challenge);
     return Promise.resolve();
@@ -98,7 +98,7 @@ export class MemoryAppApprovalChallengesDriver extends Driver(AppApprovalChallen
     return Promise.resolve();
   }
 
-  /** Unbinds it. */
+  /** Unbinds `device` from `principal`; false when it was not bound. */
   unbindDevice(principal: PublicId<"usr">, device: string): Promise<boolean> {
     return Promise.resolve(this.devices.get(principal)?.delete(device) ?? false);
   }

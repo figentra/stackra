@@ -16,6 +16,6 @@ export interface DocumentFile {
   /** The media type. */
   readonly contentType: string;
 
-  /** The content. */
+  /** The file's content as bytes. */
   readonly bytes: Uint8Array;
 }

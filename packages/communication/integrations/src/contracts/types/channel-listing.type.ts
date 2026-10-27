@@ -11,16 +11,16 @@ import type { Url } from "@stackra/contracts";
 
 /** A product's listing content on a channel. */
 export interface ChannelListing {
-  /** Our SKU. */
+  /** Our SKU for the listed product. */
   readonly sku: string;
 
   /** The BCP 47 language of the text. */
   readonly locale: string;
 
-  /** The title. */
+  /** The listing's title on the channel. */
   readonly title: string;
 
-  /** The description. */
+  /** The listing's description on the channel. */
   readonly description: string;
 
   /** The images, main one first. */

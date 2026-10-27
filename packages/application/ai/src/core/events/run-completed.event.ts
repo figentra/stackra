@@ -23,7 +23,7 @@ import { RUN_COMPLETED_SCHEMA } from "#core/constants/run-completed-schema.const
  * }
  */
 export class RunCompleted extends IntegrationEvent({ name: "run.completed" }) {
-  /** The run. */
+  /** The run that completed. */
   runId!: PublicId<"airun">;
 
   /** The agent's key. */

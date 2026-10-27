@@ -40,22 +40,27 @@ export class MemoryConnectionStoreDriver extends Driver(ConnectionStore) {
     if (records !== undefined) LOCAL_CONNECTIONS.set(this, records);
   }
 
+  /** Implements `ConnectionStore.find` by delegating to the in-process local store. */
   find<C extends Connection>(type: ConnectionClass<C>): Promise<C | null> {
     return this.local.find(type);
   }
 
+  /** Implements `ConnectionStore.byId` by delegating to the in-process local store. */
   byId<C extends Connection>(type: ConnectionClass<C>, id: string): Promise<C> {
     return this.local.byId(type, id);
   }
 
+  /** Implements `ConnectionStore.list` by delegating to the in-process local store. */
   list<C extends Connection>(type: ConnectionClass<C>): Promise<C[]> {
     return this.local.list(type);
   }
 
+  /** Implements `ConnectionStore.connect` by delegating to the in-process local store. */
   connect<C extends Connection>(type: ConnectionClass<C>, input: ConnectInput<C>): Promise<C> {
     return this.local.connect(type, input);
   }
 
+  /** Implements `ConnectionStore.disconnect` by delegating to the in-process local store. */
   disconnect(type: ConnectionClass, id: string): Promise<void> {
     return this.local.disconnect(type, id);
   }

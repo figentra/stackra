@@ -10,7 +10,7 @@
 import { ErrorKind, Refusal } from "@stackra/errors";
 
 /**
- * The refusal.
+ * The refusal for too many app approval requests from one device or for one target within the window.
  *
  * @example
  * throw AppApprovalRateLimitedError.create();

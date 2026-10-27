@@ -34,6 +34,7 @@ export function useTenant(): TenantMembership;
  * const current = useTenant({ optional: true });
  */
 export function useTenant(options: { readonly optional: true }): TenantMembership | null;
+/** The implementation behind both overloads: reads the switcher and throws when a required tenant is missing. */
 export function useTenant(options?: { readonly optional?: boolean }): TenantMembership | null {
   const switcher = useContainer().get(TenantSwitcher);
   const current = useSyncExternalStore(switcher.subscribe, switcher.current, switcher.current);

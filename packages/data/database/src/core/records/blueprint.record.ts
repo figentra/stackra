@@ -129,7 +129,7 @@ export class BlueprintRecord {
   }
 
   /**
-   * See `Blueprint.decimal`.
+   * Implements `Blueprint.decimal`, documented there.
    *
    * @throws RangeError for a precision outside 1 to 1000 or a scale outside 0 to the precision.
    */
@@ -171,7 +171,7 @@ export class BlueprintRecord {
   }
 
   /**
-   * See `Blueprint.enum`.
+   * Implements `Blueprint.enum`, documented there.
    *
    * @throws TypeError for no items or a repeated item.
    */
@@ -203,7 +203,7 @@ export class BlueprintRecord {
   }
 
   /**
-   * See `Blueprint.hasPublicId`.
+   * Implements `Blueprint.hasPublicId`, documented there.
    *
    * @throws TypeError for a prefix that is not 2 to 6 lowercase letters.
    */
@@ -290,7 +290,7 @@ export class BlueprintRecord {
   }
 
   /**
-   * See `Blueprint.primary`.
+   * Implements `Blueprint.primary`, documented there.
    *
    * @throws TypeError when the table already has a primary key, or for no columns.
    */
@@ -303,7 +303,7 @@ export class BlueprintRecord {
   }
 
   /**
-   * See `Blueprint.group`.
+   * Implements `Blueprint.group`, documented there.
    *
    * @throws TypeError for a column this blueprint did not write.
    */
@@ -330,7 +330,7 @@ export class BlueprintRecord {
   }
 
   /**
-   * See `Blueprint.rowLevelSecurity`.
+   * Implements `Blueprint.rowLevelSecurity`, documented there.
    *
    * @throws TypeError for a column that is not snake_case, a setting that is not `<prefix>.<name>`, an unknown match,
    *         or a second policy.

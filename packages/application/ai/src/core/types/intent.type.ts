@@ -7,7 +7,7 @@
  * Governing contract: ADR 0245 (decision 4: intent metadata and the intent router, as amended by ADR 0305 rule 28).
  */
 
-/** One intent. */
+/** One action's intent as the router reads it: the action key and its phrases. */
 export interface Intent {
   /** The action or query key it runs (`orders.order.cancel@1`). */
   readonly key: string;

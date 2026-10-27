@@ -15,7 +15,7 @@ import type { PublicId } from "@stackra/contracts";
 import type { TenantEnvironment } from "#core/enums/tenant-environment.enum";
 
 /**
- * A membership.
+ * One tenant the user belongs to, with their roles there.
  *
  * @example
  * const membership: TenantMembership = {

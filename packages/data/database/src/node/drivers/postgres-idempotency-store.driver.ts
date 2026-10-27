@@ -47,7 +47,7 @@ export class PostgresIdempotencyStoreDriver extends Driver(IdempotencyStore) {
   }
 
   /**
-   * See `IdempotencyStore.claim`.
+   * Implements `IdempotencyStore.claim`, documented there.
    *
    * @throws Error when the key keeps changing hands between the claim and the read (a third racing call released it
    *         twice in a row).

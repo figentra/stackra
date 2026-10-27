@@ -111,7 +111,7 @@ export class PostgresConversationStoreDriver extends Driver(ConversationStore) {
   }
 
   /**
-   * See `ConversationStore.append`.
+   * Implements `ConversationStore.append`, documented there.
    *
    * @throws RangeError when the conversation is not visible.
    */

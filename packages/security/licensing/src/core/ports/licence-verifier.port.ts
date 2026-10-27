@@ -15,7 +15,7 @@ import type { Licence } from "#core/types/licence.type";
 import type { LicenceKeyCheck } from "#core/types/licence-key-check.type";
 
 /**
- * Verifies licences.
+ * Verifies an install's licence, offline from its file or online when the install opted in.
  *
  * @example
  * const licence = await verifier.verify(await readFile("/etc/stackra/licence.lic", "utf8"));

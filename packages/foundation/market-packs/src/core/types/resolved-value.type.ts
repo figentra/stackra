@@ -9,9 +9,11 @@
 import type { PackEntry } from "#core/types/pack-entry.type";
 import type { PackValue } from "#core/types/pack-value.type";
 
-/** One value in force. */
+/** The value of one pack entry in force for a market on a date, and where it came from. */
 export type ResolvedValue = {
+  /** The pack entry's key. */
   readonly key: string;
+  /** The value in force for the market on the date. */
   readonly value: PackValue;
   /** The market whose pack set it (the overlay or a parent). */
   readonly market: string;

@@ -9,7 +9,7 @@
  */
 import type { PerkRedemptionKind } from "#core/enums/perk-redemption-kind.enum";
 
-/** One redemption. */
+/** What one perk redemption gives: a code, a link or a lead sent to the partner. */
 export type PerkRedemption =
   | { readonly kind: typeof PerkRedemptionKind.Code; readonly code: string }
   | { readonly kind: typeof PerkRedemptionKind.Link; readonly url: string }

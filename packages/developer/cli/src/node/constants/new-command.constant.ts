@@ -50,7 +50,7 @@ const KINDS = ["package", "service", "seed-pack"];
 /** Files `--over` never writes or diffs: release history and the member's authored runtime needs (ports, sizes). */
 const KEEP_OVER = ["CHANGELOG.md", "runway.yaml"];
 
-/** `stackra new`. */
+/** The `stackra new` command. */
 export const NEW_COMMAND: CliCommand = {
   name: "new",
   summary:

@@ -16,6 +16,6 @@ export interface RateCard {
   /** Metered rates, one per meter and currency. */
   readonly lines: readonly RateCardLine[];
 
-  /** Prepaid packs. */
+  /** The prepaid packs on sale. */
   readonly packs: readonly PrepaidPack[];
 }

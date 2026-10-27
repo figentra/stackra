@@ -9,7 +9,7 @@
  */
 import type { CacheEviction } from "@stackra/runway";
 
-/** One cache. */
+/** One Valkey cache of a runtime plan, shared or dedicated, with its sizing. */
 export type CachePlan = {
   /** `shared`, or `<member>.<requirement>` for a dedicated cache (`commerce.cache`). */
   readonly key: string;

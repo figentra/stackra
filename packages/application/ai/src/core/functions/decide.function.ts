@@ -47,6 +47,7 @@ export function decide(
  * const isComplaint = await decide({ model, prompt: `Is this a complaint? ${text}`, yesNo: true });
  */
 export function decide(options: DecideOptions & { readonly yesNo: true }): Promise<boolean>;
+/** The implementation behind the three overloads: validates the options, asks the model and parses its answer. */
 export async function decide(
   options: DecideOptions &
     (

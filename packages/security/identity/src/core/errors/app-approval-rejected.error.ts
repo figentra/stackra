@@ -12,7 +12,7 @@
 import { ErrorKind, Refusal } from "@stackra/errors";
 
 /**
- * The refusal.
+ * The refusal for an app approval step that cannot go ahead: unknown, lapsed, answered or foreign challenge.
  *
  * @example
  * throw AppApprovalRejectedError.create();

@@ -32,10 +32,12 @@ export class Conversation extends Model.with(HasPublicId("aiconv"), BelongsToTen
   recordId: string | null = null;
 }
 
+/** The insert-optional fields of `Conversation`, merged into the model class (MikroORM `[OptionalProps]`). */
 // shortcut: the `[OptionalProps]` augmentation is written by hand so `Repository.insert` may leave out the minted id,
 // the tenant the trait fills and the defaulted fields; remove it once gen writes the entity files (STA-339).
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: the generated `[OptionalProps]` augmentation merges into the model, as gen's entity files do
 export interface Conversation {
+  /** The fields an insert may leave out: minted ids, trait-filled columns and defaulted fields. */
   [OptionalProps]?:
     | "id"
     | "tenantId"

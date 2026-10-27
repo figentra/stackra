@@ -19,7 +19,7 @@ import type { SandboxTenant } from "#core/types/sandbox-tenant.type";
  * const sandboxes = await store.list(acme.id);
  */
 export abstract class SandboxTenants extends Port {
-  /** Records `sandbox`. */
+  /** Records `sandbox`, replacing one with the same id. */
   abstract save(sandbox: SandboxTenant): Promise<void>;
 
   /** The sandbox with tenant id `id`, or `undefined`. */

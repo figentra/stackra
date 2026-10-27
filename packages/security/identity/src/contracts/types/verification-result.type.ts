@@ -10,7 +10,7 @@
  */
 import type { VerificationStatus } from "#contracts/enums/verification-status.enum";
 
-/** One answer. */
+/** A provider's answer to one KYC or KYB check. */
 export interface VerificationResult {
   /** Where the check stands. */
   readonly status: VerificationStatus;

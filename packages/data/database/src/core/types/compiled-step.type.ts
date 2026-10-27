@@ -9,7 +9,7 @@
  * Governing contract: ADR 0159 (decision 3; 2026-10-23 and 2026-10-24 notes).
  */
 
-/** One step. */
+/** One SQL step of a compiled migration. */
 export interface CompiledStep {
   /** The statements, in order. */
   readonly sql: readonly string[];

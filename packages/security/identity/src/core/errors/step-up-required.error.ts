@@ -9,7 +9,7 @@
 import { ErrorKind, Refusal } from "@stackra/errors";
 
 /**
- * The refusal.
+ * The refusal when the action needs a newer or stronger authentication than the session's.
  *
  * @example
  * throw StepUpRequiredError.create({ required: AssuranceLevel.Aal2 });

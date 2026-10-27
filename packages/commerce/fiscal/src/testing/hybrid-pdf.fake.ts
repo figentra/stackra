@@ -11,7 +11,7 @@ import { HybridPdf } from "#contracts/ports/hybrid-pdf.port";
 import type { HybridPdfRequest } from "#contracts/types/hybrid-pdf-request.type";
 
 /**
- * Concatenates.
+ * A `HybridPdf` fake that appends the XML's bytes to the PDF's and records every request.
  *
  * @example
  * const pdfs = new HybridPdfFake();

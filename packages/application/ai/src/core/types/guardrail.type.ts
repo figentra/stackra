@@ -15,7 +15,7 @@ export interface Guardrail {
   readonly name: string;
 
   /**
-   * Checks `text`.
+   * Checks `text` and returns the guardrail's verdict on it.
    *
    * @param text - the prompt before the call or the answer after it.
    * @param stage - which of the two `text` is.

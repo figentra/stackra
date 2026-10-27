@@ -23,7 +23,7 @@ import { APPROVAL_RESOLVED_SCHEMA } from "#core/constants/approval-resolved-sche
  * }
  */
 export class ApprovalResolved extends IntegrationEvent({ name: "approval.resolved" }) {
-  /** The run. */
+  /** The run the approval resolves. */
   runId!: PublicId<"airun">;
 
   /** The approval gate's request id. */

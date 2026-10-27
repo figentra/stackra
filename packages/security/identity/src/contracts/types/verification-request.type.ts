@@ -15,7 +15,7 @@ import type { Json } from "@stackra/contracts";
 import type { VerificationKind } from "#contracts/enums/verification-kind.enum";
 import type { VerificationUse } from "#contracts/enums/verification-use.enum";
 
-/** One check. */
+/** One KYC or KYB check asked of a provider. */
 export interface VerificationRequest {
   /** What the check proves. */
   readonly kind: VerificationKind;

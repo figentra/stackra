@@ -64,9 +64,11 @@ export class AccessLogEntry extends Model.with(HasPublicId("acl"), BelongsToTena
   at!: Date;
 }
 
+/** The insert-optional fields of `AccessLogEntry`, merged into the model class (MikroORM `[OptionalProps]`). */
 // shortcut: the `[OptionalProps]` augmentation is written by hand so `Repository.insert` may leave out the tenant the
 // trait fills; remove it once gen writes the entity files (STA-339).
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: the generated `[OptionalProps]` augmentation merges into the model, as gen's entity files do
 export interface AccessLogEntry {
+  /** The fields an insert may leave out: minted ids, trait-filled columns and defaulted fields. */
   [OptionalProps]?: "tenantId";
 }

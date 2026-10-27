@@ -10,7 +10,7 @@
 import { Enum } from "@stackra/contracts";
 
 /**
- * The reasons.
+ * Why the decision point allowed or refused a permission.
  *
  * @example
  * if (explanation.reason === AccessReason.Denied) audit({ rule: explanation.rule });

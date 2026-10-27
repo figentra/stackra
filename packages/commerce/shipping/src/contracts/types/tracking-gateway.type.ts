@@ -12,7 +12,7 @@ import type { CarrierEvent } from "#contracts/types/carrier-event.type";
 import type { TrackingMap } from "#contracts/types/tracking-map.type";
 
 /**
- * Tracking.
+ * The carrier gateway that tracks shipments.
  *
  * @example
  * const timeline = normaliseTracking(await gateway.track(shipmentId), gateway.trackingMap);

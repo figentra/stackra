@@ -11,7 +11,7 @@
 export interface KdsTicketItem {
   /** The line's id. */
   readonly id: string;
-  /** How many. */
+  /** How many of the item the ticket holds. */
   readonly quantity: number;
   /** The item's name, as the kitchen calls it. */
   readonly name: string;

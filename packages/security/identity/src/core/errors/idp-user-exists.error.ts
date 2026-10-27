@@ -9,7 +9,7 @@
 import { ErrorKind, Refusal } from "@stackra/errors";
 
 /**
- * The refusal.
+ * The refusal when the identity provider already has a user with that login name in the organisation.
  *
  * @example
  * throw IdpUserExistsError.create();

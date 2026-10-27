@@ -13,7 +13,7 @@ import type { IsoDate } from "#core/types/iso-date.type";
 
 /** A parsed RRULE. */
 export interface RecurrenceRule {
-  /** FREQ. */
+  /** How often the rule repeats, its `FREQ`. */
   readonly freq: "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY";
 
   /** INTERVAL, 1 when absent. */
@@ -28,7 +28,7 @@ export interface RecurrenceRule {
   /** The time of UNTIL, when it carries one. */
   readonly untilTime: { readonly second: number; readonly utc: boolean } | undefined;
 
-  /** BYDAY entries. */
+  /** The weekdays the rule falls on, its `BYDAY` entries. */
   readonly byDay: readonly { readonly weekday: number; readonly nth: number | undefined }[];
 
   /** BYMONTHDAY, signed (`-1` is the last day). */

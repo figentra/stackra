@@ -11,6 +11,6 @@ import type { Tone } from "@stackra/ui/contracts";
 export interface KdsAgeTone {
   /** The age in minutes from which the tone applies. */
   readonly fromMinutes: number;
-  /** The tone. */
+  /** The tone a ticket of this age shows in. */
   readonly tone: Tone;
 }

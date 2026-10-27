@@ -18,7 +18,7 @@ import { CliUsageError } from "#node/errors/cli-usage.error";
 import { verifyAuditProof } from "#node/functions/verify-audit-proof.function";
 import type { CliCommand } from "#node/types/cli-command.type";
 
-/** `stackra audit:verify`. */
+/** The `stackra audit:verify` command. */
 export const AUDIT_VERIFY_COMMAND: CliCommand = {
   name: "audit:verify",
   summary: "Check an audit proof bundle offline: hash chain and signed checkpoints",

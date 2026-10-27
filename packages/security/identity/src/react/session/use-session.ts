@@ -19,7 +19,7 @@ import { SessionService } from "#core/index";
 import type { SessionValue } from "#react/session/session-value.type";
 
 /**
- * The session.
+ * Reads the session (status, user, `signIn`, `signOut`) and re-renders on every change.
  *
  * @throws Error outside a `ContainerProvider`, or when the container does not bind `SessionService`.
  * @example

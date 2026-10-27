@@ -10,7 +10,7 @@
 import { ErrorKind, Refusal } from "@stackra/errors";
 
 /**
- * The refusal.
+ * The refusal when the identity provider's admin API is unreachable, slow, throttling or failing.
  *
  * @example
  * throw IdpAdminUnavailableError.create({}, { cause });

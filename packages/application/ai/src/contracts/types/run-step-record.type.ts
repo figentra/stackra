@@ -9,7 +9,7 @@
 
 /** One step of a run. */
 export interface RunStepRecord {
-  /** The run. */
+  /** The run this step belongs to. */
   readonly runId: string;
 
   /** The step's number in the run, from 0. */

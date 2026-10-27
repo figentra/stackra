@@ -59,6 +59,7 @@ export function queryRef<I extends RefSchema, O extends RefSchema>(
   key: string,
   options: QueryRefOptions<I, O>,
 ): QueryRef<SchemaOf<I>, SchemaOf<O>>;
+/** The implementation behind the overloads: builds the query reference class for `key`. */
 export function queryRef<I extends RefSchema, O extends RefSchema>(
   key: string,
   options: QueryRefOptions<I, O>,

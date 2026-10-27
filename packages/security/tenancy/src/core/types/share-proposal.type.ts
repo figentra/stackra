@@ -8,7 +8,7 @@
  */
 import type { TenantShare } from "#core/types/tenant-share.type";
 
-/** A proposal. */
+/** What a tenant names when it proposes a share. */
 export type ShareProposal = Pick<
   TenantShare,
   "id" | "proposer" | "receiver" | "source" | "items" | "crossRegion"

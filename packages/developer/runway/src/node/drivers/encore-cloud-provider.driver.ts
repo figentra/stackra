@@ -37,13 +37,14 @@ function fieldOf(block: unknown, key: string): unknown {
 }
 
 /**
- * Deploys to Encore Cloud.
+ * The `encore-cloud` runway provider: deploys by pushing the commit to the environment's branch.
  *
  * @example
  * const encore = new EncoreCloudProviderDriver({ app: root.providers?.encore?.app ?? "" });
  * await deploy(root, "staging", sha, [encore]);
  */
 export class EncoreCloudProviderDriver extends Driver(RunwayProvider) {
+  /** The runway destination this provider serves. */
   override readonly destination = "encore-cloud";
 
   private readonly remote: string;

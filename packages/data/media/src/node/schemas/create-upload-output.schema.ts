@@ -23,7 +23,7 @@ export class CreateUploadOutput extends Schema {
   /** The signed URL. */
   url!: string;
 
-  /** Always `PUT`. */
+  /** The HTTP method of the upload, always `PUT`. */
   method!: "PUT";
 
   /** The headers to send with the bytes, exactly as given. */

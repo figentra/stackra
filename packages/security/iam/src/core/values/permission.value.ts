@@ -43,17 +43,17 @@ export class Permission {
     return new Permission(Risk.L0, false);
   }
 
-  /** Read. */
+  /** A permission at risk L1: a read. */
   static get L1(): Permission {
     return new Permission(Risk.L1, false);
   }
 
-  /** Reversible write. */
+  /** A permission at risk L2: a reversible write. */
   static get L2(): Permission {
     return new Permission(Risk.L2, false);
   }
 
-  /** Financial. */
+  /** A permission at risk L3: a financial action. */
   static get L3(): Permission {
     return new Permission(Risk.L3, false);
   }

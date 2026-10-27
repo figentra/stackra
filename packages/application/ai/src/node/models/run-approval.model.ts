@@ -33,8 +33,10 @@ export class RunApproval extends Model.with(HasPublicId("aiappr"), BelongsToTena
   status!: RunApprovalStatus;
 }
 
+/** The insert-optional fields of `RunApproval`, merged into the model class (MikroORM `[OptionalProps]`). */
 // shortcut: written by hand until gen writes the entity files (STA-339).
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: the generated `[OptionalProps]` augmentation merges into the model, as gen's entity files do
 export interface RunApproval {
+  /** The fields an insert may leave out: minted ids, trait-filled columns and defaulted fields. */
   [OptionalProps]?: "id" | "tenantId" | "createdAt" | "updatedAt";
 }

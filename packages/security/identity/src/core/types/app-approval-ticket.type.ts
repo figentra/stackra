@@ -10,7 +10,7 @@
 
 /** One started challenge, as the requester sees it. */
 export interface AppApprovalTicket {
-  /** The challenge. */
+  /** The challenge id the requester polls and completes. */
   readonly id: string;
 
   /** The secret the requester polls and completes with. */

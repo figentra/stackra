@@ -39,7 +39,7 @@ import type { AppApprovalTicket } from "#core/types/app-approval-ticket.type";
 import type { AppApprover } from "#core/types/app-approver.type";
 
 /**
- * App approvals.
+ * Signs in or steps up by approval on the signed-in mobile app: request, list, approve or deny, then complete.
  *
  * @example
  * const ticket = await approvals.request({ purpose: AppApprovalPurpose.SignIn, requester, loginHint });

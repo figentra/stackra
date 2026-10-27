@@ -11,7 +11,7 @@
 
 /** A `ui://` resource. */
 export type UiResource = {
-  /** `ui://<module>/<name>`. */
+  /** The resource's URI, `ui://<module>/<name>`. */
   readonly uri: string;
 
   /** Its display name. */

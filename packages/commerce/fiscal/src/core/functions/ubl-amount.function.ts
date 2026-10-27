@@ -11,7 +11,7 @@ import { xmlElement } from "#core/functions/xml-element.function";
 import type { XmlNode } from "#core/types/xml-node.type";
 
 /**
- * `<name currencyID="…">decimal</name>`.
+ * Builds a UBL amount element, `<name currencyID="…">decimal</name>`.
  *
  * @example
  * ublAmount("cbc:PayableAmount", document.gross);

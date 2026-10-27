@@ -18,7 +18,7 @@ import { toBase64 } from "#core/functions/to-base64.function";
 import { toBase64Url } from "#core/functions/to-base64-url.function";
 
 /**
- * Signs deterministically.
+ * A `FiscalSigner` fake that signs deterministically and records its calls.
  *
  * @example
  * const signer = new FiscalSignerFake();

@@ -46,6 +46,7 @@ const TRAILER = "Source";
  * mintlify.plan(target, sha); // stackra build, stackra lint, git init/add/commit, git fetch, git push
  */
 export class MintlifyProviderDriver extends Driver(RunwayProvider) {
+  /** The runway destination this provider serves. */
   override readonly destination = "mintlify";
 
   private readonly projectDir: string;

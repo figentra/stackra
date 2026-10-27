@@ -31,8 +31,10 @@ export class A2aTask extends Model.with(HasPublicId("aitask"), BelongsToTenant, 
   runId: string | null = null;
 }
 
+/** The insert-optional fields of `A2aTask`, merged into the model class (MikroORM `[OptionalProps]`). */
 // shortcut: written by hand until gen writes the entity files (STA-339).
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: the generated `[OptionalProps]` augmentation merges into the model, as gen's entity files do
 export interface A2aTask {
+  /** The fields an insert may leave out: minted ids, trait-filled columns and defaulted fields. */
   [OptionalProps]?: "id" | "tenantId" | "createdAt" | "updatedAt" | "remoteTaskId" | "runId";
 }

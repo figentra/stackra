@@ -95,7 +95,7 @@ export abstract class CrudService<M extends object> extends Service implements R
   }
 
   /**
-   * See `Repository.findOneOrFail`.
+   * Implements `Repository.findOneOrFail`, documented there.
    *
    * @throws NotFoundError when no row matches, or none the caller may see.
    */
@@ -127,7 +127,7 @@ export abstract class CrudService<M extends object> extends Service implements R
   }
 
   /**
-   * See `Repository.lock`.
+   * Implements `Repository.lock`, documented there.
    *
    * @throws NotFoundError when no row matches, or none the caller may see.
    * @throws ValidationError (MikroORM) when no transaction is running.
@@ -141,7 +141,7 @@ export abstract class CrudService<M extends object> extends Service implements R
   }
 
   /**
-   * See `Repository.increment`.
+   * Implements `Repository.increment`, documented there.
    *
    * @throws TypeError when `by` is not a finite number or `field` is not a single-column field.
    */

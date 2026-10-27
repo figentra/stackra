@@ -10,8 +10,10 @@
 
 /** One Cloudflare API call. */
 export type CloudflareApiRequest = {
+  /** The HTTP method of the call. */
   readonly method: "GET" | "POST" | "PATCH" | "DELETE";
-  /** `/zones/<zone id>/custom_hostnames`. */
+  /** The API path, such as `/zones/<zone id>/custom_hostnames`. */
   readonly path: string;
+  /** The JSON body, for a call that sends one. */
   readonly body?: Readonly<Record<string, unknown>>;
 };

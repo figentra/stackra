@@ -12,6 +12,7 @@ import type { LoginDirectoryKv } from "#core/types/login-directory-kv.type";
 
 /** The login directory Worker's inputs. */
 export type LoginDirectoryOptions = {
+  /** The Workers KV binding the directory lists identifiers from. */
   readonly kv: LoginDirectoryKv;
   /** The deployment's region keys; a row for any other region is ignored. */
   readonly regions: readonly string[];

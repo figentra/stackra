@@ -9,7 +9,7 @@
 import type { OfferBenefit } from "#core/types/offer-benefit.type";
 import type { OfferEligibility } from "#core/types/offer-eligibility.type";
 
-/** One offer. */
+/** One offer in the catalogue. */
 export interface CatalogueOffer {
   /** The record key (`offer:startup`). */
   readonly key: string;

@@ -76,7 +76,7 @@ interface Call {
 }
 
 /**
- * Administers ZITADEL.
+ * The ZITADEL driver of `IdpAdmin`: users, machine users, sessions, the device flow and login policies.
  *
  * @example
  * // runway: config.idp_admin.url = https://id.stackra.app; secret IDENTITY_IDP_ADMIN_TOKEN

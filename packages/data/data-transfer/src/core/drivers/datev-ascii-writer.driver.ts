@@ -47,11 +47,11 @@ function fieldOf(value: TabularCell): string {
  * const bytes = new DatevAsciiWriterDriver().write([payrollSheet(profile, inputs)], datevWriteOptionsOf(profile, tenant));
  */
 export class DatevAsciiWriterDriver extends Driver(TabularWriter) {
-  /** `text/plain`. */
+  /** The media type of the written file, `text/plain`. */
   readonly mediaType = "text/plain";
 
   /**
-   * See `TabularWriter.write`.
+   * Implements `TabularWriter.write`, documented there.
    *
    * @yields The sections, then one line per data row.
    * @throws TypeError when the options are not `DatevWriteOptions`, there is not exactly one sheet, or a cell cannot

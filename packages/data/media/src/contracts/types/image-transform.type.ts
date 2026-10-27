@@ -8,7 +8,7 @@
  * Governing contract: ADR 0222 (decision 3: image variants); OS-142.
  */
 
-/** One transform. */
+/** What an `ImageTransformer` makes of an image: box, format and quality. */
 export interface ImageTransform {
   /** The widest the output may be, in pixels. */
   readonly width?: number;

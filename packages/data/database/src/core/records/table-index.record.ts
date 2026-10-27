@@ -50,7 +50,7 @@ export class TableIndexRecord implements TableIndex {
   }
 
   /**
-   * See `TableIndex.using`.
+   * Implements `TableIndex.using`, documented there.
    *
    * @throws TypeError for an unknown access method.
    */
@@ -62,7 +62,7 @@ export class TableIndexRecord implements TableIndex {
   }
 
   /**
-   * See `TableIndex.where`.
+   * Implements `TableIndex.where`, documented there.
    *
    * @throws TypeError for a blank predicate.
    */

@@ -8,7 +8,7 @@
  */
 import type { DocsGroup } from "#core/types/docs-group.type";
 
-/** One tab. */
+/** One top-level tab of a docs site and its navigation groups. */
 export type DocsTab = {
   /** The tab's title. */
   readonly tab: string;

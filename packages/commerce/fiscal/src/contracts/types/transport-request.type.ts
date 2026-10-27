@@ -9,7 +9,7 @@
 
 /** An outbound HTTP call. */
 export type TransportRequest = {
-  /** HTTP method. */
+  /** The HTTP method of the request. */
   readonly method: "GET" | "POST";
   /** Absolute URL from the pack. */
   readonly url: string;

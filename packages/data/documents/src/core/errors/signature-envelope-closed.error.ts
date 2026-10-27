@@ -13,7 +13,7 @@ export class SignatureEnvelopeClosedError extends Refusal({
   kind: ErrorKind.Conflict,
   retryable: false,
 }) {
-  /** The envelope. */
+  /** The id of the closed signature envelope. */
   envelopeId!: string;
 
   /** Its final status. */

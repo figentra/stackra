@@ -14,7 +14,7 @@ import type { RatePair } from "#contracts/types/rate-pair.type";
 import type { RateSnapshot } from "#contracts/types/rate-snapshot.type";
 
 /**
- * Answers rates.
+ * Answers exchange rates between currencies.
  *
  * @example
  * const snapshot = await rates.rate({ base: "XAU", quote: "SAR", unit: "gram" }, clock.now());

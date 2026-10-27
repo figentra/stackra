@@ -19,7 +19,7 @@ import type { TrackingGateway } from "#contracts/types/tracking-gateway.type";
  * type Labels = CapabilityGateways["labels"]; // LabelGateway
  */
 export interface CapabilityGateways {
-  /** Live rates. */
+  /** The gateway for live rates. */
   readonly rates: RateGateway;
 
   /** Labels and their cancel. */

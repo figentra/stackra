@@ -8,7 +8,7 @@
  */
 import type { UnitPrice } from "@stackra/money";
 
-/** One rate. */
+/** One rate on a rate card. */
 export interface RateCardLine {
   /** The meter key (`messaging.whatsapp.eg`). */
   readonly meter: string;

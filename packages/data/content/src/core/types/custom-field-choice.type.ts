@@ -9,7 +9,7 @@
  */
 
 /**
- * One choice.
+ * One option of a `select` or `multi_select` custom field.
  *
  * @example
  * const large: CustomFieldChoice = { value: "l", label: { en: "Large", ar: "كبير" } };

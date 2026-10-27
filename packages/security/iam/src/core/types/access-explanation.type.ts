@@ -21,7 +21,7 @@ export interface AccessExplanation {
   /** Whether the permission is held. */
   readonly allowed: boolean;
 
-  /** Why. */
+  /** Why the decision came out as it did. */
   readonly reason: AccessReason;
 
   /** The principal of the link that decided: the first refused link, else the last link of the chain. */

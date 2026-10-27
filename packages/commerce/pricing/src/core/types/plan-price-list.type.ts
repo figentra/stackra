@@ -13,7 +13,7 @@ import type { PlanPrice } from "#core/types/plan-price.type";
 
 /** One regional price list. */
 export interface PlanPriceList {
-  /** `priceListKey(regionalTier, currency)`. */
+  /** The list's key, `priceListKey(regionalTier, currency)`. */
   readonly key: string;
 
   /** The regional price tier (`low`). */
@@ -22,6 +22,6 @@ export interface PlanPriceList {
   /** The price currency of every price. */
   readonly currency: CurrencyCode;
 
-  /** The prices. */
+  /** The plan prices on this list. */
   readonly prices: readonly PlanPrice[];
 }

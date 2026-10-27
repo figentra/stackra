@@ -20,7 +20,7 @@ export interface IcalEvent {
   /** The instant the event ends, ISO 8601 with an offset; after `start`. */
   readonly end: string;
 
-  /** The `SUMMARY`. */
+  /** The event's title, its iCalendar `SUMMARY`. */
   readonly summary: string;
 
   /** The `STATUS`; left out when absent. */

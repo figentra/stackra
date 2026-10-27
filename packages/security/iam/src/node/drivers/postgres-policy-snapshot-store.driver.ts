@@ -51,7 +51,7 @@ export class PostgresPolicySnapshotStoreDriver extends Driver(PolicySnapshotStor
   }
 
   /**
-   * See `PolicySnapshotStore.read`.
+   * Implements `PolicySnapshotStore.read`, documented there.
    *
    * @throws TypeError when the stored row is not a policy snapshot.
    */

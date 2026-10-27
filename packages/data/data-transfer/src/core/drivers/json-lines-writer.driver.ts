@@ -21,11 +21,11 @@ import type { TabularSheet } from "#contracts/types/tabular-sheet.type";
  * const bytes = new JsonLinesWriterDriver().write([{ name: "Orders", rows }]);
  */
 export class JsonLinesWriterDriver extends Driver(TabularWriter) {
-  /** `application/jsonl`. */
+  /** The media type of the written file, `application/jsonl`. */
   readonly mediaType = "application/jsonl";
 
   /**
-   * See `TabularWriter.write`.
+   * Implements `TabularWriter.write`, documented there.
    *
    * @yields One line per data row.
    * @throws TypeError when there is not exactly one sheet, or a data row is longer than the header.

@@ -15,7 +15,7 @@ import type { BrandCheckIssue } from "#contracts/types/brand-check-issue.type";
  * if (!result.ok) process.exitCode = 1;
  */
 export interface BrandCheckResult {
-  /** No issues. */
+  /** True when the check found no issues. */
   readonly ok: boolean;
 
   /** Every problem found, in kit-path order. */

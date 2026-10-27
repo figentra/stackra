@@ -9,7 +9,7 @@
  */
 import type { Input } from "@pulumi/pulumi";
 
-/** `awsRuntime`'s options. */
+/** What `awsRuntime` needs beside the plan: the network and the tags. */
 export type AwsRuntimeOptions = {
   /** Where the caches run; required even when a plan has no cache, so a later cache never lands on a default VPC. */
   readonly network: {

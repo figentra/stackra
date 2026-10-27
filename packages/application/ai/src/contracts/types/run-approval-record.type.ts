@@ -14,7 +14,7 @@ export interface RunApprovalRecord {
   /** The parked request's id, from the approval gate. */
   readonly approvalId: string;
 
-  /** The run. */
+  /** The run that waits on this approval. */
   readonly runId: string;
 
   /** The parked tool call. */

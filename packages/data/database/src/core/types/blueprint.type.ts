@@ -51,13 +51,13 @@ export interface Blueprint {
    */
   decimal(name: string, precision: number, scale: number): ColumnDefinition;
 
-  /** A `boolean`. */
+  /** Adds a `boolean` column. */
   boolean(name: string): ColumnDefinition;
 
   /** A `timestamptz`; every instant is stored with its zone. */
   timestamp(name: string): ColumnDefinition;
 
-  /** A `uuid`. */
+  /** Adds a `uuid` column. */
   uuid(name: string): ColumnDefinition;
 
   /** A `jsonb` document. */

@@ -9,7 +9,7 @@
 import { Enum } from "@stackra/contracts";
 
 /**
- * The recommendations.
+ * The recommendations a fraud score carries: what to do with the order.
  *
  * @example
  * if (score.decision === FraudDecision.Review) hold(order);

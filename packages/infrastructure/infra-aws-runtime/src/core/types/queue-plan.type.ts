@@ -8,7 +8,7 @@
  * Governing contract: ADR 0296 (decision 1: queue settings are member sizes), ADR 0172 (decision 5: cost tags).
  */
 
-/** One queue. */
+/** One SQS queue of a runtime plan, with its dead-letter queue and topic. */
 export type QueuePlan = {
   /** `<member>.<queue>`, the key of the program's outputs (`commerce.default`). */
   readonly key: string;

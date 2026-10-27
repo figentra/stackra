@@ -13,7 +13,7 @@
  * const title: LocalizedText = { en: "Organza", ar: "أورجانزا" };
  */
 export interface LocalizedText {
-  /** English. */
+  /** The English text, always present. */
   readonly en: string;
 
   /** Arabic; `[TBD]` in a proposed kit. */

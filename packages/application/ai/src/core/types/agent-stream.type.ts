@@ -10,10 +10,10 @@ import type { AgentReply } from "#core/types/agent-reply.type";
 
 /** A streaming run. */
 export interface AgentStream {
-  /** The run. */
+  /** The run being streamed. */
   readonly runId: string;
 
-  /** The conversation. */
+  /** The conversation the run belongs to. */
   readonly conversationId: string;
 
   /** The model's text deltas. */

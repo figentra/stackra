@@ -22,7 +22,7 @@ const ENVIRONMENT = z.enum(
 /** A lower-case DNS name of two labels or more (`id.staging.acme.example`). */
 const DOMAIN = /^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/;
 
-/** `providers.zitadel`. */
+/** The schema of the root runway's `providers.zitadel` block. */
 export const ZITADEL_PROVIDER_SCHEMA = z.strictObject({
   instances: z.record(
     z.string().regex(/^[a-z][a-z0-9-]*$/, "Expected an instance name in kebab-case"),

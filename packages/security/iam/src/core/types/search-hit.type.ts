@@ -8,7 +8,7 @@
  */
 import type { PublicId } from "@stackra/contracts";
 
-/** One hit. */
+/** How one record appears to a principal in a search: in full, existence-only, or not at all. */
 export type SearchHit<T> =
   | { readonly kind: "full"; readonly record: T }
   | { readonly kind: "exists"; readonly id: PublicId; readonly model: string };

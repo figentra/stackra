@@ -23,7 +23,7 @@ import { APPROVAL_REQUESTED_SCHEMA } from "#core/constants/approval-requested-sc
  * }
  */
 export class ApprovalRequested extends IntegrationEvent({ name: "approval.requested" }) {
-  /** The run. */
+  /** The run that waits for the approval. */
   runId!: PublicId<"airun">;
 
   /** The agent's key. */

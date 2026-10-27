@@ -54,7 +54,7 @@ export class ModelWebhookEndpointStoreDriver extends Driver(WebhookEndpointStore
   }
 
   /**
-   * See `WebhookEndpointStore.target`.
+   * Implements `WebhookEndpointStore.target`, documented there.
    *
    * @throws TypeError when a signing secret the endpoint names has no value in the secret store.
    */

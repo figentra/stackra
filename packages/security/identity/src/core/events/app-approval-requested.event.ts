@@ -24,7 +24,7 @@ import { AppApprovalPurpose } from "#contracts/index";
  * recordEvent(challenge, AppApprovalRequested.create({ challengeId, principal, purpose, expiresAt }));
  */
 export class AppApprovalRequested extends IntegrationEvent({ name: "app_approval.requested" }) {
-  /** The challenge. */
+  /** The app approval challenge this event is about. */
   challengeId!: string;
 
   /** The account asked to approve. */

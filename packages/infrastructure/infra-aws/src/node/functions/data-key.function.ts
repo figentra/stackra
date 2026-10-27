@@ -29,7 +29,7 @@ const USE = [
 const GRANT = ["kms:CreateGrant", "kms:ListGrants", "kms:RevokeGrant"];
 
 /**
- * The key.
+ * Declares a customer-managed KMS key with yearly rotation, its alias and a cross-account key policy.
  *
  * @param args.account - the 12-digit account that owns the key.
  * @param args.alias - the alias without the `alias/` prefix.

@@ -16,7 +16,7 @@ export interface RenderedDocument {
   /** Its media type. */
   readonly mediaType: string;
 
-  /** The file. */
+  /** The rendered file's bytes. */
   readonly bytes: Uint8Array;
 
   /** `sha256:<hex>` of `bytes`. */

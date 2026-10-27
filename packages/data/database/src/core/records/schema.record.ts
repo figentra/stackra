@@ -72,7 +72,7 @@ export class SchemaRecord implements SchemaBuilder {
   }
 
   /**
-   * See `SchemaBuilder.sql`.
+   * Implements `SchemaBuilder.sql`, documented there.
    *
    * @throws TypeError for a blank statement, a `CREATE SEQUENCE`, or an inverse that is neither a statement nor `false`.
    */
@@ -91,7 +91,7 @@ export class SchemaRecord implements SchemaBuilder {
   }
 
   /**
-   * See `SchemaBuilder.createExtension`.
+   * Implements `SchemaBuilder.createExtension`, documented there.
    *
    * @throws TypeError for an extension ADR 0160 does not approve.
    */
@@ -107,7 +107,7 @@ export class SchemaRecord implements SchemaBuilder {
   }
 
   /**
-   * See `SchemaBuilder.createCollation`.
+   * Implements `SchemaBuilder.createCollation`, documented there.
    *
    * @throws TypeError for a name that is not snake_case, or a locale that is not a BCP 47 tag.
    */

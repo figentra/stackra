@@ -18,7 +18,7 @@ import type { RunStepRecord } from "#contracts/types/run-step-record.type";
 import type { ToolCallRecord } from "#contracts/types/tool-call-record.type";
 
 /**
- * Stores runs.
+ * Stores agent runs with their steps, tool calls and approvals.
  *
  * @example
  * const run = await runs.create({ conversationId, agent: "matter_assistant", actor, status: RunStatus.Running });

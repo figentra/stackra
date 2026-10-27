@@ -21,7 +21,7 @@ export class MemoryErrorReporterDriver extends Driver(ErrorReporter) {
   /** Every reported error, oldest first. */
   readonly errors: unknown[] = [];
 
-  /** Keeps `error`. */
+  /** Keeps `error` in `errors` for the test to read. */
   report(error: unknown): void {
     this.errors.push(error);
   }

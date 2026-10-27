@@ -20,7 +20,7 @@ import { readSeedPack } from "#node/functions/read-seed-pack.function";
 import { seedRecordsFor } from "#node/functions/seed-records-for.function";
 import type { CliCommand } from "#node/types/cli-command.type";
 
-/** `stackra seed-pack`. */
+/** The `stackra seed-pack` command. */
 export const SEED_PACK_COMMAND: CliCommand = {
   name: "seed-pack",
   summary: "Check a product's seed pack, or seed one profile without touching tenant values",

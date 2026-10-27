@@ -25,13 +25,13 @@ export interface ToolCallContext {
   /** The record the run works in. */
   readonly record?: RecordScope;
 
-  /** The run. */
+  /** The run making the tool call. */
   readonly runId: string;
 
   /** The model's tool call id. */
   readonly toolCallId: string;
 
-  /** `runId:toolCallId`. */
+  /** The tool call's idempotency key, `runId:toolCallId`. */
   readonly idempotencyKey: string;
 
   /** The granted approval of a resumed call. */

@@ -8,9 +8,9 @@
 
 /** A queued run. */
 export interface QueuedRun {
-  /** The run. */
+  /** The run waiting in the queue. */
   readonly runId: string;
 
-  /** The conversation. */
+  /** The conversation the run belongs to. */
   readonly conversationId: string;
 }

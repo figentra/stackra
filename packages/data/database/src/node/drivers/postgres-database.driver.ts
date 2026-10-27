@@ -88,7 +88,7 @@ export class PostgresDatabaseDriver extends Driver(Database) {
   }
 
   /**
-   * See `Database.withScope`.
+   * Implements `Database.withScope`, documented there.
    *
    * @throws TypeError for a scope path that is not an `ltree` path.
    */

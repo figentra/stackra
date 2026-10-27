@@ -10,7 +10,7 @@
 import { registerSchemas, Schema } from "@stackra/validation";
 import { z } from "zod";
 
-/** No fields. */
+/** The input of an access-log purge, which takes no fields. */
 export class PurgeAccessLogInput extends Schema {}
 
 // shortcut: registered here until gen writes the package's #stackra/schemas registration (STA-339).

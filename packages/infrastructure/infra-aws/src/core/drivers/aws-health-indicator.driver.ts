@@ -14,13 +14,14 @@ import { Duration, HealthIndicator, HealthStatus } from "@stackra/contracts";
 import type { HealthReport } from "@stackra/contracts";
 
 /**
- * Checks aws.
+ * The `aws` health indicator: probes the dependency with one bounded GET and maps the answer to a status.
  *
  * @example
  * const indicator = new AwsHealthIndicatorDriver({ region: "me-central-1" });
  * await indicator.check(); // { status: "up", latency: "PT0.12S" }
  */
 export class AwsHealthIndicatorDriver extends Driver(HealthIndicator) {
+  /** The indicator's name in a health report. */
   override readonly name = "aws";
 
   private readonly url: string;

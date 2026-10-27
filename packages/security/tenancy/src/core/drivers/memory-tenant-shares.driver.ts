@@ -21,7 +21,7 @@ export class MemoryTenantSharesDriver extends Driver(TenantShares) {
   /** Share id to share. */
   private readonly shares = new Map<PublicId<"shr">, TenantShare>();
 
-  /** Records `share`. */
+  /** Records `share`, replacing one with the same id. */
   save(share: TenantShare): Promise<void> {
     this.shares.set(share.id, Object.freeze({ ...share }));
     return Promise.resolve();

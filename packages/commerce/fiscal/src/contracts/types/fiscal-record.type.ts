@@ -22,9 +22,9 @@ export type FiscalRecord = {
   readonly channel: FiscalChannel;
   /** The driver key that sealed it. */
   readonly driver: string;
-  /** `FiscalDocument.id`. */
+  /** The recorded document's id (`FiscalDocument.id`). */
   readonly documentId: string;
-  /** `FiscalDocument.number`. */
+  /** The recorded document's number (`FiscalDocument.number`). */
   readonly documentNumber: string;
   /** What the authority receives (XML, JSON, a signed string), as text. */
   readonly payload: string;

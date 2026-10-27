@@ -98,7 +98,7 @@ export class ColumnRecord implements ForeignKeyColumn {
   }
 
   /**
-   * See `ColumnDefinition.comment`.
+   * Implements `ColumnDefinition.comment`, documented there.
    *
    * @throws TypeError for a blank comment.
    */
@@ -109,7 +109,7 @@ export class ColumnRecord implements ForeignKeyColumn {
   }
 
   /**
-   * See `ColumnDefinition.default`.
+   * Implements `ColumnDefinition.default`, documented there.
    *
    * @throws TypeError on a generated column, or for a value with no SQL literal.
    */
@@ -127,7 +127,7 @@ export class ColumnRecord implements ForeignKeyColumn {
   }
 
   /**
-   * See `ColumnDefinition.storedAs`.
+   * Implements `ColumnDefinition.storedAs`, documented there.
    *
    * @throws TypeError for a blank expression or a column that has a default.
    */
@@ -140,7 +140,7 @@ export class ColumnRecord implements ForeignKeyColumn {
   }
 
   /**
-   * See `ColumnDefinition.collate`.
+   * Implements `ColumnDefinition.collate`, documented there.
    *
    * @throws TypeError for a name that is not snake_case, or a column that is not text.
    */
@@ -153,7 +153,7 @@ export class ColumnRecord implements ForeignKeyColumn {
   }
 
   /**
-   * See `ForeignKeyColumn.cascadeOnDelete`.
+   * Implements `ForeignKeyColumn.cascadeOnDelete`, documented there.
    *
    * @throws TypeError on a column that is not a foreign key.
    */
@@ -165,7 +165,7 @@ export class ColumnRecord implements ForeignKeyColumn {
   }
 
   /**
-   * See `ForeignKeyColumn.withoutIndex`.
+   * Implements `ForeignKeyColumn.withoutIndex`, documented there.
    *
    * @throws TypeError on a column that is not a foreign key or a link.
    */

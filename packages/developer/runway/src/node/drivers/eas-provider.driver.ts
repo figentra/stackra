@@ -54,13 +54,14 @@ function itemsOf(out: string): Record<string, unknown>[] {
 }
 
 /**
- * Builds and updates through EAS.
+ * The `eas` runway provider: builds or publishes over-the-air updates through EAS.
  *
  * @example
  * const eas = new EasProviderDriver({ projectDir: "apps/mobile" });
  * await deploy(root, "production", sha, [encore, eas]);
  */
 export class EasProviderDriver extends Driver(RunwayProvider) {
+  /** The runway destination this provider serves. */
   override readonly destination = "eas";
 
   private readonly projectDir: string;

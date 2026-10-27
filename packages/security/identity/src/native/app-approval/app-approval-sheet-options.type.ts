@@ -17,7 +17,7 @@ export interface AppApprovalSheetOptions {
   /** Approves with the picked number (none after a scan); `true` when approved, `false` when the number was wrong. */
   readonly approve: (id: string, number?: number) => Promise<boolean>;
 
-  /** Denies. */
+  /** Denies the challenge with this id. */
   readonly deny: (id: string) => Promise<void>;
 
   /** Redeems a scanned QR token into a prompt. */

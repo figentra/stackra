@@ -145,7 +145,7 @@ export class PostgresRunStoreDriver extends Driver(RunStore) {
   }
 
   /**
-   * See `RunStore.update`.
+   * Implements `RunStore.update`, documented there.
    *
    * @throws NotFoundError when the run is not visible.
    * @throws RangeError when it parks on an approval that was not recorded first.

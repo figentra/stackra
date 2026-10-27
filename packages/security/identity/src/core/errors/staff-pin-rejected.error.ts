@@ -8,7 +8,7 @@
 import { ErrorKind, Refusal } from "@stackra/errors";
 
 /**
- * The refusal.
+ * The refusal for a staff PIN that does not match on this device.
  *
  * @example
  * throw StaffPinRejectedError.create();

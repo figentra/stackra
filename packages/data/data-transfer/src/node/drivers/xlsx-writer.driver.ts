@@ -26,7 +26,7 @@ export class XlsxWriterDriver extends Driver(TabularWriter) {
   readonly mediaType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
   /**
-   * See `TabularWriter.write`.
+   * Implements `TabularWriter.write`, documented there.
    *
    * @yields The workbook bytes, chunk by chunk.
    */

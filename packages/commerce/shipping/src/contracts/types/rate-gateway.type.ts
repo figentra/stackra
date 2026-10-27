@@ -9,7 +9,7 @@ import type { RateQuote } from "#contracts/types/rate-quote.type";
 import type { RateRequest } from "#contracts/types/rate-request.type";
 
 /**
- * Live rates.
+ * The carrier gateway that quotes live rates.
  *
  * @example
  * if (hasCapability(gateway, CarrierCapability.Rates)) quotes = await gateway.quote(request);

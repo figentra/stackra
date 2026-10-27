@@ -16,7 +16,7 @@ import type { ConversationRecord } from "#contracts/types/conversation-record.ty
 import type { RecordScope } from "#contracts/types/record-scope.type";
 
 /**
- * Stores conversations.
+ * Stores conversations and their ordered messages, one tenant at a time.
  *
  * @example
  * const conversation = await conversations.open({ agent: "matter_assistant", principalId: "usr_1" });

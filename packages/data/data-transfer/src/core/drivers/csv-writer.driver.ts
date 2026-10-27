@@ -20,11 +20,11 @@ import { csvCell } from "#core/functions/csv-cell.function";
  * const bytes = new CsvWriterDriver().write([{ name: "Orders", rows }], { delimiter: ";" });
  */
 export class CsvWriterDriver extends Driver(TabularWriter) {
-  /** `text/csv`. */
+  /** The media type of the written file, `text/csv`. */
   readonly mediaType = "text/csv";
 
   /**
-   * See `TabularWriter.write`.
+   * Implements `TabularWriter.write`, documented there.
    *
    * @yields The file bytes, chunk by chunk.
    */

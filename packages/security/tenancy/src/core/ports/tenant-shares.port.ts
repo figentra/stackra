@@ -12,7 +12,7 @@ import { Port, type PublicId } from "@stackra/contracts";
 import type { TenantShare } from "#core/types/tenant-share.type";
 
 /**
- * Keeps shares.
+ * Keeps cross-tenant shares: saves one, reads one, lists a tenant's.
  *
  * @example
  * const shares = await store.list(acme.id);

@@ -10,7 +10,7 @@
 
 /** One delivery to write as an object. */
 export interface WebhookObject {
-  /** The bucket. */
+  /** The bucket the object is stored in. */
   readonly bucket: string;
 
   /** The bucket's region (`me-central-1`); the sink's default region when absent. */

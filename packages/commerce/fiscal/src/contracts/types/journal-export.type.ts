@@ -11,7 +11,7 @@
 export type JournalExport = {
   /** Suggested file name. */
   readonly fileName: string;
-  /** Media type. */
+  /** The media type of the exported file. */
   readonly contentType: string;
   /** `utf-8` for text content, `base64` for binary content carried as text. */
   readonly encoding: "utf-8" | "base64";

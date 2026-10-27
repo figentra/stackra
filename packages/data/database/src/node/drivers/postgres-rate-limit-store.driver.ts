@@ -46,7 +46,7 @@ export class PostgresRateLimitStoreDriver extends Driver(RateLimitStore) {
   }
 
   /**
-   * See `RateLimitStore.take`.
+   * Implements `RateLimitStore.take`, documented there.
    *
    * @throws RangeError for a capacity above two million tokens or below one, or a negative rate.
    */

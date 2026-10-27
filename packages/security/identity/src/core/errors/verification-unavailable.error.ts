@@ -8,7 +8,7 @@
 import { ErrorKind, Refusal } from "@stackra/errors";
 
 /**
- * The refusal.
+ * The refusal when no provider the market pack lists can answer a check now.
  *
  * @example
  * throw VerificationUnavailableError.create();

@@ -29,10 +29,10 @@ export interface LabelRequest {
   /** The service code from a `RateQuote`. */
   readonly service: string;
 
-  /** Who sends. */
+  /** The party that sends the shipment. */
   readonly shipper: ShippingParty;
 
-  /** Who receives. */
+  /** The party that receives the shipment. */
   readonly recipient: ShippingParty;
 
   /** The boxes, at least one; one label each. */

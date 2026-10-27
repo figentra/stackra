@@ -10,7 +10,7 @@
 import type { BillingPeriod } from "#core/enums/billing-period.enum";
 import type { OfferBenefitKind } from "#core/enums/offer-benefit-kind.enum";
 
-/** One benefit. */
+/** One benefit an offer grants. */
 export type OfferBenefit =
   | {
       readonly kind: typeof OfferBenefitKind.Percent;

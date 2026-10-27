@@ -11,6 +11,8 @@ import type { LoginIdentifierKind } from "#contracts/enums/login-identifier-kind
 
 /** One sign-in identifier. */
 export type LoginIdentifier = {
+  /** Which kind of identifier this is: an email address or a phone number. */
   readonly kind: LoginIdentifierKind;
+  /** The identifier as typed or held, before normalisation. */
   readonly value: string;
 };

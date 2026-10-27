@@ -18,7 +18,7 @@ export type AwsBaselineConfig = {
   readonly project: string;
   /** The environment this config is for. */
   readonly environment: RunwayEnvironment;
-  /** `providers.aws.region`. */
+  /** The AWS region the baseline runs in (`providers.aws.region`). */
   readonly region: string;
   /** The environment's account: a quoted 12-digit id or `ref:<path>`. */
   readonly account: string;

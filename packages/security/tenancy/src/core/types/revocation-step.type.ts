@@ -10,7 +10,7 @@ import type { ReceivedCopy } from "#core/types/received-copy.type";
 
 /** One copy's fate. */
 export interface RevocationStep {
-  /** The copy. */
+  /** The received copy this step revokes. */
   readonly copy: ReceivedCopy;
 
   /** Keep (marked severed) or delete. */

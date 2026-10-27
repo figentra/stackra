@@ -9,13 +9,13 @@
 
 /** An address as a fiscal document carries it; optional parts are `null` when the party has none. */
 export type FiscalAddress = {
-  /** Street name. */
+  /** The street name, without the building number. */
   readonly street: string;
   /** Building number, when the address has one. */
   readonly buildingNumber: string | null;
   /** District or neighbourhood, when the address has one. */
   readonly district: string | null;
-  /** City. */
+  /** The city the address is in. */
   readonly city: string;
   /** Region, province or governorate, when the address has one. */
   readonly region: string | null;

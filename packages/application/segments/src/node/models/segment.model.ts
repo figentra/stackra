@@ -45,9 +45,11 @@ export class Segment extends Model.with(HasPublicId("seg"), Timestamps) {
   computedAt!: Date | null;
 }
 
+/** The insert-optional fields of `Segment`, merged into the model class (MikroORM `[OptionalProps]`). */
 // shortcut: the `[OptionalProps]` augmentation is written by hand so `CrudService.insert` may leave the trait timestamps
 // out; remove it once gen writes the entity files (STA-339).
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: the generated `[OptionalProps]` augmentation merges into the model, as gen's entity files do
 export interface Segment {
+  /** The fields an insert may leave out: minted ids, trait-filled columns and defaulted fields. */
   [OptionalProps]?: "createdAt" | "updatedAt";
 }

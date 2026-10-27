@@ -11,7 +11,7 @@ import type { Money } from "@stackra/money";
 
 /** An item on a channel menu. */
 export interface ChannelMenuItem {
-  /** Our SKU. */
+  /** Our SKU for the menu item. */
   readonly sku: string;
 
   /** The name in the menu's language. */
@@ -23,7 +23,7 @@ export interface ChannelMenuItem {
   /** The price shown. */
   readonly price: Money;
 
-  /** The picture. */
+  /** The menu item's picture. */
   readonly image?: Url;
 
   /** The ids of the modifier groups offered with it, in order. */

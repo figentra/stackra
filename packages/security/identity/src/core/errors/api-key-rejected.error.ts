@@ -9,7 +9,7 @@
 import { ErrorKind, Refusal } from "@stackra/errors";
 
 /**
- * The refusal.
+ * The refusal for an API key that is malformed, of the wrong kind, or used from an origin it is not bound to.
  *
  * @example
  * throw ApiKeyRejectedError.create();

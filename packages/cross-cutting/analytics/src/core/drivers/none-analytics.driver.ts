@@ -12,7 +12,7 @@ import { Driver } from "@stackra/container";
 import { AnalyticsDriver } from "#contracts/ports/analytics-driver.port";
 
 /**
- * Sends nothing.
+ * The `none` analytics driver: accepts every event and sends nothing.
  *
  * @example
  * await new NoneAnalyticsDriver().send(deliveries); // resolves, nothing leaves the device

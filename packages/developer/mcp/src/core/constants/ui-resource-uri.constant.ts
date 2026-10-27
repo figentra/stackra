@@ -6,5 +6,5 @@
  * Governing contract: ADR 0348 (decision 2); STA-784.
  */
 
-/** `ui://<module>/<name>`. */
+/** The shape of a UI resource URI, `ui://<module>/<name>`. */
 export const UI_RESOURCE_URI = /^ui:\/\/[a-z][a-z0-9_-]*\/[a-z][a-z0-9_-]*$/;

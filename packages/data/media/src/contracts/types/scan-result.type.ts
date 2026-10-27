@@ -10,7 +10,7 @@ import type { ScanVerdict } from "#contracts/enums/scan-verdict.enum";
 
 /** One scan's outcome. */
 export interface ScanResult {
-  /** The verdict. */
+  /** The scanner's verdict on the file. */
   readonly verdict: ScanVerdict;
 
   /** The threat names the scanner reported (`Eicar-Signature`). */

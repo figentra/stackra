@@ -22,7 +22,7 @@ import { AppApprovalPurpose } from "#contracts/index";
  * recordEvent(denied, AppApprovalDenied.create({ challengeId, principal, purpose, reason: "denied", device, at }));
  */
 export class AppApprovalDenied extends IntegrationEvent({ name: "app_approval.denied" }) {
-  /** The challenge. */
+  /** The app approval challenge this event is about. */
   challengeId!: string;
 
   /** The account that answered. */

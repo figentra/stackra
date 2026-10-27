@@ -14,7 +14,7 @@ import type { EnvironmentAccount } from "#core/types/environment-account.type";
 export type AwsAccounts = {
   /** The runway `project`; it prefixes every role, key alias and fixed bucket name. */
   readonly project: string;
-  /** `providers.aws.region`. */
+  /** The AWS region the accounts run in (`providers.aws.region`). */
   readonly region: string;
   /** `providers.aws.accounts.shared`, the tooling account, or `null`. */
   readonly shared: string | null;

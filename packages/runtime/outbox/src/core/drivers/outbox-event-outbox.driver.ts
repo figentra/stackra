@@ -35,7 +35,7 @@ export class OutboxEventOutboxDriver extends Driver(EventOutbox) {
   }
 
   /**
-   * See `EventOutbox.write`.
+   * Implements `EventOutbox.write`, documented there.
    *
    * @throws TypeError when a record's event is not an integration event or its id is not an `evt_` id.
    */

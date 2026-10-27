@@ -17,7 +17,7 @@ import type { PublicId } from "@stackra/contracts";
  * const audience: SegmentRef = { kind: "segment", id: segment.id };
  */
 export interface SegmentRef {
-  /** Always `segment`. */
+  /** The reference's kind, always `segment`. */
   readonly kind: "segment";
 
   /** The segment's public id. */

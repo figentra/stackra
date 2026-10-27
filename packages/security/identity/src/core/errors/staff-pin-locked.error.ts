@@ -9,7 +9,7 @@
 import { ErrorKind, Refusal } from "@stackra/errors";
 
 /**
- * The refusal.
+ * The refusal while a staff member is locked out on this device after too many wrong PINs.
  *
  * @example
  * throw StaffPinLockedError.create();

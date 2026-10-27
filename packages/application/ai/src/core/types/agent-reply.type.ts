@@ -12,10 +12,10 @@ import type { PendingApproval } from "#core/types/pending-approval.type";
 
 /** One run's answer. */
 export interface AgentReply {
-  /** The run. */
+  /** The run that produced the answer. */
   readonly runId: string;
 
-  /** The conversation. */
+  /** The conversation the run belongs to. */
   readonly conversationId: string;
 
   /** `completed` or `waiting_approval`. */

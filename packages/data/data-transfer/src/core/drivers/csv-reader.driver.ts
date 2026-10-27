@@ -28,7 +28,7 @@ import { parseCsv } from "#core/functions/parse-csv.function";
  */
 export class CsvReaderDriver extends Driver(TabularReader) {
   /**
-   * See `TabularReader.read`.
+   * Implements `TabularReader.read`, documented there.
    *
    * @yields One row at a time.
    */

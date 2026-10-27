@@ -37,6 +37,7 @@ export function deliverRemoteEvent<E extends object, V>(
   values: V,
   meta?: Partial<EventMeta>,
 ): Promise<E>;
+/** The implementation behind both overloads: creates the event and queues it in the harness inbox. */
 export async function deliverRemoteEvent(
   type: { create(values: never): object },
   values: unknown,

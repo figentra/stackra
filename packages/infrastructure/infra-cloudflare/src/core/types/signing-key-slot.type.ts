@@ -11,7 +11,7 @@
 export type SigningKeySlot = {
   /** `k2026-10`, as the `x-figentra-key` header names it. */
   readonly keyId: string;
-  /** `STACKRA_EDGE_SIGNING_KEY_K2026_10`. */
+  /** The Worker secret holding the key, such as `STACKRA_EDGE_SIGNING_KEY_K2026_10`. */
   readonly secret: string;
   /** True for the newest key only: the Worker signs with it, the API accepts every slot. */
   readonly signs: boolean;

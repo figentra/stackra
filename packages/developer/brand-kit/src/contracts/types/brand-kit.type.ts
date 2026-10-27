@@ -22,7 +22,7 @@ export interface BrandKit {
   /** Portfolio group (for example `family`). */
   readonly group: string;
 
-  /** Review state. */
+  /** The kit's review state. */
   readonly status: KitStatus;
 
   /** The primary lockup (for example `horizontal`). */
@@ -31,7 +31,7 @@ export interface BrandKit {
   /** The parent kit, for a child kit. */
   readonly parent?: BrandKitParent;
 
-  /** Brand name. */
+  /** The brand's name, per locale. */
   readonly name: LocalizedText;
 
   /** One line for the portfolio card. */

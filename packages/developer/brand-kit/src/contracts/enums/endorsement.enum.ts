@@ -9,7 +9,7 @@
 import { Enum } from "@stackra/contracts";
 
 /**
- * Endorsement lines.
+ * How a child kit is endorsed by its parent kit (`parent.endorsement` in `kit.json`).
  *
  * @example
  * const mark = kit.parent?.endorsement === Endorsement.PoweredBy ? "powered-by" : "by";

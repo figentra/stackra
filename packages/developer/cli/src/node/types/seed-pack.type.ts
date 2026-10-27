@@ -10,7 +10,7 @@ import type { SeedRecord } from "#node/types/seed-record.type";
 
 /** One product seed pack. */
 export type SeedPack = {
-  /** `seed-pack:<product>`. */
+  /** The pack key, `seed-pack:<product>`. */
   readonly key: string;
 
   /** The product key. */

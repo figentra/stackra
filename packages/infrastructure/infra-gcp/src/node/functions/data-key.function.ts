@@ -21,7 +21,7 @@ const YEARLY = "31536000s";
 const DESTROY_AFTER = "2592000s";
 
 /**
- * The key.
+ * Declares the environment's Cloud KMS key ring and a yearly-rotating encrypt/decrypt key in it.
  *
  * @param args.ring - the key ring's name, unique in the project and region for good.
  */

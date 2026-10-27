@@ -9,7 +9,7 @@
 
 /** One statement and its inverse. */
 export interface CompiledStatement {
-  /** The statement. */
+  /** The SQL text of the statement. */
   readonly sql: string;
 
   /** What undoes it, or `false` when nothing can. */

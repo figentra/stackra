@@ -18,6 +18,6 @@ export interface TaxRateTable {
   /** How a line's tax rounds to minor units, as the market's rule says. */
   readonly rounding: Rounding;
 
-  /** The rows. */
+  /** The tax rates, one row each. */
   readonly rates: readonly TaxRate[];
 }

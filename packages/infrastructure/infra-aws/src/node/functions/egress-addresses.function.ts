@@ -13,7 +13,7 @@ import * as aws from "@pulumi/aws";
 import * as pulumi from "@pulumi/pulumi";
 
 /**
- * The addresses.
+ * Declares the environment's static egress Elastic IPs and exports their public addresses.
  *
  * @param args.count - how many addresses (`shared.network.egress.staticIps`).
  * @example

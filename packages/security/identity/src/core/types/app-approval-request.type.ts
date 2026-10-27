@@ -11,7 +11,7 @@ import type { PublicId } from "@stackra/contracts";
 
 import type { AppApprovalPurpose, AppApprovalRequester } from "#contracts/index";
 
-/** One request. */
+/** What a requesting device asks `AppApprovalService.request` for. */
 export interface AppApprovalRequest {
   /** Sign-in or step-up. */
   readonly purpose: AppApprovalPurpose;

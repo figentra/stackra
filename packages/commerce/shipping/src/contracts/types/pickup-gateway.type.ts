@@ -9,7 +9,7 @@ import type { Pickup } from "#contracts/types/pickup.type";
 import type { PickupRequest } from "#contracts/types/pickup-request.type";
 
 /**
- * Pickups.
+ * The carrier gateway that schedules and cancels pickups.
  *
  * @example
  * const pickup = await gateway.schedulePickup(request);

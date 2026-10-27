@@ -88,7 +88,7 @@ export class ZatcaOnboarding extends Driver(FiscalOnboarding) {
     return this.compliance(unitId, csr, otp, options);
   }
 
-  /** `production`. */
+  /** Completes onboarding with the `production` step. */
   async complete(unitId: string, options: unknown): Promise<OnboardingStep> {
     return this.production(unitId, options);
   }

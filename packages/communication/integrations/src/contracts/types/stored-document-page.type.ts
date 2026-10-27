@@ -9,7 +9,7 @@ import type { StoredDocument } from "#contracts/types/stored-document.type";
 
 /** A page of stored documents. */
 export interface StoredDocumentPage {
-  /** The documents. */
+  /** The documents on this page. */
   readonly documents: readonly StoredDocument[];
 
   /** The cursor of the next page; undefined on the last. */

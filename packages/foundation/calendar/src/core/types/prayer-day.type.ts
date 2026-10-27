@@ -12,10 +12,16 @@ import type { IsoDate } from "#core/types/iso-date.type";
 export type PrayerDay = {
   /** The local date asked for. */
   readonly date: IsoDate;
+  /** When the fajr prayer is due, as an ISO 8601 UTC instant. */
   readonly fajr: string;
+  /** When the sun rises, as an ISO 8601 UTC instant. */
   readonly sunrise: string;
+  /** When the dhuhr prayer is due, as an ISO 8601 UTC instant. */
   readonly dhuhr: string;
+  /** When the asr prayer is due, as an ISO 8601 UTC instant. */
   readonly asr: string;
+  /** When the maghrib prayer is due, as an ISO 8601 UTC instant. */
   readonly maghrib: string;
+  /** When the isha prayer is due, as an ISO 8601 UTC instant. */
   readonly isha: string;
 };

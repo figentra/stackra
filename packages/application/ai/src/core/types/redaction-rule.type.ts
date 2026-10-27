@@ -10,7 +10,7 @@
  *                     stays); OS-315.
  */
 
-/** One redaction. */
+/** One redaction rule: a pattern of text that never reaches a model and its replacement. */
 export interface RedactionRule {
   /** The rule's name, also the default replacement (`[card_number]`). */
   readonly name: string;

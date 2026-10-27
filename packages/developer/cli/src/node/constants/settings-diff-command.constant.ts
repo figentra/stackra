@@ -22,7 +22,7 @@ function show(value: unknown): string {
   return value === undefined ? "(unset)" : JSON.stringify(value);
 }
 
-/** `stackra settings:diff`. */
+/** The `stackra settings:diff` command. */
 export const SETTINGS_DIFF_COMMAND: CliCommand = {
   name: "settings:diff",
   summary: "Show what a settings pack would change at a scope node",

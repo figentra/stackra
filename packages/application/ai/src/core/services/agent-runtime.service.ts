@@ -114,7 +114,7 @@ function withoutResult(messages: readonly ModelMessage[], toolCallId: string): M
 }
 
 /**
- * Runs agents.
+ * Runs agents: prompts, streams and queued runs, with their tools, approvals and records.
  *
  * @example
  * const runtime = new AgentRuntime(conversations, runs, dispatcher, models, instructions, queue, clock);

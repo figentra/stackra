@@ -13,7 +13,7 @@ export class SignatureNotCompleteError extends Refusal({
   kind: ErrorKind.FailedPrecondition,
   retryable: false,
 }) {
-  /** The envelope. */
+  /** The id of the envelope still waiting on signatures. */
   envelopeId!: string;
 
   /** Its status now. */

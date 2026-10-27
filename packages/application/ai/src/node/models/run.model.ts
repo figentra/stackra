@@ -54,9 +54,11 @@ export class Run extends Model.with(HasPublicId("airun"), BelongsToTenant, Times
   finishedAt: Date | null = null;
 }
 
+/** The insert-optional fields of `Run`, merged into the model class (MikroORM `[OptionalProps]`). */
 // shortcut: written by hand until gen writes the entity files (STA-339).
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: the generated `[OptionalProps]` augmentation merges into the model, as gen's entity files do
 export interface Run {
+  /** The fields an insert may leave out: minted ids, trait-filled columns and defaulted fields. */
   [OptionalProps]?:
     | "id"
     | "tenantId"

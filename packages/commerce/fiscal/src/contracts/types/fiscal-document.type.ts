@@ -27,7 +27,7 @@ export type FiscalDocument = {
   readonly issuedAt: Date;
   /** The document currency. */
   readonly currency: CurrencyCode;
-  /** The issuer. */
+  /** The issuer of the document, the seller. */
   readonly seller: FiscalParty;
   /** The buyer; `null` on an anonymous receipt. */
   readonly buyer: FiscalParty | null;

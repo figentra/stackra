@@ -59,7 +59,7 @@ export class MemoryConversationStoreDriver extends Driver(ConversationStore) {
   }
 
   /**
-   * See `ConversationStore.append`.
+   * Implements `ConversationStore.append`, documented there.
    *
    * @throws RangeError when the conversation was never opened here.
    */

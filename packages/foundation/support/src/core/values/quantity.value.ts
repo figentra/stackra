@@ -32,7 +32,7 @@ function factorOf(unit: QuantityUnit): Rational {
  * Quantity.of("750", "g").add(Quantity.of("1", "kg")).toDecimal(0); // "1750"
  */
 export class Quantity {
-  /** The unit. */
+  /** The unit the amount is counted in. */
   readonly unit: QuantityUnit;
 
   /** The exact amount in `unit`. */

@@ -8,7 +8,7 @@
 import { toBase64 } from "#core/functions/to-base64.function";
 
 /**
- * Base64url, unpadded.
+ * Encodes `input` as unpadded base64url.
  *
  * @example
  * toBase64Url(new Uint8Array([251, 255])); // "-_8"

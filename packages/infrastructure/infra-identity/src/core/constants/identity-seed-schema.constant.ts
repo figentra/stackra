@@ -43,7 +43,7 @@ const HEX = z.string().regex(/^#[0-9a-fA-F]{6}$/, "Expected a #rrggbb colour");
 /** The four colours of one scheme of the hosted pages. */
 const PALETTE = z.strictObject({ primary: HEX, background: HEX, warn: HEX, font: HEX });
 
-/** The seed. */
+/** The schema of `.stackra/zitadel/seed.yaml`, version 1. */
 export const IDENTITY_SEED_SCHEMA = z
   .strictObject({
     version: z.literal(1),

@@ -47,9 +47,11 @@ export class Revision extends Model.with(HasPublicId("rev"), Timestamps) {
   campaign: string | null = null;
 }
 
+/** The insert-optional fields of `Revision`, merged into the model class (MikroORM `[OptionalProps]`). */
 // shortcut: the `[OptionalProps]` augmentation is written by hand so `Repository.insert` may leave the trait timestamps
 // and the draft's `publishedAt` out; remove it once gen writes the entity files (STA-339).
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: the generated `[OptionalProps]` augmentation merges into the model, as gen's entity files do
 export interface Revision {
+  /** The fields an insert may leave out: minted ids, trait-filled columns and defaulted fields. */
   [OptionalProps]?: "createdAt" | "updatedAt" | "publishedAt" | "scheduledAt" | "campaign";
 }

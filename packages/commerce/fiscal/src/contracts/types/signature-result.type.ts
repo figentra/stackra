@@ -7,7 +7,7 @@
  * Governing contract: ADR 0364 (decision 4).
  */
 
-/** One signature. */
+/** The result of signing one fiscal document. */
 export type SignatureResult = {
   /** The signature value (base64, or base64url for `jws` and `raw`). */
   readonly value: string;

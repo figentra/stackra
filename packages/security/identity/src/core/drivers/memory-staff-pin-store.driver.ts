@@ -29,7 +29,7 @@ export class MemoryStaffPinStoreDriver extends Driver(StaffPinStore) {
     return Promise.resolve(this.credentials.get(keyOf(device, principal)));
   }
 
-  /** Writes `credential`. */
+  /** Stores `credential`, replacing the staff member's previous one. */
   put(credential: StaffPinCredential): Promise<void> {
     const key = keyOf(credential.device, credential.principal);
     this.credentials.set(key, Object.freeze({ ...credential }));

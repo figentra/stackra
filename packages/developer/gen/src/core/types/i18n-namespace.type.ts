@@ -10,7 +10,10 @@ import type { I18nNode } from "#core/types/i18n-node.type";
 
 /** One namespace of the tree: its node, the package that ships it (absent for the member's own) and its base locale. */
 export interface I18nNamespace {
+  /** The namespace's node in the tree. */
   readonly node: I18nNode;
+  /** The package that ships the namespace; absent for the member's own. */
   readonly package?: string;
+  /** The namespace's base locale. */
   readonly base: string;
 }

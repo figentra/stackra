@@ -7,12 +7,12 @@
  * Governing contract: ADR 0352 (decisions 3 and 6: plan before apply, the same in CI and a terminal).
  */
 
-/** One command. */
+/** One command a provider's plan runs. */
 export interface DeployStep {
   /** The program (`git`, `eas`). */
   readonly command: string;
 
-  /** Its arguments. */
+  /** The arguments passed to the program. */
   readonly args: readonly string[];
 
   /** The folder it runs in, relative to the repository root; the root when absent. */

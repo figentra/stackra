@@ -63,7 +63,7 @@ export class MemoryRunStoreDriver extends Driver(RunStore) {
   }
 
   /**
-   * See `RunStore.update`.
+   * Implements `RunStore.update`, documented there.
    *
    * @throws RangeError when the run was never created here.
    */

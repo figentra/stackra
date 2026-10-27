@@ -18,7 +18,7 @@ export interface KdsTicket {
   readonly subtitle?: string | undefined;
   /** When it was sent to the kitchen, in epoch milliseconds. */
   readonly sentAt: number;
-  /** Its lines. */
+  /** The ticket's lines. */
   readonly items: readonly KdsTicketItem[];
   /** Whether it is a rush. */
   readonly isRush?: boolean | undefined;

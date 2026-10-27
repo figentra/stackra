@@ -13,7 +13,7 @@ import { z } from "zod";
 
 import { RunwayCloud } from "#core/enums/runway-cloud.enum";
 
-/** One region. */
+/** The schema of one `regions.<key>` entry of the root runway. */
 export const REGION_SCHEMA = z.strictObject({
   cloud: z.enum(Enum.values(RunwayCloud) as [RunwayCloud, ...RunwayCloud[]]),
   location: z.string().min(1),

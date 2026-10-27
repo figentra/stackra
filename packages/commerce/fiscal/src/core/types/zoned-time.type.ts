@@ -8,9 +8,9 @@
 
 /** Local date and time in one zone. */
 export type ZonedTime = {
-  /** `YYYY-MM-DD`. */
+  /** The local date, `YYYY-MM-DD`. */
   readonly date: string;
-  /** `HH:mm:ss`, 24-hour. */
+  /** The local time, `HH:mm:ss` on a 24-hour clock. */
   readonly time: string;
   /** `+HH:MM` or `-HH:MM`. */
   readonly offset: string;

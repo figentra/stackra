@@ -17,7 +17,7 @@ import { HasPublicId, Model, Timestamps } from "@stackra/model";
 /** A membership. Traits add `id` and the timestamps; the indexes are the migration's. */
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: merged with the [OptionalProps] augmentation below
 export class SegmentMembership extends Model.with(HasPublicId("sgm"), Timestamps) {
-  /** The segment. */
+  /** The segment this membership is in. */
   segmentId!: PublicId<"seg">;
 
   /** The segment's scope node. */
@@ -33,9 +33,11 @@ export class SegmentMembership extends Model.with(HasPublicId("sgm"), Timestamps
   subjectId!: string;
 }
 
+/** The insert-optional fields of `SegmentMembership`, merged into the model class (MikroORM `[OptionalProps]`). */
 // shortcut: the `[OptionalProps]` augmentation is written by hand so a create may leave the trait timestamps out; remove
 // it once gen writes the entity files (STA-339).
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: the generated `[OptionalProps]` augmentation merges into the model, as gen's entity files do
 export interface SegmentMembership {
+  /** The fields an insert may leave out: minted ids, trait-filled columns and defaulted fields. */
   [OptionalProps]?: "createdAt" | "updatedAt";
 }

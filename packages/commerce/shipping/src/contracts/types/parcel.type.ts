@@ -8,7 +8,7 @@
  */
 
 /**
- * One box.
+ * One box in a shipment.
  *
  * @example
  * const parcel: Parcel = { lengthMm: 400, widthMm: 300, heightMm: 200, weightG: 2_500 };

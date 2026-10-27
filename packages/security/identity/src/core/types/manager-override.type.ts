@@ -8,7 +8,7 @@
  */
 import type { PublicId } from "@stackra/contracts";
 
-/** One override. */
+/** A manager's approval of one action above the cashier's limits on a shared device. */
 export interface ManagerOverride {
   /** The shared device. */
   readonly device: PublicId;

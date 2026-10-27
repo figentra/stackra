@@ -11,7 +11,7 @@ import type { ToolCallOutcome } from "#contracts/enums/tool-call-outcome.enum";
 
 /** One recorded tool call. */
 export interface ToolCallRecord {
-  /** The run. */
+  /** The run that made this tool call. */
   readonly runId: string;
 
   /** The model's tool call id; with the run id, the action's Idempotency-Key. */

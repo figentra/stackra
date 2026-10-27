@@ -8,7 +8,7 @@
  * Governing contract: ADR 0296 (decisions 1 and 2), ADR 0186 (decision 3: object storage is versioned), ADR 0172.
  */
 
-/** One bucket. */
+/** One S3 bucket of a runtime plan, with its name, versioning and noncurrent expiry. */
 export type BucketPlan = {
   /** `<member>.<bucket>`, the key of the program's outputs (`commerce.product_images`). */
   readonly key: string;
