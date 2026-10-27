@@ -19,6 +19,7 @@ import type { StorageBackend } from "#core/types/storage-backend.type";
 
 class DevicePrefs {
   density = "comfortable";
+
   localNotifications = false;
 }
 

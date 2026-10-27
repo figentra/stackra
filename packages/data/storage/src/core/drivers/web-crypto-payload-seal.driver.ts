@@ -62,7 +62,9 @@ export class WebCryptoPayloadSealDriver extends Driver(PayloadSeal) {
   /** The last imported key and the stored value it came from. */
   private imported: { readonly raw: string; readonly key: Promise<CryptoKey> } | undefined;
 
-  /** @param storage - holds the key in its `secrets` area. */
+  /**
+   * @param storage - holds the key in its `secrets` area.
+   */
   constructor(storage: Storage) {
     super();
     this.storage = storage;

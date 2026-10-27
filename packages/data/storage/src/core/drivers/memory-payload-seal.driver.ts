@@ -30,7 +30,9 @@ export class MemoryPayloadSealDriver extends Driver(PayloadSeal) {
 
   private readonly storage: Storage;
 
-  /** @param storage - holds the key id in its `secrets` area. */
+  /**
+   * @param storage - holds the key id in its `secrets` area.
+   */
   constructor(storage: Storage) {
     super();
     this.storage = storage;

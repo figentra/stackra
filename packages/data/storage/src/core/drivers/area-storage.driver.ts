@@ -48,7 +48,9 @@ export abstract class AreaStorageDriver extends Driver(Storage) {
   /** Files and other large blobs. */
   readonly files: PersistedStorageArea;
 
-  /** @param backends - where each area persists; an area without a backend lives in memory. */
+  /**
+   * @param backends - where each area persists; an area without a backend lives in memory.
+   */
   protected constructor(
     backends: Partial<Readonly<Record<StorageArea, StorageBackend | undefined>>>,
   ) {
