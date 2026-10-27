@@ -49,7 +49,7 @@ class TestStoreDriver extends MemorySessionStoreDriver {
 
 /** A started, signed-in session over a test store, and the driver under test. */
 async function setup() {
-  const store = new TestStoreDriver(USER, true);
+  const store = new TestStoreDriver().seed(USER, true);
   const session = new SessionService(
     buildConfig(IdentityConfig),
     store,

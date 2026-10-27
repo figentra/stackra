@@ -41,7 +41,7 @@ async function setup(signedIn: boolean) {
   const scope = new ActiveScopeService();
   const session = new SessionService(
     buildConfig(IdentityConfig),
-    new TokenStoreDriver(USER, signedIn),
+    new TokenStoreDriver().seed(USER, signedIn),
     new TenantSwitcher(scope),
     new PermissionSnapshotService(),
   );
