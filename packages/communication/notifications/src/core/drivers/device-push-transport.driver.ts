@@ -8,22 +8,27 @@
  *           `WEB_PUSH_VAPID_PRIVATE_KEY`, `WEB_PUSH_VAPID_SUBJECT`), never logged. A Web Push goes only to an https
  *           endpoint, the browser's own push service. Sends are logged by key in `SendLog`. The Expo Integration is a
  *           vendor connector in the OS integrations service (R3-8): the host subclasses this driver and passes it.
+ *           Each outcome (sent, revoked, or failed on a provider refusal) is recorded as `DeliveryRecorded` through
+ *           the optional `EventOutbox` (stackra-207).
  * Runtime: isomorphic
  * Governing contract: ADR 0223 (decision 1: web push with VAPID); RFC 8030; RFC 8291; RFC 8292; ADR 0305 (rule 8);
- *                     owner decision R3-8 (STA-1281).
+ *                     owner decision R3-8 (STA-1281); stackra-207 (STA-1360).
  */
 import type { SecretStore } from "@stackra/config/contracts";
 import { Driver } from "@stackra/container";
 import type { Clock } from "@stackra/contracts";
+import type { EventOutbox } from "@stackra/events/contracts";
 import { ProviderRefusedError, ProviderUnavailableError } from "@stackra/integrations";
 import type { IntegrationApi } from "@stackra/integrations";
 
+import { NotificationChannel } from "#contracts/enums/notification-channel.enum";
 import { PushTransport } from "#contracts/ports/push-transport.port";
 import type { PushTokenStore } from "#contracts/ports/push-token-store.port";
 import type { SendLog } from "#contracts/ports/send-log.port";
 import type { OutboundPush } from "#contracts/types/outbound-push.type";
 import type { PushOutcome } from "#contracts/types/push-outcome.type";
 import { encryptWebPush } from "#core/functions/encrypt-web-push.function";
+import { recordDelivery } from "#core/functions/record-delivery.function";
 import { vapidAuthorization } from "#core/functions/vapid-authorization.function";
 
 /** An Expo push ticket or receipt. */
@@ -58,12 +63,16 @@ export class DevicePushTransportDriver extends Driver(PushTransport) {
   /** Tells the time, for the VAPID token. */
   private readonly clock: Clock;
 
+  /** Where delivery outcomes are recorded; none records nothing. */
+  private readonly outbox: EventOutbox | undefined;
+
   /**
    * @param expo - the host's Expo Integration (provider `expo`, base URL `https://exp.host`).
    * @param secrets - the secret store.
    * @param tokens - the push target store.
    * @param log - the send log.
    * @param clock - the clock.
+   * @param outbox - the service's event outbox, which receives one `DeliveryRecorded` per outcome; none records nothing.
    */
   constructor(
     expo: { readonly api: IntegrationApi },
@@ -71,6 +80,7 @@ export class DevicePushTransportDriver extends Driver(PushTransport) {
     tokens: PushTokenStore,
     log: SendLog,
     clock: Clock,
+    outbox?: EventOutbox,
   ) {
     super();
     this.expo = expo;
@@ -78,6 +88,7 @@ export class DevicePushTransportDriver extends Driver(PushTransport) {
     this.tokens = tokens;
     this.log = log;
     this.clock = clock;
+    this.outbox = outbox;
   }
 
   /** Sends `push` once per `idempotencyKey` and revokes the token of a device that is gone. */
@@ -85,10 +96,23 @@ export class DevicePushTransportDriver extends Driver(PushTransport) {
     const known = await this.log.get(idempotencyKey);
     if (known !== undefined)
       return known === REVOKED ? { status: "revoked" } : { status: "sent", providerId: known };
-    const outcome =
-      push.target.kind === "expo" ? await this.sendExpo(push) : await this.sendWeb(push);
+    const delivery = {
+      deliveryId: idempotencyKey,
+      channel: NotificationChannel.Push,
+      provider: push.target.kind === "expo" ? "expo" : "web-push",
+    };
+    let outcome: PushOutcome;
+    try {
+      outcome = push.target.kind === "expo" ? await this.sendExpo(push) : await this.sendWeb(push);
+    } catch (error) {
+      // A refusal is final; an outage is retried, so it records nothing.
+      if (error instanceof ProviderRefusedError)
+        await recordDelivery(this.outbox, this.clock, { ...delivery, status: "failed" });
+      throw error;
+    }
     await this.log.record(idempotencyKey, outcome.status === "sent" ? outcome.providerId : REVOKED);
     if (outcome.status === "revoked") await this.tokens.revoke(push.target);
+    await recordDelivery(this.outbox, this.clock, { ...delivery, status: outcome.status });
     return outcome;
   }
 

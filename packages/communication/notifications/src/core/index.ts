@@ -4,7 +4,7 @@
  *          `stackra gen` writes the entry barrels (STA-339). The vendor Integrations and Connections and the
  *          provider maps moved to the OS integrations service (R3-8, STA-1281). The inbound WhatsApp drivers
  *          (`memory`, `meta`) and Meta's signature recipe are here (ADR 0448). The content-free check and the
- *          mandatory-category answer are here (STA-964).
+ *          mandatory-category answer are here (STA-964). The `DeliveryRecorded` integration event is here (stackra-207).
  * Boundary: names each re-export and declares nothing. `MailTransport` and `OutboundMail` are not here: they are
  *           exported from `./contracts` only (ADR 0294 decision 15). `MailMessage` is a type here: the Notifier builds
  *           it. The shipped schema is re-exported under its generated name (`NotificationsConfig$`).
@@ -26,6 +26,7 @@ export { MemoryNotifierDriver } from "#core/drivers/memory-notifier.driver";
 export { MemoryWhatsAppInboundDriver } from "#core/drivers/memory-whatsapp-inbound.driver";
 export { MetaWhatsAppInboundDriver } from "#core/drivers/meta-whatsapp-inbound.driver";
 export { NotificationCategory } from "#core/enums/notification-category.enum";
+export { DeliveryRecorded } from "#core/events/delivery-recorded.event";
 export { NoTemplateError } from "#core/errors/no-template.error";
 export { RestrictedFieldError } from "#core/errors/restricted-field.error";
 export { assertContentFree } from "#core/functions/assert-content-free.function";

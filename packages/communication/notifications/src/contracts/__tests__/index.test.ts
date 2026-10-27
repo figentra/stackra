@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: the consumer contract of the `./contracts` entry: the channel ports (the template's `MailTransport`
  *          among them) and the inbound `WhatsAppInbound` port are exported as values, nothing else is, and the types they exchange
- *          resolve (`ContentFreeData` among them, STA-964).
+ *          resolve (`ContentFreeData` among them, STA-964; `NotificationDeliveryEvent` with its exact keys and statuses,
+ *          stackra-207).
  * Boundary: test only; imports the stand-in barrel through its `#contracts` alias.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0294 (decision 15).
@@ -15,6 +16,7 @@ import type {
   InAppEntry,
   InAppMessage,
   InboundWhatsApp,
+  NotificationDeliveryEvent,
   OutboundChatMessage,
   OutboundMail,
   OutboundSms,
@@ -46,5 +48,11 @@ describe("@stackra/notifications/contracts", () => {
     expectTypeOf<InAppMessage["kind"]>().toEqualTypeOf<string>();
     expectTypeOf<InAppEntry["readAt"]>().toEqualTypeOf<Date | null>();
     expectTypeOf<InboundWhatsApp["kind"]>().toEqualTypeOf<"text" | "cart" | "reply">();
+    expectTypeOf<keyof NotificationDeliveryEvent>().toEqualTypeOf<
+      "deliveryId" | "channel" | "provider" | "status" | "at"
+    >();
+    expectTypeOf<NotificationDeliveryEvent["status"]>().toEqualTypeOf<
+      "sent" | "delivered" | "failed" | "revoked"
+    >();
   });
 });

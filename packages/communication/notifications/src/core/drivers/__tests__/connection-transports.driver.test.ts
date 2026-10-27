@@ -2,11 +2,16 @@
  * Stackra file contract:
  * Purpose: unit tests of the `connection` transports (mail, SMS, WhatsApp): the provider comes from the resolver under
  *          the channel's capability with the driver map the host passed (the same object); a key already in the send
- *          log returns its id and sends nothing; a new send is logged.
- * Boundary: test only; the resolver and the send log are in-memory stand-ins.
+ *          log returns its id and sends nothing; a new send is logged; with an outbox a send records `sent` and a
+ *          provider refusal `failed` as `DeliveryRecorded`, under the provider code of the map (stackra-207).
+ * Boundary: test only; the resolver, the send log and the connection classes are in-memory stand-ins; the outbox is
+ *           `OutboxFake`.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0269; ADR 0356 (decision 2).
+ * Governing contract: ADR 0022; ADR 0269; ADR 0356 (decision 2); stackra-207 (STA-1360).
  */
+import { Clock } from "@stackra/contracts";
+import { OutboxFake } from "@stackra/events/testing";
+import { ProviderRefusedError } from "@stackra/integrations";
 import type { ProviderDrivers, ProviderResolver } from "@stackra/integrations";
 import { describe, expect, it } from "@stackra/testing";
 
@@ -86,5 +91,68 @@ describe("connection transports", () => {
     ).resolves.toBe("wa_1");
     expect(whatsapp.asked).toEqual([["whatsapp", WHATSAPP_CONNECTIONS]]);
     expect(whatsapp.asked[0]?.[1]).toBe(WHATSAPP_CONNECTIONS);
+  });
+
+  it("records sent and refused deliveries under the map's provider code", async () => {
+    class ResendStandIn {
+      async sendMail(): Promise<string> {
+        return "em_1";
+      }
+    }
+    class TwilioStandIn {
+      async sendSms(): Promise<string> {
+        throw ProviderRefusedError.create({ provider: "twilio", status: 400 });
+      }
+    }
+    const clock = new (class extends Clock {
+      now(): Date {
+        return new Date("2026-10-27T10:00:00Z");
+      }
+    })();
+    const outbox = new OutboxFake();
+    const mailDrivers = { resend: ResendStandIn } as unknown as ProviderDrivers<MailSender>;
+    const smsDrivers = { twilio: TwilioStandIn } as unknown as ProviderDrivers<SmsSender>;
+    const mail = new ConnectionMailTransportDriver(
+      resolverOf(new ResendStandIn()).resolver,
+      new MemorySendLog(),
+      mailDrivers,
+      outbox,
+      clock,
+    );
+    await mail.send(
+      { to: "a@b.example", from: "o@acme.example", subject: "S", html: "", text: "" },
+      "k1",
+    );
+    await mail.send(
+      { to: "a@b.example", from: "o@acme.example", subject: "S", html: "", text: "" },
+      "k1",
+    );
+    const sms = new ConnectionSmsTransportDriver(
+      resolverOf(new TwilioStandIn()).resolver,
+      new MemorySendLog(),
+      smsDrivers,
+      outbox,
+      clock,
+    );
+    await expect(sms.send({ to: "+966500000001", from: "A", text: "t" }, "k2")).rejects.toThrow(
+      ProviderRefusedError,
+    );
+    const at = "2026-10-27T10:00:00.000Z";
+    expect(outbox.take().map(({ event }) => event)).toEqual([
+      expect.objectContaining({
+        deliveryId: "k1",
+        channel: "mail",
+        provider: "resend",
+        status: "sent",
+        at,
+      }),
+      expect.objectContaining({
+        deliveryId: "k2",
+        channel: "sms",
+        provider: "twilio",
+        status: "failed",
+        at,
+      }),
+    ]);
   });
 });

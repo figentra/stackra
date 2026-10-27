@@ -119,6 +119,7 @@
     "@stackra/container": "workspace:*",
     "@stackra/contracts": "workspace:*",
     "@stackra/errors": "workspace:*",
+    "@stackra/events": "workspace:*",
     "@stackra/i18n": "workspace:*",
     "@stackra/integrations": "workspace:*",
     "@stackra/money": "workspace:*",

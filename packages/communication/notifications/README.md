@@ -5,7 +5,7 @@ Stackra file contract:
 Purpose: the package's reader guide: notifications, channels and providers, inbound WhatsApp, templates and testing.
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
-Governing contract: ADR 0086; ADR 0223; ADR 0294; ADR 0356; ADR 0448; STA-964.
+Governing contract: ADR 0086; ADR 0223; ADR 0294; ADR 0356; ADR 0448; STA-964; stackra-207 (STA-1360).
 -->
 
 Messages to people (ADR 0086, 0223 as amended by 0294). A notification is a class beside the model it concerns,
@@ -17,36 +17,38 @@ Strings are i18n keys, never literals. The package was `@stackra/mail` (ADR 0294
 
 **Tier:** `tier:lib` (`packages/communication/notifications`). Entries `.`, `./contracts`, `./node`, `./react` and
 `./testing`. Depends on `@stackra/contracts`, `@stackra/container`, `@stackra/config`, `@stackra/validation`,
-`@stackra/i18n`, `@stackra/money`, `@stackra/assets`, `@stackra/errors`, `@stackra/integrations` (provider
-Integrations and the provider resolver) and `@stackra/clients` (`./node` queues through it). React is an
+`@stackra/i18n`, `@stackra/money`, `@stackra/assets`, `@stackra/errors`, `@stackra/events` (the `DeliveryRecorded`
+event and the `EventOutbox` it is written to), `@stackra/integrations` (provider Integrations and the provider resolver) and `@stackra/clients` (`./node` queues through it). React is an
 optional peer, needed by `./node`, `./react` and `./testing` only.
 
 ## What is here
 
-| Entry         | Symbol                                                                         | Use                                                                    |
-| ------------- | ------------------------------------------------------------------------------ | ---------------------------------------------------------------------- |
-| `.`           | `Notification`                                                                 | the kind base: `Notification({ category })`, with `recipients(event)`  |
-| `.`           | `NotificationCategory`                                                         | `transactional`, `activity`, `marketing`; case data `mutable`, `optIn` |
-| `.`           | `Recipient`                                                                    | `Recipient.principal(id)`, `.scope(scope)`, `.address(email)`          |
-| `.`           | `MailMessage` (type)                                                           | what `mail(data, mail)` returns: `mail.subject(key, values)`           |
-| `.`           | `Notifier`                                                                     | the port gen's listener calls: `notify(notification, event)`           |
-| `.`           | `MemoryNotifierDriver`                                                         | the `memory` driver: keeps deliveries for tests and dev                |
-| `.`           | `NotificationsConfig`, `NotificationsConfig$`, `NotificationsOptions`          | key `notifications`: `driver`, `target`, `mandatoryCategories`         |
-| `.`           | `NotificationDelivery`, `NotificationOptions`, `NotifierDriverName`            | types                                                                  |
-| `./contracts` | `MailTransport`, `OutboundMail` (type)                                         | the port a mail provider driver implements (`Driver(MailTransport)`)   |
-| `./contracts` | `SmsTransport`, `OutboundSms` (type)                                           | the port an SMS provider driver implements                             |
-| `./contracts` | `InAppStore`, `InAppMessage`, `InAppEntry` (types)                             | a person's in-app inbox: `append`, `list`, `markRead`                  |
-| `./contracts` | `ChatTransport`, `OutboundChatMessage` (type)                                  | the port a chat app driver implements (Slack, Teams, Telegram)         |
-| `./contracts` | `WhatsAppInbound`, `InboundWhatsApp`, `InboundWhatsAppCartItem` (types)        | reads customer texts, native carts and replies from a webhook          |
-| `.`           | `MemoryWhatsAppInboundDriver`, `MetaWhatsAppInboundDriver`                     | the `memory` and `meta` (Cloud API) drivers of `WhatsAppInbound`       |
-| `.`           | `META_WHATSAPP_WEBHOOK_SIGNATURE`                                              | Meta's `hmac` signature recipe for the Integration's `webhooks`        |
-| `./node`      | `NotificationsNotifierDriver`                                                  | the `notifications` driver: queues rendered mail on the service        |
-| `./node`      | `MESSAGES_NOTIFIER_TARGET`, `DELIVERY_NOTIFIER_TARGET`                         | the built-in targets config `notifications.target` names               |
-| `./node`      | `NotifierTarget`, `NotifierMessage`, `NotifierAddressMessage` (types)          | what a host's own target is written with                               |
-| `./node`      | `registerNotificationMails`, `NotificationMails` (type)                        | gen's registration of the mail bodies and lang loaders                 |
-| `./react`     | `useMail`, `MailProps` (type)                                                  | what a `.mail.tsx` body imports                                        |
-| `./testing`   | `renderMail`, `MemoryNotifier` (type)                                          | render a body in a locale; read what was sent                          |
-| `./testing`   | `MailTransportFake`, `SmsTransportFake`, `InAppStoreFake`, `ChatTransportFake` | a double of each channel port                                          |
+| Entry         | Symbol                                                                         | Use                                                                       |
+| ------------- | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------- |
+| `.`           | `Notification`                                                                 | the kind base: `Notification({ category })`, with `recipients(event)`     |
+| `.`           | `NotificationCategory`                                                         | `transactional`, `activity`, `marketing`; case data `mutable`, `optIn`    |
+| `.`           | `Recipient`                                                                    | `Recipient.principal(id)`, `.scope(scope)`, `.address(email)`             |
+| `.`           | `MailMessage` (type)                                                           | what `mail(data, mail)` returns: `mail.subject(key, values)`              |
+| `.`           | `Notifier`                                                                     | the port gen's listener calls: `notify(notification, event)`              |
+| `.`           | `MemoryNotifierDriver`                                                         | the `memory` driver: keeps deliveries for tests and dev                   |
+| `.`           | `NotificationsConfig`, `NotificationsConfig$`, `NotificationsOptions`          | key `notifications`: `driver`, `target`, `mandatoryCategories`            |
+| `.`           | `NotificationDelivery`, `NotificationOptions`, `NotifierDriverName`            | types                                                                     |
+| `./contracts` | `MailTransport`, `OutboundMail` (type)                                         | the port a mail provider driver implements (`Driver(MailTransport)`)      |
+| `./contracts` | `SmsTransport`, `OutboundSms` (type)                                           | the port an SMS provider driver implements                                |
+| `./contracts` | `InAppStore`, `InAppMessage`, `InAppEntry` (types)                             | a person's in-app inbox: `append`, `list`, `markRead`                     |
+| `./contracts` | `ChatTransport`, `OutboundChatMessage` (type)                                  | the port a chat app driver implements (Slack, Teams, Telegram)            |
+| `./contracts` | `WhatsAppInbound`, `InboundWhatsApp`, `InboundWhatsAppCartItem` (types)        | reads customer texts, native carts and replies from a webhook             |
+| `.`           | `MemoryWhatsAppInboundDriver`, `MetaWhatsAppInboundDriver`                     | the `memory` and `meta` (Cloud API) drivers of `WhatsAppInbound`          |
+| `.`           | `META_WHATSAPP_WEBHOOK_SIGNATURE`                                              | Meta's `hmac` signature recipe for the Integration's `webhooks`           |
+| `./contracts` | `NotificationDeliveryEvent` (type)                                             | one delivery outcome: `deliveryId`, `channel`, `provider`, `status`, `at` |
+| `.`           | `DeliveryRecorded`                                                             | the `notifications.delivery.recorded.v1` integration event of an outcome  |
+| `./node`      | `NotificationsNotifierDriver`                                                  | the `notifications` driver: queues rendered mail on the service           |
+| `./node`      | `MESSAGES_NOTIFIER_TARGET`, `DELIVERY_NOTIFIER_TARGET`                         | the built-in targets config `notifications.target` names                  |
+| `./node`      | `NotifierTarget`, `NotifierMessage`, `NotifierAddressMessage` (types)          | what a host's own target is written with                                  |
+| `./node`      | `registerNotificationMails`, `NotificationMails` (type)                        | gen's registration of the mail bodies and lang loaders                    |
+| `./react`     | `useMail`, `MailProps` (type)                                                  | what a `.mail.tsx` body imports                                           |
+| `./testing`   | `renderMail`, `MemoryNotifier` (type)                                          | render a body in a locale; read what was sent                             |
+| `./testing`   | `MailTransportFake`, `SmsTransportFake`, `InAppStoreFake`, `ChatTransportFake` | a double of each channel port                                             |
 
 ## A notification
 
@@ -225,6 +227,32 @@ export class OsSmsTransportDriver extends ConnectionSmsTransportDriver {
 - A device the push service reports gone is revoked through `PushTokenStore`; `receipts` reads Expo receipts.
 - The VAPID keys and contact are platform secrets: `WEB_PUSH_VAPID_PUBLIC_KEY`, `WEB_PUSH_VAPID_PRIVATE_KEY`,
   `WEB_PUSH_VAPID_SUBJECT`.
+
+### Delivery events (stackra-207)
+
+Each transport records its outcomes as `DeliveryRecorded`, the integration event `notifications.delivery.recorded.v1`
+(the events package needs a dotted name, so the batch's `delivery_recorded` reads `delivery.recorded`). Its fields are a
+`NotificationDeliveryEvent` from `./contracts`: `deliveryId` (the idempotency key), `channel`, `provider` (the provider
+code of the host's map, `expo` or `web-push` for push), `status` and `at` (ISO 8601). Ids and codes only, never an address
+or content.
+
+| Status      | Recorded when                                                                                |
+| ----------- | -------------------------------------------------------------------------------------------- |
+| `sent`      | the provider accepted the message (a repeated key records nothing again)                     |
+| `failed`    | the provider refused it (`ProviderRefusedError`); an outage records nothing, the job retries |
+| `revoked`   | the push service reported the device gone                                                    |
+| `delivered` | not recorded by this package yet: it comes from provider status callbacks                    |
+
+The outbox is an optional trailing constructor argument (`outbox`, then `clock` on the connection transports; `outbox`
+after the clock on `DevicePushTransportDriver`). Without one, nothing is recorded:
+
+```ts
+export class OsSmsTransportDriver extends ConnectionSmsTransportDriver {
+  constructor(resolver: ProviderResolver, log: SendLog, outbox: EventOutbox, clock: Clock) {
+    super(resolver, log, SMS_CONNECTIONS, outbox, clock);
+  }
+}
+```
 
 ### Vendor drivers moved (STA-1281)
 

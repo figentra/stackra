@@ -4,7 +4,7 @@
  *          (`MailTransport`, `SmsTransport`, `WhatsAppTransport`, `PushTransport`, `InAppStore`, `ChatTransport`), the
  *          inbound `WhatsAppInbound` port (ADR 0448), the
  *          `ContentFreeData` (STA-964), the service ports (`PushTokenStore`, `SendLog`, `TemplateOverrides`), the provider interfaces and the types they
- *          exchange, until `stackra gen` writes the entry barrels (STA-339).
+ *          exchange (`NotificationDeliveryEvent` among them, stackra-207), until `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. The leaf: it imports no other entry of this package. Each is
  *           exported here only, never from `.` (ADR 0294 decision 15).
  * Runtime: isomorphic
@@ -30,6 +30,7 @@ export type { InboundWhatsAppCartItem } from "#contracts/types/inbound-whatsapp-
 export type { InAppEntry } from "#contracts/types/in-app-entry.type";
 export type { InAppMessage } from "#contracts/types/in-app-message.type";
 export type { MailSender } from "#contracts/types/mail-sender.type";
+export type { NotificationDeliveryEvent } from "#contracts/types/notification-delivery-event.type";
 export type { NotificationTemplate } from "#contracts/types/notification-template.type";
 export type { OutboundChatMessage } from "#contracts/types/outbound-chat-message.type";
 export type { OutboundMail } from "#contracts/types/outbound-mail.type";

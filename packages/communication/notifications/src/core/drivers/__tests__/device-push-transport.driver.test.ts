@@ -2,14 +2,16 @@
  * Stackra file contract:
  * Purpose: unit tests of `DevicePushTransportDriver`: an Expo push returns its ticket id; `DeviceNotRegistered` revokes
  *          the token; a Web Push goes encrypted with a VAPID header to the endpoint and a 410 revokes the subscription;
- *          a non-https endpoint is refused; a logged key sends nothing; Expo receipts revoke gone devices.
+ *          a non-https endpoint is refused; a logged key sends nothing; Expo receipts revoke gone devices; with an outbox
+ *          each sent, revoked or refused push records one `DeliveryRecorded` (stackra-207).
  * Boundary: test only; the Expo client is `fakeIntegrationApi` over a test Integration, `fetch` is stubbed, the VAPID
  *           keys are generated here.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0269; RFC 8030; RFC 8292.
+ * Governing contract: ADR 0022; ADR 0269; RFC 8030; RFC 8292; stackra-207 (STA-1360).
  */
 import { SecretStore } from "@stackra/config/contracts";
 import { Clock } from "@stackra/contracts";
+import { OutboxFake } from "@stackra/events/testing";
 import { AuthType, Integration, IntegrationCategory, IntegrationRole } from "@stackra/integrations";
 import { fakeIntegrationApi } from "@stackra/integrations/testing";
 import { afterEach, describe, expect, it } from "@stackra/testing";
@@ -82,7 +84,7 @@ async function keys() {
 }
 
 /** The driver with an Expo client answering `ticket`. */
-async function driverWith(ticket: unknown) {
+async function driverWith(ticket: unknown, outbox?: OutboxFake) {
   const expo = new ExpoIntegration();
   Object.defineProperty(expo, "api", {
     value: fakeIntegrationApi(ExpoIntegration, (r) =>
@@ -102,7 +104,7 @@ async function driverWith(ticket: unknown) {
   const log = new Log();
   const { secrets, p256dh, auth } = await keys();
   return {
-    driver: new DevicePushTransportDriver(expo, secrets, tokens, log, new FixedClock()),
+    driver: new DevicePushTransportDriver(expo, secrets, tokens, log, new FixedClock(), outbox),
     tokens,
     log,
     p256dh,
@@ -178,5 +180,52 @@ describe("DevicePushTransportDriver", () => {
       driver.receipts(["t1", "t2"], new Map([["t2", "ExponentPushToken[y]"]])),
     ).resolves.toEqual(["t2"]);
     expect(tokens.revoked).toEqual([{ kind: "expo", token: "ExponentPushToken[y]" }]);
+  });
+
+  it("records each outcome as DeliveryRecorded when it has an outbox", async () => {
+    const push = {
+      target: { kind: "expo", token: "ExponentPushToken[x]" },
+      title: "T",
+      body: "B",
+      ttlSeconds: 60,
+    } as const;
+    const outbox = new OutboxFake();
+    const ok = await driverWith({ status: "ok", id: "ticket-1" }, outbox);
+    await ok.driver.send(push, "k1");
+    await ok.driver.send(push, "k1");
+    const gone = await driverWith(
+      { status: "error", details: { error: "DeviceNotRegistered" } },
+      outbox,
+    );
+    await gone.driver.send(push, "k2");
+    const refused = await driverWith(
+      { status: "error", details: { error: "MessageTooBig" } },
+      outbox,
+    );
+    await expect(refused.driver.send(push, "k3")).rejects.toThrow();
+    const at = "2026-10-25T10:00:00.000Z";
+    expect(outbox.take().map(({ event }) => event)).toEqual([
+      expect.objectContaining({
+        deliveryId: "k1",
+        channel: "push",
+        provider: "expo",
+        status: "sent",
+        at,
+      }),
+      expect.objectContaining({
+        deliveryId: "k2",
+        channel: "push",
+        provider: "expo",
+        status: "revoked",
+        at,
+      }),
+      expect.objectContaining({
+        deliveryId: "k3",
+        channel: "push",
+        provider: "expo",
+        status: "failed",
+        at,
+      }),
+    ]);
   });
 });

@@ -5,7 +5,7 @@ Stackra file contract:
 Purpose: the rules an agent follows when it changes @stackra/notifications.
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
-Governing contract: ADR 0086; ADR 0223; ADR 0294; ADR 0305; ADR 0448; STA-964.
+Governing contract: ADR 0086; ADR 0223; ADR 0294; ADR 0305; ADR 0448; STA-964; stackra-207 (STA-1360).
 -->
 
 Messages to people (ADR 0086, 0223 as amended by 0294; R-26). Member at `packages/communication/notifications`
@@ -21,6 +21,7 @@ Messages to people (ADR 0086, 0223 as amended by 0294; R-26). Member at `package
 | A port (signature uses `.`) | `src/core/ports/<name>.port.ts`                |
 | A port with no core type    | `src/contracts/ports/<name>.port.ts`           |
 | A driver                    | `src/core/drivers/<name>.driver.ts`            |
+| An integration event        | `src/core/events/<name>.event.ts`              |
 | A function                  | `src/core/functions/<name>.function.ts`        |
 | A type                      | `src/core/types/<name>.type.ts`                |
 | The configuration           | `src/config/notifications.config.ts`           |
@@ -66,6 +67,10 @@ Messages to people (ADR 0086, 0223 as amended by 0294; R-26). Member at `package
   (`META_WHATSAPP_WEBHOOK_SIGNATURE`) checked by `@stackra/webhooks` before `read`. A driver never throws for the body
   and leaves out what it cannot read; prices become `MoneyAmount` through `Money.of`, never a float. The `meta` driver is
   payload decoding only (like `twiml`); its Integration and Connection stay in OS integrations (R3-8).
+- Delivery outcomes (stackra-207): a transport records each outcome through `recordDelivery` as `DeliveryRecorded`
+  (`notifications.delivery.recorded.v1`, fields `NotificationDeliveryEvent`), after the send log and only when it was
+  given an `EventOutbox`. Ids and codes only. A new status is a change to the contract type, the event's schema, the
+  `./contracts` exact-set test and the README table together. A refusal records `failed`; an outage records nothing.
 - An in-app entry always names its product; a store driver filters `list` by it.
 - A restricted record never falls back from the content-free template to the full one.
 - A content-free template reads only `CONTENT_FREE_FIELDS` (`kind`, `link`); `assertContentFree` refuses anything else
