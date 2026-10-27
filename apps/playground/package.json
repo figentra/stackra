@@ -55,6 +55,7 @@
     "@heroui/react": "catalog:frontend",
     "@heroui/styles": "catalog:frontend",
     "@internationalized/date": "catalog:frontend",
+    "@stackra/app": "workspace:*",
     "@stackra/container": "workspace:*",
     "@stackra/icons": "workspace:*",
     "@stackra/navigation": "workspace:*",
