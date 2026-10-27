@@ -1,5 +1,14 @@
 # @stackra/market-packs
 
+<!--
+Stackra file contract:
+Purpose: the package's reader guide: market packs, signing and verifying, resolving (sections without a base pack
+         included), values and floors (list floors included), storage and the base-pack keys.
+Boundary: documentation only; the code and the ADRs win on any difference.
+Runtime: none
+Governing contract: ADR 0370; ADR 0385; ADR 0417; ADR 0418; ADR 0455.
+-->
+
 The market-pack loader. A market pack is versioned, signed data for one market (a country, a group such as `eu`, or
 an overlay such as `eu-de` or `ae-difc`): tax, e-invoicing, legal floors, providers, calendar, formats. This package
 verifies packs, resolves overlays and product sections under a tenant's pins, and answers "the value of X for market M
@@ -27,7 +36,8 @@ Entry barrels are generated, never authored (ADR 0294 decision 15); until `stack
 | `SignedPack$`, `SignedPack`, `TrustedKeys`                                  | a pack as shipped: content, SHA-256 hash, Ed25519 signature; the public keys accepted                                                                                                                 |
 | `signPack`, `contentHash`                                                   | the build step: check, hash and sign a reviewed pack                                                                                                                                                  |
 | `verifyPack`, `PackRejectedError`, `PackRejection`                          | the load step: shape, hash and signature checks; a failing pack is refused                                                                                                                            |
-| `resolvePack`, `ResolveOptions`, `ResolvedPack`, `PackNotFoundError`        | overlays root first, pins per market, accepted statuses, product sections                                                                                                                             |
+| `resolvePack`, `ResolveOptions`, `ResolvedPack`, `PackNotFoundError`        | overlays root first, pins per market, accepted statuses, product sections; `requireBase: false` resolves sections with no base pack                                                                   |
+| `pickPack`                                                                  | the one version of a market's base pack or section a pin and the accepted statuses allow                                                                                                              |
 | `valueOf`, `valuesOn`, `ResolvedValue`                                      | the value of a key on a date, with the market and version that set it                                                                                                                                 |
 | `floorsOn`, `FloorBound`                                                    | the legal floors in force, with bound and law, for the settings resolver and rules                                                                                                                    |
 | `factsOn`                                                                   | the values in force as a plain record, a fact source for `@stackra/rules`                                                                                                                             |
@@ -55,6 +65,12 @@ const resolved = resolvePack(packs, tenant.market, {
 
 valueOf(resolved, "consumer.withdrawal_days", today); // { value, market, version, floor? }
 floorsOn(resolved, today); // what no setting may cross, with the law that set it
+
+// A product's own sections before the platform's base packs exist (ADR 0455).
+const sectionsOnly = resolvePack(commercePacks, "eu-de", {
+  sections: ["commerce"],
+  requireBase: false,
+});
 ```
 
 ## Draft seed packs
@@ -98,8 +114,13 @@ Each prefix is as narrow as its keys, so the OS service that owns a section stil
   sandbox may accept `beta`).
 - **Sections.** A product's section of a market follows its base pack's major line; its keys start with
   `<section>.`, so it never overwrites a base value.
-- **Floors.** A floor entry carries `bound` (`min` or `max`) and `law`. This package exposes floors; the settings
-  resolver and the rules engine apply them.
+- **Sections without a base.** With `requireBase: false`, a market with no base pack answers with its sections alone
+  (on its pin, else the highest) and nests under its code's parent (`eu-de` under `eu`); the asked-for market still
+  needs a base or a section. A base pack, when present, is used as always. The default stays `true`, so a missing
+  platform base pack is refused in production.
+- **Floors.** A floor entry carries `bound` (`min`, `max` or `list`) and `law`. A `list` floor's value is a list: a
+  value may add items but never drop one (refused goods). `overlayFloorIssues` refuses an overlay that drops an item.
+  This package exposes floors; the settings resolver and the rules engine apply them.
 - **Hash.** SHA-256 of the canonical JSON (keys sorted at every depth) of the pack exactly as shipped.
 
 ## Tasks

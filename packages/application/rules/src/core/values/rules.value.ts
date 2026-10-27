@@ -3,7 +3,9 @@
  * Purpose: `Rules`, one consumer's registry of fact sources and outcome kinds: the fields its rules may test, the
  *          outcomes a match may yield, and the checks that turn a user-written condition into a `Condition` and
  *          user-written outcomes into `Outcome`s, or refuse them, node by node.
- * Boundary: a value built with `Rules.create`, frozen. A misdeclared source or outcome kind (a bad key, a repeat, an
+ * Boundary: a value built with `Rules.create`, frozen except for its fact sources: an edition adds its own after
+ *           `create` with `register` (the registration hook), checked the same way, never replacing a registered
+ *           source; a condition naming a source that is not registered is still refused at save time. A misdeclared source or outcome kind (a bad key, a repeat, an
  *           enum without values, a floor on a parameter that is not a number) is the consumer's bug and throws a
  *           `TypeError` at module load. The checks are the trust boundary for stored rules: a tree of at most 200 nodes
  *           and 8 levels, each leaf a registered field, an operator of its type's set and a value that operator takes
@@ -13,7 +15,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0331 (decisions 2, 3, 4, 9 and 10); ADR 0328 (values are built with `create`); ADR 0140
  *                     (field errors by path); ADR 0425 (decisions 1 to 4); config-model sections 3 and 4;
- *                     STA-1250 (one key casing, `FIELD_KEY`).
+ *                     STA-1250 (one key casing, `FIELD_KEY`); ADR 0455 (decisions 1 and 2: `register`, list floors).
  */
 import { Enum } from "@stackra/contracts";
 import type { FieldErrors } from "@stackra/errors";
@@ -55,6 +57,13 @@ const MAX_OUTCOMES_CEILING = 500;
 /** The keys an outcome carries. */
 const OUTCOME_KEYS = ["kind", "params"] as const;
 
+/** The parameter types that may name a floor: ordered ones (`min`, `max`) and lists (`list`). */
+const FLOORED_TYPES: ReadonlySet<FieldType> = new Set([
+  FieldType.Number,
+  FieldType.Money,
+  FieldType.List,
+]);
+
 /** A market-pack floor key: a dotted lowercase path. */
 const FLOOR_KEY = /^[a-z0-9_]+(\.[a-z0-9_]+)*$/;
 
@@ -78,11 +87,17 @@ function checkField(path: string, key: string, field: FactField): void {
     throw new TypeError(`Rules.create: "${path}": an enum field, and only one, lists its values`);
 }
 
-/** The field description of each path of `sources`, after checking every declaration. */
-function fieldsOf(sources: readonly FactSource[]): Map<string, FactField> {
+/**
+ * The field description of each path of `sources`, after checking every declaration; `taken` holds the source keys
+ * already registered.
+ */
+function fieldsOf(
+  sources: readonly FactSource[],
+  taken: ReadonlySet<string> = new Set(),
+): Map<string, FactField> {
   if (sources.length === 0) throw new TypeError("Rules.create: register at least one fact source");
   const fields = new Map<string, FactField>();
-  const seen = new Set<string>();
+  const seen = new Set<string>(taken);
   for (const source of sources) {
     if (!KEY.test(source.key) || seen.has(source.key))
       throw new TypeError(`Rules.create: "${source.key}" is not a distinct camelCase source key`);
@@ -112,11 +127,10 @@ function kindsOf(kinds: readonly OutcomeKind[]): Map<string, OutcomeKind> {
         throw new TypeError(`Rules.create: "${path}": an outcome parameter is never a geo point`);
       if (
         param.floor !== undefined &&
-        ((param.type !== FieldType.Number && param.type !== FieldType.Money) ||
-          !FLOOR_KEY.test(param.floor))
+        (!FLOORED_TYPES.has(param.type) || !FLOOR_KEY.test(param.floor))
       )
         throw new TypeError(
-          `Rules.create: "${path}": only a number or money parameter names a floor, as a dotted lowercase key`,
+          `Rules.create: "${path}": only a number, money or list parameter names a floor, as a dotted lowercase key`,
         );
       if (param.floor !== undefined && param.optional === true)
         throw new TypeError(`Rules.create: "${path}": a floored parameter is never optional`);
@@ -142,11 +156,11 @@ export class Rules {
   /** The consumer's key, stored on its rule sets. */
   readonly key: string;
 
-  /** The fact sources, in the order they were given. */
-  readonly sources: readonly FactSource[];
+  /** The fact sources, in the order they were registered; `register` appends. */
+  private readonly registered: FactSource[];
 
-  /** Each registered field by its path. */
-  private readonly byPath: ReadonlyMap<string, FactField>;
+  /** Each registered field by its path; `register` adds. */
+  private readonly byPath: Map<string, FactField>;
 
   /** Each registered outcome kind by its key. */
   private readonly kinds: ReadonlyMap<string, OutcomeKind>;
@@ -156,13 +170,13 @@ export class Rules {
 
   private constructor(
     key: string,
-    sources: readonly FactSource[],
-    byPath: ReadonlyMap<string, FactField>,
+    sources: FactSource[],
+    byPath: Map<string, FactField>,
     kinds: ReadonlyMap<string, OutcomeKind>,
     maxOutcomes: number,
   ) {
     this.key = key;
-    this.sources = sources;
+    this.registered = sources;
     this.byPath = byPath;
     this.kinds = kinds;
     this.maxOutcomes = maxOutcomes;
@@ -190,11 +204,33 @@ export class Rules {
       );
     return new Rules(
       options.key,
-      Object.freeze([...options.sources]),
+      [...options.sources],
       fieldsOf(options.sources),
       kindsOf((options.outcomes ?? []).map(outcomeKindOf)),
       maxOutcomes,
     );
+  }
+
+  /** The fact sources, in the order they were registered. */
+  get sources(): readonly FactSource[] {
+    return Object.freeze([...this.registered]);
+  }
+
+  /**
+   * Adds `sources` after `create`: the registration hook an edition uses to contribute its own fact sources at
+   * runtime (at module init, before it saves or evaluates a rule naming them). Each is checked as `create` checks
+   * one, and is all or nothing. Until a source is registered, a condition naming its fields is refused
+   * (`field_unknown`) at save time as before.
+   *
+   * @throws TypeError when no source is given, a source key is already registered or repeated, or a source is
+   *         misdeclared (see `create`).
+   * @example
+   * DELIVERY_RULES.register(EXPRESS_EDITION_FACTS);
+   */
+  register(...sources: readonly FactSource[]): void {
+    const fields = fieldsOf(sources, new Set(this.registered.map((source) => source.key)));
+    this.registered.push(...sources);
+    for (const [path, field] of fields) this.byPath.set(path, field);
   }
 
   /** Every registered field with its path, source by source, in declaration order. */

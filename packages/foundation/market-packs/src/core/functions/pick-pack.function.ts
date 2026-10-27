@@ -2,10 +2,10 @@
  * Stackra file contract:
  * Purpose: `pickPack`, the one version of a market's base pack or product section that a resolution serves: the
  *          highest version with an accepted status that the pin allows.
- * Boundary: pure and internal (used by `resolvePack`). A pin without a dot is a major line; a pin with dots is one exact
+ * Boundary: pure and public (used by `resolvePack`, and by a product that picks one section version itself). A pin without a dot is a major line; a pin with dots is one exact
  *           version (a rollback). Returns `undefined` when nothing fits.
  * Runtime: isomorphic
- * Governing contract: ADR 0370 (decision 4).
+ * Governing contract: ADR 0370 (decision 4); ADR 0455 (decision 3: public).
  */
 import type { PackStatus } from "#core/enums/pack-status.enum";
 import { compareVersions } from "#core/functions/compare-versions.function";

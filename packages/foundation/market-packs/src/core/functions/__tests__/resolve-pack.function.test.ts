@@ -1,11 +1,12 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `resolvePack`: overlays of any depth root first with sections beside each base (a section per
- *          overlay), pins per market, accepted statuses, a missing market and overlay loops of any length.
+ *          overlay), pins per market, accepted statuses, a missing market, overlay loops of any length, and product
+ *          sections with no base pack (`requireBase: false`).
  * Boundary: test only; imports the subject through its `#core` alias and the runner through @stackra/testing. Pack
  *           data is a made-up fixture, not any market's values (ADR 0363 decision 9).
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0370.
+ * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0370; ADR 0455.
  */
 import { isRefusal } from "@stackra/errors";
 import { describe, expect, it } from "@stackra/testing";
@@ -106,5 +107,40 @@ describe("resolvePack", () => {
       pack({ market: "xc", extends: "xb", version: "1.0.0" }),
     ];
     expect(() => resolvePack(longer, "xb")).toThrow(PackRejectedError);
+  });
+
+  it("resolves product sections with no base pack when the base is not required", () => {
+    const sectionsOnly = [
+      pack({ market: "xa", section: "shop", version: "1.0.0" }),
+      pack({ market: "xa", section: "shop", version: "2.0.0" }),
+      pack({ market: "xa-one-city", section: "shop", version: "1.0.0" }),
+    ];
+    expect(
+      resolvePack(sectionsOnly, "xa-one-city", {
+        sections: ["shop"],
+        requireBase: false,
+      }).layers.map((layer) => `${layer.market}/${layer.section}@${layer.version}`),
+    ).toEqual(["xa/shop@2.0.0", "xa-one-city/shop@1.0.0"]);
+    expect(
+      resolvePack(sectionsOnly, "xa", {
+        sections: ["shop"],
+        requireBase: false,
+        pins: { xa: "1" },
+      }).layers.map((layer) => layer.version),
+    ).toEqual(["1.0.0"]);
+    expect(() => resolvePack(sectionsOnly, "xa-one-city", { sections: ["shop"] })).toThrow(
+      PackNotFoundError,
+    );
+    expect(() =>
+      resolvePack(sectionsOnly, "xb", { sections: ["shop"], requireBase: false }),
+    ).toThrow(PackNotFoundError);
+  });
+
+  it("follows a base pack's extends when one exists and the base is not required", () => {
+    expect(labels("xa-one", { sections: ["shop"], requireBase: false })).toEqual([
+      "xa@2.0.0",
+      "xa/shop@2.3.0",
+      "xa-one@1.0.0",
+    ]);
   });
 });

@@ -5,13 +5,15 @@
  *          of them legal floors), the reviewer sign-offs per entry key and the launch checklist.
  * Boundary: shape only, no values. Market codes are lowercase and dash-separated (`eu`, `eu-de`, `ae-difc`); versions
  *           are `major.minor.patch`; entry keys are dotted lowercase paths. An entry is in force from `from` through
- *           `until` (both inclusive). One key never has two entries starting the same day. A product section names
+ *           `until` (both inclusive). One key never has two entries starting the same day. A `list` floor's value
+ *           is a list. A product section names
  *           its keys under its own prefix (`<section>.`), so it can never overwrite a base value, and does not overlay
  *           a market itself: it follows its base pack. `reviews` and `checklist` default to empty. `subjects` names, per
  *           key or key prefix, whose market answers it (`location`, `buyer`, `entity`, `tenant`); each key is named
  *           once per pack and a section's subject keys carry its prefix too.
  * Runtime: isomorphic
- * Governing contract: ADR 0370 (decisions 1, 4, 5, 6 and 8) as amended by ADR 0385; ADR 0363 (decisions 3 and 4).
+ * Governing contract: ADR 0370 (decisions 1, 4, 5, 6 and 8) as amended by ADR 0385; ADR 0363 (decisions 3 and 4);
+ *                     ADR 0455 (decision 2).
  */
 import { Enum } from "@stackra/contracts";
 import { z } from "zod";
@@ -54,6 +56,10 @@ export const MARKET_PACK_SCHEMA = z
         .refine((entry) => entry.until === undefined || entry.from <= entry.until, {
           message: "until is before from",
           path: ["until"],
+        })
+        .refine((entry) => entry.floor?.bound !== FloorBound.List || Array.isArray(entry.value), {
+          message: "A list floor's value is a list",
+          path: ["value"],
         }),
     ),
     reviews: z.array(z.object({ key: KEY, reviewer: TEXT, at: z.iso.date() })).default([]),

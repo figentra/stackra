@@ -3,14 +3,14 @@
  * Purpose: Stand-in barrel: the `.` entry of @stackra/rules (`Rules`, `evaluate`, `decide`, `guardFloors`,
  *          `OutcomeDispatcher`, the `RuleOutcome` kind base, the condition, outcome, decision and pack types, the
  *          refusals, `Condition$`, `FactSource$`, `RuleSetPack$` and `RuleSetPublished`, and the AI action
- *          permission matrix's readers `ACTION_PERMISSION_RULES`, `actionPermissionRowsOf` and `packApprovalFloorOf`)
- *          until `stackra gen` writes the entry barrels (STA-339).
+ *          permission matrix's readers `ACTION_PERMISSION_RULES`, `actionPermissionRowsOf` and `packApprovalFloorOf`, and
+ *          `packRuleSetOf`, a pack's default rule set without a scope) until `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. Isomorphic: it imports no ORM and no Node API, so a browser
  *           (the rule builder's preview) evaluates with the same code as the server. It imports `./contracts` and
  *           never re-exports it (one symbol, one entry).
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 15); ADR 0331 (decisions 1, 2, 6, 7, 9 and 12); the STA-347 stand-in barrel
- *                     decision; ADR 0398 and STA-1250 (the matrix readers).
+ *                     decision; ADR 0398 and STA-1250 (the matrix readers); ADR 0455 (`packRuleSetOf`).
  */
 export { RuleOutcome } from "#core/bases/rule-outcome.base";
 export { ACTION_PERMISSION_RULES } from "#core/constants/action-permission-rules.constant";
@@ -27,6 +27,7 @@ export { decide } from "#core/functions/decide.function";
 export { evaluate } from "#core/functions/evaluate.function";
 export { guardFloors } from "#core/functions/guard-floors.function";
 export { packApprovalFloorOf } from "#core/functions/pack-approval-floor-of.function";
+export { packRuleSetOf } from "#core/functions/pack-rule-set-of.function";
 export type { Condition } from "#core/types/condition.type";
 export type { DecideOptions } from "#core/types/decide-options.type";
 export type { Decision } from "#core/types/decision.type";

@@ -1,0 +1,74 @@
+---
+title: "0455 — Rules pack defaults without a scope, registered fact sources, list floors, and sections without a base pack"
+description: "Proposed · 2026-10-27"
+---
+
+{/* Stackra file contract. Purpose: ADR 0455, a rule-set pack's default opened with no scope, fact sources registered after Rules.create, the list floor bound, resolvePack without a base pack and pickPack made public. Boundary: decisions for @stackra/rules and @stackra/market-packs only; the OS settings market_packs loader (owner decision D2) is not changed. Runtime: documentation. Governing contract: ADR 0331, 0363, 0370, 0385, 0386, 0417, 0418, 0425; config-model sections 4 and 5; STA-917. */}
+
+<Note>
+  Proposed (STA-917, batch stackra-22). It closes the Commerce module-catalogue gaps for `rules`
+  (two rows) and `market-packs` (one row), verified against wave 12. The loader of record stays OS
+  settings `market_packs` (owner decision D2); this ADR changes the libraries only.
+</Note>
+
+## Context
+
+Commerce found four gaps. `RuleSetService.open` and `seedPack` need a `ScopeRef`, so a module cannot decide with a
+pack's default rule set (returns policy, COD) before a scope has seeded its own. `Rules.create` freezes the fact
+sources, so an edition loaded after the consumer cannot contribute one (shipping's delivery promise, the OMS busy
+rules). `FloorBound` is `min` or `max`, so a list a scope may add to but never drop from (refused goods) cannot be a
+legal floor. `resolvePack` refuses a market without a base pack, and the OS base packs do not exist yet (STA-848), so
+Commerce resolves its sections with its own `pickCommercePack` and market-code nesting. Wave 12 already has `seedPack`
+on a scope; the other three gaps were open as filed.
+
+## Decision
+
+1. **A pack's default rule set opens without a scope.** `packRuleSetOf(pack, key, rules)` (the `.` entry, isomorphic)
+   parses a `RuleSetPack$` document, finds template `key`, refuses one of another consumer, and checks its condition
+   and outcomes against the consumer's `Rules`, returning a `RuleDocument` that `evaluate` and `decide` take.
+   `RuleSetService.openDefault(pack, key, rules)` returns the same as a `RuleSetRevision` numbered `0`, with the pack
+   version as `seedVersion` and never published. Nothing is stored and no platform scope row stands in for it;
+   `seedPack(scope, …)` remains the way a default becomes a scope's own record. `decide` still applies the floors.
+2. **Fact sources are registered after `create`.** `Rules.register(...sources)` is the registration hook: each source
+   is checked as `create` checks one (camelCase keys, declared types, enum values), a source key already registered is
+   refused, and a call is all or nothing. `Rules` stays frozen except for its source list and field map; nothing is
+   ever replaced or removed. Until a source is registered, a condition naming its fields is `field_unknown` at save
+   time, as before. An edition registers at module init, before it saves or evaluates a rule naming its fields, and
+   `ConditionFieldService.sync` runs after it.
+3. **`FloorBound.List`, the list floor.** A `list` floor's value is a list (`MarketPack$` refuses another value). A
+   value keeps every item of the floor and may add more. `overlayFloorIssues` reports an overlay list that drops an
+   item as `floor_loosened`. In rules, a `list` outcome parameter may name a floor; `crossedFloor` moves a list
+   missing items to the list plus the missing items (`past_floor`), and throws for a list floor on a non-list
+   parameter, a `min`/`max` floor on a list, or a list floor that is not strings (a pack bug).
+4. **Sections without a base pack.** `ResolveOptions.requireBase` (default `true`): when `false`, a market with no
+   fitting base pack answers with its requested sections alone, on its pin or else the highest version, and its parent
+   is its market code without the last segment (`eu-de` under `eu`). The asked-for market still needs a base or a
+   section, or `PackNotFoundError`; a base pack, when present, is used as always and its `extends` is followed. The
+   default stays `true`, so a missing platform base pack is still refused where it should exist.
+5. **`pickPack` is public** on the `.` entry, so a product picks one section version under the same pin and status
+   rules `resolvePack` uses. `compareVersions` stays internal.
+
+## Consequences
+
+- `@stackra/settings`' `crossesFloor` compares `min` and `max` only; a `list` floor reaching it is not refused there
+  until the settings owner adds the list case (a follow-up, outside this batch). Every bound comparison must handle
+  all three bounds.
+- `Rules.sources` is now a getter returning a frozen copy; reading it is unchanged.
+- Commerce can drop `pickCommercePack` and `commerceChain` (setup) for `pickPack` and `requireBase: false`, read the
+  returns and COD defaults with `openDefault`, and register edition fact sources with `register`.
+- A list floor may grow a list past the 100 strings a list parameter takes; a pack author keeps floor lists short.
+
+## Alternatives
+
+- **A platform scope row for pack defaults.** Rejected: it puts a fake scope under row-level security and a seed to
+  maintain per pack version, for a value that is pure pack data.
+- **Rebuilding `Rules` with the extra sources** (`Rules.extend` returning a new value). Rejected: every holder of the
+  consumer's `Rules` constant would need the new value; the registry is one per consumer.
+- **Market-code nesting always.** Rejected: base packs declare `extends`, and an overlay whose parent is not its code
+  prefix must follow the data; nesting by code is only the fallback for a market with no base pack.
+
+## Supersedes and sources
+
+Supersedes nothing; amends ADR 0370 (decisions 3, 4 and 6) and ADR 0331 (decision 2). Sources: Commerce
+`apps/docs/src/build/module-catalogue.mdx` (Stackra gaps: rules, market-packs), `services/catalogue/src/modules/setup/SPEC.md`,
+`services/fulfilment/src/modules/shipping/SPEC.md`; STA-848; owner decision D2.

@@ -1,10 +1,10 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `MARKET_PACK_SCHEMA`: it accepts a base pack and a product section with defaults, and refuses bad codes, versions, statuses, keys, date ranges, repeated starts and section keys or overlays.
+ * Purpose: unit tests of `MARKET_PACK_SCHEMA`: it accepts a base pack and a product section with defaults, and refuses bad codes, versions, statuses, keys, date ranges, repeated starts, section keys or overlays, and a list floor whose value is not a list.
  * Boundary: test only; imports the subject through its `#core` alias and the runner through @stackra/testing. Pack
  *           data is a made-up fixture, not any market's values (ADR 0363 decision 9).
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0370.
+ * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0370; ADR 0455.
  */
 import { describe, expect, it } from "@stackra/testing";
 
@@ -26,6 +26,19 @@ const valid = {
     },
   ],
 };
+
+/** `valid` with one list floor holding `value`. */
+const listFloor = (value: unknown) => ({
+  ...valid,
+  entries: [
+    {
+      key: "refused.goods",
+      value,
+      from: "2026-01-01",
+      floor: { bound: "list", law: "Made-up Act s. 2" },
+    },
+  ],
+});
 
 describe("MARKET_PACK_SCHEMA", () => {
   it("accepts a pack and defaults reviews and checklist to empty", () => {
@@ -114,5 +127,10 @@ describe("MARKET_PACK_SCHEMA", () => {
   it("refuses a section key outside its prefix", () => {
     const { extends: _parent, ...base } = valid;
     expect(MARKET_PACK_SCHEMA.safeParse({ ...base, section: "shop" }).success).toBe(false);
+  });
+
+  it("accepts a list floor holding a list and refuses one holding a scalar", () => {
+    expect(MARKET_PACK_SCHEMA.safeParse(listFloor(["a"])).success).toBe(true);
+    expect(MARKET_PACK_SCHEMA.safeParse(listFloor("a")).success).toBe(false);
   });
 });

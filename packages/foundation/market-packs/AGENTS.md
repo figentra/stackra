@@ -1,7 +1,16 @@
 # AGENTS — @stackra/market-packs
 
+<!--
+Stackra file contract:
+Purpose: the agent rules of @stackra/market-packs: where code goes, entries and barrels, the package rules (no pack
+         content in code, floors, resolving without a base pack) and PII.
+Boundary: documentation only; the code and the ADRs win on any difference.
+Runtime: none
+Governing contract: ADR 0294; ADR 0305; ADR 0370; ADR 0385; ADR 0417; ADR 0418; ADR 0455.
+-->
+
 The market-pack loader. Member at `packages/foundation/market-packs` (`tier:lib`), in the programming model v3.1 shape
-(ADR 0294, 0305). Entries `.` and `./node` (the root module). Decision records: ADR 0370, 0385, 0417, 0418.
+(ADR 0294, 0305). Entries `.` and `./node` (the root module). Decision records: ADR 0370, 0385, 0417, 0418, 0455.
 
 ## Where code goes
 
@@ -24,8 +33,8 @@ The market-pack loader. Member at `packages/foundation/market-packs` (`tier:lib`
 ## Entries and barrels
 
 - `src/core/index.ts` is a stand-in barrel until gen writes the entry barrels (STA-339); add every new public file to
-  it and to the export list in `src/core/__tests__/index.test.ts`. `canonicalJson`, `compareVersions`, `pickPack` and
-  `packLabel` and `subjectOf` stay internal.
+  it and to the export list in `src/core/__tests__/index.test.ts`. `canonicalJson`, `compareVersions`, `packLabel` and
+  `subjectOf` stay internal; `pickPack` is public (ADR 0455).
 
 ## This package
 
@@ -51,6 +60,11 @@ The market-pack loader. Member at `packages/foundation/market-packs` (`tier:lib`
   `identity.national_ids`, `identity.address_format`, `ai.approval_floor`). An identity shape is the JSON Schema of
   its @stackra/validation `X$`; never copy it by hand. Keep
   each prefix as narrow as its keys; add a key here only when a consumer reads it, and never a market's value.
+- **Floors.** `FloorBound` is `min`, `max` or `list` (ADR 0455). Every comparison of a bound (here
+  `overlayFloorIssues`, in rules `crossedFloor`, in settings `crossesFloor`) handles all three; adding a bound means
+  changing all of them.
+- **No base pack.** `resolvePack` refuses a market without a base pack unless the caller passes `requireBase: false`;
+  then a market without one nests under its code's parent. Never make that the default.
 - Trusted public keys are deployment configuration; the private signing key is held by the caller of `signPack`
   and never read, stored or logged here.
 - The content hash covers the pack exactly as shipped (canonical JSON); never hash a parsed copy in `verifyPack`.

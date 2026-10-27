@@ -3,7 +3,8 @@
  * Purpose: `RuleSetService`, the module service over `RuleSet`: opens a rule set for a consumer in a scope, stores a
  *          checked condition and its outcomes as its next draft revision, publishes a revision, reads one, evaluates
  *          or decides the published (or a stated) revision against facts, seeds the default rule sets of a
- *          versioned rule-set pack into a scope, and reads a scope's AI action permission matrix.
+ *          versioned rule-set pack into a scope, opens a pack's default rule set with no scope (`openDefault`), and
+ *          reads a scope's AI action permission matrix.
  * Boundary: a `CrudService<RuleSet>` that injects `Repository<Revision>` (content's `HasRevisions` table), so every
  *           read and write runs in the caller's transaction and scope session; row-level security limits both tables
  *           to the session's granted subtrees. A draft is checked against the consumer's `Rules` and refused for a
@@ -16,7 +17,7 @@
  * Governing contract: ADR 0331 (decisions 5, 6, 9 and 10); ADR 0321 (decision 2); ADR 0327 (decisions 3 and 9);
  *                     ADR 0105 as amended by ADR 0294; config-model sections 4 and 6 (rule sets ship as versioned seed
  *                     documents; a new seed version never overwrites tenant values); ADR 0398 and STA-1250 (the
- *                     matrix reader).
+ *                     matrix reader); ADR 0455 (decision 1: `openDefault`).
  */
 import type { Revision } from "@stackra/content/node";
 import type { ActionPermissionRow } from "@stackra/ai";
@@ -38,6 +39,7 @@ import {
   type Evaluation,
   type Facts,
   type Outcome,
+  packRuleSetOf,
   RuleSetChangedError,
   RuleSetPack$,
   RuleSetPublished,
@@ -74,6 +76,26 @@ export class RuleSetService extends CrudService<RuleSet> {
   /** A new rule set of `rules`' consumer at `scope`, with no revision yet. */
   open(scope: ScopeRef, rules: Rules): Promise<RuleSet> {
     return this.insert({ scopeId: scope.id, scopePath: scope.path, consumer: rules.key });
+  }
+
+  /**
+   * The default rule set `key` of `pack` (a `RuleSetPack$` document), with no `ScopeRef` and nothing stored: what a
+   * consumer evaluates or decides with (through `evaluate` and `decide` of the `.` entry) before a scope has seeded
+   * or written its own. It is never published and has no number (`0`); `seedPack` stores it in a scope.
+   *
+   * @throws ZodError when `pack` is not a rule-set pack; TypeError when it has no template `key` or the template is
+   *         for another consumer than `rules`; ConditionInvalidError or OutcomeInvalidError when it does not check.
+   * @example
+   * const rule = ruleSets.openDefault(returnsPack, "commerce.returns.window", RETURNS_RULES);
+   * const decision = decide(RETURNS_RULES, rule, facts, { now: ctx.startedAt, floors });
+   */
+  openDefault(pack: unknown, key: string, rules: Rules): RuleSetRevision {
+    return {
+      ...packRuleSetOf(pack, key, rules),
+      number: 0,
+      seedVersion: RuleSetPack$.parse(pack).version,
+      publishedAt: null,
+    };
   }
 
   /**

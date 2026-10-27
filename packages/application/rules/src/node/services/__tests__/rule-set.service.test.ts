@@ -8,11 +8,12 @@
  *          and refuses one past a floor when the studio passes the floors;
  *          `decide` guards the published revision's outcomes against the floors; `seed` creates and publishes a
  *          template, skips the version it already holds, keeps a tenant's edit and updates a seeded copy; `seedPack`
- *          seeds each template against its consumer's `Rules`; `approvalMatrix` reads the rows of a scope's published
+ *          seeds each template against its consumer's `Rules`; `openDefault` reads a pack's default rule set with no
+ *          scope; `approvalMatrix` reads the rows of a scope's published
  *          AI action permission matrix, none without one.
  * Boundary: test only; a fake `Database` hands out a recording entity manager, so no database runs.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0269; ADR 0331 (decisions 5, 6 and 10); ADR 0327 (decisions 3 and 9).
+ * Governing contract: ADR 0022; ADR 0269; ADR 0331 (decisions 5, 6 and 10); ADR 0327 (decisions 3 and 9); ADR 0455.
  */
 import { Revision } from "@stackra/content/node";
 import type { PublicId, ScopeRef } from "@stackra/contracts";
@@ -384,6 +385,21 @@ describe("RuleSetService outcomes and seeds", () => {
       "shop.returns": SeedResult.Created,
     });
     await expect(serviceOf().seedPack(SCOPE, pack, [])).rejects.toThrow(/needs the Rules/);
+  });
+});
+
+describe("RuleSetService.openDefault", () => {
+  it("reads a pack's default rule set with no scope", () => {
+    const pack = { key: "shop", version: "1.2.0", ruleSets: [TEMPLATE] };
+    const revision = serviceOf().openDefault(pack, "shop.returns", RULES);
+    expect(revision).toEqual({
+      condition: TEMPLATE.condition,
+      outcomes: TEMPLATE.outcomes,
+      number: 0,
+      seedVersion: "1.2.0",
+      publishedAt: null,
+    });
+    expect(() => serviceOf().openDefault(pack, "shop.none", RULES)).toThrow(TypeError);
   });
 });
 

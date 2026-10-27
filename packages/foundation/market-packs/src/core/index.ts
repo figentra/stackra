@@ -2,11 +2,11 @@
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `.` entry of @stackra/market-packs, until `stackra gen` writes the entry barrels
  *          (STA-339).
- * Boundary: names each re-export and declares nothing. The canonical JSON, version order, pick, label and subject
- *           helpers stay internal. The schemas are re-exported under their generated names (`MarketPack$`, `SignedPack$`).
+ * Boundary: names each re-export and declares nothing. The canonical JSON, version order, label and subject helpers
+ *           stay internal; `pickPack` is public (ADR 0455). The schemas are re-exported under their generated names (`MarketPack$`, `SignedPack$`).
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision; ADR 0370; ADR 0385; ADR 0417;
- *                     ADR 0418; STA-1252 (`BASE_PACK_SCHEMAS`).
+ *                     ADR 0418; STA-1252 (`BASE_PACK_SCHEMAS`); ADR 0455.
  */
 export { MarketPacksConfig } from "#config/market-packs.config";
 export { BASE_PACK_SCHEMAS } from "#core/constants/base-pack-schemas.constant";
@@ -30,6 +30,7 @@ export { fetchPacks } from "#core/functions/fetch-packs.function";
 export { floorsOn } from "#core/functions/floors-on.function";
 export { launchGate } from "#core/functions/launch-gate.function";
 export { overlayFloorIssues } from "#core/functions/overlay-floor-issues.function";
+export { pickPack } from "#core/functions/pick-pack.function";
 export { readPackAssets } from "#core/functions/read-pack-assets.function";
 export { resolvePack } from "#core/functions/resolve-pack.function";
 export { signPack } from "#core/functions/sign-pack.function";

@@ -3,10 +3,11 @@
  * Purpose: unit tests of `overlayFloorIssues`: an overlay as strict as or stricter than its parent's floor passes; one
  *          that goes below a `min`, above a `max`, changes an unordered floor or replaces a floor with a plain value is
  *          reported once, on the first day; a floor that only starts later, or ends before the overlay, is checked on
- *          the right days; keys the parent does not floor are ignored.
+ *          the right days; keys the parent does not floor are ignored; a list floor passes when every parent item is
+ *          kept and is reported when one is dropped.
  * Boundary: test only. Packs are made-up fixtures (`xa`, `xa-one`), not any market's values.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0417.
+ * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0417; ADR 0455.
  */
 import { describe, expect, it } from "@stackra/testing";
 
@@ -19,6 +20,8 @@ import type { ResolvedPack } from "#core/types/resolved-pack.type";
 const MIN = { bound: FloorBound.Min, law: "Act 1" };
 
 const MAX = { bound: FloorBound.Max, law: "Act 2" };
+
+const LIST = { bound: FloorBound.List, law: "Act 3" };
 
 /** A pack version of `market` with `entries`. */
 function pack(market: string, entries: MarketPack["entries"]): MarketPack {
@@ -43,6 +46,7 @@ const parent: ResolvedPack = {
       { key: "late.days", value: 3, from: "2027-01-01", floor: MIN },
       { key: "old.days", value: 3, from: "2020-01-01", until: "2024-12-31", floor: MIN },
       { key: "plain.days", value: 3, from: "2020-01-01" },
+      { key: "refused.goods", value: ["a", "b"], from: "2020-01-01", floor: LIST },
     ]),
   ],
 };
@@ -100,5 +104,17 @@ describe("overlayFloorIssues", () => {
     expect(issues([{ key: "old.days", value: 0, from: "2024-06-01" }])).toEqual([
       "floor_dropped old.days",
     ]);
+  });
+
+  it("passes a list floor that keeps every item and reports one that drops an item", () => {
+    expect(
+      issues([{ key: "refused.goods", value: ["b", "c", "a"], from: "2026-01-01", floor: LIST }]),
+    ).toEqual([]);
+    expect(
+      issues([{ key: "refused.goods", value: ["a"], from: "2026-01-01", floor: LIST }]),
+    ).toEqual(["floor_loosened refused.goods"]);
+    expect(
+      issues([{ key: "refused.goods", value: ["a", "b"], from: "2026-01-01", floor: MIN }]),
+    ).toEqual(["floor_dropped refused.goods"]);
   });
 });

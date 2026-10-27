@@ -1,5 +1,15 @@
 # @stackra/rules
 
+<!--
+Stackra file contract:
+Purpose: the package's reader guide: the condition engine, fact sources and their registration hook, outcomes and
+         the floor guard (list floors included), rule sets, rule-set packs and their scope-less defaults, the matrix
+         readers and the rule builder.
+Boundary: documentation only; the code and the ADRs win on any difference.
+Runtime: none
+Governing contract: ADR 0331; ADR 0370; ADR 0425; ADR 0455; config-model sections 4 to 6.
+-->
+
 Stackra rules: one condition engine for every rule consumer (ADR 0331). Segments, discounts, pricing rules, related
 products, automations and visibility rules test facts with the same tree, the same operators and the same reading of a
 missing value, so one rule never gives two answers in two places. A rule is stored data that names registered fields
@@ -30,6 +40,7 @@ and operators; it is never an expression and never runs code (ADR 0154, ADR 0227
 | `.`           | `RuleSetPublished`                                                     | the domain event of a published revision                                 |
 | `.`           | `ACTION_PERMISSION_RULES`, `actionPermissionRowsOf`                    | the AI action permission matrix as a rule set, and its reader            |
 | `.`           | `packApprovalFloorOf`, `APPROVAL_FLOOR_KEY`                            | a market pack's AI approval floor (`ai.approval_floor`) for the resolver |
+| `.`           | `packRuleSetOf`, `rules.register`                                      | a pack's default rule set with no scope; an edition's fact sources       |
 | `./node`      | `RuleSet`, `RuleSetService`, `RuleSetRevision`                         | versioned rule sets on `HasRevisions`, and their service                 |
 | `./node`      | `ConditionField`, `ConditionFieldService`                              | the cross-service condition-field registry (`rules.condition_fields`)    |
 | `./react`     | `RuleBuilder`, `RuleBuilderProps`                                      | the rule-builder panel on `@stackra/ui`                                  |
@@ -65,6 +76,14 @@ export const DISCOUNT_RULES = Rules.create({
 | `enum`     | a code     | equals, not equals, one of, not one of; the field lists its codes and their labels        |
 | `list`     | `string[]` | includes, includes any, includes all, includes none, is empty, is not empty               |
 | `geo`      | `GeoPoint` | within radius, outside radius (`{ latitude, longitude, radiusKilometres }`, great circle) |
+
+An edition (or any later module) adds its own fact sources after `create` with the registration hook, at module
+init, before it saves or evaluates a rule that names them. Until then a condition naming them is refused at save time
+(`field_unknown`), as any unknown field is.
+
+```ts
+DELIVERY_RULES.register(EXPRESS_EDITION_FACTS); // throws TypeError for a repeated or misdeclared source
+```
 
 Keys have one casing: a source, field, outcome kind and parameter key is camelCase (`FIELD_KEY`, `channelId`, never
 `channel_id`), so the field a model names in TypeScript is the field a stored condition names in every service.
@@ -145,8 +164,10 @@ await RETURNS_OUTCOMES.dispatch(decision, order);
   is required, so no outcome leaves without the guard; a market with no floors passes `[]`.
 - A money floor's pack value is `{ minor, currency }`. A money amount in another currency counts as crossing it (the
   engine never converts) and is moved to the floor's own amount.
-- A floor whose pack value does not fit its parameter (not a number, not money) throws rather than let an outcome
-  through unguarded.
+- A `list` parameter may name a `list` floor (refused goods): a list missing an item of the floor is moved to the list
+  plus the missing items.
+- A floor whose pack value or bound does not fit its parameter (not a number, not money, not a list of strings; a
+  `list` floor on a number or a `min` on a list) throws rather than let an outcome through unguarded.
 - At save time the rules studio refuses instead of moving: `RuleSetService.draft(id, rules, condition, outcomes,
 floors)` throws `outcome_invalid` with `past_floor` or `currency_mismatch` at `<index>.params.<name>`, and
   `RuleBuilder` with `floors` marks the same before the save.
@@ -236,6 +257,15 @@ await ruleSets.seedPack(scope, pack, [RETURNS_RULES, COD_RULES]); // { "commerce
 `seed` creates and publishes a template the first time (`rules.rule_sets.seed_key` and `seed_version`, migration
 `rules.0002`), skips a version it already holds, and later publishes a new version only while the latest revision is
 a seed's: a tenant's edit stands (`kept`). Seeded revisions carry `seed: { key, version }` in their data.
+
+A pack's default rule set also opens with no `ScopeRef` and nothing stored, for a consumer that decides before a scope
+has its own (ADR 0455):
+
+```ts
+const rule = ruleSets.openDefault(pack, "commerce.returns.window", RETURNS_RULES); // number 0, never published
+const decision = decide(RETURNS_RULES, rule, facts, { now: ctx.startedAt, floors });
+// isomorphic: packRuleSetOf(pack, "commerce.returns.window", RETURNS_RULES)
+```
 
 ## Rule builder
 

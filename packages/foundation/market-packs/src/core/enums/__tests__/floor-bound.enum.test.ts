@@ -12,10 +12,10 @@ import { FloorBound } from "#core/enums/floor-bound.enum";
 
 describe("FloorBound", () => {
   it("lists its codes", () => {
-    expect(Enum.values(FloorBound)).toEqual(["min", "max"]);
+    expect(Enum.values(FloorBound)).toEqual(["min", "max", "list"]);
   });
 
   it("types one code", () => {
-    expectTypeOf<FloorBound>().toEqualTypeOf<"min" | "max">();
+    expectTypeOf<FloorBound>().toEqualTypeOf<"min" | "max" | "list">();
   });
 });

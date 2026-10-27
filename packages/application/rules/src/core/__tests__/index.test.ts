@@ -1,12 +1,13 @@
 /**
  * Stackra file contract:
  * Purpose: pins the exports of the `.` entry of @stackra/rules: `Rules`, `evaluate`, `decide`, `guardFloors`,
- *          `OutcomeDispatcher`, `RuleOutcome`, `Condition$`, `FactSource$`, `RuleSetPack$`, the three refusals and `RuleSetPublished` at run time, none of `./contracts`' symbols, and the condition, fact and evaluation
+ *          `OutcomeDispatcher`, `RuleOutcome`, `Condition$`, `FactSource$`, `RuleSetPack$`, `packRuleSetOf`, the three refusals and `RuleSetPublished` at run time, none of `./contracts`' symbols, and the condition, fact and evaluation
  *          types at compile time (a tree and an evaluation typecheck; an abbreviated leaf key and an unknown
  *          operator are refused).
  * Boundary: test only.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0294 (decision 15: one symbol, one entry); ADR 0331 (decisions 2, 6 and 7).
+ * Governing contract: ADR 0022; ADR 0294 (decision 15: one symbol, one entry); ADR 0331 (decisions 2, 6 and 7);
+ *                     ADR 0455.
  */
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
@@ -44,6 +45,7 @@ describe("@stackra/rules", () => {
       "evaluate",
       "guardFloors",
       "packApprovalFloorOf",
+      "packRuleSetOf",
     ]);
   });
 

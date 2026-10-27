@@ -8,10 +8,12 @@
  *          and `checkOutcomes` returns the outcomes or throws `OutcomeInvalidError`, also for a parameter past a floor
  *          at save time (`floorProblems`); `conditionSchema` refuses an unregistered field at its node's path; a
  *          snake_case key is refused (one casing); an optional parameter may be left out but never names a floor; and
- *          `maxOutcomes` raises the outcome limit within 1 to 500.
+ *          `maxOutcomes` raises the outcome limit within 1 to 500; `register` adds an edition's source after `create`
+ *          (refused before, accepted after, a repeat or misdeclared source thrown with nothing added); a list
+ *          parameter may name a floor.
  * Boundary: test only; pure.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0269; ADR 0331 (decisions 2, 3, 4 and 10); STA-1250.
+ * Governing contract: ADR 0022; ADR 0269; ADR 0331 (decisions 2, 3, 4 and 10); STA-1250; ADR 0455.
  */
 import { isRefusal } from "@stackra/errors";
 import type { I18nKey } from "@stackra/i18n";
@@ -198,7 +200,7 @@ describe("Rules outcome kinds", () => {
       withKinds([
         { key: "fee", label, params: { note: { type: FieldType.String, label, floor: "x.y" } } },
       ] as never[]),
-    ).toThrow(/only a number or money parameter names a floor/);
+    ).toThrow(/only a number, money or list parameter names a floor/);
   });
 
   it("finds nothing wrong with registered outcomes and returns them", () => {
@@ -334,5 +336,47 @@ describe("Rules.conditionSchema", () => {
     expect(
       schema.safeParse(tree).error?.issues.map((issue) => [issue.path.join("."), issue.message]),
     ).toEqual([["all.0", "field_unknown"]]);
+  });
+
+  it("registers an edition's fact source after create, refusing it at save time until then", () => {
+    const rules = Rules.create({ key: "shop.delivery", sources: [CART] });
+    const express = {
+      key: "express",
+      fields: { slots: { type: FieldType.Number, label } },
+    } satisfies FactSource;
+    const leaf: Condition = { field: "express.slots", operator: Operator.AtLeast, value: 1 };
+    expect(rules.problems(leaf)).toEqual({ "(root)": "field_unknown" });
+    rules.register(express);
+    expect(rules.check(leaf)).toEqual(leaf);
+    expect(rules.sources).toEqual([CART, express]);
+    expect(rules.fieldOf("express.slots")).toEqual(express.fields.slots);
+    expect(Object.isFrozen(rules)).toBe(true);
+  });
+
+  it("refuses a repeated or misdeclared registered source and adds none of the call", () => {
+    const rules = Rules.create({ key: "shop.delivery", sources: [CART] });
+    expect(() => rules.register(CART)).toThrow(TypeError);
+    expect(() =>
+      rules.register(CUSTOMER, { key: "bad", fields: {} } as unknown as FactSource),
+    ).toThrow(TypeError);
+    expect(() => rules.register()).toThrow(TypeError);
+    expect(rules.sources).toEqual([CART]);
+    expect(rules.fieldOf("customer.email")).toBeUndefined();
+  });
+
+  it("lets a list parameter name a floor", () => {
+    expect(() =>
+      Rules.create({
+        key: "shop.refusals",
+        sources: [CART],
+        outcomes: [
+          {
+            key: "refuse",
+            label,
+            params: { goods: { type: FieldType.List, label, floor: "shop.refused_goods" } },
+          },
+        ],
+      }),
+    ).not.toThrow();
   });
 });

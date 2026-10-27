@@ -1,16 +1,16 @@
 /**
  * Stackra file contract:
- * Purpose: `guardFloors`, the final guard on every outcome: each number or money parameter whose kind names a
- *          market-pack floor is moved to the floor when it would cross it (below a `min`, above a `max`, or a money
- *          amount in another currency than the floor's), and each change is reported with the law, market and pack
- *          version that set the floor.
+ * Purpose: `guardFloors`, the final guard on every outcome: each number, money or list parameter whose kind names a
+ *          market-pack floor is moved to the floor when it would cross it (below a `min`, above a `max`, a money
+ *          amount in another currency than the floor's, or a list missing an item of a `list` floor), and each
+ *          change is reported with the law, market and pack version that set the floor.
  * Boundary: pure. The floors are data (`@stackra/market-packs`' `floorsOn`); the check is `crossedFloor`, the same
  *           one the rules studio refuses with at save time. A floor the market does not have leaves the parameter as
  *           it is. A floor whose pack value does not fit the parameter is a pack bug and throws rather than let an
  *           outcome through unguarded. The outcomes must already be checked against `rules` (`Rules.checkOutcomes`).
  * Runtime: isomorphic
  * Governing contract: config-model sections 3 and 4 (a rule outcome never crosses a floor; the engine checks it last);
- *                     ADR 0370 (decision 6); ADR 0331 (decision 9); ADR 0220.
+ *                     ADR 0370 (decision 6); ADR 0331 (decision 9); ADR 0220; ADR 0455 (decision 2).
  */
 import type { Json } from "@stackra/contracts";
 import type { ResolvedValue } from "@stackra/market-packs";
@@ -47,7 +47,7 @@ export function guardFloors(
       if (floor?.floor === undefined) continue;
       const crossing = crossedFloor(param.type, params[name], floor);
       if (crossing === undefined) continue;
-      // reason: `crossedFloor` reports only a number or a money amount, both of which `FloorValue` names
+      // reason: `crossedFloor` reports only a number, a money amount or a list of strings, each of which `FloorValue` names
       const from = params[name] as FloorValue;
       params[name] = crossing.to;
       floored.push(

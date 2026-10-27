@@ -53,6 +53,7 @@ describe("@stackra/market-packs", () => {
       "floorsOn",
       "launchGate",
       "overlayFloorIssues",
+      "pickPack",
       "readPackAssets",
       "resolvePack",
       "signPack",

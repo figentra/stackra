@@ -4,11 +4,15 @@
  *          it overlays, and so on to the root at any depth (`us-ca-sf`, `us-ca`, `us`), each chosen under the tenant's
  *          pin and accepted statuses, with the requested product sections on the same major line beside each base
  *          pack, so a section declared on an overlay (`us-ca-sf` / `restaurant`) overlays its parent's section.
+ *          With `requireBase: false` a market without a base pack answers with its sections alone (a product
+ *          resolving its own sections before the platform's base packs exist) and its parent is the market code
+ *          without its last segment (`eu-de` to `eu`).
  * Boundary: pure over verified packs. Refuses with `PackNotFoundError` when a market in the chain has no fitting base
- *           version, and with `PackRejectedError` (`overlay_cycle`) when the chain loops. A market with no section
+ *           version (unless `requireBase` is false; then only when the asked-for market has no fitting base or
+ *           section), and with `PackRejectedError` (`overlay_cycle`) when the chain loops. A market with no section
  *           for a product simply adds none. Only `live` is accepted unless `statuses` says otherwise.
  * Runtime: isomorphic
- * Governing contract: ADR 0370 (decisions 3, 4 and 7) as amended by ADR 0385.
+ * Governing contract: ADR 0370 (decisions 3, 4 and 7) as amended by ADR 0385; ADR 0455 (decision 3).
  */
 import { PackRejection } from "#core/enums/pack-rejection.enum";
 import { PackStatus } from "#core/enums/pack-status.enum";
@@ -19,11 +23,16 @@ import type { MarketPack } from "#core/types/market-pack.type";
 import type { ResolveOptions } from "#core/types/resolve-options.type";
 import type { ResolvedPack } from "#core/types/resolved-pack.type";
 
+/** The market a code nests under by its name (`eu-de` to `eu`), or `undefined` for a root code. */
+const parentCode = (code: string): string | undefined =>
+  code.includes("-") ? code.slice(0, code.lastIndexOf("-")) : undefined;
+
 /**
  * Resolve `market` over `packs`.
  *
  * @example
  * const resolved = resolvePack(packs, "eu-de", { pins: { "eu-de": "2", eu: "3" }, sections: ["shop"] });
+ * const sectionsOnly = resolvePack(commercePacks, "eu-de", { sections: ["commerce"], requireBase: false });
  */
 export function resolvePack(
   packs: readonly MarketPack[],
@@ -40,14 +49,17 @@ export function resolvePack(
     seen.add(code);
     const pin = options.pins?.[code];
     const base = pickPack(packs, code, undefined, pin, statuses);
-    if (base === undefined)
-      throw PackNotFoundError.create(pin === undefined ? { market: code } : { market: code, pin });
-    const major = base.version.split(".")[0];
+    const line = base === undefined ? pin : base.version.split(".")[0];
     const sections = (options.sections ?? []).flatMap(
-      (section) => pickPack(packs, code, section, major, statuses) ?? [],
+      (section) => pickPack(packs, code, section, line, statuses) ?? [],
     );
-    layers.unshift(base, ...sections);
-    next = base.extends;
+    const missing =
+      base === undefined &&
+      (options.requireBase !== false || (code === market && sections.length === 0));
+    if (missing)
+      throw PackNotFoundError.create(pin === undefined ? { market: code } : { market: code, pin });
+    layers.unshift(...(base === undefined ? [] : [base]), ...sections);
+    next = base === undefined ? parentCode(code) : base.extends;
   }
   return { market, layers };
 }
