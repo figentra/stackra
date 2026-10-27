@@ -7,19 +7,27 @@
  *           tombstone's text. Earlier texts are `CommentRevision` rows; each mention is also a `CommentMention` row, so
  *           "where was I mentioned" is one indexed read. The text may hold personal data and is never logged.
  * Runtime: node
- * Governing contract: ADR 0433 (decisions 1 to 3); ADR 0327 (decisions 3 and 9); ADR 0294 (decisions 4, 11, 20 and
- *                     27); OS-224 to OS-226.
+ * Governing contract: ADR 0433 (decisions 1 to 3); ADR 0327 (decisions 3 and 9); ADR 0294 (decisions 4, 6, 11, 20
+ *                     and 27); OS-224 to OS-226.
  */
-import type { PublicId } from "@stackra/contracts";
+import { Enum, type PublicId } from "@stackra/contracts";
 import type { OptionalProps } from "@stackra/database";
 import { HasPublicId, Model, Timestamps } from "@stackra/model";
+import { Field } from "@stackra/validation";
+import { z } from "zod";
 
 import type { CommentVisibility } from "#contracts/enums/comment-visibility.enum";
+import { MentionKind } from "#contracts/enums/mention-kind.enum";
 import type { MentionTarget } from "#contracts/types/mention-target.type";
 
 /** A comment. Traits add `id` and the timestamps; the indexes are the migration's. */
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: merged with the [OptionalProps] augmentation below
 export class Comment extends Model.with(HasPublicId("cmt"), Timestamps) {
+  /** The current mentions, each target once. */
+  // reason: `MentionTarget` is an interface that ships no `X$`; stored as one jsonb list
+  @Field(z.array(z.object({ kind: z.enum(Enum.values(MentionKind)), id: z.string().nullable() })))
+  mentions!: readonly MentionTarget[];
+
   /** The thread it belongs to. */
   threadId!: PublicId<"cth">;
 
@@ -37,9 +45,6 @@ export class Comment extends Model.with(HasPublicId("cmt"), Timestamps) {
 
   /** The current text; hidden in every view once tombstoned. */
   body!: string;
-
-  /** The current mentions, each target once. */
-  mentions!: readonly MentionTarget[];
 
   /** When the text last changed; null if never edited. */
   editedAt!: Date | null;

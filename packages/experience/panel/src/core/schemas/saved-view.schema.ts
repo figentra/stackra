@@ -8,7 +8,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0359 (decisions 4 and 14); ADR 0307 (rule 13 as reopened, rules 6 and 9).
  */
-import { registerSchemas, Schema } from "@stackra/validation";
+import { Field, registerSchemas, Schema } from "@stackra/validation";
 
 import { SAVED_VIEW_SCHEMA } from "#core/constants/saved-view-schema.constant";
 import type { Aggregate } from "#core/enums/aggregate.enum";
@@ -25,6 +25,26 @@ import type { SortNode } from "#core/types/sort-node.type";
  * });
  */
 export class SavedView extends Schema {
+  /** The filter values by row path. */
+  // reason: free filter values keyed by row path; the package's own shipped schema says it
+  @Field(SAVED_VIEW_SCHEMA.shape.filter.unwrap())
+  filter: Record<string, unknown> = {};
+
+  /** The sort, when it differs from the table's default. */
+  // reason: a nested object with no shape class; the package's own shipped schema says it
+  @Field(SAVED_VIEW_SCHEMA.shape.sort.unwrap())
+  sort?: SortNode;
+
+  /** The row path rows are grouped by, and the one each group is sub-grouped by. */
+  // reason: a nested object with no shape class; the package's own shipped schema says it
+  @Field(SAVED_VIEW_SCHEMA.shape.group.unwrap())
+  group?: { by: string; then?: string };
+
+  /** The totals computed per group. */
+  // reason: a nested object with no shape class; the package's own shipped schema says it
+  @Field(SAVED_VIEW_SCHEMA.shape.totals.unwrap())
+  totals: { key: string; aggregate: Aggregate }[] = [];
+
   /** The view's id. */
   id!: string;
 
@@ -40,20 +60,8 @@ export class SavedView extends Schema {
   /** Who sees it. */
   sharing: ViewSharing = ViewSharing.Private;
 
-  /** The filter values by row path. */
-  filter: Record<string, unknown> = {};
-
-  /** The sort, when it differs from the table's default. */
-  sort?: SortNode;
-
   /** The row paths shown, in order; the table's columns when absent. */
   columns?: string[];
-
-  /** The row path rows are grouped by, and the one each group is sub-grouped by. */
-  group?: { by: string; then?: string };
-
-  /** The totals computed per group. */
-  totals: { key: string; aggregate: Aggregate }[] = [];
 }
 
 registerSchemas([[SavedView, SAVED_VIEW_SCHEMA]]);

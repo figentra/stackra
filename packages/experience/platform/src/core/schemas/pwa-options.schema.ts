@@ -12,7 +12,7 @@
  * Governing contract: ADR 0255; ADR 0252 (mutation queue); ADR 0294 (decisions 19 and 26); ADR 0305 (rule 34).
  */
 import { Duration } from "@stackra/contracts";
-import { registerSchemas, Schema } from "@stackra/validation";
+import { Field, registerSchemas, Schema } from "@stackra/validation";
 
 import { PWA_CONFIG_SCHEMA } from "#core/constants/pwa-config-schema.constant";
 import { CachePreset } from "#core/enums/cache-preset.enum";
@@ -32,6 +32,8 @@ import { UpdateStrategy } from "#core/enums/update-strategy.enum";
  */
 export class PwaOptions extends Schema {
   /** The manifest entries code reads; each route gets the locale prefix in the built manifest. */
+  // reason: a nested options object with no shape class; the package's own shipped schema says it
+  @Field(PWA_CONFIG_SCHEMA.shape.manifest.unwrap())
   manifest: {
     /** `web+<name>` scheme to the route it opens; `%s` is the link. */
     protocolHandlers: Record<string, string>;
@@ -67,6 +69,8 @@ export class PwaOptions extends Schema {
   } = { protocolHandlers: {}, shareTarget: null, fileHandlers: [] };
 
   /** What the worker caches: the preset, per-route overrides and limits. */
+  // reason: a nested options object with no shape class; the package's own shipped schema says it
+  @Field(PWA_CONFIG_SCHEMA.shape.caching.unwrap())
   caching: {
     /** The strategy of every route at once. */
     preset: CachePreset;
@@ -99,6 +103,8 @@ export class PwaOptions extends Schema {
   };
 
   /** The service worker's offline behaviour. */
+  // reason: a nested options object with no shape class; the package's own shipped schema says it
+  @Field(PWA_CONFIG_SCHEMA.shape.offline.unwrap())
   offline: {
     /** Ask for persistent storage, so the browser does not evict the outbox. */
     persistStorage: boolean;
@@ -109,6 +115,8 @@ export class PwaOptions extends Schema {
   } = { persistStorage: false, backgroundSync: false, bannerAfter: Duration.seconds(3) };
 
   /** Web Push; in-app notices where the browser has none (ADR 0255 decision 3). */
+  // reason: a nested options object with no shape class; the package's own shipped schema says it
+  @Field(PWA_CONFIG_SCHEMA.shape.push.unwrap())
   push: {
     /** Receive Web Push. */
     enabled: boolean;
@@ -119,6 +127,8 @@ export class PwaOptions extends Schema {
   } = { enabled: false, askOn: PromptMoment.Settings, badging: false };
 
   /** How a new worker reaches open tabs. */
+  // reason: a nested options object with no shape class; the package's own shipped schema says it
+  @Field(PWA_CONFIG_SCHEMA.shape.updates.unwrap())
   updates: {
     /** Prompt, or take over at once. */
     strategy: UpdateStrategy;
@@ -136,6 +146,8 @@ export class PwaOptions extends Schema {
   };
 
   /** The install prompt. */
+  // reason: a nested options object with no shape class; the package's own shipped schema says it
+  @Field(PWA_CONFIG_SCHEMA.shape.install.unwrap())
   install: {
     /** Which prompt shows. */
     prompt: InstallPrompt;

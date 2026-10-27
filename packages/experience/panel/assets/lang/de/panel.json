@@ -62,5 +62,97 @@
     "move_up": "{label} nach oben verschieben",
     "move_down": "{label} nach unten verschieben",
     "locked": "Pflichtschritt"
+  },
+  "enums": {
+    "action_place": {
+      "row": "Zeile",
+      "view": "Detailseite",
+      "edit": "Bearbeitungsseite",
+      "bulk": "Massenaktionen",
+      "list_header": "Listenkopf",
+      "empty": "Leerer Zustand"
+    },
+    "action_run_status": {
+      "done": "Erledigt",
+      "refused": "Abgelehnt",
+      "cancelled": "Abgebrochen"
+    },
+    "aggregate": {
+      "count": "Anzahl",
+      "sum": "Summe",
+      "average": "Durchschnitt",
+      "min": "Minimum",
+      "max": "Maximum"
+    },
+    "count": {
+      "estimated": "Geschätzt",
+      "exact": "Exakt"
+    },
+    "display_kind": {
+      "kpi": "Kennzahl",
+      "kpi_group": "Kennzahlengruppe",
+      "progress": "Fortschritt",
+      "list": "Liste",
+      "view": "Gespeicherte Ansicht",
+      "custom": "Benutzerdefiniert"
+    },
+    "document_kind": {
+      "page": "Seite",
+      "dashboard": "Dashboard"
+    },
+    "document_layout": {
+      "stack": "Gestapelt",
+      "single_column": "Einspaltig"
+    },
+    "export_format": {
+      "csv": "CSV",
+      "xlsx": "Excel (XLSX)"
+    },
+    "import_mode": {
+      "create": "Neu anlegen",
+      "update": "Vorhandene aktualisieren",
+      "upsert": "Anlegen oder aktualisieren"
+    },
+    "place": {
+      "band": "Kennzahlenleiste",
+      "grid": "Raster",
+      "aside": "Seitenspalte",
+      "tabs": "Registerkarten",
+      "banner": "Banner",
+      "checklist": "Checkliste",
+      "line_entry": "Positionserfassung"
+    },
+    "placement_layer": {
+      "1": "Eigentümer",
+      "2": "Host-Modul",
+      "2b": "Edition",
+      "3": "App",
+      "4": "Bereich",
+      "5": "Benutzer"
+    },
+    "resource_page": {
+      "list": "Liste",
+      "create": "Anlegen",
+      "edit": "Bearbeiten",
+      "view": "Ansicht"
+    },
+    "time_range": {
+      "today": "Heute",
+      "yesterday": "Gestern",
+      "last_7_days": "Letzte 7 Tage",
+      "last_30_days": "Letzte 30 Tage",
+      "this_month": "Dieser Monat",
+      "custom": "Benutzerdefiniert"
+    },
+    "view_sharing": {
+      "private": "Privat",
+      "scope": "Im Bereich geteilt"
+    },
+    "widget_size": {
+      "small": "Klein",
+      "medium": "Mittel",
+      "large": "Groß",
+      "full": "Volle Breite"
+    }
   }
 }

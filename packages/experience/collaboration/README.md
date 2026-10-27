@@ -85,7 +85,7 @@ the replica sends its full state, so a reconnect converges. There is no offline 
 ## Testing
 
 ```ts
-const presence = new MemoryPresenceChannelDriver("usr_…");
+const presence = MemoryPresenceChannelDriver.for("usr_…");
 const sync = new MemorySyncTransportDriver();
 const session = new CollaborationSession(
   config,
@@ -110,7 +110,7 @@ presence.drop(); // the link goes down; presence.reconnect() brings it back
 - `RoomPublishAction` (`./node`, `collaboration.room.publish@1`, users only, not a tool) relays one message as the
   member whose key it is (`RealtimeRooms.publishFrom`), only for that member's own principal and with the checks a
   socket message gets: a viewer's `update` is refused `forbidden`, the size and rate caps drop the member. The service
-  that serves rooms hosts it.
+  that serves rooms hosts it. Its permission is `collaboration.room.publish` (`RoomPermissions`, L1).
 - `PostgresSnapshotStoreDriver` (`./node`) keeps the latest state per document in `collaboration.snapshots`
   (migration `collaboration.0001_create_snapshots`), isolated by the room's scope.
 

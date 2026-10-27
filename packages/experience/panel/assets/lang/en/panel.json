@@ -62,5 +62,97 @@
     "move_up": "Move {label} up",
     "move_down": "Move {label} down",
     "locked": "Required step"
+  },
+  "enums": {
+    "action_place": {
+      "row": "Row",
+      "view": "View page",
+      "edit": "Edit page",
+      "bulk": "Bulk actions",
+      "list_header": "List header",
+      "empty": "Empty state"
+    },
+    "action_run_status": {
+      "done": "Done",
+      "refused": "Refused",
+      "cancelled": "Cancelled"
+    },
+    "aggregate": {
+      "count": "Count",
+      "sum": "Sum",
+      "average": "Average",
+      "min": "Minimum",
+      "max": "Maximum"
+    },
+    "count": {
+      "estimated": "Estimated",
+      "exact": "Exact"
+    },
+    "display_kind": {
+      "kpi": "KPI",
+      "kpi_group": "KPI group",
+      "progress": "Progress",
+      "list": "List",
+      "view": "Saved view",
+      "custom": "Custom"
+    },
+    "document_kind": {
+      "page": "Page",
+      "dashboard": "Dashboard"
+    },
+    "document_layout": {
+      "stack": "Stack",
+      "single_column": "Single column"
+    },
+    "export_format": {
+      "csv": "CSV",
+      "xlsx": "Excel (XLSX)"
+    },
+    "import_mode": {
+      "create": "Create new",
+      "update": "Update existing",
+      "upsert": "Create or update"
+    },
+    "place": {
+      "band": "KPI band",
+      "grid": "Grid",
+      "aside": "Side column",
+      "tabs": "Tabs",
+      "banner": "Banner",
+      "checklist": "Checklist",
+      "line_entry": "Line entry"
+    },
+    "placement_layer": {
+      "1": "Owner",
+      "2": "Host module",
+      "2b": "Edition",
+      "3": "App",
+      "4": "Scope",
+      "5": "User"
+    },
+    "resource_page": {
+      "list": "List",
+      "create": "Create",
+      "edit": "Edit",
+      "view": "View"
+    },
+    "time_range": {
+      "today": "Today",
+      "yesterday": "Yesterday",
+      "last_7_days": "Last 7 days",
+      "last_30_days": "Last 30 days",
+      "this_month": "This month",
+      "custom": "Custom"
+    },
+    "view_sharing": {
+      "private": "Private",
+      "scope": "Shared in scope"
+    },
+    "widget_size": {
+      "small": "Small",
+      "medium": "Medium",
+      "large": "Large",
+      "full": "Full width"
+    }
   }
 }

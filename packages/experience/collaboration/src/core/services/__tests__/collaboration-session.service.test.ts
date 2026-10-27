@@ -71,7 +71,7 @@ function network(
   source: EntitlementSource = fakeEntitlements([[LiveCollaborationEntitlement, true]]),
 ) {
   const config = buildConfig(CollaborationConfig);
-  const alicePresence = new MemoryPresenceChannelDriver(ALICE);
+  const alicePresence = MemoryPresenceChannelDriver.for(ALICE);
   const bobPresence = alicePresence.peer(BOB);
   const aliceSync = new MemorySyncTransportDriver();
   const bobSync = aliceSync.peer();

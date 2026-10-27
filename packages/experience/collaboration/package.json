@@ -116,6 +116,7 @@
     "@stackra/entitlements": "workspace:*",
     "@stackra/errors": "workspace:*",
     "@stackra/events": "workspace:*",
+    "@stackra/iam": "workspace:*",
     "@stackra/model": "workspace:*",
     "@stackra/realtime": "workspace:*",
     "@stackra/transport": "workspace:*",

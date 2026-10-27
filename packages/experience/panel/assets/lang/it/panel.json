@@ -62,5 +62,97 @@
     "move_up": "Sposta su {label}",
     "move_down": "Sposta giù {label}",
     "locked": "Passaggio obbligatorio"
+  },
+  "enums": {
+    "action_place": {
+      "row": "Riga",
+      "view": "Pagina di dettaglio",
+      "edit": "Pagina di modifica",
+      "bulk": "Azioni multiple",
+      "list_header": "Intestazione dell'elenco",
+      "empty": "Stato vuoto"
+    },
+    "action_run_status": {
+      "done": "Completata",
+      "refused": "Rifiutata",
+      "cancelled": "Annullata"
+    },
+    "aggregate": {
+      "count": "Conteggio",
+      "sum": "Somma",
+      "average": "Media",
+      "min": "Minimo",
+      "max": "Massimo"
+    },
+    "count": {
+      "estimated": "Stimato",
+      "exact": "Esatto"
+    },
+    "display_kind": {
+      "kpi": "KPI",
+      "kpi_group": "Gruppo di KPI",
+      "progress": "Avanzamento",
+      "list": "Elenco",
+      "view": "Vista salvata",
+      "custom": "Personalizzato"
+    },
+    "document_kind": {
+      "page": "Pagina",
+      "dashboard": "Dashboard"
+    },
+    "document_layout": {
+      "stack": "In pila",
+      "single_column": "Colonna singola"
+    },
+    "export_format": {
+      "csv": "CSV",
+      "xlsx": "Excel (XLSX)"
+    },
+    "import_mode": {
+      "create": "Crea nuovi",
+      "update": "Aggiorna esistenti",
+      "upsert": "Crea o aggiorna"
+    },
+    "place": {
+      "band": "Fascia KPI",
+      "grid": "Griglia",
+      "aside": "Colonna laterale",
+      "tabs": "Schede",
+      "banner": "Banner",
+      "checklist": "Checklist",
+      "line_entry": "Inserimento righe"
+    },
+    "placement_layer": {
+      "1": "Proprietario",
+      "2": "Modulo host",
+      "2b": "Edizione",
+      "3": "App",
+      "4": "Ambito",
+      "5": "Utente"
+    },
+    "resource_page": {
+      "list": "Elenco",
+      "create": "Crea",
+      "edit": "Modifica",
+      "view": "Visualizza"
+    },
+    "time_range": {
+      "today": "Oggi",
+      "yesterday": "Ieri",
+      "last_7_days": "Ultimi 7 giorni",
+      "last_30_days": "Ultimi 30 giorni",
+      "this_month": "Questo mese",
+      "custom": "Personalizzato"
+    },
+    "view_sharing": {
+      "private": "Privata",
+      "scope": "Condivisa nell'ambito"
+    },
+    "widget_size": {
+      "small": "Piccolo",
+      "medium": "Medio",
+      "large": "Grande",
+      "full": "Larghezza piena"
+    }
   }
 }

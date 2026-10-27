@@ -15,7 +15,7 @@
 import "#core/types/peripheral-driver-registry.type";
 import type { DriverName } from "@stackra/container";
 import { Duration } from "@stackra/contracts";
-import { registerSchemas, Schema } from "@stackra/validation";
+import { Field, registerSchemas, Schema } from "@stackra/validation";
 
 import { BumpBarKey } from "#contracts/enums/bump-bar-key.enum";
 import type { BarcodeScanner } from "#contracts/ports/barcode-scanner.port";
@@ -46,6 +46,37 @@ import { PERIPHERALS_CONFIG_SCHEMA } from "#core/constants/peripherals-config-sc
  * }
  */
 export class PeripheralsOptions extends Schema {
+  /**
+   * The kitchen ticket printers by name (`grill`, `cold_line`): each one's address, the stations it prints for (a
+   * station is on one printer at most) and its buzzer, `times` beeps of `length` steps of 50 ms (1 to 9 each), or null.
+   */
+  // reason: a keyed record of nested settings with no shape class; the package's own shipped schema says it
+  @Field(PERIPHERALS_CONFIG_SCHEMA.shape.kitchenPrinters.unwrap())
+  kitchenPrinters: Record<
+    string,
+    {
+      /** `tcp://<host>:<port>` or a device path. */
+      address: string;
+      /** The station keys it prints for. */
+      stations: string[];
+      /** The buzzer after each ticket, or null for none. */
+      buzz: { times: number; length: number } | null;
+    }
+  > = {};
+
+  /** The scale profiles by name; `retail` and `precision` ship. */
+  // reason: a keyed record of nested settings with no shape class; the package's own shipped schema says it
+  @Field(PERIPHERALS_CONFIG_SCHEMA.shape.scalePresets.unwrap())
+  scalePresets: Record<string, ScalePreset> = {
+    retail: { division: 1, capacity: 15_000 },
+    precision: { division: 0.01, capacity: 600 },
+  };
+
+  /** The printer's drawer connector pin the drawer is wired to. */
+  // reason: a two-value numeric literal union; the package's own shipped schema says it
+  @Field(PERIPHERALS_CONFIG_SCHEMA.shape.drawerPin.unwrap())
+  drawerPin: DrawerPin = 2;
+
   /**
    * The receipt printer driver: `escpos` (desktop), `sunmi`, `pax` or `imin` (the Android till's built-in printer) or
    * `memory`.
@@ -103,22 +134,6 @@ export class PeripheralsOptions extends Schema {
   /** Where the `zpl` driver sends labels: `tcp://<host>:<port>`, a device path, or empty for no label printer. */
   labelPrinterAddress = "";
 
-  /**
-   * The kitchen ticket printers by name (`grill`, `cold_line`): each one's address, the stations it prints for (a
-   * station is on one printer at most) and its buzzer, `times` beeps of `length` steps of 50 ms (1 to 9 each), or null.
-   */
-  kitchenPrinters: Record<
-    string,
-    {
-      /** `tcp://<host>:<port>` or a device path. */
-      address: string;
-      /** The station keys it prints for. */
-      stations: string[];
-      /** The buzzer after each ticket, or null for none. */
-      buzz: { times: number; length: number } | null;
-    }
-  > = {};
-
   /** What each bump bar key does, keyed by the key the keypad types (Electron's `input.key`). */
   bumpBarKeys: Record<string, BumpBarKey> = {
     Enter: BumpBarKey.Bump,
@@ -128,17 +143,8 @@ export class PeripheralsOptions extends Schema {
     " ": BumpBarKey.Select,
   };
 
-  /** The scale profiles by name; `retail` and `precision` ship. */
-  scalePresets: Record<string, ScalePreset> = {
-    retail: { division: 1, capacity: 15_000 },
-    precision: { division: 0.01, capacity: 600 },
-  };
-
   /** The scale profile this device uses, a key of `scalePresets`. */
   scalePreset = "retail";
-
-  /** The printer's drawer connector pin the drawer is wired to. */
-  drawerPin: DrawerPin = 2;
 
   /** The longest pause between a wedge scanner's keystrokes; a slower burst is a person typing. */
   scanKeyGap: Duration = Duration.seconds(0.05);

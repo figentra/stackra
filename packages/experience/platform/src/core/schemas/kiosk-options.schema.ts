@@ -9,20 +9,22 @@
  * Governing contract: ADR 0428 (decisions 1 and 2); R3-SO-10; config-model.
  */
 import { Duration } from "@stackra/contracts";
-import { registerSchemas, Schema } from "@stackra/validation";
+import { Field, registerSchemas, Schema } from "@stackra/validation";
 
 import { KIOSK_CONFIG_SCHEMA } from "#core/constants/kiosk-config-schema.constant";
 
 /** The kiosk defaults. */
 export class KioskOptions extends Schema {
+  /** The reach layout the surface starts in: `standing` or `seated`. */
+  // reason: a two-value literal union; the package's own shipped schema says it
+  @Field(KIOSK_CONFIG_SCHEMA.shape.reach)
+  reach: "standing" | "seated" = "standing";
+
   /** Enter the kiosk lock (`KioskMode.enter`) when the app launches; a device's kind or setting switches it on. */
   enterOnLaunch = false;
 
   /** How long without a touch, a key or a pointer before the kiosk resets to its attract screen. */
   idleTimeout: Duration = Duration.seconds(90);
-
-  /** The reach layout the surface starts in: `standing` or `seated`. */
-  reach: "standing" | "seated" = "standing";
 
   /** Start in high contrast. */
   isHighContrast = false;

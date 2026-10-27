@@ -104,7 +104,7 @@ function setup() {
   vi.spyOn(Database, "current").mockReturnValue({
     em: () => em as unknown as ReturnType<Database["em"]>,
   } as unknown as Database);
-  const service = new CommentService(new MemoryMentionDirectoryDriver([MONA, OMAR, CLIENT]), {
+  const service = new CommentService(MemoryMentionDirectoryDriver.of([MONA, OMAR, CLIENT]), {
     now: () => AT,
   } as unknown as Clock);
   return { service, stores, em };

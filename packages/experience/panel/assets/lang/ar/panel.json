@@ -62,5 +62,97 @@
     "move_up": "نقل {label} إلى الأعلى",
     "move_down": "نقل {label} إلى الأسفل",
     "locked": "خطوة إلزامية"
+  },
+  "enums": {
+    "action_place": {
+      "row": "صف",
+      "view": "صفحة العرض",
+      "edit": "صفحة التحرير",
+      "bulk": "إجراءات جماعية",
+      "list_header": "رأس القائمة",
+      "empty": "حالة فارغة"
+    },
+    "action_run_status": {
+      "done": "اكتمل",
+      "refused": "رُفض",
+      "cancelled": "أُلغي"
+    },
+    "aggregate": {
+      "count": "العدد",
+      "sum": "المجموع",
+      "average": "المتوسط",
+      "min": "الحد الأدنى",
+      "max": "الحد الأقصى"
+    },
+    "count": {
+      "estimated": "تقديري",
+      "exact": "دقيق"
+    },
+    "display_kind": {
+      "kpi": "مؤشر أداء",
+      "kpi_group": "مجموعة مؤشرات أداء",
+      "progress": "التقدّم",
+      "list": "قائمة",
+      "view": "عرض محفوظ",
+      "custom": "مخصّص"
+    },
+    "document_kind": {
+      "page": "صفحة",
+      "dashboard": "لوحة معلومات"
+    },
+    "document_layout": {
+      "stack": "مكدّس",
+      "single_column": "عمود واحد"
+    },
+    "export_format": {
+      "csv": "CSV",
+      "xlsx": "Excel (XLSX)"
+    },
+    "import_mode": {
+      "create": "إنشاء سجلات جديدة",
+      "update": "تحديث السجلات الحالية",
+      "upsert": "إنشاء أو تحديث"
+    },
+    "place": {
+      "band": "شريط المؤشرات",
+      "grid": "شبكة",
+      "aside": "العمود الجانبي",
+      "tabs": "علامات التبويب",
+      "banner": "لافتة",
+      "checklist": "قائمة تحقّق",
+      "line_entry": "إدخال البنود"
+    },
+    "placement_layer": {
+      "1": "المالك",
+      "2": "الوحدة المضيفة",
+      "2b": "الإصدار",
+      "3": "التطبيق",
+      "4": "النطاق",
+      "5": "المستخدم"
+    },
+    "resource_page": {
+      "list": "القائمة",
+      "create": "إنشاء",
+      "edit": "تحرير",
+      "view": "عرض"
+    },
+    "time_range": {
+      "today": "اليوم",
+      "yesterday": "أمس",
+      "last_7_days": "آخر 7 أيام",
+      "last_30_days": "آخر 30 يومًا",
+      "this_month": "هذا الشهر",
+      "custom": "مخصص"
+    },
+    "view_sharing": {
+      "private": "خاص",
+      "scope": "مُشارَك ضمن النطاق"
+    },
+    "widget_size": {
+      "small": "صغير",
+      "medium": "متوسط",
+      "large": "كبير",
+      "full": "بعرض كامل"
+    }
   }
 }

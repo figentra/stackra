@@ -62,5 +62,97 @@
     "move_up": "{label} omhoog",
     "move_down": "{label} omlaag",
     "locked": "Verplichte stap"
+  },
+  "enums": {
+    "action_place": {
+      "row": "Rij",
+      "view": "Detailpagina",
+      "edit": "Bewerkpagina",
+      "bulk": "Bulkacties",
+      "list_header": "Lijstkop",
+      "empty": "Lege staat"
+    },
+    "action_run_status": {
+      "done": "Voltooid",
+      "refused": "Geweigerd",
+      "cancelled": "Geannuleerd"
+    },
+    "aggregate": {
+      "count": "Aantal",
+      "sum": "Som",
+      "average": "Gemiddelde",
+      "min": "Minimum",
+      "max": "Maximum"
+    },
+    "count": {
+      "estimated": "Geschat",
+      "exact": "Exact"
+    },
+    "display_kind": {
+      "kpi": "KPI",
+      "kpi_group": "KPI-groep",
+      "progress": "Voortgang",
+      "list": "Lijst",
+      "view": "Opgeslagen weergave",
+      "custom": "Aangepast"
+    },
+    "document_kind": {
+      "page": "Pagina",
+      "dashboard": "Dashboard"
+    },
+    "document_layout": {
+      "stack": "Gestapeld",
+      "single_column": "Eén kolom"
+    },
+    "export_format": {
+      "csv": "CSV",
+      "xlsx": "Excel (XLSX)"
+    },
+    "import_mode": {
+      "create": "Nieuw aanmaken",
+      "update": "Bestaande bijwerken",
+      "upsert": "Aanmaken of bijwerken"
+    },
+    "place": {
+      "band": "KPI-balk",
+      "grid": "Raster",
+      "aside": "Zijkolom",
+      "tabs": "Tabbladen",
+      "banner": "Banner",
+      "checklist": "Checklist",
+      "line_entry": "Regelinvoer"
+    },
+    "placement_layer": {
+      "1": "Eigenaar",
+      "2": "Hostmodule",
+      "2b": "Editie",
+      "3": "App",
+      "4": "Bereik",
+      "5": "Gebruiker"
+    },
+    "resource_page": {
+      "list": "Lijst",
+      "create": "Aanmaken",
+      "edit": "Bewerken",
+      "view": "Bekijken"
+    },
+    "time_range": {
+      "today": "Vandaag",
+      "yesterday": "Gisteren",
+      "last_7_days": "Afgelopen 7 dagen",
+      "last_30_days": "Afgelopen 30 dagen",
+      "this_month": "Deze maand",
+      "custom": "Aangepast"
+    },
+    "view_sharing": {
+      "private": "Privé",
+      "scope": "Gedeeld binnen bereik"
+    },
+    "widget_size": {
+      "small": "Klein",
+      "medium": "Middel",
+      "large": "Groot",
+      "full": "Volledige breedte"
+    }
   }
 }

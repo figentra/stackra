@@ -11,7 +11,7 @@
  */
 import "#core/types/push-transport-driver-names.type";
 import type { DriverName } from "@stackra/container";
-import { Int, registerSchemas, Schema } from "@stackra/validation";
+import { Field, Int, registerSchemas, Schema } from "@stackra/validation";
 
 import type { PushTransport } from "#contracts/ports/push-transport.port";
 import { PUSH_CONFIG_SCHEMA } from "#core/constants/push-config-schema.constant";
@@ -35,19 +35,9 @@ export class PushOptions extends Schema {
   })
   retries = 3;
 
-  /** The push transport driver; `memory` registers nothing real. */
-  provider: DriverName<PushTransport> = "memory";
-
-  /** Show a banner for a notification that arrives while the app is open. */
-  foregroundBanner = true;
-
-  /** Play the sound of a notification that arrives while the app is open. */
-  foregroundSound = true;
-
-  /** Update the app icon badge for a notification that arrives while the app is open. */
-  foregroundBadge = true;
-
   /** The Android channels created at first launch; `nameKey` is translated when the channel is created. */
+  // reason: a nested options object with no shape class; the package's own shipped schema says it
+  @Field(PUSH_CONFIG_SCHEMA.shape.androidChannels.unwrap())
   androidChannels: {
     /** The channel id a push names (snake_case). */
     id: string;
@@ -60,6 +50,18 @@ export class PushOptions extends Schema {
     /** The sound name (`default`), or null for silence. */
     sound: string | null;
   }[] = [];
+
+  /** The push transport driver; `memory` registers nothing real. */
+  provider: DriverName<PushTransport> = "memory";
+
+  /** Show a banner for a notification that arrives while the app is open. */
+  foregroundBanner = true;
+
+  /** Play the sound of a notification that arrives while the app is open. */
+  foregroundSound = true;
+
+  /** Update the app icon badge for a notification that arrives while the app is open. */
+  foregroundBadge = true;
 
   /** When the OS prompt is first shown. */
   askOn: PromptMoment = PromptMoment.Settings;

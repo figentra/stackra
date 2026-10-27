@@ -15,7 +15,7 @@
  */
 import { Duration } from "@stackra/contracts";
 import { OfflineStore } from "@stackra/storage";
-import { registerSchemas, Schema } from "@stackra/validation";
+import { Field, registerSchemas, Schema } from "@stackra/validation";
 
 import { DESKTOP_CONFIG_SCHEMA } from "#core/constants/desktop-config-schema.constant";
 import { DesktopMode } from "#core/enums/desktop-mode.enum";
@@ -35,10 +35,9 @@ import { WindowKind } from "#core/enums/window-kind.enum";
  * }
  */
 export class DesktopOptions extends Schema {
-  /** Dock app, menu-bar app or both (ADR 0281 decision 3). */
-  mode: DesktopMode = DesktopMode.Window;
-
   /** One window per key; `main` is required and is the window the app opens. */
+  // reason: a nested options object with no shape class; the package's own shipped schema says it
+  @Field(DESKTOP_CONFIG_SCHEMA.shape.windows.unwrap())
   windows: Record<
     string,
     {
@@ -79,6 +78,8 @@ export class DesktopOptions extends Schema {
   };
 
   /** Named overlays (ADR 0281 decision 4), each opened by its shortcut, the tray menu or an in-app button. */
+  // reason: a nested options object with no shape class; the package's own shipped schema says it
+  @Field(DESKTOP_CONFIG_SCHEMA.shape.overlays.unwrap())
   overlays: Record<
     string,
     {
@@ -108,6 +109,8 @@ export class DesktopOptions extends Schema {
   > = {};
 
   /** The shell's menus: the menu bar and context menu switches, Electron's role items, and the Help link. */
+  // reason: a nested options object with no shape class; the package's own shipped schema says it
+  @Field(DESKTOP_CONFIG_SCHEMA.shape.menus.unwrap())
   menus: {
     /** Show the application menu bar. */
     applicationMenu: boolean;
@@ -120,6 +123,8 @@ export class DesktopOptions extends Schema {
   } = { applicationMenu: true, contextMenu: true, standardRoles: [], docsUrl: null };
 
   /** The tray icon. */
+  // reason: a nested options object with no shape class; the package's own shipped schema says it
+  @Field(DESKTOP_CONFIG_SCHEMA.shape.tray.unwrap())
   tray: {
     /** Show a tray icon. */
     enabled: boolean;
@@ -140,6 +145,8 @@ export class DesktopOptions extends Schema {
   };
 
   /** Deep links: the custom scheme registered at install and the route a link opens (`%s` is the link). */
+  // reason: a nested options object with no shape class; the package's own shipped schema says it
+  @Field(DESKTOP_CONFIG_SCHEMA.shape.deepLinks.unwrap())
   deepLinks: {
     /** The custom scheme without `:` (`acme-console`); null registers none. */
     scheme: string | null;
@@ -150,6 +157,8 @@ export class DesktopOptions extends Schema {
   } = { scheme: null, claimHttpsOrigin: false, route: "/open?url=%s" };
 
   /** Auto-update through electron-updater (ADR 0254). */
+  // reason: a nested options object with no shape class; the package's own shipped schema says it
+  @Field(DESKTOP_CONFIG_SCHEMA.shape.updates.unwrap())
   updates: {
     /** Check for updates. */
     enabled: boolean;
@@ -176,6 +185,8 @@ export class DesktopOptions extends Schema {
   };
 
   /** The devices the app uses, each with the translation key of the reason the OS shows when it asks. */
+  // reason: a nested options object with no shape class; the package's own shipped schema says it
+  @Field(DESKTOP_CONFIG_SCHEMA.shape.devices.unwrap())
   devices: {
     /** The camera. */
     camera?: { reason: string };
@@ -192,6 +203,8 @@ export class DesktopOptions extends Schema {
   } = {};
 
   /** What main grants the renderer; anything else is refused. */
+  // reason: a nested options object with no shape class; the package's own shipped schema says it
+  @Field(DESKTOP_CONFIG_SCHEMA.shape.permissions.unwrap())
   permissions: {
     /** Electron permission names main grants (`notifications`, `media`). */
     allow: string[];
@@ -204,12 +217,17 @@ export class DesktopOptions extends Schema {
   } = { allow: [], mediaTypes: [], devices: [], allowedNavigationOrigins: ["app://bundle"] };
 
   /** Tighten-only knobs over the hardening baseline (ADR 0251 decision 3). */
+  // reason: a nested options object with no shape class; the package's own shipped schema says it
+  @Field(DESKTOP_CONFIG_SCHEMA.shape.hardening.unwrap())
   hardening: {
     /** No devtools in a production build. */
     disableDevToolsInProduction: boolean;
     /** Certificate SPKI pins for the API origin. */
     pinnedSpki: string[];
   } = { disableDevToolsInProduction: true, pinnedSpki: [] };
+
+  /** Dock app, menu-bar app or both (ADR 0281 decision 3). */
+  mode: DesktopMode = DesktopMode.Window;
 
   /**
    * Start in kiosk mode (ADR 0281, STA-469 note): a kiosk window, no menu, no developer tools in a packaged build,

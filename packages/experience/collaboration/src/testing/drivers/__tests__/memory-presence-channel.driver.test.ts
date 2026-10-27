@@ -30,7 +30,7 @@ function recorder() {
 
 describe("MemoryPresenceChannelDriver", () => {
   it("opens on the next microtask and shows two principals to each other", async () => {
-    const alice = new MemoryPresenceChannelDriver(ALICE);
+    const alice = MemoryPresenceChannelDriver.for(ALICE);
     const bob = alice.peer(BOB);
     const a = recorder();
     const b = recorder();
@@ -56,7 +56,7 @@ describe("MemoryPresenceChannelDriver", () => {
   });
 
   it("drops and reconnects its own links only", async () => {
-    const alice = new MemoryPresenceChannelDriver(ALICE);
+    const alice = MemoryPresenceChannelDriver.for(ALICE);
     const bob = alice.peer(BOB);
     const a = recorder();
     const b = recorder();

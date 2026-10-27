@@ -1,13 +1,14 @@
 /**
  * Stackra file contract:
  * Purpose: the `memory` driver of the `PresenceChannel` port: rooms in process, for tests. One driver is one signed-in
- *          principal; `peer(principalId)` adds another principal on the same rooms, so a test puts two people in one
+ *          principal (the container's has a placeholder id; `MemoryPresenceChannelDriver.for(principalId)` names one);
+ *          `peer(principalId)` adds another principal on the same rooms, so a test puts two people in one
  *          room. `drop()` and `reconnect()` take this driver's links down and up as a network would.
  * Boundary: test code only, so it ships in `./testing`; no network, no authorisation. A link opens on the next
  *           microtask (never before `join` returns). Only open links are reported as peers and receive peer lists.
  * Runtime: node
  * Governing contract: ADR 0266 (decision 2: memory driver first); ADR 0269 (decision 3: fakes in `./testing`); ADR
- *                     0225 (decision 2).
+ *                     0225 (decision 2); ADR 0294 (constructor parameters are class tokens).
  */
 import { Driver } from "@stackra/container";
 import type { PublicId } from "@stackra/contracts";
@@ -34,26 +35,29 @@ interface Member {
  * Presence in process.
  *
  * @example
- * const alice = new MemoryPresenceChannelDriver("usr_01j9z3k4m5n6p7q8r9s0t1v2w3");
+ * const alice = MemoryPresenceChannelDriver.for("usr_01j9z3k4m5n6p7q8r9s0t1v2w3");
  * const bob = alice.peer("usr_01j9z3k4m5n6p7q8r9s0t1v2w4");
  */
 export class MemoryPresenceChannelDriver extends Driver(PresenceChannel) {
-  private readonly principalId: PublicId;
+  private principalId: PublicId = "usr_00000000000000000000000000";
 
   // Shared with every driver made by `peer`.
   private rooms = new Map<string, Set<Member>>();
 
   /**
+   * A driver whose links are stamped with `principalId`, on rooms of its own.
+   *
    * @param principalId - the principal this driver's links are stamped with.
    */
-  constructor(principalId: PublicId = "usr_00000000000000000000000000") {
-    super();
-    this.principalId = principalId;
+  static for(principalId: PublicId): MemoryPresenceChannelDriver {
+    const driver = new MemoryPresenceChannelDriver();
+    driver.principalId = principalId;
+    return driver;
   }
 
   /** A driver for `principalId` on the same rooms. */
   peer(principalId: PublicId): MemoryPresenceChannelDriver {
-    const peer = new MemoryPresenceChannelDriver(principalId);
+    const peer = MemoryPresenceChannelDriver.for(principalId);
     peer.rooms = this.rooms;
     return peer;
   }

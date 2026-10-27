@@ -15,7 +15,7 @@ describe(MemoryMentionDirectoryDriver, () => {
   it("knows only the targets it was given", async () => {
     const known = { kind: MentionKind.Member, id: "usr_1" };
     const stranger = { kind: MentionKind.Member, id: "usr_2" };
-    const directory = new MemoryMentionDirectoryDriver([known]);
+    const directory = MemoryMentionDirectoryDriver.of([known]);
     expect(directory).toBeInstanceOf(MentionDirectory);
     await expect(
       directory.unknownAmong(
