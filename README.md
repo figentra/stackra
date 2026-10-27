@@ -108,7 +108,8 @@ tier:config → tier:lib → tier:app
   through versioned events or typed clients, never each other's source.
 - **Imports**: a member with a `src/` tree declares `#` subpath imports (`#core`, `#application/*`) in its
   `package.json`; relative imports never climb with `../` and carry no extension
-  ([ADR 0006](apps/docs/src/adr/0006-naming-exports-and-imports.mdx)).
+  ([ADR 0006](apps/docs/src/adr/0006-naming-exports-and-imports.mdx)). tsdown bundles every `#` import, so
+  `pnpm pack` and `pnpm publish` drop the map from the packed manifest (`.pnpmfile.mjs`, ADR 0177 PK4).
 - **Naming**: packages are `@stackra/<name>`, apps `@figentra/<dir>`, services `@figentra/service-<dir>`. Files are
   kebab-case, one exported declaration per file with a kind suffix (`token.class.ts`), and barrels name every symbol.
 - **Config**: `tsconfig.json` extends one `@stackra/typescript-config` preset; a JSON config is `.jsonc` when its

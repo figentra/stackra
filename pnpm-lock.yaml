@@ -684,6 +684,8 @@ overrides:
 
 packageExtensionsChecksum: sha256-jp9FqFPPLPeAuCzAm+dMRKWIcmL64hagsyJLfHf3Zkc=
 
+pnpmfileChecksum: sha256-o7tTR4LZhzm9eLxMeDuMpauBrniclhqjFpzQ2Nx7eLY=
+
 importers:
 
   .:
