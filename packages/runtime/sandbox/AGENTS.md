@@ -1,3 +1,11 @@
+<!--
+Stackra file contract:
+Purpose: the rules an agent follows inside @stackra/sandbox: where code goes, the isolation rules of both engines, the build rules and the PII it handles.
+Boundary: documentation only; packages/runtime/sandbox.
+Runtime: none (Markdown)
+Governing contract: ADR 0154; ADR 0434.
+-->
+
 # AGENTS — @stackra/sandbox
 
 The sandboxed code step: the `Sandbox` service, its two refusals and the `SandboxFetchProxy` port (ADR 0154). Member at
@@ -12,6 +20,7 @@ The sandboxed code step: the `Sandbox` service, its two refusals and the `Sandbo
 | A refusal                       | `src/core/errors/`                             |
 | The service                     | `src/core/services/`                           |
 | A request, limit or result type | `src/core/types/`                              |
+| A function both engines share   | `src/core/functions/`                          |
 | Process pool or Node-only code  | `src/node/{services,functions,drivers,types}/` |
 | A test                          | `__tests__/<name>.test.ts` beside it           |
 
@@ -31,8 +40,13 @@ The sandboxed code step: the `Sandbox` service, its two refusals and the `Sandbo
   job runs again (`closed`), so nothing settles into a disposed runtime.
 - A limit is classified on the host (the clock, the output budget, QuickJS's own `out of memory` and `stack overflow`
   errors), never by trusting a value the code returns.
-- Pyodide (Python) is a later engine of ADR 0154; it waits on the owner adding `pyodide` to the catalog (ADR 0434
-  decision 1). The `SandboxMeter` port is an open owner question; the caller meters `codeMs`.
+- Python runs in Pyodide (`PythonSandbox`, `src/node/services/`, internal) only inside a pool process, loaded once per
+  process on its first Python request (ADR 0434 decision 1). Never run it in a host and never reuse a process after a
+  Python run: the pool kills it, since an interpreter cannot isolate runs and Pyodide's FFI reaches the process's
+  JavaScript. Keep the process environment empty and keep the pool's second origin check on relayed fetches.
+- The guest's `fetch` arguments are read by one function, `toFetchRequest` (`src/core/functions/`, internal), for
+  both engines; change the rules there.
+- The `SandboxMeter` port is an open owner question; the caller meters `codeMs`.
 - The pool never runs a guest in the host process; a child process only runs `Sandbox` and relays `fetch`.
 - No parameter properties and no `#private` fields: services typecheck this source under `erasableSyntaxOnly`.
 
@@ -46,6 +60,6 @@ The sandboxed code step: the `Sandbox` service, its two refusals and the `Sandbo
 
 | Data                         | Where                                 | Handling                                                                                    |
 | ---------------------------- | ------------------------------------- | ------------------------------------------------------------------------------------------- |
-| Step input and output        | the QuickJS heap, during a run        | Tenant data the caller passes; freed with the runtime; never logged by this package         |
+| Step input and output        | the QuickJS or Pyodide heap, in a run | Tenant data the caller passes; freed with the runtime; never logged by this package         |
 | Logged lines, error text     | `SandboxResult.logs`, refusal details | Whatever the tenant's code prints; the caller stores them with the run, under its retention |
 | Fetch requests and responses | the `SandboxFetchProxy` driver        | Sent through the host's audited egress; this package keeps none                             |

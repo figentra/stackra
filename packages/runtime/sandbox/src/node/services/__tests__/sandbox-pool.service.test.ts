@@ -2,13 +2,15 @@
  * Stackra file contract:
  * Purpose: integration tests of `SandboxPool` over real child processes: a run returns its output, a guest `fetch` is
  *          relayed to the host's proxy, a run's own refusal comes back as the same refusal, a run waiting past its time
- *          is refused while the pool keeps serving, and a pool that is not open refuses runs.
+ *          is refused while the pool keeps serving, a Python step runs in Pyodide in a process that is then replaced,
+ *          a relayed fetch to an origin outside the run's allow-list never reaches the proxy, a run's clock restarts
+ *          at most once, and a pool that is not open refuses runs.
  * Boundary: test only; the children load this package's source `./node` entry, so Node strips its types, with a
  *           resolve hook for its extensionless `#` imports (ADR 0233); its dependencies load from their built dists
  *           (`test` runs after `^build`), since Node cannot parse their decorated sources. The watchdog test runs a
  *           stand-in process that never answers, so the watchdog, not the run's own limit, ends the run under any load.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0434 (decision 2); ADR 0154 (decisions 5 and 6).
+ * Governing contract: ADR 0022; ADR 0434 (decisions 1 and 2); ADR 0154 (decisions 2, 5 and 6).
  */
 import { Driver } from "@stackra/container";
 import { Duration } from "@stackra/contracts";
@@ -64,6 +66,32 @@ const STALLING_CHILD = `export function serveSandboxChild() {
 const STALLING = {
   ...OPTIONS,
   module: `data:text/javascript,${encodeURIComponent(STALLING_CHILD)}`,
+};
+
+/** A stand-in process that relays a fetch its run did not allow, and returns what the pool answered. */
+const FORGING_CHILD = `export function serveSandboxChild() {
+  process.on("message", (message) => {
+    if (message.type === "run")
+      process.send({ type: "fetch", fetchId: 1, reference: "forged", request: { url: "https://evil.example.org/x", method: "GET", headers: {} } });
+    else process.send({ type: "result", result: { output: message.message ?? "fetched", logs: [], codeMs: 0 } });
+  });
+  process.send({ type: "ready" });
+}`;
+const FORGING = {
+  ...OPTIONS,
+  module: `data:text/javascript,${encodeURIComponent(FORGING_CHILD)}`,
+};
+
+/** A stand-in process that keeps saying it serves during its run, to hold the run's clock back. */
+const REARMING_CHILD = `export function serveSandboxChild() {
+  process.on("message", (message) => {
+    if (message.type === "run") setInterval(() => process.send({ type: "ready" }), 200);
+  });
+  process.send({ type: "ready" });
+}`;
+const REARMING = {
+  ...OPTIONS,
+  module: `data:text/javascript,${encodeURIComponent(REARMING_CHILD)}`,
 };
 
 const pools: SandboxPool[] = [];
@@ -136,6 +164,74 @@ describe(SandboxPool, () => {
         reference: "s",
       }),
     ).resolves.toMatchObject({ output: 1 });
+  }, 20_000);
+
+  it("runs a Python step in Pyodide, relays its fetch, and replaces the process after it", async () => {
+    const proxy = new EchoProxy();
+    const pool = poolOf(proxy);
+    const result = await pool.run({
+      code: 'r = await fetch("https://api.example.com/a")\nprint("hi")\nreturn {"sum": input["a"] + input["b"], "body": r["body"]}',
+      language: "python",
+      input: { a: 2, b: 3 },
+      limits: { ...LIMITS, time: Duration.seconds(10), memoryBytes: 256 * 1024 * 1024 },
+      allowedOrigins: ["https://api.example.com"],
+      reference: "step_py",
+    });
+    expect(result).toMatchObject({
+      output: { sum: 5, body: "https://api.example.com/a" },
+      logs: ["hi"],
+    });
+    expect(proxy.seen).toEqual(["step_py https://api.example.com/a"]);
+    await expect(
+      pool.run({
+        code: "return 1;",
+        input: null,
+        limits: LIMITS,
+        allowedOrigins: [],
+        reference: "s",
+      }),
+    ).resolves.toMatchObject({ output: 1 });
+  }, 120_000);
+
+  it("refuses a Python step's own error as the same refusal", async () => {
+    const pool = poolOf();
+    await expect(
+      pool.run({
+        code: 'raise ValueError("nope")',
+        language: "python",
+        input: null,
+        limits: { ...LIMITS, time: Duration.seconds(10), memoryBytes: 256 * 1024 * 1024 },
+        allowedOrigins: [],
+        reference: "s",
+      }),
+    ).rejects.toMatchObject({ failure: "ValueError: nope" });
+  }, 120_000);
+
+  it("never sends a relayed fetch outside the run's allow-list", async () => {
+    const proxy = new EchoProxy();
+    const pool = poolOf(proxy, FORGING);
+    const result = await pool.run({
+      code: "forge",
+      input: null,
+      limits: LIMITS,
+      allowedOrigins: ["https://api.example.com"],
+      reference: "s",
+    });
+    expect(result.output).toBe("fetch: https://evil.example.org/x is not an allowed origin");
+    expect(proxy.seen).toEqual([]);
+  }, 20_000);
+
+  it("restarts a run's clock at most once", async () => {
+    const pool = poolOf(new EchoProxy(), REARMING);
+    await expect(
+      pool.run({
+        code: "stall",
+        input: null,
+        limits: { ...LIMITS, time: Duration.seconds(1) },
+        allowedOrigins: [],
+        reference: "s",
+      }),
+    ).rejects.toBeInstanceOf(SandboxLimitExceededError);
   }, 20_000);
 
   it("refuses runs when not open and a bad size", async () => {

@@ -8,9 +8,12 @@
  *           one child, never the host; the child is replaced and only its run is refused. Runs in one process are
  *           sequential and each gets a fresh QuickJS runtime, so no state passes between runs. The pool size and the
  *           grace are the host's deployment settings; every run limit is still the run's own (`SandboxLimits`). A
- *           Python engine is not here yet (ADR 0434 decision 1 waits on the owner).
+ *           Python run (Pyodide, loaded in the process when its first Python request arrives) is the last run of its
+ *           process: one interpreter cannot isolate runs and Pyodide's FFI reaches the process's JavaScript, so the
+ *           process is replaced after it. Processes start with an empty environment, and a relayed fetch's origin is
+ *           checked again here against the run's allow-list, so a process that was broken out of cannot widen egress.
  * Runtime: node
- * Governing contract: ADR 0434 (decision 2); ADR 0154 (decisions 1, 5 and 6); ADR 0294 (decision 16).
+ * Governing contract: ADR 0434 (decisions 1 and 2); ADR 0154 (decisions 1, 2, 5 and 6); ADR 0294 (decision 16).
  */
 import { type ChildProcess, spawn } from "node:child_process";
 
@@ -18,6 +21,7 @@ import { Service } from "@stackra/container";
 import { Duration } from "@stackra/contracts";
 
 import type { SandboxFetchProxy } from "#contracts/index";
+import { originOf } from "#core/functions/origin-of.function";
 import {
   SandboxCodeFailedError,
   SandboxLimitExceededError,
@@ -44,6 +48,8 @@ interface Slot {
     | (Job & {
         started: number;
         timer: NodeJS.Timeout | undefined;
+        /** The run's clock was restarted once (a Python run after Pyodide loaded); a later `ready` is ignored. */
+        isRearmed: boolean;
         readonly abort: AbortController;
       })
     | undefined;
@@ -140,7 +146,8 @@ export class SandboxPool extends Service {
     const child = spawn(
       process.execPath,
       [...(options.execArgv ?? process.execArgv), "--input-type=module", "--eval", script],
-      { stdio: ["ignore", "inherit", "inherit", "ipc"], serialization: "json" },
+      // An empty environment: no host secret reaches a process that runs tenant code.
+      { stdio: ["ignore", "inherit", "inherit", "ipc"], serialization: "json", env: {} },
     );
     const slot: Slot = { child, isReady: false };
     child.on("message", (message: PoolReply) => this.answer(slot, message));
@@ -160,6 +167,7 @@ export class SandboxPool extends Service {
         ...job,
         started: performance.now(),
         timer: undefined,
+        isRearmed: false,
         abort: new AbortController(),
       };
       if (slot.isReady) this.arm(slot);
@@ -176,6 +184,8 @@ export class SandboxPool extends Service {
     const running = slot.running;
     const options = this.options;
     if (running === undefined || options === undefined) return;
+    // A Python run says it serves again once Pyodide loaded: the clock restarts there.
+    clearTimeout(running.timer);
     running.started = performance.now();
     running.timer = setTimeout(
       () => {
@@ -197,6 +207,11 @@ export class SandboxPool extends Service {
   /** Handles one message of a process. */
   private answer(slot: Slot, message: PoolReply): void {
     if (message.type === "ready") {
+      // Only one restart per run, so a process cannot keep its run's clock from ever running out.
+      if (slot.isReady && slot.running !== undefined) {
+        if (slot.running.isRearmed) return;
+        slot.running.isRearmed = true;
+      }
       slot.isReady = true;
       this.arm(slot);
       return;
@@ -204,7 +219,18 @@ export class SandboxPool extends Service {
     const running = slot.running;
     if (running === undefined) return;
     if (message.type === "fetch") {
-      this.proxy.fetch(message.request, message.reference, running.abort.signal).then(
+      const { url } = message.request;
+      const allowed = new Set(running.request.allowedOrigins.map(originOf));
+      if (!URL.canParse(url) || !allowed.has(originOf(url))) {
+        this.post(slot, {
+          type: "fetch-failed",
+          fetchId: message.fetchId,
+          message: `fetch: ${url} is not an allowed origin`,
+        });
+        return;
+      }
+      // The run's own reference, never the process's word for it, goes to the audit.
+      this.proxy.fetch(message.request, running.request.reference, running.abort.signal).then(
         (response) => this.post(slot, { type: "fetched", fetchId: message.fetchId, response }),
         (error: unknown) =>
           this.post(slot, {
@@ -232,6 +258,8 @@ export class SandboxPool extends Service {
         }),
       );
     else running.reject(Object.assign(new Error(message.message), { name: message.name }));
+    // A process that ran Python is not reused; `lost` replaces it once it exits.
+    if (running.request.language === "python") slot.child.kill("SIGKILL");
     this.dispatch();
   }
 

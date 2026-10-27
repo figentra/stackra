@@ -2,7 +2,7 @@
   "name": "@stackra/sandbox",
   "version": "0.0.0",
   "private": true,
-  "description": "Stackra sandbox: the Sandbox service that runs a tenant's automation code step in QuickJS-WASM (a fresh runtime per run, no filesystem, JSON in and out, time, memory and output limits from the caller's plan data, network only through the allow-listed SandboxFetchProxy port) and reports the milliseconds to meter; in ./node, a process-isolated SandboxPool and TypeScript steps compiled by Node's type stripping",
+  "description": "Stackra sandbox: the Sandbox service that runs a tenant's automation code step in QuickJS-WASM (a fresh runtime per run, no filesystem, JSON in and out, time, memory and output limits from the caller's plan data, network only through the allow-listed SandboxFetchProxy port) and reports the milliseconds to meter; in ./node, a process-isolated SandboxPool that also runs Python steps in Pyodide, and TypeScript steps compiled by Node's type stripping",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -72,6 +72,7 @@
     "@stackra/container": "workspace:*",
     "@stackra/contracts": "workspace:*",
     "@stackra/errors": "workspace:*",
+    "pyodide": "catalog:",
     "quickjs-emscripten": "catalog:"
   },
   "devDependencies": {

@@ -10,7 +10,8 @@
  *           while code runs, a timer while it waits), heap (QuickJS's memory limit, and the growth of the run's
  *           WebAssembly memory while code runs), output (result plus logs). Each run gets a fresh engine module,
  *           runtime and context, all dropped after it, so no state passes between runs. Each run is metered: a result
- *           carries `codeMs`, and so does each refusal. Not a Python runner (Pyodide is a later engine of ADR 0154).
+ *           carries `codeMs`, and so does each refusal. JavaScript only: a Python request
+ *           (`language: "python"`) is refused here, since Pyodide runs only in a `SandboxPool` process (ADR 0434 d1).
  * Runtime: isomorphic
  * Governing contract: ADR 0154 (decisions 1 to 8); ADR 0294 (decisions 16 and 17: dependencies by constructor type);
  *                     ADR 0263 (ports resolve by type).
@@ -33,6 +34,8 @@ import type {
 import type { SandboxFetchProxy, SandboxFetchRequest } from "#contracts/index";
 import { SandboxCodeFailedError } from "#core/errors/sandbox-code-failed.error";
 import { SandboxLimitExceededError } from "#core/errors/sandbox-limit-exceeded.error";
+import { originOf } from "#core/functions/origin-of.function";
+import { toFetchRequest } from "#core/functions/to-fetch-request.function";
 import type { SandboxLimit } from "#core/types/sandbox-limit.type";
 import type { SandboxRequest } from "#core/types/sandbox-request.type";
 import type { SandboxResult } from "#core/types/sandbox-result.type";
@@ -101,13 +104,6 @@ const encoder = new TextEncoder();
 /** The UTF-8 length of `text`. */
 const bytesOf = (text: string): number => encoder.encode(text).length;
 
-/**
- * The origin of `url`.
- *
- * @throws TypeError when `url` is not an absolute URL.
- */
-const originOf = (url: string): string => new URL(url).origin;
-
 /** A guest error as `Name: message`, or the thrown value as text; `Error` when even that cannot be read. */
 function describe(context: QuickJSContext, error: QuickJSHandle): string {
   try {
@@ -154,9 +150,12 @@ export class Sandbox extends Service {
    * @throws SandboxCodeFailedError when the code does not compile, throws, or returns a value that is not JSON.
    * @throws SandboxLimitExceededError when the run passes its time, memory or output limit.
    * @throws RangeError when the time limit is zero.
-   * @throws TypeError when an allowed origin is not an absolute URL.
+   * @throws TypeError when an allowed origin is not an absolute URL, or the request is Python (only a `SandboxPool`
+   *         runs Python).
    */
   async run(request: SandboxRequest): Promise<SandboxResult> {
+    if (request.language === "python")
+      throw new TypeError("A Python code step runs only in a SandboxPool process");
     const milliseconds = Duration.toMilliseconds(request.limits.time);
     if (!(milliseconds > 0))
       throw new RangeError(
@@ -344,32 +343,12 @@ export class Sandbox extends Service {
     init: QuickJSHandle | undefined,
   ): SandboxFetchRequest {
     const { context } = state;
-    if (context.typeof(url) !== "string") throw new TypeError("fetch: the URL is a string");
-    const href = context.getString(url);
-    const origin = URL.canParse(href) ? originOf(href) : undefined;
-    if (origin === undefined || !state.origins.has(origin))
-      throw new TypeError(`fetch: ${origin ?? href} is not an allowed origin`);
+    const href = context.typeof(url) === "string" ? context.getString(url) : undefined;
     const text =
       init === undefined || context.typeof(init) === "undefined"
         ? undefined
         : this.toText(state, init);
-    const options = (text === undefined ? {} : JSON.parse(text)) as Record<string, unknown>;
-    const { method = "GET", headers = {}, body } = options;
-    if (typeof method !== "string") throw new TypeError("fetch: the method is a string");
-    if (
-      typeof headers !== "object" ||
-      headers === null ||
-      Object.values(headers).some((value) => typeof value !== "string")
-    )
-      throw new TypeError("fetch: the headers are an object of strings");
-    if (body !== undefined && typeof body !== "string")
-      throw new TypeError("fetch: the body is a string");
-    return {
-      url: href,
-      method: method.toUpperCase(),
-      headers: headers as Record<string, string>,
-      ...(body === undefined ? {} : { body }),
-    };
+    return toFetchRequest(href, text === undefined ? undefined : JSON.parse(text), state.origins);
   }
 
   /** Runs the guest's queued jobs, unless the run stopped; a job that cannot finish stops the run. */

@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `serveSandboxChild` in this process: it refuses to start without an IPC channel, says it is
  *          ready, answers a run with its result, its code failure, its limit or its error, relays a guest fetch
- *          through the pool and settles it with the pool's answer, and exits when the pool disconnects. The `SandboxPool` tests run the
+ *          through the pool and settles it with the pool's answer, hands a Python run to `PythonSandbox` after its load
+ *          and says it serves again, and exits when the pool disconnects. The `SandboxPool` tests run the
  *          same function in real child processes, which coverage cannot see, so its branches are measured here.
  * Boundary: test only; `process.send`, `process.on` and `process.exit` are stubbed so nothing reaches the vitest
  *           worker's own IPC channel, and restored after each test.
@@ -16,6 +17,7 @@ import { vi } from "vitest";
 import { Sandbox } from "#core/services/sandbox.service";
 import type { SandboxRequest } from "#core/types/sandbox-request.type";
 import { serveSandboxChild } from "#node/functions/serve-sandbox-child.function";
+import { PythonSandbox } from "#node/services/python-sandbox.service";
 import type { PoolReply } from "#node/types/pool-reply.type";
 import type { PoolRequest } from "#node/types/pool-request.type";
 
@@ -106,6 +108,24 @@ describe(serveSandboxChild, () => {
     message(run("return 1;"));
     await settled(replies, 1);
     expect(replies[0]).toEqual({ type: "error", name: "Error", message: "boom" });
+  });
+
+  it("hands a Python run to the Python engine once it loaded, and says it serves again", async () => {
+    const load = vi.spyOn(PythonSandbox.prototype, "load").mockResolvedValue(undefined as never);
+    const python = vi
+      .spyOn(PythonSandbox.prototype, "run")
+      .mockResolvedValue({ output: 1, logs: [], codeMs: 0 });
+    const javascript = vi.spyOn(Sandbox.prototype, "run");
+    const { replies, message } = serve();
+    message(run("return 1", { language: "python" }));
+    await settled(replies, 2);
+    expect(replies).toEqual([
+      { type: "ready" },
+      { type: "result", result: { output: 1, logs: [], codeMs: 0 } },
+    ]);
+    expect(load).toHaveBeenCalledOnce();
+    expect(python).toHaveBeenCalledOnce();
+    expect(javascript).not.toHaveBeenCalled();
   });
 
   it("relays a guest fetch to the pool and settles it with the pool's answer", async () => {

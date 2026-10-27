@@ -74,6 +74,8 @@ catalog:
   uqr: 0.1.3
   # @stackra/sandbox: QuickJS-WASM runs tenant JavaScript code steps (ADR 0154 decision 2). MIT.
   quickjs-emscripten: 0.32.0
+  # @stackra/sandbox: Pyodide runs tenant Python code steps in the pool's processes (ADR 0154 d2, ADR 0434 d1). MPL-2.0.
+  pyodide: 314.0.7
 
 catalogs:
   # Toolchain that builds TypeScript output — a different risk/cadence than lint/format/test tools.

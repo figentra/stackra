@@ -5,7 +5,8 @@
  *          settles, a large allocation, deep recursion, a large result and too many logged bytes are
  *          `sandbox_limit_exceeded` with the limit named; the guest has no filesystem or process and nothing passes
  *          between runs; `fetch` reaches only allow-listed origins, through the proxy, with the run's reference, and
- *          is aborted when the run ends first; a zero time limit and a malformed origin are refused before running.
+ *          is aborted when the run ends first; a zero time limit, a malformed origin and a Python request are refused
+ *          before running.
  * Boundary: test only; runs real QuickJS-WASM. A recording proxy stands in for the host's egress.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0154 (decisions 1 to
@@ -264,6 +265,9 @@ describe(Sandbox, () => {
     await expect(
       sandbox.run(request("return 1;", { allowedOrigins: ["not a url"] })),
     ).rejects.toThrow(TypeError);
+    await expect(sandbox.run(request("return 1", { language: "python" }))).rejects.toThrow(
+      "A Python code step runs only in a SandboxPool process",
+    );
   });
 
   it("passes JSON input of every kind through unchanged", async () => {

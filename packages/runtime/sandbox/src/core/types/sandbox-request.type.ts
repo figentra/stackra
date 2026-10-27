@@ -1,14 +1,16 @@
 /**
  * Stackra file contract:
- * Purpose: `SandboxRequest`, one run of a code step: the tenant's code, its JSON input, its limits, the origins its
- *          `fetch` may reach, and the caller's reference for the audit.
+ * Purpose: `SandboxRequest`, one run of a code step: the tenant's code and its language, its JSON input, its limits,
+ *          the origins its `fetch` may reach, and the caller's reference for the audit.
  * Boundary: a type only, plain data. The code is the body of an async function of `input` whose returned value is the
- *           output; it is JavaScript (a TypeScript step is compiled to it before it is stored).
+ *           output; it is JavaScript (a TypeScript step is compiled to it before it is stored) or, with `language:
+ *           "python"`, the body of `async def step(input)`, which only a `SandboxPool` runs.
  * Runtime: isomorphic
- * Governing contract: ADR 0154 (decisions 1, 5, 6 and 7).
+ * Governing contract: ADR 0154 (decisions 1, 2, 5, 6 and 7); ADR 0434 (decision 1).
  */
 import type { Json } from "@stackra/contracts";
 
+import type { SandboxLanguage } from "#core/types/sandbox-language.type";
 import type { SandboxLimits } from "#core/types/sandbox-limits.type";
 
 /**
@@ -26,6 +28,9 @@ import type { SandboxLimits } from "#core/types/sandbox-limits.type";
 export interface SandboxRequest {
   /** The body of `async function (input) { ... }`; what it returns is the output. */
   readonly code: string;
+
+  /** The code's language; `javascript` when absent. `python` runs only in a `SandboxPool`. */
+  readonly language?: SandboxLanguage;
 
   /** The value of `input`. */
   readonly input: Json;
