@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `SearchFindOptions<M>`, what `search.in(Model).find(phrase, options)` takes: exact filters on the facet's
- *          filter fields, how many rows, and the relations to load on them.
+ *          filter fields, how many rows, the relations to load on them, and the locale whose synonym sets apply.
  * Boundary: a type only. A filter key is a path the model's `@Searchable` lists under `filters`; `SearchIndex` refuses
  *           any other with a `TypeError`. `undefined` members are allowed, so a query passes its input's optional
  *           fields through as they are.
@@ -17,6 +17,9 @@ export interface SearchFindOptions<M extends object> {
 
   /** How many rows at most, 1 to 100; 20 when absent. */
   readonly limit?: number | undefined;
+
+  /** The phrase's locale (`ar-SA`): only that language's synonym sets apply; every language's when absent. */
+  readonly locale?: string | undefined;
 
   /** Relations of `M` to load on the returned rows. */
   readonly populate?: readonly Extract<keyof M, string>[] | undefined;

@@ -10,6 +10,7 @@
 import { Service } from "@stackra/container";
 import type { Database } from "@stackra/database";
 import { Model, Searchable } from "@stackra/model";
+import { MemorySettingValueStoreDriver, SettingsReader } from "@stackra/settings";
 import { describe, expect, it } from "@stackra/testing";
 
 import { MemorySearchDriver } from "#core/drivers/memory-search.driver";
@@ -21,7 +22,9 @@ class Entry extends Model.with() {}
 
 class Plain extends Model.with() {}
 
-const search = new Search(new MemorySearchDriver(), {} as Database);
+const settings = new SettingsReader(new MemorySettingValueStoreDriver());
+
+const search = new Search(new MemorySearchDriver(), {} as Database, settings);
 
 describe(Search, () => {
   it("is a service", () => {
@@ -72,7 +75,11 @@ describe("Search.across", () => {
             row instanceof (model as new () => object) && (where.id?.$in?.includes(row.id) ?? true),
         ),
     };
-    const global = new Search(new MemorySearchDriver(), { em: () => em } as unknown as Database);
+    const global = new Search(
+      new MemorySearchDriver(),
+      { em: () => em } as unknown as Database,
+      settings,
+    );
     await global.in(Customer).index(ROWS.slice(0, 2) as Customer[]);
     await global.in(Matter).index(ROWS.slice(2) as Matter[]);
     const hits = await global.across([Customer, Matter], "acme", { limit: 2 });

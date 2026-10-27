@@ -71,7 +71,7 @@ function scoreOf(
  * Holds documents in memory.
  *
  * @example
- * const search = new Search(new MemorySearchDriver(), database);
+ * const search = new Search(new MemorySearchDriver(), database, settings);
  * await search.in(Product).index(products);
  */
 export class MemorySearchDriver extends Driver(SearchDriver) {

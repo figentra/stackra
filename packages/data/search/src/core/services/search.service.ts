@@ -3,17 +3,19 @@
  * Purpose: `Search`, the reader a query injects to search a model's `@Searchable` index: `search.in(Product)` gives
  *          that model's `SearchIndex`, which ranks, pages, loads rows and keeps documents current, and
  *          `search.across([...])` fuses several models' results for a global search.
- * Boundary: a platform service with no state of its own: it holds the configured `SearchDriver` and the connected
- *           `Database`, and each `in(...)` call builds a fresh index value. Which driver runs is config `search.driver`;
+ * Boundary: a platform service with no state of its own: it holds the configured `SearchDriver`, the connected
+ *           `Database` and the `SettingsReader` the synonym sets come from, and each `in(...)` call builds a fresh index
+ *           value. Which driver runs is config `search.driver`;
  *           callers never name one. The class name is the injected platform name the template uses (as `GraphQuery`
  *           is @stackra/database's), so it carries no `Service` suffix.
  * Runtime: node
  * Governing contract: ADR 0221 (decisions 1 and 9: one interface over the engines); ADR 0294 (decisions 16 and 17:
- *                     dependencies by constructor type); ADR 0263.
+ *                     dependencies by constructor type); ADR 0263; ADR 0307 (synonyms are settings).
  */
 import { Service } from "@stackra/container";
 import type { AnyClass } from "@stackra/container";
 import type { Database } from "@stackra/database";
+import type { SettingsReader } from "@stackra/settings";
 
 import type { SearchDriver } from "#contracts/index";
 import type { SearchHit } from "#core/types/search-hit.type";
@@ -40,14 +42,19 @@ export class Search extends Service {
   /** The connected database. */
   private readonly database: Database;
 
+  /** The reader of `SearchSettings` (the synonym sets). */
+  private readonly settings: SettingsReader;
+
   /**
    * @param driver - the engine config `search.driver` picks.
    * @param database - the connected database whose running context each read and write joins.
+   * @param settings - the settings reader each read takes its index's synonym sets from.
    */
-  constructor(driver: SearchDriver, database: Database) {
+  constructor(driver: SearchDriver, database: Database, settings: SettingsReader) {
     super();
     this.driver = driver;
     this.database = database;
+    this.settings = settings;
   }
 
   /**
@@ -56,7 +63,7 @@ export class Search extends Service {
    * @throws TypeError when the model has no `@Searchable` facet.
    */
   in<M extends object>(model: AnyClass<M>): SearchIndex<M> {
-    return new SearchIndex(this.driver, this.database, model);
+    return new SearchIndex(this.driver, this.database, model, this.settings);
   }
 
   /**

@@ -3,7 +3,8 @@
  * Purpose: unit tests of `SearchIndex`: indexing loads the facet's relations and stores normalised documents under the
  *          model's table; `find` and `page` return loaded rows in rank order with the next cursor; filters, limits and
  *          cursors are checked; a phrase with no word reads nothing; `remove` and `reindex` reach the driver; an Arabizi word
- *          carries its Arabic alternative, record visibility reaches the driver before ranking and before facet
+ *          carries its Arabic alternative, a word of one of the index's synonym sets (settings data, per language)
+ *          finds the rows of the other words, record visibility reaches the driver before ranking and before facet
  *          counting, facets count filter values over the matches (or every row for an empty phrase), and a privileged
  *          field is excerpted only for the record's team.
  * Boundary: test only; the memory driver ranks and a stand-in entity manager answers metadata, populate and find from
@@ -16,6 +17,7 @@ import type { Database } from "@stackra/database";
 import { VisibilityFilter } from "@stackra/database/contracts";
 import { isRefusal } from "@stackra/errors";
 import { Classify, Model, PrivilegedDataClass, Searchable } from "@stackra/model";
+import { MemorySettingValueStoreDriver, SettingsReader } from "@stackra/settings";
 import { afterEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 
@@ -89,6 +91,32 @@ async function indexed() {
 }
 
 describe(SearchIndex, () => {
+  it("adds the index's synonym sets in the read's language as alternatives, for finds and facets", async () => {
+    const driver = new MemorySearchDriver();
+    const { database } = databaseOver(ROWS);
+    const settings = new SettingsReader(
+      new MemorySettingValueStoreDriver().seed("search", {
+        synonyms:
+          "products en: tunic, shirt\ncatalogue.products ar: flax, linen\narticles en: frock, dress",
+      }),
+    );
+    const products = new SearchIndex(driver, database, Product, settings);
+    await products.index(ROWS);
+    expect(await products.find("tunic", { limit: 5 })).toEqual([ROWS[0], ROWS[1], ROWS[2]]);
+    expect(await products.find("flax", { locale: "ar-SA" })).toEqual([ROWS[0], ROWS[2]]);
+    expect(await products.find("flax", { locale: "en" })).toEqual([]);
+    expect(await products.find("frock")).toEqual([]);
+    expect(await products.facets("flax", { paths: ["status"], locale: "ar" })).toEqual({
+      status: { active: 1, draft: 1 },
+    });
+    const search = vi.spyOn(driver, "search");
+    await products.find("7abibi tunic");
+    expect(search.mock.calls[0]?.[1].alternatives).toEqual({
+      "7abibi": ["حبيبي"],
+      tunic: ["shirt"],
+    });
+  });
+
   it("refuses a model without @Searchable", () => {
     const { database } = databaseOver([]);
     expect(() => new SearchIndex(new MemorySearchDriver(), database, Note)).toThrow(TypeError);

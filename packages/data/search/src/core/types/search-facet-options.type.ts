@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `SearchFacetOptions`, what `search.in(Model).facets(phrase, options)` takes: the filter paths to count, the
- *          exact filters already applied, and how many values per path.
+ *          exact filters already applied, how many values per path, and the locale whose synonym sets apply.
  * Boundary: a type only. Every path and filter key is one the model's `@Searchable` lists under `filters`;
  *           `SearchIndex` refuses any other with a `TypeError`. `undefined` members are allowed, so a query passes its
  *           input's optional fields through as they are.
@@ -17,6 +17,9 @@ export interface SearchFacetOptions {
 
   /** Filter paths and the value each must hold, as a ranked read takes them. */
   readonly filters?: Readonly<Record<string, SearchFilterValue>> | undefined;
+
+  /** The phrase's locale (`ar-SA`): only that language's synonym sets apply; every language's when absent. */
+  readonly locale?: string | undefined;
 
   /** How many values per path at most, the most frequent first, 1 to 100; 20 when absent. */
   readonly limit?: number | undefined;

@@ -10,6 +10,7 @@ Postgres drivers, the `t.searchable(...)` macro and the text-function migration 
 | You are writing…                         | It goes in…                                               |
 | ---------------------------------------- | --------------------------------------------------------- |
 | The configuration (`SearchConfig`)       | `src/config/search.config.ts`                             |
+| The settings group (`SearchSettings`)    | `src/core/search.settings.ts`                             |
 | Its options shape                        | `src/core/schemas/search-options.schema.ts`               |
 | Its shipped zod schema (`SearchConfig$`) | `src/core/constants/search-config-schema.constant.ts`     |
 | The port or a type it uses               | `src/contracts/{ports,types}/`                            |
@@ -34,6 +35,10 @@ Postgres drivers, the `t.searchable(...)` macro and the text-function migration 
 
 - One normalisation: `searchWordsOf` (Arabic through `@stackra/i18n`'s `normalizeArabic`, never a local copy) for
   documents and phrases, and `search.fold` (migration 0003) for the trigram index. Change the two together; a released migration is frozen, so a change is a new migration.
+- Synonyms are settings data (`search.synonyms`), never code: `SearchIndex` reads them per call through the
+  `SettingsReader` `Search` is given and passes them as `SearchRequest.alternatives`, so every driver applies them in
+  every lane it has. Terms go through `searchWordsOf` before they reach a driver (they land in a tsquery). The line
+  form is `SEARCH_SYNONYM_LINE`; the settings schema and `searchSynonymsOf` both read it.
 - Automatic indexing goes through `@stackra/outbox` only (`registerSearchableModels`); outbox must never depend on
   search. `SEARCHABLE_MODELS` stays internal.
 - Drivers deal in ids and documents; only `SearchIndex` and `SearchableChangeService` (one row load) touch the ORM. Isolation is the database's: never add a

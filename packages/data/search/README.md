@@ -7,7 +7,7 @@ A `VectorIndex` stores embedded passages for semantic retrieval (pgvector in Pos
 
 **Tier:** `tier:lib` (`packages/data/search`). Entries `.`, `./contracts` and `./node`. Depends on `@stackra/config`,
 `@stackra/container`, `@stackra/contracts`, `@stackra/database`, `@stackra/errors`, `@stackra/model`,
-`@stackra/outbox` and `@stackra/validation`.
+`@stackra/outbox`, `@stackra/settings` and `@stackra/validation`.
 
 ## What is here
 
@@ -18,6 +18,7 @@ A `VectorIndex` stores embedded passages for semantic retrieval (pgvector in Pos
 | `.`           | `MemorySearchDriver`                                                  | the in-process engine (tests, the dev lane)                        |
 | `.`           | `MemoryVectorIndexDriver`                                             | the in-process `VectorIndex` (tests, the dev lane)                 |
 | `.`           | `SearchConfig`, `SearchConfig$`, `SearchOptions`                      | `search.driver`: `postgres` (default) or `memory`                  |
+| `.`           | `SearchSettings`                                                      | `search.synonyms`: synonym sets per index and language (settings)  |
 | `.`           | `SearchCursorInvalidError`                                            | refusal of a cursor no page gave (`search_cursor_invalid`, 400)    |
 | `./contracts` | `SearchDriver`                                                        | the port                                                           |
 | `./contracts` | `SearchDocument`, `SearchRequest`, `SearchTable`, `SearchFilterValue` | what a driver stores and is asked                                  |
@@ -138,6 +139,22 @@ every vector's size against `dimensions`. Provider-specific drivers live with th
   visible keys (`visibleKeysQuery` of `@stackra/database`), which the Postgres driver ANDs into both lanes. The memory
   driver refuses a request that carries one.
 - An Arabizi word (`7abibi`) also matches its Arabic spelling (`حبيبي`), as a prefix alternative.
+- Synonyms are settings data, edited per scope with no deploy: `search.synonyms` (`SearchSettings`) holds one set per
+  line, `<index> <language>: term, term[, term...]`, where the index is the model's table, bare or schema-qualified,
+  and `#` starts a comment line:
+
+  ```text
+  # living room
+  products en: sofa, couch, settee
+  catalogue.products ar: كنبة, أريكة
+  ```
+
+  A set is an equivalence: each word finds the rows of the others. `find`, `page` and `facets` take `locale` (`ar-SA`),
+  and only that language's sets apply; with none, every language's sets apply (`across` passes none). The sets join
+  each phrase word as alternatives in both lanes: ORed prefixes in full-text, and in trigram one more phrase per
+  alternative (that word swapped), at most eight phrases. A term that normalises to several words is left out, and a
+  word carries at most eight synonyms. The setting's schema refuses a line that is not a set, a comment or blank.
+
 - `index.snippets(rows, phrase, { isTeamMember })` excerpts each row's own text fields; a field whose data class says
   `no_snippet` (`PrivilegedDataClass`) is excerpted only for the record's team, which IAM answers.
 - `search.across([Customer, Matter], phrase, { limit })` fuses several models' results by reciprocal rank (the
@@ -145,6 +162,8 @@ every vector's size against `dimensions`. Provider-specific drivers live with th
 
 ## Not here
 
+- Phrase synonyms (`t shirt` for `tee`) and one-way synonyms (`tv => television`): sets are single words and
+  equivalences.
 - Re-indexing a parent when a related row its facet reads changes: the writer calls `index` for it; `reindex`
   backfills.
 - The vector lane in the hybrid `Search` ranking (the `VectorIndex` stands alone for now); the versioned index swap,

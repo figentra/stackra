@@ -81,6 +81,7 @@
     "@stackra/i18n": "workspace:*",
     "@stackra/model": "workspace:*",
     "@stackra/outbox": "workspace:*",
+    "@stackra/settings": "workspace:*",
     "@stackra/validation": "workspace:*",
     "zod": "catalog:"
   },

@@ -9,25 +9,31 @@
  *           transaction and scope session: row-level security isolates, and record visibility is the only
  *           narrowing added. A cursor is the next page's offset; a page past the driver's candidate window is empty.
  *           Record visibility (ADR 0333) is handed to the driver as a key subquery, so it bounds the rows before
- *           they are ranked or counted (a facet count never includes a row the caller may not see); an Arabizi word also matches its Arabic spelling; a snippet never shows a `no_snippet`
- *           field outside the record's team.
+ *           they are ranked or counted (a facet count never includes a row the caller may not see). An Arabizi word
+ *           also matches its Arabic spelling, and a word in one of the index's synonym sets (`search.synonyms`, read per
+ *           call through the `SettingsReader` `Search` passes, in the read's language or every language) also matches
+ *           the other words of the set. A snippet never shows a `no_snippet` field outside the record's team.
  * Runtime: node
  * Governing contract: ADR 0221 (decisions 1, 2, 3 and 7); ADR 0294 (decision 6: `@Searchable` is a class facet);
  *                     cursor pagination in the HTTP conventions; ADR 0327 (decision 9: isolation in the database); ADR 0333
- *                     (amendment); ADR 0341 (decision 2); OS-173; ADR 0404 (facets).
+ *                     (amendment); ADR 0341 (decision 2); OS-173; ADR 0404 (facets); ADR 0403 (per-language synonyms);
+ *                     ADR 0307 (rules 22 to 24).
  */
 import type { AnyClass } from "@stackra/container";
 import { visibleKeysQuery } from "@stackra/database";
 import type { Database, TablePage } from "@stackra/database";
 import { Classify, Searchable, SearchSnippet, Translated } from "@stackra/model";
 import type { SearchableOptions } from "@stackra/model";
+import type { SettingsReader } from "@stackra/settings";
 
 import type { SearchDriver, SearchFacets, SearchTable } from "#contracts/index";
 import { SearchCursorInvalidError } from "#core/errors/search-cursor-invalid.error";
 import { arabiziOf } from "#core/functions/arabizi-of.function";
 import { searchDocumentOf } from "#core/functions/search-document-of.function";
 import { searchSnippetOf } from "#core/functions/search-snippet-of.function";
+import { searchSynonymsOf } from "#core/functions/search-synonyms-of.function";
 import { searchWordsOf } from "#core/functions/search-words-of.function";
+import { SearchSettings } from "#core/search.settings";
 import type { SearchFacetOptions } from "#core/types/search-facet-options.type";
 import type { SearchFindOptions } from "#core/types/search-find-options.type";
 import type { SearchPageOptions } from "#core/types/search-page-options.type";
@@ -86,13 +92,22 @@ export class SearchIndex<M extends object> {
   /** The model's `@Searchable` facet. */
   private readonly facet: SearchableOptions;
 
+  /** The reader of the synonym sets; none applies when absent. */
+  private readonly settings: SettingsReader | undefined;
+
   /**
    * @param driver - the engine.
    * @param database - the connected database.
    * @param model - a model class with a `@Searchable` facet.
+   * @param settings - the reader `SearchSettings` (the synonym sets) is read through; no synonyms without one.
    * @throws TypeError when the model has no `@Searchable` facet.
    */
-  constructor(driver: SearchDriver, database: Database, model: AnyClass<M>) {
+  constructor(
+    driver: SearchDriver,
+    database: Database,
+    model: AnyClass<M>,
+    settings?: SettingsReader,
+  ) {
     const facet = Searchable.on(model);
     if (facet === undefined)
       throw new TypeError(`${model.name} is not @Searchable, so it has no search index`);
@@ -100,6 +115,7 @@ export class SearchIndex<M extends object> {
     this.database = database;
     this.model = model;
     this.facet = facet;
+    this.settings = settings;
   }
 
   /**
@@ -138,7 +154,7 @@ export class SearchIndex<M extends object> {
     const filters = options.filters ?? {};
     this.checkFilters([...options.paths, ...Object.keys(filters)]);
     const visible = await visibleKeysQuery(this.model);
-    const { words, alternatives } = this.wordsOf(phrase);
+    const { words, alternatives } = await this.wordsOf(phrase, options.locale);
     return this.driver.facets(this.shape().table, {
       words,
       filters,
@@ -242,7 +258,7 @@ export class SearchIndex<M extends object> {
     const limit = this.limitOf(options.limit);
     const filters = options.filters ?? {};
     this.checkFilters(Object.keys(filters));
-    const { words, alternatives } = this.wordsOf(phrase);
+    const { words, alternatives } = await this.wordsOf(phrase, options.locale);
     if (words.length === 0) return { items: [], hasMore: false };
     const visible = await visibleKeysQuery(this.model);
     const { table, key } = this.shape();
@@ -285,19 +301,43 @@ export class SearchIndex<M extends object> {
         );
   }
 
-  /** The phrase's distinct normalised words, capped, and the Arabic spelling of each Arabizi word. */
-  private wordsOf(phrase: string): {
+  /**
+   * The phrase's distinct normalised words, capped, and each word's alternatives: its Arabic spelling when it is
+   * Arabizi, and the other words of the index's synonym sets in `locale`'s language (every language when absent).
+   */
+  private async wordsOf(
+    phrase: string,
+    locale: string | undefined,
+  ): Promise<{
     readonly words: readonly string[];
     readonly alternatives: Readonly<Record<string, readonly string[]>>;
-  } {
+  }> {
     const words = [...new Set(searchWordsOf(phrase))].slice(0, MAX_WORDS);
+    const synonyms = await this.synonymsOf(words, locale);
     const alternatives = Object.fromEntries(
       words.flatMap((word) => {
         const arabic = arabiziOf(word);
-        return arabic === undefined ? [] : [[word, [arabic]]];
+        const others = [
+          ...new Set([...(arabic === undefined ? [] : [arabic]), ...(synonyms.get(word) ?? [])]),
+        ];
+        return others.length === 0 ? [] : [[word, others]];
       }),
     );
     return { words, alternatives };
+  }
+
+  /** The synonym sets of this index in `locale`'s language; none without a settings reader or a word. */
+  private async synonymsOf(
+    words: readonly string[],
+    locale: string | undefined,
+  ): Promise<ReadonlyMap<string, readonly string[]>> {
+    if (this.settings === undefined || words.length === 0) return new Map();
+    const { synonyms } = await this.settings.get(SearchSettings);
+    if (synonyms === "") return new Map();
+    const { table } = this.shape();
+    const indexes =
+      table.schema === undefined ? [table.table] : [table.table, `${table.schema}.${table.table}`];
+    return searchSynonymsOf(synonyms, indexes, locale?.split("-")[0]?.toLowerCase());
   }
 
   /** The rows of `ids`, in that order; a row the session cannot see any more is left out. */

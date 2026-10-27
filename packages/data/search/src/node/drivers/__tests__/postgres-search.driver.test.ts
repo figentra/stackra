@@ -1,6 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `PostgresSearchDriver`, Arabizi alternatives and the visibility subquery included: it reads a table's vector columns from the catalogue once (locale and
+ * Purpose: unit tests of `PostgresSearchDriver`, alternatives (Arabizi, synonyms) in both lanes and the visibility
+ *          subquery included: it reads a table's vector columns from the catalogue once (locale and
  *          configuration from the column name), writes each document as weighted vectors per locale with the folded
  *          text and filter values, clears removed documents, and ranks with the two fused lanes, every value bound as a
  *          parameter in placeholder order; facets count filter values over either lane's matches (or every indexed row
@@ -141,7 +142,7 @@ describe(PostgresSearchDriver, () => {
     expect(statements.at(-1)?.params).toEqual(["mug:*", "mug", "mug", 5, 0]);
   });
 
-  it("ORs an Arabizi word's alternatives and narrows both lanes by the visibility subquery", async () => {
+  it("ORs a word's alternatives in both lanes and narrows both by the visibility subquery", async () => {
     const { database, statements } = databaseWith(["search_vector"]);
     await new PostgresSearchDriver(database).search(PRODUCTS, {
       words: ["7abibi", "mug"],
@@ -159,12 +160,67 @@ describe(PostgresSearchDriver, () => {
       "(7abibi:* | حبيبي:*) & mug:*",
       1,
       "7abibi mug",
+      "حبيبي mug",
       "7abibi mug",
+      "حبيبي mug",
       1,
       5,
       0,
     ]);
+    expect(search?.sql).toContain(
+      `greatest(word_similarity(?, search.fold(t."search_text")), word_similarity(?, search.fold(t."search_text")))`,
+    );
+    expect(search?.sql).toContain(
+      `(search.fold(t."search_text") %> ? or search.fold(t."search_text") %> ?)`,
+    );
     expect(search?.sql.match(/ and t\."id" in \(select "visible"\."id"/g)).toHaveLength(2);
+    expect(search?.sql.match(/\?/g)).toHaveLength(search?.params.length ?? -1);
+  });
+
+  it("swaps one word at a time for a synonym in the trigram lane, and counts facets over the same phrases", async () => {
+    const { database, statements } = databaseWith(["search_vector"]);
+    const driver = new PostgresSearchDriver(database);
+    const request = {
+      words: ["blue", "sofa"],
+      filters: {},
+      alternatives: { sofa: ["couch", "settee"] },
+    };
+    await driver.search(PRODUCTS, { ...request, offset: 0, limit: 5 });
+    expect(statements.at(-1)?.params).toEqual([
+      "blue:* & (sofa:* | couch:* | settee:*)",
+      "blue sofa",
+      "blue couch",
+      "blue settee",
+      "blue sofa",
+      "blue couch",
+      "blue settee",
+      5,
+      0,
+    ]);
+    await driver.facets(PRODUCTS, { ...request, paths: ["status"], limit: 5 });
+    const count = statements.at(-1);
+    expect(count?.params).toEqual([
+      "blue:* & (sofa:* | couch:* | settee:*)",
+      "blue sofa",
+      "blue couch",
+      "blue settee",
+      ["status"],
+      5,
+    ]);
+    expect(count?.sql.match(/\?/g)).toHaveLength(count?.params.length ?? -1);
+  });
+
+  it("caps the trigram phrases at eight", async () => {
+    const { database, statements } = databaseWith(["search_vector"]);
+    await new PostgresSearchDriver(database).search(PRODUCTS, {
+      words: ["sofa"],
+      filters: {},
+      offset: 0,
+      limit: 5,
+      alternatives: { sofa: ["a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8", "a9"] },
+    });
+    const search = statements.at(-1);
+    expect(search?.sql.match(/%> \?/g)).toHaveLength(8);
     expect(search?.sql.match(/\?/g)).toHaveLength(search?.params.length ?? -1);
   });
 

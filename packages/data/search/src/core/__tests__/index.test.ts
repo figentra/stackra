@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: the consumer contract of the `.` entry: `Search` (which the template's catalogue queries inject and its
  *          wiring lists), `MemorySearchDriver` (the wiring's `memory` candidate) and `MemoryVectorIndexDriver` are
- *          exported with the configuration, its shipped schema under the generated name `SearchConfig$`, the shape, the
+ *          exported with the settings group (`SearchSettings`), the configuration, its shipped schema under the
+ *          generated name `SearchConfig$`, the shape, the
  *          index value and the cursor refusal, and nothing else is a value; the option types resolve.
  * Boundary: test only; imports the stand-in barrel through its `#core` alias.
  * Runtime: node (vitest)
@@ -25,6 +26,7 @@ describe("@stackra/search", () => {
       "SearchCursorInvalidError",
       "SearchIndex",
       "SearchOptions",
+      "SearchSettings",
     ]);
   });
 

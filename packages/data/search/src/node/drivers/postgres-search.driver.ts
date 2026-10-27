@@ -7,8 +7,10 @@
  *          matches (every indexed row holding the filters when there are no words), each row once per value.
  * Boundary: raw SQL on the running context's entity manager, so it joins the caller's transaction and scope session:
  *           row-level security decides the rows, and the request's record-visibility subquery narrows both lanes
- *           before they rank or count. An Arabizi word's alternatives join its prefix as an OR group. Every value is a bound parameter;
- *           identifiers are quoted and come from the ORM metadata and the catalogue; configuration names come from
+ *           before they rank or count. A word's alternatives (its Arabic spelling when Arabizi, its synonyms) apply in
+ *           both lanes: they join its prefix as an OR group in full-text, and in trigram each alternative gives one more
+ *           phrase (the word swapped for it), matched as an OR and ranked by the best (at most `MAX_PHRASES` phrases).
+ *           Every value is a bound parameter; identifiers are quoted and come from the ORM metadata and the catalogue; configuration names come from
  *           `TEXT_SEARCH_CONFIGS` only. A table's vector columns are read once from the catalogue and kept, so a
  *           table's locales need no configuration. Each lane ranks at most `CANDIDATES` rows, so a page past that window
  *           is empty. The vector lane (pgvector) waits for an embedding port.
@@ -49,6 +51,9 @@ const CANDIDATES = 1000;
 /** The reciprocal rank fusion constant: a row's score is the sum of 1 / (60 + its rank) over the lanes. */
 const FUSION = 60;
 
+/** The most phrases the trigram lane matches: the phrase and its variants with one word swapped for an alternative. */
+const MAX_PHRASES = 8;
+
 /** The folding function of migration `search.0003_create_fold_function`, which the trigram index is built on. */
 const FOLD = "search.fold";
 
@@ -69,6 +74,33 @@ const prefixesOf = (request: Pick<SearchRequest, "words" | "alternatives">): str
       return spellings.length === 1 ? spellings[0] : `(${spellings.join(" | ")})`;
     })
     .join(" & ");
+
+/** The trigram lane's phrases: the words, then each with one word swapped for one of its alternatives, capped. */
+const phrasesOf = (request: Pick<SearchRequest, "words" | "alternatives">): readonly string[] => {
+  const phrase = request.words.join(" ");
+  const variants = request.words.flatMap((word, at) =>
+    (request.alternatives?.[word] ?? []).map((spelling) =>
+      request.words.map((other, position) => (position === at ? spelling : other)).join(" "),
+    ),
+  );
+  // shortcut: variants past MAX_PHRASES are dropped (full-text still ORs every alternative); lift it if recall suffers.
+  return [...new Set([phrase, ...variants])].slice(0, MAX_PHRASES);
+};
+
+/** The SQL that `search_text` is trigram-similar to any of `count` phrases, one placeholder each. */
+const trigramMatchOf = (count: number): string => {
+  const matches = Array.from({ length: count }, () => `${FOLD}(t."search_text") %> ?`);
+  return count === 1 ? (matches[0] ?? "") : `(${matches.join(" or ")})`;
+};
+
+/** The SQL of the best word similarity of `search_text` to `count` phrases, one placeholder each. */
+const similarityOf = (count: number): string => {
+  const similarities = Array.from(
+    { length: count },
+    () => `word_similarity(?, ${FOLD}(t."search_text"))`,
+  );
+  return count === 1 ? (similarities[0] ?? "") : `greatest(${similarities.join(", ")})`;
+};
 
 /** The filter and visibility conditions of a lane, each opening with ` and `, and their parameters in order. */
 function narrowingOf(
@@ -128,7 +160,7 @@ export class PostgresSearchDriver extends Driver(SearchDriver) {
     const vectors = await this.vectorsOf(table);
     const { sql: narrowing, params: laneParams } = narrowingOf(table, request);
     const key = `t.${quote(table.primaryKey)}`;
-    const phrase = request.words.join(" ");
+    const phrases = phrasesOf(request);
     const prefixes = prefixesOf(request);
     // raw-sql: hybrid ranking (tsvector and trigram lanes fused by reciprocal rank) has no ORM form (ADR 0221 d1)
     const rows = (await this.database.em().execute(
@@ -140,9 +172,9 @@ fts as (
   order by rank limit ${CANDIDATES}
 ),
 trigram as (
-  select ${key} as id, row_number() over (order by word_similarity(?, ${FOLD}(t."search_text")) desc, ${key}) as rank
+  select ${key} as id, row_number() over (order by ${similarityOf(phrases.length)} desc, ${key}) as rank
   from ${qualified(table)} t
-  where ${FOLD}(t."search_text") %> ?${narrowing}
+  where ${trigramMatchOf(phrases.length)}${narrowing}
   order by rank limit ${CANDIDATES}
 )
 select id from (
@@ -155,8 +187,8 @@ limit ? offset ?`,
       [
         ...vectors.map(() => prefixes),
         ...laneParams,
-        phrase,
-        phrase,
+        ...phrases,
+        ...phrases,
         ...laneParams,
         request.limit,
         request.offset,
@@ -173,8 +205,9 @@ limit ? offset ?`,
     const key = `t.${quote(table.primaryKey)}`;
     const searching = request.words.length > 0;
     const prefixes = prefixesOf(request);
+    const phrases = phrasesOf(request);
     const match = searching
-      ? `((${vectors.map((vector) => `t.${quote(vector.name)} @@ to_tsquery('${vector.config}', ?)`).join(" or ")}) or ${FOLD}(t."search_text") %> ?)`
+      ? `((${vectors.map((vector) => `t.${quote(vector.name)} @@ to_tsquery('${vector.config}', ?)`).join(" or ")}) or ${trigramMatchOf(phrases.length)})`
       : `t."search_filters" is not null`;
     // raw-sql: counting jsonb filter values per path over the matching rows has no ORM form (ADR 0221 d1)
     const rows = (await this.database.em().execute(
@@ -196,7 +229,7 @@ select path, value, count from (
 where rank <= ?
 order by path, rank`,
       [
-        ...(searching ? [...vectors.map(() => prefixes), request.words.join(" ")] : []),
+        ...(searching ? [...vectors.map(() => prefixes), ...phrases] : []),
         ...narrowingParams,
         [...request.paths],
         request.limit,

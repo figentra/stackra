@@ -7,7 +7,7 @@
  *           `words` is never empty and its words are distinct.
  * Runtime: isomorphic
  * Governing contract: ADR 0221 (decisions 1 and 3: hybrid search, Arabic); ADR 0333 (amendment: visibility bounds
- *                     search); OS-173 (Arabizi).
+ *                     search); OS-173 (Arabizi); ADR 0403 (synonyms per language).
  */
 import type { SearchFilterValue } from "#contracts/types/search-filter-value.type";
 
@@ -26,8 +26,9 @@ export interface SearchRequest {
   readonly limit: number;
 
   /**
-   * Other spellings of a word, any of which may match in its place (the Arabic spelling of an Arabizi word); a word
-   * with no entry matches only as itself.
+   * Other spellings of a word, any of which may match in its place in every lane (the Arabic spelling of an Arabizi
+   * word, the other words of its synonym sets), normalised as documents are; a word with no entry matches only as
+   * itself.
    */
   readonly alternatives?: Readonly<Record<string, readonly string[]>>;
 
