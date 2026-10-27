@@ -21,6 +21,8 @@ ZITADEL per environment (ADR 0171, ADR 0206). Member at `packages/infrastructure
   the plan, the stack's outputs or a test.
 - Agents never run `pulumi` or call ZITADEL; the slice is tested under `runtime.setMocks`.
 - Tenant organisations, their grants and branding, and the claims action are the identity service's, not this stack's.
+- The health driver's target is `InfraIdentityConfig` (`src/config/infra-identity.config.ts`, key `infra_identity`), injected by type:
+  the runway's `config.infra_identity` sets it. Never a constructor options object (gen's `token_not_a_class`).
 
 ## PII
 

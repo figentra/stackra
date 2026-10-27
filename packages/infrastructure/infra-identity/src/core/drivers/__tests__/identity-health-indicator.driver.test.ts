@@ -2,13 +2,16 @@
  * Stackra file contract:
  * Purpose: unit tests of `IdentityHealthIndicatorDriver`: a `HealthIndicator` named `identity` that GETs its target, reports `up` with
  *          a latency, maps the answer's status, and reports `down` (never throws) when the request fails.
- * Boundary: test only; `fetch` is a fake, nothing leaves the process.
+ * Boundary: test only; the global `fetch` is stubbed, nothing leaves the process.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 16 and 17); registry gaps R-27 and R-36.
  */
+import { buildConfig } from "@stackra/config";
 import { HealthIndicator } from "@stackra/contracts";
-import { describe, expect, it } from "@stackra/testing";
+import { afterEach, describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 
+import { InfraIdentityConfig } from "#config/infra-identity.config";
 import { IdentityHealthIndicatorDriver } from "#core/drivers/identity-health-indicator.driver";
 
 /** The URLs the fake fetch was asked for. */
@@ -21,8 +24,15 @@ function indicatorAnswering(status: number | null): IdentityHealthIndicatorDrive
     if (status === null) throw new TypeError("fetch failed");
     return new Response(null, { status });
   }) as typeof globalThis.fetch;
-  return new IdentityHealthIndicatorDriver({ domain: "id.acme.example", fetch });
+  vi.stubGlobal("fetch", fetch);
+  return new IdentityHealthIndicatorDriver(
+    buildConfig(InfraIdentityConfig, { values: { domain: "id.acme.example" } }),
+  );
 }
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
 
 describe("IdentityHealthIndicatorDriver", () => {
   it("is a named health indicator that GETs its target", async () => {
@@ -48,6 +58,9 @@ describe("IdentityHealthIndicatorDriver", () => {
   });
 
   it("refuses a malformed target", () => {
-    expect(() => new IdentityHealthIndicatorDriver({ domain: "https://id" })).toThrow(TypeError);
+    expect(() => buildConfig(InfraIdentityConfig, { values: { domain: "https://id" } })).toThrow();
+    expect(() => new IdentityHealthIndicatorDriver(buildConfig(InfraIdentityConfig))).toThrow(
+      TypeError,
+    );
   });
 });

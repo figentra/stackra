@@ -9,16 +9,16 @@ seed reader and the Pulumi slice). Depends on `@stackra/contracts`, `@stackra/ru
 
 ## What is here
 
-| Entry    | Symbol                                            | Use                                                                        |
-| -------- | ------------------------------------------------- | -------------------------------------------------------------------------- |
-| `.`      | `parseIdentitySeed(document, source?)`            | check a parsed `.stackra/zitadel/seed.yaml` (format version 1)             |
-| `.`      | `identityPlan(root, seed, instance)`              | what one ZITADEL instance holds, from the root runway and the seed         |
-| `.`      | `IdentityAppKind`, `InstanceRole`                 | enums: `bff` or `native`; ZITADEL's instance roles in snake_case           |
-| `.`      | `IdentityInfraInvalidError`                       | every seed or runway failure at once, with its path                        |
-| `.`      | `IdentityHealthIndicatorDriver`                   | the `HealthIndicator` driver: the issuer's discovery document is served    |
-| `.`      | `IdentitySeed`, `IdentityPlan`, `IdentityPlanApp` | types                                                                      |
-| `./node` | `readIdentitySeed(file)`                          | read, YAML-parse and check a seed file                                     |
-| `./node` | `identityStack(plan)`                             | inside the Pulumi program: create the instance's resources, export the ids |
+| Entry    | Symbol                                                 | Use                                                                                                            |
+| -------- | ------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------- |
+| `.`      | `parseIdentitySeed(document, source?)`                 | check a parsed `.stackra/zitadel/seed.yaml` (format version 1)                                                 |
+| `.`      | `identityPlan(root, seed, instance)`                   | what one ZITADEL instance holds, from the root runway and the seed                                             |
+| `.`      | `IdentityAppKind`, `InstanceRole`                      | enums: `bff` or `native`; ZITADEL's instance roles in snake_case                                               |
+| `.`      | `IdentityInfraInvalidError`                            | every seed or runway failure at once, with its path                                                            |
+| `.`      | `IdentityHealthIndicatorDriver`, `InfraIdentityConfig` | the `HealthIndicator` driver: the issuer's discovery document is served; its target is `config.infra_identity` |
+| `.`      | `IdentitySeed`, `IdentityPlan`, `IdentityPlanApp`      | types                                                                                                          |
+| `./node` | `readIdentitySeed(file)`                               | read, YAML-parse and check a seed file                                                                         |
+| `./node` | `identityStack(plan)`                                  | inside the Pulumi program: create the instance's resources, export the ids                                     |
 
 ## Instances
 

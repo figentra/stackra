@@ -18,6 +18,8 @@ describe("@stackra/infra-identity", () => {
       "IdentityAppKind",
       "IdentityHealthIndicatorDriver",
       "IdentityInfraInvalidError",
+      "InfraIdentityConfig",
+      "InfraIdentityConfig$",
       "InstanceRole",
       "identityPlan",
       "parseIdentitySeed",
