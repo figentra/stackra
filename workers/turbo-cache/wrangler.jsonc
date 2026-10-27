@@ -1,0 +1,34 @@
+// Stackra file contract:
+// Purpose: the Cloudflare Worker that serves Turborepo's remote-cache API (v8 artifacts) from an R2 bucket (ADR 0026,
+//          ADR 0289 decision 2). The script is dist/main.mjs, built by `pnpm build` (tsdown) before `wrangler deploy`.
+// Owner: release-operations · Secrets: TURBO_CACHE_TOKEN is a Worker secret (`wrangler secret put`, value from
+//        Infisical /ci TURBO_TOKEN); CI passes CLOUDFLARE_API_TOKEN from Infisical /ci in the environment.
+// Carve-out (ADR 0284 decision 8): hand-written until `stackra gen` emits Workers config from runway.yaml (ADR 0168).
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "stackra-turbo-cache",
+  // Figentra Technologies L.L.C. An account id is an identifier, not a credential; the API token grants access.
+  "account_id": "d861f9ac9df28b7f0b1298cc0c89bc9d",
+  "main": "./dist/main.mjs",
+  // Pinned: bumped on purpose, never set to "today" on every deploy.
+  "compatibility_date": "2026-10-01",
+  "r2_buckets": [
+    // Declared with its 7-day lifecycle rule by @stackra/infra-cloudflare (src/node/turbo-cache/).
+    { "binding": "BUCKET", "bucket_name": "turbo-cache" },
+  ],
+  // The settings (src/cache/read-settings.ts). A missing or invalid one fails closed with 503.
+  "vars": {
+    // Largest artifact accepted, in bytes (100 MiB); a bigger upload gets 413.
+    "TURBO_CACHE_MAX_ARTIFACT_BYTES": "104857600",
+    // Prefix of every R2 key, before `<team>/<hash>`.
+    "TURBO_CACHE_KEY_PREFIX": "v8/",
+    // Age after which an artifact is a miss, in seconds: 7 days, as turbo's cacheMaxAge and the bucket's lifecycle.
+    "TURBO_CACHE_TTL_SECONDS": "604800",
+    // Most hashes one `POST /v8/artifacts` query may ask about (each is one R2 head call).
+    "TURBO_CACHE_MAX_QUERY_HASHES": "100",
+  },
+  // The public host is a Workers Custom Domain declared by @stackra/infra-cloudflare from the stack config (no ADR
+  // names one), so wrangler declares no route and no *.workers.dev address.
+  "workers_dev": false,
+  "preview_urls": false,
+}

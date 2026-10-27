@@ -1,0 +1,45 @@
+{
+  "name": "@figentra/worker-turbo-cache",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Stackra's Turborepo remote cache: a Cloudflare Worker serving Turborepo's v8 artifacts API from an R2 bucket.",
+  "license": "UNLICENSED",
+  "type": "module",
+  "imports": {
+    "#src/*": [
+      "./src/*",
+      "./src/*.ts",
+      "./src/*.tsx",
+      "./src/*/index.ts"
+    ],
+    "#stackra/*": [
+      "./.stackra/gen/*",
+      "./.stackra/gen/*.ts",
+      "./.stackra/gen/*.tsx",
+      "./.stackra/gen/*/index.ts"
+    ]
+  },
+  "scripts": {
+    "dev": "tsdown && wrangler dev",
+    "start": "tsdown && wrangler dev",
+    "build": "tsdown",
+    "typecheck": "tsc --noEmit",
+    "lint": "oxlint .",
+    "test": "vitest run",
+    "format": "oxfmt --write .",
+    "format:check": "oxfmt --check .",
+    "clean": "rm -rf dist .turbo .wrangler"
+  },
+  "devDependencies": {
+    "@stackra/tsdown-config": "workspace:*",
+    "@stackra/typescript-config": "workspace:*",
+    "@stackra/vitest-config": "workspace:*",
+    "@types/node": "catalog:",
+    "oxfmt": "catalog:quality",
+    "oxlint": "catalog:quality",
+    "tsdown": "catalog:build",
+    "typescript": "catalog:build",
+    "vitest": "catalog:quality",
+    "wrangler": "catalog:deploy"
+  }
+}
