@@ -10,7 +10,7 @@
  */
 import type { PublicId } from "@stackra/contracts";
 import { IntegrationEvent } from "@stackra/events";
-import { registerSchemas } from "@stackra/validation";
+import { Field, Int, registerSchemas } from "@stackra/validation";
 
 import { RUN_COMPLETED_SCHEMA } from "#core/constants/run-completed-schema.constant";
 
@@ -23,17 +23,20 @@ import { RUN_COMPLETED_SCHEMA } from "#core/constants/run-completed-schema.const
  * }
  */
 export class RunCompleted extends IntegrationEvent({ name: "run.completed" }) {
+  /** `completed` or `failed`. */
+  // reason: two outcomes of RunStatus kept as a literal union, so the event's published type does not change
+  @Field(RUN_COMPLETED_SCHEMA.shape.status)
+  status!: "completed" | "failed";
+
+  /** The steps it took. */
+  @Int
+  steps!: number;
+
   /** The run that completed. */
   runId!: PublicId<"airun">;
 
   /** The agent's key. */
   agent!: string;
-
-  /** `completed` or `failed`. */
-  status!: "completed" | "failed";
-
-  /** The steps it took. */
-  steps!: number;
 
   /** A failed run's error or refusal code; null when it completed. */
   errorCode!: string | null;

@@ -11,12 +11,17 @@ import type { Actor, ScopeRef } from "@stackra/contracts";
 import type { OptionalProps } from "@stackra/database";
 import { HasPublicId, Model, Timestamps } from "@stackra/model";
 import { BelongsToTenant } from "@stackra/tenancy/node";
+import { Int } from "@stackra/validation";
 
 import type { RunStatus } from "#contracts/enums/run-status.enum";
 
 /** A run as a row. */
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: merged with the [OptionalProps] augmentation below
 export class Run extends Model.with(HasPublicId("airun"), BelongsToTenant, Timestamps) {
+  /** The steps taken so far. */
+  @Int
+  steps = 0;
+
   /** The conversation's public id. */
   conversationId!: string;
 
@@ -43,9 +48,6 @@ export class Run extends Model.with(HasPublicId("airun"), BelongsToTenant, Times
 
   /** The tool call it is parked on; null unless waiting. */
   pendingToolCallId: string | null = null;
-
-  /** The steps taken so far. */
-  steps = 0;
 
   /** The error or refusal code of a failed run; null otherwise. */
   errorCode: string | null = null;

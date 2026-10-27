@@ -22,6 +22,7 @@ import type {
 describe("@stackra/ai/contracts", () => {
   it("exports exactly its ports and enums", () => {
     expect(Object.keys(contracts).sort()).toEqual([
+      "A2aDirection",
       "AgentModels",
       "AgentQueue",
       "ConversationStore",

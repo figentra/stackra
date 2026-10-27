@@ -12,11 +12,13 @@ import type { OptionalProps } from "@stackra/database";
 import { HasPublicId, Model, Timestamps } from "@stackra/model";
 import { BelongsToTenant } from "@stackra/tenancy/node";
 
+import type { A2aDirection } from "#contracts/enums/a2a-direction.enum";
+
 /** An A2A task as a row. */
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: merged with the [OptionalProps] augmentation below
 export class A2aTask extends Model.with(HasPublicId("aitask"), BelongsToTenant, Timestamps) {
   /** `inbound` (a remote agent asked us) or `outbound` (we asked a remote agent). */
-  direction!: "inbound" | "outbound";
+  direction!: A2aDirection;
 
   /** The remote agent's card URL. */
   remoteAgent!: string;

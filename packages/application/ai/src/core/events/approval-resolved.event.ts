@@ -10,7 +10,7 @@
  */
 import type { PublicId } from "@stackra/contracts";
 import { IntegrationEvent } from "@stackra/events";
-import { registerSchemas } from "@stackra/validation";
+import { Field, registerSchemas } from "@stackra/validation";
 
 import { APPROVAL_RESOLVED_SCHEMA } from "#core/constants/approval-resolved-schema.constant";
 
@@ -23,6 +23,11 @@ import { APPROVAL_RESOLVED_SCHEMA } from "#core/constants/approval-resolved-sche
  * }
  */
 export class ApprovalResolved extends IntegrationEvent({ name: "approval.resolved" }) {
+  /** `granted` or `denied`. */
+  // reason: two decisions of RunApprovalStatus kept as a literal union, so the event's published type does not change
+  @Field(APPROVAL_RESOLVED_SCHEMA.shape.status)
+  status!: "granted" | "denied";
+
   /** The run the approval resolves. */
   runId!: PublicId<"airun">;
 
@@ -31,9 +36,6 @@ export class ApprovalResolved extends IntegrationEvent({ name: "approval.resolve
 
   /** The action key. */
   tool!: string;
-
-  /** `granted` or `denied`. */
-  status!: "granted" | "denied";
 }
 
 registerSchemas([[ApprovalResolved, APPROVAL_RESOLVED_SCHEMA]]);

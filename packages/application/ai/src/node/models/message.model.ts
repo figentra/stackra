@@ -12,18 +12,20 @@
 import type { OptionalProps } from "@stackra/database";
 import { AppendOnly, HasPublicId, Model } from "@stackra/model";
 import { BelongsToTenant } from "@stackra/tenancy/node";
+import { Int } from "@stackra/validation";
 
 /** A message as a row. */
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: merged with the [OptionalProps] augmentation below
 export class Message extends Model.with(HasPublicId("aimsg"), BelongsToTenant, AppendOnly) {
+  /** Its place in the conversation, from 0. */
+  @Int
+  position!: number;
+
   /** The conversation's public id. */
   conversationId!: string;
 
   /** The run that wrote it. */
   runId!: string;
-
-  /** Its place in the conversation, from 0. */
-  position!: number;
 
   /** The message role (`user`, `assistant`, `tool`). */
   role!: string;

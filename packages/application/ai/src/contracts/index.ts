@@ -8,6 +8,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision; STA-781; ADR 0450 (page reader).
  */
+export { A2aDirection } from "#contracts/enums/a2a-direction.enum";
 export { PageReadRefusal } from "#contracts/enums/page-read-refusal.enum";
 export { RunApprovalStatus } from "#contracts/enums/run-approval-status.enum";
 export { RunStatus } from "#contracts/enums/run-status.enum";

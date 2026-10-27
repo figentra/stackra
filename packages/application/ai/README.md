@@ -38,6 +38,7 @@ the one MCP gateway in the `ai` service serves it.
 | `routeIntent(text, intents, { model })`                                        | the intent router: a phrase match, else one `decide` among the keys                                         |
 | `PageReader` (`./contracts`), `MemoryPageReaderDriver`, `HttpPageReaderDriver` | read one URL into text and product hints (ADR 0450)                                                         |
 | `checkEgress(url, policy)`, `parsePage(html, baseUrl, maxChars)`               | the page reader's egress check and its HTML extraction, shared by both drivers                              |
+| `A2aDirection` (`./contracts`)                                                 | `inbound` or `outbound`: the direction of an `A2aTask` row                                                  |
 | `ApprovalRequested`, `ApprovalResolved`, `RunCompleted`                        | the three integration events of ADR 0100 decision 11 (`ai.approval.requested.v1` and the others)            |
 
 ## Retrieval for Facts
