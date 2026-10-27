@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `parseInfraRunway`: a root runway narrows to the GCP foundation's view with its defaults; a
- *          malformed region, an unquoted project number, a bad Postgres version, a bad label key and a missing
- *          `providers.gcp` are refused with their paths.
+ *          malformed region, an unquoted project number, a bad Postgres version, a bad label key, more than ten static
+ *          egress addresses and a missing `providers.gcp` are refused with their paths.
  * Boundary: test only; roots are built through `parseRunway`, so each is a valid root runway.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0354 (decision 4), ADR 0171 (decision 4: the root runway is the
@@ -65,6 +65,19 @@ describe("parseInfraRunway", () => {
     expect(() =>
       parseInfraRunway(rootWith({ region: "europe-west3", requiredLabels: ["Team"] })),
     ).toThrow(/providers\.gcp\.requiredLabels\.0/);
+  });
+
+  it("refuses more static egress addresses than partners can allow-list", () => {
+    const root = parseRunway("root", {
+      version: 3,
+      project: "acme",
+      providers: { gcp: {} },
+      environments: { production: { shared: { network: { egress: { staticIps: 11 } } } } },
+    });
+
+    expect(() => parseInfraRunway(root)).toThrow(
+      /environments\.production\.shared\.network\.egress\.staticIps/,
+    );
   });
 
   it("refuses a root without providers.gcp", () => {

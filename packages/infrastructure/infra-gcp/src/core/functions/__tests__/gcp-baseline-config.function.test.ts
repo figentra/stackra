@@ -5,11 +5,12 @@
  *          tenant gets its own project, prefix and tenant label; project ownership follows promotion order; the Encore
  *          Cloud service account is named only where services deploy to Encore Cloud, and must be a service account;
  *          every missing budget input is reported with its path; a deployment not on GCP, a project the runway does
- *          not list, a project name too long for a service account id and an upload origin that is not https fail.
+ *          not list, a project name too long for a service account id and an upload origin that is not https fail;
+ *          the static egress addresses come from `shared.network.egress`.
  * Boundary: test only; roots are built through `parseRunway`, so each is a valid root runway.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0354, ADR 0171, ADR 0172, ADR 0222, ADR 0400, ADR 0401,
- *                     ADR 0435.
+ *                     ADR 0435, ADR 0402.
  */
 import { RunwayInvalidError } from "@stackra/runway";
 import { describe, expect, it } from "@stackra/testing";
@@ -61,7 +62,20 @@ describe("gcpBaselineConfig", () => {
       },
       github: { org: "acme", repo: "acme-platform" },
       encore: null,
+      egress: null,
     });
+  });
+
+  it("holds the static egress addresses the runway asks for", () => {
+    const root = gcpRoot((draft) => {
+      at(draft, "environments", "production", "shared").network = {
+        vpc: "ref:gcp.network.prod",
+        egress: { staticIps: 2 },
+      };
+    });
+
+    expect(gcpBaselineConfig(root, "production").egress).toEqual({ staticIps: 2 });
+    expect(gcpBaselineConfig(root, "staging").egress).toBeNull();
   });
 
   it("names the Encore Cloud service account only where services deploy to Encore Cloud", () => {

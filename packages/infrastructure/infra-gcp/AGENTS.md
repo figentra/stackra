@@ -25,6 +25,8 @@ program) and `./testing` (Pulumi's mocks).
 - No region, project id, project number, billing account, currency or amount in code: they arrive as runway values or
   `ref:` paths and are resolved from the stack config. Which Figentra region runs on GCP is Figentra's runway, not
   this package. No secret value is read anywhere, and no service account key or HMAC key is created.
+- An egress address is `retainOnDelete`: a partner allow-lists it, so a stack change never releases it. Reserve the
+  addresses here; attaching them to a Cloud NAT is the network's job.
 
 ## PII
 

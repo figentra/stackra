@@ -4,7 +4,7 @@
  *          read, checked strictly: the project, `providers.gcp` (default region, projects, required labels, billing
  *          account, budgets and the non-production spend stop, the Encore Cloud service account), the GitHub
  *          repository, the regions, and per environment its destinations, `cloud`, regions, dedicated deployments,
- *          database server and backups, network, bucket defaults and file disks. Every other key passes through untouched.
+ *          database server and backups, network (its VPC and static egress addresses), bucket defaults and file disks. Every other key passes through untouched.
  * Boundary: internal; `parseInfraRunway` is its only reader. `@stackra/runway` owns the root schema, whose provider
  *           blocks stay open (`providers` has a catch-all), so `providers.gcp` reaches here unchecked; this schema
  *           narrows only what infra-gcp reads. Which project an environment runs in is its runway `cloud` (ADR 0400),
@@ -14,7 +14,7 @@
  * Governing contract: ADR 0354 (decisions 1, 3 and 4), ADR 0171 (`ref:` values from the stacks repository), ADR 0172
  *                     (decision 5: budgets, tags and the non-production stop, applied per project), ADR 0186
  *                     (backups), ADR 0296 (root runway), ADR 0401 (spend stop, Cloud SQL recovery, deploy roles),
- *                     ADR 0435 (the Encore Cloud roles).
+ *                     ADR 0435 (the Encore Cloud roles), ADR 0402 (decision 2: static egress addresses).
  */
 import { z } from "zod";
 
@@ -104,7 +104,19 @@ const ENVIRONMENT = z.looseObject({
           backups: BACKUPS.optional(),
         })
         .optional(),
-      network: z.looseObject({ vpc: z.string().min(1).optional() }).optional(),
+      network: z
+        .looseObject({
+          vpc: z.string().min(1).optional(),
+          egress: z
+            .looseObject({
+              staticIps: z
+                .int()
+                .min(1)
+                .max(10, "Partners allow-list each address: keep to ten or fewer"),
+            })
+            .optional(),
+        })
+        .optional(),
       buckets: z
         .looseObject({
           versioning: z.boolean().optional(),

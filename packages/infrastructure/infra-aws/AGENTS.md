@@ -24,6 +24,8 @@ Entries `.` (isomorphic config readers), `./node` (the Pulumi programs) and `./t
   condition, never as a principal, so the policy is valid before the role exists.
 - No account id, amount or external id in code: they arrive as runway values or `ref:` paths and are resolved from the
   stack config. No secret value is read anywhere.
+- An egress Elastic IP is `retainOnDelete`: a partner allow-lists it, so a stack change never releases it. Allocate
+  the addresses here; attaching them to NAT gateways is the network's job.
 
 ## PII
 

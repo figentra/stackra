@@ -2,8 +2,8 @@
 
 The free GCP foundation of a Stackra product as Pulumi TypeScript (ADR 0354 decision 3), the GCP twin of
 `@stackra/infra-aws`: for each environment that runs on GCP the data key, the files bucket, the GitHub deploy
-identity and the budget. It serves jurisdictions that need in-country hosting where AWS has no region (ADR 0354); which
-environment runs on GCP, and in which region, is runway data. Everything is read from the root `runway.yaml`. Agents
+identity, the budget and the static egress addresses partners allow-list. It serves jurisdictions that need in-country
+hosting where AWS has no region (ADR 0354); which environment runs on GCP, and in which region, is runway data. Everything is read from the root `runway.yaml`. Agents
 only preview this program or run it under Pulumi's mocks; `pulumi up` belongs to the owner or the environment's deploy
 job, driven by `stackra runway infra` (ADR 0354 decision 5).
 
@@ -46,6 +46,7 @@ exists.
 | deploy identity | the environment's Workload Identity pool `<env>-github` and provider admitting only `repo:<org>/<repo>:environment:<env>`, the service account `<project>-<env>-infra` it may impersonate, holding `DEPLOY_ROLES` (never `roles/owner`, ADR 0401)                           |
 | Encore roles    | when the environment's `destinations.services` is `encore-cloud` and `providers.gcp.encore.serviceAccount` is set: that service account holds `ENCORE_ROLES` on the project instead of the `roles/owner` Encore's connect flow asks for (ADR 0435)                          |
 | spend stop      | outside production, when `budgets.stopNonProdAt` is set: a Cloud Function on the budget topic that detaches the project's billing at that percentage (ADR 0401)                                                                                                             |
+| egress          | when `shared.network.egress.staticIps` is set: that many regional external addresses `<prefix>-egress-<n>` in the deployment's region, labelled `purpose: egress`, retained when the stack drops them (ADR 0402 decision 2)                                                 |
 | budget          | from the project's first environment: a monthly budget on the billing account, scoped to the project, in the runway's currency, a rule at each threshold, notifications to a Pub/Sub topic                                                                                  |
 
 ## What the root runway must hold
@@ -84,7 +85,10 @@ environments:
         version: POSTGRES_17
         highAvailability: true
         backups: { retentionDays: 35, pitr: true, pitrDays: 7 }
-      network: { vpc: ref:gcp.network.prod }
+      network:
+        vpc: ref:gcp.network.prod
+        egress:
+          staticIps: 2 # regional addresses partners allow-list (ADR 0402), ten at most
     dedicated:
       firm: { tenant: tenant-1, cloud: { name: gcp, account: firm } }
 ```
@@ -95,6 +99,10 @@ A project number is a quoted string or a `ref:`. `ref:gcp.projects.ksa.id` reads
 account id (`<prefix>-infra`, `<prefix>-stop`) must fit GCP's 30 characters; the config readers refuse a name that would
 not. Cloud SQL backups are always on and stored in the server's region; the runway sizes them.
 
+The stack exports `egressIps` (for partner allow-lists, and the webhooks member's `webhooks.egress.addresses` with the
+deployment's region as `webhooks.egress.region`) and `egressAddresses` (the self links the network's Cloud NAT takes as
+`natIps` with `natIpAllocateOption: MANUAL_ONLY`).
+
 ## Owner steps
 
 - Create each project, link it to the billing account and enable the KMS, Storage, IAM, IAM Credentials, STS, Pub/Sub,
@@ -104,10 +112,12 @@ not. Cloud SQL backups are always on and stored in the server's region; the runw
 - Create the HMAC key the `s3` disk signs with for the infra service account, and store it in the secret store.
 - Subscribe the budget topic (`budgetTopic`) to the alerting channel.
 - Point the deploy job's auth step at `workloadIdentityProvider` and `infraServiceAccount`.
+- Enable the Compute Engine API where `egress` is set, send `egressIps` to each partner that allow-lists our calls, and
+  give `egressAddresses` to the network's Cloud NAT. Release an address by hand only once no partner lists it.
 
 ## Not here
 
-The network, caches and queues belong to the runtime stack, and the GCP compute runtime is not decided (ADR 0354 open
-question 1); the database server is `gcpRuntime`'s. There is no GCP state backend: the stack state stays in the AWS
-state backend of `figentra/infra` (ADR 0354 consequences). Copies to a backup project and a project per product and
+The network (the Cloud Router and Cloud NAT that send egress from the reserved addresses), caches and queues belong to
+the runtime stack, and the GCP compute runtime is not decided (ADR 0354 open question 1); the database server is
+`gcpRuntime`'s. There is no GCP state backend: the stack state stays in the AWS state backend of `figentra/infra` (ADR 0354 consequences). Copies to a backup project and a project per product and
 region created by the program (ADR 0354 open question 2) are owner decisions (see the spec).

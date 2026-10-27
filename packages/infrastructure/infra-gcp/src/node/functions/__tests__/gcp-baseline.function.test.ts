@@ -4,11 +4,11 @@
  *          project and region with the cost labels; the data key, the files bucket on it, the infra service account
  *          and the budget are created and exported; the non-production stop deploys the billing-detach function on the
  *          budget topic; the Encore Cloud service account gets `ENCORE_ROLES` and a malformed one fails; an environment
- *          that does not own its project creates no budget; what the runway leaves out is not created; a malformed
- *          project id fails.
+ *          that does not own its project creates no budget; what the runway leaves out is not created; the static
+ *          egress addresses are reserved in the region, kept on delete and exported; a malformed project id fails.
  * Boundary: test only; no engine and no cloud call (ADR 0171: agents never apply a stack).
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0354, ADR 0171, ADR 0172, ADR 0222, ADR 0401, ADR 0435.
+ * Governing contract: ADR 0022 (test placement); ADR 0354, ADR 0171, ADR 0172, ADR 0222, ADR 0401, ADR 0435, ADR 0402.
  */
 import { describe, expect, it } from "@stackra/testing";
 
@@ -45,6 +45,7 @@ const STAGING: GcpBaselineConfig = {
   files: { versioning: true, expireNoncurrentDays: 30, origins: [] },
   github: { org: "acme", repo: "acme-platform" },
   encore: null,
+  egress: null,
 };
 
 /** A value a provider may receive JSON-encoded. */
@@ -116,7 +117,10 @@ describe("gcpBaseline", () => {
       foundation.workloadIdentityProvider,
       foundation.budgetTopic,
       foundation.spendStopFunction,
-    ]).toEqual([null, null, null, null, null]);
+      foundation.egressIps,
+      foundation.egressAddresses,
+    ]).toEqual([null, null, null, null, null, null, null]);
+    expect(types).not.toContain("Address");
   });
 
   it("grants the Encore Cloud service account its roles and never owner", async () => {
@@ -173,6 +177,22 @@ describe("gcpBaseline", () => {
       },
     });
     expect(await outputOf(present(foundation.spendStopFunction))).toBe("acme-staging-stop");
+  });
+
+  it("reserves the static egress addresses in the region and exports them for partner allow-lists", async () => {
+    const engine = await mockPulumi(STACK);
+    const foundation = gcpBaseline({ ...STAGING, egress: { staticIps: 2 } });
+
+    for (const index of [1, 2])
+      expect((await engine.find("Address", `acme-staging-egress-${index}`)).inputs).toMatchObject({
+        name: `acme-staging-egress-${index}`,
+        project: "acme-nonprod",
+        region: "europe-west3",
+        addressType: "EXTERNAL",
+        labels: { purpose: "egress" },
+      });
+    expect(await outputOf(present(foundation.egressAddresses))).toHaveLength(2);
+    expect(foundation.egressIps).not.toBeNull();
   });
 
   it("names the deploy pool after a dedicated deployment", async () => {

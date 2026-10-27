@@ -99,8 +99,9 @@ regions:
 
 `awsBaselineConfig` refuses an environment with backups or replicated files whose AWS regions are not
 `providers.aws.region`: a region in another jurisdiction gets its own account and stack. The stack exports `egressIps`
-(for partner allow-lists) and `egressAllocationIds` (for the network's NAT gateways); the addresses are retained when the
-stack drops them.
+(for partner allow-lists, and the webhooks member's `webhooks.egress.addresses` with the account's region as
+`webhooks.egress.region`) and `egressAllocationIds` (for the network's NAT gateways); the addresses are retained when the
+stack drops them. `@stackra/infra-gcp` reserves its twin, regional external addresses for a Cloud NAT.
 
 An account id is a quoted string or a `ref:`: YAML reads an unquoted one as a number and drops its leading zeros.
 `ref:aws.accounts.prod` reads the stack config key `aws` and walks `accounts.prod` (ADR 0171 decision 4).

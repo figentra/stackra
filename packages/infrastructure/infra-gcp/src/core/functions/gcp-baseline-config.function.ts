@@ -5,14 +5,15 @@
  *          prefix, ownership and labels), the budget and its non-production spend stop, the files bucket (when a
  *          service default puts files or media on the `s3` disk, which reaches GCS through its S3-compatible endpoint),
  *          the GitHub repository, and the Encore Cloud service account when the environment's services deploy to
- *          `encore-cloud`.
+ *          `encore-cloud`, and the static egress addresses (`shared.network.egress.staticIps`).
  * Boundary: plain data in and out, so gen can write the result as a config file; project ids, numbers, the billing
  *           account and amounts stay `ref:<path>` until the Pulumi program resolves them. Nothing here names a region
  *           or project (ADR 0354 decision 4). The app origins come from gen, which knows the app members' hosts.
  *           Spend never stops in a project production runs in: a detached billing account stops production too.
  * Runtime: isomorphic
  * Governing contract: ADR 0354 (decisions 1, 3 and 4), ADR 0171 (decisions 1 to 4), ADR 0172 (decision 5 per project),
- *                     ADR 0222 (media direct uploads), ADR 0400, ADR 0401 (the spend stop), ADR 0435 (Encore roles).
+ *                     ADR 0222 (media direct uploads), ADR 0400, ADR 0401 (the spend stop), ADR 0435 (Encore roles),
+ *                     ADR 0402 (decision 2: static egress addresses).
  */
 import { RunwayEnvironment, RunwayInvalidError } from "@stackra/runway";
 import type { RootRunway, RunwayIssue } from "@stackra/runway";
@@ -92,6 +93,7 @@ export function gcpBaselineConfig(
   const config = settings?.defaults?.service?.config;
   const onS3 = config?.filesystem?.disk === "s3" || config?.media?.disk === "s3";
   const buckets = settings?.shared?.buckets;
+  const egress = settings?.shared?.network?.egress;
 
   return {
     ...deployment,
@@ -111,5 +113,6 @@ export function gcpBaselineConfig(
       gcp.encore !== undefined && settings?.destinations?.["services"] === ENCORE_CLOUD
         ? { serviceAccount: gcp.encore.serviceAccount }
         : null,
+    egress: egress === undefined ? null : { staticIps: egress.staticIps },
   };
 }
