@@ -1,8 +1,9 @@
 /**
  * Stackra file contract:
  * Purpose: rule tests of `stackra/base-matches-suffix`: kind bases, aliases, partner type arguments, override
- *          aliases, same-kind classes and local schema bases pass; a wrong or missing base is reported; files with
- *          no class kind are ignored.
+ *          aliases, same-kind classes and local schema bases pass; a `@stackra/contracts` driver may extend its
+ *          local port and a testing-entry `.service.ts` harness may have no base, and nowhere else; a wrong or
+ *          missing base is reported; files with no class kind are ignored.
  * Boundary: test only; runs the rule through oxlint's RuleTester with the runner from @stackra/testing.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing).
@@ -19,6 +20,10 @@ const tester = new RuleTester({
   languageOptions: { sourceType: "module", parserOptions: { lang: "ts" } },
 });
 const ACTION_FILE = "src/modules/orders/actions/cancel-order.action.ts";
+const CONTRACTS_DRIVER =
+  "/repo/packages/foundation/contracts/src/core/drivers/noop-tracer.driver.ts";
+const PORT_DRIVER =
+  'import { Tracer } from "#core/ports/tracer.port";\n\nexport class NoopTracerDriver extends Tracer {}';
 
 tester.run(
   "base-matches-suffix",
@@ -77,6 +82,11 @@ tester.run(
         filename: "src/modules/orders/actions/__tests__/cancel-order.action.test.ts",
         code: "class FakeOrders {}",
       },
+      { filename: CONTRACTS_DRIVER, code: PORT_DRIVER },
+      {
+        filename: "/repo/packages/foundation/container/src/testing/services/testing-app.service.ts",
+        code: "export class TestingApp {}",
+      },
     ],
     invalid: [
       {
@@ -113,6 +123,30 @@ tester.run(
         filename: "src/modules/orders/schemas/order-view.schema.ts",
         code: 'import { Shape } from "@acme/shapes";\n\nexport class OrderView extends Shape {}',
         errors: [{ messageId: "wrongBase" }],
+      },
+      {
+        // outside @stackra/contracts a driver calls `Driver(port)`
+        filename:
+          "/repo/packages/foundation/calendar/src/core/drivers/computed-prayer-times.driver.ts",
+        code: PORT_DRIVER,
+        errors: [{ messageId: "wrongBase" }],
+      },
+      {
+        // in @stackra/contracts the port is still a local import, not a package's class
+        filename: CONTRACTS_DRIVER,
+        code: 'import { Tracer } from "@acme/tracing";\n\nexport class NoopTracerDriver extends Tracer {}',
+        errors: [{ messageId: "wrongBase" }],
+      },
+      {
+        // a testing harness has no base or the service base, never another kind's
+        filename: "/repo/packages/foundation/container/src/testing/services/testing-app.service.ts",
+        code: "export class TestingApp extends Query {}",
+        errors: [{ messageId: "wrongBase" }],
+      },
+      {
+        filename: "/repo/packages/runtime/app/src/core/services/app-wiring.service.ts",
+        code: "export class AppWiring {}",
+        errors: [{ messageId: "missingBase" }],
       },
     ],
   },

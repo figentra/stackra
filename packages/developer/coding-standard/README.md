@@ -69,8 +69,11 @@ The package has the one entry `.` (ADR 0127, 2026-10-24 note). Until `stackra ge
 
 - `base-matches-suffix` reads names, not imports. It accepts an override's `Base<Name>` alias, a class of the same
   kind (a name ending in `PascalCase(kind)`, such as a package's config class or an `Error`) and, for a schema, a
-  sibling schema imported by a relative or `#` path. Framework packages that implement a kind (the container, the
-  design-system modules) disable it per line with a reason.
+  sibling schema imported by a relative or `#` path. Two placements are exempt by path: a driver in
+  `@stackra/contracts` extends its port imported by a local path (the package sits below `@stackra/container`, so
+  `Driver(port)` is out of reach), and a class with no base in a `.service.ts` file under a package's `src/testing/`
+  is a test harness, not a container binding. Framework classes that build the kinds (the container itself, the action
+  pipeline) disable it per line with a reason.
 - A disable comment with no rule list (`// oxlint-disable-line`) may suppress its own `disable-needs-reason`
   finding, because oxlint applies the directive before reporting.
 - `docblock-shape` collapses a block only when the one-line form fits the 100-column print width.

@@ -6,7 +6,11 @@
  *           `kind_unregistered_base` resolves it). Also accepted: an override's `Base<Name>` alias (ADR 0305 rule 1),
  *           a class of the same kind (its name ends in `PascalCase(kind)`, such as a package's config class or an
  *           `Error`; not for the noun kinds, whose classes carry no suffix), and for a schema, a sibling schema
- *           imported by a relative or `#` path (ADR 0294 2026-10-23 item 13).
+ *           imported by a relative or `#` path (ADR 0294 2026-10-23 item 13). Two placements are exempt by path: a
+ *           driver of `@stackra/contracts` extends its port imported by a local path, because that package sits below
+ *           `@stackra/container` (the container's only dependency) and cannot call `Driver(port)`; and a class with no
+ *           base in a `.service.ts` file of a package's `src/testing/` entry is a test harness (`TestingApp`), never a
+ *           container binding.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (rules R1 and R3, decision 16); ADR 0305 (rules 1 to 3).
  */
@@ -23,6 +27,10 @@ const LOCAL_SOURCE = /^(?:\.{1,2}\/|#)/;
 const CLASS_TYPES = new Set(["ClassDeclaration", "ClassExpression"]);
 // Noun kinds name no suffix on their classes (ADR 0294 R2), so "a class of the same kind" cannot be read from a name.
 const NOUN_KINDS = new Set(["model", "schema", "event", "signal", "analytics-event"]);
+// The one package below @stackra/container: its drivers cannot call `Driver(port)`, so they extend the port itself.
+const BELOW_CONTAINER = /(?:^|\/)packages\/foundation\/contracts\/src\//;
+// A package's testing entry: its `.service.ts` classes are harnesses a test builds, never container bindings.
+const TESTING_ENTRY = /(?:^|\/)src\/testing\//;
 
 /** The top-level classes of a program, exported or not. */
 const topLevelClasses = (program: AstNode): AstNode[] =>
@@ -68,6 +76,9 @@ export const BASE_MATCHES_SUFFIX_RULE: Rule = {
     if (kind === undefined || bases === undefined) return {};
     const sameKindSuffix = pascalCase(kind);
     const expected = bases.map((base) => `\`${base}\``).join(" or ");
+    const filename = context.filename.replaceAll("\\", "/");
+    const portDriver = kind === "driver" && BELOW_CONTAINER.test(filename);
+    const testingHarness = kind === "service" && TESTING_ENTRY.test(filename);
     return {
       Program(program) {
         const locals = localImports(program);
@@ -75,6 +86,7 @@ export const BASE_MATCHES_SUFFIX_RULE: Rule = {
           const name = node.id?.name ?? "default";
           const actual = rootIdentifier(node.superClass);
           if (actual === undefined) {
+            if (testingHarness) continue;
             context.report({
               node: node.id ?? node,
               messageId: "missingBase",
@@ -86,7 +98,7 @@ export const BASE_MATCHES_SUFFIX_RULE: Rule = {
             bases.includes(actual) ||
             OVERRIDE_ALIAS.test(actual) ||
             (!NOUN_KINDS.has(kind) && actual.endsWith(sameKindSuffix)) ||
-            (kind === "schema" && locals.has(actual));
+            ((kind === "schema" || portDriver) && locals.has(actual));
           if (isAllowed) continue;
           context.report({
             node: node.superClass ?? node,
