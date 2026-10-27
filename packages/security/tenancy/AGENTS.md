@@ -44,8 +44,8 @@ data, the tenancy step of the resolver chain, and the client's tenant switcher (
   comment (ADR 0160).
 - A sandbox or a share is never a grant and never a tree position. Transfer rules, sandbox allowances and the terms of
   an item kind are data (market packs, plan catalogue, the share); never name a law, country or number here.
-- `BelongsToTenantOrPlatform` and `t.belongsToTenant({ nullable: true })` need @stackra/database's `equalsOrUnset`
-  match; never fall back to a hand-written policy or a second one.
+- `BelongsToTenantOrPlatform` and `t.belongsToTenant({ nullable: true })` compile through @stackra/database's
+  `equalsOrUnset` match (STA-1300); never fall back to a hand-written policy or a second one.
 - A tenant token is stored by its SHA-256 only and resolves for its one purpose; never log or store the token itself.
 - `./testing` imports `./node` internals only, never another package's `./testing`.
 - No parameter properties and no `#private` fields: apps typecheck this source under `erasableSyntaxOnly`.

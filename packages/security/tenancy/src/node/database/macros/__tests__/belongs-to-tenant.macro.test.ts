@@ -4,8 +4,8 @@
  *          NOT NULL `tenant_id varchar(33)` with its index and no foreign key, then ENABLE, FORCE and the equality
  *          policy `pol_<table>_tenant_id` on `app.tenant_id`; on an existing table the compiler refuses it (a backfill
  *          migration instead); a second policy on the same table is refused. The nullable form writes a nullable
- *          column under the `equalsOrUnset` match, so NULL rows are the platform call's (needs @stackra/database's
- *          `equalsOrUnset`, asked by stackra-115).
+ *          column under the `equalsOrUnset` match, so NULL rows are the platform call's, for reads and writes
+ *          (@stackra/database's `equalsOrUnset`, STA-1300; STA-1312).
  * Boundary: test only; pure compilation through @stackra/database, no database.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0239; ADR 0159 as amended by ADR 0305; ADR 0231.
@@ -81,8 +81,9 @@ describe(BelongsToTenantMacro, () => {
     expect(sql).toContain("or NULL for a platform row");
     expect(sql).toContain('alter table "support"."tickets" force row level security');
     expect(sql).toContain(
-      `"tenant_id" is not distinct from nullif(current_setting('app.tenant_id', true), '')::varchar(33)`,
+      `create policy "pol_tickets_tenant_id" on "support"."tickets" using ("tenant_id" is not distinct from nullif(current_setting('app.tenant_id', true), '')::varchar(33)) with check ("tenant_id" is not distinct from nullif(current_setting('app.tenant_id', true), '')::varchar(33))`,
     );
+    expect(sql).not.toContain('"tenant_id" = nullif');
   });
 
   it("adds the nullable form to an existing table, whose rows become the platform's", () => {

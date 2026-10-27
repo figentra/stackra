@@ -4,7 +4,7 @@
  * Boundary: the stand-in for what gen will write for this package. Internal: `service-acked.event.ts` registers it, and
  *           it is not exported from the entry.
  * Runtime: isomorphic
- * Governing contract: ADR 0294 (decision 26: a package ships its own `X$`); ADR 0427 (decision 1).
+ * Governing contract: ADR 0294 (decision 26: a package ships its own `X$`); ADR 0427 (decision 1); STA-1312 (`kept`).
  */
 import { z } from "zod";
 
@@ -12,4 +12,20 @@ import { z } from "zod";
 export const SERVICE_ACKED_SCHEMA = z.object({
   subject: z.string().min(1).max(255),
   service: z.string().regex(/^[a-z][a-z0-9_]{0,62}$/, "Expected a member key such as commerce"),
+  kept: z
+    .array(
+      z.object({
+        kind: z
+          .string()
+          .max(255)
+          .regex(
+            /^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+$/,
+            "Expected a model key such as orders.order",
+          ),
+        reason: z.enum(["hold", "retention"]),
+        count: z.number().int().min(0),
+      }),
+    )
+    .max(200)
+    .optional(),
 });

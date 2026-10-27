@@ -67,6 +67,7 @@ export type { DryRun } from "#core/types/dry-run.type";
 export type { DryRunStep } from "#core/types/dry-run-step.type";
 export type { HeldSignal } from "#core/types/held-signal.type";
 export type { IndustryProfile } from "#core/types/industry-profile.type";
+export type { KeptRecords } from "#core/types/kept-records.type";
 export type { ResultsOf } from "#core/types/results-of.type";
 export type { Run } from "#core/types/run.type";
 export type { RunChain } from "#core/types/run-chain.type";

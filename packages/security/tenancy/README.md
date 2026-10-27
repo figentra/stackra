@@ -92,9 +92,8 @@ export class Order extends Model.with(HasPublicId("ord"), BelongsToTenant, Times
 A table whose rows belong to a tenant or to the platform (an inbound message on a platform account) takes
 `t.belongsToTenant({ nullable: true })` and its model `BelongsToTenantOrPlatform`. A NULL `tenant_id` is the platform's.
 The policy is `tenant_id IS NOT DISTINCT FROM nullif(current_setting('app.tenant_id'), '')`: a platform call
-(`withTenant` with no tenant) reads and writes only the NULL rows, a tenant call only its own. This needs
-@stackra/database's `equalsOrUnset` policy match, asked of the database owner; until it lands the compiler refuses the
-nullable form as an unknown match.
+(`withTenant` with no tenant) reads and writes only the NULL rows, a tenant call only its own. The macro compiles it
+through @stackra/database's `equalsOrUnset` policy match (STA-1300).
 
 ## Tenant tokens
 

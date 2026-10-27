@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `ServiceAckService`, the module service over `ServiceAckSet`, the waiting side of the cross-service
  *          "service acked" contract: a workflow step expects acks from a list of services for a subject, and each
- *          `ServiceAcked` that arrives is recorded until the last expected service acked, which completes the set.
+ *          `ServiceAcked` that arrives is recorded, with the records it kept, until the last expected service acked,
+ *          which completes the set.
  * Boundary: a `CrudService<ServiceAckSet>` in the caller's transaction. `expect` runs in the step that asks the
  *           services to act (in the same transaction that records the request event), so no ack can come before its
  *           set; an ack for a subject nobody expects is ignored. `ack` only reports completion: the explorer holds
@@ -11,11 +12,13 @@
  *           caller's configuration, never code here.
  * Runtime: node
  * Governing contract: ADR 0210 (decision 6: provisioning waits for every service to ack); ADR 0427 (decision 1); ADR
- *                     0270 (decision 2).
+ *                     0270 (decision 2); STA-1312 (what each service kept).
  */
 import { CrudService } from "@stackra/database";
 
+import type { KeptRecords } from "#core/index";
 import type { ServiceAckSet } from "#node/models/service-ack-set.model";
+import type { CompletedAcks } from "#node/types/completed-acks.type";
 
 /** A member key. */
 const SERVICE = /^[a-z][a-z0-9_]{0,62}$/;
@@ -55,17 +58,22 @@ export class ServiceAckService extends CrudService<ServiceAckSet> {
   }
 
   /**
-   * Records that `service` acked `subject`.
+   * Records that `service` acked `subject`, keeping what it reports it kept (a redelivered ack replaces it).
    *
-   * @returns the expected services when this ack completed the set; `undefined` otherwise (still waiting, already
-   *          complete, or a subject nobody expects).
+   * @returns the expected services and what each kept when this ack completed the set; `undefined` otherwise (still
+   *          waiting, already complete, or a subject nobody expects).
    */
-  async ack(subject: string, service: string): Promise<readonly string[] | undefined> {
+  async ack(
+    subject: string,
+    service: string,
+    kept: readonly KeptRecords[] = [],
+  ): Promise<CompletedAcks | undefined> {
     const set = await this.findOne({ subject });
     if (set === null || set.completedAt !== null) return undefined;
     if (!set.acked.includes(service)) set.acked = [...set.acked, service];
+    if (kept.length > 0) set.kept = { ...set.kept, [service]: [...kept] };
     if (!set.expected.every((expected) => set.acked.includes(expected))) return undefined;
     set.completedAt = new Date();
-    return set.expected;
+    return { services: set.expected, kept: set.kept };
   }
 }

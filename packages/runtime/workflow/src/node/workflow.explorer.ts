@@ -5,8 +5,8 @@
  *          on the first run, and every workflow is registered for resume), subscribes a starter for each `startOn`
  *          workflow to the event bus, and subscribes each trigger building block: its occurrences are held for the runs
  *          that wait on them (when it correlates), and start the published automations it triggers; and, when
- *          `ServiceAckService` is bound, subscribes `ServiceAcked`, holding `AllServicesAcked` for the subject once the
- *          last expected service acked.
+ *          `ServiceAckService` is bound, subscribes `ServiceAcked`, holding `AllServicesAcked` (with what each service
+ *          kept) for the subject once the last expected service acked.
  * Boundary: runs once per container, after every singleton is built. It acts only when the bound `WorkflowRunner` is
  *           the native engine; another engine driver wires itself. A starter is an in-process subscription built here,
  *           not a `Listener` kind file, so gen never wires it to every event; the run it starts names no scope and
@@ -119,10 +119,14 @@ function triggerOf(
 function ackOf(runner: NativeWorkflowRunnerDriver, acks: ServiceAckService): Listener {
   return new (class extends Listener {
     async handle(event: Event): Promise<void> {
-      const { subject, service } = event as ServiceAcked;
-      const services = await acks.ack(subject, service);
-      if (services !== undefined)
-        await runner.hold(AllServicesAcked, { subject, services: [...services] }, { subject });
+      const { subject, service, kept } = event as ServiceAcked;
+      const completed = await acks.ack(subject, service, kept);
+      if (completed !== undefined)
+        await runner.hold(
+          AllServicesAcked,
+          { subject, services: [...completed.services], kept: { ...completed.kept } },
+          { subject },
+        );
     }
   })();
 }

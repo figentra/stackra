@@ -62,6 +62,7 @@ journals, the boot explorer and the in-process test driver (ADR 0101, 0102, 0151
 - Checklist steps, lock flags and industry profiles are seed data; no step is coded here. A customization never hides
   or reorders a locked step (ADR 0424).
 - `ServiceAckSet` is platform data with no scope policy, like the journal; `expect` runs before the request leaves.
+  `ServiceAcked.kept` carries kinds and counts only, never record ids or contents (STA-1312).
 - A document step's call id is its step key (`<run id>:<step>`, `:<index>` per for-each item), so the events its block
   records name the run as their correlation; `runOfCall` parses it back and `chained` reads the causing run's chain.
   Never give a document step's call another id, or chain depth stops counting.

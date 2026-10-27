@@ -34,7 +34,7 @@ steps last first when one fails (ADR 0102, 0151, 0152, 0292).
 | `WorkflowTemplatePack$`, `SeedResult`                                | `.`         | default automations as a versioned seed document                             |
 | `Automation`, `AutomationService`, `AutomationRevision`              | `./node`    | versioned automations: draft, dry run, publish as a principal, seed          |
 | `PublisherAccess`, `MemoryPublisherAccessDriver`, `AutomationPaused` | `.`         | an automation never exceeds its publisher; it pauses when access is lost     |
-| `ServiceAcked`, `AllServicesAcked`                                   | `.`         | the cross-service "service acked" contract and the await-all signal          |
+| `ServiceAcked`, `AllServicesAcked`, `KeptRecords`                    | `.`         | the cross-service "service acked" contract and the await-all signal          |
 | `ServiceAckSet`, `ServiceAckService`                                 | `./node`    | the acks a workflow waits for on one subject                                 |
 | `ChecklistTemplate$`, `ChecklistCustomization$`, `IndustryProfile$`  | `.`         | checklist templates, a scope's customization, industry profiles (seed data)  |
 | `ChecklistAudience`, `checklistView`, `checkCustomization`, …        | `.`         | locked steps, scope and user progress, `ChecklistStepCompleted`/`Completed`  |
@@ -234,6 +234,21 @@ hands each one to `ServiceAckService.ack`, and the ack that completes the set ho
 Call `expect` in the step that sends the request, so no ack can come first. `ServiceAcked` is the cross-service
 contract (an integration event named `service.acked`, its wire name derived by gen): the acking service imports it from
 `@stackra/workflow`, records it in the transaction that did its part, and needs nothing else of this package.
+
+An ack may report what the service kept instead of disposing of it (a privacy erasure: rows a legal hold or a retention
+floor keeps), as `KeptRecords`: model key, `hold` or `retention`, and a count, never ids. The set keeps each
+service's report, and `AllServicesAcked.kept` hands them to the waiting step by member key (a service that kept nothing
+is absent):
+
+```ts
+ctx.record(
+  ServiceAcked.create({
+    subject: erasureId,
+    service: "commerce",
+    kept: [{ kind: "orders.order", reason: "retention", count: 12 }],
+  }),
+);
+```
 
 ## Checklists
 

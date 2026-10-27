@@ -12,9 +12,8 @@
  *           0239): an organisation reads its children through read models. A blueprint takes one policy, so the table
  *           carries no other. A NOT NULL column without a default cannot be added to an existing table, so making an
  *           existing table tenant-owned is a backfill migration with its own expand and contract steps (rule
- *           `tenancy`, point 5); the compiler refuses the bare call there. The nullable form needs @stackra/database's
- *           `equalsOrUnset` policy match (asked of the database owner by stackra-115); until it lands the compiler
- *           refuses it as an unknown match.
+ *           `tenancy`, point 5); the compiler refuses the bare call there. The nullable form compiles through
+ *           @stackra/database's `equalsOrUnset` policy match (STA-1300), never a hand-written policy (STA-1312).
  * Runtime: node
  * Governing contract: ADR 0239 (decision 1); ADR 0327 (decision 8); ADR 0159 as amended by ADR 0305 (macros); ADR
  *                     0231 (policy name `pol_<table>_<column>`); `.agents/rules/tenancy.md` (point 2).

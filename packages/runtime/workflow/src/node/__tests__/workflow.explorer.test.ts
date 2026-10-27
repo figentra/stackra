@@ -7,7 +7,7 @@
  *          correlation and starts each published automation as its principal, keyed by automation and occurrence, with
  *          its event chain, and starts none the chain stops; a coded step waiting for an event no trigger block
  *          correlates fails boot. With `ServiceAckService` bound, each `ServiceAcked` is recorded and the ack that
- *          completes a set holds `AllServicesAcked` for its subject.
+ *          completes a set holds `AllServicesAcked` for its subject with what each service kept.
  * Boundary: test only; a stand-in container lists fixed instances and binds a recording bus; the engine runs on the
  *           memory journal.
  * Runtime: node (vitest)
@@ -273,7 +273,11 @@ describe("WorkflowExplorer service acks", () => {
       dispatch: () => undefined,
       drain: () => Promise.resolve(),
     };
-    const answers: (readonly string[] | undefined)[] = [undefined, ["commerce", "billing"]];
+    const kept = [{ kind: "orders.order", reason: "hold" as const, count: 2 }];
+    const answers: (object | undefined)[] = [
+      undefined,
+      { services: ["commerce", "billing"], kept: { commerce: kept } },
+    ];
     const acks = { ack: vi.fn(async () => answers.shift()) };
     const container = {
       instances: () => [],
@@ -285,20 +289,21 @@ describe("WorkflowExplorer service acks", () => {
     new WorkflowExplorer(container, runner).onApplicationBootstrap();
 
     const [, listener] = subscriptions.find(([candidate]) => candidate === ServiceAcked) ?? [];
-    const deliver = (service: string) =>
+    const deliver = (service: string, fields: object = {}) =>
       (listener as unknown as { handle(e: object): Promise<void> }).handle(
         Object.assign(Object.create(ServiceAcked.prototype) as object, {
           subject: "tnt_1",
           service,
+          ...fields,
         }),
       );
     await deliver("billing");
     expect(hold).not.toHaveBeenCalled();
-    await deliver("commerce");
-    expect(acks.ack).toHaveBeenCalledWith("tnt_1", "commerce");
+    await deliver("commerce", { kept });
+    expect(acks.ack).toHaveBeenCalledWith("tnt_1", "commerce", kept);
     expect(hold).toHaveBeenCalledWith(
       AllServicesAcked,
-      { subject: "tnt_1", services: ["commerce", "billing"] },
+      { subject: "tnt_1", services: ["commerce", "billing"], kept: { commerce: kept } },
       { subject: "tnt_1" },
     );
   });

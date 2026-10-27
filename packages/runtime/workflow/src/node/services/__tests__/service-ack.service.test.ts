@@ -2,8 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `ServiceAckService`: `expect` stores one set per subject (nothing to wait for without
  *          services; a second call keeps the first set) and refuses a bad service key; `ack` records each service once
- *          and reports the expected services only on the ack that completes the set; an ack for a subject nobody
- *          expects, or for a complete set, reports nothing.
+ *          and reports the expected services, with what each kept, only on the ack that completes the set; an ack for a
+ *          subject nobody expects, or for a complete set, reports nothing.
  * Boundary: test only; a fake `Database` hands out a recording entity manager, so no database runs.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0210 (decision 6); ADR 0427 (decision 1).
@@ -77,9 +77,25 @@ describe(ServiceAckService, () => {
     expect(await acks.ack("tnt_1", "billing")).toBeUndefined();
     expect(await acks.ack("tnt_1", "billing")).toBeUndefined();
     expect(set.acked).toEqual(["billing"]);
-    expect(await acks.ack("tnt_1", "commerce")).toEqual(["commerce", "billing"]);
+    expect(await acks.ack("tnt_1", "commerce")).toEqual({
+      services: ["commerce", "billing"],
+      kept: {},
+    });
     expect(set.completedAt).toBeInstanceOf(Date);
     expect(await acks.ack("tnt_1", "commerce")).toBeUndefined();
+  });
+
+  it("keeps what each service reports it kept and returns it on completion", async () => {
+    const set = storedSet();
+    connect(set);
+    const acks = new ServiceAckService();
+    const kept = [{ kind: "orders.order", reason: "retention" as const, count: 12 }];
+    expect(await acks.ack("tnt_1", "billing", [])).toBeUndefined();
+    expect(set.kept).toEqual({});
+    expect(await acks.ack("tnt_1", "commerce", kept)).toEqual({
+      services: ["commerce", "billing"],
+      kept: { commerce: kept },
+    });
   });
 
   it("ignores an ack for a subject nobody expects", async () => {
