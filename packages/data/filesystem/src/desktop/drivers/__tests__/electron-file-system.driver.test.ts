@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `ElectronFileSystemDriver`: a driver of `FileSystem` rooted at `<userData>/<root>`, which
- *          stores, lists and stats files there, keeps keys inside that folder and answers `file:` URLs.
+ *          stores, streams, lists and stats files there, keeps keys inside that folder and answers `file:` URLs.
  * Boundary: test only; `electron` does not load in vitest, so `app.getPath` is a stand-in returning a fresh folder
  *           under the OS temporary directory, removed after each test.
  * Runtime: node (vitest)
@@ -65,6 +65,7 @@ describe("ElectronFileSystemDriver", () => {
     );
     expect(await files.exists("receipts/r_01.txt")).toBe(true);
     expect(new TextDecoder().decode(await files.read("receipts/r_01.txt"))).toBe("paid");
+    expect(await new Response(await files.readStream("receipts/r_01.txt")).text()).toBe("paid");
     expect(await files.list("receipts/")).toEqual(["receipts/r_01.txt"]);
     expect(await files.stat("receipts/r_01.txt")).toMatchObject({ size: 4, contentType: null });
     expect(await files.delete("receipts/r_01.txt")).toBe(true);

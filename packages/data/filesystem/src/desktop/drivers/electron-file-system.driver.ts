@@ -58,6 +58,11 @@ export class ElectronFileSystemDriver extends Driver(FileSystem) {
     return this.local.read(path);
   }
 
+  /** The file under `path` as a stream read from disk in chunks. */
+  override readStream(path: string): Promise<ReadableStream<Uint8Array>> {
+    return this.local.readStream(path);
+  }
+
   /** Writes `contents` under `path`, never leaving a half-written file. */
   write(path: string, contents: Uint8Array | string): Promise<void> {
     return this.local.write(path, contents);

@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `LocalFileSystemDriver`: a driver of `FileSystem` over a real folder that writes atomically,
- *          lists files only, maps missing files to `FileNotFoundError`, keeps every key inside its root and refuses to
+ *          lists files only, streams reads from disk, maps missing files to `FileNotFoundError`, keeps every key inside its root and refuses to
  *          sign URLs.
  * Boundary: test only; each test gets a fresh folder under the OS temporary directory, removed afterwards.
  * Runtime: node (vitest)
@@ -126,5 +126,16 @@ describe("LocalFileSystemDriver", () => {
     expect(files.url("a/b.png")).toBe("https://files.test/a/b.png");
     await expect(files.temporaryUrl("a/b.png", Duration.minutes(5))).rejects.toThrow(/cannot sign/);
     expect(() => disk(null).url("a.png")).toThrow(/filesystem\.url/);
+  });
+
+  it("streams a file and rejects a missing file or a folder before the stream", async () => {
+    const files = disk();
+    await files.write("big/orders.csv", "x".repeat(200_000));
+    expect(await new Response(await files.readStream("big/orders.csv")).text()).toBe(
+      "x".repeat(200_000),
+    );
+    await expect(files.readStream("missing.csv")).rejects.toThrow(FileNotFoundError);
+    await expect(files.readStream("big")).rejects.toThrow(FileNotFoundError);
+    await expect(files.readStream("../escape.csv")).rejects.toThrow(RangeError);
   });
 });

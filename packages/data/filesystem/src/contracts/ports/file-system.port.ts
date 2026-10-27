@@ -6,12 +6,13 @@
  * Boundary: an abstract class that is its own token, keyed `filesystem.FileSystem`. A key is relative, `/`-separated,
  *           with no `..` segment; every driver refuses one that is not. Runtime tenant files and their key layout are
  *           the files service's (ADR 0222); a disk only stores bytes. A leaf file: it imports nothing outside
- *           `src/contracts` but the `Port` base and `Duration`. `writeStream` is the one implemented member: it buffers
- *           the stream and calls `write`, the fallback of the memory, local, GCS, Encore and Electron disks; the S3
- *           driver overrides it with a multipart upload.
+ *           `src/contracts` but the `Port` base and `Duration`. `writeStream` and `readStream` are the implemented
+ *           members: `writeStream` buffers the stream and calls `write` (the S3 driver overrides it with a multipart
+ *           upload); `readStream` reads the whole file with `read` and serves it as one chunk (the local, Electron,
+ *           S3 and GCS drivers override it to stream from the store).
  * Runtime: isomorphic
  * Governing contract: ADR 0234 (decision 7: the only storage API, disks injected); ADR 0222 (decision 1: drivers);
- *                     ADR 0413 (streamed writes);
+ *                     ADR 0413 (streamed writes; streamed reads follow the same shape, STA-1259);
  *                     ADR 0294 (decisions 4, 15 and 16); ADR 0263 (ports resolve by type).
  */
 import { type Duration, Port } from "@stackra/contracts";
@@ -49,6 +50,28 @@ export abstract class FileSystem extends Port {
    * @throws RangeError when `path` is not a key inside the disk.
    */
   abstract read(path: string): Promise<Uint8Array>;
+
+  /**
+   * The bytes stored under `path` as a web `ReadableStream`, so a large file (an import, an archive) is read chunk by
+   * chunk instead of whole. The promise settles once the file is found, so a missing file rejects here, never inside
+   * the stream; a store failure after that errors the stream. This default calls `read` and serves the bytes as one
+   * chunk; a disk that can stream overrides it (local, Electron, S3, GCS).
+   *
+   * @throws FileNotFoundError (from `@stackra/filesystem`) when nothing is stored there.
+   * @throws RangeError when `path` is not a key inside the disk.
+   * @example
+   * const body = await this.files.readStream("imports/orders.csv");
+   * return new Response(body, { headers: { "content-type": "text/csv" } });
+   */
+  async readStream(path: string): Promise<ReadableStream<Uint8Array>> {
+    const bytes = await this.read(path);
+    return new ReadableStream<Uint8Array>({
+      start(controller) {
+        if (bytes.byteLength > 0) controller.enqueue(bytes);
+        controller.close();
+      },
+    });
+  }
 
   /**
    * Stores `contents` under `path`, replacing what was there; a string is written as UTF-8. A driver never leaves a

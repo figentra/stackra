@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: unit and type tests of the `FileSystem` port: a `Port` whose drivers are its instances, keyed
  *          `filesystem.FileSystem`, with the method shapes every disk implements; the default `writeStream` buffers the
- *          stream into one `write`, and a failing stream writes nothing.
+ *          stream into one `write`, a failing stream writes nothing, and the default `readStream` serves `read` as one
+ *          chunk.
  * Boundary: test only; a minimal subclass stands in for a driver.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0294 (decision 16).
@@ -19,8 +20,10 @@ class StubFileSystem extends FileSystem {
   async exists(): Promise<boolean> {
     return false;
   }
+  /** What `read` answers. */
+  stored = new Uint8Array();
   async read(): Promise<Uint8Array> {
-    return new Uint8Array();
+    return this.stored;
   }
   /** What each `write` stored, in call order. */
   readonly written: [string, Uint8Array | string, unknown][] = [];
@@ -62,6 +65,9 @@ describe("FileSystem", () => {
     expectTypeOf<FileSystem["temporaryUrl"]>().parameter(1).toEqualTypeOf<Duration>();
     expectTypeOf<FileSystem["stat"]>().returns.toEqualTypeOf<Promise<FileStat>>();
     expectTypeOf<FileSystem["url"]>().returns.toEqualTypeOf<string>();
+    expectTypeOf<FileSystem["readStream"]>().returns.toEqualTypeOf<
+      Promise<ReadableStream<Uint8Array>>
+    >();
   });
 
   it("buffers a stream into one write by default", async () => {
@@ -84,5 +90,21 @@ describe("FileSystem", () => {
     }
     await expect(disk.writeStream("exports/x.csv", broken())).rejects.toThrow("source failed");
     expect(disk.written).toEqual([]);
+  });
+
+  it("serves read as one chunk by default", async () => {
+    const disk = new StubFileSystem();
+    disk.stored = new TextEncoder().encode("a,b");
+    expect(await new Response(await disk.readStream("x.csv")).text()).toBe("a,b");
+    disk.stored = new Uint8Array();
+    expect(await new Response(await disk.readStream("empty.csv")).text()).toBe("");
+  });
+
+  it("rejects readStream when read rejects", async () => {
+    const disk = new StubFileSystem();
+    disk.read = async () => {
+      throw new Error("not there");
+    };
+    await expect(disk.readStream("x.csv")).rejects.toThrow("not there");
   });
 });

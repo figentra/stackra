@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `GcsFileSystemDriver`: the bucket and project it builds its client with, the calls it makes
- *          for each method, not-found mapping, sorted listing and the V4 signed URL request with its seven-day limit.
+ *          for each method, not-found mapping, streamed downloads, sorted listing and the V4 signed URL request with its seven-day limit.
  * Boundary: test only; `@google-cloud/storage` is replaced by an in-memory stand-in, so no request leaves the process
  *           and no credential is read.
  * Runtime: node (vitest)
@@ -26,7 +26,9 @@ const store = vi.hoisted(() => ({
   signed: [] as unknown[],
 }));
 
-vi.mock("@google-cloud/storage", () => {
+vi.mock("@google-cloud/storage", async () => {
+  // Imported inside the factory, which vitest hoists above the file's imports.
+  const { Readable } = await import("node:stream");
   const notFound = () => Object.assign(new Error("No such object"), { code: 404 });
   class File {
     constructor(readonly name: string) {}
@@ -37,6 +39,11 @@ vi.mock("@google-cloud/storage", () => {
       const object = store.objects.get(this.name);
       if (object === undefined) throw notFound();
       return [object.data];
+    }
+    createReadStream() {
+      const object = store.objects.get(this.name);
+      if (object === undefined) throw notFound();
+      return Readable.from([object.data]);
     }
     async save(data: string | Buffer, options: { contentType?: string }) {
       store.objects.set(this.name, { data: Buffer.from(data), contentType: options.contentType });
@@ -155,5 +162,12 @@ describe("GcsFileSystemDriver", () => {
 
   it("refuses a key outside the bucket", async () => {
     await expect(disk().write("../x", "y")).rejects.toThrow(RangeError);
+  });
+
+  it("streams a download and rejects a missing object before the stream", async () => {
+    const files = disk();
+    await files.write("imports/orders.csv", "a,b");
+    expect(await new Response(await files.readStream("imports/orders.csv")).text()).toBe("a,b");
+    await expect(files.readStream("missing.csv")).rejects.toThrow(FileNotFoundError);
   });
 });

@@ -251,4 +251,15 @@ describe("S3FileSystemDriver", () => {
     expect(last).toBeInstanceOf(AbortMultipartUploadCommand);
     expect((last as AbortMultipartUploadCommand).input.UploadId).toBe("up-2");
   });
+
+  it("streams the GET body and maps NoSuchKey to FileNotFoundError before the stream", async () => {
+    answer((command) => {
+      if ((command as GetObjectCommand).input.Key === "missing.txt") throw missing("NoSuchKey");
+      return { Body: { transformToWebStream: () => new Response("hi").body } };
+    });
+    const files = disk();
+    expect(await new Response(await files.readStream("hi.txt")).text()).toBe("hi");
+    await expect(files.readStream("missing.txt")).rejects.toThrow(FileNotFoundError);
+    await expect(files.readStream("../x")).rejects.toThrow(RangeError);
+  });
 });

@@ -54,6 +54,15 @@ async function* csvRows(orders: AsyncIterable<Order>) {
 await this.files.writeStream("exports/orders.csv", csvRows(orders), { contentType: "text/csv" });
 ```
 
+A large file is read as a stream too: `readStream(key)` resolves to a web `ReadableStream` of bytes once the file is
+found, so a missing file is a `FileNotFoundError` from the call, never from inside the stream. The `local`, `electron`,
+`s3` and `gcs` disks stream from the store; `memory` and `encore_bucket` read the file whole and serve it as one chunk.
+
+```ts
+const body = await this.files.readStream("imports/orders.csv");
+for await (const text of body.pipeThrough(new TextDecoderStream())) parser.push(text);
+```
+
 | Driver          | `url()`                 | `temporaryUrl()`                     | `stat().contentType` | `stat().lastModified` |
 | --------------- | ----------------------- | ------------------------------------ | -------------------- | --------------------- |
 | `memory`        | `filesystem.url` + key  | the URL with an unsigned `expires`   | kept                 | the `Clock`'s now     |

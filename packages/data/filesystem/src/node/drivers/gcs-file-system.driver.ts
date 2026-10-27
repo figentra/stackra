@@ -6,11 +6,15 @@
  *           Run, `GOOGLE_APPLICATION_CREDENTIALS` locally), and signing a URL uses the bound service account's
  *           `signBlob` when no key file is present. Every key passes `normalizePath`. A missing object is a
  *           `FileNotFoundError`; any other store error is rethrown as it is. Which environment runs this disk is
- *           runway's `filesystem.disk` value, never code.
+ *           runway's `filesystem.disk` value, never code. `readStream` checks the object exists, then streams
+ *           the download, so a missing object rejects before the stream.
  * Runtime: node
  * Governing contract: ADR 0354 (two clouds: a driver for both where object storage differs); ADR 0222 (decision 1);
- *                     ADR 0234 (decision 7); ADR 0173 (secrets); ADR 0294 (decision 16).
+ *                     ADR 0234 (decision 7); ADR 0173 (secrets); ADR 0294 (decision 16);
+ *                     ADR 0413 (streamed reads, STA-1259).
  */
+import { Readable } from "node:stream";
+
 import { Storage } from "@google-cloud/storage";
 import type { Bucket } from "@google-cloud/storage";
 import { Driver } from "@stackra/container";
@@ -77,6 +81,20 @@ export class GcsFileSystemDriver extends Driver(FileSystem) {
     } catch (error) {
       throw isNotFound(error) ? new FileNotFoundError(key) : error;
     }
+  }
+
+  /**
+   * The object under `path` as a streamed download.
+   *
+   * shortcut: an object deleted between the check and the first byte errors the stream with the store's 404, not a
+   * `FileNotFoundError`; peek the first chunk before returning if a caller ever needs that distinction.
+   */
+  override async readStream(path: string): Promise<ReadableStream<Uint8Array>> {
+    const key = normalizePath(path);
+    const file = this.bucket.file(key);
+    const [found] = await file.exists();
+    if (!found) throw new FileNotFoundError(key);
+    return Readable.toWeb(file.createReadStream()) as unknown as ReadableStream<Uint8Array>;
   }
 
   /** Uploads `contents` under `path` in one request; GCS replaces an object atomically. */

@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: the S3-compatible `FileSystem` (`disk: "s3"`): AWS S3, Cloudflare R2 or MinIO, chosen by
  *          `filesystem.s3.{region, endpoint, forcePathStyle}`. Temporary URLs are SigV4 presigned GETs. A streamed write
- *          is a multipart upload in 8 MiB parts, so a large export never sits in memory whole.
+ *          is a multipart upload in 8 MiB parts and a streamed read is the GET body as a web stream, so a large export or
+ *          import never sits in memory whole.
  * Boundary: holds no credential: the AWS SDK reads its default chain (`AWS_ACCESS_KEY_ID` and
  *           `AWS_SECRET_ACCESS_KEY`, which runway syncs from Infisical, or an instance role). Every key passes
  *           `normalizePath`. A missing object is a `FileNotFoundError`; any other store error is rethrown as it is. Every
@@ -108,6 +109,20 @@ export class S3FileSystemDriver extends Driver(FileSystem) {
       );
       if (output.Body === undefined) throw new FileNotFoundError(key);
       return await output.Body.transformToByteArray();
+    } catch (error) {
+      throw isNotFound(error) ? new FileNotFoundError(key) : error;
+    }
+  }
+
+  /** The object under `path` as the GET response body, streamed; a missing object rejects before the stream. */
+  override async readStream(path: string): Promise<ReadableStream<Uint8Array>> {
+    const key = normalizePath(path);
+    try {
+      const output = await this.client.send(
+        new GetObjectCommand({ Bucket: this.bucket, Key: key }),
+      );
+      if (output.Body === undefined) throw new FileNotFoundError(key);
+      return output.Body.transformToWebStream() as ReadableStream<Uint8Array>;
     } catch (error) {
       throw isNotFound(error) ? new FileNotFoundError(key) : error;
     }

@@ -31,6 +31,9 @@ v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./node`, `./desktop`.
   `encore.dev` and drives the `EncoreBucket` slice the generated app binds.
 - `writeStream` buffers into `write` by default (the port's own method); a driver overrides it only when its store
   uploads in parts (S3/R2 multipart, ADR 0413). Never leave a partly written object behind.
+- `readStream` reads `read` into one chunk by default; a driver overrides it when its store streams (local and
+  Electron file handles, the S3 GET body, the GCS download). It settles only after the file is found, so not-found
+  rejects the call, never the stream.
 - One disk per member; named disks, uploads and tenant file records belong elsewhere (README, "Not here").
 
 ## Rules that fail the build
