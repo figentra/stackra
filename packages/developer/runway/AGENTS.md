@@ -5,7 +5,7 @@ Stackra file contract:
 Purpose: the agent rules of @stackra/runway: where code goes, the schema, deploy, secrets and event fan-out rules, PII.
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
-Governing contract: ADR 0296; ADR 0352; ADR 0002 (2026-10-27 amendment, the `mintlify` provider); ADR 0400; ADR 0444 (`providers.tools`); ADR 0441; ADR 0439; STA-863; ADR 0260 (decision 4: the relay fan-out
+Governing contract: ADR 0296; ADR 0352; ADR 0002 (2026-10-27 amendment, the `mintlify` provider); ADR 0400; ADR 0444 (`providers.tools`); ADR 0441; ADR 0439 (the mobile job); STA-863; ADR 0260 (decision 4: the relay fan-out
                     is gen's).
 -->
 
@@ -46,6 +46,10 @@ Runway format version 3 (ADR 0296) as code. Member at `packages/developer/runway
   never add a component, entry, script or module-path key to it (app-shells 16.7). Asset paths stay inside `assets/`.
 - The repository index table lives only in the root runway's `environments.dev.lanes.repos`; do not copy it into
   code or another file. A new dev port field must be added to `checkPorts` so duplicates keep failing.
+- The mobile job (`runMobileJob`) strips capabilities at build time from the template line's `capabilities.json`;
+  never hard-code a capability, module, plugin or permission here, and never hide a feature at run time instead. It
+  never publishes a white-label build under the platform's Apple account without the 4.2.6 and 4.3 record, and takes
+  store accounts resolved (`storeAccountsOf`, @stackra/infra-mobile); it never reads a store key.
 - A runway holds secret names only. `definesFor` inlines public vars (`VITE_`, `EXPO_PUBLIC_`, `RENDERER_VITE_`) and
   never the TLS paths.
 

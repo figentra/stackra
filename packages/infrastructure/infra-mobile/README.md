@@ -1,11 +1,21 @@
 # @stackra/infra-mobile
 
+<!--
+Stackra file contract:
+Purpose: the package's reader guide: the mobile release plan from the runways, its owner tasks, the Pulumi slice and
+         the store-account resolution of the mobile job.
+Boundary: documentation only; the code and the ADRs win on any difference.
+Runtime: none
+Governing contract: ADR 0171; ADR 0180; ADR 0344 (decision 11); ADR 0439 (decisions 7 and 8); app-shells D14.
+-->
+
 Mobile release infrastructure (ADR 0171): the EAS project and environments, the App Store and Play records, the push
 credentials and EAS-managed signing of a repository's mobile app, read from its runways, plus the slice of the
 generated Pulumi program that resolves and checks those facts from the stack config.
 
 **Tier:** `tier:lib` (`packages/infrastructure/infra-mobile`). Entries `.` (isomorphic, no Pulumi) and `./node` (the
-Pulumi slice). Depends on `@stackra/contracts`, `@stackra/runway` and `@pulumi/pulumi`.
+Pulumi slice). Depends on `@stackra/contracts`, `@stackra/runway`, `@stackra/integrations` (its `./contracts`: `MobileStore`)
+and `@pulumi/pulumi`.
 
 ## What is here
 
@@ -13,6 +23,7 @@ Pulumi slice). Depends on `@stackra/contracts`, `@stackra/runway` and `@pulumi/p
 | -------- | -------------------------------------- | ------------------------------------------------------------------------ |
 | `.`      | `mobileInfraPlan(root, app, identity)` | the release plan and its owner tasks from the root and mobile runways    |
 | `.`      | `MobileOwnerStep`                      | the manual steps no API takes (enum of snake_case codes)                 |
+| `.`      | `storeAccountsOf(app, connected?)`     | the account each store of a mobile app publishes under (managed or own)  |
 | `.`      | `MobileInfraInvalidError`              | every runway or stack config failure at once, with its path              |
 | `.`      | `MobileHealthIndicatorDriver`          | the `HealthIndicator` driver: the EAS update endpoint answers            |
 | `.`      | `MobileInfraPlan`, `MobileIdentity`, … | types                                                                    |
@@ -81,6 +92,29 @@ decision 11), each with the stack config key its result goes under when the runw
 | `play_app_signing` | Android, submitted | record the Play app-signing certificate's SHA-256                        |
 | `android_signing`  | Android            | run `eas credentials` once for the upload keystore                       |
 | `fcm_key`          | Android            | give EAS the FCM V1 service-account key Expo push sends with             |
+
+## Store accounts
+
+`storeAccountsOf(app, connected)` gives the mobile job (`runMobileJob` in `@stackra/runway/node`) one account per
+store the app targets (ADR 0439 decisions 7 and 8, app-shells D14). A scope that connected its own store account (a
+Connection implementing `StoreAccountConnector`: an App Store Connect API key or a Google Play service account) gets
+`{ owner: "scope", connection }` for that store; every other store publishes under the platform account the root
+runway names in `mobile.<app>.stores.<apple|google>.account` (`{ owner: "platform", account }`). A merge-started build
+passes no connections. A targeted store with neither fails with `stores.<apple|google>.account`. Ids only: the key is
+read on the CI runner through the Connection's credential reference, never here.
+
+```ts
+import { storeAccountsOf } from "@stackra/infra-mobile";
+import { MobileStore } from "@stackra/integrations/contracts";
+
+storeAccountsOf(root.mobile!.shopper!, [
+  { store: MobileStore.GooglePlay, connection: "conn_play" },
+]);
+// [{ store: "app_store", owner: "platform", account: "figentra" },
+//  { store: "google_play", owner: "scope", connection: "conn_play" }]
+```
+
+The white-label mode check and the Apple 4.2.6 and 4.3 record are the job's, not this function's.
 
 ## Not here
 

@@ -7,7 +7,8 @@ Purpose: the package's reader guide: runway format version 3, the topology place
 Boundary: documentation only; the event topics and subscriptions are gen's output, not this package's.
 Runtime: none
 Governing contract: ADR 0296; ADR 0352; ADR 0400; ADR 0444 (the tools stack block); ADR 0148 (decisions 3 and 6);
-                    ADR 0260 (decision 4); ADR 0441 (decision 3: surfaces, mobile); ADR 0439; ADR 0436; STA-863 (lanes).
+                    ADR 0260 (decision 4); ADR 0441 (decision 3: surfaces, mobile); ADR 0439 (the mobile job); ADR 0436;
+                    STA-863 (lanes).
 -->
 
 Runway format version 3 as code: the schemas of the root runway (WHERE things run and how they are packed) and of the
@@ -36,6 +37,8 @@ tool configs call so no port, origin or feed URL is typed outside a `runway.yaml
 | `.`         | `RunwayProvider`                                                                        | the provider port: plan, apply, verify, rollback and current (ADR 0352 d3)  |
 | `./node`    | `EncoreCloudProviderDriver`, `EasProviderDriver`, `MintlifyProviderDriver`              | the `encore-cloud`, `eas` and `mintlify` providers                          |
 | `./node`    | `runCommand`, `CommandRunner`                                                           | how a provider runs its CLI, with no shell                                  |
+| `./node`    | `runMobileJob(request)`, `MobileJobRequest`, `MobileJobResult`                          | the mobile job: Expo config from `mobile`, capability stripping, EAS build  |
+| `./node`    | `capabilityConfig(catalogue, flags)`, `MobileCapability`, `MobileStoreAccount`, …       | what a template line keeps and strips for a product's capability flags      |
 | `.`         | `RunwayKind`, `RunwayEnvironment`, `TopologyMode`, `RequirementEngine`, `CacheEviction` | enums                                                                       |
 | `.`         | `RunwayInvalidError`, `RunwayUnresolvedError`, `RunwayDeployFailedError`                | errors                                                                      |
 | `./node`    | `definesFor(member, environment)`                                                       | the bundler `define` map: public vars and the injected runway facts         |
@@ -75,6 +78,52 @@ declaratively: a package name, or `{ package, panels, resources, widgets }` whos
 capability flags, `tablet`, store accounts, EAS project and `whiteLabel` (the entitlement and the `managed` /
 `bring-your-own` modes of the tenant-started per-tenant build, ADR 0439). Every asset path sits inside `assets/`.
 An app runway's `release.mobile.whiteLabel` takes `true` or the same `whiteLabel` block.
+
+## The mobile job
+
+`runMobileJob` (`./node`) builds one app of the root runway's `mobile` from the OS mobile template (ADR 0439). A merge
+starts it with no variant; an OS event for a scope starts a white-label build with a `variant` (the scope id and the
+identity from the scope's brand and listing data). The caller checks out the app's template line into `templateDir`
+and resolves the store accounts with `storeAccountsOf` from `@stackra/infra-mobile` (the scope's connected App Store
+Connect key or Google Play service account, else the platform account in `mobile.<app>.stores`).
+
+1. Checks the app exists, every platform it targets has a store account, a variant's app has `whiteLabel` and offers
+   the mode each account needs (`managed` for a platform account, `bring-your-own` for a scope's), and the app names
+   `eas.channel`.
+2. A white-label build under the platform's Apple account waits on Apple guidelines 4.2.6 and 4.3: the job refuses it
+   until `<store>/apple-guidelines.json` records each as `{ "result": "pass", "checkedAt", "by", "note" }`.
+3. Reads the template line's `capabilities.json` (flag to `modules`, `plugins`, `ios.infoPlist`, `ios.entitlements`,
+   `android.permissions`); `capabilityConfig` refuses a flag the line does not offer and lists what every other flag
+   brings, except what an enabled flag also declares.
+4. Writes the template checkout's `app.json`: the runway identity (name, bundle id, package, scheme, `applinks:` and
+   verified intent filters for `links`, tablet), slug `<project>-<app>`, runtime version from the template line, the
+   EAS project and update URL, the enabled flags' plugins, and the disabled flags' plugins, Info.plist keys and
+   entitlements removed and Android permissions blocked; and `package.json` `expo.autolinking.exclude` with their
+   native modules. Nothing is merely hidden at run time.
+5. Starts `eas build` on the app's channel through `EasProviderDriver` from the checked-out commit.
+
+```ts
+import { storeAccountsOf } from "@stackra/infra-mobile";
+import { readRunway, runMobileJob } from "@stackra/runway/node";
+
+const root = readRunway("runway.yaml", "root");
+await runMobileJob({
+  repository: ".",
+  app: "shopper",
+  templateDir: ".stackra/mobile/shopper",
+  sha,
+  environment: "production",
+  stores: storeAccountsOf(root.mobile!.shopper!, connections),
+  variant: {
+    scope: "scope_42",
+    identity: { name: { en: "Acme" }, ios: { bundleId: "com.acme.shop" } },
+  },
+});
+```
+
+Not yet in the job: store submission (`eas submit` under the resolved account), the scope theme's icon and splash
+(`@stackra/brand-kit` through stackra-13), installing the app's `packages`, per-locale store names, the app-link files
+on the edge, and the app id pattern check of ADR 0439 decision 6.
 
 ## Dev lanes and the repository index
 
