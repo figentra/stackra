@@ -7,7 +7,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0355 (decision 8); config-model section 2.
  */
-import { registerSchemas, Schema } from "@stackra/validation";
+import { Int, registerSchemas, Schema } from "@stackra/validation";
 
 import { FEE_SCHEDULE_SCHEMA } from "#core/constants/fee-schedule-schema.constant";
 
@@ -18,17 +18,19 @@ import { FEE_SCHEDULE_SCHEMA } from "#core/constants/fee-schedule-schema.constan
  * validate(FeeSchedule, { key: "partner-standard", currency: "SAR", basisPoints: 2000, effectiveFrom: "2026-11-01" });
  */
 export class FeeSchedule extends Schema {
+  /** The rate, in basis points of the gross. */
+  @Int
+  basisPoints!: number;
+
+  /** The fixed fee per period, in minor units. */
+  @Int
+  fixedMinor = 0;
+
   /** The schedule's key (`partner-standard`). */
   key!: string;
 
   /** The ISO 4217 currency its fixed fee is in. */
   currency!: string;
-
-  /** The rate, in basis points of the gross. */
-  basisPoints!: number;
-
-  /** The fixed fee per period, in minor units. */
-  fixedMinor = 0;
 
   /** The ISO date it applies from. */
   effectiveFrom!: string;

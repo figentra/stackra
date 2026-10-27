@@ -10,7 +10,7 @@
  * Governing contract: ADR 0335 (decisions 2, 4, 5 and 6); ADR 0109 (as amended by ADR 0335); stackra-64 (packs and
  *                     role presets are data records, never code).
  */
-import { registerSchemas, Schema } from "@stackra/validation";
+import { Field, registerSchemas, Schema } from "@stackra/validation";
 
 import { EDITION_BUNDLE_SCHEMA } from "#core/constants/edition-bundle-schema.constant";
 
@@ -28,11 +28,13 @@ import { EDITION_BUNDLE_SCHEMA } from "#core/constants/edition-bundle-schema.con
  * });
  */
 export class EditionBundle extends Schema {
+  /** The base product key and the base version range. */
+  // reason: a two-field pair kept inline as published; the shipped schema already says its rule
+  @Field(EDITION_BUNDLE_SCHEMA.shape.edition)
+  edition!: { of: string; version: string };
+
   /** The edition's product key. */
   product!: string;
-
-  /** The base product key and the base version range. */
-  edition!: { of: string; version: string };
 
   /** The edition's own module keys. */
   modules!: string[];

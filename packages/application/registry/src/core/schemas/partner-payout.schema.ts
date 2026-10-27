@@ -7,7 +7,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0355 (decisions 7 and 8: one bill, partner payout records).
  */
-import { registerSchemas, Schema } from "@stackra/validation";
+import { Int, registerSchemas, Schema } from "@stackra/validation";
 
 import { PARTNER_PAYOUT_SCHEMA } from "#core/constants/partner-payout-schema.constant";
 
@@ -19,6 +19,18 @@ import { PARTNER_PAYOUT_SCHEMA } from "#core/constants/partner-payout-schema.con
  *   grossMinor: 10_000, feeMinor: 2_000, netMinor: 8_000, schedule: "partner-standard" });
  */
 export class PartnerPayout extends Schema {
+  /** What tenants paid, in minor units. */
+  @Int
+  grossMinor!: number;
+
+  /** What Figentra kept, in minor units. */
+  @Int
+  feeMinor!: number;
+
+  /** What the partner is paid, in minor units. */
+  @Int
+  netMinor!: number;
+
   /** The partner organisation's id. */
   partner!: string;
 
@@ -30,15 +42,6 @@ export class PartnerPayout extends Schema {
 
   /** The ISO 4217 currency. */
   currency!: string;
-
-  /** What tenants paid, in minor units. */
-  grossMinor!: number;
-
-  /** What Figentra kept, in minor units. */
-  feeMinor!: number;
-
-  /** What the partner is paid, in minor units. */
-  netMinor!: number;
 
   /** The key of the fee schedule applied. */
   schedule!: string;

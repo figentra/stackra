@@ -12,7 +12,7 @@
  *                     ADR 0360 (decision 4); ADR 0134; ADR 0224; OS ADR 0037 d1.
  */
 import type { DataClassification, StackraManifest } from "@stackra/contracts";
-import { registerSchemas, Schema } from "@stackra/validation";
+import { Field, registerSchemas, Schema } from "@stackra/validation";
 
 import { CATALOGUE_MANIFEST_SCHEMA } from "#core/constants/catalogue-manifest-schema.constant";
 
@@ -24,16 +24,10 @@ import { CATALOGUE_MANIFEST_SCHEMA } from "#core/constants/catalogue-manifest-sc
  * if (parsed.success) store(parsed.data.member, parsed.data);
  */
 export class CatalogueManifest extends Schema {
-  /** The member key (`commerce`). */
-  member!: string;
-
-  /** The package name (`@figentra/service-commerce`). */
-  package!: string;
-
-  /** The manifest format version. */
-  version!: string;
-
   /** The member's modules with their dependencies, the modules they only enhance, assistant intents and entitlement. */
+  // reason: a manifest entry typed by `StackraManifest` from @stackra/contracts, which ships no schema for it; the shipped
+  // schema already says its rule and keeps the fields gen adds later (loose)
+  @Field(CATALOGUE_MANIFEST_SCHEMA.shape.modules)
   modules: (NonNullable<StackraManifest["modules"]>[number] & {
     /** Modules this one adds to without needing them. */
     readonly enhances?: readonly string[];
@@ -44,6 +38,9 @@ export class CatalogueManifest extends Schema {
   })[] = [];
 
   /** The locked actions and queries; `tool` is set when an agent may call one. */
+  // reason: a manifest entry typed by `StackraManifest` from @stackra/contracts, which ships no schema for it; the shipped
+  // schema already says its rule and keeps the fields gen adds later (loose)
+  @Field(CATALOGUE_MANIFEST_SCHEMA.shape.actions)
   actions: (NonNullable<StackraManifest["actions"]>[number] & {
     /** The agent tool gen derived (`{ name, default, hints }`), or `true` in a hand-written manifest. */
     readonly tool?: boolean | { readonly name: string; readonly [field: string]: unknown };
@@ -52,6 +49,9 @@ export class CatalogueManifest extends Schema {
   })[] = [];
 
   /** The locked events, by wire name, with their webhook opt-in and personal-data classes. */
+  // reason: a manifest entry typed by `StackraManifest` from @stackra/contracts, which ships no schema for it; the shipped
+  // schema already says its rule and keeps the fields gen adds later (loose)
+  @Field(CATALOGUE_MANIFEST_SCHEMA.shape.events)
   events: (NonNullable<StackraManifest["events"]>[number] & {
     /** Whether tenants may subscribe a webhook endpoint to it. */
     readonly webhook?: boolean;
@@ -62,7 +62,19 @@ export class CatalogueManifest extends Schema {
   })[] = [];
 
   /** The derived permissions. */
+  // reason: a manifest entry typed by `StackraManifest` from @stackra/contracts, which ships no schema for it; the shipped
+  // schema already says its rule and keeps the fields gen adds later (loose)
+  @Field(CATALOGUE_MANIFEST_SCHEMA.shape.permissions)
   permissions: NonNullable<StackraManifest["permissions"]> = [];
+
+  /** The member key (`commerce`). */
+  member!: string;
+
+  /** The package name (`@figentra/service-commerce`). */
+  package!: string;
+
+  /** The manifest format version. */
+  version!: string;
 }
 
 registerSchemas([[CatalogueManifest, CATALOGUE_MANIFEST_SCHEMA]]);
