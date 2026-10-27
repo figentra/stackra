@@ -13,12 +13,12 @@
  * Runtime: node
  * Governing contract: ADR 0078 (decisions 3 and 4: written in the same transaction as the change); ADR 0141 (decisions
  *                     2 and 3); ADR 0294 (decision 27: events are recorded beside the model); ADR 0221 (decision 5);
- *                     ADR 0097 (decision 2).
+ *                     ADR 0097 (decision 2); STA-1380 (ids from @stackra/contracts' one minter).
  */
 import type { ExtensionContext } from "@stackra/actions";
 import type { ContextStorage } from "@stackra/actions/contracts";
 import { kindOf, Service } from "@stackra/container";
-import type { Clock } from "@stackra/contracts";
+import { type Clock, mintPublicId } from "@stackra/contracts";
 import type { Database } from "@stackra/database";
 import { recordEvent, takeRecordedEvents } from "@stackra/events";
 
@@ -26,7 +26,6 @@ import { MessageKind, RowChangeKind } from "#contracts/index";
 import type { OutboxMessage, RowChange } from "#contracts/index";
 import { CHANGE_CONSUMERS } from "#core/constants/change-consumers.constant";
 import { eventMessage } from "#core/functions/event-message.function";
-import { mintEventId } from "#core/functions/mint-event-id.function";
 import { insertMessages } from "#node/functions/insert-messages.function";
 import type { FlushArgs } from "#node/types/flush-args.type";
 import type { TransactionArgs } from "#node/types/transaction-args.type";
@@ -79,7 +78,7 @@ export class OutboxWriterService extends Service {
         }
         const message = eventMessage({
           event,
-          meta: { ...meta, id: mintEventId(occurredAt.getTime()), occurredAt },
+          meta: { ...meta, id: mintPublicId("evt", occurredAt.getTime()), occurredAt },
         });
         noted.push(() => message);
       }
@@ -118,7 +117,7 @@ export class OutboxWriterService extends Service {
     meta: OutboxMessage["meta"],
     occurredAt: Date,
   ): () => OutboxMessage {
-    const id = mintEventId(occurredAt.getTime());
+    const id = mintPublicId("evt", occurredAt.getTime());
     const kind = changeKindOf(changeSet.type);
     const fields = kind === RowChangeKind.Deleted ? [] : Object.keys(changeSet.payload);
     return () => {

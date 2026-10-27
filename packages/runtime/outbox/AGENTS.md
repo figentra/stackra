@@ -49,6 +49,8 @@ model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./node`.
   carry no row-level security. A replica append takes the partition's advisory lock before it reads the head.
 - No tenant word is declared here (final review R-59, ADR 0323): a scope is a `ScopeRef`. "Hook" is a React word only
   (ADR 0294 decision 23): the row-change seam is a change consumer.
+- Never mint an id here: message ids come from `@stackra/contracts`' `mintPublicId("evt", time)`. Never narrow the
+  `evt_` check to one body form; stored ids of the older forms must keep passing (STA-1380).
 - No parameter properties and no `#private` fields: services typecheck this source under `erasableSyntaxOnly`.
 
 ## Rules that fail the build

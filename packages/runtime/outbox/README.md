@@ -71,6 +71,10 @@ only, delivers it to the bus and drains it, all in one transaction in the event'
 it, and so does a consuming service's generated subscription. A redelivery runs nothing; an unknown wire name is refused
 before the claim, so a later release can still receive it.
 
+The claim compares ids as exact strings. Ids are minted by `@stackra/contracts`' `mintPublicId("evt")` (lowercase,
+UUIDv7, ADR 0135); ids stored in the older forms (the outbox's uppercase ULID, actions' random form) are still
+relayed and deduplicated unchanged (STA-1380).
+
 ## Watching rows
 
 ```ts

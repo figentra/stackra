@@ -35,7 +35,8 @@
  *                     audit in the unit of work); ADR 0215 and owner round 3 item 18 (reserve-then-commit); STA-813
  *                     (an unbound approval step does not run); ADR 0406
  *                     (step-up assurance); STA-1277 (the area bucket sized by `RateLimitBudget`, a value entitlement);
- *                     ADR 0456 (decisions 1 and 2: the request origin, an integration event without a model).
+ *                     ADR 0456 (decisions 1 and 2: the request origin, an integration event without a model); STA-1380
+ *                     (event ids from @stackra/contracts' `mintPublicId`).
  */
 import { kindOf, type AnyClass } from "@stackra/container";
 import {
@@ -45,6 +46,7 @@ import {
   Duration,
   type Json,
   Logger,
+  mintPublicId,
 } from "@stackra/contracts";
 import {
   ForbiddenError,
@@ -101,7 +103,6 @@ import { OfflineCapReachedError } from "#core/errors/offline-cap-reached.error";
 import { UsageRecorded } from "#core/events/usage-recorded.event";
 import { fingerprintOf } from "#core/functions/fingerprint-of.function";
 import { isOlderRuleVersion } from "#core/functions/is-older-rule-version.function";
-import { mintEventId } from "#core/functions/mint-event-id.function";
 import { periodOf } from "#core/functions/period-of.function";
 import { startOfZonedDay } from "#core/functions/start-of-zoned-day.function";
 import { ReplicaFeed } from "#core/services/replica-feed.service";
@@ -637,7 +638,7 @@ export class ActionPipeline {
       {
         event,
         meta: {
-          id: mintEventId(),
+          id: mintPublicId("evt"),
           occurredAt: at,
           ...(descriptor.scopeId === undefined ? {} : { scopeId: descriptor.scopeId }),
           actor: descriptor.actor,
@@ -663,7 +664,7 @@ export class ActionPipeline {
       {
         event,
         meta: {
-          id: mintEventId(),
+          id: mintPublicId("evt"),
           occurredAt: at,
           ...(descriptor.scopeId === undefined ? {} : { scopeId: descriptor.scopeId }),
           actor: descriptor.actor,

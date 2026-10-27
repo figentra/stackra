@@ -4,7 +4,8 @@
  *          writes the entry barrels (STA-339). The old `./traits` and `./orm` entries are folded in (owner Q4).
  * Boundary: names each re-export and declares nothing. `Collection` and `Ref` are the ORM's own, so
  *           `new Collection<T>(this)` in a model is the collection the hydrator and the unit of work understand. The
- *           trait registry, the global-model set, `MinorUnitsType`, the public id minting and the kind list stay internal.
+ *           trait registry, the global-model set, `MinorUnitsType` and the kind list stay internal;
+ *           public ids are minted by @stackra/contracts' `mintPublicId` (STA-1380).
  * Runtime: node
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision; ADR 0127 2026-10-24 note.
  */

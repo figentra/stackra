@@ -100,6 +100,7 @@ describe("@stackra/contracts", () => {
       "definePackage",
       "defineService",
       "defineWorker",
+      "mintPublicId",
       "verifySignature",
       "wrapScopeKey",
     ]);

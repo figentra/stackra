@@ -7,15 +7,16 @@
  *           its metadata as every event does, and the request origin as `originKind` and `originId` (ADR 0456). The pipeline writes the entry after the action's unit of work ends, so a
  *           refused call is audited even though its changes rolled back.
  * Runtime: isomorphic
- * Governing contract: ADR 0212 (decisions 1, 2 and 4); ADR 0098 (decisions 3 and 7); ADR 0294 (decision 16).
+ * Governing contract: ADR 0212 (decisions 1, 2 and 4); ADR 0098 (decisions 3 and 7); ADR 0294 (decision 16); ADR
+ *                     0135 (event ids from @stackra/contracts' `mintPublicId`, STA-1380).
  */
 import { Driver } from "@stackra/container";
+import { mintPublicId } from "@stackra/contracts";
 import type { EventOutbox } from "@stackra/events/contracts";
 
 import { AuditTrail } from "#contracts/ports/audit-trail.port";
 import type { AuditEntry } from "#contracts/types/audit-entry.type";
 import { AuditEntryRecorded } from "#core/events/audit-entry-recorded.event";
-import { mintEventId } from "#core/functions/mint-event-id.function";
 
 /**
  * Audits through the outbox.
@@ -55,7 +56,7 @@ export class OutboxAuditTrailDriver extends Driver(AuditTrail) {
       {
         event,
         meta: {
-          id: mintEventId(),
+          id: mintPublicId("evt"),
           occurredAt: entry.at,
           ...(call.scopeId === undefined ? {} : { scopeId: call.scopeId }),
           actor: call.actor,

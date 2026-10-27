@@ -18,6 +18,7 @@ package may import it; it imports nothing.
 | `HealthIndicator`, `KeyProvider`, `FieldCipher`, `Signer`                                                                                 | ports     | a probed dependency; data keys; seal and open a field; sign; drivers below    |
 | `Actor`, `PublicId<P>`, `Branded<T, B>`, `Email`, `Url`, `Json`, `VerifiedPrincipal`, `HealthReport`, `DataKey`                           | types     | the caller, ids and value types the shape compiler knows                      |
 | `brand<B>()`                                                                                                                              | function  | the one constructor of a branded type                                         |
+| `mintPublicId(prefix, time?)`                                                                                                             | function  | the one public-id minter (UUIDv7, ADR 0135)                                   |
 | `StackraManifest`                                                                                                                         | type      | reading a committed `stackra.manifest.json`                                   |
 | `defineApp`, `defineService`, `definePackage`, `defineWorker`                                                                             | functions | the one call in a member's `stackra.config.ts`                                |
 

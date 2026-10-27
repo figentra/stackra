@@ -7,12 +7,11 @@
  *           leave a service, and there is no second id column. Gen maps `id` to the primary key.
  * Runtime: isomorphic
  * Governing contract: ADR 0135 (format and prefixes); ADR 0082; ADR 0096 (`Has*`: the model owns data); ADR 0294
- *                     (decision 27).
+ *                     (decision 27); STA-1380 (the id comes from @stackra/contracts' one minter).
  */
-import type { PublicId } from "@stackra/contracts";
+import { mintPublicId, type PublicId } from "@stackra/contracts";
 
 import { createTrait } from "#core/functions/create-trait.function";
-import { mintPublicId } from "#core/functions/mint-public-id.function";
 import type { Trait } from "#core/types/trait.type";
 
 /** A registered prefix: 2 to 6 lowercase letters. */

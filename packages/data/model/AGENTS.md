@@ -50,6 +50,7 @@ model v3.1 shape (ADR 0294, 0305). Entry `.` only; `./traits` and `./orm` are fo
 - `@Searchable` keeps its options frozen and adds no key the caller left out; `semantic` only declares. The embedding
   and the `ai: never` refusal are @stackra/search's and gen's (ADR 0380); never read a provider here.
 - `Model.global(...)` marks a model global by design (no `tenant_id`, ADR 0210 amendment); `Model.isGlobal` reads it.
+- `HasPublicId` mints with `@stackra/contracts`' `mintPublicId`; never add a second minter here (STA-1380).
 - Only add a symbol a consumer imports today (the template, a package, or the registry row).
 
 ## Rules that fail the build

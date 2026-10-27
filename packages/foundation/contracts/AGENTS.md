@@ -31,6 +31,8 @@ The whole package is one `.` entry, so its enums, ports and types sit under `src
 - Only add a symbol a consumer imports today (the template, a wave-1 package, or a registry row).
 - A kind base assigns no fields in its constructor and keeps no state (0294 decision 25); brands are `declare`d,
   type-only `~kind` and `~brand` keys.
+- `mintPublicId` is the one public-id minter (ADR 0135, STA-1380); its only state is the last millisecond and random
+  bits, which keep one process's ids in minting order. Keep the lowercase UUIDv7 form: ids are stored and compared.
 - `Enum.of` codes are snake_case except a tool-owned value (`HttpMethod`), which keeps the tool's spelling.
 - A new `DataClassification` code is appended, never inserted or renamed: codes are stored, and stored checks
   (`@stackra/access-log`'s `t.dataClassification`) list them literally.

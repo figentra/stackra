@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: unit tests of `eventMessage`: a recorded integration event becomes a due event message with its id, time,
  *          wire name, the event as payload and the rest of the metadata; a domain event and an id that is not an
- *          `evt_` id are refused.
+ *          `evt_` id are refused; ids stored in the older ULID and random forms still pass (STA-1380).
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0141 (decisions 2 and 3).
@@ -40,6 +40,12 @@ describe(eventMessage, () => {
       attempts: 0,
       availableAt: NOON,
     });
+  });
+
+  it("keeps ids minted in the older forms", () => {
+    // The ULID form the outbox minted and the random form actions minted before STA-1380.
+    for (const id of ["evt_01JB6Z3Q0M4V9TBN1XG5RD2HC8", "evt_7zk3q0m4v9tbn1xg5rd2hc8wpa"])
+      expect(eventMessage({ event: new OrderPaid(), meta: { id, occurredAt: NOON } }).id).toBe(id);
   });
 
   it("refuses a domain event and an id that is not an evt_ id", () => {
