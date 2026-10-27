@@ -1,9 +1,130 @@
 {
+  "nav": {
+    "loyalty": "Fedeltà"
+  },
   "enums": {
     "loyalty_tier": {
       "bronze": "Bronzo",
       "silver": "Argento",
       "gold": "Oro"
+    },
+    "entry_kind": {
+      "earn": "Guadagnati",
+      "redeem": "Riscattati",
+      "expire": "Scaduti",
+      "adjust": "Rettificati",
+      "hold": "Trattenuti",
+      "release": "Rilasciati"
+    }
+  },
+  "resources": {
+    "loyalty_account": {
+      "title": "Conti fedeltà"
+    }
+  },
+  "widgets": {
+    "points_issued": {
+      "title": "Punti di oggi"
+    },
+    "points_balance": {
+      "title": "Saldo punti",
+      "expiry_note": "Alcuni dei tuoi punti scadono a breve."
+    }
+  },
+  "documents": {
+    "loyalty_overview": {
+      "title": "I miei punti"
+    }
+  },
+  "settings": {
+    "title": "Fedeltà",
+    "is_active": {
+      "label": "Programma attivo",
+      "help": "Se disattivato, i membri qui non guadagnano nulla; riscatto e scadenza continuano."
+    },
+    "earn_per_minor": {
+      "label": "Punti per unità minore spesa",
+      "help": "Punti che un membro guadagna per ogni unità minore (centesimo) spesa, arrotondati per difetto; 0,01 è un punto ogni 100 centesimi."
+    },
+    "point_value_minor": {
+      "label": "Valore del punto (unità minori)",
+      "help": "Quanto vale un punto al riscatto, in unità minori (centesimi); 1 significa che un punto toglie un centesimo."
+    },
+    "max_redeem_percent": {
+      "label": "Quota massima pagata con punti (%)",
+      "help": "La quota massima del totale di un ordine che i punti possono coprire, come percentuale intera; 0 disattiva il riscatto."
+    },
+    "expiry_months": {
+      "label": "I punti scadono dopo (mesi)",
+      "help": "I punti guadagnati e non spesi scadono questo numero di mesi dopo essere stati guadagnati."
+    },
+    "tiers": {
+      "label": "Livelli",
+      "help": "I saldi a cui un conto viene promosso; un conto non viene mai retrocesso automaticamente.",
+      "silver_from": {
+        "label": "Argento da (punti)"
+      },
+      "gold_from": {
+        "label": "Oro da (punti)"
+      }
+    },
+    "stamps_per_visit": {
+      "label": "Timbri per visita",
+      "help": "Quanti timbri aggiunge una visita alla tessera timbri di un membro."
+    },
+    "stamps_per_card": {
+      "label": "Timbri per tessera",
+      "help": "Quanti timbri riempiono una tessera; una tessera piena è un premio."
+    }
+  },
+  "permissions": {
+    "loyalty_account": {
+      "read": "Visualizzare i conti fedeltà",
+      "enroll": "Iscrivere membri",
+      "freeze": "Congelare conti",
+      "redeem": "Riscattare punti",
+      "expire": "Far scadere punti",
+      "stamp": "Timbrare visite"
+    }
+  },
+  "actions": {
+    "account": {
+      "enroll": {
+        "success": "Membro iscritto",
+        "intents": ["iscrivi questo cliente al programma fedeltà", "aggiungilo al programma punti"]
+      },
+      "freeze": {
+        "confirm": "Congelare questo conto? Il membro non potrà guadagnare né spendere finché non viene scongelato.",
+        "success": "Conto aggiornato"
+      }
+    },
+    "points": {
+      "balance": {
+        "intents": ["quanti punti ho", "mostra il mio saldo fedeltà"]
+      },
+      "earn_visit": {
+        "success": "Visita timbrata"
+      }
+    }
+  },
+  "account": {
+    "frozen_badge": "Congelato"
+  },
+  "adjustment": {
+    "points": "Punti fedeltà"
+  },
+  "errors": {
+    "insufficient_points": {
+      "message": "Non hai abbastanza punti."
+    },
+    "not_a_member": {
+      "message": "Non sei iscritto al programma fedeltà."
+    },
+    "account_frozen": {
+      "message": "Questo conto è congelato."
+    },
+    "not_own_principal": {
+      "message": "Puoi iscrivere solo te stesso."
     }
   },
   "passes": {

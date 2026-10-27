@@ -14,7 +14,7 @@ import { ConsentVerifier } from "#contracts/ports/consent-verifier.port";
 import type { ConsentVerification } from "#contracts/types/consent-verification.type";
 
 /**
- * Verifies nothing.
+ * The fail-closed verifier: it runs no method, so every consent that needs verification is refused.
  *
  * @example
  * await new NoneConsentVerifierDriver().verify(request); // { verified: false }

@@ -1,9 +1,130 @@
 {
+  "nav": {
+    "loyalty": "Fidelización"
+  },
   "enums": {
     "loyalty_tier": {
       "bronze": "Bronce",
       "silver": "Plata",
       "gold": "Oro"
+    },
+    "entry_kind": {
+      "earn": "Ganados",
+      "redeem": "Canjeados",
+      "expire": "Caducados",
+      "adjust": "Ajustados",
+      "hold": "Retenidos",
+      "release": "Liberados"
+    }
+  },
+  "resources": {
+    "loyalty_account": {
+      "title": "Cuentas de fidelización"
+    }
+  },
+  "widgets": {
+    "points_issued": {
+      "title": "Puntos de hoy"
+    },
+    "points_balance": {
+      "title": "Saldo de puntos",
+      "expiry_note": "Algunos de tus puntos caducan pronto."
+    }
+  },
+  "documents": {
+    "loyalty_overview": {
+      "title": "Mis puntos"
+    }
+  },
+  "settings": {
+    "title": "Fidelización",
+    "is_active": {
+      "label": "Programa activo",
+      "help": "Si está desactivado, los miembros no ganan nada aquí; el canje y la caducidad continúan."
+    },
+    "earn_per_minor": {
+      "label": "Puntos por unidad menor gastada",
+      "help": "Puntos que gana un miembro por cada unidad menor (céntimo) gastada, redondeados hacia abajo; 0,01 es un punto cada 100 céntimos."
+    },
+    "point_value_minor": {
+      "label": "Valor del punto (unidades menores)",
+      "help": "Lo que vale un punto al canjearlo, en unidades menores (céntimos); 1 significa que un punto descuenta un céntimo."
+    },
+    "max_redeem_percent": {
+      "label": "Parte máxima pagada con puntos (%)",
+      "help": "La mayor parte del total de un pedido que pueden cubrir los puntos, como porcentaje entero; 0 desactiva el canje."
+    },
+    "expiry_months": {
+      "label": "Los puntos caducan tras (meses)",
+      "help": "Los puntos ganados y no gastados caducan este número de meses después de ganarse."
+    },
+    "tiers": {
+      "label": "Niveles",
+      "help": "Los saldos a partir de los que una cuenta sube de nivel; una cuenta nunca baja de nivel automáticamente.",
+      "silver_from": {
+        "label": "Plata desde (puntos)"
+      },
+      "gold_from": {
+        "label": "Oro desde (puntos)"
+      }
+    },
+    "stamps_per_visit": {
+      "label": "Sellos por visita",
+      "help": "Cuántos sellos añade una visita a la tarjeta de sellos de un miembro."
+    },
+    "stamps_per_card": {
+      "label": "Sellos por tarjeta",
+      "help": "Cuántos sellos llenan una tarjeta; una tarjeta llena es una recompensa."
+    }
+  },
+  "permissions": {
+    "loyalty_account": {
+      "read": "Ver cuentas de fidelización",
+      "enroll": "Inscribir miembros",
+      "freeze": "Congelar cuentas",
+      "redeem": "Canjear puntos",
+      "expire": "Caducar puntos",
+      "stamp": "Sellar visitas"
+    }
+  },
+  "actions": {
+    "account": {
+      "enroll": {
+        "success": "Miembro inscrito",
+        "intents": ["inscribir a este cliente en fidelización", "añadirlo al programa de puntos"]
+      },
+      "freeze": {
+        "confirm": "¿Congelar esta cuenta? El miembro no podrá ganar ni gastar hasta que se descongele.",
+        "success": "Cuenta actualizada"
+      }
+    },
+    "points": {
+      "balance": {
+        "intents": ["cuántos puntos tengo", "muestra mi saldo de puntos"]
+      },
+      "earn_visit": {
+        "success": "Visita sellada"
+      }
+    }
+  },
+  "account": {
+    "frozen_badge": "Congelada"
+  },
+  "adjustment": {
+    "points": "Puntos de fidelización"
+  },
+  "errors": {
+    "insufficient_points": {
+      "message": "No tienes puntos suficientes."
+    },
+    "not_a_member": {
+      "message": "No estás inscrito en el programa de fidelización."
+    },
+    "account_frozen": {
+      "message": "Esta cuenta está congelada."
+    },
+    "not_own_principal": {
+      "message": "Solo puedes inscribirte a ti mismo."
     }
   },
   "passes": {

@@ -17,7 +17,7 @@ const CHILD = "usr_01j9z3k4m5n6p7q8r9s0t1v2c1";
 
 describe("NoneConsentVerifierDriver", () => {
   it("refuses every method", async () => {
-    const verifier = new NoneConsentVerifierDriver();
+    const verifier: ConsentVerifier = new NoneConsentVerifierDriver();
     expect(verifier).toBeInstanceOf(ConsentVerifier);
     for (const method of Enum.values(ConsentVerificationMethod))
       expect(

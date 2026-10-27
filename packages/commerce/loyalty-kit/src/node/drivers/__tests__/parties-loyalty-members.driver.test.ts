@@ -51,10 +51,12 @@ describe("PartiesLoyaltyMembersDriver", () => {
   });
 
   it("refuses a merged-away or erased person", async () => {
-    expect(await new HostDriver({ mergedInto: "per_2", erasedAt: null }).isMember(memberId("per_1"))).toBe(false);
-    expect(await new HostDriver({ mergedInto: null, erasedAt: new Date(0) }).isMember(memberId("per_1"))).toBe(
-      false,
-    );
+    expect(
+      await new HostDriver({ mergedInto: "per_2", erasedAt: null }).isMember(memberId("per_1")),
+    ).toBe(false);
+    expect(
+      await new HostDriver({ mergedInto: null, erasedAt: new Date(0) }).isMember(memberId("per_1")),
+    ).toBe(false);
   });
 
   it("answers an unknown person as not a member", async () => {
@@ -62,8 +64,8 @@ describe("PartiesLoyaltyMembersDriver", () => {
   });
 
   it("rethrows any other failure, so a redemption fails closed", async () => {
-    await expect(new HostDriver(new Error("unreachable")).isMember(memberId("per_1"))).rejects.toThrow(
-      "unreachable",
-    );
+    await expect(
+      new HostDriver(new Error("unreachable")).isMember(memberId("per_1")),
+    ).rejects.toThrow("unreachable");
   });
 });

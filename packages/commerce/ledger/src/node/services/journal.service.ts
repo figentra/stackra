@@ -144,7 +144,9 @@ function entryOf<M extends object>(row: object, fields: Fields): JournalEntry<M>
     at: record[fields.at] as Date,
     ...(fields.currency === undefined ? {} : { currency: String(record[fields.currency]) }),
     // reason: the keys are the model's listed field names, read from its facet at run time
-    ...(Object.keys(extra).length === 0 ? {} : { extra: extra as JournalEntry<M>["extra"] }),
+    ...(Object.keys(extra).length === 0
+      ? {}
+      : { extra: extra as NonNullable<JournalEntry<M>["extra"]> }),
   };
 }
 

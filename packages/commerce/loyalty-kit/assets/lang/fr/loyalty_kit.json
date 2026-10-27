@@ -1,9 +1,133 @@
 {
+  "nav": {
+    "loyalty": "Fidélité"
+  },
   "enums": {
     "loyalty_tier": {
       "bronze": "Bronze",
       "silver": "Argent",
       "gold": "Or"
+    },
+    "entry_kind": {
+      "earn": "Gagnés",
+      "redeem": "Utilisés",
+      "expire": "Expirés",
+      "adjust": "Ajustés",
+      "hold": "Réservés",
+      "release": "Libérés"
+    }
+  },
+  "resources": {
+    "loyalty_account": {
+      "title": "Comptes fidélité"
+    }
+  },
+  "widgets": {
+    "points_issued": {
+      "title": "Points du jour"
+    },
+    "points_balance": {
+      "title": "Solde de points",
+      "expiry_note": "Certains de vos points expirent bientôt."
+    }
+  },
+  "documents": {
+    "loyalty_overview": {
+      "title": "Mes points"
+    }
+  },
+  "settings": {
+    "title": "Fidélité",
+    "is_active": {
+      "label": "Programme actif",
+      "help": "Désactivé, les membres ne gagnent rien ici ; l'utilisation et l'expiration continuent."
+    },
+    "earn_per_minor": {
+      "label": "Points par unité mineure dépensée",
+      "help": "Points qu'un membre gagne pour chaque unité mineure (centime) dépensée, arrondis à l'inférieur ; 0,01 correspond à un point pour 100 centimes."
+    },
+    "point_value_minor": {
+      "label": "Valeur du point (unités mineures)",
+      "help": "Ce que vaut un point à l'utilisation, en unités mineures (centimes) ; 1 signifie qu'un point retire un centime."
+    },
+    "max_redeem_percent": {
+      "label": "Part maximale payée en points (%)",
+      "help": "La plus grande part du total d'une commande que les points peuvent couvrir, en pourcentage entier ; 0 désactive l'utilisation."
+    },
+    "expiry_months": {
+      "label": "Les points expirent après (mois)",
+      "help": "Les points gagnés non dépensés expirent ce nombre de mois après avoir été gagnés."
+    },
+    "tiers": {
+      "label": "Niveaux",
+      "help": "Les soldes à partir desquels un compte monte de niveau ; un compte n'est jamais rétrogradé automatiquement.",
+      "silver_from": {
+        "label": "Argent à partir de (points)"
+      },
+      "gold_from": {
+        "label": "Or à partir de (points)"
+      }
+    },
+    "stamps_per_visit": {
+      "label": "Tampons par visite",
+      "help": "Combien de tampons une visite ajoute à la carte de tampons d'un membre."
+    },
+    "stamps_per_card": {
+      "label": "Tampons par carte",
+      "help": "Combien de tampons remplissent une carte ; une carte pleine vaut une récompense."
+    }
+  },
+  "permissions": {
+    "loyalty_account": {
+      "read": "Voir les comptes fidélité",
+      "enroll": "Inscrire des membres",
+      "freeze": "Geler des comptes",
+      "redeem": "Utiliser des points",
+      "expire": "Faire expirer des points",
+      "stamp": "Tamponner des visites"
+    }
+  },
+  "actions": {
+    "account": {
+      "enroll": {
+        "success": "Membre inscrit",
+        "intents": [
+          "inscrire ce client au programme de fidélité",
+          "l'ajouter au programme de points"
+        ]
+      },
+      "freeze": {
+        "confirm": "Geler ce compte ? Le membre ne peut ni gagner ni dépenser tant qu'il n'est pas dégelé.",
+        "success": "Compte mis à jour"
+      }
+    },
+    "points": {
+      "balance": {
+        "intents": ["combien de points ai-je", "affiche mon solde de fidélité"]
+      },
+      "earn_visit": {
+        "success": "Visite tamponnée"
+      }
+    }
+  },
+  "account": {
+    "frozen_badge": "Gelé"
+  },
+  "adjustment": {
+    "points": "Points de fidélité"
+  },
+  "errors": {
+    "insufficient_points": {
+      "message": "Vous n'avez pas assez de points."
+    },
+    "not_a_member": {
+      "message": "Vous n'êtes pas inscrit au programme de fidélité."
+    },
+    "account_frozen": {
+      "message": "Ce compte est gelé."
+    },
+    "not_own_principal": {
+      "message": "Vous ne pouvez inscrire que vous-même."
     }
   },
   "passes": {

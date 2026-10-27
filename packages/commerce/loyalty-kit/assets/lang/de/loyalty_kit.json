@@ -1,9 +1,130 @@
 {
+  "nav": {
+    "loyalty": "Treueprogramm"
+  },
   "enums": {
     "loyalty_tier": {
       "bronze": "Bronze",
       "silver": "Silber",
       "gold": "Gold"
+    },
+    "entry_kind": {
+      "earn": "Gesammelt",
+      "redeem": "Eingelöst",
+      "expire": "Verfallen",
+      "adjust": "Korrigiert",
+      "hold": "Reserviert",
+      "release": "Freigegeben"
+    }
+  },
+  "resources": {
+    "loyalty_account": {
+      "title": "Treuekonten"
+    }
+  },
+  "widgets": {
+    "points_issued": {
+      "title": "Punkte heute"
+    },
+    "points_balance": {
+      "title": "Punktestand",
+      "expiry_note": "Einige Ihrer Punkte verfallen bald."
+    }
+  },
+  "documents": {
+    "loyalty_overview": {
+      "title": "Meine Punkte"
+    }
+  },
+  "settings": {
+    "title": "Treueprogramm",
+    "is_active": {
+      "label": "Programm aktiv",
+      "help": "Wenn aus, sammeln Mitglieder hier nichts; Einlösen und Verfall laufen weiter."
+    },
+    "earn_per_minor": {
+      "label": "Punkte pro ausgegebener Untereinheit",
+      "help": "Punkte, die ein Mitglied pro ausgegebener Untereinheit (Cent) erhält, abgerundet; 0,01 ist ein Punkt pro 100 Cent."
+    },
+    "point_value_minor": {
+      "label": "Punktwert (Untereinheiten)",
+      "help": "Was ein Punkt beim Einlösen wert ist, in Untereinheiten (Cent); 1 bedeutet, ein Punkt zieht einen Cent ab."
+    },
+    "max_redeem_percent": {
+      "label": "Größter mit Punkten bezahlter Anteil (%)",
+      "help": "Der höchste Anteil einer Bestellsumme, den Punkte decken dürfen, als ganze Prozentzahl; 0 schaltet das Einlösen ab."
+    },
+    "expiry_months": {
+      "label": "Punkte verfallen nach (Monaten)",
+      "help": "Nicht ausgegebene gesammelte Punkte verfallen so viele Monate nach dem Sammeln."
+    },
+    "tiers": {
+      "label": "Stufen",
+      "help": "Die Punktestände, ab denen ein Konto aufsteigt; ein Konto wird nie automatisch herabgestuft.",
+      "silver_from": {
+        "label": "Silber ab (Punkte)"
+      },
+      "gold_from": {
+        "label": "Gold ab (Punkte)"
+      }
+    },
+    "stamps_per_visit": {
+      "label": "Stempel pro Besuch",
+      "help": "Wie viele Stempel ein Besuch der Stempelkarte eines Mitglieds hinzufügt."
+    },
+    "stamps_per_card": {
+      "label": "Stempel pro Karte",
+      "help": "Wie viele Stempel eine Karte füllen; eine volle Karte ist eine Prämie."
+    }
+  },
+  "permissions": {
+    "loyalty_account": {
+      "read": "Treuekonten ansehen",
+      "enroll": "Mitglieder aufnehmen",
+      "freeze": "Konten sperren",
+      "redeem": "Punkte einlösen",
+      "expire": "Punkte verfallen lassen",
+      "stamp": "Besuche stempeln"
+    }
+  },
+  "actions": {
+    "account": {
+      "enroll": {
+        "success": "Mitglied aufgenommen",
+        "intents": ["diesen Kunden ins Treueprogramm aufnehmen", "zum Punkteprogramm hinzufügen"]
+      },
+      "freeze": {
+        "confirm": "Dieses Konto sperren? Das Mitglied kann bis zur Entsperrung weder sammeln noch einlösen.",
+        "success": "Konto aktualisiert"
+      }
+    },
+    "points": {
+      "balance": {
+        "intents": ["wie viele Punkte habe ich", "zeig meinen Punktestand"]
+      },
+      "earn_visit": {
+        "success": "Besuch gestempelt"
+      }
+    }
+  },
+  "account": {
+    "frozen_badge": "Gesperrt"
+  },
+  "adjustment": {
+    "points": "Treuepunkte"
+  },
+  "errors": {
+    "insufficient_points": {
+      "message": "Sie haben nicht genug Punkte."
+    },
+    "not_a_member": {
+      "message": "Sie sind nicht im Treueprogramm angemeldet."
+    },
+    "account_frozen": {
+      "message": "Dieses Konto ist gesperrt."
+    },
+    "not_own_principal": {
+      "message": "Sie können nur sich selbst anmelden."
     }
   },
   "passes": {

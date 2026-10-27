@@ -1,9 +1,133 @@
 {
+  "nav": {
+    "loyalty": "Loyaliteit"
+  },
   "enums": {
     "loyalty_tier": {
       "bronze": "Brons",
       "silver": "Zilver",
       "gold": "Goud"
+    },
+    "entry_kind": {
+      "earn": "Verdiend",
+      "redeem": "Ingewisseld",
+      "expire": "Vervallen",
+      "adjust": "Gecorrigeerd",
+      "hold": "Gereserveerd",
+      "release": "Vrijgegeven"
+    }
+  },
+  "resources": {
+    "loyalty_account": {
+      "title": "Loyaliteitsaccounts"
+    }
+  },
+  "widgets": {
+    "points_issued": {
+      "title": "Punten vandaag"
+    },
+    "points_balance": {
+      "title": "Puntensaldo",
+      "expiry_note": "Een deel van je punten vervalt binnenkort."
+    }
+  },
+  "documents": {
+    "loyalty_overview": {
+      "title": "Mijn punten"
+    }
+  },
+  "settings": {
+    "title": "Loyaliteit",
+    "is_active": {
+      "label": "Programma actief",
+      "help": "Uit: leden verdienen hier niets; inwisselen en vervallen gaan door."
+    },
+    "earn_per_minor": {
+      "label": "Punten per uitgegeven kleinste eenheid",
+      "help": "Punten die een lid verdient per uitgegeven kleinste eenheid (cent), naar beneden afgerond; 0,01 is één punt per 100 cent."
+    },
+    "point_value_minor": {
+      "label": "Puntwaarde (kleinste eenheden)",
+      "help": "Wat één punt waard is bij inwisselen, in kleinste eenheden (centen); 1 betekent dat één punt één cent korting geeft."
+    },
+    "max_redeem_percent": {
+      "label": "Grootste deel betaald met punten (%)",
+      "help": "Het grootste deel van een ordertotaal dat punten mogen dekken, als heel percentage; 0 zet inwisselen uit."
+    },
+    "expiry_months": {
+      "label": "Punten vervallen na (maanden)",
+      "help": "Niet-uitgegeven verdiende punten vervallen dit aantal maanden nadat ze zijn verdiend."
+    },
+    "tiers": {
+      "label": "Niveaus",
+      "help": "De saldi waarbij een account promoveert; een account degradeert nooit automatisch.",
+      "silver_from": {
+        "label": "Zilver vanaf (punten)"
+      },
+      "gold_from": {
+        "label": "Goud vanaf (punten)"
+      }
+    },
+    "stamps_per_visit": {
+      "label": "Stempels per bezoek",
+      "help": "Hoeveel stempels één bezoek toevoegt aan de stempelkaart van een lid."
+    },
+    "stamps_per_card": {
+      "label": "Stempels per kaart",
+      "help": "Hoeveel stempels een kaart vullen; een volle kaart is één beloning."
+    }
+  },
+  "permissions": {
+    "loyalty_account": {
+      "read": "Loyaliteitsaccounts bekijken",
+      "enroll": "Leden inschrijven",
+      "freeze": "Accounts blokkeren",
+      "redeem": "Punten inwisselen",
+      "expire": "Punten laten vervallen",
+      "stamp": "Bezoeken stempelen"
+    }
+  },
+  "actions": {
+    "account": {
+      "enroll": {
+        "success": "Lid ingeschreven",
+        "intents": [
+          "schrijf deze klant in voor het loyaliteitsprogramma",
+          "voeg ze toe aan het puntenprogramma"
+        ]
+      },
+      "freeze": {
+        "confirm": "Dit account blokkeren? Het lid kan niets verdienen of uitgeven tot het is gedeblokkeerd.",
+        "success": "Account bijgewerkt"
+      }
+    },
+    "points": {
+      "balance": {
+        "intents": ["hoeveel punten heb ik", "toon mijn puntensaldo"]
+      },
+      "earn_visit": {
+        "success": "Bezoek gestempeld"
+      }
+    }
+  },
+  "account": {
+    "frozen_badge": "Geblokkeerd"
+  },
+  "adjustment": {
+    "points": "Loyaliteitspunten"
+  },
+  "errors": {
+    "insufficient_points": {
+      "message": "Je hebt niet genoeg punten."
+    },
+    "not_a_member": {
+      "message": "Je bent niet ingeschreven voor het loyaliteitsprogramma."
+    },
+    "account_frozen": {
+      "message": "Dit account is geblokkeerd."
+    },
+    "not_own_principal": {
+      "message": "Je kunt alleen jezelf inschrijven."
     }
   },
   "passes": {
