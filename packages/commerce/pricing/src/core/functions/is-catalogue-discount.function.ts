@@ -9,8 +9,9 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0391 (decision 4); owner OS-381.
  */
+import type { CatalogueRow } from "@stackra/contracts";
+
 import { planPriceListsOf } from "#core/functions/plan-price-lists-of.function";
-import type { CatalogueRow } from "#core/types/catalogue-row.type";
 
 /**
  * Whether replacing `current` with `next` in a record of `kind` is a discount.

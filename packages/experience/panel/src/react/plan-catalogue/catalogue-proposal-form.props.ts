@@ -7,7 +7,7 @@
  * Governing contract: ADR 0391 (decisions 2 to 5); owner OS-82, OS-381.
  */
 import type { CatalogueProposal } from "@stackra/entitlements";
-import type { CatalogueRow } from "@stackra/pricing";
+import type { CatalogueRow } from "@stackra/contracts";
 
 /** Props of `CatalogueProposalForm`. */
 export interface CatalogueProposalFormProps {

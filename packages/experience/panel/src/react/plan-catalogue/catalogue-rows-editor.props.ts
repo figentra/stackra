@@ -6,7 +6,7 @@
  * Runtime: browser
  * Governing contract: ADR 0391 (decision 2); config-model section 2 (the catalogue is data).
  */
-import type { CatalogueRow } from "@stackra/pricing";
+import type { CatalogueRow } from "@stackra/contracts";
 
 /** Props of `CatalogueRowsEditor`. */
 export interface CatalogueRowsEditorProps {

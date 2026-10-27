@@ -7,8 +7,9 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0391 (decision 1); config-model section 2; stackra-117 (open catalogue records).
  */
+import type { CatalogueRow } from "@stackra/contracts";
+
 import type { CatalogueModule } from "#core/types/catalogue-module.type";
-import type { CatalogueRow } from "#core/types/catalogue-row.type";
 import type { PlanTier } from "#core/types/plan-tier.type";
 import type { SeatKind } from "#core/types/seat-kind.type";
 import type { TrialTerms } from "#core/types/trial-terms.type";

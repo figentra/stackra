@@ -13,7 +13,8 @@
  */
 import { today } from "@internationalized/date";
 import { useTranslation } from "@stackra/i18n/react";
-import { isCatalogueDiscount, type CatalogueRow } from "@stackra/pricing";
+import type { CatalogueRow } from "@stackra/contracts";
+import { isCatalogueDiscount } from "@stackra/pricing";
 import { Alert, Button, Card, DatePicker, Switch, Text } from "@stackra/ui/react";
 import { useState, type ReactElement } from "react";
 

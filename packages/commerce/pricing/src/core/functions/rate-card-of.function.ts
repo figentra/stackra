@@ -7,11 +7,11 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0391 (decisions 1 and 5); config-model section 2.
  */
+import type { CatalogueRow } from "@stackra/contracts";
 import { Money, UnitPrice } from "@stackra/money";
 
 import { rowText } from "#core/functions/row-text.function";
 import { rowWhole } from "#core/functions/row-whole.function";
-import type { CatalogueRow } from "#core/types/catalogue-row.type";
 import type { PrepaidPack } from "#core/types/prepaid-pack.type";
 import type { RateCard } from "#core/types/rate-card.type";
 import type { RateCardLine } from "#core/types/rate-card-line.type";

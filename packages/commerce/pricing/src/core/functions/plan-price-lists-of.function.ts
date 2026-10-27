@@ -8,13 +8,12 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0391 (decisions 1 and 5); ADR 0392 (decision 1); config-model section 2.
  */
-import { Enum } from "@stackra/contracts";
+import { type CatalogueRow, Enum } from "@stackra/contracts";
 import { Money } from "@stackra/money";
 
 import { BillingPeriod } from "#core/enums/billing-period.enum";
 import { priceListKey } from "#core/functions/price-list-key.function";
 import { rowText } from "#core/functions/row-text.function";
-import type { CatalogueRow } from "#core/types/catalogue-row.type";
 import type { PlanPrice } from "#core/types/plan-price.type";
 import type { PlanPriceList } from "#core/types/plan-price-list.type";
 

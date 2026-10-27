@@ -6,7 +6,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0391 (decision 5).
  */
-import type { CatalogueRow } from "#core/types/catalogue-row.type";
+import type { CatalogueRow } from "@stackra/contracts";
 
 /**
  * The whole number `row[field]`.

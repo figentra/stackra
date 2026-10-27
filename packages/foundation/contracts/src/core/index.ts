@@ -55,6 +55,7 @@ export type { AwsKmsApi } from "#core/types/aws-kms-api.type";
 export type { AwsKmsKeyProviderOptions } from "#core/types/aws-kms-key-provider-options.type";
 export type { AwsKmsSignerOptions } from "#core/types/aws-kms-signer-options.type";
 export type { Branded } from "#core/types/branded.type";
+export type { CatalogueRow } from "#core/types/catalogue-row.type";
 export type { DataKey } from "#core/types/data-key.type";
 export type { Email } from "#core/types/email.type";
 export type { GeoPoint } from "#core/types/geo-point.type";

@@ -31,7 +31,7 @@ An entitlement is a commercial right. It is never a release switch (that is a fl
 | `.`           | `SeatMeterService`, `MemorySeatLedgerDriver`, `SeatLimitReachedError`                   | the seat-kind meter: assign, release, usage per kind                       |
 | `.`           | `limitAllows`                                                                           | whether one more fits a count or a soft limit at a time                    |
 | `.`           | `isLimitGrant`, `limitOf`                                                               | whether a grant is a usable limit; the allowance a refusal names           |
-| `.`           | `planCatalogueOf`, `CatalogueRow`                                                       | parse a plan-catalogue version; other record kinds land in `extras`        |
+| `.`           | `planCatalogueOf` (rows are `@stackra/contracts`' `CatalogueRow`)                       | parse a plan-catalogue version; other record kinds land in `extras`        |
 | `./contracts` | `CapLiftFacts`; `.` `paidPlanDays`                                                      | the R1-OS-40 cap-lift facts; the paid-plan age from `PlanSnapshot`         |
 | `./contracts` | `EntitlementUsage`                                                                      | the port a limit's current count comes from (the data layer implements it) |
 | `.`           | `PlanEntitlementCheckDriver`                                                            | the driver of `EntitlementCheck`, the pipeline's entitlement step          |

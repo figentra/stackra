@@ -10,7 +10,8 @@
  * Governing contract: ADR 0391 (decisions 2 and 3); config-model section 2.
  */
 import { planCatalogueOf } from "@stackra/entitlements";
-import { offerOf, planPriceListsOf, rateCardOf, type CatalogueRow } from "@stackra/pricing";
+import type { CatalogueRow } from "@stackra/contracts";
+import { offerOf, planPriceListsOf, rateCardOf } from "@stackra/pricing";
 
 /** Each kind's reader; each throws naming the bad row. */
 const READERS: Readonly<Record<string, (key: string, rows: readonly CatalogueRow[]) => unknown>> =

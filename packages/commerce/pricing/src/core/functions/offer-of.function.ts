@@ -8,14 +8,13 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0391 (decision 5); ADR 0393 (decision 2); owner M3-6, R3-SO-18.
  */
-import { Enum, type Json } from "@stackra/contracts";
+import { type CatalogueRow, Enum, type Json } from "@stackra/contracts";
 
 import { BillingPeriod } from "#core/enums/billing-period.enum";
 import { OfferBenefitKind } from "#core/enums/offer-benefit-kind.enum";
 import { rowText } from "#core/functions/row-text.function";
 import { rowWhole } from "#core/functions/row-whole.function";
 import type { CatalogueOffer } from "#core/types/catalogue-offer.type";
-import type { CatalogueRow } from "#core/types/catalogue-row.type";
 import type { OfferBenefit } from "#core/types/offer-benefit.type";
 import type { OfferEligibility } from "#core/types/offer-eligibility.type";
 

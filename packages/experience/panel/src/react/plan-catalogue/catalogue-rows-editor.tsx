@@ -10,9 +10,8 @@
  * Runtime: browser
  * Governing contract: ADR 0391 (decision 2); config-model section 2; WCAG 2.2 SC 1.3.1 and 3.3.2.
  */
-import type { Json } from "@stackra/contracts";
+import type { CatalogueRow, Json } from "@stackra/contracts";
 import { useTranslation } from "@stackra/i18n/react";
-import type { CatalogueRow } from "@stackra/pricing";
 import { Button, Card, NumberField, Switch, Text, TextField } from "@stackra/ui/react";
 import type { ReactElement, ReactNode } from "react";
 

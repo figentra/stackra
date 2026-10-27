@@ -44,7 +44,6 @@ export { PlanCatalogueService } from "#core/services/plan-catalogue.service";
 export { SeatMeterService } from "#core/services/seat-meter.service";
 export type { CatalogueModule } from "#core/types/catalogue-module.type";
 export type { CatalogueProposal } from "#core/types/catalogue-proposal.type";
-export type { CatalogueRow } from "#core/types/catalogue-row.type";
 export type { CatalogueSeedRecord } from "#core/types/catalogue-seed-record.type";
 export type { EditionEntitlementBundle } from "#core/types/edition-entitlement-bundle.type";
 export type { EntitlementClass } from "#core/types/entitlement-class.type";

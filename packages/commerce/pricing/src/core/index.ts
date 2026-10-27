@@ -29,7 +29,6 @@ export { stackOffers } from "#core/functions/stack-offers.function";
 export { taxByRates } from "#core/functions/tax-by-rates.function";
 export type { BillingTerms } from "#core/types/billing-terms.type";
 export type { CatalogueOffer } from "#core/types/catalogue-offer.type";
-export type { CatalogueRow } from "#core/types/catalogue-row.type";
 export type { FormulaResult } from "#core/types/formula-result.type";
 export type { FormulaTerm } from "#core/types/formula-term.type";
 export type { ItemPrice } from "#core/types/item-price.type";
