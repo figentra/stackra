@@ -1,0 +1,42 @@
+/**
+ * Stackra file contract:
+ * Purpose: `MemoryPageReaderDriver`, the in-process `PageReader`: pages are fixed HTML by URL, read through the same
+ *          `parsePage` as the HTTP driver, for tests, evals and local runs.
+ * Boundary: no network. A URL it does not hold is `Unreachable`; every page it holds reads with status 200 and no text
+ *           limit. It applies no egress check: the URLs are the test's own.
+ * Runtime: isomorphic
+ * Governing contract: ADR 0450 (decision 1); STA-904 (page reader).
+ */
+import { Driver } from "@stackra/container";
+
+import { PageReadRefusal } from "#contracts/enums/page-read-refusal.enum";
+import { PageReader } from "#contracts/ports/page-reader.port";
+import type { PageReadResult } from "#contracts/types/page-read-result.type";
+import { parsePage } from "#core/functions/parse-page.function";
+
+/**
+ * Reads pages from memory.
+ *
+ * @example
+ * const pages = new MemoryPageReaderDriver({ "https://shop.example.com/": "<title>Shop</title>" });
+ * await pages.read("https://shop.example.com/"); // { ok: true, page: { title: "Shop", ... } }
+ */
+export class MemoryPageReaderDriver extends Driver(PageReader) {
+  /** The HTML by URL. */
+  private readonly pages: ReadonlyMap<string, string>;
+
+  /**
+   * @param pages - the HTML of each URL the driver serves.
+   */
+  constructor(pages: Readonly<Record<string, string>> = {}) {
+    super();
+    this.pages = new Map(Object.entries(pages));
+  }
+
+  /** See `PageReader.read`. */
+  async read(url: string): Promise<PageReadResult> {
+    const html = this.pages.get(url);
+    if (html === undefined) return { ok: false, refusal: PageReadRefusal.Unreachable };
+    return { ok: true, page: Object.freeze({ url, status: 200, ...parsePage(html, url) }) };
+  }
+}

@@ -1,12 +1,14 @@
 /**
  * Stackra file contract:
- * Purpose: Stand-in barrel: the `./contracts` entry of @stackra/ai (the agent runtime's ports, the run vocabulary and
- *          the records the ports exchange) until `stackra gen` writes the entry barrels (STA-339).
+ * Purpose: Stand-in barrel: the `./contracts` entry of @stackra/ai (the agent runtime's ports, the run vocabulary,
+ *          the records the ports exchange, and the `PageReader` port with its reading, hints and refusals) until
+ *          `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. The leaf entry: it imports no other entry of this package
  *           (ADR 0294 decision 15).
  * Runtime: isomorphic
- * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision; STA-781.
+ * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision; STA-781; ADR 0450 (page reader).
  */
+export { PageReadRefusal } from "#contracts/enums/page-read-refusal.enum";
 export { RunApprovalStatus } from "#contracts/enums/run-approval-status.enum";
 export { RunStatus } from "#contracts/enums/run-status.enum";
 export { ToolCallOutcome } from "#contracts/enums/tool-call-outcome.enum";
@@ -14,10 +16,14 @@ export { AgentModels } from "#contracts/ports/agent-models.port";
 export { AgentQueue } from "#contracts/ports/agent-queue.port";
 export { ConversationStore } from "#contracts/ports/conversation-store.port";
 export { InstructionSource } from "#contracts/ports/instruction-source.port";
+export { PageReader } from "#contracts/ports/page-reader.port";
 export { RunStore } from "#contracts/ports/run-store.port";
 export { ToolDispatcher } from "#contracts/ports/tool-dispatcher.port";
 export type { AgentTool } from "#contracts/types/agent-tool.type";
 export type { ConversationRecord } from "#contracts/types/conversation-record.type";
+export type { PageReadResult } from "#contracts/types/page-read-result.type";
+export type { PageReading } from "#contracts/types/page-reading.type";
+export type { ProductHint } from "#contracts/types/product-hint.type";
 export type { RecordScope } from "#contracts/types/record-scope.type";
 export type { RunApprovalRecord } from "#contracts/types/run-approval-record.type";
 export type { RunRecord } from "#contracts/types/run-record.type";

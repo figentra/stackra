@@ -4,18 +4,22 @@
  *          the entry barrels (STA-339): the kinds, the tool-table vocabulary, `decide` and `retrieve`, the approval-mode
  *          resolver with the permission matrix, the model router, the context allow-list and redaction, budgets,
  *          guardrails, evals and intents, the `ModelProviders` token, and the agent runtime (`Agent`, `Promptable`,
- *          `AgentRuntime`, the memory stores).
+ *          `AgentRuntime`, the memory stores), and the page reader drivers (memory, egress-bounded HTTP) with
+ *          `checkEgress` and `parsePage`.
  * Boundary: names each re-export and declares nothing. The one entry serves the module's `ai/` group, the generated
  *           tool table and the service that calls a model.
  * Runtime: isomorphic
- * Governing contract: ADR 0294 (decision 15); ADR 0127 2026-10-24 note; the STA-347 stand-in barrel decision; ADR 0360.
+ * Governing contract: ADR 0294 (decision 15); ADR 0127 2026-10-24 note; the STA-347 stand-in barrel decision; ADR 0360;
+ *                     ADR 0450.
  */
 export { Agent } from "#core/bases/agent.base";
 export { Facts } from "#core/bases/facts.base";
 export { Prompt } from "#core/bases/prompt.base";
 export { Promptable } from "#core/bases/promptable.base";
 export { Skill } from "#core/bases/skill.base";
+export { HttpPageReaderDriver } from "#core/drivers/http-page-reader.driver";
 export { MemoryConversationStoreDriver } from "#core/drivers/memory-conversation-store.driver";
+export { MemoryPageReaderDriver } from "#core/drivers/memory-page-reader.driver";
 export { MemoryRunStoreDriver } from "#core/drivers/memory-run-store.driver";
 export { ActionPermission } from "#core/enums/action-permission.enum";
 export { ApprovalMode } from "#core/enums/approval-mode.enum";
@@ -27,7 +31,9 @@ export { RunCompleted } from "#core/events/run-completed.event";
 export { allowFields } from "#core/functions/allow-fields.function";
 export { approvalFor } from "#core/functions/approval-for.function";
 export { checkBudget } from "#core/functions/check-budget.function";
+export { checkEgress } from "#core/functions/check-egress.function";
 export { decide } from "#core/functions/decide.function";
+export { parsePage } from "#core/functions/parse-page.function";
 export { redact } from "#core/functions/redact.function";
 export { resolveApproval } from "#core/functions/resolve-approval.function";
 export { resolveModel } from "#core/functions/resolve-model.function";
@@ -65,6 +71,7 @@ export type { Guardrail } from "#core/types/guardrail.type";
 export type { Intent } from "#core/types/intent.type";
 export type { ModelProviderDriver } from "#core/types/model-provider-driver.type";
 export type { ModelRoute } from "#core/types/model-route.type";
+export type { PageReaderPolicy } from "#core/types/page-reader-policy.type";
 export type { PendingApproval } from "#core/types/pending-approval.type";
 export type { PromptCall } from "#core/types/prompt-call.type";
 export type { PromptClass } from "#core/types/prompt-class.type";

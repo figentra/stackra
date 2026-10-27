@@ -33,6 +33,7 @@ import type {
   Intent,
   ModelProviderDriver,
   ModelRoute,
+  PageReaderPolicy,
   PromptClass,
   PromptOptions,
   RedactionRule,
@@ -60,7 +61,9 @@ describe("@stackra/ai", () => {
       "ApprovalRequested",
       "ApprovalResolved",
       "Facts",
+      "HttpPageReaderDriver",
       "MemoryConversationStoreDriver",
+      "MemoryPageReaderDriver",
       "MemoryRunStoreDriver",
       "ModelProviders",
       "Prompt",
@@ -71,7 +74,9 @@ describe("@stackra/ai", () => {
       "allowFields",
       "approvalFor",
       "checkBudget",
+      "checkEgress",
       "decide",
+      "parsePage",
       "redact",
       "resolveApproval",
       "resolveModel",
@@ -133,6 +138,11 @@ describe("@stackra/ai", () => {
     expectTypeOf<EvalCase<string, boolean>["input"]>().toEqualTypeOf<string>();
     expectTypeOf<Intent["phrases"]>().toEqualTypeOf<readonly string[]>();
     expectTypeOf<RouteIntentOptions["instructions"]>().toEqualTypeOf<string | undefined>();
+  });
+
+  it("types the page reader policy", () => {
+    expectTypeOf<PageReaderPolicy["allowHosts"]>().toEqualTypeOf<readonly string[] | undefined>();
+    expectTypeOf<PageReaderPolicy["maxBytes"]>().toEqualTypeOf<number>();
   });
 
   it("resolves the type exports", () => {

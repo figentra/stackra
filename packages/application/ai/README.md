@@ -1,3 +1,11 @@
+<!--
+Stackra file contract:
+Purpose: the README of @stackra/ai: the AI kinds, the tool-table vocabulary, decide and retrieve, approvals, routing, the agent runtime, the page reader and the events.
+Boundary: documentation only; the rules for agents are in AGENTS.md.
+Runtime: none (Markdown)
+Governing contract: ADR 0100, ADR 0155, ADR 0294, ADR 0360, ADR 0399; ADR 0450.
+-->
+
 # @stackra/ai
 
 The AI kinds of a module's `ai/` group and the vocabulary of the MCP tool table gen writes, plus `decide()`, one
@@ -10,25 +18,27 @@ the one MCP gateway in the `ai` service serves it.
 
 ## What is here
 
-| Symbol                                                            | Use                                                                                                         |
-| ----------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| `Prompt`, `Prompt({ version })`                                   | kind base of a versioned MCP prompt in `ai/<name>.prompt.ts`                                                |
-| `Skill({ tools })`                                                | kind base of an agent skill in `ai/<name>.skill.ts`; `examples` field typed `SkillExample`                  |
-| `Facts<M>`                                                        | kind base of the facts about one record in `ai/<name>.facts.ts`; `provide(id, ctx)`                         |
-| `FactsContext`, `ContextFacts`                                    | types: `provide`'s context (`actor`, `locale`, `authorize`, `money`) and result                             |
-| `ToolSource`                                                      | `Query`, `Action`: what a tool row of `#stackra/ai` projects                                                |
-| `Approval`, `approvalFor(risk)`                                   | `Confirm` (L2), `NamedApprover` (L3, L4): the default human gate of an agent's call                         |
-| `retrieve(query, { index, embedder, topK, scope })`               | top-k passages (`text`, `source`, `score`) for a `Facts` class, over the `VectorIndex` and `Embedder` ports |
-| `decide({ model, prompt, ... })`                                  | one of `choices`, a `score` in a range, or `yesNo` as a boolean, typed                                      |
-| `PromptClass`, `SkillClass`, ...                                  | types: the class types and options of the kinds above                                                       |
-| `resolveApproval(request, { floor, policy, preferences })`        | the approval-mode resolver of ADR 0360 in its fixed order; `ApprovalMode` names the deciding mode           |
-| `routeModel(request, table)`, `resolveModel(choice, drivers)`     | the model router by task, region and data class, and the bound provider driver's model instance             |
-| `allowFields(facts, dataClass, allowList)`, `redact(text, rules)` | the field allow-list per data class and the redaction rules, before context reaches a model                 |
-| `checkBudget(used, requested, budget)`                            | the meter check: refuse a run over its token budget, warn at the budget's share                             |
-| `runGuardrails(layers, text, stage)`                              | the layered guardrail check over bound `Guardrail` drivers; the first block wins                            |
-| `runEvals(cases, subject)`                                        | an eval suite run, for CI on AI SDK's mock or recorded models                                               |
-| `routeIntent(text, intents, { model })`                           | the intent router: a phrase match, else one `decide` among the keys                                         |
-| `ApprovalRequested`, `ApprovalResolved`, `RunCompleted`           | the three integration events of ADR 0100 decision 11 (`ai.approval.requested.v1` and the others)            |
+| Symbol                                                                         | Use                                                                                                         |
+| ------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------- |
+| `Prompt`, `Prompt({ version })`                                                | kind base of a versioned MCP prompt in `ai/<name>.prompt.ts`                                                |
+| `Skill({ tools })`                                                             | kind base of an agent skill in `ai/<name>.skill.ts`; `examples` field typed `SkillExample`                  |
+| `Facts<M>`                                                                     | kind base of the facts about one record in `ai/<name>.facts.ts`; `provide(id, ctx)`                         |
+| `FactsContext`, `ContextFacts`                                                 | types: `provide`'s context (`actor`, `locale`, `authorize`, `money`) and result                             |
+| `ToolSource`                                                                   | `Query`, `Action`: what a tool row of `#stackra/ai` projects                                                |
+| `Approval`, `approvalFor(risk)`                                                | `Confirm` (L2), `NamedApprover` (L3, L4): the default human gate of an agent's call                         |
+| `retrieve(query, { index, embedder, topK, scope })`                            | top-k passages (`text`, `source`, `score`) for a `Facts` class, over the `VectorIndex` and `Embedder` ports |
+| `decide({ model, prompt, ... })`                                               | one of `choices`, a `score` in a range, or `yesNo` as a boolean, typed                                      |
+| `PromptClass`, `SkillClass`, ...                                               | types: the class types and options of the kinds above                                                       |
+| `resolveApproval(request, { floor, policy, preferences })`                     | the approval-mode resolver of ADR 0360 in its fixed order; `ApprovalMode` names the deciding mode           |
+| `routeModel(request, table)`, `resolveModel(choice, drivers)`                  | the model router by task, region and data class, and the bound provider driver's model instance             |
+| `allowFields(facts, dataClass, allowList)`, `redact(text, rules)`              | the field allow-list per data class and the redaction rules, before context reaches a model                 |
+| `checkBudget(used, requested, budget)`                                         | the meter check: refuse a run over its token budget, warn at the budget's share                             |
+| `runGuardrails(layers, text, stage)`                                           | the layered guardrail check over bound `Guardrail` drivers; the first block wins                            |
+| `runEvals(cases, subject)`                                                     | an eval suite run, for CI on AI SDK's mock or recorded models                                               |
+| `routeIntent(text, intents, { model })`                                        | the intent router: a phrase match, else one `decide` among the keys                                         |
+| `PageReader` (`./contracts`), `MemoryPageReaderDriver`, `HttpPageReaderDriver` | read one URL into text and product hints (ADR 0450)                                                         |
+| `checkEgress(url, policy)`, `parsePage(html, baseUrl, maxChars)`               | the page reader's egress check and its HTML extraction, shared by both drivers                              |
+| `ApprovalRequested`, `ApprovalResolved`, `RunCompleted`                        | the three integration events of ADR 0100 decision 11 (`ai.approval.requested.v1` and the others)            |
 
 ## Retrieval for Facts
 
@@ -166,6 +176,26 @@ const isComplaint = await decide({ model, prompt: `Is this a complaint? ${text}`
 secret name resolved at run time). A model id string is refused: AI SDK would resolve it through its hosted gateway,
 an LLM proxy ADR 0155 rules out. An answer outside the choices or the range rejects with AI SDK's
 `NoObjectGeneratedError`.
+
+## Page reader
+
+`PageReader` (`ai.PageReader`, ADR 0450) reads one web page: `read(url)` returns the `PageReading` (final URL, status,
+title, language, readable text cut at the policy's limit, and `ProductHint`s from schema.org `Product` JSON-LD) or a
+`PageReadRefusal` code. It does not crawl, run scripts, send cookies or store anything.
+
+```ts
+const pages = new HttpPageReaderDriver(settings.pageReader, egressFetch);
+const result = await pages.read("https://shop.example.com/products/abaya");
+if (result.ok) draft(result.page.products); // [{ name: "Black Abaya", price: "129.00", currency: "SAR", ... }]
+```
+
+- Every URL and redirect target passes `checkEgress`: https, the default port, no credentials, a public host name
+  (no IP literal, `localhost`, single label or private suffix), then the policy's deny and allow lists.
+- `PageReaderPolicy` (`maxBytes`, `timeoutMs`, `maxRedirects`, `maxTextChars`, `userAgent`, `allowHosts`, `denyHosts`)
+  comes from settings; nothing here sets a default. The check reads the URL only, so the service passes a fetch that
+  goes through its egress proxy, which cannot reach private addresses.
+- A reading is untrusted: hand it to a model as data, under the guardrails.
+- `MemoryPageReaderDriver({ [url]: html })` serves tests and evals through the same `parsePage`.
 
 ## Events
 
