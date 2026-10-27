@@ -77,6 +77,9 @@
       // component folder's index.ts is its public surface (ADR 0294 decision 14).
       "entry": ["src/main.{ts,tsx}", "src/*.module.ts", "src/components/*/index.ts"],
       "project": ["src/**/*.{ts,tsx,css}"],
+      // @stackra/app: imported only by gen's `.stackra/entry/<runtime>.ts` (gen refuses generated_dependency_missing
+      // without it), which is gen output that does not exist when knip runs.
+      "ignoreDependencies": ["@stackra/app"],
     },
     "apps/mobile": {
       // The design-system review area is reached through `__DEV__ ? require(...)` in the tab navigator, which knip

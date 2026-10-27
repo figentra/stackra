@@ -79,7 +79,6 @@
     "@stackra/errors": "workspace:*"
   },
   "devDependencies": {
-    "@stackra/container": "workspace:*",
     "@stackra/testing": "workspace:*",
     "@stackra/tsdown-config": "workspace:*",
     "@stackra/typescript-config": "workspace:*",
