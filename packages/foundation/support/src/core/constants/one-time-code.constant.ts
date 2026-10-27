@@ -7,12 +7,13 @@
  *           with a compare-and-set. Code length, lifetime and attempts are rule-set or settings values the caller
  *           passes (`@academorix/safeguarding-rules`), never defaults here. The pepper is the caller's key source.
  * Runtime: isomorphic
- * Governing contract: ADR 0305 (one declaration per file); ADR 0173 (nobody reads a value); ACA-538; STA-934.
+ * Governing contract: ADR 0305 (one declaration per file); ADR 0173 (nobody reads a value); ACA-538; STA-934;
+ *                     STA-1383 (record renamed `KeyedOneTimeCodeRecord`).
  */
 import { base64url } from "#core/constants/base64url.constant";
 import { hmacKey } from "#core/functions/hmac-key.function";
 import type { OneTimeCodeCheck } from "#core/types/one-time-code-check.type";
-import type { OneTimeCodeRecord } from "#core/types/one-time-code-record.type";
+import type { KeyedOneTimeCodeRecord } from "#core/types/keyed-one-time-code-record.type";
 import type { SigningKeySource } from "#core/types/signing-key-source.type";
 
 const DOMAIN = "stackra.one-time-code.v1\n";
@@ -64,7 +65,7 @@ export const oneTimeCode = Object.freeze({
       readonly expiresAt: Date;
       readonly maxAttempts: number;
     },
-  ): Promise<{ readonly code: string; readonly record: OneTimeCodeRecord }> {
+  ): Promise<{ readonly code: string; readonly record: KeyedOneTimeCodeRecord }> {
     checkPurpose(options.purpose);
     if (!Number.isInteger(options.length) || options.length < 4 || options.length > 12)
       throw new RangeError("oneTimeCode: length must be a whole number from 4 to 12");
@@ -97,7 +98,7 @@ export const oneTimeCode = Object.freeze({
    */
   async verify(
     keys: SigningKeySource,
-    record: OneTimeCodeRecord,
+    record: KeyedOneTimeCodeRecord,
     code: string,
     options: { readonly purpose: string; readonly now: Date },
   ): Promise<OneTimeCodeCheck> {

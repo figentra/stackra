@@ -29,7 +29,7 @@ export { restrictedGtin } from "#core/functions/restricted-gtin.function";
 export { snakeCase } from "#core/functions/snake-case.function";
 export type { Code128Symbol } from "#core/types/code128-symbol.type";
 export type { OneTimeCodeCheck } from "#core/types/one-time-code-check.type";
-export type { OneTimeCodeRecord } from "#core/types/one-time-code-record.type";
+export type { KeyedOneTimeCodeRecord } from "#core/types/keyed-one-time-code-record.type";
 export type { QuantityRounding } from "#core/types/quantity-rounding.type";
 export type { QuantityUnit } from "#core/types/quantity-unit.type";
 export type { Rational } from "#core/types/rational.type";
