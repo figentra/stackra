@@ -4,6 +4,11 @@
       "necessary": "Notwendig",
       "analytics": "Produktanalyse",
       "crash_replay": "Absturzaufzeichnungen"
+    },
+    "consent_verification_method": {
+      "card_check": "Kartenprüfung",
+      "signed_form": "Unterschriebenes Formular",
+      "guardian_login": "Anmeldung des Erziehungsberechtigten"
     }
   },
   "ui": {

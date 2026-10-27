@@ -3,7 +3,7 @@
  * Purpose: unit tests of `RedeemPointsWorkflow` on the native engine: the run answers at once with the debit when it
  *          parks on the confirmation; a confirmed redemption keeps its debit past the wait; an unconfirmed one is
  *          credited back under the revert reference when the wait times out; a `redeemVerify` extension may lower the
- *          points asked for.
+ *          points asked for; the quote converts and caps at the scope's point value and redemption cap settings.
  * Boundary: test only; the engine runs on the memory journal and lock driver with a clock the test moves, over a real
  *           `LoyaltyService`, the memory ledger, the members fake, a stand-in extension point and a stand-in outbox
  *           that keeps what the debit step writes (`points.redeemed` is an integration event, ADR 0454). No database. The sample's
@@ -15,11 +15,11 @@
  *                     (decision 18).
  */
 import type { ExtensionContext, Resolver } from "@stackra/actions";
-import { buildConfig } from "@stackra/config";
 import type { AnyClass } from "@stackra/container";
 import type { Clock } from "@stackra/contracts";
 import { EventOutbox, type RecordedEvent } from "@stackra/events/contracts";
 import { actors } from "@stackra/iam/testing";
+import { fakeSettings } from "@stackra/settings/testing";
 import { Locks, MemoryLockDriver } from "@stackra/locking";
 import { describe, expect, it } from "@stackra/testing";
 import {
@@ -29,13 +29,13 @@ import {
 } from "@stackra/workflow";
 import type { RunOrigin } from "@stackra/workflow";
 
-import { LoyaltyKitConfig } from "#config/loyalty-kit.config";
 import { EntryKind } from "#contracts/enums/entry-kind.enum";
 import { MemoryLoyaltyLedgerDriver } from "#core/drivers/memory-loyalty-ledger.driver";
 import { memberId } from "#core/functions/member-id.function";
 import { LoyaltyService } from "#core/services/loyalty.service";
 import { PointsRedeemed } from "#node/events/points-redeemed.event";
 import type { LoyaltyKitExtensionPoint } from "#node/extensions/loyalty-kit.extension-point";
+import { LoyaltyKitSettings } from "#node/loyalty-kit.settings";
 import { RedeemPointsInput } from "#node/schemas/redeem-points-input.schema";
 import { RedeemPointsWorkflow } from "#node/workflows/redeem-points.workflow";
 import { RedemptionConfirmed } from "#node/workflows/redemption-confirmed.signal";
@@ -72,8 +72,14 @@ const passThrough = async (input: RedeemPointsInput, _ctx: ExtensionContext) => 
 const steps = (run: { readonly steps: readonly { name: string; status: string }[] } | undefined) =>
   run?.steps.map((step) => `${step.name}:${step.status}`);
 
-/** An engine running the workflow for a customer holding 1 000 points, with `redeemVerify` as the slot. */
-async function engineWith(redeemVerify = passThrough) {
+/**
+ * An engine running the workflow for a customer holding 1 000 points, with `redeemVerify` as the slot and the scope's
+ * redemption rates (the defaults unless given).
+ */
+async function engineWith(
+  redeemVerify = passThrough,
+  rates: { pointValueMinor?: number; maxRedeemPercent?: number } = {},
+) {
   const clock = {
     at: START,
     now(): Date {
@@ -82,14 +88,13 @@ async function engineWith(redeemVerify = passThrough) {
   } as Clock & { at: Date };
   const ledger = new MemoryLoyaltyLedgerDriver();
   await ledger.append(pointsEntry.build({ memberId: member, points: 1_000, at: plus(-60) }));
-  const loyalty = new LoyaltyService(
+  const loyalty = new LoyaltyService(ledger, LoyaltyMembersFake.with([CUSTOMER]));
+  const workflow = new RedeemPointsWorkflow(
+    loyalty,
     ledger,
-    LoyaltyMembersFake.with([CUSTOMER]),
-    buildConfig(LoyaltyKitConfig, { values: { ledger: "memory" } }),
+    { redeemVerify } as unknown as LoyaltyKitExtensionPoint,
+    fakeSettings([[LoyaltyKitSettings, rates]]),
   );
-  const workflow = new RedeemPointsWorkflow(loyalty, ledger, {
-    redeemVerify,
-  } as unknown as LoyaltyKitExtensionPoint);
   const runner = new NativeWorkflowRunnerDriver(
     new MemoryWorkflowJournalDriver(),
     new Locks(new MemoryLockDriver(clock), clock),
@@ -175,5 +180,15 @@ describe("RedeemPointsWorkflow", () => {
       kind: EntryKind.Redeem,
       points: -100,
     });
+  });
+
+  it("quotes at the scope's point value and redemption cap", async () => {
+    const { runner } = await engineWith(passThrough, { pointValueMinor: 2, maxRedeemPercent: 1 });
+    const input = RedeemPointsInput.create({ points: 300, reference: "ord_4", totalMinor: 10_000 });
+
+    // 1 % of 10 000 is 100 minor units, which at 2 a point is 50 points
+    const output = await runner.start(RedeemPointsWorkflow, input, ORIGIN);
+
+    expect({ ...(output as object) }).toEqual({ points: 50, amountMinor: 100, balance: 950 });
   });
 });

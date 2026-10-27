@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `LOYALTY_KIT_CONFIG_SCHEMA` (`LoyaltyKitConfig$`): its defaults equal `LoyaltyKitOptions`'
- *          initializers, and it refuses a zero point value, a non-positive earn rate and an unknown named ledger.
+ *          initializers (the ledger and the named ledgers only), and it refuses an unknown named ledger.
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0294 (decision 26).
@@ -15,9 +15,6 @@ describe("LOYALTY_KIT_CONFIG_SCHEMA", () => {
     expect(LOYALTY_KIT_CONFIG_SCHEMA.parse({})).toEqual({
       ledger: "postgres",
       ledgers: {},
-      pointValueMinor: 1,
-      earnPerMinor: 0.01,
-      maxRedeemPercent: 50,
     });
   });
 
@@ -28,8 +25,7 @@ describe("LOYALTY_KIT_CONFIG_SCHEMA", () => {
     expect(() => LOYALTY_KIT_CONFIG_SCHEMA.parse({ ledgers: { primary: "redis" } })).toThrow();
   });
 
-  it("refuses a zero point value and a non-positive earn rate", () => {
-    expect(() => LOYALTY_KIT_CONFIG_SCHEMA.parse({ pointValueMinor: 0 })).toThrow();
-    expect(() => LOYALTY_KIT_CONFIG_SCHEMA.parse({ earnPerMinor: 0 })).toThrow();
+  it("carries no business value: rates and caps are settings", () => {
+    expect(Object.keys(LOYALTY_KIT_CONFIG_SCHEMA.shape).sort()).toEqual(["ledger", "ledgers"]);
   });
 });

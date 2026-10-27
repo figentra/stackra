@@ -4,18 +4,26 @@
  *          current version is accepted, a refusal or an older version never counts, an acceptance records the version,
  *          the hash and the channel, and a consent for another is recorded with the authority's relationship or
  *          refused when the authority knows none; the evidence trail lists every answer for a subject, oldest first,
- *          with who gave it, on whose behalf, the version and when, narrowed to one document on request.
- * Boundary: test only; a fixed clock and an authority that knows one guardian link.
+ *          with who gave it, on whose behalf, the version and when, narrowed to one document on request; a consent the
+ *          market pack wants verified is recorded with the method and the verifier's reference only when the verifier
+ *          passes it, and refused, writing nothing, when it does not or when the kit's `none` verifier runs.
+ * Boundary: test only; a fixed clock, an authority that knows one guardian link and a verifier that passes one card
+ *           check.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; owner round 3 #29; OS-284; ADR 0454 (decision 5).
+ * Governing contract: ADR 0022; owner round 3 #29; OS-284; ADR 0454 (decision 5); STA-1323.
  */
 import { Driver } from "@stackra/container";
 import { Clock, type PublicId } from "@stackra/contracts";
 import { beforeEach, describe, expect, it } from "@stackra/testing";
 
+import { ConsentVerificationMethod } from "#contracts/enums/consent-verification-method.enum";
 import { ConsentAuthority } from "#contracts/ports/consent-authority.port";
+import { ConsentVerifier } from "#contracts/ports/consent-verifier.port";
+import type { ConsentVerificationRequest } from "#contracts/types/consent-verification-request.type";
 import { MemoryConsentProofStoreDriver } from "#core/drivers/memory-consent-proof-store.driver";
+import { NoneConsentVerifierDriver } from "#core/drivers/none-consent-verifier.driver";
 import { ConsentAuthorityMissingError } from "#core/errors/consent-authority-missing.error";
+import { ConsentNotVerifiedError } from "#core/errors/consent-not-verified.error";
 import { ConsentProofService } from "#core/services/consent-proof.service";
 import type { TermsDocument } from "#core/types/terms-document.type";
 
@@ -36,6 +44,17 @@ class OneLinkAuthorityDriver extends Driver(ConsentAuthority) {
     return givenBy === PARENT && subject === CHILD && document === "photos"
       ? "guardian"
       : undefined;
+  }
+}
+
+/** Passes one card check, `auth_ok`, for the parent; answers its own reference. */
+class OneCardCheckVerifierDriver extends Driver(ConsentVerifier) {
+  async verify(request: ConsentVerificationRequest) {
+    return request.method === ConsentVerificationMethod.CardCheck &&
+      request.givenBy === PARENT &&
+      request.evidence === "auth_ok"
+      ? { verified: true, reference: "chk_1" }
+      : { verified: false };
   }
 }
 
@@ -61,6 +80,7 @@ describe("ConsentProofService", () => {
       new MemoryConsentProofStoreDriver(),
       new OneLinkAuthorityDriver(),
       new FixedClockDriver(),
+      new OneCardCheckVerifierDriver(),
     );
   });
 
@@ -125,5 +145,45 @@ describe("ConsentProofService", () => {
       "photos",
     ]);
     expect(await proofs.evidence(STRANGER)).toEqual([]);
+  });
+
+  it("records a verified consent for another with the method and the verifier's reference", async () => {
+    const card = { method: ConsentVerificationMethod.CardCheck, evidence: "auth_ok" };
+    const proof = await proofs.answerFor(CHILD, PARENT, PHOTOS, true, "kiosk", card);
+    expect(proof).toMatchObject({
+      relationship: "guardian",
+      verificationMethod: "card_check",
+      verificationReference: "chk_1",
+    });
+    expect((await proofs.evidence(CHILD))[0]?.verificationMethod).toBe("card_check");
+  });
+
+  it("refuses a consent whose verification fails, and records nothing", async () => {
+    const failed = { method: ConsentVerificationMethod.CardCheck, evidence: "auth_declined" };
+    await expect(
+      proofs.answerFor(CHILD, PARENT, PHOTOS, true, undefined, failed),
+    ).rejects.toBeInstanceOf(ConsentNotVerifiedError);
+    const form = { method: ConsentVerificationMethod.SignedForm, evidence: "auth_ok" };
+    await expect(
+      proofs.answerFor(CHILD, PARENT, PHOTOS, true, undefined, form),
+    ).rejects.toBeInstanceOf(ConsentNotVerifiedError);
+    expect(await proofs.evidence(CHILD)).toEqual([]);
+  });
+
+  it("fails closed under the kit's none verifier", async () => {
+    const closed = new ConsentProofService(
+      new MemoryConsentProofStoreDriver(),
+      new OneLinkAuthorityDriver(),
+      new FixedClockDriver(),
+      new NoneConsentVerifierDriver(),
+    );
+    const card = { method: ConsentVerificationMethod.CardCheck, evidence: "auth_ok" };
+    await expect(
+      closed.answerFor(CHILD, PARENT, PHOTOS, true, undefined, card),
+    ).rejects.toBeInstanceOf(ConsentNotVerifiedError);
+    // with no method named, the authority alone suffices, as before
+    await expect(closed.answerFor(CHILD, PARENT, PHOTOS, true)).resolves.toMatchObject({
+      relationship: "guardian",
+    });
   });
 });

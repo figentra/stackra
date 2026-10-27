@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `RedeemPointsWorkflow`, the steps behind `loyalty_kit.points.redeem`: quote (verify included), debit,
- *          confirm. The debit is undone (credited back) when confirmation never comes.
+ *          confirm. The debit is undone (credited back) when confirmation never comes. The quote converts and caps at
+ *          the scope's `pointValueMinor` and `maxRedeemPercent` settings (STA-1323).
  * Boundary: the public async methods are the steps, run in declaration order; `undoDebit` compensates `debit`; `output`
  *           maps the results to the action's output. Only `confirm` takes `@Step`, because it waits for a signal. Each
  *           step is its own transaction and is idempotent on the run. The run parks before `confirm` until
@@ -13,8 +14,9 @@
  * Runtime: node
  * Governing contract: ADR 0294 (decisions 6, 16 and 18); ADR 0101; ADR 0151; ADR 0152 (decision 1: `waitFor`); ADR
  *                     0265 as amended (the owner runs its `before` slot); ADR 0454 (decision 4: `points.redeemed` is an
- *                     integration event).
+ *                     integration event); STA-1323 (the redemption rates are settings).
  */
+import type { SettingsReader } from "@stackra/settings";
 import { type Run, Step, type StepContext, Workflow } from "@stackra/workflow";
 
 import { EntryKind } from "#contracts/enums/entry-kind.enum";
@@ -24,6 +26,7 @@ import { memberId } from "#core/functions/member-id.function";
 import type { LoyaltyService } from "#core/services/loyalty.service";
 import { PointsRedeemed } from "#node/events/points-redeemed.event";
 import type { LoyaltyKitExtensionPoint } from "#node/extensions/loyalty-kit.extension-point";
+import { LoyaltyKitSettings } from "#node/loyalty-kit.settings";
 import { QuotedRedemption } from "#node/schemas/quoted-redemption.schema";
 import type { RedeemPointsInput } from "#node/schemas/redeem-points-input.schema";
 import { RedeemPointsOutput } from "#node/schemas/redeem-points-output.schema";
@@ -45,20 +48,26 @@ export class RedeemPointsWorkflow extends Workflow<RedeemPointsInput>({ timeout:
   /** The kit's extension point, whose `redeemVerify` slot runs before the quote. */
   private readonly extensions: LoyaltyKitExtensionPoint;
 
+  /** The scope's programme: the point value and the redemption cap the quote uses. */
+  private readonly settings: SettingsReader;
+
   /**
    * @param loyalty - quotes and debits.
    * @param ledger - credits the points back when the debit is undone.
    * @param extensions - runs the `redeemVerify` slot.
+   * @param settings - the scope's redemption rates, read per quote.
    */
   constructor(
     loyalty: LoyaltyService,
     ledger: LoyaltyLedger,
     extensions: LoyaltyKitExtensionPoint,
+    settings: SettingsReader,
   ) {
     super();
     this.loyalty = loyalty;
     this.ledger = ledger;
     this.extensions = extensions;
+    this.settings = settings;
   }
 
   /**
@@ -72,7 +81,8 @@ export class RedeemPointsWorkflow extends Workflow<RedeemPointsInput>({ timeout:
     const member = memberId((ctx.actor.onBehalfOf ?? ctx.actor).id);
     const [input] = await this.extensions.redeemVerify(run.input, ctx);
     await this.loyalty.assertCanRedeem(member, input.points);
-    const quote = await this.loyalty.quote(member, input.points, input.totalMinor);
+    const rates = await this.settings.get(LoyaltyKitSettings);
+    const quote = await this.loyalty.quote(member, input.points, input.totalMinor, rates);
     return QuotedRedemption.create({
       memberId: member,
       points: quote.points,

@@ -3,7 +3,7 @@ Stackra file contract:
 Purpose: the agent rules of @stackra/loyalty-kit: where code goes, entries, the kit's invariants, PII.
 Boundary: documentation only; the user-facing guide is README.md.
 Runtime: none (Markdown)
-Governing contract: ADR 0294, ADR 0305; ADR 0454; STA-804.
+Governing contract: ADR 0294, ADR 0305; ADR 0454; STA-804; STA-1323.
 -->
 
 # AGENTS — @stackra/loyalty-kit
@@ -43,17 +43,22 @@ model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./node`, `./reac
   check and the write one step per member. `expire` is cut at zero in every driver; never add an expiry or debit path
   that skips the floor. In the Postgres driver every journal call states its floor (`null` for `append`, `0` for
   `debit` and `expire`).
-- A programme is the settings group at a scope (ADR 0454): both earn paths read `isActive` and the spend rate is the
-  `earnPerMinor` setting; never read the earn rate from config on the server.
+- A programme is the settings group at a scope (ADR 0454): both earn paths read `isActive`; the earn rate, the point
+  value and the redemption cap are the `earnPerMinor`, `pointValueMinor` and `maxRedeemPercent` settings (STA-1323).
+  Config holds none of them and `LoyaltyService` takes them as arguments; never add a config fallback for a rate.
 - `PartiesLoyaltyMembersDriver` stays abstract and types the parties client by the one call it makes
   (`person.get`); never add an OS package dependency for it, and never treat a failure other than `not_found` as
   "not a member" (a redemption fails closed).
 - Tier rules live behind `LoyaltyTierPolicy` (the `threshold` driver by default); the listener only applies the answer
   and only raises a tier. Never put a tier rule in the listener.
-- Every balance move records an integration event (`points.earned`, `points.redeemed`, `points.expired`); a new move
-  gets one too, named `<model>.<verb>` so gen writes `loyalty_kit.<model>.<verb>.v<n>`.
-- `AccountService.earn` is the one spend-based earn path (enroll, `earnAdjust`, append, `points.earned`) and
-  `AccountService.earnVisit` the one visit-based (stamp card) path; never credit points another way.
+- Every balance move records an integration event (`points.earned`, `points.redeemed`, `points.expired`,
+  `points.taken_back`, `points.imported`) and drops the balance query's cache; a new move gets one too, named `<model>.<verb>` so gen writes `loyalty_kit.<model>.<verb>.v<n>`.
+- `AccountService.earn` is the one spend-based earn path (enroll, `earnAdjust`, append, `points.earned`),
+  `AccountService.earnVisit` the one visit-based (stamp card) path and `AccountService.importBalance` the one path for a
+  balance carried over from another platform (exact points, `import:` reference, `points.imported`, tier raised only);
+  never credit points another way.
+- `AccountService.takeBack` is the one way points leave for a refund: a covered `adjust` debit under `take_back:`, cut
+  at the balance, the reference marked even when nothing was taken. Never let a host append `adjust` entries.
 - Stamp counts and card sizes are settings; which visits earn is the host's rule set. Never fix either in code.
 - The tables are owned through tenancy's `BelongsToTenant` and `t.belongsToTenant()` (ADR 0323 d1 allows the use);
   declare no `tenant` identifier here (R-59). Migrations are frozen snapshots: literals only, every column

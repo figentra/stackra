@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: the consumer contract of the `./contracts` entry: the three ports and the three enums are its values, and
- *          the entry, earn, quote, tier draft and member-id types keep the shapes hosts code against.
+ *          the entry, earn, quote, redemption rates, points import, tier draft and member-id types keep the shapes hosts code against.
  * Boundary: test only; imports the stand-in barrel through its `#contracts` alias.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0294 (decision 15).
@@ -35,5 +35,12 @@ describe("@stackra/loyalty-kit/contracts", () => {
       readonly points: number;
       readonly amountMinor: number;
     }>();
+    expectTypeOf<contracts.RedemptionRates>().toEqualTypeOf<{
+      readonly pointValueMinor: number;
+      readonly maxRedeemPercent: number;
+    }>();
+    expectTypeOf<contracts.PointsImport["tier"]>().toEqualTypeOf<
+      contracts.LoyaltyTier | undefined
+    >();
   });
 });

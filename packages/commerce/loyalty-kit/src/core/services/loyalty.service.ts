@@ -4,19 +4,22 @@
  *          take off a total, and the hold, settle and release of points a purchase spends.
  * Boundary: generic maths over the `LoyaltyLedger` and `LoyaltyMembers` ports; no knowledge of orders or of any
  *           product. It never writes an earn: crediting a purchase is `AccountService.earn`, which enrolls, runs the
- *           extension chain and records the event. Exported by `LoyaltyKitModule` for hosts to inject by class.
+ *           extension chain and records the event. The earn rate, the point value and the redemption cap are the
+ *           caller's arguments, read from the scope's `LoyaltyKitSettings` (ADR 0454, STA-1323); this service reads no
+ *           config and has no fallback, so a server can never quote at a deploy-time rate. Exported by
+ *           `LoyaltyKitModule` for hosts to inject by class.
  * Runtime: isomorphic
- * Governing contract: ADR 0294 (decisions 15, 16 and 17); ADR 0220 (integer minor units); ADR 0454 (decision 2).
+ * Governing contract: ADR 0294 (decisions 15, 16 and 17); ADR 0220 (integer minor units); ADR 0454 (decision 2); STA-1323.
  */
 import { Service } from "@stackra/container";
 
-import type { LoyaltyKitConfig } from "#config/loyalty-kit.config";
 import { DebitOutcome } from "#contracts/enums/debit-outcome.enum";
 import { EntryKind } from "#contracts/enums/entry-kind.enum";
 import type { LoyaltyLedger } from "#contracts/ports/loyalty-ledger.port";
 import type { LoyaltyMembers } from "#contracts/ports/loyalty-members.port";
 import type { MemberId } from "#contracts/types/member-id.type";
 import type { RedemptionQuote } from "#contracts/types/redemption-quote.type";
+import type { RedemptionRates } from "#contracts/types/redemption-rates.type";
 import { HOLD_REFERENCE_PREFIX } from "#core/constants/hold-reference-prefix.constant";
 import { RELEASE_REFERENCE_PREFIX } from "#core/constants/release-reference-prefix.constant";
 import { SETTLE_REFERENCE_PREFIX } from "#core/constants/settle-reference-prefix.constant";
@@ -28,7 +31,8 @@ import { NotAMemberError } from "#core/errors/not-a-member.error";
  *
  * @example
  * constructor(loyalty: LoyaltyService) { super(); this.loyalty = loyalty; }
- * const { amountMinor } = await this.loyalty.quote(member, requestedPoints, runningTotalMinor);
+ * const rates = await this.settings.get(LoyaltyKitSettings);
+ * const { amountMinor } = await this.loyalty.quote(member, requestedPoints, runningTotalMinor, rates);
  */
 export class LoyaltyService extends Service {
   /** The ledger driver config `ledger` chose. */
@@ -37,19 +41,14 @@ export class LoyaltyService extends Service {
   /** The host's membership answers. */
   private readonly members: LoyaltyMembers;
 
-  /** The resolved configuration, the host's override included. */
-  private readonly config: LoyaltyKitConfig;
-
   /**
    * @param ledger - the port; the driver is chosen by config `ledger`.
    * @param members - implemented by the host, never by the kit.
-   * @param config - the resolved config class, the host's override included.
    */
-  constructor(ledger: LoyaltyLedger, members: LoyaltyMembers, config: LoyaltyKitConfig) {
+  constructor(ledger: LoyaltyLedger, members: LoyaltyMembers) {
     super();
     this.ledger = ledger;
     this.members = members;
-    this.config = config;
   }
 
   /**
@@ -57,27 +56,33 @@ export class LoyaltyService extends Service {
    * than `maxRedeemPercent` of the total, converted at `pointValueMinor`. Reads only; nothing is held.
    *
    * @param totalMinor - the amount still to pay at this point of the adjustment chain, in minor units.
+   * @param rates - the scope's point value and cap (`LoyaltyKitSettings`).
    * @returns zero points and zero amount when the member has no balance or the cap rounds to nothing.
    */
-  async quote(member: MemberId, requested: number, totalMinor: number): Promise<RedemptionQuote> {
+  async quote(
+    member: MemberId,
+    requested: number,
+    totalMinor: number,
+    rates: RedemptionRates,
+  ): Promise<RedemptionQuote> {
     const balance = await this.ledger.balance(member);
-    const capMinor = Math.floor((totalMinor * this.config.maxRedeemPercent) / 100);
+    const capMinor = Math.floor((totalMinor * rates.maxRedeemPercent) / 100);
     const points = Math.max(
       0,
-      Math.min(requested, balance, Math.floor(capMinor / this.config.pointValueMinor)),
+      Math.min(requested, balance, Math.floor(capMinor / rates.pointValueMinor)),
     );
-    return { points, amountMinor: points * this.config.pointValueMinor };
+    return { points, amountMinor: points * rates.pointValueMinor };
   }
 
   /**
    * The base points an amount earns before any extension runs: floor(amountMinor × earnPerMinor). Pure maths: no
    * ledger read, no write, no tier; `AccountService.earn` applies the tier multiplier and credits the result.
    *
-   * @param earnPerMinor - the scope's rate (the `LoyaltyKitSettings.earnPerMinor` setting, ADR 0454); config
-   *                       `earnPerMinor` only when the caller has no settings reader (a client-side preview).
+   * @param earnPerMinor - the scope's rate (the `LoyaltyKitSettings.earnPerMinor` setting, ADR 0454); a client-side
+   *                       preview passes the rate its settings read returned.
    * @returns zero for a sub-point amount.
    */
-  quoteEarn(amountMinor: number, earnPerMinor: number = this.config.earnPerMinor): number {
+  quoteEarn(amountMinor: number, earnPerMinor: number): number {
     return Math.floor(amountMinor * earnPerMinor);
   }
 
@@ -95,9 +100,9 @@ export class LoyaltyService extends Service {
     if (points > balance) throw InsufficientPointsError.create({ balance, requested: points });
   }
 
-  /** The whole points an amount of a redemption stands for, at `pointValueMinor`. */
-  pointsFor(amountMinor: number): number {
-    return Math.floor(amountMinor / this.config.pointValueMinor);
+  /** The whole points an amount of a redemption stands for, at the scope's `pointValueMinor`. */
+  pointsFor(amountMinor: number, pointValueMinor: number): number {
+    return Math.floor(amountMinor / pointValueMinor);
   }
 
   /**

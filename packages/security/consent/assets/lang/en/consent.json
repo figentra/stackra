@@ -4,6 +4,11 @@
       "necessary": "Necessary",
       "analytics": "Product analytics",
       "crash_replay": "Crash replays"
+    },
+    "consent_verification_method": {
+      "card_check": "Card check",
+      "signed_form": "Signed form",
+      "guardian_login": "Guardian sign-in"
     }
   },
   "ui": {

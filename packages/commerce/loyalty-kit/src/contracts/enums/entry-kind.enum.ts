@@ -3,7 +3,7 @@
  * Purpose: `EntryKind`, why a ledger entry exists; stored on every row and shown as a badge in the console.
  * Boundary: an `Enum.of` value plus the type of the same name, in the leaf entry. The code is the column value; the
  *           tone colours the badge. Labels are the derived i18n keys `loyalty_kit::enums.entry_kind.<code>`. `Expire`
- *           and `Adjust` are written only by the kit's own job and redemption; `Hold` and `Release` only by
+ *           and `Adjust` are written only by the kit's own job, redemption and take-back (`AccountService.takeBack`); `Hold` and `Release` only by
  *           `LoyaltyService`'s hold, settle and release. A host never appends any of them directly.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 15, 16 and 20); ADR 0231 (snake_case codes).

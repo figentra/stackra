@@ -14,11 +14,13 @@ export { CONSENT_CONFIG_SCHEMA as ConsentConfig$ } from "#core/constants/consent
 export { CookieConsentStoreDriver } from "#core/drivers/cookie-consent-store.driver";
 export { MemoryConsentProofStoreDriver } from "#core/drivers/memory-consent-proof-store.driver";
 export { MemoryConsentStoreDriver } from "#core/drivers/memory-consent-store.driver";
+export { NoneConsentVerifierDriver } from "#core/drivers/none-consent-verifier.driver";
 export { StorageConsentStoreDriver } from "#core/drivers/storage-consent-store.driver";
 export { ConsentCategory } from "#core/enums/consent-category.enum";
 export { ConsentRegime } from "#core/enums/consent-regime.enum";
 export { ConsentStatus } from "#core/enums/consent-status.enum";
 export { ConsentAuthorityMissingError } from "#core/errors/consent-authority-missing.error";
+export { ConsentNotVerifiedError } from "#core/errors/consent-not-verified.error";
 export { needsGuardianConsent } from "#core/functions/needs-guardian-consent.function";
 export { ConsentOptions } from "#core/schemas/consent-options.schema";
 export { ConsentLedger } from "#core/services/consent-ledger.service";

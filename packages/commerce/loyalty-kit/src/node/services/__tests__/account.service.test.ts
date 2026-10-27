@@ -5,23 +5,25 @@
  *          `points.earned` with the balance after; a frozen account is refused before anything is appended; enrolment
  *          is idempotent and records `account.enrolled` once; freezing records `account.frozen` only on a change; a
  *          visit stamps the card once per reference, at the stamp count given; the earn rate is the scope's setting,
- *          and a paused programme earns, stamps and enrolls nothing.
+ *          and a paused programme earns, stamps and enrolls nothing; a take-back is cut at the balance, once per
+ *          reference, records `points.taken_back` with the shortfall and marks a reference that found nothing; an
+ *          imported balance credits its exact points once, raises (never lowers) the tier, records `points.imported`
+ *          and not `points.earned`, and goes on while the programme is paused.
  * Boundary: test only; the service runs over the memory ledger, a real `LoyaltyService`, an extension point whose slot
  *           calls the tier extension, and an in-memory stand-in for the two repository calls it makes, so no database
  *           runs. Recorded events are read with `takeRecordedEvents`.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0269; ADR 0105 as amended; ADR 0141; ADR 0265.
+ * Governing contract: ADR 0022; ADR 0269; ADR 0105 as amended; ADR 0141; ADR 0265; STA-1323.
  */
 import type { ExtensionContext, RequestContext } from "@stackra/actions";
 import { fakeExtensionContext } from "@stackra/actions/testing";
-import { buildConfig } from "@stackra/config";
 import type { Clock, PublicId } from "@stackra/contracts";
 import { takeRecordedEvents } from "@stackra/events";
 import { refusal } from "@stackra/errors/testing";
 import { fakeSettings } from "@stackra/settings/testing";
 import { beforeEach, describe, expect, it } from "@stackra/testing";
 
-import { LoyaltyKitConfig } from "#config/loyalty-kit.config";
+import { EntryKind } from "#contracts/enums/entry-kind.enum";
 import { LoyaltyTier } from "#contracts/enums/loyalty-tier.enum";
 import type { EarnDraft } from "#contracts/types/earn-draft.type";
 import { MemoryLoyaltyLedgerDriver } from "#core/drivers/memory-loyalty-ledger.driver";
@@ -31,6 +33,8 @@ import { LoyaltyService } from "#core/services/loyalty.service";
 import { AccountEnrolled } from "#node/events/account-enrolled.event";
 import type { AccountFrozen } from "#node/events/account-frozen.event";
 import { PointsEarned } from "#node/events/points-earned.event";
+import { PointsImported } from "#node/events/points-imported.event";
+import { PointsTakenBack } from "#node/events/points-taken-back.event";
 import type { LoyaltyKitExtensionPoint } from "#node/extensions/loyalty-kit.extension-point";
 import { TierMultiplierExtension } from "#node/extensions/tier-multiplier.extension";
 import { LoyaltyKitSettings } from "#node/loyalty-kit.settings";
@@ -55,7 +59,6 @@ describe("AccountService", () => {
   beforeEach(() => {
     ledger = new MemoryLoyaltyLedgerDriver();
     stored = [];
-    const config = buildConfig(LoyaltyKitConfig, { values: { ledger: "memory" } });
     const tiers = new TierMultiplierExtension();
     const extensions = {
       earnAdjust: (points: number, draft: EarnDraft, ctx: ExtensionContext) =>
@@ -63,7 +66,7 @@ describe("AccountService", () => {
     } as unknown as LoyaltyKitExtensionPoint;
     accounts = new AccountService(
       ledger,
-      new LoyaltyService(ledger, LoyaltyMembersFake.with([]), config),
+      new LoyaltyService(ledger, LoyaltyMembersFake.with([])),
       extensions,
       { now: () => new Date(NOW.getTime()) } as Clock,
       { current: () => fakeExtensionContext() } as unknown as RequestContext,
@@ -194,5 +197,97 @@ describe("AccountService", () => {
       accounts.earnVisit(member, { reference: "apt_1", stamps: 1 }),
     ).rejects.toRefuseWith(refusal(AccountFrozenError, { accountId: account.id }));
     expect(await ledger.balance(member)).toBe(0);
+  });
+
+  it("takes points back once per reference, cut at the balance, never below zero", async () => {
+    const member = memberId("usr_refund");
+    await accounts.earn(member, purchase); // 100 points
+    takeRecordedEvents(stored[0] as LoyaltyAccount);
+
+    expect(await accounts.takeBack(member, 30, "rfd_1")).toBe(30);
+    expect(await accounts.takeBack(member, 30, "rfd_1")).toBe(30);
+    expect(await accounts.takeBack(member, 500, "rfd_2")).toBe(70);
+
+    expect(await ledger.balance(member)).toBe(0);
+    expect(await ledger.find(member, "take_back:rfd_1")).toMatchObject({
+      kind: EntryKind.Adjust,
+      points: -30,
+    });
+    expect(takeRecordedEvents(stored[0] as LoyaltyAccount)).toEqual([
+      PointsTakenBack.create({
+        memberId: member,
+        points: 30,
+        shortfall: 0,
+        reference: "rfd_1",
+        balanceAfter: 70,
+      }),
+      PointsTakenBack.create({
+        memberId: member,
+        points: 70,
+        shortfall: 430,
+        reference: "rfd_2",
+        balanceAfter: 0,
+      }),
+    ]);
+  });
+
+  it("marks a take-back that found nothing, so a retry never takes later points", async () => {
+    const member = memberId("usr_spent");
+    expect(await accounts.takeBack(member, 50, "rfd_1")).toBe(0);
+    await accounts.earn(member, purchase);
+    expect(await accounts.takeBack(member, 50, "rfd_1")).toBe(0);
+    expect(await ledger.balance(member)).toBe(100);
+    await expect(accounts.takeBack(member, 0, "rfd_2")).rejects.toThrow(RangeError);
+  });
+
+  it("imports a balance once, at its exact points, raising the tier and recording points.imported", async () => {
+    withProgramme({ isActive: false, earnPerMinor: 0.5 });
+    const member = memberId("usr_import");
+
+    expect(
+      await accounts.importBalance(member, {
+        points: 1_250,
+        reference: "run_1:row_1",
+        tier: LoyaltyTier.Silver,
+      }),
+    ).toBe(1_250);
+    expect(await accounts.importBalance(member, { points: 1_250, reference: "run_1:row_1" })).toBe(
+      0,
+    );
+
+    const account = stored[0] as LoyaltyAccount;
+    expect(account.tier).toBe(LoyaltyTier.Silver);
+    expect(await ledger.balance(member)).toBe(1_250);
+    expect(await ledger.find(member, "import:run_1:row_1")).toMatchObject({
+      kind: EntryKind.Earn,
+      points: 1_250,
+    });
+    const events = takeRecordedEvents(account);
+    expect(events.filter((event) => event instanceof PointsEarned)).toHaveLength(0);
+    expect(events.filter((event) => event instanceof PointsImported)).toEqual([
+      PointsImported.create({
+        memberId: member,
+        points: 1_250,
+        reference: "run_1:row_1",
+        tier: LoyaltyTier.Silver,
+        balanceAfter: 1_250,
+      }),
+    ]);
+  });
+
+  it("never lowers a tier on import, and refuses a frozen account or a bad count", async () => {
+    const member = memberId("usr_gold_import");
+    const account = await accounts.enroll(member, LoyaltyTier.Gold);
+    await accounts.importBalance(member, { points: 10, reference: "r1", tier: LoyaltyTier.Bronze });
+    expect(account.tier).toBe(LoyaltyTier.Gold);
+
+    await expect(accounts.importBalance(member, { points: 1.5, reference: "r2" })).rejects.toThrow(
+      RangeError,
+    );
+    await accounts.setFrozen(account, true, NOW);
+    await expect(
+      accounts.importBalance(member, { points: 10, reference: "r3" }),
+    ).rejects.toRefuseWith(refusal(AccountFrozenError, { accountId: account.id }));
+    expect(await ledger.balance(member)).toBe(10);
   });
 });

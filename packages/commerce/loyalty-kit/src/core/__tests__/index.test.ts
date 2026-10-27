@@ -18,6 +18,7 @@ describe("@stackra/loyalty-kit", () => {
       "BalanceView",
       "EXPIRE_REFERENCE_PREFIX",
       "HOLD_REFERENCE_PREFIX",
+      "IMPORT_REFERENCE_PREFIX",
       "InsufficientPointsError",
       "LoyaltyAccountView",
       "LoyaltyKitConfig",
@@ -32,6 +33,7 @@ describe("@stackra/loyalty-kit", () => {
       "RELEASE_REFERENCE_PREFIX",
       "REVERT_REFERENCE_PREFIX",
       "SETTLE_REFERENCE_PREFIX",
+      "TAKE_BACK_REFERENCE_PREFIX",
       "isExpiringSoon",
       "memberId",
       "stampCardProgress",
@@ -44,6 +46,8 @@ describe("@stackra/loyalty-kit", () => {
     expect(core.RELEASE_REFERENCE_PREFIX).toBe("release:");
     expect(core.REVERT_REFERENCE_PREFIX).toBe("revert:");
     expect(core.SETTLE_REFERENCE_PREFIX).toBe("settle:");
+    expect(core.IMPORT_REFERENCE_PREFIX).toBe("import:");
+    expect(core.TAKE_BACK_REFERENCE_PREFIX).toBe("take_back:");
     expect(core.MAX_POINTS_PER_ENTRY).toBe(1_000_000);
   });
 });

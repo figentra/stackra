@@ -1,3 +1,12 @@
+<!--
+Stackra file contract:
+Purpose: the README of @stackra/consent: visitor consent, server consent proofs, consent for another and its
+         verification method, the entries and how a host uses them.
+Boundary: documentation only; the rules for agents are in AGENTS.md.
+Runtime: none (Markdown)
+Governing contract: ADR 0298; ADR 0454; OS-284; STA-1323.
+-->
+
 # @stackra/consent
 
 Visitor consent for Stackra surfaces (ADR 0298): nothing optional runs until the visitor decides, a browser sending
@@ -10,26 +19,28 @@ is an optional peer of `./react`.
 
 ## What is here
 
-| Entry         | Symbol                                                                           | Use                                                                                             |
-| ------------- | -------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| `.`           | `ConsentConfig`                                                                  | the configuration (key `consent`): categories, cookie, expiry, policy version, regions          |
-| `.`           | `ConsentConfig$`                                                                 | the shipped schema a member's generated override extends                                        |
-| `.`           | `ConsentCategory`                                                                | `necessary`, `analytics`, `crash_replay`                                                        |
-| `.`           | `ConsentStatus`                                                                  | `granted`, `denied`, `undecided`                                                                |
-| `.`           | `ConsentRegime`                                                                  | `gdpr` (opt-in) and `ccpa` (opt-out), per region in `regionDefaults`                            |
-| `.`           | `ConsentLedger`                                                                  | the service that decides: `status`, `isGranted`, `set`, `reset`, `setRegion`, `subscribe`       |
-| `.`           | `CookieConsentStoreDriver`                                                       | the web store: the one decision cookie                                                          |
-| `.`           | `StorageConsentStoreDriver`                                                      | the device store: `consent.decision` in the `prefs` area                                        |
-| `.`           | `MemoryConsentStoreDriver`                                                       | tests and previews                                                                              |
-| `./contracts` | `ConsentStore`                                                                   | the port the drivers implement (`read`, `write`, `clear`)                                       |
-| `./react`     | `useConsent`                                                                     | `useConsent(category)` for a banner, `useConsent()` for a settings page                         |
-| `./testing`   | `fakeConsent`                                                                    | a real ledger over memory, nothing decided                                                      |
-| `.`           | `ConsentProofService`                                                            | server proofs: `pending` terms by version, `answer`, `answerFor` another, `current`, `evidence` |
-| `.`           | `MemoryConsentProofStoreDriver`, `TermsDocument`, `ConsentAuthorityMissingError` | the memory proof store, a versioned document, the refusal                                       |
-| `.`           | `needsGuardianConsent`                                                           | whether a birth date is below an age of consent (the age is market-pack data)                   |
-| `./contracts` | `ConsentProofStore`, `ConsentAuthority`, `ConsentProof`                          | the append-only proof store; who may consent for whom                                           |
-| `./ui`        | `ConsentBanner`, `ConsentPreferences`                                            | the cookie banner (accept all, reject all, manage) and the category switches                    |
-| `./ui`        | `LegalPage`, `TermsPrompt`                                                       | one legal text (plain paragraphs); versioned terms acceptance                                   |
+| Entry         | Symbol                                                                                              | Use                                                                                                     |
+| ------------- | --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `.`           | `ConsentConfig`                                                                                     | the configuration (key `consent`): categories, cookie, expiry, policy version, regions                  |
+| `.`           | `ConsentConfig$`                                                                                    | the shipped schema a member's generated override extends                                                |
+| `.`           | `ConsentCategory`                                                                                   | `necessary`, `analytics`, `crash_replay`                                                                |
+| `.`           | `ConsentStatus`                                                                                     | `granted`, `denied`, `undecided`                                                                        |
+| `.`           | `ConsentRegime`                                                                                     | `gdpr` (opt-in) and `ccpa` (opt-out), per region in `regionDefaults`                                    |
+| `.`           | `ConsentLedger`                                                                                     | the service that decides: `status`, `isGranted`, `set`, `reset`, `setRegion`, `subscribe`               |
+| `.`           | `CookieConsentStoreDriver`                                                                          | the web store: the one decision cookie                                                                  |
+| `.`           | `StorageConsentStoreDriver`                                                                         | the device store: `consent.decision` in the `prefs` area                                                |
+| `.`           | `MemoryConsentStoreDriver`                                                                          | tests and previews                                                                                      |
+| `./contracts` | `ConsentStore`                                                                                      | the port the drivers implement (`read`, `write`, `clear`)                                               |
+| `./react`     | `useConsent`                                                                                        | `useConsent(category)` for a banner, `useConsent()` for a settings page                                 |
+| `./testing`   | `fakeConsent`                                                                                       | a real ledger over memory, nothing decided                                                              |
+| `.`           | `ConsentProofService`                                                                               | server proofs: `pending` terms by version, `answer`, `answerFor` another, `current`, `evidence`         |
+| `.`           | `MemoryConsentProofStoreDriver`, `TermsDocument`, `ConsentAuthorityMissingError`                    | the memory proof store, a versioned document, the refusal                                               |
+| `.`           | `needsGuardianConsent`                                                                              | whether a birth date is below an age of consent (the age is market-pack data)                           |
+| `.`           | `NoneConsentVerifierDriver`, `ConsentNotVerifiedError`                                              | the default verifier (fails every method closed); the refusal of a failed verification                  |
+| `./contracts` | `ConsentVerifier`, `ConsentVerificationMethod`, `ConsentVerificationRequest`, `ConsentVerification` | the verification method port, its methods (card check, signed form, guardian login), request and answer |
+| `./contracts` | `ConsentProofStore`, `ConsentAuthority`, `ConsentProof`                                             | the append-only proof store; who may consent for whom                                                   |
+| `./ui`        | `ConsentBanner`, `ConsentPreferences`                                                               | the cookie banner (accept all, reject all, manage) and the category switches                            |
+| `./ui`        | `LegalPage`, `TermsPrompt`                                                                          | one legal text (plain paragraphs); versioned terms acceptance                                           |
 
 ## Terms, proofs and consent for another
 
@@ -43,6 +54,31 @@ from the market pack (`needsGuardianConsent(birthDate, today, age)`).
 Each proof is a consent evidence record (ADR 0454): who it is about (`subject`), who gave it (`givenBy`), on whose
 behalf (`relationship`), the document and version, the text's hash, the answer, when (`at`) and where (`channel`).
 `evidence(subject, document?)` returns the subject's trail oldest first, as written, for the person or a regulator.
+
+## Verifying a consent for another (STA-1323)
+
+Some markets require more than the relationship record before a guardian's consent counts: a card check, a signed form
+or the guardian signing in (review A2-2). Which method applies is market-pack data; the caller reads it and passes it
+with the evidence the method's flow produced:
+
+```ts
+const method = valueOf(pack, "consent.guardian_verification", today)?.value as
+  ConsentVerificationMethod | undefined;
+await proofs.answerFor(
+  child.id,
+  parent.id,
+  PHOTOS,
+  true,
+  "kiosk",
+  method && { method, evidence: authorisation.id },
+);
+```
+
+`ConsentVerifier` (`./contracts`) checks it; the services that run the methods implement it and a host binds its class
+with `@Replaces(ConsentVerifier)`. The proof stores the method and the verifier's reference (`verificationMethod`,
+`verificationReference`), never input. A failed check refuses with `ConsentNotVerifiedError` and writes nothing. The
+package ships only `NoneConsentVerifierDriver`, which fails every method closed, so a market that requires verification
+is never recorded unverified. With no method named, the relationship alone suffices, as before.
 
 ## The rules, in order
 

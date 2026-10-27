@@ -46,6 +46,14 @@
       "label": "Points per minor unit spent",
       "help": "Points a member earns for each minor unit (cent) spent, rounded down; 0.01 is one point per 100 cents."
     },
+    "point_value_minor": {
+      "label": "Point value (minor units)",
+      "help": "What one point is worth at redemption, in minor units (cents); 1 means one point takes one cent off."
+    },
+    "max_redeem_percent": {
+      "label": "Largest share paid with points (%)",
+      "help": "The most of an order total points may cover, as a whole percentage; 0 turns redemption off."
+    },
     "expiry_months": {
       "label": "Points expire after (months)",
       "help": "Unspent earned points expire this many months after they were earned."

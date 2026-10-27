@@ -11,7 +11,7 @@
  *           and `LoyaltyAccountPolicy#read` narrows a customer to their own account.
  * Runtime: node
  * Governing contract: ADR 0294 (decisions 2, 16 and 21); ADR 0305 (rules 28 and 31 to 33: the cache option); ADR
- *                     0150; ADR 0155; ADR 0245; ADR 0454 (decision 4: an expiry drops the cache too).
+ *                     0150; ADR 0155; ADR 0245; ADR 0454 (decision 4: an expiry drops the cache too); STA-1323 (so do a take-back and an import).
  */
 import { Query, type QueryContext } from "@stackra/actions";
 import { ActorKind, HttpMethod, SortDirection } from "@stackra/contracts";
@@ -26,7 +26,9 @@ import { BalanceView } from "#core/schemas/balance-view.schema";
 import { LoyaltyAccountPermissions } from "#node/access/loyalty-account.permissions";
 import { PointsEarned } from "#node/events/points-earned.event";
 import { PointsExpired } from "#node/events/points-expired.event";
+import { PointsImported } from "#node/events/points-imported.event";
 import { PointsRedeemed } from "#node/events/points-redeemed.event";
+import { PointsTakenBack } from "#node/events/points-taken-back.event";
 import { LoyaltyKitSettings } from "#node/loyalty-kit.settings";
 import type { LedgerEntry } from "#node/models/ledger-entry.model";
 import type { GetBalanceInput } from "#node/schemas/get-balance-input.schema";
@@ -44,7 +46,10 @@ export class GetBalanceQuery extends Query({
   actors: [ActorKind.User, ActorKind.Agent, ActorKind.Service],
   endpoint: { method: HttpMethod.Get, path: "/loyalty/accounts/:accountId/balance" },
   intent: true,
-  cache: { ttl: "1m", invalidateOn: [PointsEarned, PointsRedeemed, PointsExpired] },
+  cache: {
+    ttl: "1m",
+    invalidateOn: [PointsEarned, PointsRedeemed, PointsExpired, PointsTakenBack, PointsImported],
+  },
 }) {
   /** Loads the account for the record check. */
   private readonly accounts: AccountService;

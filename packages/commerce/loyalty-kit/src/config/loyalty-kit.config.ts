@@ -3,7 +3,8 @@
  * Purpose: `LoyaltyKitConfig`, the loyalty kit's configuration (key `loyalty_kit`): the first layer of package → host →
  *          environment → runway.
  * Boundary: a configuration class over `LoyaltyKitOptions`; `env` maps the one field read from the environment to its
- *           variable. Values only; never per scope (that is settings) and never a secret. A custom ledger class is a
+ *           variable. Values only; never per scope (that is settings: the earn rate, point value and redemption cap
+ *           live in `LoyaltyKitSettings`) and never a secret. A custom ledger class is a
  *           host `@Replaces(LoyaltyLedger)`; runway `config.loyalty_kit.ledger` is the per-environment layer of the
  *           driver choice.
  * Runtime: isomorphic
@@ -21,7 +22,7 @@ import { LoyaltyKitOptions } from "#core/schemas/loyalty-kit-options.schema";
  * import { LoyaltyKitConfig as BaseLoyaltyKitConfig } from "@stackra/loyalty-kit";
  *
  * export class LoyaltyKitConfig extends BaseLoyaltyKitConfig {
- *   override maxRedeemPercent = 30;
+ *   override ledger = "memory" as const;
  * }
  */
 export class LoyaltyKitConfig extends Config({

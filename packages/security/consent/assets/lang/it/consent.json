@@ -4,6 +4,11 @@
       "necessary": "Necessari",
       "analytics": "Analisi del prodotto",
       "crash_replay": "Registrazioni degli arresti anomali"
+    },
+    "consent_verification_method": {
+      "card_check": "Verifica con carta",
+      "signed_form": "Modulo firmato",
+      "guardian_login": "Accesso del tutore"
     }
   },
   "ui": {

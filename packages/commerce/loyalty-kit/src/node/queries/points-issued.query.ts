@@ -7,7 +7,7 @@
  *           (`endpoint: false`); it is still an MCP tool. Cached five minutes per principal and dropped when points
  *           move. It runs under `LoyaltyAccountPermissions.read` (L0), named because the key's aggregate is `points`.
  * Runtime: node
- * Governing contract: ADR 0294 (decisions 2, 16 and 21); ADR 0305 (rules 28 and 31 to 33); ADR 0098; ADR 0155.
+ * Governing contract: ADR 0294 (decisions 2, 16 and 21); ADR 0305 (rules 28 and 31 to 33); ADR 0098; ADR 0155; STA-1323 (an import is an earn entry, so it drops the cache).
  */
 import { Query, type QueryContext } from "@stackra/actions";
 import { ActorKind } from "@stackra/contracts";
@@ -17,6 +17,7 @@ import { EntryKind } from "#contracts/enums/entry-kind.enum";
 import { PointsIssuedView } from "#core/schemas/points-issued-view.schema";
 import { LoyaltyAccountPermissions } from "#node/access/loyalty-account.permissions";
 import { PointsEarned } from "#node/events/points-earned.event";
+import { PointsImported } from "#node/events/points-imported.event";
 import { PointsRedeemed } from "#node/events/points-redeemed.event";
 import type { LedgerEntry } from "#node/models/ledger-entry.model";
 import type { PointsIssuedInput } from "#node/schemas/points-issued-input.schema";
@@ -32,7 +33,7 @@ export class PointsIssuedQuery extends Query({
   permission: LoyaltyAccountPermissions.read,
   actors: [ActorKind.User],
   endpoint: false,
-  cache: { ttl: "5m", invalidateOn: [PointsEarned, PointsRedeemed] },
+  cache: { ttl: "5m", invalidateOn: [PointsEarned, PointsRedeemed, PointsImported] },
 }) {
   /** The ledger entry repository; `sum` runs in SQL. */
   private readonly rows: Repository<LedgerEntry>;

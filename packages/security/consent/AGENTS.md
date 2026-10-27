@@ -1,3 +1,11 @@
+<!--
+Stackra file contract:
+Purpose: the agent rules of @stackra/consent: where code goes, entries, the consent and proof invariants, PII.
+Boundary: documentation only; the user-facing guide is README.md.
+Runtime: none (Markdown)
+Governing contract: ADR 0298; ADR 0454; OS-284; STA-1323.
+-->
+
 # AGENTS — @stackra/consent
 
 Visitor consent: decline by default, Global Privacy Control refuses, the decision stored with its policy version
@@ -6,16 +14,16 @@ Entries `.`, `./contracts`, `./react`, `./testing`.
 
 ## Where code goes
 
-| You are writing…                    | It goes in…                                          |
-| ----------------------------------- | ---------------------------------------------------- |
-| The configuration (`ConsentConfig`) | `src/config/consent.config.ts`                       |
-| Its schema and shipped `X$`         | `src/core/schemas/`, `src/core/constants/`           |
-| The port and the record type        | `src/contracts/{ports,types}/`                       |
-| A store driver                      | `src/core/drivers/<name>-consent-store.driver.ts`    |
-| React code                          | `src/react/consent/`                                 |
-| A test helper                       | `src/testing/functions/`                             |
-| A category label                    | `assets/lang/<locale>/consent.json` (en and ar both) |
-| A test                              | `__tests__/<name>.<kind>.test.ts(x)` beside it       |
+| You are writing…                     | It goes in…                                          |
+| ------------------------------------ | ---------------------------------------------------- |
+| The configuration (`ConsentConfig`)  | `src/config/consent.config.ts`                       |
+| Its schema and shipped `X$`          | `src/core/schemas/`, `src/core/constants/`           |
+| A port, its enum and the record type | `src/contracts/{ports,enums,types}/`                 |
+| A store driver                       | `src/core/drivers/<name>-consent-store.driver.ts`    |
+| React code                           | `src/react/consent/`                                 |
+| A test helper                        | `src/testing/functions/`                             |
+| A category label                     | `assets/lang/<locale>/consent.json` (en and ar both) |
+| A test                               | `__tests__/<name>.<kind>.test.ts(x)` beside it       |
 
 ## Entries and barrels
 
@@ -25,6 +33,10 @@ Entries `.`, `./contracts`, `./react`, `./testing`.
 - `./ui` renders `@stackra/ui` web components; `./react` stays hooks only. Reject all has the same weight as accept
   all. Legal texts render as plain paragraphs, never as HTML.
 - Proofs are append-only and hold ids, never the text; a relationship comes from `ConsentAuthority`, never input.
+- A verification method (card check, signed form, guardian login) is named by the market pack, read by the caller, and
+  checked by `ConsentVerifier` before anything is written; the stored method and reference are the verifier's answer.
+  The shipped verifier is `none` and fails closed; never ship one that passes by default, and never record a consent
+  whose verification failed.
 - A proof is the consent evidence record (ADR 0454): `evidence` returns the rows as written; never summarise or merge
   them.
 

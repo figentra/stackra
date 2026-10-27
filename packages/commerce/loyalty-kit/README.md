@@ -3,7 +3,7 @@ Stackra file contract:
 Purpose: the README of @stackra/loyalty-kit: what the kit does, how a host uses it, its entries and drivers.
 Boundary: documentation only; the rules for agents are in AGENTS.md.
 Runtime: none (Markdown)
-Governing contract: ADR 0294, ADR 0305; ADR 0454; STA-804 (members over OS parties).
+Governing contract: ADR 0294, ADR 0305; ADR 0454; STA-804 (members over OS parties); STA-1323.
 -->
 
 # @stackra/loyalty-kit
@@ -25,11 +25,18 @@ programming model v3.1 (ADR 0294, 0305) on `@stackra/ledger`.
 import { LoyaltyKitConfig as BaseLoyaltyKitConfig } from "@stackra/loyalty-kit";
 
 export class LoyaltyKitConfig extends BaseLoyaltyKitConfig {
-  override maxRedeemPercent = 30;
+  override ledger = "memory" as const; // config is deploy-time only: the ledger driver
 }
 
 // the one earn path
 await accounts.earn(memberId(event.customerId), { amountMinor, currency, reference: event.orderId });
+
+// a refund takes points back (never below zero); a migration imports a balance from another platform
+await accounts.takeBack(member, 120, refund.id); // the points taken; the rest was already spent
+await accounts.importBalance(member, { points: 1_250, reference: `${run.id}:${row.id}`, tier: LoyaltyTier.Silver });
+
+// a quote converts and caps at the scope's settings
+const quote = await loyalty.quote(member, requested, totalMinor, await settings.get(LoyaltyKitSettings));
 
 // spending points on a purchase: hold in the purchase's transaction, settle once it exists, release if it ends unpaid
 await loyalty.hold(member, points, orderId, at); // InsufficientPointsError if uncovered
@@ -65,8 +72,8 @@ offsets the hold), so settle and release commute: the points come back exactly o
 
 | Entry         | Holds                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `.`           | `LoyaltyKitConfig`, `LoyaltyKitOptions`, `LoyaltyKitConfig$`, `LoyaltyService`, `MemoryLoyaltyLedgerDriver`, the four refusals, `BalanceView`, `LoyaltyAccountView`, `PointsIssuedView`, the reference constants (hold, settle, release, expire, revert), `memberId`, `isExpiringSoon`                                                                                                                                                                                                                                                                                                                                             |
-| `./contracts` | the ports `LoyaltyLedger`, `LoyaltyMembers` and `LoyaltyTierPolicy`, the enums `DebitOutcome`, `EntryKind`, `LoyaltyTier`, the types `PointsEntry`, `MemberId`, `EarnDraft`, `EarnRequest`, `RedemptionQuote`, `TierDraft`                                                                                                                                                                                                                                                                                                                                                                                                         |
+| `.`           | `LoyaltyKitConfig`, `LoyaltyKitOptions`, `LoyaltyKitConfig$`, `LoyaltyService`, `MemoryLoyaltyLedgerDriver`, the four refusals, `BalanceView`, `LoyaltyAccountView`, `PointsIssuedView`, the reference constants (hold, settle, release, expire, revert, take-back, import), `memberId`, `isExpiringSoon`                                                                                                                                                                                                                                                                                                                          |
+| `./contracts` | the ports `LoyaltyLedger`, `LoyaltyMembers` and `LoyaltyTierPolicy`, the enums `DebitOutcome`, `EntryKind`, `LoyaltyTier`, the types `PointsEntry`, `MemberId`, `EarnDraft`, `EarnRequest`, `PointsImport`, `RedemptionQuote`, `RedemptionRates`, `TierDraft`                                                                                                                                                                                                                                                                                                                                                                      |
 | `./node`      | `LoyaltyKitModule`, `LoyaltyKitSettings`, `LoyaltyAccountPermissions`, `LoyaltyAccountPolicy`, the enroll, freeze, expire, redeem and confirm-redemption actions, the balance and points-issued queries, their schemas and `QuotedRedemption`, `RedeemPointsWorkflow` and `RedemptionConfirmed`, the events and the v1 change, the extension point and tier extension, the listener, the models, `LoyaltyAccountResource`, `LoyaltyOverviewDocument`, `PointsBalanceWidget`, `PointsIssuedWidget`, the services, `PostgresLoyaltyLedgerDriver`, `ThresholdLoyaltyTierPolicyDriver`, `PartiesLoyaltyMembersDriver`, both migrations |
 | `./react`     | `PointsBalance`, `PointsIssued` and their Props                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | `./native`    | `PointsBalance` and its Props (the web Props, field for field)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
@@ -113,16 +120,33 @@ stampCardProgress(balance, settings.stampsPerCard); // the renderers' card
 - **Programme:** the `LoyaltyKitSettings` group resolved at a scope is that scope's programme; a per-brand programme is a
   scope level below the tenant the host contributes. `isActive` (default on) pauses it: a paused programme earns,
   stamps and enrolls nothing, while redemption and expiry go on.
-- **Earn rate:** `loyalty_kit.earnPerMinor` (default `0.01`, approval required) is the rate `AccountService.earn` uses;
-  `LoyaltyService.quoteEarn(amountMinor, earnPerMinor?)` falls back to config `earnPerMinor` only for a preview with no
-  settings reader. Point value and the redemption cap are still config.
+- **Earn rate, point value and cap:** settings, all three approval-required member benefits:
+  `loyalty_kit.earnPerMinor` (default `0.01`), `loyalty_kit.pointValueMinor` (default `1`) and
+  `loyalty_kit.maxRedeemPercent` (default `50`, 0 to 100). Config holds none of them (STA-1323). `LoyaltyService` stays
+  isomorphic by taking them as arguments: `quoteEarn(amountMinor, earnPerMinor)`, `pointsFor(amountMinor,
+pointValueMinor)` and `quote(member, requested, totalMinor, rates)`; a resolved settings group is a `RedemptionRates`
+  as it is. `AccountService.earn` and `RedeemPointsWorkflow` read them per call.
 - **Tiers:** `RecalculateTierListener` asks the `LoyaltyTierPolicy` port which tier an earn earns and only ever raises
   one. The kit's driver, `threshold`, reads `loyalty_kit.tiers`; a host applies its own tier rules with
   `@Replaces(LoyaltyTierPolicy)`.
 - **Events:** every balance move leaves through the outbox: `loyalty_kit.points.earned.v2`,
   `loyalty_kit.points.redeemed.v1` (was a private domain event; now carries `balanceAfter`) and
-  `loyalty_kit.points.expired.v1` (one per account whose expiry took points). Keys follow the casing rules: the module
-  key is the package key, `loyalty_kit`.
+  `loyalty_kit.points.expired.v1` (one per account whose expiry took points), `loyalty_kit.points.taken_back.v1` and
+  `loyalty_kit.points.imported.v1`. Keys follow the casing rules: the module key is the package key, `loyalty_kit`.
+
+## Take-backs and imported balances (STA-1323)
+
+- **`AccountService.takeBack(member, points, reference)`**: a refund or cancellation takes points back as one covered
+  `adjust` debit under `take_back:<reference>`, cut at the balance: what the member already spent is the event's
+  `shortfall`, never a negative balance. Once per reference; a take-back that found nothing still marks the reference,
+  so a retry never takes points earned since. Records `points.taken_back` when it took any. A host no longer appends
+  `adjust` entries itself.
+- **`AccountService.importBalance(member, { points, reference, tier? })`**: a balance carried over from another
+  platform is one `earn` entry of the exact points under `import:<reference>` (no earn rate, no extension; it expires
+  like any earn, counted from the import). It enrolls at the import's tier, raises an existing tier to it (never
+  lowers), and records `points.imported`, not `points.earned`, so the tier listener does not run. A paused programme
+  still imports; a frozen account is refused. The entry kind stays `earn`: a kind of its own would need a migration of
+  the kind column and a second kind in every driver's expiry, for no behaviour the reference prefix does not give.
 
 ## Members over the OS parties service (STA-804)
 

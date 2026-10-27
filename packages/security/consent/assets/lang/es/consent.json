@@ -4,6 +4,11 @@
       "necessary": "Necesarias",
       "analytics": "Analítica del producto",
       "crash_replay": "Grabaciones de errores"
+    },
+    "consent_verification_method": {
+      "card_check": "Verificación con tarjeta",
+      "signed_form": "Formulario firmado",
+      "guardian_login": "Inicio de sesión del tutor"
     }
   },
   "ui": {

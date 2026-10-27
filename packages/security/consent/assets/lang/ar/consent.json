@@ -4,6 +4,11 @@
       "necessary": "ضرورية",
       "analytics": "تحليلات المنتج",
       "crash_replay": "تسجيلات الأعطال"
+    },
+    "consent_verification_method": {
+      "card_check": "التحقق بالبطاقة",
+      "signed_form": "نموذج موقّع",
+      "guardian_login": "تسجيل دخول ولي الأمر"
     }
   },
   "ui": {

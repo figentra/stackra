@@ -21,6 +21,7 @@ describe("@stackra/consent", () => {
       "ConsentConfig",
       "ConsentConfig$",
       "ConsentLedger",
+      "ConsentNotVerifiedError",
       "ConsentOptions",
       "ConsentProofService",
       "ConsentRegime",
@@ -28,6 +29,7 @@ describe("@stackra/consent", () => {
       "CookieConsentStoreDriver",
       "MemoryConsentProofStoreDriver",
       "MemoryConsentStoreDriver",
+      "NoneConsentVerifierDriver",
       "StorageConsentStoreDriver",
       "needsGuardianConsent",
     ]);
@@ -36,6 +38,8 @@ describe("@stackra/consent", () => {
   it("keeps the port and the internals out of the entry", () => {
     for (const name of [
       "ConsentStore",
+      "ConsentVerifier",
+      "ConsentVerificationMethod",
       "CONSENT_CONFIG_SCHEMA",
       "CONSENT_RECORD_SCHEMA",
       "CONSENT_STORAGE_KEY",

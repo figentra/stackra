@@ -1,19 +1,17 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `LoyaltyService`: redemption is capped by balance and by `maxRedeemPercent`, the base earn is
- *          pure maths, a non-member or an overdrawn member is refused, two concurrent holds of the whole balance write
+ * Purpose: unit tests of `LoyaltyService`: redemption is capped by balance and by the scope's `maxRedeemPercent` and
+ *          converted at its `pointValueMinor`, the base earn is pure maths at the rate given, a non-member or an overdrawn member is refused, two concurrent holds of the whole balance write
  *          one and refuse the other with no overdraft, and settle and release give held points back exactly once in
  *          either order.
- * Boundary: test only; the service is constructed directly over the memory driver, the members fake and a built
- *           configuration.
+ * Boundary: test only; the service is constructed directly over the memory driver and the members fake; the rates are
+ *           plain arguments, as a resolved settings group passes them.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0220; ADR 0294 (decision 15).
  */
-import { buildConfig } from "@stackra/config";
 import { refusal } from "@stackra/errors/testing";
 import { beforeEach, describe, expect, it } from "@stackra/testing";
 
-import { LoyaltyKitConfig } from "#config/loyalty-kit.config";
 import { MemoryLoyaltyLedgerDriver } from "#core/drivers/memory-loyalty-ledger.driver";
 import { InsufficientPointsError } from "#core/errors/insufficient-points.error";
 import { NotAMemberError } from "#core/errors/not-a-member.error";
@@ -25,6 +23,9 @@ import { pointsEntry } from "#testing/points-entry.fixture";
 /** The one enrolled member of these cases. */
 const usr1 = memberId("usr_1");
 
+/** A scope's redemption rates: a point is worth one minor unit, at most 30 % of a total. */
+const RATES = { pointValueMinor: 1, maxRedeemPercent: 30 };
+
 /** The time of every entry. */
 const at = new Date("2026-10-21T00:00:00Z");
 
@@ -34,32 +35,40 @@ describe("LoyaltyService", () => {
 
   beforeEach(() => {
     ledger = new MemoryLoyaltyLedgerDriver();
-    loyalty = new LoyaltyService(
-      ledger,
-      LoyaltyMembersFake.with(["usr_1"]),
-      buildConfig(LoyaltyKitConfig, {
-        values: { ledger: "memory", pointValueMinor: 1, earnPerMinor: 0.1, maxRedeemPercent: 30 },
-      }),
-    );
+    loyalty = new LoyaltyService(ledger, LoyaltyMembersFake.with(["usr_1"]));
   });
 
   it("quotes the base earn without touching the ledger", async () => {
-    expect(loyalty.quoteEarn(5_000)).toBe(500);
-    expect(loyalty.quoteEarn(9)).toBe(0);
-    // the scope's rate, when given, wins over config
+    expect(loyalty.quoteEarn(5_000, 0.1)).toBe(500);
+    expect(loyalty.quoteEarn(9, 0.1)).toBe(0);
     expect(loyalty.quoteEarn(5_000, 0.02)).toBe(100);
-    expect(loyalty.pointsFor(250)).toBe(250);
+    expect(loyalty.pointsFor(250, 1)).toBe(250);
+    expect(loyalty.pointsFor(250, 10)).toBe(25);
     expect(await ledger.balance(usr1)).toBe(0);
   });
 
   it("caps redemption at maxRedeemPercent of the total and at the balance", async () => {
     await ledger.append(pointsEntry.build({ memberId: usr1, points: 10_000, at }));
-    expect(await loyalty.quote(usr1, 9_999, 1_000)).toEqual({ points: 300, amountMinor: 300 });
-    expect(await loyalty.quote(usr1, 50, 1_000)).toEqual({ points: 50, amountMinor: 50 });
-    expect(await loyalty.quote(memberId("usr_2"), 50, 1_000)).toEqual({
+    expect(await loyalty.quote(usr1, 9_999, 1_000, RATES)).toEqual({
+      points: 300,
+      amountMinor: 300,
+    });
+    expect(await loyalty.quote(usr1, 50, 1_000, RATES)).toEqual({ points: 50, amountMinor: 50 });
+    expect(await loyalty.quote(memberId("usr_2"), 50, 1_000, RATES)).toEqual({
       points: 0,
       amountMinor: 0,
     });
+  });
+
+  it("converts at the scope's point value and cap", async () => {
+    await ledger.append(pointsEntry.build({ memberId: usr1, points: 10_000, at }));
+    // 20 % of 1 000 is 200 minor units; at 5 a point that is 40 points
+    expect(
+      await loyalty.quote(usr1, 9_999, 1_000, { pointValueMinor: 5, maxRedeemPercent: 20 }),
+    ).toEqual({ points: 40, amountMinor: 200 });
+    expect(
+      await loyalty.quote(usr1, 9_999, 1_000, { pointValueMinor: 1, maxRedeemPercent: 0 }),
+    ).toEqual({ points: 0, amountMinor: 0 });
   });
 
   it("refuses a redemption above the balance, and any redemption by a non-member", async () => {

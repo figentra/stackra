@@ -4,6 +4,11 @@
       "necessary": "Noodzakelijk",
       "analytics": "Productanalyse",
       "crash_replay": "Crashopnames"
+    },
+    "consent_verification_method": {
+      "card_check": "Kaartcontrole",
+      "signed_form": "Ondertekend formulier",
+      "guardian_login": "Aanmelding van de voogd"
     }
   },
   "ui": {

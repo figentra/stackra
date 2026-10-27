@@ -1,13 +1,13 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `GetBalanceQuery`: the `points.balance` query on its GET route, an intent, cached a minute and
- *          dropped by `points.earned`, `points.redeemed` and `points.expired`; it authorizes against the account, then
- *          returns the ledger's balance, the tier and the next expiry: the oldest earn not yet expired plus the window,
- *          or null.
+ *          dropped by `points.earned`, `points.redeemed`, `points.expired`, `points.taken_back` and `points.imported`;
+ *          it authorizes against the account, then returns the ledger's balance, the tier and the next expiry: the
+ *          oldest earn not yet expired plus the window, or null.
  * Boundary: test only; the query is called directly with a stand-in account service and entry repository, the memory
  *           ledger and `fakeSettings`. The cache step is the pipeline's.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0269; ADR 0305 (rules 31 to 33); ADR 0150; ADR 0454 (decision 4).
+ * Governing contract: ADR 0022; ADR 0269; ADR 0305 (rules 31 to 33); ADR 0150; ADR 0454 (decision 4); STA-1323.
  */
 import { fakeActionContext } from "@stackra/actions/testing";
 import { kindOf } from "@stackra/container";
@@ -25,7 +25,9 @@ import { BalanceView } from "#core/schemas/balance-view.schema";
 import { LoyaltyAccountPermissions } from "#node/access/loyalty-account.permissions";
 import { PointsEarned } from "#node/events/points-earned.event";
 import { PointsExpired } from "#node/events/points-expired.event";
+import { PointsImported } from "#node/events/points-imported.event";
 import { PointsRedeemed } from "#node/events/points-redeemed.event";
+import { PointsTakenBack } from "#node/events/points-taken-back.event";
 import { LoyaltyKitSettings } from "#node/loyalty-kit.settings";
 import { LedgerEntry } from "#node/models/ledger-entry.model";
 import { LoyaltyAccount } from "#node/models/loyalty-account.model";
@@ -71,7 +73,16 @@ describe("GetBalanceQuery", () => {
       permission: LoyaltyAccountPermissions.read,
       endpoint: { method: HttpMethod.Get, path: "/loyalty/accounts/:accountId/balance" },
       intent: true,
-      cache: { ttl: "1m", invalidateOn: [PointsEarned, PointsRedeemed, PointsExpired] },
+      cache: {
+        ttl: "1m",
+        invalidateOn: [
+          PointsEarned,
+          PointsRedeemed,
+          PointsExpired,
+          PointsTakenBack,
+          PointsImported,
+        ],
+      },
     });
   });
 

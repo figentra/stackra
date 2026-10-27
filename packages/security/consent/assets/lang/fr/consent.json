@@ -4,6 +4,11 @@
       "necessary": "Nécessaires",
       "analytics": "Analyse du produit",
       "crash_replay": "Relectures des plantages"
+    },
+    "consent_verification_method": {
+      "card_check": "Vérification par carte",
+      "signed_form": "Formulaire signé",
+      "guardian_login": "Connexion du tuteur"
     }
   },
   "ui": {
