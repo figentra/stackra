@@ -6,7 +6,8 @@ Purpose: the agent rules of @stackra/app: where code goes, entries and barrels, 
          shutdown order, request guards and the route session included) and the rules that fail the build.
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
-Governing contract: ADR 0294; ADR 0295; ADR 0305; ADR 0263; ADR 0260 (decision 4); ADR 0251 (decision 3); ADR 0457.
+Governing contract: ADR 0294; ADR 0295; ADR 0305; ADR 0263; ADR 0260 (decision 4); ADR 0251 (decision 3); ADR 0457;
+                    ADR 0437 (decision 4).
 -->
 
 The app runtime: `createApp` per runtime target, the shared boot, the client contexts and the `Controller` kind.
@@ -16,16 +17,20 @@ note).
 
 ## Where code goes
 
-| You are writing…                     | It goes in…                                    |
-| ------------------------------------ | ---------------------------------------------- |
-| Boot shared by every target          | `src/core/{functions,services,drivers,types}/` |
-| A target's `createApp` and its types | `src/<target>/{functions,types}/`              |
-| The `Controller` kind                | `src/server/bases/controller.base.ts`          |
-| The `RequestGuard` extension point   | `src/server/bases/request-guard.base.ts`       |
-| The route session (loader, part)     | `src/core/{functions,constants,types}/`        |
-| A refusal                            | `src/<target>/errors/<name>.error.ts`          |
-| React contexts                       | `src/react/contexts/`                          |
-| A test                               | `__tests__/<name>.<kind>.test.ts(x)` beside it |
+| You are writing…                     | It goes in…                                        |
+| ------------------------------------ | -------------------------------------------------- |
+| Boot shared by every target          | `src/core/{functions,services,drivers,types}/`     |
+| A target's `createApp` and its types | `src/<target>/{functions,types}/`                  |
+| The `Controller` kind                | `src/server/bases/controller.base.ts`              |
+| The `RequestGuard` extension point   | `src/server/bases/request-guard.base.ts`           |
+| The edge-header guard                | `src/server/services/edge-header.guard.ts`         |
+| Its ports (keys, seen nonces)        | `src/contracts/ports/edge-*.port.ts`               |
+| Their memory drivers                 | `src/server/drivers/memory-edge-*.driver.ts`       |
+| The edge signature bytes             | `src/core/functions/sign-edge-request.function.ts` |
+| The route session (loader, part)     | `src/core/{functions,constants,types}/`            |
+| A refusal                            | `src/<target>/errors/<name>.error.ts`              |
+| React contexts                       | `src/react/contexts/`                              |
+| A test                               | `__tests__/<name>.<kind>.test.ts(x)` beside it     |
 
 ## Entries and barrels
 
@@ -49,6 +54,11 @@ note).
 - The desktop hardening baseline is not configurable (ADR 0251 decision 3).
 - A check every inbound server request passes is a `RequestGuard` subclass found with `getAll`; never a list of guards
   in `createApp`. `order` is a position in a fixed check sequence, never a business value.
+- The edge signature bytes are fixed in `signEdgeRequest` only; the guard and the Worker both call it. Never
+  re-join the fields elsewhere. A new covered field is a change to `EdgeSignatureInput`, the function and os-80 at once.
+- The edge-header guard fails closed: no active key, a stale or future timestamp, a seen request id or a missing
+  identity header is one `EdgeSignatureInvalidError`, with no detail. Claim the nonce only after the signature holds.
+- Edge signing secrets come only from the bound `EdgeSigningKeys`; never a literal, never logged.
 - The route session is loaded per request container on the Worker and never kept on a singleton: one visitor's session
   must never reach another request. `session` and `identity` are the only `RouteServices` members this package adds.
 - No parameter properties and no `#private` fields: apps typecheck this source under `erasableSyntaxOnly`.

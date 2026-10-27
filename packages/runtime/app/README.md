@@ -3,12 +3,12 @@
 <!--
 Stackra file contract:
 Purpose: the reader guide of @stackra/app: `createApp` per runtime target, the generated entries, the shared boot,
-         the client contexts, the server lifecycle (boot, drain, close), request guards, the route session and the
-         desktop baseline.
+         the client contexts, the server lifecycle (boot, drain, close), request guards, the signed edge-header guard,
+         the route session and the desktop baseline.
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
 Governing contract: ADR 0295 (decisions 7 to 9); ADR 0263; ADR 0260 (decision 4); ADR 0127 2026-10-24 note;
-                    ADR 0457.
+                    ADR 0457; ADR 0437 (decision 4: the signed edge headers).
 -->
 
 Stackra app runtime: `createApp` for each runtime target, returning that target's app object, the shared boot from the
@@ -31,12 +31,17 @@ peers, each loaded only by the entry that needs it.
 | `AppWiring`                                  | `.`         | the booted wiring as a container token                                               |
 | `AppSections`, `BootOptions`, `BootedApp`    | `.`         | the wiring sections this package reads; boot's options and result                    |
 | `RouteSession`                               | `.`         | `ctx.session` and `ctx.identity`, added to navigation's `RouteServices`              |
+| `signEdgeRequest`                            | `.`         | the edge signature (HMAC-SHA256, base64url); the Worker signs, the guard recomputes  |
 | `Contexts`                                   | `./react`   | the client contexts in graph order, with the locale and catalogues                   |
 | `registerContext`                            | `./react`   | a client package names the component of its context key                              |
 | `createApp`, `ServerApp`                     | `./server`  | `key`, `ready()`, `probe()`, `drain()`, `close()`, `handlers`; `/healthz`, `/readyz` |
 | `Controller`                                 | `./server`  | `extends Controller({ path })`: a raw endpoint with `handle(request)`                |
 | `RequestGuard`                               | `./server`  | a check every inbound request passes; `handlers.guard(request, container)` runs them |
 | `AppDrainingError`                           | `./server`  | the 503 refusal a draining server answers                                            |
+| `EdgeHeaderGuard`                            | `./server`  | the first server check: signed, fresh, unreplayed edge headers (ADR 0437)            |
+| `EdgeSignatureInvalidError`                  | `./server`  | the 401 refusal for a missing, wrong, stale or replayed edge signature               |
+| `MemoryEdgeSigningKeysDriver`                | `./server`  | the `memory` `EdgeSigningKeys` driver (tests, local runs)                            |
+| `MemoryEdgeNonceStoreDriver`                 | `./server`  | the `memory` `EdgeNonceStore` driver (tests, a single instance)                      |
 | `createApp`, `WorkerApp`, `WorkerRequest<E>` | `./worker`  | `fetch(request, env, ctx)` over the React Router server build                        |
 | `createApp`, `BrowserApp`, `hydrateRoute`    | `./browser` | `mount(root)`, `hydrate({ nonce })`, `router`; one prerendered page                  |
 | `createApp`, `NativeApp`                     | `./native`  | `Root`, which boots behind the splash                                                |
@@ -120,11 +125,28 @@ export class EdgeSignatureGuard extends RequestGuard {
 }
 ```
 
+### The signed edge headers
+
+The edge Worker forwards `EdgeHeader.Scope` (`x-figentra-tenant`; absent on a platform host), `Product`, `Surface`,
+`Realm`, `RequestId`, `Timestamp` and `Signature` (ADR 0437 decision 4). `signEdgeRequest(input, secret)` (`.`) fixes
+the signed bytes once: the `EdgeSignatureInput` fields joined by newlines (scope, product, surface, realm, request id,
+timestamp, method, path with query, SHA-256 of the body in hex), HMAC-SHA256, base64url. The Worker imports it, so the
+two sides cannot drift.
+
+`EdgeHeaderGuard` is the first `RequestGuard` (order -100, ADR 0437 decision 8). It refuses with
+`EdgeSignatureInvalidError` (401) unless the signature matches one of the keys `EdgeSigningKeys` answers (newest
+first; two during a rotation, every key tried), the timestamp is within `maxAge` (60 seconds) of now either side, and
+`EdgeNonceStore.claim(requestId)` wins (a replay loses). The nonce is claimed only after the signature holds. An
+unsigned request passes only on one of `publicPaths` (none by default) and only with no identity header.
+
+The key provider and the nonce store are ports, so which one answers is configuration: the `memory` drivers ship for
+tests and local runs; production binds a secret-store key driver and, with more than one API instance, a shared
+nonce store. `maxAge` and `publicPaths` are getters a host overrides in `src/overrides/app/` (ADR 0306).
+
 ### The tenant on a call and its rate limit
 
-The edge Worker forwards the tenant as the signed `EdgeHeader.Scope` (`x-figentra-tenant`, ADR 0437). The signature
-guard (stackra-65, a `RequestGuard`) and the generated adapter that turns a verified request into `CallOptions` are not in this package
-yet; until they land, the tenant reaching `CallOptions.actor.scopeId` from the edge is assumed, not confirmed. Once it
+The generated adapter that turns a verified request into `CallOptions` is not in this package yet; until it lands, the
+tenant reaching `CallOptions.actor.scopeId` from the edge is assumed, not confirmed. Once it
 is there, `@stackra/actions` keys the area's token bucket by it and sizes it from the bound `RateLimitBudget` (the
 plan's value entitlement), so this package carries no rate-limit code of its own.
 
