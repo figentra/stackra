@@ -898,6 +898,9 @@ importers:
       '@stackra-pro/ui':
         specifier: workspace:*
         version: link:../../packages/design-system/ui-pro
+      '@stackra/container':
+        specifier: workspace:*
+        version: link:../../packages/foundation/container
       '@stackra/icons':
         specifier: workspace:*
         version: link:../../packages/design-system/icons
@@ -7969,6 +7972,10 @@ importers:
         version: 7.0.2
 
   services/example:
+    dependencies:
+      '@stackra/container':
+        specifier: workspace:*
+        version: link:../../packages/foundation/container
     devDependencies:
       '@stackra/tsdown-config':
         specifier: workspace:*
@@ -7993,6 +8000,10 @@ importers:
         version: 7.0.2
 
   services/health:
+    dependencies:
+      '@stackra/container':
+        specifier: workspace:*
+        version: link:../../packages/foundation/container
     devDependencies:
       '@stackra/tsdown-config':
         specifier: workspace:*
