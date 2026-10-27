@@ -16,7 +16,7 @@ configuration and the action testing helpers.
 | `.`           | `Action`, `ActionContext`                                                                | `extends Action({ key, actors, ... })`, `handle(input, ctx)`            |
 | `.`           | `Query`, `QueryContext`                                                                  | `extends Query({ key, actors, ... })`, `handle(input, ctx)`             |
 | `.`           | `Precondition`, `PreconditionContext`                                                    | `extends Precondition`, `check(ctx)`; listed in `preconditions`         |
-| `.`           | `ExtensionPoint`, `Extension`, `ExtensionContext`, `ExtensionTable`                      | slots `after<V, A>()` and `before<A>()`; `Extension<Point["slot"]>`     |
+| `.`           | `ExtensionPoint`, `Extension`, `ExtensionClass`, `ExtensionContext`, `ExtensionTable`    | slots `after<V, A>()` and `before<A>()`; `Extension<Point["slot"]>`     |
 | `.`           | `Interceptor`                                                                            | `extends Interceptor`, `intercept(ctx, next)`; listed in `interceptors` |
 | `.`           | `Idempotency`, `OfflineMode`, `IdMinting`, `OfflinePrecondition`, `ConflictResolution`   | the enums of the `idempotency` and `offline` options                    |
 | `.`           | `ActionPipeline`, `PipelineStage`, `RequestContext`                                      | the runtime: the fixed steps, their names, the running call's context   |

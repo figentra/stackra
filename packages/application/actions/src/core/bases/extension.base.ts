@@ -13,6 +13,7 @@
 import { createKind, type WithPartner } from "@stackra/container";
 
 import type { AnySlot } from "#core/types/any-slot.type";
+import type { ExtensionClass } from "#core/types/extension-class.type";
 import type { ExtensionOptions } from "#core/types/extension-options.type";
 import type { SlotHandler } from "#core/types/slot-handler.type";
 
@@ -39,7 +40,7 @@ type ExtensionKind = (abstract new <S extends AnySlot>() => ExtensionBase<S>) &
       ExtensionOptions,
       'Name the slot as a type argument: Extension<OrderExtensionPoint["adjustTotals"]>({ … })'
     >,
-  ) => abstract new () => ExtensionBase<S>);
+  ) => ExtensionClass<S>);
 
 /** Checks the options of the called form. */
 function read(options: ExtensionOptions = {}) {

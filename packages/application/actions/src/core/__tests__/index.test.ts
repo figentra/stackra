@@ -5,8 +5,8 @@
  *          `OfflinePrecondition`, `Precondition`, `Query`, `RateLimitConfig`, `RateLimitConfig$`, `RequestContext`)
  *          and the registry row's runtime are exported with the offline additions (the device, cap, replica and review
  *          memory drivers, `ReplicaFeed` and two refusals; no header name), nothing else is, the ports are not,
- *          and the template's types (`ActionContext`, `ExtensionContext`, `ExtensionTable`, `PreconditionContext`,
- *          `QueryContext`) and the offline option and replica types resolve.
+ *          and the template's types (`ActionContext`, `ExtensionClass`, `ExtensionContext`, `ExtensionTable`,
+ *          `PreconditionContext`, `QueryContext`) and the offline option and replica types resolve.
  * Boundary: test only; imports the stand-in barrel through its `#core` alias.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0294 (decision 15).
@@ -20,8 +20,10 @@ import type {
   ActionAccepts,
   ActionContext,
   ActionEffects,
+  AnySlot,
   CallInput,
   CallOptions,
+  ExtensionClass,
   ExtensionContext,
   ExtensionTable,
   InputOf,
@@ -97,6 +99,8 @@ describe("@stackra/actions", () => {
     expectTypeOf<ActionContext>().toMatchTypeOf<QueryContext>();
     expectTypeOf<ActionContext["idempotencyKey"]>().toEqualTypeOf<string | undefined>();
     expectTypeOf<ExtensionTable[string]["kind"]>().toEqualTypeOf<"after" | "before">();
+    // the called form returns the exported `ExtensionClass`, so a consumer's declaration emit can name it (STA-1220)
+    expectTypeOf(actions.Extension<AnySlot>({ order: 1 })).toEqualTypeOf<ExtensionClass<AnySlot>>();
     type Handler = {
       handle(input: { orderId: string }, ctx: QueryContext): Promise<{ status: string }>;
     };
