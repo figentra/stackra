@@ -92,6 +92,7 @@
     "@stackra/errors": "workspace:*",
     "@stackra/events": "workspace:*",
     "@stackra/model": "workspace:*",
+    "@stackra/outbox": "workspace:*",
     "@stackra/search": "workspace:*",
     "@stackra/tenancy": "workspace:*",
     "@stackra/validation": "workspace:*",

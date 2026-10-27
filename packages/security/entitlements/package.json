@@ -86,6 +86,7 @@
     "@stackra/actions": "workspace:*",
     "@stackra/container": "workspace:*",
     "@stackra/contracts": "workspace:*",
+    "@stackra/database": "workspace:*",
     "@stackra/errors": "workspace:*",
     "@stackra/locking": "workspace:*"
   },

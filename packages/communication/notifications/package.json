@@ -123,6 +123,7 @@
     "@stackra/i18n": "workspace:*",
     "@stackra/integrations": "workspace:*",
     "@stackra/money": "workspace:*",
+    "@stackra/outbox": "workspace:*",
     "@stackra/validation": "workspace:*",
     "zod": "catalog:"
   },

@@ -86,6 +86,7 @@
   },
   "dependencies": {
     "@stackra/actions": "workspace:*",
+    "@stackra/content": "workspace:*",
     "@stackra/contracts": "workspace:*",
     "@stackra/database": "workspace:*",
     "@stackra/documents": "workspace:*",
@@ -94,6 +95,7 @@
     "@stackra/iam": "workspace:*",
     "@stackra/integrations": "workspace:*",
     "@stackra/model": "workspace:*",
+    "@stackra/outbox": "workspace:*",
     "@stackra/rules": "workspace:*",
     "@stackra/validation": "workspace:*",
     "uqr": "catalog:",
