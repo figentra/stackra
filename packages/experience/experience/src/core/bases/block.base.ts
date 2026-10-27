@@ -19,16 +19,11 @@ import { createKind } from "@stackra/container";
 import { Enum } from "@stackra/contracts";
 
 import { ExperienceKind } from "#contracts/enums/experience-kind.enum";
+import { BlockBase } from "#core/bases/block-base.base";
 import { DEFAULT_BLOCK_KINDS } from "#core/constants/default-block-kinds.constant";
 import { BlockCategory } from "#core/enums/block-category.enum";
 import type { BlockClass } from "#core/types/block-class.type";
 import type { BlockOptions } from "#core/types/block-options.type";
-
-/** The instance side every block shares. */
-export abstract class BlockBase {
-  /** Type-only kind brand; protected, so it is not in `keyof` and never counts as a prop. */
-  declare protected readonly "~kind": "block";
-}
 
 /** A block instance: its fields are its props. */
 export type Block = BlockBase;
