@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: hold the workspace `.pnpmfile.mjs` to its contract: the packed manifest loses its `#` `imports` map and
  *          its `@stackra/source` export condition, a `dist` that still imports a `#` specifier fails the pack, and a
- *          `#` specifier in a comment does not.
+ *          `#` specifier in a comment does not; a Stackra package without `stackra.manifest.json` on disk and in
+ *          `files` fails the pack, a tooling preset and another kind do not (STA-1362).
  * Boundary: writes throwaway member folders under the OS temp directory and removes them.
  * Runtime: node
  * Governing contract: ADR 0177 (PK4 release checks); ADR 0453 (registry publish); ADR 0022 (tests live in tests folders).
@@ -104,6 +105,73 @@ test("beforePacking drops both the imports map and the source condition in one p
       name: "@stackra/x",
       exports: { ".": { default: "./dist/index.mjs" } },
     });
+  } finally {
+    rmSync(dir, { recursive: true });
+  }
+});
+
+/** A Stackra library package whose `files` ships the manifest. */
+const library = {
+  name: "@stackra/w",
+  files: ["dist", "stackra.manifest.json"],
+  stackra: { kind: "package", tier: "lib" },
+};
+
+/** A throwaway member folder that holds `stackra.manifest.json` when `withManifest`. */
+function stackraMember(withManifest) {
+  const dir = mkdtempSync(join(tmpdir(), "pnpmfile-"));
+  if (withManifest) writeFileSync(join(dir, "stackra.manifest.json"), "{}\n");
+  return dir;
+}
+
+test("beforePacking packs a Stackra package whose manifest is on disk and in files", () => {
+  const dir = stackraMember(true);
+  try {
+    assert.equal(hooks.beforePacking(library, dir), library);
+    const kindless = { ...library, stackra: { tier: "lib" } }; // a missing kind is a package
+    assert.equal(hooks.beforePacking(kindless, dir), kindless);
+  } finally {
+    rmSync(dir, { recursive: true });
+  }
+});
+
+test("beforePacking refuses a Stackra package without stackra.manifest.json", () => {
+  const dir = stackraMember(false);
+  try {
+    assert.throws(
+      () => hooks.beforePacking(library, dir),
+      /@stackra\/w: no stackra\.manifest\.json to pack; run `stackra gen --manifests`/,
+    );
+    assert.throws(
+      () => hooks.beforePacking({ ...library, stackra: { tier: "lib" } }, dir),
+      /no stackra\.manifest\.json to pack/,
+    );
+  } finally {
+    rmSync(dir, { recursive: true });
+  }
+});
+
+test("beforePacking refuses a Stackra package whose files leave the manifest out", () => {
+  const dir = stackraMember(true);
+  try {
+    assert.throws(
+      () => hooks.beforePacking({ ...library, files: ["dist"] }, dir),
+      /@stackra\/w: package\.json `files` leaves out stackra\.manifest\.json/,
+    );
+  } finally {
+    rmSync(dir, { recursive: true });
+  }
+});
+
+test("beforePacking asks no manifest of a tooling preset, another kind or a non-Stackra member", () => {
+  const dir = stackraMember(false);
+  try {
+    for (const plain of [
+      { ...library, stackra: { kind: "package", tier: "config" } },
+      { ...library, stackra: { kind: "skill" } },
+      { name: "@stackra/v", files: ["dist"] },
+    ])
+      assert.equal(hooks.beforePacking(plain, dir), plain);
   } finally {
     rmSync(dir, { recursive: true });
   }

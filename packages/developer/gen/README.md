@@ -74,7 +74,9 @@ Gen sorts files by path, reads each class's kind from its `extends` clause (`ext
 the heritage type argument (`Policy<Order>`, `Extension<Point["slot"]>`), and its constructor parameter types as
 tokens. A dependency is described by its committed manifest, never by its `.d.ts`; a package lists
 `stackra.manifest.json` in `files` so a host reads it under `node_modules`, and `--check` refuses
-`manifest_unshipped` when it does not (STA-1308). Every refusal carries a
+`manifest_unshipped` when it does not (STA-1308). The manifest is committed, never generated at pack time: the
+workspace `.pnpmfile.mjs` refuses to pack a Stackra package whose `stackra.manifest.json` is missing (STA-1362), so run
+`stackra gen --manifests` and commit it first. Every refusal carries a
 snake_case code, a position and the fix; when there is one, nothing is written.
 
 The quality-gate refusals (STA-1306) hold the conventions gen can see: a kind class's file suffix and name
