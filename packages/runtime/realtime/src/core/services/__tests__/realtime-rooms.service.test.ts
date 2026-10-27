@@ -23,6 +23,7 @@ import type { RoomGrant } from "#contracts/types/room-grant.type";
 import { LocalRealtimeFanoutDriver } from "#core/drivers/local-realtime-fanout.driver";
 import { RoomLimitReachedError } from "#core/errors/room-limit-reached.error";
 import { RealtimeRooms } from "#core/services/realtime-rooms.service";
+import type { RoomSocket } from "#core/types/room-socket.type";
 
 /** A grant for `principalId` in `scopeId` on page `pag_1`. */
 function grant(principalId: string, mayEdit = true, scopeId = "ten_1"): RoomGrant {
@@ -175,13 +176,18 @@ describe(RealtimeRooms, () => {
 
   it("accepts a socket, relays its frames and answers a viewer's update", () => {
     const { rooms } = roomsOf();
-    const listeners: Record<string, (event?: { data: unknown }) => void> = {};
+    // The `close` listener takes no event, so it ignores the one it is called with.
+    const listeners: Record<string, (event: { readonly data: unknown }) => void> = {};
     const sent: string[] = [];
     const closed: unknown[][] = [];
-    const socket = {
-      send: (data: string) => sent.push(data),
-      close: (...args: unknown[]) => closed.push(args),
-      addEventListener: (type: string, listener: (event?: { data: unknown }) => void) => {
+    const socket: RoomSocket = {
+      send: (data) => {
+        sent.push(data);
+      },
+      close: (...args) => {
+        closed.push(args);
+      },
+      addEventListener: (type: string, listener: (event: { readonly data: unknown }) => void) => {
         listeners[type] = listener;
       },
     };
@@ -192,7 +198,7 @@ describe(RealtimeRooms, () => {
     listeners["message"]?.({ data: JSON.stringify({ t: "update", data: "AAE=" }) });
     listeners["message"]?.({ data: "not json" });
     expect(JSON.parse(sent.at(-1) ?? "{}")).toEqual({ t: "refused", code: "forbidden" });
-    listeners["close"]?.();
+    listeners["close"]?.({ data: undefined });
     expect(rooms.size("ten_1:pag_1")).toBe(0);
   });
 });
