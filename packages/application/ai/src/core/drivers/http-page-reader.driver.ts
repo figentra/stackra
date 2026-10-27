@@ -4,7 +4,8 @@
  *          URL and every redirect target passes `checkEgress` first; redirects are followed by hand up to the limit;
  *          only an HTML response is read, up to the byte limit, within the time limit; the body is decoded by its
  *          declared charset and read with `parsePage`.
- * Boundary: GET only, no cookies, no credentials, no script run, nothing stored or logged. A refusal carries the code
+ * Boundary: built by `within(policy, fetcher?)`; its constructor takes nothing so gen can name it, and a reader built
+ *           without a policy is unusable (the policy comes from settings, never a default). GET only, no cookies, no credentials, no script run, nothing stored or logged. A refusal carries the code
  *           and, for an error answer, the status; never a body or header. The fetch function is injected (the
  *           platform `fetch` by default) so the service can pass its egress-proxied client and tests a stub. Server
  *           only (Node, Workers): it needs `redirect: "manual"` to return the 3xx answer, which a browser hides.
@@ -63,26 +64,27 @@ function textOf(body: Uint8Array, contentType: string): string {
  * Fetches pages within an egress bound.
  *
  * @example
- * container.bind(PageReader, () => new HttpPageReaderDriver(settings.pageReader));
+ * container.bind(PageReader, () => HttpPageReaderDriver.within(settings.pageReader));
  */
 export class HttpPageReaderDriver extends Driver(PageReader) {
-  /** The egress bound and limits. */
-  private readonly policy: PageReaderPolicy;
+  /** The egress bound and limits; set by `within`. */
+  private policy!: PageReaderPolicy;
 
   /** The fetch function. */
-  private readonly fetcher: typeof fetch;
+  private fetcher: typeof fetch = (input, init) => fetch(input, init);
 
   /**
+   * A reader bound by `policy`.
+   *
    * @param policy - the egress bound and limits, from settings.
    * @param fetcher - the fetch function; the platform `fetch` when left out.
+   * @returns the driver.
    */
-  constructor(
-    policy: PageReaderPolicy,
-    fetcher: typeof fetch = (input, init) => fetch(input, init),
-  ) {
-    super();
-    this.policy = policy;
-    this.fetcher = fetcher;
+  static within(policy: PageReaderPolicy, fetcher?: typeof fetch): HttpPageReaderDriver {
+    const driver = new HttpPageReaderDriver();
+    driver.policy = policy;
+    if (fetcher !== undefined) driver.fetcher = fetcher;
+    return driver;
   }
 
   /** Fetches `url` within the policy, following each checked redirect by hand, and answers the page or the refusal. */

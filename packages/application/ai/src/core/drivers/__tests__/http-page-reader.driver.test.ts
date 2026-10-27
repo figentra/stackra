@@ -49,7 +49,7 @@ function redirect(location: string): Response {
 describe(HttpPageReaderDriver, () => {
   it("reads an HTML page within the policy", async () => {
     const fetcher = stub(html("<title>Shop</title><p>Welcome</p>"));
-    const pages = new HttpPageReaderDriver(POLICY, fetcher);
+    const pages = HttpPageReaderDriver.within(POLICY, fetcher);
     expect(pages).toBeInstanceOf(PageReader);
     const result = await pages.read("https://shop.example.com/");
     expect(result).toEqual({
@@ -72,13 +72,16 @@ describe(HttpPageReaderDriver, () => {
   });
 
   it("follows a redirect and checks its target", async () => {
-    const followed = new HttpPageReaderDriver(POLICY, stub(redirect("/home"), html("<p>Home</p>")));
+    const followed = HttpPageReaderDriver.within(
+      POLICY,
+      stub(redirect("/home"), html("<p>Home</p>")),
+    );
     const read = await followed.read("https://shop.example.com/");
     expect(read.ok && read.page.url).toBe("https://shop.example.com/home");
 
     const internal = stub(redirect("https://10.0.0.1/admin"));
     expect(
-      await new HttpPageReaderDriver(POLICY, internal).read("https://shop.example.com/"),
+      await HttpPageReaderDriver.within(POLICY, internal).read("https://shop.example.com/"),
     ).toEqual({
       ok: false,
       refusal: "egress_refused",
@@ -86,7 +89,9 @@ describe(HttpPageReaderDriver, () => {
     expect(internal.calls).toHaveLength(1);
 
     const loop = stub(redirect("/again"));
-    expect(await new HttpPageReaderDriver(POLICY, loop).read("https://shop.example.com/")).toEqual({
+    expect(
+      await HttpPageReaderDriver.within(POLICY, loop).read("https://shop.example.com/"),
+    ).toEqual({
       ok: false,
       refusal: "too_many_redirects",
     });
@@ -94,7 +99,7 @@ describe(HttpPageReaderDriver, () => {
 
   it("refuses an egress-bound URL without fetching it", async () => {
     const fetcher = stub();
-    const pages = new HttpPageReaderDriver(
+    const pages = HttpPageReaderDriver.within(
       { ...POLICY, allowHosts: ["shop.example.com"] },
       fetcher,
     );
@@ -115,16 +120,16 @@ describe(HttpPageReaderDriver, () => {
     [html("<p>x</p>", { "content-length": "5000" }), { refusal: "too_large", status: 200 }],
     [html(`<p>${"x".repeat(2_000)}</p>`), { refusal: "too_large", status: 200 }],
   ])("refuses a bad answer", async (answer, refusal) => {
-    const pages = new HttpPageReaderDriver(POLICY, async () => answer);
+    const pages = HttpPageReaderDriver.within(POLICY, async () => answer);
     expect(await pages.read("https://shop.example.com/")).toEqual({ ok: false, ...refusal });
   });
 
   it("refuses a timeout and an unreachable host", async () => {
-    const slow = new HttpPageReaderDriver(POLICY, async () => {
+    const slow = HttpPageReaderDriver.within(POLICY, async () => {
       throw new DOMException("The operation timed out.", "TimeoutError");
     });
     expect(await slow.read("https://shop.example.com/")).toEqual({ ok: false, refusal: "timeout" });
-    const down = new HttpPageReaderDriver(POLICY, async () => {
+    const down = HttpPageReaderDriver.within(POLICY, async () => {
       throw new TypeError("fetch failed");
     });
     expect(await down.read("https://shop.example.com/")).toEqual({
@@ -134,7 +139,9 @@ describe(HttpPageReaderDriver, () => {
   });
 
   it("cuts the text at the policy's limit", async () => {
-    const pages = new HttpPageReaderDriver(POLICY, async () => html(`<p>${"a".repeat(150)}</p>`));
+    const pages = HttpPageReaderDriver.within(POLICY, async () =>
+      html(`<p>${"a".repeat(150)}</p>`),
+    );
     const result = await pages.read("https://shop.example.com/");
     expect(result.ok && result.page.text.length).toBe(100);
     expect(result.ok && result.page.truncated).toBe(true);

@@ -13,7 +13,7 @@ import { MemoryPageReaderDriver } from "#core/drivers/memory-page-reader.driver"
 
 describe(MemoryPageReaderDriver, () => {
   it("reads the pages it holds", async () => {
-    const pages = new MemoryPageReaderDriver({
+    const pages = MemoryPageReaderDriver.of({
       "https://shop.example.com/": "<title>Shop</title><p>Welcome</p>",
     });
     expect(pages).toBeInstanceOf(PageReader);
@@ -29,6 +29,13 @@ describe(MemoryPageReaderDriver, () => {
       },
     });
     expect(await pages.read("https://shop.example.com/missing")).toEqual({
+      ok: false,
+      refusal: "unreachable",
+    });
+  });
+
+  it("holds no page when built with no arguments", async () => {
+    expect(await new MemoryPageReaderDriver().read("https://shop.example.com/")).toEqual({
       ok: false,
       refusal: "unreachable",
     });

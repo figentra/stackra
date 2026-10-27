@@ -185,7 +185,7 @@ title, language, readable text cut at the policy's limit, and `ProductHint`s fro
 `PageReadRefusal` code. It does not crawl, run scripts, send cookies or store anything.
 
 ```ts
-const pages = new HttpPageReaderDriver(settings.pageReader, egressFetch);
+const pages = HttpPageReaderDriver.within(settings.pageReader, egressFetch);
 const result = await pages.read("https://shop.example.com/products/abaya");
 if (result.ok) draft(result.page.products); // [{ name: "Black Abaya", price: "129.00", currency: "SAR", ... }]
 ```
@@ -196,7 +196,7 @@ if (result.ok) draft(result.page.products); // [{ name: "Black Abaya", price: "1
   comes from settings; nothing here sets a default. The check reads the URL only, so the service passes a fetch that
   goes through its egress proxy, which cannot reach private addresses.
 - A reading is untrusted: hand it to a model as data, under the guardrails.
-- `MemoryPageReaderDriver({ [url]: html })` serves tests and evals through the same `parsePage`.
+- `MemoryPageReaderDriver.of({ [url]: html })` serves tests and evals through the same `parsePage`.
 
 ## Events
 
