@@ -12,8 +12,8 @@ import { Icon, Surface, Text } from "@stackra/ui/native";
 import { Pressable, View } from "react-native";
 import { useReducedMotion } from "react-native-reanimated";
 
-import type { DesignSystemComponentRoute } from "#src/navigation/types";
 import type { PageLink } from "#src/types/page-link.type";
+import type { PagePagerProps } from "#src/components/ui/page-pager.props";
 
 // shortcut: English strings in one place until @stackra/i18n reaches the mobile app; then keys.
 const STRINGS = {
@@ -21,16 +21,6 @@ const STRINGS = {
   next: "Next",
   label: (direction: string, title: string) => `${direction}: ${title}`,
 } as const;
-
-/** Props of {@link PagePager}. */
-export interface PagePagerProps {
-  /** Every page, in gallery order. */
-  pages: readonly PageLink[];
-  /** The page on screen. */
-  current: PageLink;
-  /** Opens a page. */
-  onOpen: (route: DesignSystemComponentRoute) => void;
-}
 
 /** One card of the pager: the direction above the page title, aligned to its own edge. */
 function PagerCard({

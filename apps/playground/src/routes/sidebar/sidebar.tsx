@@ -25,7 +25,7 @@ import {
   Users,
 } from "@stackra/icons/react/lucide-icons";
 import type { NavigationItem } from "@stackra/ui/contracts";
-import * as Ui from "@stackra/ui/react";
+import { Button, Heading, Sidebar as UiSidebar, Text } from "@stackra/ui/react";
 import { useState, type ReactNode } from "react";
 import { useLocation } from "react-router";
 
@@ -111,18 +111,18 @@ interface MarkProps {
 /** The app's brand node: its name, or one letter in the rail. */
 function Brand({ isCollapsed }: MarkProps) {
   return (
-    <Ui.Text className="px-2 pt-1 font-semibold">
+    <Text className="px-2 pt-1 font-semibold">
       {isCollapsed ? STRINGS.brandMark : STRINGS.brand}
-    </Ui.Text>
+    </Text>
   );
 }
 
 /** The app's account node: the name, or one letter in the rail. */
 function Account({ isCollapsed }: MarkProps) {
   return (
-    <Ui.Text tone="muted" className="px-2">
+    <Text tone="muted" className="px-2">
       {isCollapsed ? STRINGS.accountMark : STRINGS.account}
-    </Ui.Text>
+    </Text>
   );
 }
 
@@ -166,15 +166,15 @@ export function Sidebar() {
       <article className="grid gap-10">
         <title>{STRINGS.documentTitle}</title>
         <header className="grid gap-2">
-          <Ui.Heading level={1}>{SidebarRoute.title}</Ui.Heading>
-          <Ui.Text className="max-w-prose">
+          <Heading level={1}>{SidebarRoute.title}</Heading>
+          <Text className="max-w-prose">
             <bdi>{STRINGS.intro}</bdi>
-          </Ui.Text>
+          </Text>
         </header>
 
         <PageSection id="sidebar-expanded" title={STRINGS.expanded} note={STRINGS.expandedNote}>
           <Boxed>
-            <Ui.Sidebar
+            <UiSidebar
               label={STRINGS.expandedLabel}
               items={items("sidebar-expanded")}
               startContent={<Brand isCollapsed={false} />}
@@ -185,7 +185,7 @@ export function Sidebar() {
 
         <PageSection id="sidebar-collapsed" title={STRINGS.collapsed} note={STRINGS.collapsedNote}>
           <Boxed>
-            <Ui.Sidebar
+            <UiSidebar
               label={STRINGS.collapsedLabel}
               items={items("sidebar-collapsed")}
               isCollapsed
@@ -197,7 +197,7 @@ export function Sidebar() {
 
         <PageSection id="sidebar-current" title={STRINGS.current} note={STRINGS.currentNote}>
           <Boxed>
-            <Ui.Sidebar
+            <UiSidebar
               label={STRINGS.currentLabel}
               items={items("sidebar-current", "orders")}
               startContent={<Brand isCollapsed={false} />}
@@ -207,7 +207,7 @@ export function Sidebar() {
 
         <PageSection id="sidebar-no-toggle" title={STRINGS.noToggle} note={STRINGS.noToggleNote}>
           <Boxed>
-            <Ui.Sidebar
+            <UiSidebar
               label={STRINGS.noToggleLabel}
               items={items("sidebar-no-toggle")}
               isCollapsible={false}
@@ -218,10 +218,10 @@ export function Sidebar() {
         <PageSection id="sidebar-arabic" title={STRINGS.arabic} note={STRINGS.arabicNote}>
           <div lang="ar" dir="rtl">
             <Boxed>
-              <Ui.Sidebar
+              <UiSidebar
                 label={STRINGS.arabicLabel}
                 startContent={
-                  <Ui.Text className="px-2 pt-1 font-semibold">{STRINGS.arabicBrand}</Ui.Text>
+                  <Text className="px-2 pt-1 font-semibold">{STRINGS.arabicBrand}</Text>
                 }
                 items={[
                   {
@@ -252,7 +252,7 @@ export function Sidebar() {
         <PageSection id="sidebar-live" title={STRINGS.live} note={STRINGS.liveNote}>
           <div className="flex flex-wrap items-start gap-4">
             <Boxed>
-              <Ui.Sidebar
+              <UiSidebar
                 label={STRINGS.liveLabel}
                 items={items("sidebar-live", "home")}
                 isCollapsed={isCollapsed}
@@ -262,9 +262,9 @@ export function Sidebar() {
               />
             </Boxed>
             <div className="grid gap-3">
-              <Ui.Button variant="secondary" onPress={() => setIsCollapsed((value) => !value)}>
+              <Button variant="secondary" onPress={() => setIsCollapsed((value) => !value)}>
                 {STRINGS.toggleOutside}
-              </Ui.Button>
+              </Button>
               <output aria-live="polite" data-testid="sidebar-state">
                 <bdi>{STRINGS.state(isCollapsed)}</bdi>
               </output>

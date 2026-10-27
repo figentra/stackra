@@ -10,7 +10,7 @@
  *          dark, RTL).
  */
 import { Size, Tone } from "@stackra/ui/contracts";
-import * as Ui from "@stackra/ui/react";
+import { Button, Heading, StatusBadge as UiStatusBadge, Text } from "@stackra/ui/react";
 import { useState } from "react";
 
 import { PageSection } from "#src/components/page-section";
@@ -64,22 +64,22 @@ export function StatusBadge() {
     <article className="grid gap-10">
       <title>{STRINGS.documentTitle}</title>
       <header className="grid gap-2">
-        <Ui.Heading level={1}>{StatusBadgeRoute.title}</Ui.Heading>
-        <Ui.Text className="max-w-prose">
+        <Heading level={1}>{StatusBadgeRoute.title}</Heading>
+        <Text className="max-w-prose">
           <bdi>{STRINGS.intro}</bdi>
-        </Ui.Text>
+        </Text>
       </header>
 
       <PageSection id="status-badge-tones" title={STRINGS.tones} note={STRINGS.tonesNote}>
         {Size.map((size) => (
           <div key={size} className="grid gap-2">
-            <Ui.Heading level={3}>{STRINGS.size(size)}</Ui.Heading>
+            <Heading level={3}>{STRINGS.size(size)}</Heading>
             <ul className={ROW}>
               {Tone.map((name) => (
                 <li key={name}>
-                  <Ui.StatusBadge tone={name} size={size}>
+                  <UiStatusBadge tone={name} size={size}>
                     {STATE[name]}
-                  </Ui.StatusBadge>
+                  </UiStatusBadge>
                 </li>
               ))}
             </ul>
@@ -107,7 +107,7 @@ export function StatusBadge() {
                   <bdi>{order.name}</bdi>
                 </th>
                 <td className="p-2">
-                  <Ui.StatusBadge tone={order.tone}>{STATE[order.tone]}</Ui.StatusBadge>
+                  <UiStatusBadge tone={order.tone}>{STATE[order.tone]}</UiStatusBadge>
                 </td>
               </tr>
             ))}
@@ -117,13 +117,13 @@ export function StatusBadge() {
 
       <PageSection id="status-badge-live" title={STRINGS.live} note={STRINGS.liveNote}>
         <div className={ROW}>
-          <Ui.StatusBadge tone={tone}>{STATE[tone]}</Ui.StatusBadge>
-          <Ui.Button
+          <UiStatusBadge tone={tone}>{STATE[tone]}</UiStatusBadge>
+          <Button
             variant="secondary"
             onPress={() => setToneIndex((index) => (index + 1) % Tone.length)}
           >
             {STRINGS.advance}
-          </Ui.Button>
+          </Button>
         </div>
       </PageSection>
     </article>

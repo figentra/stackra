@@ -11,24 +11,14 @@
  */
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import type { ReactNode } from "react";
 
-import type { DesignSystemComponentRoute, HomeStackParamList } from "#src/navigation/types";
-import type { PageLink } from "#src/types/page-link.type";
+import type { HomeStackParamList } from "#src/navigation/types";
+import type { DesignSystemComponentRoute } from "#src/navigation/design-system-component-route.type";
 import { CategoryStrip } from "./category-strip";
 import { PagePager } from "./page-pager";
 import { ReviewIcons } from "./review-icons";
-import { ScreenChrome } from "./screen";
-
-/** Props of {@link ComponentPage}. */
-export interface ComponentPageProps {
-  /** Every page, in gallery order. */
-  pages: readonly PageLink[];
-  /** The route of the page inside. */
-  route: DesignSystemComponentRoute;
-  /** The component page the frame wraps. */
-  children: ReactNode;
-}
+import { ScreenChrome } from "./screen-chrome.context";
+import type { ComponentPageProps } from "#src/components/ui/component-page.props";
 
 /** A design-system page with its category strip and pager. */
 export function ComponentPage({ pages, route, children }: ComponentPageProps) {

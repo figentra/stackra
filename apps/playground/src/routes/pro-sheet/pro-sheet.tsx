@@ -7,7 +7,7 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 12); ADR 0060 (light, dark, RTL); STA-416 FR-012.
  */
-import * as Ui from "@stackra/ui/react";
+import { Button, TextField } from "@stackra/ui/react";
 import * as UiPro from "@stackra-pro/ui/react";
 import { useState } from "react";
 
@@ -62,7 +62,7 @@ export function ProSheet() {
             onOpenChange={(isOpen) => setOpen(isOpen ? "bottom" : null)}
           >
             <UiPro.Sheet.Trigger>
-              <Ui.Button variant="secondary">{STRINGS.openBottom}</Ui.Button>
+              <Button variant="secondary">{STRINGS.openBottom}</Button>
             </UiPro.Sheet.Trigger>
             <UiPro.Sheet.Backdrop>
               <UiPro.Sheet.Content className="mx-auto max-h-[95vh] max-w-[420px]">
@@ -78,10 +78,10 @@ export function ProSheet() {
                     </p>
                   </UiPro.Sheet.Body>
                   <UiPro.Sheet.Footer>
-                    <Ui.Button variant="secondary" onPress={() => answer(STRINGS.cancel)}>
+                    <Button variant="secondary" onPress={() => answer(STRINGS.cancel)}>
                       {STRINGS.cancel}
-                    </Ui.Button>
-                    <Ui.Button onPress={() => answer(STRINGS.confirm)}>{STRINGS.confirm}</Ui.Button>
+                    </Button>
+                    <Button onPress={() => answer(STRINGS.confirm)}>{STRINGS.confirm}</Button>
                   </UiPro.Sheet.Footer>
                 </UiPro.Sheet.Dialog>
               </UiPro.Sheet.Content>
@@ -93,7 +93,7 @@ export function ProSheet() {
             onOpenChange={(isOpen) => setOpen(isOpen ? "side" : null)}
           >
             <UiPro.Sheet.Trigger>
-              <Ui.Button variant="secondary">{STRINGS.openSide}</Ui.Button>
+              <Button variant="secondary">{STRINGS.openSide}</Button>
             </UiPro.Sheet.Trigger>
             <UiPro.Sheet.Backdrop>
               <UiPro.Sheet.Content className="w-[400px]">
@@ -104,13 +104,13 @@ export function ProSheet() {
                   </UiPro.Sheet.Header>
                   <UiPro.Sheet.Body>
                     <form className="grid gap-4">
-                      <Ui.TextField
+                      <TextField
                         className="w-full"
                         name="name"
                         label={STRINGS.name}
                         variant="secondary"
                       />
-                      <Ui.TextField
+                      <TextField
                         className="w-full"
                         name="email"
                         type="email"
@@ -120,10 +120,10 @@ export function ProSheet() {
                     </form>
                   </UiPro.Sheet.Body>
                   <UiPro.Sheet.Footer>
-                    <Ui.Button variant="secondary" onPress={() => answer(STRINGS.cancel)}>
+                    <Button variant="secondary" onPress={() => answer(STRINGS.cancel)}>
                       {STRINGS.cancel}
-                    </Ui.Button>
-                    <Ui.Button onPress={() => answer(STRINGS.save)}>{STRINGS.save}</Ui.Button>
+                    </Button>
+                    <Button onPress={() => answer(STRINGS.save)}>{STRINGS.save}</Button>
                   </UiPro.Sheet.Footer>
                 </UiPro.Sheet.Dialog>
               </UiPro.Sheet.Content>

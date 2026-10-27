@@ -9,14 +9,7 @@
  * Governing contract: ADR 0310 (decision 6); STA-403 FR-011.
  */
 import { Calendar } from "@stackra-pro/ui/native";
-
-/** Props of {@link CalendarParts}. */
-export interface CalendarPartsProps {
-  /** Days of the month that get a dot under the number, for example days with an event. */
-  eventDays?: readonly number[];
-  /** True to replace the heading with the year picker trigger and add the year list. */
-  hasYearPicker?: boolean;
-}
+import type { CalendarPartsProps } from "./calendar-parts.props";
 
 /** The month calendar's parts: header, weekday labels, day cells with event dots and, optionally, the year picker. */
 export function CalendarParts({ eventDays = [], hasYearPicker = false }: CalendarPartsProps) {

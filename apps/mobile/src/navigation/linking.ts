@@ -8,7 +8,8 @@
 import type { LinkingOptions, PathConfig } from "@react-navigation/native";
 import * as Linking from "expo-linking";
 
-import type { HomeStackParamList, RootStackParamList } from "./types";
+import type { HomeStackParamList } from "./types";
+import type { RootStackParamList } from "./root-stack-param-list.type";
 
 /**
  * The Home tab's paths. Typed against its own param list: React Navigation's nested-config inference does not

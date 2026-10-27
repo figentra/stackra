@@ -8,7 +8,7 @@
  * Runtime: browser
  * Governing contract: ADR 0302 (decisions 3 and 5); ADR 0303 (decision 7); ADR 0060 (light, dark, RTL).
  */
-import * as Ui from "@stackra/ui/react";
+import { Heading, Surface, Text, TextArea as UiTextArea } from "@stackra/ui/react";
 import { useState } from "react";
 
 import { PageSection } from "#src/components/page-section";
@@ -72,59 +72,59 @@ export function TextArea() {
     <article className="grid gap-10">
       <title>{STRINGS.documentTitle}</title>
       <header className="grid gap-2">
-        <Ui.Heading level={1}>{TextAreaRoute.title}</Ui.Heading>
-        <Ui.Text className="max-w-prose">
+        <Heading level={1}>{TextAreaRoute.title}</Heading>
+        <Text className="max-w-prose">
           <bdi>{STRINGS.intro}</bdi>
-        </Ui.Text>
+        </Text>
       </header>
 
       <PageSection id="text-area-variants" title={STRINGS.variants} note={STRINGS.variantsNote}>
         <div className={GRID}>
-          <Ui.TextArea label={STRINGS.primary} variant="primary" defaultValue="Ada" />
-          <Ui.Surface variant="secondary" className="rounded-lg p-4">
-            <Ui.TextArea label={STRINGS.secondary} variant="secondary" defaultValue="Ada" />
-          </Ui.Surface>
+          <UiTextArea label={STRINGS.primary} variant="primary" defaultValue="Ada" />
+          <Surface variant="secondary" className="rounded-lg p-4">
+            <UiTextArea label={STRINGS.secondary} variant="secondary" defaultValue="Ada" />
+          </Surface>
         </div>
       </PageSection>
 
       <PageSection id="text-area-parts" title={STRINGS.parts} note={STRINGS.partsNote}>
         <div className={GRID}>
-          <Ui.TextArea label={STRINGS.labelOnly} />
-          <Ui.TextArea label={STRINGS.withPlaceholder} placeholder={STRINGS.placeholder} />
-          <Ui.TextArea label={STRINGS.withDescription} description={STRINGS.description} />
+          <UiTextArea label={STRINGS.labelOnly} />
+          <UiTextArea label={STRINGS.withPlaceholder} placeholder={STRINGS.placeholder} />
+          <UiTextArea label={STRINGS.withDescription} description={STRINGS.description} />
         </div>
       </PageSection>
 
       <PageSection id="text-area-lines" title={STRINGS.lines} note={STRINGS.linesNote}>
         <div className={GRID}>
-          <Ui.TextArea label={STRINGS.twoLines} rows={2} />
-          <Ui.TextArea label={STRINGS.sixLines} rows={6} />
+          <UiTextArea label={STRINGS.twoLines} rows={2} />
+          <UiTextArea label={STRINGS.sixLines} rows={6} />
         </div>
       </PageSection>
 
       <PageSection id="text-area-states" title={STRINGS.states} note={STRINGS.statesNote}>
         <div className={GRID}>
-          <Ui.TextArea label={STRINGS.required} isRequired />
-          <Ui.TextArea
+          <UiTextArea label={STRINGS.required} isRequired />
+          <UiTextArea
             label={STRINGS.invalid}
             isInvalid
             defaultValue="Hi"
             errorMessage={STRINGS.invalidMessage}
           />
-          <Ui.TextArea label={STRINGS.disabled} isDisabled defaultValue={STRINGS.kept} />
-          <Ui.TextArea label={STRINGS.readOnly} isReadOnly defaultValue={STRINGS.kept} />
+          <UiTextArea label={STRINGS.disabled} isDisabled defaultValue={STRINGS.kept} />
+          <UiTextArea label={STRINGS.readOnly} isReadOnly defaultValue={STRINGS.kept} />
         </div>
       </PageSection>
 
       <PageSection id="text-area-width" title={STRINGS.width} note={STRINGS.widthNote}>
         <div className="grid gap-4">
-          <Ui.TextArea label={STRINGS.full} />
-          <Ui.TextArea label={STRINGS.content} isFullWidth={false} />
+          <UiTextArea label={STRINGS.full} />
+          <UiTextArea label={STRINGS.content} isFullWidth={false} />
         </div>
       </PageSection>
 
       <PageSection id="text-area-live" title={STRINGS.live} note={STRINGS.liveNote}>
-        <Ui.TextArea
+        <UiTextArea
           label={STRINGS.liveLabel}
           description={STRINGS.liveDescription}
           errorMessage={STRINGS.liveError}
@@ -133,9 +133,9 @@ export function TextArea() {
           value={message}
           onChange={setMessage}
         />
-        <Ui.Text data-testid="count" aria-live="polite">
+        <Text data-testid="count" aria-live="polite">
           {STRINGS.liveCount(message.length)}
-        </Ui.Text>
+        </Text>
       </PageSection>
     </article>
   );

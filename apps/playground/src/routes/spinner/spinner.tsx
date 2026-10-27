@@ -8,7 +8,7 @@
  * Governing contract: ADR 0302 (decisions 3 and 5); ADR 0303 (decision 7); ADR 0304; ADR 0060 (light, dark, RTL).
  */
 import { Size, TextTone } from "@stackra/ui/contracts";
-import * as Ui from "@stackra/ui/react";
+import { Button, Heading, Spinner as UiSpinner, Text } from "@stackra/ui/react";
 import { useEffect, useRef, useState } from "react";
 
 import { PageSection } from "#src/components/page-section";
@@ -67,16 +67,16 @@ export function Spinner() {
     <article className="grid gap-10">
       <title>{STRINGS.documentTitle}</title>
       <header className="grid gap-2">
-        <Ui.Heading level={1}>{SpinnerRoute.title}</Ui.Heading>
-        <Ui.Text className="max-w-prose">
+        <Heading level={1}>{SpinnerRoute.title}</Heading>
+        <Text className="max-w-prose">
           <bdi>{STRINGS.intro}</bdi>
-        </Ui.Text>
+        </Text>
       </header>
 
       <PageSection id="spinner-sizes" title={STRINGS.sizes} note={STRINGS.sizesNote}>
         <div className={ROW}>
           {Size.map((size) => (
-            <Ui.Spinner key={size} size={size} label={STRINGS.sizeLabel(size)} data-size={size} />
+            <UiSpinner key={size} size={size} label={STRINGS.sizeLabel(size)} data-size={size} />
           ))}
         </div>
       </PageSection>
@@ -84,32 +84,32 @@ export function Spinner() {
       <PageSection id="spinner-tones" title={STRINGS.tones} note={STRINGS.tonesNote}>
         <div className={ROW}>
           {TextTone.map((tone) => (
-            <Ui.Spinner key={tone} tone={tone} label={STRINGS.toneLabel(tone)} data-tone={tone} />
+            <UiSpinner key={tone} tone={tone} label={STRINGS.toneLabel(tone)} data-tone={tone} />
           ))}
         </div>
       </PageSection>
 
       <PageSection id="spinner-beside" title={STRINGS.beside} note={STRINGS.besideNote}>
         <div className="flex items-center gap-2">
-          <Ui.Spinner size="sm" tone="muted" />
-          <Ui.Text tone="muted">{STRINGS.results}</Ui.Text>
+          <UiSpinner size="sm" tone="muted" />
+          <Text tone="muted">{STRINGS.results}</Text>
         </div>
       </PageSection>
 
       <PageSection id="spinner-speed" title={STRINGS.speed} note={STRINGS.speedNote}>
         <div className="flex items-center gap-2">
           {/* Decorative: the text beside it names the wait. */}
-          <Ui.Spinner className="animate-[spin_1.5s_linear_infinite] motion-reduce:animate-none" />
-          <Ui.Text tone="muted">{STRINGS.slow}</Ui.Text>
+          <UiSpinner className="animate-[spin_1.5s_linear_infinite] motion-reduce:animate-none" />
+          <Text tone="muted">{STRINGS.slow}</Text>
         </div>
       </PageSection>
 
       <PageSection id="spinner-action" title={STRINGS.action} note={STRINGS.actionNote}>
         <div className={ROW}>
-          <Ui.Button variant="secondary" isLoading={isLoading} onPress={start}>
+          <Button variant="secondary" isLoading={isLoading} onPress={start}>
             {STRINGS.load}
-          </Ui.Button>
-          {isLoading ? <Ui.Spinner label={STRINGS.loading} /> : null}
+          </Button>
+          {isLoading ? <UiSpinner label={STRINGS.loading} /> : null}
           <output aria-live="polite">{result}</output>
         </div>
       </PageSection>

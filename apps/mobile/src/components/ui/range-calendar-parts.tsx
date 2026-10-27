@@ -9,12 +9,7 @@
  * Governing contract: ADR 0310 (decision 12); STA-416 FR-013.
  */
 import { RangeCalendar } from "@stackra-pro/ui/native";
-
-/** Props of {@link RangeCalendarParts}. */
-export interface RangeCalendarPartsProps {
-  /** True to replace the heading with the year picker trigger and add the year list. */
-  hasYearPicker?: boolean;
-}
+import type { RangeCalendarPartsProps } from "./range-calendar-parts.props";
 
 /** The range calendar's parts: header, weekday labels, day cells and, optionally, the year picker. */
 export function RangeCalendarParts({ hasYearPicker = false }: RangeCalendarPartsProps) {

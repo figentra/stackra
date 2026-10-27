@@ -14,28 +14,35 @@ import { useThemeColor } from "heroui-native";
 
 import { HomeScreen } from "../screens/home-screen";
 import { SettingsScreen } from "../screens/settings-screen";
-import { detailHeader, largeTitleHeader } from "./header-options";
-import type {
-  HomeStackParamList,
-  SearchStackParamList,
-  SettingsStackParamList,
-  TabParamList,
-} from "./types";
+import { detailHeader } from "./detail-header.constant";
+import { largeTitleHeader } from "./large-title-header.constant";
+import type { HomeStackParamList } from "./types";
+import type { SettingsStackParamList } from "./settings-stack-param-list.type";
+import type { SearchStackParamList } from "./search-stack-param-list.type";
+import type { TabParamList } from "./tab-param-list.type";
+import type { ComponentPage as ComponentPageComponent } from "../components/ui/component-page";
+import type { DisplaySettings as DisplaySettingsComponent } from "../components/ui/display-settings";
+import type { DESIGN_SYSTEM_COMPONENTS as DesignSystemComponentsList } from "../screens/design-system-components";
+import type { DesignSystemScreen as DesignSystemScreenComponent } from "../screens/design-system-screen";
+import type { SearchScreen as SearchScreenComponent } from "../screens/search-screen";
 
 // Release builds leave the review area out of the bundle: Metro folds `__DEV__` to false and drops these requires,
-// where static imports would bundle and evaluate all its screens and their native libraries at start-up.
+// where static imports would bundle and evaluate all its screens and their native libraries at start-up (the type
+// imports above are erased).
 /* oxlint-disable typescript/no-require-imports -- the requires are what lets the release build drop the area */
-const DESIGN_SYSTEM_COMPONENTS: typeof import("../screens/design-system-components").DESIGN_SYSTEM_COMPONENTS =
-  __DEV__ ? require("../screens/design-system-components").DESIGN_SYSTEM_COMPONENTS : [];
-const DesignSystemScreen:
-  | typeof import("../screens/design-system-screen").DesignSystemScreen
-  | undefined = __DEV__ ? require("../screens/design-system-screen").DesignSystemScreen : undefined;
-const ComponentPage: typeof import("../components/ui/component-page").ComponentPage | undefined =
-  __DEV__ ? require("../components/ui/component-page").ComponentPage : undefined;
-const DisplaySettings:
-  | typeof import("../components/ui/display-settings").DisplaySettings
-  | undefined = __DEV__ ? require("../components/ui/display-settings").DisplaySettings : undefined;
-const SearchScreen: typeof import("../screens/search-screen").SearchScreen | undefined = __DEV__
+const DESIGN_SYSTEM_COMPONENTS: typeof DesignSystemComponentsList = __DEV__
+  ? require("../screens/design-system-components").DESIGN_SYSTEM_COMPONENTS
+  : [];
+const DesignSystemScreen: typeof DesignSystemScreenComponent | undefined = __DEV__
+  ? require("../screens/design-system-screen").DesignSystemScreen
+  : undefined;
+const ComponentPage: typeof ComponentPageComponent | undefined = __DEV__
+  ? require("../components/ui/component-page").ComponentPage
+  : undefined;
+const DisplaySettings: typeof DisplaySettingsComponent | undefined = __DEV__
+  ? require("../components/ui/display-settings").DisplaySettings
+  : undefined;
+const SearchScreen: typeof SearchScreenComponent | undefined = __DEV__
   ? require("../screens/search-screen").SearchScreen
   : undefined;
 /* oxlint-enable typescript/no-require-imports */

@@ -7,7 +7,7 @@
  * Runtime: browser
  * Governing contract: ADR 0060 (light, dark, RTL); STA-803.
  */
-import * as Ui from "@stackra/ui/react";
+import { Button, EnvironmentBanner as UiEnvironmentBanner, Switch } from "@stackra/ui/react";
 import { useState } from "react";
 
 import { EnvironmentBannerRoute } from "#src/routes/environment-banner/environment-banner.route";
@@ -40,12 +40,12 @@ export function EnvironmentBanner() {
         <h2 id="demo-heading" className="type-h2">
           {STRINGS.demo}
         </h2>
-        <Ui.Switch label={STRINGS.production} value={isProduction} onChange={setIsProduction} />
-        <Ui.EnvironmentBanner
+        <Switch label={STRINGS.production} value={isProduction} onChange={setIsProduction} />
+        <UiEnvironmentBanner
           environment={STRINGS.environment}
           isProduction={isProduction}
           description={STRINGS.description}
-          actions={<Ui.Button size="sm">{STRINGS.publish}</Ui.Button>}
+          actions={<Button size="sm">{STRINGS.publish}</Button>}
         />
       </section>
     </article>

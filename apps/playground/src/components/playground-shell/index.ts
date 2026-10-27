@@ -5,4 +5,5 @@
  * Runtime: browser
  * Governing contract: ADR 0294 (decision 14).
  */
-export { PlaygroundShell, type PlaygroundShellProps } from "./playground-shell";
+export { PlaygroundShell } from "./playground-shell";
+export { type PlaygroundShellProps } from "./playground-shell.props";

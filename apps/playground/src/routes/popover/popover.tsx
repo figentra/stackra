@@ -10,7 +10,7 @@
  * Governing contract: ADR 0302 (decisions 3 and 5); ADR 0303 (decision 7); ADR 0312; ADR 0060 (light, dark, RTL);
  *          WCAG 2.2 SC 2.1.2 and 2.5.8.
  */
-import * as Ui from "@stackra/ui/react";
+import { Button, Heading, Popover as UiPopover, Text, TextField } from "@stackra/ui/react";
 import { useState } from "react";
 
 import { PageSection } from "#src/components/page-section";
@@ -86,9 +86,9 @@ const SURFACE = "max-w-72";
 /** One short paragraph of popover content; `<bdi>` keeps an English full stop at its end inside a right-to-left page. */
 function Body({ children }: { readonly children: string }) {
   return (
-    <Ui.Text>
+    <Text>
       <bdi>{children}</bdi>
-    </Ui.Text>
+    </Text>
   );
 }
 
@@ -116,24 +116,24 @@ function ClosableSample({
 }: ClosableSampleProps) {
   const [isOpen, setIsOpen] = useState(false);
   return (
-    <Ui.Popover
+    <UiPopover
       isOpen={isOpen}
       onOpenChange={setIsOpen}
       isDismissable={isDismissable}
       isKeyboardDismissDisabled={isKeyboardDismissDisabled}
       title={title}
       className={SURFACE}
-      trigger={<Ui.Button variant="secondary">{label}</Ui.Button>}
+      trigger={<Button variant="secondary">{label}</Button>}
     >
       <div className="grid gap-3">
         <Body>{body}</Body>
         <div>
-          <Ui.Button size="sm" onPress={() => setIsOpen(false)}>
+          <Button size="sm" onPress={() => setIsOpen(false)}>
             {STRINGS.done}
-          </Ui.Button>
+          </Button>
         </div>
       </div>
-    </Ui.Popover>
+    </UiPopover>
   );
 }
 
@@ -145,10 +145,10 @@ export function Popover() {
     <article className="grid gap-10">
       <title>{STRINGS.documentTitle}</title>
       <header className="grid gap-2">
-        <Ui.Heading level={1}>{PopoverRoute.title}</Ui.Heading>
-        <Ui.Text className="max-w-prose">
+        <Heading level={1}>{PopoverRoute.title}</Heading>
+        <Text className="max-w-prose">
           <bdi>{STRINGS.intro}</bdi>
-        </Ui.Text>
+        </Text>
       </header>
 
       <PageSection id="popover-placement" title={STRINGS.placement} note={STRINGS.placementNote}>
@@ -162,14 +162,14 @@ export function Popover() {
             ] as const
           ).map(([placement, label]) => (
             <li key={placement}>
-              <Ui.Popover
+              <UiPopover
                 placement={placement}
                 title={STRINGS.sideTitle}
                 className={SURFACE}
-                trigger={<Ui.Button variant="secondary">{label}</Ui.Button>}
+                trigger={<Button variant="secondary">{label}</Button>}
               >
                 <Body>{STRINGS.sideBody}</Body>
-              </Ui.Popover>
+              </UiPopover>
             </li>
           ))}
         </ul>
@@ -185,15 +185,15 @@ export function Popover() {
             ] as const
           ).map(([align, label]) => (
             <li key={align}>
-              <Ui.Popover
+              <UiPopover
                 placement="bottom"
                 align={align}
                 title={STRINGS.alignTitle}
                 className={SURFACE}
-                trigger={<Ui.Button variant="secondary">{label}</Ui.Button>}
+                trigger={<Button variant="secondary">{label}</Button>}
               >
                 <Body>{STRINGS.alignBody}</Body>
-              </Ui.Popover>
+              </UiPopover>
             </li>
           ))}
         </ul>
@@ -202,46 +202,46 @@ export function Popover() {
       <PageSection id="popover-content" title={STRINGS.content} note={STRINGS.contentNote}>
         <ul className={ROW}>
           <li>
-            <Ui.Popover
+            <UiPopover
               title={STRINGS.titledTitle}
               className={SURFACE}
-              trigger={<Ui.Button variant="secondary">{STRINGS.titled}</Ui.Button>}
+              trigger={<Button variant="secondary">{STRINGS.titled}</Button>}
             >
               <Body>{STRINGS.titledBody}</Body>
-            </Ui.Popover>
+            </UiPopover>
           </li>
           <li>
-            <Ui.Popover
+            <UiPopover
               hasArrow
               title={STRINGS.arrowTitle}
               className={SURFACE}
-              trigger={<Ui.Button variant="secondary">{STRINGS.arrow}</Ui.Button>}
+              trigger={<Button variant="secondary">{STRINGS.arrow}</Button>}
             >
               <Body>{STRINGS.arrowBody}</Body>
-            </Ui.Popover>
+            </UiPopover>
           </li>
           <li>
-            <Ui.Popover
+            <UiPopover
               aria-label={STRINGS.namedLabel}
               className={SURFACE}
-              trigger={<Ui.Button variant="secondary">{STRINGS.named}</Ui.Button>}
+              trigger={<Button variant="secondary">{STRINGS.named}</Button>}
             >
               <Body>{STRINGS.namedBody}</Body>
-            </Ui.Popover>
+            </UiPopover>
           </li>
           <li>
-            <Ui.Popover
+            <UiPopover
               title={STRINGS.formTitle}
               className={SURFACE}
-              trigger={<Ui.Button variant="secondary">{STRINGS.form}</Ui.Button>}
+              trigger={<Button variant="secondary">{STRINGS.form}</Button>}
             >
               <div className="grid gap-3">
-                <Ui.TextField label={STRINGS.formField} defaultValue="Spring order" />
+                <TextField label={STRINGS.formField} defaultValue="Spring order" />
                 <div>
-                  <Ui.Button size="sm">{STRINGS.formSave}</Ui.Button>
+                  <Button size="sm">{STRINGS.formSave}</Button>
                 </div>
               </div>
-            </Ui.Popover>
+            </UiPopover>
           </li>
         </ul>
       </PageSection>
@@ -249,13 +249,13 @@ export function Popover() {
       <PageSection id="popover-dismissal" title={STRINGS.dismissal} note={STRINGS.dismissalNote}>
         <ul className={ROW}>
           <li>
-            <Ui.Popover
+            <UiPopover
               title={STRINGS.dismissableTitle}
               className={SURFACE}
-              trigger={<Ui.Button variant="secondary">{STRINGS.dismissable}</Ui.Button>}
+              trigger={<Button variant="secondary">{STRINGS.dismissable}</Button>}
             >
               <Body>{STRINGS.dismissableBody}</Body>
-            </Ui.Popover>
+            </UiPopover>
           </li>
           <li>
             <ClosableSample
@@ -280,22 +280,22 @@ export function Popover() {
 
       <PageSection id="popover-live" title={STRINGS.live} note={STRINGS.liveNote}>
         <div className={ROW}>
-          <Ui.Popover
+          <UiPopover
             isOpen={isLiveOpen}
             onOpenChange={setIsLiveOpen}
             title={STRINGS.liveTitle}
             className={SURFACE}
-            trigger={<Ui.Button variant="secondary">{STRINGS.liveTrigger}</Ui.Button>}
+            trigger={<Button variant="secondary">{STRINGS.liveTrigger}</Button>}
           >
             <Body>{STRINGS.liveBody}</Body>
-          </Ui.Popover>
-          <Ui.Button variant="tertiary" onPress={() => setIsLiveOpen(true)}>
+          </UiPopover>
+          <Button variant="tertiary" onPress={() => setIsLiveOpen(true)}>
             {STRINGS.liveOpen}
-          </Ui.Button>
+          </Button>
         </div>
-        <Ui.Text role="status" data-testid="popover-state" tone="muted">
+        <Text role="status" data-testid="popover-state" tone="muted">
           {STRINGS.state(isLiveOpen)}
-        </Ui.Text>
+        </Text>
       </PageSection>
     </article>
   );

@@ -51,8 +51,11 @@ describe("Combo box page", () => {
         constructor(callback: IntersectionObserverCallback) {
           observed.push(callback);
         }
+
         observe() {}
+
         unobserve() {}
+
         disconnect() {}
       },
     );

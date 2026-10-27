@@ -12,11 +12,24 @@
  */
 import { pairRatio, paintedColour, themeVariables } from "@stackra/tokens";
 import type { ContrastPair, Theme } from "@stackra/tokens/contracts";
-import * as Ui from "@stackra/ui/react";
+import {
+  Button,
+  Checkbox,
+  Chip,
+  Heading,
+  Icon,
+  StatusBadge,
+  Switch,
+  Text,
+  TextField,
+  ToggleButtonGroup,
+  Toolbar,
+} from "@stackra/ui/react";
 import { useState, type CSSProperties } from "react";
 
 import { Choice } from "#src/components/choice";
 import { Showcase } from "#src/components/showcase";
+import type { StudioPreviewProps } from "#src/components/studio-preview/studio-preview.props";
 
 // shortcut: English strings in one place until @stackra/i18n ships; then `playground::studio.preview.*` keys.
 const STRINGS = {
@@ -79,14 +92,6 @@ const WIDTHS = {
 
 type CanvasWidth = keyof typeof WIDTHS;
 
-/** Props of {@link StudioPreview}. */
-export interface StudioPreviewProps {
-  /** The theme to show. */
-  theme: Theme;
-  /** The colour scheme on screen. */
-  scheme: "light" | "dark";
-}
-
 /** The live preview and its contrast report. */
 export function StudioPreview({ theme, scheme: pageScheme }: StudioPreviewProps) {
   const [width, setWidth] = useState<CanvasWidth>("fluid");
@@ -103,11 +108,11 @@ export function StudioPreview({ theme, scheme: pageScheme }: StudioPreviewProps)
   return (
     <section aria-labelledby="studio-preview" className="grid min-w-0 content-start gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <Ui.Heading id="studio-preview" level={2} className="[font:var(--h4)]">
+        <Heading id="studio-preview" level={2} className="[font:var(--h4)]">
           {STRINGS.title}
-        </Ui.Heading>
-        <Ui.Toolbar aria-label={STRINGS.canvas} className="flex flex-wrap items-center gap-2">
-          <Ui.ToggleButtonGroup
+        </Heading>
+        <Toolbar aria-label={STRINGS.canvas} className="flex flex-wrap items-center gap-2">
+          <ToggleButtonGroup
             aria-label={STRINGS.width}
             size="sm"
             selectionMode="single"
@@ -120,11 +125,11 @@ export function StudioPreview({ theme, scheme: pageScheme }: StudioPreviewProps)
           >
             {(Object.keys(WIDTHS) as CanvasWidth[]).map((key) => (
               <Choice key={key} id={key} aria-label={STRINGS.widths[key]}>
-                <Ui.Icon name={WIDTHS[key].icon} size="sm" />
+                <Icon name={WIDTHS[key].icon} size="sm" />
               </Choice>
             ))}
-          </Ui.ToggleButtonGroup>
-          <Ui.ToggleButtonGroup
+          </ToggleButtonGroup>
+          <ToggleButtonGroup
             aria-label={STRINGS.scheme}
             size="sm"
             selectionMode="single"
@@ -135,13 +140,13 @@ export function StudioPreview({ theme, scheme: pageScheme }: StudioPreviewProps)
             }
           >
             <Choice id="light" aria-label={STRINGS.schemes.light}>
-              <Ui.Icon name="sun" size="sm" />
+              <Icon name="sun" size="sm" />
             </Choice>
             <Choice id="dark" aria-label={STRINGS.schemes.dark}>
-              <Ui.Icon name="moon" size="sm" />
+              <Icon name="moon" size="sm" />
             </Choice>
-          </Ui.ToggleButtonGroup>
-        </Ui.Toolbar>
+          </ToggleButtonGroup>
+        </Toolbar>
       </div>
       {/* The canvas: a ground the sheet sits on, at the width picked, in the scheme picked. */}
       <div className="rounded-3xl border border-separator bg-surface-secondary p-3 sm:p-5">
@@ -152,26 +157,26 @@ export function StudioPreview({ theme, scheme: pageScheme }: StudioPreviewProps)
         >
           <div className="flex flex-wrap gap-2">
             {VARIANTS.map((variant, index) => (
-              <Ui.Button key={variant} variant={variant} size="sm">
+              <Button key={variant} variant={variant} size="sm">
                 {STRINGS.buttons[index]}
-              </Ui.Button>
+              </Button>
             ))}
           </div>
           <div className="flex flex-wrap gap-2">
             {STRINGS.statuses.map(([tone, label]) => (
-              <Ui.StatusBadge key={tone} tone={tone}>
+              <StatusBadge key={tone} tone={tone}>
                 {label}
-              </Ui.StatusBadge>
+              </StatusBadge>
             ))}
-            <Ui.Chip variant="soft" tone="accent" size="sm">
+            <Chip variant="soft" tone="accent" size="sm">
               {STRINGS.statuses[3][1]}
-            </Ui.Chip>
+            </Chip>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Ui.TextField label={STRINGS.field} defaultValue={STRINGS.fieldValue} />
+            <TextField label={STRINGS.field} defaultValue={STRINGS.fieldValue} />
             <div className="grid content-end gap-3">
-              <Ui.Switch label={STRINGS.notify} defaultValue />
-              <Ui.Checkbox label={STRINGS.remember} />
+              <Switch label={STRINGS.notify} defaultValue />
+              <Checkbox label={STRINGS.remember} />
             </div>
           </div>
           <Showcase headingLevel={3} />
@@ -179,12 +184,12 @@ export function StudioPreview({ theme, scheme: pageScheme }: StudioPreviewProps)
       </div>
       <div className="material-thick grid gap-3 rounded-3xl p-5">
         <div className="grid gap-1">
-          <Ui.Heading level={3} className="[font:var(--h5)]">
+          <Heading level={3} className="[font:var(--h5)]">
             {STRINGS.contrast}
-          </Ui.Heading>
-          <Ui.Text tone="muted" className="text-sm">
+          </Heading>
+          <Text tone="muted" className="text-sm">
             <bdi>{STRINGS.contrastNote}</bdi>
-          </Ui.Text>
+          </Text>
         </div>
         <ul className="grid gap-2">
           {PAIRS.map((pair) => {
@@ -215,9 +220,9 @@ export function StudioPreview({ theme, scheme: pageScheme }: StudioPreviewProps)
                 <span className="font-mono text-xs">
                   {ratio === undefined ? "—" : `${ratio.toFixed(2)}:1`}
                 </span>
-                <Ui.Chip size="sm" variant="soft" tone={isPassing ? "success" : "danger"}>
+                <Chip size="sm" variant="soft" tone={isPassing ? "success" : "danger"}>
                   {isPassing ? STRINGS.passes : STRINGS.fails}
-                </Ui.Chip>
+                </Chip>
               </li>
             );
           })}

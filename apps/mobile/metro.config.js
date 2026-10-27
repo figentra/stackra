@@ -1,3 +1,10 @@
+/**
+ * Stackra file contract:
+ * Purpose: Metro config of @figentra/mobile.
+ * Boundary: build configuration only.
+ * Runtime: node
+ * Governing contract: ADR 0300 (published tooling presets).
+ */
 const fs = require("node:fs");
 const path = require("node:path");
 

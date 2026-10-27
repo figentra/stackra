@@ -11,19 +11,7 @@
  * Governing contract: ADR 0310 (decision 12); ADR 0060 (light, dark, RTL); STA-416 FR-012.
  */
 import { Text } from "recharts";
-import type { ComponentProps } from "react";
-
-/** The props recharts hands an axis tick: the text's own, plus the tick's value, index and the axis's formatter. */
-export type DemoChartTickProps = Omit<ComponentProps<typeof Text>, "children"> & {
-  /** The tick's value. */
-  readonly payload?: { readonly value?: unknown } | undefined;
-  /** The index of the tick on the axis. */
-  readonly index?: number | undefined;
-  /** The formatter of the axis. */
-  readonly tickFormatter?: ((value: never, index: number) => string) | undefined;
-  /** How many ticks the axis draws; recharts passes it and the text has no use for it. */
-  readonly visibleTicksCount?: number | undefined;
-};
+import type { DemoChartTickProps } from "./demo-chart-tick.props";
 
 // `inert` is not in React's svg attribute types; the attribute is all axe reads.
 const INERT = { inert: true } as Record<string, boolean>;

@@ -10,7 +10,7 @@
 // @covers sta-403:FR-013
 import { expect, test } from "@playwright/test";
 
-import { visit } from "../support/pro-page";
+import { visit } from "../support/visit.function";
 
 const PATH = "/pro-trend-chip";
 const WORDS = { up: "Trending up", down: "Trending down", neutral: "No change" } as const;

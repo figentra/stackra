@@ -16,7 +16,17 @@ import { defineIconRegistry } from "@stackra/icons";
 import { IconRegistryProvider } from "@stackra/icons/react";
 import { Ellipsis, Menu } from "@stackra/icons/react/lucide-icons";
 import type { MenuSection } from "@stackra/ui/contracts";
-import * as Ui from "@stackra/ui/react";
+import {
+  AppHeader as UiAppHeader,
+  Avatar,
+  Button,
+  Heading,
+  Icon,
+  IconButton,
+  Menu as UiMenu,
+  SearchField,
+  Text,
+} from "@stackra/ui/react";
 import { useState, type ReactNode } from "react";
 
 import { PageSection } from "#src/components/page-section";
@@ -87,9 +97,9 @@ function Sample({
 }) {
   return (
     <li className="grid content-start gap-2">
-      <Ui.Text tone="muted" type="small">
+      <Text tone="muted" type="small">
         {caption}
-      </Ui.Text>
+      </Text>
       <div className={[BOX, className].filter(Boolean).join(" ")}>{children}</div>
     </li>
   );
@@ -129,12 +139,12 @@ function UserMenu({
   readonly onAction?: (id: string) => void;
 }) {
   return (
-    <Ui.Menu sections={sections} {...(onAction ? { onAction } : {})}>
-      <Ui.Button variant="ghost" label={label}>
+    <UiMenu sections={sections} {...(onAction ? { onAction } : {})}>
+      <Button variant="ghost" label={label}>
         {/* An icon, not initials: initials are visible text that the menu's name does not hold (WCAG 2.5.3). */}
-        <Ui.Avatar size="sm" />
-      </Ui.Button>
-    </Ui.Menu>
+        <Avatar size="sm" />
+      </Button>
+    </UiMenu>
   );
 }
 
@@ -150,51 +160,51 @@ export function AppHeader() {
       <article className="grid gap-10">
         <title>{STRINGS.documentTitle}</title>
         <header className="grid gap-2">
-          <Ui.Heading level={1}>{AppHeaderRoute.title}</Ui.Heading>
-          <Ui.Text className="max-w-prose">
+          <Heading level={1}>{AppHeaderRoute.title}</Heading>
+          <Text className="max-w-prose">
             <bdi>{STRINGS.intro}</bdi>
-          </Ui.Text>
+          </Text>
         </header>
 
         <PageSection id="app-header-parts" title={STRINGS.parts} note={STRINGS.partsNote}>
           <ul className={GRID}>
             <Sample caption={STRINGS.all}>
-              <Ui.AppHeader
+              <UiAppHeader
                 startContent={
-                  <Ui.IconButton icon="menu" label={STRINGS.openNavigation} variant="ghost" />
+                  <IconButton icon="menu" label={STRINGS.openNavigation} variant="ghost" />
                 }
                 title={STRINGS.brand}
                 search={
-                  <Ui.SearchField
+                  <SearchField
                     aria-label={STRINGS.searchLabel}
                     placeholder={STRINGS.searchPlaceholder}
                     isFullWidth
                   />
                 }
                 endContent={
-                  <Ui.IconButton icon="bell" label={STRINGS.notifications(2)} variant="ghost" />
+                  <IconButton icon="bell" label={STRINGS.notifications(2)} variant="ghost" />
                 }
                 userMenu={<UserMenu label={STRINGS.accountLabel} sections={account} />}
               />
             </Sample>
             <Sample caption={STRINGS.titleOnly}>
-              <Ui.AppHeader title={STRINGS.brand} />
+              <UiAppHeader title={STRINGS.brand} />
             </Sample>
             <Sample caption={STRINGS.logo}>
-              <Ui.AppHeader
+              <UiAppHeader
                 title={
                   <span className="flex items-center gap-2 font-semibold">
-                    <Ui.Icon name="building" />
+                    <Icon name="building" />
                     {STRINGS.brand}
                   </span>
                 }
               />
             </Sample>
             <Sample caption={STRINGS.noActions}>
-              <Ui.AppHeader
+              <UiAppHeader
                 title={STRINGS.brand}
                 search={
-                  <Ui.SearchField
+                  <SearchField
                     aria-label={STRINGS.searchLabel}
                     placeholder={STRINGS.searchPlaceholder}
                     isFullWidth
@@ -204,7 +214,7 @@ export function AppHeader() {
               />
             </Sample>
             <Sample caption={STRINGS.long} className="max-w-sm">
-              <Ui.AppHeader
+              <UiAppHeader
                 title={STRINGS.longTitle}
                 userMenu={<UserMenu label={STRINGS.accountLabel} sections={account} />}
               />
@@ -214,20 +224,20 @@ export function AppHeader() {
 
         <PageSection id="app-header-arabic" title={STRINGS.arabic} note={STRINGS.arabicNote}>
           <div dir="rtl" lang="ar" data-sample="arabic" className={BOX}>
-            <Ui.AppHeader
+            <UiAppHeader
               startContent={
-                <Ui.IconButton icon="menu" label={STRINGS.arabicOpenNavigation} variant="ghost" />
+                <IconButton icon="menu" label={STRINGS.arabicOpenNavigation} variant="ghost" />
               }
               title={STRINGS.arabicBrand}
               search={
-                <Ui.SearchField
+                <SearchField
                   aria-label={STRINGS.arabicSearchLabel}
                   placeholder={STRINGS.arabicSearchLabel}
                   isFullWidth
                 />
               }
               endContent={
-                <Ui.IconButton icon="bell" label={STRINGS.arabicNotifications} variant="ghost" />
+                <IconButton icon="bell" label={STRINGS.arabicNotifications} variant="ghost" />
               }
               userMenu={
                 <UserMenu
@@ -242,10 +252,10 @@ export function AppHeader() {
         <PageSection id="app-header-live" title={STRINGS.live} note={STRINGS.liveNote}>
           <div className="grid gap-3">
             <div className={BOX} data-sample="live">
-              <Ui.AppHeader
+              <UiAppHeader
                 title={STRINGS.brand}
                 search={
-                  <Ui.SearchField
+                  <SearchField
                     aria-label={STRINGS.searchLabel}
                     placeholder={STRINGS.searchPlaceholder}
                     value={query}
@@ -254,7 +264,7 @@ export function AppHeader() {
                   />
                 }
                 endContent={
-                  <Ui.IconButton
+                  <IconButton
                     icon="bell"
                     label={STRINGS.notifications(unread)}
                     variant="ghost"
@@ -276,15 +286,15 @@ export function AppHeader() {
               />
             </div>
             <div className="grid gap-1" data-sample="live-status">
-              <Ui.Text role="status" tone="muted">
+              <Text role="status" tone="muted">
                 {STRINGS.searchStatus(query)}
-              </Ui.Text>
-              <Ui.Text role="status" tone="muted">
+              </Text>
+              <Text role="status" tone="muted">
                 {STRINGS.unreadStatus(unread)}
-              </Ui.Text>
-              <Ui.Text role="status" tone="muted">
+              </Text>
+              <Text role="status" tone="muted">
                 {STRINGS.actionStatus(action)}
-              </Ui.Text>
+              </Text>
             </div>
           </div>
         </PageSection>

@@ -17,14 +17,16 @@
  * Governing contract: ADR 0302 (decision 5); WAI-ARIA 1.2 combobox and listbox; WCAG 2.2 SC 2.1.1, 2.4.3, 4.1.2, 4.1.3.
  */
 import type { IconName } from "@stackra/icons/contracts";
-import * as Ui from "@stackra/ui/react";
+import { Chip, Icon } from "@stackra/ui/react";
 import { useEffect, useId, useRef, useState, type KeyboardEvent, type MouseEvent } from "react";
 import { useNavigate } from "react-router";
 
 import { CategoryGlyph } from "#src/components/category-glyph";
-import { tierOf } from "#src/components/playground-pages/page-tier";
+import { tierOf } from "#src/components/playground-pages/tier-of.function";
 import { PageCategory } from "#src/enums/page-category.enum";
 import type { PageLink } from "#src/types/page-link.type";
+import type { CommandPaletteProps } from "#src/components/command-palette/command-palette.props";
+import type { PaletteAction } from "#src/components/command-palette/palette-action.type";
 
 // shortcut: English strings in one place until @stackra/i18n ships; then `playground::palette.*` keys.
 const STRINGS = {
@@ -53,36 +55,6 @@ const STRINGS = {
 /** The pages kept in the recent list, newest first, and where. */
 const RECENT_KEY = "stackra-playground:recent";
 const RECENT_SIZE = 5;
-
-/** A command the shell offers in the palette: switch the scheme, the language, go somewhere. */
-export interface PaletteAction {
-  /** A stable id, unique among the actions. */
-  readonly id: string;
-  /** What the row says. */
-  readonly label: string;
-  /** A short line under it. */
-  readonly detail: string;
-  /** The icon, by name. */
-  readonly icon: IconName;
-  /** Other words it is found by. */
-  readonly keywords?: string;
-  /** Carries the action out; the palette closes after it. */
-  readonly run: () => void;
-}
-
-/** Props of {@link CommandPalette}. */
-export interface CommandPaletteProps {
-  /** Every page, in navigation order. */
-  pages: readonly PageLink[];
-  /** The quick actions. */
-  actions: readonly PaletteAction[];
-  /** The URL search params each page link keeps. */
-  search: string;
-  /** Whether the palette is open. */
-  isOpen: boolean;
-  /** Called when the palette closes itself (Escape, the scrim, a run). */
-  onClose: () => void;
-}
 
 /** One row: a page or an action. */
 interface Item {
@@ -160,7 +132,7 @@ function Tile({ item, size = "size-9" }: { item: Item; size?: string }) {
       {item.page ? (
         <CategoryGlyph category={item.page.category} className="size-[45%]" />
       ) : item.action ? (
-        <Ui.Icon name={item.action.icon} size="sm" />
+        <Icon name={item.action.icon} size="sm" />
       ) : null}
     </span>
   );
@@ -174,7 +146,7 @@ function Key({ name }: { name: string }) {
       dir="ltr"
       className="inline-flex min-h-5 items-center rounded-md border border-border px-1.5 font-mono text-xs"
     >
-      {name === "esc" ? name : <Ui.Icon name={name as IconName} size="sm" />}
+      {name === "esc" ? name : <Icon name={name as IconName} size="sm" />}
     </kbd>
   );
 }
@@ -293,7 +265,7 @@ export function CommandPalette({ pages, actions, search, isOpen, onClose }: Comm
       {isOpen ? (
         <div className="grid max-h-[min(76vh,42rem)] grid-rows-[auto_minmax(0,1fr)_auto]">
           <div className="flex items-center gap-3 border-b border-separator px-5 py-4">
-            <Ui.Icon name="search" tone="muted" />
+            <Icon name="search" tone="muted" />
             <input
               type="text"
               role="combobox"
@@ -373,9 +345,9 @@ export function CommandPalette({ pages, actions, search, isOpen, onClose }: Comm
                               <span className="truncate text-xs text-muted">{item.detail}</span>
                             </span>
                             {item.page && tierOf(item.page.path) === "Pro" ? (
-                              <Ui.Chip size="sm" variant="soft" tone="accent">
+                              <Chip size="sm" variant="soft" tone="accent">
                                 {STRINGS.pro}
-                              </Ui.Chip>
+                              </Chip>
                             ) : null}
                             {isActive ? <Key name="corner-down-left" /> : null}
                           </div>

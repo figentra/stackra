@@ -1,3 +1,11 @@
+/**
+ * Stackra file contract:
+ * Purpose: hold `jsonc.mjs` to its contract: comments and trailing commas dropped, `//` inside strings kept, an
+ *          unterminated comment refused.
+ * Boundary: pure function; no file access.
+ * Runtime: node
+ * Governing contract: ADR 0022 (tests live in tests folders); ADR 0182 (testing strategy).
+ */
 import assert from "node:assert/strict";
 import { test } from "node:test";
 

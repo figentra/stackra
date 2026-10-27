@@ -9,7 +9,7 @@
  * Governing contract: ADR 0310 (decision 12); ADR 0060 (light, dark, RTL); STA-416 FR-012.
  */
 import type { Selection } from "@heroui/react";
-import * as Ui from "@stackra/ui/react";
+import { Button, Chip } from "@stackra/ui/react";
 import * as UiPro from "@stackra-pro/ui/react";
 import { useState } from "react";
 
@@ -83,21 +83,21 @@ export function ProActionBar() {
       </section>
       <UiPro.ActionBar label={STRINGS.bar} isOpen={count > 0}>
         <UiPro.ActionBar.Prefix>
-          <Ui.Chip className="shrink-0 tabular-nums" size="sm">
+          <Chip className="shrink-0 tabular-nums" size="sm">
             {STRINGS.count(count)}
-          </Ui.Chip>
+          </Chip>
         </UiPro.ActionBar.Prefix>
         <UiPro.ActionBar.Content>
           {ACTIONS.map((action) => (
-            <Ui.Button key={action} size="sm" variant="ghost" onPress={() => setLast(action)}>
+            <Button key={action} size="sm" variant="ghost" onPress={() => setLast(action)}>
               {action}
-            </Ui.Button>
+            </Button>
           ))}
         </UiPro.ActionBar.Content>
         <UiPro.ActionBar.Suffix>
-          <Ui.Button size="sm" variant="ghost" onPress={() => setSelected(new Set())}>
+          <Button size="sm" variant="ghost" onPress={() => setSelected(new Set())}>
             {STRINGS.clear}
-          </Ui.Button>
+          </Button>
         </UiPro.ActionBar.Suffix>
       </UiPro.ActionBar>
     </article>

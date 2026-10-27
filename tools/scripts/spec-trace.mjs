@@ -12,6 +12,9 @@
  *                           every SC naming its verification method. Wired into `pnpm validate`.
  * A test covers an ID with a tag anywhere in a `__tests__/*.test.*` file: `@covers sta-163:FR-001 sta-163:P-002`.
  * Dependency-free; reads files and git only, never Linear or the network.
+ * Boundary: reads specs, tasks, tests and the git diff; writes nothing.
+ * Runtime: node
+ * Governing contract: ADR 0120 (SDLC spec location, lanes and change risk); STA-348.
  * Secrets: none.
  */
 import { execFileSync } from "node:child_process";
@@ -117,6 +120,9 @@ function load(dir) {
   };
 }
 
+/** Whether the repository-relative path `p` exists. */
+const existsInRepo = (p) => existsSync(join(ROOT, p));
+
 function main([mode, ...args]) {
   const base = args.find((a) => a.startsWith("--base="))?.slice(7) ?? "origin/main";
   const dir = args.find((a) => !a.startsWith("--"));
@@ -125,7 +131,6 @@ function main([mode, ...args]) {
     if (out === null) console.log(`spec-trace: no ${base} to diff against; skipping`);
     return (out ?? "").split("\n").filter(Boolean);
   };
-  const exists = (p) => existsSync(join(ROOT, p));
   if (mode === "trace" && dir) {
     const t = trace({ ...load(resolve(dir)), tests: testsText() });
     if (args.includes("--json")) return (console.log(JSON.stringify(t, null, 2)), 0);
@@ -137,7 +142,7 @@ function main([mode, ...args]) {
     return 0;
   }
   if (mode === "drift" && dir) {
-    const problems = drift({ ...load(resolve(dir)), changed: changed(), exists });
+    const problems = drift({ ...load(resolve(dir)), changed: changed(), exists: existsInRepo });
     for (const p of problems) console.error(`spec-trace: ${p}`);
     return problems.length ? 1 : 0;
   }
@@ -158,7 +163,7 @@ function main([mode, ...args]) {
     for (const s of specs) {
       const status = statusOf(s.spec);
       if (status !== "implementing" && status !== "done") continue;
-      const problems = drift({ ...s, changed: names, exists, named });
+      const problems = drift({ ...s, changed: names, exists: existsInRepo, named });
       if (status === "done")
         problems.push(...traceProblems(trace({ ...s, tests: (tests ??= testsText()) })));
       for (const p of problems) console.error(`spec-trace: ${SPECS_DIR}/${s.folder}: ${p}`);

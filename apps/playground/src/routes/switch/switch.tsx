@@ -7,7 +7,7 @@
  * Runtime: browser
  * Governing contract: ADR 0302 (decisions 3 and 5); ADR 0303 (decision 7); ADR 0060 (light, dark, RTL).
  */
-import * as Ui from "@stackra/ui/react";
+import { Heading, Switch as UiSwitch, Text } from "@stackra/ui/react";
 import { useState, type ReactNode } from "react";
 
 import { PageSection } from "#src/components/page-section";
@@ -66,9 +66,9 @@ const GRID = "grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3";
 function Sample({ caption, children }: { caption: string; children: ReactNode }) {
   return (
     <li className="grid content-start gap-2">
-      <Ui.Text tone="muted" type="small">
+      <Text tone="muted" type="small">
         {caption}
-      </Ui.Text>
+      </Text>
       {children}
     </li>
   );
@@ -86,37 +86,37 @@ export function Switch() {
     <article className="grid gap-10">
       <title>{STRINGS.documentTitle}</title>
       <header className="grid gap-2">
-        <Ui.Heading level={1}>{SwitchRoute.title}</Ui.Heading>
-        <Ui.Text className="max-w-prose">
+        <Heading level={1}>{SwitchRoute.title}</Heading>
+        <Text className="max-w-prose">
           <bdi>{STRINGS.intro}</bdi>
-        </Ui.Text>
+        </Text>
       </header>
 
       <PageSection id="switch-states" title={STRINGS.states} note={STRINGS.statesNote}>
         <ul className={GRID}>
           <Sample caption={STRINGS.captions.off}>
-            <Ui.Switch label={STRINGS.labels.off} />
+            <UiSwitch label={STRINGS.labels.off} />
           </Sample>
           <Sample caption={STRINGS.captions.on}>
-            <Ui.Switch label={STRINGS.labels.on} defaultValue />
+            <UiSwitch label={STRINGS.labels.on} defaultValue />
           </Sample>
           <Sample caption={STRINGS.captions.disabled}>
-            <Ui.Switch label={STRINGS.labels.disabled} isDisabled />
+            <UiSwitch label={STRINGS.labels.disabled} isDisabled />
           </Sample>
           <Sample caption={STRINGS.captions.disabledOn}>
-            <Ui.Switch label={STRINGS.labels.disabledOn} isDisabled defaultValue />
+            <UiSwitch label={STRINGS.labels.disabledOn} isDisabled defaultValue />
           </Sample>
           <Sample caption={STRINGS.captions.readOnly}>
-            <Ui.Switch label={STRINGS.labels.readOnly} isReadOnly defaultValue />
+            <UiSwitch label={STRINGS.labels.readOnly} isReadOnly defaultValue />
           </Sample>
           <Sample caption={STRINGS.captions.required}>
-            <Ui.Switch label={STRINGS.labels.required} isRequired />
+            <UiSwitch label={STRINGS.labels.required} isRequired />
           </Sample>
           <Sample caption={STRINGS.captions.description}>
-            <Ui.Switch label={STRINGS.labels.description} description={STRINGS.descriptionText} />
+            <UiSwitch label={STRINGS.labels.description} description={STRINGS.descriptionText} />
           </Sample>
           <Sample caption={STRINGS.captions.invalid}>
-            <Ui.Switch
+            <UiSwitch
               label={STRINGS.labels.invalid}
               isInvalid={!allowed}
               errorMessage={STRINGS.errorText}
@@ -128,7 +128,7 @@ export function Switch() {
       </PageSection>
 
       <PageSection id="switch-unnamed" title={STRINGS.unnamed} note={STRINGS.unnamedNote}>
-        <Ui.Switch aria-label={STRINGS.unnamedName} />
+        <UiSwitch aria-label={STRINGS.unnamedName} />
       </PageSection>
 
       <PageSection id="switch-live" title={STRINGS.live} note={STRINGS.liveNote}>
@@ -136,7 +136,7 @@ export function Switch() {
           <ul aria-label={STRINGS.settings} className="grid max-w-sm gap-3">
             {SETTINGS.map(({ key, label }) => (
               <li key={key}>
-                <Ui.Switch
+                <UiSwitch
                   label={label}
                   value={on.includes(key)}
                   onChange={(isOn) =>
@@ -148,7 +148,7 @@ export function Switch() {
               </li>
             ))}
           </ul>
-          <Ui.Text role="status">{STRINGS.summary(names || STRINGS.none)}</Ui.Text>
+          <Text role="status">{STRINGS.summary(names || STRINGS.none)}</Text>
         </div>
       </PageSection>
     </article>

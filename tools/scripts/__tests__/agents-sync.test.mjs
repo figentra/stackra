@@ -1,12 +1,12 @@
 /**
- * @module tools/scripts/agents-sync.test
- *
- * Purpose: hold `agents-sync.mjs`'s agent projection to each assistant's dialect — Claude
- *          Code and OpenCode — and to its safety guarantees (never clobber, --check
- *          detects drift, --prune removes only what it owns, bad sources fail loudly).
- * Boundary: runs the real script against a throwaway repository in the OS temp dir; never
- *           reads or writes this repository's own `.agents/` or assistant directories.
- * Runtime: node — uses node:test, node:assert and node:child_process.
+ * Stackra file contract:
+ * Purpose: hold `agents-sync.mjs`'s agent projection to each assistant's dialect — Claude Code and OpenCode — and to
+ *          its safety guarantees (never clobber, --check detects drift, --prune removes only what it owns, bad sources
+ *          fail loudly).
+ * Boundary: runs the real script against a throwaway repository in the OS temp dir; never reads or writes this
+ *           repository's own `.agents/` or assistant directories; uses node:test, node:assert and node:child_process.
+ * Runtime: node
+ * Governing contract: ADR 0022 (tests live in tests folders); ADR 0182 (testing strategy).
  *
  * The script executes on load (it calls `process.exit(main())`), so it is exercised as a
  * child process against a copied fixture root rather than imported.

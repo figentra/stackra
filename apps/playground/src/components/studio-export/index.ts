@@ -5,4 +5,5 @@
  * Runtime: browser
  * Governing contract: ADR 0294 (decision 14).
  */
-export { StudioExport, type StudioExportProps } from "./studio-export";
+export { StudioExport } from "./studio-export";
+export { type StudioExportProps } from "./studio-export.props";

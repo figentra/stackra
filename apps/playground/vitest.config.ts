@@ -2,6 +2,9 @@
  * Stackra file contract:
  * Purpose: test config of @figentra/playground — the React (jsdom) vitest preset. `test` runs the unit tier; the
  *          infixed tiers (`.int`, `.contract`, `.e2e`, `.load`) run under their own tasks (TS1/TS2).
+ * Boundary: test configuration only.
+ * Runtime: node
+ * Governing contract: ADR 0182 (testing strategy); ADR 0300 (published tooling presets).
  * Owner: the app owner · Secrets: forbidden
  */
 import { stackraVitestReact } from "@stackra/vitest-config/preset-react";

@@ -42,8 +42,8 @@ import {
   type PaletteAction,
 } from "#src/components/command-palette";
 import { PagePager } from "#src/components/page-pager";
-import type { PageLink } from "#src/types/page-link.type";
 import type { ShellContext } from "#src/types/shell-context.type";
+import type { PlaygroundShellProps } from "#src/components/playground-shell/playground-shell.props";
 
 // shortcut: English strings in one place until @stackra/i18n ships; then `playground::shell.*` keys.
 const STRINGS = {
@@ -96,12 +96,6 @@ const LOCALES = [
 /** The palette's shortcut as this platform writes it. */
 const SHORTCUT =
   typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.userAgent) ? "⌘K" : "Ctrl K";
-
-/** Props of {@link PlaygroundShell}. */
-export interface PlaygroundShellProps {
-  /** The pages the navigation links to, in order. */
-  pages: readonly PageLink[];
-}
 
 /** Props of {@link DisplaySettings}. */
 interface DisplaySettingsProps {

@@ -8,7 +8,7 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 12); ADR 0060 (light, dark, RTL); STA-416 FR-012.
  */
-import * as Ui from "@stackra/ui/react";
+import { Chip } from "@stackra/ui/react";
 import * as UiPro from "@stackra-pro/ui/react";
 
 import { DemoIcon, type DemoIconName } from "#src/components/demo-icon";
@@ -115,9 +115,9 @@ export function ProTimeline() {
               <UiPro.Timeline.Content>
                 <div className="flex flex-wrap items-center gap-2">
                   <h3 className="text-sm font-medium">{event.title}</h3>
-                  <Ui.Chip tone={event.color} size="sm" variant="soft">
+                  <Chip tone={event.color} size="sm" variant="soft">
                     {event.state}
-                  </Ui.Chip>
+                  </Chip>
                   <time className="text-xs text-muted">{event.time}</time>
                 </div>
                 <p className="text-sm text-muted">

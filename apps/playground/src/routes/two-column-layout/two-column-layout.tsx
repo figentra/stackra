@@ -15,7 +15,13 @@
  *          (right-to-left); WCAG 2.2 SC 1.3.1, 1.3.2, 1.4.10 and 4.1.3.
  */
 import type { LayoutBreakpoint } from "@stackra/ui/contracts";
-import * as Ui from "@stackra/ui/react";
+import {
+  Heading,
+  Section,
+  Switch,
+  Text,
+  TwoColumnLayout as UiTwoColumnLayout,
+} from "@stackra/ui/react";
 import { useState, type ReactNode } from "react";
 
 import { PageSection } from "#src/components/page-section";
@@ -81,9 +87,9 @@ function Sample({
 }) {
   return (
     <div className="grid content-start gap-2">
-      <Ui.Text tone="muted" type="small">
+      <Text tone="muted" type="small">
         {caption}
-      </Ui.Text>
+      </Text>
       <div className={BOX} data-sample={sample}>
         {children}
       </div>
@@ -102,18 +108,18 @@ function Collapsing({
   readonly aside: string;
 }) {
   return (
-    <Ui.TwoColumnLayout
+    <UiTwoColumnLayout
       collapseBelow={collapseBelow}
       aside={
-        <Ui.Section headingLevel={3} title={aside}>
-          <Ui.Text>{STRINGS.asideBody}</Ui.Text>
-        </Ui.Section>
+        <Section headingLevel={3} title={aside}>
+          <Text>{STRINGS.asideBody}</Text>
+        </Section>
       }
     >
-      <Ui.Section headingLevel={3} title={main}>
-        <Ui.Text>{STRINGS.mainBody}</Ui.Text>
-      </Ui.Section>
-    </Ui.TwoColumnLayout>
+      <Section headingLevel={3} title={main}>
+        <Text>{STRINGS.mainBody}</Text>
+      </Section>
+    </UiTwoColumnLayout>
   );
 }
 
@@ -125,10 +131,10 @@ export function TwoColumnLayout() {
     <article className="grid gap-10">
       <title>{STRINGS.documentTitle}</title>
       <header className="grid gap-2">
-        <Ui.Heading level={1}>{TwoColumnLayoutRoute.title}</Ui.Heading>
-        <Ui.Text className="max-w-prose">
+        <Heading level={1}>{TwoColumnLayoutRoute.title}</Heading>
+        <Text className="max-w-prose">
           <bdi>{STRINGS.intro}</bdi>
-        </Ui.Text>
+        </Text>
       </header>
 
       <PageSection
@@ -137,25 +143,25 @@ export function TwoColumnLayout() {
         note={STRINGS.byDefaultNote}
       >
         <Sample caption={STRINGS.defaultCaption} sample="default">
-          <Ui.TwoColumnLayout
+          <UiTwoColumnLayout
             aside={
               <>
-                <Ui.Section headingLevel={3} title={STRINGS.summary}>
-                  <Ui.Text>{STRINGS.summaryBody}</Ui.Text>
-                </Ui.Section>
-                <Ui.Section headingLevel={3} title={STRINGS.history}>
-                  <Ui.Text>{STRINGS.historyBody}</Ui.Text>
-                </Ui.Section>
+                <Section headingLevel={3} title={STRINGS.summary}>
+                  <Text>{STRINGS.summaryBody}</Text>
+                </Section>
+                <Section headingLevel={3} title={STRINGS.history}>
+                  <Text>{STRINGS.historyBody}</Text>
+                </Section>
               </>
             }
           >
-            <Ui.Section headingLevel={3} title={STRINGS.order}>
-              <Ui.Text>{STRINGS.orderBody}</Ui.Text>
-            </Ui.Section>
-            <Ui.Section headingLevel={3} title={STRINGS.items}>
-              <Ui.Text>{STRINGS.itemsBody}</Ui.Text>
-            </Ui.Section>
-          </Ui.TwoColumnLayout>
+            <Section headingLevel={3} title={STRINGS.order}>
+              <Text>{STRINGS.orderBody}</Text>
+            </Section>
+            <Section headingLevel={3} title={STRINGS.items}>
+              <Text>{STRINGS.itemsBody}</Text>
+            </Section>
+          </UiTwoColumnLayout>
         </Sample>
       </PageSection>
 
@@ -176,50 +182,50 @@ export function TwoColumnLayout() {
 
       <PageSection id="two-column-layout-arabic" title={STRINGS.arabic} note={STRINGS.arabicNote}>
         <div dir="rtl" lang="ar" className={BOX} data-sample="arabic">
-          <Ui.TwoColumnLayout
+          <UiTwoColumnLayout
             aside={
-              <Ui.Section headingLevel={3} title={STRINGS.arabicAside}>
-                <Ui.Text>{STRINGS.arabicAsideBody}</Ui.Text>
-              </Ui.Section>
+              <Section headingLevel={3} title={STRINGS.arabicAside}>
+                <Text>{STRINGS.arabicAsideBody}</Text>
+              </Section>
             }
           >
-            <Ui.Section headingLevel={3} title={STRINGS.arabicMain}>
-              <Ui.Text>{STRINGS.arabicMainBody}</Ui.Text>
-            </Ui.Section>
-          </Ui.TwoColumnLayout>
+            <Section headingLevel={3} title={STRINGS.arabicMain}>
+              <Text>{STRINGS.arabicMainBody}</Text>
+            </Section>
+          </UiTwoColumnLayout>
         </div>
       </PageSection>
 
       <PageSection id="two-column-layout-live" title={STRINGS.live} note={STRINGS.liveNote}>
         <div className="grid gap-3">
-          <Ui.Switch
+          <Switch
             label={STRINGS.historySwitch}
             value={isHistoryShown}
             onChange={setIsHistoryShown}
           />
           <div className={BOX} data-sample="live">
-            <Ui.TwoColumnLayout
+            <UiTwoColumnLayout
               aside={
                 <>
-                  <Ui.Section headingLevel={3} title={STRINGS.liveSummary}>
-                    <Ui.Text>{STRINGS.summaryBody}</Ui.Text>
-                  </Ui.Section>
+                  <Section headingLevel={3} title={STRINGS.liveSummary}>
+                    <Text>{STRINGS.summaryBody}</Text>
+                  </Section>
                   {isHistoryShown ? (
-                    <Ui.Section headingLevel={3} title={STRINGS.liveHistory}>
-                      <Ui.Text>{STRINGS.historyBody}</Ui.Text>
-                    </Ui.Section>
+                    <Section headingLevel={3} title={STRINGS.liveHistory}>
+                      <Text>{STRINGS.historyBody}</Text>
+                    </Section>
                   ) : null}
                 </>
               }
             >
-              <Ui.Section headingLevel={3} title={STRINGS.liveMain}>
-                <Ui.Text>{STRINGS.orderBody}</Ui.Text>
-              </Ui.Section>
-            </Ui.TwoColumnLayout>
+              <Section headingLevel={3} title={STRINGS.liveMain}>
+                <Text>{STRINGS.orderBody}</Text>
+              </Section>
+            </UiTwoColumnLayout>
           </div>
-          <Ui.Text role="status" tone="muted" data-sample="live-status">
+          <Text role="status" tone="muted" data-sample="live-status">
             {STRINGS.historyStatus(isHistoryShown)}
-          </Ui.Text>
+          </Text>
         </div>
       </PageSection>
     </article>

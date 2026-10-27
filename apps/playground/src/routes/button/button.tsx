@@ -4,12 +4,12 @@
  *          end and both icons, a direction-aware chevron, full width, and live samples (a save that loads for a
  *          moment, a press counter), all from `@stackra/ui/react` with real props.
  * Boundary: presentation only; strings in one `STRINGS` constant until @stackra/i18n. Icons are drawn by name
- *          through `Ui.Icon`, from the registry in `components/playground-icons` (ADR 0303 decision 10).
+ *          through `Icon`, from the registry in `components/playground-icons` (ADR 0303 decision 10).
  * Runtime: browser
  * Governing contract: ADR 0302 (decisions 3 and 5); ADR 0303 (decisions 3 and 7); ADR 0060 (right-to-left).
  */
 import { ButtonVariant, Size } from "@stackra/ui/contracts";
-import * as Ui from "@stackra/ui/react";
+import { Button as UiButton, Heading, Icon, Text } from "@stackra/ui/react";
 import { useEffect, useState, type ReactNode } from "react";
 
 import { PageSection } from "#src/components/page-section";
@@ -57,9 +57,9 @@ function Sample({ caption, children }: { caption: string; children: ReactNode })
   return (
     <li className="grid justify-items-start gap-2">
       {children}
-      <Ui.Text type="small" tone="muted">
+      <Text type="small" tone="muted">
         <bdi dir="ltr">{caption}</bdi>
-      </Ui.Text>
+      </Text>
     </li>
   );
 }
@@ -83,22 +83,22 @@ export function Button() {
     <article className="grid gap-10">
       <title>{STRINGS.documentTitle}</title>
       <header className="grid gap-2">
-        <Ui.Heading level={1}>{ButtonRoute.title}</Ui.Heading>
-        <Ui.Text className="max-w-prose">
+        <Heading level={1}>{ButtonRoute.title}</Heading>
+        <Text className="max-w-prose">
           <bdi>{STRINGS.intro}</bdi>
-        </Ui.Text>
+        </Text>
       </header>
 
       <PageSection id="button-variants" title={STRINGS.variants} note={STRINGS.variantsNote}>
         {Size.map((size) => (
           <div key={size} className="grid gap-2">
-            <Ui.Heading level={3}>{STRINGS.size(size)}</Ui.Heading>
+            <Heading level={3}>{STRINGS.size(size)}</Heading>
             <ul className={ROW}>
               {ButtonVariant.map((variant) => (
                 <li key={variant}>
-                  <Ui.Button variant={variant} size={size}>
+                  <UiButton variant={variant} size={size}>
                     {variant}
-                  </Ui.Button>
+                  </UiButton>
                 </li>
               ))}
             </ul>
@@ -110,17 +110,17 @@ export function Button() {
         <ul className="grid gap-4">
           {ButtonVariant.map((variant) => (
             <li key={variant} className="grid gap-2">
-              <Ui.Text type="small" tone="muted">
+              <Text type="small" tone="muted">
                 <bdi dir="ltr">{variant}</bdi>
-              </Ui.Text>
+              </Text>
               <div className={ROW}>
-                <Ui.Button variant={variant}>{STRINGS.default}</Ui.Button>
-                <Ui.Button variant={variant} isDisabled>
+                <UiButton variant={variant}>{STRINGS.default}</UiButton>
+                <UiButton variant={variant} isDisabled>
                   {STRINGS.disabled}
-                </Ui.Button>
-                <Ui.Button variant={variant} isLoading>
+                </UiButton>
+                <UiButton variant={variant} isLoading>
                   {STRINGS.loading}
-                </Ui.Button>
+                </UiButton>
               </div>
             </li>
           ))}
@@ -130,53 +130,50 @@ export function Button() {
       <PageSection id="button-icons" title={STRINGS.icons} note={STRINGS.iconsNote}>
         <ul className={ROW}>
           <Sample caption="startIcon">
-            <Ui.Button variant="secondary" startIcon="plus">
+            <UiButton variant="secondary" startIcon="plus">
               {STRINGS.add}
-            </Ui.Button>
+            </UiButton>
           </Sample>
           <Sample caption="endIcon">
-            <Ui.Button
-              variant="secondary"
-              endIcon={<Ui.Icon name="chevron-right" isMirroredInRtl />}
-            >
+            <UiButton variant="secondary" endIcon={<Icon name="chevron-right" isMirroredInRtl />}>
               {STRINGS.next}
-            </Ui.Button>
+            </UiButton>
           </Sample>
           <Sample caption="startIcon + endIcon">
-            <Ui.Button
+            <UiButton
               variant="secondary"
               startIcon="download"
-              endIcon={<Ui.Icon name="chevron-right" isMirroredInRtl />}
+              endIcon={<Icon name="chevron-right" isMirroredInRtl />}
             >
               {STRINGS.download}
-            </Ui.Button>
+            </UiButton>
           </Sample>
         </ul>
       </PageSection>
 
       <PageSection id="button-full-width" title={STRINGS.fullWidth} note={STRINGS.fullWidthNote}>
         <div className="grid max-w-sm gap-3">
-          <Ui.Button isFullWidth>{STRINGS.primary}</Ui.Button>
-          <Ui.Button variant="secondary" isFullWidth>
+          <UiButton isFullWidth>{STRINGS.primary}</UiButton>
+          <UiButton variant="secondary" isFullWidth>
             {STRINGS.secondary}
-          </Ui.Button>
+          </UiButton>
         </div>
       </PageSection>
 
       <PageSection id="button-live" title={STRINGS.live} note={STRINGS.liveNote}>
         <div className="flex flex-wrap items-center gap-4">
-          <Ui.Button isLoading={isSaving} onPress={() => setIsSaving(true)}>
+          <UiButton isLoading={isSaving} onPress={() => setIsSaving(true)}>
             {STRINGS.save}
-          </Ui.Button>
+          </UiButton>
           <output aria-live="polite" data-testid="save-state">
             <bdi>{STRINGS.saveState(isSaving)}</bdi>
           </output>
         </div>
         <div className="flex flex-wrap items-center gap-4">
-          <Ui.Button onPress={() => setCount((value) => value + 1)}>{STRINGS.count}</Ui.Button>
-          <Ui.Button isDisabled onPress={() => setCount((value) => value + 1)}>
+          <UiButton onPress={() => setCount((value) => value + 1)}>{STRINGS.count}</UiButton>
+          <UiButton isDisabled onPress={() => setCount((value) => value + 1)}>
             {STRINGS.countDisabled}
-          </Ui.Button>
+          </UiButton>
           <output aria-live="polite" data-testid="press-count">
             <bdi>{STRINGS.presses(count)}</bdi>
           </output>

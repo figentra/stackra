@@ -13,7 +13,7 @@
  *          0060 (light, dark, RTL).
  */
 import { Tone } from "@stackra/ui/contracts";
-import * as Ui from "@stackra/ui/react";
+import { Button, Heading, Switch, Text, ToastProvider, toast } from "@stackra/ui/react";
 import { useEffect, useState } from "react";
 
 import { PageSection } from "#src/components/page-section";
@@ -61,93 +61,93 @@ export function Toast() {
   const [isTop, setIsTop] = useState(false);
 
   // The queue is global, so a toast shown here would still be waiting when the reader came back to this page.
-  useEffect(() => () => Ui.toast.clear(), []);
+  useEffect(() => () => toast.clear(), []);
 
   return (
     <article className="grid gap-10">
       <title>{STRINGS.documentTitle}</title>
-      <Ui.ToastProvider dismissLabel={STRINGS.dismissLabel} position={isTop ? "top" : "bottom"} />
+      <ToastProvider dismissLabel={STRINGS.dismissLabel} position={isTop ? "top" : "bottom"} />
       <header className="grid gap-2">
-        <Ui.Heading level={1}>{ToastRoute.title}</Ui.Heading>
-        <Ui.Text className="max-w-prose">
+        <Heading level={1}>{ToastRoute.title}</Heading>
+        <Text className="max-w-prose">
           <bdi>{STRINGS.intro}</bdi>
-        </Ui.Text>
+        </Text>
       </header>
 
       <PageSection id="toast-tones" title={STRINGS.tones} note={STRINGS.tonesNote}>
         <div className={ROW}>
           {Tone.map((tone) => (
-            <Ui.Button
+            <Button
               key={tone}
               variant="secondary"
-              onPress={() => Ui.toast(TONE_MESSAGES[tone], { tone })}
+              onPress={() => toast(TONE_MESSAGES[tone], { tone })}
             >
               {STRINGS.show(tone)}
-            </Ui.Button>
+            </Button>
           ))}
         </div>
       </PageSection>
 
       <PageSection id="toast-options" title={STRINGS.options} note={STRINGS.optionsNote}>
         <div className={ROW}>
-          <Ui.Button
+          <Button
             variant="secondary"
             onPress={() =>
-              Ui.toast("Changes saved", {
+              toast("Changes saved", {
                 tone: "success",
                 description: "Your profile is up to date.",
               })
             }
           >
             {STRINGS.withDescription}
-          </Ui.Button>
-          <Ui.Button
+          </Button>
+          <Button
             variant="secondary"
             onPress={() =>
-              Ui.toast("Order deleted", {
+              toast("Order deleted", {
                 action: {
                   label: "Undo",
-                  onPress: () => Ui.toast.success("Order restored"),
+                  onPress: () => toast.success("Order restored"),
                 },
               })
             }
           >
             {STRINGS.withAction}
-          </Ui.Button>
-          <Ui.Button
+          </Button>
+          <Button
             variant="secondary"
-            onPress={() => Ui.toast("Upload paused", { tone: "warning", timeout: 0 })}
+            onPress={() => toast("Upload paused", { tone: "warning", timeout: 0 })}
           >
             {STRINGS.staying}
-          </Ui.Button>
-          <Ui.Button
+          </Button>
+          <Button
             variant="secondary"
-            onPress={() => Ui.toast("Link copied", { tone: "accent", icon: "circle-check" })}
+            onPress={() => toast("Link copied", { tone: "accent", icon: "circle-check" })}
           >
             {STRINGS.ownIcon}
-          </Ui.Button>
-          <Ui.Button variant="secondary" onPress={() => Ui.toast("Link copied", { icon: false })}>
+          </Button>
+          <Button variant="secondary" onPress={() => toast("Link copied", { icon: false })}>
             {STRINGS.noIcon}
-          </Ui.Button>
+          </Button>
         </div>
       </PageSection>
 
       <PageSection id="toast-control" title={STRINGS.control} note={STRINGS.controlNote}>
         <div className={ROW}>
-          <Ui.Switch label={STRINGS.atTop} value={isTop} onChange={setIsTop} />
-          <Ui.Button
+          <Switch label={STRINGS.atTop} value={isTop} onChange={setIsTop} />
+          <Button
             variant="secondary"
             onPress={() => {
-              Ui.toast.success("Saved");
-              Ui.toast.info("Syncing");
-              Ui.toast.warning("Offline");
+              toast.success("Saved");
+              toast.info("Syncing");
+              toast.warning("Offline");
             }}
           >
             {STRINGS.stack}
-          </Ui.Button>
-          <Ui.Button variant="ghost" onPress={() => Ui.toast.clear()}>
+          </Button>
+          <Button variant="ghost" onPress={() => toast.clear()}>
             {STRINGS.clear}
-          </Ui.Button>
+          </Button>
         </div>
       </PageSection>
     </article>

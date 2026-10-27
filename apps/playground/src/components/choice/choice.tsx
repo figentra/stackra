@@ -7,22 +7,12 @@
  * Governing contract: ADR 0302 (decision 5); WCAG 2.2 SC 1.4.1 and 1.4.11.
  */
 import { ToggleButton } from "@stackra/ui/react";
-import type { ReactNode } from "react";
+import type { ChoiceProps } from "./choice.props";
 
 // HeroUI marks the selected toggle with `accent-soft` on a `default` track, about 1:1 in this theme (an open brand
 // question), so the switcher paints the selected one with the accent fill instead: well over 3:1 in both schemes.
 const SELECTED_AS_ACCENT =
   "[--toggle-button-bg-selected:var(--accent)] [--toggle-button-bg-selected-hover:var(--accent-hover)] [--toggle-button-bg-selected-pressed:var(--accent-pressed)] [--toggle-button-fg-selected:var(--accent-foreground)]";
-
-/** Props of {@link Choice}. */
-export interface ChoiceProps {
-  /** The key the group selects it by. */
-  id: string;
-  /** The accessible name when the visible content is an icon or an abbreviation. */
-  "aria-label"?: string;
-  /** The visible content. */
-  children: ReactNode;
-}
 
 /** A switcher button: a check mark marks the selected one. */
 export function Choice({ id, "aria-label": label, children }: ChoiceProps) {

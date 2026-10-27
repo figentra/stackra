@@ -5,6 +5,9 @@
  *   opencode → budget check, fresh worktree + branch `delegate/sta-<n>-<type>-<slug>` from origin/main, `opencode run`
  *              inside it, JSON transcript saved next to the worktree; the lead (Claude) reviews and commits.
  *   claude   → prints the command for the lead to run; nothing starts here.
+ * Boundary: starts the executor in a fresh worktree and never commits; Linear calls are best-effort.
+ * Runtime: node
+ * Governing contract: ADR 0066 (delegation by routing matrix); ADR 0065 (rule 7); ADR 0293 (agent permission tiers).
  * Linear: `--issue STA-n` is required (ADR 0065). At dispatch it runs `pnpm linear start` on the issue with the
  *   delegate branch; at the end `pnpm linear comment` with the exit code and report path. Both are best-effort.
  * Flags: --issue STA-n (required), --agent <name>, --executor claude|opencode (or STACKRA_EXECUTOR), --dry-run, --no-install,

@@ -1,11 +1,12 @@
 /**
  * Stackra file contract:
- * Purpose: the route names and their params, for every navigator in the app.
- * Boundary: types only, plus the global `ReactNavigation` augmentation; it declares no navigator.
+ * Purpose: `HomeStackParamList`, the Home stack's route names and params, and the global `ReactNavigation`
+ *          augmentation from `RootStackParamList`; the other navigators' lists sit beside it, one per file.
+ * Boundary: types only, plus the global augmentation; it declares no navigator.
  * Runtime: isomorphic
  * Governing contract: ADR 0007 (documentation).
  */
-import type { NavigatorScreenParams } from "@react-navigation/native";
+import type { RootStackParamList } from "./root-stack-param-list.type";
 
 /**
  * The routes of the Home tab's stack and their params, declared once. A screen's `route.params` and every
@@ -264,39 +265,6 @@ export type HomeStackParamList = {
   ProResourceScheduler: undefined;
   /** The SignatureField page; deep link `stackra://design-system/pro/signature-field`. */
   ProSignatureField: undefined;
-};
-
-/** The routes of the Settings tab's stack and their params. */
-export type SettingsStackParamList = {
-  /** The Settings screen, the app's settings; takes no params. */
-  Settings: undefined;
-};
-
-/** The routes of the Search tab's stack (development builds only). */
-export type SearchStackParamList = {
-  /** The review area's search; deep link `stackra://search`. */
-  Search: undefined;
-};
-
-/** The routes that show one design-system component: every Home route except the home and the landing. */
-export type DesignSystemComponentRoute = Exclude<keyof HomeStackParamList, "Home" | "DesignSystem">;
-
-/** The tab routes; each tab holds the stack of its own screens. */
-export type TabParamList = {
-  /** The Home tab, whose params are the Home stack's. */
-  HomeTab: NavigatorScreenParams<HomeStackParamList>;
-  /** The Settings tab, whose params are the Settings stack's. */
-  SettingsTab: NavigatorScreenParams<SettingsStackParamList>;
-  /** The Search tab (development builds only), whose params are the Search stack's. */
-  SearchTab: NavigatorScreenParams<SearchStackParamList>;
-};
-
-/** The root stack: the tab shell and the item detail screen. */
-export type RootStackParamList = {
-  /** The tab shell, whose params are the tab routes'. */
-  Tabs: NavigatorScreenParams<TabParamList>;
-  /** Dynamic route: deep link `stackra://items/<id>`. */
-  Item: { id: string };
 };
 
 declare global {

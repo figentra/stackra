@@ -13,7 +13,7 @@ import type { IconComponentProps, IconName } from "@stackra/icons/contracts";
 import { IconRegistryProvider } from "@stackra/icons/react";
 import { ICON_SIZES } from "@stackra/ui";
 import { Size, TextTone } from "@stackra/ui/contracts";
-import * as Ui from "@stackra/ui/react";
+import { Button, Heading, Icon as UiIcon, Text } from "@stackra/ui/react";
 import { useState, type ReactNode } from "react";
 
 import { PageSection } from "#src/components/page-section";
@@ -99,9 +99,9 @@ function Sample({ caption, children }: { caption: string; children: ReactNode })
   return (
     <li className="grid justify-items-center gap-2">
       {children}
-      <Ui.Text type="small" tone="muted">
+      <Text type="small" tone="muted">
         <bdi dir="ltr">{caption}</bdi>
-      </Ui.Text>
+      </Text>
     </li>
   );
 }
@@ -121,17 +121,17 @@ export function Icon() {
     <article className="grid gap-10">
       <title>{STRINGS.documentTitle}</title>
       <header className="grid gap-2">
-        <Ui.Heading level={1}>{IconRoute.title}</Ui.Heading>
-        <Ui.Text className="max-w-prose">
+        <Heading level={1}>{IconRoute.title}</Heading>
+        <Text className="max-w-prose">
           <bdi>{STRINGS.intro}</bdi>
-        </Ui.Text>
+        </Text>
       </header>
 
       <PageSection id="icon-sizes" title={STRINGS.sizes} note={STRINGS.sizesNote}>
         <ul className={ROW}>
           {Size.map((each) => (
             <Sample key={each} caption={`${each} · ${ICON_SIZES[each]} px`}>
-              <Ui.Icon name="search" size={each} />
+              <UiIcon name="search" size={each} />
             </Sample>
           ))}
         </ul>
@@ -141,44 +141,44 @@ export function Icon() {
         <ul className={ROW}>
           {TextTone.map((each) => (
             <Sample key={each} caption={each}>
-              <Ui.Icon name="circle-check" size="lg" tone={each} label={each} />
+              <UiIcon name="circle-check" size="lg" tone={each} label={each} />
             </Sample>
           ))}
         </ul>
-        <Ui.Text tone="muted" className="flex items-center gap-2">
-          <Ui.Icon name="circle-check" />
+        <Text tone="muted" className="flex items-center gap-2">
+          <UiIcon name="circle-check" />
           <bdi>{STRINGS.inherits}</bdi>
-        </Ui.Text>
+        </Text>
       </PageSection>
 
       <PageSection id="icon-names" title={STRINGS.names} note={STRINGS.namesNote}>
         <ul className={ROW}>
           <li className="flex items-center gap-2">
-            <Ui.Icon name="heart" />
-            <Ui.Text>
+            <UiIcon name="heart" />
+            <Text>
               <bdi>{STRINGS.favourites}</bdi>
-            </Ui.Text>
+            </Text>
           </li>
           <li className="flex items-center gap-2">
-            <Ui.Icon name="star" label={STRINGS.rated} />
+            <UiIcon name="star" label={STRINGS.rated} />
           </li>
         </ul>
       </PageSection>
 
       <PageSection id="icon-rtl" title={STRINGS.rtl} note={STRINGS.rtlNote}>
-        <Ui.Heading level={3}>{STRINGS.mirrored}</Ui.Heading>
+        <Heading level={3}>{STRINGS.mirrored}</Heading>
         <ul className={ROW}>
           {MIRRORED.map(([label, name]) => (
             <Sample key={label} caption={name}>
-              <Ui.Icon name={name} size="lg" label={label} isMirroredInRtl />
+              <UiIcon name={name} size="lg" label={label} isMirroredInRtl />
             </Sample>
           ))}
         </ul>
-        <Ui.Heading level={3}>{STRINGS.neverMirrored}</Ui.Heading>
+        <Heading level={3}>{STRINGS.neverMirrored}</Heading>
         <ul className={ROW}>
           {NEVER_MIRRORED.map(([label, name]) => (
             <Sample key={label} caption={name}>
-              <Ui.Icon name={name} size="lg" label={label} />
+              <UiIcon name={name} size="lg" label={label} />
             </Sample>
           ))}
         </ul>
@@ -188,11 +188,11 @@ export function Icon() {
         <IconRegistryProvider registry={PAGE_ICONS}>
           <ul className={ROW}>
             <Sample caption={STRINGS.alias}>
-              <Ui.Icon name="orders" size="lg" />
+              <UiIcon name="orders" size="lg" />
             </Sample>
             {Size.map((each) => (
               <Sample key={each} caption={`playground::mark · ${each}`}>
-                <Ui.Icon name="playground::mark" size={each} />
+                <UiIcon name="playground::mark" size={each} />
               </Sample>
             ))}
             <Sample caption={STRINGS.rawElement}>
@@ -215,37 +215,37 @@ export function Icon() {
       <PageSection id="icon-passthrough" title={STRINGS.passthrough} note={STRINGS.passthroughNote}>
         <ul className={ROW}>
           <Sample caption={STRINGS.thinStroke}>
-            <Ui.Icon name="search" size="lg" strokeWidth={1.5} />
+            <UiIcon name="search" size="lg" strokeWidth={1.5} />
           </Sample>
           <Sample caption={STRINGS.withClass}>
-            <Ui.Icon name="search" size="lg" className="opacity-50" data-testid="passed-class" />
+            <UiIcon name="search" size="lg" className="opacity-50" data-testid="passed-class" />
           </Sample>
         </ul>
       </PageSection>
 
       <PageSection id="icon-live" title={STRINGS.live} note={STRINGS.liveNote}>
         <div className="flex flex-wrap items-center gap-4">
-          <Ui.Button
+          <Button
             onPress={() => {
               setSizeIndex((index) => index + 1);
               setPresses((count) => count + 1);
             }}
           >
             {STRINGS.nextSize}
-          </Ui.Button>
-          <Ui.Button
+          </Button>
+          <Button
             onPress={() => {
               setToneIndex((index) => index + 1);
               setPresses((count) => count + 1);
             }}
           >
             {STRINGS.nextTone}
-          </Ui.Button>
-          <Ui.Icon name="star" size={size} tone={tone} data-testid="live-icon" />
+          </Button>
+          <UiIcon name="star" size={size} tone={tone} data-testid="live-icon" />
         </div>
-        <Ui.Text role="status" tone="muted">
+        <Text role="status" tone="muted">
           <bdi>{STRINGS.state(size, tone, presses)}</bdi>
-        </Ui.Text>
+        </Text>
       </PageSection>
     </article>
   );

@@ -5,4 +5,5 @@
  * Runtime: browser
  * Governing contract: ADR 0294 (decision 14).
  */
-export { PageSection, type PageSectionProps } from "./page-section";
+export { PageSection } from "./page-section";
+export { type PageSectionProps } from "./page-section.props";

@@ -1,3 +1,11 @@
+/**
+ * Stackra file contract:
+ * Purpose: hold `bot-token.mjs` to its contract: the RS256 app JWT, the token mint and its errors that never name the
+ *          key, the connect timeout, and the retry rules for idempotent and non-idempotent calls.
+ * Boundary: a generated throwaway key and mocked fetch; no network.
+ * Runtime: node
+ * Governing contract: ADR 0022 (tests live in tests folders); ADR 0182 (testing strategy). STA-302.
+ */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { generateKeyPairSync, verify } from "node:crypto";
@@ -151,32 +159,37 @@ test("netFetch sends a POST once unless the caller marks it idempotent", async (
   }
 });
 
-test("retryUnlessLanded re-runs a write only when a fresh read says it did not land", async () => {
-  const flaky = (errors) => {
-    let n = 0;
-    const run = () => {
-      n++;
-      if (errors.length) throw new Error(errors.shift());
-      return "done";
-    };
-    return { run, runs: () => n };
+const flakyRun = (errors) => {
+  let n = 0;
+  const run = () => {
+    n++;
+    if (errors.length) throw new Error(errors.shift());
+    return "done";
   };
-  let w = flaky(["gh pr merge failed: HTTP 502: Bad Gateway"]);
+  return { run, runs: () => n };
+};
+
+test("retryUnlessLanded re-runs a write only when a fresh read says it did not land", async () => {
+  let w = flakyRun(["gh pr merge failed: HTTP 502: Bad Gateway"]);
   assert.equal(await retryUnlessLanded(w.run, () => false, noWait), "done");
   assert.equal(w.runs(), 2);
 
-  w = flaky(["fetch failed"]);
+  w = flakyRun(["fetch failed"]);
   assert.equal(await retryUnlessLanded(w.run, () => true, noWait), undefined);
   assert.equal(w.runs(), 1);
 
   let reads = 0;
-  w = flaky(["HTTP 422: Validation Failed"]);
+  w = flakyRun(["HTTP 422: Validation Failed"]);
   await assert.rejects(
     retryUnlessLanded(w.run, () => ++reads, noWait),
     /422/,
   );
   assert.equal(reads, 0);
 });
+
+const failingRead = () => {
+  throw new Error("gh pr view failed: i/o timeout");
+};
 
 test("retryUnlessLanded re-reads after the last send; a failing re-read keeps the send's error", async () => {
   let runs = 0;
@@ -197,10 +210,7 @@ test("retryUnlessLanded re-reads after the last send; a failing re-read keeps th
   assert.equal(runs, RETRY_ATTEMPTS);
 
   runs = 0;
-  const unread = () => {
-    throw new Error("gh pr view failed: i/o timeout");
-  };
-  await assert.rejects(retryUnlessLanded(gateway, unread, noWait), (error) => {
+  await assert.rejects(retryUnlessLanded(gateway, failingRead, noWait), (error) => {
     assert.match(
       error.message,
       /^gh pr merge failed: HTTP 504.*outcome unknown.*gh pr view failed/,

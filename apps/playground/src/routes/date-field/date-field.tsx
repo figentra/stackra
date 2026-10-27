@@ -11,7 +11,7 @@
  *          RTL).
  */
 import { CalendarDate } from "@internationalized/date";
-import * as Ui from "@stackra/ui/react";
+import { DateField as UiDateField, Heading, Text } from "@stackra/ui/react";
 import { useState } from "react";
 
 import { PageSection } from "#src/components/page-section";
@@ -65,16 +65,16 @@ export function DateField() {
     <article className="grid gap-10">
       <title>{STRINGS.documentTitle}</title>
       <header className="grid gap-2">
-        <Ui.Heading level={1}>{DateFieldRoute.title}</Ui.Heading>
-        <Ui.Text className="max-w-prose">
+        <Heading level={1}>{DateFieldRoute.title}</Heading>
+        <Text className="max-w-prose">
           <bdi>{STRINGS.intro}</bdi>
-        </Ui.Text>
+        </Text>
       </header>
 
       <PageSection id="date-field-basics" title={STRINGS.basics} note={STRINGS.basicsNote}>
         <div className={GRID}>
-          <Ui.DateField label={STRINGS.empty} description={STRINGS.emptyDescription} />
-          <Ui.DateField
+          <UiDateField label={STRINGS.empty} description={STRINGS.emptyDescription} />
+          <UiDateField
             label={STRINGS.filled}
             description={STRINGS.filledDescription}
             defaultValue={new CalendarDate(2026, 3, 5)}
@@ -83,7 +83,7 @@ export function DateField() {
       </PageSection>
 
       <PageSection id="date-field-bounded" title={STRINGS.bounded} note={STRINGS.boundedNote}>
-        <Ui.DateField
+        <UiDateField
           label={STRINGS.boundedLabel}
           description={STRINGS.boundedDescription}
           errorMessage={STRINGS.boundedMessage}
@@ -96,19 +96,19 @@ export function DateField() {
 
       <PageSection id="date-field-states" title={STRINGS.states} note={STRINGS.statesNote}>
         <div className={GRID}>
-          <Ui.DateField
+          <UiDateField
             label={STRINGS.invalid}
             errorMessage={STRINGS.invalidMessage}
             defaultValue={new CalendarDate(2026, 3, 7)}
             isDateUnavailable={isWeekend}
             validationBehavior="aria"
           />
-          <Ui.DateField
+          <UiDateField
             label={STRINGS.readOnly}
             defaultValue={new CalendarDate(2026, 2, 12)}
             isReadOnly
           />
-          <Ui.DateField
+          <UiDateField
             label={STRINGS.disabled}
             defaultValue={new CalendarDate(2026, 1, 20)}
             isDisabled
@@ -117,10 +117,10 @@ export function DateField() {
       </PageSection>
 
       <PageSection id="date-field-live" title={STRINGS.live} note={STRINGS.liveNote}>
-        <Ui.DateField label={STRINGS.liveLabel} value={day} onChange={setDay} />
-        <Ui.Text data-testid="date-field-value" aria-live="polite">
+        <UiDateField label={STRINGS.liveLabel} value={day} onChange={setDay} />
+        <Text data-testid="date-field-value" aria-live="polite">
           {day === null ? STRINGS.liveEmpty : STRINGS.liveChosen(day)}
-        </Ui.Text>
+        </Text>
       </PageSection>
     </article>
   );

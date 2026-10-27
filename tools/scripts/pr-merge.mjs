@@ -24,6 +24,9 @@
  *      the owner user, never a bot (ADR 0293). The events are read only then; an API error refuses the merge.
  *   With a merge queue it enqueues only while `enqueueReady` holds (owner order OP7): bot-token.mjs keeps a 30 s
  *   connect timeout and retries (STA-302).
+ * Boundary: reads the PR, its checks and reviews through gh, then merges or enqueues it; changes nothing else.
+ * Runtime: node
+ * Governing contract: ADR 0119 (merge policy and release authority); ADR 0230 (reviewer identity); ADR 0285.
  * Network: gh reads retry on transient errors (bot-token.mjs); the merge or enqueue runs again after a transient
  *   failure only when a re-read shows the PR neither merged nor queued.
  * Convention: the reviewer posts `AI-REVIEW: PASS <full head sha> base=<base ref> patch=<patch id>` (or `FAIL <sha>`) as a new

@@ -7,6 +7,7 @@
  * Governing contract: ADR 0320 (the showcase stage); the stackra brand kit.
  */
 import { BrandGlyph, type BrandGlyphName } from "#src/components/brand-glyph";
+import type { CategoryGlyphProps } from "#src/components/category-glyph/category-glyph.props";
 
 /** The brand icon each category wears; a category missing here wears the module icon. */
 const CATEGORY_GLYPHS: Readonly<Record<string, BrandGlyphName>> = {
@@ -23,14 +24,6 @@ const CATEGORY_GLYPHS: Readonly<Record<string, BrandGlyphName>> = {
   Layout: "menu",
   AI: "pipeline",
 };
-
-/** Props of {@link CategoryGlyph}. */
-export interface CategoryGlyphProps {
-  /** The category, by name. */
-  category: string;
-  /** Sizing and colour classes. */
-  className?: string;
-}
 
 /** The brand icon of `category`. */
 export function CategoryGlyph({ category, className }: CategoryGlyphProps) {

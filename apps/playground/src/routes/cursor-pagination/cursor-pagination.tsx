@@ -13,7 +13,7 @@
  *          (right-to-left); WCAG 2.2 SC 4.1.3.
  */
 import { Size } from "@stackra/ui/contracts";
-import * as Ui from "@stackra/ui/react";
+import { CursorPagination as UiCursorPagination, Heading, Text } from "@stackra/ui/react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import { PageSection } from "#src/components/page-section";
@@ -100,7 +100,7 @@ function PagerExample() {
           <li key={order}>{order}</li>
         ))}
       </ul>
-      <Ui.CursorPagination
+      <UiCursorPagination
         label={STRINGS.pagerLabel}
         hasMore={page.nextCursor !== undefined}
         hasPrevious={history.length > 0}
@@ -114,9 +114,9 @@ function PagerExample() {
           if (previous !== undefined) go(previous, history.slice(0, -1));
         }}
       />
-      <Ui.Text tone="muted" data-testid="cursor">
+      <Text tone="muted" data-testid="cursor">
         <bdi>{STRINGS.cursor(cursor)}</bdi>
-      </Ui.Text>
+      </Text>
     </div>
   );
 }
@@ -148,7 +148,7 @@ function GrowingExample() {
           <li key={order}>{order}</li>
         ))}
       </ul>
-      <Ui.CursorPagination
+      <UiCursorPagination
         mode="load-more"
         label={STRINGS.growingLabel}
         hasMore={nextCursor !== undefined}
@@ -164,7 +164,7 @@ function GrowingExample() {
 function Sample({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div className="grid gap-2">
-      <Ui.Heading level={3}>{title}</Ui.Heading>
+      <Heading level={3}>{title}</Heading>
       {children}
     </div>
   );
@@ -176,36 +176,36 @@ export function CursorPagination() {
     <article className="grid gap-10">
       <title>{STRINGS.documentTitle}</title>
       <header className="grid gap-2">
-        <Ui.Heading level={1}>{CursorPaginationRoute.title}</Ui.Heading>
-        <Ui.Text className="max-w-prose">
+        <Heading level={1}>{CursorPaginationRoute.title}</Heading>
+        <Text className="max-w-prose">
           <bdi>{STRINGS.intro}</bdi>
-        </Ui.Text>
+        </Text>
       </header>
 
       <PageSection id="cursor-pagination-pager" title={STRINGS.pager} note={STRINGS.pagerNote}>
         <Sample title={STRINGS.first}>
-          <Ui.CursorPagination label={STRINGS.first} hasMore />
+          <UiCursorPagination label={STRINGS.first} hasMore />
         </Sample>
         <Sample title={STRINGS.middle}>
-          <Ui.CursorPagination label={STRINGS.middle} hasMore hasPrevious />
+          <UiCursorPagination label={STRINGS.middle} hasMore hasPrevious />
         </Sample>
         <Sample title={STRINGS.last}>
-          <Ui.CursorPagination label={STRINGS.last} hasMore={false} hasPrevious />
+          <UiCursorPagination label={STRINGS.last} hasMore={false} hasPrevious />
         </Sample>
         <Sample title={STRINGS.only}>
-          <Ui.CursorPagination label={STRINGS.only} hasMore={false} />
+          <UiCursorPagination label={STRINGS.only} hasMore={false} />
         </Sample>
         <Sample title={STRINGS.loading}>
-          <Ui.CursorPagination label={STRINGS.loading} hasMore hasPrevious isLoading />
+          <UiCursorPagination label={STRINGS.loading} hasMore hasPrevious isLoading />
         </Sample>
       </PageSection>
 
       <PageSection id="cursor-pagination-more" title={STRINGS.loadMore} note={STRINGS.loadMoreNote}>
         <Sample title={STRINGS.more}>
-          <Ui.CursorPagination mode="load-more" label={STRINGS.more} hasMore count={20} />
+          <UiCursorPagination mode="load-more" label={STRINGS.more} hasMore count={20} />
         </Sample>
         <Sample title={STRINGS.loadingMore}>
-          <Ui.CursorPagination
+          <UiCursorPagination
             mode="load-more"
             label={STRINGS.loadingMore}
             hasMore
@@ -214,24 +214,24 @@ export function CursorPagination() {
           />
         </Sample>
         <Sample title={STRINGS.end}>
-          <Ui.CursorPagination mode="load-more" label={STRINGS.end} hasMore={false} count={45} />
+          <UiCursorPagination mode="load-more" label={STRINGS.end} hasMore={false} count={45} />
         </Sample>
       </PageSection>
 
       <PageSection id="cursor-pagination-sizes" title={STRINGS.sizes} note={STRINGS.sizesNote}>
         {Size.map((size) => (
           <Sample key={size} title={STRINGS.size(size)}>
-            <Ui.CursorPagination label={STRINGS.size(size)} size={size} hasMore hasPrevious />
+            <UiCursorPagination label={STRINGS.size(size)} size={size} hasMore hasPrevious />
           </Sample>
         ))}
       </PageSection>
 
       <PageSection id="cursor-pagination-count" title={STRINGS.count} note={STRINGS.countNote}>
         <Sample title={STRINGS.defaultCount}>
-          <Ui.CursorPagination label={STRINGS.defaultCount} hasMore hasPrevious count={20} />
+          <UiCursorPagination label={STRINGS.defaultCount} hasMore hasPrevious count={20} />
         </Sample>
         <Sample title={STRINGS.customCount}>
-          <Ui.CursorPagination
+          <UiCursorPagination
             label={STRINGS.customCount}
             hasMore
             hasPrevious

@@ -4,13 +4,13 @@
  *          direction-aware chevron, chips inside running text and in a list, and a live sample that steps through
  *          variants and tones, all from `@stackra/ui/react` with real props.
  * Boundary: presentation only; strings in one `STRINGS` constant until @stackra/i18n. Icons are drawn by name
- *          through `Ui.Icon`, from the registry in `components/playground-icons` (ADR 0303 decision 10).
+ *          through `Icon`, from the registry in `components/playground-icons` (ADR 0303 decision 10).
  * Runtime: browser
  * Governing contract: ADR 0302 (decisions 3 and 5); ADR 0303 (decisions 3 and 7); ADR 0304; ADR 0060 (light, dark,
  *          RTL).
  */
 import { ChipVariant, Size, Tone } from "@stackra/ui/contracts";
-import * as Ui from "@stackra/ui/react";
+import { Button, Chip as UiChip, Heading, Icon, Text } from "@stackra/ui/react";
 import { createElement, useState } from "react";
 
 import { PageSection } from "#src/components/page-section";
@@ -63,16 +63,16 @@ export function Chip() {
     <article className="grid gap-10">
       <title>{STRINGS.documentTitle}</title>
       <header className="grid gap-2">
-        <Ui.Heading level={1}>{ChipRoute.title}</Ui.Heading>
-        <Ui.Text className="max-w-prose">
+        <Heading level={1}>{ChipRoute.title}</Heading>
+        <Text className="max-w-prose">
           <bdi>{STRINGS.intro}</bdi>
-        </Ui.Text>
+        </Text>
       </header>
 
       <PageSection id="chip-matrix" title={STRINGS.matrix} note={STRINGS.matrixNote}>
         {Size.map((size) => (
           <div key={size} className="grid gap-2">
-            <Ui.Heading level={3}>{STRINGS.size(size)}</Ui.Heading>
+            <Heading level={3}>{STRINGS.size(size)}</Heading>
             <table className="w-full text-start">
               <thead>
                 <tr>
@@ -94,9 +94,9 @@ export function Chip() {
                     </th>
                     {Tone.map((toneName) => (
                       <td key={toneName} className="p-2">
-                        <Ui.Chip variant={name} tone={toneName} size={size}>
+                        <UiChip variant={name} tone={toneName} size={size}>
                           {toneName}
-                        </Ui.Chip>
+                        </UiChip>
                       </td>
                     ))}
                   </tr>
@@ -110,72 +110,70 @@ export function Chip() {
       <PageSection id="chip-icons" title={STRINGS.icons} note={STRINGS.iconsNote}>
         <ul className={ROW}>
           <li>
-            <Ui.Chip tone="success" startIcon="check">
+            <UiChip tone="success" startIcon="check">
               {STRINGS.start}
-            </Ui.Chip>
+            </UiChip>
           </li>
           <li>
-            <Ui.Chip endIcon={<Ui.Icon name="chevron-right" isMirroredInRtl />}>
-              {STRINGS.end}
-            </Ui.Chip>
+            <UiChip endIcon={<Icon name="chevron-right" isMirroredInRtl />}>{STRINGS.end}</UiChip>
           </li>
           <li>
-            <Ui.Chip
+            <UiChip
               variant="soft"
               tone="accent"
               size="lg"
               startIcon="check"
-              endIcon={<Ui.Icon name="chevron-right" isMirroredInRtl />}
+              endIcon={<Icon name="chevron-right" isMirroredInRtl />}
             >
               {STRINGS.both}
-            </Ui.Chip>
+            </UiChip>
           </li>
         </ul>
       </PageSection>
 
       <PageSection id="chip-context" title={STRINGS.context} note={STRINGS.contextNote}>
-        <Ui.Text className="max-w-prose">
+        <Text className="max-w-prose">
           <bdi>
             {STRINGS.sentencePrefix}{" "}
-            <Ui.Chip tone="success" size="sm">
+            <UiChip tone="success" size="sm">
               {STRINGS.sentenceChip}
-            </Ui.Chip>{" "}
+            </UiChip>{" "}
             {STRINGS.sentenceSuffix}
           </bdi>
-        </Ui.Text>
+        </Text>
         <ul aria-label={STRINGS.categories} className={ROW}>
           {CATEGORIES.map((name) => (
-            <Ui.Chip
+            <UiChip
               key={name}
               variant="tertiary"
               // `render` is typed for a span's ref; a plain object type lets a list item take the props.
               render={(props: object) => createElement("li", props)}
             >
               {name}
-            </Ui.Chip>
+            </UiChip>
           ))}
         </ul>
       </PageSection>
 
       <PageSection id="chip-live" title={STRINGS.live} note={STRINGS.liveNote}>
         <div className={ROW}>
-          <Ui.Button
+          <Button
             variant="secondary"
             onPress={() => setVariantIndex((index) => (index + 1) % ChipVariant.length)}
           >
             {STRINGS.nextVariant}
-          </Ui.Button>
-          <Ui.Button
+          </Button>
+          <Button
             variant="secondary"
             onPress={() => setToneIndex((index) => (index + 1) % Tone.length)}
           >
             {STRINGS.nextTone}
-          </Ui.Button>
+          </Button>
         </div>
         <div className={ROW}>
-          <Ui.Chip variant={variant} tone={tone} startIcon="check">
+          <UiChip variant={variant} tone={tone} startIcon="check">
             {STRINGS.current(variant, tone)}
-          </Ui.Chip>
+          </UiChip>
         </div>
       </PageSection>
     </article>

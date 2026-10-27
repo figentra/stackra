@@ -1,6 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: the shared native-stack header options: a transparent header on iOS, and large titles on tab roots.
+ * Purpose: `glassHeader`, the native-stack header options every stack shares: a transparent header on iOS; the base
+ *          of `largeTitleHeader` (tab roots) and `detailHeader` (pushed pages).
  * Boundary: option objects only; it declares no navigator and no screen.
  * Runtime: react-native
  * Governing contract: ADR 0007 (documentation).
@@ -15,17 +16,4 @@ export const glassHeader: NativeStackNavigationOptions = {
   headerTransparent: ios,
   headerShadowVisible: false,
   headerBackButtonDisplayMode: "minimal",
-};
-
-/** Tab roots add a large title that collapses into the glass header on scroll. */
-export const largeTitleHeader: NativeStackNavigationOptions = {
-  ...glassHeader,
-  headerLargeTitle: ios,
-  headerLargeTitleShadowVisible: false,
-};
-
-/** Pages pushed from a tab root keep the glass header and the small title, so the large title stays on roots. */
-export const detailHeader: NativeStackNavigationOptions = {
-  ...glassHeader,
-  headerLargeTitle: false,
 };

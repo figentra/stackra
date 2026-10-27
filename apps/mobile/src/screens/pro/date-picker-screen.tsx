@@ -14,7 +14,7 @@ import { DatePicker, type DatePickerProps } from "@stackra-pro/ui/native";
 import { useState } from "react";
 
 import { CalendarParts } from "#src/components/ui/calendar-parts";
-import { useInsetSheet } from "#src/components/ui/inset-sheet";
+import { useInsetSheet } from "#src/components/ui/use-inset-sheet";
 import { Screen } from "#src/components/ui/screen";
 import { Section } from "#src/components/ui/section";
 

@@ -21,7 +21,7 @@ import {
 } from "@stackra/icons/react/lucide-icons";
 import { ButtonVariant, Size } from "@stackra/ui/contracts";
 import type { MenuSection } from "@stackra/ui/contracts";
-import * as Ui from "@stackra/ui/react";
+import { ActionMenu as UiActionMenu, Button, Heading, Surface, Text } from "@stackra/ui/react";
 import { useState, type ReactNode } from "react";
 
 import { PageSection } from "#src/components/page-section";
@@ -115,9 +115,9 @@ function Sample({ caption, children }: { caption: string; children: ReactNode })
   return (
     <li className="grid justify-items-start gap-2">
       {children}
-      <Ui.Text type="small" tone="muted">
+      <Text type="small" tone="muted">
         <bdi>{caption}</bdi>
-      </Ui.Text>
+      </Text>
     </li>
   );
 }
@@ -136,16 +136,16 @@ export function ActionMenu() {
       <article className="grid gap-10">
         <title>{STRINGS.documentTitle}</title>
         <header className="grid gap-2">
-          <Ui.Heading level={1}>{ActionMenuRoute.title}</Ui.Heading>
-          <Ui.Text className="max-w-prose">
+          <Heading level={1}>{ActionMenuRoute.title}</Heading>
+          <Text className="max-w-prose">
             <bdi>{STRINGS.intro}</bdi>
-          </Ui.Text>
+          </Text>
         </header>
 
         <PageSection id="action-menu-basics" title={STRINGS.basics} note={STRINGS.basicsNote}>
           <ul className={ROW}>
             <Sample caption={STRINGS.basicsCaption}>
-              <Ui.ActionMenu label={STRINGS.basicsLabel} sections={ORDER_SECTIONS} />
+              <UiActionMenu label={STRINGS.basicsLabel} sections={ORDER_SECTIONS} />
             </Sample>
           </ul>
         </PageSection>
@@ -155,7 +155,7 @@ export function ActionMenu() {
             <ul key={size} aria-label={STRINGS.size(size)} className={ROW}>
               {ButtonVariant.map((variant) => (
                 <Sample key={variant} caption={`${size} · ${variant}`}>
-                  <Ui.ActionMenu
+                  <UiActionMenu
                     label={`${STRINGS.variantLabel(variant)}, ${size}`}
                     sections={ORDER_SECTIONS}
                     variant={variant}
@@ -170,7 +170,7 @@ export function ActionMenu() {
         <PageSection id="action-menu-icon" title={STRINGS.icon} note={STRINGS.iconNote}>
           <ul className={ROW}>
             <Sample caption={STRINGS.iconCaption}>
-              <Ui.ActionMenu
+              <UiActionMenu
                 label={STRINGS.iconLabel}
                 sections={ORDER_SECTIONS}
                 icon="ellipsis-vertical"
@@ -186,10 +186,10 @@ export function ActionMenu() {
         >
           <ul className={ROW}>
             <Sample caption={STRINGS.placementDefaultCaption}>
-              <Ui.ActionMenu label={STRINGS.placementDefaultLabel} sections={ORDER_SECTIONS} />
+              <UiActionMenu label={STRINGS.placementDefaultLabel} sections={ORDER_SECTIONS} />
             </Sample>
             <Sample caption={STRINGS.placementTopCaption}>
-              <Ui.ActionMenu
+              <UiActionMenu
                 label={STRINGS.placementTopLabel}
                 sections={ORDER_SECTIONS}
                 placement="top"
@@ -202,13 +202,13 @@ export function ActionMenu() {
         <PageSection id="action-menu-states" title={STRINGS.states} note={STRINGS.statesNote}>
           <ul className={ROW}>
             <Sample caption={STRINGS.disabledCaption}>
-              <Ui.ActionMenu label={STRINGS.disabledLabel} sections={ORDER_SECTIONS} isDisabled />
+              <UiActionMenu label={STRINGS.disabledLabel} sections={ORDER_SECTIONS} isDisabled />
             </Sample>
           </ul>
         </PageSection>
 
         <PageSection id="action-menu-live" title={STRINGS.live} note={STRINGS.liveNote}>
-          <Ui.Surface
+          <Surface
             variant="secondary"
             className="flex items-center justify-between gap-4 rounded-2xl p-3"
             // A press on the row's own text opens it; a button inside counts its own press, so none counts twice.
@@ -216,24 +216,24 @@ export function ActionMenu() {
               if (!(event.target as HTMLElement).closest("button")) openRow();
             }}
           >
-            <Ui.Text>{STRINGS.rowTitle}</Ui.Text>
+            <Text>{STRINGS.rowTitle}</Text>
             <div className="flex items-center gap-2">
-              <Ui.Button variant="tertiary" onPress={openRow}>
+              <Button variant="tertiary" onPress={openRow}>
                 {STRINGS.openOrder}
-              </Ui.Button>
-              <Ui.ActionMenu
+              </Button>
+              <UiActionMenu
                 label={STRINGS.basicsLabel}
                 sections={ORDER_SECTIONS}
                 onAction={setLastAction}
               />
             </div>
-          </Ui.Surface>
-          <Ui.Text role="status" data-testid="action-menu-row-opened" tone="muted">
+          </Surface>
+          <Text role="status" data-testid="action-menu-row-opened" tone="muted">
             {STRINGS.rowOpened(rowOpened)}
-          </Ui.Text>
-          <Ui.Text role="status" data-testid="action-menu-last-action" tone="muted">
+          </Text>
+          <Text role="status" data-testid="action-menu-last-action" tone="muted">
             {STRINGS.lastAction(lastAction)}
-          </Ui.Text>
+          </Text>
         </PageSection>
       </article>
     </IconRegistryProvider>

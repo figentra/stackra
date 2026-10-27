@@ -13,7 +13,7 @@
  */
 import { deriveTheme, InvalidThemeError, STACKRA_THEME } from "@stackra/tokens";
 import type { Theme, ThemeKnobs } from "@stackra/tokens/contracts";
-import * as Ui from "@stackra/ui/react";
+import { Button, Heading, Icon, Text, Toolbar, useDesignSystem } from "@stackra/ui/react";
 import { useDeferredValue, useMemo, useState } from "react";
 import { useSearchParams } from "react-router";
 
@@ -98,7 +98,7 @@ interface Step {
 /** The Theme Studio. */
 export function ThemeStudio() {
   const [params, setParams] = useSearchParams();
-  const { resolvedColorScheme } = Ui.useDesignSystem();
+  const { resolvedColorScheme } = useDesignSystem();
   const [base, setBase] = useState<Theme>(STACKRA_THEME);
   const [past, setPast] = useState<readonly Step[]>([]);
   const [future, setFuture] = useState<readonly Step[]>([]);
@@ -155,47 +155,42 @@ export function ThemeStudio() {
       <title>{STRINGS.documentTitle}</title>
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div className="grid max-w-2xl gap-2">
-          <Ui.Heading level={1}>{ThemeStudioRoute.title}</Ui.Heading>
-          <Ui.Text tone="muted">
+          <Heading level={1}>{ThemeStudioRoute.title}</Heading>
+          <Text tone="muted">
             <bdi>{STRINGS.intro}</bdi>
-          </Ui.Text>
+          </Text>
         </div>
-        <Ui.Toolbar aria-label={STRINGS.history} className="flex flex-wrap items-center gap-2">
-          <Ui.Button
+        <Toolbar aria-label={STRINGS.history} className="flex flex-wrap items-center gap-2">
+          <Button
             size="sm"
             variant="secondary"
-            startIcon={<Ui.Icon name="undo-2" isMirroredInRtl />}
+            startIcon={<Icon name="undo-2" isMirroredInRtl />}
             isDisabled={past.length === 0}
             onPress={undo}
           >
             {STRINGS.undo}
-          </Ui.Button>
-          <Ui.Button
+          </Button>
+          <Button
             size="sm"
             variant="secondary"
-            startIcon={<Ui.Icon name="redo-2" isMirroredInRtl />}
+            startIcon={<Icon name="redo-2" isMirroredInRtl />}
             isDisabled={future.length === 0}
             onPress={redo}
           >
             {STRINGS.redo}
-          </Ui.Button>
-          <Ui.Button
+          </Button>
+          <Button
             size="sm"
             variant="secondary"
             startIcon="rotate-ccw"
             onPress={() => change({ base: STACKRA_THEME, knobs: {} })}
           >
             {STRINGS.reset}
-          </Ui.Button>
-          <Ui.Button
-            size="sm"
-            variant="secondary"
-            startIcon="link-2"
-            onPress={() => void copyLink()}
-          >
+          </Button>
+          <Button size="sm" variant="secondary" startIcon="link-2" onPress={() => void copyLink()}>
             {STRINGS.link}
-          </Ui.Button>
-        </Ui.Toolbar>
+          </Button>
+        </Toolbar>
       </header>
       <p role="status" className="min-h-5 text-sm text-muted">
         {status ? <bdi>{status}</bdi> : null}

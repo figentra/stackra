@@ -13,7 +13,13 @@
  * Governing contract: ADR 0302 (decisions 3 and 5); ADR 0303 (decision 7); ADR 0317 (decision 7); ADR 0060
  *          (right-to-left); WCAG 2.2 SC 1.3.1, 1.4.10 and 4.1.3.
  */
-import * as Ui from "@stackra/ui/react";
+import {
+  Button,
+  Heading,
+  Section,
+  SingleColumnLayout as UiSingleColumnLayout,
+  Text,
+} from "@stackra/ui/react";
 import { useState, type ReactNode } from "react";
 
 import { PageSection } from "#src/components/page-section";
@@ -73,9 +79,9 @@ function Sample({
 }) {
   return (
     <div className="grid min-w-0 content-start gap-2">
-      <Ui.Text tone="muted" type="small">
+      <Text tone="muted" type="small">
         {caption}
-      </Ui.Text>
+      </Text>
       <div className={BOX} data-sample={sample}>
         {children}
       </div>
@@ -91,10 +97,10 @@ export function SingleColumnLayout() {
     <article className="grid grid-cols-[minmax(0,1fr)] gap-10">
       <title>{STRINGS.documentTitle}</title>
       <header className="grid gap-2">
-        <Ui.Heading level={1}>{SingleColumnLayoutRoute.title}</Ui.Heading>
-        <Ui.Text className="max-w-prose">
+        <Heading level={1}>{SingleColumnLayoutRoute.title}</Heading>
+        <Text className="max-w-prose">
           <bdi>{STRINGS.intro}</bdi>
-        </Ui.Text>
+        </Text>
       </header>
 
       <PageSection
@@ -103,24 +109,24 @@ export function SingleColumnLayout() {
         note={STRINGS.stackedNote}
       >
         <Sample caption={STRINGS.stackedCaption} sample="stacked">
-          <Ui.SingleColumnLayout>
-            <Ui.Section headingLevel={3} title={STRINGS.customer}>
-              <Ui.Text>{STRINGS.customerBody}</Ui.Text>
-            </Ui.Section>
-            <Ui.Section headingLevel={3} title={STRINGS.payment}>
-              <Ui.Text>{STRINGS.paymentBody}</Ui.Text>
-            </Ui.Section>
-            <Ui.Section headingLevel={3} title={STRINGS.shipping}>
-              <Ui.Text>{STRINGS.shippingBody}</Ui.Text>
-            </Ui.Section>
-          </Ui.SingleColumnLayout>
+          <UiSingleColumnLayout>
+            <Section headingLevel={3} title={STRINGS.customer}>
+              <Text>{STRINGS.customerBody}</Text>
+            </Section>
+            <Section headingLevel={3} title={STRINGS.payment}>
+              <Text>{STRINGS.paymentBody}</Text>
+            </Section>
+            <Section headingLevel={3} title={STRINGS.shipping}>
+              <Text>{STRINGS.shippingBody}</Text>
+            </Section>
+          </UiSingleColumnLayout>
         </Sample>
       </PageSection>
 
       <PageSection id="single-column-layout-wide" title={STRINGS.wide} note={STRINGS.wideNote}>
         <Sample caption={STRINGS.wideCaption} sample="wide">
-          <Ui.SingleColumnLayout>
-            <Ui.Section headingLevel={3} title={STRINGS.itemsTitle}>
+          <UiSingleColumnLayout>
+            <Section headingLevel={3} title={STRINGS.itemsTitle}>
               {/* A scroll region must be focusable to be reachable by keyboard: tabIndex makes it so (axe `scrollable-region-focusable`). */}
               <div
                 className="overflow-x-auto"
@@ -129,10 +135,10 @@ export function SingleColumnLayout() {
                 tabIndex={0}
                 data-sample="wide-scroller"
               >
-                <Ui.Text className="w-max min-w-[80rem]">{STRINGS.itemsRow}</Ui.Text>
+                <Text className="w-max min-w-[80rem]">{STRINGS.itemsRow}</Text>
               </div>
-            </Ui.Section>
-          </Ui.SingleColumnLayout>
+            </Section>
+          </UiSingleColumnLayout>
         </Sample>
       </PageSection>
 
@@ -142,43 +148,43 @@ export function SingleColumnLayout() {
         note={STRINGS.arabicNote}
       >
         <div dir="rtl" lang="ar" className={BOX} data-sample="arabic">
-          <Ui.SingleColumnLayout>
-            <Ui.Section headingLevel={3} title={STRINGS.arabicCustomer}>
-              <Ui.Text>{STRINGS.arabicCustomerBody}</Ui.Text>
-            </Ui.Section>
-            <Ui.Section headingLevel={3} title={STRINGS.arabicPayment}>
-              <Ui.Text>{STRINGS.arabicPaymentBody}</Ui.Text>
-            </Ui.Section>
-          </Ui.SingleColumnLayout>
+          <UiSingleColumnLayout>
+            <Section headingLevel={3} title={STRINGS.arabicCustomer}>
+              <Text>{STRINGS.arabicCustomerBody}</Text>
+            </Section>
+            <Section headingLevel={3} title={STRINGS.arabicPayment}>
+              <Text>{STRINGS.arabicPaymentBody}</Text>
+            </Section>
+          </UiSingleColumnLayout>
         </div>
       </PageSection>
 
       <PageSection id="single-column-layout-live" title={STRINGS.live} note={STRINGS.liveNote}>
         <div className="grid gap-3">
           <div className="flex flex-wrap gap-2">
-            <Ui.Button variant="secondary" onPress={() => setCount((current) => current + 1)}>
+            <Button variant="secondary" onPress={() => setCount((current) => current + 1)}>
               {STRINGS.add}
-            </Ui.Button>
-            <Ui.Button
+            </Button>
+            <Button
               variant="secondary"
               isDisabled={count === 0}
               onPress={() => setCount((current) => Math.max(0, current - 1))}
             >
               {STRINGS.remove}
-            </Ui.Button>
+            </Button>
           </div>
           <div className={BOX} data-sample="live">
-            <Ui.SingleColumnLayout>
+            <UiSingleColumnLayout>
               {Array.from({ length: count }, (_, index) => (
-                <Ui.Section key={index} headingLevel={3} title={STRINGS.note(index + 1)}>
-                  <Ui.Text>{STRINGS.noteBody}</Ui.Text>
-                </Ui.Section>
+                <Section key={index} headingLevel={3} title={STRINGS.note(index + 1)}>
+                  <Text>{STRINGS.noteBody}</Text>
+                </Section>
               ))}
-            </Ui.SingleColumnLayout>
+            </UiSingleColumnLayout>
           </div>
-          <Ui.Text role="status" tone="muted" data-sample="live-status">
+          <Text role="status" tone="muted" data-sample="live-status">
             {STRINGS.count(count)}
-          </Ui.Text>
+          </Text>
         </div>
       </PageSection>
     </article>

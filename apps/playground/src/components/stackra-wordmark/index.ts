@@ -5,4 +5,5 @@
  * Runtime: browser
  * Governing contract: ADR 0294 (decision 14).
  */
-export { StackraWordmark, type StackraWordmarkProps } from "./stackra-wordmark";
+export { StackraWordmark } from "./stackra-wordmark";
+export { type StackraWordmarkProps } from "./stackra-wordmark.props";

@@ -14,8 +14,11 @@
  * Governing contract: ADR 0320 (the Theme Studio); WCAG 2.2 SC 1.3.1, 2.5.8, 4.1.2.
  */
 import type { ThemeKnobs } from "@stackra/tokens/contracts";
-import * as Ui from "@stackra/ui/react";
+import { Heading, Select, Separator, Switch, TextField } from "@stackra/ui/react";
 import { useId } from "react";
+import type { StudioControlsProps } from "./studio-controls.props";
+import { STUDIO_PRESETS } from "./studio-presets.constant";
+import { STUDIO_FACES } from "./studio-faces.constant";
 
 // shortcut: English strings in one place until @stackra/i18n ships; then `playground::studio.controls.*` keys.
 const STRINGS = {
@@ -34,52 +37,6 @@ const STRINGS = {
   latin: "Latin face",
   arabic: "Arabic face",
 } as const;
-
-/** The presets: a name and the knobs it sets. Stackra is the theme as shipped, with its steel-blue accent. */
-export const STUDIO_PRESETS: readonly { id: string; label: string; knobs: ThemeKnobs }[] = [
-  { id: "stackra", label: "Stackra", knobs: {} },
-  {
-    id: "ember",
-    label: "Ember",
-    knobs: { accent: { hue: 40, chroma: 0.16 }, neutralHue: 60, neutralChroma: 0.008, radius: 8 },
-  },
-  {
-    id: "moss",
-    label: "Moss",
-    knobs: { accent: { hue: 150, chroma: 0.12 }, neutralHue: 140, neutralChroma: 0.008, radius: 6 },
-  },
-  {
-    id: "violet",
-    label: "Violet",
-    knobs: { accent: { hue: 295, chroma: 0.15 }, neutralHue: 290, neutralChroma: 0.01, radius: 12 },
-  },
-];
-
-/** The faces the controls offer, by id: a label and the font stack. */
-export const STUDIO_FACES = {
-  latin: [
-    { id: "geist", label: "Geist", stack: '"Geist", ui-sans-serif, system-ui, sans-serif' },
-    { id: "system", label: "System", stack: 'system-ui, "Segoe UI", sans-serif' },
-    { id: "serif", label: "Serif", stack: "ui-serif, Georgia, serif" },
-    { id: "mono", label: "Geist Mono", stack: '"Geist Mono", ui-monospace, monospace' },
-  ],
-  arabic: [
-    {
-      id: "plex",
-      label: "IBM Plex Sans Arabic",
-      stack: '"IBM Plex Sans Arabic", "Geist", system-ui, "Segoe UI", "Tahoma", sans-serif',
-    },
-    { id: "system", label: "System", stack: 'system-ui, "Segoe UI", "Tahoma", sans-serif' },
-  ],
-} as const;
-
-/** Props of {@link StudioControls}. */
-export interface StudioControlsProps {
-  /** The knobs on screen. */
-  knobs: ThemeKnobs;
-  /** Called with the whole new set of knobs after a change. */
-  onChange: (knobs: ThemeKnobs) => void;
-}
 
 /** One labelled range input that shows its value. */
 function Range({
@@ -140,17 +97,17 @@ export function StudioControls({ knobs, onChange }: StudioControlsProps) {
       aria-labelledby="studio-controls"
       className="material-thick grid content-start gap-5 rounded-3xl p-5"
     >
-      <Ui.Heading id="studio-controls" level={2} className="[font:var(--h4)]">
+      <Heading id="studio-controls" level={2} className="[font:var(--h4)]">
         {STRINGS.title}
-      </Ui.Heading>
-      <Ui.TextField
+      </Heading>
+      <TextField
         label={STRINGS.name}
         description={<bdi>{STRINGS.nameNote}</bdi>}
         value={knobs.name ?? ""}
         placeholder="stackra"
         onChange={(name) => set({ name: name === "" ? undefined : name })}
       />
-      <Ui.Select
+      <Select
         label={STRINGS.preset}
         placeholder={STRINGS.custom}
         items={STUDIO_PRESETS.map(({ id, label }) => ({ id, label }))}
@@ -160,9 +117,9 @@ export function StudioControls({ knobs, onChange }: StudioControlsProps) {
           if (picked) onChange(picked.knobs);
         }}
       />
-      <Ui.Separator />
+      <Separator />
       <div className="grid gap-3">
-        <Ui.Switch
+        <Switch
           label={STRINGS.accent}
           value={accent !== null}
           onChange={(isOn) => set({ accent: isOn ? { hue: 248, chroma: 0.12 } : null })}
@@ -187,7 +144,7 @@ export function StudioControls({ knobs, onChange }: StudioControlsProps) {
           onChange={(chroma) => set({ accent: { hue: accent?.hue ?? 248, chroma } })}
         />
       </div>
-      <Ui.Separator />
+      <Separator />
       <div className="grid gap-3">
         <p className="text-sm font-medium">{STRINGS.neutral}</p>
         <Range
@@ -217,8 +174,8 @@ export function StudioControls({ knobs, onChange }: StudioControlsProps) {
           onChange={(radius) => set({ radius })}
         />
       </div>
-      <Ui.Separator />
-      <Ui.Select
+      <Separator />
+      <Select
         label={STRINGS.latin}
         items={STUDIO_FACES.latin.map(({ id, label }) => ({ id, label }))}
         value={
@@ -229,7 +186,7 @@ export function StudioControls({ knobs, onChange }: StudioControlsProps) {
           set({ fontSans: STUDIO_FACES.latin.find((face) => face.id === id)?.stack })
         }
       />
-      <Ui.Select
+      <Select
         label={STRINGS.arabic}
         items={STUDIO_FACES.arabic.map(({ id, label }) => ({ id, label }))}
         value={

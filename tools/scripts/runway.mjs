@@ -15,6 +15,8 @@
  *   `--dry-run` prints the `gh` commands instead of running them.
  * Boundary: reads runway.yaml, the member runways and the caller workflows; runs git and gh. Whether a runway file is
  *   valid is `pnpm validate`'s check (checkRunwayFiles). Never reads a secret value.
+ * Runtime: node
+ * Governing contract: ADR 0170 (what deploys where and how a release is promoted); STA-268.
  * Secrets: none; gh uses the person's own login. The guard asks the owner before an agent runs deploy or promote
  *   (`runway-deploy`, .agents/hooks/_rules.mjs).
  */
@@ -82,16 +84,16 @@ export function plan(env, { root, members }) {
  */
 export function preflight({ command, sha, git }) {
   git(["fetch", "--quiet", "origin", "main"]);
-  const main = git(["rev-parse", "origin/main"]);
+  const mainSha = git(["rev-parse", "origin/main"]);
   if (command === "deploy") {
     if (git(["status", "--porcelain"]) !== "")
       throw new Error(
         "the working tree has uncommitted changes; deploy from a clean checkout of main",
       );
     const head = git(["rev-parse", "HEAD"]);
-    if (head !== main)
+    if (head !== mainSha)
       throw new Error(
-        `HEAD ${head} is not the head of origin/main (${main}); check out main and pull, then run it again`,
+        `HEAD ${head} is not the head of origin/main (${mainSha}); check out main and pull, then run it again`,
       );
     return head;
   }
@@ -102,7 +104,7 @@ export function preflight({ command, sha, git }) {
     throw new Error(`"${sha}" names no commit here; fetch it first`);
   }
   try {
-    git(["merge-base", "--is-ancestor", full, main]);
+    git(["merge-base", "--is-ancestor", full, mainSha]);
   } catch {
     throw new Error(`${full} is not on origin/main; only commits of main are promoted`);
   }
@@ -137,6 +139,14 @@ export function dispatches({ root, targets, sha, promote = false, readWorkflow }
   return { runs, skipped };
 }
 
+/** Runs git in the repository root; returns trimmed stdout and throws on a non-zero exit. */
+const runGit = (args) =>
+  execFileSync("git", args, {
+    cwd: ROOT,
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "pipe"],
+  }).trim();
+
 function main(argv) {
   const { values, positionals } = parseArgs({
     args: argv,
@@ -155,13 +165,7 @@ function main(argv) {
     throw new Error(
       `runway.yaml has no target "${arg}" with caller workflows (${Object.keys(root.targets ?? {}).join(", ")})`,
     );
-  const git = (args) =>
-    execFileSync("git", args, {
-      cwd: ROOT,
-      encoding: "utf8",
-      stdio: ["ignore", "pipe", "pipe"],
-    }).trim();
-  const sha = preflight({ command, sha: arg, git });
+  const sha = preflight({ command, sha: arg, git: runGit });
   console.log(`commit ${sha}`);
   const { runs, skipped } = dispatches({
     root,

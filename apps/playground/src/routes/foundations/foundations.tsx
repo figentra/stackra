@@ -12,7 +12,7 @@
 import { contrastRatio, STACKRA_THEME } from "@stackra/tokens";
 import contrastReport from "@stackra/tokens/assets/data/stackra/contrast.json";
 import type { ColorRole, ColorToken } from "@stackra/tokens/contracts";
-import * as Ui from "@stackra/ui/react";
+import { Heading, useDesignSystem } from "@stackra/ui/react";
 
 import { PageSection } from "#src/components/page-section";
 import { FoundationsRoute } from "#src/routes/foundations/foundations.route";
@@ -128,7 +128,7 @@ const cssVar = (name: string) => `var(--${name})`;
 
 /** The token foundations page. */
 export function Foundations() {
-  const { resolvedColorScheme } = Ui.useDesignSystem();
+  const { resolvedColorScheme } = useDesignSystem();
   const dark = resolvedColorScheme === "dark";
   const hexOf = (name: string) => (dark ? TOKENS[name]?.hexDark : TOKENS[name]?.hexLight) ?? "";
 
@@ -173,7 +173,7 @@ export function Foundations() {
     <article className="grid gap-10">
       <title>{STRINGS.documentTitle}</title>
       <header className="grid gap-2">
-        <Ui.Heading level={1}>{FoundationsRoute.title}</Ui.Heading>
+        <Heading level={1}>{FoundationsRoute.title}</Heading>
         <p className="max-w-prose">
           <bdi>{STRINGS.intro}</bdi>
         </p>
@@ -185,7 +185,7 @@ export function Foundations() {
         </p>
         {(Object.keys(ROLE_GROUPS) as (keyof typeof ROLE_GROUPS)[]).map((group) => (
           <div key={group} className="grid gap-3">
-            <Ui.Heading level={3}>{STRINGS.groups[group]}</Ui.Heading>
+            <Heading level={3}>{STRINGS.groups[group]}</Heading>
             <ul className="grid grid-cols-[repeat(auto-fill,minmax(14rem,1fr))] gap-4">
               {ROLE_GROUPS[group].map(roleCard)}
             </ul>

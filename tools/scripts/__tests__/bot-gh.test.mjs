@@ -1,3 +1,13 @@
+/**
+ * Stackra file contract:
+ * Purpose: hold `bot-gh.mjs` to its contract: the commands that would print or store the token are refused, merges go
+ *          only through `pnpm pr:merge`, the reviewer identity only reads and comments, git runs as the bot with a
+ *          token-free credential setup, and gh reads retry on transient errors.
+ * Boundary: pure functions plus child processes against a fake `gh` in a temp directory; no network, no token.
+ * Runtime: node
+ * Governing contract: ADR 0022 (tests live in tests folders); ADR 0182 (testing strategy). ADR 0230 (reviewer
+ *                     identity).
+ */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { spawn, spawnSync } from "node:child_process";

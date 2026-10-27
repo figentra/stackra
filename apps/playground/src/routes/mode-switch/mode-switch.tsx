@@ -7,7 +7,7 @@
  * Runtime: browser
  * Governing contract: ADR 0060 (light, dark, RTL); STA-803.
  */
-import * as Ui from "@stackra/ui/react";
+import { ModeSwitch as UiModeSwitch } from "@stackra/ui/react";
 import { useState } from "react";
 
 import { ModeSwitchRoute } from "#src/routes/mode-switch/mode-switch.route";
@@ -39,7 +39,7 @@ export function ModeSwitch() {
         <h2 id="demo-heading" className="type-h2">
           {STRINGS.demo}
         </h2>
-        <Ui.ModeSwitch
+        <UiModeSwitch
           label={STRINGS.label}
           description={STRINGS.description}
           mode={mode}

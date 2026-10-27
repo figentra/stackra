@@ -13,7 +13,8 @@
 import { expect, test } from "@playwright/test";
 import { contrastRatio } from "@stackra/tokens";
 
-import { SCHEMES, visit } from "../support/pro-page";
+import { SCHEMES } from "../support/schemes.constant";
+import { visit } from "../support/visit.function";
 
 const PATH = "/pro-map";
 const MAP_COLOUR = { light: "#e5e7eb", dark: "#1f2937" } as const;

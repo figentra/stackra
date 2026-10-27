@@ -13,7 +13,14 @@
  * Governing contract: ADR 0302 (decisions 3 and 5); ADR 0303 (decision 7); ADR 0317 (decisions 4, 5 and 7); ADR 0060
  *          (right-to-left); WCAG 2.2 SC 1.3.1, 2.4.6, 2.5.8 and 4.1.3.
  */
-import * as Ui from "@stackra/ui/react";
+import {
+  Avatar,
+  Heading,
+  IconButton,
+  NavigationHeader as UiNavigationHeader,
+  Switch,
+  Text,
+} from "@stackra/ui/react";
 import { useState, type ReactNode } from "react";
 
 import { PageSection } from "#src/components/page-section";
@@ -84,9 +91,9 @@ function Sample({
 }) {
   return (
     <li className="grid content-start gap-2">
-      <Ui.Text tone="muted" type="small">
+      <Text tone="muted" type="small">
         {caption}
-      </Ui.Text>
+      </Text>
       <div className={[BOX, className].filter(Boolean).join(" ")}>{children}</div>
     </li>
   );
@@ -105,22 +112,22 @@ export function NavigationHeader() {
     <article className="grid gap-10">
       <title>{STRINGS.documentTitle}</title>
       <header className="grid gap-2">
-        <Ui.Heading level={1}>{NavigationHeaderRoute.title}</Ui.Heading>
-        <Ui.Text className="max-w-prose">
+        <Heading level={1}>{NavigationHeaderRoute.title}</Heading>
+        <Text className="max-w-prose">
           <bdi>{STRINGS.intro}</bdi>
-        </Ui.Text>
+        </Text>
       </header>
 
       <PageSection id="navigation-header-parts" title={STRINGS.parts} note={STRINGS.partsNote}>
         <ul className={GRID}>
           <Sample caption={STRINGS.titleOnly}>
-            <Ui.NavigationHeader headingLevel={3} title={STRINGS.title} />
+            <UiNavigationHeader headingLevel={3} title={STRINGS.title} />
           </Sample>
           <Sample caption={STRINGS.backButton}>
-            <Ui.NavigationHeader headingLevel={3} title={STRINGS.orderTitle} onBack={noop} />
+            <UiNavigationHeader headingLevel={3} title={STRINGS.orderTitle} onBack={noop} />
           </Sample>
           <Sample caption={STRINGS.backLink}>
-            <Ui.NavigationHeader
+            <UiNavigationHeader
               headingLevel={3}
               title={STRINGS.orderTitle}
               backHref="/"
@@ -128,34 +135,34 @@ export function NavigationHeader() {
             />
           </Sample>
           <Sample caption={STRINGS.slots}>
-            <Ui.NavigationHeader
+            <UiNavigationHeader
               headingLevel={3}
               title={STRINGS.title}
               onBack={noop}
-              startContent={<Ui.Avatar name="Ada Lovelace" size="sm" />}
+              startContent={<Avatar name="Ada Lovelace" size="sm" />}
               endContent={
                 <>
-                  <Ui.IconButton icon="bell" label={STRINGS.notifications} variant="ghost" />
-                  <Ui.IconButton icon="plus" label={STRINGS.add} variant="ghost" />
+                  <IconButton icon="bell" label={STRINGS.notifications} variant="ghost" />
+                  <IconButton icon="plus" label={STRINGS.add} variant="ghost" />
                 </>
               }
             />
           </Sample>
           <Sample caption={STRINGS.long} className="max-w-sm">
-            <Ui.NavigationHeader
+            <UiNavigationHeader
               headingLevel={3}
               title={STRINGS.longTitle}
               onBack={noop}
-              endContent={<Ui.IconButton icon="plus" label={STRINGS.add} variant="ghost" />}
+              endContent={<IconButton icon="plus" label={STRINGS.add} variant="ghost" />}
             />
           </Sample>
           <Sample caption={STRINGS.large}>
-            <Ui.NavigationHeader
+            <UiNavigationHeader
               headingLevel={3}
               title={STRINGS.title}
               hasLargeTitle
               onBack={noop}
-              endContent={<Ui.IconButton icon="plus" label={STRINGS.add} variant="ghost" />}
+              endContent={<IconButton icon="plus" label={STRINGS.add} variant="ghost" />}
             />
           </Sample>
         </ul>
@@ -163,13 +170,13 @@ export function NavigationHeader() {
 
       <PageSection id="navigation-header-arabic" title={STRINGS.arabic} note={STRINGS.arabicNote}>
         <div dir="rtl" lang="ar" data-sample="arabic" className={BOX}>
-          <Ui.NavigationHeader
+          <UiNavigationHeader
             headingLevel={3}
             title={STRINGS.arabicTitle}
             onBack={noop}
             backLabel={STRINGS.arabicBack}
             endContent={
-              <Ui.IconButton icon="bell" label={STRINGS.arabicNotifications} variant="ghost" />
+              <IconButton icon="bell" label={STRINGS.arabicNotifications} variant="ghost" />
             }
           />
         </div>
@@ -177,15 +184,15 @@ export function NavigationHeader() {
 
       <PageSection id="navigation-header-live" title={STRINGS.live} note={STRINGS.liveNote}>
         <div className="grid gap-3">
-          <Ui.Switch label={STRINGS.largeSwitch} value={isLarge} onChange={setIsLarge} />
+          <Switch label={STRINGS.largeSwitch} value={isLarge} onChange={setIsLarge} />
           <div className={BOX} data-sample="live">
-            <Ui.NavigationHeader
+            <UiNavigationHeader
               headingLevel={3}
               title={STRINGS.title}
               hasLargeTitle={isLarge}
               onBack={() => setBackCount((count) => count + 1)}
               endContent={
-                <Ui.IconButton
+                <IconButton
                   icon="plus"
                   label={STRINGS.add}
                   variant="ghost"
@@ -195,15 +202,15 @@ export function NavigationHeader() {
             />
           </div>
           <div className="grid gap-1" data-sample="live-status">
-            <Ui.Text role="status" tone="muted">
+            <Text role="status" tone="muted">
               {STRINGS.backStatus(backCount)}
-            </Ui.Text>
-            <Ui.Text role="status" tone="muted">
+            </Text>
+            <Text role="status" tone="muted">
               {STRINGS.actionStatus(added)}
-            </Ui.Text>
-            <Ui.Text role="status" tone="muted">
+            </Text>
+            <Text role="status" tone="muted">
               {STRINGS.titleStatus(isLarge)}
-            </Ui.Text>
+            </Text>
           </div>
         </div>
       </PageSection>

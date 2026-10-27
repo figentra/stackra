@@ -8,7 +8,7 @@
  * Governing contract: ADR 0302 (decisions 3 and 5); ADR 0304; ADR 0313 (decisions 1 and 6); WCAG 2.2 SC 4.1.3; ADR 0060 (light, dark, RTL).
  */
 import { PageSkeletonLayout, SkeletonAnimation } from "@stackra/ui/contracts";
-import * as Ui from "@stackra/ui/react";
+import { Button, Heading, PageSkeleton as UiPageSkeleton, Text } from "@stackra/ui/react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import { PageSection } from "#src/components/page-section";
@@ -53,9 +53,9 @@ const CARD = "rounded-xl border border-separator p-6";
 function Sample({ caption, children }: { caption: string; children: ReactNode }) {
   return (
     <li className="grid content-start gap-2">
-      <Ui.Text tone="muted" type="small">
+      <Text tone="muted" type="small">
         {caption}
-      </Ui.Text>
+      </Text>
       <div className={CARD}>{children}</div>
     </li>
   );
@@ -78,17 +78,17 @@ export function PageSkeleton() {
     <article className="grid gap-10">
       <title>{STRINGS.documentTitle}</title>
       <header className="grid gap-2">
-        <Ui.Heading level={1}>{PageSkeletonRoute.title}</Ui.Heading>
-        <Ui.Text className="max-w-prose">
+        <Heading level={1}>{PageSkeletonRoute.title}</Heading>
+        <Text className="max-w-prose">
           <bdi>{STRINGS.intro}</bdi>
-        </Ui.Text>
+        </Text>
       </header>
 
       <PageSection id="page-skeleton-layouts" title={STRINGS.layouts} note={STRINGS.layoutsNote}>
         <ul className={GRID}>
           {PageSkeletonLayout.map((layout) => (
             <Sample key={layout} caption={`layout="${layout}"`}>
-              <Ui.PageSkeleton layout={layout} loadingLabel={`Loading the ${layout} layout`} />
+              <UiPageSkeleton layout={layout} loadingLabel={`Loading the ${layout} layout`} />
             </Sample>
           ))}
         </ul>
@@ -102,7 +102,7 @@ export function PageSkeleton() {
         <ul className={GRID}>
           {SkeletonAnimation.map((animationType) => (
             <Sample key={animationType} caption={`animationType="${animationType}"`}>
-              <Ui.PageSkeleton
+              <UiPageSkeleton
                 layout="section"
                 animationType={animationType}
                 loadingLabel={`Loading with ${animationType}`}
@@ -114,9 +114,9 @@ export function PageSkeleton() {
 
       <PageSection id="page-skeleton-live" title={STRINGS.live} note={STRINGS.liveNote}>
         <div className="grid max-w-xl justify-items-start gap-4">
-          <Ui.Button variant="secondary" isLoading={isLoading} onPress={reload}>
+          <Button variant="secondary" isLoading={isLoading} onPress={reload}>
             {STRINGS.reload}
-          </Ui.Button>
+          </Button>
           <div
             role="group"
             aria-label={STRINGS.regionName}
@@ -124,12 +124,12 @@ export function PageSkeleton() {
             data-sample="live"
           >
             {isLoading ? (
-              <Ui.PageSkeleton layout="table" loadingLabel={STRINGS.loadingOrders} />
+              <UiPageSkeleton layout="table" loadingLabel={STRINGS.loadingOrders} />
             ) : (
               <ul className="grid divide-y divide-separator">
                 {ORDERS.map((order) => (
                   <li key={order} className="py-3 first:pt-0 last:pb-0">
-                    <Ui.Text>{order}</Ui.Text>
+                    <Text>{order}</Text>
                   </li>
                 ))}
               </ul>

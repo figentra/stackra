@@ -3,6 +3,10 @@
  * Stackra file contract:
  * Purpose: mint a GitHub App installation token for `stackra-bot` (`pnpm bot:token`). Builds an RS256 app JWT with
  *   node:crypto and exchanges it at POST /app/installations/{id}/access_tokens.
+ * Boundary: mints a token and wraps fetch and gh reads with the connect timeout and retries; holds no state between
+ *           runs.
+ * Runtime: node
+ * Governing contract: ADR 0230 (reviewer identity separate from builder); STA-302 (network layer).
  * Input: STACKRA_BOT_APP_ID, STACKRA_BOT_INSTALLATION_ID, STACKRA_BOT_PRIVATE_KEY from the environment — injected by
  *   `infisical run --env=dev --path=/agents`, never from a file. The reviewer app (`stackra-reviewer`, ADR 0230) uses
  *   the same names with the STACKRA_REVIEWER_ prefix.
@@ -95,9 +99,7 @@ export async function retryUnlessLanded(run, landed, wait = sleep) {
     } catch (read) {
       throw new Error(
         `${error.message}; outcome unknown, check it by hand (re-read failed: ${read.message})`,
-        {
-          cause: error,
-        },
+        { cause: read },
       );
     }
     if (done) return undefined;
@@ -125,12 +127,14 @@ export function ghIdempotent(args) {
   return group === "search" || ["view", "list", "diff", "checks", "status"].includes(verb);
 }
 
+/** Whether a spawnSync result failed with a TRANSIENT error or stderr. */
+const failedTransiently = (r) =>
+  r.status !== 0 && TRANSIENT.test(`${r.error?.message ?? ""} ${r.stderr ?? ""}`);
+
 /** spawnSync of an idempotent command, run again with backoff while it fails with TRANSIENT stderr (pipe it). */
 export function spawnRetrying(cmd, args, options, wait = sleepSync) {
-  const failed = (r) =>
-    r.status !== 0 && TRANSIENT.test(`${r.error?.message ?? ""} ${r.stderr ?? ""}`);
   let r = spawnSync(cmd, args, options);
-  for (let n = 1; n < RETRY_ATTEMPTS && failed(r); n++) {
+  for (let n = 1; n < RETRY_ATTEMPTS && failedTransiently(r); n++) {
     const why = `${r.stderr || r.error?.message}`.trim().split("\n")[0];
     process.stderr.write(`retrying ${cmd} ${args[0]} (${n + 1}/${RETRY_ATTEMPTS}) after: ${why}\n`);
     wait(backoff(n));

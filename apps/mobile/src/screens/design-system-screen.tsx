@@ -27,7 +27,8 @@ import { PageGallery } from "../components/ui/page-gallery";
 import { ReviewIcons } from "../components/ui/review-icons";
 import { Screen } from "../components/ui/screen";
 import { Showcase } from "../components/ui/showcase";
-import type { DesignSystemComponentRoute, HomeStackParamList } from "../navigation/types";
+import type { HomeStackParamList } from "../navigation/types";
+import type { DesignSystemComponentRoute } from "../navigation/design-system-component-route.type";
 import { DESIGN_SYSTEM_COMPONENTS } from "./design-system-components";
 
 // shortcut: English strings in one place until @stackra/i18n reaches the mobile app; then keys.

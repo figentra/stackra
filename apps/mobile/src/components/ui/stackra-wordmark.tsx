@@ -10,6 +10,7 @@
  * Governing contract: ADR 0320 (glass and the showcase stage); the stackra brand kit.
  */
 import Svg, { Path, Rect } from "react-native-svg";
+import type { StackraWordmarkProps } from "./stackra-wordmark.props";
 
 /** The bar and stem of the beam-S, as rectangles: x, y, width, height. */
 const BEAM: readonly (readonly [number, number, number, number])[] = [
@@ -24,16 +25,6 @@ const LETTERS =
 
 /** The artwork's aspect ratio, width over height. */
 const WORDMARK_RATIO = 397.9 / 86.4;
-
-/** Props of {@link StackraWordmark}. */
-export interface StackraWordmarkProps {
-  /** The colour, a resolved theme colour. */
-  color: string;
-  /** `fill` paints it solid; `outline` draws only a hairline edge, for the echoes around the solid one. */
-  variant?: "fill" | "outline";
-  /** The opacity of the paint, for the faint echoes. */
-  opacity?: number;
-}
 
 /** The beam-S wordmark, as wide as its parent. */
 export function StackraWordmark({ color, variant = "fill", opacity = 1 }: StackraWordmarkProps) {

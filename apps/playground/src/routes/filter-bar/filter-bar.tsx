@@ -15,7 +15,7 @@
  *          dark, RTL).
  */
 import type { FilterDefinition, FilterValue, ResourceQuery } from "@stackra/ui/contracts";
-import * as Ui from "@stackra/ui/react";
+import { FilterBar as UiFilterBar, Heading, Text } from "@stackra/ui/react";
 import { useState } from "react";
 
 import { PageSection } from "#src/components/page-section";
@@ -254,16 +254,16 @@ function BarExample({
   const [query, setQuery] = useState(initial);
   return (
     <div className={COLUMN}>
-      <Ui.FilterBar
+      <UiFilterBar
         searchLabel={searchLabel}
         filters={filters}
         query={query}
         onQueryChange={setQuery}
         {...(placeholder === undefined ? {} : { searchPlaceholder: placeholder })}
       />
-      <Ui.Text data-testid={testId} tone="muted">
+      <Text data-testid={testId} tone="muted">
         <bdi>{describe(query)}</bdi>
-      </Ui.Text>
+      </Text>
     </div>
   );
 }
@@ -274,27 +274,27 @@ function LiveExample() {
   const rows = ordersFor(query);
   return (
     <div className={COLUMN}>
-      <Ui.FilterBar
+      <UiFilterBar
         searchLabel={STRINGS.liveSearch}
         searchPlaceholder={STRINGS.livePlaceholder}
         filters={FILTERS}
         query={query}
         onQueryChange={setQuery}
       />
-      <Ui.Text data-testid="filter-bar-live-query" tone="muted">
+      <Text data-testid="filter-bar-live-query" tone="muted">
         <bdi>{describe(query)}</bdi>
-      </Ui.Text>
-      <Ui.Text role="status" tone="muted">
+      </Text>
+      <Text role="status" tone="muted">
         {rows.length === 0 ? STRINGS.none : STRINGS.count(rows.length)}
-      </Ui.Text>
+      </Text>
       <ul aria-label={STRINGS.results} className="grid gap-1">
         {rows.map((order) => (
           <li key={order.id}>
-            <Ui.Text>
+            <Text>
               <bdi>
                 {order.order} · {order.customer} · {MONEY.format(order.total)} · {order.placed}
               </bdi>
-            </Ui.Text>
+            </Text>
           </li>
         ))}
       </ul>
@@ -308,10 +308,10 @@ export function FilterBar() {
     <article className="grid gap-10">
       <title>{STRINGS.documentTitle}</title>
       <header className="grid gap-2">
-        <Ui.Heading level={1}>{FilterBarRoute.title}</Ui.Heading>
-        <Ui.Text className="max-w-prose">
+        <Heading level={1}>{FilterBarRoute.title}</Heading>
+        <Text className="max-w-prose">
           <bdi>{STRINGS.intro}</bdi>
-        </Ui.Text>
+        </Text>
       </header>
 
       <PageSection id="filter-bar-basics" title={STRINGS.basics} note={STRINGS.basicsNote}>
@@ -327,34 +327,34 @@ export function FilterBar() {
         <ul aria-label={STRINGS.kindsList} className="grid gap-1">
           {STRINGS.kindRows.map(([kind, editor, value]) => (
             <li key={kind}>
-              <Ui.Text>
+              <Text>
                 <bdi>
                   {kind}: {editor}; holds {value}.
                 </bdi>
-              </Ui.Text>
+              </Text>
             </li>
           ))}
         </ul>
       </PageSection>
 
       <PageSection id="filter-bar-states" title={STRINGS.states} note={STRINGS.statesNote}>
-        <Ui.Heading level={3}>{STRINGS.applied}</Ui.Heading>
+        <Heading level={3}>{STRINGS.applied}</Heading>
         <BarExample
           searchLabel={STRINGS.appliedSearch}
           filters={ICON_FILTERS}
           initial={APPLIED_QUERY}
           testId="filter-bar-applied-query"
         />
-        <Ui.Heading level={3}>{STRINGS.disabled}</Ui.Heading>
-        <Ui.Text tone="muted">
+        <Heading level={3}>{STRINGS.disabled}</Heading>
+        <Text tone="muted">
           <bdi>{STRINGS.disabledNote}</bdi>
-        </Ui.Text>
+        </Text>
         <BarExample
           searchLabel={STRINGS.disabledSearch}
           filters={ICON_FILTERS}
           testId="filter-bar-disabled-query"
         />
-        <Ui.Heading level={3}>{STRINGS.allApplied}</Ui.Heading>
+        <Heading level={3}>{STRINGS.allApplied}</Heading>
         <BarExample
           searchLabel={STRINGS.allAppliedSearch}
           filters={FILTERS.filter((filter) => filter.id !== "placed")}

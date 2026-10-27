@@ -12,7 +12,7 @@
  *          WCAG 2.2 SC 2.4.8.
  */
 import type { BreadcrumbItem } from "@stackra/ui/contracts";
-import * as Ui from "@stackra/ui/react";
+import { Breadcrumbs as UiBreadcrumbs, Button, Heading, Text } from "@stackra/ui/react";
 import { useState } from "react";
 import { useLocation } from "react-router";
 
@@ -89,14 +89,14 @@ export function Breadcrumbs() {
     <article className="grid gap-10">
       <title>{STRINGS.documentTitle}</title>
       <header className="grid gap-2">
-        <Ui.Heading level={1}>{BreadcrumbsRoute.title}</Ui.Heading>
-        <Ui.Text className="max-w-prose">
+        <Heading level={1}>{BreadcrumbsRoute.title}</Heading>
+        <Text className="max-w-prose">
           <bdi>{STRINGS.intro}</bdi>
-        </Ui.Text>
+        </Text>
       </header>
 
       <PageSection id="breadcrumbs-trail" title={STRINGS.trail} note={STRINGS.trailNote}>
-        <Ui.Breadcrumbs
+        <UiBreadcrumbs
           label={STRINGS.trailLabel}
           items={[
             { id: "home", label: STRINGS.home, href: anchor("breadcrumbs-trail") },
@@ -107,9 +107,9 @@ export function Breadcrumbs() {
       </PageSection>
 
       <PageSection id="breadcrumbs-lengths" title={STRINGS.lengths} note={STRINGS.lengthsNote}>
-        <Ui.Breadcrumbs label={STRINGS.singleLabel} items={[{ id: "home", label: STRINGS.home }]} />
+        <UiBreadcrumbs label={STRINGS.singleLabel} items={[{ id: "home", label: STRINGS.home }]} />
         <div className="max-w-xs">
-          <Ui.Breadcrumbs
+          <UiBreadcrumbs
             label={STRINGS.longLabel}
             items={[
               { id: "home", label: STRINGS.home, href: anchor("breadcrumbs-lengths") },
@@ -127,7 +127,7 @@ export function Breadcrumbs() {
         title={STRINGS.separator}
         note={STRINGS.separatorNote}
       >
-        <Ui.Breadcrumbs
+        <UiBreadcrumbs
           label={STRINGS.separatorLabel}
           separator="/"
           items={[
@@ -139,7 +139,7 @@ export function Breadcrumbs() {
       </PageSection>
 
       <PageSection id="breadcrumbs-press" title={STRINGS.pressOnly} note={STRINGS.pressOnlyNote}>
-        <Ui.Breadcrumbs
+        <UiBreadcrumbs
           label={STRINGS.pressOnlyLabel}
           items={[
             { id: "home", label: STRINGS.home, onPress: () => setPresses((count) => count + 1) },
@@ -157,18 +157,18 @@ export function Breadcrumbs() {
       </PageSection>
 
       <PageSection id="breadcrumbs-live" title={STRINGS.live} note={STRINGS.liveNote}>
-        <Ui.Breadcrumbs label={STRINGS.liveLabel} items={live} />
+        <UiBreadcrumbs label={STRINGS.liveLabel} items={live} />
         <div className="flex flex-wrap items-center gap-3">
-          <Ui.Button
+          <Button
             variant="secondary"
             isDisabled={depth >= FULL_TRAIL.length}
             onPress={() => setDepth((value) => Math.min(value + 1, FULL_TRAIL.length))}
           >
             {STRINGS.deeper}
-          </Ui.Button>
-          <Ui.Button variant="tertiary" onPress={() => setDepth(1)}>
+          </Button>
+          <Button variant="tertiary" onPress={() => setDepth(1)}>
             {STRINGS.reset}
-          </Ui.Button>
+          </Button>
         </div>
         <output aria-live="polite" data-testid="current-page">
           <bdi>{STRINGS.current(currentName)}</bdi>
@@ -177,7 +177,7 @@ export function Breadcrumbs() {
 
       <PageSection id="breadcrumbs-arabic" title={STRINGS.arabic} note={STRINGS.arabicNote}>
         <div lang="ar" dir="rtl">
-          <Ui.Breadcrumbs
+          <UiBreadcrumbs
             label={STRINGS.arabicLabel}
             items={[
               { id: "home", label: STRINGS.arabicHome, href: anchor("breadcrumbs-arabic") },

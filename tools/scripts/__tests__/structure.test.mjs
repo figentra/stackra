@@ -1,3 +1,11 @@
+/**
+ * Stackra file contract:
+ * Purpose: hold `structure.mjs` and the scaffold to the structure tables: the categories on disk, scaffold writing
+ *          every category under `packages/<category>/<name>`, and the entries in exports order.
+ * Boundary: reads this checkout and renders into temp directories; writes nothing here.
+ * Runtime: node
+ * Governing contract: ADR 0022 (tests live in tests folders); ADR 0182 (testing strategy). ADR 0294.
+ */
 import assert from "node:assert/strict";
 import { existsSync, mkdtempSync, readFileSync, readdirSync } from "node:fs";
 import { tmpdir } from "node:os";

@@ -7,12 +7,12 @@
  * Boundary: presentation only; strings in one `STRINGS` constant until @stackra/i18n, text in another language
  *          carries its own `lang`. A hover-only link never sits inside a paragraph: the theme's link colour equals the
  *          text colour, so only the underline tells it apart there (WCAG 1.4.1). Icons are drawn by name
- *          through `Ui.Icon` (ADR 0303 decision 10).
+ *          through `Icon` (ADR 0303 decision 10).
  * Runtime: browser
  * Governing contract: ADR 0302 (decisions 3 and 5); ADR 0303 (decisions 5 and 7); ADR 0060 (right-to-left).
  */
 import { Tone } from "@stackra/ui/contracts";
-import * as Ui from "@stackra/ui/react";
+import { Heading, Icon, Link as UiLink, Text } from "@stackra/ui/react";
 import { useState, type ReactNode } from "react";
 import { useLocation } from "react-router";
 
@@ -65,7 +65,7 @@ const ROW = "flex flex-wrap items-center gap-x-6 gap-y-2";
 function ToneList({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div className="grid gap-2">
-      <Ui.Heading level={3}>{title}</Ui.Heading>
+      <Heading level={3}>{title}</Heading>
       <ul className={ROW}>{children}</ul>
     </div>
   );
@@ -82,28 +82,28 @@ export function Link() {
     <article className="grid gap-10">
       <title>{STRINGS.documentTitle}</title>
       <header className="grid gap-2">
-        <Ui.Heading level={1}>{LinkRoute.title}</Ui.Heading>
-        <Ui.Text className="max-w-prose">
+        <Heading level={1}>{LinkRoute.title}</Heading>
+        <Text className="max-w-prose">
           <bdi>{STRINGS.intro}</bdi>
-        </Ui.Text>
+        </Text>
       </header>
 
       <PageSection id="link-tones" title={STRINGS.tones} note={STRINGS.tonesNote}>
         <ToneList title={STRINGS.hover}>
           {Tone.map((tone) => (
             <li key={tone}>
-              <Ui.Link href={`${here}#link-tones`} tone={tone} underline="hover">
+              <UiLink href={`${here}#link-tones`} tone={tone} underline="hover">
                 {tone}
-              </Ui.Link>
+              </UiLink>
             </li>
           ))}
         </ToneList>
         <ToneList title={STRINGS.always}>
           {Tone.map((tone) => (
             <li key={tone}>
-              <Ui.Link href={`${here}#link-tones`} tone={tone} underline="always">
+              <UiLink href={`${here}#link-tones`} tone={tone} underline="always">
                 {tone}
-              </Ui.Link>
+              </UiLink>
             </li>
           ))}
         </ToneList>
@@ -111,57 +111,57 @@ export function Link() {
 
       <PageSection id="link-running" title={STRINGS.running} note={STRINGS.runningNote}>
         {/* Only `always` links in a paragraph: a hover-only one would fail WCAG 1.4.1 and axe's link-in-text-block. */}
-        <Ui.Text className="max-w-prose">
+        <Text className="max-w-prose">
           <bdi>{STRINGS.beforeLinks}</bdi>
           {Tone.map((tone, index) => (
             <span key={tone}>
-              <Ui.Link href={`${here}#link-running`} tone={tone}>
+              <UiLink href={`${here}#link-running`} tone={tone}>
                 {tone}
-              </Ui.Link>
+              </UiLink>
               {index < Tone.length - 1 ? ", " : ""}
             </span>
           ))}
           <bdi>{STRINGS.afterLinks}</bdi>
-        </Ui.Text>
+        </Text>
       </PageSection>
 
       <PageSection id="link-external" title={STRINGS.external} note={STRINGS.externalNote}>
         <ul className={ROW}>
           <li>
-            <Ui.Link href="https://heroui.com" isExternal>
+            <UiLink href="https://heroui.com" isExternal>
               {STRINGS.externalText}
-            </Ui.Link>
+            </UiLink>
           </li>
           <li>
-            <Ui.Link href="https://heroui.com" isExternal label={STRINGS.externalLabel}>
-              <Ui.Icon name="settings" />
-            </Ui.Link>
+            <UiLink href="https://heroui.com" isExternal label={STRINGS.externalLabel}>
+              <Icon name="settings" />
+            </UiLink>
           </li>
         </ul>
       </PageSection>
 
       <PageSection id="link-router" title={STRINGS.router} note={STRINGS.routerNote}>
         <div>
-          <Ui.Link href={`/foundations${search}`} underline="hover">
+          <UiLink href={`/foundations${search}`} underline="hover">
             {STRINGS.routerLink}
-          </Ui.Link>
+          </UiLink>
         </div>
       </PageSection>
 
       <PageSection id="link-states" title={STRINGS.states} note={STRINGS.statesNote}>
         <ul className={ROW}>
           <li>
-            <Ui.Link href={`${here}#link-states`} isDisabled>
+            <UiLink href={`${here}#link-states`} isDisabled>
               {STRINGS.disabledLink}
-            </Ui.Link>
+            </UiLink>
           </li>
           <li>
-            <Ui.Link onPress={() => setPresses((count) => count + 1)}>{STRINGS.pressLink}</Ui.Link>
+            <UiLink onPress={() => setPresses((count) => count + 1)}>{STRINGS.pressLink}</UiLink>
           </li>
           <li>
-            <Ui.Link href={`${here}#link-states`} label={STRINGS.settingsLabel}>
-              <Ui.Icon name="settings" />
-            </Ui.Link>
+            <UiLink href={`${here}#link-states`} label={STRINGS.settingsLabel}>
+              <Icon name="settings" />
+            </UiLink>
           </li>
           <li>
             <output aria-live="polite" data-testid="press-count">
@@ -172,10 +172,10 @@ export function Link() {
       </PageSection>
 
       <PageSection id="link-long" title={STRINGS.long} note={STRINGS.longNote}>
-        <Ui.Text lang="ar" className="max-w-xs">
-          {STRINGS.arabic} <Ui.Link href={`${here}#link-long`}>{STRINGS.arabicLinkText}</Ui.Link>
+        <Text lang="ar" className="max-w-xs">
+          {STRINGS.arabic} <UiLink href={`${here}#link-long`}>{STRINGS.arabicLinkText}</UiLink>
           {STRINGS.arabicSentenceEnd}
-        </Ui.Text>
+        </Text>
       </PageSection>
     </article>
   );

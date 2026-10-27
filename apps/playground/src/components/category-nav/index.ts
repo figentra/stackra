@@ -5,4 +5,5 @@
  * Runtime: browser
  * Governing contract: ADR 0294 (decision 14).
  */
-export { CategoryNav, type CategoryNavProps } from "./category-nav";
+export { CategoryNav } from "./category-nav";
+export { type CategoryNavProps } from "./category-nav.props";

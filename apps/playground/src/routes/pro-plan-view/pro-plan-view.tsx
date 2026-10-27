@@ -6,7 +6,7 @@
  * Runtime: browser
  * Governing contract: ADR 0245 (decision 8); ADR 0310 (decision 12); WCAG 2.2 SC 1.4.1; STA-803.
  */
-import * as Ui from "@stackra/ui/react";
+import { Button } from "@stackra/ui/react";
 import * as UiPro from "@stackra-pro/ui/react";
 
 import { ProPlanViewRoute } from "#src/routes/pro-plan-view/pro-plan-view.route";
@@ -50,8 +50,8 @@ export function ProPlanView() {
           steps={STRINGS.steps}
           actions={
             <>
-              <Ui.Button>{STRINGS.approve}</Ui.Button>
-              <Ui.Button variant="ghost">{STRINGS.reject}</Ui.Button>
+              <Button>{STRINGS.approve}</Button>
+              <Button variant="ghost">{STRINGS.reject}</Button>
             </>
           }
         />

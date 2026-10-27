@@ -8,7 +8,7 @@
  * Governing contract: ADR 0302 (decisions 3 and 5); ADR 0303 (decision 7); ADR 0312; ADR 0060 (light, dark, RTL).
  */
 import { Size, Tone } from "@stackra/ui/contracts";
-import * as Ui from "@stackra/ui/react";
+import { Button, Heading, ProgressCircle as UiProgressCircle, Text } from "@stackra/ui/react";
 import { useState } from "react";
 
 import { PageSection } from "#src/components/page-section";
@@ -60,16 +60,16 @@ export function ProgressCircle() {
     <article className="grid gap-10">
       <title>{STRINGS.documentTitle}</title>
       <header className="grid gap-2">
-        <Ui.Heading level={1}>{ProgressCircleRoute.title}</Ui.Heading>
-        <Ui.Text className="max-w-prose">
+        <Heading level={1}>{ProgressCircleRoute.title}</Heading>
+        <Text className="max-w-prose">
           <bdi>{STRINGS.intro}</bdi>
-        </Ui.Text>
+        </Text>
       </header>
 
       <PageSection id="progress-circle-sizes" title={STRINGS.sizes} note={STRINGS.sizesNote}>
         <div className={ROW}>
           {Size.map((size) => (
-            <Ui.ProgressCircle
+            <UiProgressCircle
               key={size}
               size={size}
               value={60}
@@ -83,7 +83,7 @@ export function ProgressCircle() {
       <PageSection id="progress-circle-tones" title={STRINGS.tones} note={STRINGS.tonesNote}>
         <div className={ROW}>
           {Tone.map((tone) => (
-            <Ui.ProgressCircle
+            <UiProgressCircle
               key={tone}
               tone={tone}
               value={60}
@@ -101,7 +101,7 @@ export function ProgressCircle() {
       >
         <div className={ROW}>
           {[0, 25, 50, 75, 100].map((step) => (
-            <Ui.ProgressCircle
+            <UiProgressCircle
               key={step}
               size="lg"
               value={step}
@@ -118,31 +118,31 @@ export function ProgressCircle() {
         note={STRINGS.indeterminateNote}
       >
         <div className={ROW}>
-          <Ui.ProgressCircle label={STRINGS.indeterminateLabel} data-indeterminate />
+          <UiProgressCircle label={STRINGS.indeterminateLabel} data-indeterminate />
         </div>
       </PageSection>
 
       <PageSection id="progress-circle-beside" title={STRINGS.beside} note={STRINGS.besideNote}>
         <div className="flex items-center gap-2">
-          <Ui.ProgressCircle size="sm" value={75} label={STRINGS.besideLabel} />
-          <Ui.Text tone="muted">{STRINGS.besideText}</Ui.Text>
+          <UiProgressCircle size="sm" value={75} label={STRINGS.besideLabel} />
+          <Text tone="muted">{STRINGS.besideText}</Text>
         </div>
       </PageSection>
 
       <PageSection id="progress-circle-action" title={STRINGS.action} note={STRINGS.actionNote}>
         <div className={ROW}>
-          <Ui.ProgressCircle
+          <UiProgressCircle
             size="lg"
             value={value}
             label={STRINGS.actionLabel}
             tone={value >= 100 ? "success" : "accent"}
           />
-          <Ui.Button variant="secondary" onPress={advance}>
+          <Button variant="secondary" onPress={advance}>
             {STRINGS.advance}
-          </Ui.Button>
-          <Ui.Button variant="tertiary" onPress={() => setValue(0)}>
+          </Button>
+          <Button variant="tertiary" onPress={() => setValue(0)}>
             {STRINGS.reset}
-          </Ui.Button>
+          </Button>
           <output aria-live="polite">{value >= 100 ? STRINGS.complete : ""}</output>
         </div>
       </PageSection>

@@ -48,7 +48,9 @@ describe("DataTable page", () => {
       "IntersectionObserver",
       class {
         observe() {}
+
         unobserve() {}
+
         disconnect() {}
       },
     );

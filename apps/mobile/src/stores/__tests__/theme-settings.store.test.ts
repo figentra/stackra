@@ -11,12 +11,10 @@
 import { STACKRA_THEME } from "@stackra/tokens";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import {
-  contrastReport,
-  createThemeSettingsStore,
-  THEME_PRESETS,
-  uniwindVariables,
-} from "../theme-settings.store";
+import { THEME_PRESETS } from "../theme-presets.constant";
+import { uniwindVariables } from "../uniwind-variables.function";
+import { contrastReport } from "../contrast-report.function";
+import { createThemeSettingsStore } from "../create-theme-settings-store.function";
 
 const { updateCSSVariables } = vi.hoisted(() => ({ updateCSSVariables: vi.fn() }));
 vi.mock("uniwind", () => ({ Uniwind: { updateCSSVariables } }));

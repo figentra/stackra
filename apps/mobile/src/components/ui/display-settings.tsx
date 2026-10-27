@@ -15,7 +15,7 @@ import { useState } from "react";
 import { View } from "react-native";
 
 import { ChoiceGroup } from "./choice-group";
-import { useInsetSheet } from "./inset-sheet";
+import { useInsetSheet } from "./use-inset-sheet";
 import { ReviewIcons } from "./review-icons";
 
 // shortcut: English strings in one place until @stackra/i18n reaches the mobile app; then keys.

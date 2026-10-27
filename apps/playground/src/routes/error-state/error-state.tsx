@@ -14,7 +14,7 @@
  *          and 4.1.3; ADR 0060 (light, dark, RTL).
  */
 import { ErrorKind } from "@stackra/ui/contracts";
-import * as Ui from "@stackra/ui/react";
+import { Button, ErrorState as UiErrorState, Heading, PageSkeleton, Text } from "@stackra/ui/react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import { PageSection } from "#src/components/page-section";
@@ -81,9 +81,9 @@ const CARD = "rounded-xl border border-separator";
 function Sample({ caption, children }: { caption: string; children: ReactNode }) {
   return (
     <li className="grid content-start gap-2">
-      <Ui.Text tone="muted" type="small">
+      <Text tone="muted" type="small">
         {caption}
-      </Ui.Text>
+      </Text>
       <div className={CARD}>{children}</div>
     </li>
   );
@@ -117,26 +117,26 @@ export function ErrorState() {
     <article className="grid gap-10">
       <title>{STRINGS.documentTitle}</title>
       <header className="grid gap-2">
-        <Ui.Heading level={1}>{ErrorStateRoute.title}</Ui.Heading>
-        <Ui.Text className="max-w-prose">
+        <Heading level={1}>{ErrorStateRoute.title}</Heading>
+        <Text className="max-w-prose">
           <bdi>{STRINGS.intro}</bdi>
-        </Ui.Text>
+        </Text>
       </header>
 
       <PageSection id="error-state-kinds" title={STRINGS.kinds} note={STRINGS.kindsNote}>
         <ul className={GRID}>
           {ErrorKind.map((kind) => (
             <Sample key={kind} caption={`kind="${kind}"`}>
-              <Ui.ErrorState
+              <UiErrorState
                 kind={kind}
                 headingLevel={3}
                 title={KIND_COPY[kind].title}
                 description={KIND_COPY[kind].description}
                 actions={
                   kind === "unauthenticated" ? (
-                    <Ui.Button>{STRINGS.signIn}</Ui.Button>
+                    <Button>{STRINGS.signIn}</Button>
                   ) : kind === "not-found" || kind === "forbidden" ? (
-                    <Ui.Button variant="secondary">{STRINGS.goBack}</Ui.Button>
+                    <Button variant="secondary">{STRINGS.goBack}</Button>
                   ) : undefined
                 }
                 retry={
@@ -153,7 +153,7 @@ export function ErrorState() {
       <PageSection id="error-state-parts" title={STRINGS.parts} note={STRINGS.partsNote}>
         <ul className={GRID}>
           <Sample caption="With the error's details">
-            <Ui.ErrorState
+            <UiErrorState
               headingLevel={3}
               title={KIND_COPY.unexpected.title}
               description={KIND_COPY.unexpected.description}
@@ -162,16 +162,16 @@ export function ErrorState() {
             />
           </Sample>
           <Sample caption="A retry and a further action">
-            <Ui.ErrorState
+            <UiErrorState
               headingLevel={3}
               title={KIND_COPY.unexpected.title}
               description={KIND_COPY.unexpected.description}
               retry={{ label: STRINGS.retry, onPress: () => undefined }}
-              actions={<Ui.Button variant="ghost">{STRINGS.contactSupport}</Ui.Button>}
+              actions={<Button variant="ghost">{STRINGS.contactSupport}</Button>}
             />
           </Sample>
           <Sample caption="An icon of your own">
-            <Ui.ErrorState
+            <UiErrorState
               headingLevel={3}
               icon="lock"
               title="This page is locked"
@@ -179,7 +179,7 @@ export function ErrorState() {
             />
           </Sample>
           <Sample caption="No icon">
-            <Ui.ErrorState
+            <UiErrorState
               headingLevel={3}
               icon={false}
               title={KIND_COPY["not-found"].title}
@@ -199,7 +199,7 @@ export function ErrorState() {
           data-sample="live"
         >
           {phase === "failed" ? (
-            <Ui.ErrorState
+            <UiErrorState
               headingLevel={3}
               title={KIND_COPY.unexpected.title}
               description={KIND_COPY.unexpected.description}
@@ -209,13 +209,13 @@ export function ErrorState() {
             />
           ) : phase === "loading" ? (
             <div className="p-6">
-              <Ui.PageSkeleton layout="section" loadingLabel={STRINGS.loadingOrders} />
+              <PageSkeleton layout="section" loadingLabel={STRINGS.loadingOrders} />
             </div>
           ) : (
             <div className="grid justify-items-start gap-3 p-6">
-              <Ui.Heading level={3}>{STRINGS.recovered}</Ui.Heading>
-              <Ui.Text tone="muted">{STRINGS.recoveredNote}</Ui.Text>
-              <Ui.Button
+              <Heading level={3}>{STRINGS.recovered}</Heading>
+              <Text tone="muted">{STRINGS.recoveredNote}</Text>
+              <Button
                 variant="secondary"
                 onPress={() => {
                   setPhase("failed");
@@ -223,7 +223,7 @@ export function ErrorState() {
                 }}
               >
                 {STRINGS.breakAgain}
-              </Ui.Button>
+              </Button>
             </div>
           )}
         </div>

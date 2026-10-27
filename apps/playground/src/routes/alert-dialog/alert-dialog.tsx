@@ -10,7 +10,8 @@
  * Governing contract: ADR 0302 (decisions 3 and 5); ADR 0303 (decisions 3 and 7); ADR 0312; WAI-ARIA `alertdialog`;
  *          WCAG 2.2 SC 2.1.2, 2.5.8 and 4.1.2.
  */
-import * as Ui from "@stackra/ui/react";
+import type { AlertDialogProps } from "@stackra/ui/react";
+import { AlertDialog as UiAlertDialog, Button, Heading, Text } from "@stackra/ui/react";
 import { useState } from "react";
 
 import { PageSection } from "#src/components/page-section";
@@ -45,7 +46,7 @@ interface Sample {
   readonly confirm: string;
   readonly cancel: string;
   readonly props?: Pick<
-    Ui.AlertDialogProps,
+    AlertDialogProps,
     "tone" | "icon" | "isDismissable" | "isKeyboardDismissDisabled"
   >;
 }
@@ -154,9 +155,9 @@ export function AlertDialog() {
     <ul className={ROW}>
       {SAMPLES.filter((sample) => sample.group === group).map((sample) => (
         <li key={sample.id}>
-          <Ui.Button variant="secondary" onPress={() => setOpen(sample.id)}>
+          <Button variant="secondary" onPress={() => setOpen(sample.id)}>
             {sample.trigger}
-          </Ui.Button>
+          </Button>
         </li>
       ))}
     </ul>
@@ -166,10 +167,10 @@ export function AlertDialog() {
     <article className="grid gap-10">
       <title>{STRINGS.documentTitle}</title>
       <header className="grid gap-2">
-        <Ui.Heading level={1}>{AlertDialogRoute.title}</Ui.Heading>
-        <Ui.Text className="max-w-prose">
+        <Heading level={1}>{AlertDialogRoute.title}</Heading>
+        <Text className="max-w-prose">
           <bdi>{STRINGS.intro}</bdi>
-        </Ui.Text>
+        </Text>
       </header>
 
       <PageSection id="alert-dialog-tones" title={STRINGS.tones} note={STRINGS.tonesNote}>
@@ -187,13 +188,13 @@ export function AlertDialog() {
       </PageSection>
 
       <PageSection id="alert-dialog-answer" title={STRINGS.answer}>
-        <Ui.Text role="status">
+        <Text role="status">
           <bdi>{answer}</bdi>
-        </Ui.Text>
+        </Text>
       </PageSection>
 
       {SAMPLES.map((sample) => (
-        <Ui.AlertDialog
+        <UiAlertDialog
           key={sample.id}
           {...sample.props}
           isOpen={open === sample.id}

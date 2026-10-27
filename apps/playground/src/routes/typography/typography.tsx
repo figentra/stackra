@@ -10,7 +10,7 @@
  */
 import { STACKRA_THEME } from "@stackra/tokens";
 import { HeadingType, TextAlign, TextTone, TextType } from "@stackra/ui/contracts";
-import * as Ui from "@stackra/ui/react";
+import { Button, Heading, Text } from "@stackra/ui/react";
 import { useState, type ReactNode } from "react";
 
 import { PageSection } from "#src/components/page-section";
@@ -69,12 +69,12 @@ const metrics = (name: string) => {
 /** A row label: the token, its values, and its Arabic twin's values, isolated left to right. */
 function TokenLabel({ prefix, token }: { prefix?: string; token: string }) {
   return (
-    <Ui.Text type="caption" tone="muted">
+    <Text type="caption" tone="muted">
       <bdi dir="ltr">
         {prefix ? `${prefix} · ` : ""}
         <code>{token}</code> · {metrics(token)} · ar {metrics(`${token}-ar`)}
       </bdi>
-    </Ui.Text>
+    </Text>
   );
 }
 
@@ -98,22 +98,22 @@ export function Typography() {
     <article className="grid gap-10">
       <title>{STRINGS.documentTitle}</title>
       <header className="grid gap-2">
-        <Ui.Heading level={1}>{TypographyRoute.title}</Ui.Heading>
-        <Ui.Text className="max-w-prose">
+        <Heading level={1}>{TypographyRoute.title}</Heading>
+        <Text className="max-w-prose">
           <bdi>{STRINGS.intro}</bdi>
-        </Ui.Text>
+        </Text>
       </header>
 
       <PageSection id="typography-text" title={STRINGS.textTypes} note={STRINGS.textTypesNote}>
         <ul className="grid gap-3">
           {TextType.map((type) => (
             <TypeRow key={type} label={<TokenLabel token={type} />}>
-              <Ui.Text type={type} data-testid={`text-${type}`}>
+              <Text type={type} data-testid={`text-${type}`}>
                 {STRINGS.latinSample}
-              </Ui.Text>
-              <Ui.Text type={type} lang="ar" data-testid={`text-${type}-ar`}>
+              </Text>
+              <Text type={type} lang="ar" data-testid={`text-${type}-ar`}>
                 {STRINGS.arabicSample}
-              </Ui.Text>
+              </Text>
             </TypeRow>
           ))}
         </ul>
@@ -127,12 +127,12 @@ export function Typography() {
         <ul className="grid gap-3">
           {HeadingType.map((type) => (
             <TypeRow key={type} label={<TokenLabel prefix={`level 3, type`} token={type} />}>
-              <Ui.Heading level={3} type={type} data-testid={`heading-${type}`}>
+              <Heading level={3} type={type} data-testid={`heading-${type}`}>
                 {STRINGS.latinSample}
-              </Ui.Heading>
-              <Ui.Heading level={3} type={type} lang="ar" data-testid={`heading-${type}-ar`}>
+              </Heading>
+              <Heading level={3} type={type} lang="ar" data-testid={`heading-${type}-ar`}>
                 {STRINGS.arabicSample}
-              </Ui.Heading>
+              </Heading>
             </TypeRow>
           ))}
         </ul>
@@ -143,31 +143,31 @@ export function Typography() {
         title={STRINGS.headingLevels}
         note={STRINGS.headingLevelsNote}
       >
-        <Ui.Heading level={3} data-testid="level-3">
+        <Heading level={3} data-testid="level-3">
           {STRINGS.level(3)}
-        </Ui.Heading>
-        <Ui.Heading level={4} data-testid="level-4">
+        </Heading>
+        <Heading level={4} data-testid="level-4">
           {STRINGS.level(4)}
-        </Ui.Heading>
-        <Ui.Heading level={5} data-testid="level-5">
+        </Heading>
+        <Heading level={5} data-testid="level-5">
           {STRINGS.level(5)}
-        </Ui.Heading>
-        <Ui.Heading level={6} data-testid="level-6">
+        </Heading>
+        <Heading level={6} data-testid="level-6">
           {STRINGS.level(6)}
-        </Ui.Heading>
+        </Heading>
       </PageSection>
 
       <PageSection id="typography-tones" title={STRINGS.tones} note={STRINGS.tonesNote}>
         <ul className="grid gap-3 md:grid-cols-2">
           {TextTone.map((each) => (
             <li key={each} className="grid gap-2">
-              <Ui.Text tone={each} data-testid={`tone-${each}`}>
+              <Text tone={each} data-testid={`tone-${each}`}>
                 <bdi>{`${each}: ${STRINGS.latinSample}`}</bdi>
-              </Ui.Text>
+              </Text>
               <div className="rounded-lg bg-surface p-3">
-                <Ui.Text tone={each} data-testid={`tone-${each}-surface`}>
+                <Text tone={each} data-testid={`tone-${each}-surface`}>
                   <bdi>{`${each}: ${STRINGS.latinSample}`}</bdi>
-                </Ui.Text>
+                </Text>
               </div>
             </li>
           ))}
@@ -178,12 +178,12 @@ export function Typography() {
         <ul className="grid gap-3">
           {TextAlign.map((align) => (
             <li key={align} className="grid gap-1 rounded-lg border border-border p-3">
-              <Ui.Text type="caption" tone="muted">
+              <Text type="caption" tone="muted">
                 <bdi dir="ltr">{align}</bdi>
-              </Ui.Text>
-              <Ui.Text align={align} data-testid={`align-${align}`}>
+              </Text>
+              <Text align={align} data-testid={`align-${align}`}>
                 <bdi>{STRINGS.longSample}</bdi>
-              </Ui.Text>
+              </Text>
             </li>
           ))}
         </ul>
@@ -195,65 +195,65 @@ export function Typography() {
         note={STRINGS.truncationNote}
       >
         <div className="grid max-w-48 gap-3 rounded-lg border border-border p-3">
-          <Ui.Text data-testid="wrapped">
+          <Text data-testid="wrapped">
             <bdi>{STRINGS.longSample}</bdi>
-          </Ui.Text>
-          <Ui.Text isTruncated data-testid="truncated">
+          </Text>
+          <Text isTruncated data-testid="truncated">
             <bdi>{STRINGS.longSample}</bdi>
-          </Ui.Text>
-          <Ui.Heading level={3} type="h4" isTruncated data-testid="truncated-heading">
+          </Text>
+          <Heading level={3} type="h4" isTruncated data-testid="truncated-heading">
             <bdi>{STRINGS.longSample}</bdi>
-          </Ui.Heading>
+          </Heading>
         </div>
       </PageSection>
 
       <PageSection id="typography-weight" title={STRINGS.weight} note={STRINGS.weightNote}>
-        <Ui.Text weight="bold" data-testid="weight-bold">
+        <Text weight="bold" data-testid="weight-bold">
           <bdi>{STRINGS.latinSample}</bdi>
-        </Ui.Text>
+        </Text>
       </PageSection>
 
       <PageSection id="typography-language" title={STRINGS.language} note={STRINGS.languageNote}>
-        <Ui.Text lang="ar" data-testid="lang-ar">
+        <Text lang="ar" data-testid="lang-ar">
           {STRINGS.arabicSample}
-        </Ui.Text>
-        <Ui.Text lang="en" data-testid="lang-en">
+        </Text>
+        <Text lang="en" data-testid="lang-en">
           <bdi>{STRINGS.latinSample}</bdi>
-        </Ui.Text>
+        </Text>
       </PageSection>
 
       <PageSection id="typography-inline" title={STRINGS.inline} note={STRINGS.inlineNote}>
         <p>
           <bdi>
             {STRINGS.inlineBefore}
-            <Ui.Text tone="accent" weight="semibold" render={(props) => <span {...props} />}>
+            <Text tone="accent" weight="semibold" render={(props) => <span {...props} />}>
               {STRINGS.inlineText}
-            </Ui.Text>
+            </Text>
             {STRINGS.inlineAfter}
           </bdi>
         </p>
-        <Ui.Text type="small" tone="muted">
+        <Text type="small" tone="muted">
           <bdi>{STRINGS.small}</bdi>
-        </Ui.Text>
+        </Text>
       </PageSection>
 
       <PageSection id="typography-live" title={STRINGS.live} note={STRINGS.liveNote}>
         <div className="flex flex-wrap items-center gap-4">
-          <Ui.Button
+          <Button
             onPress={() => {
               setToneIndex((index) => index + 1);
               setPresses((count) => count + 1);
             }}
           >
             {STRINGS.nextTone}
-          </Ui.Button>
-          <Ui.Text tone={tone} data-testid="live-text">
+          </Button>
+          <Text tone={tone} data-testid="live-text">
             <bdi>{STRINGS.latinSample}</bdi>
-          </Ui.Text>
+          </Text>
         </div>
-        <Ui.Text role="status" type="small" tone="muted">
+        <Text role="status" type="small" tone="muted">
           <bdi>{STRINGS.state(tone, presses)}</bdi>
-        </Ui.Text>
+        </Text>
       </PageSection>
     </article>
   );

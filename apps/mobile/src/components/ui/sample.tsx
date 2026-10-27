@@ -7,16 +7,8 @@
  * Governing contract: ADR 0310 (decision 6); STA-416 FR-013.
  */
 import { Text } from "@stackra/ui/native";
-import type { ReactNode } from "react";
 import { View } from "react-native";
-
-/** Props of {@link Sample}. */
-export interface SampleProps {
-  /** The option the sample shows, for example a variant name. */
-  caption: string;
-  /** The component drawn above the caption. */
-  children: ReactNode;
-}
+import type { SampleProps } from "./sample.props";
 
 /** A component with its caption underneath, aligned to the start. */
 export function Sample({ caption, children }: SampleProps) {

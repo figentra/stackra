@@ -9,7 +9,7 @@
  * Governing contract: ADR 0302 (decisions 3 and 5); ADR 0313; ADR 0060 (light, dark, RTL).
  */
 import { AccordionVariant } from "@stackra/ui/contracts";
-import * as Ui from "@stackra/ui/react";
+import { Accordion as UiAccordion, Button, Heading, Link, Text } from "@stackra/ui/react";
 import { useState } from "react";
 
 import { PageSection } from "#src/components/page-section";
@@ -94,9 +94,9 @@ const FAQ_RICH = [
     id: "returns",
     title: "Can I return an order?",
     content: (
-      <Ui.Link href="https://example.com/returns" isExternal>
+      <Link href="https://example.com/returns" isExternal>
         {STRINGS.docsLink}
-      </Ui.Link>
+      </Link>
     ),
   },
 ] as const;
@@ -118,33 +118,33 @@ export function Accordion() {
     <article className="grid gap-10">
       <title>{STRINGS.documentTitle}</title>
       <header className="grid gap-2">
-        <Ui.Heading level={1}>{AccordionRoute.title}</Ui.Heading>
-        <Ui.Text className="max-w-prose">
+        <Heading level={1}>{AccordionRoute.title}</Heading>
+        <Text className="max-w-prose">
           <bdi>{STRINGS.intro}</bdi>
-        </Ui.Text>
+        </Text>
       </header>
 
       <PageSection id="accordion-single" title={STRINGS.single} note={STRINGS.singleNote}>
-        <Ui.Accordion items={FAQ} className={WIDTH} />
+        <UiAccordion items={FAQ} className={WIDTH} />
       </PageSection>
 
       <PageSection id="accordion-multiple" title={STRINGS.multiple} note={STRINGS.multipleNote}>
-        <Ui.Accordion items={FAQ} canExpandMultiple className={WIDTH} />
+        <UiAccordion items={FAQ} canExpandMultiple className={WIDTH} />
       </PageSection>
 
       <PageSection id="accordion-variants" title={STRINGS.variants} note={STRINGS.variantsNote}>
         <div className={ROW}>
           {AccordionVariant.map((variant) => (
             <div key={variant} className="grid gap-2">
-              <Ui.Text tone="muted">{STRINGS.variant(variant)}</Ui.Text>
-              <Ui.Accordion items={FAQ} variant={variant} className={WIDTH} />
+              <Text tone="muted">{STRINGS.variant(variant)}</Text>
+              <UiAccordion items={FAQ} variant={variant} className={WIDTH} />
             </div>
           ))}
         </div>
       </PageSection>
 
       <PageSection id="accordion-expanded" title={STRINGS.expanded} note={STRINGS.expandedNote}>
-        <Ui.Accordion
+        <UiAccordion
           items={FAQ}
           canExpandMultiple
           defaultExpandedKeys={["shipping", "warranty"]}
@@ -154,8 +154,8 @@ export function Accordion() {
 
       <PageSection id="accordion-states" title={STRINGS.states} note={STRINGS.statesNote}>
         <div className={ROW}>
-          <Ui.Accordion items={FAQ_ONE_DISABLED} className={WIDTH} />
-          <Ui.Accordion
+          <UiAccordion items={FAQ_ONE_DISABLED} className={WIDTH} />
+          <UiAccordion
             items={FAQ}
             isDisabled
             canExpandMultiple
@@ -166,27 +166,27 @@ export function Accordion() {
       </PageSection>
 
       <PageSection id="accordion-rich" title={STRINGS.rich} note={STRINGS.richNote}>
-        <Ui.Accordion items={FAQ_RICH} className={WIDTH} />
+        <UiAccordion items={FAQ_RICH} className={WIDTH} />
       </PageSection>
 
       <PageSection id="accordion-live" title={STRINGS.live} note={STRINGS.liveNote}>
-        <Ui.Accordion
+        <UiAccordion
           items={FAQ}
           canExpandMultiple
           expandedKeys={open}
           onExpandedChange={setOpen}
           className={WIDTH}
         />
-        <Ui.Text role="status" data-testid="accordion-open" tone="muted">
+        <Text role="status" data-testid="accordion-open" tone="muted">
           {STRINGS.open(open)}
-        </Ui.Text>
+        </Text>
         <div className="flex flex-wrap gap-2">
-          <Ui.Button variant="secondary" onPress={() => setOpen(ALL_IDS)}>
+          <Button variant="secondary" onPress={() => setOpen(ALL_IDS)}>
             {STRINGS.expandAll}
-          </Ui.Button>
-          <Ui.Button variant="secondary" onPress={() => setOpen([])}>
+          </Button>
+          <Button variant="secondary" onPress={() => setOpen([])}>
             {STRINGS.collapseAll}
-          </Ui.Button>
+          </Button>
         </div>
       </PageSection>
     </article>

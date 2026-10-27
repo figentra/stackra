@@ -1,9 +1,9 @@
 /**
- * @module tools/scripts/spec-trace.test
- *
+ * Stackra file contract:
  * Purpose: hold spec-trace's trace matrix and drift rules to their contract, on the sta-901 fixture.
- * Boundary: pure functions; no git, no network.
- * Runtime: node — node:test and node:assert.
+ * Boundary: pure functions; no git, no network; node:test and node:assert.
+ * Runtime: node
+ * Governing contract: ADR 0022 (tests live in tests folders); ADR 0182 (testing strategy).
  */
 // @covers sta-163:FR-006 sta-163:FR-007 sta-163:P-004
 import { test } from "node:test";

@@ -12,6 +12,9 @@
  *   digest                           ≤8 lines: In Progress plus `owner`-labelled issues (the SessionStart hook)
  *   check-pr                         CI: exit 1 unless PR_BRANCH is Linear-named (figentra/ or delegate/sta-n-…) and
  *                                    the title or branch carries an STA key (PR_LABELS may hold chore-lane)
+ * Boundary: talks to Linear's GraphQL API through bot-token.mjs' network layer; writes no repo file.
+ * Runtime: node
+ * Governing contract: ADR 0065 (Linear gate checked offline); ADR 0121 (SDLC tooling roles and Linear).
  * Token: the "Stackra Agent" OAuth app (actor=app, so actions show as the app; it becomes the issue's delegate,
  *   never its assignee) is preferred: LINEAR_AGENT_TOKEN, re-minted from LINEAR_AGENT_CLIENT_ID and
  *   LINEAR_AGENT_CLIENT_SECRET (client_credentials) when it expires or is absent. LINEAR_API_KEY (personal key)
@@ -76,6 +79,9 @@ const isAuthError = (res, json) =>
     /AUTHENTICATION|authenticat/i.test(`${e.extensions?.code} ${e.message}`),
   );
 
+/** A read or an issueUpdate (it sets values) is safe to repeat; netFetch retries it. */
+const isIdempotentQuery = (query) => isGraphqlRead(query) || /\bissueUpdate\(/.test(query);
+
 /**
  * A GraphQL client. A missing or expired app token is (re-)minted from the client credentials, once per call;
  * if that fails and a personal key exists, the client falls back to it. Errors carry Linear's messages, never a token.
@@ -95,8 +101,6 @@ export function client({ env = process.env, fetch = netFetch } = {}) {
       if (!fallback()) throw e;
     }
   };
-  // A read or an issueUpdate (it sets values) is safe to repeat; netFetch retries it.
-  const idempotent = (query) => isGraphqlRead(query) || /\bissueUpdate\(/.test(query);
   const post = async (query, variables) => {
     const res = await fetch(
       API,
@@ -105,7 +109,7 @@ export function client({ env = process.env, fetch = netFetch } = {}) {
         headers: { "content-type": "application/json", authorization: state.header },
         body: JSON.stringify({ query, variables }),
       },
-      { idempotent: idempotent(query) },
+      { idempotent: isIdempotentQuery(query) },
     );
     return { res, json: await res.json().catch(() => ({})) };
   };

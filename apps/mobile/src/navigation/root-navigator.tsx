@@ -10,7 +10,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { ItemScreen } from "../screens/item-screen";
 import { glassHeader } from "./header-options";
 import { TabNavigator } from "./tab-navigator";
-import type { RootStackParamList } from "./types";
+import type { RootStackParamList } from "./root-stack-param-list.type";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 

@@ -23,7 +23,15 @@ import type {
 import { defineIconRegistry } from "@stackra/icons";
 import { IconRegistryProvider } from "@stackra/icons/react";
 import { Ellipsis } from "@stackra/icons/react/lucide-icons";
-import * as Ui from "@stackra/ui/react";
+import type { DataTableProps } from "@stackra/ui/react";
+import {
+  Button,
+  Chip,
+  DataTable as UiDataTable,
+  Heading,
+  SearchField,
+  Text,
+} from "@stackra/ui/react";
 import { useState, type ReactNode } from "react";
 
 import { PageSection } from "#src/components/page-section";
@@ -169,8 +177,7 @@ const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve,
 
 /** The cell of a sample: the status as a chip and the total as money, the rest as the table's own text. */
 function renderOrderCell(order: Order, column: TableColumn) {
-  if (column.id === "status")
-    return <Ui.Chip tone={STATUS_TONE[order.status]}>{order.status}</Ui.Chip>;
+  if (column.id === "status") return <Chip tone={STATUS_TONE[order.status]}>{order.status}</Chip>;
   if (column.id === "total") return <bdi>{MONEY.format(order.total)}</bdi>;
   return <bdi>{String(order[column.id as keyof Order])}</bdi>;
 }
@@ -211,16 +218,16 @@ const STACK = "grid gap-8";
 function Sample({ title, children }: { readonly title: string; readonly children: ReactNode }) {
   return (
     <div className="grid gap-2">
-      <Ui.Heading level={3}>{title}</Ui.Heading>
+      <Heading level={3}>{title}</Heading>
       {children}
     </div>
   );
 }
 
 /** A sample table with the common props of the page's static samples. */
-function Static(props: Partial<Ui.DataTableProps<Order>> & { readonly label: string }) {
+function Static(props: Partial<DataTableProps<Order>> & { readonly label: string }) {
   return (
-    <Ui.DataTable
+    <UiDataTable
       items={FEW}
       columns={PLAIN_COLUMNS}
       renderCell={renderOrderCell}
@@ -300,7 +307,7 @@ function SortingExample() {
   });
   return (
     <>
-      <Ui.DataTable
+      <UiDataTable
         label={STRINGS.sortedLabel}
         items={ordersFor(query).slice(0, 6)}
         columns={COLUMNS}
@@ -308,9 +315,9 @@ function SortingExample() {
         query={query}
         onQueryChange={setQuery}
       />
-      <Ui.Text role="status" data-testid="data-table-sort" tone="muted">
+      <Text role="status" data-testid="data-table-sort" tone="muted">
         {STRINGS.sorted(query.sort)}
-      </Ui.Text>
+      </Text>
     </>
   );
 }
@@ -321,9 +328,9 @@ function RowActionsExample() {
   return (
     <>
       <Static label={STRINGS.rowActionsLabel} rowActions={rowActionsOf(setLast)} headingLevel={3} />
-      <Ui.Text role="status" data-testid="data-table-last-action" tone="muted">
+      <Text role="status" data-testid="data-table-last-action" tone="muted">
         {STRINGS.lastAction(last)}
-      </Ui.Text>
+      </Text>
     </>
   );
 }
@@ -348,15 +355,15 @@ function SelectionExample() {
         isAllMatchingSelected={isAll}
         onAllMatchingSelectedChange={setIsAll}
       />
-      <Ui.Text role="status" data-testid="data-table-selected" tone="muted">
+      <Text role="status" data-testid="data-table-selected" tone="muted">
         {STRINGS.selected(selected)}
-      </Ui.Text>
-      <Ui.Text role="status" data-testid="data-table-all-matching" tone="muted">
+      </Text>
+      <Text role="status" data-testid="data-table-all-matching" tone="muted">
         {STRINGS.allMatching(isAll)}
-      </Ui.Text>
-      <Ui.Text role="status" data-testid="data-table-bulk-action" tone="muted">
+      </Text>
+      <Text role="status" data-testid="data-table-bulk-action" tone="muted">
         {STRINGS.lastAction(last)}
-      </Ui.Text>
+      </Text>
     </>
   );
 }
@@ -366,7 +373,7 @@ function FilterSlotExample() {
   const [query, setQuery] = useState<ResourceQuery>(NO_QUERY);
   return (
     <>
-      <Ui.DataTable
+      <UiDataTable
         label={STRINGS.filterSlotLabel}
         items={ordersFor(query).slice(0, 5)}
         columns={PLAIN_COLUMNS}
@@ -375,16 +382,16 @@ function FilterSlotExample() {
         onQueryChange={setQuery}
         headingLevel={3}
         filterBar={
-          <Ui.SearchField
+          <SearchField
             aria-label={STRINGS.searchLabel}
             value={query.search}
             onChange={(search) => setQuery({ ...query, search })}
           />
         }
       />
-      <Ui.Text role="status" data-testid="data-table-slot-query" tone="muted">
+      <Text role="status" data-testid="data-table-slot-query" tone="muted">
         {STRINGS.query(query)}
-      </Ui.Text>
+      </Text>
     </>
   );
 }
@@ -412,9 +419,9 @@ function PagingExample() {
           setHistory(history.slice(0, -1));
         }}
       />
-      <Ui.Text data-testid="data-table-cursor" tone="muted">
+      <Text data-testid="data-table-cursor" tone="muted">
         <bdi>{STRINGS.cursor(cursor)}</bdi>
-      </Ui.Text>
+      </Text>
     </>
   );
 }
@@ -456,7 +463,7 @@ function LiveExample() {
 
   return (
     <>
-      <Ui.DataTable
+      <UiDataTable
         label={STRINGS.liveLabel}
         items={rows}
         columns={COLUMNS}
@@ -485,29 +492,29 @@ function LiveExample() {
         isMessageShown
         onRetry={() => setIsFailing(false)}
         filterBar={
-          <Ui.SearchField
+          <SearchField
             aria-label={STRINGS.liveSearch}
             value={query.search}
             onChange={(search) => change({ ...query, search })}
           />
         }
       />
-      <Ui.Text role="status" data-testid="data-table-live-query" tone="muted">
+      <Text role="status" data-testid="data-table-live-query" tone="muted">
         {STRINGS.query(query)} · {STRINGS.sorted(query.sort)}
-      </Ui.Text>
-      <Ui.Text role="status" data-testid="data-table-live-selected" tone="muted">
+      </Text>
+      <Text role="status" data-testid="data-table-live-selected" tone="muted">
         {STRINGS.selected(selected)}
-      </Ui.Text>
-      <Ui.Text role="status" data-testid="data-table-live-last" tone="muted">
+      </Text>
+      <Text role="status" data-testid="data-table-live-last" tone="muted">
         {STRINGS.lastAction(last)}
-      </Ui.Text>
-      <Ui.Text data-testid="data-table-live-matching" tone="muted">
+      </Text>
+      <Text data-testid="data-table-live-matching" tone="muted">
         {STRINGS.matching(found.length)}
-      </Ui.Text>
+      </Text>
       <div>
-        <Ui.Button variant="secondary" onPress={() => setIsFailing((current) => !current)}>
+        <Button variant="secondary" onPress={() => setIsFailing((current) => !current)}>
           {isFailing ? STRINGS.recover : STRINGS.simulateError}
-        </Ui.Button>
+        </Button>
       </div>
     </>
   );
@@ -520,10 +527,10 @@ export function DataTable() {
       <article className="grid gap-10">
         <title>{STRINGS.documentTitle}</title>
         <header className="grid gap-2">
-          <Ui.Heading level={1}>{DataTableRoute.title}</Ui.Heading>
-          <Ui.Text className="max-w-prose">
+          <Heading level={1}>{DataTableRoute.title}</Heading>
+          <Text className="max-w-prose">
             <bdi>{STRINGS.intro}</bdi>
-          </Ui.Text>
+          </Text>
         </header>
 
         <PageSection id="data-table-basics" title={STRINGS.basics} note={STRINGS.basicsNote}>

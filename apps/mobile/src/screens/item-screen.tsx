@@ -9,7 +9,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Card } from "heroui-native";
 
 import { Screen } from "../components/ui/screen";
-import type { RootStackParamList } from "../navigation/types";
+import type { RootStackParamList } from "../navigation/root-stack-param-list.type";
 
 /** Dynamic route: `id` comes from `navigate("Item", { id })` or the deep link `stackra://items/<id>`. */
 export function ItemScreen({ route }: NativeStackScreenProps<RootStackParamList, "Item">) {

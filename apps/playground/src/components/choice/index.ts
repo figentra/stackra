@@ -5,4 +5,5 @@
  * Runtime: browser
  * Governing contract: ADR 0294 (decision 14).
  */
-export { Choice, type ChoiceProps } from "./choice";
+export { Choice } from "./choice";
+export { type ChoiceProps } from "./choice.props";

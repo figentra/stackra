@@ -9,7 +9,7 @@
  * Governing contract: ADR 0302 (decisions 3 and 5); ADR 0303 (decision 7); ADR 0060 (light, dark, RTL).
  */
 import { TextFieldType } from "@stackra/ui/contracts";
-import * as Ui from "@stackra/ui/react";
+import { Heading, Surface, Text, TextField as UiTextField } from "@stackra/ui/react";
 import { useState } from "react";
 
 import { PageSection } from "#src/components/page-section";
@@ -72,60 +72,60 @@ export function TextField() {
     <article className="grid gap-10">
       <title>{STRINGS.documentTitle}</title>
       <header className="grid gap-2">
-        <Ui.Heading level={1}>{TextFieldRoute.title}</Ui.Heading>
-        <Ui.Text className="max-w-prose">
+        <Heading level={1}>{TextFieldRoute.title}</Heading>
+        <Text className="max-w-prose">
           <bdi>{STRINGS.intro}</bdi>
-        </Ui.Text>
+        </Text>
       </header>
 
       <PageSection id="text-field-variants" title={STRINGS.variants} note={STRINGS.variantsNote}>
         <div className={GRID}>
-          <Ui.TextField label={STRINGS.primary} variant="primary" defaultValue="Ada" />
-          <Ui.Surface variant="secondary" className="rounded-lg p-4">
-            <Ui.TextField label={STRINGS.secondary} variant="secondary" defaultValue="Ada" />
-          </Ui.Surface>
+          <UiTextField label={STRINGS.primary} variant="primary" defaultValue="Ada" />
+          <Surface variant="secondary" className="rounded-lg p-4">
+            <UiTextField label={STRINGS.secondary} variant="secondary" defaultValue="Ada" />
+          </Surface>
         </div>
       </PageSection>
 
       <PageSection id="text-field-parts" title={STRINGS.parts} note={STRINGS.partsNote}>
         <div className={GRID}>
-          <Ui.TextField label={STRINGS.labelOnly} />
-          <Ui.TextField label={STRINGS.withPlaceholder} placeholder={STRINGS.placeholder} />
-          <Ui.TextField label={STRINGS.withDescription} description={STRINGS.description} />
+          <UiTextField label={STRINGS.labelOnly} />
+          <UiTextField label={STRINGS.withPlaceholder} placeholder={STRINGS.placeholder} />
+          <UiTextField label={STRINGS.withDescription} description={STRINGS.description} />
         </div>
       </PageSection>
 
       <PageSection id="text-field-states" title={STRINGS.states} note={STRINGS.statesNote}>
         <div className={GRID}>
-          <Ui.TextField label={STRINGS.required} isRequired />
-          <Ui.TextField
+          <UiTextField label={STRINGS.required} isRequired />
+          <UiTextField
             label={STRINGS.invalid}
             isInvalid
             defaultValue="A"
             errorMessage={STRINGS.invalidMessage}
           />
-          <Ui.TextField label={STRINGS.disabled} isDisabled defaultValue={STRINGS.kept} />
-          <Ui.TextField label={STRINGS.readOnly} isReadOnly defaultValue={STRINGS.kept} />
+          <UiTextField label={STRINGS.disabled} isDisabled defaultValue={STRINGS.kept} />
+          <UiTextField label={STRINGS.readOnly} isReadOnly defaultValue={STRINGS.kept} />
         </div>
       </PageSection>
 
       <PageSection id="text-field-kinds" title={STRINGS.kinds} note={STRINGS.kindsNote}>
         <div className={GRID}>
           {TextFieldType.map((kind) => (
-            <Ui.TextField key={kind} label={STRINGS.kindLabel(kind)} type={kind} />
+            <UiTextField key={kind} label={STRINGS.kindLabel(kind)} type={kind} />
           ))}
         </div>
       </PageSection>
 
       <PageSection id="text-field-width" title={STRINGS.width} note={STRINGS.widthNote}>
         <div className="grid gap-4">
-          <Ui.TextField label={STRINGS.full} />
-          <Ui.TextField label={STRINGS.content} isFullWidth={false} />
+          <UiTextField label={STRINGS.full} />
+          <UiTextField label={STRINGS.content} isFullWidth={false} />
         </div>
       </PageSection>
 
       <PageSection id="text-field-live" title={STRINGS.live} note={STRINGS.liveNote}>
-        <Ui.TextField
+        <UiTextField
           label={STRINGS.liveLabel}
           description={STRINGS.liveDescription}
           errorMessage={STRINGS.liveError}
@@ -134,9 +134,9 @@ export function TextField() {
           value={email}
           onChange={setEmail}
         />
-        <Ui.Text data-testid="typed" aria-live="polite">
+        <Text data-testid="typed" aria-live="polite">
           {email === "" ? STRINGS.liveEmpty : STRINGS.liveTyped(email)}
-        </Ui.Text>
+        </Text>
       </PageSection>
     </article>
   );

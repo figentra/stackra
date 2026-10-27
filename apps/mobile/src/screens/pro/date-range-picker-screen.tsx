@@ -12,7 +12,7 @@ import { Description, FieldError, Label, Text, useDesignSystem } from "@stackra/
 import { DateRangePicker, type DateRangePickerProps } from "@stackra-pro/ui/native";
 import { useState } from "react";
 
-import { useInsetSheet } from "#src/components/ui/inset-sheet";
+import { useInsetSheet } from "#src/components/ui/use-inset-sheet";
 import { RangeCalendarParts } from "#src/components/ui/range-calendar-parts";
 import { Screen } from "#src/components/ui/screen";
 import { Section } from "#src/components/ui/section";

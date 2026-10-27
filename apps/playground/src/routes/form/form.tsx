@@ -11,7 +11,16 @@
  * Governing contract: ADR 0302 (decisions 3 and 5); ADR 0303 (decision 7); ADR 0055 (forms); ADR 0060 (light, dark,
  *          RTL); WCAG 2.2 SC 1.3.1, 3.3.1 and 3.3.3.
  */
-import * as Ui from "@stackra/ui/react";
+import {
+  Button,
+  Description,
+  FieldError,
+  Form as UiForm,
+  Heading,
+  Label,
+  Switch,
+  Text,
+} from "@stackra/ui/react";
 import { useRef, useState, type ChangeEvent, type FormEvent } from "react";
 
 import { PageSection } from "#src/components/page-section";
@@ -78,14 +87,14 @@ function LabelSample({ sample }: { sample: (typeof LABEL_SAMPLES)[number] }) {
   const isDisabled = "isDisabled" in sample;
   return (
     <div className="grid gap-1">
-      <Ui.Label
+      <Label
         htmlFor={sample.id}
         isRequired={isRequired}
         isInvalid={isInvalid}
         isDisabled={isDisabled}
       >
         {sample.text}
-      </Ui.Label>
+      </Label>
       <input
         id={sample.id}
         className={CONTROL}
@@ -126,10 +135,10 @@ export function Form() {
     <article className="grid gap-10">
       <title>{STRINGS.documentTitle}</title>
       <header className="grid gap-2">
-        <Ui.Heading level={1}>{FormRoute.title}</Ui.Heading>
-        <Ui.Text className="max-w-prose">
+        <Heading level={1}>{FormRoute.title}</Heading>
+        <Text className="max-w-prose">
           <bdi>{STRINGS.intro}</bdi>
-        </Ui.Text>
+        </Text>
       </header>
 
       <PageSection id="form-label" title={STRINGS.label} note={STRINGS.labelNote}>
@@ -142,18 +151,18 @@ export function Form() {
 
       <PageSection id="form-description" title={STRINGS.description} note={STRINGS.descriptionNote}>
         <div className="grid max-w-sm gap-1">
-          <Ui.Label htmlFor="display-name">{STRINGS.displayName}</Ui.Label>
+          <Label htmlFor="display-name">{STRINGS.displayName}</Label>
           <input id="display-name" className={CONTROL} aria-describedby="display-name-hint" />
-          <Ui.Description id="display-name-hint">{STRINGS.displayNameHint}</Ui.Description>
+          <Description id="display-name-hint">{STRINGS.displayNameHint}</Description>
         </div>
       </PageSection>
 
       <PageSection id="form-field-error" title={STRINGS.fieldError} note={STRINGS.fieldErrorNote}>
         <div className="grid max-w-sm gap-4">
           <div className="grid gap-1">
-            <Ui.Label htmlFor="invalid-field" isInvalid>
+            <Label htmlFor="invalid-field" isInvalid>
               {STRINGS.invalidField}
-            </Ui.Label>
+            </Label>
             <input
               id="invalid-field"
               className={CONTROL}
@@ -161,23 +170,23 @@ export function Form() {
               data-invalid
               aria-describedby="invalid-field-error"
             />
-            <Ui.FieldError id="invalid-field-error" isInvalid>
+            <FieldError id="invalid-field-error" isInvalid>
               {STRINGS.invalidMessage}
-            </Ui.FieldError>
+            </FieldError>
           </div>
           <div className="grid gap-1">
-            <Ui.Label htmlFor="valid-field">{STRINGS.validField}</Ui.Label>
+            <Label htmlFor="valid-field">{STRINGS.validField}</Label>
             <input id="valid-field" className={CONTROL} aria-describedby="valid-field-hint" />
-            <Ui.Description id="valid-field-hint">{STRINGS.validNote}</Ui.Description>
-            <Ui.FieldError id="valid-field-error" isInvalid={false}>
+            <Description id="valid-field-hint">{STRINGS.validNote}</Description>
+            <FieldError id="valid-field-error" isInvalid={false}>
               {STRINGS.invalidMessage}
-            </Ui.FieldError>
+            </FieldError>
           </div>
         </div>
       </PageSection>
 
       <PageSection id="form-live" title={STRINGS.live} note={STRINGS.liveNote}>
-        <Ui.Form
+        <UiForm
           aria-label={STRINGS.formName}
           validationBehavior="aria"
           isSubmitOnModEnter={isModEnter}
@@ -185,9 +194,9 @@ export function Form() {
           className="grid max-w-sm gap-4"
         >
           <div className="grid gap-1">
-            <Ui.Label htmlFor="email" isRequired isInvalid={isEmailInvalid}>
+            <Label htmlFor="email" isRequired isInvalid={isEmailInvalid}>
               {STRINGS.email}
-            </Ui.Label>
+            </Label>
             <input
               id="email"
               ref={emailRef}
@@ -202,13 +211,13 @@ export function Form() {
               data-invalid={isEmailInvalid || undefined}
               aria-describedby={isEmailInvalid ? "email-hint email-error" : "email-hint"}
             />
-            <Ui.Description id="email-hint">{STRINGS.emailHint}</Ui.Description>
-            <Ui.FieldError id="email-error" isInvalid={isEmailInvalid}>
+            <Description id="email-hint">{STRINGS.emailHint}</Description>
+            <FieldError id="email-error" isInvalid={isEmailInvalid}>
               {STRINGS.emailError}
-            </Ui.FieldError>
+            </FieldError>
           </div>
           <div className="grid gap-1">
-            <Ui.Label htmlFor="notes">{STRINGS.notes}</Ui.Label>
+            <Label htmlFor="notes">{STRINGS.notes}</Label>
             <textarea
               id="notes"
               rows={3}
@@ -217,18 +226,18 @@ export function Form() {
               onChange={(event: ChangeEvent<HTMLTextAreaElement>) => setNotes(event.target.value)}
               aria-describedby="notes-hint"
             />
-            <Ui.Description id="notes-hint">{STRINGS.notesHint}</Ui.Description>
+            <Description id="notes-hint">{STRINGS.notesHint}</Description>
           </div>
-          <Ui.Switch label={STRINGS.modEnter} value={isModEnter} onChange={setIsModEnter} />
+          <Switch label={STRINGS.modEnter} value={isModEnter} onChange={setIsModEnter} />
           <div className="flex flex-wrap items-center gap-4">
-            <Ui.Button type="submit">{STRINGS.submit}</Ui.Button>
-            <Ui.Text tone="muted">
+            <Button type="submit">{STRINGS.submit}</Button>
+            <Text tone="muted">
               <output aria-live="polite" data-testid="submit-state">
                 <bdi>{status}</bdi>
               </output>
-            </Ui.Text>
+            </Text>
           </div>
-        </Ui.Form>
+        </UiForm>
       </PageSection>
     </article>
   );

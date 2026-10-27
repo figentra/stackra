@@ -5,4 +5,5 @@
  * Runtime: browser
  * Governing contract: ADR 0294 (decision 14).
  */
-export { StudioPreview, type StudioPreviewProps } from "./studio-preview";
+export { StudioPreview } from "./studio-preview";
+export { type StudioPreviewProps } from "./studio-preview.props";

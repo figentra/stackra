@@ -9,7 +9,7 @@
  * Governing contract: ADR 0302 (decisions 3 and 5); ADR 0303 (decision 7); ADR 0055; ADR 0060 (light, dark, RTL).
  */
 import { Size, TagVariant } from "@stackra/ui/contracts";
-import * as Ui from "@stackra/ui/react";
+import { Button, Heading, Surface, TagGroup as UiTagGroup, Text } from "@stackra/ui/react";
 import { useState } from "react";
 
 import { PageSection } from "#src/components/page-section";
@@ -103,33 +103,33 @@ export function TagGroup() {
     <article className="grid gap-10">
       <title>{STRINGS.documentTitle}</title>
       <header className="grid gap-2">
-        <Ui.Heading level={1}>{TagGroupRoute.title}</Ui.Heading>
-        <Ui.Text className="max-w-prose">
+        <Heading level={1}>{TagGroupRoute.title}</Heading>
+        <Text className="max-w-prose">
           <bdi>{STRINGS.intro}</bdi>
-        </Ui.Text>
+        </Text>
       </header>
 
       <PageSection id="tag-group-basics" title={STRINGS.basics} note={STRINGS.basicsNote}>
         <div className={ROW}>
-          <Ui.TagGroup items={TOPICS} label={STRINGS.topicsLabel} />
-          <Ui.TagGroup
+          <UiTagGroup items={TOPICS} label={STRINGS.topicsLabel} />
+          <UiTagGroup
             items={AMENITIES}
             label={STRINGS.describedLabel}
             description={STRINGS.description}
           />
-          <Ui.TagGroup items={TOPICS} aria-label={STRINGS.hiddenLabelName} />
+          <UiTagGroup items={TOPICS} aria-label={STRINGS.hiddenLabelName} />
         </div>
       </PageSection>
 
       <PageSection id="tag-group-sizes" title={STRINGS.sizes} note={STRINGS.sizesNote}>
         {TagVariant.map((variant) => (
-          <Ui.Surface
+          <Surface
             key={variant}
             variant={variant === "surface" ? "secondary" : "default"}
             className="grid gap-4 p-4"
           >
             {Size.map((size) => (
-              <Ui.TagGroup
+              <UiTagGroup
                 key={size}
                 items={TOPICS}
                 size={size}
@@ -139,20 +139,20 @@ export function TagGroup() {
                 defaultValue={["news"]}
               />
             ))}
-          </Ui.Surface>
+          </Surface>
         ))}
       </PageSection>
 
       <PageSection id="tag-group-selection" title={STRINGS.selection} note={STRINGS.selectionNote}>
         <div className={ROW}>
-          <Ui.TagGroup items={TOPICS} label={STRINGS.none} />
-          <Ui.TagGroup
+          <UiTagGroup items={TOPICS} label={STRINGS.none} />
+          <UiTagGroup
             items={TOPICS}
             label={STRINGS.single}
             selectionMode="single"
             defaultValue={["travel"]}
           />
-          <Ui.TagGroup
+          <UiTagGroup
             items={TOPICS}
             label={STRINGS.multiple}
             selectionMode="multiple"
@@ -163,19 +163,19 @@ export function TagGroup() {
 
       <PageSection id="tag-group-states" title={STRINGS.states} note={STRINGS.statesNote}>
         <div className={ROW}>
-          <Ui.TagGroup
+          <UiTagGroup
             items={TOPICS_ONE_DISABLED}
             label={STRINGS.disabledTag}
             selectionMode="multiple"
           />
-          <Ui.TagGroup
+          <UiTagGroup
             items={TOPICS}
             label={STRINGS.disabledGroup}
             selectionMode="multiple"
             defaultValue={["news"]}
             isDisabled
           />
-          <Ui.TagGroup
+          <UiTagGroup
             items={TOPICS}
             label={STRINGS.readOnly}
             selectionMode="multiple"
@@ -184,25 +184,20 @@ export function TagGroup() {
             onRemove={() => undefined}
             removeLabel={STRINGS.remove}
           />
-          <Ui.TagGroup
-            items={TOPICS}
-            label={STRINGS.required}
-            selectionMode="multiple"
-            isRequired
-          />
-          <Ui.TagGroup
+          <UiTagGroup items={TOPICS} label={STRINGS.required} selectionMode="multiple" isRequired />
+          <UiTagGroup
             items={TOPICS}
             label={STRINGS.invalid}
             selectionMode="multiple"
             isInvalid
             errorMessage={STRINGS.invalidError}
           />
-          <Ui.TagGroup items={[]} label={STRINGS.empty} emptyMessage={STRINGS.emptyMessage} />
+          <UiTagGroup items={[]} label={STRINGS.empty} emptyMessage={STRINGS.emptyMessage} />
         </div>
       </PageSection>
 
       <PageSection id="tag-group-live" title={STRINGS.live} note={STRINGS.liveNote}>
-        <Ui.TagGroup
+        <UiTagGroup
           items={tags}
           label={STRINGS.liveLabel}
           selectionMode="multiple"
@@ -215,14 +210,14 @@ export function TagGroup() {
           }}
           removeLabel={STRINGS.remove}
         />
-        <Ui.Text role="status" data-testid="tag-group-selected" tone="muted">
+        <Text role="status" data-testid="tag-group-selected" tone="muted">
           {STRINGS.selected(picked)}
-        </Ui.Text>
-        <Ui.Text data-testid="tag-group-removed" tone="muted">
+        </Text>
+        <Text data-testid="tag-group-removed" tone="muted">
           {STRINGS.removed(removedKeys)}
-        </Ui.Text>
+        </Text>
         <div>
-          <Ui.Button
+          <Button
             variant="secondary"
             onPress={() => {
               setTags(FILTERS);
@@ -230,7 +225,7 @@ export function TagGroup() {
             }}
           >
             {STRINGS.restore}
-          </Ui.Button>
+          </Button>
         </div>
       </PageSection>
     </article>

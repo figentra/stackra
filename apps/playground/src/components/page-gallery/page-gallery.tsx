@@ -9,20 +9,17 @@
  * Runtime: browser
  * Governing contract: ADR 0302 (decision 5); ADR 0294 (decision 14); the catalogue taxonomy (2026-10-24).
  */
-import type { HeadingLevel } from "@stackra/ui/contracts";
-import * as Ui from "@stackra/ui/react";
+import { Chip, Heading, Icon, Link, Text, ToggleButtonGroup } from "@stackra/ui/react";
 import { useState } from "react";
 
 import { CategoryGlyph } from "#src/components/category-glyph";
 import { Choice } from "#src/components/choice";
 import { PageCategory } from "#src/enums/page-category.enum";
-import {
-  matchesTier,
-  TIER_FILTERS,
-  tierOf,
-  type TierFilter,
-} from "#src/components/playground-pages/page-tier";
-import type { PageLink } from "#src/types/page-link.type";
+import { TIER_FILTERS } from "#src/components/playground-pages/tier-filters.constant";
+import { type TierFilter } from "#src/components/playground-pages/tier-filter.type";
+import { tierOf } from "#src/components/playground-pages/tier-of.function";
+import { matchesTier } from "#src/components/playground-pages/matches-tier.function";
+import type { PageGalleryProps } from "#src/components/page-gallery/page-gallery.props";
 
 // shortcut: English strings in one place until @stackra/i18n ships; then `playground::gallery.*` keys.
 const TIER_LABELS = { all: "All", free: "Free", pro: "Pro" } as const;
@@ -54,16 +51,6 @@ const CATEGORY_NOTES: Readonly<Record<string, string>> = {
   AI: "Conversations, prompts, sources and streamed text.",
 };
 
-/** Props of {@link PageGallery}. */
-export interface PageGalleryProps {
-  /** The pages to show, in navigation order. */
-  pages: readonly PageLink[];
-  /** The URL search params each card keeps. */
-  search: string;
-  /** The heading level of each category name. */
-  headingLevel: HeadingLevel;
-}
-
 /** The two-letter mark a card wears: the initials of a two-word title, else its first two letters. */
 function monogram(title: string) {
   const words = title.split(/\s+/);
@@ -77,7 +64,7 @@ export function PageGallery({ pages, search, headingLevel }: PageGalleryProps) {
 
   return (
     <div className="grid gap-8">
-      <Ui.ToggleButtonGroup
+      <ToggleButtonGroup
         aria-label={STRINGS.tier}
         size="sm"
         selectionMode="single"
@@ -94,13 +81,13 @@ export function PageGallery({ pages, search, headingLevel }: PageGalleryProps) {
             {STRINGS.tiers[choice]}
           </Choice>
         ))}
-      </Ui.ToggleButtonGroup>
+      </ToggleButtonGroup>
       {/* The filter changes the list in place, so its result is announced. */}
       <p role="status" className="sr-only">
         {STRINGS.shown(shown.length, tier)}
       </p>
       <nav aria-label={STRINGS.pages} className="columns-1 gap-4 md:columns-2 xl:columns-3">
-        {shown.length === 0 ? <Ui.Text tone="muted">{STRINGS.none}</Ui.Text> : null}
+        {shown.length === 0 ? <Text tone="muted">{STRINGS.none}</Text> : null}
         {PageCategory.map((category) => {
           const inCategory = shown.filter((page) => page.category === category);
           if (inCategory.length === 0) return null;
@@ -119,23 +106,23 @@ export function PageGallery({ pages, search, headingLevel }: PageGalleryProps) {
                   >
                     <CategoryGlyph category={category} className="size-5" />
                   </span>
-                  <Ui.Heading id={id} level={headingLevel} className="flex-1">
+                  <Heading id={id} level={headingLevel} className="flex-1">
                     {category}
-                  </Ui.Heading>
+                  </Heading>
                   <span className="shrink-0 font-mono text-xs text-muted">
                     {STRINGS.count(inCategory.length)}
                   </span>
                 </div>
                 {CATEGORY_NOTES[category] ? (
-                  <Ui.Text tone="muted" className="text-sm">
+                  <Text tone="muted" className="text-sm">
                     <bdi>{CATEGORY_NOTES[category]}</bdi>
-                  </Ui.Text>
+                  </Text>
                 ) : null}
               </div>
               <ul aria-label={category} className="grid">
                 {inCategory.map((page) => (
                   <li key={page.path}>
-                    <Ui.Link
+                    <Link
                       href={`${page.path}${search}`}
                       underline="hover"
                       className="group flex w-full items-center gap-3 rounded-2xl p-2 hover:bg-default hover:no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
@@ -148,14 +135,14 @@ export function PageGallery({ pages, search, headingLevel }: PageGalleryProps) {
                       </span>
                       <span className="flex-1 font-medium">{page.title}</span>
                       {tierOf(page.path) === "Pro" ? (
-                        <Ui.Chip size="sm" variant="soft" tone="accent">
+                        <Chip size="sm" variant="soft" tone="accent">
                           {STRINGS.tiers.pro}
-                        </Ui.Chip>
+                        </Chip>
                       ) : null}
                       <span className="text-muted opacity-60 transition-transform group-hover:translate-x-0.5 group-hover:opacity-100 motion-reduce:transition-none rtl:-scale-x-100 rtl:group-hover:-translate-x-0.5">
-                        <Ui.Icon name="chevron-right" size="sm" />
+                        <Icon name="chevron-right" size="sm" />
                       </span>
-                    </Ui.Link>
+                    </Link>
                   </li>
                 ))}
               </ul>

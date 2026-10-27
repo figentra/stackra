@@ -11,7 +11,8 @@
  * Governing contract: ADR 0302 (decisions 3 and 5); ADR 0303 (decision 7); ADR 0312; ADR 0060 (light, dark, RTL);
  *          WCAG 2.2 SC 2.1.1, 2.1.2, 2.4.3 and 4.1.2.
  */
-import * as Ui from "@stackra/ui/react";
+import type { ModalProps } from "@stackra/ui/react";
+import { Button, Heading, Modal as UiModal, Text, TextField } from "@stackra/ui/react";
 import { useState } from "react";
 
 import { PageSection } from "#src/components/page-section";
@@ -89,7 +90,7 @@ const PARAGRAPHS = Array.from({ length: 30 }, (_, index) => `${index + 1}. ${STR
 
 /** Props of {@link Sample}. */
 interface SampleProps extends Pick<
-  Ui.ModalProps,
+  ModalProps,
   "size" | "position" | "isDismissable" | "isKeyboardDismissDisabled"
 > {
   /** The label of the button that opens the modal. */
@@ -103,22 +104,22 @@ interface SampleProps extends Pick<
 /** One modal with its own trigger button, a close button, a title, a body sentence and a Cancel button. */
 function Sample({ buttonLabel, title, body, ...modalProps }: SampleProps) {
   return (
-    <Ui.Modal trigger={<Ui.Button variant="secondary">{buttonLabel}</Ui.Button>} {...modalProps}>
-      <Ui.Modal.Close label={STRINGS.close} />
-      <Ui.Modal.Header>
-        <Ui.Modal.Title>{title}</Ui.Modal.Title>
-      </Ui.Modal.Header>
-      <Ui.Modal.Body>
-        <Ui.Text>
+    <UiModal trigger={<Button variant="secondary">{buttonLabel}</Button>} {...modalProps}>
+      <UiModal.Close label={STRINGS.close} />
+      <UiModal.Header>
+        <UiModal.Title>{title}</UiModal.Title>
+      </UiModal.Header>
+      <UiModal.Body>
+        <Text>
           <bdi>{body}</bdi>
-        </Ui.Text>
-      </Ui.Modal.Body>
-      <Ui.Modal.Footer>
-        <Ui.Button variant="secondary" slot="close">
+        </Text>
+      </UiModal.Body>
+      <UiModal.Footer>
+        <Button variant="secondary" slot="close">
           {STRINGS.cancel}
-        </Ui.Button>
-      </Ui.Modal.Footer>
-    </Ui.Modal>
+        </Button>
+      </UiModal.Footer>
+    </UiModal>
   );
 }
 
@@ -132,10 +133,10 @@ export function Modal() {
     <article className="grid gap-10">
       <title>{STRINGS.documentTitle}</title>
       <header className="grid gap-2">
-        <Ui.Heading level={1}>{ModalRoute.title}</Ui.Heading>
-        <Ui.Text className="max-w-prose">
+        <Heading level={1}>{ModalRoute.title}</Heading>
+        <Text className="max-w-prose">
           <bdi>{STRINGS.intro}</bdi>
-        </Ui.Text>
+        </Text>
       </header>
 
       <PageSection id="modal-sizes" title={STRINGS.sizes} note={STRINGS.sizesNote}>
@@ -198,62 +199,62 @@ export function Modal() {
 
       <PageSection id="modal-long" title={STRINGS.long} note={STRINGS.longNote}>
         <div>
-          <Ui.Modal trigger={<Ui.Button variant="secondary">{STRINGS.openLong}</Ui.Button>}>
-            <Ui.Modal.Close label={STRINGS.close} />
-            <Ui.Modal.Header>
-              <Ui.Modal.Title>{STRINGS.longTitle}</Ui.Modal.Title>
-            </Ui.Modal.Header>
-            <Ui.Modal.Body tabIndex={0}>
+          <UiModal trigger={<Button variant="secondary">{STRINGS.openLong}</Button>}>
+            <UiModal.Close label={STRINGS.close} />
+            <UiModal.Header>
+              <UiModal.Title>{STRINGS.longTitle}</UiModal.Title>
+            </UiModal.Header>
+            <UiModal.Body tabIndex={0}>
               {PARAGRAPHS.map((paragraph) => (
-                <Ui.Text key={paragraph}>
+                <Text key={paragraph}>
                   <bdi>{paragraph}</bdi>
-                </Ui.Text>
+                </Text>
               ))}
-            </Ui.Modal.Body>
-            <Ui.Modal.Footer>
-              <Ui.Button slot="close">{STRINGS.done}</Ui.Button>
-            </Ui.Modal.Footer>
-          </Ui.Modal>
+            </UiModal.Body>
+            <UiModal.Footer>
+              <Button slot="close">{STRINGS.done}</Button>
+            </UiModal.Footer>
+          </UiModal>
         </div>
       </PageSection>
 
       <PageSection id="modal-live" title={STRINGS.live} note={STRINGS.liveNote}>
         <div className="grid max-w-sm gap-3">
           <div>
-            <Ui.Button
+            <Button
               onPress={() => {
                 setDraft(name);
                 setIsOpen(true);
               }}
             >
               {STRINGS.editName}
-            </Ui.Button>
+            </Button>
           </div>
-          <Ui.Text role="status">
+          <Text role="status">
             <bdi>{`${STRINGS.currentName} ${name}`}</bdi>
-          </Ui.Text>
-          <Ui.Modal isOpen={isOpen} onOpenChange={setIsOpen}>
-            <Ui.Modal.Close label={STRINGS.close} />
-            <Ui.Modal.Header>
-              <Ui.Modal.Title>{STRINGS.editTitle}</Ui.Modal.Title>
-            </Ui.Modal.Header>
-            <Ui.Modal.Body>
-              <Ui.TextField label={STRINGS.fullName} value={draft} onChange={setDraft} />
-            </Ui.Modal.Body>
-            <Ui.Modal.Footer>
-              <Ui.Button variant="secondary" slot="close">
+          </Text>
+          <UiModal isOpen={isOpen} onOpenChange={setIsOpen}>
+            <UiModal.Close label={STRINGS.close} />
+            <UiModal.Header>
+              <UiModal.Title>{STRINGS.editTitle}</UiModal.Title>
+            </UiModal.Header>
+            <UiModal.Body>
+              <TextField label={STRINGS.fullName} value={draft} onChange={setDraft} />
+            </UiModal.Body>
+            <UiModal.Footer>
+              <Button variant="secondary" slot="close">
                 {STRINGS.cancel}
-              </Ui.Button>
-              <Ui.Button
+              </Button>
+              <Button
                 onPress={() => {
                   setName(draft);
                   setIsOpen(false);
                 }}
               >
                 {STRINGS.save}
-              </Ui.Button>
-            </Ui.Modal.Footer>
-          </Ui.Modal>
+              </Button>
+            </UiModal.Footer>
+          </UiModal>
         </div>
       </PageSection>
     </article>

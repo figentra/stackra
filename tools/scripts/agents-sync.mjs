@@ -1,6 +1,11 @@
 #!/usr/bin/env node
 /**
- * agents-sync — project `.agents/` into Claude Code and OpenCode directories.
+ * Stackra file contract:
+ * Purpose: `agents-sync` — project `.agents/` into Claude Code and OpenCode directories.
+ * Boundary: writes only the symlinks and generated files it owns under `.claude/`, `.opencode/`, the AGENTS.md rules
+ *           block and `.mcp.json`; a real file in their place is a conflict, never overwritten.
+ * Runtime: node
+ * Governing contract: ADR 0258 (agent roster v2 and skill fencing); ADR 0293; ADR 0061.
  *
  * `.agents/` is the single source of truth for every AI artifact in this repo —
  * skills, subagents, rules, hooks and templates (specs in `.agents/specs` are read in place). Claude Code and OpenCode

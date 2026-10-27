@@ -8,7 +8,7 @@
  * Runtime: browser
  * Governing contract: ADR 0302 (decisions 3 and 5); ADR 0303 (decision 7); ADR 0060 (light, dark, RTL).
  */
-import * as Ui from "@stackra/ui/react";
+import { Button, Checkbox as UiCheckbox, Heading, Surface, Text } from "@stackra/ui/react";
 import { useState, type ReactNode } from "react";
 
 import { PageSection } from "#src/components/page-section";
@@ -78,9 +78,9 @@ const GRID = "grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3";
 function Sample({ caption, children }: { caption: string; children: ReactNode }) {
   return (
     <li className="grid content-start gap-2">
-      <Ui.Text tone="muted" type="small">
+      <Text tone="muted" type="small">
         {caption}
-      </Ui.Text>
+      </Text>
       {children}
     </li>
   );
@@ -99,40 +99,40 @@ export function Checkbox() {
     <article className="grid gap-10">
       <title>{STRINGS.documentTitle}</title>
       <header className="grid gap-2">
-        <Ui.Heading level={1}>{CheckboxRoute.title}</Ui.Heading>
-        <Ui.Text className="max-w-prose">
+        <Heading level={1}>{CheckboxRoute.title}</Heading>
+        <Text className="max-w-prose">
           <bdi>{STRINGS.intro}</bdi>
-        </Ui.Text>
+        </Text>
       </header>
 
       <PageSection id="checkbox-states" title={STRINGS.states} note={STRINGS.statesNote}>
         <ul className={GRID}>
           <Sample caption={STRINGS.captions.unchecked}>
-            <Ui.Checkbox label={STRINGS.labels.unchecked} />
+            <UiCheckbox label={STRINGS.labels.unchecked} />
           </Sample>
           <Sample caption={STRINGS.captions.checked}>
-            <Ui.Checkbox label={STRINGS.labels.checked} defaultValue />
+            <UiCheckbox label={STRINGS.labels.checked} defaultValue />
           </Sample>
           <Sample caption={STRINGS.captions.indeterminate}>
-            <Ui.Checkbox label={STRINGS.labels.indeterminate} isIndeterminate />
+            <UiCheckbox label={STRINGS.labels.indeterminate} isIndeterminate />
           </Sample>
           <Sample caption={STRINGS.captions.disabled}>
-            <Ui.Checkbox label={STRINGS.labels.disabled} isDisabled />
+            <UiCheckbox label={STRINGS.labels.disabled} isDisabled />
           </Sample>
           <Sample caption={STRINGS.captions.disabledChecked}>
-            <Ui.Checkbox label={STRINGS.labels.disabledChecked} isDisabled defaultValue />
+            <UiCheckbox label={STRINGS.labels.disabledChecked} isDisabled defaultValue />
           </Sample>
           <Sample caption={STRINGS.captions.readOnly}>
-            <Ui.Checkbox label={STRINGS.labels.readOnly} isReadOnly defaultValue />
+            <UiCheckbox label={STRINGS.labels.readOnly} isReadOnly defaultValue />
           </Sample>
           <Sample caption={STRINGS.captions.required}>
-            <Ui.Checkbox label={STRINGS.labels.required} isRequired />
+            <UiCheckbox label={STRINGS.labels.required} isRequired />
           </Sample>
           <Sample caption={STRINGS.captions.description}>
-            <Ui.Checkbox label={STRINGS.labels.description} description={STRINGS.descriptionText} />
+            <UiCheckbox label={STRINGS.labels.description} description={STRINGS.descriptionText} />
           </Sample>
           <Sample caption={STRINGS.captions.invalid}>
-            <Ui.Checkbox
+            <UiCheckbox
               label={STRINGS.labels.invalid}
               isInvalid={!accepted}
               errorMessage={STRINGS.errorText}
@@ -146,29 +146,29 @@ export function Checkbox() {
       <PageSection id="checkbox-variants" title={STRINGS.variants} note={STRINGS.variantsNote}>
         <div className="grid gap-6 sm:grid-cols-2">
           <div className="grid content-start gap-3">
-            <Ui.Text tone="muted" type="small">
+            <Text tone="muted" type="small">
               {STRINGS.primary}
-            </Ui.Text>
-            <Ui.Checkbox variant="primary" label="Primary, unchecked" />
-            <Ui.Checkbox variant="primary" label="Primary, checked" defaultValue />
+            </Text>
+            <UiCheckbox variant="primary" label="Primary, unchecked" />
+            <UiCheckbox variant="primary" label="Primary, checked" defaultValue />
           </div>
-          <Ui.Surface variant="default" className="grid content-start gap-3 rounded-2xl p-4">
-            <Ui.Text tone="muted" type="small">
+          <Surface variant="default" className="grid content-start gap-3 rounded-2xl p-4">
+            <Text tone="muted" type="small">
               {STRINGS.secondary}
-            </Ui.Text>
-            <Ui.Checkbox variant="secondary" label="Secondary, unchecked" />
-            <Ui.Checkbox variant="secondary" label="Secondary, checked" defaultValue />
-          </Ui.Surface>
+            </Text>
+            <UiCheckbox variant="secondary" label="Secondary, unchecked" />
+            <UiCheckbox variant="secondary" label="Secondary, checked" defaultValue />
+          </Surface>
         </div>
       </PageSection>
 
       <PageSection id="checkbox-unnamed" title={STRINGS.unnamed} note={STRINGS.unnamedNote}>
-        <Ui.Checkbox aria-label={STRINGS.rowSelector} />
+        <UiCheckbox aria-label={STRINGS.rowSelector} />
       </PageSection>
 
       <PageSection id="checkbox-live" title={STRINGS.live} note={STRINGS.liveNote}>
         <div className="grid gap-3">
-          <Ui.Checkbox
+          <UiCheckbox
             label={STRINGS.parent}
             value={all}
             isIndeterminate={topping.length > 0 && !all}
@@ -177,7 +177,7 @@ export function Checkbox() {
           <ul aria-label={STRINGS.children} className="grid gap-3 ps-8">
             {TOPPINGS.map(({ key, label }) => (
               <li key={key}>
-                <Ui.Checkbox
+                <UiCheckbox
                   label={label}
                   value={topping.includes(key)}
                   onChange={(isChecked) =>
@@ -189,11 +189,11 @@ export function Checkbox() {
               </li>
             ))}
           </ul>
-          <Ui.Text role="status">{STRINGS.chosen(names || STRINGS.none)}</Ui.Text>
+          <Text role="status">{STRINGS.chosen(names || STRINGS.none)}</Text>
           <div>
-            <Ui.Button variant="secondary" onPress={() => setTopping([])}>
+            <Button variant="secondary" onPress={() => setTopping([])}>
               {STRINGS.clear}
-            </Ui.Button>
+            </Button>
           </div>
         </div>
       </PageSection>

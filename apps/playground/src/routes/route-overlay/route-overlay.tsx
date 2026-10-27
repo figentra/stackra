@@ -17,8 +17,21 @@
  *          RTL); WCAG 2.2 SC 2.1.2, 2.4.3, 3.3.4 and 4.1.2.
  */
 import type { OverlayPresentation, RouteOverlayState } from "@stackra/navigation/contracts";
-import * as Nav from "@stackra/navigation/react";
-import * as Ui from "@stackra/ui/react";
+import {
+  ReactRouterProvider,
+  RouteLeaveConfirmation,
+  RouteOverlay as NavRouteOverlay,
+  useRouteOverlay,
+} from "@stackra/navigation/react";
+import {
+  Button,
+  DesignSystemProvider,
+  Heading,
+  Link,
+  Text,
+  TextField,
+  useDesignSystem,
+} from "@stackra/ui/react";
 import { StrictMode, useEffect, useRef, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import {
@@ -96,11 +109,11 @@ const RETURN_TO_WORKBENCH = { returnTo: "/" } satisfies RouteOverlayState;
 
 /** A Cancel button for an overlay's footer; it closes the overlay it sits in. */
 function CancelButton() {
-  const { close } = Nav.useRouteOverlay();
+  const { close } = useRouteOverlay();
   return (
-    <Ui.Button variant="secondary" onPress={close}>
+    <Button variant="secondary" onPress={close}>
       {STRINGS.cancel}
-    </Ui.Button>
+    </Button>
   );
 }
 
@@ -113,31 +126,31 @@ function Sample({
   readonly title: string;
 }) {
   return (
-    <Nav.RouteOverlay
+    <NavRouteOverlay
       presentation={presentation}
       title={title}
       closeLabel={STRINGS.close}
       footer={<CancelButton />}
     >
-      <Ui.Text>
+      <Text>
         <bdi>{STRINGS.body}</bdi>
-      </Ui.Text>
-    </Nav.RouteOverlay>
+      </Text>
+    </NavRouteOverlay>
   );
 }
 
 /** The body of the locked overlay: says whether dismissal is on and flips it. */
 function LockedBody() {
-  const { isDismissable, setDismissable } = Nav.useRouteOverlay();
+  const { isDismissable, setDismissable } = useRouteOverlay();
   return (
     <div className="grid gap-3">
-      <Ui.Text>
+      <Text>
         <bdi>{isDismissable ? STRINGS.lockedOff : STRINGS.lockedOn}</bdi>
-      </Ui.Text>
+      </Text>
       <div>
-        <Ui.Button variant="secondary" onPress={() => setDismissable(!isDismissable)}>
+        <Button variant="secondary" onPress={() => setDismissable(!isDismissable)}>
           {isDismissable ? STRINGS.lock : STRINGS.allow}
-        </Ui.Button>
+        </Button>
       </div>
     </div>
   );
@@ -146,7 +159,7 @@ function LockedBody() {
 /** The body of the live overlay: a name field, Save, and the leave confirmation while the name is edited. */
 function EditBody() {
   const { name, setName } = useOutletContext<WorkbenchContext>();
-  const { complete } = Nav.useRouteOverlay();
+  const { complete } = useRouteOverlay();
   const [draft, setDraft] = useState(name);
   const [isSaved, setIsSaved] = useState(false);
   const isDirty = draft !== name && !isSaved;
@@ -158,9 +171,9 @@ function EditBody() {
 
   return (
     <div className="grid gap-4">
-      <Ui.TextField label={STRINGS.nameLabel} value={draft} onChange={setDraft} />
+      <TextField label={STRINGS.nameLabel} value={draft} onChange={setDraft} />
       <div>
-        <Ui.Button
+        <Button
           isDisabled={!isDirty}
           onPress={() => {
             setName(draft);
@@ -168,9 +181,9 @@ function EditBody() {
           }}
         >
           {STRINGS.save}
-        </Ui.Button>
+        </Button>
       </div>
-      <Nav.RouteLeaveConfirmation
+      <RouteLeaveConfirmation
         when={isDirty}
         title={STRINGS.leaveTitle}
         description={STRINGS.leaveDescription}
@@ -197,29 +210,29 @@ function Workbench() {
       >
         <ul className={ROW}>
           <li>
-            <Ui.Button variant="secondary" onPress={open("/modal")}>
+            <Button variant="secondary" onPress={open("/modal")}>
               {STRINGS.openModal}
-            </Ui.Button>
+            </Button>
           </li>
           <li>
-            <Ui.Button variant="secondary" onPress={open("/sheet")}>
+            <Button variant="secondary" onPress={open("/sheet")}>
               {STRINGS.openSheet}
-            </Ui.Button>
+            </Button>
           </li>
           <li>
-            <Ui.Button variant="secondary" onPress={open("/drawer")}>
+            <Button variant="secondary" onPress={open("/drawer")}>
               {STRINGS.openDrawer}
-            </Ui.Button>
+            </Button>
           </li>
           <li>
-            <Ui.Button variant="secondary" onPress={open("/full-screen")}>
+            <Button variant="secondary" onPress={open("/full-screen")}>
               {STRINGS.openFullScreen}
-            </Ui.Button>
+            </Button>
           </li>
           <li>
-            <Ui.Link href="/modal" underline="always">
+            <Link href="/modal" underline="always">
               {STRINGS.openByLink}
-            </Ui.Link>
+            </Link>
           </li>
         </ul>
       </PageSection>
@@ -230,27 +243,27 @@ function Workbench() {
         note={STRINGS.dismissalNote}
       >
         <div>
-          <Ui.Button variant="secondary" onPress={open("/locked")}>
+          <Button variant="secondary" onPress={open("/locked")}>
             {STRINGS.openLocked}
-          </Ui.Button>
+          </Button>
         </div>
       </PageSection>
 
       <PageSection id="route-overlay-live" title={STRINGS.live} note={STRINGS.liveNote}>
         <div className="grid max-w-sm gap-3">
           <div>
-            <Ui.Button onPress={open("/edit")}>{STRINGS.openEdit}</Ui.Button>
+            <Button onPress={open("/edit")}>{STRINGS.openEdit}</Button>
           </div>
-          <Ui.Text>
+          <Text>
             <bdi>{`${STRINGS.savedName} ${name}`}</bdi>
-          </Ui.Text>
+          </Text>
         </div>
       </PageSection>
 
       <PageSection id="route-overlay-route" title={STRINGS.route} note={STRINGS.routeNote}>
-        <Ui.Text role="status">
+        <Text role="status">
           <bdi>{`${STRINGS.routeIs} ${location.pathname}`}</bdi>
-        </Ui.Text>
+        </Text>
       </PageSection>
 
       <Outlet context={{ name, setName } satisfies WorkbenchContext} />
@@ -262,9 +275,9 @@ function Workbench() {
 const ROUTES = [
   {
     element: (
-      <Nav.ReactRouterProvider>
+      <ReactRouterProvider>
         <Outlet />
-      </Nav.ReactRouterProvider>
+      </ReactRouterProvider>
     ),
     children: [
       {
@@ -284,26 +297,26 @@ const ROUTES = [
           {
             path: "locked",
             element: (
-              <Nav.RouteOverlay
+              <NavRouteOverlay
                 title={STRINGS.lockedTitle}
                 closeLabel={STRINGS.close}
                 isDismissable={false}
                 footer={<CancelButton />}
               >
                 <LockedBody />
-              </Nav.RouteOverlay>
+              </NavRouteOverlay>
             ),
           },
           {
             path: "edit",
             element: (
-              <Nav.RouteOverlay
+              <NavRouteOverlay
                 title={STRINGS.editTitle}
                 closeLabel={STRINGS.close}
                 footer={<CancelButton />}
               >
                 <EditBody />
-              </Nav.RouteOverlay>
+              </NavRouteOverlay>
             ),
           },
         ],
@@ -326,7 +339,7 @@ function WorkbenchHost() {
   const host = useRef<HTMLDivElement>(null);
   const root = useRef<Root | null>(null);
   const unmount = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  const { colorScheme, locale, direction } = Ui.useDesignSystem();
+  const { colorScheme, locale, direction } = useDesignSystem();
 
   useEffect(() => {
     // A pending unmount from Strict Mode's rehearsal is called off, so the root is made once per container.
@@ -345,9 +358,9 @@ function WorkbenchHost() {
     root.current?.render(
       <StrictMode>
         <PlaygroundIcons>
-          <Ui.DesignSystemProvider colorScheme={colorScheme} locale={locale} direction={direction}>
+          <DesignSystemProvider colorScheme={colorScheme} locale={locale} direction={direction}>
             <WorkbenchApp />
-          </Ui.DesignSystemProvider>
+          </DesignSystemProvider>
         </PlaygroundIcons>
       </StrictMode>,
     );
@@ -362,10 +375,10 @@ export function RouteOverlay() {
     <article className="grid gap-10">
       <title>{STRINGS.documentTitle}</title>
       <header className="grid gap-2">
-        <Ui.Heading level={1}>{RouteOverlayRoute.title}</Ui.Heading>
-        <Ui.Text className="max-w-prose">
+        <Heading level={1}>{RouteOverlayRoute.title}</Heading>
+        <Text className="max-w-prose">
           <bdi>{STRINGS.intro}</bdi>
-        </Ui.Text>
+        </Text>
       </header>
       <WorkbenchHost />
     </article>

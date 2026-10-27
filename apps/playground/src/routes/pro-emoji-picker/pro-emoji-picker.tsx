@@ -9,7 +9,7 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 12); ADR 0060 (light, dark, RTL); STA-416 FR-012.
  */
-import * as Ui from "@stackra/ui/react";
+import { SearchField } from "@stackra/ui/react";
 import * as UiPro from "@stackra-pro/ui/react";
 import { useState } from "react";
 
@@ -92,7 +92,7 @@ export function ProEmojiPicker() {
             </UiPro.EmojiPicker.Trigger>
             <UiPro.EmojiPicker.Popover>
               <UiPro.EmojiPicker.Content>
-                <Ui.SearchField
+                <SearchField
                   aria-label={STRINGS.search}
                   placeholder={STRINGS.placeholder}
                   variant="secondary"

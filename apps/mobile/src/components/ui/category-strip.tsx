@@ -13,23 +13,10 @@ import { useThemeColor } from "heroui-native";
 import { useRef } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 
-import type { DesignSystemComponentRoute } from "#src/navigation/types";
-import type { PageLink } from "#src/types/page-link.type";
+import type { CategoryStripProps } from "#src/components/ui/category-strip.props";
 
 // shortcut: English strings in one place until @stackra/i18n reaches the mobile app; then keys.
 const STRINGS = { all: "All components" } as const;
-
-/** Props of {@link CategoryStrip}. */
-export interface CategoryStripProps {
-  /** Every page, in gallery order. */
-  pages: readonly PageLink[];
-  /** The page on screen. */
-  current: PageLink;
-  /** Opens a page of the category. */
-  onOpen: (route: DesignSystemComponentRoute) => void;
-  /** Goes back to the gallery. */
-  onOpenAll: () => void;
-}
 
 const PILL = "min-h-8 flex-row items-center gap-1.5 rounded-full px-3";
 

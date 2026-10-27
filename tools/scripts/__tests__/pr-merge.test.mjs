@@ -1,3 +1,12 @@
+/**
+ * Stackra file contract:
+ * Purpose: hold `pr-merge.mjs` to its contract: the green gate, draft and closed PRs refused, the reviewer app's
+ *          verdict on the head's patch id, owner approval where needed, and the merge or enqueue retries.
+ * Boundary: mocked gh and GraphQL; no network, nothing merged.
+ * Runtime: node
+ * Governing contract: ADR 0022 (tests live in tests folders); ADR 0182 (testing strategy). ADR 0119 (merge policy);
+ *                     ADR 0230 (reviewer identity).
+ */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import * as network from "../bot-token.mjs";
@@ -322,34 +331,36 @@ test("STA-234: patch= is used only when the earlier head is gone; only the app's
   assert.equal(verdict([reviewer(`AI-REVIEW: PASS ${SHA} base=main patch=${P1}`)]), "PASS");
 });
 
+const oneLineDiff = (at, ...lines) =>
+  `diff --git a/x b/x\n--- a/x\n+++ b/x\n@@ -${at},1 +${at},${lines.length} @@\n-old\n` +
+  lines.map((l) => `+${l}\n`).join("");
+
 test("patchId ignores line numbers and changes with the content, whitespace included", () => {
-  const diff = (at, ...lines) =>
-    `diff --git a/x b/x\n--- a/x\n+++ b/x\n@@ -${at},1 +${at},${lines.length} @@\n-old\n` +
-    lines.map((l) => `+${l}\n`).join("");
-  assert.match(patchId(diff(1, "new")), /^[0-9a-f]{40}$/);
-  assert.equal(patchId(diff(1, "new")), patchId(diff(40, "new")));
-  assert.notEqual(patchId(diff(1, "new")), patchId(diff(1, "other")));
+  assert.match(patchId(oneLineDiff(1, "new")), /^[0-9a-f]{40}$/);
+  assert.equal(patchId(oneLineDiff(1, "new")), patchId(oneLineDiff(40, "new")));
+  assert.notEqual(patchId(oneLineDiff(1, "new")), patchId(oneLineDiff(1, "other")));
   // Whitespace-only differences change the id (`--stable` would give one id for each pair).
-  assert.notEqual(patchId(diff(1, "echo /tmp/x")), patchId(diff(1, "echo / tmp/x")));
+  assert.notEqual(patchId(oneLineDiff(1, "echo /tmp/x")), patchId(oneLineDiff(1, "echo / tmp/x")));
   assert.notEqual(
-    patchId(diff(1, "  - run: deploy", "    if: github.ref == y")),
-    patchId(diff(1, "  - run: deploy", "  if: github.ref == y")),
+    patchId(oneLineDiff(1, "  - run: deploy", "    if: github.ref == y")),
+    patchId(oneLineDiff(1, "  - run: deploy", "  if: github.ref == y")),
   );
   assert.equal(patchId(""), null);
 });
 
+const ciStepDiff = (at, line) =>
+  `diff --git a/ci.yml b/ci.yml\n--- a/ci.yml\n+++ b/ci.yml\n@@ -${at},2 +${at},2 @@\n` +
+  ` steps:\n-  old\n+${line}\n`;
+
 test("ADR 0285 end to end: a rebase that only shifts lines keeps the PASS, a whitespace edit voids it", () => {
-  const diff = (at, line) =>
-    `diff --git a/ci.yml b/ci.yml\n--- a/ci.yml\n+++ b/ci.yml\n@@ -${at},2 +${at},2 @@\n` +
-    ` steps:\n-  old\n+${line}\n`;
   const oldPass = reviewer(`AI-REVIEW: PASS ${OLD} base=main`);
   const run = (headDiff) => {
-    const diffs = { [OLD]: diff(3, "    if: github.ref == y"), [SHA]: headDiff };
+    const diffs = { [OLD]: ciStepDiff(3, "    if: github.ref == y"), [SHA]: headDiff };
     const same = samePatchShas(pr(), [oldPass], (c) => patchId(diffs[c]));
     return blockers(pr(), green, builtByBot, [oldPass], [], same);
   };
-  assert.deepEqual(run(diff(30, "    if: github.ref == y")), []);
-  assert.match(run(diff(3, "  if: github.ref == y")).join(), /no AI review/);
+  assert.deepEqual(run(ciStepDiff(30, "    if: github.ref == y")), []);
+  assert.match(run(ciStepDiff(3, "  if: github.ref == y")).join(), /no AI review/);
 });
 
 test("OP7: enqueueing waits for STA-302's connect timeout and retries", () => {

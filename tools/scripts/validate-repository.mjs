@@ -7,6 +7,9 @@
  *          JSON vs JSONC, runway schemas and files, YAML flow maps, imports, the Expo form factor, window sizing and the
  *          lang catalogues). `stackra check --only config,structure,catalogues` runs the same checks.
  *          Prints the findings as `<dir>: <finding>` and exits 1; prints nothing on success.
+ * Boundary: a thin wrapper; the checks themselves are @stackra/repo-checks'.
+ * Runtime: node
+ * Governing contract: ADR 0129 (house lint plugin and coding standard); ADR 0022 (tests live in tests folders).
  * Scope: every member listed by `pnpm -r list --json --depth -1`; test placement covers every non-ignored file.
  * Owner: release-operations · Secrets: forbidden
  */

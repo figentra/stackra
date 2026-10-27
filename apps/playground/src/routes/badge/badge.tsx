@@ -4,12 +4,12 @@
  *          and icons, and a badge on a pressable control whose presses pass through, all from `@stackra/ui/react`
  *          with real props.
  * Boundary: presentation only; strings in one `STRINGS` constant until @stackra/i18n. The anchors are decorative
- *          plain discs, a stand-in for `Ui.Avatar` (STA-361): swap `Disc` for it when a sample needs a real avatar.
+ *          plain discs, a stand-in for `Avatar` (STA-361): swap `Disc` for it when a sample needs a real avatar.
  * Runtime: browser
  * Governing contract: ADR 0302 (decisions 3 and 5); ADR 0303 (decision 7); ADR 0304; ADR 0060 (light, dark, RTL).
  */
 import { BadgePlacement, BadgeVariant, Size, Tone } from "@stackra/ui/contracts";
-import * as Ui from "@stackra/ui/react";
+import { Badge as UiBadge, Heading, Icon, IconButton, Text } from "@stackra/ui/react";
 import { useState } from "react";
 
 import { PageSection } from "#src/components/page-section";
@@ -69,29 +69,29 @@ export function Badge() {
     <article className="grid gap-10">
       <title>{STRINGS.documentTitle}</title>
       <header className="grid gap-2">
-        <Ui.Heading level={1}>{BadgeRoute.title}</Ui.Heading>
-        <Ui.Text className="max-w-prose">
+        <Heading level={1}>{BadgeRoute.title}</Heading>
+        <Text className="max-w-prose">
           <bdi>{STRINGS.intro}</bdi>
-        </Ui.Text>
+        </Text>
       </header>
 
       <PageSection id="badge-variants" title={STRINGS.variants} note={STRINGS.variantsNote}>
         {BadgeVariant.map((variant) => (
           <div key={variant} className="grid gap-2">
-            <Ui.Heading level={3}>{variant}</Ui.Heading>
+            <Heading level={3}>{variant}</Heading>
             <ul className={ROW}>
               {Tone.map((tone) => (
                 <li key={tone}>
-                  <Ui.Badge.Anchor>
+                  <UiBadge.Anchor>
                     <Disc />
-                    <Ui.Badge
+                    <UiBadge
                       tone={tone}
                       variant={variant}
                       label={STRINGS.variantLabel(tone, variant)}
                     >
                       5
-                    </Ui.Badge>
-                  </Ui.Badge.Anchor>
+                    </UiBadge>
+                  </UiBadge.Anchor>
                 </li>
               ))}
             </ul>
@@ -104,12 +104,12 @@ export function Badge() {
           {Size.flatMap((size) =>
             ["5", "99+"].map((text) => (
               <li key={`${size}-${text}`}>
-                <Ui.Badge.Anchor>
+                <UiBadge.Anchor>
                   <Disc />
-                  <Ui.Badge tone="danger" size={size} label={STRINGS.sizeLabel(size, text)}>
+                  <UiBadge tone="danger" size={size} label={STRINGS.sizeLabel(size, text)}>
                     {text}
-                  </Ui.Badge>
-                </Ui.Badge.Anchor>
+                  </UiBadge>
+                </UiBadge.Anchor>
               </li>
             )),
           )}
@@ -120,18 +120,18 @@ export function Badge() {
         <ul className={ROW}>
           {BadgePlacement.map((placement) => (
             <li key={placement} className="grid justify-items-center gap-2">
-              <Ui.Badge.Anchor>
+              <UiBadge.Anchor>
                 <Disc />
-                <Ui.Badge
+                <UiBadge
                   tone="accent"
                   size="sm"
                   placement={placement}
                   label={STRINGS.cornerLabel(placement)}
                 />
-              </Ui.Badge.Anchor>
-              <Ui.Text type="caption" tone="muted">
+              </UiBadge.Anchor>
+              <Text type="caption" tone="muted">
                 <bdi>{placement}</bdi>
-              </Ui.Text>
+              </Text>
             </li>
           ))}
         </ul>
@@ -147,10 +147,10 @@ export function Badge() {
             ] as const
           ).map(([tone, label]) => (
             <li key={tone}>
-              <Ui.Badge.Anchor>
+              <UiBadge.Anchor>
                 <Disc />
-                <Ui.Badge tone={tone} size="sm" placement="bottom-end" label={label} />
-              </Ui.Badge.Anchor>
+                <UiBadge tone={tone} size="sm" placement="bottom-end" label={label} />
+              </UiBadge.Anchor>
             </li>
           ))}
         </ul>
@@ -159,48 +159,48 @@ export function Badge() {
       <PageSection id="badge-content" title={STRINGS.content} note={STRINGS.contentNote}>
         <ul className={ROW}>
           <li>
-            <Ui.Badge.Anchor>
+            <UiBadge.Anchor>
               <Disc />
-              <Ui.Badge tone="accent" label={STRINGS.number}>
+              <UiBadge tone="accent" label={STRINGS.number}>
                 {8}
-              </Ui.Badge>
-            </Ui.Badge.Anchor>
+              </UiBadge>
+            </UiBadge.Anchor>
           </li>
           <li>
-            <Ui.Badge.Anchor>
+            <UiBadge.Anchor>
               <Disc />
-              <Ui.Badge tone="success" variant="soft" label={STRINGS.word}>
+              <UiBadge tone="success" variant="soft" label={STRINGS.word}>
                 New
-              </Ui.Badge>
-            </Ui.Badge.Anchor>
+              </UiBadge>
+            </UiBadge.Anchor>
           </li>
           <li>
-            <Ui.Badge.Anchor>
+            <UiBadge.Anchor>
               <Disc />
-              <Ui.Badge tone="danger" size="lg" label={STRINGS.icon}>
-                <Ui.Icon name="bell" className="size-3" />
-              </Ui.Badge>
-            </Ui.Badge.Anchor>
+              <UiBadge tone="danger" size="lg" label={STRINGS.icon}>
+                <Icon name="bell" className="size-3" />
+              </UiBadge>
+            </UiBadge.Anchor>
           </li>
         </ul>
       </PageSection>
 
       <PageSection id="badge-control" title={STRINGS.control} note={STRINGS.controlNote}>
         <div className={ROW}>
-          <Ui.Badge.Anchor>
-            <Ui.IconButton
+          <UiBadge.Anchor>
+            <IconButton
               variant="secondary"
               label={STRINGS.controlLabel(count)}
-              icon={<Ui.Icon name="bell" />}
+              icon={<Icon name="bell" />}
               onPress={() => {
                 setCount((value) => value + 1);
                 setPresses((value) => value + 1);
               }}
             />
-            <Ui.Badge tone="danger" size="sm">
+            <UiBadge tone="danger" size="sm">
               {count}
-            </Ui.Badge>
-          </Ui.Badge.Anchor>
+            </UiBadge>
+          </UiBadge.Anchor>
           <output aria-live="polite" data-testid="press-count">
             <bdi>{STRINGS.presses(presses)}</bdi>
           </output>

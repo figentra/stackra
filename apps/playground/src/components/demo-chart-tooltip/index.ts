@@ -5,8 +5,6 @@
  * Runtime: browser
  * Governing contract: ADR 0294 (decision 14).
  */
-export {
-  DemoChartTooltip,
-  type DemoChartTooltipEntry,
-  type DemoChartTooltipProps,
-} from "./demo-chart-tooltip";
+export { DemoChartTooltip } from "./demo-chart-tooltip";
+export { type DemoChartTooltipEntry } from "./demo-chart-tooltip-entry.type";
+export { type DemoChartTooltipProps } from "./demo-chart-tooltip.props";

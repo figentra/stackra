@@ -3,6 +3,9 @@
  * Stackra file contract:
  * Purpose: fresh-machine checklist (`pnpm doctor`) — mise tools, pnpm install, Infisical login, AWS `bedrock`
  *   profile, claude/opencode CLIs, the pinned spec-kit `specify`, `pnpm agents:check`, .mcp.json. Prints what is missing and how to fix it.
+ * Boundary: runs read-only status commands and prints what is missing; installs and changes nothing.
+ * Runtime: node
+ * Governing contract: ADR 0027 (CLI tools pinned in mise); ADR 0121 (SDLC tooling roles).
  * Exit: 1 when a required check fails (a `warn` check never fails the run).
  * Secrets: forbidden — only non-secret status commands run (`infisical profile list`, `aws sts get-caller-identity`);
  *   their output is parsed, never printed.

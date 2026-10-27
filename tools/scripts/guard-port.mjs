@@ -7,6 +7,9 @@
  *   checkout's `.agents/hooks`, then patches `_rules.mjs`, `guard-bash.mjs` and the test for the port. Every hunk is
  *   an exact-string replacement whose anchor must occur once, so a drifted upstream fails loudly instead of
  *   half-patching; a rerun copies again first, so it is idempotent. Each added line carries `// port:`.
+ * Boundary: writes only the target `.agents/hooks` files it copies and patches, after every hunk applied.
+ * Runtime: node
+ * Governing contract: ADR 0293 (agent permission tiers and executor pushes); STA-449 (guard port).
  * Upstream: figentra/stackra `.agents/hooks`, written against 34cc99690f70381c77ea37e18d212ec0e9a30dbb (the last
  *   hooks change; origin/main cac2b28). The target repo's `.agents/hooks/README.md` records the SHA it was ported
  *   from, which this script prints.

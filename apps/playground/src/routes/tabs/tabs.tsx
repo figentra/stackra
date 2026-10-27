@@ -7,7 +7,7 @@
  * Runtime: browser
  * Governing contract: ADR 0302 (decisions 3 and 5); ADR 0313; ADR 0060 (light, dark, RTL).
  */
-import * as Ui from "@stackra/ui/react";
+import { Button, Heading, Surface, Tabs as UiTabs, Text } from "@stackra/ui/react";
 import { useState } from "react";
 
 import { PageSection } from "#src/components/page-section";
@@ -81,66 +81,66 @@ export function Tabs() {
     <article className="grid gap-10">
       <title>{STRINGS.documentTitle}</title>
       <header className="grid gap-2">
-        <Ui.Heading level={1}>{TabsRoute.title}</Ui.Heading>
-        <Ui.Text className="max-w-prose">
+        <Heading level={1}>{TabsRoute.title}</Heading>
+        <Text className="max-w-prose">
           <bdi>{STRINGS.intro}</bdi>
-        </Ui.Text>
+        </Text>
       </header>
 
       <PageSection id="tabs-basics" title={STRINGS.basics} note={STRINGS.basicsNote}>
         <div className={ROW}>
-          <Ui.Tabs items={SECTIONS} label={STRINGS.basicsLabel} />
-          <Ui.Tabs items={SECTIONS} />
+          <UiTabs items={SECTIONS} label={STRINGS.basicsLabel} />
+          <UiTabs items={SECTIONS} />
         </div>
       </PageSection>
 
       <PageSection id="tabs-variants" title={STRINGS.variants} note={STRINGS.variantsNote}>
         <div className={ROW}>
-          <Ui.Tabs items={SECTIONS} label={STRINGS.primary} variant="primary" />
-          <Ui.Surface variant="secondary" className="p-4">
-            <Ui.Tabs items={SECTIONS} label={STRINGS.secondary} variant="secondary" />
-          </Ui.Surface>
+          <UiTabs items={SECTIONS} label={STRINGS.primary} variant="primary" />
+          <Surface variant="secondary" className="p-4">
+            <UiTabs items={SECTIONS} label={STRINGS.secondary} variant="secondary" />
+          </Surface>
         </div>
       </PageSection>
 
       <PageSection id="tabs-orientation" title={STRINGS.orientation} note={STRINGS.orientationNote}>
         <div className={ROW}>
-          <Ui.Tabs items={SECTIONS} label={STRINGS.horizontal} orientation="horizontal" />
-          <Ui.Tabs items={SECTIONS} label={STRINGS.vertical} orientation="vertical" />
+          <UiTabs items={SECTIONS} label={STRINGS.horizontal} orientation="horizontal" />
+          <UiTabs items={SECTIONS} label={STRINGS.vertical} orientation="vertical" />
         </div>
       </PageSection>
 
       <PageSection id="tabs-states" title={STRINGS.states} note={STRINGS.statesNote}>
         <div className={ROW}>
-          <Ui.Tabs items={SECTIONS_ONE_DISABLED} label={STRINGS.disabledTab} />
-          <Ui.Tabs items={SECTIONS} label={STRINGS.disabledList} isDisabled />
+          <UiTabs items={SECTIONS_ONE_DISABLED} label={STRINGS.disabledTab} />
+          <UiTabs items={SECTIONS} label={STRINGS.disabledList} isDisabled />
         </div>
       </PageSection>
 
       <PageSection id="tabs-empty" title={STRINGS.empty} note={STRINGS.emptyNote}>
         <div className={ROW}>
-          <Ui.Tabs items={[]} emptyState={<Ui.Text tone="muted">{STRINGS.emptyMessage}</Ui.Text>} />
-          <Ui.Tabs items={[]} isLoading loadingLabel={STRINGS.loadingLabel} />
+          <UiTabs items={[]} emptyState={<Text tone="muted">{STRINGS.emptyMessage}</Text>} />
+          <UiTabs items={[]} isLoading loadingLabel={STRINGS.loadingLabel} />
         </div>
       </PageSection>
 
       <PageSection id="tabs-live" title={STRINGS.live} note={STRINGS.liveNote}>
-        <Ui.Tabs
+        <UiTabs
           items={SECTIONS}
           label={STRINGS.liveLabel}
           selectedKeys={picked}
           onSelectionChange={setPicked}
         />
-        <Ui.Text role="status" data-testid="tabs-selected" tone="muted">
+        <Text role="status" data-testid="tabs-selected" tone="muted">
           {STRINGS.selected(picked)}
-        </Ui.Text>
+        </Text>
         <div className="flex flex-wrap gap-2">
-          <Ui.Button variant="secondary" onPress={() => setPicked(["history"])}>
+          <Button variant="secondary" onPress={() => setPicked(["history"])}>
             {STRINGS.showHistory}
-          </Ui.Button>
-          <Ui.Button variant="secondary" onPress={() => setPicked(["overview"])}>
+          </Button>
+          <Button variant="secondary" onPress={() => setPicked(["overview"])}>
             {STRINGS.showOverview}
-          </Ui.Button>
+          </Button>
         </div>
       </PageSection>
     </article>

@@ -20,7 +20,7 @@ import {
   Trash,
 } from "@stackra/icons/react/lucide-icons";
 import type { MenuSection } from "@stackra/ui/contracts";
-import * as Ui from "@stackra/ui/react";
+import { Button, Heading, Menu as UiMenu, Text } from "@stackra/ui/react";
 import { useState, type ReactNode } from "react";
 
 import { PageSection } from "#src/components/page-section";
@@ -225,9 +225,9 @@ function Sample({ caption, children }: { caption: string; children: ReactNode })
   return (
     <li className="grid justify-items-start gap-2">
       {children}
-      <Ui.Text type="small" tone="muted">
+      <Text type="small" tone="muted">
         <bdi>{caption}</bdi>
-      </Ui.Text>
+      </Text>
     </li>
   );
 }
@@ -247,23 +247,23 @@ export function Menu() {
       <article className="grid gap-10">
         <title>{STRINGS.documentTitle}</title>
         <header className="grid gap-2">
-          <Ui.Heading level={1}>{MenuRoute.title}</Ui.Heading>
-          <Ui.Text className="max-w-prose">
+          <Heading level={1}>{MenuRoute.title}</Heading>
+          <Text className="max-w-prose">
             <bdi>{STRINGS.intro}</bdi>
-          </Ui.Text>
+          </Text>
         </header>
 
         <PageSection id="menu-basics" title={STRINGS.basics} note={STRINGS.basicsNote}>
           <ul className={ROW}>
             <Sample caption={STRINGS.orderActionsCaption}>
-              <Ui.Menu sections={ORDER_SECTIONS}>
-                <Ui.Button variant="secondary">{STRINGS.orderActions}</Ui.Button>
-              </Ui.Menu>
+              <UiMenu sections={ORDER_SECTIONS}>
+                <Button variant="secondary">{STRINGS.orderActions}</Button>
+              </UiMenu>
             </Sample>
             <Sample caption={STRINGS.plainCaption}>
-              <Ui.Menu sections={PLAIN_SECTIONS}>
-                <Ui.Button variant="secondary">{STRINGS.plain}</Ui.Button>
-              </Ui.Menu>
+              <UiMenu sections={PLAIN_SECTIONS}>
+                <Button variant="secondary">{STRINGS.plain}</Button>
+              </UiMenu>
             </Sample>
           </ul>
         </PageSection>
@@ -272,16 +272,16 @@ export function Menu() {
           <ul className={ROW}>
             {SIDES.map((side) => (
               <Sample key={side} caption={STRINGS.sideCaption(side)}>
-                <Ui.Menu sections={TWO_ACTIONS} placement={side}>
-                  <Ui.Button variant="tertiary">{STRINGS.side(side)}</Ui.Button>
-                </Ui.Menu>
+                <UiMenu sections={TWO_ACTIONS} placement={side}>
+                  <Button variant="tertiary">{STRINGS.side(side)}</Button>
+                </UiMenu>
               </Sample>
             ))}
             {ALIGNS.map((align) => (
               <Sample key={align} caption={STRINGS.alignCaption(align)}>
-                <Ui.Menu sections={TWO_ACTIONS} placement="bottom" align={align}>
-                  <Ui.Button variant="tertiary">{STRINGS.align(align)}</Ui.Button>
-                </Ui.Menu>
+                <UiMenu sections={TWO_ACTIONS} placement="bottom" align={align}>
+                  <Button variant="tertiary">{STRINGS.align(align)}</Button>
+                </UiMenu>
               </Sample>
             ))}
           </ul>
@@ -290,30 +290,30 @@ export function Menu() {
         <PageSection id="menu-selection" title={STRINGS.selection} note={STRINGS.selectionNote}>
           <ul className={ROW}>
             <Sample caption={STRINGS.singleCaption}>
-              <Ui.Menu
+              <UiMenu
                 sections={SORT_SECTIONS}
                 selectionMode="single"
                 value={sort}
                 onChange={setSort}
               >
-                <Ui.Button variant="secondary">{STRINGS.singleTrigger}</Ui.Button>
-              </Ui.Menu>
-              <Ui.Text role="status" data-testid="menu-single-chosen" tone="muted">
+                <Button variant="secondary">{STRINGS.singleTrigger}</Button>
+              </UiMenu>
+              <Text role="status" data-testid="menu-single-chosen" tone="muted">
                 {STRINGS.chosen(sort)}
-              </Ui.Text>
+              </Text>
             </Sample>
             <Sample caption={STRINGS.multipleCaption}>
-              <Ui.Menu
+              <UiMenu
                 sections={COLUMN_SECTIONS}
                 selectionMode="multiple"
                 value={columns}
                 onChange={setColumns}
               >
-                <Ui.Button variant="secondary">{STRINGS.multipleTrigger}</Ui.Button>
-              </Ui.Menu>
-              <Ui.Text role="status" data-testid="menu-multiple-chosen" tone="muted">
+                <Button variant="secondary">{STRINGS.multipleTrigger}</Button>
+              </UiMenu>
+              <Text role="status" data-testid="menu-multiple-chosen" tone="muted">
                 {STRINGS.chosen(columns)}
-              </Ui.Text>
+              </Text>
             </Sample>
           </ul>
         </PageSection>
@@ -321,9 +321,9 @@ export function Menu() {
         <PageSection id="menu-submenu" title={STRINGS.submenu} note={STRINGS.submenuNote}>
           <ul className={ROW}>
             <Sample caption={STRINGS.fileCaption}>
-              <Ui.Menu sections={FILE_SECTIONS}>
-                <Ui.Button variant="secondary">{STRINGS.fileTrigger}</Ui.Button>
-              </Ui.Menu>
+              <UiMenu sections={FILE_SECTIONS}>
+                <Button variant="secondary">{STRINGS.fileTrigger}</Button>
+              </UiMenu>
             </Sample>
           </ul>
         </PageSection>
@@ -331,40 +331,40 @@ export function Menu() {
         <PageSection id="menu-states" title={STRINGS.states} note={STRINGS.statesNote}>
           <ul className={ROW}>
             <Sample caption={STRINGS.linkCaption}>
-              <Ui.Menu sections={LINK_SECTIONS}>
-                <Ui.Button variant="secondary">{STRINGS.linkTrigger}</Ui.Button>
-              </Ui.Menu>
+              <UiMenu sections={LINK_SECTIONS}>
+                <Button variant="secondary">{STRINGS.linkTrigger}</Button>
+              </UiMenu>
             </Sample>
             <Sample caption={STRINGS.disabledCaption}>
-              <Ui.Menu sections={PLAIN_SECTIONS}>
-                <Ui.Button variant="secondary" isDisabled>
+              <UiMenu sections={PLAIN_SECTIONS}>
+                <Button variant="secondary" isDisabled>
                   {STRINGS.disabledTrigger}
-                </Ui.Button>
-              </Ui.Menu>
+                </Button>
+              </UiMenu>
             </Sample>
           </ul>
         </PageSection>
 
         <PageSection id="menu-live" title={STRINGS.live} note={STRINGS.liveNote}>
           <div className={ROW}>
-            <Ui.Menu
+            <UiMenu
               sections={ORDER_SECTIONS}
               isOpen={isOpen}
               onOpenChange={setIsOpen}
               onAction={setLastAction}
             >
-              <Ui.Button variant="secondary">{STRINGS.liveTrigger}</Ui.Button>
-            </Ui.Menu>
-            <Ui.Button variant="tertiary" onPress={() => setIsOpen(true)}>
+              <Button variant="secondary">{STRINGS.liveTrigger}</Button>
+            </UiMenu>
+            <Button variant="tertiary" onPress={() => setIsOpen(true)}>
               {STRINGS.openFromOutside}
-            </Ui.Button>
+            </Button>
           </div>
-          <Ui.Text role="status" data-testid="menu-last-action" tone="muted">
+          <Text role="status" data-testid="menu-last-action" tone="muted">
             {STRINGS.lastAction(lastAction)}
-          </Ui.Text>
-          <Ui.Text role="status" data-testid="menu-open-state" tone="muted">
+          </Text>
+          <Text role="status" data-testid="menu-open-state" tone="muted">
             {STRINGS.openState(isOpen)}
-          </Ui.Text>
+          </Text>
         </PageSection>
       </article>
     </IconRegistryProvider>

@@ -17,10 +17,10 @@ import { Pressable, View } from "react-native";
 
 import { ComponentCategory } from "#src/enums/component-category.enum";
 import { ComponentTier } from "#src/enums/component-tier.enum";
-import type { DesignSystemComponentRoute } from "#src/navigation/types";
-import type { PageLink } from "#src/types/page-link.type";
-import { BrandGlyph, type BrandGlyphName } from "./brand-glyph";
+import { BrandGlyph } from "./brand-glyph";
+import type { BrandGlyphName } from "./brand-glyph-name.type";
 import { ChoiceGroup } from "./choice-group";
+import type { PageGalleryProps } from "#src/components/ui/page-gallery.props";
 
 // shortcut: English strings in one place until @stackra/i18n reaches the mobile app; then keys.
 const STRINGS = {
@@ -76,14 +76,6 @@ const TIER_FILTERS = (["All", ...ComponentTier] as const).map((value) => ({
 function monogram(title: string) {
   const words = title.match(/[A-Z][a-z0-9]*/g) ?? [title];
   return (words.length > 1 ? `${words[0]?.[0]}${words[1]?.[0]}` : title.slice(0, 2)).toUpperCase();
-}
-
-/** Props of {@link PageGallery}. */
-export interface PageGalleryProps {
-  /** The pages to show, in gallery order. */
-  pages: readonly PageLink[];
-  /** Opens a page. */
-  onOpen: (route: DesignSystemComponentRoute) => void;
 }
 
 /** The gallery of pages by category. */

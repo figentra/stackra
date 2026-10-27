@@ -11,7 +11,7 @@
  * Governing contract: ADR 0302 (decisions 3 and 5); ADR 0303 (decision 7); ADR 0312; WCAG 2.2 SC 2.5.8, 3.3.4 and
  *          4.1.2.
  */
-import * as Ui from "@stackra/ui/react";
+import { Button, ConfirmationProvider, Heading, Text, useConfirmation } from "@stackra/ui/react";
 import { useState } from "react";
 
 import { PageSection } from "#src/components/page-section";
@@ -40,7 +40,7 @@ const ROW = "flex flex-wrap items-center gap-4";
 
 /** The questions and the status line; they sit inside the provider, because the hook reads it. */
 function Questions() {
-  const confirm = Ui.useConfirmation();
+  const confirm = useConfirmation();
   const [answer, setAnswer] = useState<string>(STRINGS.noAnswer);
   const [deleted, setDeleted] = useState(0);
 
@@ -72,7 +72,7 @@ function Questions() {
       >
         <ul className={ROW}>
           <li>
-            <Ui.Button
+            <Button
               variant="secondary"
               onPress={() =>
                 void ask(STRINGS.plain, {
@@ -84,10 +84,10 @@ function Questions() {
               }
             >
               {STRINGS.plain}
-            </Ui.Button>
+            </Button>
           </li>
           <li>
-            <Ui.Button
+            <Button
               variant="danger-soft"
               onPress={() =>
                 void ask(STRINGS.danger, {
@@ -100,23 +100,23 @@ function Questions() {
               }
             >
               {STRINGS.danger}
-            </Ui.Button>
+            </Button>
           </li>
           <li>
-            <Ui.Button variant="danger-soft" onPress={() => void deleteWorkspace()}>
+            <Button variant="danger-soft" onPress={() => void deleteWorkspace()}>
               {STRINGS.typed}
-            </Ui.Button>
+            </Button>
           </li>
         </ul>
-        <Ui.Text>
+        <Text>
           <bdi>{STRINGS.deleted(deleted)}</bdi>
-        </Ui.Text>
+        </Text>
       </PageSection>
 
       <PageSection id="use-confirmation-answer" title={STRINGS.answer}>
-        <Ui.Text role="status">
+        <Text role="status">
           <bdi>{answer}</bdi>
-        </Ui.Text>
+        </Text>
       </PageSection>
     </>
   );
@@ -125,17 +125,17 @@ function Questions() {
 /** The useConfirmation page. */
 export function UseConfirmation() {
   return (
-    <Ui.ConfirmationProvider>
+    <ConfirmationProvider>
       <article className="grid gap-10">
         <title>{STRINGS.documentTitle}</title>
         <header className="grid gap-2">
-          <Ui.Heading level={1}>{UseConfirmationRoute.title}</Ui.Heading>
-          <Ui.Text className="max-w-prose">
+          <Heading level={1}>{UseConfirmationRoute.title}</Heading>
+          <Text className="max-w-prose">
             <bdi>{STRINGS.intro}</bdi>
-          </Ui.Text>
+          </Text>
         </header>
         <Questions />
       </article>
-    </Ui.ConfirmationProvider>
+    </ConfirmationProvider>
   );
 }

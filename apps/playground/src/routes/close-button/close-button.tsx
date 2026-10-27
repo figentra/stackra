@@ -4,11 +4,11 @@
  *          and one inside a `Card` whose dismissal hides the card and a Button restores it, all from
  *          `@stackra/ui/react` with real props.
  * Boundary: presentation only; strings in one `STRINGS` constant until @stackra/i18n. Icons are drawn by name
- *          through `Ui.Icon`, from the registry in `components/playground-icons` (ADR 0303 decision 10).
+ *          through `Icon`, from the registry in `components/playground-icons` (ADR 0303 decision 10).
  * Runtime: browser
  * Governing contract: ADR 0302 (decisions 3 and 5); ADR 0303 (decisions 3 and 7); WCAG 2.2 SC 4.1.2 and 2.5.8.
  */
-import * as Ui from "@stackra/ui/react";
+import { Button, Card, CloseButton as UiCloseButton, Heading, Icon, Text } from "@stackra/ui/react";
 import { useState } from "react";
 
 import { PageSection } from "#src/components/page-section";
@@ -44,22 +44,22 @@ export function CloseButton() {
     <article className="grid gap-10">
       <title>{STRINGS.documentTitle}</title>
       <header className="grid gap-2">
-        <Ui.Heading level={1}>{CloseButtonRoute.title}</Ui.Heading>
-        <Ui.Text className="max-w-prose">
+        <Heading level={1}>{CloseButtonRoute.title}</Heading>
+        <Text className="max-w-prose">
           <bdi>{STRINGS.intro}</bdi>
-        </Ui.Text>
+        </Text>
       </header>
 
       <PageSection id="close-button-forms" title={STRINGS.forms} note={STRINGS.formsNote}>
         <ul className={ROW}>
           <li>
-            <Ui.CloseButton label={STRINGS.default} />
+            <UiCloseButton label={STRINGS.default} />
           </li>
           <li>
-            <Ui.CloseButton label={STRINGS.custom} icon={<Ui.Icon name="circle-x" size="sm" />} />
+            <UiCloseButton label={STRINGS.custom} icon={<Icon name="circle-x" size="sm" />} />
           </li>
           <li>
-            <Ui.CloseButton label={STRINGS.disabled} isDisabled />
+            <UiCloseButton label={STRINGS.disabled} isDisabled />
           </li>
         </ul>
       </PageSection>
@@ -67,28 +67,28 @@ export function CloseButton() {
       <PageSection id="close-button-use" title={STRINGS.card} note={STRINGS.cardNote}>
         <div className="grid max-w-sm gap-3">
           {isShown ? (
-            <Ui.Card>
-              <Ui.CloseButton
+            <Card>
+              <UiCloseButton
                 label={STRINGS.dismiss}
                 className="absolute end-3 top-3"
                 onPress={() => setIsShown(false)}
               />
-              <Ui.Card.Header>
-                <Ui.Card.Title>{STRINGS.noticeTitle}</Ui.Card.Title>
-                <Ui.Card.Description>
+              <Card.Header>
+                <Card.Title>{STRINGS.noticeTitle}</Card.Title>
+                <Card.Description>
                   <bdi>{STRINGS.noticeBody}</bdi>
-                </Ui.Card.Description>
-              </Ui.Card.Header>
-            </Ui.Card>
+                </Card.Description>
+              </Card.Header>
+            </Card>
           ) : (
             <>
-              <Ui.Text role="status" tone="muted">
+              <Text role="status" tone="muted">
                 <bdi>{STRINGS.hidden}</bdi>
-              </Ui.Text>
+              </Text>
               <div>
-                <Ui.Button variant="secondary" onPress={() => setIsShown(true)}>
+                <Button variant="secondary" onPress={() => setIsShown(true)}>
                   {STRINGS.showAgain}
-                </Ui.Button>
+                </Button>
               </div>
             </>
           )}

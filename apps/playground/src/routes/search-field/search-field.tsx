@@ -9,7 +9,7 @@
  * Runtime: browser
  * Governing contract: ADR 0302 (decisions 3 and 5); ADR 0303 (decision 7); ADR 0055; ADR 0060 (light, dark, RTL).
  */
-import * as Ui from "@stackra/ui/react";
+import { Heading, SearchField as UiSearchField, Text } from "@stackra/ui/react";
 import { useEffect, useRef, useState } from "react";
 
 import { PageSection } from "#src/components/page-section";
@@ -106,26 +106,26 @@ export function SearchField() {
     <article className="grid gap-10">
       <title>{STRINGS.documentTitle}</title>
       <header className="grid gap-2">
-        <Ui.Heading level={1}>{SearchFieldRoute.title}</Ui.Heading>
-        <Ui.Text className="max-w-prose">
+        <Heading level={1}>{SearchFieldRoute.title}</Heading>
+        <Text className="max-w-prose">
           <bdi>{STRINGS.intro}</bdi>
-        </Ui.Text>
+        </Text>
       </header>
 
       <PageSection id="search-field-basics" title={STRINGS.basics} note={STRINGS.basicsNote}>
         <div className={ROW}>
-          <Ui.SearchField
+          <UiSearchField
             label={STRINGS.label}
             placeholder={STRINGS.placeholder}
             className={SAMPLE}
           />
-          <Ui.SearchField
+          <UiSearchField
             label={STRINGS.describedLabel}
             placeholder={STRINGS.describedPlaceholder}
             description={STRINGS.description}
             className={SAMPLE}
           />
-          <Ui.SearchField
+          <UiSearchField
             aria-label={STRINGS.hiddenLabelName}
             placeholder={STRINGS.hiddenLabelPlaceholder}
             className={SAMPLE}
@@ -135,20 +135,20 @@ export function SearchField() {
 
       <PageSection id="search-field-surfaces" title={STRINGS.surfaces} note={STRINGS.surfacesNote}>
         <div className={ROW}>
-          <Ui.SearchField
+          <UiSearchField
             label={STRINGS.primary}
             placeholder={STRINGS.placeholder}
             variant="primary"
             className={SAMPLE}
           />
-          <Ui.SearchField
+          <UiSearchField
             label={STRINGS.secondary}
             placeholder={STRINGS.placeholder}
             variant="secondary"
             className={SAMPLE}
           />
         </div>
-        <Ui.SearchField
+        <UiSearchField
           label={STRINGS.fullWidth}
           description={STRINGS.fullWidthNote}
           placeholder={STRINGS.placeholder}
@@ -158,37 +158,37 @@ export function SearchField() {
 
       <PageSection id="search-field-states" title={STRINGS.states} note={STRINGS.statesNote}>
         <div className={ROW}>
-          <Ui.SearchField
+          <UiSearchField
             label={STRINGS.withValue}
             defaultValue={STRINGS.sampleText}
             className={SAMPLE}
           />
-          <Ui.SearchField
+          <UiSearchField
             label={STRINGS.required}
             placeholder={STRINGS.placeholder}
             isRequired
             className={SAMPLE}
           />
-          <Ui.SearchField
+          <UiSearchField
             label={STRINGS.invalid}
             defaultValue="ab"
             isInvalid
             errorMessage={STRINGS.invalidError}
             className={SAMPLE}
           />
-          <Ui.SearchField
+          <UiSearchField
             label={STRINGS.disabled}
             defaultValue={STRINGS.sampleText}
             isDisabled
             className={SAMPLE}
           />
-          <Ui.SearchField
+          <UiSearchField
             label={STRINGS.readOnly}
             defaultValue={STRINGS.sampleText}
             isReadOnly
             className={SAMPLE}
           />
-          <Ui.SearchField
+          <UiSearchField
             label={STRINGS.loading}
             defaultValue={STRINGS.sampleText}
             isLoading
@@ -198,7 +198,7 @@ export function SearchField() {
       </PageSection>
 
       <PageSection id="search-field-live" title={STRINGS.live} note={STRINGS.liveNote}>
-        <Ui.SearchField
+        <UiSearchField
           label={STRINGS.liveLabel}
           placeholder={STRINGS.livePlaceholder}
           clearLabel={STRINGS.liveClear}
@@ -209,16 +209,16 @@ export function SearchField() {
           onClear={() => setMessage(STRINGS.cleared)}
           className={SAMPLE}
         />
-        <Ui.Text role="status" tone="muted">
+        <Text role="status" tone="muted">
           {isSearching ? "" : STRINGS.count(results.length)}
-        </Ui.Text>
-        <Ui.Text data-testid="search-message" tone="muted">
+        </Text>
+        <Text data-testid="search-message" tone="muted">
           {message}
-        </Ui.Text>
+        </Text>
         <ul aria-label={STRINGS.results} className="grid gap-1">
           {results.map((name) => (
             <li key={name}>
-              <Ui.Text>{name}</Ui.Text>
+              <Text>{name}</Text>
             </li>
           ))}
         </ul>

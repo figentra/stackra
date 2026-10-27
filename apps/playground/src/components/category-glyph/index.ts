@@ -5,4 +5,5 @@
  * Runtime: browser
  * Governing contract: ADR 0294 (decision 14).
  */
-export { CategoryGlyph, type CategoryGlyphProps } from "./category-glyph";
+export { CategoryGlyph } from "./category-glyph";
+export { type CategoryGlyphProps } from "./category-glyph.props";

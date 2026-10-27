@@ -1,3 +1,10 @@
+/**
+ * Stackra file contract:
+ * Purpose: the Stackra guard plugin for OpenCode: applies decide.ts to every read, edit and shell call, ask as deny.
+ * Boundary: wires the decisions into the plugin hooks; the decisions live in decide.ts.
+ * Runtime: node
+ * Governing contract: ADR 0293 (agent permission tiers and executor pushes); ADR 0066 (unattended OpenCode).
+ */
 // Stackra guard plugin (OpenCode v2 plugin API: https://opencode.ai/v2/docs/build/plugins).
 // Applies the permission tiers shared with the Claude hooks (.agents/hooks/_rules.mjs, ADR 0293) with ask as deny,
 // denies the lead-only commands, and refuses edits in the main checkout (worktree-only).

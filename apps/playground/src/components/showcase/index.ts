@@ -5,4 +5,5 @@
  * Runtime: browser
  * Governing contract: ADR 0294 (decision 14).
  */
-export { Showcase, type ShowcaseProps } from "./showcase";
+export { Showcase } from "./showcase";
+export { type ShowcaseProps } from "./showcase.props";

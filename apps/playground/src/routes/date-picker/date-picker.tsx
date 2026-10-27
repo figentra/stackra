@@ -11,7 +11,7 @@
  *          (light, dark, RTL).
  */
 import { CalendarDate } from "@internationalized/date";
-import * as Ui from "@stackra/ui/react";
+import { Button, DatePicker as UiDatePicker, Heading, Text } from "@stackra/ui/react";
 import { useState } from "react";
 
 import { PageSection } from "#src/components/page-section";
@@ -75,20 +75,20 @@ export function DatePicker() {
     <article className="grid gap-10">
       <title>{STRINGS.documentTitle}</title>
       <header className="grid gap-2">
-        <Ui.Heading level={1}>{DatePickerRoute.title}</Ui.Heading>
-        <Ui.Text className="max-w-prose">
+        <Heading level={1}>{DatePickerRoute.title}</Heading>
+        <Text className="max-w-prose">
           <bdi>{STRINGS.intro}</bdi>
-        </Ui.Text>
+        </Text>
       </header>
 
       <PageSection id="date-picker-basics" title={STRINGS.basics} note={STRINGS.basicsNote}>
         <div className={GRID}>
-          <Ui.DatePicker
+          <UiDatePicker
             label={STRINGS.empty}
             description={STRINGS.emptyDescription}
             calendarButtonLabel={STRINGS.emptyButton}
           />
-          <Ui.DatePicker
+          <UiDatePicker
             label={STRINGS.filled}
             description={STRINGS.filledDescription}
             calendarButtonLabel={STRINGS.filledButton}
@@ -98,7 +98,7 @@ export function DatePicker() {
       </PageSection>
 
       <PageSection id="date-picker-bounded" title={STRINGS.bounded} note={STRINGS.boundedNote}>
-        <Ui.DatePicker
+        <UiDatePicker
           label={STRINGS.boundedLabel}
           description={STRINGS.boundedDescription}
           errorMessage={STRINGS.boundedMessage}
@@ -112,7 +112,7 @@ export function DatePicker() {
 
       <PageSection id="date-picker-states" title={STRINGS.states} note={STRINGS.statesNote}>
         <div className={GRID}>
-          <Ui.DatePicker
+          <UiDatePicker
             label={STRINGS.invalid}
             errorMessage={STRINGS.invalidMessage}
             calendarButtonLabel={STRINGS.invalidButton}
@@ -120,12 +120,12 @@ export function DatePicker() {
             isDateUnavailable={isWeekend}
             validationBehavior="aria"
           />
-          <Ui.DatePicker
+          <UiDatePicker
             label={STRINGS.readOnly}
             defaultValue={new CalendarDate(2026, 2, 12)}
             isReadOnly
           />
-          <Ui.DatePicker
+          <UiDatePicker
             label={STRINGS.disabled}
             defaultValue={new CalendarDate(2026, 1, 20)}
             isDisabled
@@ -134,7 +134,7 @@ export function DatePicker() {
       </PageSection>
 
       <PageSection id="date-picker-live" title={STRINGS.live} note={STRINGS.liveNote}>
-        <Ui.DatePicker
+        <UiDatePicker
           label={STRINGS.liveLabel}
           calendarButtonLabel={STRINGS.liveButton}
           value={day}
@@ -145,16 +145,16 @@ export function DatePicker() {
           onOpenChange={setIsOpen}
         />
         <div className="flex flex-wrap items-center gap-4">
-          <Ui.Button variant="secondary" onPress={() => setIsOpen(true)}>
+          <Button variant="secondary" onPress={() => setIsOpen(true)}>
             {STRINGS.openFromOutside}
-          </Ui.Button>
-          <Ui.Text data-testid="date-picker-open" aria-live="polite">
+          </Button>
+          <Text data-testid="date-picker-open" aria-live="polite">
             {isOpen ? STRINGS.liveOpen : STRINGS.liveClosed}
-          </Ui.Text>
+          </Text>
         </div>
-        <Ui.Text data-testid="date-picker-value" aria-live="polite">
+        <Text data-testid="date-picker-value" aria-live="polite">
           {day === null ? STRINGS.liveEmpty : STRINGS.liveChosen(day)}
-        </Ui.Text>
+        </Text>
       </PageSection>
     </article>
   );

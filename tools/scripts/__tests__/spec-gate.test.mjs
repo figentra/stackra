@@ -1,10 +1,10 @@
 /**
- * @module tools/scripts/spec-gate.test
- *
+ * Stackra file contract:
  * Purpose: hold the stage gates (state machine, plan, tasks, lane, branch, bug lane, tripwire), the v2 templates,
  *   their validate wiring and the Linear task parser to their contract.
- * Boundary: pure functions plus one dry-run child process; no network, no repository writes.
- * Runtime: node — node:test and node:assert.
+ * Boundary: pure functions plus one dry-run child process; no network, no repository writes; node:test and node:assert.
+ * Runtime: node
+ * Governing contract: ADR 0022 (tests live in tests folders); ADR 0182 (testing strategy).
  */
 // @covers sta-163:FR-001 sta-163:FR-002 sta-163:FR-003 sta-163:FR-004 sta-163:FR-005 sta-163:FR-008
 // @covers sta-163:P-001 sta-163:P-002 sta-163:P-003 sta-163:P-005 sta-163:P-006 sta-163:P-007
@@ -100,25 +100,25 @@ test("the fixture passes at every stage from Clarified to Done", () => {
 });
 
 test("Planned: constitution rows, deploy modes and FR validation", () => {
-  const spec = at("Planned");
+  const planned = at("Planned");
   const plan = fixture("plan.md");
   assert.match(
-    stageOf(spec, { plan: plan.replace("| PASS   |", "| TODO   |") }).join(),
+    stageOf(planned, { plan: plan.replace("| PASS   |", "| TODO   |") }).join(),
     /Constitution Check `Boundaries` is `TODO`/,
   );
   assert.match(
-    stageOf(spec, { plan: plan.replace("no tenant data", "") }).join(),
+    stageOf(planned, { plan: plan.replace("no tenant data", "") }).join(),
     /`Tenancy` is N\/A without a reason/,
   );
   assert.match(
-    stageOf(spec, { plan: plan.replace(/^\| Air-gapped.*\n/m, "") }).join(),
+    stageOf(planned, { plan: plan.replace(/^\| Air-gapped.*\n/m, "") }).join(),
     /`air-gapped` row/,
   );
   assert.match(
-    stageOf(spec, { plan: plan.replace("FR-001, FR-002", "FR-001") }).join(),
+    stageOf(planned, { plan: plan.replace("FR-001, FR-002", "FR-001") }).join(),
     /FR-002 is validated by no P-###/,
   );
-  const exampleOnly = spec.replace("SHALL refuse it.", "SHALL refuse it. (example-only)");
+  const exampleOnly = planned.replace("SHALL refuse it.", "SHALL refuse it. (example-only)");
   assert.deepEqual(stageOf(exampleOnly, { plan: plan.replace("FR-001, FR-002", "FR-001") }), []);
 });
 
@@ -401,9 +401,11 @@ test("spec-gate plan exits 1 on a pending spec, and spec-linear --dry-run needs 
   }
 });
 
+const presetTemplate = (n) =>
+  readFileSync(join(ROOT, ".agents/speckit/presets/stackra/templates", n), "utf8");
+
 test("the v2 templates carry the state machine, Impact v2, Amendments, Status history and the task line format", () => {
-  const t = (n) => readFileSync(join(ROOT, ".agents/speckit/presets/stackra/templates", n), "utf8");
-  const specT = t("spec-template.md");
+  const specT = presetTemplate("spec-template.md");
   assert.match(specT, /Draft → Clarified → Planned → Tasked → Implementing → Done/);
   for (const h of [
     "## Impact",
@@ -416,10 +418,13 @@ test("the v2 templates carry the state machine, Impact v2, Amendments, Status hi
   for (const f of ["Licence tier", "Docs to update", "Lane", "Change risk"])
     assert.ok(specT.includes(`- **${f}**:`), f);
   assert.match(
-    t("plan-template.md"),
+    presetTemplate("plan-template.md"),
     /## Constitution Check[\s\S]*## Deploy modes[\s\S]*Validates: FR-001/,
   );
-  assert.match(t("tasks-template.md"), /— covers: FR-003, P-002 — route: spec-task — deps: T010/);
+  assert.match(
+    presetTemplate("tasks-template.md"),
+    /— covers: FR-003, P-002 — route: spec-task — deps: T010/,
+  );
 });
 
 test("validate and CI run both gates; a ready-for-review PR sets the Tasked rule", () => {

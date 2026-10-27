@@ -1,3 +1,11 @@
+/**
+ * Stackra file contract:
+ * Purpose: hold `runway.mjs` to its contract: the deploy plan's targets, workflows and names, the deploy and promote
+ *          preflights, and which caller workflows a deploy or promote dispatches.
+ * Boundary: fixture runways and stubbed git and gh; dispatches nothing.
+ * Runtime: node
+ * Governing contract: ADR 0022 (tests live in tests folders); ADR 0182 (testing strategy). ADR 0170 (deployment).
+ */
 import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";

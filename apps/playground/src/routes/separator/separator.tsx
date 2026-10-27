@@ -9,7 +9,7 @@
  * Governing contract: ADR 0302 (decisions 3 and 5); ADR 0303 (decision 7); ADR 0304; ADR 0060 (light, dark, RTL).
  */
 import { SurfaceVariant, type SeparatorVariant } from "@stackra/ui/contracts";
-import * as Ui from "@stackra/ui/react";
+import { Button, Heading, Link, Separator as UiSeparator, Surface, Text } from "@stackra/ui/react";
 import { useState } from "react";
 
 import { PageSection } from "#src/components/page-section";
@@ -73,10 +73,10 @@ export function Separator() {
     <article className="grid gap-10">
       <title>{STRINGS.documentTitle}</title>
       <header className="grid gap-2">
-        <Ui.Heading level={1}>{SeparatorRoute.title}</Ui.Heading>
-        <Ui.Text className="max-w-prose">
+        <Heading level={1}>{SeparatorRoute.title}</Heading>
+        <Text className="max-w-prose">
           <bdi>{STRINGS.intro}</bdi>
-        </Ui.Text>
+        </Text>
       </header>
 
       <PageSection
@@ -85,28 +85,28 @@ export function Separator() {
         note={STRINGS.horizontalNote}
       >
         <div className="grid max-w-prose gap-3">
-          <Ui.Text>
+          <Text>
             <bdi>{STRINGS.before}</bdi>
-          </Ui.Text>
-          <Ui.Separator />
-          <Ui.Text>
+          </Text>
+          <UiSeparator />
+          <Text>
             <bdi>{STRINGS.after}</bdi>
-          </Ui.Text>
+          </Text>
         </div>
       </PageSection>
 
       <PageSection id="separator-levels" title={STRINGS.levels} note={STRINGS.levelsNote}>
         <div className="grid gap-4 sm:grid-cols-2">
           {SurfaceVariant.map((variant) => (
-            <Ui.Surface
+            <Surface
               key={variant}
               variant={variant}
               className={variant === "transparent" ? `${BOX} border border-border` : BOX}
             >
-              <Ui.Text>{STRINGS.level(variant)}</Ui.Text>
-              <Ui.Separator variant={RULE_FOR[variant]} className="my-3" />
-              <Ui.Text tone="muted">{STRINGS.level(RULE_FOR[variant])}</Ui.Text>
-            </Ui.Surface>
+              <Text>{STRINGS.level(variant)}</Text>
+              <UiSeparator variant={RULE_FOR[variant]} className="my-3" />
+              <Text tone="muted">{STRINGS.level(RULE_FOR[variant])}</Text>
+            </Surface>
           ))}
         </div>
       </PageSection>
@@ -116,10 +116,10 @@ export function Separator() {
           <ul className="flex h-5 items-center gap-4">
             {RELATED.map((link, index) => (
               <li key={link.href} className="flex h-full items-center gap-4">
-                {index > 0 ? <Ui.Separator orientation="vertical" /> : null}
-                <Ui.Link href={link.href} underline="hover">
+                {index > 0 ? <UiSeparator orientation="vertical" /> : null}
+                <Link href={link.href} underline="hover">
                   {link.text}
-                </Ui.Link>
+                </Link>
               </li>
             ))}
           </ul>
@@ -128,38 +128,38 @@ export function Separator() {
 
       <PageSection id="separator-labelled" title={STRINGS.labelled} note={STRINGS.labelledNote}>
         <div role="group" aria-label={STRINGS.groupName} className="flex h-9 items-center gap-2">
-          <Ui.Button size="sm" variant="secondary">
+          <Button size="sm" variant="secondary">
             {STRINGS.bold}
-          </Ui.Button>
-          <Ui.Button size="sm" variant="secondary">
+          </Button>
+          <Button size="sm" variant="secondary">
             {STRINGS.italic}
-          </Ui.Button>
-          <Ui.Separator orientation="vertical" aria-label={STRINGS.ruleName} className="mx-2" />
-          <Ui.Button size="sm" variant="secondary">
+          </Button>
+          <UiSeparator orientation="vertical" aria-label={STRINGS.ruleName} className="mx-2" />
+          <Button size="sm" variant="secondary">
             {STRINGS.left}
-          </Ui.Button>
-          <Ui.Button size="sm" variant="secondary">
+          </Button>
+          <Button size="sm" variant="secondary">
             {STRINGS.right}
-          </Ui.Button>
+          </Button>
         </div>
       </PageSection>
 
       <PageSection id="separator-live" title={STRINGS.live} note={STRINGS.liveNote}>
         <div className="flex flex-wrap items-center gap-4">
-          <Ui.Button variant="secondary" onPress={() => setIsVertical((value) => !value)}>
+          <Button variant="secondary" onPress={() => setIsVertical((value) => !value)}>
             {STRINGS.turn}
-          </Ui.Button>
-          <Ui.Text tone="muted" data-testid="orientation">
+          </Button>
+          <Text tone="muted" data-testid="orientation">
             <bdi>{STRINGS.orientation(isVertical ? "vertical" : "horizontal")}</bdi>
-          </Ui.Text>
+          </Text>
         </div>
         <div className={isVertical ? "flex items-stretch gap-4" : "grid max-w-xs gap-4"}>
-          <Ui.Text>{STRINGS.blockA}</Ui.Text>
-          <Ui.Separator
+          <Text>{STRINGS.blockA}</Text>
+          <UiSeparator
             orientation={isVertical ? "vertical" : "horizontal"}
             data-testid="live-rule"
           />
-          <Ui.Text>{STRINGS.blockB}</Ui.Text>
+          <Text>{STRINGS.blockB}</Text>
         </div>
       </PageSection>
     </article>

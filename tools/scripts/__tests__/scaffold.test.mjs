@@ -1,3 +1,12 @@
+/**
+ * Stackra file contract:
+ * Purpose: hold `scaffold.mjs`'s templates to their contract: each member kind renders the v3 shape with no token
+ *          left, the entries and data flags, and the files copied byte for byte.
+ * Boundary: renders into temp directories; never writes this checkout.
+ * Runtime: node
+ * Governing contract: ADR 0022 (tests live in tests folders); ADR 0182 (testing strategy). ADR 0126 (member shapes and
+ *                     scaffold templates).
+ */
 import assert from "node:assert/strict";
 import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -59,12 +68,18 @@ for (const [kind, name, extra] of cases)
     if (kind === "package") assert.deepEqual(checkExports(pkg.exports), []);
   });
 
+const readText = (dest, f) => readFileSync(join(dest, f), "utf8");
+
+const tokenRefs = (text) => [...text.matchAll(/@stackra\/tokens\/[^"'\s)]+/g)].map((m) => m[0]);
+
 // @covers sta-173:FR-003 sta-173:P-003 sta-350:FR-005
 test("app templates take their theme from @stackra/tokens and ship their own copy of the app icons", () => {
-  const TOKENS = fileURLToPath(new URL("../../../packages/design-system/tokens/", import.meta.url));
+  const TOKENS_DIR = fileURLToPath(
+    new URL("../../../packages/design-system/tokens/", import.meta.url),
+  );
   const BRAND = fileURLToPath(new URL("../../../apps/docs/src/assets/brand/", import.meta.url));
   const wildcards = Object.entries(
-    JSON.parse(readFileSync(join(TOKENS, "package.json"), "utf8")).exports,
+    JSON.parse(readFileSync(join(TOKENS_DIR, "package.json"), "utf8")).exports,
   ).filter(([key]) => key.endsWith("/*"));
   // Resolves `@stackra/tokens/<subpath>` through the package's wildcard exports, as Tailwind and Metro do.
   const tokensFile = (ref) => {
@@ -72,29 +87,27 @@ test("app templates take their theme from @stackra/tokens and ship their own cop
     const [key, target] = wildcards.find(([k]) => sub.startsWith(k.slice(0, -1))) ?? [];
     assert.ok(key, `no @stackra/tokens export for ${ref}`);
     // Node substitutes every `*` in an export target, not only the first.
-    const file = join(TOKENS, target.replaceAll("*", sub.slice(key.length - 1)));
+    const file = join(TOKENS_DIR, target.replaceAll("*", sub.slice(key.length - 1)));
     assert.ok(existsSync(file), `tokens file missing: ${ref}`);
   };
-  const refs = (text) => [...text.matchAll(/@stackra\/tokens\/[^"'\s)]+/g)].map((m) => m[0]);
-  const read = (dest, f) => readFileSync(join(dest, f), "utf8");
   const sameBytes = (dest, f, original) =>
     assert.ok(readFileSync(join(dest, f)).equals(readFileSync(join(BRAND, original))), f);
 
   const web = render("app:console", "admin").dest;
   assert.equal(json(web, "package.json").dependencies["@stackra/tokens"], "workspace:*");
-  const styles = read(web, "src/styles/app.css");
-  assert.deepEqual(refs(styles), [
+  const styles = readText(web, "src/styles/app.css");
+  assert.deepEqual(tokenRefs(styles), [
     "@stackra/tokens/fonts/fonts.css",
     "@stackra/tokens/themes/stackra/web.css",
   ]);
-  refs(styles).forEach(tokensFile);
+  tokenRefs(styles).forEach(tokensFile);
   assert.ok(existsSync(join(web, "public/favicon.svg")));
 
   const mobile = render("app:mobile", "sample").dest;
   assert.equal(json(mobile, "package.json").dependencies["@stackra/tokens"], "workspace:*");
-  const global = read(mobile, "src/styles/global.css");
-  assert.deepEqual(refs(global), ["@stackra/tokens/themes/stackra/native.css"]);
-  refs(global).forEach(tokensFile);
+  const global = readText(mobile, "src/styles/global.css");
+  assert.deepEqual(tokenRefs(global), ["@stackra/tokens/themes/stackra/native.css"]);
+  tokenRefs(global).forEach(tokensFile);
   const icons = [...read(mobile, "app.json").matchAll(/"\.\/(assets\/[^"]+)"/g)].map((m) => m[1]);
   assert.equal(icons.length, 4); // icon, adaptive foreground, light and dark splash
   for (const icon of icons) {
@@ -104,19 +117,19 @@ test("app templates take their theme from @stackra/tokens and ship their own cop
 
   const desktop = render("app:desktop", "studio").dest;
   assert.equal(json(desktop, "package.json").devDependencies["@stackra/tokens"], "workspace:*");
-  const builder = read(desktop, "electron-builder.yml");
+  const builder = readText(desktop, "electron-builder.yml");
   assert.equal([...builder.matchAll(/icon: assets\/app-icon-1024\.png/g)].length, 3); // mac, win, linux
   sameBytes(desktop, "assets/app-icon-1024.png", "app-icon/app-icon-light-1024.png");
 
   const docs = render("app:docs", "handbook").dest;
   assert.equal(json(docs, "src/docs.json").colors.primary, "#0B0D0F");
   assert.equal(
-    read(docs, "src/assets/logo/light.svg"),
+    readText(docs, "src/assets/logo/light.svg"),
     readFileSync(join(BRAND, "logos/stackra-wordmark-light.svg"), "utf8"),
   );
   for (const dest of [web, mobile, desktop, docs])
     for (const f of ["package.json", "README.md"])
-      assert.ok(!read(dest, f).includes("@stackra/brand"), f);
+      assert.ok(!readText(dest, f).includes("@stackra/brand"), f);
 });
 
 /** The v3 member root (ADR 0294 R12): no authored entry, barrel or generated contract in what the scaffold writes. */
@@ -280,7 +293,7 @@ test("apps come out in the v3 shape: config, root module, route folders, config 
       assert.ok(!(glass in dependencies), `${kind}: ${glass}`);
     // Beside the root module, src/ holds only the stand-ins gen replaces; the entry is marked (ADR 0294 d14).
     const STAND_INS = ["src/main.ts", "src/main.tsx", "src/app.tsx", "src/window-options.ts"];
-    for (const f of files.filter((f) => /^src\/[^/]+(?<!\.d)\.tsx?$/.test(f)))
+    for (const f of files.filter((file) => /^src\/[^/]+(?<!\.d)\.tsx?$/.test(file)))
       assert.ok(f === `src/${names[kind]}.module.ts` || STAND_INS.includes(f), `${kind}: ${f}`);
     const entry = files.find((f) => /^src\/main\.tsx?$/.test(f));
     // Accepted stand-in: the removal trigger is STA-339, when gen writes the entries.

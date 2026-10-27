@@ -7,6 +7,10 @@
  *   (d) In Progress with no branch/PR activity for 3 days → `stale` label + comment (label removed when active again)
  *   (e) Backlog/Todo issues whose title names an ADR that is now Accepted → comment
  *   (f) summary to stdout and $GITHUB_STEP_SUMMARY
+ * Boundary: reads GitHub, git refs and the ADRs; writes only Linear states, labels and marked comments, never a repo
+ *           file.
+ * Runtime: node
+ * Governing contract: ADR 0065 (rule 7: Linear sync never blocks); ADR 0121 (SDLC tooling roles and Linear).
  * Idempotent: every comment carries a `linear-reconcile (<tag>)` marker and an action whose marker is already on the
  * issue is skipped, so a human who reopens an issue is not overridden. `--dry-run` writes nothing.
  * Inputs: `gh pr list` (GH_TOKEN in CI), `git for-each-ref refs/remotes/origin`, apps/docs/src/adr/*.mdx.

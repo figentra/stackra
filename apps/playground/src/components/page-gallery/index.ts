@@ -5,4 +5,5 @@
  * Runtime: browser
  * Governing contract: ADR 0294 (decision 14).
  */
-export { PageGallery, type PageGalleryProps } from "./page-gallery";
+export { PageGallery } from "./page-gallery";
+export { type PageGalleryProps } from "./page-gallery.props";

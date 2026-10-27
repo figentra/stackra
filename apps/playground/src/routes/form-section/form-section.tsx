@@ -9,7 +9,14 @@
  * Governing contract: ADR 0302 (decisions 3 and 5); ADR 0303 (decision 7); ADR 0055 (forms); ADR 0060 (light, dark,
  *          RTL); WCAG 2.2 SC 1.3.1.
  */
-import * as Ui from "@stackra/ui/react";
+import {
+  Form,
+  FormSection as UiFormSection,
+  Heading,
+  Switch,
+  Text,
+  TextField,
+} from "@stackra/ui/react";
 import { useState } from "react";
 
 import { PageSection } from "#src/components/page-section";
@@ -58,52 +65,52 @@ export function FormSection() {
     <article className="grid gap-10">
       <title>{STRINGS.documentTitle}</title>
       <header className="grid gap-2">
-        <Ui.Heading level={1}>{FormSectionRoute.title}</Ui.Heading>
-        <Ui.Text className="max-w-prose">
+        <Heading level={1}>{FormSectionRoute.title}</Heading>
+        <Text className="max-w-prose">
           <bdi>{STRINGS.intro}</bdi>
-        </Ui.Text>
+        </Text>
       </header>
 
       <PageSection id="form-section-parts" title={STRINGS.variants} note={STRINGS.variantsNote}>
         <div className={GRID}>
-          <Ui.FormSection title={STRINGS.titleOnly}>
-            <Ui.TextField label={STRINGS.name} />
-          </Ui.FormSection>
-          <Ui.FormSection title={STRINGS.withDescription} description={STRINGS.description}>
-            <Ui.TextField label={STRINGS.name} />
-          </Ui.FormSection>
-          <Ui.FormSection title={STRINGS.several}>
-            <Ui.TextField label={STRINGS.company} />
-            <Ui.TextField label={STRINGS.country} />
-          </Ui.FormSection>
+          <UiFormSection title={STRINGS.titleOnly}>
+            <TextField label={STRINGS.name} />
+          </UiFormSection>
+          <UiFormSection title={STRINGS.withDescription} description={STRINGS.description}>
+            <TextField label={STRINGS.name} />
+          </UiFormSection>
+          <UiFormSection title={STRINGS.several}>
+            <TextField label={STRINGS.company} />
+            <TextField label={STRINGS.country} />
+          </UiFormSection>
         </div>
       </PageSection>
 
       <PageSection id="form-section-states" title={STRINGS.states} note={STRINGS.statesNote}>
-        <Ui.FormSection title={STRINGS.disabledSection} disabled>
-          <Ui.TextField label={STRINGS.company} defaultValue={STRINGS.kept} />
-        </Ui.FormSection>
+        <UiFormSection title={STRINGS.disabledSection} disabled>
+          <TextField label={STRINGS.company} defaultValue={STRINGS.kept} />
+        </UiFormSection>
       </PageSection>
 
       <PageSection id="form-section-live" title={STRINGS.live} note={STRINGS.liveNote}>
-        <Ui.Form aria-label={STRINGS.liveName} className="grid max-w-md gap-8">
-          <Ui.FormSection title={STRINGS.profile} description={STRINGS.profileDescription}>
-            <Ui.TextField label={STRINGS.displayName} />
-          </Ui.FormSection>
-          <Ui.FormSection
+        <Form aria-label={STRINGS.liveName} className="grid max-w-md gap-8">
+          <UiFormSection title={STRINGS.profile} description={STRINGS.profileDescription}>
+            <TextField label={STRINGS.displayName} />
+          </UiFormSection>
+          <UiFormSection
             title={STRINGS.billing}
             description={STRINGS.billingDescription}
             disabled={isBillingDisabled}
           >
-            <Ui.TextField label={STRINGS.address} />
-            <Ui.TextField label={STRINGS.vatNumber} />
-          </Ui.FormSection>
-          <Ui.Switch
+            <TextField label={STRINGS.address} />
+            <TextField label={STRINGS.vatNumber} />
+          </UiFormSection>
+          <Switch
             label={STRINGS.disableBilling}
             value={isBillingDisabled}
             onChange={setIsBillingDisabled}
           />
-        </Ui.Form>
+        </Form>
       </PageSection>
     </article>
   );

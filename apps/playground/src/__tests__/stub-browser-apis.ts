@@ -26,7 +26,9 @@ export function stubBrowserApis(): void {
     "ResizeObserver",
     class {
       observe() {}
+
       unobserve() {}
+
       disconnect() {}
     },
   );

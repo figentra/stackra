@@ -8,9 +8,21 @@
  * Runtime: browser
  * Governing contract: ADR 0302 (decision 5); ADR 0294 (decision 14).
  */
-import type { HeadingLevel, Tone } from "@stackra/ui/contracts";
-import * as Ui from "@stackra/ui/react";
+import type { Tone } from "@stackra/ui/contracts";
+import {
+  Avatar,
+  Button,
+  Card,
+  Checkbox,
+  Chip,
+  SearchField,
+  Spinner,
+  StatusBadge,
+  Switch,
+  TextField,
+} from "@stackra/ui/react";
 import { useState } from "react";
+import type { ShowcaseProps } from "./showcase.props";
 
 // shortcut: English strings in one place until @stackra/i18n ships; then `playground::showcase.*` keys.
 const STRINGS = {
@@ -45,12 +57,6 @@ const DEPLOYS: readonly { name: string; version: string; status: string; tone: T
   { name: "Sara Kim", version: "v2.13.9", status: "Failed", tone: "danger" },
 ];
 
-/** Props of {@link Showcase}. */
-export interface ShowcaseProps {
-  /** The heading level of each scene's title. */
-  headingLevel: HeadingLevel;
-}
-
 const CARD = "material-thick rounded-3xl";
 
 /** Three composed scenes. */
@@ -66,15 +72,15 @@ export function Showcase({ headingLevel }: ShowcaseProps) {
     // Laid out by the room it is given, not the window: the index gives it the page, the Theme Studio a column.
     <div className="@container">
       <div className="grid gap-4 @2xl:grid-cols-2 @5xl:grid-cols-3">
-        <Ui.Card className={CARD}>
-          <Ui.Card.Header>
-            <Ui.Card.Title level={headingLevel}>{STRINGS.invite.title}</Ui.Card.Title>
-            <Ui.Card.Description>
+        <Card className={CARD}>
+          <Card.Header>
+            <Card.Title level={headingLevel}>{STRINGS.invite.title}</Card.Title>
+            <Card.Description>
               <bdi>{STRINGS.invite.description}</bdi>
-            </Ui.Card.Description>
-          </Ui.Card.Header>
-          <Ui.Card.Content className="grid gap-4">
-            <Ui.TextField
+            </Card.Description>
+          </Card.Header>
+          <Card.Content className="grid gap-4">
+            <TextField
               label={STRINGS.invite.email}
               type="email"
               placeholder={STRINGS.invite.placeholder}
@@ -84,65 +90,61 @@ export function Showcase({ headingLevel }: ShowcaseProps) {
                 setSent(false);
               }}
             />
-            <Ui.Switch label={STRINGS.invite.admin} />
-          </Ui.Card.Content>
-          <Ui.Card.Footer className="flex flex-wrap items-center gap-3">
-            <Ui.Button startIcon="send-horizontal" onPress={() => setSent(true)}>
+            <Switch label={STRINGS.invite.admin} />
+          </Card.Content>
+          <Card.Footer className="flex flex-wrap items-center gap-3">
+            <Button startIcon="send-horizontal" onPress={() => setSent(true)}>
               {STRINGS.invite.send}
-            </Ui.Button>
+            </Button>
             <p role="status" className="text-sm text-muted">
               {isSent ? <bdi>{STRINGS.invite.sent(email)}</bdi> : null}
             </p>
-          </Ui.Card.Footer>
-        </Ui.Card>
+          </Card.Footer>
+        </Card>
 
-        <Ui.Card className={CARD}>
-          <Ui.Card.Header>
-            <Ui.Card.Title level={headingLevel}>{STRINGS.deploys.title}</Ui.Card.Title>
-            <Ui.Card.Description>
+        <Card className={CARD}>
+          <Card.Header>
+            <Card.Title level={headingLevel}>{STRINGS.deploys.title}</Card.Title>
+            <Card.Description>
               <bdi>{STRINGS.deploys.description}</bdi>
-            </Ui.Card.Description>
-          </Ui.Card.Header>
-          <Ui.Card.Content>
+            </Card.Description>
+          </Card.Header>
+          <Card.Content>
             <ul className="grid divide-y divide-separator">
               {DEPLOYS.map(({ name, version, status, tone }) => (
                 <li key={version} className="flex items-center gap-3 py-3">
-                  <Ui.Avatar name={name} size="sm" />
+                  <Avatar name={name} size="sm" />
                   <span className="grid min-w-0 flex-1">
                     <span className="truncate font-medium">{name}</span>
                     <span className="font-mono text-xs text-muted">{version}</span>
                   </span>
-                  {tone === "warning" ? <Ui.Spinner size="sm" tone="muted" /> : null}
-                  <Ui.StatusBadge tone={tone}>{status}</Ui.StatusBadge>
+                  {tone === "warning" ? <Spinner size="sm" tone="muted" /> : null}
+                  <StatusBadge tone={tone}>{status}</StatusBadge>
                 </li>
               ))}
             </ul>
-          </Ui.Card.Content>
-        </Ui.Card>
+          </Card.Content>
+        </Card>
 
-        <Ui.Card className={`${CARD} @2xl:col-span-2 @5xl:col-span-1`}>
-          <Ui.Card.Header>
-            <Ui.Card.Title level={headingLevel}>{STRINGS.filters.title}</Ui.Card.Title>
-            <Ui.Card.Description>
+        <Card className={`${CARD} @2xl:col-span-2 @5xl:col-span-1`}>
+          <Card.Header>
+            <Card.Title level={headingLevel}>{STRINGS.filters.title}</Card.Title>
+            <Card.Description>
               <bdi>{STRINGS.filters.description}</bdi>
-            </Ui.Card.Description>
-          </Ui.Card.Header>
-          <Ui.Card.Content className="grid gap-4">
-            <Ui.SearchField label={STRINGS.filters.search} value={query} onChange={setQuery} />
+            </Card.Description>
+          </Card.Header>
+          <Card.Content className="grid gap-4">
+            <SearchField label={STRINGS.filters.search} value={query} onChange={setQuery} />
             <div className="grid gap-2">
-              <Ui.Checkbox label={STRINGS.filters.paid} value={isPaidOnly} onChange={setPaidOnly} />
-              <Ui.Checkbox
-                label={STRINGS.filters.shipped}
-                value={isShipped}
-                onChange={setShipped}
-              />
+              <Checkbox label={STRINGS.filters.paid} value={isPaidOnly} onChange={setPaidOnly} />
+              <Checkbox label={STRINGS.filters.shipped} value={isShipped} onChange={setShipped} />
             </div>
-          </Ui.Card.Content>
-          <Ui.Card.Footer className="flex items-center justify-between gap-3">
-            <Ui.Chip variant="soft" size="sm">
+          </Card.Content>
+          <Card.Footer className="flex items-center justify-between gap-3">
+            <Chip variant="soft" size="sm">
               <span role="status">{STRINGS.filters.count(count)}</span>
-            </Ui.Chip>
-            <Ui.Button
+            </Chip>
+            <Button
               variant="ghost"
               size="sm"
               startIcon="undo-2"
@@ -153,9 +155,9 @@ export function Showcase({ headingLevel }: ShowcaseProps) {
               }}
             >
               {STRINGS.filters.reset}
-            </Ui.Button>
-          </Ui.Card.Footer>
-        </Ui.Card>
+            </Button>
+          </Card.Footer>
+        </Card>
       </div>
     </div>
   );

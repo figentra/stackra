@@ -1,6 +1,11 @@
 #!/usr/bin/env node
 /**
- * spec-linear — link a spec-kit spec and its tasks to Linear (team STA).
+ * Stackra file contract:
+ * Purpose: `spec-linear` — link a spec-kit spec and its tasks to Linear (team STA).
+ * Boundary: creates Linear issues and writes only the `**Linear**` key and task ` [STA-n]` suffixes into the spec
+ *           files.
+ * Runtime: node
+ * Governing contract: ADR 0121 (SDLC tooling roles and Linear); ADR 0065.
  *
  *   node tools/scripts/spec-linear.mjs issue <spec.md>  [--dry-run]   create the spec's issue (labelled `agent` when an agent runs it), write `**Linear**: STA-n`
  *   node tools/scripts/spec-linear.mjs tasks <tasks.md> [--dry-run]   one sub-issue per `T###` task, appends ` [STA-n]`

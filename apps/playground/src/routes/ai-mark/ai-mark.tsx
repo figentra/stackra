@@ -7,7 +7,7 @@
  * Runtime: browser
  * Governing contract: ADR 0360 (decision 11); ADR 0060 (light, dark, RTL); STA-803.
  */
-import * as Ui from "@stackra/ui/react";
+import { AiMark as UiAiMark, Button } from "@stackra/ui/react";
 
 import { AiMarkRoute } from "#src/routes/ai-mark/ai-mark.route";
 
@@ -41,18 +41,18 @@ export function AiMark() {
           {STRINGS.kinds}
         </h2>
         <div className="flex items-center gap-2">
-          <Ui.Button variant="secondary">{STRINGS.action}</Ui.Button>
-          <Ui.AiMark kind="capable" label={STRINGS.capable} />
+          <Button variant="secondary">{STRINGS.action}</Button>
+          <UiAiMark kind="capable" label={STRINGS.capable} />
         </div>
         <p className="flex items-center gap-2 text-sm">
           <bdi>{STRINGS.record}</bdi>
-          <Ui.AiMark kind="changed" label={STRINGS.changed} />
+          <UiAiMark kind="changed" label={STRINGS.changed} />
         </p>
         <div className="grid gap-1 rounded-md border border-border p-3">
           <p className="text-sm">
             <bdi>{STRINGS.content}</bdi>
           </p>
-          <Ui.AiMark kind="generated" label={STRINGS.generated} isLabelVisible />
+          <UiAiMark kind="generated" label={STRINGS.generated} isLabelVisible />
         </div>
       </section>
     </article>

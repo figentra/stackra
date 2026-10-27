@@ -37,7 +37,7 @@ import {
   Trash,
   Undo2,
 } from "@stackra/icons/native/lucide-icons";
-import type { ReactNode } from "react";
+import type { ReviewIconsProps } from "./review-icons.props";
 
 // shortcut: written by hand, only the icons the review screens draw, until gen emits it from the names used (STA-339).
 const REVIEW_ICONS = defineIconRegistry({
@@ -67,12 +67,6 @@ const REVIEW_ICONS = defineIconRegistry({
   trash: Trash,
   "undo-2": Undo2,
 });
-
-/** Props of {@link ReviewIcons}. */
-export interface ReviewIconsProps {
-  /** The review screen or header part that draws icons by name. */
-  readonly children: ReactNode;
-}
 
 /** Gives the review area's screens their icons by name. */
 export function ReviewIcons({ children }: ReviewIconsProps) {

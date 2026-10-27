@@ -11,7 +11,7 @@
  * Governing contract: ADR 0302 (decision 5); ADR 0310 (decision 6); ADR 0060 (light, dark, RTL); STA-403 FR-013.
  */
 import { Kbd } from "@heroui/react";
-import * as Ui from "@stackra/ui/react";
+import { Button } from "@stackra/ui/react";
 import * as UiPro from "@stackra-pro/ui/react";
 import { useEffect, useState } from "react";
 
@@ -96,7 +96,7 @@ export function ProActionPalette() {
         </p>
       </header>
       <div>
-        <Ui.Button
+        <Button
           variant="outline"
           aria-keyshortcuts="Control+K Meta+K"
           onPress={() => setOpen(true)}
@@ -105,7 +105,7 @@ export function ProActionPalette() {
           <Kbd>
             <Kbd.Content>{STRINGS.shortcut}</Kbd.Content>
           </Kbd>
-        </Ui.Button>
+        </Button>
       </div>
       <p role="status" className="text-muted">
         <bdi>{lastAction ? STRINGS.last(lastAction) : STRINGS.none}</bdi>

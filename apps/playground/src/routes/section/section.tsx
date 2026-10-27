@@ -19,7 +19,14 @@ import { defineIconRegistry } from "@stackra/icons";
 import { IconRegistryProvider } from "@stackra/icons/react";
 import { Ellipsis } from "@stackra/icons/react/lucide-icons";
 import type { MenuLeafItem } from "@stackra/ui/contracts";
-import * as Ui from "@stackra/ui/react";
+import {
+  Avatar,
+  Heading,
+  PropertyList,
+  Section as UiSection,
+  StatusBadge,
+  Text,
+} from "@stackra/ui/react";
 import { useState, type ReactNode } from "react";
 
 import { PageSection } from "#src/components/page-section";
@@ -113,9 +120,9 @@ const GRID = "grid gap-4";
 function Sample({ caption, children }: { readonly caption: string; readonly children: ReactNode }) {
   return (
     <li className="grid content-start gap-2">
-      <Ui.Text tone="muted" type="small">
+      <Text tone="muted" type="small">
         {caption}
-      </Ui.Text>
+      </Text>
       {children}
     </li>
   );
@@ -152,47 +159,47 @@ export function Section() {
       <article className="grid gap-10">
         <title>{STRINGS.documentTitle}</title>
         <header className="grid gap-2">
-          <Ui.Heading level={1}>{SectionRoute.title}</Ui.Heading>
-          <Ui.Text className="max-w-prose">
+          <Heading level={1}>{SectionRoute.title}</Heading>
+          <Text className="max-w-prose">
             <bdi>{STRINGS.intro}</bdi>
-          </Ui.Text>
+          </Text>
         </header>
 
         <PageSection id="section-parts" title={STRINGS.parts} note={STRINGS.partsNote}>
           <ul className={GRID}>
             <Sample caption={STRINGS.titleOnly}>
-              <Ui.Section headingLevel={3} title={STRINGS.titleOnlyTitle} />
+              <UiSection headingLevel={3} title={STRINGS.titleOnlyTitle} />
             </Sample>
             <Sample caption={STRINGS.description}>
-              <Ui.Section
+              <UiSection
                 headingLevel={3}
                 title={STRINGS.descriptionTitle}
                 description={STRINGS.descriptionLine}
               />
             </Sample>
             <Sample caption={STRINGS.body}>
-              <Ui.Section headingLevel={3} title={STRINGS.bodyTitle}>
-                <Ui.Text>{STRINGS.paid}</Ui.Text>
-              </Ui.Section>
+              <UiSection headingLevel={3} title={STRINGS.bodyTitle}>
+                <Text>{STRINGS.paid}</Text>
+              </UiSection>
             </Sample>
             <Sample caption={STRINGS.start}>
-              <Ui.Section
+              <UiSection
                 headingLevel={3}
                 title={STRINGS.startTitle}
-                startContent={<Ui.Avatar name={STRINGS.placedBy} shape="square" />}
+                startContent={<Avatar name={STRINGS.placedBy} shape="square" />}
               />
             </Sample>
             <Sample caption={STRINGS.every}>
-              <Ui.Section
+              <UiSection
                 headingLevel={3}
                 title={STRINGS.everyTitle}
                 description={STRINGS.everyLine}
-                startContent={<Ui.Avatar name={STRINGS.placedBy} shape="square" />}
+                startContent={<Avatar name={STRINGS.placedBy} shape="square" />}
                 actions={actionsOf(2)}
-                endContent={<Ui.StatusBadge tone="success">{STRINGS.paid}</Ui.StatusBadge>}
+                endContent={<StatusBadge tone="success">{STRINGS.paid}</StatusBadge>}
               >
-                <Ui.PropertyList items={DETAILS} />
-              </Ui.Section>
+                <PropertyList items={DETAILS} />
+              </UiSection>
             </Sample>
           </ul>
         </PageSection>
@@ -200,13 +207,13 @@ export function Section() {
         <PageSection id="section-actions" title={STRINGS.actions} note={STRINGS.actionsNote}>
           <ul className={GRID}>
             <Sample caption={STRINGS.one}>
-              <Ui.Section headingLevel={3} title={STRINGS.oneTitle} actions={actionsOf(1)} />
+              <UiSection headingLevel={3} title={STRINGS.oneTitle} actions={actionsOf(1)} />
             </Sample>
             <Sample caption={STRINGS.three}>
-              <Ui.Section headingLevel={3} title={STRINGS.threeTitle} actions={actionsOf(3)} />
+              <UiSection headingLevel={3} title={STRINGS.threeTitle} actions={actionsOf(3)} />
             </Sample>
             <Sample caption={STRINGS.six}>
-              <Ui.Section
+              <UiSection
                 headingLevel={3}
                 title={STRINGS.sixTitle}
                 actions={actionsOf(6)}
@@ -214,7 +221,7 @@ export function Section() {
               />
             </Sample>
             <Sample caption={STRINGS.danger}>
-              <Ui.Section
+              <UiSection
                 headingLevel={3}
                 title={STRINGS.dangerTitle}
                 actions={[
@@ -225,7 +232,7 @@ export function Section() {
               />
             </Sample>
             <Sample caption={STRINGS.link}>
-              <Ui.Section
+              <UiSection
                 headingLevel={3}
                 title={STRINGS.linkTitle}
                 actions={[{ id: "open", label: STRINGS.openApp, href: "/page-header" }]}
@@ -238,12 +245,12 @@ export function Section() {
           <ul className={GRID}>
             <Sample caption={STRINGS.sameTitle}>
               <div className="grid gap-4 sm:grid-cols-2">
-                <Ui.Section
+                <UiSection
                   headingLevel={3}
                   title={STRINGS.address}
                   label={STRINGS.billingAddress}
                 />
-                <Ui.Section
+                <UiSection
                   headingLevel={3}
                   title={STRINGS.address}
                   label={STRINGS.shippingAddress}
@@ -255,7 +262,7 @@ export function Section() {
 
         <PageSection id="section-arabic" title={STRINGS.arabic} note={STRINGS.arabicNote}>
           <div dir="rtl" lang="ar" data-sample="arabic">
-            <Ui.Section
+            <UiSection
               headingLevel={3}
               title={STRINGS.arabicTitle}
               description={STRINGS.arabicLine}
@@ -264,15 +271,15 @@ export function Section() {
                 { id: "export", label: STRINGS.arabicExport, icon: "download" },
               ]}
             >
-              <Ui.Text>{STRINGS.arabicBody}</Ui.Text>
-            </Ui.Section>
+              <Text>{STRINGS.arabicBody}</Text>
+            </UiSection>
           </div>
         </PageSection>
 
         <PageSection id="section-live" title={STRINGS.live} note={STRINGS.liveNote}>
           <div className="grid gap-3">
             <div data-sample="live">
-              <Ui.Section
+              <UiSection
                 headingLevel={3}
                 title={STRINGS.liveTitle}
                 description={STRINGS.liveLine}
@@ -289,14 +296,12 @@ export function Section() {
                   { id: "archive", label: STRINGS.archive, onPress: choose(STRINGS.archive) },
                 ]}
               >
-                <Ui.Text data-sample="live-body">
-                  {isEditing ? STRINGS.editing : STRINGS.viewing}
-                </Ui.Text>
-              </Ui.Section>
+                <Text data-sample="live-body">{isEditing ? STRINGS.editing : STRINGS.viewing}</Text>
+              </UiSection>
             </div>
-            <Ui.Text role="status" tone="muted" data-sample="live-status">
+            <Text role="status" tone="muted" data-sample="live-status">
               {STRINGS.actionStatus(action)}
-            </Ui.Text>
+            </Text>
           </div>
         </PageSection>
       </article>

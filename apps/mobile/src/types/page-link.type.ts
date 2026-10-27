@@ -8,7 +8,7 @@
  */
 import type { ComponentCategory } from "../enums/component-category.enum";
 import type { ComponentTier } from "../enums/component-tier.enum";
-import type { DesignSystemComponentRoute } from "../navigation/types";
+import type { DesignSystemComponentRoute } from "../navigation/design-system-component-route.type";
 
 /** A component page the review area links to. */
 export interface PageLink {

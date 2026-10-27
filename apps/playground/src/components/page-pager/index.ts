@@ -5,4 +5,5 @@
  * Runtime: browser
  * Governing contract: ADR 0294 (decision 14).
  */
-export { PagePager, type PagePagerProps } from "./page-pager";
+export { PagePager } from "./page-pager";
+export { type PagePagerProps } from "./page-pager.props";

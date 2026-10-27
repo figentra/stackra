@@ -22,8 +22,11 @@ describe("ProCarousel", () => {
       "IntersectionObserver",
       class {
         observe() {}
+
         unobserve() {}
+
         disconnect() {}
+
         takeRecords() {
           return [];
         }

@@ -5,12 +5,12 @@
  *          driven from outside and reported, all from `@stackra/ui/react` with real props.
  * Boundary: presentation only; strings in one `STRINGS` constant until @stackra/i18n. The samples sit in centred rows so
  *           a tooltip has room on every side and is never flipped or shifted by the viewport edge. Icons are drawn by
- *           name through `Ui.IconButton`, from the registry in `components/playground-icons` (ADR 0303 decision 10).
+ *           name through `IconButton`, from the registry in `components/playground-icons` (ADR 0303 decision 10).
  * Runtime: browser
  * Governing contract: ADR 0302 (decisions 3 and 5); ADR 0303 (decision 7); ADR 0312; ADR 0060 (light, dark, RTL);
  *          WCAG 2.2 SC 1.4.13 and 2.5.8.
  */
-import * as Ui from "@stackra/ui/react";
+import { Button, Heading, IconButton, Switch, Text, Tooltip as UiTooltip } from "@stackra/ui/react";
 import { useState } from "react";
 
 import { PageSection } from "#src/components/page-section";
@@ -79,10 +79,10 @@ export function Tooltip() {
     <article className="grid gap-10">
       <title>{STRINGS.documentTitle}</title>
       <header className="grid gap-2">
-        <Ui.Heading level={1}>{TooltipRoute.title}</Ui.Heading>
-        <Ui.Text className="max-w-prose">
+        <Heading level={1}>{TooltipRoute.title}</Heading>
+        <Text className="max-w-prose">
           <bdi>{STRINGS.intro}</bdi>
-        </Ui.Text>
+        </Text>
       </header>
 
       <PageSection id="tooltip-placement" title={STRINGS.placement} note={STRINGS.placementNote}>
@@ -96,9 +96,9 @@ export function Tooltip() {
             ] as const
           ).map(([placement, label]) => (
             <li key={placement}>
-              <Ui.Tooltip placement={placement} content={STRINGS.sideText(label)}>
-                <Ui.Button variant="secondary">{label}</Ui.Button>
-              </Ui.Tooltip>
+              <UiTooltip placement={placement} content={STRINGS.sideText(label)}>
+                <Button variant="secondary">{label}</Button>
+              </UiTooltip>
             </li>
           ))}
         </ul>
@@ -114,9 +114,9 @@ export function Tooltip() {
             ] as const
           ).map(([align, label]) => (
             <li key={align}>
-              <Ui.Tooltip placement="bottom" align={align} content={STRINGS.alignText}>
-                <Ui.Button variant="secondary">{label}</Ui.Button>
-              </Ui.Tooltip>
+              <UiTooltip placement="bottom" align={align} content={STRINGS.alignText}>
+                <Button variant="secondary">{label}</Button>
+              </UiTooltip>
             </li>
           ))}
         </ul>
@@ -125,14 +125,14 @@ export function Tooltip() {
       <PageSection id="tooltip-arrow" title={STRINGS.arrow} note={STRINGS.arrowNote}>
         <ul className={ROW}>
           <li>
-            <Ui.Tooltip content={STRINGS.arrowText}>
-              <Ui.Button variant="secondary">{STRINGS.withoutArrow}</Ui.Button>
-            </Ui.Tooltip>
+            <UiTooltip content={STRINGS.arrowText}>
+              <Button variant="secondary">{STRINGS.withoutArrow}</Button>
+            </UiTooltip>
           </li>
           <li>
-            <Ui.Tooltip hasArrow content={STRINGS.arrowText}>
-              <Ui.Button variant="secondary">{STRINGS.withArrow}</Ui.Button>
-            </Ui.Tooltip>
+            <UiTooltip hasArrow content={STRINGS.arrowText}>
+              <Button variant="secondary">{STRINGS.withArrow}</Button>
+            </UiTooltip>
           </li>
         </ul>
       </PageSection>
@@ -140,19 +140,19 @@ export function Tooltip() {
       <PageSection id="tooltip-icons" title={STRINGS.icons} note={STRINGS.iconsNote}>
         <ul className={ROW}>
           <li>
-            <Ui.Tooltip content={STRINGS.settingsText}>
-              <Ui.IconButton icon="settings" label={STRINGS.settingsLabel} variant="secondary" />
-            </Ui.Tooltip>
+            <UiTooltip content={STRINGS.settingsText}>
+              <IconButton icon="settings" label={STRINGS.settingsLabel} variant="secondary" />
+            </UiTooltip>
           </li>
           <li>
-            <Ui.Tooltip content={STRINGS.alertsText}>
-              <Ui.IconButton icon="bell" label={STRINGS.alertsLabel} variant="secondary" />
-            </Ui.Tooltip>
+            <UiTooltip content={STRINGS.alertsText}>
+              <IconButton icon="bell" label={STRINGS.alertsLabel} variant="secondary" />
+            </UiTooltip>
           </li>
           <li>
-            <Ui.Tooltip content={STRINGS.downloadText}>
-              <Ui.IconButton icon="download" label={STRINGS.downloadLabel} variant="secondary" />
-            </Ui.Tooltip>
+            <UiTooltip content={STRINGS.downloadText}>
+              <IconButton icon="download" label={STRINGS.downloadLabel} variant="secondary" />
+            </UiTooltip>
           </li>
         </ul>
       </PageSection>
@@ -160,33 +160,33 @@ export function Tooltip() {
       <PageSection id="tooltip-delay" title={STRINGS.delay} note={STRINGS.delayNote}>
         <ul className={ROW}>
           <li>
-            <Ui.Tooltip content={STRINGS.defaultDelayText}>
-              <Ui.Button variant="secondary">{STRINGS.defaultDelay}</Ui.Button>
-            </Ui.Tooltip>
+            <UiTooltip content={STRINGS.defaultDelayText}>
+              <Button variant="secondary">{STRINGS.defaultDelay}</Button>
+            </UiTooltip>
           </li>
           <li>
-            <Ui.Tooltip delay={0} content={STRINGS.noDelayText}>
-              <Ui.Button variant="secondary">{STRINGS.noDelay}</Ui.Button>
-            </Ui.Tooltip>
+            <UiTooltip delay={0} content={STRINGS.noDelayText}>
+              <Button variant="secondary">{STRINGS.noDelay}</Button>
+            </UiTooltip>
           </li>
           <li>
-            <Ui.Tooltip isDisabled content={STRINGS.switchedOffText}>
-              <Ui.Button variant="secondary">{STRINGS.switchedOff}</Ui.Button>
-            </Ui.Tooltip>
+            <UiTooltip isDisabled content={STRINGS.switchedOffText}>
+              <Button variant="secondary">{STRINGS.switchedOff}</Button>
+            </UiTooltip>
           </li>
         </ul>
       </PageSection>
 
       <PageSection id="tooltip-live" title={STRINGS.live} note={STRINGS.liveNote}>
         <div className={ROW}>
-          <Ui.Tooltip isOpen={isLiveOpen} onOpenChange={setIsLiveOpen} content={STRINGS.liveText}>
-            <Ui.Button variant="secondary">{STRINGS.liveTrigger}</Ui.Button>
-          </Ui.Tooltip>
-          <Ui.Switch label={STRINGS.liveShow} value={isLiveOpen} onChange={setIsLiveOpen} />
+          <UiTooltip isOpen={isLiveOpen} onOpenChange={setIsLiveOpen} content={STRINGS.liveText}>
+            <Button variant="secondary">{STRINGS.liveTrigger}</Button>
+          </UiTooltip>
+          <Switch label={STRINGS.liveShow} value={isLiveOpen} onChange={setIsLiveOpen} />
         </div>
-        <Ui.Text role="status" data-testid="tooltip-state" tone="muted">
+        <Text role="status" data-testid="tooltip-state" tone="muted">
           {STRINGS.state(isLiveOpen)}
-        </Ui.Text>
+        </Text>
       </PageSection>
     </article>
   );

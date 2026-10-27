@@ -17,7 +17,7 @@ import { defineIconRegistry } from "@stackra/icons";
 import { IconRegistryProvider } from "@stackra/icons/react";
 import { House, Inbox, Package, Users } from "@stackra/icons/react/lucide-icons";
 import type { NavigationItem } from "@stackra/ui/contracts";
-import * as Ui from "@stackra/ui/react";
+import { Heading, NavigationList as UiNavigationList, Text } from "@stackra/ui/react";
 import { useState } from "react";
 import { useLocation } from "react-router";
 
@@ -121,15 +121,15 @@ export function NavigationList() {
       <article className="grid gap-10">
         <title>{STRINGS.documentTitle}</title>
         <header className="grid gap-2">
-          <Ui.Heading level={1}>{NavigationListRoute.title}</Ui.Heading>
-          <Ui.Text className="max-w-prose">
+          <Heading level={1}>{NavigationListRoute.title}</Heading>
+          <Text className="max-w-prose">
             <bdi>{STRINGS.intro}</bdi>
-          </Ui.Text>
+          </Text>
         </header>
 
         <PageSection id="navigation-list-basics" title={STRINGS.basics} note={STRINGS.basicsNote}>
           <div className="max-w-xs">
-            <Ui.NavigationList label={STRINGS.basicsLabel} items={flat("navigation-list-basics")} />
+            <UiNavigationList label={STRINGS.basicsLabel} items={flat("navigation-list-basics")} />
           </div>
         </PageSection>
 
@@ -139,7 +139,7 @@ export function NavigationList() {
           note={STRINGS.currentNote}
         >
           <div className="grid max-w-xs gap-6">
-            <Ui.NavigationList
+            <UiNavigationList
               label={STRINGS.currentLabel}
               items={[
                 {
@@ -163,7 +163,7 @@ export function NavigationList() {
                 },
               ]}
             />
-            <Ui.NavigationList
+            <UiNavigationList
               label={STRINGS.holdingLabel}
               items={[
                 {
@@ -187,7 +187,7 @@ export function NavigationList() {
 
         <PageSection id="navigation-list-groups" title={STRINGS.groups} note={STRINGS.groupsNote}>
           <div className="max-w-xs">
-            <Ui.NavigationList
+            <UiNavigationList
               label={STRINGS.groupsLabel}
               items={[
                 {
@@ -231,7 +231,7 @@ export function NavigationList() {
 
         <PageSection id="navigation-list-badges" title={STRINGS.badges} note={STRINGS.badgesNote}>
           <div className="max-w-xs">
-            <Ui.NavigationList
+            <UiNavigationList
               label={STRINGS.badgesLabel}
               items={[
                 {
@@ -262,7 +262,7 @@ export function NavigationList() {
 
         <PageSection id="navigation-list-states" title={STRINGS.states} note={STRINGS.statesNote}>
           <div className="grid max-w-xs gap-3">
-            <Ui.NavigationList
+            <UiNavigationList
               label={STRINGS.statesLabel}
               items={[
                 {
@@ -298,7 +298,7 @@ export function NavigationList() {
           note={STRINGS.shortcutsNote}
         >
           <div className="max-w-xs">
-            <Ui.NavigationList
+            <UiNavigationList
               label={STRINGS.shortcutsLabel}
               items={[
                 {
@@ -326,7 +326,7 @@ export function NavigationList() {
           note={STRINGS.compactNote}
         >
           <div className="w-20 rounded-xl border border-border p-2">
-            <Ui.NavigationList
+            <UiNavigationList
               isCompact
               label={STRINGS.compactLabel}
               items={[
@@ -357,7 +357,7 @@ export function NavigationList() {
 
         <PageSection id="navigation-list-arabic" title={STRINGS.arabic} note={STRINGS.arabicNote}>
           <div lang="ar" dir="rtl" className="max-w-xs">
-            <Ui.NavigationList
+            <UiNavigationList
               label={STRINGS.arabicLabel}
               items={[
                 {
@@ -386,7 +386,7 @@ export function NavigationList() {
 
         <PageSection id="navigation-list-live" title={STRINGS.live} note={STRINGS.liveNote}>
           <div className="grid max-w-xs gap-3">
-            <Ui.NavigationList label={STRINGS.liveLabel} items={live} />
+            <UiNavigationList label={STRINGS.liveLabel} items={live} />
             <output aria-live="polite" data-testid="current-page">
               <bdi>{STRINGS.currentPage(currentName)}</bdi>
             </output>

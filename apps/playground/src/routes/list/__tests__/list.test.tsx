@@ -47,11 +47,14 @@ describe("List page", () => {
       "IntersectionObserver",
       class {
         private readonly entry: { fire: () => void; disconnected: boolean };
+
         constructor(callback: (entries: { isIntersecting: boolean }[]) => void) {
           this.entry = { fire: () => callback([{ isIntersecting: true }]), disconnected: false };
           observers.push(this.entry);
         }
+
         observe() {}
+
         disconnect() {
           this.entry.disconnected = true;
         }

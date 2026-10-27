@@ -1,3 +1,11 @@
+/**
+ * Stackra file contract:
+ * Purpose: hold the OpenCode guard's decisions to their contract.
+ * Boundary: pure decisions plus temp directories; no network.
+ * Runtime: node
+ * Governing contract: ADR 0022 (tests live in tests folders); ADR 0182 (testing strategy). ADR 0293 (agent permission
+ *                     tiers).
+ */
 // node --test .opencode/plugins/guard/__tests__/decide.test.ts   (Node >= 23.6 strips the types; no network)
 import { test } from "node:test";
 import assert from "node:assert/strict";

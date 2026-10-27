@@ -10,7 +10,7 @@
  *          (light, dark, RTL).
  */
 import { SurfaceVariant } from "@stackra/ui/contracts";
-import * as Ui from "@stackra/ui/react";
+import { Button, Card as UiCard, CloseButton, Heading, Text } from "@stackra/ui/react";
 import { useState } from "react";
 
 import { PageSection } from "#src/components/page-section";
@@ -69,50 +69,50 @@ export function Card() {
     <article className="grid gap-10">
       <title>{STRINGS.documentTitle}</title>
       <header className="grid gap-2">
-        <Ui.Heading level={1}>{CardRoute.title}</Ui.Heading>
-        <Ui.Text className="max-w-prose">
+        <Heading level={1}>{CardRoute.title}</Heading>
+        <Text className="max-w-prose">
           <bdi>{STRINGS.intro}</bdi>
-        </Ui.Text>
+        </Text>
       </header>
 
       <PageSection id="card-levels" title={STRINGS.levels} note={STRINGS.levelsNote}>
         <div className="grid gap-4 sm:grid-cols-2">
           {SurfaceVariant.map((variant) => (
-            <Ui.Card
+            <UiCard
               key={variant}
               variant={variant}
               className={variant === "transparent" ? "border border-border" : ""}
             >
-              <Ui.Card.Header>
-                <Ui.Card.Title>{STRINGS.levelTitle(variant)}</Ui.Card.Title>
-                <Ui.Card.Description>
+              <UiCard.Header>
+                <UiCard.Title>{STRINGS.levelTitle(variant)}</UiCard.Title>
+                <UiCard.Description>
                   <bdi>{STRINGS.levelDescription}</bdi>
-                </Ui.Card.Description>
-              </Ui.Card.Header>
-              <Ui.Card.Content>
+                </UiCard.Description>
+              </UiCard.Header>
+              <UiCard.Content>
                 <bdi>{STRINGS.levelContent}</bdi>
-              </Ui.Card.Content>
-            </Ui.Card>
+              </UiCard.Content>
+            </UiCard>
           ))}
         </div>
       </PageSection>
 
       <PageSection id="card-anatomy" title={STRINGS.anatomy} note={STRINGS.anatomyNote}>
-        <Ui.Card className="max-w-sm">
-          <Ui.Card.Header>
-            <Ui.Card.Title>{STRINGS.anatomyTitle}</Ui.Card.Title>
-            <Ui.Card.Description>
+        <UiCard className="max-w-sm">
+          <UiCard.Header>
+            <UiCard.Title>{STRINGS.anatomyTitle}</UiCard.Title>
+            <UiCard.Description>
               <bdi>{STRINGS.anatomyDescription}</bdi>
-            </Ui.Card.Description>
-          </Ui.Card.Header>
-          <Ui.Card.Content>
+            </UiCard.Description>
+          </UiCard.Header>
+          <UiCard.Content>
             <bdi>{STRINGS.anatomyContent}</bdi>
-          </Ui.Card.Content>
-          <Ui.Card.Footer className="gap-2">
-            <Ui.Button variant="primary">{STRINGS.pay}</Ui.Button>
-            <Ui.Button variant="secondary">{STRINGS.later}</Ui.Button>
-          </Ui.Card.Footer>
-        </Ui.Card>
+          </UiCard.Content>
+          <UiCard.Footer className="gap-2">
+            <Button variant="primary">{STRINGS.pay}</Button>
+            <Button variant="secondary">{STRINGS.later}</Button>
+          </UiCard.Footer>
+        </UiCard>
       </PageSection>
 
       <PageSection
@@ -120,74 +120,74 @@ export function Card() {
         title={STRINGS.titleLevels}
         note={STRINGS.titleLevelsNote}
       >
-        <Ui.Card className="max-w-md">
-          <Ui.Card.Header>
-            <Ui.Card.Title level={3}>{STRINGS.outerTitle}</Ui.Card.Title>
-            <Ui.Card.Description>
+        <UiCard className="max-w-md">
+          <UiCard.Header>
+            <UiCard.Title level={3}>{STRINGS.outerTitle}</UiCard.Title>
+            <UiCard.Description>
               <bdi>{STRINGS.outerDescription}</bdi>
-            </Ui.Card.Description>
-          </Ui.Card.Header>
-          <Ui.Card.Content>
-            <Ui.Card variant="transparent" className="border border-border">
-              <Ui.Card.Title level={4}>{STRINGS.innerTitle}</Ui.Card.Title>
-              <Ui.Card.Content>
+            </UiCard.Description>
+          </UiCard.Header>
+          <UiCard.Content>
+            <UiCard variant="transparent" className="border border-border">
+              <UiCard.Title level={4}>{STRINGS.innerTitle}</UiCard.Title>
+              <UiCard.Content>
                 <bdi>{STRINGS.innerContent}</bdi>
-              </Ui.Card.Content>
-            </Ui.Card>
-          </Ui.Card.Content>
-        </Ui.Card>
+              </UiCard.Content>
+            </UiCard>
+          </UiCard.Content>
+        </UiCard>
       </PageSection>
 
       <PageSection id="card-named" title={STRINGS.named} note={STRINGS.namedNote}>
-        <Ui.Card role="article" aria-labelledby="card-named-title" className="max-w-sm">
-          <Ui.Card.Header>
-            <Ui.Card.Title id="card-named-title">{STRINGS.namedTitle}</Ui.Card.Title>
-          </Ui.Card.Header>
-          <Ui.Card.Content>
+        <UiCard role="article" aria-labelledby="card-named-title" className="max-w-sm">
+          <UiCard.Header>
+            <UiCard.Title id="card-named-title">{STRINGS.namedTitle}</UiCard.Title>
+          </UiCard.Header>
+          <UiCard.Content>
             <bdi>{STRINGS.namedContent}</bdi>
-          </Ui.Card.Content>
-        </Ui.Card>
+          </UiCard.Content>
+        </UiCard>
       </PageSection>
 
       <PageSection id="card-horizontal" title={STRINGS.horizontal} note={STRINGS.horizontalNote}>
-        <Ui.Card className="max-w-xl md:flex-row md:items-center">
+        <UiCard className="max-w-xl md:flex-row md:items-center">
           <div
             aria-hidden="true"
             className="h-24 rounded-2xl bg-default md:h-24 md:w-40 md:shrink-0"
           />
-          <Ui.Card.Content>
-            <Ui.Card.Title>{STRINGS.horizontalTitle}</Ui.Card.Title>
-            <Ui.Card.Description>
+          <UiCard.Content>
+            <UiCard.Title>{STRINGS.horizontalTitle}</UiCard.Title>
+            <UiCard.Description>
               <bdi>{STRINGS.horizontalContent}</bdi>
-            </Ui.Card.Description>
-          </Ui.Card.Content>
-        </Ui.Card>
+            </UiCard.Description>
+          </UiCard.Content>
+        </UiCard>
       </PageSection>
 
       <PageSection id="card-dismissible" title={STRINGS.dismissible} note={STRINGS.dismissibleNote}>
         <div className="grid max-w-sm gap-3">
           {isShown ? (
-            <Ui.Card>
-              <Ui.CloseButton
+            <UiCard>
+              <CloseButton
                 label={STRINGS.dismiss}
                 className="absolute end-3 top-3"
                 onPress={() => setIsShown(false)}
               />
-              <Ui.Card.Header>
-                <Ui.Card.Title>{STRINGS.dismissibleTitle}</Ui.Card.Title>
-              </Ui.Card.Header>
-              <Ui.Card.Content>
+              <UiCard.Header>
+                <UiCard.Title>{STRINGS.dismissibleTitle}</UiCard.Title>
+              </UiCard.Header>
+              <UiCard.Content>
                 <bdi>{STRINGS.dismissibleContent}</bdi>
-              </Ui.Card.Content>
-            </Ui.Card>
+              </UiCard.Content>
+            </UiCard>
           ) : (
             <div className={ROW}>
-              <Ui.Text role="status" tone="muted">
+              <Text role="status" tone="muted">
                 <bdi>{STRINGS.hidden}</bdi>
-              </Ui.Text>
-              <Ui.Button variant="secondary" onPress={() => setIsShown(true)}>
+              </Text>
+              <Button variant="secondary" onPress={() => setIsShown(true)}>
                 {STRINGS.showAgain}
-              </Ui.Button>
+              </Button>
             </div>
           )}
         </div>

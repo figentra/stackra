@@ -9,7 +9,7 @@
  * Governing contract: ADR 0302 (decisions 3 and 5); ADR 0303 (decision 7); ADR 0304; ADR 0060 (light, dark, RTL).
  */
 import { SurfaceVariant } from "@stackra/ui/contracts";
-import * as Ui from "@stackra/ui/react";
+import { Button, Heading, Surface as UiSurface, Text } from "@stackra/ui/react";
 import { useState } from "react";
 
 import { PageSection } from "#src/components/page-section";
@@ -50,52 +50,52 @@ export function Surface() {
     <article className="grid gap-10">
       <title>{STRINGS.documentTitle}</title>
       <header className="grid gap-2">
-        <Ui.Heading level={1}>{SurfaceRoute.title}</Ui.Heading>
-        <Ui.Text className="max-w-prose">
+        <Heading level={1}>{SurfaceRoute.title}</Heading>
+        <Text className="max-w-prose">
           <bdi>{STRINGS.intro}</bdi>
-        </Ui.Text>
+        </Text>
       </header>
 
       <PageSection id="surface-levels" title={STRINGS.levels} note={STRINGS.levelsNote}>
         <div className="grid gap-4 sm:grid-cols-2">
           {SurfaceVariant.map((variant) => (
-            <Ui.Surface
+            <UiSurface
               key={variant}
               variant={variant}
               className={variant === "transparent" ? `${BOX} border border-border` : BOX}
             >
-              <Ui.Text>{STRINGS.level(variant)}</Ui.Text>
-              <Ui.Text type="small" tone="muted">
+              <Text>{STRINGS.level(variant)}</Text>
+              <Text type="small" tone="muted">
                 <bdi>{STRINGS.levelLine}</bdi>
-              </Ui.Text>
-            </Ui.Surface>
+              </Text>
+            </UiSurface>
           ))}
         </div>
       </PageSection>
 
       <PageSection id="surface-nested" title={STRINGS.nested} note={STRINGS.nestedNote}>
-        <Ui.Surface variant="default" className={BOX}>
-          <Ui.Text>{STRINGS.level("default")}</Ui.Text>
-          <Ui.Surface variant="secondary" className={`${BOX} mt-4`}>
-            <Ui.Text>{STRINGS.level("secondary")}</Ui.Text>
-            <Ui.Surface variant="tertiary" className={`${BOX} mt-4`}>
-              <Ui.Text>{STRINGS.level("tertiary")}</Ui.Text>
-            </Ui.Surface>
-          </Ui.Surface>
-        </Ui.Surface>
+        <UiSurface variant="default" className={BOX}>
+          <Text>{STRINGS.level("default")}</Text>
+          <UiSurface variant="secondary" className={`${BOX} mt-4`}>
+            <Text>{STRINGS.level("secondary")}</Text>
+            <UiSurface variant="tertiary" className={`${BOX} mt-4`}>
+              <Text>{STRINGS.level("tertiary")}</Text>
+            </UiSurface>
+          </UiSurface>
+        </UiSurface>
       </PageSection>
 
       <PageSection id="surface-text" title={STRINGS.text} note={STRINGS.textNote}>
         <div className={ROW}>
           {SurfaceVariant.filter((variant) => variant !== "transparent").map((variant) => (
-            <Ui.Surface key={variant} variant={variant} className={BOX}>
-              <Ui.Text>
+            <UiSurface key={variant} variant={variant} className={BOX}>
+              <Text>
                 <bdi>{STRINGS.defaultText}</bdi>
-              </Ui.Text>
-              <Ui.Text tone="muted">
+              </Text>
+              <Text tone="muted">
                 <bdi>{STRINGS.mutedText}</bdi>
-              </Ui.Text>
-            </Ui.Surface>
+              </Text>
+            </UiSurface>
           ))}
         </div>
       </PageSection>
@@ -104,25 +104,25 @@ export function Surface() {
         <ul className={ROW}>
           {SurfaceVariant.map((variant) => (
             <li key={variant}>
-              <Ui.Button
+              <Button
                 variant={variant === level ? "primary" : "secondary"}
                 aria-pressed={variant === level}
                 onPress={() => setLevel(variant)}
               >
                 {STRINGS.pick(variant)}
-              </Ui.Button>
+              </Button>
             </li>
           ))}
         </ul>
-        <Ui.Surface
+        <UiSurface
           variant={level}
           data-testid="live-surface"
           className={level === "transparent" ? `${BOX} border border-border` : BOX}
         >
-          <Ui.Text>
+          <Text>
             <bdi>{STRINGS.current(level)}</bdi>
-          </Ui.Text>
-        </Ui.Surface>
+          </Text>
+        </UiSurface>
       </PageSection>
     </article>
   );

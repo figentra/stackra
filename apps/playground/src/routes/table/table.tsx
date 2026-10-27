@@ -11,7 +11,7 @@
  * Governing contract: ADR 0302 (decisions 3 and 5); ADR 0303 (decision 7); ADR 0313; ADR 0060 (light, dark, RTL).
  */
 import type { SortDescriptor, TableColumn, Tone } from "@stackra/ui/contracts";
-import * as Ui from "@stackra/ui/react";
+import { Button, Chip, Heading, Table as UiTable, Text } from "@stackra/ui/react";
 import { useEffect, useRef, useState } from "react";
 
 import { PageSection } from "#src/components/page-section";
@@ -118,8 +118,7 @@ const MONEY = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD
 
 /** The cell of a sample: the status as a chip and the total as money, the rest as the table's own text. */
 function renderOrderCell(order: Order, column: TableColumn) {
-  if (column.id === "status")
-    return <Ui.Chip tone={STATUS_TONE[order.status]}>{order.status}</Ui.Chip>;
+  if (column.id === "status") return <Chip tone={STATUS_TONE[order.status]}>{order.status}</Chip>;
   if (column.id === "total") return <bdi>{MONEY.format(order.total)}</bdi>;
   return String(order[column.id as keyof Order]);
 }
@@ -171,21 +170,21 @@ export function Table() {
     <article className="grid gap-10">
       <title>{STRINGS.documentTitle}</title>
       <header className="grid gap-2">
-        <Ui.Heading level={1}>{TableRoute.title}</Ui.Heading>
-        <Ui.Text className="max-w-prose">
+        <Heading level={1}>{TableRoute.title}</Heading>
+        <Text className="max-w-prose">
           <bdi>{STRINGS.intro}</bdi>
-        </Ui.Text>
+        </Text>
       </header>
 
       <PageSection id="table-basics" title={STRINGS.basics} note={STRINGS.basicsNote}>
         <div className={STACK}>
-          <Ui.Table
+          <UiTable
             label={STRINGS.primary}
             items={FEW}
             columns={PLAIN_COLUMNS}
             renderCell={renderOrderCell}
           />
-          <Ui.Table
+          <UiTable
             label={STRINGS.secondary}
             variant="secondary"
             items={FEW}
@@ -196,7 +195,7 @@ export function Table() {
       </PageSection>
 
       <PageSection id="table-sorting" title={STRINGS.sorting} note={STRINGS.sortingNote}>
-        <Ui.Table
+        <UiTable
           label={STRINGS.sortedLabel}
           items={sortedOrders(sort).slice(0, 6)}
           columns={COLUMNS}
@@ -204,20 +203,20 @@ export function Table() {
           sortDescriptor={sort}
           onSortChange={setSort}
         />
-        <Ui.Text role="status" data-testid="table-sort" tone="muted">
+        <Text role="status" data-testid="table-sort" tone="muted">
           {STRINGS.sorted(sort)}
-        </Ui.Text>
+        </Text>
       </PageSection>
 
       <PageSection id="table-selection" title={STRINGS.selection} note={STRINGS.selectionNote}>
         <div className={STACK}>
-          <Ui.Table
+          <UiTable
             label={STRINGS.none}
             items={FEW}
             columns={PLAIN_COLUMNS}
             renderCell={renderOrderCell}
           />
-          <Ui.Table
+          <UiTable
             label={STRINGS.single}
             items={FEW}
             columns={PLAIN_COLUMNS}
@@ -226,10 +225,10 @@ export function Table() {
             selectedKeys={single}
             onSelectionChange={setSingle}
           />
-          <Ui.Text role="status" data-testid="table-selected-single" tone="muted">
+          <Text role="status" data-testid="table-selected-single" tone="muted">
             {STRINGS.selected(single)}
-          </Ui.Text>
-          <Ui.Table
+          </Text>
+          <UiTable
             label={STRINGS.multiple}
             items={FEW}
             columns={PLAIN_COLUMNS}
@@ -238,14 +237,14 @@ export function Table() {
             selectedKeys={multiple}
             onSelectionChange={setMultiple}
           />
-          <Ui.Text role="status" data-testid="table-selected-multiple" tone="muted">
+          <Text role="status" data-testid="table-selected-multiple" tone="muted">
             {STRINGS.selected(multiple)}
-          </Ui.Text>
+          </Text>
         </div>
       </PageSection>
 
       <PageSection id="table-sticky" title={STRINGS.sticky} note={STRINGS.stickyNote}>
-        <Ui.Table
+        <UiTable
           label={STRINGS.stickyLabel}
           items={ORDERS.slice(0, 14)}
           columns={PLAIN_COLUMNS}
@@ -257,20 +256,20 @@ export function Table() {
 
       <PageSection id="table-states" title={STRINGS.states} note={STRINGS.statesNote}>
         <div className={STACK}>
-          <Ui.Table
+          <UiTable
             label={STRINGS.emptyLabel}
             items={[]}
             columns={PLAIN_COLUMNS}
-            emptyState={<Ui.Text tone="muted">{STRINGS.empty}</Ui.Text>}
+            emptyState={<Text tone="muted">{STRINGS.empty}</Text>}
           />
-          <Ui.Table
+          <UiTable
             label={STRINGS.loadingLabel}
             items={[]}
             columns={PLAIN_COLUMNS}
             isLoading
             loadingLabel={STRINGS.loadingText}
           />
-          <Ui.Table
+          <UiTable
             label={STRINGS.reloadingLabel}
             items={FEW}
             columns={PLAIN_COLUMNS}
@@ -282,7 +281,7 @@ export function Table() {
       </PageSection>
 
       <PageSection id="table-live" title={STRINGS.live} note={STRINGS.liveNote}>
-        <Ui.Table
+        <UiTable
           label={STRINGS.liveLabel}
           items={liveRows}
           columns={COLUMNS}
@@ -309,17 +308,17 @@ export function Table() {
             }, 400);
           }}
         />
-        <Ui.Text role="status" data-testid="table-live-sort" tone="muted">
+        <Text role="status" data-testid="table-live-sort" tone="muted">
           {STRINGS.liveSort(liveSort)}
-        </Ui.Text>
-        <Ui.Text role="status" data-testid="table-live-selected" tone="muted">
+        </Text>
+        <Text role="status" data-testid="table-live-selected" tone="muted">
           {STRINGS.selected(liveSelected)}
-        </Ui.Text>
-        <Ui.Text data-testid="table-live-loaded" tone="muted">
+        </Text>
+        <Text data-testid="table-live-loaded" tone="muted">
           {STRINGS.liveLoaded(liveRows.length, ORDERS.length)}
-        </Ui.Text>
+        </Text>
         <div>
-          <Ui.Button
+          <Button
             variant="secondary"
             onPress={() => {
               clearTimeout(timer.current);
@@ -330,7 +329,7 @@ export function Table() {
             }}
           >
             {STRINGS.reset}
-          </Ui.Button>
+          </Button>
         </div>
       </PageSection>
     </article>

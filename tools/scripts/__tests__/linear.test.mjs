@@ -1,10 +1,10 @@
 /**
- * @module tools/scripts/linear.test
- *
+ * Stackra file contract:
  * Purpose: hold `pnpm linear` and linear-reconcile to their contract: token choice and re-minting, no token in
  * output, the CI key check, and the reconcile plan's rules and idempotency.
- * Boundary: mocked fetch only; no network, no repository writes.
- * Runtime: node — node:test and node:assert.
+ * Boundary: mocked fetch only; no network, no repository writes; node:test and node:assert.
+ * Runtime: node
+ * Governing contract: ADR 0022 (tests live in tests folders); ADR 0182 (testing strategy).
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -115,20 +115,21 @@ test("start moves to In Progress, delegates to the app (not assignee) and commen
   assert.match(comment.variables.i.body, /figentra\/sta-7-x/);
 });
 
+const jsonResponse = (json) => ({ ok: true, status: 200, json: async () => json });
+
 test("STA-302: a failed comment is re-sent with its own id only when a read shows it did not land", async () => {
   const sent = [];
   const retried = new Map();
   let landed = false;
-  const answer = (json) => ({ ok: true, status: 200, json: async () => json });
   const fetch = async (_url, init, options) => {
     const { query, variables } = JSON.parse(init.body);
     retried.set(query.split("(")[0], options.idempotent);
     if (query.includes("commentCreate")) {
       sent.push(variables.i.id);
       if (sent.length === 1) throw new TypeError("fetch failed");
-      return answer({ data: { commentCreate: { success: true } } });
+      return jsonResponse({ data: { commentCreate: { success: true } } });
     }
-    return answer(
+    return jsonResponse(
       landed
         ? { data: { comment: { id: variables.id } } }
         : { errors: [{ message: "Entity not found: Comment" }] },
@@ -207,18 +208,19 @@ test("create adds the agent label when an agent runs it; dry-run writes nothing"
   assert.ok(!calls.some((c) => JSON.parse(c.init.body).query.includes("mutation")));
 });
 
+const issueRow = (n, state = "In Progress") => ({
+  identifier: `STA-${n}`,
+  title: `t${n}`,
+  state: { name: state },
+});
+
 test("digest: In Progress first, owner steps tagged, deduped, capped at 8 lines", () => {
-  const row = (n, state = "In Progress") => ({
-    identifier: `STA-${n}`,
-    title: `t${n}`,
-    state: { name: state },
-  });
-  assert.deepEqual(digest([row(1)], [row(1), row(2, "Todo")]), [
+  assert.deepEqual(digest([issueRow(1)], [issueRow(1), issueRow(2, "Todo")]), [
     "STA-1 In Progress: t1",
     "STA-2 Todo: t2 [owner]",
   ]);
   const many = digest(
-    Array.from({ length: 12 }, (_, i) => row(i)),
+    Array.from({ length: 12 }, (_, i) => issueRow(i)),
     [],
   );
   assert.equal(many.length, 8);

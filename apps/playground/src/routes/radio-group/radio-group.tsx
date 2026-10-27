@@ -9,7 +9,7 @@
  * Governing contract: ADR 0302 (decisions 3 and 5); ADR 0303 (decision 7); ADR 0060 (light, dark, RTL).
  */
 import type { ChoiceOption } from "@stackra/ui/contracts";
-import * as Ui from "@stackra/ui/react";
+import { Button, Heading, RadioGroup as UiRadioGroup, Surface, Text } from "@stackra/ui/react";
 import { useState, type ReactNode } from "react";
 
 import { PageSection } from "#src/components/page-section";
@@ -98,9 +98,9 @@ const GRID = "grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3";
 function Sample({ caption, children }: { caption: string; children: ReactNode }) {
   return (
     <li className="grid content-start gap-2">
-      <Ui.Text tone="muted" type="small">
+      <Text tone="muted" type="small">
         {caption}
-      </Ui.Text>
+      </Text>
       {children}
     </li>
   );
@@ -115,21 +115,21 @@ export function RadioGroup() {
     <article className="grid gap-10">
       <title>{STRINGS.documentTitle}</title>
       <header className="grid gap-2">
-        <Ui.Heading level={1}>{RadioGroupRoute.title}</Ui.Heading>
-        <Ui.Text className="max-w-prose">
+        <Heading level={1}>{RadioGroupRoute.title}</Heading>
+        <Text className="max-w-prose">
           <bdi>{STRINGS.intro}</bdi>
-        </Ui.Text>
+        </Text>
       </header>
 
       <PageSection id="radio-group-layouts" title={STRINGS.layouts} note={STRINGS.layoutsNote}>
         <div className="grid gap-6 sm:grid-cols-2">
-          <Ui.RadioGroup
+          <UiRadioGroup
             label={STRINGS.groupLabels.vertical}
             description={STRINGS.verticalDescription}
             options={SPEEDS}
             defaultValue="standard"
           />
-          <Ui.RadioGroup
+          <UiRadioGroup
             label={STRINGS.groupLabels.horizontal}
             options={SIZES}
             orientation="horizontal"
@@ -141,7 +141,7 @@ export function RadioGroup() {
       <PageSection id="radio-group-states" title={STRINGS.states} note={STRINGS.statesNote}>
         <ul className={GRID}>
           <Sample caption={STRINGS.captions.disabled}>
-            <Ui.RadioGroup
+            <UiRadioGroup
               label={STRINGS.groupLabels.disabled}
               options={CYCLES}
               defaultValue="monthly"
@@ -149,10 +149,10 @@ export function RadioGroup() {
             />
           </Sample>
           <Sample caption={STRINGS.captions.optionDisabled}>
-            <Ui.RadioGroup label={STRINGS.groupLabels.optionDisabled} options={METHODS} />
+            <UiRadioGroup label={STRINGS.groupLabels.optionDisabled} options={METHODS} />
           </Sample>
           <Sample caption={STRINGS.captions.readOnly}>
-            <Ui.RadioGroup
+            <UiRadioGroup
               label={STRINGS.groupLabels.readOnly}
               options={CYCLES}
               defaultValue="yearly"
@@ -160,10 +160,10 @@ export function RadioGroup() {
             />
           </Sample>
           <Sample caption={STRINGS.captions.required}>
-            <Ui.RadioGroup label={STRINGS.groupLabels.required} options={CYCLES} isRequired />
+            <UiRadioGroup label={STRINGS.groupLabels.required} options={CYCLES} isRequired />
           </Sample>
           <Sample caption={STRINGS.captions.invalid}>
-            <Ui.RadioGroup
+            <UiRadioGroup
               label={STRINGS.groupLabels.invalid}
               description={STRINGS.invalidDescription}
               errorMessage={STRINGS.invalidError}
@@ -177,39 +177,39 @@ export function RadioGroup() {
 
       <PageSection id="radio-group-variants" title={STRINGS.variants} note={STRINGS.variantsNote}>
         <div className="grid gap-6 sm:grid-cols-2">
-          <Ui.RadioGroup
+          <UiRadioGroup
             label={STRINGS.groupLabels.primary}
             options={SIZES}
             defaultValue="s"
             variant="primary"
           />
-          <Ui.Surface variant="default" className="rounded-2xl p-4">
-            <Ui.RadioGroup
+          <Surface variant="default" className="rounded-2xl p-4">
+            <UiRadioGroup
               label={STRINGS.groupLabels.secondary}
               options={SIZES}
               defaultValue="s"
               variant="secondary"
             />
-          </Ui.Surface>
+          </Surface>
         </div>
       </PageSection>
 
       <PageSection id="radio-group-live" title={STRINGS.live} note={STRINGS.liveNote}>
         <div className="grid gap-3">
-          <Ui.RadioGroup
+          <UiRadioGroup
             label={STRINGS.groupLabels.live}
             options={FRUIT}
             value={fruit}
             onChange={setFruit}
           />
-          <Ui.Text role="status">{STRINGS.chosen(fruit)}</Ui.Text>
+          <Text role="status">{STRINGS.chosen(fruit)}</Text>
           <div className="flex flex-wrap gap-3">
-            <Ui.Button variant="secondary" onPress={() => setFruit("apple")}>
+            <Button variant="secondary" onPress={() => setFruit("apple")}>
               {STRINGS.pickApple}
-            </Ui.Button>
-            <Ui.Button variant="secondary" onPress={() => setFruit("pear")}>
+            </Button>
+            <Button variant="secondary" onPress={() => setFruit("pear")}>
               {STRINGS.pickPear}
-            </Ui.Button>
+            </Button>
           </div>
         </div>
       </PageSection>

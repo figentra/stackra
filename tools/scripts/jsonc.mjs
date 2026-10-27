@@ -2,6 +2,9 @@
  * Stackra file contract:
  * Purpose: the one JSONC reader the repo scripts share (agents-sync, validate-repository). Drops // and /* *\/
  *          comments outside strings and trailing commas, then JSON.parse. No dependency: node has no JSONC API.
+ * Boundary: text to value only; no file is written.
+ * Runtime: node
+ * Governing contract: ADR 0007 (source documentation standard).
  * Scope: tools/scripts/*.mjs · Owner: release-operations · Secrets: forbidden
  */
 import { readFileSync } from "node:fs";

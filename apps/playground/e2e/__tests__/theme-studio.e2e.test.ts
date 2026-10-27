@@ -12,11 +12,11 @@
  * Governing contract: ADR 0320 (the Theme Studio); ADR 0182 (test tiers); ADR 0022 (test placement).
  */
 import { AxeBuilder } from "@axe-core/playwright";
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-practice"];
 
-const previewVariable = (page: import("@playwright/test").Page, name: string) =>
+const previewVariable = (page: Page, name: string) =>
   page
     .getByRole("region", { name: "Preview" })
     .locator("[data-theme]")

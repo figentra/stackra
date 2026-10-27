@@ -5,6 +5,9 @@
  *          runs it through validate-repository.mjs): a thin wrapper over @stackra/repo-checks (`checkCatalogues`).
  *          `stackra check --only catalogues` runs the same check. Prints the findings and exits 1; prints nothing on
  *          success.
+ * Boundary: a thin wrapper; the check itself is @stackra/repo-checks' `checkCatalogues`.
+ * Runtime: node
+ * Governing contract: ADR 0403 (catalogues and a completeness gate).
  * Scope: every git-listed `assets/lang` JSON file outside the scaffold templates.
  * Owner: code-standards-steward · Secrets: forbidden
  */

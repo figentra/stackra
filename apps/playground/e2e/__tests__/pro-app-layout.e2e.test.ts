@@ -13,7 +13,9 @@
 // @covers sta-403:FR-013
 import { expect, test, type Page } from "@playwright/test";
 
-import { expectNoAxeFindings, SCHEMES, visit } from "../support/pro-page";
+import { SCHEMES } from "../support/schemes.constant";
+import { visit } from "../support/visit.function";
+import { expectNoAxeFindings } from "../support/expect-no-axe-findings.function";
 
 const PATH = "/pro-app-layout";
 const NARROW = { width: 600, height: 900 };

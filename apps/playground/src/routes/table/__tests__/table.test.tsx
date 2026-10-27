@@ -42,7 +42,9 @@ describe("Table page", () => {
       "IntersectionObserver",
       class {
         observe() {}
+
         unobserve() {}
+
         disconnect() {}
       },
     );

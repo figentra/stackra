@@ -11,7 +11,16 @@
  * Governing contract: ADR 0302 (decisions 3 and 5); ADR 0303 (decision 7); ADR 0055 (forms); ADR 0060 (light, dark,
  *          RTL); WCAG 2.2 SC 3.3.1 and 4.1.3.
  */
-import * as Ui from "@stackra/ui/react";
+import {
+  Button,
+  Checkbox,
+  Form,
+  FormField as UiFormField,
+  Heading,
+  RadioGroup,
+  Text,
+  TextField,
+} from "@stackra/ui/react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 
@@ -90,7 +99,7 @@ function LiveForm() {
   const [status, setStatus] = useState<string>(STRINGS.idle);
 
   return (
-    <Ui.Form
+    <Form
       aria-label={STRINGS.formName}
       validationBehavior="aria"
       className="grid max-w-sm gap-4"
@@ -105,7 +114,7 @@ function LiveForm() {
         (errors) => setStatus(STRINGS.refused(Object.keys(errors).length)),
       )}
     >
-      <Ui.FormField
+      <UiFormField
         control={form.control}
         name="email"
         rules={{
@@ -113,7 +122,7 @@ function LiveForm() {
           pattern: { value: EMAIL, message: STRINGS.emailPattern },
         }}
         render={(binding) => (
-          <Ui.TextField
+          <TextField
             {...binding}
             label={STRINGS.email}
             description={STRINGS.emailHint}
@@ -121,20 +130,20 @@ function LiveForm() {
           />
         )}
       />
-      <Ui.FormField
+      <UiFormField
         control={form.control}
         name="plan"
-        render={(binding) => <Ui.RadioGroup {...binding} label={STRINGS.plan} options={PLANS} />}
+        render={(binding) => <RadioGroup {...binding} label={STRINGS.plan} options={PLANS} />}
       />
-      <Ui.FormField
+      <UiFormField
         control={form.control}
         name="terms"
         rules={{ required: STRINGS.termsRequired }}
-        render={(binding) => <Ui.Checkbox {...binding} label={STRINGS.terms} />}
+        render={(binding) => <Checkbox {...binding} label={STRINGS.terms} />}
       />
       <div className="flex flex-wrap items-center gap-2">
-        <Ui.Button type="submit">{STRINGS.save}</Ui.Button>
-        <Ui.Button
+        <Button type="submit">{STRINGS.save}</Button>
+        <Button
           variant="secondary"
           onPress={() => {
             form.setError("email", { type: "server", message: STRINGS.emailTaken });
@@ -142,8 +151,8 @@ function LiveForm() {
           }}
         >
           {STRINGS.reject}
-        </Ui.Button>
-        <Ui.Button
+        </Button>
+        <Button
           variant="ghost"
           onPress={() => {
             form.reset();
@@ -151,14 +160,14 @@ function LiveForm() {
           }}
         >
           {STRINGS.reset}
-        </Ui.Button>
+        </Button>
       </div>
-      <Ui.Text tone="muted">
+      <Text tone="muted">
         <output aria-live="polite" data-testid="status">
           <bdi>{status}</bdi>
         </output>
-      </Ui.Text>
-    </Ui.Form>
+      </Text>
+    </Form>
   );
 }
 
@@ -174,30 +183,30 @@ function StatesForm() {
   }, [setError]);
 
   return (
-    <Ui.Form aria-label={STRINGS.statesName} validationBehavior="aria" className={GRID}>
-      <Ui.FormField
+    <Form aria-label={STRINGS.statesName} validationBehavior="aria" className={GRID}>
+      <UiFormField
         control={form.control}
         name="required"
         rules={{ required: STRINGS.emailRequired }}
-        render={(binding) => <Ui.TextField {...binding} label={STRINGS.required} />}
+        render={(binding) => <TextField {...binding} label={STRINGS.required} />}
       />
-      <Ui.FormField
+      <UiFormField
         control={form.control}
         name="invalid"
-        render={(binding) => <Ui.TextField {...binding} label={STRINGS.invalid} />}
+        render={(binding) => <TextField {...binding} label={STRINGS.invalid} />}
       />
-      <Ui.FormField
+      <UiFormField
         control={form.control}
         name="disabled"
         disabled
-        render={(binding) => <Ui.TextField {...binding} label={STRINGS.disabled} />}
+        render={(binding) => <TextField {...binding} label={STRINGS.disabled} />}
       />
-      <Ui.FormField
+      <UiFormField
         control={form.control}
         name="valid"
-        render={(binding) => <Ui.TextField {...binding} label={STRINGS.valid} />}
+        render={(binding) => <TextField {...binding} label={STRINGS.valid} />}
       />
-    </Ui.Form>
+    </Form>
   );
 }
 
@@ -207,10 +216,10 @@ export function FormField() {
     <article className="grid gap-10">
       <title>{STRINGS.documentTitle}</title>
       <header className="grid gap-2">
-        <Ui.Heading level={1}>{FormFieldRoute.title}</Ui.Heading>
-        <Ui.Text className="max-w-prose">
+        <Heading level={1}>{FormFieldRoute.title}</Heading>
+        <Text className="max-w-prose">
           <bdi>{STRINGS.intro}</bdi>
-        </Ui.Text>
+        </Text>
       </header>
 
       <PageSection id="form-field-live" title={STRINGS.live} note={STRINGS.liveNote}>

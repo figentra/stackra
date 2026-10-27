@@ -2,6 +2,9 @@
 /**
  * Stackra file contract:
  * Purpose: today's and the 7-day OpenCode spend against the daily cap in .agents/routing.yaml (`pnpm ai:spend`).
+ * Boundary: reads `.agents/routing.yaml` and runs `opencode stats`; writes nothing.
+ * Runtime: node
+ * Governing contract: ADR 0066 (delegation to OpenCode by routing matrix).
  * Exit: 0 under the cap, 1 at or over it. Spend comes from `opencode stats --cost --json` (field `cost`, USD).
  * Pure functions (parseBudget, costOf, evaluate, formatLine) take injected data; only `main` shells out.
  * Secrets: forbidden — stats carry token counts and cost, never credentials.

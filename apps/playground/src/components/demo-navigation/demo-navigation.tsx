@@ -10,7 +10,9 @@
  */
 import * as UiPro from "@stackra-pro/ui/react";
 
-import { DemoIcon, type DemoIconName } from "#src/components/demo-icon";
+import { DemoIcon } from "#src/components/demo-icon";
+import { DEMO_NAVIGATION } from "#src/components/demo-navigation/demo-navigation.constant";
+import type { DemoNavigationProps } from "#src/components/demo-navigation/demo-navigation.props";
 
 // shortcut: English strings in one place until @stackra/i18n ships; then `playground::navigation.*` keys.
 const STRINGS = {
@@ -19,49 +21,6 @@ const STRINGS = {
   navigation: "Workspace navigation",
   account: "Account navigation",
 } as const;
-
-/** One navigation entry; an entry with `children` expands instead of navigating. */
-interface NavigationItem {
-  readonly id: string;
-  readonly label: string;
-  readonly icon: DemoIconName;
-  readonly count?: string;
-  readonly children?: readonly { readonly id: string; readonly label: string }[];
-}
-
-const ITEMS: readonly NavigationItem[] = [
-  { id: "dashboard", label: "Dashboard", icon: "home" },
-  { id: "orders", label: "Orders", icon: "doc", count: "12" },
-  { id: "customers", label: "Customers", icon: "users" },
-  {
-    id: "reports",
-    label: "Reports",
-    icon: "chart",
-    children: [
-      { id: "reports-overview", label: "Overview" },
-      { id: "reports-revenue", label: "Revenue" },
-    ],
-  },
-];
-
-const SETTINGS = { id: "settings", label: "Settings", icon: "gear" } as const;
-
-/** The label of a navigation id, for the page that shows where the user is. */
-export function navigationLabel(id: string): string {
-  const all = [...ITEMS, SETTINGS].flatMap((item) => [
-    item,
-    ...("children" in item ? (item.children ?? []) : []),
-  ]);
-  return all.find((item) => item.id === id)?.label ?? id;
-}
-
-/** Props of {@link DemoNavigation}. */
-export interface DemoNavigationProps {
-  /** The id of the current item. */
-  current: string;
-  /** Called with the id of the item the user pressed. */
-  onNavigate: (id: string) => void;
-}
 
 /** The header, content and footer of a demo sidebar, for `Sidebar` and `Sidebar.Mobile` alike. */
 export function DemoNavigation({ current, onNavigate }: DemoNavigationProps) {
@@ -84,7 +43,7 @@ export function DemoNavigation({ current, onNavigate }: DemoNavigationProps) {
         <UiPro.Sidebar.Group>
           <UiPro.Sidebar.GroupLabel>{STRINGS.workspace}</UiPro.Sidebar.GroupLabel>
           <UiPro.Sidebar.Menu label={STRINGS.navigation} defaultExpandedKeys={["reports"]}>
-            {ITEMS.map((item) => (
+            {DEMO_NAVIGATION.items.map((item) => (
               <UiPro.Sidebar.MenuItem
                 key={item.id}
                 id={item.id}
@@ -127,15 +86,15 @@ export function DemoNavigation({ current, onNavigate }: DemoNavigationProps) {
       <UiPro.Sidebar.Footer>
         <UiPro.Sidebar.Menu label={STRINGS.account}>
           <UiPro.Sidebar.MenuItem
-            id={SETTINGS.id}
-            textValue={SETTINGS.label}
-            isCurrent={current === SETTINGS.id}
-            onAction={() => onNavigate(SETTINGS.id)}
+            id={DEMO_NAVIGATION.settings.id}
+            textValue={DEMO_NAVIGATION.settings.label}
+            isCurrent={current === DEMO_NAVIGATION.settings.id}
+            onAction={() => onNavigate(DEMO_NAVIGATION.settings.id)}
           >
-            <UiPro.Sidebar.MenuIcon label={SETTINGS.label}>
-              <DemoIcon name={SETTINGS.icon} />
+            <UiPro.Sidebar.MenuIcon label={DEMO_NAVIGATION.settings.label}>
+              <DemoIcon name={DEMO_NAVIGATION.settings.icon} />
             </UiPro.Sidebar.MenuIcon>
-            <UiPro.Sidebar.MenuLabel>{SETTINGS.label}</UiPro.Sidebar.MenuLabel>
+            <UiPro.Sidebar.MenuLabel>{DEMO_NAVIGATION.settings.label}</UiPro.Sidebar.MenuLabel>
           </UiPro.Sidebar.MenuItem>
         </UiPro.Sidebar.Menu>
       </UiPro.Sidebar.Footer>

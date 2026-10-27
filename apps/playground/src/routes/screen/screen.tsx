@@ -14,7 +14,15 @@
  *          (right-to-left); WCAG 2.2 SC 1.3.1, 1.4.10, 2.1.1 and 4.1.3.
  */
 import type { ScreenEdge } from "@stackra/ui/contracts";
-import * as Ui from "@stackra/ui/react";
+import {
+  Button,
+  CheckboxGroup,
+  Heading,
+  Screen as UiScreen,
+  Surface,
+  Switch,
+  Text,
+} from "@stackra/ui/react";
 import { useState, type ReactNode } from "react";
 
 import { PageSection } from "#src/components/page-section";
@@ -77,9 +85,9 @@ const GRID = "grid gap-4";
 function Sample({ caption, children }: { readonly caption: string; readonly children: ReactNode }) {
   return (
     <li className="grid content-start gap-2">
-      <Ui.Text tone="muted" type="small">
+      <Text tone="muted" type="small">
         {caption}
-      </Ui.Text>
+      </Text>
       {children}
     </li>
   );
@@ -97,7 +105,7 @@ function Lines({
     <ul className="grid gap-1 p-3">
       {Array.from({ length: count }, (_, index) => (
         <li key={index}>
-          <Ui.Text>{line(index)}</Ui.Text>
+          <Text>{line(index)}</Text>
         </li>
       ))}
     </ul>
@@ -116,11 +124,11 @@ function EdgesSample({
 }) {
   return (
     <Sample caption={caption}>
-      <Ui.Screen isEmbedded edges={edges} className={BOX} data-sample={sample}>
-        <Ui.Surface className="m-3 p-3">
-          <Ui.Text>{STRINGS.card}</Ui.Text>
-        </Ui.Surface>
-      </Ui.Screen>
+      <UiScreen isEmbedded edges={edges} className={BOX} data-sample={sample}>
+        <Surface className="m-3 p-3">
+          <Text>{STRINGS.card}</Text>
+        </Surface>
+      </UiScreen>
     </Sample>
   );
 }
@@ -135,10 +143,10 @@ export function Screen() {
     <article className="grid gap-10">
       <title>{STRINGS.documentTitle}</title>
       <header className="grid gap-2">
-        <Ui.Heading level={1}>{ScreenRoute.title}</Ui.Heading>
-        <Ui.Text className="max-w-prose">
+        <Heading level={1}>{ScreenRoute.title}</Heading>
+        <Text className="max-w-prose">
           <bdi>{STRINGS.intro}</bdi>
-        </Ui.Text>
+        </Text>
       </header>
 
       <PageSection id="screen-edges" title={STRINGS.edges} note={STRINGS.edgesNote}>
@@ -154,49 +162,45 @@ export function Screen() {
       <PageSection id="screen-scrolling" title={STRINGS.scrolling} note={STRINGS.scrollingNote}>
         <ul className={GRID}>
           <Sample caption={STRINGS.scrolls}>
-            <Ui.Screen isEmbedded className={BOX} data-sample="scrolls">
+            <UiScreen isEmbedded className={BOX} data-sample="scrolls">
               <div className="p-3">
-                <Ui.Button size="sm">{STRINGS.press}</Ui.Button>
+                <Button size="sm">{STRINGS.press}</Button>
               </div>
               <Lines count={12} line={STRINGS.line} />
-            </Ui.Screen>
+            </UiScreen>
           </Sample>
           <Sample caption={STRINGS.holds}>
-            <Ui.Screen isEmbedded isScrollable={false} className={BOX} data-sample="holds">
+            <UiScreen isEmbedded isScrollable={false} className={BOX} data-sample="holds">
               <Lines count={12} line={STRINGS.line} />
-            </Ui.Screen>
+            </UiScreen>
           </Sample>
         </ul>
       </PageSection>
 
       <PageSection id="screen-arabic" title={STRINGS.arabic} note={STRINGS.arabicNote}>
         <div dir="rtl" lang="ar" data-sample="arabic">
-          <Ui.Screen isEmbedded className={BOX}>
+          <UiScreen isEmbedded className={BOX}>
             <div className="p-3">
-              <Ui.Button size="sm">{STRINGS.arabicPress}</Ui.Button>
+              <Button size="sm">{STRINGS.arabicPress}</Button>
             </div>
-            <Ui.Text className="px-3">{STRINGS.arabicCard}</Ui.Text>
+            <Text className="px-3">{STRINGS.arabicCard}</Text>
             <Lines count={8} line={STRINGS.arabicLine} />
-          </Ui.Screen>
+          </UiScreen>
         </div>
       </PageSection>
 
       <PageSection id="screen-live" title={STRINGS.live} note={STRINGS.liveNote}>
         <div className="grid gap-4">
           <div className="flex flex-wrap items-start gap-6">
-            <Ui.Switch
-              label={STRINGS.scrollSwitch}
-              value={isScrollable}
-              onChange={setIsScrollable}
-            />
-            <Ui.CheckboxGroup
+            <Switch label={STRINGS.scrollSwitch} value={isScrollable} onChange={setIsScrollable} />
+            <CheckboxGroup
               label={STRINGS.edgesGroup}
               options={EDGE_OPTIONS}
               value={edges}
               onChange={setEdges}
             />
           </div>
-          <Ui.Screen
+          <UiScreen
             isEmbedded
             isScrollable={isScrollable}
             edges={edges as readonly ScreenEdge[]}
@@ -204,19 +208,19 @@ export function Screen() {
             data-sample="live"
           >
             <div className="p-3">
-              <Ui.Button size="sm" onPress={() => setPressed((count) => count + 1)}>
+              <Button size="sm" onPress={() => setPressed((count) => count + 1)}>
                 {STRINGS.press}
-              </Ui.Button>
+              </Button>
             </div>
             <Lines count={12} line={STRINGS.line} />
-          </Ui.Screen>
+          </UiScreen>
           <div className="grid gap-1" data-sample="live-status">
-            <Ui.Text role="status" tone="muted">
+            <Text role="status" tone="muted">
               {STRINGS.settings(isScrollable, edges)}
-            </Ui.Text>
-            <Ui.Text role="status" tone="muted">
+            </Text>
+            <Text role="status" tone="muted">
               {STRINGS.pressed(pressed)}
-            </Ui.Text>
+            </Text>
           </div>
         </div>
       </PageSection>

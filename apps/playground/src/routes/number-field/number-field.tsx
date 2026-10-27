@@ -9,7 +9,7 @@
  * Governing contract: ADR 0302 (decisions 3 and 5); ADR 0303 (decision 7); ADR 0318 (decision 9); ADR 0060 (light, dark,
  *          RTL).
  */
-import * as Ui from "@stackra/ui/react";
+import { Heading, NumberField as UiNumberField, Text } from "@stackra/ui/react";
 import { useState } from "react";
 
 import { PageSection } from "#src/components/page-section";
@@ -64,20 +64,20 @@ export function NumberField() {
     <article className="grid gap-10">
       <title>{STRINGS.documentTitle}</title>
       <header className="grid gap-2">
-        <Ui.Heading level={1}>{NumberFieldRoute.title}</Ui.Heading>
-        <Ui.Text className="max-w-prose">
+        <Heading level={1}>{NumberFieldRoute.title}</Heading>
+        <Text className="max-w-prose">
           <bdi>{STRINGS.intro}</bdi>
-        </Ui.Text>
+        </Text>
       </header>
 
       <PageSection id="number-field-basics" title={STRINGS.basics} note={STRINGS.basicsNote}>
         <div className={GRID}>
-          <Ui.NumberField
+          <UiNumberField
             label={STRINGS.plain}
             description={STRINGS.plainDescription}
             defaultValue={2}
           />
-          <Ui.NumberField
+          <UiNumberField
             label={STRINGS.bounded}
             description={STRINGS.boundedDescription}
             defaultValue={4}
@@ -89,7 +89,7 @@ export function NumberField() {
 
       <PageSection id="number-field-formats" title={STRINGS.formats} note={STRINGS.formatsNote}>
         <div className={GRID}>
-          <Ui.NumberField
+          <UiNumberField
             label={STRINGS.percent}
             description={STRINGS.percentDescription}
             defaultValue={0.15}
@@ -98,7 +98,7 @@ export function NumberField() {
             step={0.05}
             formatOptions={{ style: "percent" }}
           />
-          <Ui.NumberField
+          <UiNumberField
             label={STRINGS.currency}
             description={STRINGS.currencyDescription}
             defaultValue={1299.5}
@@ -110,7 +110,7 @@ export function NumberField() {
       </PageSection>
 
       <PageSection id="number-field-steppers" title={STRINGS.steppers} note={STRINGS.steppersNote}>
-        <Ui.NumberField
+        <UiNumberField
           label={STRINGS.noSteppers}
           description={STRINGS.noSteppersDescription}
           defaultValue={3}
@@ -121,19 +121,19 @@ export function NumberField() {
 
       <PageSection id="number-field-states" title={STRINGS.states} note={STRINGS.statesNote}>
         <div className={GRID}>
-          <Ui.NumberField
+          <UiNumberField
             label={STRINGS.invalid}
             defaultValue={0}
             isInvalid
             errorMessage={STRINGS.invalidMessage}
           />
-          <Ui.NumberField label={STRINGS.disabled} defaultValue={2} isDisabled />
-          <Ui.NumberField label={STRINGS.readOnly} defaultValue={5} isReadOnly />
+          <UiNumberField label={STRINGS.disabled} defaultValue={2} isDisabled />
+          <UiNumberField label={STRINGS.readOnly} defaultValue={5} isReadOnly />
         </div>
       </PageSection>
 
       <PageSection id="number-field-live" title={STRINGS.live} note={STRINGS.liveNote}>
-        <Ui.NumberField
+        <UiNumberField
           label={STRINGS.liveLabel}
           description={STRINGS.liveDescription}
           value={seats}
@@ -141,9 +141,9 @@ export function NumberField() {
           minValue={1}
           maxValue={10}
         />
-        <Ui.Text data-testid="number-field-value" aria-live="polite">
+        <Text data-testid="number-field-value" aria-live="polite">
           {seats === null ? STRINGS.liveEmpty : STRINGS.liveChosen(seats)}
-        </Ui.Text>
+        </Text>
       </PageSection>
     </article>
   );

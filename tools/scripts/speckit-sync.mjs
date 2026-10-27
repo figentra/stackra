@@ -5,6 +5,9 @@
  *   into `.specify/presets/`, keep the bundled `speckit` workflow disabled, and re-render both integrations
  *   (spec-kit registers preset commands for the active integration only, so OpenCode first, then Claude).
  *   The installed copies are generated and committed; `spec-gate ci` (tripwire) fails when they drift from the source.
+ * Boundary: writes only `.specify/`, through the pinned `specify`.
+ * Runtime: node
+ * Governing contract: ADR 0120 (SDLC specs); ADR 0027 (CLI tools pinned in mise).
  * Needs: the pinned `specify` on PATH (mise.toml). Local only; CI never runs it.
  * Secrets: none.
  */

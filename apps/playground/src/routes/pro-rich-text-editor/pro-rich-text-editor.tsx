@@ -10,7 +10,7 @@
  * Governing contract: ADR 0310 (decision 12); ADR 0060 (light, dark, RTL); STA-416 FR-012.
  */
 import type { JSONContent } from "@tiptap/core";
-import * as Ui from "@stackra/ui/react";
+import { Icon } from "@stackra/ui/react";
 import * as UiPro from "@stackra-pro/ui/react";
 
 import { ProRichTextEditorRoute } from "#src/routes/pro-rich-text-editor/pro-rich-text-editor.route";
@@ -66,47 +66,47 @@ function Toolbar({ label }: { readonly label: string }) {
     <UiPro.RichTextEditor.Toolbar label={label}>
       <UiPro.RichTextEditor.ToolbarGroup aria-label={STRINGS.history}>
         <UiPro.RichTextEditor.ActionButton action="undo">
-          <Ui.Icon name="undo-2" size="sm" isMirroredInRtl />
+          <Icon name="undo-2" size="sm" isMirroredInRtl />
         </UiPro.RichTextEditor.ActionButton>
         <UiPro.RichTextEditor.ActionButton action="redo">
-          <Ui.Icon name="redo-2" size="sm" isMirroredInRtl />
+          <Icon name="redo-2" size="sm" isMirroredInRtl />
         </UiPro.RichTextEditor.ActionButton>
       </UiPro.RichTextEditor.ToolbarGroup>
       <UiPro.RichTextEditor.ToolbarSeparator />
       <UiPro.RichTextEditor.ToolbarGroup aria-label={STRINGS.style}>
         <UiPro.RichTextEditor.ToggleButton command="bold">
-          <Ui.Icon name="bold" size="sm" />
+          <Icon name="bold" size="sm" />
         </UiPro.RichTextEditor.ToggleButton>
         <UiPro.RichTextEditor.ToggleButton command="italic">
-          <Ui.Icon name="italic" size="sm" />
+          <Icon name="italic" size="sm" />
         </UiPro.RichTextEditor.ToggleButton>
         <UiPro.RichTextEditor.ToggleButton command="underline">
-          <Ui.Icon name="underline" size="sm" />
+          <Icon name="underline" size="sm" />
         </UiPro.RichTextEditor.ToggleButton>
       </UiPro.RichTextEditor.ToolbarGroup>
       <UiPro.RichTextEditor.ToolbarSeparator />
       <UiPro.RichTextEditor.ToolbarGroup aria-label={STRINGS.blocks}>
         <UiPro.RichTextEditor.ToggleButton command="heading-1">
-          <Ui.Icon name="heading-1" size="sm" />
+          <Icon name="heading-1" size="sm" />
         </UiPro.RichTextEditor.ToggleButton>
         <UiPro.RichTextEditor.ToggleButton command="heading-2">
-          <Ui.Icon name="heading-2" size="sm" />
+          <Icon name="heading-2" size="sm" />
         </UiPro.RichTextEditor.ToggleButton>
         <UiPro.RichTextEditor.ToggleButton command="blockquote">
-          <Ui.Icon name="quote" size="sm" />
+          <Icon name="quote" size="sm" />
         </UiPro.RichTextEditor.ToggleButton>
       </UiPro.RichTextEditor.ToolbarGroup>
       <UiPro.RichTextEditor.ToolbarSeparator />
       <UiPro.RichTextEditor.ToolbarGroup aria-label={STRINGS.links}>
         <UiPro.RichTextEditor.ToggleButton command="bulletList">
-          <Ui.Icon name="list" size="sm" isMirroredInRtl />
+          <Icon name="list" size="sm" isMirroredInRtl />
         </UiPro.RichTextEditor.ToggleButton>
         <UiPro.RichTextEditor.ToggleButton command="orderedList">
-          <Ui.Icon name="list-ordered" size="sm" isMirroredInRtl />
+          <Icon name="list-ordered" size="sm" isMirroredInRtl />
         </UiPro.RichTextEditor.ToggleButton>
         <UiPro.RichTextEditor.LinkPopover>
           <UiPro.RichTextEditor.LinkPopover.Trigger>
-            <Ui.Icon name="link" size="sm" />
+            <Icon name="link" size="sm" />
           </UiPro.RichTextEditor.LinkPopover.Trigger>
           <UiPro.RichTextEditor.LinkPopover.Content>
             <UiPro.RichTextEditor.LinkPopover.Input />

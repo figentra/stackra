@@ -5,4 +5,5 @@
  * Runtime: browser
  * Governing contract: ADR 0294 (decision 14).
  */
-export { PlaygroundIcons, type PlaygroundIconsProps } from "./playground-icons";
+export { PlaygroundIcons } from "./playground-icons";
+export { type PlaygroundIconsProps } from "./playground-icons.props";

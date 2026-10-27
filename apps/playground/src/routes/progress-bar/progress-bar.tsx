@@ -9,7 +9,7 @@
  * Governing contract: ADR 0302 (decisions 3 and 5); ADR 0303 (decision 7); ADR 0312; ADR 0060 (light, dark, RTL).
  */
 import { Size, Tone } from "@stackra/ui/contracts";
-import * as Ui from "@stackra/ui/react";
+import { Button, Heading, ProgressBar as UiProgressBar, Text } from "@stackra/ui/react";
 import { useState } from "react";
 
 import { PageSection } from "#src/components/page-section";
@@ -64,16 +64,16 @@ export function ProgressBar() {
     <article className="grid gap-10">
       <title>{STRINGS.documentTitle}</title>
       <header className="grid gap-2">
-        <Ui.Heading level={1}>{ProgressBarRoute.title}</Ui.Heading>
-        <Ui.Text className="max-w-prose">
+        <Heading level={1}>{ProgressBarRoute.title}</Heading>
+        <Text className="max-w-prose">
           <bdi>{STRINGS.intro}</bdi>
-        </Ui.Text>
+        </Text>
       </header>
 
       <PageSection id="progress-bar-sizes" title={STRINGS.sizes} note={STRINGS.sizesNote}>
         <div className={COLUMN}>
           {Size.map((size) => (
-            <Ui.ProgressBar
+            <UiProgressBar
               key={size}
               size={size}
               value={60}
@@ -87,7 +87,7 @@ export function ProgressBar() {
       <PageSection id="progress-bar-tones" title={STRINGS.tones} note={STRINGS.tonesNote}>
         <div className={COLUMN}>
           {Tone.map((tone) => (
-            <Ui.ProgressBar
+            <UiProgressBar
               key={tone}
               tone={tone}
               value={60}
@@ -105,7 +105,7 @@ export function ProgressBar() {
       >
         <div className={COLUMN}>
           {[0, 40, 100].map((step) => (
-            <Ui.ProgressBar
+            <UiProgressBar
               key={step}
               value={step}
               label={STRINGS.valueLabel(step)}
@@ -121,14 +121,14 @@ export function ProgressBar() {
         note={STRINGS.indeterminateNote}
       >
         <div className={COLUMN}>
-          <Ui.ProgressBar label={STRINGS.indeterminateLabel} data-indeterminate />
+          <UiProgressBar label={STRINGS.indeterminateLabel} data-indeterminate />
         </div>
       </PageSection>
 
       <PageSection id="progress-bar-text" title={STRINGS.text} note={STRINGS.textNote}>
         <div className={COLUMN}>
-          <Ui.ProgressBar value={72} label={STRINGS.storage} isLabelVisible isValueVisible />
-          <Ui.ProgressBar
+          <UiProgressBar value={72} label={STRINGS.storage} isLabelVisible isValueVisible />
+          <UiProgressBar
             value={3}
             maxValue={12}
             valueLabel={STRINGS.filesText}
@@ -142,7 +142,7 @@ export function ProgressBar() {
 
       <PageSection id="progress-bar-action" title={STRINGS.action} note={STRINGS.actionNote}>
         <div className={COLUMN}>
-          <Ui.ProgressBar
+          <UiProgressBar
             value={value}
             label={STRINGS.actionLabel}
             tone={value >= 100 ? "success" : "accent"}
@@ -150,12 +150,12 @@ export function ProgressBar() {
             isValueVisible
           />
           <div className="flex flex-wrap items-center gap-4">
-            <Ui.Button variant="secondary" onPress={advance}>
+            <Button variant="secondary" onPress={advance}>
               {STRINGS.advance}
-            </Ui.Button>
-            <Ui.Button variant="tertiary" onPress={() => setValue(0)}>
+            </Button>
+            <Button variant="tertiary" onPress={() => setValue(0)}>
               {STRINGS.reset}
-            </Ui.Button>
+            </Button>
             <output aria-live="polite">{value >= 100 ? STRINGS.complete : ""}</output>
           </div>
         </div>

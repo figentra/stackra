@@ -5,6 +5,9 @@
  *          @stackra/repo-checks (package categories, package entries, the programming model v3 tables, the pre-v3 kind
  *          folders, banned folders, suffix lookups, test tiers and documented exceptions; ADR 0294, 0295), which
  *          scaffold.mjs imports from here, and `--write-docs` renders apps/docs/src/standards/structure.mdx from it.
+ * Boundary: re-exports and the docs page renderer; it runs no checks.
+ * Runtime: node
+ * Governing contract: ADR 0294; ADR 0269; ADR 0022 (tests live in tests folders).
  * Scope: re-exports and the docs page renderer. It runs no checks; findings live in @stackra/repo-checks.
  * Owner: code-standards-steward · Secrets: forbidden
  */

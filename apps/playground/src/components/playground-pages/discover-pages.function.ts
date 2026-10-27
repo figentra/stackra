@@ -1,31 +1,23 @@
 /**
  * Stackra file contract:
- * Purpose: finds the playground's pages from the route folders, so a new component is one folder and nothing else:
- *          every `routes/<name>/<name>.route.ts` that names a category is paired with its page `routes/<name>/<name>.tsx`,
- *          checked (path is `/<name>`, category is a known one, the page exists) and ordered by category, then Free
- *          before Pro (`page-tier`), then by title. The router, the index page and the shell's navigation all draw from the result.
- * Boundary: discovery and validation only; `PLAYGROUND_PAGES` is the one `import.meta.glob` of the app, and
- *          `discoverPages` takes plain module records so a test can feed it without Vite. A route with no category
- *          (the index route) is not a listed page and is skipped here.
+ * Purpose: `discoverPages`, which finds the playground's pages from the route folders, so a new component is one
+ *          folder and nothing else: every `routes/<name>/<name>.route.ts` that names a category is paired with its
+ *          page `routes/<name>/<name>.tsx`, checked (path is `/<name>`, category is a known one, the page exists) and
+ *          ordered by category, then Free before Pro (`page-tier`), then by title. The router, the index page and the
+ *          shell's navigation all draw from the result.
+ * Boundary: discovery and validation only; `PLAYGROUND_PAGES` (`playground-pages.ts`) holds the one `import.meta.glob`
+ *           of the app, and `discoverPages` takes plain module records so a test can feed it without Vite. A route
+ *           with no category (the index route) is not a listed page and is skipped here.
  * Runtime: browser
  * Governing contract: ADR 0302 (decision 5); ADR 0294 (decision 14, rule R7); ADR 0295 (decision 7).
  */
 import { createElement, type ReactElement } from "react";
 
-import { tierOf } from "#src/components/playground-pages/page-tier";
+import { tierOf } from "#src/components/playground-pages/tier-of.function";
 import { PageCategory } from "#src/enums/page-category.enum";
 import type { PageLink } from "#src/types/page-link.type";
-
-/** The exports of one module, as `import.meta.glob` hands them over. */
-export type ModuleExports = Readonly<Record<string, unknown>>;
-
-/** A discovered page: the link the navigation draws and the element the router renders at its path. */
-export interface DiscoveredPage {
-  /** The path, title and category of the page. */
-  readonly route: PageLink;
-  /** The page, rendered at `route.path`. */
-  readonly element: ReactElement;
-}
+import type { ModuleExports } from "#src/components/playground-pages/module-exports.type";
+import type { DiscoveredPage } from "#src/components/playground-pages/discovered-page.type";
 
 // The folder name written twice (`avatar/avatar.route.ts`) is the pairing rule; the backreference enforces it.
 const ROUTE_FILE = /\/([^/]+)\/\1\.route\.ts$/;
@@ -98,9 +90,3 @@ export function discoverPages(
       a.route.title.localeCompare(b.route.title, "en"),
   );
 }
-
-/** Every page of the playground, found from the route folders. */
-export const PLAYGROUND_PAGES = discoverPages(
-  import.meta.glob<ModuleExports>("../../routes/*/*.route.ts", { eager: true }),
-  import.meta.glob<ModuleExports>("../../routes/*/*.tsx", { eager: true }),
-);

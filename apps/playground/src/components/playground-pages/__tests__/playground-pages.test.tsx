@@ -21,7 +21,9 @@ const linkAt = (path: string) =>
 const route = (path: string, title: string, category?: string) => ({
   Route: class {
     static readonly path = path;
+
     static readonly title = title;
+
     static readonly category = category;
   },
 });

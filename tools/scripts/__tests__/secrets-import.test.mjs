@@ -1,3 +1,11 @@
+/**
+ * Stackra file contract:
+ * Purpose: hold `secrets-import.mjs` to its contract: imports verified by read-back, sidecars and flags, refused
+ *          inputs, the production confirmation, and no secret value in the output, the audit log or the runner's argv.
+ * Boundary: a throwaway HOME and a fake Infisical runner; the real inbox and vault are never touched.
+ * Runtime: node
+ * Governing contract: ADR 0022 (tests live in tests folders); ADR 0182 (testing strategy). ADR 0257 (secrets inbox).
+ */
 // Every test runs against a throwaway HOME (temp dir) with a fake Infisical runner; the real ~/Secrets-inbox and
 // the real vault are never touched. Values are random canaries generated here; each test asserts none of them
 // reaches the output, the audit log or the runner's argv.
@@ -31,6 +39,9 @@ function setup() {
   return { home, inbox };
 }
 
+/** The value of `--<k>=` in `args`. */
+const flagValue = (args, k) => args.find((a) => a.startsWith(`--${k}=`))?.split("=")[1];
+
 /** In-memory Infisical: `secrets get … --output=json` and `secrets set NAME=@file`. */
 function fakeInfisical({
   failSet = false,
@@ -41,10 +52,9 @@ function fakeInfisical({
 } = {}) {
   const store = new Map();
   const calls = [];
-  const flag = (args, k) => args.find((a) => a.startsWith(`--${k}=`))?.split("=")[1];
   const runner = (args) => {
     calls.push(args);
-    const key = `${flag(args, "env")}:${flag(args, "path")}`;
+    const key = `${flagValue(args, "env")}:${flagValue(args, "path")}`;
     if (args[1] === "get") {
       if (failGet-- > 0) return { status: 1, stdout: "", stderr: "error: please login" };
       const v = store.get(`${key}:${args[2]}`);

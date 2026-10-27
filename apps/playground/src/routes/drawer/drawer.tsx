@@ -12,7 +12,8 @@
  * Governing contract: ADR 0302 (decisions 3 and 5); ADR 0303 (decision 7); ADR 0312; ADR 0060 (light, dark, RTL);
  *          WCAG 2.2 SC 2.1.1, 2.1.2, 2.4.3 and 4.1.2.
  */
-import * as Ui from "@stackra/ui/react";
+import type { DrawerProps } from "@stackra/ui/react";
+import { Button, Drawer as UiDrawer, Heading, Switch, Text } from "@stackra/ui/react";
 import { useState } from "react";
 
 import { PageSection } from "#src/components/page-section";
@@ -77,7 +78,7 @@ const ENTRIES = Array.from({ length: 30 }, (_, index) => `${index + 1}. ${STRING
 
 /** Props of {@link Sample}. */
 interface SampleProps extends Pick<
-  Ui.DrawerProps,
+  DrawerProps,
   "placement" | "isDismissable" | "isKeyboardDismissDisabled"
 > {
   /** The label of the button that opens the drawer. */
@@ -91,22 +92,22 @@ interface SampleProps extends Pick<
 /** One drawer with its own trigger button, a close button, a title, a body sentence and a Cancel button. */
 function Sample({ buttonLabel, title, body, ...drawerProps }: SampleProps) {
   return (
-    <Ui.Drawer trigger={<Ui.Button variant="secondary">{buttonLabel}</Ui.Button>} {...drawerProps}>
-      <Ui.Drawer.Close label={STRINGS.close} />
-      <Ui.Drawer.Header>
-        <Ui.Drawer.Title>{title}</Ui.Drawer.Title>
-      </Ui.Drawer.Header>
-      <Ui.Drawer.Body>
-        <Ui.Text>
+    <UiDrawer trigger={<Button variant="secondary">{buttonLabel}</Button>} {...drawerProps}>
+      <UiDrawer.Close label={STRINGS.close} />
+      <UiDrawer.Header>
+        <UiDrawer.Title>{title}</UiDrawer.Title>
+      </UiDrawer.Header>
+      <UiDrawer.Body>
+        <Text>
           <bdi>{body}</bdi>
-        </Ui.Text>
-      </Ui.Drawer.Body>
-      <Ui.Drawer.Footer>
-        <Ui.Button variant="secondary" slot="close">
+        </Text>
+      </UiDrawer.Body>
+      <UiDrawer.Footer>
+        <Button variant="secondary" slot="close">
           {STRINGS.cancel}
-        </Ui.Button>
-      </Ui.Drawer.Footer>
-    </Ui.Drawer>
+        </Button>
+      </UiDrawer.Footer>
+    </UiDrawer>
   );
 }
 
@@ -120,10 +121,10 @@ export function Drawer() {
     <article className="grid gap-10">
       <title>{STRINGS.documentTitle}</title>
       <header className="grid gap-2">
-        <Ui.Heading level={1}>{DrawerRoute.title}</Ui.Heading>
-        <Ui.Text className="max-w-prose">
+        <Heading level={1}>{DrawerRoute.title}</Heading>
+        <Text className="max-w-prose">
           <bdi>{STRINGS.intro}</bdi>
-        </Ui.Text>
+        </Text>
       </header>
 
       <PageSection id="drawer-placement" title={STRINGS.placement} note={STRINGS.placementNote}>
@@ -171,62 +172,62 @@ export function Drawer() {
 
       <PageSection id="drawer-long" title={STRINGS.long} note={STRINGS.longNote}>
         <div>
-          <Ui.Drawer trigger={<Ui.Button variant="secondary">{STRINGS.openLong}</Ui.Button>}>
-            <Ui.Drawer.Close label={STRINGS.close} />
-            <Ui.Drawer.Header>
-              <Ui.Drawer.Title>{STRINGS.longTitle}</Ui.Drawer.Title>
-            </Ui.Drawer.Header>
-            <Ui.Drawer.Body tabIndex={0}>
+          <UiDrawer trigger={<Button variant="secondary">{STRINGS.openLong}</Button>}>
+            <UiDrawer.Close label={STRINGS.close} />
+            <UiDrawer.Header>
+              <UiDrawer.Title>{STRINGS.longTitle}</UiDrawer.Title>
+            </UiDrawer.Header>
+            <UiDrawer.Body tabIndex={0}>
               {ENTRIES.map((entry) => (
-                <Ui.Text key={entry}>
+                <Text key={entry}>
                   <bdi>{entry}</bdi>
-                </Ui.Text>
+                </Text>
               ))}
-            </Ui.Drawer.Body>
-            <Ui.Drawer.Footer>
-              <Ui.Button slot="close">{STRINGS.done}</Ui.Button>
-            </Ui.Drawer.Footer>
-          </Ui.Drawer>
+            </UiDrawer.Body>
+            <UiDrawer.Footer>
+              <Button slot="close">{STRINGS.done}</Button>
+            </UiDrawer.Footer>
+          </UiDrawer>
         </div>
       </PageSection>
 
       <PageSection id="drawer-live" title={STRINGS.live} note={STRINGS.liveNote}>
         <div className="grid max-w-sm gap-3">
           <div>
-            <Ui.Button
+            <Button
               onPress={() => {
                 setDraft(isEmailOn);
                 setIsOpen(true);
               }}
             >
               {STRINGS.openSettings}
-            </Ui.Button>
+            </Button>
           </div>
-          <Ui.Text role="status">
+          <Text role="status">
             <bdi>{`${STRINGS.notifications} ${isEmailOn ? STRINGS.on : STRINGS.off}`}</bdi>
-          </Ui.Text>
-          <Ui.Drawer isOpen={isOpen} onOpenChange={setIsOpen}>
-            <Ui.Drawer.Close label={STRINGS.close} />
-            <Ui.Drawer.Header>
-              <Ui.Drawer.Title>{STRINGS.settingsTitle}</Ui.Drawer.Title>
-            </Ui.Drawer.Header>
-            <Ui.Drawer.Body>
-              <Ui.Switch label={STRINGS.emailNotifications} value={draft} onChange={setDraft} />
-            </Ui.Drawer.Body>
-            <Ui.Drawer.Footer>
-              <Ui.Button variant="secondary" slot="close">
+          </Text>
+          <UiDrawer isOpen={isOpen} onOpenChange={setIsOpen}>
+            <UiDrawer.Close label={STRINGS.close} />
+            <UiDrawer.Header>
+              <UiDrawer.Title>{STRINGS.settingsTitle}</UiDrawer.Title>
+            </UiDrawer.Header>
+            <UiDrawer.Body>
+              <Switch label={STRINGS.emailNotifications} value={draft} onChange={setDraft} />
+            </UiDrawer.Body>
+            <UiDrawer.Footer>
+              <Button variant="secondary" slot="close">
                 {STRINGS.cancel}
-              </Ui.Button>
-              <Ui.Button
+              </Button>
+              <Button
                 onPress={() => {
                   setIsEmailOn(draft);
                   setIsOpen(false);
                 }}
               >
                 {STRINGS.apply}
-              </Ui.Button>
-            </Ui.Drawer.Footer>
-          </Ui.Drawer>
+              </Button>
+            </UiDrawer.Footer>
+          </UiDrawer>
         </div>
       </PageSection>
     </article>

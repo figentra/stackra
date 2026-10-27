@@ -5,4 +5,6 @@
  * Runtime: browser
  * Governing contract: ADR 0294 (decision 14).
  */
-export { BrandGlyph, type BrandGlyphName, type BrandGlyphProps } from "./brand-glyph";
+export { BrandGlyph } from "./brand-glyph";
+export { type BrandGlyphName } from "./brand-glyph-name.type";
+export { type BrandGlyphProps } from "./brand-glyph.props";

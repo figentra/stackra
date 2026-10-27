@@ -30,13 +30,11 @@ import { Share, Text, View } from "react-native";
 import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg";
 
 import { Screen } from "../components/ui/screen";
-import {
-  contrastReport,
-  THEME_FACES,
-  THEME_PRESETS,
-  themeSettings,
-  useThemeSettings,
-} from "../stores/theme-settings.store";
+import { themeSettings } from "../stores/theme-settings.store";
+import { THEME_PRESETS } from "../stores/theme-presets.constant";
+import { THEME_FACES } from "../stores/theme-faces.constant";
+import { contrastReport } from "../stores/contrast-report.function";
+import { useThemeSettings } from "../stores/use-theme-settings";
 
 // shortcut: English strings in one place until @stackra/i18n ships; then `mobile::settings.*` keys.
 const STRINGS = {

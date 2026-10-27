@@ -10,7 +10,7 @@
  * Governing contract: ADR 0302 (decisions 3 and 5); ADR 0318; ADR 0055; ADR 0060 (light, dark, RTL).
  */
 import type { EntityOption, EntityOptionPage } from "@stackra/ui/contracts";
-import * as Ui from "@stackra/ui/react";
+import { EntityPicker as UiEntityPicker, Heading, Text } from "@stackra/ui/react";
 import { useState } from "react";
 
 import { PageSection } from "#src/components/page-section";
@@ -151,15 +151,15 @@ export function EntityPicker() {
     <article className="grid gap-10">
       <title>{STRINGS.documentTitle}</title>
       <header className="grid gap-2">
-        <Ui.Heading level={1}>{EntityPickerRoute.title}</Ui.Heading>
-        <Ui.Text className="max-w-prose">
+        <Heading level={1}>{EntityPickerRoute.title}</Heading>
+        <Text className="max-w-prose">
           <bdi>{STRINGS.intro}</bdi>
-        </Ui.Text>
+        </Text>
       </header>
 
       <PageSection id="entity-picker-basics" title={STRINGS.basics} note={STRINGS.basicsNote}>
         <div className={ROW}>
-          <Ui.EntityPicker
+          <UiEntityPicker
             loadOptions={searchPeople}
             label={STRINGS.ownerLabel}
             placeholder={STRINGS.ownerPlaceholder}
@@ -167,13 +167,13 @@ export function EntityPicker() {
             emptyMessage={STRINGS.empty}
             className={SAMPLE}
           />
-          <Ui.EntityPicker
+          <UiEntityPicker
             loadOptions={searchTeams}
             label={STRINGS.teamLabel}
             placeholder={STRINGS.teamPlaceholder}
             className={SAMPLE}
           />
-          <Ui.EntityPicker
+          <UiEntityPicker
             loadOptions={searchPeople}
             label={STRINGS.reviewerLabel}
             description={STRINGS.reviewerDescription}
@@ -186,7 +186,7 @@ export function EntityPicker() {
 
       <PageSection id="entity-picker-several" title={STRINGS.several} note={STRINGS.severalNote}>
         <div className={ROW}>
-          <Ui.EntityPicker
+          <UiEntityPicker
             loadOptions={searchPeople}
             label={STRINGS.reviewersLabel}
             placeholder={STRINGS.ownerPlaceholder}
@@ -200,14 +200,14 @@ export function EntityPicker() {
 
       <PageSection id="entity-picker-server" title={STRINGS.server} note={STRINGS.serverNote}>
         <div className={ROW}>
-          <Ui.EntityPicker
+          <UiEntityPicker
             loadOptions={searchSlowly}
             label={STRINGS.slowLabel}
             placeholder={STRINGS.ownerPlaceholder}
             loadingLabel={STRINGS.loading}
             className={SAMPLE}
           />
-          <Ui.EntityPicker
+          <UiEntityPicker
             loadOptions={searchOffline}
             label={STRINGS.failingLabel}
             placeholder={STRINGS.ownerPlaceholder}
@@ -220,7 +220,7 @@ export function EntityPicker() {
 
       <PageSection id="entity-picker-create" title={STRINGS.create} note={STRINGS.createNote}>
         <div className={ROW}>
-          <Ui.EntityPicker
+          <UiEntityPicker
             loadOptions={searchWithCreated}
             label={STRINGS.createLabel}
             placeholder={STRINGS.ownerPlaceholder}
@@ -241,14 +241,14 @@ export function EntityPicker() {
 
       <PageSection id="entity-picker-states" title={STRINGS.states} note={STRINGS.statesNote}>
         <div className={ROW}>
-          <Ui.EntityPicker
+          <UiEntityPicker
             loadOptions={searchPeople}
             label={STRINGS.required}
             placeholder={STRINGS.ownerPlaceholder}
             isRequired
             className={SAMPLE}
           />
-          <Ui.EntityPicker
+          <UiEntityPicker
             loadOptions={searchPeople}
             label={STRINGS.invalid}
             placeholder={STRINGS.ownerPlaceholder}
@@ -256,14 +256,14 @@ export function EntityPicker() {
             errorMessage={STRINGS.invalidError}
             className={SAMPLE}
           />
-          <Ui.EntityPicker
+          <UiEntityPicker
             loadOptions={searchPeople}
             label={STRINGS.disabled}
             defaultValue={PEOPLE[0] ?? null}
             isDisabled
             className={SAMPLE}
           />
-          <Ui.EntityPicker
+          <UiEntityPicker
             loadOptions={searchPeople}
             label={STRINGS.readOnly}
             selectionMode="multiple"
@@ -277,7 +277,7 @@ export function EntityPicker() {
 
       <PageSection id="entity-picker-live" title={STRINGS.live} note={STRINGS.liveNote}>
         <div className={ROW}>
-          <Ui.EntityPicker
+          <UiEntityPicker
             loadOptions={searchPeople}
             label={STRINGS.liveOwner}
             placeholder={STRINGS.ownerPlaceholder}
@@ -287,7 +287,7 @@ export function EntityPicker() {
             onChange={setOwner}
             className={SAMPLE}
           />
-          <Ui.EntityPicker
+          <UiEntityPicker
             loadOptions={searchPeople}
             label={STRINGS.liveFollowers}
             placeholder={STRINGS.ownerPlaceholder}
@@ -300,12 +300,12 @@ export function EntityPicker() {
             className={SAMPLE}
           />
         </div>
-        <Ui.Text role="status" data-testid="entity-picker-owner" tone="muted">
+        <Text role="status" data-testid="entity-picker-owner" tone="muted">
           {STRINGS.chosenOwner(owner)}
-        </Ui.Text>
-        <Ui.Text role="status" data-testid="entity-picker-followers" tone="muted">
+        </Text>
+        <Text role="status" data-testid="entity-picker-followers" tone="muted">
           <bdi>{STRINGS.chosenFollowers(followers)}</bdi>
-        </Ui.Text>
+        </Text>
       </PageSection>
     </article>
   );

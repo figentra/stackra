@@ -13,7 +13,8 @@
  *          (light, dark, RTL); WCAG 2.2 SC 2.4.3, 4.1.3.
  */
 import type { ResourceAction } from "@stackra/ui/contracts";
-import * as Ui from "@stackra/ui/react";
+import type { BulkActionBarProps } from "@stackra/ui/react";
+import { BulkActionBar as UiBulkActionBar, CheckboxGroup, Heading, Text } from "@stackra/ui/react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import { PageSection } from "#src/components/page-section";
@@ -102,16 +103,16 @@ const DISABLED: readonly ResourceAction[] = [
 function Sample({ title, children }: { readonly title: string; readonly children: ReactNode }) {
   return (
     <div className="grid gap-2">
-      <Ui.Heading level={3}>{title}</Ui.Heading>
+      <Heading level={3}>{title}</Heading>
       {children}
     </div>
   );
 }
 
 /** A bar of the static samples, named after the sample. */
-function Static({ name, ...props }: { readonly name: string } & Partial<Ui.BulkActionBarProps>) {
+function Static({ name, ...props }: { readonly name: string } & Partial<BulkActionBarProps>) {
   return (
-    <Ui.BulkActionBar
+    <UiBulkActionBar
       selectedCount={3}
       actions={THREE}
       onClearSelection={ignore}
@@ -170,24 +171,24 @@ function LiveExample() {
       data-testid="bulk-action-bar-live"
       className="grid gap-3 outline-none"
     >
-      <Ui.CheckboxGroup
+      <CheckboxGroup
         label={STRINGS.liveList}
         options={ORDERS}
         value={selected}
         onChange={setSelected}
       />
-      <Ui.BulkActionBar
+      <UiBulkActionBar
         label={STRINGS.liveLabel}
         selectedCount={selected.length}
         actions={actions}
         onClearSelection={() => setSelected([])}
       />
-      <Ui.Text role="status" data-testid="bulk-action-bar-selected" tone="muted">
+      <Text role="status" data-testid="bulk-action-bar-selected" tone="muted">
         {STRINGS.selected(selected)}
-      </Ui.Text>
-      <Ui.Text role="status" data-testid="bulk-action-bar-last" tone="muted">
+      </Text>
+      <Text role="status" data-testid="bulk-action-bar-last" tone="muted">
         {STRINGS.lastAction(last)}
-      </Ui.Text>
+      </Text>
     </div>
   );
 }
@@ -213,10 +214,10 @@ export function BulkActionBar() {
     <article className="grid gap-10">
       <title>{STRINGS.documentTitle}</title>
       <header className="grid gap-2">
-        <Ui.Heading level={1}>{BulkActionBarRoute.title}</Ui.Heading>
-        <Ui.Text className="max-w-prose">
+        <Heading level={1}>{BulkActionBarRoute.title}</Heading>
+        <Text className="max-w-prose">
           <bdi>{STRINGS.intro}</bdi>
-        </Ui.Text>
+        </Text>
       </header>
 
       <PageSection id="bulk-action-bar-counts" title={STRINGS.counts} note={STRINGS.countsNote}>

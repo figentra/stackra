@@ -5,4 +5,6 @@
  * Runtime: browser
  * Governing contract: ADR 0294 (decision 14).
  */
-export { DemoIcon, type DemoIconName, type DemoIconProps } from "./demo-icon";
+export { DemoIcon } from "./demo-icon";
+export { type DemoIconName } from "./demo-icon-name.type";
+export { type DemoIconProps } from "./demo-icon.props";

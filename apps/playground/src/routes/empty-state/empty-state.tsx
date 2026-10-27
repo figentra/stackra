@@ -11,7 +11,7 @@
  *          4.1.3; ADR 0060 (light, dark, RTL).
  */
 import { EmptyReason } from "@stackra/ui/contracts";
-import * as Ui from "@stackra/ui/react";
+import { Button, EmptyState as UiEmptyState, Heading, SearchField, Text } from "@stackra/ui/react";
 import { useState, type ReactNode } from "react";
 
 import { PageSection } from "#src/components/page-section";
@@ -77,9 +77,9 @@ const CARD = "rounded-xl border border-separator";
 function Sample({ caption, children }: { caption: string; children: ReactNode }) {
   return (
     <li className="grid content-start gap-2">
-      <Ui.Text tone="muted" type="small">
+      <Text tone="muted" type="small">
         {caption}
-      </Ui.Text>
+      </Text>
       <div className={CARD}>{children}</div>
     </li>
   );
@@ -104,26 +104,26 @@ export function EmptyState() {
     <article className="grid gap-10">
       <title>{STRINGS.documentTitle}</title>
       <header className="grid gap-2">
-        <Ui.Heading level={1}>{EmptyStateRoute.title}</Ui.Heading>
-        <Ui.Text className="max-w-prose">
+        <Heading level={1}>{EmptyStateRoute.title}</Heading>
+        <Text className="max-w-prose">
           <bdi>{STRINGS.intro}</bdi>
-        </Ui.Text>
+        </Text>
       </header>
 
       <PageSection id="empty-state-reasons" title={STRINGS.reasons} note={STRINGS.reasonsNote}>
         <ul className={GRID}>
           {EmptyReason.map((reason) => (
             <Sample key={reason} caption={`reason="${reason}"`}>
-              <Ui.EmptyState
+              <UiEmptyState
                 reason={reason}
                 headingLevel={3}
                 title={REASON_COPY[reason].title}
                 description={REASON_COPY[reason].description}
                 actions={
                   reason === "permission-denied" ? undefined : (
-                    <Ui.Button variant={reason === "no-data" ? "primary" : "secondary"}>
+                    <Button variant={reason === "no-data" ? "primary" : "secondary"}>
                       {reason === "no-data" ? STRINGS.create : STRINGS.clearFilters}
-                    </Ui.Button>
+                    </Button>
                   )
                 }
               />
@@ -135,23 +135,23 @@ export function EmptyState() {
       <PageSection id="empty-state-parts" title={STRINGS.parts} note={STRINGS.partsNote}>
         <ul className={GRID}>
           <Sample caption="Title only">
-            <Ui.EmptyState headingLevel={3} title={REASON_COPY["no-data"].title} />
+            <UiEmptyState headingLevel={3} title={REASON_COPY["no-data"].title} />
           </Sample>
           <Sample caption="With an action">
-            <Ui.EmptyState
+            <UiEmptyState
               headingLevel={3}
               title={REASON_COPY["no-data"].title}
               description={REASON_COPY["no-data"].description}
               actions={
                 <>
-                  <Ui.Button>{STRINGS.create}</Ui.Button>
-                  <Ui.Button variant="ghost">{STRINGS.learnMore}</Ui.Button>
+                  <Button>{STRINGS.create}</Button>
+                  <Button variant="ghost">{STRINGS.learnMore}</Button>
                 </>
               }
             />
           </Sample>
           <Sample caption="An icon of your own">
-            <Ui.EmptyState
+            <UiEmptyState
               headingLevel={3}
               icon="triangle-alert"
               title="Importing is paused"
@@ -159,7 +159,7 @@ export function EmptyState() {
             />
           </Sample>
           <Sample caption="No icon">
-            <Ui.EmptyState
+            <UiEmptyState
               headingLevel={3}
               icon={false}
               title={REASON_COPY["no-results"].title}
@@ -171,7 +171,7 @@ export function EmptyState() {
 
       <PageSection id="empty-state-live" title={STRINGS.live} note={STRINGS.liveNote}>
         <div id="empty-state-demo" className="grid max-w-xl gap-4">
-          <Ui.SearchField
+          <SearchField
             label={STRINGS.searchLabel}
             placeholder={STRINGS.searchPlaceholder}
             clearLabel={STRINGS.clearSearch}
@@ -180,27 +180,27 @@ export function EmptyState() {
             isFullWidth
           />
           {/* The count is what a screen reader hears when the list becomes the empty state, or the reverse. */}
-          <Ui.Text role="status" className="sr-only">
+          <Text role="status" className="sr-only">
             {STRINGS.count(matches.length)}
-          </Ui.Text>
+          </Text>
           <div className={CARD} data-sample="live">
             {matches.length === 0 ? (
-              <Ui.EmptyState
+              <UiEmptyState
                 reason="no-results"
                 headingLevel={3}
                 title={REASON_COPY["no-results"].title}
                 description={`No order matches “${query.trim()}”. Check the spelling or clear the search.`}
                 actions={
-                  <Ui.Button variant="secondary" onPress={clearSearch}>
+                  <Button variant="secondary" onPress={clearSearch}>
                     {STRINGS.showAll}
-                  </Ui.Button>
+                  </Button>
                 }
               />
             ) : (
               <ul aria-label={STRINGS.resultsIntro} className="grid divide-y divide-separator">
                 {matches.map((order) => (
                   <li key={order} className="px-4 py-3">
-                    <Ui.Text>{order}</Ui.Text>
+                    <Text>{order}</Text>
                   </li>
                 ))}
               </ul>

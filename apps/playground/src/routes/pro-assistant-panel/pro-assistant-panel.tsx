@@ -6,7 +6,7 @@
  * Runtime: browser
  * Governing contract: ADR 0360 (decisions 1 and 11); ADR 0310 (decision 12); STA-803.
  */
-import * as Ui from "@stackra/ui/react";
+import { Button, IconButton, TextField } from "@stackra/ui/react";
 import * as UiPro from "@stackra-pro/ui/react";
 
 import { ProAssistantPanelRoute } from "#src/routes/pro-assistant-panel/pro-assistant-panel.route";
@@ -40,11 +40,11 @@ export function ProAssistantPanel() {
         <UiPro.AssistantPanel
           title={STRINGS.title}
           disclosure={STRINGS.disclosure}
-          headerActions={<Ui.IconButton icon="x" label={STRINGS.close} variant="ghost" size="sm" />}
+          headerActions={<IconButton icon="x" label={STRINGS.close} variant="ghost" size="sm" />}
           composer={
             <div className="flex items-end gap-2">
-              <Ui.TextField label={STRINGS.message} className="flex-1" />
-              <Ui.Button>{STRINGS.send}</Ui.Button>
+              <TextField label={STRINGS.message} className="flex-1" />
+              <Button>{STRINGS.send}</Button>
             </div>
           }
         >

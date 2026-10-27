@@ -7,7 +7,9 @@
  * Governing contract: ADR 0302 (decision 5); ADR 0022 (test placement).
  */
 // @covers sta-416:FR-001
-import { matchesTier, TIER_FILTERS, tierOf } from "#src/components/playground-pages/page-tier";
+import { TIER_FILTERS } from "#src/components/playground-pages/tier-filters.constant";
+import { tierOf } from "#src/components/playground-pages/tier-of.function";
+import { matchesTier } from "#src/components/playground-pages/matches-tier.function";
 
 describe("tierOf", () => {
   it("is Pro for a path that starts with /pro-", () => {

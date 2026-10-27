@@ -8,7 +8,7 @@
  * Governing contract: ADR 0310 (decision 12); ADR 0060 (light, dark, RTL); STA-416 FR-012.
  */
 import type { Selection } from "@heroui/react";
-import * as Ui from "@stackra/ui/react";
+import { Button } from "@stackra/ui/react";
 import * as UiPro from "@stackra-pro/ui/react";
 import { useState } from "react";
 
@@ -81,14 +81,14 @@ export function ProListView() {
                 </div>
               </UiPro.ListView.ItemContent>
               <UiPro.ListView.ItemAction>
-                <Ui.Button
+                <Button
                   size="sm"
                   variant="ghost"
                   label={STRINGS.more(file.name)}
                   onPress={() => setAction(file.name)}
                 >
                   {STRINGS.moreLabel}
-                </Ui.Button>
+                </Button>
               </UiPro.ListView.ItemAction>
             </UiPro.ListView.Item>
           )}

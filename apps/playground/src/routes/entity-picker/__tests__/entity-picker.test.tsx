@@ -50,7 +50,9 @@ describe("Entity picker page", () => {
       "IntersectionObserver",
       class {
         observe() {}
+
         unobserve() {}
+
         disconnect() {}
       },
     );

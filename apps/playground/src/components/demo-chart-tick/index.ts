@@ -5,4 +5,5 @@
  * Runtime: browser
  * Governing contract: ADR 0294 (decision 14).
  */
-export { DemoChartTick, type DemoChartTickProps } from "./demo-chart-tick";
+export { DemoChartTick } from "./demo-chart-tick";
+export { type DemoChartTickProps } from "./demo-chart-tick.props";

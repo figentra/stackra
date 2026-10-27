@@ -9,7 +9,7 @@
  * Governing contract: ADR 0302 (decisions 3 and 5); ADR 0303 (decision 7); ADR 0304; ADR 0060 (light, dark, RTL).
  */
 import { AvatarShape, AvatarVariant, Size, Tone } from "@stackra/ui/contracts";
-import * as Ui from "@stackra/ui/react";
+import { Avatar as UiAvatar, Button, Heading, Icon, Text } from "@stackra/ui/react";
 import { useState } from "react";
 
 import { PageSection } from "#src/components/page-section";
@@ -82,20 +82,20 @@ export function Avatar() {
     <article className="grid gap-10">
       <title>{STRINGS.documentTitle}</title>
       <header className="grid gap-2">
-        <Ui.Heading level={1}>{AvatarRoute.title}</Ui.Heading>
-        <Ui.Text className="max-w-prose">
+        <Heading level={1}>{AvatarRoute.title}</Heading>
+        <Text className="max-w-prose">
           <bdi>{STRINGS.intro}</bdi>
-        </Ui.Text>
+        </Text>
       </header>
 
       <PageSection id="avatar-sizes" title={STRINGS.sizes} note={STRINGS.sizesNote}>
         {AvatarShape.map((shape) => (
           <div key={shape} className="grid gap-2">
-            <Ui.Heading level={3}>{STRINGS.shape(shape)}</Ui.Heading>
+            <Heading level={3}>{STRINGS.shape(shape)}</Heading>
             <ul aria-label={STRINGS.shape(shape)} className={ROW}>
               {Size.map((size) => (
                 <li key={`${size}-image`}>
-                  <Ui.Avatar
+                  <UiAvatar
                     shape={shape}
                     size={size}
                     src={SAMPLE_IMAGE}
@@ -107,7 +107,7 @@ export function Avatar() {
               ))}
               {Size.map((size) => (
                 <li key={`${size}-initials`}>
-                  <Ui.Avatar
+                  <UiAvatar
                     shape={shape}
                     size={size}
                     name={STRINGS.standalone}
@@ -124,11 +124,11 @@ export function Avatar() {
       <PageSection id="avatar-tones" title={STRINGS.tones} note={STRINGS.tonesNote}>
         {AvatarVariant.map((variant) => (
           <div key={variant} className="grid gap-2">
-            <Ui.Heading level={3}>{STRINGS.variant(variant)}</Ui.Heading>
+            <Heading level={3}>{STRINGS.variant(variant)}</Heading>
             <ul aria-label={STRINGS.variant(variant)} className={ROW}>
               {Tone.map((tone) => (
                 <li key={tone}>
-                  <Ui.Avatar
+                  <UiAvatar
                     variant={variant}
                     tone={tone}
                     name={STRINGS.standalone}
@@ -145,33 +145,33 @@ export function Avatar() {
       <PageSection id="avatar-fallbacks" title={STRINGS.fallbacks} note={STRINGS.fallbacksNote}>
         <ul className={ROW}>
           <li className="grid justify-items-center gap-2">
-            <Ui.Avatar src={SAMPLE_IMAGE} name={STRINGS.standalone} data-sample="loaded" />
-            <Ui.Text tone="muted" type="small">
+            <UiAvatar src={SAMPLE_IMAGE} name={STRINGS.standalone} data-sample="loaded" />
+            <Text tone="muted" type="small">
               {STRINGS.loaded}
-            </Ui.Text>
+            </Text>
           </li>
           <li className="grid justify-items-center gap-2">
-            <Ui.Avatar src={BROKEN_IMAGE} name={STRINGS.standalone} data-sample="broken" />
-            <Ui.Text tone="muted" type="small">
+            <UiAvatar src={BROKEN_IMAGE} name={STRINGS.standalone} data-sample="broken" />
+            <Text tone="muted" type="small">
               {STRINGS.broken}
-            </Ui.Text>
+            </Text>
           </li>
           <li className="grid justify-items-center gap-2">
-            <Ui.Avatar
+            <UiAvatar
               shape="square"
               name={STRINGS.organisation}
-              fallback={<Ui.Icon name="building" />}
+              fallback={<Icon name="building" />}
               data-sample="organisation"
             />
-            <Ui.Text tone="muted" type="small">
+            <Text tone="muted" type="small">
               {STRINGS.organisation}
-            </Ui.Text>
+            </Text>
           </li>
           <li className="grid justify-items-center gap-2">
-            <Ui.Avatar data-sample="anonymous" />
-            <Ui.Text tone="muted" type="small">
+            <UiAvatar data-sample="anonymous" />
+            <Text tone="muted" type="small">
               {STRINGS.anonymous}
-            </Ui.Text>
+            </Text>
           </li>
         </ul>
       </PageSection>
@@ -180,7 +180,7 @@ export function Avatar() {
         <ul className={ROW}>
           {NAMES.map(({ name, lang }) => (
             <li key={name} className="flex items-center gap-2">
-              <Ui.Avatar name={name} data-sample="name" />
+              <UiAvatar name={name} data-sample="name" />
               <span lang={lang}>{name}</span>
             </li>
           ))}
@@ -193,15 +193,15 @@ export function Avatar() {
         note={STRINGS.accessibleNameNote}
       >
         <div className={ROW}>
-          <Ui.Avatar name={STRINGS.standalone} label={STRINGS.row} data-sample="labelled" />
+          <UiAvatar name={STRINGS.standalone} label={STRINGS.row} data-sample="labelled" />
           <ul aria-label={STRINGS.accessibleName}>
             <li className="flex items-center gap-2" data-sample="row">
-              <Ui.Avatar name={STRINGS.rowName} />
+              <UiAvatar name={STRINGS.rowName} />
               <span className="grid">
                 <span>{STRINGS.rowName}</span>
-                <Ui.Text tone="muted" type="small">
+                <Text tone="muted" type="small">
                   {STRINGS.rowRole}
-                </Ui.Text>
+                </Text>
               </span>
             </li>
           </ul>
@@ -210,18 +210,18 @@ export function Avatar() {
 
       <PageSection id="avatar-live" title={STRINGS.live} note={STRINGS.liveNote}>
         <div className={ROW}>
-          <Ui.Button
+          <Button
             variant="secondary"
             onPress={() => setNameIndex((index) => (index + 1) % NAMES.length)}
           >
             {STRINGS.nextName}
-          </Ui.Button>
-          <Ui.Button variant="secondary" onPress={() => setHasImage((value) => !value)}>
+          </Button>
+          <Button variant="secondary" onPress={() => setHasImage((value) => !value)}>
             {hasImage ? STRINGS.imageOff : STRINGS.imageOn}
-          </Ui.Button>
+          </Button>
         </div>
         <div className={ROW}>
-          <Ui.Avatar
+          <UiAvatar
             size="lg"
             name={current.name}
             label={STRINGS.current}

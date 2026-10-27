@@ -7,7 +7,7 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 12); ADR 0060 (light, dark, RTL); STA-416 FR-012.
  */
-import * as Ui from "@stackra/ui/react";
+import { Description, Label } from "@stackra/ui/react";
 import * as UiPro from "@stackra-pro/ui/react";
 import { useState } from "react";
 
@@ -51,8 +51,8 @@ function Items({
     <UiPro.RadioButtonGroup.Item key={item.value} value={item.value}>
       <UiPro.RadioButtonGroup.Indicator />
       <UiPro.RadioButtonGroup.ItemContent>
-        <Ui.Label>{item.title}</Ui.Label>
-        <Ui.Description>{item.description}</Ui.Description>
+        <Label>{item.title}</Label>
+        <Description>{item.description}</Description>
       </UiPro.RadioButtonGroup.ItemContent>
     </UiPro.RadioButtonGroup.Item>
   ));
@@ -76,8 +76,8 @@ export function ProRadioButtonGroup() {
           {STRINGS.controlled}
         </h2>
         <UiPro.RadioButtonGroup name="plan" variant="secondary" value={plan} onChange={setPlan}>
-          <Ui.Label>{STRINGS.plan}</Ui.Label>
-          <Ui.Description>{STRINGS.planHint}</Ui.Description>
+          <Label>{STRINGS.plan}</Label>
+          <Description>{STRINGS.planHint}</Description>
           <Items items={PLANS} />
         </UiPro.RadioButtonGroup>
         <p role="status" className="text-sm">
@@ -95,7 +95,7 @@ export function ProRadioButtonGroup() {
           name="delivery"
           variant="secondary"
         >
-          <Ui.Label className="col-span-full">{STRINGS.delivery}</Ui.Label>
+          <Label className="col-span-full">{STRINGS.delivery}</Label>
           <Items items={DELIVERY} />
         </UiPro.RadioButtonGroup>
       </section>
@@ -109,8 +109,8 @@ export function ProRadioButtonGroup() {
           name="locked-plan"
           variant="secondary"
         >
-          <Ui.Label>{STRINGS.disabledPlan}</Ui.Label>
-          <Ui.Description>{STRINGS.disabledHint}</Ui.Description>
+          <Label>{STRINGS.disabledPlan}</Label>
+          <Description>{STRINGS.disabledHint}</Description>
           <Items items={PLANS} />
         </UiPro.RadioButtonGroup>
       </section>

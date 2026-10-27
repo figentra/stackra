@@ -10,7 +10,7 @@
  * Governing contract: ADR 0302 (decisions 3 and 5); ADR 0303 (decision 7); ADR 0313; ADR 0060 (light, dark, RTL).
  */
 import { SurfaceVariant } from "@stackra/ui/contracts";
-import * as Ui from "@stackra/ui/react";
+import { Avatar, Chip, Heading, List as UiList, Text } from "@stackra/ui/react";
 import { useEffect, useRef, useState } from "react";
 
 import { PageSection } from "#src/components/page-section";
@@ -78,11 +78,11 @@ const TEAM = [
     id: "ada",
     title: "Ada Lovelace",
     description: "Engineering",
-    startIcon: <Ui.Avatar name="Ada Lovelace" size="sm" />,
+    startIcon: <Avatar name="Ada Lovelace" size="sm" />,
     endContent: (
-      <Ui.Chip size="sm" tone="success">
+      <Chip size="sm" tone="success">
         Active
-      </Ui.Chip>
+      </Chip>
     ),
     hasChevron: true,
   },
@@ -142,24 +142,24 @@ export function List() {
     <article className="grid gap-10">
       <title>{STRINGS.documentTitle}</title>
       <header className="grid gap-2">
-        <Ui.Heading level={1}>{ListRoute.title}</Ui.Heading>
-        <Ui.Text className="max-w-prose">
+        <Heading level={1}>{ListRoute.title}</Heading>
+        <Text className="max-w-prose">
           <bdi>{STRINGS.intro}</bdi>
-        </Ui.Text>
+        </Text>
       </header>
 
       <PageSection id="list-basics" title={STRINGS.basics} note={STRINGS.basicsNote}>
-        <Ui.List label={STRINGS.basicsLabel} items={ORDERS} />
+        <UiList label={STRINGS.basicsLabel} items={ORDERS} />
       </PageSection>
 
       <PageSection id="list-slots" title={STRINGS.slots} note={STRINGS.slotsNote}>
-        <Ui.List label={STRINGS.slotsLabel} items={TEAM} />
+        <UiList label={STRINGS.slotsLabel} items={TEAM} />
       </PageSection>
 
       <PageSection id="list-surfaces" title={STRINGS.surfaces} note={STRINGS.surfacesNote}>
         <div className="grid gap-4 sm:grid-cols-2">
           {SurfaceVariant.map((variant) => (
-            <Ui.List
+            <UiList
               key={variant}
               label={STRINGS.surface(variant)}
               variant={variant}
@@ -171,7 +171,7 @@ export function List() {
 
       <PageSection id="list-press" title={STRINGS.press} note={STRINGS.pressNote}>
         <div className="grid gap-4 sm:grid-cols-2">
-          <Ui.List
+          <UiList
             label={STRINGS.pressLabel}
             items={[
               {
@@ -190,7 +190,7 @@ export function List() {
               },
             ]}
           />
-          <Ui.List
+          <UiList
             label={STRINGS.disabledLabel}
             items={[
               {
@@ -213,13 +213,13 @@ export function List() {
 
       <PageSection id="list-selection" title={STRINGS.selection} note={STRINGS.selectionNote}>
         <div className="grid gap-4 sm:grid-cols-2">
-          <Ui.List
+          <UiList
             label={STRINGS.singleLabel}
             items={CHANNELS}
             selectionMode="single"
             defaultSelectedKeys={["push"]}
           />
-          <Ui.List
+          <UiList
             label={STRINGS.multipleLabel}
             items={CHANNELS}
             selectionMode="multiple"
@@ -230,12 +230,12 @@ export function List() {
 
       <PageSection id="list-states" title={STRINGS.states} note={STRINGS.statesNote}>
         <div className="grid gap-4 sm:grid-cols-2">
-          <Ui.List
+          <UiList
             label={STRINGS.emptyLabel}
             items={[]}
-            emptyState={<Ui.Text tone="muted">{STRINGS.empty}</Ui.Text>}
+            emptyState={<Text tone="muted">{STRINGS.empty}</Text>}
           />
-          <Ui.List
+          <UiList
             label={STRINGS.loadingLabel}
             items={ORDERS.slice(0, 2)}
             isLoading
@@ -245,7 +245,7 @@ export function List() {
       </PageSection>
 
       <PageSection id="list-live-press" title={STRINGS.livePress} note={STRINGS.livePressNote}>
-        <Ui.List
+        <UiList
           label={STRINGS.pressLabel}
           items={ORDERS.map((order) => ({
             id: order.id,
@@ -254,22 +254,22 @@ export function List() {
             onPress: press(order.title),
           }))}
         />
-        <Ui.Text role="status" tone="muted" data-testid="list-pressed">
+        <Text role="status" tone="muted" data-testid="list-pressed">
           {pressed === undefined ? STRINGS.nonePressed : STRINGS.pressed(pressed)}
-        </Ui.Text>
+        </Text>
       </PageSection>
 
       <PageSection id="list-live-select" title={STRINGS.liveSelect} note={STRINGS.liveSelectNote}>
-        <Ui.List
+        <UiList
           label={STRINGS.liveSelectLabel}
           items={CHANNELS}
           selectionMode="multiple"
           selectedKeys={channels}
           onSelectionChange={setChannels}
         />
-        <Ui.Text role="status" tone="muted" data-testid="list-selected">
+        <Text role="status" tone="muted" data-testid="list-selected">
           {STRINGS.selected(channels)}
-        </Ui.Text>
+        </Text>
       </PageSection>
 
       <PageSection id="list-live-more" title={STRINGS.liveMore} note={STRINGS.liveMoreNote}>
@@ -281,7 +281,7 @@ export function List() {
           className="h-56 overflow-y-auto"
           data-testid="list-scroll"
         >
-          <Ui.List
+          <UiList
             label={STRINGS.liveMoreLabel}
             items={activityRows(activity)}
             hasMore={activity < TOTAL}
@@ -290,9 +290,9 @@ export function List() {
             loadingLabel={STRINGS.loading}
           />
         </div>
-        <Ui.Text role="status" tone="muted" data-testid="list-count">
+        <Text role="status" tone="muted" data-testid="list-count">
           {STRINGS.rows(activity)}
-        </Ui.Text>
+        </Text>
       </PageSection>
     </article>
   );

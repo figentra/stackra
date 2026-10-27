@@ -1,3 +1,12 @@
+/**
+ * Stackra file contract:
+ * Purpose: the decision functions of the Stackra OpenCode guard plugin (index.ts): the permission tiers shared with
+ *          the Claude hooks with ask as deny, the executor layer of lead-only commands, and edits refused outside the
+ *          session's worktree.
+ * Boundary: pure decisions over a path or a command; the plugin applies them.
+ * Runtime: node
+ * Governing contract: ADR 0293 (agent permission tiers and executor pushes); ADR 0066 (unattended OpenCode); STA-400.
+ */
 // Decision functions for the Stackra OpenCode guard plugin (index.ts), covered by node:test.
 // The permission tiers live in .agents/hooks/_rules.mjs, shared with the Claude hooks (ADR 0293), so the two tools
 // never drift. OpenCode runs unattended (ADR 0066) and `--auto` approves any ask, so an ask is a deny here, through

@@ -2,6 +2,9 @@
  * Stackra file contract:
  * Purpose: pure parsers for spec-kit artifacts shared by spec-gate and spec-trace (spec.md, plan.md, tasks.md,
  *   `.agents/routing.yaml` task types, `@covers` tags in tests). Dependency-free; no I/O.
+ * Boundary: pure functions over text; no file or network access.
+ * Runtime: node
+ * Governing contract: ADR 0120 (SDLC spec location, lanes and change risk); ADR 0121.
  * Secrets: none.
  */
 

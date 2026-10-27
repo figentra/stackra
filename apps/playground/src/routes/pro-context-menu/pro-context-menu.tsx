@@ -8,7 +8,7 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 12); ADR 0060 (light, dark, RTL); STA-416 FR-012.
  */
-import * as Ui from "@stackra/ui/react";
+import { Button, Label } from "@stackra/ui/react";
 import * as UiPro from "@stackra-pro/ui/react";
 import { useState } from "react";
 
@@ -54,9 +54,9 @@ export function ProContextMenu() {
           {STRINGS.area}
         </h2>
         <div>
-          <Ui.Button variant="secondary" onPress={() => setOpen(true)}>
+          <Button variant="secondary" onPress={() => setOpen(true)}>
             {STRINGS.open}
-          </Ui.Button>
+          </Button>
         </div>
         <UiPro.ContextMenu isOpen={isOpen} onOpenChange={setOpen}>
           <UiPro.ContextMenu.Trigger>
@@ -67,33 +67,33 @@ export function ProContextMenu() {
           <UiPro.ContextMenu.Popover>
             <UiPro.ContextMenu.Menu label={STRINGS.menu} onAction={onAction}>
               <UiPro.ContextMenu.Item id="rename" textValue={STRINGS.rename}>
-                <Ui.Label>{STRINGS.rename}</Ui.Label>
+                <Label>{STRINGS.rename}</Label>
               </UiPro.ContextMenu.Item>
               <UiPro.ContextMenu.Item id="duplicate" textValue={STRINGS.duplicate}>
-                <Ui.Label>{STRINGS.duplicate}</Ui.Label>
+                <Label>{STRINGS.duplicate}</Label>
               </UiPro.ContextMenu.Item>
               <UiPro.ContextMenu.SubmenuTrigger>
                 <UiPro.ContextMenu.Item id="share" textValue={STRINGS.share}>
-                  <Ui.Label>{STRINGS.share}</Ui.Label>
+                  <Label>{STRINGS.share}</Label>
                   <UiPro.ContextMenu.SubmenuIndicator />
                 </UiPro.ContextMenu.Item>
                 <UiPro.ContextMenu.Popover>
                   <UiPro.ContextMenu.Menu label={STRINGS.share} onAction={onAction}>
                     <UiPro.ContextMenu.Item id="link" textValue={STRINGS.link}>
-                      <Ui.Label>{STRINGS.link}</Ui.Label>
+                      <Label>{STRINGS.link}</Label>
                     </UiPro.ContextMenu.Item>
                     <UiPro.ContextMenu.Item id="email" textValue={STRINGS.email}>
-                      <Ui.Label>{STRINGS.email}</Ui.Label>
+                      <Label>{STRINGS.email}</Label>
                     </UiPro.ContextMenu.Item>
                   </UiPro.ContextMenu.Menu>
                 </UiPro.ContextMenu.Popover>
               </UiPro.ContextMenu.SubmenuTrigger>
               <UiPro.ContextMenu.Separator />
               <UiPro.ContextMenu.Item id="archive" textValue={STRINGS.archive}>
-                <Ui.Label>{STRINGS.archive}</Ui.Label>
+                <Label>{STRINGS.archive}</Label>
               </UiPro.ContextMenu.Item>
               <UiPro.ContextMenu.Item id="delete" textValue={STRINGS.delete} variant="danger">
-                <Ui.Label>{STRINGS.delete}</Ui.Label>
+                <Label>{STRINGS.delete}</Label>
               </UiPro.ContextMenu.Item>
             </UiPro.ContextMenu.Menu>
           </UiPro.ContextMenu.Popover>

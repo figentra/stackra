@@ -1,9 +1,9 @@
 /**
- * @module tools/scripts/speckit-sync.test
- *
+ * Stackra file contract:
  * Purpose: hold the order of `pnpm speckit:sync`'s specify calls to their contract.
- * Boundary: pure function; never runs specify.
- * Runtime: node — node:test and node:assert.
+ * Boundary: pure function; never runs specify; node:test and node:assert.
+ * Runtime: node
+ * Governing contract: ADR 0022 (tests live in tests folders); ADR 0182 (testing strategy).
  */
 // @covers sta-163:FR-001
 import { test } from "node:test";

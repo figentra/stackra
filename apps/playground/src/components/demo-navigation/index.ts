@@ -5,4 +5,6 @@
  * Runtime: browser
  * Governing contract: ADR 0294 (decision 14).
  */
-export { DemoNavigation, navigationLabel, type DemoNavigationProps } from "./demo-navigation";
+export { DemoNavigation } from "./demo-navigation";
+export { navigationLabel } from "./navigation-label.function";
+export { type DemoNavigationProps } from "./demo-navigation.props";

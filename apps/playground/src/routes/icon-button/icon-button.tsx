@@ -3,12 +3,12 @@
  * Purpose: the page of the icon-button route: every IconButton variant in every size, each named by its `label`, the
  *          disabled and loading states, and a live press counter, all from `@stackra/ui/react` with real props.
  * Boundary: presentation only; strings in one `STRINGS` constant until @stackra/i18n. Icons are drawn by name
- *          through `Ui.Icon`, from the registry in `components/playground-icons` (ADR 0303 decision 10).
+ *          through `Icon`, from the registry in `components/playground-icons` (ADR 0303 decision 10).
  * Runtime: browser
  * Governing contract: ADR 0302 (decisions 3 and 5); ADR 0303 (decisions 3 and 7); WCAG 2.2 SC 4.1.2 and 2.5.8.
  */
 import { ButtonVariant, Size } from "@stackra/ui/contracts";
-import * as Ui from "@stackra/ui/react";
+import { Heading, IconButton as UiIconButton, Text } from "@stackra/ui/react";
 import { useEffect, useState } from "react";
 
 import { PageSection } from "#src/components/page-section";
@@ -62,20 +62,20 @@ export function IconButton() {
     <article className="grid gap-10">
       <title>{STRINGS.documentTitle}</title>
       <header className="grid gap-2">
-        <Ui.Heading level={1}>{IconButtonRoute.title}</Ui.Heading>
-        <Ui.Text className="max-w-prose">
+        <Heading level={1}>{IconButtonRoute.title}</Heading>
+        <Text className="max-w-prose">
           <bdi>{STRINGS.intro}</bdi>
-        </Ui.Text>
+        </Text>
       </header>
 
       <PageSection id="icon-button-variants" title={STRINGS.variants} note={STRINGS.variantsNote}>
         {Size.map((size) => (
           <div key={size} className="grid gap-2">
-            <Ui.Heading level={3}>{STRINGS.size(size)}</Ui.Heading>
+            <Heading level={3}>{STRINGS.size(size)}</Heading>
             <ul className={ROW}>
               {ButtonVariant.map((variant) => (
                 <li key={variant}>
-                  <Ui.IconButton
+                  <UiIconButton
                     variant={variant}
                     size={size}
                     label={isDanger(variant) ? STRINGS.delete : STRINGS.settings}
@@ -91,17 +91,17 @@ export function IconButton() {
       <PageSection id="icon-button-states" title={STRINGS.states} note={STRINGS.statesNote}>
         <ul className={ROW}>
           <li>
-            <Ui.IconButton isDisabled label={STRINGS.disabled} icon="settings" />
+            <UiIconButton isDisabled label={STRINGS.disabled} icon="settings" />
           </li>
           <li>
-            <Ui.IconButton isLoading label={STRINGS.loading} icon="settings" />
+            <UiIconButton isLoading label={STRINGS.loading} icon="settings" />
           </li>
         </ul>
       </PageSection>
 
       <PageSection id="icon-button-live" title={STRINGS.live} note={STRINGS.liveNote}>
         <div className={ROW}>
-          <Ui.IconButton
+          <UiIconButton
             label={STRINGS.count}
             icon="settings"
             onPress={() => setCount((value) => value + 1)}
@@ -111,16 +111,16 @@ export function IconButton() {
           </output>
         </div>
         <div className={ROW}>
-          <Ui.IconButton
+          <UiIconButton
             variant="secondary"
             label={STRINGS.load}
             icon="settings"
             isLoading={isLoading}
             onPress={() => setIsLoading(true)}
           />
-          <Ui.Text role="status" tone="muted">
+          <Text role="status" tone="muted">
             <bdi>{STRINGS.loadState(isLoading)}</bdi>
-          </Ui.Text>
+          </Text>
         </div>
       </PageSection>
     </article>

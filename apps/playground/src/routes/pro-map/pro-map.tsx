@@ -10,7 +10,7 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 12); ADR 0060 (light, dark, RTL); STA-416 FR-012.
  */
-import * as Ui from "@stackra/ui/react";
+import { Button } from "@stackra/ui/react";
 import * as UiPro from "@stackra-pro/ui/react";
 // MapLibre finds its worker next to its own module, which Vite's dep optimiser moves and its build never emits; the
 // worker file is self-contained, so Vite serves and emits it as an asset and the map is told its URL.
@@ -146,9 +146,9 @@ export function ProMap() {
         </h2>
         <div className="flex flex-wrap gap-2">
           {STOPS.map((stop) => (
-            <Ui.Button key={stop.id} variant="secondary" onPress={() => setChosen(stop)}>
+            <Button key={stop.id} variant="secondary" onPress={() => setChosen(stop)}>
               {STRINGS.choose(stop.name)}
-            </Ui.Button>
+            </Button>
           ))}
         </div>
         <p role="status">

@@ -9,7 +9,13 @@
  * Governing contract: ADR 0302 (decisions 3 and 5); ADR 0303 (decision 7); ADR 0060 (light, dark, RTL).
  */
 import type { ChoiceOption } from "@stackra/ui/contracts";
-import * as Ui from "@stackra/ui/react";
+import {
+  Button,
+  CheckboxGroup as UiCheckboxGroup,
+  Heading,
+  Surface,
+  Text,
+} from "@stackra/ui/react";
 import { useState, type ReactNode } from "react";
 
 import { PageSection } from "#src/components/page-section";
@@ -98,9 +104,9 @@ const GRID = "grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3";
 function Sample({ caption, children }: { caption: string; children: ReactNode }) {
   return (
     <li className="grid content-start gap-2">
-      <Ui.Text tone="muted" type="small">
+      <Text tone="muted" type="small">
         {caption}
-      </Ui.Text>
+      </Text>
       {children}
     </li>
   );
@@ -115,14 +121,14 @@ export function CheckboxGroup() {
     <article className="grid gap-10">
       <title>{STRINGS.documentTitle}</title>
       <header className="grid gap-2">
-        <Ui.Heading level={1}>{CheckboxGroupRoute.title}</Ui.Heading>
-        <Ui.Text className="max-w-prose">
+        <Heading level={1}>{CheckboxGroupRoute.title}</Heading>
+        <Text className="max-w-prose">
           <bdi>{STRINGS.intro}</bdi>
-        </Ui.Text>
+        </Text>
       </header>
 
       <PageSection id="checkbox-group-basic" title={STRINGS.basic} note={STRINGS.basicNote}>
-        <Ui.CheckboxGroup
+        <UiCheckboxGroup
           label={STRINGS.groupLabels.basic}
           description={STRINGS.basicDescription}
           options={CHANNELS}
@@ -133,7 +139,7 @@ export function CheckboxGroup() {
       <PageSection id="checkbox-group-states" title={STRINGS.states} note={STRINGS.statesNote}>
         <ul className={GRID}>
           <Sample caption={STRINGS.captions.disabled}>
-            <Ui.CheckboxGroup
+            <UiCheckboxGroup
               label={STRINGS.groupLabels.disabled}
               options={FORMATS}
               defaultValue={["csv"]}
@@ -141,13 +147,13 @@ export function CheckboxGroup() {
             />
           </Sample>
           <Sample caption={STRINGS.captions.optionDisabled}>
-            <Ui.CheckboxGroup
+            <UiCheckboxGroup
               label={STRINGS.groupLabels.optionDisabled}
               options={FORMATS_WITH_ONE_DISABLED}
             />
           </Sample>
           <Sample caption={STRINGS.captions.readOnly}>
-            <Ui.CheckboxGroup
+            <UiCheckboxGroup
               label={STRINGS.groupLabels.readOnly}
               options={FORMATS}
               defaultValue={["csv", "pdf"]}
@@ -155,10 +161,10 @@ export function CheckboxGroup() {
             />
           </Sample>
           <Sample caption={STRINGS.captions.required}>
-            <Ui.CheckboxGroup label={STRINGS.groupLabels.required} options={FORMATS} isRequired />
+            <UiCheckboxGroup label={STRINGS.groupLabels.required} options={FORMATS} isRequired />
           </Sample>
           <Sample caption={STRINGS.captions.invalid}>
-            <Ui.CheckboxGroup
+            <UiCheckboxGroup
               label={STRINGS.groupLabels.invalid}
               description={STRINGS.invalidDescription}
               errorMessage={STRINGS.invalidError}
@@ -177,42 +183,42 @@ export function CheckboxGroup() {
         note={STRINGS.variantsNote}
       >
         <div className="grid gap-6 sm:grid-cols-2">
-          <Ui.CheckboxGroup
+          <UiCheckboxGroup
             label={STRINGS.groupLabels.primary}
             options={FORMATS}
             defaultValue={["xlsx"]}
             variant="primary"
           />
-          <Ui.Surface variant="default" className="rounded-2xl p-4">
-            <Ui.CheckboxGroup
+          <Surface variant="default" className="rounded-2xl p-4">
+            <UiCheckboxGroup
               label={STRINGS.groupLabels.secondary}
               options={FORMATS}
               defaultValue={["xlsx"]}
               variant="secondary"
             />
-          </Ui.Surface>
+          </Surface>
         </div>
       </PageSection>
 
       <PageSection id="checkbox-group-live" title={STRINGS.live} note={STRINGS.liveNote}>
         <div className="grid gap-3">
-          <Ui.CheckboxGroup
+          <UiCheckboxGroup
             label={STRINGS.groupLabels.live}
             options={TOPPINGS}
             value={toppings}
             onChange={setToppings}
           />
-          <Ui.Text role="status">{STRINGS.chosen(toppings.join(", ") || STRINGS.none)}</Ui.Text>
+          <Text role="status">{STRINGS.chosen(toppings.join(", ") || STRINGS.none)}</Text>
           <div className="flex flex-wrap gap-3">
-            <Ui.Button
+            <Button
               variant="secondary"
               onPress={() => setToppings(TOPPINGS.map(({ value }) => value))}
             >
               {STRINGS.all}
-            </Ui.Button>
-            <Ui.Button variant="secondary" onPress={() => setToppings([])}>
+            </Button>
+            <Button variant="secondary" onPress={() => setToppings([])}>
               {STRINGS.clear}
-            </Ui.Button>
+            </Button>
           </div>
         </div>
       </PageSection>

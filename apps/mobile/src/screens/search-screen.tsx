@@ -16,7 +16,8 @@ import { matchPages } from "../components/ui/match-pages";
 import { PageGallery } from "../components/ui/page-gallery";
 import { ReviewIcons } from "../components/ui/review-icons";
 import { Screen } from "../components/ui/screen";
-import type { DesignSystemComponentRoute, SearchStackParamList } from "../navigation/types";
+import type { SearchStackParamList } from "../navigation/search-stack-param-list.type";
+import type { DesignSystemComponentRoute } from "../navigation/design-system-component-route.type";
 import { DESIGN_SYSTEM_COMPONENTS } from "./design-system-components";
 
 // shortcut: English strings in one place until @stackra/i18n reaches the mobile app; then keys.

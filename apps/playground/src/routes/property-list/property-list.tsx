@@ -10,7 +10,13 @@
  * Governing contract: ADR 0302 (decisions 3 and 5); ADR 0303 (decision 7); ADR 0313 (decisions 1 and 7); ADR 0060
  *          (light, dark, RTL); WCAG 2.2 SC 1.3.1.
  */
-import * as Ui from "@stackra/ui/react";
+import {
+  Heading,
+  PropertyList as UiPropertyList,
+  StatusBadge,
+  Switch,
+  Text,
+} from "@stackra/ui/react";
 import { useState, type ReactNode } from "react";
 
 import { PageSection } from "#src/components/page-section";
@@ -100,9 +106,9 @@ const LIVE_ITEMS = [
 function Sample({ caption, children }: { caption: string; children: ReactNode }) {
   return (
     <div className="grid content-start gap-2">
-      <Ui.Text type="caption" tone="muted">
+      <Text type="caption" tone="muted">
         <bdi>{caption}</bdi>
-      </Ui.Text>
+      </Text>
       {children}
     </div>
   );
@@ -117,19 +123,19 @@ export function PropertyList() {
     <article className="grid gap-10">
       <title>{STRINGS.documentTitle}</title>
       <header className="grid gap-2">
-        <Ui.Heading level={1}>{PropertyListRoute.title}</Ui.Heading>
-        <Ui.Text className="max-w-prose">
+        <Heading level={1}>{PropertyListRoute.title}</Heading>
+        <Text className="max-w-prose">
           <bdi>{STRINGS.intro}</bdi>
-        </Ui.Text>
+        </Text>
       </header>
 
       <PageSection id="property-list-columns" title={STRINGS.columns} note={STRINGS.columnsNote}>
         <div className="grid gap-8">
           <Sample caption={STRINGS.oneColumn}>
-            <Ui.PropertyList items={DETAILS} />
+            <UiPropertyList items={DETAILS} />
           </Sample>
           <Sample caption={STRINGS.twoColumns}>
-            <Ui.PropertyList items={DETAILS} columns={2} />
+            <UiPropertyList items={DETAILS} columns={2} />
           </Sample>
         </div>
       </PageSection>
@@ -137,13 +143,13 @@ export function PropertyList() {
       <PageSection id="property-list-values" title={STRINGS.values} note={STRINGS.valuesNote}>
         <div className="grid gap-8 sm:grid-cols-2">
           <Sample caption={STRINGS.valuesDefault}>
-            <Ui.PropertyList
+            <UiPropertyList
               items={[
                 { id: "customer", label: STRINGS.customer, value: STRINGS.customerValue },
                 {
                   id: "status",
                   label: STRINGS.status,
-                  value: <Ui.StatusBadge tone="success">{STRINGS.paid}</Ui.StatusBadge>,
+                  value: <StatusBadge tone="success">{STRINGS.paid}</StatusBadge>,
                 },
                 { id: "note", label: STRINGS.note },
                 { id: "zero", label: STRINGS.zeroLabel, value: 0 },
@@ -151,7 +157,7 @@ export function PropertyList() {
             />
           </Sample>
           <Sample caption={STRINGS.valuesCustom}>
-            <Ui.PropertyList
+            <UiPropertyList
               emptyValue={STRINGS.notSet}
               items={[
                 { id: "phone", label: STRINGS.phone, value: "" },
@@ -164,7 +170,7 @@ export function PropertyList() {
 
       <PageSection id="property-list-copyable" title={STRINGS.copyable} note={STRINGS.copyableNote}>
         <Sample caption={STRINGS.copyableList}>
-          <Ui.PropertyList
+          <UiPropertyList
             items={[
               {
                 id: "orderId",
@@ -186,22 +192,22 @@ export function PropertyList() {
 
       <PageSection id="property-list-live" title={STRINGS.live} note={STRINGS.liveNote}>
         <div className="grid max-w-3xl gap-4">
-          <Ui.Switch
+          <Switch
             label={STRINGS.twoColumnsSwitch}
             value={hasTwoColumns}
             onChange={setHasTwoColumns}
           />
-          <Ui.PropertyList
+          <UiPropertyList
             items={LIVE_ITEMS}
             columns={hasTwoColumns ? 2 : 1}
             copiedLabel={STRINGS.copiedLabel}
             onCopy={(_item, text) => setLastCopied(text)}
           />
-          <Ui.Text tone="muted" data-testid="last-copied">
+          <Text tone="muted" data-testid="last-copied">
             <bdi>
               {STRINGS.lastCopied} {lastCopied ?? STRINGS.nothingCopied}
             </bdi>
-          </Ui.Text>
+          </Text>
         </div>
       </PageSection>
     </article>

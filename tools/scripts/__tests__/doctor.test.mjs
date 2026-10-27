@@ -1,3 +1,11 @@
+/**
+ * Stackra file contract:
+ * Purpose: hold `doctor.mjs`'s checks to their contract: missing mise tools, an active Infisical session, the AWS
+ *          identity without echoing it, the spec-kit pin, and a report that fails only on a required check.
+ * Boundary: pure functions on injected command output; runs no command.
+ * Runtime: node
+ * Governing contract: ADR 0022 (tests live in tests folders); ADR 0182 (testing strategy).
+ */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {

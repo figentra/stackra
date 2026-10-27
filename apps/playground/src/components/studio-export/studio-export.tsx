@@ -21,8 +21,9 @@ import {
   themeToDtcg,
 } from "@stackra/tokens";
 import type { Theme } from "@stackra/tokens/contracts";
-import * as Ui from "@stackra/ui/react";
+import { Button, Heading, Select, Separator, TextArea } from "@stackra/ui/react";
 import { useState } from "react";
+import type { StudioExportProps } from "./studio-export.props";
 
 // shortcut: English strings in one place until @stackra/i18n ships; then `playground::studio.export.*` keys.
 const STRINGS = {
@@ -75,16 +76,6 @@ const FORMATS = [
   },
 ] as const;
 
-/** Props of {@link StudioExport}. */
-export interface StudioExportProps {
-  /** The theme the changes-only export is measured against and the import applies a diff to. */
-  base: Theme;
-  /** The theme to export. */
-  theme: Theme;
-  /** Called with a checked imported theme. */
-  onImport: (theme: Theme) => void;
-}
-
 /** The export and import panel. */
 export function StudioExport({ base, theme, onImport }: StudioExportProps) {
   const [formatId, setFormatId] = useState<(typeof FORMATS)[number]["id"]>("json");
@@ -129,10 +120,10 @@ export function StudioExport({ base, theme, onImport }: StudioExportProps) {
       aria-labelledby="studio-export"
       className="material-thick grid min-w-0 content-start gap-4 rounded-3xl p-5"
     >
-      <Ui.Heading id="studio-export" level={2} className="[font:var(--h4)]">
+      <Heading id="studio-export" level={2} className="[font:var(--h4)]">
         {STRINGS.title}
-      </Ui.Heading>
-      <Ui.Select
+      </Heading>
+      <Select
         label={STRINGS.format}
         items={FORMATS.map(({ id, label }) => ({ id, label }))}
         value={formatId}
@@ -151,18 +142,18 @@ export function StudioExport({ base, theme, onImport }: StudioExportProps) {
         <code>{text}</code>
       </pre>
       <div className="flex flex-wrap items-center gap-2">
-        <Ui.Button size="sm" variant="secondary" startIcon="copy" onPress={() => void copy()}>
+        <Button size="sm" variant="secondary" startIcon="copy" onPress={() => void copy()}>
           {STRINGS.copy}
-        </Ui.Button>
-        <Ui.Button size="sm" variant="secondary" startIcon="download" onPress={download}>
+        </Button>
+        <Button size="sm" variant="secondary" startIcon="download" onPress={download}>
           {STRINGS.download}
-        </Ui.Button>
+        </Button>
         <p role="status" className="text-sm text-muted">
           {status ? <bdi>{status}</bdi> : null}
         </p>
       </div>
-      <Ui.Separator />
-      <Ui.TextArea
+      <Separator />
+      <TextArea
         label={STRINGS.paste}
         description={<bdi>{STRINGS.pasteNote}</bdi>}
         rows={4}
@@ -182,7 +173,7 @@ export function StudioExport({ base, theme, onImport }: StudioExportProps) {
           </ul>
         </div>
       ) : null}
-      <Ui.Button
+      <Button
         size="sm"
         startIcon="upload"
         isDisabled={pasted.trim() === ""}
@@ -190,7 +181,7 @@ export function StudioExport({ base, theme, onImport }: StudioExportProps) {
         className="justify-self-start"
       >
         {STRINGS.import}
-      </Ui.Button>
+      </Button>
     </section>
   );
 }

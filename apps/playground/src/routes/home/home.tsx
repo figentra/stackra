@@ -8,7 +8,7 @@
  * Runtime: browser
  * Governing contract: ADR 0302 (decision 5); ADR 0294 (decision 14, rule R7).
  */
-import * as Ui from "@stackra/ui/react";
+import { Button, Chip, Heading, Icon, Link, Text } from "@stackra/ui/react";
 import { useEffect } from "react";
 import { useLocation, useOutletContext } from "react-router";
 
@@ -16,8 +16,8 @@ import { HeroArt } from "#src/components/hero-art";
 import { PageGallery } from "#src/components/page-gallery";
 import { Showcase } from "#src/components/showcase";
 import { HomeRoute } from "#src/routes/home/home.route";
-import type { PageLink } from "#src/types/page-link.type";
 import type { ShellContext } from "#src/types/shell-context.type";
+import type { HomeProps } from "#src/routes/home/home.props";
 
 // shortcut: English strings in one place until @stackra/i18n ships; then `playground::home.*` keys.
 const STRINGS = {
@@ -40,12 +40,6 @@ const STRINGS = {
   components: "Components",
   componentsNote: "Every page, grouped by category. Free pages come first; Pro pages wear a badge.",
 } as const;
-
-/** Props of {@link Home}. */
-export interface HomeProps {
-  /** The pages to list, in order. */
-  pages: readonly PageLink[];
-}
 
 /** The landing page: hero, showcase and gallery. */
 export function Home({ pages }: HomeProps) {
@@ -70,48 +64,48 @@ export function Home({ pages }: HomeProps) {
       <title>{HomeRoute.title}</title>
       <header className="grid justify-items-center gap-6 pt-4 text-center sm:pt-8">
         <HeroArt />
-        <Ui.Chip variant="soft" size="sm" startIcon="sparkles">
+        <Chip variant="soft" size="sm" startIcon="sparkles">
           {STRINGS.eyebrow}
-        </Ui.Chip>
+        </Chip>
         {/* The stage above draws the name as the wordmark, so the heading shows the rest of it; its text, which
             titles the document, is the whole name. */}
-        <Ui.Heading
+        <Heading
           level={1}
           align="center"
           className="[font:var(--display)] tracking-[-0.035em] text-balance"
         >
           <span className="sr-only">{STRINGS.brand}</span> {STRINGS.product}
-        </Ui.Heading>
+        </Heading>
         {/* <bdi>: an English sentence keeps its full stop at its end inside a right-to-left page. */}
         <p className="max-w-2xl text-lg text-muted text-pretty">
           <bdi>{STRINGS.intro}</bdi>
         </p>
         <div className="flex flex-wrap justify-center gap-3">
-          <Ui.Link
+          <Link
             href={`/${search}#components`}
             underline="hover"
             className="inline-flex min-h-10 items-center gap-2 rounded-full bg-accent px-5 font-medium text-accent-foreground! hover:bg-accent-hover hover:no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
           >
             {STRINGS.browse}
-            <Ui.Icon name="arrow-right" size="sm" isMirroredInRtl />
-          </Ui.Link>
-          <Ui.Link
+            <Icon name="arrow-right" size="sm" isMirroredInRtl />
+          </Link>
+          <Link
             href={`/theme-studio${search}`}
             underline="hover"
             className="material inline-flex min-h-10 items-center gap-2 rounded-full px-5 font-medium hover:no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
           >
-            <Ui.Icon name="palette" size="sm" />
+            <Icon name="palette" size="sm" />
             {STRINGS.studio}
-          </Ui.Link>
+          </Link>
           {shell ? (
-            <Ui.Button
+            <Button
               variant="outline"
               startIcon="search"
               onPress={shell.openPalette}
               className="material rounded-full"
             >
               {STRINGS.search}
-            </Ui.Button>
+            </Button>
           ) : null}
         </div>
         <ul className="flex flex-wrap justify-center gap-2 text-sm">
@@ -125,12 +119,12 @@ export function Home({ pages }: HomeProps) {
 
       <section aria-labelledby="home-showcase" className="grid gap-4">
         <div className="grid gap-1">
-          <Ui.Heading id="home-showcase" level={2}>
+          <Heading id="home-showcase" level={2}>
             {STRINGS.showcase}
-          </Ui.Heading>
-          <Ui.Text tone="muted">
+          </Heading>
+          <Text tone="muted">
             <bdi>{STRINGS.showcaseNote}</bdi>
-          </Ui.Text>
+          </Text>
         </div>
         <Showcase headingLevel={3} />
       </section>
@@ -141,12 +135,12 @@ export function Home({ pages }: HomeProps) {
         className="grid scroll-mt-24 gap-4"
       >
         <div className="grid gap-1">
-          <Ui.Heading id="home-components" level={2}>
+          <Heading id="home-components" level={2}>
             {STRINGS.components}
-          </Ui.Heading>
-          <Ui.Text tone="muted">
+          </Heading>
+          <Text tone="muted">
             <bdi>{STRINGS.componentsNote}</bdi>
-          </Ui.Text>
+          </Text>
         </div>
         <PageGallery pages={pages} search={search} headingLevel={3} />
       </section>

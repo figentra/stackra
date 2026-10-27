@@ -9,6 +9,10 @@
  *   helper, and ssh remotes are rewritten to https for this one command. Everything is `-c`, so nothing is written
  *   to .git/config and the token never appears in argv. No hook runs (`core.hooksPath=/dev/null`): the CI gate runs
  *   the checks a hook would, and a hook is repository code that would see every /agents value.
+ * Boundary: runs one `gh` or `git` child with the minted token in its environment; writes no git config and no file.
+ * Runtime: node
+ * Governing contract: ADR 0230 (reviewer identity separate from builder); ADR 0293 (agent permission tiers and
+ *                     executor pushes).
  * Secrets: the token lives only in the child's environment; never printed.
  */
 import { spawnSync } from "node:child_process";
@@ -40,6 +44,10 @@ export const gitBotArgs = () => [
 
 const CAPTURE_MIB = 256; // as pr-merge: a lockfile diff passes 1 MiB
 
+/** Writes `text` and resolves once it is flushed: the caller exits right after, which would cut a large diff written
+ * to a pipe. */
+const write = (stream, text) => new Promise((resolve) => stream.write(text ?? "", resolve));
+
 /**
  * Run gh/git as the bot; resolves to the exit status. A gh read whose output goes to a pipe or file is retried on a
  * transient network error (STA-302): its output is captured and only the last attempt's is shown, so a cut-off
@@ -63,8 +71,6 @@ export async function runAsBot(tool, args, token) {
     if (error.code !== "EPIPE") throw error;
     process.exit(141);
   });
-  // Wait for each flush: the caller exits right after, which would cut a large diff written to a pipe.
-  const write = (stream, text) => new Promise((resolve) => stream.write(text ?? "", resolve));
   await write(process.stderr, r.stderr);
   // spawnSync kills gh past maxBuffer (ENOBUFS); its cut-off output is not printed.
   if (r.error) {
@@ -75,19 +81,23 @@ export async function runAsBot(tool, args, token) {
   return r.status ?? 1;
 }
 
+/**
+ * Whether a `gh api` arg makes it write: gh api switches to POST when given fields or --input. pflag bundles short
+ * flags (`-iX`, `-if`), so every single-dash arg is read letter by letter; a value that happens to hold X, f or F is
+ * denied too.
+ */
+const isWriteFlag = (a) =>
+  a.startsWith("--")
+    ? ["method", "field", "raw-field", "input"].includes(a.slice(2).split("=")[0])
+    : a.startsWith("-") && /[XfF]/.test(a.slice(1));
+
 /** gh subcommands the reviewer identity may run: read a PR, then comment or review. Never push, merge or edit. */
 export function reviewerAllows(args) {
   const [group, verb] = args;
   // A verdict is never edited or deleted (ADR 0230): post a new comment.
   if (args.some((a) => /^--(edit|delete)-last(=|$)/.test(a))) return false;
   if (group === "pr") return ["view", "diff", "checks", "comment", "review"].includes(verb);
-  // gh api switches to POST when given fields or --input. pflag bundles short flags (`-iX`, `-if`), so every
-  // single-dash arg is read letter by letter; a value that happens to hold X, f or F is denied too.
-  const write = (a) =>
-    a.startsWith("--")
-      ? ["method", "field", "raw-field", "input"].includes(a.slice(2).split("=")[0])
-      : a.startsWith("-") && /[XfF]/.test(a.slice(1));
-  return group === "api" && !args.some(write);
+  return group === "api" && !args.some(isWriteFlag);
 }
 
 /**

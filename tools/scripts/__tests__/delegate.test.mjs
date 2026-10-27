@@ -1,3 +1,12 @@
+/**
+ * Stackra file contract:
+ * Purpose: hold `delegate.mjs` to its contract: the routing file's budget and executors, flag over env over routing,
+ *          unknown types refused, slugs and branch names, the required Linear issue and the prompt.
+ * Boundary: pure functions over the checked-in `.agents/routing.yaml`; starts no executor.
+ * Runtime: node
+ * Governing contract: ADR 0022 (tests live in tests folders); ADR 0182 (testing strategy). ADR 0066 (delegation by
+ *                     routing matrix).
+ */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";

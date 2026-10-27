@@ -1,3 +1,13 @@
+/**
+ * Stackra file contract:
+ * Purpose: hold `guard-port.mjs` to its contract: usage errors, a drifted anchor failing before anything is written,
+ *          and the port's rules (bot scripts name this checkout, the owner's config is never written, deploys deny,
+ *          paid or signed builds ask).
+ * Boundary: ports the guard into a temp directory and runs the ported hooks there; never writes this checkout.
+ * Runtime: node
+ * Governing contract: ADR 0022 (tests live in tests folders); ADR 0182 (testing strategy). ADR 0293 (agent permission
+ *                     tiers); STA-449.
+ */
 import { after, test } from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";

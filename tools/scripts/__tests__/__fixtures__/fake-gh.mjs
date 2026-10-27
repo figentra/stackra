@@ -3,6 +3,8 @@
  * Purpose: a fake `gh` for the STA-302 retry tests. Run n plays `steps[n]` (the last step repeats): `out` to stdout,
  *   `err` to stderr, exit `code` (default 0). It counts its runs in a file.
  * Boundary: writes only to a fresh temp directory; no network.
+ * Runtime: node
+ * Governing contract: ADR 0022 (tests live in tests folders); STA-302.
  */
 import { chmodSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";

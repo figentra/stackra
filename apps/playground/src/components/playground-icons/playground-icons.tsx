@@ -64,7 +64,7 @@ import {
   Undo2,
   Upload,
 } from "@stackra/icons/react/lucide-icons";
-import type { ReactNode } from "react";
+import type { PlaygroundIconsProps } from "./playground-icons.props";
 
 /** The icons the playground pages draw, by name. */
 const PLAYGROUND_ICONS = defineIconRegistry({
@@ -121,12 +121,6 @@ const PLAYGROUND_ICONS = defineIconRegistry({
   "undo-2": Undo2,
   upload: Upload,
 });
-
-/** Props of {@link PlaygroundIcons}. */
-export interface PlaygroundIconsProps {
-  /** The tree whose pages draw icons. */
-  children: ReactNode;
-}
 
 /** Provides the playground's icon registry to everything below it. */
 export function PlaygroundIcons({ children }: PlaygroundIconsProps) {

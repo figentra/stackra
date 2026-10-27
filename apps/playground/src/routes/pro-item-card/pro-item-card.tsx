@@ -7,7 +7,7 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 12); ADR 0060 (light, dark, RTL); STA-416 FR-012.
  */
-import * as Ui from "@stackra/ui/react";
+import { Button, Chip, Switch } from "@stackra/ui/react";
 import * as UiPro from "@stackra-pro/ui/react";
 import { useState } from "react";
 
@@ -63,7 +63,7 @@ export function ProItemCard() {
             <UiPro.ItemCard.Description>{STRINGS.notificationsText}</UiPro.ItemCard.Description>
           </UiPro.ItemCard.Content>
           <UiPro.ItemCard.Action>
-            <Ui.Switch value={isOn} onChange={setOn} aria-label={STRINGS.notificationsSwitch} />
+            <Switch value={isOn} onChange={setOn} aria-label={STRINGS.notificationsSwitch} />
           </UiPro.ItemCard.Action>
         </UiPro.ItemCard>
         <p role="status">
@@ -84,9 +84,9 @@ export function ProItemCard() {
               <UiPro.ItemCard.Description>{STRINGS.laptopText}</UiPro.ItemCard.Description>
             </UiPro.ItemCard.Content>
             <UiPro.ItemCard.Action>
-              <Ui.Chip tone="success" size="sm" variant="soft">
+              <Chip tone="success" size="sm" variant="soft">
                 {STRINGS.active}
-              </Ui.Chip>
+              </Chip>
             </UiPro.ItemCard.Action>
           </UiPro.ItemCard>
           <UiPro.ItemCard>
@@ -103,14 +103,14 @@ export function ProItemCard() {
                   <bdi>{STRINGS.revoked}</bdi>
                 </span>
               ) : (
-                <Ui.Button
+                <Button
                   size="sm"
                   variant="outline"
                   label={STRINGS.revokeTablet}
                   onPress={() => setRevoked(true)}
                 >
                   {STRINGS.revoke}
-                </Ui.Button>
+                </Button>
               )}
             </UiPro.ItemCard.Action>
           </UiPro.ItemCard>

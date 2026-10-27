@@ -10,7 +10,7 @@
  * Runtime: browser
  * Governing contract: ADR 0302 (decisions 3 and 5); ADR 0303 (decision 7); ADR 0055; ADR 0060 (light, dark, RTL).
  */
-import * as Ui from "@stackra/ui/react";
+import { ComboBox as UiComboBox, Heading, Text } from "@stackra/ui/react";
 import { useEffect, useRef, useState } from "react";
 
 import { PageSection } from "#src/components/page-section";
@@ -144,28 +144,28 @@ export function ComboBox() {
     <article className="grid gap-10">
       <title>{STRINGS.documentTitle}</title>
       <header className="grid gap-2">
-        <Ui.Heading level={1}>{ComboBoxRoute.title}</Ui.Heading>
-        <Ui.Text className="max-w-prose">
+        <Heading level={1}>{ComboBoxRoute.title}</Heading>
+        <Text className="max-w-prose">
           <bdi>{STRINGS.intro}</bdi>
-        </Ui.Text>
+        </Text>
       </header>
 
       <PageSection id="combo-box-basics" title={STRINGS.basics} note={STRINGS.basicsNote}>
         <div className={ROW}>
-          <Ui.ComboBox
+          <UiComboBox
             items={COUNTRIES}
             label={STRINGS.countryLabel}
             placeholder={STRINGS.countryPlaceholder}
             className={SAMPLE}
           />
-          <Ui.ComboBox
+          <UiComboBox
             items={COUNTRIES}
             label={STRINGS.describedLabel}
             placeholder={STRINGS.describedPlaceholder}
             description={STRINGS.description}
             className={SAMPLE}
           />
-          <Ui.ComboBox
+          <UiComboBox
             items={COUNTRIES}
             aria-label={STRINGS.hiddenLabelName}
             placeholder={STRINGS.hiddenLabelName}
@@ -176,14 +176,14 @@ export function ComboBox() {
 
       <PageSection id="combo-box-modes" title={STRINGS.modes} note={STRINGS.modesNote}>
         <div className={ROW}>
-          <Ui.ComboBox
+          <UiComboBox
             items={COUNTRIES}
             label={STRINGS.single}
             placeholder={STRINGS.countryPlaceholder}
             defaultValue="au"
             className={SAMPLE}
           />
-          <Ui.ComboBox
+          <UiComboBox
             items={COUNTRIES}
             label={STRINGS.multiple}
             placeholder={STRINGS.countryPlaceholder}
@@ -196,7 +196,7 @@ export function ComboBox() {
 
       <PageSection id="combo-box-items" title={STRINGS.items} note={STRINGS.itemsNote}>
         <div className={ROW}>
-          <Ui.ComboBox
+          <UiComboBox
             items={OFFICES}
             label={STRINGS.richLabel}
             placeholder={STRINGS.richPlaceholder}
@@ -207,14 +207,14 @@ export function ComboBox() {
 
       <PageSection id="combo-box-states" title={STRINGS.states} note={STRINGS.statesNote}>
         <div className={ROW}>
-          <Ui.ComboBox
+          <UiComboBox
             items={COUNTRIES}
             label={STRINGS.required}
             placeholder={STRINGS.countryPlaceholder}
             isRequired
             className={SAMPLE}
           />
-          <Ui.ComboBox
+          <UiComboBox
             items={COUNTRIES}
             label={STRINGS.invalid}
             placeholder={STRINGS.countryPlaceholder}
@@ -222,21 +222,21 @@ export function ComboBox() {
             errorMessage={STRINGS.invalidError}
             className={SAMPLE}
           />
-          <Ui.ComboBox
+          <UiComboBox
             items={COUNTRIES}
             label={STRINGS.disabled}
             defaultValue="au"
             isDisabled
             className={SAMPLE}
           />
-          <Ui.ComboBox
+          <UiComboBox
             items={COUNTRIES}
             label={STRINGS.readOnly}
             defaultValue="au"
             isReadOnly
             className={SAMPLE}
           />
-          <Ui.ComboBox
+          <UiComboBox
             items={COUNTRIES}
             label={STRINGS.noMatch}
             placeholder={STRINGS.countryPlaceholder}
@@ -244,7 +244,7 @@ export function ComboBox() {
             className={SAMPLE}
           />
         </div>
-        <Ui.ComboBox
+        <UiComboBox
           items={COUNTRIES}
           label={STRINGS.fullWidth}
           description={STRINGS.fullWidthNote}
@@ -254,7 +254,7 @@ export function ComboBox() {
       </PageSection>
 
       <PageSection id="combo-box-live" title={STRINGS.live} note={STRINGS.liveNote}>
-        <Ui.ComboBox
+        <UiComboBox
           items={page}
           label={STRINGS.liveLabel}
           placeholder={STRINGS.countryPlaceholder}
@@ -268,12 +268,12 @@ export function ComboBox() {
           onChange={setChosen}
           className={SAMPLE}
         />
-        <Ui.Text role="status" data-testid="combo-box-chosen" tone="muted">
+        <Text role="status" data-testid="combo-box-chosen" tone="muted">
           {STRINGS.chosen(chosen)}
-        </Ui.Text>
-        <Ui.Text data-testid="combo-box-shown" tone="muted">
+        </Text>
+        <Text data-testid="combo-box-shown" tone="muted">
           {STRINGS.shown(page.length, matches.length)}
-        </Ui.Text>
+        </Text>
       </PageSection>
     </article>
   );

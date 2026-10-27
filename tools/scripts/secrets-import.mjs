@@ -4,6 +4,9 @@
  * Purpose: move secret values a human dropped into ~/Secrets-inbox/ into Infisical without any value ever reaching
  *   stdout, stderr, argv, the audit log or the caller (`pnpm secrets:import`, ADR 0257). Verifies by SHA-256 read-back
  *   inside this process, deletes the inbox file on success, keeps it on failure.
+ * Boundary: the inbox, the Infisical CLI and the audit line only; no value leaves this process.
+ * Runtime: node
+ * Governing contract: ADR 0257 (secret manager agent and the secrets inbox).
  * Input: files directly in $HOME/Secrets-inbox/ (file name = secret name, one extension stripped); optional
  *   `<NAME>.target.yaml` sidecar with `env` / `path`; flags --env --path --name --dry-run --list --confirm --actor.
  * Output: one line per secret NAME with the target and a value-free result; exit 1 when any secret failed.

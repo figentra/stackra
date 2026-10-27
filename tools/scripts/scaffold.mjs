@@ -8,6 +8,9 @@
  *          target repo's LICENSE into the new member, then formats the result with oxfmt. Members come out in the
  *          programming model v3 shape (ADR 0294 rule R12, ADR 0295): `stackra.config.ts`, one root module, no
  *          authored `main.ts` or entry barrel.
+ * Boundary: writes only the one new destination directory, then formats it.
+ * Runtime: node
+ * Governing contract: ADR 0126 (member shapes and scaffold templates); ADR 0294.
  * Scope: tools/scaffold/templates/**; writes only the one new destination directory.
  * Owner: release-operations · Secrets: forbidden
  */

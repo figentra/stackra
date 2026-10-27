@@ -28,7 +28,7 @@ import {
   Users,
 } from "@stackra/icons/react/lucide-icons";
 import type { LayoutBreakpoint, NavigationItem } from "@stackra/ui/contracts";
-import * as Ui from "@stackra/ui/react";
+import { AppShell as UiAppShell, Heading, IconButton, Sidebar, Text } from "@stackra/ui/react";
 import { useState } from "react";
 import { useLocation } from "react-router";
 
@@ -145,7 +145,7 @@ function DemoShell({
 
   return (
     <div className={BOX}>
-      <Ui.AppShell
+      <UiAppShell
         isEmbedded
         mainId={mainId}
         isOpen={isOpen}
@@ -154,7 +154,7 @@ function DemoShell({
         header={
           <header className="flex items-center gap-2 border-b border-border p-2">
             {items === undefined ? null : (
-              <Ui.IconButton
+              <IconButton
                 variant="ghost"
                 icon="menu"
                 label={openLabel}
@@ -162,14 +162,14 @@ function DemoShell({
                 onPress={() => change(true)}
               />
             )}
-            <Ui.Text className="font-semibold">{brand}</Ui.Text>
+            <Text className="font-semibold">{brand}</Text>
           </header>
         }
         sidebar={
           items === undefined
             ? undefined
             : ({ isInDrawer }) => (
-                <Ui.Sidebar
+                <Sidebar
                   label={label}
                   items={items}
                   isCollapsible={!isInDrawer}
@@ -180,12 +180,12 @@ function DemoShell({
         }
       >
         <div className="grid gap-2 p-4">
-          <Ui.Heading level={3}>{heading}</Ui.Heading>
-          <Ui.Text tone="muted">
+          <Heading level={3}>{heading}</Heading>
+          <Text tone="muted">
             <bdi>{body}</bdi>
-          </Ui.Text>
+          </Text>
         </div>
-      </Ui.AppShell>
+      </UiAppShell>
     </div>
   );
 }
@@ -214,10 +214,10 @@ export function AppShell() {
       <article className="grid gap-10">
         <title>{STRINGS.documentTitle}</title>
         <header className="grid gap-2">
-          <Ui.Heading level={1}>{AppShellRoute.title}</Ui.Heading>
-          <Ui.Text className="max-w-prose">
+          <Heading level={1}>{AppShellRoute.title}</Heading>
+          <Text className="max-w-prose">
             <bdi>{STRINGS.intro}</bdi>
-          </Ui.Text>
+          </Text>
         </header>
 
         <PageSection id="app-shell-frame" title={STRINGS.frame} note={STRINGS.frameNote}>

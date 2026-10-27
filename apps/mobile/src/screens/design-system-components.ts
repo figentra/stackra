@@ -11,11 +11,9 @@
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 6); STA-403 FR-013.
  */
-import type { ReactElement } from "react";
 
 import { ComponentCategory } from "../enums/component-category.enum";
 import { ComponentTier } from "../enums/component-tier.enum";
-import type { PageLink } from "../types/page-link.type";
 import { AccordionScreen } from "./free/accordion-screen";
 import { ActionMenuScreen } from "./free/action-menu-screen";
 import { AlertScreen } from "./free/alert-screen";
@@ -140,12 +138,7 @@ import { WheelPickerScreen } from "./pro/wheel-picker-screen";
 import { WheelPickerGroupScreen } from "./pro/wheel-picker-group-screen";
 import { WheelTimePickerScreen } from "./pro/wheel-time-picker-screen";
 import { WidgetScreen } from "./pro/widget-screen";
-
-/** One component of the review area: its page link and the screen that shows it. */
-export interface DesignSystemComponent extends PageLink {
-  /** The page that shows the component. */
-  readonly screen: () => ReactElement;
-}
+import type { DesignSystemComponent } from "../types/design-system-component.type";
 
 /** The components as written, in no particular order. */
 const COMPONENTS: readonly DesignSystemComponent[] = [

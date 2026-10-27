@@ -1,6 +1,12 @@
 #!/usr/bin/env node
 /**
- * spec-gate — the stage gates for spec-kit specs in `.agents/specs/sta-<n>-<slug>/` (ADR 0120 D1, owner decision OR12).
+ * Stackra file contract:
+ * Purpose: `spec-gate` — the stage gates for spec-kit specs in `.agents/specs/sta-<n>-<slug>/` (ADR 0120 D1, owner
+ *          decision OR12).
+ * Boundary: reads the spec folders, git and, through `pnpm linear`, comments on Linear (best-effort); writes no spec
+ *           file.
+ * Runtime: node
+ * Governing contract: ADR 0120 (SDLC spec location, lanes and change risk); ADR 0121; ADR 0065 (rule 7).
  *
  *   plan <spec.md>              exit 1 unless the spec may be planned (run by setup-plan.sh)
  *   check <dir>                 the stage rules for the spec's declared `**Status**`
@@ -101,6 +107,19 @@ export const statusOf = (text) =>
     .match(/^\*\*Status\*\*:\s*([A-Za-z]+)/m)?.[1]
     ?.toLowerCase() ?? "";
 
+/** The table rows of `text`: every `|` line but the first (the header) and the rules, each as its trimmed cells. */
+const tableRows = (text) =>
+  (text ?? "")
+    .split("\n")
+    .filter((l) => l.startsWith("|") && !/^\|\s*-/.test(l))
+    .slice(1)
+    .map((l) =>
+      l
+        .split("|")
+        .slice(1, -1)
+        .map((c) => c.trim()),
+    );
+
 /** Planned rules for plan.md against its spec. */
 export function checkPlan(plan, spec) {
   const problems = [];
@@ -109,21 +128,10 @@ export function checkPlan(plan, spec) {
     problems.push("plan.md: a `[NEEDS CLARIFICATION` marker remains");
   const section = (name) =>
     body.match(new RegExp(`^## ${name}\\b[^\\n]*\\n([\\s\\S]*?)(?=^## |(?![\\s\\S]))`, "m"))?.[1];
-  const rows = (text) =>
-    (text ?? "")
-      .split("\n")
-      .filter((l) => l.startsWith("|") && !/^\|\s*-/.test(l))
-      .slice(1)
-      .map((l) =>
-        l
-          .split("|")
-          .slice(1, -1)
-          .map((c) => c.trim()),
-      );
   const constitution = section("Constitution Check");
   if (constitution === undefined)
     problems.push("plan.md: the `## Constitution Check` table is missing");
-  for (const [law, result, note] of rows(constitution)) {
+  for (const [law, result, note] of tableRows(constitution)) {
     if (!/^(PASS|N\/A)$/i.test(result ?? ""))
       problems.push(
         `plan.md: Constitution Check \`${law}\` is \`${result ?? ""}\`, not PASS or N/A`,
@@ -131,7 +139,7 @@ export function checkPlan(plan, spec) {
     else if (/^N\/A$/i.test(result) && !note)
       problems.push(`plan.md: Constitution Check \`${law}\` is N/A without a reason`);
   }
-  const modes = rows(section("Deploy modes")).map(([m]) => m.toLowerCase());
+  const modes = tableRows(section("Deploy modes")).map(([m]) => m.toLowerCase());
   for (const mode of ["saas", "on-prem", "air-gapped"])
     if (!modes.includes(mode)) problems.push(`plan.md: Deploy modes has no \`${mode}\` row`);
   const validated = new Set([...properties(plan).values()].flat());
@@ -302,10 +310,10 @@ export function checkBranch(branch) {
 }
 
 /** Bug lane: `.specify/bugs/sta-<n>-<slug>/` with a regression test tagged `@covers sta-<n>:BUG`. */
-export function checkBug(folder, testsText) {
+export function checkBug(folder, tests) {
   const key = folder.match(FOLDER_RE)?.[1];
   if (!key) return [`.specify/bugs/${folder}: folder is not \`sta-<n>-<slug>\``];
-  return new RegExp(`@covers[^\\n]*\\bsta-${key}:BUG\\b`, "i").test(testsText)
+  return new RegExp(`@covers[^\\n]*\\bsta-${key}:BUG\\b`, "i").test(tests)
     ? []
     : [`.specify/bugs/${folder}: no regression test carries \`@covers sta-${key}:BUG\``];
 }

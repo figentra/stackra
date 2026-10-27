@@ -14,7 +14,13 @@
  *          4.1.2.
  */
 import type { LeaveConfirmationHandle } from "@stackra/ui/contracts";
-import * as Ui from "@stackra/ui/react";
+import {
+  Button,
+  Heading,
+  LeaveConfirmation as UiLeaveConfirmation,
+  Text,
+  TextField,
+} from "@stackra/ui/react";
 import { useRef, useState } from "react";
 
 import { PageSection } from "#src/components/page-section";
@@ -70,15 +76,15 @@ export function LeaveConfirmation() {
     <article className="grid gap-10">
       <title>{STRINGS.documentTitle}</title>
       <header className="grid gap-2">
-        <Ui.Heading level={1}>{LeaveConfirmationRoute.title}</Ui.Heading>
-        <Ui.Text className="max-w-prose">
+        <Heading level={1}>{LeaveConfirmationRoute.title}</Heading>
+        <Text className="max-w-prose">
           <bdi>{STRINGS.intro}</bdi>
-        </Ui.Text>
+        </Text>
       </header>
 
       <PageSection id="leave-confirmation-draft" title={STRINGS.draft} note={STRINGS.draftNote}>
         <div className="grid max-w-sm gap-4">
-          <Ui.TextField
+          <TextField
             label={STRINGS.noteLabel}
             placeholder={STRINGS.notePlaceholder}
             value={note}
@@ -86,29 +92,29 @@ export function LeaveConfirmation() {
           />
           <ul className={ROW}>
             <li>
-              <Ui.Button onPress={() => setSaved(note)} isDisabled={!isDirty}>
+              <Button onPress={() => setSaved(note)} isDisabled={!isDirty}>
                 {STRINGS.save}
-              </Ui.Button>
+              </Button>
             </li>
             <li>
-              <Ui.Button variant="secondary" onPress={() => void tryToLeave()}>
+              <Button variant="secondary" onPress={() => void tryToLeave()}>
                 {STRINGS.leave}
-              </Ui.Button>
+              </Button>
             </li>
           </ul>
-          <Ui.Text tone="muted">
+          <Text tone="muted">
             <bdi>{isDirty ? STRINGS.dirty : STRINGS.clean}</bdi>
-          </Ui.Text>
+          </Text>
         </div>
       </PageSection>
 
       <PageSection id="leave-confirmation-answer" title={STRINGS.answer}>
-        <Ui.Text role="status">
+        <Text role="status">
           <bdi>{answer}</bdi>
-        </Ui.Text>
+        </Text>
       </PageSection>
 
-      <Ui.LeaveConfirmation
+      <UiLeaveConfirmation
         ref={leave}
         when={isDirty}
         title={STRINGS.title}

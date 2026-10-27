@@ -1,3 +1,11 @@
+/**
+ * Stackra file contract:
+ * Purpose: hold `ai-spend.mjs`'s pure functions to their contract: the budget parse and its defaults, a missing cost,
+ *          the ok, warn and over levels, and the report line.
+ * Boundary: pure functions on injected data; never runs `opencode`.
+ * Runtime: node
+ * Governing contract: ADR 0022 (tests live in tests folders); ADR 0182 (testing strategy).
+ */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { costOf, evaluate, formatLine, parseBudget } from "../ai-spend.mjs";

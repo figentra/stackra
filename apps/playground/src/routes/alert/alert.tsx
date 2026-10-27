@@ -11,7 +11,7 @@
  *          0060 (light, dark, RTL).
  */
 import { Tone } from "@stackra/ui/contracts";
-import * as Ui from "@stackra/ui/react";
+import { Alert as UiAlert, Button, Heading, Text } from "@stackra/ui/react";
 import { useState, type ReactNode } from "react";
 
 import { PageSection } from "#src/components/page-section";
@@ -66,9 +66,9 @@ const STACK = "grid max-w-2xl gap-4";
 function Sample({ caption, children }: { caption: string; children: ReactNode }) {
   return (
     <li className="grid content-start gap-2">
-      <Ui.Text tone="muted" type="small">
+      <Text tone="muted" type="small">
         {caption}
-      </Ui.Text>
+      </Text>
       {children}
     </li>
   );
@@ -88,17 +88,17 @@ export function Alert() {
     <article className="grid gap-10">
       <title>{STRINGS.documentTitle}</title>
       <header className="grid gap-2">
-        <Ui.Heading level={1}>{AlertRoute.title}</Ui.Heading>
-        <Ui.Text className="max-w-prose">
+        <Heading level={1}>{AlertRoute.title}</Heading>
+        <Text className="max-w-prose">
           <bdi>{STRINGS.intro}</bdi>
-        </Ui.Text>
+        </Text>
       </header>
 
       <PageSection id="alert-tones" title={STRINGS.tones} note={STRINGS.tonesNote}>
         <ul className={STACK}>
           {Tone.map((tone) => (
             <Sample key={tone} caption={`tone="${tone}"`}>
-              <Ui.Alert
+              <UiAlert
                 tone={tone}
                 title={TONE_COPY[tone].title}
                 description={TONE_COPY[tone].description}
@@ -111,27 +111,27 @@ export function Alert() {
       <PageSection id="alert-parts" title={STRINGS.parts} note={STRINGS.partsNote}>
         <ul className={STACK}>
           <Sample caption="Title only">
-            <Ui.Alert tone="success" title={TONE_COPY.success.title} />
+            <UiAlert tone="success" title={TONE_COPY.success.title} />
           </Sample>
           <Sample caption="With actions">
-            <Ui.Alert
+            <UiAlert
               tone="warning"
               title={TONE_COPY.warning.title}
               description={TONE_COPY.warning.description}
               actions={
                 <>
-                  <Ui.Button size="sm" variant="secondary">
+                  <Button size="sm" variant="secondary">
                     {STRINGS.upgrade}
-                  </Ui.Button>
-                  <Ui.Button size="sm" variant="ghost">
+                  </Button>
+                  <Button size="sm" variant="ghost">
                     {STRINGS.manage}
-                  </Ui.Button>
+                  </Button>
                 </>
               }
             />
           </Sample>
           <Sample caption="An icon of your own">
-            <Ui.Alert
+            <UiAlert
               tone="accent"
               icon="circle-check"
               title={TONE_COPY.accent.title}
@@ -139,7 +139,7 @@ export function Alert() {
             />
           </Sample>
           <Sample caption="No icon">
-            <Ui.Alert
+            <UiAlert
               tone="danger"
               icon={false}
               title={TONE_COPY.danger.title}
@@ -151,30 +151,22 @@ export function Alert() {
 
       <PageSection id="alert-live" title={STRINGS.live} note={STRINGS.liveNote}>
         <div className="flex flex-wrap items-center gap-4">
-          <Ui.Button
-            id="alert-show-error"
-            variant="secondary"
-            onPress={() => setIsErrorShown(true)}
-          >
+          <Button id="alert-show-error" variant="secondary" onPress={() => setIsErrorShown(true)}>
             {STRINGS.showError}
-          </Ui.Button>
-          <Ui.Button
-            id="alert-show-saved"
-            variant="secondary"
-            onPress={() => setIsSavedShown(true)}
-          >
+          </Button>
+          <Button id="alert-show-saved" variant="secondary" onPress={() => setIsSavedShown(true)}>
             {STRINGS.showSaved}
-          </Ui.Button>
+          </Button>
         </div>
         <div className={STACK}>
           {isErrorShown ? (
-            <Ui.Alert
+            <UiAlert
               tone="danger"
               title={TONE_COPY.danger.title}
               description={TONE_COPY.danger.description}
               actions={
                 <>
-                  <Ui.Button
+                  <Button
                     size="sm"
                     variant="secondary"
                     onPress={() => {
@@ -184,8 +176,8 @@ export function Alert() {
                     }}
                   >
                     {STRINGS.retry}
-                  </Ui.Button>
-                  <Ui.Button
+                  </Button>
+                  <Button
                     size="sm"
                     variant="ghost"
                     onPress={() => {
@@ -194,18 +186,18 @@ export function Alert() {
                     }}
                   >
                     {STRINGS.dismiss}
-                  </Ui.Button>
+                  </Button>
                 </>
               }
             />
           ) : null}
           {isSavedShown ? (
-            <Ui.Alert
+            <UiAlert
               tone="success"
               title={TONE_COPY.success.title}
               description={TONE_COPY.success.description}
               actions={
-                <Ui.Button
+                <Button
                   size="sm"
                   variant="ghost"
                   onPress={() => {
@@ -214,7 +206,7 @@ export function Alert() {
                   }}
                 >
                   {STRINGS.dismiss}
-                </Ui.Button>
+                </Button>
               }
             />
           ) : null}

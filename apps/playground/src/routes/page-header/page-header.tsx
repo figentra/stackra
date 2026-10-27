@@ -19,7 +19,7 @@ import { defineIconRegistry } from "@stackra/icons";
 import { IconRegistryProvider } from "@stackra/icons/react";
 import { Ellipsis } from "@stackra/icons/react/lucide-icons";
 import type { MenuLeafItem } from "@stackra/ui/contracts";
-import * as Ui from "@stackra/ui/react";
+import { Avatar, PageHeader as UiPageHeader, StatusBadge, Text } from "@stackra/ui/react";
 import { useState, type ReactNode } from "react";
 
 import { PageSection } from "#src/components/page-section";
@@ -92,9 +92,9 @@ const GRID = "grid gap-4";
 function Sample({ caption, children }: { readonly caption: string; readonly children: ReactNode }) {
   return (
     <li className="grid content-start gap-2">
-      <Ui.Text tone="muted" type="small">
+      <Text tone="muted" type="small">
         {caption}
-      </Ui.Text>
+      </Text>
       <div className={CARD}>{children}</div>
     </li>
   );
@@ -123,7 +123,7 @@ export function PageHeader() {
     <IconRegistryProvider registry={PAGE_ICONS}>
       <article className="grid gap-10">
         <title>{STRINGS.documentTitle}</title>
-        <Ui.PageHeader
+        <UiPageHeader
           title={PageHeaderRoute.title}
           description={<bdi>{STRINGS.intro}</bdi>}
           className="max-w-prose"
@@ -132,28 +132,28 @@ export function PageHeader() {
         <PageSection id="page-header-parts" title={STRINGS.parts} note={STRINGS.partsNote}>
           <ul className={GRID}>
             <Sample caption={STRINGS.titleOnly}>
-              <Ui.PageHeader headingLevel={3} title={STRINGS.order} />
+              <UiPageHeader headingLevel={3} title={STRINGS.order} />
             </Sample>
             <Sample caption={STRINGS.description}>
-              <Ui.PageHeader headingLevel={3} title={STRINGS.order} description={STRINGS.placed} />
+              <UiPageHeader headingLevel={3} title={STRINGS.order} description={STRINGS.placed} />
             </Sample>
             <Sample caption={STRINGS.status}>
-              <Ui.PageHeader
+              <UiPageHeader
                 headingLevel={3}
                 title={STRINGS.order}
-                status={<Ui.StatusBadge tone="success">{STRINGS.paid}</Ui.StatusBadge>}
+                status={<StatusBadge tone="success">{STRINGS.paid}</StatusBadge>}
               />
             </Sample>
             <Sample caption={STRINGS.start}>
-              <Ui.PageHeader
+              <UiPageHeader
                 headingLevel={3}
                 title={STRINGS.order}
                 description={STRINGS.placed}
-                startContent={<Ui.Avatar name="Ada Lovelace" shape="square" />}
+                startContent={<Avatar name="Ada Lovelace" shape="square" />}
               />
             </Sample>
             <Sample caption={STRINGS.every}>
-              <Ui.PageHeader
+              <UiPageHeader
                 headingLevel={3}
                 breadcrumbs={[
                   { id: "orders", label: STRINGS.orders, href: "/" },
@@ -162,8 +162,8 @@ export function PageHeader() {
                 ]}
                 title={STRINGS.order}
                 description={STRINGS.placed}
-                status={<Ui.StatusBadge tone="success">{STRINGS.paid}</Ui.StatusBadge>}
-                startContent={<Ui.Avatar name="Ada Lovelace" shape="square" />}
+                status={<StatusBadge tone="success">{STRINGS.paid}</StatusBadge>}
+                startContent={<Avatar name="Ada Lovelace" shape="square" />}
                 actions={actionsOf(3)}
               />
             </Sample>
@@ -173,13 +173,13 @@ export function PageHeader() {
         <PageSection id="page-header-actions" title={STRINGS.actions} note={STRINGS.actionsNote}>
           <ul className={GRID}>
             <Sample caption={STRINGS.one}>
-              <Ui.PageHeader headingLevel={3} title={STRINGS.order} actions={actionsOf(1)} />
+              <UiPageHeader headingLevel={3} title={STRINGS.order} actions={actionsOf(1)} />
             </Sample>
             <Sample caption={STRINGS.three}>
-              <Ui.PageHeader headingLevel={3} title={STRINGS.order} actions={actionsOf(3)} />
+              <UiPageHeader headingLevel={3} title={STRINGS.order} actions={actionsOf(3)} />
             </Sample>
             <Sample caption={STRINGS.six}>
-              <Ui.PageHeader
+              <UiPageHeader
                 headingLevel={3}
                 title={STRINGS.order}
                 actions={actionsOf(6)}
@@ -187,7 +187,7 @@ export function PageHeader() {
               />
             </Sample>
             <Sample caption={STRINGS.danger}>
-              <Ui.PageHeader
+              <UiPageHeader
                 headingLevel={3}
                 title={STRINGS.order}
                 actions={[
@@ -198,7 +198,7 @@ export function PageHeader() {
               />
             </Sample>
             <Sample caption={STRINGS.link}>
-              <Ui.PageHeader
+              <UiPageHeader
                 headingLevel={3}
                 title={STRINGS.order}
                 actions={[{ id: "open", label: STRINGS.openApp, href: "/app-header" }]}
@@ -209,11 +209,11 @@ export function PageHeader() {
 
         <PageSection id="page-header-arabic" title={STRINGS.arabic} note={STRINGS.arabicNote}>
           <div dir="rtl" lang="ar" data-sample="arabic" className={CARD}>
-            <Ui.PageHeader
+            <UiPageHeader
               headingLevel={3}
               title={STRINGS.arabicTitle}
               description={STRINGS.arabicDescription}
-              status={<Ui.StatusBadge tone="success">{STRINGS.arabicPaid}</Ui.StatusBadge>}
+              status={<StatusBadge tone="success">{STRINGS.arabicPaid}</StatusBadge>}
               actions={[
                 { id: "edit", label: STRINGS.arabicEdit },
                 { id: "export", label: STRINGS.arabicExport, icon: "download" },
@@ -225,14 +225,14 @@ export function PageHeader() {
         <PageSection id="page-header-live" title={STRINGS.live} note={STRINGS.liveNote}>
           <div className="grid gap-3">
             <div className={CARD} data-sample="live">
-              <Ui.PageHeader
+              <UiPageHeader
                 headingLevel={3}
                 title={STRINGS.order}
                 description={STRINGS.placed}
                 status={
-                  <Ui.StatusBadge tone={isShipped ? "accent" : "success"}>
+                  <StatusBadge tone={isShipped ? "accent" : "success"}>
                     {isShipped ? STRINGS.shipped : STRINGS.paid}
-                  </Ui.StatusBadge>
+                  </StatusBadge>
                 }
                 moreActionsLabel={STRINGS.moreActions}
                 actions={[
@@ -248,9 +248,9 @@ export function PageHeader() {
                 ]}
               />
             </div>
-            <Ui.Text role="status" tone="muted" data-sample="live-status">
+            <Text role="status" tone="muted" data-sample="live-status">
               {STRINGS.actionStatus(action)}
-            </Ui.Text>
+            </Text>
           </div>
         </PageSection>
       </article>

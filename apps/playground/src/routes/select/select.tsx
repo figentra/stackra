@@ -8,7 +8,7 @@
  * Runtime: browser
  * Governing contract: ADR 0302 (decisions 3 and 5); ADR 0303 (decision 7); ADR 0055; ADR 0060 (light, dark, RTL).
  */
-import * as Ui from "@stackra/ui/react";
+import { Button, Heading, Select as UiSelect, Text } from "@stackra/ui/react";
 import { useState } from "react";
 
 import { PageSection } from "#src/components/page-section";
@@ -95,28 +95,28 @@ export function Select() {
     <article className="grid gap-10">
       <title>{STRINGS.documentTitle}</title>
       <header className="grid gap-2">
-        <Ui.Heading level={1}>{SelectRoute.title}</Ui.Heading>
-        <Ui.Text className="max-w-prose">
+        <Heading level={1}>{SelectRoute.title}</Heading>
+        <Text className="max-w-prose">
           <bdi>{STRINGS.intro}</bdi>
-        </Ui.Text>
+        </Text>
       </header>
 
       <PageSection id="select-basics" title={STRINGS.basics} note={STRINGS.basicsNote}>
         <div className={ROW}>
-          <Ui.Select
+          <UiSelect
             items={STATUSES}
             label={STRINGS.statusLabel}
             placeholder={STRINGS.statusPlaceholder}
             className={SAMPLE}
           />
-          <Ui.Select
+          <UiSelect
             items={METHODS}
             label={STRINGS.describedLabel}
             placeholder={STRINGS.describedPlaceholder}
             description={STRINGS.description}
             className={SAMPLE}
           />
-          <Ui.Select
+          <UiSelect
             items={SORTS}
             aria-label={STRINGS.hiddenLabelName}
             defaultValue="newest"
@@ -127,7 +127,7 @@ export function Select() {
 
       <PageSection id="select-items" title={STRINGS.items} note={STRINGS.itemsNote}>
         <div className={ROW}>
-          <Ui.Select
+          <UiSelect
             items={PLANS}
             label={STRINGS.richLabel}
             placeholder={STRINGS.richPlaceholder}
@@ -138,20 +138,20 @@ export function Select() {
 
       <PageSection id="select-states" title={STRINGS.states} note={STRINGS.statesNote}>
         <div className={ROW}>
-          <Ui.Select
+          <UiSelect
             items={STATUSES}
             label={STRINGS.withValue}
             defaultValue="sent"
             className={SAMPLE}
           />
-          <Ui.Select
+          <UiSelect
             items={STATUSES}
             label={STRINGS.required}
             placeholder={STRINGS.statusPlaceholder}
             isRequired
             className={SAMPLE}
           />
-          <Ui.Select
+          <UiSelect
             items={STATUSES}
             label={STRINGS.invalid}
             placeholder={STRINGS.statusPlaceholder}
@@ -159,14 +159,14 @@ export function Select() {
             errorMessage={STRINGS.invalidError}
             className={SAMPLE}
           />
-          <Ui.Select
+          <UiSelect
             items={STATUSES}
             label={STRINGS.disabled}
             defaultValue="sent"
             isDisabled
             className={SAMPLE}
           />
-          <Ui.Select
+          <UiSelect
             items={STATUSES}
             label={STRINGS.readOnly}
             defaultValue="sent"
@@ -174,7 +174,7 @@ export function Select() {
             className={SAMPLE}
           />
         </div>
-        <Ui.Select
+        <UiSelect
           items={STATUSES}
           label={STRINGS.fullWidth}
           description={STRINGS.fullWidthNote}
@@ -185,7 +185,7 @@ export function Select() {
 
       <PageSection id="select-live" title={STRINGS.live} note={STRINGS.liveNote}>
         <div className={ROW}>
-          <Ui.Select
+          <UiSelect
             items={STATUSES}
             label={STRINGS.liveLabel}
             placeholder={STRINGS.statusPlaceholder}
@@ -193,13 +193,13 @@ export function Select() {
             onChange={setStatus}
             className={SAMPLE}
           />
-          <Ui.Button variant="secondary" onPress={() => setStatus(null)}>
+          <Button variant="secondary" onPress={() => setStatus(null)}>
             {STRINGS.clear}
-          </Ui.Button>
+          </Button>
         </div>
-        <Ui.Text role="status" data-testid="select-chosen" tone="muted">
+        <Text role="status" data-testid="select-chosen" tone="muted">
           {STRINGS.chosen(status)}
-        </Ui.Text>
+        </Text>
       </PageSection>
     </article>
   );

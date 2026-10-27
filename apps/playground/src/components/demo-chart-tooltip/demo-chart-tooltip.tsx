@@ -8,30 +8,7 @@
  * Governing contract: ADR 0310 (decision 12); ADR 0060 (light, dark, RTL); STA-416 FR-012.
  */
 import { ChartTooltip } from "@stackra-pro/ui/react";
-
-/** One row of a tooltip's payload, as far as the card reads it. */
-export interface DemoChartTooltipEntry {
-  /** The data key of the series; the row's key. */
-  readonly dataKey?: unknown;
-  /** The colour of the series; a CSS colour. */
-  readonly color?: string | undefined;
-  /** The name of the series. */
-  readonly name?: string | number | undefined;
-  /** The value at the point. */
-  readonly value?: unknown;
-}
-
-/** Props of {@link DemoChartTooltip}; recharts passes them to a tooltip's `content`. */
-export interface DemoChartTooltipProps {
-  /** Whether a point is hovered or focused. */
-  readonly active?: boolean | undefined;
-  /** The label of the point, the header. */
-  readonly label?: string | number | undefined;
-  /** One entry per series at the point. */
-  readonly payload?: readonly DemoChartTooltipEntry[] | undefined;
-  /** How a value reads; locale numbers when left out. */
-  readonly format?: ((value: number) => string) | undefined;
-}
+import type { DemoChartTooltipProps } from "./demo-chart-tooltip.props";
 
 /** The tooltip card of a hovered point. */
 export function DemoChartTooltip({ active, label, payload, format }: DemoChartTooltipProps) {
