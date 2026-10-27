@@ -309,10 +309,13 @@ overrides:
 # ADR 0310: the HeroUI Pro packages on npm are shells whose real package.json arrives with the postinstall download,
 # so pnpm never sees their peers and links none: a Pro module then resolves the hoisted React of another catalog
 # ("Invalid hook call"). These are the peers of the downloaded 1.0.0-beta.10 / 1.0.0-beta.11 package.json, copied
-# verbatim; update them with each Pro bump.
+# verbatim; update them with each Pro bump. `@types/react` is ours, not Pro's: its .d.ts files import "react", and
+# without a linked peer TypeScript finds the hoisted @types/react of the mobile catalog (19.2.18), so a consumer on the
+# frontend catalog (19.3.0) sees two unrelated `Ref` types (TS2322 in ui-pro's NumberValue).
 packageExtensions:
   "@heroui-pro/react":
     peerDependencies:
+      "@types/react": ">=19.0.0"
       "@heroui/react": ">=3.2.6"
       "@heroui/styles": ">=3.2.6"
       "@number-flow/react": ">=0.5.0"
@@ -346,6 +349,8 @@ packageExtensions:
       tailwind-variants: ">=3.3.1"
       tailwindcss: ">=4.0.0"
     peerDependenciesMeta:
+      "@types/react":
+        optional: true
       "@tiptap/core":
         optional: true
       "@tiptap/extension-link":
