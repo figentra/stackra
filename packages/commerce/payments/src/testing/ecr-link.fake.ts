@@ -19,7 +19,7 @@ type Queued =
   | { readonly held: Promise<string> };
 
 /**
- * Recorded answers.
+ * An `EcrLink` for tests that replays queued terminal answers and records every call.
  *
  * @example
  * const link = EcrLinkFake.answering("01|chk_9|00|RRN1|2500|0");

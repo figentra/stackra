@@ -8,6 +8,9 @@
 
 /** An address and port. */
 export interface UdpPeer {
+  /** The peer's IP address. */
   readonly address: string;
+
+  /** The peer's UDP port. */
   readonly port: number;
 }

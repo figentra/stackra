@@ -6,8 +6,9 @@
  *          declared charset and read with `parsePage`.
  * Boundary: GET only, no cookies, no credentials, no script run, nothing stored or logged. A refusal carries the code
  *           and, for an error answer, the status; never a body or header. The fetch function is injected (the
- *           platform `fetch` by default) so the service can pass its egress-proxied client and tests a stub.
- * Runtime: server (Node, Workers): it needs `redirect: "manual"` to return the 3xx answer, which a browser hides.
+ *           platform `fetch` by default) so the service can pass its egress-proxied client and tests a stub. Server
+ *           only (Node, Workers): it needs `redirect: "manual"` to return the 3xx answer, which a browser hides.
+ * Runtime: node
  * Governing contract: ADR 0450 (decisions 1 and 3); ADR 0308 (rule 19); STA-904 (page reader).
  */
 import { Driver } from "@stackra/container";
@@ -84,7 +85,7 @@ export class HttpPageReaderDriver extends Driver(PageReader) {
     this.fetcher = fetcher;
   }
 
-  /** See `PageReader.read`. */
+  /** Fetches `url` within the policy, following each checked redirect by hand, and answers the page or the refusal. */
   async read(url: string): Promise<PageReadResult> {
     let target = url;
     for (let hop = 0; hop <= this.policy.maxRedirects; hop += 1) {

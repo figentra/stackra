@@ -84,7 +84,7 @@ export class MemoryAccountingConnector implements AccountingProvider, AccountMap
     return this.journals.get(idempotencyKey) ?? null;
   }
 
-  /** The chart. */
+  /** Lists the chart of accounts it was given; empty when none was. */
   async accounts(): Promise<readonly { readonly code: string; readonly name: string }[]> {
     return this.options.chart ?? [];
   }

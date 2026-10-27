@@ -9,8 +9,15 @@
 
 /** One device frame. */
 export interface DeviceFrame {
+  /** The frame's id, used in the generated file names. */
   readonly id: string;
+
+  /** The canvas width in px. */
   readonly width: number;
+
+  /** The canvas height in px. */
   readonly height: number;
+
+  /** The screen's corner radius in px. */
   readonly radius: number;
 }

@@ -15,9 +15,18 @@ import type { TurnoverCipher } from "#contracts/ports/turnover-cipher.port";
 
 /** Every port a driver may take; a run fills the ones the caller leaves out with recorded fakes. */
 export type CertificationPorts = {
+  /** The signer that signs with the unit's key (an HSM, a USB token or a cloud seal). */
   readonly signer: FiscalSigner;
+
+  /** The transport the driver sends authority, ASP and access-point calls through. */
   readonly transport: FiscalTransport;
+
+  /** The fiscal unit outside the till's code (a TSE, a fiscal data module, a telematic printer). */
   readonly device: FiscalDevice;
+
+  /** The cipher that encrypts the till's running turnover counter with the till's own key. */
   readonly cipher: TurnoverCipher;
+
+  /** The per-unit store of the till's fiscal credentials (a CSID, a signing certificate's serial). */
   readonly credentials: TillCredentials;
 };

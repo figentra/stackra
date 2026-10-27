@@ -8,6 +8,9 @@
 
 /** One PNG and its square size in px (1 to 256). */
 export interface IcoImage {
+  /** The square size in px, 1 to 256. */
   readonly size: number;
+
+  /** The encoded PNG bytes. */
   readonly png: Uint8Array;
 }

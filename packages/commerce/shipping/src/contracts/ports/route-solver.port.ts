@@ -14,7 +14,7 @@ import type { RoutePlan } from "#contracts/types/route-plan.type";
 import type { RouteProblem } from "#contracts/types/route-problem.type";
 
 /**
- * Route planning.
+ * The port that plans delivery routes: it places stops on vehicles and orders each vehicle's route.
  *
  * @example
  * const plan = await solver.solve({ vehicles, stops });

@@ -12,7 +12,7 @@ import type { ReturnLabelRequest } from "#contracts/types/return-label-request.t
 import type { Shipment } from "#contracts/types/shipment.type";
 
 /**
- * Return labels.
+ * The carrier capability that buys a return label for a shipment and cancels it while unused.
  *
  * @example
  * const shipment = await gateway.createReturnLabel(request);

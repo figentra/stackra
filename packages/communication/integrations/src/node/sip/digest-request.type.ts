@@ -11,7 +11,7 @@
 export interface DigestRequest {
   /** The request method (`INVITE`, `REGISTER`). */
   readonly method: string;
-  /** The Request-URI. */
+  /** The Request-URI of the request being answered. */
   readonly uri: string;
   /** The trunk's user name. */
   readonly username: string;

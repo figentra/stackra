@@ -6,7 +6,7 @@
  * Boundary: pure apart from Web Crypto. Keys come from the caller's `SigningKeySource` (the `KeyProvider` of
  *           @stackra/contracts); the clock and the expiry come from the caller (expiry lengths are settings). The data
  *           is signed, not encrypted: never put a secret or personal data in it, put an id.
- * Runtime: isomorphic (Web Crypto)
+ * Runtime: isomorphic
  * Governing contract: ADR 0305 (one declaration per file); ADR 0416 (canonical JSON); STA-934.
  */
 import { base64url } from "#core/constants/base64url.constant";
@@ -29,7 +29,7 @@ function checkPurpose(purpose: string): void {
 }
 
 /**
- * Signed tokens.
+ * Signs short opaque tokens for a purpose and expiry, and verifies them by key, signature, purpose and expiry.
  *
  * @example
  * const token = await signedToken.sign(keys, { purpose: "receipt.view", expiresAt: time.addDays(now, 30), data: { receiptId } });

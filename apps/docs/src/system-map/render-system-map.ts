@@ -7,8 +7,9 @@
  *          out, tables, packages, drivers, who uses it, its flows).
  * Boundary: pure and deterministic: graph in, pages out, in the graph's own (sorted) order. Every name, edge and flow
  *           comes from the graph; nothing is listed by hand, so the pages are regenerated, never edited. It reads the
- *           graph shape only through `@stackra/gen`'s exported types (ADR 0452 decision 4).
- * Runtime: node (Mintlify MDX output; run by `write-system-map.ts`)
+ *           graph shape only through `@stackra/gen`'s exported types (ADR 0452 decision 4). It returns Mintlify MDX;
+ *           `write-system-map.ts` runs it and writes the pages.
+ * Runtime: node
  * Governing contract: ADR 0452 (the system graph); STA-845 (levels 1 to 3, flows declared once); batch stackra-60
  *                     (STA-1098).
  */

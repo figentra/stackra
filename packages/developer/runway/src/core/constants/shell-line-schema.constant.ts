@@ -10,7 +10,7 @@
  */
 import { z } from "zod";
 
-/** `owner/name@major`. */
+/** The schema of a shell or mobile template line, `<owner>/<shell>@<major>`. */
 export const SHELL_LINE_SCHEMA = z
   .string()
   .regex(/^[a-z][a-z0-9-]*\/[a-z][a-z0-9-]*@[0-9]+$/, "Expected <owner>/<shell>@<major>");

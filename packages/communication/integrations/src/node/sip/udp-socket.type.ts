@@ -16,6 +16,6 @@ export interface UdpSocket {
   on(event: "message", listener: (data: Uint8Array, from: UdpPeer) => void): unknown;
   /** The local address and port it is bound to. */
   address(): UdpPeer;
-  /** Closes it. */
+  /** Closes the socket; no datagram is sent or received after. */
   close(): void;
 }

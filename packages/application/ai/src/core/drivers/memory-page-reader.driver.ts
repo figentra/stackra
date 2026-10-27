@@ -33,7 +33,7 @@ export class MemoryPageReaderDriver extends Driver(PageReader) {
     this.pages = new Map(Object.entries(pages));
   }
 
-  /** See `PageReader.read`. */
+  /** Answers the page held for `url` with status 200, or the `Unreachable` refusal when none is held. */
   async read(url: string): Promise<PageReadResult> {
     const html = this.pages.get(url);
     if (html === undefined) return { ok: false, refusal: PageReadRefusal.Unreachable };

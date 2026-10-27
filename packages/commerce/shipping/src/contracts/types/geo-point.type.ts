@@ -9,7 +9,7 @@
  */
 
 /**
- * A point.
+ * A place on the map in decimal degrees: a stop, a depot or a matrix origin or destination.
  *
  * @example
  * const depot: GeoPoint = { latitude: 24.7136, longitude: 46.6753 };

@@ -10,7 +10,7 @@ import type { BrandKitOptions } from "#contracts/types/brand-kit-options.type";
 import type { SvgRenderer } from "#contracts/types/svg-renderer.type";
 
 /**
- * Run options.
+ * The generator options plus the store sources, the captured screenshots folder and the SVG renderer of one run.
  *
  * @example
  * const options: BrandKitRunOptions = { root: ".", storeDir: "assets/store" };

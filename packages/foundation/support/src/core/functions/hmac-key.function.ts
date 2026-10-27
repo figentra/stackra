@@ -3,7 +3,7 @@
  * Purpose: `hmacKey`, the Web Crypto HMAC-SHA-256 key over the raw bytes a key source hands out, for signing and
  *          constant-time verifying signed tokens and one-time codes.
  * Boundary: internal to @stackra/support (not re-exported). The key is not extractable; the bytes are never logged.
- * Runtime: isomorphic (Web Crypto)
+ * Runtime: isomorphic
  * Governing contract: ADR 0305 (one declaration per file); ADR 0173 (nobody reads a value).
  */
 

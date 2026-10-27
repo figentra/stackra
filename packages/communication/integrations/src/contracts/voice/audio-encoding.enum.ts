@@ -12,7 +12,7 @@
 import { Enum } from "@stackra/contracts";
 
 /**
- * The encodings.
+ * The uncompressed sample encodings a speech stream carries, each with its bytes per sample.
  *
  * @example
  * const width = Enum.meta(AudioEncoding, format.encoding).bytesPerSample; // 2 for linear16

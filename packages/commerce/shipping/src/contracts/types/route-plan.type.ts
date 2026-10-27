@@ -9,7 +9,7 @@
  */
 
 /**
- * A plan.
+ * A route planner's answer: one route per vehicle and the stops it could not place.
  *
  * @example
  * for (const route of plan.routes) dispatch(route.vehicleId, route.visits.map((visit) => visit.stopId));

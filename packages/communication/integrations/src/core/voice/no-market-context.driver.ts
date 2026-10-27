@@ -13,13 +13,13 @@ import { Driver } from "@stackra/container";
 import { MarketContext } from "#contracts/ports/market-context.port";
 
 /**
- * No Market.
+ * A `MarketContext` that answers no Market, for the speech resolver built over the region map.
  *
  * @example
  * new ProviderResolver(store, new RegionMapProviderDefaultsDriver(regions), new NoMarketContextDriver());
  */
 export class NoMarketContextDriver extends Driver(MarketContext) {
-  /** Always undefined. */
+  /** Answers undefined, so the resolver never uses a Market code in place of a region. */
   market(): string | undefined {
     return undefined;
   }

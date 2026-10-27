@@ -11,7 +11,7 @@ import type { MemberGraph } from "#core/types/member-graph.type";
 
 /** A member in the graph. */
 export interface GraphNode extends MemberGraph {
-  /** `<repo>.<member>` (`os.billing`). */
+  /** The node's id across the system, `<repo>.<member>` (`os.billing`). */
   readonly id: string;
 
   /** The repo key, the graph's layer (`stackra`, `os`, `commerce`, `mezzora`). */

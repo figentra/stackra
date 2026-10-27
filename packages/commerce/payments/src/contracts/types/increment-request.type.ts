@@ -11,7 +11,7 @@ import type { Money } from "@stackra/money";
 import type { PaymentTarget } from "#contracts/types/payment-target.type";
 
 /**
- * Hold more.
+ * A request to raise an authorised payment's hold by `amount` on top of what it already holds.
  *
  * @example
  * await gateway.increment({ payment: { reference, providerRef }, amount, reference: "tab_7:round_2" });
