@@ -10,7 +10,7 @@
 import "#core/types/search-driver-names.type";
 
 import type { DriverName } from "@stackra/container";
-import { registerSchemas, Schema } from "@stackra/validation";
+import { Field, registerSchemas, Schema } from "@stackra/validation";
 
 import type { SearchDriver } from "#contracts/ports/search-driver.port";
 import { SEARCH_CONFIG_SCHEMA } from "#core/constants/search-config-schema.constant";
@@ -24,14 +24,13 @@ import { SEARCH_CONFIG_SCHEMA } from "#core/constants/search-config-schema.const
  * }
  */
 export class SearchOptions extends Schema {
-  /** Which driver runs: `postgres` keeps the index in the model's own table; `memory` keeps it in the process. */
-  driver: DriverName<SearchDriver> = "postgres";
-
   /**
    * The in-region embeddings endpoint `HttpEmbedderDriver` calls (an OpenAI-compatible `/embeddings` API: a model
    * served in the tenant's region, so text never leaves it). Which provider and region is runway's value per
    * environment; no credential is a field, only the name of the runtime secret that holds the token (ADR 0173).
    */
+  // reason: a nested driver option a host override replaces whole; the shipped config schema holds its rules
+  @Field(SEARCH_CONFIG_SCHEMA.shape.embedder)
   embedder: {
     /** The endpoint base URL (`https://embed.me-central-1.acme.internal/v1`); `null` while none is configured. */
     url: string | null;
@@ -42,6 +41,9 @@ export class SearchOptions extends Schema {
     /** The secret holding the bearer token, read through `SecretStore`; `null` for an endpoint that needs none. */
     tokenSecret: string | null;
   } = { url: null, model: "", dimensions: 1024, tokenSecret: null };
+
+  /** Which driver runs: `postgres` keeps the index in the model's own table; `memory` keeps it in the process. */
+  driver: DriverName<SearchDriver> = "postgres";
 }
 
 registerSchemas([[SearchOptions, SEARCH_CONFIG_SCHEMA]]);
