@@ -54,6 +54,7 @@ screen reads, and the claims mapping that turns a provider's token into a Stackr
 | `./desktop`   | `ElectronSignInBrowserDriver`                                                                                | Electron main: the system browser and a loopback redirect                                      |
 | `./react`     | `useSession`, `SessionValue`, `SignedInSession`                                                              | the session in a component                                                                     |
 | `./testing`   | `fakeSession`, `SessionFake`, `fakeIdentity`                                                                 | a session in any status with spied actions; a resolver over named principals                   |
+| `./testing`   | `runVerificationCase`, `VerificationCase`, `VerificationCaseResult`                                          | the recorded-fixture harness every `Verification` driver (OS integrations) runs its cases on   |
 
 ## Configuring a member
 
@@ -169,6 +170,11 @@ WebCrypto. No `SignInBrowser` driver ships here yet: the Expo and Electron ones 
   own KYB and KYC of a tenant) is pinned to platform Connections (`{ pin: "managed" }`) and an `own` candidate is
   skipped again here; `tenant` (a tenant checking its customers) takes the tenant's own Connection first, then the
   managed one. The result carries the `mode` that answered. Vendor Connections live in the OS integrations service.
+- **Verification drivers.** The vendor drivers (Wathq, ZATCA lookup, Nafath, UAE Pass, Didit, Uqudo or Sumsub,
+  ComplyAdvantage; Middesk and Persona for the US pack) are OS integrations code (ADR 0443 decision 7, os-104); this
+  package keeps the port, `VerificationService`, `MemoryVerificationDriver` and the harness below. Each vendor driver
+  ships recorded cases from the vendor's public documentation, marked `certification: "pending"` until a run against
+  the vendor's sandbox passes (owner decision D3, 2026-10-27).
 
 ## The login directory (ADR 0451)
 
@@ -218,4 +224,27 @@ createTestingModule(NotificationsModule).override(
   IdentityResolver,
   fakeIdentity({ [customer.id]: { email: "a@acme.example", locale: "ar" } }),
 );
+```
+
+A `Verification` driver runs each recorded case through `runVerificationCase`, which checks the recorded status,
+reasons and provider reference and the port's rules: the kind is supported, an outage refuses
+`verification_unavailable` (so `VerificationService` falls through), reasons are snake_case codes and empty when
+verified, `checkedAt` is a real time, and no subject fact comes back in the answer.
+
+```ts
+const api = fakeIntegrationApi({ "POST /v2/session": { status: 200, body: recorded } });
+const result = await runVerificationCase(new VendorVerificationDriver(api.connection), {
+  id: "vendor.identity-verified",
+  source: "vendor API reference, session decision",
+  certification: "pending",
+  request: {
+    kind: VerificationKind.Identity,
+    market: "sa",
+    reference: "chk_1",
+    subject,
+    consented: true,
+  },
+  expect: { status: VerificationStatus.Verified },
+});
+expect(result.mismatches).toEqual([]);
 ```

@@ -51,6 +51,10 @@ model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./desktop`, `./n
   tenant's own Connection: pin `ProviderResolver#candidates("verification", …)` to `managed`, and `verifyThrough`
   drops an `own` candidate again. Vendor verification Connections live in the OS integrations service (R3-8), never
   in this package; it keeps the port (capability map M2).
+- No vendor verification driver is written here (ADR 0443 decisions 7 and 8): the vendor drivers are OS integrations
+  code (os-104). This package ships the vendor-neutral harness `runVerificationCase` in `./testing`; a vendor driver's
+  recorded cases carry `certification: "pending"` until a sandbox run passes (owner decision D3). A harness mismatch
+  names a subject field, never its value.
 - A staff PIN is stored only as its salted PBKDF2 hash and compared in constant time; a key is shown once and only its
   hash is stored. Never log either.
 - An API key's `lastUsedAt` is written by `ApiKeyVerifierService` only (through `ApiKeyStore.recordUse`), throttled
