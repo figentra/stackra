@@ -1,5 +1,6 @@
 // TypeScript project for this member: extends exactly one @stackra/typescript-config preset and sets nothing else
 // (pnpm validate checks the preset). tsc reads tsconfig.json as JSONC, so the name stays .json.
-// `react`: the `./react` entry is TSX; the source uses no decorators and keeps to erasable syntax.
+// `decorators-react`: the `./react` entry is TSX and `SentryOptions` carries `@Num`, a legacy field decorator
+// (ADR 0005), as do the @stackra/config and @stackra/validation sources it typechecks through `@stackra/source`.
 // Owner: release-operations · Secrets: forbidden
-{ "extends": "@stackra/typescript-config/react" }
+{ "extends": "@stackra/typescript-config/decorators-react" }

@@ -28,7 +28,9 @@ The HTTP client pipeline. Member at `packages/foundation/transport` (`tier:lib`)
 - Retryable statuses come from `ErrorKind` (`RETRYABLE_STATUSES`); never write a status list by hand (ADR 0140).
 - `TransportError` and `RetryOn` belong to `@stackra/clients`; do not declare them here.
 - Use `AbortController` and `setTimeout`, not `AbortSignal.timeout` or `AbortSignal.any` (Hermes lacks them).
-- No parameter properties, no `#private` fields, no decorators (`library` preset, `erasableSyntaxOnly`).
+- No parameter properties, no `#private` fields, no decorators in its own source: it keeps to erasable syntax, though its
+  `decorators-react` preset turns the check off so tsc can read the decorated sources of @stackra/config and
+  @stackra/errors.
 
 ## Rules that fail the build
 

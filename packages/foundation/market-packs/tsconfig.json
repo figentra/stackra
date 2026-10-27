@@ -1,6 +1,8 @@
 // TypeScript project for this member: extends exactly one @stackra/typescript-config preset and sets nothing else
 // (pnpm validate checks the preset). tsc reads tsconfig.json as JSONC, so the name stays .json.
-// `library`: enums, constants, types, functions and refusal classes; no decorators and no TSX. The Web Crypto global
-// comes from @types/node.
+// `decorators`: enums, constants, types, functions and refusal classes; no TSX. The Web Crypto global comes from
+// @types/node.
+// The sources it typechecks through `@stackra/source` (@stackra/config, @stackra/validation, @stackra/errors) carry legacy field
+// decorators (ADR 0005), so tsc needs `experimentalDecorators` here as the vitest preset already has it.
 // Owner: release-operations · Secrets: forbidden
-{ "extends": "@stackra/typescript-config/library" }
+{ "extends": "@stackra/typescript-config/decorators" }
