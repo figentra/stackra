@@ -3,7 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra client storage: the Storage port with the named areas of ADR 0256 (prefs, session, cache, outbox, secrets, files), values checked by their generated schemas, a time-to-live per write, the memory, web and native drivers, usePrefs and fakeStorage",
+  "homepage": "https://github.com/figentra/stackra/tree/main/packages/data/storage#readme",
+  "bugs": {
+    "url": "https://github.com/figentra/stackra/issues"
+  },
   "license": "MIT",
+  "author": "Figentra (https://figentra.com)",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/figentra/stackra.git",
@@ -154,5 +159,19 @@
     "react-native-mmkv": {
       "optional": true
     }
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "stackra": {
+    "kind": "package",
+    "tier": "lib",
+    "category": "data",
+    "runtimes": [
+      "isomorphic",
+      "node",
+      "browser",
+      "react-native"
+    ]
   }
 }

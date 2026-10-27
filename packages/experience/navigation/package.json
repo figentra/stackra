@@ -3,7 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra navigation: the Route, Layout and Menu kinds, typed route refs and contexts, chrome config, the React Router 7 and React Navigation adapters, the root error boundary and router-aware links",
+  "homepage": "https://github.com/figentra/stackra/tree/main/packages/experience/navigation#readme",
+  "bugs": {
+    "url": "https://github.com/figentra/stackra/issues"
+  },
   "license": "MIT",
+  "author": "Figentra (https://figentra.com)",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/figentra/stackra.git",
@@ -179,5 +184,18 @@
     "react-router": {
       "optional": true
     }
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "stackra": {
+    "kind": "package",
+    "tier": "lib",
+    "category": "experience",
+    "runtimes": [
+      "isomorphic",
+      "browser",
+      "react-native"
+    ]
   }
 }

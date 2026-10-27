@@ -3,7 +3,17 @@
   "version": "0.0.1",
   "private": true,
   "description": "Stackra's Turborepo remote cache: a Cloudflare Worker serving Turborepo's v8 artifacts API from an R2 bucket.",
+  "homepage": "https://github.com/figentra/stackra/tree/main/workers/turbo-cache#readme",
+  "bugs": {
+    "url": "https://github.com/figentra/stackra/issues"
+  },
   "license": "UNLICENSED",
+  "author": "Figentra (https://figentra.com)",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/figentra/stackra.git",
+    "directory": "workers/turbo-cache"
+  },
   "type": "module",
   "imports": {
     "#src/*": [
@@ -41,5 +51,15 @@
     "typescript": "catalog:build",
     "vitest": "catalog:quality",
     "wrangler": "catalog:deploy"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "stackra": {
+    "kind": "package",
+    "tier": "app",
+    "runtimes": [
+      "worker"
+    ]
   }
 }

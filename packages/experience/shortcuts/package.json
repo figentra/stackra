@@ -3,7 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra shortcuts: the Shortcut({ keys, group }) kind, key parsing with chord sequences, the conflict detector, the open ShortcutContext, the palette list, key hints, the keyboard bindings and runShortcut",
+  "homepage": "https://github.com/figentra/stackra/tree/main/packages/experience/shortcuts#readme",
+  "bugs": {
+    "url": "https://github.com/figentra/stackra/issues"
+  },
   "license": "MIT",
+  "author": "Figentra (https://figentra.com)",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/figentra/stackra.git",
@@ -102,5 +107,18 @@
     "react": {
       "optional": true
     }
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "stackra": {
+    "kind": "package",
+    "tier": "lib",
+    "category": "experience",
+    "runtimes": [
+      "isomorphic",
+      "node",
+      "browser"
+    ]
   }
 }

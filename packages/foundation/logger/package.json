@@ -3,7 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra logging: the Logger driver with per-channel levels, sampling and redaction (field names, @Classified fields and secret patterns), the LogReporter port with its console driver, and the LoggingConfig and TelemetryConfig configurations with their shipped schemas, and the OTLP log reporter with OtlpConfig",
+  "homepage": "https://github.com/figentra/stackra/tree/main/packages/foundation/logger#readme",
+  "bugs": {
+    "url": "https://github.com/figentra/stackra/issues"
+  },
   "license": "MIT",
+  "author": "Figentra (https://figentra.com)",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/figentra/stackra.git",
@@ -81,5 +86,16 @@
     "tsdown": "catalog:build",
     "typescript": "catalog:build",
     "vitest": "catalog:quality"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "stackra": {
+    "kind": "package",
+    "tier": "lib",
+    "category": "foundation",
+    "runtimes": [
+      "isomorphic"
+    ]
   }
 }

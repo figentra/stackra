@@ -3,7 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra cache: the Cache port with keys scoped per call namespace and single-flight loads, CacheKey.of, the CacheNamespace port, the CacheConfig configuration with its shipped schema, and the memory, storage, Valkey and Workers KV drivers",
+  "homepage": "https://github.com/figentra/stackra/tree/main/packages/runtime/cache#readme",
+  "bugs": {
+    "url": "https://github.com/figentra/stackra/issues"
+  },
   "license": "MIT",
+  "author": "Figentra (https://figentra.com)",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/figentra/stackra.git",
@@ -102,5 +107,18 @@
     "tsdown": "catalog:build",
     "typescript": "catalog:build",
     "vitest": "catalog:quality"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "stackra": {
+    "kind": "package",
+    "tier": "lib",
+    "category": "runtime",
+    "runtimes": [
+      "isomorphic",
+      "node",
+      "worker"
+    ]
   }
 }

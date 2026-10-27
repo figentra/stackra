@@ -3,7 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra locking: the Locks service that runs work under named server-side locks (sorted keys, a TTL renewed while the work runs, a fencing token per lease, try-without-waiting for single-runner jobs), the LockDriver port, the memory driver, the Postgres advisory-lock driver with its WAL-position token, the Valkey driver, and LockingConfig with its shipped schema",
+  "homepage": "https://github.com/figentra/stackra/tree/main/packages/runtime/locking#readme",
+  "bugs": {
+    "url": "https://github.com/figentra/stackra/issues"
+  },
   "license": "MIT",
+  "author": "Figentra (https://figentra.com)",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/figentra/stackra.git",
@@ -94,5 +99,17 @@
     "tsdown": "catalog:build",
     "typescript": "catalog:build",
     "vitest": "catalog:quality"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "stackra": {
+    "kind": "package",
+    "tier": "lib",
+    "category": "runtime",
+    "runtimes": [
+      "isomorphic",
+      "node"
+    ]
   }
 }

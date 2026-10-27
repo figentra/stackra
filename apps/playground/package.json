@@ -3,7 +3,17 @@
   "version": "0.0.1",
   "private": true,
   "description": "The Stackra Design System playground: every @stackra/ui component on its own route, in light and dark and in left-to-right and right-to-left, checked by Playwright and axe.",
+  "homepage": "https://github.com/figentra/stackra/tree/main/apps/playground#readme",
+  "bugs": {
+    "url": "https://github.com/figentra/stackra/issues"
+  },
   "license": "UNLICENSED",
+  "author": "Figentra (https://figentra.com)",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/figentra/stackra.git",
+    "directory": "apps/playground"
+  },
   "type": "module",
   "imports": {
     "#src/*": [
@@ -87,5 +97,15 @@
     "typescript": "catalog:build",
     "vite": "catalog:frontend",
     "vitest": "catalog:quality"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "stackra": {
+    "kind": "package",
+    "tier": "app",
+    "runtimes": [
+      "browser"
+    ]
   }
 }

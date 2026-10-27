@@ -3,7 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra Content Security Policy: the CspConfig configuration, the nonce-based baseline policy builder, per-request nonces, and the React NonceProvider, useNonce and Style",
+  "homepage": "https://github.com/figentra/stackra/tree/main/packages/security/csp#readme",
+  "bugs": {
+    "url": "https://github.com/figentra/stackra/issues"
+  },
   "license": "MIT",
+  "author": "Figentra (https://figentra.com)",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/figentra/stackra.git",
@@ -93,5 +98,16 @@
     "react": {
       "optional": true
     }
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "stackra": {
+    "kind": "package",
+    "tier": "lib",
+    "category": "security",
+    "runtimes": [
+      "isomorphic"
+    ]
   }
 }

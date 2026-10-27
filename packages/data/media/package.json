@@ -3,7 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra media: the Bucket kind (visibility, accepted media types, size limit, image variants), signed direct uploads that MediaLibrary claims into a bucket, the MediaDisk port (with byte reads) and its memory and S3/R2 drivers, the sharp ImageTransformer with compositing, the in-region DOCX and PDF TextExtractor, the in-region PaddleOCR TextExtractor with Arabic, the c2pa ContentCredentials signer and reader, the Uploader port with its memory and HTTP drivers, MediaConfig with its shipped schema, the upload.create action, useUpload, useImageVariant and fakeUpload",
+  "homepage": "https://github.com/figentra/stackra/tree/main/packages/data/media#readme",
+  "bugs": {
+    "url": "https://github.com/figentra/stackra/issues"
+  },
   "license": "MIT",
+  "author": "Figentra (https://figentra.com)",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/figentra/stackra.git",
@@ -133,5 +138,17 @@
     "react": {
       "optional": true
     }
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "stackra": {
+    "kind": "package",
+    "tier": "lib",
+    "category": "data",
+    "runtimes": [
+      "isomorphic",
+      "node"
+    ]
   }
 }

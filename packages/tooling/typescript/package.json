@@ -3,7 +3,17 @@
   "version": "0.1.0",
   "private": true,
   "description": "Shared tsconfig presets. A workspace extends exactly one role preset and adds no compiler options of its own.",
+  "homepage": "https://github.com/figentra/stackra/tree/main/packages/tooling/typescript#readme",
+  "bugs": {
+    "url": "https://github.com/figentra/stackra/issues"
+  },
   "license": "MIT",
+  "author": "Figentra (https://figentra.com)",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/figentra/stackra.git",
+    "directory": "packages/tooling/typescript"
+  },
   "files": [
     "src/*.json",
     "README.md",
@@ -41,5 +51,16 @@
     "oxfmt": "catalog:quality",
     "oxlint": "catalog:quality",
     "vitest": "catalog:quality"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "stackra": {
+    "kind": "package",
+    "tier": "config",
+    "category": "tooling",
+    "runtimes": [
+      "node"
+    ]
   }
 }

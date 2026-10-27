@@ -3,7 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "description": "Pulumi programs for the free GCP foundation read from the root runway (ADR 0354): per environment a provider pinned to its project and region with cost labels, the data key, the files bucket (media CORS, versioning, CMEK), the GitHub Workload Identity deploy service account and, from the project's first environment, the monthly billing budget with its alert topic",
+  "homepage": "https://github.com/figentra/stackra/tree/main/packages/infrastructure/infra-gcp#readme",
+  "bugs": {
+    "url": "https://github.com/figentra/stackra/issues"
+  },
   "license": "MIT",
+  "author": "Figentra (https://figentra.com)",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/figentra/stackra.git",
@@ -91,5 +96,17 @@
   },
   "peerDependencies": {
     "@pulumi/pulumi": "catalog:infra"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "stackra": {
+    "kind": "package",
+    "tier": "lib",
+    "category": "infrastructure",
+    "runtimes": [
+      "isomorphic",
+      "node"
+    ]
   }
 }

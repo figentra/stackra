@@ -3,7 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra workflow: the Workflow and Signal kind bases, the @Step method decorator and the Run<W> and StepContext types; the native engine that runs a workflow's steps in process, records every run and step in a durable journal (Postgres by default, memory for tests), parks a run on a signal or event wait, retries with backoff, times out steps and runs, compensates completed steps in reverse, and pins each run to the version it started on; the building-block registry, the automation document kind with its check and dry run, versioned Automation records with AutomationService, workflow template packs, and agent plans run as ephemeral document workflows; the publisher-access check that pauses an automation whose publisher lost access; the cross-service service-acked contract; the checklist engine with locked steps, scope and user progress and industry profiles; the WorkflowRunner driver behind ctx.run and ctx.signal, and the in-process test driver",
+  "homepage": "https://github.com/figentra/stackra/tree/main/packages/runtime/workflow#readme",
+  "bugs": {
+    "url": "https://github.com/figentra/stackra/issues"
+  },
   "license": "MIT",
+  "author": "Figentra (https://figentra.com)",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/figentra/stackra.git",
@@ -101,5 +106,17 @@
     "tsdown": "catalog:build",
     "typescript": "catalog:build",
     "vitest": "catalog:quality"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "stackra": {
+    "kind": "package",
+    "tier": "lib",
+    "category": "runtime",
+    "runtimes": [
+      "isomorphic",
+      "node"
+    ]
   }
 }

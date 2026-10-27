@@ -1,10 +1,10 @@
-// Turborepo package configuration: extends the root turbo.jsonc and declares this member's one tier tag
-// (pnpm validate checks it matches the directory). Task overrides for this member only go here.
+// Turborepo package configuration: extends the root turbo.jsonc and declares this member's tags
+// (tier, category, runtimes; pnpm validate checks them). Member-only task overrides go here.
 // Owner: release-operations · Secrets: forbidden
 {
   "$schema": "https://turborepo.dev/schema.json",
   "extends": ["//"],
-  "tags": ["tier:app"],
+  "tags": ["tier:app", "runtime:node"],
   "tasks": {
     // The build reads tools/schemas at the working tree and at every `schemas@<version>` git tag (ADR 0284).
     // A new tag changes the output without changing any file turbo hashes, so a cached replay could deploy a

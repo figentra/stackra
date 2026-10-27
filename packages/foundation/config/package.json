@@ -3,7 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra configuration: the Config({ schema, env }) kind base, @Secret field references resolved blind through the SecretStore port, config layering, public env hydration, the env value parsers, useConfig and the testing module's withConfig and withSecrets, and the Infisical and AWS Secrets Manager SecretStore drivers",
+  "homepage": "https://github.com/figentra/stackra/tree/main/packages/foundation/config#readme",
+  "bugs": {
+    "url": "https://github.com/figentra/stackra/issues"
+  },
   "license": "MIT",
+  "author": "Figentra (https://figentra.com)",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/figentra/stackra.git",
@@ -128,5 +133,17 @@
     "react": {
       "optional": true
     }
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "stackra": {
+    "kind": "package",
+    "tier": "lib",
+    "category": "foundation",
+    "runtimes": [
+      "isomorphic",
+      "node"
+    ]
   }
 }

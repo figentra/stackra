@@ -3,7 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "description": "The Stackra Vite preset: serves the generated #stackra/* modules, wires gen's class-component pass, and turns a member's stackra.config.ts plus the generated options into one Vite config (React or React Router on Workers, Tailwind v4, per-locale pages, the PWA, prerender, budgets and source maps)",
+  "homepage": "https://github.com/figentra/stackra/tree/main/packages/developer/vite-plugin#readme",
+  "bugs": {
+    "url": "https://github.com/figentra/stackra/issues"
+  },
   "license": "MIT",
+  "author": "Figentra (https://figentra.com)",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/figentra/stackra.git",
@@ -76,5 +81,16 @@
   },
   "peerDependencies": {
     "vite": "catalog:frontend"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "stackra": {
+    "kind": "package",
+    "tier": "lib",
+    "category": "developer",
+    "runtimes": [
+      "node"
+    ]
   }
 }

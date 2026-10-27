@@ -2,7 +2,12 @@
   "name": "@stackra/scope",
   "version": "0.0.0",
   "description": "Stackra scope tree: levels declared as deployment data (ScopeConfig, ScopeConfig$) with their aliases, the ScopeNode model on an ltree path with its migration and its subtree move (the ScopeMoved event), the ScopeTree, ScopeResolver and GrantedScopes ports, the resolver chain (X-Scope-Path header, token claim, root), the tree depth entitlement, ActiveScopeService and useScope, rememberActiveScope for device apps (./native), and the scopeRefOf and fakeScopeTree test helpers (./testing)",
+  "homepage": "https://github.com/figentra/stackra/tree/main/packages/security/scope#readme",
+  "bugs": {
+    "url": "https://github.com/figentra/stackra/issues"
+  },
   "license": "MIT",
+  "author": "Figentra (https://figentra.com)",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/figentra/stackra.git",
@@ -144,5 +149,17 @@
     "react": {
       "optional": true
     }
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "stackra": {
+    "kind": "package",
+    "tier": "lib",
+    "category": "security",
+    "runtimes": [
+      "isomorphic",
+      "node"
+    ]
   }
 }

@@ -3,7 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra shipping: the carrier ports (rate quote, label with cancel, pickup with cancel, tracking, pickup point and locker search, return label) that OS integrations connectors implement, the CarrierGateways port that picks a carrier per scope and Market through the Connection, the DistanceMatrix and RouteSolver routing ports with memory drivers, tracking-state normalisation over a connector's code map, PDF and ZPL label documents, dimensional and chargeable weight, and a CarrierGateways fake in ./testing",
+  "homepage": "https://github.com/figentra/stackra/tree/main/packages/commerce/shipping#readme",
+  "bugs": {
+    "url": "https://github.com/figentra/stackra/issues"
+  },
   "license": "MIT",
+  "author": "Figentra (https://figentra.com)",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/figentra/stackra.git",
@@ -94,5 +99,17 @@
     "@stackra/testing": {
       "optional": true
     }
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "stackra": {
+    "kind": "package",
+    "tier": "lib",
+    "category": "commerce",
+    "runtimes": [
+      "isomorphic",
+      "node"
+    ]
   }
 }

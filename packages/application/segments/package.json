@@ -3,7 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra segments: named audiences over any subject model, dynamic (a @stackra/rules rule set) or manual (a static list), with membership materialised per segment and subject, recomputed on the subject's row changes through the outbox, on an hourly per-scope schedule and on a newly published revision, and membership-entered and membership-left integration events for every change",
+  "homepage": "https://github.com/figentra/stackra/tree/main/packages/application/segments#readme",
+  "bugs": {
+    "url": "https://github.com/figentra/stackra/issues"
+  },
   "license": "MIT",
+  "author": "Figentra (https://figentra.com)",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/figentra/stackra.git",
@@ -104,5 +109,17 @@
     "tsdown": "catalog:build",
     "typescript": "catalog:build",
     "vitest": "catalog:quality"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "stackra": {
+    "kind": "package",
+    "tier": "lib",
+    "category": "application",
+    "runtimes": [
+      "isomorphic",
+      "node"
+    ]
   }
 }

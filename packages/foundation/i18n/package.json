@@ -3,7 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra i18n: the Locale (seven languages and their overlays), NumberingSystem, HourCycle, LocaleUrlStrategy, LengthUnit and DisplayUnit enums, per-locale week start and clock (localeFormat), the I18nConfig configuration, the ICU message engine over namespaced catalogues with regional overlays, the typed key builder gen calls, the Arabic normaliser, digit switching, address, country, length and quantity formatting, the translation, geocoding and address-autocomplete ports (./contracts), and the React provider and formatting hooks",
+  "homepage": "https://github.com/figentra/stackra/tree/main/packages/foundation/i18n#readme",
+  "bugs": {
+    "url": "https://github.com/figentra/stackra/issues"
+  },
   "license": "MIT",
+  "author": "Figentra (https://figentra.com)",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/figentra/stackra.git",
@@ -111,5 +116,16 @@
     "react": {
       "optional": true
     }
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "stackra": {
+    "kind": "package",
+    "tier": "lib",
+    "category": "foundation",
+    "runtimes": [
+      "isomorphic"
+    ]
   }
 }

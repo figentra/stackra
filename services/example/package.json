@@ -3,7 +3,17 @@
   "version": "0.0.1",
   "private": true,
   "description": "Example service.",
+  "homepage": "https://github.com/figentra/stackra/tree/main/services/example#readme",
+  "bugs": {
+    "url": "https://github.com/figentra/stackra/issues"
+  },
   "license": "UNLICENSED",
+  "author": "Figentra (https://figentra.com)",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/figentra/stackra.git",
+    "directory": "services/example"
+  },
   "type": "module",
   "imports": {
     "#src/*": [
@@ -41,7 +51,15 @@
     "tsdown": "catalog:build",
     "typescript": "catalog:build"
   },
+  "engines": {
+    "node": ">=24.0.0"
+  },
   "stackra": {
+    "kind": "package",
+    "tier": "service",
+    "runtimes": [
+      "node"
+    ],
     "module": "./src/example.module.ts"
   }
 }

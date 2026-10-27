@@ -3,7 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra devices: the DeviceTelemetry, DeviceCommands, DeviceCredential, DeviceIdentity and DevicePairing ports a device app reports, takes commands, pairs and orders its offline calls through, the DeviceRegistry port with its memory driver, the stored identity and credential drivers, the DevicesConfig configuration with its shipped schema, the HTTP drivers over @stackra/transport, and the server's devices.device.acknowledged query",
+  "homepage": "https://github.com/figentra/stackra/tree/main/packages/runtime/devices#readme",
+  "bugs": {
+    "url": "https://github.com/figentra/stackra/issues"
+  },
   "license": "MIT",
+  "author": "Figentra (https://figentra.com)",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/figentra/stackra.git",
@@ -95,5 +100,17 @@
     "tsdown": "catalog:build",
     "typescript": "catalog:build",
     "vitest": "catalog:quality"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "stackra": {
+    "kind": "package",
+    "tier": "lib",
+    "category": "runtime",
+    "runtimes": [
+      "isomorphic",
+      "node"
+    ]
   }
 }

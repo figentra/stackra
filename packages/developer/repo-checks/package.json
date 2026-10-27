@@ -3,7 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "description": "The repository checks every Stackra repo runs through `stackra check`: config files, repository structure, the doc standard and lang catalogue completeness, as typed functions over the git file list",
+  "homepage": "https://github.com/figentra/stackra/tree/main/packages/developer/repo-checks#readme",
+  "bugs": {
+    "url": "https://github.com/figentra/stackra/issues"
+  },
   "license": "MIT",
+  "author": "Figentra (https://figentra.com)",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/figentra/stackra.git",
@@ -65,5 +70,16 @@
     "tsdown": "catalog:build",
     "typescript": "catalog:build",
     "vitest": "catalog:quality"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "stackra": {
+    "kind": "package",
+    "tier": "lib",
+    "category": "developer",
+    "runtimes": [
+      "node"
+    ]
   }
 }

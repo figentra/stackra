@@ -3,7 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "description": "The renderer layer shared by Stackra and Vellum: pure functions that write the neutral agent documents of @stackra/skills into each assistant's own layout (Claude Code, OpenCode, Kiro, Cursor and AGENTS.md)",
+  "homepage": "https://github.com/figentra/stackra/tree/main/packages/developer/renderers#readme",
+  "bugs": {
+    "url": "https://github.com/figentra/stackra/issues"
+  },
   "license": "MIT",
+  "author": "Figentra (https://figentra.com)",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/figentra/stackra.git",
@@ -65,5 +70,16 @@
     "tsdown": "catalog:build",
     "typescript": "catalog:build",
     "vitest": "catalog:quality"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "stackra": {
+    "kind": "package",
+    "tier": "lib",
+    "category": "developer",
+    "runtimes": [
+      "isomorphic"
+    ]
   }
 }

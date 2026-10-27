@@ -3,7 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra builder: the one editor kernel for every builder document kind: a document model of block instances, insert, move, remove and set-prop changes with undo and redo, selection, a check of each block against the registered blocks, document parsing, the Yjs binding through @stackra/collaboration, the DocumentEditor kernel of structured kinds (the automation editor), the form document kind with its checks and answers schema, and the useEditor, useSelection, useSharedEditor and useDocumentEditor hooks with no UI chrome",
+  "homepage": "https://github.com/figentra/stackra/tree/main/packages/experience/builder#readme",
+  "bugs": {
+    "url": "https://github.com/figentra/stackra/issues"
+  },
   "license": "MIT",
+  "author": "Figentra (https://figentra.com)",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/figentra/stackra.git",
@@ -116,5 +121,16 @@
     "yjs": {
       "optional": true
     }
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "stackra": {
+    "kind": "package",
+    "tier": "lib",
+    "category": "experience",
+    "runtimes": [
+      "isomorphic"
+    ]
   }
 }

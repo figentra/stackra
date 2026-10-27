@@ -3,7 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra access log: the @AccessLogged class facet and its Explorer, which write one access record per call of a marked action, query or service to the AccessLogSink port; a per-tenant SHA-256 hash chain over the records (linkAccessRecord, findChainBreak); memory and Postgres sinks; the append-only AccessLogEntry table with its migration and the t.dataClassification() macro; the retention job; and the sink fake and toHaveLoggedAccess matcher for tests",
+  "homepage": "https://github.com/figentra/stackra/tree/main/packages/security/access-log#readme",
+  "bugs": {
+    "url": "https://github.com/figentra/stackra/issues"
+  },
   "license": "MIT",
+  "author": "Figentra (https://figentra.com)",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/figentra/stackra.git",
@@ -118,5 +123,17 @@
     "@stackra/testing": {
       "optional": true
     }
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "stackra": {
+    "kind": "package",
+    "tier": "lib",
+    "category": "security",
+    "runtimes": [
+      "isomorphic",
+      "node"
+    ]
   }
 }

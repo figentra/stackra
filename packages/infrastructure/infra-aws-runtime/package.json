@@ -3,7 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "description": "Pulumi programs for the AWS runtime resources members declare in runway.yaml: per environment, the SQS queues (with dead-letter queues and, on the sns-sqs provider, an SNS topic each), the Valkey caches (the shared one and each dedicated one) and the S3 buckets, derived from the root and service runways",
+  "homepage": "https://github.com/figentra/stackra/tree/main/packages/infrastructure/infra-aws-runtime#readme",
+  "bugs": {
+    "url": "https://github.com/figentra/stackra/issues"
+  },
   "license": "MIT",
+  "author": "Figentra (https://figentra.com)",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/figentra/stackra.git",
@@ -80,5 +85,17 @@
   },
   "peerDependencies": {
     "@pulumi/pulumi": "catalog:infra"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "stackra": {
+    "kind": "package",
+    "tier": "lib",
+    "category": "infrastructure",
+    "runtimes": [
+      "isomorphic",
+      "node"
+    ]
   }
 }

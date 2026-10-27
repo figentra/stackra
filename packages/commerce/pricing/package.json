@@ -3,7 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "description": "Pricing on @stackra/money: price points, graduated tiers, the pure price evaluation over price lists by currency, Market, sales channel and date with fixed, graduated and formula prices, the tax rate-table engine and the TaxProvider port",
+  "homepage": "https://github.com/figentra/stackra/tree/main/packages/commerce/pricing#readme",
+  "bugs": {
+    "url": "https://github.com/figentra/stackra/issues"
+  },
   "license": "MIT",
+  "author": "Figentra (https://figentra.com)",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/figentra/stackra.git",
@@ -76,5 +81,16 @@
     "tsdown": "catalog:build",
     "typescript": "catalog:build",
     "vitest": "catalog:quality"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "stackra": {
+    "kind": "package",
+    "tier": "lib",
+    "category": "commerce",
+    "runtimes": [
+      "isomorphic"
+    ]
   }
 }

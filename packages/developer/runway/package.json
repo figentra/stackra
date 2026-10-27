@@ -3,7 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "description": "Runway v3: the member (WHAT) and root (WHERE) runway schemas with their JSON Schema files, the topology placement check, and the readers of the resolved dev ports and release facts that generated configs call",
+  "homepage": "https://github.com/figentra/stackra/tree/main/packages/developer/runway#readme",
+  "bugs": {
+    "url": "https://github.com/figentra/stackra/issues"
+  },
   "license": "MIT",
+  "author": "Figentra (https://figentra.com)",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/figentra/stackra.git",
@@ -79,5 +84,17 @@
     "tsdown": "catalog:build",
     "typescript": "catalog:build",
     "vitest": "catalog:quality"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "stackra": {
+    "kind": "package",
+    "tier": "lib",
+    "category": "developer",
+    "runtimes": [
+      "isomorphic",
+      "node"
+    ]
   }
 }

@@ -3,7 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra client state: the Store({ persist }) kind base whose fields are the state and whose set is the only writer, persisted through client storage under a derived key, signals, useStore and useSignal, StateConfig with its shipped schema, and the createStore and mountStore test helpers",
+  "homepage": "https://github.com/figentra/stackra/tree/main/packages/state/state#readme",
+  "bugs": {
+    "url": "https://github.com/figentra/stackra/issues"
+  },
   "license": "MIT",
+  "author": "Figentra (https://figentra.com)",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/figentra/stackra.git",
@@ -107,5 +112,16 @@
     "react": {
       "optional": true
     }
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "stackra": {
+    "kind": "package",
+    "tier": "lib",
+    "category": "state",
+    "runtimes": [
+      "isomorphic"
+    ]
   }
 }

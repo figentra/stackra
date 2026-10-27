@@ -3,7 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra Design System Pro components for Stackra's own apps only: the @stackra/ui props vocabulary over HeroUI Pro on web and HeroUI Native Pro on native. Published only to Figentra's restricted Keygen channel, never to npmjs.",
+  "homepage": "https://github.com/figentra/stackra/tree/main/packages/design-system/ui-pro#readme",
+  "bugs": {
+    "url": "https://github.com/figentra/stackra/issues"
+  },
   "license": "MIT",
+  "author": "Figentra (https://figentra.com)",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/figentra/stackra.git",
@@ -342,5 +347,19 @@
     "victory-native": {
       "optional": true
     }
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "stackra": {
+    "kind": "package",
+    "tier": "lib",
+    "category": "design-system",
+    "runtimes": [
+      "isomorphic",
+      "node",
+      "browser",
+      "react-native"
+    ]
   }
 }

@@ -3,7 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra actions: the Action, Query, Precondition, ExtensionPoint, Extension and Interceptor kind bases, the fixed action pipeline (tenancy, permission, precondition, entitlement, flag, idempotency, interceptors, handle), the idempotency and rate-limit stores behind ports, RequestContext, the RateLimitConfig configuration and the action testing helpers, the approval step (ApprovalGate), effect tags (bulk included), structural actions guarded by LiveConfigurationGuard, meters with the usage.recorded event, the outbox AuditTrail driver, and the Valkey idempotency and rate-limit stores with StoresConfig",
+  "homepage": "https://github.com/figentra/stackra/tree/main/packages/application/actions#readme",
+  "bugs": {
+    "url": "https://github.com/figentra/stackra/issues"
+  },
   "license": "MIT",
+  "author": "Figentra (https://figentra.com)",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/figentra/stackra.git",
@@ -112,5 +117,17 @@
     "@stackra/testing": {
       "optional": true
     }
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "stackra": {
+    "kind": "package",
+    "tier": "lib",
+    "category": "application",
+    "runtimes": [
+      "isomorphic",
+      "node"
+    ]
   }
 }

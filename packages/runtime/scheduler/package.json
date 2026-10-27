@@ -3,7 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra scheduler: cron dispatch of the actions whose job option carries a cron, once for the platform or once per scope, and per-scope schedules kept as data with a time zone and a misfire policy. SchedulerService ticks once per minute on one runner (Locks.tryWith), catches up missed runs within a bounded window and pushes each run through QueueService; a five-field cron parser, the ScheduleDriver port with the memory and Postgres drivers, the CronScopes port, SchedulerConfig, and the tick test helper In SaaS, encoreCronJobs declares one Encore CronJob per cron action (fired through SchedulerService.fire) and a minute CronJob for the stored schedules.",
+  "homepage": "https://github.com/figentra/stackra/tree/main/packages/runtime/scheduler#readme",
+  "bugs": {
+    "url": "https://github.com/figentra/stackra/issues"
+  },
   "license": "MIT",
+  "author": "Figentra (https://figentra.com)",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/figentra/stackra.git",
@@ -115,5 +120,17 @@
     "@stackra/testing": {
       "optional": true
     }
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "stackra": {
+    "kind": "package",
+    "tier": "lib",
+    "category": "runtime",
+    "runtimes": [
+      "isomorphic",
+      "node"
+    ]
   }
 }

@@ -3,7 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "description": "Dependency-free pure helpers for Stackra packages and services, grown on demand: time and calendar-month shifts, exact quantities with units, canonical JSON and its hash, GS1 restricted-circulation GTINs and a Code 128 encoder",
+  "homepage": "https://github.com/figentra/stackra/tree/main/packages/foundation/support#readme",
+  "bugs": {
+    "url": "https://github.com/figentra/stackra/issues"
+  },
   "license": "MIT",
+  "author": "Figentra (https://figentra.com)",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/figentra/stackra.git",
@@ -60,5 +65,16 @@
     "tsdown": "catalog:build",
     "typescript": "catalog:build",
     "vitest": "catalog:quality"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "stackra": {
+    "kind": "package",
+    "tier": "lib",
+    "category": "foundation",
+    "runtimes": [
+      "isomorphic"
+    ]
   }
 }

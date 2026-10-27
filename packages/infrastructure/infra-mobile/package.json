@@ -3,7 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "description": "Mobile release infrastructure: the release plan read from the root and mobile runways (EAS project and environments, store records, push credentials and EAS-managed signing) with the owner steps no API can take, and its Pulumi slice, which resolves and checks the stack config",
+  "homepage": "https://github.com/figentra/stackra/tree/main/packages/infrastructure/infra-mobile#readme",
+  "bugs": {
+    "url": "https://github.com/figentra/stackra/issues"
+  },
   "license": "MIT",
+  "author": "Figentra (https://figentra.com)",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/figentra/stackra.git",
@@ -77,5 +82,17 @@
     "tsdown": "catalog:build",
     "typescript": "catalog:build",
     "vitest": "catalog:quality"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "stackra": {
+    "kind": "package",
+    "tier": "lib",
+    "category": "infrastructure",
+    "runtimes": [
+      "isomorphic",
+      "node"
+    ]
   }
 }

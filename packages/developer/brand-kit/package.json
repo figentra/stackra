@@ -3,7 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra brand kit: the generic brand generator that reads <repo>/assets/brand/kit.json and writes tokens, HeroUI CSS, app and adaptive icons, splash screens, favicons, the web manifest and store-screenshot frames, with a deterministic --check and an asset manifest of every generated file",
+  "homepage": "https://github.com/figentra/stackra/tree/main/packages/developer/brand-kit#readme",
+  "bugs": {
+    "url": "https://github.com/figentra/stackra/issues"
+  },
   "license": "MIT",
+  "author": "Figentra (https://figentra.com)",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/figentra/stackra.git",
@@ -82,5 +87,17 @@
     "tsdown": "catalog:build",
     "typescript": "catalog:build",
     "vitest": "catalog:quality"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "stackra": {
+    "kind": "package",
+    "tier": "lib",
+    "category": "developer",
+    "runtimes": [
+      "isomorphic",
+      "node"
+    ]
   }
 }

@@ -3,7 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra SEO: the SEO chain of a route (app defaults, static seo, meta(), tenant record), hreflang alternates and locale paths callable from client code, the JSON-LD escaper, canonical redirects, robots groups per crawler, paged sitemaps within the protocol limits, the SeoConfig configuration, and the Open Graph image renderer for servers and Workers",
+  "homepage": "https://github.com/figentra/stackra/tree/main/packages/cross-cutting/seo#readme",
+  "bugs": {
+    "url": "https://github.com/figentra/stackra/issues"
+  },
   "license": "MIT",
+  "author": "Figentra (https://figentra.com)",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/figentra/stackra.git",
@@ -105,5 +110,18 @@
     "tsdown": "catalog:build",
     "typescript": "catalog:build",
     "vitest": "catalog:quality"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "stackra": {
+    "kind": "package",
+    "tier": "lib",
+    "category": "cross-cutting",
+    "runtimes": [
+      "isomorphic",
+      "node",
+      "worker"
+    ]
   }
 }

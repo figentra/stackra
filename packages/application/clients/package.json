@@ -3,7 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra generated-client runtime: the ref factories gen writes into #stackra/clients (actions, queries, events, refusals, shapes, widgets, modules, permissions, intents), ServiceClient with call and queue, the HTTP ClientTransport and MutationSender drivers, the React query and action hooks, the Worker's public clients and forwarded facts, and fakeClient",
+  "homepage": "https://github.com/figentra/stackra/tree/main/packages/application/clients#readme",
+  "bugs": {
+    "url": "https://github.com/figentra/stackra/issues"
+  },
   "license": "MIT",
+  "author": "Figentra (https://figentra.com)",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/figentra/stackra.git",
@@ -142,5 +147,18 @@
     "react": {
       "optional": true
     }
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "stackra": {
+    "kind": "package",
+    "tier": "lib",
+    "category": "application",
+    "runtimes": [
+      "isomorphic",
+      "node",
+      "worker"
+    ]
   }
 }

@@ -3,7 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "description": "The leaf vocabulary of Stackra: the Port and Enum bases, actor and id types, Duration, platform enums, the core ports and the stackra.config.ts helpers, the Tracer port, and the AES-GCM FieldCipher, memory KeyProvider and no-op Tracer drivers",
+  "homepage": "https://github.com/figentra/stackra/tree/main/packages/foundation/contracts#readme",
+  "bugs": {
+    "url": "https://github.com/figentra/stackra/issues"
+  },
   "license": "MIT",
+  "author": "Figentra (https://figentra.com)",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/figentra/stackra.git",
@@ -60,5 +65,16 @@
     "tsdown": "catalog:build",
     "typescript": "catalog:build",
     "vitest": "catalog:quality"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "stackra": {
+    "kind": "package",
+    "tier": "lib",
+    "category": "foundation",
+    "runtimes": [
+      "isomorphic"
+    ]
   }
 }

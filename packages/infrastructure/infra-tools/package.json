@@ -3,7 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "description": "Pulumi program for the self-hosted tools stack each region runs (owner decision R3-5): Documenso, the OCR server, Nominatim and Photon on a regional OpenStreetMap extract, LibreTranslate and Chatwoot, planned from the root runway's providers.tools block, with the endpoints OS integrations turns into managed Connections",
+  "homepage": "https://github.com/figentra/stackra/tree/main/packages/infrastructure/infra-tools#readme",
+  "bugs": {
+    "url": "https://github.com/figentra/stackra/issues"
+  },
   "license": "MIT",
+  "author": "Figentra (https://figentra.com)",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/figentra/stackra.git",
@@ -80,5 +85,17 @@
   },
   "peerDependencies": {
     "@pulumi/pulumi": "catalog:infra"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "stackra": {
+    "kind": "package",
+    "tier": "lib",
+    "category": "infrastructure",
+    "runtimes": [
+      "isomorphic",
+      "node"
+    ]
   }
 }

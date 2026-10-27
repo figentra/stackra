@@ -3,7 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "description": "GitHub as code: the repository plan read from the root runway (settings, deployment environments with their reviewers and deploy refs, Actions variables, the CI secret names) and the committed rulesets and branch protection, plus the Pulumi slice that applies them and pins the OIDC subject CI trusts",
+  "homepage": "https://github.com/figentra/stackra/tree/main/packages/infrastructure/infra-github#readme",
+  "bugs": {
+    "url": "https://github.com/figentra/stackra/issues"
+  },
   "license": "MIT",
+  "author": "Figentra (https://figentra.com)",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/figentra/stackra.git",
@@ -78,5 +83,17 @@
     "tsdown": "catalog:build",
     "typescript": "catalog:build",
     "vitest": "catalog:quality"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "stackra": {
+    "kind": "package",
+    "tier": "lib",
+    "category": "infrastructure",
+    "runtimes": [
+      "isomorphic",
+      "node"
+    ]
   }
 }

@@ -3,7 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra theming: the colour scheme a user picks (light, dark, system), persisted per device and resolved against the system preference, the ThemingConfig look over @stackra/tokens themes with its shipped schema, the SystemColorScheme port with its memory, browser and appearance drivers, useColorScheme and fakeColorScheme",
+  "homepage": "https://github.com/figentra/stackra/tree/main/packages/state/theming#readme",
+  "bugs": {
+    "url": "https://github.com/figentra/stackra/issues"
+  },
   "license": "MIT",
+  "author": "Figentra (https://figentra.com)",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/figentra/stackra.git",
@@ -148,5 +153,19 @@
     "react-native": {
       "optional": true
     }
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "stackra": {
+    "kind": "package",
+    "tier": "lib",
+    "category": "state",
+    "runtimes": [
+      "isomorphic",
+      "node",
+      "browser",
+      "react-native"
+    ]
   }
 }

@@ -3,7 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra entitlements: the Entitlement({ kind, counts }) kind for plan rights (feature, limit, module), the EntitlementSource, EntitlementUsage, PlanSnapshots and SeatLedger ports, the plan driver of the action pipeline's entitlement step with soft limits and grace, the plan-snapshot source, reserve-then-commit at a limit, the seat-kind meter, LimitReachedError, SeatLimitReachedError and fakeEntitlements",
+  "homepage": "https://github.com/figentra/stackra/tree/main/packages/security/entitlements#readme",
+  "bugs": {
+    "url": "https://github.com/figentra/stackra/issues"
+  },
   "license": "MIT",
+  "author": "Figentra (https://figentra.com)",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/figentra/stackra.git",
@@ -87,5 +92,17 @@
     "tsdown": "catalog:build",
     "typescript": "catalog:build",
     "vitest": "catalog:quality"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "stackra": {
+    "kind": "package",
+    "tier": "lib",
+    "category": "security",
+    "runtimes": [
+      "isomorphic",
+      "node"
+    ]
   }
 }

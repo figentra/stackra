@@ -3,7 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra versioning: the Change kind base for integration event versions and dated response changes, the transforms that serve an older version (downgrade, upgrade), and the Stackra-Version resolution with its Deprecation and Sunset headers",
+  "homepage": "https://github.com/figentra/stackra/tree/main/packages/communication/versioning#readme",
+  "bugs": {
+    "url": "https://github.com/figentra/stackra/issues"
+  },
   "license": "MIT",
+  "author": "Figentra (https://figentra.com)",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/figentra/stackra.git",
@@ -69,5 +74,16 @@
     "typescript": "catalog:build",
     "vitest": "catalog:quality",
     "zod": "catalog:"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "stackra": {
+    "kind": "package",
+    "tier": "lib",
+    "category": "communication",
+    "runtimes": [
+      "isomorphic"
+    ]
   }
 }

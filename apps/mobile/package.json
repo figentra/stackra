@@ -3,7 +3,17 @@
   "version": "0.0.1",
   "private": true,
   "description": "Stackra mobile app — Expo SDK 57, code-based React Navigation (native stack + native tabs, iOS 26 Liquid Glass), HeroUI Native + Uniwind.",
+  "homepage": "https://github.com/figentra/stackra/tree/main/apps/mobile#readme",
+  "bugs": {
+    "url": "https://github.com/figentra/stackra/issues"
+  },
   "license": "UNLICENSED",
+  "author": "Figentra (https://figentra.com)",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/figentra/stackra.git",
+    "directory": "apps/mobile"
+  },
   "main": "src/main.ts",
   "imports": {
     "#src/*": [
@@ -87,5 +97,15 @@
     "oxlint": "catalog:quality",
     "typescript": "catalog:mobile",
     "vitest": "catalog:quality"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "stackra": {
+    "kind": "package",
+    "tier": "app",
+    "runtimes": [
+      "react-native"
+    ]
   }
 }

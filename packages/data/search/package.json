@@ -3,7 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra search: the SearchDriver port, the Search reader over a model's @Searchable index (ranked find and cursor pages, indexing, removal, reindex), the memory driver, the Postgres hybrid driver (full-text and trigram, fused by reciprocal rank), the t.searchable(...) migration macro, the text-function migration and SearchConfig with its shipped schema",
+  "homepage": "https://github.com/figentra/stackra/tree/main/packages/data/search#readme",
+  "bugs": {
+    "url": "https://github.com/figentra/stackra/issues"
+  },
   "license": "MIT",
+  "author": "Figentra (https://figentra.com)",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/figentra/stackra.git",
@@ -97,5 +102,17 @@
     "tsdown": "catalog:build",
     "typescript": "catalog:build",
     "vitest": "catalog:quality"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "stackra": {
+    "kind": "package",
+    "tier": "lib",
+    "category": "data",
+    "runtimes": [
+      "isomorphic",
+      "node"
+    ]
   }
 }

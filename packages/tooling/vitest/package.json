@@ -3,7 +3,17 @@
   "version": "0.1.0",
   "private": true,
   "description": "Shared vitest presets by member role: libraryPreset, servicePreset, appPreset, mobilePreset and toolingPreset, over the base, decorators and react presets and the coverage gate.",
+  "homepage": "https://github.com/figentra/stackra/tree/main/packages/tooling/vitest#readme",
+  "bugs": {
+    "url": "https://github.com/figentra/stackra/issues"
+  },
   "license": "MIT",
+  "author": "Figentra (https://figentra.com)",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/figentra/stackra.git",
+    "directory": "packages/tooling/vitest"
+  },
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
@@ -30,5 +40,16 @@
     "oxfmt": "catalog:quality",
     "oxlint": "catalog:quality",
     "typescript": "catalog:build"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "stackra": {
+    "kind": "package",
+    "tier": "config",
+    "category": "tooling",
+    "runtimes": [
+      "node"
+    ]
   }
 }

@@ -3,7 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra server disks: the FileSystem port with memory, local, Encore bucket, S3/R2 and Google Cloud Storage drivers, the Electron main-process driver, and FilesystemConfig with its shipped schema",
+  "homepage": "https://github.com/figentra/stackra/tree/main/packages/data/filesystem#readme",
+  "bugs": {
+    "url": "https://github.com/figentra/stackra/issues"
+  },
   "license": "MIT",
+  "author": "Figentra (https://figentra.com)",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/figentra/stackra.git",
@@ -113,5 +118,17 @@
     "electron": {
       "optional": true
     }
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "stackra": {
+    "kind": "package",
+    "tier": "lib",
+    "category": "data",
+    "runtimes": [
+      "isomorphic",
+      "node"
+    ]
   }
 }

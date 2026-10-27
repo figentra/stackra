@@ -3,7 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra tab coordination: leader election between the tabs and windows of one device through Web Locks, with a BroadcastChannel heartbeat fallback and an in-memory fallback, the leader flag as a @stackra/state signal, and withTabLock for one task at a time",
+  "homepage": "https://github.com/figentra/stackra/tree/main/packages/state/coordinator#readme",
+  "bugs": {
+    "url": "https://github.com/figentra/stackra/issues"
+  },
   "license": "MIT",
+  "author": "Figentra (https://figentra.com)",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/figentra/stackra.git",
@@ -69,5 +74,16 @@
   },
   "peerDependencies": {
     "react": "catalog:frontend"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "stackra": {
+    "kind": "package",
+    "tier": "lib",
+    "category": "state",
+    "runtimes": [
+      "isomorphic"
+    ]
   }
 }

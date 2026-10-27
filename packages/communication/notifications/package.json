@@ -3,7 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra notifications: the Notification({ category }) kind base, Recipient, the Notifier port with its memory driver and NotificationsConfig, the mail, SMS, WhatsApp, push, in-app and chat channel ports, connection transports that send through the provider chosen per tenant and Market over the host's vendor connectors (OS integrations), Web Push with dead-device revocation, the template cascade with content-free variants, quiet hours with mandatory categories, escalation, the .mail.tsx class-component bodies rendered with useMail, and the notifications Notifier driver (./node)",
+  "homepage": "https://github.com/figentra/stackra/tree/main/packages/communication/notifications#readme",
+  "bugs": {
+    "url": "https://github.com/figentra/stackra/issues"
+  },
   "license": "MIT",
+  "author": "Figentra (https://figentra.com)",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/figentra/stackra.git",
@@ -137,5 +142,17 @@
     "react-dom": {
       "optional": true
     }
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "stackra": {
+    "kind": "package",
+    "tier": "lib",
+    "category": "communication",
+    "runtimes": [
+      "isomorphic",
+      "node"
+    ]
   }
 }

@@ -3,7 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra module catalogue validation for a registry service: the CatalogueManifest shape of a published stackra.manifest.json and validateCatalogue, which checks a set of manifests for structure, duplicate members, identity collisions, foreign namespaces, unknown modules and dependencies, and dependency cycles, returning deterministic diagnostics; plus the app market records the registry carries (AppReview with ReviewState and canTransitionReview, DeveloperSandbox, FeeSchedule, PartnerPayout with computePartnerPayout) and the edition install plan (EditionBundle, planEditionInstall)",
+  "homepage": "https://github.com/figentra/stackra/tree/main/packages/application/registry#readme",
+  "bugs": {
+    "url": "https://github.com/figentra/stackra/issues"
+  },
   "license": "MIT",
+  "author": "Figentra (https://figentra.com)",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/figentra/stackra.git",
@@ -67,5 +72,16 @@
     "typescript": "catalog:build",
     "vitest": "catalog:quality",
     "yaml": "catalog:"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "stackra": {
+    "kind": "package",
+    "tier": "lib",
+    "category": "application",
+    "runtimes": [
+      "isomorphic"
+    ]
   }
 }

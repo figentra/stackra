@@ -3,7 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra feature flags: the Flag({ default, expires, removalIssue, scopes }) kind, typed flag refs, the FlagProvider port with its config and PostHog drivers, the FlagReader, FeatureFlagsConfig with its shipped schema, useFlag and fakeFlags, and the feature-flags oxlint plugin with its no-plan-targeting rule",
+  "homepage": "https://github.com/figentra/stackra/tree/main/packages/state/feature-flags#readme",
+  "bugs": {
+    "url": "https://github.com/figentra/stackra/issues"
+  },
   "license": "MIT",
+  "author": "Figentra (https://figentra.com)",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/figentra/stackra.git",
@@ -124,5 +129,17 @@
     "react": {
       "optional": true
     }
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "stackra": {
+    "kind": "package",
+    "tier": "lib",
+    "category": "state",
+    "runtimes": [
+      "isomorphic",
+      "node"
+    ]
   }
 }

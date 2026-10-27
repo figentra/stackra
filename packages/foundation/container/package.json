@@ -3,7 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "description": "The Stackra DI and kind machinery: classes are tokens, gen-written wiring, createKind, createDecorator, Driver(Port), Lifetime, Explorer, DiscoveryService, Named, Module, Service and the testing module",
+  "homepage": "https://github.com/figentra/stackra/tree/main/packages/foundation/container#readme",
+  "bugs": {
+    "url": "https://github.com/figentra/stackra/issues"
+  },
   "license": "MIT",
+  "author": "Figentra (https://figentra.com)",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/figentra/stackra.git",
@@ -96,5 +101,17 @@
     "react": {
       "optional": true
     }
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "stackra": {
+    "kind": "package",
+    "tier": "lib",
+    "category": "foundation",
+    "runtimes": [
+      "isomorphic",
+      "node"
+    ]
   }
 }

@@ -3,7 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "description": "The Stackra compiler: discovery on the TypeScript 7 API with a TypeScript 6 fallback, derived identities and the committed manifest, the shape compiler, wiring, the member module and entries, the openapi projection, the class-component compiler and the manifest contract helpers",
+  "homepage": "https://github.com/figentra/stackra/tree/main/packages/developer/gen#readme",
+  "bugs": {
+    "url": "https://github.com/figentra/stackra/issues"
+  },
   "license": "MIT",
+  "author": "Figentra (https://figentra.com)",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/figentra/stackra.git",
@@ -100,5 +105,17 @@
     "oxlint": "catalog:quality",
     "tsdown": "catalog:build",
     "vitest": "catalog:quality"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "stackra": {
+    "kind": "package",
+    "tier": "lib",
+    "category": "developer",
+    "runtimes": [
+      "isomorphic",
+      "node"
+    ]
   }
 }

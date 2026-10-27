@@ -3,7 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra loyalty kit, the golden capability kit: points accounts, tiers, earning and redemption maths behind the LoyaltyLedger and LoyaltyMembers ports, memory and Postgres ledger drivers (the Postgres one on @stackra/ledger's journal, floored at zero), the loyalty account permissions and policy, the enroll, freeze, expire, redeem and confirm actions, the redemption workflow and its signal, the balance and points-issued queries, versioned events, an extension point with the tier multiplier, settings, the panel resource, overview document and two widgets, web and native renderers, and the members fake, points fixture and balance matcher",
+  "homepage": "https://github.com/figentra/stackra/tree/main/packages/commerce/loyalty-kit#readme",
+  "bugs": {
+    "url": "https://github.com/figentra/stackra/issues"
+  },
   "license": "MIT",
+  "author": "Figentra (https://figentra.com)",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/figentra/stackra.git",
@@ -167,5 +172,19 @@
     "react-native": {
       "optional": true
     }
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "stackra": {
+    "kind": "package",
+    "tier": "lib",
+    "category": "commerce",
+    "runtimes": [
+      "isomorphic",
+      "node",
+      "browser",
+      "react-native"
+    ]
   }
 }

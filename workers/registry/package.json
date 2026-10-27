@@ -3,7 +3,17 @@
   "version": "0.0.1",
   "private": true,
   "description": "The Stackra registry: the npm-compatible Cloudflare Worker behind npm.stackra.figentra.com (R2 tarballs, D1 metadata, KV caches, the kinds catalogue).",
+  "homepage": "https://github.com/figentra/stackra/tree/main/workers/registry#readme",
+  "bugs": {
+    "url": "https://github.com/figentra/stackra/issues"
+  },
   "license": "UNLICENSED",
+  "author": "Figentra (https://figentra.com)",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/figentra/stackra.git",
+    "directory": "workers/registry"
+  },
   "type": "module",
   "imports": {
     "#src/*": [
@@ -34,5 +44,15 @@
     "typescript": "catalog:build",
     "vitest": "catalog:quality",
     "wrangler": "catalog:deploy"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "stackra": {
+    "kind": "package",
+    "tier": "app",
+    "runtimes": [
+      "worker"
+    ]
   }
 }

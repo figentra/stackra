@@ -3,7 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "description": "Market-pack loader: verifies signed, content-hashed market packs, resolves overlays and product sections under a tenant's pins and accepted statuses, answers the value of a key for a market on a date, picks the market of a record's subject per rule kind, stores and fetches signed packs by content hash, and exposes legal floors to settings, facts to rules and the review and launch gate of each pack",
+  "homepage": "https://github.com/figentra/stackra/tree/main/packages/foundation/market-packs#readme",
+  "bugs": {
+    "url": "https://github.com/figentra/stackra/issues"
+  },
   "license": "MIT",
+  "author": "Figentra (https://figentra.com)",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/figentra/stackra.git",
@@ -85,5 +90,17 @@
     "tsdown": "catalog:build",
     "typescript": "catalog:build",
     "vitest": "catalog:quality"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "stackra": {
+    "kind": "package",
+    "tier": "lib",
+    "category": "foundation",
+    "runtimes": [
+      "isomorphic",
+      "node"
+    ]
   }
 }

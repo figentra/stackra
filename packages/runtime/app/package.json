@@ -3,7 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra app runtime: createApp per runtime target (server, worker, browser, native, desktop) returning that target's app object, the shared boot from the generated wiring, the client Contexts, and the Controller kind for raw HTTP",
+  "homepage": "https://github.com/figentra/stackra/tree/main/packages/runtime/app#readme",
+  "bugs": {
+    "url": "https://github.com/figentra/stackra/issues"
+  },
   "license": "MIT",
+  "author": "Figentra (https://figentra.com)",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/figentra/stackra.git",
@@ -176,5 +181,20 @@
     "react-router": {
       "optional": true
     }
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "stackra": {
+    "kind": "package",
+    "tier": "lib",
+    "category": "runtime",
+    "runtimes": [
+      "isomorphic",
+      "node",
+      "browser",
+      "worker",
+      "react-native"
+    ]
   }
 }

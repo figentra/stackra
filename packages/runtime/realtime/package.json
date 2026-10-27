@@ -3,7 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra realtime: the channel hub that delivers data-free broadcast refreshes by audience and permission, the RealtimeDriver (server) and RealtimeTransport (client) ports with their memory, SSE and WebSocket drivers, the reconnecting client connection, RealtimeConfig with its shipped schema, useRealtimeConnection, useSubscription and fakeRealtime, the RealtimeFanout port with the local and Valkey pub/sub drivers and the RealtimeRelay across instances, and the collaboration rooms of ADR 0346 (RealtimeRooms with its caps and room_limit_reached)",
+  "homepage": "https://github.com/figentra/stackra/tree/main/packages/runtime/realtime#readme",
+  "bugs": {
+    "url": "https://github.com/figentra/stackra/issues"
+  },
   "license": "MIT",
+  "author": "Figentra (https://figentra.com)",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/figentra/stackra.git",
@@ -131,5 +136,17 @@
     "react": {
       "optional": true
     }
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "stackra": {
+    "kind": "package",
+    "tier": "lib",
+    "category": "runtime",
+    "runtimes": [
+      "isomorphic",
+      "node"
+    ]
   }
 }

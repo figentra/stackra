@@ -3,7 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra visitor consent: decline by default, Global Privacy Control refuses, the decision stored with its policy version (ADR 0298); the ConsentConfig configuration with its shipped schema, the ConsentLedger, the ConsentStore port with cookie, storage and memory drivers, the React useConsent hook and the fakeConsent test helper; the server's versioned terms acceptance and consent proofs (ConsentProofService over the ConsentProofStore and ConsentAuthority ports), consent on behalf of another, and the cookie banner, consent preferences, legal page and terms prompt (./ui)",
+  "homepage": "https://github.com/figentra/stackra/tree/main/packages/security/consent#readme",
+  "bugs": {
+    "url": "https://github.com/figentra/stackra/issues"
+  },
   "license": "MIT",
+  "author": "Figentra (https://figentra.com)",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/figentra/stackra.git",
@@ -134,5 +139,18 @@
     "react": {
       "optional": true
     }
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "stackra": {
+    "kind": "package",
+    "tier": "lib",
+    "category": "security",
+    "runtimes": [
+      "isomorphic",
+      "node",
+      "browser"
+    ]
   }
 }

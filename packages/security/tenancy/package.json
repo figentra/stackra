@@ -3,7 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra tenancy: tenant isolation in Postgres (the BelongsToTenant trait, the t.belongsToTenant() macro with its generated equality policy on tenant_id, TenantIsolationService.withTenant), the tenant level contributed to the scope tree as data (TenancyScopes, TENANT_SCOPE_LEVEL, TENANT_SCOPE_ALIAS), the tenancy step of the scope resolver chain, and the client's TenantSwitcher with useTenant and useTenantSwitcher, sandbox tenants (SandboxTenantService) and consented cross-tenant shares (TenantShareService, revocationPlan) with their ports and memory drivers, the nullable BelongsToTenantOrPlatform, tenant tokens for anonymous calls (TenantTokenService), the TenantBillingContacts port, and test helpers in ./testing",
+  "homepage": "https://github.com/figentra/stackra/tree/main/packages/security/tenancy#readme",
+  "bugs": {
+    "url": "https://github.com/figentra/stackra/issues"
+  },
   "license": "MIT",
+  "author": "Figentra (https://figentra.com)",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/figentra/stackra.git",
@@ -118,5 +123,17 @@
     "react": {
       "optional": true
     }
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "stackra": {
+    "kind": "package",
+    "tier": "lib",
+    "category": "security",
+    "runtimes": [
+      "isomorphic",
+      "node"
+    ]
   }
 }

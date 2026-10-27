@@ -3,7 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "description": "Identity infrastructure over ZITADEL: the seed (zitadel/seed.yaml) that names the staff organisation, the project and its roles, one OIDC client per app, the machine users and the branding; the plan of one ZITADEL instance read from the root runway and the seed; and its Pulumi slice, which creates them with the baseline token and sign-in policies",
+  "homepage": "https://github.com/figentra/stackra/tree/main/packages/infrastructure/infra-identity#readme",
+  "bugs": {
+    "url": "https://github.com/figentra/stackra/issues"
+  },
   "license": "MIT",
+  "author": "Figentra (https://figentra.com)",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/figentra/stackra.git",
@@ -79,5 +84,17 @@
     "tsdown": "catalog:build",
     "typescript": "catalog:build",
     "vitest": "catalog:quality"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "stackra": {
+    "kind": "package",
+    "tier": "lib",
+    "category": "infrastructure",
+    "runtimes": [
+      "isomorphic",
+      "node"
+    ]
   }
 }

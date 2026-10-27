@@ -3,7 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra module assets: the assets() builder of the generated `#stackra/assets` keys (`<module>::<kind>/<path>`), the AssetLibrary that resolves a URL and reads bytes over a filesystem disk, and useAsset",
+  "homepage": "https://github.com/figentra/stackra/tree/main/packages/data/assets#readme",
+  "bugs": {
+    "url": "https://github.com/figentra/stackra/issues"
+  },
   "license": "MIT",
+  "author": "Figentra (https://figentra.com)",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/figentra/stackra.git",
@@ -89,5 +94,16 @@
     "react": {
       "optional": true
     }
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "stackra": {
+    "kind": "package",
+    "tier": "lib",
+    "category": "data",
+    "runtimes": [
+      "isomorphic"
+    ]
   }
 }

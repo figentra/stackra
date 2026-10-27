@@ -3,7 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra settings: the Settings({ scopes, navigation }) kind and the @Setting field decorator, SettingsReader resolving a module's group through the scope cascade with locks, the SettingValueStore port with its memory and Postgres drivers and the stored-settings table, the generated-key helpers settingKeys and settingsPage, SettingsResolver with market-pack legal floors, provenance, live and sandbox keys, revisions, four-eyes approval and schedules, YAML settings packs with diff and apply, the Promotable port with its settings driver, the native SettingsForm and fakeSettings",
+  "homepage": "https://github.com/figentra/stackra/tree/main/packages/state/settings#readme",
+  "bugs": {
+    "url": "https://github.com/figentra/stackra/issues"
+  },
   "license": "MIT",
+  "author": "Figentra (https://figentra.com)",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/figentra/stackra.git",
@@ -138,5 +143,18 @@
     "react-native": {
       "optional": true
     }
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "stackra": {
+    "kind": "package",
+    "tier": "lib",
+    "category": "state",
+    "runtimes": [
+      "isomorphic",
+      "node",
+      "react-native"
+    ]
   }
 }

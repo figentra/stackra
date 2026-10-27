@@ -3,7 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra identity, provider-neutral over ZITADEL (ADR 0206): the IdentityConfig configuration with its shipped schema, the SessionStore port with the BFF cookie and PKCE drivers, the SessionService with the session claims mapping, the ClientSession and memory IdentityResolver drivers, the React useSession hook, and the fakeSession and fakeIdentity test helpers; step-up (assurance levels, stepUpSignIn), national and other external identity providers chosen by market pack, the Expo (./native) and Electron (./desktop) SignInBrowser drivers, staff PIN quick-switch with manager override, publishable origin-bound API keys, a guardian acting for a minor, the KYC and KYB Verification port with VerificationService selecting providers from market-pack data, and app approval sign-in and step-up (number matching and QR) with the AppApprovalChallenges port, its memory driver, the sessions.app_approval events and the web and app hooks",
+  "homepage": "https://github.com/figentra/stackra/tree/main/packages/security/identity#readme",
+  "bugs": {
+    "url": "https://github.com/figentra/stackra/issues"
+  },
   "license": "MIT",
+  "author": "Figentra (https://figentra.com)",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/figentra/stackra.git",
@@ -166,5 +171,18 @@
     "vitest": {
       "optional": true
     }
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "stackra": {
+    "kind": "package",
+    "tier": "lib",
+    "category": "security",
+    "runtimes": [
+      "isomorphic",
+      "node",
+      "react-native"
+    ]
   }
 }

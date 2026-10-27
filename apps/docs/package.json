@@ -3,7 +3,17 @@
   "version": "0.0.1",
   "private": true,
   "description": "Stackra documentation site — Mintlify (docs.json + MDX).",
+  "homepage": "https://github.com/figentra/stackra/tree/main/apps/docs#readme",
+  "bugs": {
+    "url": "https://github.com/figentra/stackra/issues"
+  },
   "license": "UNLICENSED",
+  "author": "Figentra (https://figentra.com)",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/figentra/stackra.git",
+    "directory": "apps/docs"
+  },
   "type": "module",
   "imports": {
     "#src/*": "./src/*.ts"
@@ -24,5 +34,15 @@
     "@stackra/testing": "workspace:*",
     "mint": "catalog:docs",
     "oxfmt": "catalog:quality"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "stackra": {
+    "kind": "package",
+    "tier": "app",
+    "runtimes": [
+      "browser"
+    ]
   }
 }

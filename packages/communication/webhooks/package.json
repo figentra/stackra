@@ -3,7 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra webhooks: Standard Webhooks signing and verification (HMAC-SHA256, webhook-id, webhook-timestamp, webhook-signature, a five-minute tolerance, dual-secret rotation), provider HMAC signatures verified from the Integration's recipe data (Stripe, Checkout.com), SignatureScheme, the WebhookReceiver that verifies an inbound provider webhook against the secret its Integration names and routes it to its WebhookEvent class through the outbox, and outbound delivery of webhook integration events to the endpoints a scope registers as a queue job with retries, a delivery log and automatic disable, plus the deliverWebhook test helper",
+  "homepage": "https://github.com/figentra/stackra/tree/main/packages/communication/webhooks#readme",
+  "bugs": {
+    "url": "https://github.com/figentra/stackra/issues"
+  },
   "license": "MIT",
+  "author": "Figentra (https://figentra.com)",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/figentra/stackra.git",
@@ -105,5 +110,17 @@
     "tsdown": "catalog:build",
     "typescript": "catalog:build",
     "vitest": "catalog:quality"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "stackra": {
+    "kind": "package",
+    "tier": "lib",
+    "category": "communication",
+    "runtimes": [
+      "isomorphic",
+      "node"
+    ]
   }
 }

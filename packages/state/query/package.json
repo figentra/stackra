@@ -3,7 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra server state on the client: the TanStack Query cache refetched live on its queries' invalidation events, the offline mutation queue with idempotency keys, per-device order, caps and conflict records, bounded replicas with an as-of time, the offline lock that wipes a revoked or long-offline device, the offline map, QueryConfig with its shipped schema, useMutationQueue, useReplica and fakeQueue",
+  "homepage": "https://github.com/figentra/stackra/tree/main/packages/state/query#readme",
+  "bugs": {
+    "url": "https://github.com/figentra/stackra/issues"
+  },
   "license": "MIT",
+  "author": "Figentra (https://figentra.com)",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/figentra/stackra.git",
@@ -122,5 +127,17 @@
     "react": {
       "optional": true
     }
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "stackra": {
+    "kind": "package",
+    "tier": "lib",
+    "category": "state",
+    "runtimes": [
+      "isomorphic",
+      "node"
+    ]
   }
 }

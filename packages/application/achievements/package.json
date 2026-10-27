@@ -3,7 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra achievements: award kinds kept as scope data, awards granted by hand or automatically when a kind's @stackra/rules criteria match a recipient's facts, revoke, an opaque verify token and a short typed code resolved across scopes by a public verify query, a QR code, one live award per kind, recipient and period, certificates rendered through @stackra/documents, and award-granted and award-revoked integration events",
+  "homepage": "https://github.com/figentra/stackra/tree/main/packages/application/achievements#readme",
+  "bugs": {
+    "url": "https://github.com/figentra/stackra/issues"
+  },
   "license": "MIT",
+  "author": "Figentra (https://figentra.com)",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/figentra/stackra.git",
@@ -96,5 +101,17 @@
     "tsdown": "catalog:build",
     "typescript": "catalog:build",
     "vitest": "catalog:quality"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "stackra": {
+    "kind": "package",
+    "tier": "lib",
+    "category": "application",
+    "runtimes": [
+      "isomorphic",
+      "node"
+    ]
   }
 }

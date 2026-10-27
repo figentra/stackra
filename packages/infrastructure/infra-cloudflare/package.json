@@ -3,7 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "description": "Pulumi programs for the Cloudflare core stack: the zones and DNS, Worker custom domains, R2 buckets (the Turborepo cache), the dev tunnels, Access, and the edge (TLS, managed WAF, bots, the per-IP rate limit and the API cache bypass) read from the root runway",
+  "homepage": "https://github.com/figentra/stackra/tree/main/packages/infrastructure/infra-cloudflare#readme",
+  "bugs": {
+    "url": "https://github.com/figentra/stackra/issues"
+  },
   "license": "MIT",
+  "author": "Figentra (https://figentra.com)",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/figentra/stackra.git",
@@ -81,5 +86,17 @@
   },
   "peerDependencies": {
     "@pulumi/pulumi": "catalog:infra"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "stackra": {
+    "kind": "package",
+    "tier": "lib",
+    "category": "infrastructure",
+    "runtimes": [
+      "isomorphic",
+      "node"
+    ]
   }
 }
