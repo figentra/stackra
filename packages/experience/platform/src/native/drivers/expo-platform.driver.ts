@@ -144,7 +144,7 @@ export class ExpoPlatformDriver extends Driver(Platform) {
         if ((await readPushPermission()) !== "granted")
           return refuse(Capability.LocalNotifications, "permission_denied");
         await Notifications.scheduleNotificationAsync({
-          identifier: options.tag,
+          ...(options.tag === undefined ? {} : { identifier: options.tag }),
           content: { title, ...(options.body === undefined ? {} : { body: options.body }) },
           trigger: null,
         });

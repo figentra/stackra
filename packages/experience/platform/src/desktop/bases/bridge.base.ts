@@ -15,20 +15,8 @@
  */
 import { createKind } from "@stackra/container";
 
+import { BridgeBase } from "#desktop/bases/bridge-base.base";
 import type { BridgeOptions } from "#desktop/types/bridge-options.type";
-
-/** The instance side every bridge shares; `handle` is abstract, so a bridge implements it without `override`. */
-export abstract class BridgeBase {
-  /** Type-only kind brand, so a class of another kind cannot stand in for a bridge. */
-  declare readonly "~kind": "bridge";
-
-  /**
-   * Runs the bridge in main with the renderer's input; the result travels back in the 0140 envelope.
-   *
-   * @throws a typed refusal or an error; the dispatcher turns either into an error envelope.
-   */
-  abstract handle(input: never): Promise<unknown>;
-}
 
 /** A bridge instance. */
 export type Bridge = BridgeBase;
