@@ -60,7 +60,7 @@ export const ACTIONS_TESTING_PLUGIN: TestingPlugin = {
   app(app: TestingApp) {
     // Runs before the builder's onCompile steps, so `.withExtensions` reconnects with its implementers afterwards.
     connectExtensions(app);
-    const trail = new RecordingAuditTrailDriver(app);
+    const trail = RecordingAuditTrailDriver.over(app);
     const resolver: Resolver = {
       has: (token) => token === AuditTrail || app.has(token),
       get: (token) => (token === AuditTrail ? (trail as never) : app.get(token)),

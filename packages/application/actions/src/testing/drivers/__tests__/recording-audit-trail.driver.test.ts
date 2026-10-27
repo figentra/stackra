@@ -51,7 +51,7 @@ function appWith(trail?: AuditTrail): Resolver {
 describe(RecordingAuditTrailDriver, () => {
   it("keeps the last entry per call and forwards it", async () => {
     const kept = new Kept();
-    const trail = new RecordingAuditTrailDriver(appWith(kept));
+    const trail = RecordingAuditTrailDriver.over(appWith(kept));
     await trail.record(entryOf("c1", "ok"));
     await trail.record(entryOf("c1", "refused"));
     expect(trail.entryOf("c1")?.outcome).toBe("refused");
@@ -60,7 +60,13 @@ describe(RecordingAuditTrailDriver, () => {
   });
 
   it("records with no trail bound in the app", async () => {
-    const trail = new RecordingAuditTrailDriver(appWith());
+    const trail = RecordingAuditTrailDriver.over(appWith());
+    await trail.record(entryOf("c1", "ok"));
+    expect(trail.entryOf("c1")?.outcome).toBe("ok");
+  });
+
+  it("keeps entries with no app when built with no arguments", async () => {
+    const trail = new RecordingAuditTrailDriver();
     await trail.record(entryOf("c1", "ok"));
     expect(trail.entryOf("c1")?.outcome).toBe("ok");
   });
