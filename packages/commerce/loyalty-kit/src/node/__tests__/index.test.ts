@@ -44,6 +44,7 @@ describe("@stackra/loyalty-kit/node", () => {
       "LoyaltyAccountPermissions",
       "LoyaltyAccountPolicy",
       "LoyaltyAccountResource",
+      "LoyaltyCardPass",
       "LoyaltyKitExtensionPoint",
       "LoyaltyKitModule",
       "LoyaltyKitSettings",

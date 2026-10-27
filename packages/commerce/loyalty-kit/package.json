@@ -117,6 +117,7 @@
     "@stackra/events": "workspace:*",
     "@stackra/i18n": "workspace:*",
     "@stackra/iam": "workspace:*",
+    "@stackra/integrations": "workspace:*",
     "@stackra/ledger": "workspace:*",
     "@stackra/model": "workspace:*",
     "@stackra/panel": "workspace:*",

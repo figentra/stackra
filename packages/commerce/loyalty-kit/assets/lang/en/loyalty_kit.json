@@ -126,5 +126,11 @@
     "not_own_principal": {
       "message": "You can only enroll yourself."
     }
+  },
+  "passes": {
+    "loyalty_card": {
+      "points": "Points",
+      "tier": "Tier"
+    }
   }
 }

@@ -3,11 +3,11 @@
 <!--
 Stackra file contract:
 Purpose: the package's reader guide: Integrations, Connections and their stores, the provider resolver, the connector
-         contracts (commerce, EDI, fraud scoring, document stores) and the gateway that resolves them, and what is not
-         here.
+         contracts (commerce, EDI, fraud scoring, document stores) and the gateway that resolves them, wallet pass
+         issuing (`./node`), and what is not here.
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
-Governing contract: ADR 0308; ADR 0355; ADR 0356; ADR 0376; ADR 0447.
+Governing contract: ADR 0308; ADR 0348; ADR 0355; ADR 0356; ADR 0376; ADR 0447.
 -->
 
 Provider integrations (ADR 0308). An **Integration** describes a provider once, the same for every scope and user:
@@ -17,10 +17,12 @@ or a user. Both expose the same **managed client** (`api`), which authenticates,
 is safe and turns every provider outcome into a value or a typed refusal. This package absorbs the retired
 `@stackra/connections`.
 
-**Tier:** `tier:lib` (`packages/communication/integrations`). Entries `.`, `./contracts` and `./testing`.
+**Tier:** `tier:lib` (`packages/communication/integrations`). Entries `.`, `./contracts`, `./node` (wallet pass
+issuing) and `./testing`.
 Depends on `@stackra/actions` (the `RateLimitStore`, and `RequestContext` for the `request` connection context),
 `@stackra/config` (`@Secret`, `SecretStore`), `@stackra/container`, `@stackra/contracts`, `@stackra/errors`, and the
-`Money` and `Address` types of `@stackra/money` and `@stackra/validation`.
+`Money` and `Address` types of `@stackra/money` and `@stackra/validation`; `./node` adds `@stackra/data-transfer`
+(`writeZip`), `pkijs` and `asn1js`.
 
 ## What is here
 
@@ -111,6 +113,45 @@ await api.post<ResendSendResult>("/emails", mail, { idempotencyKey });
 `.` also exports the type `PassBase`, the instance side of `Pass({ key })`, so a consumer's
 `class LoyaltyCardPass extends Pass({ key: "loyalty_card" })` has a nameable base in its declaration emit (TS2883,
 STA-1220).
+
+## Wallet passes (`./node`, ADR 0348 decision 5)
+
+A module's `Pass({ key })` kind builds `PassContent`; a `WalletPassIssuer` driver issues it:
+
+| Symbol                                                                        | Use                                                                                                      |
+| ----------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `./contracts`: `CmsSigner`                                                    | the host port that makes a detached CMS (PKCS #7) signature; the key stays with the host                 |
+| `PkijsCmsSignerDriver`, `CmsSignerSecrets`, `APPLE_WALLET_SIGNER_SECRETS`     | the `CmsSigner` over pkijs, reading PEM certificate, key and chain by secret name                        |
+| `WalletPassIssuer`, `WalletPassRequest`, `IssuedWalletPass`                   | issue one pass: the kind, its content, the shown text of its lang keys, locale, time                     |
+| `AppleWalletPassDriver`, `AppleWalletOptions`, `applePassJson`, `buildPkpass` | the signed `.pkpass` (pass.json, brand-kit images, SHA-1 manifest, signature, zip)                       |
+| `GoogleWalletPassDriver`, `GoogleWalletOptions`, `googleWalletObject`         | the `genericObject` written through the Google Wallet Integration's `api` (JWT bearer) and the save link |
+
+```ts
+const signer = new PkijsCmsSignerDriver(secrets); // APPLE_WALLET_PASS_CERTIFICATE, _KEY, APPLE_WALLET_WWDR_CERTIFICATE
+const apple = new AppleWalletPassDriver(signer, {
+  passTypeIdentifier,
+  teamIdentifier,
+  organizationName,
+});
+const google = new GoogleWalletPassDriver(googleWallet.api, secrets, {
+  issuerId,
+  serviceAccountEmail,
+});
+const request = {
+  kind: "loyalty_card",
+  content: await pass.content(card),
+  labels,
+  locale,
+  issuedAt,
+  images,
+};
+const { file } = await apple.issue(request); // application/vnd.apple.pkpass
+const { saveUrl } = await google.issue(request); // https://pay.google.com/gp/v/save/<jwt>
+```
+
+A pass kind's labels are lang keys; the host passes their text in `labels`. Identifiers, styles and classes are the
+deployment's data; the certificates and keys are secrets read by name (`GOOGLE_WALLET_ISSUER_KEY`), never values.
+Neither driver is certified yet against a registered pass type or a live issuer account.
 
 ## The six auth types
 
@@ -246,8 +287,10 @@ record and an array repeats its key.
 - Lifecycle events (`integrations.connection.*.v1`), tombstones and encryption at rest: the store host.
 - Provider drivers of other packages' ports: SMS, WhatsApp, push, mail and voice drivers are `@stackra/notifications`';
   payment gateways `@stackra/payments`'; carriers OS integrations connectors behind `@stackra/shipping`.
-- Apple Wallet and Google Wallet drivers, ad-platform and marketplace Integrations: not built yet (see the spec's open
-  items).
+- Ad-platform and marketplace Integrations: not built yet (see the spec's open items). The Google Wallet
+  Integration itself (base URL, `OAuth2JwtBearer` auth) is an OS connector (R3-8); `./node` takes its `api`.
+- Wallet pass device updates (the Apple pass web service and push, Google object patches on record change) and
+  revocation: not built yet (STA-791).
 
 ## The hosted store over the generated client
 

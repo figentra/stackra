@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `./node` entry of @stackra/loyalty-kit (the root module, its settings, the permissions
  *          and policy, actions, queries, their input and output schemas, the redemption workflow and its signal,
- *          events, the extension point and its extension, listener, models, the panel resource, document and widgets,
+ *          events, the extension point and its extension, the loyalty card wallet pass, listener, models, the panel resource, document and widgets,
  *          services, the Postgres ledger, threshold tier policy and parties members drivers and the migrations) until `stackra gen`
  *          writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. Every export under src/node except `database/factories` and
@@ -35,6 +35,8 @@ export { PointsRedeemed } from "#node/events/points-redeemed.event";
 export { PointsTakenBack } from "#node/events/points-taken-back.event";
 export { LoyaltyKitExtensionPoint } from "#node/extensions/loyalty-kit.extension-point";
 export { TierMultiplierExtension } from "#node/extensions/tier-multiplier.extension";
+export { LoyaltyCardPass } from "#node/integrations/loyalty-card.pass";
+export type { LoyaltyCardPassSource } from "#node/integrations/loyalty-card-pass-source.type";
 export { RecalculateTierListener } from "#node/listeners/recalculate-tier.listener";
 export { LoyaltyKitModule } from "#node/loyalty-kit.module";
 export { LoyaltyKitSettings } from "#node/loyalty-kit.settings";

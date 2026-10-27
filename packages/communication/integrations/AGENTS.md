@@ -6,11 +6,12 @@ Purpose: the agent rules of @stackra/integrations: where code goes, entries and 
          kinds and the capability lookup included) and PII.
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
-Governing contract: ADR 0294; ADR 0305; ADR 0308; ADR 0355; ADR 0356; ADR 0447.
+Governing contract: ADR 0294; ADR 0305; ADR 0308; ADR 0348; ADR 0355; ADR 0356; ADR 0447.
 -->
 
 Provider integrations, connections and their store (ADR 0308). Member at `packages/communication/integrations`
-(`tier:lib`), in the programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts` and `./testing`.
+(`tier:lib`), in the programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./node` and
+`./testing`.
 
 ## Where code goes
 
@@ -26,11 +27,12 @@ Provider integrations, connections and their store (ADR 0308). Member at `packag
 | A value class            | `src/core/values/<name>.value.ts`           |
 | A type                   | `src/core/types/<name>.type.ts`             |
 | A fake or testing helper | `src/testing/<group>/<name>.<kind>.ts`      |
+| Wallet pass issuing      | `src/node/pass/<name>.<kind>.ts`            |
 | A test                   | `__tests__/<name>.<kind>.test.ts` beside it |
 
 ## Entries and barrels
 
-- `src/core/index.ts`, `src/contracts/index.ts` and `src/testing/index.ts` are stand-in barrels until gen writes the entry barrels (STA-339); add
+- `src/core/index.ts`, `src/contracts/index.ts`, `src/node/index.ts` and `src/testing/index.ts` are stand-in barrels until gen writes the entry barrels (STA-339); add
   every new public file to the barrel and to its `__tests__/index.test.ts`.
 - `managedClient`, the placeholder lookup, the JWT signer and the registries stay internal; `requestToken` (with
   `TokenRequest`) is public so a store host shares the one RFC 6749 client. `./testing`
@@ -89,6 +91,11 @@ Provider integrations, connections and their store (ADR 0308). Member at `packag
   a framework of their own here.
 - A fraud score is a fact for the tenant's rules; nothing here holds, cancels or thresholds on it.
 - EDI is canonical JSON through a network provider (R3-SO-07): no EDIFACT, X12 or AS2 codec in this package.
+- Wallet passes (ADR 0348 decision 5): issuing lives in `./node` (`src/node/pass/`), so pkijs, asn1js and the zip
+  writer never load with `.`. A driver takes its signer, `api` and options as constructor arguments the host passes;
+  the `CmsSigner` port is in `./contracts`. Certificates and keys are read by secret name at each call and never put in
+  an error; the Google Wallet Integration (JWT bearer auth) stays an OS connector, the driver only takes its `api`.
+  Pass labels are lang keys the host resolves into `WalletPassRequest.labels`; never hard-code wording.
 
 ## PII
 
@@ -99,4 +106,5 @@ Provider integrations, connections and their store (ADR 0308). Member at `packag
 | Provider answers        | managed client                             | Returned to the caller only; never stored or logged here.                                      |
 | Fraud score requests    | `FraudScoreRequest`                        | Contact, IP, device and addresses travel for one score; never stored or logged here.           |
 | Documents               | `DocumentFile`                             | Bytes held in memory for one call; never stored or logged here.                                |
+| Wallet pass content     | `WalletPassRequest`, `IssuedWalletPass`    | Lock-screen data only (ADR 0348 d5); built and signed in memory, never stored or logged here.  |
 | Connected account label | `ConnectedAccount`, store records          | The provider's account id and name or domain, shown to the owner in the console.               |

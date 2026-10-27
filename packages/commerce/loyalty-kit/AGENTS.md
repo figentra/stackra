@@ -3,7 +3,7 @@ Stackra file contract:
 Purpose: the agent rules of @stackra/loyalty-kit: where code goes, entries, the kit's invariants, PII.
 Boundary: documentation only; the user-facing guide is README.md.
 Runtime: none (Markdown)
-Governing contract: ADR 0294, ADR 0305; ADR 0454; STA-804; STA-1323.
+Governing contract: ADR 0294, ADR 0305; ADR 0348 (decision 5); ADR 0454; STA-804; STA-1323.
 -->
 
 # AGENTS — @stackra/loyalty-kit
@@ -24,9 +24,10 @@ model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./node`, `./reac
 | A workflow or a signal                                        | `src/node/workflows/`                                             |
 | A panel resource, document or widget                          | `src/node/resources/loyalty-account/`                             |
 | A model, its migration, a factory, the demo seeder            | `src/node/models/`, `src/node/database/*/`                        |
+| A wallet pass kind and its source type                        | `src/node/integrations/`                                          |
 | A renderer and its Props                                      | `src/react/<name>/`, `src/native/<name>/`                         |
 | A fake, fixture or matcher                                    | `src/testing/`                                                    |
-| A label                                                       | `assets/lang/{en,ar}/loyalty_kit.json` (`en-US` overlay)          |
+| A label                                                       | `assets/lang/<locale>/loyalty_kit.json` (`en-US` overlay)         |
 | A test                                                        | `__tests__/<name>.<kind>.test.ts(x)` beside it                    |
 
 ## Entries and barrels
@@ -72,6 +73,9 @@ model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./node`, `./reac
   the wait.
 - Panel declarations take icons, slots and i18n keys from the internal stand-ins (`LOYALTY_KIT_ICONS`,
   `LOYALTY_KIT_SLOTS`, `LOYALTY_KIT_KEYS`), never a raw string (R-56); delete the stand-ins with STA-339.
+- Wallet passes: `LoyaltyCardPass` builds content only; issuing is `@stackra/integrations/node`'s. A pass shows only
+  lock-screen data (never the member id); its labels and the tier are lang keys, kept in every locale file
+  (ar, de, en, es, fr, it, nl), and the programme name and brand are tenant data in the source, never code.
 
 ## Rules that fail the build
 

@@ -1,0 +1,10 @@
+{
+  "passes": {
+    "award": {
+      "level": "Livello",
+      "period": "Periodo",
+      "granted": "Conferito",
+      "code": "Codice"
+    }
+  }
+}

@@ -1,5 +1,14 @@
 # AGENTS — @stackra/achievements
 
+<!--
+Stackra file contract:
+Purpose: the agent rules of @stackra/achievements: where code goes, entries and barrels, the package rules (the award
+         wallet pass included) and PII.
+Boundary: documentation only; the user-facing guide is README.md.
+Runtime: none (Markdown)
+Governing contract: ADR 0368; ADR 0432; ADR 0348 (decision 5); ADR 0294; ADR 0305.
+-->
+
 Award kinds as scope data, awards granted by hand or by `@stackra/rules` criteria, revoke, a cross-scope verify token
 with a QR code and certificate fields for `@stackra/documents` (ADR 0368, OS ADR 0058). Member at
 `packages/application/achievements` (`tier:lib`), in the programming model v3.1 shape (ADR 0294, 0305). Entries
@@ -13,6 +22,8 @@ with a QR code and certificate fields for `@stackra/documents` (ADR 0368, OS ADR
 | An integration event, a refusal, an isomorphic helper  | `src/core/{events,errors,functions,constants}/`     |
 | A model, a migration                                   | `src/node/models/`, `src/node/database/migrations/` |
 | A service, the recipient registry and its registration | `src/node/{services,constants,functions}/`          |
+| A wallet pass kind and its source type                 | `src/node/integrations/`                            |
+| A label                                                | `assets/lang/<locale>/achievements.json`            |
 | A test                                                 | `__tests__/<name>.test.ts` beside it                |
 
 ## Entries and barrels
@@ -34,6 +45,8 @@ with a QR code and certificate fields for `@stackra/documents` (ADR 0368, OS ADR
 - `verify` and `verifyCode` open a scope session (`Database.withScope`); never call it from a method another action's transaction runs.
 - No tenant word is declared here (R-59, ADR 0323): a scope is a `ScopeRef`. No parameter properties and no `#private`
   fields (services typecheck this source under `erasableSyntaxOnly`). Never import `@mikro-orm/*` (ADR 0097 d2).
+- `AwardPass` builds content only, from the certificate fields; signing and issuing are `@stackra/integrations/node`'s.
+  Never put the recipient's name or any personal data on a pass; labels are lang keys kept in all seven locale files.
 
 ## Rules that fail the build
 

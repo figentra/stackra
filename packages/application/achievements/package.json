@@ -12,6 +12,7 @@
   "files": [
     "dist",
     "src",
+    "assets",
     "stackra.manifest.json",
     "README.md",
     "CHANGELOG.md",
@@ -75,6 +76,7 @@
     "@stackra/documents": "workspace:*",
     "@stackra/errors": "workspace:*",
     "@stackra/events": "workspace:*",
+    "@stackra/integrations": "workspace:*",
     "@stackra/model": "workspace:*",
     "@stackra/rules": "workspace:*",
     "@stackra/validation": "workspace:*",

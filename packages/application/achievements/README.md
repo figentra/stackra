@@ -1,12 +1,22 @@
 # @stackra/achievements
 
+<!--
+Stackra file contract:
+Purpose: the reader guide of @stackra/achievements: award kinds, grants and criteria, verify and certificates, the award
+         wallet pass, tables and scope, and what is not here.
+Boundary: documentation only; the code and the ADRs win on any difference.
+Runtime: none (Markdown)
+Governing contract: ADR 0368; ADR 0432; ADR 0348 (decision 5: wallet passes); OS ADR 0058.
+-->
+
 Stackra achievements: award kinds kept as scope data, awards granted by hand or automatically when a kind's
 `@stackra/rules` criteria match a recipient's facts, revoke, an opaque verify token resolved across scopes with a QR
 code, and the fields of a certificate that `@stackra/documents` renders (ADR 0368, OS ADR 0058). The package names no
 recipient model and no award kind: kinds, levels and certificate layouts are data a product seeds and a tenant edits.
 
-**Tier:** `tier:lib` (`packages/application/achievements`). Entries `./contracts`, `.` and `./node`. Depends on
-`@stackra/actions`, `@stackra/contracts`, `@stackra/database`, `@stackra/errors`, `@stackra/events`, `@stackra/model`,
+**Tier:** `tier:lib` (`packages/application/achievements`). Entries `./contracts`, `.` and `./node`, and the lang
+files under `./assets/*`. Depends on `@stackra/actions`, `@stackra/contracts`, `@stackra/database`,
+`@stackra/documents`, `@stackra/errors`, `@stackra/events`, `@stackra/integrations` (the `Pass` kind), `@stackra/model`,
 `@stackra/rules`, `@stackra/validation`, `uqr` and zod.
 
 ## What is here
@@ -28,6 +38,7 @@ recipient model and no award kind: kinds, levels and certificate layouts are dat
 | `AwardKindService`                        | `./node`      | `open`, `archive`, `draftCriteria`, `publishCriteria`                                                   |
 | `AwardService`                            | `./node`      | `grant`, `consider`, `revoke`, `awardsOf`, `verify`, `verifyCode`, `certificateOf`, `renderCertificate` |
 | `AwardKind`, `Award`, `AwardVerification` | `./node`      | the models: `achievements.award_kinds`, `achievements.awards`, `.award_verifications`                   |
+| `AwardPass`, `AwardPassSource`            | `./node`      | the `award` wallet pass kind, built from `certificateOf`'s fields                                       |
 
 ## Kinds and grants
 
@@ -86,6 +97,32 @@ The token (32 random bytes, base64url) stays on the award under row-level securi
 holds only its SHA-256 (and the short code's), the award id and the scope, with no row-level security (ADR 0368 decision 5); `verify` reads it
 and opens the award's scope session, so call it from its own public action.
 
+## Wallet passes (ADR 0348 decision 5)
+
+`AwardPass` (`Pass({ key: "award" })`, in `src/node/integrations/`) turns an award's certificate fields into pass
+content: the kind's name as title, the level as subtitle, the level, period, grant date and short code as fields, the
+award id as serial and the verify URL as the QR code. The recipient's name is never on it. Labels are lang keys
+(`achievements::passes.award.*` in `assets/lang/<locale>/achievements.json`, seven locales); the host passes their text
+to a `WalletPassIssuer` of `@stackra/integrations/node`:
+
+```ts
+const {
+  template: _t,
+  verifyQr: _q,
+  ...award
+} = await awards.certificateOf(awardId, settings.verifyBaseUrl);
+const content = new AwardPass().content({ ...award, brand });
+const { saveUrl } = await google.issue({
+  kind: "award",
+  content,
+  labels,
+  locale,
+  issuedAt: ctx.now(),
+});
+```
+
+A revoked award is refused by `certificateOf`; voiding a pass already issued is not built yet (STA-791).
+
 ## Tables and scope
 
 `achievements.award_kinds` and `achievements.awards` carry `scope_id` and `scope_path` under forced row-level security
@@ -95,6 +132,7 @@ kind, recipient and period, so the loser of two concurrent period grants is refu
 
 ## Not here
 
-- Points (`@stackra/loyalty-kit`), leaderboards (report widgets), goals, Open Badges and wallet passes.
+- Points (`@stackra/loyalty-kit`), leaderboards (report widgets), goals and Open Badges. Wallet pass signing and
+  issuing: `@stackra/integrations/node`.
 - Whether an AI principal may grant: a platform floor the calling action checks (ADR 0368 open questions).
 - The `awk`, `awd` and `awv` rows of gen's public id prefix registry (`PUBLIC_ID_PREFIXES` in `@stackra/gen`).

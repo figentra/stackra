@@ -126,5 +126,11 @@
     "not_own_principal": {
       "message": "يمكنك تسجيل نفسك فقط."
     }
+  },
+  "passes": {
+    "loyalty_card": {
+      "points": "النقاط",
+      "tier": "المستوى"
+    }
   }
 }

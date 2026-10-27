@@ -16,6 +16,7 @@ describe("@stackra/integrations/contracts", () => {
     expect(Object.keys(contracts).sort()).toEqual([
       "CallStatus",
       "ChannelPaymentMethod",
+      "CmsSigner",
       "ConnectionContext",
       "EdiDocumentType",
       "FraudDecision",

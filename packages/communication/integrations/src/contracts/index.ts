@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: Stand-in barrel: the `./contracts` entry of @stackra/integrations, the leaf entry with the
+ * Purpose: Stand-in barrel: the `./contracts` entry of @stackra/integrations, the leaf entry with the `CmsSigner`,
  *          `ConnectionContext`, `ProviderDefaults`, `MarketContext` and `ManagedProvisioning` ports, the managed-or-BYO
  *          words and records, and the interfaces a provider's Connection implements (accounting, the commerce
  *          connectors, the EDI, fraud-scoring and document-store connectors, telephony, the store accounts), until `stackra gen` writes the entry barrels (STA-339).
@@ -21,6 +21,7 @@ export { ProviderMode } from "#contracts/enums/provider-mode.enum";
 export { ProviderSource } from "#contracts/enums/provider-source.enum";
 export { ProvisioningStatus } from "#contracts/enums/provisioning-status.enum";
 export { RecordingConsent } from "#contracts/enums/recording-consent.enum";
+export { CmsSigner } from "#contracts/ports/cms-signer.port";
 export { ConnectionContext } from "#contracts/ports/connection-context.port";
 export { ManagedProvisioning } from "#contracts/ports/managed-provisioning.port";
 export { MarketContext } from "#contracts/ports/market-context.port";

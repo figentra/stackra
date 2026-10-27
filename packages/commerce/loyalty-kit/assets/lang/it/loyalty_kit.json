@@ -1,0 +1,15 @@
+{
+  "enums": {
+    "loyalty_tier": {
+      "bronze": "Bronzo",
+      "silver": "Argento",
+      "gold": "Oro"
+    }
+  },
+  "passes": {
+    "loyalty_card": {
+      "points": "Punti",
+      "tier": "Livello"
+    }
+  }
+}
