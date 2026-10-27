@@ -5,23 +5,15 @@
  *          drivers render and sign.
  * Boundary: called only (a key is required). A binding: dependencies are constructor parameters. The pass updates when
  *           its source record changes, through the module's integration events; the pass web service endpoints are
- *           the module's `WebhookEvent<I>` classes and queries (ADR 0348 decision 5).
+ *           the module's `WebhookEvent<I>` classes and queries (ADR 0348 decision 5). `PassBase`
+ *           (pass-base.base.ts) is the instance side.
  * Runtime: isomorphic
  * Governing contract: ADR 0348 (decision 5); ADR 0305 (rule 2: a kind with options is called); ADR 0294 (decision 25).
  */
 import { createKind } from "@stackra/container";
 
-import type { PassContent } from "#core/types/pass-content.type";
+import { PassBase } from "#core/bases/pass-base.base";
 import type { PassOptions } from "#core/types/pass-options.type";
-
-/** The instance side every pass kind shares. */
-export abstract class PassBase {
-  /** Type-only kind brand. */
-  declare readonly "~kind": "pass";
-
-  /** The pass for one owning record; the subclass types `record`. */
-  abstract content(record: never): PassContent | Promise<PassContent>;
-}
 
 /** Checks the options of a pass kind. */
 function read(options: PassOptions) {

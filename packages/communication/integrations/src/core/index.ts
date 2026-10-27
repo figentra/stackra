@@ -15,7 +15,8 @@
  */
 export { Connection } from "#core/bases/connection.base";
 export { Integration } from "#core/bases/integration.base";
-export { Pass, type PassBase } from "#core/bases/pass.base";
+export { Pass } from "#core/bases/pass.base";
+export type { PassBase } from "#core/bases/pass-base.base";
 export { MANAGED_PROVISIONING_TEMPLATES } from "#core/constants/managed-provisioning-templates.constant";
 export { PROVIDER_CATALOGUE_SEEDS } from "#core/constants/provider-catalogue-seeds.constant";
 export { PROVIDER_CATEGORY_SEEDS } from "#core/constants/provider-category-seeds.constant";
