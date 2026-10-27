@@ -264,7 +264,8 @@ publishing service is heard on the relay service's next gen run. A service whose
 `#stackra/clients/<service>` event gets `.stackra/encore/<member>/subscriptions.ts`: one `Subscription` per consumed
 event (named `<member>-<wire name>`) on the producer's generated topic, imported from its `events.ts` like the relay's,
 each delivery handed to `InboxService#receive`, which runs the typed listeners; a wire name the service's relay already
-hears gets none. The cross-service topic imports of `relay.ts` and `subscriptions.ts` are not yet checked by an Encore
+hears gets none. A local listener of the service's own integration event gets one too, on its own topic from
+`./events` (STA-1302), so a deploy on the broker driver still runs it once, after commit. The cross-service topic imports of `relay.ts` and `subscriptions.ts` are not yet checked by an Encore
 build (STA-597). The manifest also locks each Integration's egress entry from its `baseUrl`: a fixed https
 origin, or a `{field}` host kept as data with the credential-set fields it is filled from (`egress_invalid` otherwise),
 and refuses a sequence outside `database/sequences/` (`sequence_misplaced`), a `@DocumentNumber` field whose sequence

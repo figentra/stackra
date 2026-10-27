@@ -7,7 +7,8 @@
  *          product (its own and every publishing sibling's) that hands the envelope to its `InboxService`; and, for a
  *          service whose listeners take a `#stackra/clients/<service>` event, `.stackra/encore/<member>/subscriptions.ts`,
  *          one `Subscription` per consumed event on the producer's generated topic, into the same inbox, which runs the
- *          typed listeners.
+ *          typed listeners; a local listener of the service's own integration event gets one on its own topic too
+ *          (STA-1302), so the broker driver still delivers it once, after commit.
  * Boundary: pure; reads the manifest's integration events (hosted packages' included, as the outbox publishes them)
  *           and `ir.publishers`. No producer is edited to add a subscriber: the relay service imports each producer's
  *           generated topic, so a new publishing service is heard on the relay's next gen run. A wire name two
@@ -118,7 +119,7 @@ export function emitEncoreEvents(ir: MemberIR, manifest: StackraManifest): Gener
   }
 
   const relaySubscribed = emitRelay(ir, own, files);
-  emitSubscriptions(ir, relaySubscribed, files);
+  emitSubscriptions(ir, manifest, relaySubscribed, files);
   return files;
 }
 
@@ -176,19 +177,29 @@ function emitRelay(ir: MemberIR, own: readonly string[], files: GeneratedFile[])
 }
 
 /**
- * Writes `subscriptions.ts` for a service whose listeners take a `#stackra/clients/<service>` event: one
- * `Subscription` per consumed wire name on the producer's generated topic, into the inbox, which runs the typed
- * listeners. A wire name the relay already hears, or one the producer's manifest does not publish (a
- * `client_event_unknown` refusal of the clients target), is left out.
+ * Writes `subscriptions.ts` for a service whose listeners take a `#stackra/clients/<service>` event, or one of its own
+ * integration events: one `Subscription` per consumed wire name on the producer's generated topic (its own from
+ * `./events`, STA-1302), into the inbox, which runs the typed listeners. With the broker `EventPublisher` driver the
+ * outbox publishes only to the topic, so without the own-topic subscription a local listener would never run; the
+ * inbox claims the event id, so it still runs once, after commit. A wire name the relay already hears, or one the
+ * producer's manifest does not publish (a `client_event_unknown` refusal of the clients target), is left out.
  */
-function emitSubscriptions(ir: MemberIR, skip: ReadonlySet<string>, files: GeneratedFile[]): void {
+function emitSubscriptions(
+  ir: MemberIR,
+  manifest: StackraManifest,
+  skip: ReadonlySet<string>,
+  files: GeneratedFile[],
+): void {
   const byService = new Map<string, Set<string>>();
   for (const declared of ir.classes) {
     const event = declared.kind === "listener" ? declared.handle?.event : undefined;
-    if (event === undefined || !event.from.startsWith(CLIENTS_SPECIFIER)) continue;
-    const service = event.from.slice(CLIENTS_SPECIFIER.length);
-    if (service === ir.member) continue;
-    const entry = (serviceManifest(ir, service)?.events ?? []).find(
+    if (event === undefined) continue;
+    // An own event (its own module, a hosted package's, or its own client path) is on its own topic.
+    const service = event.from.startsWith(CLIENTS_SPECIFIER)
+      ? event.from.slice(CLIENTS_SPECIFIER.length)
+      : ir.member;
+    const events = service === ir.member ? manifest.events : serviceManifest(ir, service)?.events;
+    const entry = (events ?? []).find(
       (candidate) => candidate.kind === "integration" && candidate["class"] === event.name,
     );
     const wire = entry?.["name"];
@@ -207,13 +218,15 @@ function emitSubscriptions(ir: MemberIR, skip: ReadonlySet<string>, files: Gener
     for (const wire of fresh) seen.add(wire);
     const folder =
       ir.services?.find((candidate) => candidate.member === service)?.folder ?? service;
-    imports.push(
-      `import { ${fresh.map(topicConst).join(", ")} } from ${JSON.stringify(`../../../../${folder}/.stackra/encore/${service}/events`)};`,
-    );
+    const from =
+      service === ir.member
+        ? "./events"
+        : `../../../../${folder}/.stackra/encore/${service}/events`;
+    imports.push(`import { ${fresh.map(topicConst).join(", ")} } from ${JSON.stringify(from)};`);
     subscribed.push(...fresh);
   }
   const header = generatedHeader({
-    from: "the listeners of #stackra/clients/<service> events and those services' stackra.manifest.json",
+    from: "the listeners of integration events (own and #stackra/clients/<service>) and the stackra.manifest.json files",
     purpose: `the typed event subscriptions of ${ir.package}: one per consumed integration event, into its inbox.`,
     boundary:
       "each delivery runs InboxService#receive in the server app, so the inbox claims the event id once and runs the " +

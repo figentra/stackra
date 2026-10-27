@@ -4,7 +4,8 @@
  *          registered under its wire name; a relay service also gets one subscription per integration topic of the
  *          product (its own and each publisher's, a shared wire name once) into its inbox; a typed consumer gets one
  *          subscription per consumed event on the producer's topic (none for an event its relay hears or the producer
- *          does not publish); nothing for a package, an app, or a service that neither publishes, relays nor consumes.
+ *          does not publish); a local listener of the service's own integration event gets one on its own topic
+ *          (STA-1302); nothing for a package, an app, or a service that neither publishes, relays nor consumes.
  * Boundary: test only; runs on the IR fixtures and the manifests built from them.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0260 (decision 4); ADR 0141; ADR 0148 (decisions 3 and 6).
@@ -147,6 +148,37 @@ describe("emitEncoreEvents", () => {
       "    await container.get(InboxService).receive(message.body as EventEnvelope);",
     );
     expect(content.match(/new Subscription\(/g)).toHaveLength(1);
+  });
+
+  it("subscribes a local listener of the service's own event on its own topic (STA-1302)", () => {
+    const local: DeclaredClass = {
+      ...RELAY,
+      name: "NotifyOnOrderPaidListener",
+      module: "orders",
+      file: "src/modules/orders/listeners/notify-on-order-paid.listener.ts",
+      importPath: "#modules/orders/listeners/notify-on-order-paid.listener",
+      handle: { event: { name: "OrderPaid", from: "#modules/orders/events/order-paid.event" } },
+    };
+    const ir: MemberIR = {
+      ...COMMERCE_IR,
+      classes: [...COMMERCE_IR.classes, local, { ...local, name: "AuditOnOrderPaidListener" }],
+    };
+    const files = emitEncoreEvents(ir, buildManifest(ir).manifest);
+    expect(files.map((file) => file.path)).toEqual([
+      ".stackra/encore/commerce/events.ts",
+      ".stackra/encore/commerce/subscriptions.ts",
+    ]);
+    const content = files[1]?.content ?? "";
+    expect(content).toContain('import { eventOrdersOrderPaidV1 } from "./events";');
+    expect(content).toContain(
+      'export const eventOrdersOrderPaidV1Subscription = new Subscription(eventOrdersOrderPaidV1, "commerce-orders-order-paid-v1", {',
+    );
+    expect(content.match(/new Subscription\(/g)).toHaveLength(1);
+    // A relay already hears the own topic, so no second subscription is written.
+    const relayed: MemberIR = { ...ir, classes: [...ir.classes, RELAY] };
+    expect(
+      emitEncoreEvents(relayed, buildManifest(relayed).manifest).map((file) => file.path),
+    ).toEqual([".stackra/encore/commerce/events.ts", ".stackra/encore/commerce/relay.ts"]);
   });
 
   it("leaves a consumed event to the relay when the service relays", () => {

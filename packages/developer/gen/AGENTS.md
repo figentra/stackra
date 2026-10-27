@@ -116,7 +116,9 @@ The Stackra compiler. Member at `packages/developer/gen` (`tier:lib`), in the pr
   the product from each publisher's generated `events.ts`. Discovery reads the publishers (`readPublisherManifests`)
   only for a member with a relay. A typed consumer (a listener of a `#stackra/clients/<service>` event) gets
   `subscriptions.ts`, one subscription per consumed event on the producer's topic (folder from `MemberIR.services`),
-  into the inbox; a wire name its relay hears is left to the relay. Never make a producer list its subscribers.
+  into the inbox; a wire name its relay hears is left to the relay. Never make a producer list its subscribers. A
+  local listener of the service's own integration event gets a subscription on its own topic (`./events`) into its
+  inbox too (STA-1302): the broker publisher reaches only the topic, so without it the listener never runs.
 - The shape vocabulary is `TypeDesc` (`src/core/types/type-desc.type.ts`). A new platform field type is one
   `TypeDesc` kind read in `readTypeReference` (only when declared in a `@stackra/*` package) and one case in each of
   `emitSchemas`, `jsonSchemaOf` and, for a model column, `emitEntities`, with tests. `Translated` and
