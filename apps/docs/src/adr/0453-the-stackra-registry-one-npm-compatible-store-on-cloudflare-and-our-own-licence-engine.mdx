@@ -179,8 +179,9 @@ wait and our registry does not need npmjs.
     - `GET /-/stackra/v1/catalogue?kind=&scope=&q=&cursor=&limit=` returns `CataloguePage`:
       `{ items: CatalogueItem[], next: string | null }`, newest publish first, `limit` at most 100.
     - `GET /-/stackra/v1/catalogue/@scope/name` returns one `CatalogueItem` with `versions`.
-    - `CatalogueItem` is `{ name, scope, kind, description, latest, distTags, access: "open" | "licensed",
-licence, keywords, repository, homepage, publishedAt, deprecated, stackra }`.
+    - `CatalogueItem` is an object of `name`, `scope`, `kind`, `description`, `latest`, `distTags`,
+      `access` (`"open"` or `"licensed"`), `licence`, `keywords`, `repository`, `homepage`, `publishedAt`,
+      `deprecated` and `stackra`.
     - `GET /-/stackra/v1/entitlements` with a licence token returns what it may read:
       `{ holder, grants, expiresAt, status }`; the CLI shows it as `stackra whoami`.
 

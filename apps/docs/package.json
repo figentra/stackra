@@ -5,6 +5,9 @@
   "description": "Stackra documentation site — Mintlify (docs.json + MDX).",
   "license": "UNLICENSED",
   "type": "module",
+  "imports": {
+    "#src/*": "./src/*.ts"
+  },
   "scripts": {
     "dev": "cd src && mint dev --port 3333",
     "build": "cd src && mint validate",
@@ -14,7 +17,11 @@
     "a11y": "cd src && mint a11y",
     "clean": "rm -rf src/.mintlify .turbo"
   },
+  "dependencies": {
+    "@stackra/gen": "workspace:*"
+  },
   "devDependencies": {
+    "@stackra/testing": "workspace:*",
     "mint": "catalog:docs",
     "oxfmt": "catalog:quality"
   }

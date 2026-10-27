@@ -4,7 +4,9 @@
  *          (`mergeSystemGraphs`' output, or one repo's `stackra.graph.json`), renders it with `renderSystemMap` and
  *          writes `index.mdx`, `flows/` and `services/` into the map folder, replacing the previous generated pages
  *          whole so a removed flow or service leaves no stale page. Run as
- *          `node apps/docs/src/system-map/write-system-map.ts <graph.json> [out-dir]` (Node strips the types).
+ *          `node apps/docs/src/system-map/write-system-map.ts <graph.json> [out-dir]` (Node strips the types; the
+ *          renderer is imported as `#src/system-map/render-system-map`, which `imports` in package.json maps to its
+ *          `.ts` file, so Node finds it without a written extension).
  * Boundary: reads one file and writes generated pages only; the rendering is `renderSystemMap`'s. It never touches
  *           anything but `index.mdx`, `flows/` and `services/` under the out folder (the renderer's own source and
  *           tests stay). A missing graph, invalid JSON or an unknown graph version fails the run with the path.
@@ -18,7 +20,7 @@ import { fileURLToPath } from "node:url";
 
 import type { SystemGraph } from "@stackra/gen";
 
-import { renderSystemMap } from "./render-system-map.ts";
+import { renderSystemMap } from "#src/system-map/render-system-map";
 
 /**
  * Regenerates the map pages from the graph at `graphPath` into `outDir` and returns the written page paths.

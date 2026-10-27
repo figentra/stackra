@@ -747,7 +747,14 @@ importers:
         version: 7.0.2
 
   apps/docs:
+    dependencies:
+      '@stackra/gen':
+        specifier: workspace:*
+        version: link:../../packages/developer/gen
     devDependencies:
+      '@stackra/testing':
+        specifier: workspace:*
+        version: link:../../packages/developer/testing
       mint:
         specifier: catalog:docs
         version: 4.2.985(@base-ui/react@1.9.0(@types/react@19.3.0)(react-dom@19.3.1(react@19.2.3))(react@19.2.3))(@types/node@26.6.4)(@types/react@19.3.0)(debug@4.4.3(supports-color@8.1.1))(react-dom@19.3.1(react@19.2.3))(supports-color@8.1.1)(typescript@6.0.3)

@@ -18,8 +18,8 @@ import { systemGraph } from "@stackra/gen";
 import type { GraphFlow, GraphNode } from "@stackra/gen";
 import { describe, expect, it } from "@stackra/testing";
 
-import { renderSystemMap } from "../render-system-map.ts";
-import { writeSystemMap } from "../write-system-map.ts";
+import { renderSystemMap } from "../render-system-map";
+import { writeSystemMap } from "../write-system-map";
 
 /** A node of `repo` named `member`. */
 function node(repo: string, member: string, extra: Partial<GraphNode> = {}): GraphNode {
