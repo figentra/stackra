@@ -2,9 +2,9 @@
  * Stackra file contract:
  * Purpose: `CarrierGatewaysFake`, a `CarrierGateways` that answers from the offers a test puts in `offers`: per Market,
  *          the first gateway with every needed capability, all of them in order, or the gateway of a connection.
- * Boundary: built on `Fake` of @stackra/testing; records every call. It refuses with `NoCarrierError` exactly where
- *           the port says a driver does, so the engine's refusal paths are testable. The gateways are the test's own
- *           literals; no carrier is named here.
+ * Boundary: built on `Fake` of @stackra/testing; records the first argument of every call, as `FakeRecorder` takes
+ *           it. It refuses with `NoCarrierError` exactly where the port says a driver does, so the engine's refusal
+ *           paths are testable. The gateways are the test's own literals; no carrier is named here.
  * Runtime: node
  * Governing contract: ADR 0269 (decision 3: fakes in the owner's `./testing`); ADR 0369 (decision 3); ADR 0356.
  */
@@ -27,26 +27,26 @@ export class CarrierGatewaysFake extends Fake.of(CarrierGateways) {
   /** What each Market offers, preferred first. */
   readonly offers: { readonly market: string; readonly gateway: CarrierGateway }[] = [];
 
-  /** Recorded, then the first offer of `market` with every capability in `needs`. */
+  /** Records `market`, then the first offer of `market` with every capability in `needs`. */
   async forMarket(market: string, needs: readonly CarrierCapability[]): Promise<CarrierGateway> {
-    this.record("forMarket", { market, needs });
+    this.record("forMarket", market);
     const [gateway] = this.matching(market, needs);
     if (gateway === undefined) throw NoCarrierError.create({ market, needs: needs.join(",") });
     return gateway;
   }
 
-  /** Recorded, then every offer of `market` with every capability in `needs`, in order. */
+  /** Records `market`, then every offer of `market` with every capability in `needs`, in order. */
   async allForMarket(
     market: string,
     needs: readonly CarrierCapability[],
   ): Promise<readonly CarrierGateway[]> {
-    this.record("allForMarket", { market, needs });
+    this.record("allForMarket", market);
     return this.matching(market, needs);
   }
 
-  /** Recorded, then the offered gateway with this provider and connection id. */
+  /** Records `provider`, then the offered gateway with this provider and connection id. */
   async byConnection(provider: string, connectionId: string): Promise<CarrierGateway> {
-    this.record("byConnection", { provider, connectionId });
+    this.record("byConnection", provider);
     const offer = this.offers.find(
       ({ gateway }) => gateway.provider === provider && gateway.id === connectionId,
     );

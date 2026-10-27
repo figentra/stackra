@@ -45,10 +45,7 @@ describe("CarrierGatewaysFake", () => {
     ).toBe(full);
     expect(await carriers.allForMarket("zz", [CarrierCapability.Rates])).toEqual([rates, full]);
     expect(await carriers.allForMarket("yy", [])).toEqual([]);
-    expect(carriers.calls("forMarket")).toEqual([
-      { market: "zz", needs: ["rates"] },
-      { market: "zz", needs: ["labels", "pickup_points"] },
-    ]);
+    expect(carriers.calls("forMarket")).toEqual(["zz", "zz"]);
   });
 
   it("finds the connection that bought a label", async () => {

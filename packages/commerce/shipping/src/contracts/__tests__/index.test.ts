@@ -274,7 +274,7 @@ describe("@stackra/shipping/contracts", () => {
         },
       ],
       stops: [{ stopId: "o1", location: at, demand: { chilled: 2 }, serviceS: 120 }],
-      profile: request.profile,
+      profile: "van",
     };
     const plan: RoutePlan = {
       routes: [
@@ -289,11 +289,12 @@ describe("@stackra/shipping/contracts", () => {
       ],
       unassigned: [],
     };
-    expect([matrix.durationsS[0]?.[1], problem.stops.length, plan.routes[0]?.durationS]).toEqual([
-      null,
-      1,
-      120,
-    ]);
+    expect([
+      request.destinations.length,
+      matrix.durationsS[0]?.[1],
+      problem.stops.length,
+      plan.routes[0]?.durationS,
+    ]).toEqual([2, null, 1, 120]);
     // @ts-expect-error -- a vehicle has a shift
     const shiftless: RouteProblem["vehicles"][number] = {
       vehicleId: "v2",
