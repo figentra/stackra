@@ -3,7 +3,8 @@
  * Purpose: Stand-in barrel: the `./node` entry of @stackra/loyalty-kit (the root module, its settings, the permissions
  *          and policy, actions, queries, their input and output schemas, the redemption workflow and its signal,
  *          events, the extension point and its extension, listener, models, the panel resource, document and widgets,
- *          services, the Postgres driver and the migrations) until `stackra gen` writes the entry barrels (STA-339).
+ *          services, the Postgres ledger and threshold tier policy drivers and the migrations) until `stackra gen`
+ *          writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. Every export under src/node except `database/factories` and
  *           `database/seeders`, which only ./testing exports, so a server never loads Faker; the internal constants
  *           (the tier settings schema and the icon and slot stand-ins) stay here. A host's manifest references the migrations as `{ from: "@stackra/loyalty-kit/node",
@@ -22,10 +23,12 @@ export { RedeemPointsAction } from "#node/actions/redeem-points.action";
 export { CreateLoyaltyTablesMigration } from "#node/database/migrations/0001-create-loyalty-tables.migration";
 export { LedgerEntriesAccountIdIndexMigration } from "#node/database/migrations/0002-ledger-entries-account-id-index.migration";
 export { PostgresLoyaltyLedgerDriver } from "#node/drivers/postgres-loyalty-ledger.driver";
+export { ThresholdLoyaltyTierPolicyDriver } from "#node/drivers/threshold-loyalty-tier-policy.driver";
 export { AccountEnrolled } from "#node/events/account-enrolled.event";
 export { AccountFrozen } from "#node/events/account-frozen.event";
 export { PointsEarnedV1Change } from "#node/events/points-earned-v1.change";
 export { PointsEarned } from "#node/events/points-earned.event";
+export { PointsExpired } from "#node/events/points-expired.event";
 export { PointsRedeemed } from "#node/events/points-redeemed.event";
 export { LoyaltyKitExtensionPoint } from "#node/extensions/loyalty-kit.extension-point";
 export { TierMultiplierExtension } from "#node/extensions/tier-multiplier.extension";

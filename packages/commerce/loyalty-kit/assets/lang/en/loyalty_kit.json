@@ -38,6 +38,14 @@
   },
   "settings": {
     "title": "Loyalty",
+    "is_active": {
+      "label": "Programme running",
+      "help": "When off, members earn nothing here; redemption and expiry go on."
+    },
+    "earn_per_minor": {
+      "label": "Points per minor unit spent",
+      "help": "Points a member earns for each minor unit (cent) spent, rounded down; 0.01 is one point per 100 cents."
+    },
     "expiry_months": {
       "label": "Points expire after (months)",
       "help": "Unspent earned points expire this many months after they were earned."

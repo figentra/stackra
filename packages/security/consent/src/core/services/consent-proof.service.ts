@@ -3,14 +3,15 @@
  * Purpose: `ConsentProofService`, versioned terms acceptance and consent on the server: which required documents a
  *          person has not accepted in their current version, recording an acceptance or a refusal with the text's
  *          hash, and recording a consent one person gives for another after the `ConsentAuthority` confirms the
- *          relationship.
+ *          relationship; and reading a person's evidence trail (who answered, which version, when, on whose behalf).
  * Boundary: over `ConsentProofStore`, `ConsentAuthority` and `Clock`; the only writer of proofs. A newer version of a
  *           document needs a new acceptance; an older or refused answer never counts. The relationship stored is the
  *           authority's answer, never the caller's. Who must be asked (an age floor) is market-pack data the caller
- *           applies (`needsGuardianConsent`).
+ *           applies (`needsGuardianConsent`). The evidence trail is the store's rows as written, never summarised, so
+ *           it can be shown to a regulator or the person as it is.
  * Runtime: isomorphic
  * Governing contract: owner round 3 #29 (versioned terms acceptance, server proof store); OS-284 (on behalf of
- *                     another); ADR 0298 (decision 3).
+ *                     another); ADR 0298 (decision 3); ADR 0454 (decision 5: consent evidence records).
  */
 import { Service } from "@stackra/container";
 import type { Clock } from "@stackra/contracts";
@@ -115,6 +116,16 @@ export class ConsentProofService extends Service {
   /** The latest answer of `subject` for `document`, any version. */
   current(subject: PublicId, document: string): Promise<ConsentProof | undefined> {
     return this.store.latest(subject, document);
+  }
+
+  /**
+   * The evidence trail of `subject`, oldest first: every answer given by them or for them, each with who gave it, the
+   * relationship when on their behalf, the document version, the text's hash and when. Narrowed to one document when
+   * `document` is given.
+   */
+  async evidence(subject: PublicId, document?: string): Promise<readonly ConsentProof[]> {
+    const proofs = await this.store.list(subject);
+    return document === undefined ? proofs : proofs.filter((proof) => proof.document === document);
   }
 
   /** Stamps and appends one proof. */

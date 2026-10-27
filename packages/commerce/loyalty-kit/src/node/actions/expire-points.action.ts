@@ -6,12 +6,13 @@
  *           scope (`perScope`), and gen checks the cron's `input` against `ExpirePointsInput`.
  *           The only actor is the system, so it gets no endpoint and no tool, and the same pipeline applies isolation,
  *           audit and idempotency. Each driver cuts an expiry at zero, so a member whose earned points were spent is
- *           never taken below zero. It runs on the default queue until gen writes `#stackra/queues`
- *           (`Queues.Maintenance`). The key's aggregate (`points`) is not the model's, so the permission is named:
+ *           never taken below zero. Each account whose expiry took points records `loyalty_kit.points.expired.v1`,
+ *           which reaches the outbox with the run's unit of work. It runs on the default queue until gen writes
+ *           `#stackra/queues` (`Queues.Maintenance`). The key's aggregate (`points`) is not the model's, so the permission is named:
  *           `LoyaltyAccountPermissions.expire`, a system permission no role grants.
  * Runtime: node
  * Governing contract: ADR 0294 (decisions 16, 18 and 21); ADR 0305 (rule 28: the job surface); ADR 0098; ADR 0148
- *                     (queue and scheduler); ADR 0220.
+ *                     (queue and scheduler); ADR 0220; ADR 0454 (decision 4).
  */
 import { Action, type ActionContext } from "@stackra/actions";
 import { ActorKind, SortDirection } from "@stackra/contracts";
@@ -20,6 +21,7 @@ import type { SettingsReader } from "@stackra/settings";
 import type { LoyaltyLedger } from "#contracts/ports/loyalty-ledger.port";
 import { memberId } from "#core/functions/member-id.function";
 import { LoyaltyAccountPermissions } from "#node/access/loyalty-account.permissions";
+import { PointsExpired } from "#node/events/points-expired.event";
 import { LoyaltyKitSettings } from "#node/loyalty-kit.settings";
 import type { ExpirePointsInput } from "#node/schemas/expire-points-input.schema";
 import { ExpirePointsOutput } from "#node/schemas/expire-points-output.schema";
@@ -73,9 +75,22 @@ export class ExpirePointsAction extends Action({
       { limit: input.batchSize, orderBy: { updatedAt: SortDirection.Asc } },
     );
     let points = 0;
-    for (const account of accounts)
+    for (const account of accounts) {
+      const member = memberId(account.memberId);
       // oxlint-disable-next-line no-await-in-loop -- one account at a time on the caller's connection
-      points += await this.ledger.expire(memberId(account.memberId), cutoff);
+      const expired = await this.ledger.expire(member, cutoff);
+      if (expired <= 0) continue;
+      points += expired;
+      account.record(
+        PointsExpired.create({
+          memberId: account.memberId,
+          points: expired,
+          cutoff: cutoff.toISOString(),
+          // oxlint-disable-next-line no-await-in-loop -- read on the same connection, after this member's expiry
+          balanceAfter: await this.ledger.balance(member),
+        }),
+      );
+    }
     return ExpirePointsOutput.create({ accounts: accounts.length, points });
   }
 }

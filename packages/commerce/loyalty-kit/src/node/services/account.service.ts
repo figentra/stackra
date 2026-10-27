@@ -8,14 +8,17 @@
  *           (the stamp card: earning by visit count). Events are
  *           recorded on the aggregate and reach the outbox when the unit of work flushes, so a rolled-back change emits
  *           nothing. The extension point is injected as a class and its `earnAdjust` slot called as a method. This is
- *           the one earn path: the pure maths is `LoyaltyService.quoteEarn`, which writes nothing.
+ *           the one earn path: the pure maths is `LoyaltyService.quoteEarn`, which writes nothing. Both earn paths read
+ *           the scope's programme (`LoyaltyKitSettings`): a paused programme earns and enrolls nothing, and the spend
+ *           rate is the `earnPerMinor` setting, never config (ADR 0454).
  * Runtime: node
  * Governing contract: ADR 0294 (decisions 13, 16 and 27); ADR 0105 as amended; ADR 0136; ADR 0141; ADR 0265 (the owner
- *                     calls its extension point explicitly).
+ *                     calls its extension point explicitly); ADR 0454 (decisions 1 and 2).
  */
 import type { RequestContext } from "@stackra/actions";
 import type { Clock, PublicId } from "@stackra/contracts";
 import { CrudService } from "@stackra/database";
+import type { SettingsReader } from "@stackra/settings";
 
 import { EntryKind } from "#contracts/enums/entry-kind.enum";
 import { LoyaltyTier } from "#contracts/enums/loyalty-tier.enum";
@@ -29,6 +32,7 @@ import { AccountEnrolled } from "#node/events/account-enrolled.event";
 import { AccountFrozen } from "#node/events/account-frozen.event";
 import { PointsEarned } from "#node/events/points-earned.event";
 import type { LoyaltyKitExtensionPoint } from "#node/extensions/loyalty-kit.extension-point";
+import { LoyaltyKitSettings } from "#node/loyalty-kit.settings";
 import type { LoyaltyAccount } from "#node/models/loyalty-account.model";
 
 /**
@@ -53,12 +57,16 @@ export class AccountService extends CrudService<LoyaltyAccount> {
   /** The ambient context of the running action, listener or job, handed to the extension chain. */
   private readonly request: RequestContext;
 
+  /** The scope's programme (whether it runs, the earn rate), read per call so a change applies at once. */
+  private readonly settings: SettingsReader;
+
   /**
    * @param ledger - the configured ledger driver, by type.
    * @param loyalty - the base earn maths.
    * @param extensions - the kit's extension point.
    * @param clock - the clock, frozen in tests.
    * @param request - the ambient context of the running call.
+   * @param settings - the scope's programme, read per call.
    */
   constructor(
     ledger: LoyaltyLedger,
@@ -66,6 +74,7 @@ export class AccountService extends CrudService<LoyaltyAccount> {
     extensions: LoyaltyKitExtensionPoint,
     clock: Clock,
     request: RequestContext,
+    settings: SettingsReader,
   ) {
     super();
     this.ledger = ledger;
@@ -73,6 +82,7 @@ export class AccountService extends CrudService<LoyaltyAccount> {
     this.extensions = extensions;
     this.clock = clock;
     this.request = request;
+    this.settings = settings;
   }
 
   /**
@@ -111,13 +121,15 @@ export class AccountService extends CrudService<LoyaltyAccount> {
    * Credits a purchase: enrolls the member at bronze on their first earn, takes the base rate, runs the `earnAdjust`
    * chain (the tier multiplier), appends one ledger entry and records `points.earned` v2, which promotes the tier.
    *
-   * @returns the points credited; zero for a repeated reference or a sub-point amount.
+   * @returns the points credited; zero for a repeated reference, a sub-point amount or a paused programme.
    * @throws AccountFrozenError when the account is frozen.
    */
   async earn(member: MemberId, request: EarnRequest): Promise<number> {
+    const { isActive, earnPerMinor } = await this.settings.get(LoyaltyKitSettings);
+    if (!isActive) return 0;
     const account = await this.enroll(member, LoyaltyTier.Bronze);
     if (!account.canTransact) throw AccountFrozenError.create({ accountId: account.id });
-    const base = this.loyalty.quoteEarn(request.amountMinor);
+    const base = this.loyalty.quoteEarn(request.amountMinor, earnPerMinor);
     const points = await this.extensions.earnAdjust(
       base,
       {
@@ -154,13 +166,15 @@ export class AccountService extends CrudService<LoyaltyAccount> {
    * entry of `request.stamps` points under the visit's reference and records `points.earned`. No spend rate and no
    * extension applies: a stamp card counts visits, not money.
    *
-   * @returns the stamps credited; zero for a repeated reference.
+   * @returns the stamps credited; zero for a repeated reference or a paused programme.
    * @throws AccountFrozenError when the account is frozen.
    * @throws RangeError when `request.stamps` is not a positive integer.
    */
   async earnVisit(member: MemberId, request: VisitRequest): Promise<number> {
     if (!Number.isInteger(request.stamps) || request.stamps < 1)
       throw new RangeError(`earnVisit: stamps must be a positive integer, got ${request.stamps}`);
+    const { isActive } = await this.settings.get(LoyaltyKitSettings);
+    if (!isActive) return 0;
     const account = await this.enroll(member, LoyaltyTier.Bronze);
     if (!account.canTransact) throw AccountFrozenError.create({ accountId: account.id });
     const written = await this.ledger.append({

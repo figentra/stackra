@@ -25,6 +25,8 @@ Entries `.`, `./contracts`, `./react`, `./testing`.
 - `./ui` renders `@stackra/ui` web components; `./react` stays hooks only. Reject all has the same weight as accept
   all. Legal texts render as plain paragraphs, never as HTML.
 - Proofs are append-only and hold ids, never the text; a relationship comes from `ConsentAuthority`, never input.
+- A proof is the consent evidence record (ADR 0454): `evidence` returns the rows as written; never summarise or merge
+  them.
 
 ## This package
 

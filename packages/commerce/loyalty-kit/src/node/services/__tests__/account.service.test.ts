@@ -4,7 +4,8 @@
  *          `earnAdjust` chain applies (gold earns double), the credit is idempotent per reference and records one
  *          `points.earned` with the balance after; a frozen account is refused before anything is appended; enrolment
  *          is idempotent and records `account.enrolled` once; freezing records `account.frozen` only on a change; a
- *          visit stamps the card once per reference, at the stamp count given.
+ *          visit stamps the card once per reference, at the stamp count given; the earn rate is the scope's setting,
+ *          and a paused programme earns, stamps and enrolls nothing.
  * Boundary: test only; the service runs over the memory ledger, a real `LoyaltyService`, an extension point whose slot
  *           calls the tier extension, and an in-memory stand-in for the two repository calls it makes, so no database
  *           runs. Recorded events are read with `takeRecordedEvents`.
@@ -17,6 +18,7 @@ import { buildConfig } from "@stackra/config";
 import type { Clock, PublicId } from "@stackra/contracts";
 import { takeRecordedEvents } from "@stackra/events";
 import { refusal } from "@stackra/errors/testing";
+import { fakeSettings } from "@stackra/settings/testing";
 import { beforeEach, describe, expect, it } from "@stackra/testing";
 
 import { LoyaltyKitConfig } from "#config/loyalty-kit.config";
@@ -31,6 +33,7 @@ import type { AccountFrozen } from "#node/events/account-frozen.event";
 import { PointsEarned } from "#node/events/points-earned.event";
 import type { LoyaltyKitExtensionPoint } from "#node/extensions/loyalty-kit.extension-point";
 import { TierMultiplierExtension } from "#node/extensions/tier-multiplier.extension";
+import { LoyaltyKitSettings } from "#node/loyalty-kit.settings";
 import { LoyaltyAccount } from "#node/models/loyalty-account.model";
 import { AccountService } from "#node/services/account.service";
 import { LoyaltyMembersFake } from "#testing/loyalty-members.fake";
@@ -45,6 +48,9 @@ describe("AccountService", () => {
   let ledger: MemoryLoyaltyLedgerDriver;
   let accounts: AccountService;
   let stored: LoyaltyAccount[];
+  /** Sets the scope's programme the next calls read. */
+  const withProgramme = (values: { isActive?: boolean; earnPerMinor?: number }) =>
+    Object.assign(accounts, { settings: fakeSettings([[LoyaltyKitSettings, values]]) });
 
   beforeEach(() => {
     ledger = new MemoryLoyaltyLedgerDriver();
@@ -61,6 +67,7 @@ describe("AccountService", () => {
       extensions,
       { now: () => new Date(NOW.getTime()) } as Clock,
       { current: () => fakeExtensionContext() } as unknown as RequestContext,
+      fakeSettings(),
     );
     // the two repository calls the service makes, kept in memory
     Object.assign(accounts, {
@@ -100,6 +107,20 @@ describe("AccountService", () => {
     const gold = memberId("usr_gold");
     await accounts.enroll(gold, LoyaltyTier.Gold);
     expect(await accounts.earn(gold, purchase)).toBe(200);
+  });
+
+  it("earns at the scope's earnPerMinor setting", async () => {
+    withProgramme({ earnPerMinor: 0.02 });
+    expect(await accounts.earn(memberId("usr_rate"), purchase)).toBe(200);
+  });
+
+  it("earns, stamps and enrolls nothing while the programme is paused", async () => {
+    withProgramme({ isActive: false });
+    const member = memberId("usr_paused");
+    expect(await accounts.earn(member, purchase)).toBe(0);
+    expect(await accounts.earnVisit(member, { stamps: 1, reference: "vis_1" })).toBe(0);
+    expect(stored).toHaveLength(0);
+    expect(await ledger.balance(member)).toBe(0);
   });
 
   it("credits nothing for a sub-point purchase", async () => {

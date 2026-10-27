@@ -46,6 +46,8 @@ describe("LoyaltyService", () => {
   it("quotes the base earn without touching the ledger", async () => {
     expect(loyalty.quoteEarn(5_000)).toBe(500);
     expect(loyalty.quoteEarn(9)).toBe(0);
+    // the scope's rate, when given, wins over config
+    expect(loyalty.quoteEarn(5_000, 0.02)).toBe(100);
     expect(loyalty.pointsFor(250)).toBe(250);
     expect(await ledger.balance(usr1)).toBe(0);
   });

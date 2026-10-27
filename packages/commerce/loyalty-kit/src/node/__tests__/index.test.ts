@@ -2,8 +2,8 @@
  * Stackra file contract:
  * Purpose: the consumer contract of the `./node` entry: the module, settings, permissions and policy, actions,
  *          queries, schemas, the workflow and its signal, events, extension point and extension, listener, models, the
- *          panel resource, document and widgets, services, Postgres driver and migrations are its values; the
- *          factories, the seeder and the internal constants are not.
+ *          panel resource, document and widgets, services, the Postgres and threshold drivers and migrations are its
+ *          values; the factories, the seeder and the internal constants are not.
  * Boundary: test only; imports the stand-in barrel through its `#node` alias.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0294 (decision 15).
@@ -52,6 +52,7 @@ describe("@stackra/loyalty-kit/node", () => {
       "PointsBalanceWidget",
       "PointsEarned",
       "PointsEarnedV1Change",
+      "PointsExpired",
       "PointsIssuedInput",
       "PointsIssuedQuery",
       "PointsIssuedWidget",
@@ -64,6 +65,7 @@ describe("@stackra/loyalty-kit/node", () => {
       "RedeemPointsOutput",
       "RedeemPointsWorkflow",
       "RedemptionConfirmed",
+      "ThresholdLoyaltyTierPolicyDriver",
       "TierMultiplierExtension",
     ]);
   });

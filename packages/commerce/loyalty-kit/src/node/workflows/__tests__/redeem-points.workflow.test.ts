@@ -5,8 +5,8 @@
  *          credited back under the revert reference when the wait times out; a `redeemVerify` extension may lower the
  *          points asked for.
  * Boundary: test only; the engine runs on the memory journal and lock driver with a clock the test moves, over a real
- *           `LoyaltyService`, the memory ledger, the members fake and a stand-in extension point. No database and no
- *           outbox run (`points.redeemed` is a domain event, dispatched only when a bus is bound). The sample's
+ *           `LoyaltyService`, the memory ledger, the members fake, a stand-in extension point and a stand-in outbox
+ *           that keeps what the debit step writes (`points.redeemed` is an integration event, ADR 0454). No database. The sample's
  *           integration test expected the redeem call itself to refuse with `workflow_timed_out` after the wait; the
  *           engine answers the call when the run parks, so here the call returns the debit and the timeout shows on the
  *           run record and the balance.
@@ -18,6 +18,7 @@ import type { ExtensionContext, Resolver } from "@stackra/actions";
 import { buildConfig } from "@stackra/config";
 import type { AnyClass } from "@stackra/container";
 import type { Clock } from "@stackra/contracts";
+import { EventOutbox, type RecordedEvent } from "@stackra/events/contracts";
 import { actors } from "@stackra/iam/testing";
 import { Locks, MemoryLockDriver } from "@stackra/locking";
 import { describe, expect, it } from "@stackra/testing";
@@ -33,6 +34,7 @@ import { EntryKind } from "#contracts/enums/entry-kind.enum";
 import { MemoryLoyaltyLedgerDriver } from "#core/drivers/memory-loyalty-ledger.driver";
 import { memberId } from "#core/functions/member-id.function";
 import { LoyaltyService } from "#core/services/loyalty.service";
+import { PointsRedeemed } from "#node/events/points-redeemed.event";
 import type { LoyaltyKitExtensionPoint } from "#node/extensions/loyalty-kit.extension-point";
 import { RedeemPointsInput } from "#node/schemas/redeem-points-input.schema";
 import { RedeemPointsWorkflow } from "#node/workflows/redeem-points.workflow";
@@ -93,22 +95,38 @@ async function engineWith(redeemVerify = passThrough) {
     new Locks(new MemoryLockDriver(clock), clock),
     clock,
   );
+  const written: RecordedEvent[] = [];
+  const outbox = {
+    write: async (records: readonly RecordedEvent[]) => void written.push(...records),
+  };
+  const bound = new Map<AnyClass, object>([
+    [RedeemPointsWorkflow, workflow],
+    [EventOutbox, outbox],
+  ]);
   const resolver: Resolver = {
-    has: (token: AnyClass) => token === RedeemPointsWorkflow,
-    get: <T extends object>(_token: AnyClass<T>) => workflow as unknown as T,
+    has: (token: AnyClass) => bound.has(token),
+    get: <T extends object>(token: AnyClass<T>) => bound.get(token) as T,
   };
   runner.connect(resolver);
-  return { runner, ledger, clock };
+  return { runner, ledger, clock, written };
 }
 
 describe("RedeemPointsWorkflow", () => {
   it("answers with the debit when it parks, and keeps it once the host confirms within the wait", async () => {
-    const { runner, ledger, clock } = await engineWith();
+    const { runner, ledger, clock, written } = await engineWith();
     const input = RedeemPointsInput.create({ points: 300, reference: "ord_2", totalMinor: 10_000 });
 
     const output = await runner.start(RedeemPointsWorkflow, input, ORIGIN);
 
     expect({ ...(output as object) }).toEqual({ points: 300, amountMinor: 300, balance: 700 });
+    expect(written.map((record) => record.event)).toEqual([
+      PointsRedeemed.create({
+        memberId: member,
+        points: 300,
+        reference: "ord_2",
+        balanceAfter: 700,
+      }),
+    ]);
     expect((await runner.last(RedeemPointsWorkflow))?.status).toBe(WorkflowRunStatus.Waiting);
 
     const confirmation = { memberId: member, reference: "ord_2" };

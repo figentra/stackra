@@ -12,7 +12,8 @@
  *           `ctx.run`.
  * Runtime: node
  * Governing contract: ADR 0294 (decisions 6, 16 and 18); ADR 0101; ADR 0151; ADR 0152 (decision 1: `waitFor`); ADR
- *                     0265 as amended (the owner runs its `before` slot).
+ *                     0265 as amended (the owner runs its `before` slot); ADR 0454 (decision 4: `points.redeemed` is an
+ *                     integration event).
  */
 import { type Run, Step, type StepContext, Workflow } from "@stackra/workflow";
 
@@ -82,7 +83,7 @@ export class RedeemPointsWorkflow extends Workflow<RedeemPointsInput>({ timeout:
 
   /**
    * Takes the points off the ledger as one covered debit, so a redemption that raced this one since the quote is
-   * refused here instead of overdrawing; `points.redeemed` is dispatched when this step commits.
+   * refused here instead of overdrawing; `points.redeemed.v1` reaches the outbox when this step commits.
    *
    * @returns the member's balance after the debit.
    * @throws InsufficientPointsError when the balance no longer covers the quoted points.
@@ -90,7 +91,9 @@ export class RedeemPointsWorkflow extends Workflow<RedeemPointsInput>({ timeout:
   async debit(run: Run<this>, ctx: StepContext): Promise<number> {
     const { memberId: member, points, reference } = run.results.quote;
     const balance = await this.loyalty.redeem(memberId(member), points, reference, ctx.now());
-    ctx.record(PointsRedeemed.create({ memberId: member, points, reference }));
+    ctx.record(
+      PointsRedeemed.create({ memberId: member, points, reference, balanceAfter: balance }),
+    );
     return balance;
   }
 

@@ -1,0 +1,75 @@
+---
+title: "0454 — Loyalty programme as scoped settings, a tier policy port, public balance events, and consent evidence"
+description: "Proposed · 2026-10-27"
+---
+
+{/* Stackra file contract. Purpose: ADR 0454, the loyalty-kit programme, earn rate, tier policy and balance events, and consent evidence records. Boundary: decisions for @stackra/loyalty-kit and @stackra/consent only. Runtime: documentation. Governing contract: ADR 0294, 0213, 0141, 0298, 0357, 0323; OS-343; STA-927. */}
+
+<Note>
+  Proposed (STA-927, batch stackra-53). It closes the Commerce loyalty gaps (customers loyalty SPEC,
+  "Stackra gaps") and the consent-on-behalf row of the package needs (OS-284). Loyalty points stay
+  on `@stackra/loyalty-kit` (OS-343; ADR 0357's Note of 2026-10-26).
+</Note>
+
+## Context
+
+Commerce's loyalty module found five gaps in the kit: there is no programme (one account per scope and member, and
+nothing a merchant can pause); the earn rate, point value and redemption cap are deploy-time config, not per-scope
+settings; tiers are fixed to the kit's balance thresholds in `RecalculateTierListener`, with no way for a host to
+apply its own tier rules; `points.redeemed` is a private domain event and expiry publishes nothing, so a host cannot
+follow every balance move; and the catalogue planned `loyalty.points.earned` while the kit publishes
+`loyalty_kit.points.earned`. Separately, products need server-side consent evidence (who answered, which version,
+when, on whose behalf) beyond the visitor's cookie decision of ADR 0298.
+
+## Decision
+
+1. **A programme is the kit's settings group resolved at a scope.** `LoyaltyKitSettings` gains `isActive` (default
+   `true`). One programme per scope node: a tenant's settings are its programme, and a per-brand programme (COM-181)
+   is a scope level below the tenant that the host contributes, resolved by the settings cascade (ADR 0213). No
+   programme table: accounts stay one per (scope, member). A paused programme earns and enrolls nothing (spend and
+   visit earns return zero); redemption and expiry go on, so a member never loses points to a pause.
+2. **The earn rate is a setting.** `LoyaltyKitSettings.earnPerMinor` (default `0.01`, at most `1`, approval required,
+   since it is a member benefit) is the rate `AccountService.earn` uses. `LoyaltyService.quoteEarn(amountMinor,
+earnPerMinor?)` takes the scope's rate; config `earnPerMinor` remains only as the fallback of an isomorphic
+   preview with no settings reader, and is to be removed once no caller relies on it. Point value and the redemption
+   cap stay config in this ADR (they are read by the isomorphic `quote`); moving them is a follow-up.
+3. **Tiers are a port, `LoyaltyTierPolicy`.** `RecalculateTierListener` asks the policy which tier an earn earns
+   (`tierFor({ memberId, current, balanceAfter })`) and applies the answer only to raise a tier, never to demote.
+   The kit's one driver, `threshold`, reads `LoyaltyKitSettings.tiers` and is the behaviour the kit had before. A
+   host replaces it with `@Replaces(LoyaltyTierPolicy)`, which is the hook that replaces the threshold listener's rule.
+4. **Every balance move is an integration event, named in gen form.** Event keys follow the casing rules: the module
+   key is the package key, one snake_case segment, so the kit's events are `loyalty_kit.<model>.<verb>.v<n>`; the
+   catalogue's `loyalty.points.earned` is the name to change, not the kit's. `PointsRedeemed` becomes an integration
+   event, `loyalty_kit.points.redeemed.v1`, with `balanceAfter`; a new `PointsExpired`,
+   `loyalty_kit.points.expired.v1` (`memberId`, `points`, `cutoff`, `balanceAfter`), is recorded per account whose
+   expiry took points. `loyalty_kit.points.earned.v2` is unchanged. The balance query's cache drops on all three.
+5. **Consent evidence records are `ConsentProof` rows.** Each row already holds who it is about (`subject`), who gave
+   it (`givenBy`), on whose behalf (`relationship`, the `ConsentAuthority`'s answer, never input), the document and
+   version, the text's hash, the answer, the instant and the channel; the store is append-only. `ConsentProofService`
+   gains `evidence(subject, document?)`, the subject's trail oldest first, as written, so it can be shown to the
+   person or a regulator. The visitor cookie (ADR 0298) stays a preference, never evidence.
+
+## Consequences
+
+- Consumers of the renamed wire name: anything listing `loyalty_kit.points.redeemed` (no version) must read
+  `loyalty_kit.points.redeemed.v1`; in Commerce that is `apps/docs/src/api-reference/openapi.json` (`invalidateOn`)
+  and `services/customers/src/modules/loyalty/SPEC.md`. Commerce's `PromoteOnPointsEarnedListener` can become a
+  `LoyaltyTierPolicy` replacement, and its `loyalty.paused` handling can read `isActive`.
+- `AccountService` takes a `SettingsReader`; `RecalculateTierListener` takes a `LoyaltyTierPolicy` instead of one.
+  Both are resolved by type, so gen wiring needs no change beyond discovering the new driver.
+- A consent verification method (card check, signed form; review A2-2) is not part of the record yet; it is a
+  follow-up port.
+
+## Alternatives
+
+- **A programme table with its own id on every account and entry.** Rejected for now: it needs a migration of every
+  loyalty table and a new key on the ledger, while the settings cascade already gives one value set per scope.
+- **An `after` extension slot for the tier.** Rejected: the listener runs after commit, outside an action call, so it
+  has no extension context; a port replaced by type fits the kit's existing `@Replaces(LoyaltyLedger)` pattern.
+- **Renaming the kit's events to `loyalty.*`.** Rejected: the module key is derived from the package (ADR 0294
+  decision 20), and a rename would need `@Renamed` on every event for no gain.
+
+## Supersedes and sources
+
+Supersedes nothing. Sources: Commerce `services/customers/src/modules/loyalty/SPEC.md` ("Stackra gaps"); Commerce
+STA-716, STA-713; OS-343; OS-284; ADR 0213, 0298, 0357.

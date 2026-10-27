@@ -10,5 +10,10 @@
     "not_a_member": {
       "message": "You are not enrolled in the loyalty program."
     }
+  },
+  "settings": {
+    "is_active": {
+      "label": "Program running"
+    }
   }
 }

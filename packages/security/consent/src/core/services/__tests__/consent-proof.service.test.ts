@@ -3,10 +3,11 @@
  * Purpose: unit tests of `ConsentProofService` over `MemoryConsentProofStoreDriver`: a document is pending until its
  *          current version is accepted, a refusal or an older version never counts, an acceptance records the version,
  *          the hash and the channel, and a consent for another is recorded with the authority's relationship or
- *          refused when the authority knows none.
+ *          refused when the authority knows none; the evidence trail lists every answer for a subject, oldest first,
+ *          with who gave it, on whose behalf, the version and when, narrowed to one document on request.
  * Boundary: test only; a fixed clock and an authority that knows one guardian link.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; owner round 3 #29; OS-284.
+ * Governing contract: ADR 0022; owner round 3 #29; OS-284; ADR 0454 (decision 5).
  */
 import { Driver } from "@stackra/container";
 import { Clock, type PublicId } from "@stackra/contracts";
@@ -102,5 +103,27 @@ describe("ConsentProofService", () => {
       ConsentAuthorityMissingError,
     );
     await expect(proofs.answerFor(CHILD, CHILD, PHOTOS, true)).rejects.toThrow(RangeError);
+  });
+
+  it("lists the evidence trail: who, which version, when and on whose behalf", async () => {
+    await proofs.answer(CHILD, TERMS_2, true, "signup");
+    await proofs.answerFor(CHILD, PARENT, PHOTOS, true, "settings");
+
+    const trail = await proofs.evidence(CHILD);
+    expect(trail.map((proof) => [proof.document, proof.givenBy, proof.relationship])).toEqual([
+      ["terms", CHILD, undefined],
+      ["photos", PARENT, "guardian"],
+    ]);
+    expect(trail[1]).toMatchObject({
+      subject: CHILD,
+      version: "1",
+      granted: true,
+      at: "2026-10-25T09:00:00.000Z",
+      channel: "settings",
+    });
+    expect((await proofs.evidence(CHILD, "photos")).map((proof) => proof.document)).toEqual([
+      "photos",
+    ]);
+    expect(await proofs.evidence(STRANGER)).toEqual([]);
   });
 });

@@ -6,7 +6,7 @@
  *           product. It never writes an earn: crediting a purchase is `AccountService.earn`, which enrolls, runs the
  *           extension chain and records the event. Exported by `LoyaltyKitModule` for hosts to inject by class.
  * Runtime: isomorphic
- * Governing contract: ADR 0294 (decisions 15, 16 and 17); ADR 0220 (integer minor units).
+ * Governing contract: ADR 0294 (decisions 15, 16 and 17); ADR 0220 (integer minor units); ADR 0454 (decision 2).
  */
 import { Service } from "@stackra/container";
 
@@ -73,10 +73,12 @@ export class LoyaltyService extends Service {
    * The base points an amount earns before any extension runs: floor(amountMinor × earnPerMinor). Pure maths: no
    * ledger read, no write, no tier; `AccountService.earn` applies the tier multiplier and credits the result.
    *
+   * @param earnPerMinor - the scope's rate (the `LoyaltyKitSettings.earnPerMinor` setting, ADR 0454); config
+   *                       `earnPerMinor` only when the caller has no settings reader (a client-side preview).
    * @returns zero for a sub-point amount.
    */
-  quoteEarn(amountMinor: number): number {
-    return Math.floor(amountMinor * this.config.earnPerMinor);
+  quoteEarn(amountMinor: number, earnPerMinor: number = this.config.earnPerMinor): number {
+    return Math.floor(amountMinor * earnPerMinor);
   }
 
   /**
