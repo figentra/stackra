@@ -1,4 +1,4 @@
-<!-- Purpose: the README of @stackra/peripherals: what the ports, drivers, parsers and bridges are and how a host uses them. Boundary: this package only; the decisions live in the ADRs it names. Runtime: docs. Governing contract: ADR 0253, ADR 0339, ADR 0377, ADR 0449, STA-965. -->
+<!-- Purpose: the README of @stackra/peripherals: what the ports, drivers, parsers and bridges are and how a host uses them. Boundary: this package only; the decisions live in the ADRs it names. Runtime: docs. Governing contract: ADR 0253, ADR 0339, ADR 0377, ADR 0442, ADR 0449, ADR 0458 to 0460, STA-965. -->
 
 # @stackra/peripherals
 
@@ -10,8 +10,8 @@ honour resolves a typed refusal (`unavailable`, `permission_denied`) in the `Cap
 a keyboard-wedge HID device. A peripheral is hardware the client uses; a device that is a principal belongs to
 `@stackra/devices` (ADR 0235).
 
-**Tier:** `tier:lib` (`packages/experience/peripherals`). Entries `.`, `./contracts` and `./desktop` (ADR 0127
-2026-10-24 note: a runtime-target entry). Depends on `@stackra/platform` (capability codes, the result shape, the
+**Tier:** `tier:lib` (`packages/experience/peripherals`). Entries `.`, `./contracts`, `./desktop` and `./native` (ADR
+0127 2026-10-24 note: a runtime-target entry; `./native` is the Android till of ADR 0442). Depends on `@stackra/platform` (capability codes, the result shape, the
 `Bridge` kind), `@stackra/contracts`, `@stackra/container`, `@stackra/config`, `@stackra/validation` and
 `@stackra/errors`. Electron is an optional peer of `./desktop`.
 
@@ -25,6 +25,7 @@ a keyboard-wedge HID device. A peripheral is hardware the client uses; a device 
 | `./contracts` | `ReceiptPrinter`, `CashDrawer`, `BarcodeScanner`, `Scale`; `Receipt`, `PrintedReceipt`, `DrawerPin`, `ScaleReading`                                                                                          | the ports, injected by type (from here only)                                              |
 | `./desktop`   | `PrintReceiptBridge`                                                                                                                                                                                         | `peripherals.receipt.print`, the renderer's only way to the printer                       |
 | `./desktop`   | `EscposReceiptPrinterDriver`, `PrinterKickCashDrawerDriver`, `HidBarcodeScannerDriver`                                                                                                                       | the main-process drivers `escpos`, `printer_kick` and `hid`                               |
+| `./native`    | `SunmiReceiptPrinterDriver`, `PaxCashDrawerDriver`, `IminBarcodeScannerDriver` and the other six (three per family)                                                                                          | the Android till drivers `sunmi`, `pax` and `imin` (ADR 0442; certification pending)      |
 | `./contracts` | `LabelPrinter`, `CustomerDisplay`, `CardTerminal`; `LabelFormat`, `TerminalState`; `Label`, `RasterImage`, `PrintedLabel`, `CustomerDisplayView`, `CustomerDisplayLine`, `TerminalPairing`, `PairedTerminal` | the ports of ADR 0339 decision 1 and their types                                          |
 | `.`           | `MemoryLabelPrinterDriver`, `MemoryCustomerDisplayDriver`, `MemoryCardTerminalDriver`                                                                                                                        | the `memory` candidates of the three new ports                                            |
 | `.`           | `ChannelCustomerDisplayDriver`, `listenCustomerDisplay`, `CUSTOMER_DISPLAY_CHANNEL`                                                                                                                          | the `channel` customer display: the till posts views, the display window listens          |
@@ -185,6 +186,41 @@ parseGs1ElementString("]e00109501101530003" + "3103001250");
   form. A wrong GTIN or SSCC check digit, an identifier it does not know, a bad length or a non-GS1 symbology
   identifier (`]E0`) parses to `null`. An in-store prefix-2x EAN-13 stays `parseEmbeddedBarcode`'s.
 
+## The native Android till: Sunmi, PAX and iMin
+
+The `./native` entry holds the drivers of the Android till on Sunmi, PAX and iMin terminals (ADR 0442 decision 4), one
+vendor ADR each (0458 Sunmi, 0459 PAX, 0460 iMin). Each family drives the terminal's built-in printer, the drawer on
+its drawer port and its built-in scanner behind the existing ports; the ports do not change.
+
+| Driver name | `ReceiptPrinter`            | `CashDrawer`            | `BarcodeScanner`            | Expo module    |
+| ----------- | --------------------------- | ----------------------- | --------------------------- | -------------- |
+| `sunmi`     | `SunmiReceiptPrinterDriver` | `SunmiCashDrawerDriver` | `SunmiBarcodeScannerDriver` | `StackraSunmi` |
+| `pax`       | `PaxReceiptPrinterDriver`   | `PaxCashDrawerDriver`   | `PaxBarcodeScannerDriver`   | `StackraPax`   |
+| `imin`      | `IminReceiptPrinterDriver`  | `IminCashDrawerDriver`  | `IminBarcodeScannerDriver`  | `StackraImin`  |
+
+```ts
+export class PeripheralsConfig extends BasePeripheralsConfig {
+  override printer: DriverName<ReceiptPrinter> = "sunmi";
+  override drawer: DriverName<CashDrawer> = "sunmi";
+  override scanner: DriverName<BarcodeScanner> = "sunmi";
+}
+```
+
+- Each driver reads its family's Expo module from the app's modules registry when it runs, as the `external` customer
+  display does, so the entry loads anywhere and a build without the module refuses (`print`, or `scanner` for the
+  scanner) instead of crashing. Which families a build links is the runway's `device:<family>` capability.
+- The module is a thin pass-through to the vendor SDK (`printerStatus`, `printLines`, `openDrawer`, the `onScan`
+  event). Its Kotlin lives in the till app's `src/native-sources/<family>/` (ADR 0345 decision 6), not here. The JS
+  driver reads the SDK's raw printer status against the family's ready codes, so the vendor knowledge is tested here.
+- The printer checks it is ready before every print and kick. Lines go over as text with control characters dropped;
+  other Unicode is kept, because the SDK draws the text (Arabic shaping is the SDK font's, and is checked at
+  certification).
+- The second screen stays the `external` customer display. Card terminals and label printers on these terminals are
+  not built: an acquirer SDK is its own ADR (ADR 0442 decision 6).
+- **Certification pending.** Built from the vendors' public SDK documents with tests that replay transcribed SDK
+  answers (`src/native/__tests__/pos-device-sdk.fixture.ts`). Recordings from certified models (STA-739) replace
+  them before a family ships.
+
 ## Targets and limits
 
 Web APIs first, native modules only on evidence (ADR 0253 decisions 2 and 3). What each target can do today:
@@ -195,6 +231,8 @@ Web APIs first, native modules only on evidence (ADR 0253 decisions 2 and 3). Wh
 | Cash drawer     | `printer_kick` through the bound printer                                                              | through a WebUSB printer, once that driver exists                                              | none                     |
 | Barcode scanner | `hid`: keyboard-wedge keystrokes read from every window's `before-input-event`                        | a wedge scanner types into the focused field with no permission; WebHID (POS mode) not shipped | wedge typing only        |
 | Scale           | none: a serial line needs a native module in main (ADR 0253 decision 3)                               | WebSerial behind `Capability.Serial`; not shipped                                              | none                     |
+
+On the Android till (Sunmi, PAX, iMin) the receipt printer, drawer and scanner are the `./native` drivers above.
 
 The browser drivers would live in a `./browser` entry, which this package does not have yet; they land with the first
 web till that needs them, under the driver names above. In the Electron renderer, WebUSB, WebHID and WebSerial also

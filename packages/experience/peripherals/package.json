@@ -2,7 +2,7 @@
   "name": "@stackra/peripherals",
   "version": "0.0.0",
   "private": true,
-  "description": "Stackra peripherals: the ReceiptPrinter, LabelPrinter, CashDrawer, BarcodeScanner, Scale, CustomerDisplay and CardTerminal ports with their typed refusals, PeripheralsConfig, memory drivers, the channel customer display, in-store and GS1 weight and price barcode parsing, the ScannerScale, BaggingScale, LabelScale and DriveThroughLane ports with memory drivers, ESC/POS receipts with the drawer kick through the printer, ZPL labels, and the Electron main-process drivers and print bridges",
+  "description": "Stackra peripherals: the ReceiptPrinter, LabelPrinter, CashDrawer, BarcodeScanner, Scale, CustomerDisplay and CardTerminal ports with their typed refusals, PeripheralsConfig, memory drivers, the channel customer display, in-store and GS1 weight and price barcode parsing, the ScannerScale, BaggingScale, LabelScale and DriveThroughLane ports with memory drivers, ESC/POS receipts with the drawer kick through the printer, ZPL labels, the Electron main-process drivers and print bridges, and the Sunmi, PAX and iMin printer, drawer and scanner drivers of the native Android till",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -38,6 +38,11 @@
       "./src/desktop/*",
       "./src/desktop/*.ts",
       "./src/desktop/*/index.ts"
+    ],
+    "#native/*": [
+      "./src/native/*",
+      "./src/native/*.ts",
+      "./src/native/*/index.ts"
     ]
   },
   "exports": {
@@ -55,6 +60,11 @@
       "@stackra/source": "./src/desktop/index.ts",
       "types": "./dist/desktop.d.mts",
       "default": "./dist/desktop.mjs"
+    },
+    "./native": {
+      "@stackra/source": "./src/native/index.ts",
+      "types": "./dist/native.d.mts",
+      "default": "./dist/native.mjs"
     }
   },
   "publishConfig": {

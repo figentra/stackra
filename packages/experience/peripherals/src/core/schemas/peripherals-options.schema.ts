@@ -10,7 +10,7 @@
  *           `memory` driver and no device, so a member that never configures peripherals touches no hardware.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 4, 19 and 26); ADR 0253 (decision 4); ADR 0266 (decisions 1 and 5); ADR
- *                     0449 (decisions 1 to 4); STA-965.
+ *                     0449 (decisions 1 to 4); STA-965; ADR 0442 (decision 4).
  */
 import "#core/types/peripheral-driver-registry.type";
 import type { DriverName } from "@stackra/container";
@@ -46,13 +46,16 @@ import { PERIPHERALS_CONFIG_SCHEMA } from "#core/constants/peripherals-config-sc
  * }
  */
 export class PeripheralsOptions extends Schema {
-  /** The receipt printer driver: `escpos` (desktop) or `memory`. */
+  /**
+   * The receipt printer driver: `escpos` (desktop), `sunmi`, `pax` or `imin` (the Android till's built-in printer) or
+   * `memory`.
+   */
   printer: DriverName<ReceiptPrinter> = "memory";
 
-  /** The cash drawer driver: `printer_kick` (through the printer) or `memory`. */
+  /** The cash drawer driver: `printer_kick` (through the printer), `sunmi`, `pax`, `imin` or `memory`. */
   drawer: DriverName<CashDrawer> = "memory";
 
-  /** The barcode scanner driver: `hid` (keyboard wedge, desktop) or `memory`. */
+  /** The barcode scanner driver: `hid` (keyboard wedge, desktop), `sunmi`, `pax`, `imin` or `memory`. */
   scanner: DriverName<BarcodeScanner> = "memory";
 
   /** The label printer driver: `zpl` (desktop) or `memory`. */

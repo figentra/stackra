@@ -1,4 +1,4 @@
-<!-- Purpose: the agent guide of @stackra/peripherals: where code goes, the package's rules and its PII. Boundary: this package only. Runtime: docs. Governing contract: ADR 0253, ADR 0339, ADR 0377, ADR 0449, STA-965. -->
+<!-- Purpose: the agent guide of @stackra/peripherals: where code goes, the package's rules and its PII. Boundary: this package only. Runtime: docs. Governing contract: ADR 0253, ADR 0339, ADR 0377, ADR 0442, ADR 0449, ADR 0458 to 0460, STA-965. -->
 
 # AGENTS — @stackra/peripherals
 
@@ -6,7 +6,7 @@ Point-of-sale hardware: receipt, label and kitchen ticket printers, cash drawer,
 customer display, card terminal (pairing only), exit gates and their used-receipt store, scanner-scales, bagging
 scales, label-scale sync and drive-through lanes. Member at
 `packages/experience/peripherals` (`tier:lib`), in the programming model v3.1 shape (ADR 0294, 0305). Entries `.`,
-`./contracts`, `./desktop`.
+`./contracts`, `./desktop`, `./native`.
 
 ## Where code goes
 
@@ -19,6 +19,7 @@ scales, label-scale sync and drive-through lanes. Member at
 | An encoder, a parser, a refusal      | `src/core/functions/`                                                |
 | A refusal                            | `src/core/errors/<name>.error.ts`                                    |
 | A main-process driver or bridge      | `src/desktop/drivers/`, `src/desktop/bridges/`                       |
+| An Android till driver (ADR 0442)    | `src/native/drivers/<family>-<port>.driver.ts`                       |
 | A test                               | `__tests__/<name>.<kind>.test.ts` beside it                          |
 
 ## This package
@@ -45,8 +46,14 @@ scales, label-scale sync and drive-through lanes. Member at
   identifier there, never guess one. Prices and weights stay decimal strings (`impliedDecimal`).
 - A new driver name goes into `PERIPHERAL_DRIVERS`; it must equal what gen writes for the port, because both augment
   the same `DriverRegistry` key.
-- No native module (ADR 0253 decision 3): main reaches printers over `node:net` or a device path, and the scanner
-  through `before-input-event`. A browser driver needs a `./browser` entry first.
+- No native module on the desktop (ADR 0253 decision 3): main reaches printers over `node:net` or a device path, and
+  the scanner through `before-input-event`.
+- `./native` (ADR 0442 decision 4): a Sunmi, PAX or iMin driver reads its family's Expo module (`StackraSunmi`,
+  `StackraPax`, `StackraImin`) from `globalThis.expo.modules` when it runs and imports no native package. The module
+  passes the vendor SDK through unmapped; its Kotlin lives in the till app's `src/native-sources/<family>/` (ADR 0345
+  decision 6), never here. The ready status codes are `POS_DEVICE_FAMILIES` (the vendor SDK's table); the shared
+  logic is `src/native/functions/`, so a fourth family is a family entry, three one-line drivers and its vendor ADR.
+  Certification pending: the tests replay transcribed SDK answers until STA-739 records certified models. A browser driver needs a `./browser` entry first.
 - No module of `./desktop` imports Electron or a Node module at load time; each loads it when it runs.
 - The bridge validates its input: it comes from the renderer. Lines are text, never printer commands.
 - `src/*/index.ts` are stand-in barrels until gen writes them (STA-339); add every public file to its barrel and to
