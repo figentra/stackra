@@ -15,5 +15,7 @@ import type { CountryCode } from "@stackra/validation";
  * countryName("EG", "ar"); // "مصر"
  */
 export function countryName(code: CountryCode, locale: string): string {
+  // Hermes (React Native) has no Intl.DisplayNames: answer the code, as `fallback: "code"` would.
+  if (typeof Intl.DisplayNames !== "function") return code;
   return new Intl.DisplayNames([locale], { type: "region", fallback: "code" }).of(code) ?? code;
 }
