@@ -351,4 +351,36 @@ describe("emitSchemas", () => {
     expect(content).toContain("  region: z.string().nullable(),");
     expect(content).toMatch(/import \{[^}]*\bcountryCode\b[^}]*\} from "@stackra\/validation";/);
   });
+
+  it("imports a hatch's type-only names as types", () => {
+    const action: ShapeIR = {
+      name: "HeroAction",
+      kind: "schema",
+      module: "orders",
+      file: "src/modules/orders/schemas/hero-action.schema.ts",
+      importPath: "#modules/orders/schemas/hero-action.schema",
+      fields: [
+        {
+          name: "route",
+          optional: false,
+          nullable: false,
+          type: {
+            kind: "hatch",
+            source: "z.custom<RouteKey>((key) => Object.hasOwn(Routes, key))",
+            imports: [
+              ["Routes", "#stackra/routes"],
+              ["RouteKey", "#stackra/routes", true],
+            ],
+          },
+          rules: [],
+        },
+      ],
+      relations: [],
+    };
+    const content = emitSchemas(
+      { ...COMMERCE_IR, shapes: [action], enums: [], classes: [] },
+      "orders",
+    );
+    expect(content).toContain('import { type RouteKey, Routes } from "#stackra/routes";');
+  });
 });

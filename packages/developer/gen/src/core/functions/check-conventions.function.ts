@@ -11,8 +11,8 @@
  * Boundary: pure; reads the IR and the module graph of the built manifest. Run on the full pass only, never the
  *           manifest pass, so a convention refusal never blocks `stackra gen --manifests`. Only files directly under a
  *           `<stem>.<suffix>.ts` name whose suffix is a `KIND_FILES` row are checked. Default applied 2026-10-27
- *           (owner may override): a service may also be named by its stem alone (`EventBus`), names compare without
- *           case (`WhatsApp`), and only an injected service counts for `sibling_not_exported`.
+ *           (owner may override): a service may also be named by its stem alone (`EventBus`), a seeder may lead with its
+ *           module key (`OrdersDemoSeeder`, as the Seeder base's example), names compare without case (`WhatsApp`), and only an injected service counts for `sibling_not_exported`.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (R1 to R3, decisions 13 and 24); ADR 0305 (rules 1 to 3 and 15 to 18, conventions 4);
  *                     ADR 0263 (sibling exports and module cycles); ADR 0159 (migrations are frozen); STA-1306.
@@ -104,7 +104,13 @@ export function checkConventions(ir: MemberIR, manifest: StackraManifest): GenEr
       continue;
     }
     const expected = pascalCase(at.stem) + row.suffix;
-    const accepted = [expected, ...(declared.kind === "service" ? [pascalCase(at.stem)] : [])];
+    // A seeder may lead with its module (`OrdersDemoSeeder`): every module has a `demo.seeder.ts`, and the Seeder base's
+    // own example names them so, which keeps them apart where one seeds another (`.seed(LoyaltyKitDemoSeeder)`).
+    const accepted = [
+      expected,
+      ...(declared.kind === "service" ? [pascalCase(at.stem)] : []),
+      ...(declared.kind === "seeder" ? [pascalCase(declared.module) + expected] : []),
+    ];
     if (!accepted.some((name) => name.toLowerCase() === declared.name.toLowerCase()))
       errors.push(
         error(

@@ -1,8 +1,9 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `readPackageCatalogues` and `dependencyPath`: a declared `@stackra/*` package's `assets/lang`
- *          read through node_modules from the member root upward, a package without lang or outside `@stackra/`
- *          skipped, and an invalid catalogue refused with its path.
+ * Purpose: unit tests of `readPackageCatalogues` and `dependencyPath`: a declared Stackra package's `assets/lang` (a
+ *          `@stackra/*` one, or a product package that ships `stackra.manifest.json`) read through node_modules from the
+ *          member root upward, a package without lang or a third-party one skipped, and an invalid catalogue refused
+ *          with its path.
  * Boundary: test only; writes small fixtures under `.cache/`.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0080; STA-1298.
@@ -16,7 +17,7 @@ import { readPackageCatalogues } from "#node/functions/read-package-catalogues.f
 import { writeFixtureMember } from "#node/__tests__/fixtures/write-fixture-member";
 
 describe("readPackageCatalogues", () => {
-  it("reads each declared @stackra package's lang", () => {
+  it("reads each declared Stackra package's lang, a product package by its shipped manifest", () => {
     const root = writeFixtureMember("customers", {
       "node_modules/@stackra/loyalty-kit/package.json": JSON.stringify({
         name: "@stackra/loyalty-kit",
@@ -26,14 +27,22 @@ describe("readPackageCatalogues", () => {
       }),
       "node_modules/@stackra/plain/package.json": JSON.stringify({ name: "@stackra/plain" }),
       "node_modules/@acme/kit/assets/lang/en/kit.json": JSON.stringify({ title: "Kit" }),
+      "node_modules/@acme/loyalty/stackra.manifest.json": JSON.stringify({ member: "loyalty" }),
+      "node_modules/@acme/loyalty/assets/lang/en/loyalty.json": JSON.stringify({ title: "Points" }),
     });
     expect(
-      readPackageCatalogues(root, ["@stackra/plain", "@acme/kit", "@stackra/loyalty-kit"]),
+      readPackageCatalogues(root, [
+        "@stackra/plain",
+        "@acme/kit",
+        "@stackra/loyalty-kit",
+        "@acme/loyalty",
+      ]),
     ).toEqual([
       {
         package: "@stackra/loyalty-kit",
         catalogues: { en: { loyalty_kit: { enums: { loyalty_tier: { gold: "Gold" } } } } },
       },
+      { package: "@acme/loyalty", catalogues: { en: { loyalty: { title: "Points" } } } },
     ]);
   });
 

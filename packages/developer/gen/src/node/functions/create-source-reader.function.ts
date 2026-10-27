@@ -344,28 +344,32 @@ export function createSourceReader(
     return map;
   };
 
-  /** The named, unaliased value imports of `path` that `source` uses, as `[name, specifier]` (a hatch's imports). */
-  const importsUsedBy = (path: string, source: string): [string, string][] => {
+  /**
+   * The named, unaliased imports of `path` that `source` uses, as `[name, specifier]`, or `[name, specifier, true]` for
+   * a type-only one (`z.custom<RouteKey>(...)`), so the generated schema imports it as a type (a hatch's imports).
+   */
+  const importsUsedBy = (
+    path: string,
+    source: string,
+  ): ([string, string] | [string, string, true])[] => {
     const used = new Set(
       [...source.matchAll(/(?<![.\w$])([A-Za-z_$][\w$]*)/g)].map((match) => match[1]),
     );
-    const found: [string, string][] = [];
+    const found: ([string, string] | [string, string, true])[] = [];
     for (const statement of byPath.get(path)?.statements ?? []) {
       if (host.kind(statement) !== "ImportDeclaration") continue;
       const from = statement.moduleSpecifier?.text;
       const clause = statement.importClause;
       // shortcut: a relative, aliased, default or namespace import is not carried; hatches use `#` or package imports.
-      if (
-        from === undefined ||
-        from.startsWith(".") ||
-        clause === undefined ||
-        clause.isTypeOnly === true
-      )
-        continue;
+      if (from === undefined || from.startsWith(".") || clause === undefined) continue;
       for (const element of clause.namedBindings?.elements ?? []) {
         const name = nameOf(element.name);
-        if (element.propertyName === undefined && element.isTypeOnly !== true && used.has(name))
-          found.push([name, from]);
+        if (element.propertyName !== undefined || !used.has(name)) continue;
+        found.push(
+          clause.isTypeOnly === true || element.isTypeOnly === true
+            ? [name, from, true]
+            : [name, from],
+        );
       }
     }
     return found;

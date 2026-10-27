@@ -17,7 +17,9 @@ describe("IDENTITY_KINDS", () => {
   it("is a frozen list of snake_case codes including blocks, models and actions", () => {
     expect(Object.isFrozen(IDENTITY_KINDS)).toBe(true);
     for (const code of IDENTITY_KINDS) expect(code).toMatch(/^[a-z]+(_[a-z]+)*$/);
-    expect(IDENTITY_KINDS).toEqual(expect.arrayContaining(["action", "block", "model", "refusal"]));
+    expect(IDENTITY_KINDS).toEqual(
+      expect.arrayContaining(["action", "block", "domain_event", "model", "refusal"]),
+    );
   });
 
   it.each(IDENTITY_KINDS)("lets @Renamed mark a class of kind %s", (kind) => {

@@ -85,9 +85,10 @@ The Stackra compiler. Member at `packages/developer/gen` (`tier:lib`), in the pr
   runs on a Mac (builder rule 6): the testing session regenerates and commits the manifests on ci-box.
 - i18n (STA-1293): `readCatalogues` reads `assets/lang/<locale>/*.json`; `emitI18n` writes `#stackra/i18n` (`I18n`
   through `keys()` of `@stackra/i18n`, `locales`) only when the member declares `@stackra/i18n`. A `@Field(zod)` hatch
-  carries the named imports its source uses (`TypeDesc` hatch `imports`); a nullable field gets `.nullable()` once.
-- i18n packages (STA-1298): `readPackageCatalogues` reads the `assets/lang` of each declared `@stackra/*` package
-  through `dependencyPath` (the node_modules walk `readDependencyManifests` uses); `i18nTree` merges their namespaces
+  carries the named imports its source uses (`TypeDesc` hatch `imports`, a type-only one marked and imported as a
+  type, so `z.custom<RouteKey>(...)` resolves in the generated file); a nullable field gets `.nullable()` once.
+- i18n packages (STA-1298): `readPackageCatalogues` reads the `assets/lang` of each declared Stackra package (a
+  `@stackra/*` one, or a product package such as `@acme/loyalty-kit` that ships `stackra.manifest.json`) through `dependencyPath` (the node_modules walk `readDependencyManifests` uses); `i18nTree` merges their namespaces
   (the file name, e.g. `loyalty_kit`) beside the member's, each from its own base locale. `readI18nReferences` reads
   every `I18n.<ns>.<path>` chain of a file importing `#stackra/i18n` (tests included); `checkI18n` refuses a chain no
   merged catalogue ships (`i18n_key_missing`, reused by stackra-167) and a namespace two owners ship
@@ -177,8 +178,8 @@ The Stackra compiler. Member at `packages/developer/gen` (`tier:lib`), in the pr
 The gen refusals of the 2026-10-27 coverage audit, section 4. Each carries its fix; none is applied for you.
 
 - `checkConventions` (core, full pass only, never the manifest pass): `kind_suffix_mismatch`, `kind_unregistered_base`
-  (from `FileExports.classes`), `kind_class_name` (from `KIND_FILES`; a service may drop `Service`, names compare
-  without case), `empty_module`, `sibling_not_exported` (an injected service only), `module_cycle`,
+  (from `FileExports.classes`), `kind_class_name` (from `KIND_FILES`; a service may drop `Service`, a seeder may
+  lead with its module key, `OrdersDemoSeeder`, names compare without case), `empty_module`, `sibling_not_exported` (an injected service only), `module_cycle`,
   `migration_numbering` (per `database/migrations/` folder, from 0001 without gaps), `event_name_shape` (an
   integration event's `name` is `<aggregate>.<verb>`) and `override_legacy_name` (under `src/overrides/`).
 - `checkSemanticSearch` (core, full pass only, STA-1251): `searchable_semantic_ai_never`, a `semantic: true`

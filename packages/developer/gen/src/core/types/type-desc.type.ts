@@ -8,7 +8,7 @@
  * Governing contract: ADR 0294 (decisions 4 and 26: the TypeScript type is the rule); the STA-335 type-to-schema spike;
  *                     ADR 0162 (decision 2: `Translated` per-locale values); ADR 0222 (decision 2: `Upload<Bucket>`
  *                     tokens); STA-1290 (a `@stackra/*` type with a shipped `X$` is the `shipped` kind); STA-1293 (a hatch
- *                     carries its imports).
+ *                     carries its imports, type-only ones marked).
  */
 
 /** The meaning of one shape field type. */
@@ -69,10 +69,11 @@ export type TypeDesc =
     }
   /**
    * The `@Field(zod)` escape hatch: the zod source as written, and the named imports of the source file it uses as
-   * `[name, module specifier]` (`countryCode` from `@stackra/validation`), so the generated schema imports them too.
+   * `[name, module specifier]` (`countryCode` from `@stackra/validation`), so the generated schema imports them too; a
+   * third `true` marks a type-only import (`RouteKey` in `z.custom<RouteKey>(...)`), imported as a type.
    */
   | {
       readonly kind: "hatch";
       readonly source: string;
-      readonly imports?: readonly (readonly [name: string, from: string])[];
+      readonly imports?: readonly (readonly [name: string, from: string, typeOnly?: true])[];
     };

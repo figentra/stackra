@@ -774,6 +774,18 @@ const IMPORT_SOURCES: Readonly<Record<string, string>> = {
     "}",
     "",
   ].join("\n"),
+  "src/core/schemas/link.schema.ts": [
+    'import type { Url } from "@stackra/contracts";',
+    'import { Field, Schema } from "@stackra/validation";',
+    'import { type ZodType, z } from "zod";',
+    "",
+    "export class Link extends Schema {",
+    "  // reason: any absolute URL the type allows",
+    '  @Field(z.custom<Url>((value) => typeof value === "string") as ZodType<Url>)',
+    "  href!: Url;",
+    "}",
+    "",
+  ].join("\n"),
   "src/core/functions/storefront.function.ts": [
     'import { StorefrontSearchQuery } from "#stackra/clients/channels";',
     "export const storefront = () => StorefrontSearchQuery;",
@@ -802,6 +814,17 @@ describe("createSourceReader on hatch and client imports", async () => {
       kind: "hatch",
       source: "countryCode().nullable()",
       imports: [["countryCode", "@stackra/validation"]],
+    });
+  });
+
+  it("marks the type-only imports a hatch's source uses", () => {
+    expect(shapes.find((shape) => shape.name === "Link")?.fields[0]?.type).toMatchObject({
+      kind: "hatch",
+      imports: [
+        ["Url", "@stackra/contracts", true],
+        ["ZodType", "zod", true],
+        ["z", "zod"],
+      ],
     });
   });
 

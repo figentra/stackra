@@ -164,7 +164,8 @@ function zodOf(
       return `z.discriminatedUnion(${JSON.stringify(type.discriminator)}, [${members.join(", ")}])`;
     }
     case "hatch":
-      for (const [name, from] of type.imports ?? []) use(imports, from, name);
+      for (const [name, from, typeOnly] of type.imports ?? [])
+        use(imports, from, name, typeOnly === true);
       return type.source;
   }
 }

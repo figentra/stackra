@@ -110,6 +110,33 @@ describe("checkConventions", () => {
     expect(checkConventions(ir, buildManifest(ir).manifest)[0]?.fix).toContain("RefundOrderAction");
   });
 
+  it("lets a seeder lead with its module, and refuses another module's name", () => {
+    expect(
+      refused(
+        withClasses(
+          declared(
+            "DemoSeeder",
+            "seeder",
+            "orders",
+            "src/modules/orders/database/seeders/demo.seeder.ts",
+          ),
+          declared(
+            "OrdersMinimalSeeder",
+            "seeder",
+            "orders",
+            "src/modules/orders/database/seeders/minimal.seeder.ts",
+          ),
+          declared(
+            "CatalogueTestSeeder",
+            "seeder",
+            "orders",
+            "src/modules/orders/database/seeders/test.seeder.ts",
+          ),
+        ),
+      ),
+    ).toEqual(["kind_class_name CatalogueTestSeeder"]);
+  });
+
   it("refuses a class in a kind file that extends no kind base", () => {
     expect(
       refused({

@@ -15,6 +15,8 @@ export const IDENTITY_KINDS: readonly string[] = Object.freeze([
   "analytics_event",
   "block",
   "config",
+  // gen locks a domain event's in-service name (`loyalty_kit.points_redeemed`) as it locks an integration event's.
+  "domain_event",
   "flag",
   "integration_event",
   "model",
