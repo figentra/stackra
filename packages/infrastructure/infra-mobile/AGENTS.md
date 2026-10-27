@@ -34,6 +34,8 @@ Entries `.` (isomorphic: the plan from the runways) and `./node` (the Pulumi sli
   Connection id, and takes `MobileStore` from `@stackra/integrations/contracts` only (never its `.` entry). Name
   per-scope things `scope`, never `tenant` (R-59).
 - A step no API takes is a `MobileOwnerStep`, not code that pretends to do it (ADR 0344 decision 11).
+- The health driver's target is `InfraMobileConfig` (`src/config/infra-mobile.config.ts`, key `infra_mobile`), injected by type:
+  the runway's `config.infra_mobile` sets it. Never a constructor options object (gen's `token_not_a_class`).
 
 ## PII
 

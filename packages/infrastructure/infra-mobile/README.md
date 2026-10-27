@@ -19,15 +19,15 @@ and `@pulumi/pulumi`.
 
 ## What is here
 
-| Entry    | Symbol                                 | Use                                                                      |
-| -------- | -------------------------------------- | ------------------------------------------------------------------------ |
-| `.`      | `mobileInfraPlan(root, app, identity)` | the release plan and its owner tasks from the root and mobile runways    |
-| `.`      | `MobileOwnerStep`                      | the manual steps no API takes (enum of snake_case codes)                 |
-| `.`      | `storeAccountsOf(app, connected?)`     | the account each store of a mobile app publishes under (managed or own)  |
-| `.`      | `MobileInfraInvalidError`              | every runway or stack config failure at once, with its path              |
-| `.`      | `MobileHealthIndicatorDriver`          | the `HealthIndicator` driver: the EAS update endpoint answers            |
-| `.`      | `MobileInfraPlan`, `MobileIdentity`, … | types                                                                    |
-| `./node` | `mobileStack(plan)`                    | inside the Pulumi program: resolve every `ref:` fact and check its shape |
+| Entry    | Symbol                                             | Use                                                                                                |
+| -------- | -------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `.`      | `mobileInfraPlan(root, app, identity)`             | the release plan and its owner tasks from the root and mobile runways                              |
+| `.`      | `MobileOwnerStep`                                  | the manual steps no API takes (enum of snake_case codes)                                           |
+| `.`      | `storeAccountsOf(app, connected?)`                 | the account each store of a mobile app publishes under (managed or own)                            |
+| `.`      | `MobileInfraInvalidError`                          | every runway or stack config failure at once, with its path                                        |
+| `.`      | `MobileHealthIndicatorDriver`, `InfraMobileConfig` | the `HealthIndicator` driver: the EAS update endpoint answers; its target is `config.infra_mobile` |
+| `.`      | `MobileInfraPlan`, `MobileIdentity`, …             | types                                                                                              |
+| `./node` | `mobileStack(plan)`                                | inside the Pulumi program: resolve every `ref:` fact and check its shape                           |
 
 ## Where the facts come from
 

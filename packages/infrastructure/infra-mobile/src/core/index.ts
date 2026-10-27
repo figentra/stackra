@@ -10,6 +10,8 @@
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision; ADR 0127 (the infrastructure
  *                     category and its entries); ADR 0439.
  */
+export { InfraMobileConfig } from "#config/infra-mobile.config";
+export { InfraMobileConfig$ } from "#core/constants/infra-mobile-config-schema.constant";
 export { MobileHealthIndicatorDriver } from "#core/drivers/mobile-health-indicator.driver";
 export { MobileOwnerStep } from "#core/enums/mobile-owner-step.enum";
 export { MobileInfraInvalidError } from "#core/errors/mobile-infra-invalid.error";

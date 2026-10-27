@@ -25,6 +25,8 @@ import type {
 describe("@stackra/infra-mobile", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(mobile).sort()).toEqual([
+      "InfraMobileConfig",
+      "InfraMobileConfig$",
       "MobileHealthIndicatorDriver",
       "MobileInfraInvalidError",
       "MobileOwnerStep",

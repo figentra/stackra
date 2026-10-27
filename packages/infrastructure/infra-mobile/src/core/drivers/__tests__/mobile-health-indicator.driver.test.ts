@@ -2,13 +2,16 @@
  * Stackra file contract:
  * Purpose: unit tests of `MobileHealthIndicatorDriver`: a `HealthIndicator` named `eas` that GETs its target, reports `up` with
  *          a latency, maps the answer's status, and reports `down` (never throws) when the request fails.
- * Boundary: test only; `fetch` is a fake, nothing leaves the process.
+ * Boundary: test only; the global `fetch` is stubbed, nothing leaves the process.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 16 and 17); registry gaps R-27 and R-36.
  */
+import { buildConfig } from "@stackra/config";
 import { HealthIndicator } from "@stackra/contracts";
-import { describe, expect, it } from "@stackra/testing";
+import { afterEach, describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 
+import { InfraMobileConfig } from "#config/infra-mobile.config";
 import { MobileHealthIndicatorDriver } from "#core/drivers/mobile-health-indicator.driver";
 
 /** The URLs the fake fetch was asked for. */
@@ -21,11 +24,17 @@ function indicatorAnswering(status: number | null): MobileHealthIndicatorDriver 
     if (status === null) throw new TypeError("fetch failed");
     return new Response(null, { status });
   }) as typeof globalThis.fetch;
-  return new MobileHealthIndicatorDriver({
-    projectId: "0b1c2d3e-4f50-6172-8394-a5b6c7d8e9f0",
-    fetch,
-  });
+  vi.stubGlobal("fetch", fetch);
+  return new MobileHealthIndicatorDriver(
+    buildConfig(InfraMobileConfig, {
+      values: { projectId: "0b1c2d3e-4f50-6172-8394-a5b6c7d8e9f0" },
+    }),
+  );
 }
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
 
 describe("MobileHealthIndicatorDriver", () => {
   it("is a named health indicator that GETs its target", async () => {
@@ -55,6 +64,9 @@ describe("MobileHealthIndicatorDriver", () => {
   });
 
   it("refuses a malformed target", () => {
-    expect(() => new MobileHealthIndicatorDriver({ projectId: "acme" })).toThrow(TypeError);
+    expect(() => buildConfig(InfraMobileConfig, { values: { projectId: "acme" } })).toThrow();
+    expect(() => new MobileHealthIndicatorDriver(buildConfig(InfraMobileConfig))).toThrow(
+      TypeError,
+    );
   });
 });
