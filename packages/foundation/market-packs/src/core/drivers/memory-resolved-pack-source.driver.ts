@@ -23,7 +23,9 @@ export class MemoryResolvedPackSourceDriver extends Driver(ResolvedPackSource) {
   /** The pack versions served. */
   private readonly held: readonly MarketPack[];
 
-  /** @param packs - the verified pack versions to serve; copied. */
+  /**
+   * @param packs - the verified pack versions to serve; copied.
+   */
   constructor(packs: readonly MarketPack[] = []) {
     super();
     this.held = Object.freeze([...packs]);

@@ -12,7 +12,7 @@
  *                     injected); ADR 0266.
  */
 import { Driver } from "@stackra/container";
-import { FileSystem } from "@stackra/filesystem/contracts";
+import type { FileSystem } from "@stackra/filesystem/contracts";
 
 import { PackRejection } from "#core/enums/pack-rejection.enum";
 import { PackRejectedError } from "#core/errors/pack-rejected.error";
@@ -38,7 +38,9 @@ export class FilesystemPackStoreDriver extends Driver(PackStore) {
   /** The disk the packs live on. */
   private readonly files: FileSystem;
 
-  /** @param files - the disk the packs live on. */
+  /**
+   * @param files - the disk the packs live on.
+   */
   constructor(files: FileSystem) {
     super();
     this.files = files;

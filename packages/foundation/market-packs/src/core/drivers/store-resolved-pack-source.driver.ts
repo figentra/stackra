@@ -12,9 +12,9 @@
  */
 import { Driver } from "@stackra/container";
 
-import { MarketPacksConfig } from "#config/market-packs.config";
+import type { MarketPacksConfig } from "#config/market-packs.config";
 import { fetchPacks } from "#core/functions/fetch-packs.function";
-import { PackStore } from "#core/ports/pack-store.port";
+import type { PackStore } from "#core/ports/pack-store.port";
 import { ResolvedPackSource } from "#core/ports/resolved-pack-source.port";
 import type { MarketPack } from "#core/types/market-pack.type";
 

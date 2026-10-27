@@ -14,7 +14,10 @@ import { ErrorKind, Refusal } from "@stackra/errors";
  * @example
  * throw PackNotFoundError.create({ market: "eu-de", pin: "2" });
  */
-export class PackNotFoundError extends Refusal({ kind: ErrorKind.NotFound, retryable: false }) {
+export class PackNotFoundError extends Refusal({
+  kind: ErrorKind.NotFound,
+  retryable: false,
+}) {
   /** The market with no fitting version. */
   market!: string;
 
