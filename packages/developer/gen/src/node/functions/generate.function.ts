@@ -19,11 +19,13 @@
  *           a `Reason:` header is refused as `tool_reason_missing` (STA-1306); whether a hatch changes an owned key is
  *           not checked, since gen does not apply hatches yet. A docs app (`src/config/docs.config.ts`) takes the
  *           docs-site run instead (`generateDocsSite`, STA-1316): it has no module graph, writes only
- *           `.stackra/site/`, and its manifest pass writes nothing.
+ *           `.stackra/site/`, and its manifest pass writes nothing. A service's full run also writes
+ *           `.stackra/encore/encore.app` from the root runway's `providers.encore.app` (`encore_app_missing` without
+ *           it), and any run refuses an `encore.app` at the member or repository root (`encore_app_stray`, STA-1322).
  * Runtime: node
  * Governing contract: ADR 0294 (decisions 10 and 22: the committed manifest and `stackra gen --check`); ADR 0295
  *                     (decision 5: generated files are overwritten); ADR 0261; ADR 0260 (a cycle between services is
- *                     allowed at the manifest level).
+ *                     allowed at the manifest level); ADR 0091 (decision 2) and ADR 0029 (the Encore app file).
  */
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -37,6 +39,7 @@ import { generateMember } from "#core/functions/generate-member.function";
 import type { GenError } from "#core/types/gen-error.type";
 import type { GeneratedFile } from "#core/types/generated-file.type";
 import { discoverMember } from "#node/functions/discover-member.function";
+import { encoreApp } from "#node/functions/encore-app.function";
 import { generateDocsSite } from "#node/functions/generate-docs-site.function";
 import type { GenerateResult } from "#node/types/generate-result.type";
 
@@ -192,8 +195,11 @@ export async function generate(
   // An authored root tool config is never overwritten. One that merges the generated config is kept (and the vitest
   // shim is not written); any other is refused (STA-1296, STA-1297; every generated tool config since STA-1306). A
   // code hatch outside the closed set or without its `Reason:` header is refused too.
-  const errors = hatchErrors(root);
-  let files = result.files;
+  // The Encore app file of a service, from the root runway's `providers.encore.app`; a stray encore.app outside
+  // `.stackra/encore` is refused (STA-1322).
+  const encore = encoreApp(root, ir.layout === "service" && options.pass === undefined);
+  const errors = [...hatchErrors(root), ...encore.errors];
+  let files = [...result.files, ...encore.files];
   for (const tool of TOOL_CONFIGS) {
     const config = `${tool}.config.ts`;
     if (

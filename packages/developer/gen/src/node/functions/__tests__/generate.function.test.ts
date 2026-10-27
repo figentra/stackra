@@ -8,7 +8,8 @@
  *          `shim_authored` (STA-1296); a check fails `manifest_unshipped` when a package's `files` leaves the manifest
  *          out, and reports a missing manifest as stale (STA-1308); an authored root tsdown.config.ts that does not
  *          merge the generated one is `shim_authored`, and a `*.extend.ts` hatch outside the closed set or without its
- *          `Reason:` header is `tool_reason_missing` (STA-1306).
+ *          `Reason:` header is `tool_reason_missing` (STA-1306); an `encore.app` at the member root is
+ *          `encore_app_stray` (STA-1322).
  * Boundary: test only; writes the shop fixture under `.cache/` and runs gen on it.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 10 and 22); ADR 0295 (decision 5).
@@ -172,6 +173,15 @@ describe("generate's tool configs and code hatches (STA-1306)", () => {
       "tool_reason_missing metro.extend.ts",
       "tool_reason_missing webpack.extend.ts",
     ]);
+  });
+
+  it("refuses a hand-made encore.app at the member root (STA-1322)", async () => {
+    const root = writeFixtureMember("shop", { ...SHOP_SOURCES, "encore.app": "{}\n" });
+    const result = await generate(root);
+    expect(result.errors.map((error) => `${error.code} ${error.file}`)).toEqual([
+      "encore_app_stray encore.app",
+    ]);
+    expect(existsSync(join(root, ".stackra/encore/encore.app"))).toBe(false);
   });
 });
 

@@ -7,7 +7,7 @@ Purpose: the agent rules of @stackra/gen: where code goes, entries and barrels, 
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
 Governing contract: ADR 0294; ADR 0295; ADR 0305; ADR 0260 (generated clients and typed events); ADR 0263; ADR 0162 and ADR 0222
-                    (the translated and upload shape kinds); ADR 0338 (a replica query's `ReplicaPage` output); STA-1290 (the shipped shape kind); STA-1293 (i18n, clients for apps, undeclared packages); STA-1296 (client modules and permission sets, config overrides, the root Vitest shim); STA-1298 (package lang namespaces in `I18n`, `i18n_key_missing`, `i18n_namespace_clash`); STA-1309 (catalogue loaders); STA-1306 (the quality-gate refusals); STA-1316 (the docs site).
+                    (the translated and upload shape kinds); ADR 0338 (a replica query's `ReplicaPage` output); STA-1290 (the shipped shape kind); STA-1293 (i18n, clients for apps, undeclared packages); STA-1296 (client modules and permission sets, config overrides, the root Vitest shim); STA-1298 (package lang namespaces in `I18n`, `i18n_key_missing`, `i18n_namespace_clash`); STA-1309 (catalogue loaders); STA-1306 (the quality-gate refusals); STA-1316 (the docs site); STA-1322 (the Encore app file).
 -->
 
 The Stackra compiler. Member at `packages/developer/gen` (`tier:lib`), in the programming model v3.1 shape (ADR 0294,
@@ -183,6 +183,10 @@ The gen refusals of the 2026-10-27 coverage audit, section 4. Each carries its f
   `./.stackra/tsdown.config` is kept), and `tool_reason_missing` for a root `*.extend.ts` outside the closed set
   (vite, expo, metro, desktop, pwa) or without a `Reason:` header. Owned-key changes in a hatch are not checked: gen
   does not apply hatches yet. Keep `KIND_FILES` in step with `KIND_BASES` and the coding-standard lint table.
+- `encoreApp` (STA-1322): a service's full run writes `.stackra/encore/encore.app` from the root runway's
+  `providers.encore.app`, refused as `encore_app_missing` without it (never a default id); an `encore.app` at the member
+  or repository root is `encore_app_stray`. The root runway is read by a block-YAML lookup because gen does not depend
+  on `@stackra/runway`; move to `readRunway` once it does.
 
 ## Rules that fail the build
 

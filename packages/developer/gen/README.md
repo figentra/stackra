@@ -282,6 +282,12 @@ Metro config sets `babelTransformerPath` to `@stackra/gen/metro-transformer`.
 
 ## Encore jobs and queues
 
+A service's full run writes `.stackra/encore/encore.app`, `{ "id": <app id>, "lang": "typescript" }`, so `encore run`
+in `.stackra/encore` (what `stackra dev` starts) finds its app (ADR 0091 decision 2). The id is the root runway's
+`providers.encore.app` (the `runway.yaml` beside `pnpm-workspace.yaml`); without it gen refuses with
+`encore_app_missing` rather than invent one. Any run refuses an `encore.app` at the member root or the repository root
+(`encore_app_stray`, ADR 0029): gen writes the only one (STA-1322).
+
 For a service, gen writes the first parts of the Encore app (ADR 0148): `.stackra/encore/<member>/cron.ts` holds one
 `CronJob` per action whose `job` has a `cron` (its endpoint calls `SchedulerService.fire(<locked key>)`; ids by
 `cronJobId`, which `encoreCronJobs()` also calls) and the stored schedules' minute tick; `.stackra/encore/<member>/queues.ts`
