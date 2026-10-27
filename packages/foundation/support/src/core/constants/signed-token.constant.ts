@@ -82,7 +82,7 @@ export const signedToken = Object.freeze({
     const [keyPart, bodyPart, macPart] = parts as [string, string, string];
     let keyId: string;
     let body: { purpose?: unknown; expiresAt?: unknown; data?: unknown };
-    let mac: Uint8Array;
+    let mac: Uint8Array<ArrayBuffer>;
     try {
       keyId = new TextDecoder("utf-8", { fatal: true }).decode(base64url.decode(keyPart));
       body = JSON.parse(

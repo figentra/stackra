@@ -113,7 +113,7 @@ export const oneTimeCode = Object.freeze({
     } catch {
       return { ok: false, reason: "unknown_key", record };
     }
-    let digest: Uint8Array;
+    let digest: Uint8Array<ArrayBuffer>;
     try {
       digest = new Uint8Array(base64url.decode(record.digest));
     } catch {

@@ -67,7 +67,7 @@ const request: WalletPassRequest = {
 const options = { issuerId: "338", serviceAccountEmail: "wallet@example.iam.gserviceaccount.com" };
 
 /** The bytes of a base64url part. */
-function decode(part: string): Uint8Array {
+function decode(part: string): Uint8Array<ArrayBuffer> {
   return Uint8Array.from(atob(part.replaceAll("-", "+").replaceAll("_", "/")), (c) =>
     c.charCodeAt(0),
   );
@@ -78,7 +78,7 @@ function partsOf(saveUrl: string): {
   header: unknown;
   claims: Record<string, unknown>;
   input: string;
-  signature: Uint8Array;
+  signature: Uint8Array<ArrayBuffer>;
 } {
   const token = saveUrl.replace("https://pay.google.com/gp/v/save/", "");
   const [header = "", claims = "", signature = ""] = token.split(".");

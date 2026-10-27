@@ -14,13 +14,13 @@ import { CmsSigner } from "#contracts/ports/cms-signer.port";
 
 class EchoCmsSignerDriver extends Driver(CmsSigner) {
   async sign(content: Uint8Array): Promise<Uint8Array> {
-    return content.toReversed();
+    return Uint8Array.from(content, (_, i) => content[content.length - 1 - i] ?? 0);
   }
 }
 
 describe("CmsSigner", () => {
   it("is a port a driver implements", async () => {
-    const signer = new EchoCmsSignerDriver();
+    const signer: CmsSigner = new EchoCmsSignerDriver();
     expect(signer).toBeInstanceOf(CmsSigner);
     expect(signer).toBeInstanceOf(Port);
     expect(await signer.sign(Uint8Array.of(1, 2), new Date(0))).toEqual(Uint8Array.of(2, 1));
