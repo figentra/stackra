@@ -5,19 +5,20 @@ holiday sets and working weeks, working hours, RRULE recurrence that skips holid
 and age on a date. It holds no calendar data: working weeks, holidays, Hijri rules and court calendars come from
 market packs, read through `@stackra/market-packs`, and tenant settings (ADR 0363, ADR 0366, ADR 0387).
 
-**Tier:** `tier:lib` (`packages/foundation/calendar`), entry `.` only. Depends on `@stackra/contracts`,
+**Tier:** `tier:lib` (`packages/foundation/calendar`), entries `.` and `./contracts`. Depends on `@stackra/contracts`,
 `@stackra/market-packs` and `zod`;
 isomorphic and offline, so the same code runs on a server, a browser and a till. It reads the runtime's ICU data
 (`Intl`) for time zones and the `islamic-umalqura` calendar, and no clock, locale, environment or network.
 
 ## Entry points
 
-| Import              | Holds                        | Exports                        |
-| ------------------- | ---------------------------- | ------------------------------ |
-| `@stackra/calendar` | `src/core/`: isomorphic code | the symbols in the table below |
+| Import                        | Holds                                  | Exports                                                                   |
+| ----------------------------- | -------------------------------------- | ------------------------------------------------------------------------- |
+| `@stackra/calendar`           | `src/core/`: isomorphic code           | the symbols in the table below                                            |
+| `@stackra/calendar/contracts` | `src/contracts/`: leaf enums and types | `DayCountMode`, `BusinessDayBoundary`, `HijriSchedule`, `PackCalendarRef` |
 
 Entry barrels are generated, never authored (ADR 0294 decision 15); until `stackra gen` writes them (STA-339),
-`src/core/index.ts` is a stand-in barrel.
+`src/core/index.ts` and `src/contracts/index.ts` are stand-in barrels.
 
 ## What is here
 

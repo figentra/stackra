@@ -8,4 +8,4 @@
  */
 import { library } from "@stackra/tsdown-config";
 
-export default library({ index: "src/core/index.ts" });
+export default library({ index: "src/core/index.ts", contracts: "src/contracts/index.ts" });

@@ -5,7 +5,6 @@
  *          barrels (STA-339).
  * Boundary: names each re-export and declares nothing; every file here is a leaf and imports nothing from `core`. The
  *           names here are new; the types already exported from `.` stay there (no symbol from two entries, ADR 0294).
- *           The package's `./contracts` export, `#contracts/*` import and tsdown entry are the owner's to add.
  * Runtime: isomorphic
  * Governing contract: ADR 0117 (decision 2); ADR 0294 (decision 15); ADR 0366; ADR 0387.
  */
