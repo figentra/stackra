@@ -12,6 +12,7 @@ export { fiscalDocument } from "#testing/fiscal-document.fixture";
 export { fiscalRecord } from "#testing/fiscal-record.fixture";
 export { FiscalPackSourceFake } from "#testing/fiscal-pack-source.fake";
 export { FiscalSignerFake } from "#testing/fiscal-signer.fake";
+export { FiscalSigningKeyFake } from "#testing/fiscal-signing-key.fake";
 export { FiscalTransportFake } from "#testing/fiscal-transport.fake";
 export { HybridPdfFake } from "#testing/hybrid-pdf.fake";
 export { TillCredentialsFake } from "#testing/till-credentials.fake";

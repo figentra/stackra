@@ -67,6 +67,7 @@ describe("ZatcaDriver#seal", () => {
     );
     const [request] = signer.calls("sign") as SignatureRequest[];
     expect(request?.format).toBe(SignatureFormat.Xades);
+    expect(request?.signedAt).toEqual(context.now);
     expect(request?.unitId).toBe("till_1");
     expect(sealed.hash).toBe(toBase64(await sha256(request?.payload ?? "")));
     expect(request?.digest).toBe(sealed.hash);

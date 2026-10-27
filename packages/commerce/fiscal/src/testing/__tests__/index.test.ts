@@ -15,6 +15,7 @@ describe("@stackra/fiscal/testing", () => {
       "FiscalDeviceFake",
       "FiscalPackSourceFake",
       "FiscalSignerFake",
+      "FiscalSigningKeyFake",
       "FiscalTransportFake",
       "HybridPdfFake",
       "TillCredentialsFake",

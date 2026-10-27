@@ -14,6 +14,7 @@ import * as contracts from "#contracts/index";
 describe("@stackra/fiscal/contracts", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(contracts).sort()).toEqual([
+      "CheckDocumentMode",
       "FiscalChannel",
       "FiscalDevice",
       "FiscalDocumentKind",
@@ -23,6 +24,7 @@ describe("@stackra/fiscal/contracts", () => {
       "FiscalPackSource",
       "FiscalRecordStatus",
       "FiscalSigner",
+      "FiscalSigningKey",
       "FiscalTransport",
       "HybridPdf",
       "OnboardingInput",

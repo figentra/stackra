@@ -28,11 +28,11 @@ describe("FiscalOnboardingService", () => {
     const eta = new EtaOnboardingDriver(transport, credentials);
     const tse = new DeviceOnboardingDriver("tse", device, credentials);
     const onboardings = new FiscalOnboardingService([zatca, eta, tse]);
-    expect([onboardings.for("zatca"), onboardings.for("eta"), onboardings.for("tse")]).toEqual([
-      zatca,
-      eta,
-      tse,
-    ]);
+    expect([
+      onboardings.for("zatca"),
+      onboardings.for("eta-receipt"),
+      onboardings.for("tse"),
+    ]).toEqual([zatca, eta, tse]);
     expect([onboardings.supports("tse"), onboardings.supports("nf525")]).toEqual([true, false]);
   });
 

@@ -2,11 +2,11 @@
  * Stackra file contract:
  * Purpose: `ZatcaDriver`, the `zatca` mandate (ZATCA Phase 2): a UBL 2.1 invoice with the unit's invoice counter and
  *          the previous invoice hash, hashed, XAdES-signed by the unit's CSID key, stamped with the TLV receipt QR,
- * then
- *          reported (simplified) or cleared (standard).
+ *          then reported (simplified) or cleared (standard).
  * Boundary: a driver of `FiscalDriver`, key `zatca`. Sealing needs no network, so a till issues offline and reports
  *           later. The hash is SHA-256 of the canonical XML before the signature and the QR are added (the signer
- *           envelopes `ext:UBLExtensions` and `cac:Signature`, both outside the hash). Endpoints, version, profile, tax
+ *           envelopes `ext:UBLExtensions` and `cac:Signature`, both outside the hash, at the sealing time it is
+ *           handed; `XadesEnvelopeSignerDriver` is that signer over a host key). Endpoints, version, profile, tax
  *           currency, payment-means codes and time zone are pack options; the type codes and transaction flags are
  *           the mandate's format.
  * Runtime: isomorphic
@@ -131,6 +131,7 @@ export class ZatcaDriver extends Driver(FiscalDriver) {
       format: SignatureFormat.Xades,
       payload: unsigned,
       digest: hash,
+      signedAt: context.now,
     });
     if (!signed.signedPayload || !signed.publicKey)
       throw FiscalCredentialMissingError.create({ unitId: context.unitId, driver: this.key });

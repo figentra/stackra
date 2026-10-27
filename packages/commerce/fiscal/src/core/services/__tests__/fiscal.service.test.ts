@@ -2,8 +2,9 @@
  * Stackra file contract:
  * Purpose: unit tests of `FiscalService`: the pack picks the driver per market and channel, a channel with no mandate
  *          seals nothing, an unknown driver is refused, sealing chains and is idempotent, a race is a conflict,
- *          submission runs in order and stops at an unreachable authority, the offline status reads the pack's
- *          window, and the export uses the pack's driver.
+ *          submission runs in order and stops at an unreachable authority, polling reads the verdict of submitted
+ *          records and skips drivers without `poll`, a guest check seals under the pack's check mode, the offline
+ *          status reads the pack's window, and the export uses the pack's driver.
  * Boundary: test only; a recording driver, the memory journal and the pack fake stand in. Pack values are samples.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0364 (decisions 1 to 3).
@@ -12,11 +13,14 @@ import { Clock } from "@stackra/contracts";
 import { isRefusal } from "@stackra/errors";
 import { describe, expect, it } from "@stackra/testing";
 
+import { CheckDocumentMode } from "#contracts/enums/check-document-mode.enum";
 import { FiscalChannel } from "#contracts/enums/fiscal-channel.enum";
 import { FiscalRecordStatus } from "#contracts/enums/fiscal-record-status.enum";
 import { FiscalDriver } from "#contracts/ports/fiscal-driver.port";
 import type { DriverContext } from "#contracts/types/driver-context.type";
+import type { FiscalCheck } from "#contracts/types/fiscal-check.type";
 import type { FiscalDocument } from "#contracts/types/fiscal-document.type";
+import type { FiscalLine } from "#contracts/types/fiscal-line.type";
 import type { FiscalMandate } from "#contracts/types/fiscal-mandate.type";
 import type { FiscalRecord } from "#contracts/types/fiscal-record.type";
 import type { JournalExport } from "#contracts/types/journal-export.type";
@@ -27,6 +31,7 @@ import { MemoryFiscalJournalDriver } from "#core/drivers/memory-fiscal-journal.d
 import { FiscalAuthorityUnavailableError } from "#core/errors/fiscal-authority-unavailable.error";
 import { FiscalChainConflictError } from "#core/errors/fiscal-chain-conflict.error";
 import { FiscalDriverMissingError } from "#core/errors/fiscal-driver-missing.error";
+import { FiscalOptionsInvalidError } from "#core/errors/fiscal-options-invalid.error";
 import { FiscalService } from "#core/services/fiscal.service";
 import { fiscalDocument } from "#testing/fiscal-document.fixture";
 import { FiscalPackSourceFake } from "#testing/fiscal-pack-source.fake";
@@ -200,6 +205,129 @@ describe("FiscalService#submitPending", () => {
     tillDriver.answers.push("unavailable");
     expect(await service.submitPending(till, 10)).toEqual([]);
     expect(await journal.pending("till_1", 10)).toHaveLength(2);
+  });
+});
+
+/** A recording driver whose authority validates after accepting; `verdicts` answer each poll in order. */
+class PollingDriver extends RecordingDriver {
+  readonly verdicts: (SubmissionOutcome | null | "unavailable")[] = [];
+
+  async poll(): Promise<SubmissionOutcome | null> {
+    const verdict = this.verdicts.shift() ?? null;
+    if (verdict === "unavailable")
+      throw FiscalAuthorityUnavailableError.create({ driver: this.key, status: 503 });
+    return verdict;
+  }
+}
+
+describe("FiscalService#pollSubmitted", () => {
+  const handed: SubmissionOutcome = {
+    status: FiscalRecordStatus.Submitted,
+    authorityReference: "U",
+    message: null,
+    payload: null,
+  };
+
+  /** A service whose till driver polls, with two records submitted. */
+  const polling = async () => {
+    const driver = new PollingDriver("till-driver");
+    driver.answers.push(handed, handed);
+    const journal = new MemoryFiscalJournalDriver();
+    const service = new FiscalService(
+      [driver],
+      FiscalPackSourceFake.with({ xx: { invoice: null, till: mandate("till-driver") } }),
+      journal,
+      new TestClock(),
+    );
+    await service.seal(fiscalDocument(), till);
+    await service.seal(fiscalDocument({ id: "doc-2", number: "INV-0002" }), till);
+    await service.submitPending(till, 10);
+    return { driver, journal, service };
+  };
+
+  it("records the verdict and leaves undecided records submitted", async () => {
+    const { driver, journal, service } = await polling();
+    driver.verdicts.push(null, {
+      status: FiscalRecordStatus.Accepted,
+      authorityReference: null,
+      message: null,
+      payload: null,
+    });
+    const answered = await service.pollSubmitted(till, 10);
+    expect(
+      answered.map((record) => [record.sequence, record.status, record.authorityReference]),
+    ).toEqual([[2, FiscalRecordStatus.Accepted, "U"]]);
+    expect((await journal.submitted("till_1", 10)).map((record) => record.sequence)).toEqual([1]);
+  });
+
+  it("stops at an unreachable authority", async () => {
+    const { driver, service } = await polling();
+    driver.verdicts.push("unavailable");
+    expect(await service.pollSubmitted(till, 10)).toEqual([]);
+    expect(driver.verdicts).toEqual([]);
+  });
+
+  it("skips drivers that do not poll", async () => {
+    const { service, journal } = setup();
+    await service.seal(fiscalDocument(), till);
+    const [record] = await journal.pending("till_1", 1);
+    if (record) await journal.update({ ...record, status: FiscalRecordStatus.Submitted });
+    expect(await service.pollSubmitted(till, 10)).toEqual([]);
+  });
+});
+
+const wholeCheck = fiscalDocument();
+const [widget, book] = wholeCheck.lines as readonly [FiscalLine, FiscalLine];
+const paidPart = (id: string, line: FiscalLine) => ({
+  id,
+  number: id,
+  paidAt: new Date("2026-03-01T10:00:00Z"),
+  lines: [line],
+  payments: [{ method: "cash", amount: line.net.plus(line.tax) }],
+});
+const sample: FiscalCheck = { document: wholeCheck, parts: [paidPart("part-1", widget)] };
+const checkService = (checkDocument?: CheckDocumentMode) =>
+  new FiscalService(
+    [new RecordingDriver("till-driver")],
+    FiscalPackSourceFake.with({
+      xx: {
+        invoice: null,
+        till: { ...mandate("till-driver"), ...(checkDocument ? { checkDocument } : {}) },
+      },
+    }),
+    new MemoryFiscalJournalDriver(),
+    new TestClock(),
+  );
+
+describe("FiscalService#sealCheck", () => {
+  it("seals each paid part once, as payments arrive", async () => {
+    const fiscal = checkService(CheckDocumentMode.PerPart);
+    const first = await fiscal.sealCheck(sample, till);
+    const both = await fiscal.sealCheck(
+      { document: wholeCheck, parts: [...sample.parts, paidPart("part-2", book)] },
+      till,
+    );
+    expect(first.map((record) => record.documentId)).toEqual(["part-1"]);
+    expect(both.map((record) => [record.documentId, record.sequence])).toEqual([
+      ["part-1", 1],
+      ["part-2", 2],
+    ]);
+  });
+
+  it("seals the whole check only once it is paid", async () => {
+    const fiscal = checkService(CheckDocumentMode.WholeCheck);
+    expect(await fiscal.sealCheck(sample, till)).toEqual([]);
+    const paid = await fiscal.sealCheck(
+      { document: wholeCheck, parts: [...sample.parts, paidPart("part-2", book)] },
+      till,
+    );
+    expect(paid.map((record) => record.documentId)).toEqual([wholeCheck.id]);
+  });
+
+  it("refuses a pack that names no check mode", async () => {
+    await expect(checkService().sealCheck(sample, till)).rejects.toSatisfy((error: unknown) =>
+      isRefusal(error, FiscalOptionsInvalidError),
+    );
   });
 });
 

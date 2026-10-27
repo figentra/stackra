@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `FiscalJournal`, the port of the per-unit store of sealed records: the chain's tail, a document's record,
- *          the pending queue and a date range.
+ *          the pending queue, the records awaiting the authority's verdict, and a date range.
  * Boundary: an abstract class that is its own token, key `fiscal.FiscalJournal`. `append` is atomic on
  *           (unit, sequence) and on (unit, document): a driver for a till keeps it on the device, a server keeps it in
  *           its database. The memory driver ships here. A leaf file.
@@ -36,6 +36,12 @@ export abstract class FiscalJournal extends Port {
 
   /** Up to `limit` of the unit's `sealed` records, lowest sequence first. */
   abstract pending(unitId: string, limit: number): Promise<readonly FiscalRecord[]>;
+
+  /**
+   * Up to `limit` of the unit's `submitted` records (handed over, verdict pending), lowest sequence first; what
+   * `FiscalService.pollSubmitted` asks the authority about.
+   */
+  abstract submitted(unitId: string, limit: number): Promise<readonly FiscalRecord[]>;
 
   /** The unit's records sealed in `[from, to)`, lowest sequence first. */
   abstract range(unitId: string, from: Date, to: Date): Promise<readonly FiscalRecord[]>;

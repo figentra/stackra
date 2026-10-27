@@ -36,7 +36,7 @@ describe("EtaOnboardingDriver", () => {
     const transport = FiscalTransportFake.answering(TOKEN);
     const credentials = new TillCredentialsFake();
     const onboarding = new EtaOnboardingDriver(transport, credentials);
-    expect([onboarding.key, onboarding.inputs.length]).toEqual(["eta", 5]);
+    expect([onboarding.key, onboarding.inputs.length]).toEqual(["eta-receipt", 5]);
     expect(await onboarding.register("till_1", ANSWERS, OPTIONS)).toEqual({
       unitId: "till_1",
       stage: "compliance",

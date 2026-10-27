@@ -2,8 +2,9 @@
  * Stackra file contract:
  * Purpose: `FiscalService`, the engine: it reads the market pack for a document's market and channel, picks the
  *          driver the pack names, seals the document onto the unit's chain (offline-capable, idempotent per
- *          document), submits pending records in order when the authority is reachable, reports how far a unit is
- *          behind against the pack's reporting window, and exports the journal.
+ *          document), seals a guest check's documents under the pack's check mode, submits pending records in order
+ *          when the authority is reachable, polls submitted records for the authority's verdict, reports how far a
+ *          unit is behind against the pack's reporting window, and exports the journal.
  * Boundary: a `Service` the host builds with every driver it registers, because the driver is chosen per call from
  *           pack data rather than bound once. It names no market and holds no value of its own: windows and options
  *           are pack data, the time is the `Clock`'s. A pack with no mandate in a channel means nothing is sealed.
@@ -16,6 +17,7 @@ import type { Clock } from "@stackra/contracts";
 import type { FiscalDriver } from "#contracts/ports/fiscal-driver.port";
 import type { FiscalJournal } from "#contracts/ports/fiscal-journal.port";
 import type { FiscalPackSource } from "#contracts/ports/fiscal-pack-source.port";
+import type { FiscalCheck } from "#contracts/types/fiscal-check.type";
 import type { FiscalDocument } from "#contracts/types/fiscal-document.type";
 import type { FiscalMandate } from "#contracts/types/fiscal-mandate.type";
 import type { FiscalRecord } from "#contracts/types/fiscal-record.type";
@@ -26,6 +28,8 @@ import type { SubmissionOutcome } from "#contracts/types/submission-outcome.type
 import { FiscalAuthorityUnavailableError } from "#core/errors/fiscal-authority-unavailable.error";
 import { FiscalChainConflictError } from "#core/errors/fiscal-chain-conflict.error";
 import { FiscalDriverMissingError } from "#core/errors/fiscal-driver-missing.error";
+import { FiscalOptionsInvalidError } from "#core/errors/fiscal-options-invalid.error";
+import { checkDocuments } from "#core/functions/check-documents.function";
 
 /** Milliseconds in an hour. */
 const HOUR = 3_600_000;
@@ -156,6 +160,74 @@ export class FiscalService extends Service {
       answered.push(updated);
     }
     return answered;
+  }
+
+  /**
+   * Asks the authority for its verdict on up to `limit` of the unit's `submitted` records, lowest sequence first, under
+   * the pack in force when each was sealed (validity polling, ADR 0364 open question 2). The host schedules the call
+   * (a cron or workflow step); records whose driver has no `poll`, and records still undecided, are left as they are.
+   * Stops at an unreachable authority.
+   *
+   * @returns the records that got a verdict, as updated in the journal.
+   * @throws FiscalDriverMissingError when a record's driver is no longer registered.
+   */
+  async pollSubmitted(target: FiscalTarget, limit: number): Promise<FiscalRecord[]> {
+    const answered: FiscalRecord[] = [];
+    for (const record of await this.journal.submitted(target.unitId, limit)) {
+      const driver = this.driver(target, record.driver);
+      if (!driver.poll) continue;
+      const mandate = await this.mandate(
+        { ...target, market: record.market, channel: record.channel },
+        record.sealedAt,
+      );
+      let outcome: SubmissionOutcome | null;
+      try {
+        outcome = await driver.poll(record, {
+          unitId: target.unitId,
+          options: mandate?.options ?? {},
+        });
+      } catch (error) {
+        if (error instanceof FiscalAuthorityUnavailableError) break;
+        throw error;
+      }
+      if (!outcome) continue;
+      const updated: FiscalRecord = {
+        ...record,
+        status: outcome.status,
+        authorityReference: outcome.authorityReference ?? record.authorityReference,
+        message: outcome.message,
+        payload: outcome.payload ?? record.payload,
+        submittedAt: this.clock.now(),
+      };
+      await this.journal.update(updated);
+      answered.push(updated);
+    }
+    return answered;
+  }
+
+  /**
+   * Seals the fiscal documents a guest check paid in parts issues now, under the pack's `checkDocument` mode: one per
+   * paid part, or the whole check once the parts cover it. Each goes through `seal`, so calling again after every
+   * payment returns the parts already sealed and seals only what is new.
+   *
+   * @returns the records, in order; empty when the pack asks nothing in this channel or the whole check is not paid.
+   * @throws FiscalOptionsInvalidError when the pack names no `checkDocument` mode.
+   * @throws FiscalDocumentInvalidError when a part has no lines under `per_part`.
+   */
+  async sealCheck(check: FiscalCheck, target: FiscalTarget): Promise<FiscalRecord[]> {
+    const mandate = await this.mandate(target, check.document.issuedAt);
+    if (!mandate) return [];
+    if (!mandate.checkDocument)
+      throw FiscalOptionsInvalidError.create({
+        driver: mandate.driver,
+        issues: "checkDocument: required to seal a guest check",
+      });
+    const records: FiscalRecord[] = [];
+    for (const document of checkDocuments(check, mandate.checkDocument)) {
+      const record = await this.seal(document, target);
+      if (record) records.push(record);
+    }
+    return records;
   }
 
   /**

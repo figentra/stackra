@@ -1,15 +1,16 @@
 /**
  * Stackra file contract:
- * Purpose: Stand-in barrel: the `.` entry of @stackra/fiscal (the service, the drivers, the onboardings and their
- *          picker, the memory driver and journal, the refusals and the option schemas a pack is checked against) until
- *          `stackra gen` writes the entry barrels (STA-339).
- * Boundary: names each re-export and declares nothing. The format helpers (XML, base64, TLV, hashing, time zones)
- *           and the format constants stay internal: no consumer imports them.
+ * Purpose: Stand-in barrel: the `.` entry of @stackra/fiscal (the service, the drivers, the XAdES envelope signer,
+ *          the onboardings and their picker, the memory driver and journal, the refusals and the option schemas a pack
+ *          is checked against) until `stackra gen` writes the entry barrels (STA-339).
+ * Boundary: names each re-export and declares nothing. The format helpers (XML, base64, TLV, hashing, time zones,
+ *           the ETA verdict, the guest-check split) and the format constants stay internal: no consumer imports them.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision.
  */
 export { ETA_ONBOARDING_OPTIONS } from "#core/constants/eta-onboarding-options.constant";
 export { ETA_OPTIONS } from "#core/constants/eta-options.constant";
+export { ETA_RECEIPT_OPTIONS } from "#core/constants/eta-receipt-options.constant";
 export { FACTUR_X_OPTIONS } from "#core/constants/factur-x-options.constant";
 export { FDM_OPTIONS } from "#core/constants/fdm-options.constant";
 export { NF525_OPTIONS } from "#core/constants/nf525-options.constant";
@@ -22,6 +23,7 @@ export { ZATCA_OPTIONS } from "#core/constants/zatca-options.constant";
 export { DeviceOnboardingDriver } from "#core/drivers/device-onboarding.driver";
 export { EtaDriver } from "#core/drivers/eta.driver";
 export { EtaOnboardingDriver } from "#core/drivers/eta-onboarding.driver";
+export { EtaReceiptDriver } from "#core/drivers/eta-receipt.driver";
 export { FacturXDriver } from "#core/drivers/factur-x.driver";
 export { FdmDriver } from "#core/drivers/fdm.driver";
 export { MarketPackFiscalPackSourceDriver } from "#core/drivers/market-pack-fiscal-pack-source.driver";
@@ -33,6 +35,7 @@ export { RksvDriver } from "#core/drivers/rksv.driver";
 export { RtDriver } from "#core/drivers/rt.driver";
 export { TseDriver } from "#core/drivers/tse.driver";
 export { VerifactuDriver } from "#core/drivers/verifactu.driver";
+export { XadesEnvelopeSignerDriver } from "#core/drivers/xades-envelope-signer.driver";
 export { ZatcaDriver } from "#core/drivers/zatca.driver";
 export { ZatcaOnboarding } from "#core/drivers/zatca-onboarding.driver";
 export { FiscalAuthorityUnavailableError } from "#core/errors/fiscal-authority-unavailable.error";
@@ -44,6 +47,7 @@ export { FiscalOnboardingInputMissingError } from "#core/errors/fiscal-onboardin
 export { FiscalOnboardingRefusedError } from "#core/errors/fiscal-onboarding-refused.error";
 export { FiscalOnboardingUnsupportedError } from "#core/errors/fiscal-onboarding-unsupported.error";
 export { FiscalOptionsInvalidError } from "#core/errors/fiscal-options-invalid.error";
+export { FiscalSignatureUnsupportedError } from "#core/errors/fiscal-signature-unsupported.error";
 export { FiscalService } from "#core/services/fiscal.service";
 export { FiscalOnboardingService } from "#core/services/fiscal-onboarding.service";
 export type { TaxGroup } from "#core/types/tax-group.type";

@@ -4,7 +4,8 @@
  *          registered item code, serialized canonically, sealed with CAdES-BES by the issuer's token or cloud seal,
  *          and submitted in a batch of one.
  * Boundary: a driver of `FiscalDriver`, key `eta`. The authority validates after it accepts a submission, so an
- *           accepted document is `submitted` with its UUID as the reference. Tax types, the activity code, the
+ *           accepted document is `submitted` with its UUID as the reference, and `poll` asks the pack's status URL for
+ *           the verdict (`valid` or `invalid`). Tax types, the activity code, the
  *           version, the endpoint and the reporting currency are pack options; party and document type letters are
  *           the format's.
  * Runtime: isomorphic
@@ -34,6 +35,7 @@ import { FiscalDocumentInvalidError } from "#core/errors/fiscal-document-invalid
 import { FiscalOptionsInvalidError } from "#core/errors/fiscal-options-invalid.error";
 import { assertAnswered } from "#core/functions/assert-answered.function";
 import { canonicalEta } from "#core/functions/canonical-eta.function";
+import { etaVerdict } from "#core/functions/eta-verdict.function";
 import { jsonLinesExport } from "#core/functions/json-lines-export.function";
 import { parseOptions } from "#core/functions/parse-options.function";
 import { sha256 } from "#core/functions/sha256.function";
@@ -245,6 +247,35 @@ export class EtaDriver extends Driver(FiscalDriver) {
       message: rejected?.error?.message ?? `HTTP ${response.status}`,
       payload: null,
     };
+  }
+
+  /**
+   * Asks the authority whether a submitted document is valid yet (`statusUrl` with its UUID).
+   *
+   * @returns the verdict, or `null` while the document is still being validated.
+   * @throws FiscalOptionsInvalidError when the pack has no `statusUrl`.
+   * @throws FiscalAuthorityUnavailableError when the authority cannot be reached.
+   */
+  async poll(record: FiscalRecord, context: DriverContext): Promise<SubmissionOutcome | null> {
+    const options = parseOptions(ETA_OPTIONS, context.options, this.key);
+    if (!options.statusUrl)
+      throw FiscalOptionsInvalidError.create({
+        driver: this.key,
+        issues: "statusUrl: required to poll",
+      });
+    const reference = record.authorityReference;
+    if (!reference) return null;
+    const response = assertAnswered(
+      await this.transport.send({
+        method: "GET",
+        url: options.statusUrl.replace("{uuid}", encodeURIComponent(reference)),
+        credential: context.unitId,
+        headers: {},
+        body: null,
+      }),
+      this.key,
+    );
+    return etaVerdict(response, reference);
   }
 
   /** The signed documents as JSON lines. */

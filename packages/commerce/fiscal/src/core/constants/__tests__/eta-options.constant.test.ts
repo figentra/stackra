@@ -1,8 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `ETA_OPTIONS`: a complete pack section passes and a section missing a field or holding a
- *          misfit
- *          fails.
+ * Purpose: unit tests of `ETA_OPTIONS`: a complete pack section passes, the optional status URL must name the UUID,
+ *          and a section missing a field or holding a misfit fails.
  * Boundary: test only; the option values are samples, never a market's real values (ADR 0363 decision 9).
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0364 (decision 2).
@@ -27,6 +26,14 @@ describe("ETA_OPTIONS", () => {
   it("refuses a section without `activityCode`", () => {
     const { activityCode: _left, ...rest } = SAMPLE;
     expect(ETA_OPTIONS.safeParse(rest).success).toBe(false);
+  });
+
+  it("takes an optional status URL that names the UUID", () => {
+    const statusUrl = "https://authority.test/documents/{uuid}/details";
+    expect(ETA_OPTIONS.safeParse({ ...SAMPLE, statusUrl }).success).toBe(true);
+    expect(
+      ETA_OPTIONS.safeParse({ ...SAMPLE, statusUrl: "https://authority.test/x" }).success,
+    ).toBe(false);
   });
 
   it("refuses a tax type without a subtype", () => {

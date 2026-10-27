@@ -23,8 +23,10 @@ describe("@stackra/fiscal", () => {
       "DeviceOnboardingDriver",
       "ETA_ONBOARDING_OPTIONS",
       "ETA_OPTIONS",
+      "ETA_RECEIPT_OPTIONS",
       "EtaDriver",
       "EtaOnboardingDriver",
+      "EtaReceiptDriver",
       "FACTUR_X_OPTIONS",
       "FDM_OPTIONS",
       "FacturXDriver",
@@ -39,6 +41,7 @@ describe("@stackra/fiscal", () => {
       "FiscalOnboardingService",
       "FiscalOnboardingUnsupportedError",
       "FiscalOptionsInvalidError",
+      "FiscalSignatureUnsupportedError",
       "FiscalService",
       "MarketPackFiscalPackSourceDriver",
       "MemoryFiscalDriver",
@@ -55,6 +58,7 @@ describe("@stackra/fiscal", () => {
       "TseDriver",
       "VERIFACTU_OPTIONS",
       "VerifactuDriver",
+      "XadesEnvelopeSignerDriver",
       "ZATCA_OPTIONS",
       "ZatcaDriver",
       "ZatcaOnboarding",
@@ -76,6 +80,7 @@ describe("@stackra/fiscal", () => {
       new core.RtDriver(device),
       new core.RksvDriver(signer, new TurnoverCipherFake(), new TillCredentialsFake()),
       new core.VerifactuDriver(transport),
+      new core.EtaReceiptDriver(transport, new TillCredentialsFake()),
       new core.MemoryFiscalDriver(),
     ].map((driver) => driver.key);
     expect(keys).toEqual([
@@ -89,6 +94,7 @@ describe("@stackra/fiscal", () => {
       "rt",
       "rksv",
       "verifactu",
+      "eta-receipt",
       "memory",
     ]);
   });

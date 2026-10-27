@@ -1,13 +1,14 @@
 /**
  * Stackra file contract:
- * Purpose: `EtaOnboardingDriver`, POS registration for the `eta` till mandate (the Egyptian e-receipt system): the
- *          client id, client secret and pre-shared key the taxpayer's portal issued for one POS, checked by asking the
- *          identity service for an access token with the POS's serial and OS version, then kept per unit.
- * Boundary: the `eta` driver of `FiscalOnboarding` over `FiscalTransport` and `TillCredentials`. The client id goes in
- *           `token`, the secret in `secret`, the serial, OS version and pre-shared key in `attributes`; the access
- *           token is only proof and is dropped, so the host's transport binding mints its own per call. The token
- *           endpoint is the mandate's pack option (`ETA_ONBOARDING_OPTIONS`); header and grant names are the
- *           protocol's.
+ * Purpose: `EtaOnboardingDriver`, POS registration for the `eta-receipt` till mandate (the Egyptian e-receipt
+ *          system, `EtaReceiptDriver`): the client id, client secret and pre-shared key the taxpayer's portal issued
+ *          for one POS, checked by asking the identity service for an access token with the POS's serial and OS
+ *          version, then kept per unit.
+ * Boundary: the `eta-receipt` driver of `FiscalOnboarding` over `FiscalTransport` and `TillCredentials`. The client id
+ *           goes in `token`, the secret in `secret`, the serial, OS version and pre-shared key in `attributes`; the
+ *           access token is only proof and is dropped, so the host's transport binding mints its own per call. The
+ *           token endpoint is the mandate's pack option (`ETA_ONBOARDING_OPTIONS`, beside `ETA_RECEIPT_OPTIONS` in
+ *           the same till options); header and grant names are the protocol's.
  * Runtime: isomorphic
  * Governing contract: ADR 0364 (decisions 4 and 5); ADR 0173 (secrets stay with the host).
  */
@@ -28,7 +29,8 @@ import { onboardingAnswers } from "#core/functions/onboarding-answers.function";
 import { parseOptions } from "#core/functions/parse-options.function";
 
 /** The driver key the options and refusals name. */
-const DRIVER = "eta";
+// The till mandate is the B2C e-receipt; the `eta` key is the invoice driver, which needs no POS registration.
+const DRIVER = "eta-receipt";
 
 /** What `register` reads, in the order the portal shows them. */
 const INPUTS = [

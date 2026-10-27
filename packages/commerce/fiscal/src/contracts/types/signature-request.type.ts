@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `SignatureRequest`, what a driver asks the host's signer to sign: the unit whose key signs, the format, the
- *          payload and its SHA-256 digest.
+ *          payload, its SHA-256 digest and, for an enveloping format, the sealing time.
  * Boundary: a type only; the key and certificate stay with the signer (an HSM, a token, a cloud seal).
  * Runtime: isomorphic
  * Governing contract: ADR 0364 (decision 4).
@@ -18,4 +18,9 @@ export type SignatureRequest = {
   readonly payload: string;
   /** Base64 SHA-256 of the document as the mandate defines it. */
   readonly digest: string;
+  /**
+   * The sealing time an enveloping format writes (XAdES `SigningTime`), from `SealContext.now`, so the signer never
+   * reads a clock; left out by formats that carry no time.
+   */
+  readonly signedAt?: Date;
 };

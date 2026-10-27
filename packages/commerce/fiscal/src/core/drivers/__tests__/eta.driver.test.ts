@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `EtaDriver`: the document JSON with item codes and mapped tax types, the CAdES request over
- *          the canonical form, the refusals, the submission answer, and the export.
+ *          the canonical form, the refusals, the submission answer, validity polling, and the export.
  * Boundary: test only; the signer and transport are fakes and the options are samples (ADR 0363 decision 9).
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0364.
@@ -165,6 +165,41 @@ describe("EtaDriver#submit", () => {
       "bad code",
       "S1",
     ]);
+  });
+});
+
+describe("EtaDriver#poll", () => {
+  const submitted = fiscalRecord({
+    status: FiscalRecordStatus.Submitted,
+    authorityReference: "U1",
+  });
+  const polling = {
+    ...context,
+    options: { ...OPTIONS, statusUrl: "https://authority.test/documents/{uuid}/details" },
+  };
+
+  it("asks the status URL with the UUID and reads the verdict", async () => {
+    const transport = FiscalTransportFake.answering(
+      { status: 200, headers: {}, body: '{"status":"Valid"}' },
+      { status: 200, headers: {}, body: '{"status":"Submitted"}' },
+    );
+    const driver = new EtaDriver(new FiscalSignerFake(), transport);
+    expect((await driver.poll(submitted, polling))?.status).toBe(FiscalRecordStatus.Accepted);
+    expect(await driver.poll(submitted, polling)).toBeNull();
+    const [request] = transport.calls("send") as TransportRequest[];
+    expect([request?.method, request?.url]).toEqual([
+      "GET",
+      "https://authority.test/documents/U1/details",
+    ]);
+  });
+
+  it("refuses to poll without a status URL", async () => {
+    await expect(
+      new EtaDriver(new FiscalSignerFake(), FiscalTransportFake.answering()).poll(
+        submitted,
+        context,
+      ),
+    ).rejects.toSatisfy((error: unknown) => isRefusal(error, FiscalOptionsInvalidError));
   });
 });
 

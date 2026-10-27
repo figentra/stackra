@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `FiscalDriver`, the one port every e-invoicing mandate and till fiscal device implements: seal a document
- *          offline, submit a sealed record, export a journal.
+ *          offline, submit a sealed record, poll a submitted record's verdict where the authority validates later,
+ *          export a journal.
  * Boundary: an abstract class that is its own token, key `fiscal.FiscalDriver`. Many drivers are registered at once and
  *           the pack's `driver` value picks one per market and channel, matched on `key`. A driver parses its own
  *           options and never reads the clock, a secret or the network except through its ports. A leaf file.
@@ -40,6 +41,15 @@ export abstract class FiscalDriver extends Port {
 
   /** Hands a sealed record to the authority; throws `FiscalAuthorityUnavailableError` when it cannot be reached. */
   abstract submit(record: FiscalRecord, context: DriverContext): Promise<SubmissionOutcome>;
+
+  /**
+   * Asks the authority for its verdict on a `submitted` record (validity polling, ADR 0364 open question 2): the new
+   * outcome, or `null` while the authority has not decided. Only drivers whose authority validates after accepting
+   * implement it; `FiscalService.pollSubmitted` skips the others.
+   *
+   * @throws FiscalAuthorityUnavailableError when the authority cannot be reached.
+   */
+  poll?(record: FiscalRecord, context: DriverContext): Promise<SubmissionOutcome | null>;
 
   /** The unit's records in the mandate's audit export format. */
   abstract exportJournal(

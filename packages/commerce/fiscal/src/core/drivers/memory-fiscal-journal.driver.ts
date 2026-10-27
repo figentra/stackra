@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `MemoryFiscalJournalDriver`, an in-memory `FiscalJournal` for tests and development: the same append
- *          guards (one record per sequence and per document on a unit) as a durable journal.
+ *          guards (one record per sequence and per document on a unit) as a durable journal, and the pending and
+ *          submitted queues.
  * Boundary: the memory driver the port ships with (ADR 0266); its name is the file prefix (`memory`). Every check and
  *           write of `append` happens in one turn of the event loop, so two seals that race see each other.
  * Runtime: isomorphic
@@ -58,6 +59,13 @@ export class MemoryFiscalJournalDriver extends Driver(FiscalJournal) {
   async pending(unitId: string, limit: number): Promise<readonly FiscalRecord[]> {
     return (this.units.get(unitId) ?? [])
       .filter((record) => record.status === FiscalRecordStatus.Sealed)
+      .slice(0, limit);
+  }
+
+  /** The unit's submitted records awaiting a verdict, lowest sequence first. */
+  async submitted(unitId: string, limit: number): Promise<readonly FiscalRecord[]> {
+    return (this.units.get(unitId) ?? [])
+      .filter((record) => record.status === FiscalRecordStatus.Submitted)
       .slice(0, limit);
   }
 

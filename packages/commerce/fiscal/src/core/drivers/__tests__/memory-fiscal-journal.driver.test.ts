@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `MemoryFiscalJournalDriver`: the tail, a document's record, the append guards on sequence
- *          and document, updates, the pending queue and a time range.
+ *          and document, updates, the pending and submitted queues and a time range.
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0266; ADR 0364.
@@ -61,5 +61,15 @@ describe("MemoryFiscalJournalDriver", () => {
     ).toHaveLength(1);
     await journal.update(fiscalRecord({ unitId: "till_9" }));
     expect(await journal.last("till_9")).toBeNull();
+  });
+
+  it("lists submitted records awaiting a verdict", async () => {
+    const journal = new MemoryFiscalJournalDriver();
+    await journal.append(first);
+    expect(await journal.submitted("till_1", 10)).toEqual([]);
+    const handed = { ...first, status: FiscalRecordStatus.Submitted };
+    await journal.update(handed);
+    expect(await journal.submitted("till_1", 10)).toEqual([handed]);
+    expect(await journal.submitted("till_1", 0)).toEqual([]);
   });
 });
