@@ -13,7 +13,7 @@
 import { Driver } from "@stackra/container";
 import { z } from "zod";
 
-import { MediaConfig } from "#config/media.config";
+import type { MediaConfig } from "#config/media.config";
 import { UploadFailedError } from "#core/errors/upload-failed.error";
 import { Uploader } from "#core/ports/uploader.port";
 import { Upload } from "#core/values/upload.value";

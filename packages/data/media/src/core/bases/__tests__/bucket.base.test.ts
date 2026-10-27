@@ -12,7 +12,7 @@ import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
 import { Bucket, BucketBase } from "#core/bases/bucket.base";
 import { BucketVisibility } from "#core/enums/bucket-visibility.enum";
-import { ImageFormat } from "#core/enums/image-format.enum";
+import type { ImageFormat } from "#core/enums/image-format.enum";
 import { MediaType } from "#core/enums/media-type.enum";
 import type { BucketOptions } from "#core/types/bucket-options.type";
 

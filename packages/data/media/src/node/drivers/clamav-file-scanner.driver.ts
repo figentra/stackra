@@ -14,7 +14,7 @@ import { connect } from "node:net";
 
 import { Driver } from "@stackra/container";
 
-import { MediaConfig } from "#config/media.config";
+import type { MediaConfig } from "#config/media.config";
 import { ScanVerdict } from "#contracts/enums/scan-verdict.enum";
 import { FileScanner } from "#contracts/ports/file-scanner.port";
 import type { ScanResult } from "#contracts/types/scan-result.type";

@@ -11,8 +11,10 @@
  * Governing contract: ADR 0222 (decisions 1 and 2); ADR 0266 (memory drivers first); ADR 0294 (decision 16).
  */
 import { Driver } from "@stackra/container";
-import { Clock, Duration } from "@stackra/contracts";
-import { FileNotFoundError, FilesystemConfig } from "@stackra/filesystem";
+import type { Clock } from "@stackra/contracts";
+import { Duration } from "@stackra/contracts";
+import type { FilesystemConfig } from "@stackra/filesystem";
+import { FileNotFoundError } from "@stackra/filesystem";
 
 import { MediaDisk } from "#contracts/ports/media-disk.port";
 import type { MediaObject } from "#contracts/types/media-object.type";

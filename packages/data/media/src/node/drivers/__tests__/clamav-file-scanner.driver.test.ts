@@ -21,7 +21,7 @@ let server: Server | undefined;
 function clamd(reply: string, received: Buffer[]): Promise<number> {
   return new Promise((resolve) => {
     server = createServer((socket) => {
-      socket.on("data", (data) => received.push(data));
+      socket.on("data", (data) => received.push(Buffer.isBuffer(data) ? data : Buffer.from(data)));
       socket.on("end", () => socket.end(reply));
     });
     server.listen(0, "127.0.0.1", () =>

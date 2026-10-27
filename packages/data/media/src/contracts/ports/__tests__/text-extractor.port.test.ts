@@ -49,7 +49,7 @@ class KeptContentCredentialsDriver extends Driver(ContentCredentials) {
     return signed;
   }
 
-  async read(bytes: Uint8Array): Promise<ContentCredential | null> {
+  async read(bytes: Uint8Array, _contentType: string): Promise<ContentCredential | null> {
     return this.kept.get(bytes) ?? null;
   }
 }

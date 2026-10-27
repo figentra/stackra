@@ -14,7 +14,7 @@ import { ActorKind } from "@stackra/contracts";
 import { NotFoundError } from "@stackra/errors";
 
 import { bucketByKey } from "#core/functions/bucket-by-key.function";
-import { MediaLibrary } from "#core/services/media-library.service";
+import type { MediaLibrary } from "#core/services/media-library.service";
 import type { CreateUploadInput } from "#node/schemas/create-upload-input.schema";
 import { CreateUploadOutput } from "#node/schemas/create-upload-output.schema";
 

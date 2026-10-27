@@ -13,10 +13,11 @@
  * Governing contract: ADR 0222 (decisions 1 to 3); ADR 0294 (decisions 16 and 17); ADR 0263 (classes are the tokens).
  */
 import { Service } from "@stackra/container";
-import { Clock, Duration } from "@stackra/contracts";
+import type { Clock } from "@stackra/contracts";
+import { Duration } from "@stackra/contracts";
 
-import { MediaConfig } from "#config/media.config";
-import { MediaDisk } from "#contracts/ports/media-disk.port";
+import type { MediaConfig } from "#config/media.config";
+import type { MediaDisk } from "#contracts/ports/media-disk.port";
 import type { BucketBase } from "#core/bases/bucket.base";
 import type { MediaType } from "#core/enums/media-type.enum";
 import { UploadBucketMismatchError } from "#core/errors/upload-bucket-mismatch.error";

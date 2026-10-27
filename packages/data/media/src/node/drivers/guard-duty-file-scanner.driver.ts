@@ -12,7 +12,7 @@
  */
 import { GetObjectTaggingCommand, S3Client } from "@aws-sdk/client-s3";
 import { Driver } from "@stackra/container";
-import { FilesystemConfig } from "@stackra/filesystem";
+import type { FilesystemConfig } from "@stackra/filesystem";
 
 import { ScanVerdict } from "#contracts/enums/scan-verdict.enum";
 import { FileScanner } from "#contracts/ports/file-scanner.port";

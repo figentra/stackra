@@ -23,7 +23,8 @@ import {
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { Driver } from "@stackra/container";
 import { Duration } from "@stackra/contracts";
-import { FileNotFoundError, FilesystemConfig } from "@stackra/filesystem";
+import type { FilesystemConfig } from "@stackra/filesystem";
+import { FileNotFoundError } from "@stackra/filesystem";
 
 import { MediaDisk } from "#contracts/ports/media-disk.port";
 import type { MediaObject } from "#contracts/types/media-object.type";
