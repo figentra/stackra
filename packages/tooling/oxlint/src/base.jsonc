@@ -102,6 +102,12 @@
       "files": ["**/developer/coding-standard/src/**/*.ts"],
       "rules": { "stackra/no-tenant-vocabulary": "off" },
     },
+    {
+      // Tests feed raw keys as fixture data: gen's and runway's tests build the manifests the generated constants
+      // come from, so no constant exists yet. Product code stays under R-56.
+      "files": ["**/__tests__/**"],
+      "rules": { "stackra/no-raw-key-literal": "off" },
+    },
   ],
   "ignorePatterns": [
     "**/dist/**",
