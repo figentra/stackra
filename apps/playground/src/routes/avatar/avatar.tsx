@@ -8,7 +8,8 @@
  * Runtime: browser
  * Governing contract: ADR 0302 (decisions 3 and 5); ADR 0303 (decision 7); ADR 0304; ADR 0060 (light, dark, RTL).
  */
-import { AvatarShape, AvatarVariant, Size, Tone } from "@stackra/ui/contracts";
+import { Enum, Tone } from "@stackra/contracts";
+import { AvatarShape, AvatarVariant, Size } from "@stackra/ui/contracts";
 import { Avatar as UiAvatar, Button, Heading, Icon, Text } from "@stackra/ui/react";
 import { useState } from "react";
 
@@ -126,7 +127,7 @@ export function Avatar() {
           <div key={variant} className="grid gap-2">
             <Heading level={3}>{STRINGS.variant(variant)}</Heading>
             <ul aria-label={STRINGS.variant(variant)} className={ROW}>
-              {Tone.map((tone) => (
+              {Enum.values(Tone).map((tone) => (
                 <li key={tone}>
                   <UiAvatar
                     variant={variant}

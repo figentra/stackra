@@ -9,7 +9,8 @@
  * Governing contract: ADR 0302 (decisions 3 and 5); ADR 0303 (decisions 3 and 7); ADR 0304; ADR 0060 (light, dark,
  *          RTL).
  */
-import { ChipVariant, Size, Tone } from "@stackra/ui/contracts";
+import { Enum, Tone } from "@stackra/contracts";
+import { ChipVariant, Size } from "@stackra/ui/contracts";
 import { Button, Chip as UiChip, Heading, Icon, Text } from "@stackra/ui/react";
 import { createElement, useState } from "react";
 
@@ -57,7 +58,7 @@ export function Chip() {
   const [variantIndex, setVariantIndex] = useState(0);
   const [toneIndex, setToneIndex] = useState(0);
   const variant = ChipVariant[variantIndex] ?? "secondary";
-  const tone = Tone[toneIndex] ?? "default";
+  const tone = Enum.values(Tone)[toneIndex] ?? "default";
 
   return (
     <article className="grid gap-10">
@@ -79,7 +80,7 @@ export function Chip() {
                   <th scope="col" className="p-2 text-start text-sm font-semibold">
                     {STRINGS.variantColumn}
                   </th>
-                  {Tone.map((name) => (
+                  {Enum.values(Tone).map((name) => (
                     <th key={name} scope="col" className="p-2 text-start text-sm font-semibold">
                       {name}
                     </th>
@@ -92,7 +93,7 @@ export function Chip() {
                     <th scope="row" className="p-2 text-start text-sm font-semibold">
                       {name}
                     </th>
-                    {Tone.map((toneName) => (
+                    {Enum.values(Tone).map((toneName) => (
                       <td key={toneName} className="p-2">
                         <UiChip variant={name} tone={toneName} size={size}>
                           {toneName}
@@ -165,7 +166,7 @@ export function Chip() {
           </Button>
           <Button
             variant="secondary"
-            onPress={() => setToneIndex((index) => (index + 1) % Tone.length)}
+            onPress={() => setToneIndex((index) => (index + 1) % Enum.values(Tone).length)}
           >
             {STRINGS.nextTone}
           </Button>

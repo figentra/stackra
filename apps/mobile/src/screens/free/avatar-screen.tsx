@@ -7,7 +7,8 @@
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 6); STA-416 FR-013.
  */
-import { AvatarShape, AvatarVariant, Size, Tone } from "@stackra/ui/contracts";
+import { Enum, Tone } from "@stackra/contracts";
+import { AvatarShape, AvatarVariant, Size } from "@stackra/ui/contracts";
 import { Avatar, Button, Icon, Text } from "@stackra/ui/native";
 import { useState } from "react";
 import { View } from "react-native";
@@ -111,7 +112,7 @@ export function AvatarScreen() {
               {STRINGS.tones.variant(variant)}
             </Text>
             <View className="flex-row flex-wrap items-center gap-3">
-              {Tone.map((tone) => (
+              {Enum.values(Tone).map((tone) => (
                 <Sample key={tone} caption={tone}>
                   <Avatar tone={tone} variant={variant} name={STRINGS.person} />
                 </Sample>

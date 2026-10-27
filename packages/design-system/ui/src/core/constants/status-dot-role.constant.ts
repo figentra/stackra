@@ -7,7 +7,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0302 (decision 3); ADR 0304 (decision 4); ADR 0165 (UI contract).
  */
-import type { Tone } from "#contracts/enums/tone.enum";
+import type { Tone } from "@stackra/contracts";
 
 /** The theme role each tone's dot is drawn in; every value is a CSS variable of the theme and a HeroUI Native colour. */
 export const STATUS_DOT_ROLE = Object.freeze({

@@ -9,7 +9,8 @@
  * Governing contract: ADR 0302 (decision 5); ADR 0304; ADR 0022 (test placement).
  */
 // @covers sta-350:FR-046 sta-350:P-035
-import { AvatarShape, AvatarVariant, Size, Tone } from "@stackra/ui/contracts";
+import { Enum, Tone } from "@stackra/contracts";
+import { AvatarShape, AvatarVariant, Size } from "@stackra/ui/contracts";
 import { DesignSystemProvider } from "@stackra/ui/react";
 import { act, render, screen, within } from "@testing-library/react";
 
@@ -67,7 +68,7 @@ describe("Avatar page", () => {
     renderPage();
     for (const variant of AvatarVariant) {
       const samples = [...document.querySelectorAll(`[data-variant="${variant}"]`)];
-      expect(samples.map((sample) => sample.getAttribute("data-tone"))).toEqual([...Tone]);
+      expect(samples.map((sample) => sample.getAttribute("data-tone"))).toEqual([...Enum.values(Tone)]);
       for (const sample of samples) expect(sample.textContent).toBe("AL");
     }
   });

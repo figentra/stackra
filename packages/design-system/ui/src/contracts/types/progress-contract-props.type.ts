@@ -8,8 +8,9 @@
  * Governing contract: ADR 0302 (decision 3: one API on web and native); ADR 0303 (decision 7: props vocabulary);
  *          ADR 0312; WCAG 2.2 SC 4.1.2 (a progress bar has a name and a value).
  */
+import type { Tone } from "@stackra/contracts";
+
 import type { Size } from "#contracts/enums/size.enum";
-import type { Tone } from "#contracts/enums/tone.enum";
 
 /** Props shared by every progress indicator on web and native. */
 export interface ProgressContractProps {

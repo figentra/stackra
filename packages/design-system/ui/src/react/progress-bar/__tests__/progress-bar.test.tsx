@@ -10,11 +10,11 @@
  */
 // @vitest-environment jsdom
 // @covers sta-350:FR-118
+import { Enum, Tone } from "@stackra/contracts";
 import { render, screen } from "@testing-library/react";
 import { createRef } from "react";
 
 import { Size } from "#contracts/enums/size.enum";
-import { Tone } from "#contracts/enums/tone.enum";
 import type { ProgressBarContractProps } from "#contracts/types/progress-bar-contract-props.type";
 import { ProgressBar } from "#react/progress-bar/progress-bar";
 import type { ProgressBarProps } from "#react/progress-bar/progress-bar.props";
@@ -37,7 +37,7 @@ describe("ProgressBar (web)", () => {
     expect(screen.getByRole("progressbar").classList.contains(`progress-bar--${size}`)).toBe(true);
   });
 
-  it.each(Tone)("draws tone %s", (tone) => {
+  it.each(Enum.values(Tone))("draws tone %s", (tone) => {
     render(<ProgressBar label="Uploading" tone={tone} />);
     expect(screen.getByRole("progressbar").classList.contains(`progress-bar--${tone}`)).toBe(true);
   });

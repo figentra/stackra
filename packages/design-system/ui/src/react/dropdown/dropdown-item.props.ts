@@ -8,8 +8,8 @@
  *          compound type so the declaration emit is self-contained (STA-1220).
  */
 import type { DropdownItemProps as HeroDropdownItemProps } from "@heroui/react";
+import type { Tone } from "@stackra/contracts";
 import type { ReactNode } from "react";
-import type { Tone } from "#contracts/enums/tone.enum";
 
 /** Props of `Dropdown.Item`: HeroUI's item props with the label as children, a `description` and a `color`. */
 export type DropdownItemProps = Omit<HeroDropdownItemProps, "children" | "variant"> & {

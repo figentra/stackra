@@ -13,10 +13,10 @@
  */
 // @vitest-environment jsdom
 // @covers sta-350:FR-119
+import { Enum, Tone } from "@stackra/contracts";
 import { act, render } from "@testing-library/react";
 
 import { Size } from "#contracts/enums/size.enum";
-import { Tone } from "#contracts/enums/tone.enum";
 import type { ProgressBarContractProps } from "#contracts/types/progress-bar-contract-props.type";
 import { PROGRESS_FILL_ROLE } from "#core/constants/progress-fill-role.constant";
 import { ProgressBar } from "#native/progress-bar/progress-bar";
@@ -170,7 +170,7 @@ describe("ProgressBar (native)", () => {
     expect(fillStyle()).toMatchObject({ backgroundColor: "color:accent" });
   });
 
-  it.each(Tone)("fills tone %s in its role", (tone) => {
+  it.each(Enum.values(Tone))("fills tone %s in its role", (tone) => {
     render(<ProgressBar label="Uploading" tone={tone} value={10} />);
     expect(fillStyle()).toMatchObject({ backgroundColor: `color:${PROGRESS_FILL_ROLE[tone]}` });
   });

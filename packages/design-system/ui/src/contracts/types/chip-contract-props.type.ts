@@ -8,11 +8,11 @@
  * Governing contract: ADR 0302 (decision 3: one API on web and native); ADR 0165 (UI contract); ADR 0303 (decision 7,
  *          props vocabulary); ADR 0304.
  */
+import type { Tone } from "@stackra/contracts";
 import type { ReactNode } from "react";
 
 import type { ChipVariant } from "#contracts/enums/chip-variant.enum";
 import type { Size } from "#contracts/enums/size.enum";
-import type { Tone } from "#contracts/enums/tone.enum";
 import type { IconSlot } from "#contracts/types/icon-slot.type";
 
 /** Props shared by the web and native `Chip`. */

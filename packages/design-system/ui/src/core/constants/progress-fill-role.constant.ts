@@ -7,7 +7,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0302 (decision 3); ADR 0312; ADR 0165 (UI contract).
  */
-import type { Tone } from "#contracts/enums/tone.enum";
+import type { Tone } from "@stackra/contracts";
 
 /** The theme role of each tone's fill; every value is a CSS variable of the theme and a HeroUI Native colour. */
 export const PROGRESS_FILL_ROLE = Object.freeze({

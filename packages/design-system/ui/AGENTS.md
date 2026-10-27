@@ -43,7 +43,8 @@ extending the kind's base class. The group table is the docs page `standards/str
 
 ## This package
 
-- A component is a contract in `src/contracts/` (its props type, built on `Size`, `Tone`, `Variant`) plus one
+- A component is a contract in `src/contracts/` (its props type, built on `Size`, `Variant` and
+  `@stackra/contracts`' `Tone`) plus one
   implementation in `src/react/<name>/` on HeroUI v3 and one in `src/native/<name>/` on HeroUI Native, each with
   `__tests__/`. The code is not shared between them (ADR 0302 decision 3, ADR 0227). Add it to the stand-in barrels
   `src/contracts/index.ts`, `src/react/index.ts` and `src/native/index.ts`, and give it a route in `apps/playground`.

@@ -10,7 +10,7 @@
  * Governing contract: ADR 0302 (decisions 3 and 5); ADR 0312 (decisions 1 and 3); WCAG 2.2 SC 1.4.1 and 4.1.3; ADR
  *          0060 (light, dark, RTL).
  */
-import { Tone } from "@stackra/ui/contracts";
+import { Enum, Tone } from "@stackra/contracts";
 import { Alert as UiAlert, Button, Heading, Text } from "@stackra/ui/react";
 import { useState, type ReactNode } from "react";
 
@@ -96,7 +96,7 @@ export function Alert() {
 
       <PageSection id="alert-tones" title={STRINGS.tones} note={STRINGS.tonesNote}>
         <ul className={STACK}>
-          {Tone.map((tone) => (
+          {Enum.values(Tone).map((tone) => (
             <Sample key={tone} caption={`tone="${tone}"`}>
               <UiAlert
                 tone={tone}

@@ -10,7 +10,7 @@
 // @covers sta-350:FR-121
 import type { ReactNode } from "react";
 
-import type { SortDirection } from "#contracts/enums/sort-direction.enum";
+import type { AriaSortDirection } from "#contracts/enums/aria-sort-direction.enum";
 import type { CollectionContractProps } from "#contracts/types/collection-contract-props.type";
 import type { CollectionItem } from "#contracts/types/collection-item.type";
 import type { SelectionContractProps } from "#contracts/types/selection-contract-props.type";
@@ -52,8 +52,8 @@ describe("collection contracts", () => {
 
   it("sorts one column in one of two directions", () => {
     expectTypeOf<SortDescriptor["column"]>().toEqualTypeOf<string>();
-    expectTypeOf<SortDescriptor["direction"]>().toEqualTypeOf<SortDirection>();
-    expectTypeOf<SortDirection>().toEqualTypeOf<"ascending" | "descending">();
+    expectTypeOf<SortDescriptor["direction"]>().toEqualTypeOf<AriaSortDirection>();
+    expectTypeOf<AriaSortDirection>().toEqualTypeOf<"ascending" | "descending">();
   });
 
   it("makes every selection prop optional", () => {

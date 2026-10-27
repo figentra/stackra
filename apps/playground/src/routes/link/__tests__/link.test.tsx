@@ -6,7 +6,7 @@
  * Governing contract: ADR 0302 (decision 5); ADR 0303 (decision 7); ADR 0022 (test placement).
  */
 // @covers sta-350:FR-028 sta-350:P-018
-import { Tone } from "@stackra/ui/contracts";
+import { Enum, Tone } from "@stackra/contracts";
 import { DesignSystemProvider } from "@stackra/ui/react";
 import { act, render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
@@ -55,7 +55,7 @@ describe("Link page", () => {
   it("shows one link per tone with the underline on hover and always", () => {
     renderPage();
     const tones = section("Tones");
-    for (const tone of Tone) {
+    for (const tone of Enum.values(Tone)) {
       const links = tones.getAllByRole("link", { name: tone });
       expect(links, tone).toHaveLength(2);
       expect(links[0]?.classList.contains("underline")).toBe(false);
@@ -66,7 +66,7 @@ describe("Link page", () => {
   it("underlines every link inside running text", () => {
     renderPage();
     const links = section("In running text").getAllByRole("link");
-    expect(links).toHaveLength(Tone.length);
+    expect(links).toHaveLength(Enum.values(Tone).length);
     for (const link of links) expect(link.classList.contains("underline")).toBe(true);
   });
 

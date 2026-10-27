@@ -8,7 +8,8 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0312; WCAG 2.2 SC 4.1.3.
  */
-import type { Tone } from "#contracts/enums/tone.enum";
+import type { Tone } from "@stackra/contracts";
+
 import type { IconSlot } from "#contracts/types/icon-slot.type";
 
 /** Props shared by Alert, AlertDialog and Toast on web and native. */

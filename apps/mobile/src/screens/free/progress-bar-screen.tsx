@@ -7,7 +7,8 @@
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 6); STA-471.
  */
-import { Size, Tone } from "@stackra/ui/contracts";
+import { Enum, Tone } from "@stackra/contracts";
+import { Size } from "@stackra/ui/contracts";
 import { Button, ProgressBar, Text } from "@stackra/ui/native";
 import { useState } from "react";
 import { View } from "react-native";
@@ -91,7 +92,7 @@ export function ProgressBarScreen() {
       </Section>
 
       <Section title={STRINGS.tones.title} description={STRINGS.tones.description}>
-        {Tone.map((tone) => (
+        {Enum.values(Tone).map((tone) => (
           <ProgressBar key={tone} value={60} tone={tone} label={STRINGS.tones.label(tone)} />
         ))}
       </Section>

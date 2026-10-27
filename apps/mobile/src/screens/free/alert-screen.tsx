@@ -7,7 +7,7 @@
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 6); STA-471.
  */
-import { Tone } from "@stackra/ui/contracts";
+import { Enum, Tone } from "@stackra/contracts";
 import { Alert, Button, Text } from "@stackra/ui/native";
 import { useState } from "react";
 
@@ -60,7 +60,7 @@ export function AlertScreen() {
   return (
     <Screen>
       <Section title={STRINGS.tones.title} description={STRINGS.tones.description}>
-        {Tone.map((tone) => (
+        {Enum.values(Tone).map((tone) => (
           <Alert
             key={tone}
             tone={tone}

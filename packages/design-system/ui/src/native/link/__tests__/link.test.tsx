@@ -10,10 +10,10 @@
  */
 // @vitest-environment jsdom
 // @covers sta-350:FR-025 sta-350:FR-026 sta-350:P-017
+import { Enum, Tone } from "@stackra/contracts";
 import { fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 
-import { Tone } from "#contracts/enums/tone.enum";
 import type { LinkContractProps } from "#contracts/types/link-contract-props.type";
 import { TONE_CLASS_NAME } from "#core/constants/tone-class-name.constant";
 import { Link } from "#native/link/link";
@@ -90,7 +90,7 @@ describe("Link (native)", () => {
     expect(labelClass()).toBe("text-link underline");
   });
 
-  it.each(Tone)("paints the %s tone", (tone) => {
+  it.each(Enum.values(Tone))("paints the %s tone", (tone) => {
     render(<Link tone={tone}>Go</Link>);
     expect(labelClass()).toContain(tone === "default" ? "text-link" : TONE_CLASS_NAME[tone]);
   });

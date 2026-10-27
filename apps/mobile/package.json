@@ -59,6 +59,7 @@
     "@internationalized/number": "catalog:mobile",
     "@react-navigation/native": "catalog:mobile",
     "@react-navigation/native-stack": "catalog:mobile",
+    "@stackra/contracts": "workspace:*",
     "@stackra/icons": "workspace:*",
     "@stackra/tokens": "workspace:*",
     "@stackra/ui": "workspace:*",

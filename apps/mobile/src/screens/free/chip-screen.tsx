@@ -6,7 +6,8 @@
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 6); STA-416 FR-013.
  */
-import { ChipVariant, Size, Tone } from "@stackra/ui/contracts";
+import { Enum, Tone } from "@stackra/contracts";
+import { ChipVariant, Size } from "@stackra/ui/contracts";
 import { Button, Chip, Icon, Text } from "@stackra/ui/native";
 import { useState } from "react";
 import { View } from "react-native";
@@ -53,7 +54,7 @@ export function ChipScreen() {
   const [variantIndex, setVariantIndex] = useState(0);
   const [toneIndex, setToneIndex] = useState(0);
   const variant = ChipVariant[variantIndex % ChipVariant.length] ?? "secondary";
-  const tone = Tone[toneIndex % Tone.length] ?? "default";
+  const tone = Enum.values(Tone)[toneIndex % Enum.values(Tone).length] ?? "default";
 
   return (
     <Screen>
@@ -62,7 +63,7 @@ export function ChipScreen() {
           ChipVariant.map((chipVariant) => (
             <Sample key={`${size}-${chipVariant}`} caption={STRINGS.matrix.size(size, chipVariant)}>
               <View className="flex-row flex-wrap gap-2">
-                {Tone.map((chipTone) => (
+                {Enum.values(Tone).map((chipTone) => (
                   <Chip key={chipTone} size={size} variant={chipVariant} tone={chipTone}>
                     {chipTone}
                   </Chip>

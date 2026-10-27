@@ -6,9 +6,10 @@
  * Governing contract: ADR 0302 (decision 5); ADR 0304; ADR 0022 (test placement).
  */
 // @covers sta-350:FR-036 sta-350:P-030
+import { Enum, Tone } from "@stackra/contracts";
 import { DesignSystemProvider } from "@stackra/ui/react";
 import { act, render, screen, within } from "@testing-library/react";
-import { Size, Tone } from "@stackra/ui/contracts";
+import { Size } from "@stackra/ui/contracts";
 
 import { StatusBadge } from "#src/routes/status-badge/status-badge";
 import { StatusBadgeRoute } from "#src/routes/status-badge/status-badge.route";
@@ -51,7 +52,7 @@ describe("StatusBadge page", () => {
     const tones = section("Tones and sizes");
     expect(
       document.querySelectorAll('#status-badge-tones ~ div [data-slot="status-badge-dot"]'),
-    ).toHaveLength(Tone.length * Size.length);
+    ).toHaveLength(Enum.values(Tone).length * Size.length);
     for (const state of ["Draft", "Scheduled", "Active", "Pending", "Failed"]) {
       expect(tones.getAllByText(state)).toHaveLength(Size.length);
     }

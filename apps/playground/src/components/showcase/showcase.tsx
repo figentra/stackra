@@ -8,7 +8,7 @@
  * Runtime: browser
  * Governing contract: ADR 0302 (decision 5); ADR 0294 (decision 14).
  */
-import type { Tone } from "@stackra/ui/contracts";
+import type { Tone } from "@stackra/contracts";
 import {
   Avatar,
   Button,

@@ -8,7 +8,8 @@
  * Runtime: browser
  * Governing contract: ADR 0302 (decisions 3 and 5); ADR 0303 (decision 7); ADR 0312; ADR 0060 (light, dark, RTL).
  */
-import { Size, Tone } from "@stackra/ui/contracts";
+import { Enum, Tone } from "@stackra/contracts";
+import { Size } from "@stackra/ui/contracts";
 import { Button, Heading, ProgressBar as UiProgressBar, Text } from "@stackra/ui/react";
 import { useState } from "react";
 
@@ -86,7 +87,7 @@ export function ProgressBar() {
 
       <PageSection id="progress-bar-tones" title={STRINGS.tones} note={STRINGS.tonesNote}>
         <div className={COLUMN}>
-          {Tone.map((tone) => (
+          {Enum.values(Tone).map((tone) => (
             <UiProgressBar
               key={tone}
               tone={tone}

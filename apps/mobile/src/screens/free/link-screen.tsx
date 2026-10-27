@@ -7,7 +7,8 @@
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 6); STA-416 FR-013.
  */
-import { LinkUnderline, Tone } from "@stackra/ui/contracts";
+import { Enum, Tone } from "@stackra/contracts";
+import { LinkUnderline } from "@stackra/ui/contracts";
 import { Link, Text } from "@stackra/ui/native";
 import { useState } from "react";
 import { View } from "react-native";
@@ -66,7 +67,7 @@ export function LinkScreen() {
         {LinkUnderline.map((underline) => (
           <Sample key={underline} caption={underline}>
             <View className="flex-row flex-wrap gap-4">
-              {Tone.map((tone) => (
+              {Enum.values(Tone).map((tone) => (
                 <Link key={tone} href={HEROUI_URL} tone={tone} underline={underline}>
                   {tone}
                 </Link>

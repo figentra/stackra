@@ -13,9 +13,9 @@
  */
 // @vitest-environment jsdom
 // @covers sta-350:FR-112 sta-350:FR-113
+import { Enum, Tone } from "@stackra/contracts";
 import { act, render, screen } from "@testing-library/react";
 
-import { Tone } from "#contracts/enums/tone.enum";
 import type { ToastContractProps } from "#contracts/types/toast-contract-props.type";
 import type { ToastProviderContractProps } from "#contracts/types/toast-provider-contract-props.type";
 import { FEEDBACK_BY_TONE } from "#core/constants/feedback-by-tone.constant";
@@ -82,7 +82,7 @@ describe("toast (web)", () => {
     expect(screen.getByText("It ships on Monday.")).toBeTruthy();
   });
 
-  it.each(Tone)("announces a %s toast by its tone", (tone) => {
+  it.each(Enum.values(Tone))("announces a %s toast by its tone", (tone) => {
     render(<ToastProvider dismissLabel="Dismiss notification" />);
     act(() => {
       toast("Something happened", { tone });

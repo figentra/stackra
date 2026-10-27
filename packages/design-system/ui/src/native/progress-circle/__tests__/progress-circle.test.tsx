@@ -12,10 +12,10 @@
  */
 // @vitest-environment jsdom
 // @covers sta-350:FR-119
+import { Enum, Tone } from "@stackra/contracts";
 import { render } from "@testing-library/react";
 
 import { Size } from "#contracts/enums/size.enum";
-import { Tone } from "#contracts/enums/tone.enum";
 import type { ProgressCircleContractProps } from "#contracts/types/progress-circle-contract-props.type";
 import { PROGRESS_FILL_ROLE } from "#core/constants/progress-fill-role.constant";
 import { ProgressCircle } from "#native/progress-circle/progress-circle";
@@ -175,7 +175,7 @@ describe("ProgressCircle (native)", () => {
     expect(fillCircle()).toMatchObject({ stroke: "color:accent", strokeLinecap: "round" });
   });
 
-  it.each(Tone)("fills tone %s in its role", (tone) => {
+  it.each(Enum.values(Tone))("fills tone %s in its role", (tone) => {
     render(<ProgressCircle label="Syncing" tone={tone} value={50} />);
     expect(fillCircle()).toMatchObject({ stroke: `color:${PROGRESS_FILL_ROLE[tone]}` });
   });

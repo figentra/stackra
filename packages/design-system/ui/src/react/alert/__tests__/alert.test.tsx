@@ -11,9 +11,9 @@
  */
 // @vitest-environment jsdom
 // @covers sta-350:FR-112 sta-350:FR-113
+import { Enum, Tone } from "@stackra/contracts";
 import { render, screen } from "@testing-library/react";
 
-import { Tone } from "#contracts/enums/tone.enum";
 import type { AlertContractProps } from "#contracts/types/alert-contract-props.type";
 import { FEEDBACK_BY_TONE } from "#core/constants/feedback-by-tone.constant";
 import { Alert } from "#react/alert/alert";
@@ -24,7 +24,7 @@ const rootOf = (container: HTMLElement) =>
   container.querySelector<HTMLElement>('[data-slot="alert-root"]');
 
 describe("Alert (web)", () => {
-  it.each(Tone)("announces a %s alert by its tone", (tone) => {
+  it.each(Enum.values(Tone))("announces a %s alert by its tone", (tone) => {
     const { container } = render(<Alert tone={tone} title="Heads up" />);
     const root = rootOf(container);
     const { role } = FEEDBACK_BY_TONE[tone];

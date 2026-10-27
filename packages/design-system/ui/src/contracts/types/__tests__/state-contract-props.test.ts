@@ -11,7 +11,7 @@
 import type { ReactNode } from "react";
 
 import { EmptyReason } from "#contracts/enums/empty-reason.enum";
-import { ErrorKind } from "#contracts/enums/error-kind.enum";
+import { ErrorStateKind } from "#contracts/enums/error-state-kind.enum";
 import { PageSkeletonLayout } from "#contracts/enums/page-skeleton-layout.enum";
 import type { EmptyStateContractProps } from "#contracts/types/empty-state-contract-props.type";
 import type { ErrorStateContractProps } from "#contracts/types/error-state-contract-props.type";
@@ -21,9 +21,9 @@ import type { StateContractProps } from "#contracts/types/state-contract-props.t
 describe("state page contracts", () => {
   it("names the reasons, kinds and layouts of ADR 0313, frozen", () => {
     expect(EmptyReason).toEqual(["no-data", "no-results", "permission-denied"]);
-    expect(ErrorKind).toEqual(["unauthenticated", "forbidden", "not-found", "unexpected"]);
+    expect(ErrorStateKind).toEqual(["unauthenticated", "forbidden", "not-found", "unexpected"]);
     expect(PageSkeletonLayout).toEqual(["page", "table", "section", "form"]);
-    for (const tuple of [EmptyReason, ErrorKind, PageSkeletonLayout])
+    for (const tuple of [EmptyReason, ErrorStateKind, PageSkeletonLayout])
       expect(Object.isFrozen(tuple)).toBe(true);
   });
 
@@ -31,7 +31,7 @@ describe("state page contracts", () => {
     expectTypeOf<EmptyStateContractProps>().toExtend<StateContractProps>();
     expectTypeOf<ErrorStateContractProps>().toExtend<StateContractProps>();
     expectTypeOf<EmptyStateContractProps["reason"]>().toEqualTypeOf<EmptyReason | undefined>();
-    expectTypeOf<ErrorStateContractProps["kind"]>().toEqualTypeOf<ErrorKind | undefined>();
+    expectTypeOf<ErrorStateContractProps["kind"]>().toEqualTypeOf<ErrorStateKind | undefined>();
   });
 
   it("requires only the title, and takes the rest as optional", () => {

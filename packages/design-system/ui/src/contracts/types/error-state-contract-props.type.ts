@@ -10,13 +10,13 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0313 (decisions 1 and 6); ADR 0140 (error envelope); WCAG 2.2 SC
  *          4.1.3.
  */
-import type { ErrorKind } from "#contracts/enums/error-kind.enum";
+import type { ErrorStateKind } from "#contracts/enums/error-state-kind.enum";
 import type { StateContractProps } from "#contracts/types/state-contract-props.type";
 
 /** Props shared by the web and native `ErrorState`. */
 export interface ErrorStateContractProps extends StateContractProps {
   /** What kind of failure it is: `unauthenticated`, `forbidden`, `not-found` or `unexpected`. Defaults to `unexpected`. */
-  readonly kind?: ErrorKind | undefined;
+  readonly kind?: ErrorStateKind | undefined;
   /**
    * The thrown value, as caught. An `Error` or a string shows its message outside production; its stack is shown
    * outside production only.

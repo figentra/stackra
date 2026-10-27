@@ -12,12 +12,12 @@
  */
 // @vitest-environment jsdom
 // @covers sta-350:FR-041 sta-350:FR-043 sta-350:P-031 sta-350:P-034
+import { Enum, Tone } from "@stackra/contracts";
 import { render } from "@testing-library/react";
 import type { ReactNode } from "react";
 
 import { AvatarVariant } from "#contracts/enums/avatar-variant.enum";
 import { Size } from "#contracts/enums/size.enum";
-import { Tone } from "#contracts/enums/tone.enum";
 import type { AvatarContractProps } from "#contracts/types/avatar-contract-props.type";
 import { ICON_SIZES } from "#core/constants/icon-sizes.constant";
 import { Avatar } from "#native/avatar/avatar";
@@ -79,7 +79,7 @@ describe("Avatar (native)", () => {
     render(<Avatar name="Ada Lovelace" />);
     expect(propsOf("avatar")).toMatchObject({ color: "default" });
     for (const variant of AvatarVariant)
-      for (const tone of Tone)
+      for (const tone of Enum.values(Tone))
         for (const size of Size) {
           render(<Avatar variant={variant} tone={tone} size={size} />);
           expect(propsOf("avatar")).toMatchObject({ variant, color: tone, size });
@@ -145,7 +145,7 @@ describe("Avatar (native)", () => {
   });
 
   it("sizes and colours a fallback icon through the Lucide provider, in the tone's soft foreground", () => {
-    for (const tone of Tone)
+    for (const tone of Enum.values(Tone))
       for (const size of Size) {
         render(<Avatar tone={tone} size={size} />);
         expect(propsOf("provider")).toEqual({

@@ -6,8 +6,8 @@
  * Governing contract: ADR 0305 (rules 10 and 12: one declaration per file); ADR 0302 (decision 3); ADR 0312 (decision
  *          3); WCAG 2.2 SC 2.5.8 and 4.1.3.
  */
+import type { Tone } from "@stackra/contracts";
 import type { ToastComponentProps } from "heroui-native";
-import type { Tone } from "#contracts/enums/tone.enum";
 import type { IconSlot } from "#contracts/types/icon-slot.type";
 import type { ToastAction } from "#contracts/types/toast-action.type";
 

@@ -9,7 +9,8 @@
  * Governing contract: ADR 0302 (decisions 3 and 5); ADR 0304; WCAG 2.2 SC 1.4.1 (use of colour); ADR 0060 (light,
  *          dark, RTL).
  */
-import { Size, Tone } from "@stackra/ui/contracts";
+import { Enum, Tone } from "@stackra/contracts";
+import { Size } from "@stackra/ui/contracts";
 import { Button, Heading, StatusBadge as UiStatusBadge, Text } from "@stackra/ui/react";
 import { useState } from "react";
 
@@ -58,7 +59,7 @@ const ROW = "flex flex-wrap items-center gap-4";
 /** The StatusBadge page. */
 export function StatusBadge() {
   const [toneIndex, setToneIndex] = useState(0);
-  const tone = Tone[toneIndex] ?? "default";
+  const tone = Enum.values(Tone)[toneIndex] ?? "default";
 
   return (
     <article className="grid gap-10">
@@ -75,7 +76,7 @@ export function StatusBadge() {
           <div key={size} className="grid gap-2">
             <Heading level={3}>{STRINGS.size(size)}</Heading>
             <ul className={ROW}>
-              {Tone.map((name) => (
+              {Enum.values(Tone).map((name) => (
                 <li key={name}>
                   <UiStatusBadge tone={name} size={size}>
                     {STATE[name]}
@@ -120,7 +121,7 @@ export function StatusBadge() {
           <UiStatusBadge tone={tone}>{STATE[tone]}</UiStatusBadge>
           <Button
             variant="secondary"
-            onPress={() => setToneIndex((index) => (index + 1) % Tone.length)}
+            onPress={() => setToneIndex((index) => (index + 1) % Enum.values(Tone).length)}
           >
             {STRINGS.advance}
           </Button>

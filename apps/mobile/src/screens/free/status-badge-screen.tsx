@@ -6,7 +6,8 @@
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 6); STA-416 FR-013.
  */
-import { Size, Tone } from "@stackra/ui/contracts";
+import { Enum, Tone } from "@stackra/contracts";
+import { Size } from "@stackra/ui/contracts";
 import { Button, Separator, StatusBadge, Text } from "@stackra/ui/native";
 import { Fragment, useState } from "react";
 import { View } from "react-native";
@@ -52,7 +53,7 @@ const ORDERS = [
 /** The StatusBadge page: one section per option, in a scrollable screen. */
 export function StatusBadgeScreen() {
   const [step, setStep] = useState(0);
-  const tone = Tone[step % Tone.length] ?? "default";
+  const tone = Enum.values(Tone)[step % Enum.values(Tone).length] ?? "default";
 
   return (
     <Screen>
@@ -60,7 +61,7 @@ export function StatusBadgeScreen() {
         {Size.map((size) => (
           <Sample key={size} caption={STRINGS.tones.size(size)}>
             <View className="flex-row flex-wrap gap-2">
-              {Tone.map((badgeTone) => (
+              {Enum.values(Tone).map((badgeTone) => (
                 <StatusBadge key={badgeTone} tone={badgeTone} size={size}>
                   {STRINGS.states[badgeTone]}
                 </StatusBadge>

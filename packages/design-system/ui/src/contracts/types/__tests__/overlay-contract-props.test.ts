@@ -8,9 +8,10 @@
  * Governing contract: ADR 0312; ADR 0022 (test placement).
  */
 // @covers sta-350:FR-096
+import type { Tone } from "@stackra/contracts";
+
 import type { Placement } from "#contracts/enums/placement.enum";
 import type { PlacementAlign } from "#contracts/enums/placement-align.enum";
-import type { Tone } from "#contracts/enums/tone.enum";
 import type { FeedbackContractProps } from "#contracts/types/feedback-contract-props.type";
 import type { IconSlot } from "#contracts/types/icon-slot.type";
 import type { OpenStateContractProps } from "#contracts/types/open-state-contract-props.type";

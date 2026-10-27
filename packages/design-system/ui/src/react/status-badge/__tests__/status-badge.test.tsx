@@ -9,15 +9,15 @@
  */
 // @vitest-environment jsdom
 // @covers sta-350:FR-033 sta-350:FR-034 sta-350:P-023 sta-350:P-024
+import { Enum, Tone } from "@stackra/contracts";
 import { render } from "@testing-library/react";
 import { createRef } from "react";
 
-import { Tone } from "#contracts/enums/tone.enum";
 import { STATUS_DOT_ROLE } from "#core/constants/status-dot-role.constant";
 import { StatusBadge } from "#react/status-badge/status-badge";
 
 describe("StatusBadge (web)", () => {
-  it.each(Tone)("is a neutral chip with a %s dot first, before the text", (tone) => {
+  it.each(Enum.values(Tone))("is a neutral chip with a %s dot first, before the text", (tone) => {
     const { container } = render(<StatusBadge tone={tone}>Active</StatusBadge>);
     const chip = container.querySelector('[data-slot="chip"]');
     expect(chip?.classList.contains("chip--secondary")).toBe(true);

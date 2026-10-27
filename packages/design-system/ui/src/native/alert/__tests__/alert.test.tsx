@@ -12,10 +12,10 @@
  */
 // @vitest-environment jsdom
 // @covers sta-350:FR-112 sta-350:FR-114
+import { Enum, Tone } from "@stackra/contracts";
 import { render } from "@testing-library/react";
 import type { ReactNode } from "react";
 
-import { Tone } from "#contracts/enums/tone.enum";
 import type { AlertContractProps } from "#contracts/types/alert-contract-props.type";
 import { FEEDBACK_BY_TONE } from "#core/constants/feedback-by-tone.constant";
 import { Alert } from "#native/alert/alert";
@@ -67,7 +67,7 @@ describe("Alert (native)", () => {
     received.props = {};
   });
 
-  it.each(Tone)("hands HeroUI Native the %s tone as status and its live region", (tone) => {
+  it.each(Enum.values(Tone))("hands HeroUI Native the %s tone as status and its live region", (tone) => {
     render(<Alert tone={tone} title="Heads up" />);
     const { role } = FEEDBACK_BY_TONE[tone];
     expect(propsOf("alert")).toMatchObject({

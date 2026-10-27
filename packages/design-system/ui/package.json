@@ -145,6 +145,7 @@
   "dependencies": {
     "@stackra/config": "workspace:*",
     "@stackra/container": "workspace:*",
+    "@stackra/contracts": "workspace:*",
     "@stackra/i18n": "workspace:*",
     "@stackra/icons": "workspace:*",
     "@stackra/tokens": "workspace:*",

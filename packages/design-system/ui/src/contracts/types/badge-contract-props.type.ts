@@ -8,12 +8,12 @@
  * Governing contract: ADR 0302 (decision 3: one API on web and native); ADR 0303 (decision 7); ADR 0304; WCAG 2.2
  *          SC 1.1.1.
  */
+import type { Tone } from "@stackra/contracts";
 import type { ReactNode } from "react";
 
 import type { BadgePlacement } from "#contracts/enums/badge-placement.enum";
 import type { BadgeVariant } from "#contracts/enums/badge-variant.enum";
 import type { Size } from "#contracts/enums/size.enum";
-import type { Tone } from "#contracts/enums/tone.enum";
 
 /** Props shared by the web and native `Badge`. */
 export interface BadgeContractProps {

@@ -8,7 +8,8 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0302 (decision 3); ADR 0312; WCAG 2.2 SC 4.1.3 (status messages).
  */
-import type { Tone } from "#contracts/enums/tone.enum";
+import type { Tone } from "@stackra/contracts";
+
 import type { Feedback } from "#core/types/feedback.type";
 
 /** The icon and role of each tone; `default` and `accent` read as information, so they share one icon. */

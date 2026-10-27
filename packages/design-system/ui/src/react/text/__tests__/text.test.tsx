@@ -9,12 +9,12 @@
  */
 // @vitest-environment jsdom
 // @covers sta-350:FR-017 sta-350:FR-018 sta-350:P-010 sta-350:P-011
+import { Enum, Tone } from "@stackra/contracts";
 import { render, screen } from "@testing-library/react";
 import { createRef } from "react";
 
 import { TextTone } from "#contracts/enums/text-tone.enum";
 import { TextType } from "#contracts/enums/text-type.enum";
-import { Tone } from "#contracts/enums/tone.enum";
 import type { TextContractProps } from "#contracts/types/text-contract-props.type";
 import { TONE_CLASS_NAME } from "#core/constants/tone-class-name.constant";
 import { TYPOGRAPHY_TYPE } from "#core/constants/typography-type.constant";
@@ -66,7 +66,7 @@ describe("Text (web)", () => {
   });
 
   it("knows every shared tone, and muted besides", () => {
-    for (const tone of Tone) expect(TextTone).toContain(tone);
+    for (const tone of Enum.values(Tone)) expect(TextTone).toContain(tone);
     expect(TextTone).toContain("muted");
   });
 

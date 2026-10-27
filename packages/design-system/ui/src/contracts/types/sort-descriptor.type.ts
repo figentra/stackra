@@ -8,12 +8,12 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0302 (decision 3); ADR 0313; ADR 0294 (cursor pages, `Page.of`).
  */
-import type { SortDirection } from "#contracts/enums/sort-direction.enum";
+import type { AriaSortDirection } from "#contracts/enums/aria-sort-direction.enum";
 
 /** The sort of a table: one column and its direction. */
 export interface SortDescriptor {
   /** The `id` of the sorted column. */
   readonly column: string;
   /** The direction the column is sorted in. */
-  readonly direction: SortDirection;
+  readonly direction: AriaSortDirection;
 }

@@ -12,7 +12,7 @@
 import type { IconName } from "@stackra/icons/contracts";
 
 import type { EmptyReason } from "#contracts/enums/empty-reason.enum";
-import type { ErrorKind } from "#contracts/enums/error-kind.enum";
+import type { ErrorStateKind } from "#contracts/enums/error-state-kind.enum";
 
 /** The default icon of each reason and kind, by name. */
 export const STATE_ICON = Object.freeze({
@@ -23,4 +23,4 @@ export const STATE_ICON = Object.freeze({
   forbidden: "ban",
   "not-found": "file-question-mark",
   unexpected: "triangle-alert",
-} as const satisfies Record<EmptyReason | ErrorKind, IconName>);
+} as const satisfies Record<EmptyReason | ErrorStateKind, IconName>);

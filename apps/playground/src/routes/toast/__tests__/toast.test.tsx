@@ -10,7 +10,7 @@
  *          placement).
  */
 // @covers sta-350:FR-116
-import { Tone } from "@stackra/ui/contracts";
+import { Enum, Tone } from "@stackra/contracts";
 import { DesignSystemProvider, toast } from "@stackra/ui/react";
 import { act, render, screen, waitFor, within } from "@testing-library/react";
 
@@ -72,7 +72,7 @@ describe("Toast page", () => {
     expect(document.querySelector('[data-slot="toast-region"]')).toBeNull();
   });
 
-  it.each(Tone)("shows a %s toast announced by its tone", (tone) => {
+  it.each(Enum.values(Tone))("shows a %s toast announced by its tone", (tone) => {
     renderPage();
     act(() =>
       section("Tones")

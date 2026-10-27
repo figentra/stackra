@@ -7,7 +7,7 @@
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 6); STA-471.
  */
-import { ErrorKind } from "@stackra/ui/contracts";
+import { ErrorStateKind } from "@stackra/ui/contracts";
 import { Button, ErrorState, Text } from "@stackra/ui/native";
 import { useState } from "react";
 
@@ -79,7 +79,7 @@ export function ErrorStateScreen() {
   return (
     <Screen>
       <Section title={STRINGS.kinds.title} description={STRINGS.kinds.description}>
-        {ErrorKind.map((kind) => (
+        {ErrorStateKind.map((kind) => (
           <ErrorState
             key={kind}
             kind={kind}

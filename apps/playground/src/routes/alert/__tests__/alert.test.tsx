@@ -8,7 +8,7 @@
  * Governing contract: ADR 0302 (decision 5); ADR 0312 (decision 3); WCAG 2.2 SC 4.1.3; ADR 0022 (test placement).
  */
 // @covers sta-350:FR-116
-import { Tone } from "@stackra/ui/contracts";
+import { Enum, Tone } from "@stackra/contracts";
 import { DesignSystemProvider } from "@stackra/ui/react";
 import { act, render, screen, within } from "@testing-library/react";
 
@@ -52,7 +52,7 @@ describe("Alert page", () => {
     renderPage();
     const tones = section("Tones");
     expect(document.querySelectorAll('#alert-tones ~ ul [data-slot="alert-root"]')).toHaveLength(
-      Tone.length,
+      Enum.values(Tone).length,
     );
     expect(tones.getAllByRole("alert")).toHaveLength(2);
     expect(tones.getAllByRole("status")).toHaveLength(3);

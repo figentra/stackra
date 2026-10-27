@@ -11,13 +11,13 @@
  */
 // @vitest-environment jsdom
 // @covers sta-350:FR-041 sta-350:FR-042 sta-350:P-031 sta-350:P-034
+import { Enum, Tone } from "@stackra/contracts";
 import { act, render, screen } from "@testing-library/react";
 import { createRef } from "react";
 import { I18nProvider } from "react-aria-components";
 
 import { AvatarVariant } from "#contracts/enums/avatar-variant.enum";
 import { Size } from "#contracts/enums/size.enum";
-import { Tone } from "#contracts/enums/tone.enum";
 import type { AvatarContractProps } from "#contracts/types/avatar-contract-props.type";
 import { ICON_SIZES } from "#core/constants/icon-sizes.constant";
 import { Avatar } from "#react/avatar/avatar";
@@ -123,7 +123,7 @@ describe("Avatar (web)", () => {
   it.each(AvatarVariant)(
     "draws the %s variant in every tone and size as HeroUI's classes",
     (variant) => {
-      for (const tone of Tone)
+      for (const tone of Enum.values(Tone))
         for (const size of Size) {
           const { container, unmount } = render(
             <Avatar name="Ada Lovelace" variant={variant} tone={tone} size={size} />,

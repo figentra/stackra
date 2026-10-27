@@ -10,11 +10,11 @@
  */
 // @vitest-environment jsdom
 // @covers sta-350:FR-114
+import { Enum, Tone } from "@stackra/contracts";
 import { defineIconRegistry } from "@stackra/icons";
 import { IconRegistryProvider } from "@stackra/icons/native";
 import { render, screen } from "@testing-library/react";
 
-import { Tone } from "#contracts/enums/tone.enum";
 import { ICON_SIZES } from "#core/constants/icon-sizes.constant";
 import { FEEDBACK_BY_TONE } from "#core/constants/feedback-by-tone.constant";
 import { FeedbackIcon } from "#native/feedback-icon/feedback-icon";
@@ -60,7 +60,7 @@ const propsOf = (): Record<string, unknown> =>
   JSON.parse(screen.getByTestId("icon").dataset["props"] ?? "{}");
 
 describe("FeedbackIcon (native)", () => {
-  it.each(Tone)("draws the %s tone's icon, small and in the tone's colour", (tone) => {
+  it.each(Enum.values(Tone))("draws the %s tone's icon, small and in the tone's colour", (tone) => {
     render(<FeedbackIcon tone={tone} />);
     expect(screen.getByTestId("icon").dataset["name"]).toBe(FEEDBACK_BY_TONE[tone].icon);
     expect(propsOf()["size"]).toBe(ICON_SIZES.sm);

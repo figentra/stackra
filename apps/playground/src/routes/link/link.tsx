@@ -11,7 +11,7 @@
  * Runtime: browser
  * Governing contract: ADR 0302 (decisions 3 and 5); ADR 0303 (decisions 5 and 7); ADR 0060 (right-to-left).
  */
-import { Tone } from "@stackra/ui/contracts";
+import { Enum, Tone } from "@stackra/contracts";
 import { Heading, Icon, Link as UiLink, Text } from "@stackra/ui/react";
 import { useState, type ReactNode } from "react";
 import { useLocation } from "react-router";
@@ -90,7 +90,7 @@ export function Link() {
 
       <PageSection id="link-tones" title={STRINGS.tones} note={STRINGS.tonesNote}>
         <ToneList title={STRINGS.hover}>
-          {Tone.map((tone) => (
+          {Enum.values(Tone).map((tone) => (
             <li key={tone}>
               <UiLink href={`${here}#link-tones`} tone={tone} underline="hover">
                 {tone}
@@ -99,7 +99,7 @@ export function Link() {
           ))}
         </ToneList>
         <ToneList title={STRINGS.always}>
-          {Tone.map((tone) => (
+          {Enum.values(Tone).map((tone) => (
             <li key={tone}>
               <UiLink href={`${here}#link-tones`} tone={tone} underline="always">
                 {tone}
@@ -113,12 +113,12 @@ export function Link() {
         {/* Only `always` links in a paragraph: a hover-only one would fail WCAG 1.4.1 and axe's link-in-text-block. */}
         <Text className="max-w-prose">
           <bdi>{STRINGS.beforeLinks}</bdi>
-          {Tone.map((tone, index) => (
+          {Enum.values(Tone).map((tone, index) => (
             <span key={tone}>
               <UiLink href={`${here}#link-running`} tone={tone}>
                 {tone}
               </UiLink>
-              {index < Tone.length - 1 ? ", " : ""}
+              {index < Enum.values(Tone).length - 1 ? ", " : ""}
             </span>
           ))}
           <bdi>{STRINGS.afterLinks}</bdi>

@@ -13,13 +13,8 @@
  * Governing contract: ADR 0302 (decisions 3 and 5); ADR 0303 (decision 7); ADR 0313; ADR 0318 (decisions 2 and 4 to 6);
  *          ADR 0060 (light, dark, RTL).
  */
-import type {
-  ResourceAction,
-  ResourceQuery,
-  SortDescriptor,
-  TableColumn,
-  Tone,
-} from "@stackra/ui/contracts";
+import type { Tone } from "@stackra/contracts";
+import type { ResourceAction, ResourceQuery, SortDescriptor, TableColumn } from "@stackra/ui/contracts";
 import { defineIconRegistry } from "@stackra/icons";
 import { IconRegistryProvider } from "@stackra/icons/react";
 import { Ellipsis } from "@stackra/icons/react/lucide-icons";

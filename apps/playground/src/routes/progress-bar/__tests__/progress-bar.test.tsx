@@ -9,7 +9,8 @@
  * Governing contract: ADR 0302 (decision 5); ADR 0312; ADR 0022 (test placement).
  */
 // @covers sta-350:FR-120
-import { Size, Tone } from "@stackra/ui/contracts";
+import { Enum, Tone } from "@stackra/contracts";
+import { Size } from "@stackra/ui/contracts";
 import { DesignSystemProvider } from "@stackra/ui/react";
 import { act, render, screen, within } from "@testing-library/react";
 
@@ -55,7 +56,7 @@ describe("ProgressBar page", () => {
     for (const size of Size)
       expect(sizes.getByRole("progressbar", { name: `Upload, ${size}` })).toBeTruthy();
     const tones = section("Tones");
-    for (const tone of Tone)
+    for (const tone of Enum.values(Tone))
       expect(tones.getByRole("progressbar", { name: `Upload, ${tone}` })).toBeTruthy();
   });
 

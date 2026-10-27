@@ -12,7 +12,7 @@
  * Governing contract: ADR 0302 (decisions 3 and 5); ADR 0312 (decisions 1 to 3); WCAG 2.2 SC 4.1.3 and 2.2.1; ADR
  *          0060 (light, dark, RTL).
  */
-import { Tone } from "@stackra/ui/contracts";
+import { Enum, Tone } from "@stackra/contracts";
 import { Button, Heading, Switch, Text, ToastProvider, toast } from "@stackra/ui/react";
 import { useEffect, useState } from "react";
 
@@ -77,7 +77,7 @@ export function Toast() {
 
       <PageSection id="toast-tones" title={STRINGS.tones} note={STRINGS.tonesNote}>
         <div className={ROW}>
-          {Tone.map((tone) => (
+          {Enum.values(Tone).map((tone) => (
             <Button
               key={tone}
               variant="secondary"

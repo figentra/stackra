@@ -6,7 +6,8 @@
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 6); STA-416 FR-013.
  */
-import { BadgePlacement, BadgeVariant, Size, Tone } from "@stackra/ui/contracts";
+import { Enum, Tone } from "@stackra/contracts";
+import { BadgePlacement, BadgeVariant, Size } from "@stackra/ui/contracts";
 import { Avatar, Badge, Button, Icon, Text } from "@stackra/ui/native";
 import { useState } from "react";
 import { View } from "react-native";
@@ -75,7 +76,7 @@ export function BadgeScreen() {
         {BadgeVariant.map((variant) => (
           <Sample key={variant} caption={variant}>
             <View className="flex-row flex-wrap gap-5 pt-2">
-              {Tone.map((tone) => (
+              {Enum.values(Tone).map((tone) => (
                 <Badge.Anchor key={tone}>
                   <Anchor />
                   <Badge

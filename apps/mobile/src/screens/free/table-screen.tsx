@@ -9,7 +9,8 @@
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 6); STA-471.
  */
-import type { SortDescriptor, TableColumn, Tone } from "@stackra/ui/contracts";
+import type { Tone } from "@stackra/contracts";
+import type { SortDescriptor, TableColumn } from "@stackra/ui/contracts";
 import { Chip, EmptyState, Table, Text } from "@stackra/ui/native";
 import { useState } from "react";
 

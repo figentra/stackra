@@ -17,7 +17,7 @@
 import { render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 
-import { ErrorKind } from "#contracts/enums/error-kind.enum";
+import { ErrorStateKind } from "#contracts/enums/error-state-kind.enum";
 import type { ErrorStateContractProps } from "#contracts/types/error-state-contract-props.type";
 import { STATE_ICON } from "#core/constants/state-icon.constant";
 import { ErrorState } from "#native/error-state/error-state";
@@ -112,7 +112,7 @@ describe("ErrorState (native)", () => {
     expect(propsOf("heading")["level"]).toBe(2);
   });
 
-  it.each(ErrorKind)("draws the icon of the %s kind", (kind) => {
+  it.each(ErrorStateKind)("draws the icon of the %s kind", (kind) => {
     render(<ErrorState kind={kind} title="Failed" />);
     expect(propsOf("icon")["name"]).toBe(STATE_ICON[kind]);
   });

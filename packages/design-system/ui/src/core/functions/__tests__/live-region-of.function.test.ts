@@ -7,7 +7,8 @@
  * Governing contract: ADR 0312 (decision 3); WCAG 2.2 SC 4.1.3; ADR 0022 (test placement).
  */
 // @covers sta-350:FR-115
-import { Tone } from "#contracts/enums/tone.enum";
+import { Enum, Tone } from "@stackra/contracts";
+
 import { liveRegionOf } from "#core/functions/live-region-of.function";
 
 describe("liveRegionOf", () => {
@@ -20,7 +21,7 @@ describe("liveRegionOf", () => {
   });
 
   it("never pairs an alert with polite or a status with assertive", () => {
-    for (const tone of Tone) {
+    for (const tone of Enum.values(Tone)) {
       const { role, "aria-live": live } = liveRegionOf(tone);
       expect(live, tone).toBe(role === "alert" ? "assertive" : "polite");
     }

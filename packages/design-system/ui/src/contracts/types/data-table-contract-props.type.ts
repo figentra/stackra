@@ -14,7 +14,7 @@
  */
 import type { ReactNode } from "react";
 
-import type { ErrorKind } from "#contracts/enums/error-kind.enum";
+import type { ErrorStateKind } from "#contracts/enums/error-state-kind.enum";
 import type { HeadingLevel } from "#contracts/enums/heading-level.enum";
 import type { AllMatchingSelectionContractProps } from "#contracts/types/all-matching-selection-contract-props.type";
 import type { CollectionItem } from "#contracts/types/collection-item.type";
@@ -47,7 +47,7 @@ export interface DataTableContractProps<TItem extends CollectionItem = Collectio
   /** The thrown value of a failed fetch. Given, the table shows an `ErrorState` in place of the rows. */
   readonly error?: unknown;
   /** What kind of failure `error` is, so the state's wording and icon fit. Defaults to `unexpected`. */
-  readonly errorKind?: ErrorKind | undefined;
+  readonly errorKind?: ErrorStateKind | undefined;
   /**
    * Whether the error's message is shown, as for `ErrorState`: by default outside production only, because a server
    * message is an internal. An app whose error carries text written for the user sets it to true.

@@ -8,16 +8,16 @@
  */
 // @covers sta-350:FR-148
 import { EmptyReason } from "#contracts/enums/empty-reason.enum";
-import { ErrorKind } from "#contracts/enums/error-kind.enum";
+import { ErrorStateKind } from "#contracts/enums/error-state-kind.enum";
 import { STATE_ICON } from "#core/constants/state-icon.constant";
 
 describe("STATE_ICON", () => {
   it("has an icon for every reason and every kind, and no other key", () => {
-    expect(Object.keys(STATE_ICON).sort()).toEqual([...EmptyReason, ...ErrorKind].sort());
+    expect(Object.keys(STATE_ICON).sort()).toEqual([...EmptyReason, ...ErrorStateKind].sort());
   });
 
   it("keeps reasons and kinds apart", () => {
-    const kinds: readonly string[] = ErrorKind;
+    const kinds: readonly string[] = ErrorStateKind;
     expect(EmptyReason.filter((reason) => kinds.includes(reason))).toEqual([]);
   });
 });

@@ -13,7 +13,7 @@
  * Governing contract: ADR 0302 (decisions 3 and 5); ADR 0313 (decisions 1 and 6); ADR 0140; WCAG 2.2 SC 1.3.1, 2.4.3
  *          and 4.1.3; ADR 0060 (light, dark, RTL).
  */
-import { ErrorKind } from "@stackra/ui/contracts";
+import { ErrorStateKind } from "@stackra/ui/contracts";
 import { Button, ErrorState as UiErrorState, Heading, PageSkeleton, Text } from "@stackra/ui/react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
@@ -63,7 +63,7 @@ const KIND_COPY = {
     title: "Something went wrong",
     description: "We could not load this page. Try again in a moment.",
   },
-} as const satisfies Record<ErrorKind, { readonly title: string; readonly description: string }>;
+} as const satisfies Record<ErrorStateKind, { readonly title: string; readonly description: string }>;
 
 /** The error the details sample shows, as a failed request would throw it. */
 const FAILURE = new Error("The order service did not answer in time (order_unavailable).");
@@ -125,7 +125,7 @@ export function ErrorState() {
 
       <PageSection id="error-state-kinds" title={STRINGS.kinds} note={STRINGS.kindsNote}>
         <ul className={GRID}>
-          {ErrorKind.map((kind) => (
+          {ErrorStateKind.map((kind) => (
             <Sample key={kind} caption={`kind="${kind}"`}>
               <UiErrorState
                 kind={kind}

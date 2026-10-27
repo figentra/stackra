@@ -6,9 +6,10 @@
  * Governing contract: ADR 0302 (decision 5); ADR 0304; ADR 0022 (test placement).
  */
 // @covers sta-350:FR-036 sta-350:P-030
+import { Enum, Tone } from "@stackra/contracts";
 import { DesignSystemProvider } from "@stackra/ui/react";
 import { act, render, screen, within } from "@testing-library/react";
-import { ChipVariant, Size, Tone } from "@stackra/ui/contracts";
+import { ChipVariant, Size } from "@stackra/ui/contracts";
 
 import { PlaygroundIcons } from "#src/components/playground-icons";
 import { Chip } from "#src/routes/chip/chip";
@@ -53,7 +54,7 @@ describe("Chip page", () => {
     renderPage();
     const matrix = section("Variants and tones");
     const chips = [...document.querySelectorAll('#chip-matrix ~ div [data-slot="chip"]')];
-    expect(chips).toHaveLength(ChipVariant.length * Tone.length * Size.length);
+    expect(chips).toHaveLength(ChipVariant.length * Enum.values(Tone).length * Size.length);
     expect(matrix.getAllByText("success")).toHaveLength(ChipVariant.length * Size.length + 3);
     for (const size of Size)
       expect(matrix.getByRole("heading", { level: 3, name: `Size ${size}` })).toBeTruthy();

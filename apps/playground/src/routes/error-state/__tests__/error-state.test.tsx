@@ -10,7 +10,7 @@
  *          (test placement).
  */
 // @covers sta-350:FR-151
-import { ErrorKind } from "@stackra/ui/contracts";
+import { ErrorStateKind } from "@stackra/ui/contracts";
 import { DesignSystemProvider } from "@stackra/ui/react";
 import { act, render, screen, within } from "@testing-library/react";
 
@@ -56,9 +56,9 @@ describe("Error state page", () => {
     renderPage();
     const kinds = section("Kinds");
     expect(document.querySelectorAll("#error-state-kinds ~ ul [data-kind]")).toHaveLength(
-      ErrorKind.length,
+      ErrorStateKind.length,
     );
-    expect(kinds.getAllByRole("alert")).toHaveLength(ErrorKind.length);
+    expect(kinds.getAllByRole("alert")).toHaveLength(ErrorStateKind.length);
     for (const name of [
       "Sign in to continue",
       "You do not have access",

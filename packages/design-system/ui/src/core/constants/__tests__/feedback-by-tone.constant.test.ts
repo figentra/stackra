@@ -8,19 +8,20 @@
  * Governing contract: ADR 0312; WCAG 2.2 SC 4.1.3 (status messages); ADR 0022 (test placement).
  */
 // @covers sta-350:FR-096 sta-350:P-055
-import { Tone } from "#contracts/enums/tone.enum";
+import { Enum, Tone } from "@stackra/contracts";
+
 import { FEEDBACK_BY_TONE } from "#core/constants/feedback-by-tone.constant";
 
 describe("FEEDBACK_BY_TONE", () => {
   it("has an icon and a role for every tone", () => {
-    expect(Object.keys(FEEDBACK_BY_TONE).sort()).toEqual([...Tone].sort());
-    for (const tone of Tone) {
+    expect(Object.keys(FEEDBACK_BY_TONE).sort()).toEqual([...Enum.values(Tone)].sort());
+    for (const tone of Enum.values(Tone)) {
       expect(FEEDBACK_BY_TONE[tone].icon, tone).toBeTruthy();
     }
   });
 
   it("announces only warning and danger at once", () => {
-    const alerts = Tone.filter((tone) => FEEDBACK_BY_TONE[tone].role === "alert");
+    const alerts = Enum.values(Tone).filter((tone) => FEEDBACK_BY_TONE[tone].role === "alert");
     expect(alerts).toEqual(["warning", "danger"]);
   });
 });

@@ -10,11 +10,11 @@
  */
 // @vitest-environment jsdom
 // @covers sta-350:FR-118
+import { Enum, Tone } from "@stackra/contracts";
 import { render, screen } from "@testing-library/react";
 import { createRef } from "react";
 
 import { Size } from "#contracts/enums/size.enum";
-import { Tone } from "#contracts/enums/tone.enum";
 import type { ProgressCircleContractProps } from "#contracts/types/progress-circle-contract-props.type";
 import { ProgressCircle } from "#react/progress-circle/progress-circle";
 import type { ProgressCircleProps } from "#react/progress-circle/progress-circle.props";
@@ -42,7 +42,7 @@ describe("ProgressCircle (web)", () => {
     );
   });
 
-  it.each(Tone)("draws tone %s", (tone) => {
+  it.each(Enum.values(Tone))("draws tone %s", (tone) => {
     render(<ProgressCircle label="Syncing" tone={tone} />);
     expect(screen.getByRole("progressbar").classList.contains(`progress-circle--${tone}`)).toBe(
       true,

@@ -11,10 +11,10 @@
  */
 // @vitest-environment jsdom
 // @covers sta-350:FR-112 sta-350:FR-114
+import { Enum, Tone } from "@stackra/contracts";
 import { act, render } from "@testing-library/react";
 import type { ReactNode } from "react";
 
-import { Tone } from "#contracts/enums/tone.enum";
 import { FEEDBACK_BY_TONE } from "#core/constants/feedback-by-tone.constant";
 import { ToastItem } from "#native/toast/toast-item";
 import type { ToastItemProps } from "#native/toast/toast-item.props";
@@ -84,7 +84,7 @@ describe("ToastItem (native)", () => {
     hide.mockClear();
   });
 
-  it.each(Tone)("hands HeroUI Native the %s tone as variant and its live region", (tone) => {
+  it.each(Enum.values(Tone))("hands HeroUI Native the %s tone as variant and its live region", (tone) => {
     render(item({ tone }));
     const { role } = FEEDBACK_BY_TONE[tone];
     expect(propsOf("toast")).toMatchObject({

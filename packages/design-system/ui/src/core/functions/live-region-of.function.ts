@@ -7,7 +7,8 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0302 (decision 3); ADR 0312 (decision 3); WCAG 2.2 SC 4.1.3 (status messages).
  */
-import type { Tone } from "#contracts/enums/tone.enum";
+import type { Tone } from "@stackra/contracts";
+
 import { FEEDBACK_BY_TONE } from "#core/constants/feedback-by-tone.constant";
 import type { LiveRegion } from "#core/types/live-region.type";
 

@@ -21,12 +21,12 @@
  * Governing contract: ADR 0302 (decision 3, adapted forms); ADR 0303 (decision 7); ADR 0312; ADR 0165 (HeroUI Native
  *          on native); WAI-ARIA `alertdialog`; WCAG 2.2 SC 1.4.1 and 4.1.2.
  */
+import type { Tone } from "@stackra/contracts";
 import { Dialog, useThemeColor, type ThemeColor } from "heroui-native";
 import { LucideProvider } from "lucide-react-native";
 import { useState, type ReactElement } from "react";
 import { View } from "react-native";
 
-import type { Tone } from "#contracts/enums/tone.enum";
 import { FEEDBACK_BY_TONE } from "#core/constants/feedback-by-tone.constant";
 import { ICON_SIZES } from "#core/constants/icon-sizes.constant";
 import { Button } from "#native/button/button";

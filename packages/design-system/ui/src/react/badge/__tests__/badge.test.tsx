@@ -11,6 +11,7 @@
  */
 // @vitest-environment jsdom
 // @covers sta-350:FR-037 sta-350:FR-038 sta-350:P-019 sta-350:P-026 sta-350:P-027 sta-350:P-028 sta-350:P-029
+import { Enum, Tone } from "@stackra/contracts";
 import { render } from "@testing-library/react";
 import { I18nProvider } from "react-aria-components";
 import { createRef, type ReactNode } from "react";
@@ -18,7 +19,6 @@ import { createRef, type ReactNode } from "react";
 import { BadgePlacement } from "#contracts/enums/badge-placement.enum";
 import { BadgeVariant } from "#contracts/enums/badge-variant.enum";
 import { Size } from "#contracts/enums/size.enum";
-import { Tone } from "#contracts/enums/tone.enum";
 import type { BadgeContractProps } from "#contracts/types/badge-contract-props.type";
 import { physicalPlacementOf } from "#core/functions/physical-placement-of.function";
 import { Badge } from "#react/badge/badge";
@@ -41,7 +41,7 @@ describe("Badge (web)", () => {
   });
 
   it.each(BadgeVariant)("draws the %s variant in every tone and size", (variant) => {
-    for (const tone of Tone)
+    for (const tone of Enum.values(Tone))
       for (const size of Size) {
         const { container, unmount } = render(
           <Badge variant={variant} tone={tone} size={size}>

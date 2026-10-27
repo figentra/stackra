@@ -9,10 +9,10 @@
  * Governing contract: ADR 0302 (decision 3: one API on web and native); ADR 0303 (decision 7); ADR 0165 (UI
  *          contract); ADR 0060 (RTL).
  */
+import type { Tone } from "@stackra/contracts";
 import type { ReactNode } from "react";
 
 import type { LinkUnderline } from "#contracts/enums/link-underline.enum";
-import type { Tone } from "#contracts/enums/tone.enum";
 
 /** Props shared by the web and native `Link`. */
 export interface LinkContractProps {

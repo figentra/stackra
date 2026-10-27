@@ -8,7 +8,7 @@
  * Runtime: react-native
  * Governing contract: ADR 0320 (glass and the showcase stage); ADR 0302 (decision 5).
  */
-import type { Tone } from "@stackra/ui/contracts";
+import type { Tone } from "@stackra/contracts";
 import {
   Avatar,
   Button,

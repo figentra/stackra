@@ -6,10 +6,10 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0302 (decision 3); ADR 0165 (UI contract); ADR 0304; WCAG 2.2 SC 1.4.1 (use of colour).
  */
+import type { Tone } from "@stackra/contracts";
 import type { ReactNode } from "react";
 
 import type { Size } from "#contracts/enums/size.enum";
-import type { Tone } from "#contracts/enums/tone.enum";
 
 /** Props shared by the web and native `StatusBadge`. */
 export interface StatusBadgeContractProps {

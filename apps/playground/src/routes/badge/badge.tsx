@@ -8,7 +8,8 @@
  * Runtime: browser
  * Governing contract: ADR 0302 (decisions 3 and 5); ADR 0303 (decision 7); ADR 0304; ADR 0060 (light, dark, RTL).
  */
-import { BadgePlacement, BadgeVariant, Size, Tone } from "@stackra/ui/contracts";
+import { Enum, Tone } from "@stackra/contracts";
+import { BadgePlacement, BadgeVariant, Size } from "@stackra/ui/contracts";
 import { Badge as UiBadge, Heading, Icon, IconButton, Text } from "@stackra/ui/react";
 import { useState } from "react";
 
@@ -80,7 +81,7 @@ export function Badge() {
           <div key={variant} className="grid gap-2">
             <Heading level={3}>{variant}</Heading>
             <ul className={ROW}>
-              {Tone.map((tone) => (
+              {Enum.values(Tone).map((tone) => (
                 <li key={tone}>
                   <UiBadge.Anchor>
                     <Disc />

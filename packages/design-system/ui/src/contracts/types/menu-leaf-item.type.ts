@@ -10,7 +10,8 @@
  * Governing contract: ADR 0302 (decision 3: one API on web and native); ADR 0303 (decision 7, props vocabulary);
  *          ADR 0312.
  */
-import type { Tone } from "#contracts/enums/tone.enum";
+import type { Tone } from "@stackra/contracts";
+
 import type { IconSlot } from "#contracts/types/icon-slot.type";
 
 /** One action of a menu. */

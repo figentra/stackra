@@ -12,13 +12,13 @@
  */
 // @vitest-environment jsdom
 // @covers sta-350:FR-037 sta-350:FR-039 sta-350:P-019 sta-350:P-026 sta-350:P-027 sta-350:P-028 sta-350:P-029
+import { Enum, Tone } from "@stackra/contracts";
 import { render } from "@testing-library/react";
 import type { ReactNode } from "react";
 
 import { BadgePlacement } from "#contracts/enums/badge-placement.enum";
 import { BadgeVariant } from "#contracts/enums/badge-variant.enum";
 import { Size } from "#contracts/enums/size.enum";
-import { Tone } from "#contracts/enums/tone.enum";
 import type { BadgeContractProps } from "#contracts/types/badge-contract-props.type";
 import { Badge } from "#native/badge/badge";
 import type { BadgeProps } from "#native/badge/badge.props";
@@ -75,7 +75,7 @@ describe("Badge (native)", () => {
 
   it("hands every variant, tone and size to HeroUI Native, the tone as `color`", () => {
     for (const variant of BadgeVariant)
-      for (const tone of Tone)
+      for (const tone of Enum.values(Tone))
         for (const size of Size) {
           render(
             <Badge variant={variant} tone={tone} size={size}>

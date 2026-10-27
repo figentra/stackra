@@ -57,6 +57,7 @@
     "@internationalized/date": "catalog:frontend",
     "@stackra/app": "workspace:*",
     "@stackra/container": "workspace:*",
+    "@stackra/contracts": "workspace:*",
     "@stackra/icons": "workspace:*",
     "@stackra/navigation": "workspace:*",
     "@stackra/tokens": "workspace:*",

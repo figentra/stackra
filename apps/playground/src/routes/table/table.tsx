@@ -10,7 +10,8 @@
  * Runtime: browser
  * Governing contract: ADR 0302 (decisions 3 and 5); ADR 0303 (decision 7); ADR 0313; ADR 0060 (light, dark, RTL).
  */
-import type { SortDescriptor, TableColumn, Tone } from "@stackra/ui/contracts";
+import type { Tone } from "@stackra/contracts";
+import type { SortDescriptor, TableColumn } from "@stackra/ui/contracts";
 import { Button, Chip, Heading, Table as UiTable, Text } from "@stackra/ui/react";
 import { useEffect, useRef, useState } from "react";
 

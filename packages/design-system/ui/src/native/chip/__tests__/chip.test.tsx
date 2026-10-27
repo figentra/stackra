@@ -11,12 +11,12 @@
  */
 // @vitest-environment jsdom
 // @covers sta-350:FR-033 sta-350:FR-035 sta-350:P-019 sta-350:P-023 sta-350:P-025 sta-350:FR-053
+import { Enum, Tone } from "@stackra/contracts";
 import { render } from "@testing-library/react";
 import type { ReactNode } from "react";
 
 import { ChipVariant } from "#contracts/enums/chip-variant.enum";
 import { Size } from "#contracts/enums/size.enum";
-import { Tone } from "#contracts/enums/tone.enum";
 import type { ChipContractProps } from "#contracts/types/chip-contract-props.type";
 import { Chip } from "#native/chip/chip";
 import type { ChipProps } from "#native/chip/chip.props";
@@ -94,7 +94,7 @@ describe("Chip (native)", () => {
 
   it("hands every variant, tone and size to HeroUI Native, the tone as `color`", () => {
     for (const variant of ChipVariant)
-      for (const tone of Tone)
+      for (const tone of Enum.values(Tone))
         for (const size of Size) {
           render(
             <Chip variant={variant} tone={tone} size={size}>
@@ -133,7 +133,7 @@ describe("Chip (native)", () => {
   it("sizes icons to the label and colours them like it: solid on primary, soft otherwise", () => {
     const points = { sm: 12, md: 14, lg: 16 } as const;
     for (const variant of ChipVariant)
-      for (const tone of Tone)
+      for (const tone of Enum.values(Tone))
         for (const size of Size) {
           render(
             <Chip variant={variant} tone={tone} size={size}>
