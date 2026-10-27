@@ -13,7 +13,7 @@ import * as contracts from "#contracts/index";
 import type { DrawerPin, PrintedReceipt, Receipt, ScaleReading } from "#contracts/index";
 
 describe("@stackra/peripherals/contracts", () => {
-  it("exports exactly the eleven ports and three enums at run time", () => {
+  it("exports exactly the twelve ports and three enums at run time", () => {
     expect(Object.keys(contracts).sort()).toEqual([
       "AccessController",
       "BarcodeScanner",
@@ -29,6 +29,7 @@ describe("@stackra/peripherals/contracts", () => {
       "ReceiptPrinter",
       "Scale",
       "TerminalState",
+      "UsedReceiptStore",
     ]);
   });
 

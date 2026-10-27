@@ -19,8 +19,11 @@ vi.mock("electron", () => {
 describe("@stackra/peripherals/desktop", () => {
   it("exports the print bridges and the main-process drivers", () => {
     expect(Object.keys(electron).sort()).toEqual([
+      "EscposKitchenPrinterDriver",
       "EscposReceiptPrinterDriver",
       "HidBarcodeScannerDriver",
+      "HidBumpBarDriver",
+      "PrintKitchenTicketBridge",
       "PrintLabelBridge",
       "PrintReceiptBridge",
       "PrinterKickCashDrawerDriver",

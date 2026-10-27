@@ -20,6 +20,9 @@ describe("PERIPHERAL_DRIVERS", () => {
       customerDisplay: ["memory", "channel", "external"],
       cardTerminal: ["memory"],
       accessController: ["memory"],
+      kitchenPrinter: ["memory", "escpos"],
+      bumpBar: ["memory", "hid"],
+      usedReceiptStore: ["memory"],
     });
     expect(Object.isFrozen(PERIPHERAL_DRIVERS)).toBe(true);
   });

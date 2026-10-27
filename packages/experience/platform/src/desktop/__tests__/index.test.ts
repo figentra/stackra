@@ -26,6 +26,7 @@ describe("@stackra/platform/desktop", () => {
       "PickFolderBridge",
       "SetKioskModeBridge",
       "ShowSecondScreenBridge",
+      "browserWindowOptions",
     ]);
   });
 });

@@ -2,13 +2,15 @@
  * Stackra file contract:
  * Purpose: `ExitGateService`, the exit check of a self-checkout lane or a store exit: each credential the
  *          `AccessController` reads is taken as a signed receipt token; the gate opens once for a token whose Ed25519
- *          signature the configured public key accepts, issued in this node within `exitTokenMaxAge`, not used before
- *          at this gate, and admitted by the product's rule; every decision is reported.
+ *          signature the configured public key accepts, issued in this node within `exitTokenMaxAge`, admitted by the
+ *          product's rule, and claimed first in the `UsedReceiptStore` (this gate's memory, or the venue's shared
+ *          store so a receipt opens one of several exits once); every decision is reported.
  * Boundary: decides and opens only; signing is the till's (`signReceiptToken`). The key and the age are
  *           `PeripheralsConfig` values (configuration), the node and the rule are the caller's data. Every refusal is
- *           reported, never thrown, so one bad scan never stops the gate.
+ *           reported, never thrown, so one bad scan never stops the gate. A store that cannot answer keeps the gate
+ *           closed (`store`); a claimed receipt whose gate then fails to open is given back.
  * Runtime: isomorphic
- * Governing contract: ADR 0429 (decisions 1 and 2); config-model (gate rules are rule sets).
+ * Governing contract: ADR 0429 (decisions 1 to 3); ADR 0449 (decision 4); config-model (gate rules are rule sets).
  */
 import { Service } from "@stackra/container";
 import type { Clock } from "@stackra/contracts";
@@ -16,14 +18,11 @@ import { Duration } from "@stackra/contracts";
 
 import type { PeripheralsConfig } from "#config/peripherals.config";
 import type { AccessController } from "#contracts/ports/access-controller.port";
+import type { UsedReceiptStore } from "#contracts/ports/used-receipt-store.port";
 import type { ExitDecision } from "#contracts/types/exit-decision.type";
 import { importReceiptPublicKey } from "#core/functions/import-receipt-public-key.function";
 import { verifyReceiptToken } from "#core/functions/verify-receipt-token.function";
 import type { ExitGateOptions } from "#core/types/exit-gate-options.type";
-
-/** How many used receipts a gate remembers; the oldest is forgotten first. */
-// shortcut: one gate's memory, bounded; a venue with several exits shares a used-receipt store when one ships (ADR 0429).
-const REMEMBERED = 10_000;
 
 /**
  * The exit gate.
@@ -41,19 +40,26 @@ export class ExitGateService extends Service {
   /** The current time. */
   private readonly clock: Clock;
 
-  /** The receipts that have opened this gate, oldest first. */
-  private readonly used = new Set<string>();
+  /** The receipts that have opened this gate or, with a shared store, any exit of the venue. */
+  private readonly used: UsedReceiptStore;
 
   /**
    * @param gate - the gate and its reader.
    * @param config - the peripherals configuration (`exitTokenPublicKey`, `exitTokenMaxAge`).
    * @param clock - the current time.
+   * @param used - the used receipts (`peripherals.usedReceiptStore`).
    */
-  constructor(gate: AccessController, config: PeripheralsConfig, clock: Clock) {
+  constructor(
+    gate: AccessController,
+    config: PeripheralsConfig,
+    clock: Clock,
+    used: UsedReceiptStore,
+  ) {
     super();
     this.gate = gate;
     this.config = config;
     this.clock = clock;
+    this.used = used;
   }
 
   /**
@@ -86,11 +92,10 @@ export class ExitGateService extends Service {
     const verified = await verifyReceiptToken(credential, key);
     if (!verified.ok) return { opened: false, reason: verified.reason };
     const { claims } = verified;
+    const maxAge = Duration.toMilliseconds(this.config.exitTokenMaxAge);
     const age = this.clock.now().getTime() - claims.issuedAt;
-    if (age < 0 || age > Duration.toMilliseconds(this.config.exitTokenMaxAge))
-      return { opened: false, reason: "expired", claims };
+    if (age < 0 || age > maxAge) return { opened: false, reason: "expired", claims };
     if (claims.nodeId !== options.nodeId) return { opened: false, reason: "node", claims };
-    if (this.used.has(claims.receiptId)) return { opened: false, reason: "used", claims };
     if (options.admit !== undefined) {
       // A rule that fails to answer keeps the gate closed, as a refusal does.
       const isAdmitted = await Promise.resolve()
@@ -98,10 +103,13 @@ export class ExitGateService extends Service {
         .catch(() => false);
       if (isAdmitted !== true) return { opened: false, reason: "rule", claims };
     }
+    // Claimed after the rule, so a refused receipt is not spent; the claim is atomic across a venue's exits.
+    const claimed = await this.used.claim(claims.receiptId, new Date(claims.issuedAt + maxAge));
+    if (!claimed.ok) return { opened: false, reason: "store", claims };
+    if (!claimed.data) return { opened: false, reason: "used", claims };
     const opened = await this.gate.open();
-    if (!opened.ok) return { opened: false, reason: "gate", claims };
-    this.used.add(claims.receiptId);
-    if (this.used.size > REMEMBERED) this.used.delete(this.used.values().next().value as string);
-    return { opened: true, claims };
+    if (opened.ok) return { opened: true, claims };
+    await this.used.release(claims.receiptId);
+    return { opened: false, reason: "gate", claims };
   }
 }

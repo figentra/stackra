@@ -1,7 +1,7 @@
 # AGENTS — @stackra/peripherals
 
-Point-of-sale hardware: receipt and label printers, cash drawer, barcode scanner, scale, customer display, card
-terminal (pairing only). Member at
+Point-of-sale hardware: receipt, label and kitchen ticket printers, cash drawer, barcode scanner, bump bar, scale,
+customer display, card terminal (pairing only), exit gates and their used-receipt store. Member at
 `packages/experience/peripherals` (`tier:lib`), in the programming model v3.1 shape (ADR 0294, 0305). Entries `.`,
 `./contracts`, `./desktop`.
 
@@ -27,6 +27,11 @@ terminal (pairing only). Member at
   display shows are market-pack, seed-pack or settings data. Code holds the parsers and drivers only.
 - `CardTerminal` pairs and reports; the payment protocol stays in the payments driver (ADR 0339 decision 1). A
   provider's SDK driver needs its own ADR (ADR 0339 open question 1).
+- Kitchen printers are named in `kitchenPrinters`; a station sits on one printer at most, and item-to-station routing is
+  the product's. A ticket with a `raster` prints the raster (Arabic is the renderer's, ADR 0339 decision 2).
+- A bump bar keypad model is a `bumpBarKeys` map, a scale model a `scalePresets` entry: configuration, not code.
+- `ExitGateService` claims a receipt in the bound `UsedReceiptStore` after the rule admits it and releases it when the
+  gate fails to open (ADR 0449 decision 4).
 - The label bridge accepts one ZPL label with no `~` or `^J` command, or a packed raster; never raw bytes.
 - A new driver name goes into `PERIPHERAL_DRIVERS`; it must equal what gen writes for the port, because both augment
   the same `DriverRegistry` key.
@@ -51,4 +56,6 @@ terminal (pairing only). Member at
 | Scanned codes   | `BarcodeScanner.onScan` listeners  | Handed to the listeners only; never stored here                          |
 | Printer address | `PeripheralsConfig.printerAddress` | On the user's own network or machine; shown as `printer`, not a secret   |
 | Label content   | `LabelPrinter.print`, the bridge   | Sent to the printer only; never logged, never put in a refusal's details |
+| Kitchen tickets | `KitchenPrinter.print`, the bridge | Sent to the station's printer only; never logged                         |
+| Receipt ids     | `UsedReceiptStore.claim`           | Ids only, never the token or the basket                                  |
 | Display views   | `CustomerDisplay.show`             | Posted to the app's own display window only (same-origin channel)        |

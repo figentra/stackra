@@ -29,6 +29,9 @@ a keyboard-wedge HID device. A peripheral is hardware the client uses; a device 
 | `.`           | `parseEmbeddedBarcode`, `EmbeddedValue`, `EmbeddedBarcode`, `EmbeddedBarcodeLayout`                                                                                                                          | weight- and price-embedded barcodes (prefix 2x) read through market-pack layouts          |
 | `.`           | `LabelPrinterUnavailableError`                                                                                                                                                                               | the refusal the label bridge sends back (`label_printer_unavailable`)                     |
 | `./desktop`   | `PrintLabelBridge`, `ZplLabelPrinterDriver`                                                                                                                                                                  | `peripherals.label.print` and the main-process `zpl` driver                               |
+| `./contracts` | `KitchenPrinter`, `BumpBar`, `UsedReceiptStore`; `BumpBarKey`; `KitchenTicket`, `ScalePreset`                                                                                                                | kitchen tickets, the bump bar and the venue's used receipts (ADR 0449)                    |
+| `.`           | `MemoryKitchenPrinterDriver`, `MemoryBumpBarDriver`, `MemoryUsedReceiptStoreDriver`, `fitScaleReading`                                                                                                       | their `memory` candidates, and a reading put through the scale preset                     |
+| `./desktop`   | `PrintKitchenTicketBridge`, `EscposKitchenPrinterDriver`, `HidBumpBarDriver`                                                                                                                                 | `peripherals.kitchen.print` and the main-process `escpos` and `hid` drivers               |
 
 ## Using it
 
@@ -91,6 +94,38 @@ const scanned = parseEmbeddedBarcode(code, pack.barcodeLayouts); // { itemCode, 
 - A barcode that matches no layout, or fails its GS1 check digit, parses to `null`: scan it as an ordinary code.
 - An RFID reader port is later (MUS-90), not here.
 
+## Kitchen printers, bump bars, scale presets and several exits
+
+```ts
+export class PeripheralsConfig extends BasePeripheralsConfig {
+  override kitchenPrinter: DriverName<KitchenPrinter> = "escpos";
+  override bumpBar: DriverName<BumpBar> = "hid";
+  override kitchenPrinters: BasePeripheralsConfig["kitchenPrinters"] = {
+    grill: { address: "tcp://10.0.0.30:9100", stations: ["grill"], buzz: { times: 2, length: 3 } },
+    cold_line: { address: "tcp://10.0.0.31:9100", stations: ["cold", "dessert"], buzz: null },
+  };
+  override scalePreset = "precision"; // 0.01 g up to 600 g
+}
+
+// renderer: an Arabic ticket goes as a raster the renderer drew; the lines stay for the audit
+await window.stackra.invoke("peripherals.kitchen.print", {
+  orderId,
+  station: "grill",
+  lines,
+  raster,
+});
+const stop = bumpBar.onKey((key) =>
+  key === BumpBarKey.Bump ? board.bumpSelected() : board.move(key),
+);
+const weight = fitScaleReading(reading, peripheralsConfig); // null over capacity
+```
+
+- A station is on one named printer at most; a station no printer serves refuses with `unavailable`.
+- The buzzer is `ESC B n t`; a printer that does not know it prints silently.
+- `bumpBarKeys` maps what the keypad types to `bump`, `recall`, `next`, `previous`, `select`.
+- `ExitGateService` takes a `UsedReceiptStore`; only `memory` (one gate) ships, so a venue with several exits needs a
+  shared driver before one receipt is refused at the second exit.
+
 ## Targets and limits
 
 Web APIs first, native modules only on evidence (ADR 0253 decisions 2 and 3). What each target can do today:
@@ -121,5 +156,5 @@ printer.isPresent = false; // every call now refuses with `unavailable`
 `MemoryBarcodeScannerDriver#emit(code)` scans, `MemoryCashDrawerDriver#opened` counts opens and
 `MemoryScaleDriver#reading` (`null` for no scale) sets the weight.
 
-Governing ADRs: 0253 (this package), 0250 (capabilities and refusals), 0251 (bridges and hardening), 0254 (desktop
+Governing ADRs: 0253 (this package), 0339, 0429, 0449, 0250 (capabilities and refusals), 0251 (bridges and hardening), 0254 (desktop
 release baseline), 0266, 0269, 0294 (decisions 4, 15 to 17, 19, 20, 26), 0127 2026-10-24 note.

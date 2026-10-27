@@ -27,6 +27,7 @@ React Native, NetInfo, expo-camera and expo-haptics are optional peers of `./des
 | `./contracts` | `KioskMode`, `SecondScreen`                                                                                                                                                                                                     | kiosk mode and the second-display window (the customer display)             |
 | `.`           | `MemoryKioskModeDriver`, `MemorySecondScreenDriver`                                                                                                                                                                             | their `memory` candidates                                                   |
 | `./desktop`   | `ElectronKioskModeDriver`, `ElectronSecondScreenDriver`, `SetKioskModeBridge`, `ShowSecondScreenBridge`                                                                                                                         | the main-process drivers and `platform.kiosk.set`, `platform.screen.second` |
+| `./desktop`   | `browserWindowOptions`                                                                                                                                                                                                          | the `BrowserWindow` options of a configured window, the kiosk kind included |
 | `./native`    | `ExpoPlatformDriver`, `ExpoPushTransportDriver`, `SelfHostedPushTransportDriver`                                                                                                                                                | the phone platform; push on a device (`platform.push.provider`)             |
 | `./worker`    | `TurnstileCaptchaVerifierDriver`                                                                                                                                                                                                | Turnstile siteverify from a Cloudflare Worker                               |
 | `./node`      | `TurnstileCaptchaVerifierDriver`                                                                                                                                                                                                | the same verifier for a Node service (Encore)                               |
@@ -86,6 +87,11 @@ await window.stackra.invoke("platform.screen.second", { route: null }); // close
 - `ElectronSecondScreenDriver` opens a frameless, full-screen, hardened window with no preload on the first non-primary
   display, at a route of the main window's own origin. The customer display it shows is fed by `@stackra/peripherals`'
   `channel` driver.
+
+- A window of kind `kiosk` (`DesktopConfig.windows[].kind`, `WindowKind.Kiosk`) is full-display, frameless and cannot be
+  resized, moved, minimised or closed; `browserWindowOptions(desktop.windows.main)` from `./desktop` gives the
+  `BrowserWindow` options of any configured window, which the shell spreads under its own `webPreferences`. It locks
+  that one window; `KioskMode` locks the whole app (ADR 0449 decision 5).
 
 ## Testing
 

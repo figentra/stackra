@@ -50,6 +50,11 @@ describe("PeripheralsConfig", () => {
     expect(config.accessController).toBe("memory");
     expect(config.exitTokenPublicKey).toBe("");
     expect(config.exitTokenMaxAge).toBe("PT30M");
+    expect(config.kitchenPrinter).toBe("memory");
+    expect(config.bumpBar).toBe("memory");
+    expect(config.usedReceiptStore).toBe("memory");
+    expect(config.kitchenPrinters).toEqual({});
+    expect(config.scalePreset).toBe("retail");
     expect(Object.isFrozen(config)).toBe(true);
   });
 

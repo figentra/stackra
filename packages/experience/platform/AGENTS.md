@@ -41,6 +41,8 @@ v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./browser`, `./desktop
 - `KioskMode` and `SecondScreen` are ports of their own (not `Platform` facets): main-process mechanisms with Electron
   drivers in `./desktop`, memory drivers in `.`, and a bridge each. Whether a till runs in kiosk mode or shows a
   customer display is a tenant setting; `DesktopConfig.kioskOnLaunch` is only the launch default.
+- A window kind (`WindowKind`) means only what `browserWindowOptions` maps it to; a new kind adds a case and its
+  options there, never in the shell. `createApp` (`@stackra/app`) is the shell that spreads it.
 - A capability call that the target or device cannot honour returns `refuse(capability, code)`; a programming error
   throws.
 - A driver's constructor takes only container-built dependencies; gen reads constructor parameters as dependencies.

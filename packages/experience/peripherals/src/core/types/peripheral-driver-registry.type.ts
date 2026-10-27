@@ -1,12 +1,12 @@
 /**
  * Stackra file contract:
- * Purpose: the `DriverRegistry` entries of the six selectable peripheral ports, so `PeripheralsConfig`'s driver
+ * Purpose: the `DriverRegistry` entries of the selectable peripheral ports, so `PeripheralsConfig`'s driver
  *          fields (typed `DriverName<Port>`) and a runway `peripherals.*` value take exactly this package's driver
  *          names.
  * Boundary: a module augmentation only; the stand-in for the entries this package's generated wiring writes (ADR 0263
  *           decision 9). `PeripheralsOptions` imports this file so the augmentation travels with the shape.
  * Runtime: isomorphic
- * Governing contract: ADR 0294 (decisions 4 and 19); ADR 0263 (decision 9).
+ * Governing contract: ADR 0294 (decisions 4 and 19); ADR 0263 (decision 9); ADR 0449.
  */
 import type { PERIPHERAL_DRIVERS } from "#core/constants/peripheral-drivers.constant";
 
@@ -26,5 +26,11 @@ declare module "@stackra/container" {
     "peripherals.CardTerminal": (typeof PERIPHERAL_DRIVERS.cardTerminal)[number];
     /** The driver names of `AccessController` (`memory`). */
     "peripherals.AccessController": (typeof PERIPHERAL_DRIVERS.accessController)[number];
+    /** The driver names of `KitchenPrinter` (`memory`, `escpos`). */
+    "peripherals.KitchenPrinter": (typeof PERIPHERAL_DRIVERS.kitchenPrinter)[number];
+    /** The driver names of `BumpBar` (`memory`, `hid`). */
+    "peripherals.BumpBar": (typeof PERIPHERAL_DRIVERS.bumpBar)[number];
+    /** The driver names of `UsedReceiptStore` (`memory`). */
+    "peripherals.UsedReceiptStore": (typeof PERIPHERAL_DRIVERS.usedReceiptStore)[number];
   }
 }

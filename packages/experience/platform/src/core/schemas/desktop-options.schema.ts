@@ -58,7 +58,7 @@ export class DesktopOptions extends Schema {
       persistBounds: boolean;
       /** Electron's title bar style. */
       titleBarStyle: "default" | "hidden" | "hiddenInset" | "customButtonsOnHover";
-      /** An ordinary or a utility window. */
+      /** An ordinary, a utility or a kiosk window (`browserWindowOptions` maps it). */
       kind: WindowKind;
       /** Open it when the app starts. */
       openOnLaunch: boolean;

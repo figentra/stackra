@@ -11,13 +11,18 @@ import type { Duration } from "@stackra/contracts";
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 import { Schema } from "@stackra/validation";
 
+import type { BumpBarKey } from "#contracts/enums/bump-bar-key.enum";
 import type { BarcodeScanner } from "#contracts/ports/barcode-scanner.port";
+import type { BumpBar } from "#contracts/ports/bump-bar.port";
 import type { CardTerminal } from "#contracts/ports/card-terminal.port";
 import type { CashDrawer } from "#contracts/ports/cash-drawer.port";
 import type { CustomerDisplay } from "#contracts/ports/customer-display.port";
+import type { KitchenPrinter } from "#contracts/ports/kitchen-printer.port";
 import type { LabelPrinter } from "#contracts/ports/label-printer.port";
 import type { ReceiptPrinter } from "#contracts/ports/receipt-printer.port";
+import type { UsedReceiptStore } from "#contracts/ports/used-receipt-store.port";
 import type { DrawerPin } from "#contracts/types/drawer-pin.type";
+import type { ScalePreset } from "#contracts/types/scale-preset.type";
 import { PERIPHERALS_CONFIG_SCHEMA } from "#core/constants/peripherals-config-schema.constant";
 import { PeripheralsOptions } from "#core/schemas/peripherals-options.schema";
 
@@ -39,5 +44,14 @@ describe("PeripheralsOptions", () => {
     expectTypeOf<PeripheralsOptions["cardTerminal"]>().toEqualTypeOf<DriverName<CardTerminal>>();
     expectTypeOf<PeripheralsOptions["drawerPin"]>().toEqualTypeOf<DrawerPin>();
     expectTypeOf<PeripheralsOptions["scanKeyGap"]>().toEqualTypeOf<Duration>();
+    expectTypeOf<PeripheralsOptions["kitchenPrinter"]>().toEqualTypeOf<
+      DriverName<KitchenPrinter>
+    >();
+    expectTypeOf<PeripheralsOptions["bumpBar"]>().toEqualTypeOf<DriverName<BumpBar>>();
+    expectTypeOf<PeripheralsOptions["usedReceiptStore"]>().toEqualTypeOf<
+      DriverName<UsedReceiptStore>
+    >();
+    expectTypeOf<PeripheralsOptions["bumpBarKeys"]>().toEqualTypeOf<Record<string, BumpBarKey>>();
+    expectTypeOf<PeripheralsOptions["scalePresets"]>().toEqualTypeOf<Record<string, ScalePreset>>();
   });
 });

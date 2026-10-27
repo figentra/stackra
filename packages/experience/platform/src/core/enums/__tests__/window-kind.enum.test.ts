@@ -12,13 +12,13 @@ import { WindowKind } from "#core/enums/window-kind.enum";
 
 describe("WindowKind", () => {
   it("lists its codes in source order", () => {
-    expect(Enum.values(WindowKind)).toEqual(["normal", "utility"]);
+    expect(Enum.values(WindowKind)).toEqual(["normal", "utility", "kiosk"]);
   });
 
   it("reads a case by name and types it as a code", () => {
     expect(WindowKind.Normal).toBe("normal");
     expectTypeOf(WindowKind.Normal).toEqualTypeOf<"normal">();
-    expectTypeOf<WindowKind>().toEqualTypeOf<"normal" | "utility">();
+    expectTypeOf<WindowKind>().toEqualTypeOf<"normal" | "utility" | "kiosk">();
   });
 
   it("is frozen", () => {

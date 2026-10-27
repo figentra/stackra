@@ -2,8 +2,8 @@
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `.` entry of @stackra/peripherals (the configuration with its shipped schema, the
  *          memory drivers gen's wiring imports, the `channel` and `external` customer display drivers and the
- *          display-side listener, the in-store barcode parser, the receipt-token signing and checking with the exit
- *          gate, and the bridges' refusals) until `stackra gen` writes the entry barrels (STA-339).
+ *          display-side listener, the in-store barcode parser, the scale preset fit, the receipt-token signing and
+ *          checking with the exit gate, and the bridges' refusals) until `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. The ports are exported from `./contracts` only (ADR 0294
  *           decision 15). The option shape, the driver names, the ESC/POS and ZPL encoders, the GS1 check digit and
  *           the refusal builder stay internal.
@@ -17,15 +17,19 @@ export { ChannelCustomerDisplayDriver } from "#core/drivers/channel-customer-dis
 export { ExternalCustomerDisplayDriver } from "#core/drivers/external-customer-display.driver";
 export { MemoryAccessControllerDriver } from "#core/drivers/memory-access-controller.driver";
 export { MemoryBarcodeScannerDriver } from "#core/drivers/memory-barcode-scanner.driver";
+export { MemoryBumpBarDriver } from "#core/drivers/memory-bump-bar.driver";
 export { MemoryCardTerminalDriver } from "#core/drivers/memory-card-terminal.driver";
 export { MemoryCashDrawerDriver } from "#core/drivers/memory-cash-drawer.driver";
 export { MemoryCustomerDisplayDriver } from "#core/drivers/memory-customer-display.driver";
+export { MemoryKitchenPrinterDriver } from "#core/drivers/memory-kitchen-printer.driver";
 export { MemoryLabelPrinterDriver } from "#core/drivers/memory-label-printer.driver";
 export { MemoryReceiptPrinterDriver } from "#core/drivers/memory-receipt-printer.driver";
 export { MemoryScaleDriver } from "#core/drivers/memory-scale.driver";
+export { MemoryUsedReceiptStoreDriver } from "#core/drivers/memory-used-receipt-store.driver";
 export { EmbeddedValue } from "#core/enums/embedded-value.enum";
 export { LabelPrinterUnavailableError } from "#core/errors/label-printer-unavailable.error";
 export { PrinterUnavailableError } from "#core/errors/printer-unavailable.error";
+export { fitScaleReading } from "#core/functions/fit-scale-reading.function";
 export { importReceiptPublicKey } from "#core/functions/import-receipt-public-key.function";
 export { listenCustomerDisplay } from "#core/functions/listen-customer-display.function";
 export { parseEmbeddedBarcode } from "#core/functions/parse-embedded-barcode.function";

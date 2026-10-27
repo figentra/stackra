@@ -21,8 +21,24 @@ describe("PERIPHERALS_CONFIG_SCHEMA", () => {
       customerDisplay: "memory",
       cardTerminal: "memory",
       accessController: "memory",
+      kitchenPrinter: "memory",
+      bumpBar: "memory",
+      usedReceiptStore: "memory",
       printerAddress: "",
       labelPrinterAddress: "",
+      kitchenPrinters: {},
+      bumpBarKeys: {
+        Enter: "bump",
+        r: "recall",
+        ArrowRight: "next",
+        ArrowLeft: "previous",
+        " ": "select",
+      },
+      scalePresets: {
+        retail: { division: 1, capacity: 15_000 },
+        precision: { division: 0.01, capacity: 600 },
+      },
+      scalePreset: "retail",
       drawerPin: 2,
       scanKeyGap: "PT0.05S",
       probeOnBoot: false,
@@ -37,6 +53,20 @@ describe("PERIPHERALS_CONFIG_SCHEMA", () => {
     expect(PERIPHERALS_CONFIG_SCHEMA.parse({ drawerPin: 5 }).drawerPin).toBe(5);
   });
 
+  it("takes named kitchen printers, each station on one printer, with or without a buzzer", () => {
+    const kitchenPrinters = {
+      grill: {
+        address: "tcp://10.0.0.30:9100",
+        stations: ["grill"],
+        buzz: { times: 2, length: 3 },
+      },
+      cold_line: { address: "/dev/usb/lp1", stations: ["cold", "dessert"], buzz: null },
+    };
+    expect(PERIPHERALS_CONFIG_SCHEMA.parse({ kitchenPrinters }).kitchenPrinters).toEqual(
+      kitchenPrinters,
+    );
+  });
+
   it("refuses what no driver can use", () => {
     for (const values of [
       { printer: "star" },
@@ -49,6 +79,23 @@ describe("PERIPHERALS_CONFIG_SCHEMA", () => {
       { drawerPin: 3 },
       { scanKeyGap: "PT0S" },
       { scanKeyGap: "50ms" },
+      { kitchenPrinter: "star" },
+      { kitchenPrinters: { grill: { address: "", stations: ["grill"], buzz: null } } },
+      { kitchenPrinters: { grill: { address: "/dev/lp0", stations: [], buzz: null } } },
+      {
+        kitchenPrinters: {
+          grill: { address: "/dev/lp0", stations: ["grill"], buzz: { times: 10, length: 1 } },
+        },
+      },
+      {
+        kitchenPrinters: {
+          a: { address: "/dev/lp0", stations: ["grill"], buzz: null },
+          b: { address: "/dev/lp1", stations: ["grill"], buzz: null },
+        },
+      },
+      { bumpBarKeys: { Enter: "delete" } },
+      { scalePresets: { precision: { division: 0, capacity: 600 } } },
+      { usedReceiptStore: "redis" },
     ])
       expect(PERIPHERALS_CONFIG_SCHEMA.safeParse(values).success).toBe(false);
   });
