@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `AuditEntryRecorded`, the integration event the `outbox` AuditTrail driver writes for every audited action
  *          call: who called which action in which tenant and scope, its permission, risk and effect tags, the outcome
- *          with the refusal code, and the fields the handler added. The audit service consumes it, chains it per
+ *          with the refusal code, the request origin (storefront, console, API key, agent), and the fields the handler
+ *          added. The audit service consumes it, chains it per
  *          tenant and stores it (ADR 0212).
  * Boundary: an integration event (`audit_entry.recorded`, version 1). The actor carries its full `onBehalfOf` chain
  *           (ADR 0098 decision 7) as public ids and kinds, never a credential. `fields` are what the handler passed to
@@ -10,7 +11,7 @@
  *           (STA-339 replaces the registration).
  * Runtime: isomorphic
  * Governing contract: ADR 0212 (decisions 1, 2 and 4); ADR 0098 (decision 7); ADR 0141 (the envelope); ADR 0294
- *                     (decisions 5 and 16).
+ *                     (decisions 5 and 16); ADR 0456 (decision 1: the request origin, optional fields of version 1).
  */
 import type { Actor, Json } from "@stackra/contracts";
 import { IntegrationEvent } from "@stackra/events";
@@ -48,6 +49,12 @@ export class AuditEntryRecorded extends IntegrationEvent({ name: "audit_entry.re
   /** The scope node's path. */
   scopePath?: string;
 
+  /** The surface the call arrived through (`storefront`, `console`, `api_key`, `agent`); absent for an internal call. */
+  originKind?: string;
+
+  /** The public id of the storefront, API key or agent the call came from. */
+  originId?: string;
+
   /** `ok`, or `refused`. */
   outcome!: "ok" | "refused";
 
@@ -71,6 +78,8 @@ registerSchemas([
       actor: z.custom<Actor>((value) => typeof value === "object" && value !== null),
       scopeId: z.string().optional(),
       scopePath: z.string().optional(),
+      originKind: z.string().optional(),
+      originId: z.string().optional(),
       outcome: z.enum(["ok", "refused"]),
       code: z.string().optional(),
       fields: z.record(

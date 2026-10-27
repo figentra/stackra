@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `MemoryReplicaLogDriver`: append returns the head; a read after a position returns the later
  *          changes and nothing older, pages by `limit` with `more`, keeps partitions apart, returns only entries within
- *          the caller's scope (while its position passes the others), and answers `undefined` above the head.
+ *          the caller's scope (while its position passes the others), lets a cascading change reach the callers below
+ *          its node (ADR 0456 decision 3), and answers `undefined` above the head.
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0338 (decision 3 and its enforcement: a stale cursor receives
@@ -79,5 +80,21 @@ describe("MemoryReplicaLogDriver", () => {
       more: false,
     });
     expect((await log.read("p", 0, 10, undefined))?.changes).toHaveLength(4);
+  });
+
+  it("lets a cascading change reach the callers at or below its node, and an unscoped one reach every caller", async () => {
+    const log = new MemoryReplicaLogDriver();
+    await log.append("p", [{ id: "lot_1", cascade: true }], ACME);
+    await log.append("p", [{ id: "lot_2", cascade: true }], EU);
+    await log.append("p", [{ id: "lot_3", cascade: true }], undefined);
+    await log.append("p", [{ id: "lot_4" }], ACME);
+    expect((await log.read("p", 0, 10, EU))?.changes.map((change) => change.id)).toEqual([
+      "lot_1",
+      "lot_2",
+      "lot_3",
+    ]);
+    expect((await log.read("p", 0, 10, OTHER))?.changes.map((change) => change.id)).toEqual([
+      "lot_3",
+    ]);
   });
 });

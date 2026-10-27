@@ -4,10 +4,11 @@
  *          cursor; a later refresh returns only the rows changed and the ids removed since the cursor, collapsed to the
  *          latest per id across pages, with a monotonic cursor; a cursor of another partition, a malformed one or one
  *          above the head fills again; a sliced replica keeps its slices apart and needs its slice; the registered key
- *          names the partition; a query without a replica is refused.
+ *          names the partition; a query without a replica is refused; a cascading change stamped above a reader's node
+ *          reaches it on an incremental refresh (lot recall, ADR 0456 decision 3).
  * Boundary: test only; over the memory replica log.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0338 (decision 3 and its enforcement).
+ * Governing contract: ADR 0022 (test placement); ADR 0338 (decision 3 and its enforcement); ADR 0456 (decision 3).
  */
 import { ActorKind, type ScopeRef } from "@stackra/contracts";
 import { describe, expect, it } from "@stackra/testing";
@@ -54,6 +55,11 @@ class PlainQuery extends Query({
 
 const AT = new Date("2026-10-25T09:00:00.000Z");
 const EU: ScopeRef = { id: "scp_01j9z3k4m5n6p7q8r9s0t1v2w3", path: "platform.acme.shop_eu" };
+const ACME: ScopeRef = { id: "scp_01j9z3k4m5n6p7q8r9s0t1v2w1", path: "platform.acme" };
+const TILL: ScopeRef = {
+  id: "scp_01j9z3k4m5n6p7q8r9s0t1v2w4",
+  path: "platform.acme.shop_eu.till_1",
+};
 
 /** A replica row of `id` carrying `total`. */
 const rowOf = (id: string, total = 0): ReplicaRow => ({ id, at: AT, data: { total } });
@@ -166,5 +172,20 @@ describe(ReplicaFeed, () => {
     const feed = new ReplicaFeed(new MemoryReplicaLogDriver());
     const { cursor } = await feed.page(RecentSalesQuery, { at: AT }, fillOf([]).fill);
     expect(cursor).toBe(`0.${encodeURIComponent("sales.sale.recent@1|")}`);
+  });
+
+  it("sends a cascading change stamped above the reader's node on an incremental refresh", async () => {
+    const feed = new ReplicaFeed(new MemoryReplicaLogDriver());
+    const full = await feed.page(RecentSalesQuery, { at: AT, within: TILL }, fillOf([]).fill);
+    await feed.record(RecentSalesQuery, [{ id: "lot_1", row: rowOf("lot_1", 1) }], { scope: ACME });
+    await feed.record(RecentSalesQuery, [{ id: "lot_2", row: rowOf("lot_2", 2), cascade: true }], {
+      scope: EU,
+    });
+    const next = await feed.page(
+      RecentSalesQuery,
+      { cursor: full.cursor, at: AT, within: TILL },
+      fillOf([]).fill,
+    );
+    expect(next).toMatchObject({ rows: [rowOf("lot_2", 2)], removed: [], full: false });
   });
 });

@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: the consumer contract of the `./contracts` entry: the twenty-one ports of the pipeline's steps and stores and
- *          the `ReviewReason`, `Effect`, `ApproverRefusal` and `AssuranceLevel` enums are exported, nothing else is as a value, and the exchanged types resolve.
+ *          the `ReviewReason`, `Effect`, `ApproverRefusal`, `AssuranceLevel` and `CallOriginKind` enums are exported, nothing else is as a value, and the exchanged types resolve.
  * Boundary: test only; imports the stand-in barrel through its `#contracts` alias.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0294 (decision 15).
@@ -16,6 +16,8 @@ import type {
   CallAssurance,
   CallClient,
   CallDescriptor,
+  CallOrigin,
+  CallOriginKind,
   DeviceOrder,
   DeviceSequence,
   IdempotencyRecord,
@@ -37,6 +39,7 @@ describe("@stackra/actions/contracts", () => {
       "ApproverRefusal",
       "AssuranceLevel",
       "AuditTrail",
+      "CallOriginKind",
       "ContextStorage",
       "DeviceSequenceStore",
       "Effect",
@@ -62,6 +65,8 @@ describe("@stackra/actions/contracts", () => {
   it("resolves its public types", () => {
     expectTypeOf<CallDescriptor["actor"]>().toEqualTypeOf<Actor>();
     expectTypeOf<CallDescriptor["kind"]>().toEqualTypeOf<"action" | "query">();
+    expectTypeOf<CallDescriptor["origin"]>().toEqualTypeOf<CallOrigin | undefined>();
+    expectTypeOf<CallOrigin["kind"]>().toEqualTypeOf<CallOriginKind>();
     expectTypeOf<AuditEntry["fields"]>().toEqualTypeOf<Readonly<Record<string, Json>>>();
     expectTypeOf<AuditEntry["outcome"]>().toEqualTypeOf<"ok" | "refused">();
     expectTypeOf<IdempotencyRecord["fingerprint"]>().toEqualTypeOf<string>();

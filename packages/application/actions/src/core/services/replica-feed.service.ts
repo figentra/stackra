@@ -3,7 +3,8 @@
  * Purpose: `ReplicaFeed`, the server side of a replica query: a producer records the changes to a replica's rows, and
  *          a replica query answers with the rows changed and the ids removed since the client's opaque cursor, or a
  *          full fill on the first refresh or when the log no longer holds the cursor, with the next cursor and the
- *          "as of" time.
+ *          "as of" time. A change marked `cascade` (a lot recall placed above a till's node) also reaches the readers
+ *          below its scope node on an incremental refresh, not only on a full fill.
  * Boundary: a platform binding over the `ReplicaLog` port. A partition is the query's locked key and, for a sliced
  *           replica, the caller's value of its `scope` field. The cursor is `<position>.<partition>`, opaque to
  *           clients; one from another partition or above the head refills. The changes since a cursor are read page by
@@ -12,7 +13,8 @@
  *           never arrives before the change is readable. The pipeline builds one per replica call for `ctx.replica`.
  * Runtime: isomorphic
  * Governing contract: ADR 0338 (decision 3: an opaque, monotonic change cursor per replica, the first fill is the only
- *                     full download, the "as of" time, a scoped replica); ADR 0315 (decision 1: the refresh signal).
+ *                     full download, the "as of" time, a scoped replica); ADR 0315 (decision 1: the refresh signal); ADR
+ *                     0456 (decision 3: a cascading change reaches the readers below its node).
  */
 import { type AnyClass, kindOf, Service } from "@stackra/container";
 import { Duration, type ScopeRef } from "@stackra/contracts";

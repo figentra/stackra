@@ -57,6 +57,12 @@ Member at `packages/application/actions` (`tier:lib`), in the programming model 
 - `sandbox` and `client` on `CallOptions` come from the verified credential and the connection (or the edge's trusted
   forwarding header), never from input. The sandbox flag reaches the descriptor and the context; the client reaches
   `ctx.client` only: never put it on `CallDescriptor`, an audit entry or a log line (STA-1248).
+- `origin` on `CallOptions` (a `CallOrigin`) comes from the verified credential, never from input; it rides on the
+  descriptor (so the audit entry has it) and `ctx.origin`. A new `CallOriginKind` is an ADR change (ADR 0456).
+- `ctx.publish(event)` is only for an integration event no model owns; a model's event is recorded on the model. It
+  writes through `EventOutbox` at once, so it belongs in `handle` (inside the unit of work), never in `afterCommit`.
+- A replica change reaches readers at its scope node or above it; only `cascade: true` also reaches the readers below
+  (a recall). Never widen the default rule: a driver's read must keep both cases (ADR 0456 decision 3).
 - A raw-body query output is `rawBody(...)`; the transport keys on the `~raw` marker, never on the field names.
 - The source keeps to erasable syntax: no parameter properties, no `#private` fields.
 

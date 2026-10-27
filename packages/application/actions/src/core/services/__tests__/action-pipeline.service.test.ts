@@ -14,13 +14,15 @@
  *          approval step runs only with a gate bound unless the action declares `approval` (STA-813), the limit
  *          reservation wraps the unit of work, a successful call's audit entry is written inside it, and written effect
  *          tags reach the descriptor; and the step-up check with `ctx.assurance` (STA-814); and the sandbox flag on the
- *          descriptor and the context, and the network client on the context only (STA-1248).
+ *          descriptor and the context, and the network client on the context only (STA-1248); and the request origin
+ *          on the descriptor, the audit entry and the context, and `ctx.publish` of an integration event without a
+ *          model inside the unit of work (ADR 0456).
  * Boundary: test only; every port is a stand-in driver in a map resolver, so each step is observed directly; the
  *           offline stores are the memory drivers.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0138 (as amended); ADR 0136 (decisions 1 to 3 and 5); ADR 0305
  *                     (rule 24); ADR 0217 (decision 2); ADR 0327 (decision 6); ADR 0338 (decisions 1, 3 and 5); ADR
- *                     0337 (decisions 4 and 5).
+ *                     0337 (decisions 4 and 5); ADR 0456 (decisions 1 and 2).
  */
 import { type AnyClass, Driver } from "@stackra/container";
 import {
@@ -41,6 +43,7 @@ import {
   RateLimitedError,
   Refusal,
 } from "@stackra/errors";
+import { DomainEvent, IntegrationEvent } from "@stackra/events";
 import type { RecordedEvent } from "@stackra/events/contracts";
 import { EventOutbox } from "@stackra/events/contracts";
 import { describe, expect, it, onTestFinished } from "@stackra/testing";
@@ -70,7 +73,8 @@ import {
   UnitOfWork,
   WorkflowRunner,
 } from "#contracts/index";
-import type { AuditEntry, CallAssurance, CallDescriptor } from "#contracts/index";
+import type { AuditEntry, CallAssurance, CallDescriptor, CallOrigin } from "#contracts/index";
+import { CallOriginKind } from "#contracts/enums/call-origin-kind.enum";
 import { AssuranceLevel } from "#contracts/enums/assurance-level.enum";
 import { Action } from "#core/bases/action.base";
 import { Interceptor } from "#core/bases/interceptor.base";
@@ -591,6 +595,7 @@ describe(ActionPipeline, () => {
       {
         type: CreateOrderAction,
         key: "orders.order.create@1",
+        // oxlint-disable-next-line stackra/no-raw-key-literal -- reason: the test stands in for gen, which writes these registrations
         permission: "orders.order.create",
         risk: "L1",
         input: CreateOrderInput,
@@ -604,6 +609,7 @@ describe(ActionPipeline, () => {
     );
     expect(access.calls[0]).toMatchObject({
       key: "orders.order.create@1",
+      // oxlint-disable-next-line stackra/no-raw-key-literal -- reason: the test stands in for gen, which writes these registrations
       permission: "orders.order.create",
       risk: "L1",
       kind: "action",
@@ -1111,6 +1117,7 @@ registerActions([
   {
     type: RefundAction,
     key: "payments.payment.refund@1",
+    // oxlint-disable-next-line stackra/no-raw-key-literal -- reason: the test stands in for gen, which writes these registrations
     permission: "payments.payment.refund",
     risk: "L3",
     effects: [Effect.Financial, Effect.Irreversible],
@@ -1574,5 +1581,105 @@ describe("ActionPipeline sandbox and client (STA-1248)", () => {
     const output = await pipeline.execute(WhereQuery, {}, { actor: customer, sandbox: false });
     expect(output).toEqual({ sandbox: undefined, client: undefined });
     expect(access.calls.at(-1)).not.toHaveProperty("sandbox");
+  });
+});
+
+/** A query that answers with the call's request origin. */
+class OriginQuery extends Query({
+  key: "call.origin",
+  actors: [ActorKind.User, ActorKind.Agent],
+}) {
+  async handle(_input: object, ctx: QueryContext): Promise<{ origin?: CallOrigin }> {
+    return ctx.origin === undefined ? {} : { origin: ctx.origin };
+  }
+}
+
+describe("ActionPipeline request origin (ADR 0456)", () => {
+  it("hands the origin to the descriptor, the audit entry and the context", async () => {
+    const { pipeline, access, trail } = setup([[OriginQuery, new OriginQuery()]]);
+    const origin: CallOrigin = { kind: CallOriginKind.Agent, id: "agt_1" };
+    expect(await pipeline.execute(OriginQuery, {}, { actor: agent, origin })).toEqual({ origin });
+    expect(access.calls.at(-1)?.origin).toEqual(origin);
+    await pipeline.execute(
+      CreateOrderAction,
+      { quantity: 1 },
+      { actor: customer, origin: { kind: CallOriginKind.Storefront, id: "sfr_1" } },
+    );
+    expect(trail.entries.at(-1)?.call.origin).toEqual({ kind: "storefront", id: "sfr_1" });
+  });
+
+  it("leaves it absent for an internal call", async () => {
+    const { pipeline, access } = setup([[OriginQuery, new OriginQuery()]]);
+    expect(await pipeline.execute(OriginQuery, {}, { actor: customer })).toEqual({});
+    expect(access.calls.at(-1)).not.toHaveProperty("origin");
+  });
+});
+
+/** An integration event that no model owns. */
+class StockNearExpiry extends IntegrationEvent({ name: "stock.near_expiry" }) {
+  sku!: string;
+}
+
+/** A domain event, which only a model records. */
+class StockCounted extends DomainEvent {
+  sku!: string;
+}
+
+registerSchemas([
+  [StockNearExpiry, z.object({ sku: z.string() })],
+  [StockCounted, z.object({ sku: z.string() })],
+]);
+
+/** Publishes the event its input names, then refuses when told to. */
+class AlertAction extends Action({
+  key: "stock.alert",
+  actors: [ActorKind.User],
+}) {
+  async handle(input: { domain?: boolean; refuse?: boolean }, ctx: ActionContext): Promise<void> {
+    log.push("handle");
+    await ctx.publish(
+      input.domain === true
+        ? StockCounted.create({ sku: "sku_1" })
+        : StockNearExpiry.create({ sku: "sku_1" }),
+    );
+    if (input.refuse === true) throw OrdersPausedError.create();
+  }
+}
+
+describe("ActionPipeline ctx.publish (ADR 0456)", () => {
+  it("writes the event through the outbox inside the unit of work, with the call's metadata", async () => {
+    const outbox = new Outbox();
+    const { pipeline } = setup([
+      [EventOutbox, outbox],
+      [AlertAction, new AlertAction()],
+    ]);
+    await pipeline.execute(AlertAction, {}, { actor: customer, callId: "call_alert" });
+    expect(log.slice(log.indexOf("begin"))).toEqual(["begin", "handle", "outbox", "commit"]);
+    expect(outbox.written[0]?.event).toBeInstanceOf(StockNearExpiry);
+    expect(outbox.written[0]?.meta).toMatchObject({
+      occurredAt: NOW,
+      scopeId: "ten_1",
+      actor: customer,
+      correlationId: "call_alert",
+    });
+  });
+
+  it("rolls back with a refused call, refuses a domain event and needs an outbox", async () => {
+    const outbox = new Outbox();
+    const { pipeline } = setup([
+      [EventOutbox, outbox],
+      [AlertAction, new AlertAction()],
+    ]);
+    await expect(
+      pipeline.execute(AlertAction, { refuse: true }, { actor: customer }),
+    ).rejects.toBeInstanceOf(OrdersPausedError);
+    expect(log.at(-1)).toBe("rollback");
+    await expect(
+      pipeline.execute(AlertAction, { domain: true }, { actor: customer }),
+    ).rejects.toThrow(/not an IntegrationEvent/);
+    const bare = setup([[AlertAction, new AlertAction()]]);
+    await expect(bare.pipeline.execute(AlertAction, {}, { actor: customer })).rejects.toThrow(
+      /EventOutbox is not bound/,
+    );
   });
 });

@@ -1,0 +1,69 @@
+---
+title: "0456 — Actions: the request origin, integration events without a model, and cascading replica changes"
+description: "Proposed · 2026-10-27"
+---
+
+{/* Stackra file contract: Purpose: the decision record for three additions to @stackra/actions that Commerce asked for (request origin on the call, an integration event published from an action with no owning model, a replica change that reaches the readers below its scope node). Boundary: decision text only; the code is in packages/application/actions. Runtime: docs. Governing contract: ADR template (apps/docs/src/adr/template.mdx); ADR 0136, 0138, 0338. */}
+
+<Note>
+  Proposed (STA-915, batch stackra-20; STA-904 item "request origin"). The batch reserved 0443,
+  which ADR 0443 (integration architecture) took first; this is the next number after every number
+  the batch plan reserves.
+</Note>
+
+## Context
+
+The Commerce wave A build listed three gaps in `@stackra/actions` (Commerce `apps/docs/src/build/module-catalogue.mdx`).
+The call context has no request origin, so a storefront cannot bind its keys to one origin and an audit entry or an AI
+attribution cannot say whether a call came from the storefront, the console, an API key or an agent. An action can
+only emit an integration event through a model's `record(event)`, so inventory's near-expiry alert, which belongs to no
+single row, was being recorded on stock-level rows. And `ReplicaFeed` stamps each change with the writer's scope node
+and serves a reader only its node or below (ADR 0338 decision 3), so a lot recall placed on a legal entity reaches a
+till below it on a full fill but never on an incremental refresh. The alternatives weighed were a free-form origin
+string (rejected: attribution and key binding need a closed vocabulary), a synthetic "alerts" model (rejected: a model
+with no state to hold a fact), and widening the read rule to ancestors (rejected: it would leak every parent-node row
+to every child).
+
+## Decision
+
+1. **The request origin is a call fact.** `CallOptions.origin` is a `CallOrigin` (`./contracts`): a `CallOriginKind`
+   (`storefront`, `console`, `api_key`, `agent`, snake_case codes) and the public id of the storefront, API key or
+   agent. The transport sets it from the verified credential, never from input; the AI tool dispatcher sets `agent`.
+   The pipeline puts it on `CallDescriptor.origin` (so the audit entry, whose `call` is the descriptor, and every port
+   carry it) and on `ctx.origin` (every call context, so `RequestContext.current()` has it too). It is no personal
+   data, unlike `CallClient`. An internal call (a job, a workflow step) has none. A new kind is an ADR change.
+2. **An action publishes an integration event that no model owns with `ctx.publish(event)`.** The pipeline writes it
+   through the `EventOutbox` at once, with a fresh event id, the call's clock, scope id, actor and the call id as the
+   correlation. Called from `handle`, the write is inside the action's unit of work, so the event leaves only when the
+   call commits and a refused call rolls it back. Only an `IntegrationEvent` is accepted (a domain event is a model's);
+   a call that publishes without a bound outbox is an error. An event a model owns stays on the model.
+3. **A replica change may cascade.** `ReplicaChange.cascade: true` makes a change reach every reader at its scope node
+   or below it, in addition to the default readers at the node or above it. A cascading change with no scope reaches
+   every reader. The default rule does not change; only a producer that means "for all descendants" (a recall, a
+   notice) sets it. `ReplicaFeed` passes it through; a `ReplicaLog` driver's read must honour both cases.
+
+## Consequences
+
+- Commerce's storefront binds keys to an origin, and its inventory module publishes the near-expiry alert and records
+  the lot recall once at the legal entity, through Stackra rather than workarounds.
+- `fakeActionContext` records published events (`recorded.published`), so handler tests assert them without an outbox.
+- Each transport must set `CallOptions.origin`: the HTTP transport and the storefront edge from the key or session,
+  `@stackra/ai`'s tool dispatcher to `agent`. Until they do, `origin` is absent and nothing breaks.
+- `@stackra/outbox`'s `PostgresReplicaLogDriver` must store the flag and widen its read to
+  `scope_path <@ $within or (cascade and scope_path @> $within)` (plus unscoped cascading rows); until then a cascade
+  reaches readers below its node only through the memory driver.
+- `EventMeta` has no origin; carrying the origin into event metadata is a separate change to `@stackra/events`.
+
+## Enforcement
+
+`packages/application/actions/src/core/services/__tests__/action-pipeline.service.test.ts` (origin on the descriptor,
+the audit entry and the context; `ctx.publish` inside the unit of work, rolled back on a refusal, refusing a domain
+event and an unbound outbox), `replica-feed.service.test.ts` and `memory-replica-log.driver.test.ts` (a cascading change
+reaches a reader below its node on an incremental refresh, and nothing else widens). Planned: the same read test for
+the Postgres replica log.
+
+## Supersedes and sources
+
+`Supersedes: none`. Amends ADR 0338 decision 3 (who a scoped replica change reaches) and ADR 0136 decision 1 (the
+handler context gains `origin` and `publish`). Sources: Linear STA-904 and STA-915; Commerce
+`apps/docs/src/build/module-catalogue.mdx` (actions rows); ADR 0137, 0138, 0381, 0382, 0397.

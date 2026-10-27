@@ -9,6 +9,7 @@
  */
 export { ApproverRefusal } from "#contracts/enums/approver-refusal.enum";
 export { AssuranceLevel } from "#contracts/enums/assurance-level.enum";
+export { CallOriginKind } from "#contracts/enums/call-origin-kind.enum";
 export { Effect } from "#contracts/enums/effect.enum";
 export { ReviewReason } from "#contracts/enums/review-reason.enum";
 export { AccessControl } from "#contracts/ports/access-control.port";
@@ -37,6 +38,7 @@ export type { AuditEntry } from "#contracts/types/audit-entry.type";
 export type { CallAssurance } from "#contracts/types/call-assurance.type";
 export type { CallClient } from "#contracts/types/call-client.type";
 export type { CallDescriptor } from "#contracts/types/call-descriptor.type";
+export type { CallOrigin } from "#contracts/types/call-origin.type";
 export type { DeviceOrder } from "#contracts/types/device-order.type";
 export type { DeviceSequence } from "#contracts/types/device-sequence.type";
 export type { IdempotencyRecord } from "#contracts/types/idempotency-record.type";

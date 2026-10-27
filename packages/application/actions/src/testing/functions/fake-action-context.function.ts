@@ -1,14 +1,15 @@
 /**
  * Stackra file contract:
  * Purpose: `fakeActionContext(overrides?)`, the context a unit test hands a service or extension that takes an
- *          `ActionContext`, without running the pipeline: `authorize` allows, `afterCommit` work and `audit` fields are
- *          recorded, and `period`, `startOfDay` and `now` work on a clock frozen at creation.
+ *          `ActionContext`, without running the pipeline: `authorize` allows, `afterCommit` work, `audit` fields and
+ *          `publish`ed events are recorded, and `period`, `startOfDay` and `now` work on a clock frozen at creation.
  * Boundary: test only. `run`, `signal`, `dispatch` and `replica` reject with a message unless the test passes its own;
  *           a test that needs the real steps uses `run(...)` instead. Overrides replace members whole.
  * Runtime: node
  * Governing contract: ADR 0269 (testing helpers); ADR 0136 (consequence: handlers are testable with a fake ctx).
  */
 import type { Json } from "@stackra/contracts";
+import type { Event } from "@stackra/events";
 
 import type { ActionContext, PeriodInput } from "#core/index";
 import { periodOf } from "#core/functions/period-of.function";
@@ -38,6 +39,7 @@ export function fakeActionContext(overrides: Partial<ActionContext> = {}): FakeA
   const authorized: object[] = [];
   const afterCommit: (() => unknown)[] = [];
   const audit: Record<string, Json> = {};
+  const published: Event[] = [];
   return Object.freeze({
     ...base,
     idempotencyKey: undefined,
@@ -52,11 +54,14 @@ export function fakeActionContext(overrides: Partial<ActionContext> = {}): FakeA
     audit: (fields: Readonly<Record<string, Json>>) => {
       Object.assign(audit, fields);
     },
+    publish: async (event: Event) => {
+      published.push(event);
+    },
     run: missing("run"),
     signal: missing("signal"),
     dispatch: missing("dispatch"),
     replica: missing("replica"),
     ...overrides,
-    recorded: Object.freeze({ authorized, afterCommit, audit }),
+    recorded: Object.freeze({ authorized, afterCommit, audit, published }),
   });
 }

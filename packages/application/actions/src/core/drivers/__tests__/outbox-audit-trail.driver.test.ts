@@ -1,11 +1,11 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `OutboxAuditTrailDriver`: it is the `AuditTrail` port; each entry is written to the
- *          `EventOutbox` as one `AuditEntryRecorded` with the call's identity, tags, actor, scope, outcome, code and
- *          fields, and metadata carrying a fresh `evt_` id, the call's time, tenant, actor and correlation.
+ *          `EventOutbox` as one `AuditEntryRecorded` with the call's identity, tags, actor, scope, request origin,
+ *          outcome, code and fields, and metadata carrying a fresh `evt_` id, the call's time, tenant, actor and correlation.
  * Boundary: test only; a recording EventOutbox.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0269; ADR 0212 (decisions 1, 2 and 4); ADR 0098 (decision 7).
+ * Governing contract: ADR 0022; ADR 0269; ADR 0212 (decisions 1, 2 and 4); ADR 0098 (decision 7); ADR 0456.
  */
 import { Driver } from "@stackra/container";
 import { ActorKind, ApiArea, Realm } from "@stackra/contracts";
@@ -14,6 +14,7 @@ import { EventOutbox } from "@stackra/events/contracts";
 import type { RecordedEvent } from "@stackra/events/contracts";
 import { describe, expect, it } from "@stackra/testing";
 
+import { CallOriginKind } from "#contracts/enums/call-origin-kind.enum";
 import { Effect } from "#contracts/enums/effect.enum";
 import { AuditTrail } from "#contracts/ports/audit-trail.port";
 import { OutboxAuditTrailDriver } from "#core/drivers/outbox-audit-trail.driver";
@@ -45,6 +46,7 @@ describe(OutboxAuditTrailDriver, () => {
         type: class {},
         kind: "action",
         key: "payments.payment.refund@1",
+        // oxlint-disable-next-line stackra/no-raw-key-literal -- reason: the test stands in for gen, which writes the descriptor's permission
         permission: "payments.payment.refund",
         risk: "L3",
         effects: [Effect.Financial],
@@ -52,6 +54,7 @@ describe(OutboxAuditTrailDriver, () => {
         scopeId: "ten_1",
         scope: { id: "scp_1", path: "platform.acme" },
         area: ApiArea.App,
+        origin: { kind: CallOriginKind.ApiKey, id: "key_1" },
       },
       at,
       outcome: "refused",
@@ -63,12 +66,15 @@ describe(OutboxAuditTrailDriver, () => {
     expect(record?.event).toMatchObject({
       callId: "call-1",
       key: "payments.payment.refund@1",
+      // oxlint-disable-next-line stackra/no-raw-key-literal -- reason: the expected event carries the permission gen wrote
       permission: "payments.payment.refund",
       risk: "L3",
       effects: ["financial"],
       actor,
       scopeId: "scp_1",
       scopePath: "platform.acme",
+      originKind: "api_key",
+      originId: "key_1",
       outcome: "refused",
       code: "forbidden",
       fields: { amount: 2500 },

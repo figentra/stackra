@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `fakeActionContext`: `authorize` allows and records, `afterCommit` and `audit` are recorded
- *          (never run), `period` and `startOfDay` use the frozen clock and time zone, `run`, `signal` and `dispatch`
+ * Purpose: unit tests of `fakeActionContext`: `authorize` allows and records, `afterCommit`, `audit` and `publish` are
+ *          recorded (never run or written), `period` and `startOfDay` use the frozen clock and time zone, `run`, `signal` and `dispatch`
  *          reject unless overridden, and the actor can be set.
  * Boundary: test only.
  * Runtime: node (vitest)
@@ -19,7 +19,7 @@ class SendMessageAction {
 }
 
 describe(fakeActionContext, () => {
-  it("records authorize, afterCommit and audit", async () => {
+  it("records authorize, afterCommit, audit and publish", async () => {
     const ctx = fakeActionContext();
     const record = { id: "ord_1" };
     let ran = false;
@@ -29,10 +29,13 @@ describe(fakeActionContext, () => {
     });
     ctx.audit({ reason: "count" });
     ctx.audit({ by: "staff" });
+    const event = { sku: "sku_1" };
+    await ctx.publish(event);
     expect(ctx.recorded.authorized).toEqual([record]);
     expect(ctx.recorded.afterCommit).toHaveLength(1);
     expect(ran).toBe(false);
     expect(ctx.recorded.audit).toEqual({ reason: "count", by: "staff" });
+    expect(ctx.recorded.published).toEqual([event]);
     expect(ctx.idempotencyKey).toBeUndefined();
   });
 

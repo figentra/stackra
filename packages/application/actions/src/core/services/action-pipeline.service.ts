@@ -10,7 +10,9 @@
  *          and `propose`, an action's draft-only run (the steps up to validation, then a metered draft, no effects).
  *          The permission step includes an action's step-up (`stepUp`, through `StepUpCheck`), and the call context
  *          carries the caller's verified assurance (`ctx.assurance`), the sandbox flag (`ctx.sandbox`, also on the
- *          descriptor) and the network client (`ctx.client`, never on the descriptor or the audit entry; STA-1248).
+ *          descriptor) and the network client (`ctx.client`, never on the descriptor or the audit entry; STA-1248),
+ *          the request origin (`ctx.origin`, also on the descriptor, so the audit entry carries it) and an action's
+ *          integration event without a model (`ctx.publish`, through the outbox in its unit of work; ADR 0456).
  * Boundary: built by the runtime (and the testing module) over a `Resolver`, so it reads the action instances, their
  *           preconditions and interceptors and every step's port by class. Steps whose owner is not installed are
  *           skipped (tenancy, entitlement, flag, limit reservation, unit of work, audit); permission fails closed (no
@@ -32,7 +34,8 @@
  *                     read-only); ADR 0216 (decisions 1 and 4: usage through the outbox); ADR 0212 (decision 4: the
  *                     audit in the unit of work); ADR 0215 and owner round 3 item 18 (reserve-then-commit); STA-813
  *                     (an unbound approval step does not run); ADR 0406
- *                     (step-up assurance); STA-1277 (the area bucket sized by `RateLimitBudget`, a value entitlement).
+ *                     (step-up assurance); STA-1277 (the area bucket sized by `RateLimitBudget`, a value entitlement);
+ *                     ADR 0456 (decisions 1 and 2: the request origin, an integration event without a model).
  */
 import { kindOf, type AnyClass } from "@stackra/container";
 import {
@@ -49,6 +52,7 @@ import {
   isRefusal,
   RateLimitedError,
 } from "@stackra/errors";
+import type { Event } from "@stackra/events";
 import { EventOutbox } from "@stackra/events/contracts";
 import { duration, validate } from "@stackra/validation";
 
@@ -176,6 +180,7 @@ const APPROVALS =
  * const pipeline = new ActionPipeline(container);
  * const output = await pipeline.execute(CreateOrderAction, input, { actor, idempotencyKey: "k1", locale: "ar-SA" });
  */
+// oxlint-disable-next-line stackra/base-matches-suffix -- reason: built per resolver by the runtime and the testing module, never a container service
 export class ActionPipeline {
   /** Where action instances and step ports come from. */
   private readonly resolver: Resolver;
@@ -264,6 +269,7 @@ export class ActionPipeline {
       ...(request.scope === undefined ? {} : { scope: request.scope }),
       area: options.area,
       ...(request.sandbox === true ? { sandbox: true as const } : {}),
+      ...(request.origin === undefined ? {} : { origin: Object.freeze({ ...request.origin }) }),
     });
     const state: CallState = {
       idempotencyKey: undefined,
@@ -641,6 +647,32 @@ export class ActionPipeline {
     ]);
   }
 
+  /**
+   * Writes `event`, an integration event no model owns, through the outbox with the call's metadata: called from
+   * `handle`, it lands in the action's unit of work, so it leaves only when the call commits.
+   */
+  private async published(descriptor: CallDescriptor, at: Date, event: Event): Promise<void> {
+    if (kindOf(event.constructor as AnyClass)?.kind !== "integration_event")
+      throw new TypeError(
+        `${descriptor.key} published ${event.constructor.name}, which is not an IntegrationEvent: record a domain event on its model`,
+      );
+    await this.required(
+      EventOutbox,
+      `${descriptor.key} publishes an event; install @stackra/outbox`,
+    ).write([
+      {
+        event,
+        meta: {
+          id: mintEventId(),
+          occurredAt: at,
+          ...(descriptor.scopeId === undefined ? {} : { scopeId: descriptor.scopeId }),
+          actor: descriptor.actor,
+          correlationId: descriptor.callId,
+        },
+      },
+    ]);
+  }
+
   /** Runs the work queued with `ctx.afterCommit`, in order; a failure is logged and never fails the call. */
   private async afterCommit(call: Call): Promise<void> {
     for (const work of call.state.afterCommit)
@@ -702,6 +734,7 @@ export class ActionPipeline {
       timeZone,
       currency: request.currency ?? CALL_DEFAULTS.currency,
       market: request.market ?? CALL_DEFAULTS.market,
+      ...(descriptor.origin === undefined ? {} : { origin: descriptor.origin }),
       abortSignal: request.abortSignal ?? new AbortController().signal,
       now: () => new Date(at.getTime()),
       authorize: (record: object) =>
@@ -760,6 +793,7 @@ export class ActionPipeline {
           input,
           descriptor,
         ),
+      publish: (event: Event) => this.published(descriptor, at, event),
     };
     return Object.freeze(action);
   }

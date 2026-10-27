@@ -36,6 +36,7 @@ configuration and the action testing helpers.
 | `./contracts` | `DeviceSequenceStore`, `OfflineCapStore`, `ReplicaLog`, `ReviewItemSink`, `ReviewReason` | the offline stores and the review sink, with their types                |
 | `./contracts` | `DeviceOrder`, `DeviceSequence`, `ReplicaRow`, `ReplicaChange`, `ReviewItem`             | the device on the call, a device's last settled call, replica rows      |
 | `./contracts` | `CallClient`                                                                             | the network client on `ctx.client` (address, user agent)                |
+| `./contracts` | `CallOrigin`, `CallOriginKind`                                                           | the request origin on `ctx.origin` and the descriptor (ADR 0456)        |
 | `./node`      | `AsyncContextStorageDriver`                                                              | `ContextStorage` over `AsyncLocalStorage`                               |
 | `./testing`   | `run`, `fakeActionContext`, `fakeExtensionContext`, `extension`, `toHaveAudited`         | call through the real pipeline; fake contexts; inline extensions        |
 
@@ -96,6 +97,17 @@ entitlement driver can let any tier install into its sandbox) and a handler read
 reaches `ctx.client` only (no port, no audit entry), so a public query such as a traffic hit can count it. It is
 personal data: hash or truncate it before keeping it.
 
+The transport also sets the request origin (ADR 0456 decision 1): `CallOptions.origin` is a `CallOrigin`, a
+`CallOriginKind` (`storefront`, `console`, `api_key`, `agent`) and the public id of the storefront, API key or agent,
+read from the verified credential. Unlike the client it is no personal data, so it rides on `CallDescriptor.origin`:
+the audit entry carries it, an AI attribution reads it, a storefront binds its keys to it, and a handler reads
+`ctx.origin`. An internal call (a job, a workflow step) has none.
+
+An event a model owns is recorded on the model. One that no model owns (a near-expiry alert, a notice) is
+`await ctx.publish(StockNearExpiry.create({ ... }))` from `handle` (ADR 0456 decision 2): the pipeline writes it
+through the `EventOutbox` in the action's unit of work, with the call id as its correlation, so it leaves only if the
+call commits. Only an `IntegrationEvent` is published; without a bound outbox the call fails.
+
 A query whose response is not JSON (an iCalendar feed, a CSV) returns `rawBody(contentType, body, filename?)`; the
 transport tests the output with `isRawBody` and sends the body as is with that content type. An ordinary output with
 `contentType` and `body` fields stays JSON: only the `~raw` marker counts.
@@ -153,7 +165,10 @@ on the device) lives in `@stackra/query`, `@stackra/storage` and `@stackra/clien
   cursor and `asOf`. That is the `ReplicaChanges` wire shape `@stackra/query` parses. Producers record changes with
   `ReplicaFeed.record(Query, changes, { slice, scope })` in the same unit of work as the change, so the live query's
   refresh (its `cache.invalidateOn` events, delivered by `@stackra/realtime` after commit on the routes
-  `liveQueryRoutes` derives) never arrives first. A read returns only entries within the caller's scope.
+  `liveQueryRoutes` derives) never arrives first. A read returns only entries within the caller's scope, plus a
+  change recorded with `cascade: true` at the caller's node or above it (ADR 0456 decision 3): a lot recall placed on
+  a legal entity reaches each till below it on its next incremental refresh, not only on a full fill. The memory log
+  honours it; the Postgres log of `@stackra/outbox` needs the same filter (handed over).
 
 ```ts
 export class RedeemGiftCardAction extends Action({

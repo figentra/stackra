@@ -1,17 +1,19 @@
 /**
  * Stackra file contract:
  * Purpose: `ActionContext`, the second parameter of an action's `handle`: the query context plus what a write needs:
- *          the Idempotency-Key, work after commit, audit fields, a workflow behind the same key, a workflow signal and
- *          a queued job.
+ *          the Idempotency-Key, work after commit, audit fields, a workflow behind the same key, a workflow signal,
+ *          a queued job and an integration event that no model owns (`publish`, ADR 0456 decision 2).
  * Boundary: a type only; the pipeline builds it per call. `run` and `signal` reach `WorkflowRunner`, `dispatch` reaches
- *           `JobDispatcher`; calling them in an app that binds neither is an error naming the package. External calls
+ *           `JobDispatcher`, `publish` reaches `EventOutbox`; calling one in an app that does not bind its port is an error
+ *           naming the package. An event a model owns is recorded on the model (`record(event)`), never published here. External calls
  *           belong in `afterCommit`, never inside the transaction.
  * Runtime: isomorphic
  * Governing contract: ADR 0136 (decisions 1 to 3 and 5); ADR 0101 (a workflow behind the action); ADR 0305 (rule 28:
- *                     the job surface).
+ *                     the job surface); ADR 0456 (decision 2: an integration event without a model).
  */
 import type { AnyClass } from "@stackra/container";
 import type { Json } from "@stackra/contracts";
+import type { Event } from "@stackra/events";
 
 import type { CallInput } from "#core/types/call-input.type";
 import type { QueryContext } from "#core/types/query-context.type";
@@ -47,4 +49,13 @@ export interface ActionContext extends QueryContext {
    * @throws Error when no `JobDispatcher` is bound (`@stackra/queue` is not installed).
    */
   dispatch<A extends object>(action: AnyClass<A>, input: CallInput<A>): Promise<void>;
+
+  /**
+   * Writes `event`, an integration event no model owns (an alert, a notice), to the outbox in the call's unit of work,
+   * with the call's id as its correlation, its actor and its scope; it leaves only if the call commits. Call it from
+   * `handle`, never from `afterCommit`.
+   * @throws TypeError when `event` is not an `IntegrationEvent`.
+   * @throws Error when no `EventOutbox` is bound (`@stackra/outbox` is not installed).
+   */
+  publish(event: Event): Promise<void>;
 }

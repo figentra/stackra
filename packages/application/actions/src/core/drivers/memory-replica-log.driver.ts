@@ -4,9 +4,10 @@
  *          the position, for tests, local runs and single-instance memory deployments.
  * Boundary: one process only; a restart empties every partition, so an older cursor is above the head and the client
  *           fills again. A read returns only entries whose scope path is the caller's or below it; an entry without a
- *           scope reaches only a caller without one.
+ *           scope reaches only a caller without one, unless it cascades: a `cascade` change also reaches every caller at
+ *           its scope node or below it (one without a scope reaches every caller).
  * Runtime: isomorphic
- * Governing contract: ADR 0338 (decision 3); ADR 0327 (scope paths).
+ * Governing contract: ADR 0338 (decision 3); ADR 0327 (scope paths); ADR 0456 (decision 3: cascade).
  */
 import { Driver } from "@stackra/container";
 import type { ScopeRef } from "@stackra/contracts";
@@ -14,6 +15,9 @@ import type { ScopeRef } from "@stackra/contracts";
 import { ReplicaLog } from "#contracts/ports/replica-log.port";
 import type { ReplicaChange } from "#contracts/types/replica-change.type";
 import type { ReplicaRead } from "#contracts/types/replica-read.type";
+
+/** Whether `path` is `node` or below it. */
+const under = (path: string, node: string): boolean => path === node || path.startsWith(`${node}.`);
 
 /** One stored change and the scope of its record. */
 type Entry = { readonly change: ReplicaChange; readonly scope: ScopeRef | undefined };
@@ -66,13 +70,16 @@ export class MemoryReplicaLogDriver extends Driver(ReplicaLog) {
     while (position < entries.length && changes.length < limit) {
       const { change, scope } = entries[position] as Entry;
       position += 1;
-      if (
-        within === undefined ||
-        (scope !== undefined &&
-          (scope.path === within.path || scope.path.startsWith(`${within.path}.`)))
-      )
-        changes.push(change);
+      if (within === undefined || this.visible(change, scope, within)) changes.push(change);
     }
     return { changes, position, more: position < entries.length };
+  }
+
+  /** Whether a change stamped `scope` reaches a caller in `within`: at or below it, or cascading from at or above it. */
+  private visible(change: ReplicaChange, scope: ScopeRef | undefined, within: ScopeRef): boolean {
+    if (scope === undefined) return change.cascade === true;
+    return (
+      under(scope.path, within.path) || (change.cascade === true && under(within.path, scope.path))
+    );
   }
 }
