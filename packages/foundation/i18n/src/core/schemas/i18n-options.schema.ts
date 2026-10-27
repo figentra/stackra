@@ -11,8 +11,11 @@
  * Governing contract: ADR 0294 (decision 19), ADR 0080, ADR 0192, ADR 0297 (decision 4), ADR 0305 (conventions 1),
  *                     ADR 0403 (formats per locale).
  */
-import { List, Schema, Str } from "@stackra/validation";
+import { Enum } from "@stackra/contracts";
+import { Field, List, Schema, Str } from "@stackra/validation";
+import { z } from "zod";
 
+import { HourCycle } from "#core/enums/hour-cycle.enum";
 import { Locale } from "#core/enums/locale.enum";
 import { LocaleUrlStrategy } from "#core/enums/locale-url-strategy.enum";
 import { NumberingSystem } from "#core/enums/numbering-system.enum";
@@ -39,6 +42,19 @@ export class I18nOptions extends Schema {
   })
   cookieName = "locale";
 
+  /** Per locale, the week start and clock that replace the `Locale`'s defaults (`{ en: { hourCycle: "h23" } }`). */
+  // reason: a record of partial interface values, which no typed decorator says; exact optionals match Partial<LocaleFormat>
+  @Field(
+    z.record(
+      z.string(),
+      z.object({
+        weekStart: z.number().int().min(1).max(7).exactOptional(),
+        hourCycle: z.enum(Enum.values(HourCycle)).exactOptional(),
+      }),
+    ),
+  )
+  formats: Record<string, Partial<LocaleFormat>> = {};
+
   /** The locale of a visitor nothing else decides for, and the unprefixed web locale. */
   defaultLocale: Locale = Locale.En;
 
@@ -47,9 +63,6 @@ export class I18nOptions extends Schema {
 
   /** The digits of numbers, money and dates (ADR 0192: Latin by default). */
   numerals: NumberingSystem = NumberingSystem.Latn;
-
-  /** Per locale, the week start and clock that replace the `Locale`'s defaults (`{ en: { hourCycle: "h23" } }`). */
-  formats: Record<string, Partial<LocaleFormat>> = {};
 
   /** How a web member's URLs carry the locale (ADR 0297 decision 4). */
   urlStrategy: LocaleUrlStrategy = LocaleUrlStrategy.PrefixExceptDefault;
