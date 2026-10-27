@@ -44,11 +44,11 @@ The PII table is always present. A member that handles no personal data says "No
 | `app:docs`    | `templates/apps/docs`        | `apps/<name>` (port from 3334)                       |
 
 ```bash
-pnpm new service billing --description "Billing."
-pnpm new package retry --category foundation --description "Retries with backoff."
-pnpm new package ledger --category commerce --description "Double-entry ledger." --data
-pnpm new app:console admin --title "Admin" --description "The admin console."
-pnpm new service billing --description "Billing." --repo ../figentra-os --dry-run
+pnpm new service billing --description "Billing." --summary "Reach for it to invoice tenants."
+pnpm new package retry --category foundation --description "Retries with backoff." --summary "Reach for it to retry a flaky call."
+pnpm new package ledger --category commerce --description "Double-entry ledger." --summary "Reach for it to post balanced entries." --data
+pnpm new app:console admin --title "Admin" --description "The admin console." --summary "Open it to run the platform."
+pnpm new service billing --description "Billing." --summary "Reach for it to invoice tenants." --repo ../figentra-os --dry-run
 ```
 
 `--description` is required: the sentence becomes the `package.json` description and opens `README.md` and `AGENTS.md`. Members come out in the programming model v3 shape ([ADR 0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming) rule R12). Shapes: [ADR 0126](/adr/0126-member-shapes-and-scaffold-templates). Flags and tokens: [Scaffolding](/guides/scaffolding).

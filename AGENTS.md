@@ -19,7 +19,11 @@ global rules. Full guides: `apps/docs` (`pnpm docs`). Every member keeps its cod
 Rules every member follows (`pnpm validate` enforces them):
 
 - Versions come only from `pnpm-workspace.yaml` catalogs (`catalog:<name>`) or `workspace:*`. `catalogMode: strict`.
-- `turbo.jsonc` extends `//` with exactly one tier tag; `tsconfig.json` extends one `@stackra/typescript-config` preset.
+- `turbo.jsonc` extends `//` with exactly one tier tag, then its category and runtime tags; `tsconfig.json` extends one
+  `@stackra/typescript-config` preset.
+- `package.json` carries `keywords`, `repository` (with `directory`), `homepage`, `bugs`, `author`, `engines` and
+  `"stackra": { "kind": "package", "tier", "category", "runtimes", "summary" }`, checked against
+  `STACKRA_MANIFEST_SCHEMA` and the folder (ADR 0453 decision 11, amendment of 2026-10-27; `/standards/members`).
 - Every test file sits directly in a `__tests__/` folder beside its subject (`src/**/__tests__/<name>.test.ts`), anywhere in the repo; no root `tests/`, no `.spec`. App e2e lives in the app. ADR 0022, enforced by `pnpm validate`.
 - A package never imports an app, a service or `encore.dev`, nor another package's `src/`.
 - A JSON config is `.jsonc` (comments welcome) when its tool reads JSONC; tsconfig files keep `.json` and take comments.
@@ -733,6 +737,9 @@ Every member declares exactly one tier in its `turbo.jsonc`:
 - `tier:lib` - Packages (category-based, never depend on apps/services)
 - `tier:app` - Apps and Cloudflare Worker members under `workers/` (never depend on services; ADR 0284)
 - `tier:service` - Services in plain TypeScript; Encore is generated into `.stackra/encore` (ADR 0124)
+
+After the tier tag come `category:<c>` (packages only) and one `runtime:<r>` per entry of the `package.json`
+`stackra.runtimes`, in that order (ADR 0453 decision 11, amendment of 2026-10-27); the boundary rules read tier tags only.
 
 #### Placement Test
 

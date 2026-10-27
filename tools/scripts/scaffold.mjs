@@ -5,7 +5,9 @@
  *          or another with `--repo <path>`), replaces the tokens ({{NAME}} {{PASCAL}} {{TITLE}} {{DESCRIPTION}}
  *          {{PORT}} {{CATEGORY}} {{ENTRIES}}) in contents and path names, adds the chosen optional package entries
  *          and, with `--data`, the module's database folders, writes a package's `exports` and `imports`, copies the
- *          target repo's LICENSE into the new member, then formats the result with oxfmt. Members come out in the
+ *          target repo's LICENSE into the new member, writes the npm metadata, keywords, `stackra` field (with
+ *          `--summary`) and turbo tags `pnpm validate` requires (ADR 0453 decision 11, amendment of 2026-10-27), then
+ *          formats the result with oxfmt. Members come out in the
  *          programming model v3 shape (ADR 0294 rule R12, ADR 0295): `stackra.config.ts`, one root module, no
  *          authored `main.ts` or entry barrel.
  * Boundary: writes only the one new destination directory, then formats it.
@@ -32,7 +34,11 @@ import {
   ENTRY_NAMES,
   OPTIONAL_ENTRY_NAMES,
   PACKAGE_FOLDERS,
+  categoryOf,
+  npmMetadataFor,
   rootModuleOf,
+  tierFor,
+  turboTagsFor,
 } from "./structure.mjs";
 
 const ROOT = fileURLToPath(new URL("../../", import.meta.url));
@@ -40,19 +46,66 @@ const TEMPLATES = join(ROOT, "tools/scaffold/templates");
 
 /** kind → template dir and destination (relative to the target repo root). */
 const KINDS = {
-  service: { tpl: "services/service", dest: (n) => `services/${n}` },
+  service: { tpl: "services/service", dest: (n) => `services/${n}`, runtimes: ["node"] },
   package: {
     tpl: "packages/package",
     dest: (n, c) => `packages/${c}/${n}`,
     category: true,
     data: true,
+    // `.` and `./node` always come; `entryRuntimes` adds the picked optional entries.
+    runtimes: ["isomorphic", "node"],
   },
-  tooling: { tpl: "packages/tooling", dest: (n) => `packages/tooling/${n}` },
-  "app:console": { tpl: "apps/console", dest: (n) => `apps/${n}`, ports: [3710, 3799] },
-  "app:mobile": { tpl: "apps/mobile", dest: (n) => `apps/${n}`, noHyphen: true },
-  "app:desktop": { tpl: "apps/desktop", dest: (n) => `apps/${n}` },
-  "app:docs": { tpl: "apps/docs", dest: (n) => `apps/${n}`, ports: [3334, 3399] },
+  tooling: { tpl: "packages/tooling", dest: (n) => `packages/tooling/${n}`, runtimes: ["node"] },
+  "app:console": {
+    tpl: "apps/console",
+    dest: (n) => `apps/${n}`,
+    ports: [3710, 3799],
+    runtimes: ["browser"],
+  },
+  "app:mobile": {
+    tpl: "apps/mobile",
+    dest: (n) => `apps/${n}`,
+    noHyphen: true,
+    runtimes: ["react-native"],
+  },
+  "app:desktop": { tpl: "apps/desktop", dest: (n) => `apps/${n}`, runtimes: ["node", "browser"] },
+  "app:docs": {
+    tpl: "apps/docs",
+    dest: (n) => `apps/${n}`,
+    ports: [3334, 3399],
+    runtimes: ["browser"],
+  },
 };
+
+/** The runtime an optional package entry adds (`stackra.runtimes`, ADR 0453 decision 11). */
+const ENTRY_RUNTIMES = { react: "browser", native: "react-native" };
+/** The runtime vocabulary of the contract header, in `stackra.runtimes` order. */
+const RUNTIME_ORDER = ["isomorphic", "node", "browser", "worker", "react-native"];
+
+/**
+ * The npm metadata, keywords and `stackra` field of a new member (ADR 0453 decision 11, amendment of 2026-10-27), and
+ * the turbo tags they imply. `pnpm validate` checks the same values.
+ */
+function memberMetadata({ rel, runtimes, summary, keywords = [] }) {
+  const category = categoryOf(rel) ?? undefined;
+  const tier = tierFor(rel).slice("tier:".length);
+  const ordered = RUNTIME_ORDER.filter((r) => runtimes.includes(r));
+  const stackra = {
+    kind: "package",
+    tier,
+    ...(category && { category }),
+    runtimes: ordered,
+    summary,
+  };
+  return {
+    fields: {
+      keywords: [...new Set(["stackra", ...(category ? [category] : []), ...keywords])],
+      ...npmMetadataFor(rel),
+      stackra,
+    },
+    tags: turboTagsFor(stackra),
+  };
+}
 export const KIND_NAMES = Object.keys(KINDS);
 
 const NAME_RE = /^[a-z][a-z0-9]*(-[a-z0-9]+)*$/;
@@ -141,6 +194,8 @@ export function scaffold({
   entries = [],
   data = false,
   description,
+  summary,
+  keywords = [],
   title,
   port,
   dryRun = false,
@@ -162,6 +217,10 @@ export function scaffold({
   if (!description?.trim())
     throw new Error(
       '--description is required: one sentence, for example --description "Retries with backoff." It becomes the package.json description and opens README.md and AGENTS.md',
+    );
+  if (!summary?.trim() || summary.trim() === description.trim())
+    throw new Error(
+      "--summary is required: one sentence for agents on when to reach for the member, not the description (package.json stackra.summary, ADR 0453 decision 11)",
     );
   if (!existsSync(root) || !statSync(root).isDirectory())
     throw new Error(`--repo ${root} is not a directory`);
@@ -210,17 +269,35 @@ export function scaffold({
   const licensed = kind === "package" || kind === "tooling";
   if (licensed) files.push("LICENSE");
   if (!dryRun) {
+    const file = join(dest, "package.json");
+    const pkg = JSON.parse(readFileSync(file, "utf8"));
     if (kind === "package") {
-      const file = join(dest, "package.json");
-      const pkg = JSON.parse(readFileSync(file, "utf8"));
       pkg.exports = {
         ...Object.fromEntries(exported.map(([key, out, src]) => [key, exportOf(out, src)])),
         // Static files at the package root (ADR 0177 and ADR 0234, amendments of 2026-10-21).
         "./assets/*": "./assets/*",
       };
       pkg.imports = packageImports(picked);
-      writeFileSync(file, `${JSON.stringify(pkg, null, 2)}\n`);
     }
+    const { fields, tags } = memberMetadata({
+      rel,
+      runtimes: [...spec.runtimes, ...picked.map((e) => ENTRY_RUNTIMES[e]).filter(Boolean)],
+      summary: summary.trim(),
+      keywords: (Array.isArray(keywords) ? keywords : String(keywords).split(","))
+        .map((k) => k.trim())
+        .filter(Boolean),
+    });
+    // oxfmt sorts the keys into package.json order when it formats the member.
+    Object.assign(pkg, fields);
+    writeFileSync(file, `${JSON.stringify(pkg, null, 2)}\n`);
+    const turbo = join(dest, "turbo.jsonc");
+    writeFileSync(
+      turbo,
+      readFileSync(turbo, "utf8").replace(
+        /"tags"\s*:\s*\[[^\]]*\]/,
+        `"tags": ${JSON.stringify(tags)}`,
+      ),
+    );
     const license = !licensed
       ? undefined
       : existsSync(join(root, "LICENSE"))
@@ -233,7 +310,16 @@ export function scaffold({
   return { dest, rel, files: files.sort() };
 }
 
-const VALUE_FLAGS = ["--category", "--description", "--title", "--port", "--entries", "--repo"];
+const VALUE_FLAGS = [
+  "--category",
+  "--description",
+  "--summary",
+  "--keywords",
+  "--title",
+  "--port",
+  "--entries",
+  "--repo",
+];
 
 function parseArgs(argv) {
   const opts = { _: [] };
@@ -260,7 +346,7 @@ async function main() {
     } = parseArgs(process.argv.slice(2));
     if (!kind || !name || extra.length)
       throw new Error(
-        `usage: pnpm new <kind> <name> --description "<one sentence>" [--category <c>] [--entries ${OPTIONAL_ENTRY_NAMES.join(",")}|none] [--data] [--title "<Title>"] [--port <n>] [--repo <path>] [--dry-run]\nkinds: ${KIND_NAMES.join(", ")}`,
+        `usage: pnpm new <kind> <name> --description "<one sentence>" --summary "<when an agent reaches for it>" [--keywords a,b,c] [--category <c>] [--entries ${OPTIONAL_ENTRY_NAMES.join(",")}|none] [--data] [--title "<Title>"] [--port <n>] [--repo <path>] [--dry-run]\nkinds: ${KIND_NAMES.join(", ")}`,
       );
     // The only prompt: optional package entries, asked on a terminal when --entries is absent.
     if (kind === "package" && opts.entries === undefined && process.stdin.isTTY) {

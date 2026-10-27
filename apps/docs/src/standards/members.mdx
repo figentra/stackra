@@ -4,7 +4,7 @@ description: "What every app, package and service must contain, and which check 
 icon: "badge-check"
 ---
 
-A member is anything `pnpm-workspace.yaml` lists: `apps/*`, `packages/<category>/<name>`, `services/*`. The rules on this page apply to all of them. Kind-specific shape lives on [Packages](/standards/packages), [Services](/standards/services) and [Apps](/standards/apps).
+A member is anything `pnpm-workspace.yaml` lists: `apps/*`, `packages/<category>/<name>`, `services/*`, `workers/*`. The rules on this page apply to all of them. Kind-specific shape lives on [Packages](/standards/packages), [Services](/standards/services) and [Apps](/standards/apps).
 
 ## Required files
 
@@ -13,7 +13,7 @@ Every member has the files below; `LICENSE` is for packages and tooling only.
 | File            | Holds                                                                                                                                                                |
 | --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `package.json`  | The manifest fields below; scripts from the [task vocabulary](/guides/tooling)                                                                                       |
-| `turbo.jsonc`   | `{ "extends": ["//"], "tags": ["tier:<x>"] }` with exactly one tier tag                                                                                              |
+| `turbo.jsonc`   | `{ "extends": ["//"], "tags": ["tier:<x>", "category:<c>", "runtime:<r>", …] }`: exactly one tier tag, then the `stackra` field's category and runtimes              |
 | `tsconfig.json` | Extends one `@stackra/typescript-config/<preset>` and nothing else                                                                                                   |
 | `README.md`     | What it is, a tasks table of its scripts, the structure of `src/`, how to run it                                                                                     |
 | `AGENTS.md`     | Where code goes, rules that fail the build, tasks, and a mandatory `## PII` table                                                                                    |
@@ -48,12 +48,43 @@ Presence of the heading is checked; whether the table is still true is a review 
 | `sideEffects` | `false` on every `tier:lib` package                                                                                                                                                                                                                    |
 | `exports`     | `tier:lib` only: each module entry is `{ "@stackra/source": "./src/….ts", types: "./dist/….d.mts", default: "./dist/….mjs" }`, source condition first; a plain string entry is a static asset ([0025](/adr/0025-packages-publish-to-private-registry)) |
 | dependencies  | `catalog:`, `catalog:<name>` or `workspace:*` only: see [Dependencies](/standards/dependencies)                                                                                                                                                        |
+| `keywords`    | `"stackra"`, the category (packages), then 3 to 8 domain terms a developer or an agent would search for; no tier or runtime words (those are the `stackra` field and the turbo tags)                                                                   |
+| `repository`  | `{ "type": "git", "url": "git+https://github.com/figentra/stackra.git", "directory": "<member dir>" }`                                                                                                                                                 |
+| `homepage`    | `https://github.com/figentra/stackra/tree/main/<member dir>#readme`                                                                                                                                                                                    |
+| `bugs`        | `{ "url": "https://github.com/figentra/stackra/issues" }`                                                                                                                                                                                              |
+| `author`      | `"Figentra (https://figentra.com)"`                                                                                                                                                                                                                    |
+| `engines`     | `{ "node": ">=24.0.0" }`, as the root `package.json`                                                                                                                                                                                                   |
+| `stackra`     | `{ "kind": "package", "tier", "category", "runtimes", "summary" }`: see [The `stackra` field](#the-stackra-field)                                                                                                                                      |
 
-Key order: `name`, `version`, `private`, `description`, `license`, `files`, `type`, `main` (Expo only), `sideEffects`, `imports`, `exports`, `scripts`, `dependencies`, `devDependencies`. Order is convention, not checked.
+Key order is oxfmt's `package.json` sort (`pnpm format` writes it): `name`, `version`, `private`, `description`, `keywords`, `homepage`, `bugs`, `license`, `author`, `repository`, `files`, `type`, `sideEffects`, `imports`, `exports`, `publishConfig`, `scripts`, the dependency fields, `engines`, `stackra`.
+
+### The `stackra` field
+
+What an agent reads to place a member without opening its code ([ADR 0453](/adr/0453-the-stackra-registry-one-npm-compatible-store-on-cloudflare-and-our-own-licence-engine) decision 11, amendment of 2026-10-27). Its schema is `STACKRA_MANIFEST_SCHEMA` of `@stackra/skills/contracts`, the one the registry Worker and `stackra publish` run.
+
+```json
+"stackra": {
+  "kind": "package",
+  "tier": "lib",
+  "category": "data",
+  "runtimes": ["isomorphic", "node", "browser", "react-native"],
+  "summary": "Reach for it to keep files on a local disk, a bucket or a device, behind one port."
+}
+```
+
+| Key        | Rule                                                                                                                                                                        |
+| ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `kind`     | Always written: `"package"` for every member                                                                                                                                |
+| `tier`     | `lib`, `app`, `service` or `config`: the turbo tier tag without `tier:`, from the folder                                                                                    |
+| `category` | The `packages/<category>` folder (`tooling` for `packages/tooling/*`); absent for apps, services and Workers                                                                |
+| `runtimes` | Non-empty, from `isomorphic`, `node`, `browser`, `worker`, `react-native`: the `Runtime:` headers of the files its export entries name (or its entry file when it has none) |
+| `summary`  | One sentence for agents: when to reach for this member. Never a copy of `description`                                                                                       |
+
+A v2 service keeps its `module` key beside these until STA-344.
 
 ## `turbo.jsonc` and tiers
 
-The tag matches the directory:
+The tier tag matches the directory. After it come `category:<c>` (packages only) and one `runtime:<r>` per `stackra.runtimes` entry, in that order; the boundary rules in the root `turbo.jsonc` read only the tier tags:
 
 | Directory                    | Tag            | May depend on             |
 | ---------------------------- | -------------- | ------------------------- |
@@ -75,7 +106,7 @@ The direction rule is a law: see [Boundaries](/constitution/boundaries) and [ADR
 
 ## Scaffolding
 
-`pnpm new <kind> <name> --description "<one sentence>" [--category <c>] [--entries react,native|none] [--data] [--title "<Title>"] [--port <n>] [--repo <path>] [--dry-run]` copies a template from `tools/scaffold/templates`, replaces the tokens, copies the target repo's `LICENSE` (packages and tooling only), and formats the result. Then run `pnpm install` and `pnpm verify`.
+`pnpm new <kind> <name> --description "<one sentence>" --summary "<when an agent reaches for it>" [--keywords a,b,c] [--category <c>] [--entries react,native|none] [--data] [--title "<Title>"] [--port <n>] [--repo <path>] [--dry-run]` copies a template from `tools/scaffold/templates`, replaces the tokens, copies the target repo's `LICENSE` (packages and tooling only), writes the npm metadata, keywords, `stackra` field and turbo tags above, and formats the result. Then run `pnpm install` and `pnpm verify`.
 
 | Kind          | Template                     | Lands in                                             |
 | ------------- | ---------------------------- | ---------------------------------------------------- |
@@ -88,31 +119,32 @@ The direction rule is a law: see [Boundaries](/constitution/boundaries) and [ADR
 | `app:docs`    | `templates/apps/docs`        | `apps/<name>` (port from 3334)                       |
 
 ```bash
-pnpm new service billing --description "Billing."
-pnpm new package retry --category foundation --description "Retries with backoff."
-pnpm new package ledger --category commerce --description "Double-entry ledger." --data
-pnpm new app:console admin --title "Admin" --description "The admin console."
-pnpm new service billing --description "Billing." --repo ../figentra-os --dry-run
+pnpm new service billing --description "Billing." --summary "Reach for it to invoice tenants."
+pnpm new package retry --category foundation --description "Retries with backoff." --summary "Reach for it to retry a flaky call."
+pnpm new package ledger --category commerce --description "Double-entry ledger." --summary "Reach for it to post balanced entries." --data
+pnpm new app:console admin --title "Admin" --description "The admin console." --summary "Open it to run the platform."
+pnpm new service billing --description "Billing." --summary "Reach for it to invoice tenants." --repo ../figentra-os --dry-run
 ```
 
 `--description` is required: the sentence becomes the `package.json` description and opens `README.md` and `AGENTS.md`. Members come out in the programming model v3 shape ([ADR 0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming) rule R12). Shapes: [ADR 0126](/adr/0126-member-shapes-and-scaffold-templates). Flags and tokens: [Scaffolding](/guides/scaffolding).
 
 ## What enforces this
 
-| Rule                                                                                | Check                                                                 | Status |
-| ----------------------------------------------------------------------------------- | --------------------------------------------------------------------- | ------ |
-| `README.md`, `AGENTS.md`, `CHANGELOG.md` exist; `LICENSE` too for packages, tooling | `validate-repository.mjs` (`checkFiles`)                              | Yes    |
-| `AGENTS.md` has a `## PII` heading                                                  | `validate-repository.mjs`                                             | Yes    |
-| Package `LICENSE` equals the root `LICENSE`; apps and services have none            | `validate-repository.mjs`                                             | Yes    |
-| `description` non-empty, `license` is `MIT` (`UNLICENSED` for apps, services)       | `validate-repository.mjs`                                             | Yes    |
-| `name` is `@stackra/<name>`, `@figentra/<dir>` or `@figentra/service-<dir>`         | `validate-repository.mjs`                                             | Yes    |
-| Exactly one `tier:*` tag matching the directory; extends `//`                       | `validate-repository.mjs` (`check`)                                   | Yes    |
-| `tsconfig.json` extends `@stackra/typescript-config/<preset>`                       | `validate-repository.mjs`                                             | Yes    |
-| `sideEffects: false` and the dist + `@stackra/source` exports shape on `tier:lib`   | `validate-repository.mjs`                                             | Yes    |
-| Catalog or workspace versions only; no forbidden dependency                         | `validate-repository.mjs` + `catalogMode`                             | Yes    |
-| Tier direction                                                                      | `turbo boundaries` (`pnpm boundaries`)                                | Yes    |
-| Every member exposes the task-vocabulary scripts                                    | planned: validator check                                              | No     |
-| `CHANGELOG.md` heading, `package.json` key order, `tsconfig.json` has no extra keys | planned: validator                                                    | No     |
-| `vitest.config.ts` / `tsdown.config.ts` start with the file contract                | planned: doc-standard check (see [Code style](/standards/code-style)) | No     |
+| Rule                                                                                                                                                                                 | Check                                                                 | Status |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------- | ------ |
+| `README.md`, `AGENTS.md`, `CHANGELOG.md` exist; `LICENSE` too for packages, tooling                                                                                                  | `validate-repository.mjs` (`checkFiles`)                              | Yes    |
+| `AGENTS.md` has a `## PII` heading                                                                                                                                                   | `validate-repository.mjs`                                             | Yes    |
+| Package `LICENSE` equals the root `LICENSE`; apps and services have none                                                                                                             | `validate-repository.mjs`                                             | Yes    |
+| `description` non-empty, `license` is `MIT` (`UNLICENSED` for apps, services)                                                                                                        | `validate-repository.mjs`                                             | Yes    |
+| `name` is `@stackra/<name>`, `@figentra/<dir>` or `@figentra/service-<dir>`                                                                                                          | `validate-repository.mjs`                                             | Yes    |
+| Exactly one `tier:*` tag matching the directory; extends `//`                                                                                                                        | `validate-repository.mjs` (`check`)                                   | Yes    |
+| `keywords`, `repository`, `homepage`, `bugs`, `author`, `engines`; the `stackra` field passes `STACKRA_MANIFEST_SCHEMA`, its tier and category match the folder; turbo tags equal it | `@stackra/repo-checks` (`checkMemberMetadata`, in `pnpm validate`)    | Yes    |
+| `tsconfig.json` extends `@stackra/typescript-config/<preset>`                                                                                                                        | `validate-repository.mjs`                                             | Yes    |
+| `sideEffects: false` and the dist + `@stackra/source` exports shape on `tier:lib`                                                                                                    | `validate-repository.mjs`                                             | Yes    |
+| Catalog or workspace versions only; no forbidden dependency                                                                                                                          | `validate-repository.mjs` + `catalogMode`                             | Yes    |
+| Tier direction                                                                                                                                                                       | `turbo boundaries` (`pnpm boundaries`)                                | Yes    |
+| Every member exposes the task-vocabulary scripts                                                                                                                                     | planned: validator check                                              | No     |
+| `CHANGELOG.md` heading, `package.json` key order, `tsconfig.json` has no extra keys                                                                                                  | planned: validator                                                    | No     |
+| `vitest.config.ts` / `tsdown.config.ts` start with the file contract                                                                                                                 | planned: doc-standard check (see [Code style](/standards/code-style)) | No     |
 
 Run it directly with `node tools/scripts/validate-repository.mjs`; it prints nothing when clean.

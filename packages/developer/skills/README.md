@@ -26,6 +26,7 @@ documents themselves). Depends on `@stackra/contracts`, zod and yaml.
 | `.`           | `AgentDocumentInvalidError`                                                                                                   | error naming the file and every invalid path             |
 | `.`           | `AgentDocument`, `SkillDocument`, `RuleDocument`, `SubagentDocument`, …                                                       | types                                                    |
 | `./contracts` | `StackraKind`, `StackraManifest`, `CatalogueItem`, `CataloguePage`, `ItemsLock`                                               | the registry item shapes (ADR 0453)                      |
+| `./contracts` | `StackraTier`, `StackraCategory`, `StackraRuntime`                                                                            | the vocabularies of a `package` item's `stackra` field   |
 | `./contracts` | `STACKRA_MANIFEST_SCHEMA`, `CATALOGUE_ITEM_SCHEMA`, `CATALOGUE_PAGE_SCHEMA`, `ITEMS_LOCK_SCHEMA`, `ITEM_PACKAGE_NAME_PATTERN` | their checks                                             |
 | `./node`      | `loadSkillSet(root?)`                                                                                                         | every document under a root; defaults to the shipped set |
 | `./assets`    | `skills/<name>/SKILL.md`, `rules/<name>.md`                                                                                   | the documents, for tools that read files directly        |
@@ -57,7 +58,11 @@ const alwaysOn = loadSkillSet().filter((document) => document.kind === "rule" &&
 
 The Stackra registry (ADR 0453) stores skills, agents, MCP servers and plugins as npm tarballs beside the packages.
 An item's `package.json` carries `"stackra": { "kind": … }`: `package` (the default), `skill`, `agent`, `mcp` or
-`plugin`, and an `mcp` item also `"mcp"`, its `.mcp.yaml` server entry. Every non-package item is named
+`plugin`, and an `mcp` item also `"mcp"`, its `.mcp.yaml` server entry. A `package` may also carry `tier`
+(`StackraTier`), `category` (`StackraCategory`), `runtimes` (`StackraRuntime`, from its entries' `Runtime:` headers) and
+`summary` (one sentence for agents on when to reach for it); every member of the Stackra repository writes all four and
+`"kind": "package"`, and `pnpm validate` holds them to its folder and turbo tags (ADR 0453 decision 11, amendment of
+2026-10-27). The schema keeps them optional, so a `package` from elsewhere still parses. Every non-package item is named
 `@<scope>/<kind>-<name>` (`ITEM_PACKAGE_NAME_PATTERN`), for example `@stackra/skill-archify`. The registry Worker
 checks the field on publish and serves `CatalogueItem`/`CataloguePage`; `stackra add` installs items and pins them in
 `stackra-items.lock.yaml` at the workspace root:

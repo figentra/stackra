@@ -1,8 +1,9 @@
 /**
  * Stackra file contract:
  * Purpose: `NEW_COMMAND`, `stackra new <package|service|seed-pack> <name> [--category <c>] [--area <a>]
- *          [--description <text>] [--scope <product|@npm-scope>] [--over]`: writes a new member in the programming
- *          model v3 shape (`packages/<category>/<name>`, `services/<name>`) or a product seed pack
+ *          [--description <text>] [--summary <text>] [--scope <product|@npm-scope>] [--over]`: writes a new member in
+ *          the programming model v3 shape, with the `stackra` field and turbo tags of ADR 0453 decision 11
+ *          (`packages/<category>/<name>`, `services/<name>`) or a product seed pack
  *          (`seed-packs/<name>`) at the workspace root, then names the next steps. The package name comes from
  *          `memberNaming` (`--scope`, else the root runway's `product.key`). `--over` regenerates over an existing
  *          member: it writes only the files that are missing and prints a line diff for each authored file that
@@ -56,11 +57,12 @@ export const NEW_COMMAND: CliCommand = {
   summary:
     "Create a package, a service or a product seed pack in the v3 shape, or regenerate one with --over",
   usage:
-    "stackra new <package|service|seed-pack> <name> [--category <c>] [--area <a>] [--description <text>] [--scope <product|@npm-scope>] [--over]",
+    "stackra new <package|service|seed-pack> <name> [--category <c>] [--area <a>] [--description <text>] [--summary <text>] [--scope <product|@npm-scope>] [--over]",
   options: {
     category: { type: "string" },
     area: { type: "string" },
     description: { type: "string" },
+    summary: { type: "string" },
     scope: { type: "string" },
     over: { type: "boolean" },
   },
@@ -84,6 +86,11 @@ export const NEW_COMMAND: CliCommand = {
       typeof values["description"] === "string" && values["description"].trim() !== ""
         ? values["description"].trim()
         : `@stackra ${kind} ${name}.`;
+    // `stackra.summary` (ADR 0453 decision 11, amendment of 2026-10-27): when an agent reaches for the member.
+    const summary =
+      typeof values["summary"] === "string" && values["summary"].trim() !== ""
+        ? { summary: values["summary"].trim() }
+        : {};
 
     let folder: string;
     let files: readonly TemplateFile[];
@@ -104,6 +111,7 @@ export const NEW_COMMAND: CliCommand = {
         pascal,
         description,
         category,
+        ...summary,
         ...memberNaming(root, "package", name, scope),
       });
     } else if (kind === "service") {
@@ -117,6 +125,7 @@ export const NEW_COMMAND: CliCommand = {
         pascal,
         description,
         area: area.charAt(0).toUpperCase() + area.slice(1),
+        ...summary,
         ...memberNaming(root, "service", name, scope),
       });
     } else {

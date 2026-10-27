@@ -15,6 +15,10 @@
  * Governing contract: ADR 0294 (rule R12, decision 15); ADR 0295 (decisions 1 and 5); ADR 0305 (rule 15: the root
  *                     module is optional); ADR 0282 (consequences: `new` moves into the CLI); ADR 0349 (decisions 2 and 4); STA-1210.
  */
+import { Enum } from "@stackra/contracts";
+import { npmMetadataFor, turboTagsFor } from "@stackra/repo-checks/node";
+import { StackraCategory } from "@stackra/skills/contracts";
+
 import type { TemplateFile } from "#node/types/template-file.type";
 import type { TemplateOptions } from "#node/types/template-options.type";
 
@@ -31,12 +35,24 @@ export function packageTemplate(options: TemplateOptions): readonly TemplateFile
   const framework = packageName.startsWith("@stackra/");
   const category = options.category ?? "";
   const tasks = ["build", "typecheck", "lint", "test"];
+  const metadata = npmMetadataFor(`packages/${category}/${name}`);
+  // `.` is the first entry and isomorphic; `stackra.runtimes` and the turbo tags grow with the entries added later.
+  const stackra = {
+    kind: "package",
+    tier: "lib",
+    ...((Enum.values(StackraCategory) as string[]).includes(category) && { category }),
+    runtimes: ["isomorphic"],
+    ...(options.summary !== undefined && { summary: options.summary }),
+  };
   const packageJson = {
     name: packageName,
     version: "0.0.0",
     private: true,
     description,
+    keywords: ["stackra", category],
+    ...(framework && { homepage: metadata.homepage, bugs: metadata.bugs }),
     license: framework ? "MIT" : "UNLICENSED",
+    ...(framework && { author: metadata.author }),
     ...(framework && {
       repository: {
         type: "git",
@@ -87,6 +103,8 @@ export function packageTemplate(options: TemplateOptions): readonly TemplateFile
       typescript: "catalog:build",
       vitest: "catalog:quality",
     },
+    engines: metadata.engines,
+    stackra,
   };
   return [
     { path: "package.json", content: `${JSON.stringify(packageJson, null, 2)}\n` },
@@ -102,9 +120,9 @@ export function packageTemplate(options: TemplateOptions): readonly TemplateFile
     {
       path: "turbo.jsonc",
       content: [
-        "// Turborepo package configuration: extends the root turbo.jsonc and declares this member's one tier tag.",
+        "// Turborepo package configuration: extends the root turbo.jsonc and declares this member's tags.",
         "// Owner: release-operations · Secrets: forbidden",
-        '{ "$schema": "https://turborepo.dev/schema.json", "extends": ["//"], "tags": ["tier:lib"] }',
+        `{ "$schema": "https://turborepo.dev/schema.json", "extends": ["//"], "tags": ${JSON.stringify(turboTagsFor(stackra))} }`,
         "",
       ].join("\n"),
     },

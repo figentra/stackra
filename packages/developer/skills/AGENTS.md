@@ -33,7 +33,8 @@ The agent-neutral source of Stackra's open conventions (ADR 0282, 0286). Member 
 - `.` and `./contracts` stay bundle-safe: no `node:*` import outside `src/node/`.
 - `./contracts` is the leaf entry the registry Worker and `stackra add`/`publish` share (ADR 0453 decision 11): it
   imports no other entry of this package. A change to `StackraKind` or a schema updates `src/contracts/__tests__` and
-  the README in the same commit; a new kind needs an ADR.
+  the README in the same commit; a new kind needs an ADR. A new `StackraCategory` or `StackraRuntime` case follows a
+  new category folder or header runtime (ADR 0453 decision 11, amendment of 2026-10-27).
 
 ## PII
 

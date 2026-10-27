@@ -171,7 +171,8 @@ wait and our registry does not need npmjs.
     Non-package installs are pinned by name, version and integrity in `stackra-items.lock.yaml` at the workspace root
     (its schema is stackra-184's). The `stackra` field's schema per kind is a contract of `@stackra/skills`
     (`./contracts`: `StackraKind`, `StackraManifest`, `CatalogueItem`, `CataloguePage`), which the Worker and the CLI
-    both import.
+    both import. The `package` kind's `tier`, `category`, `runtimes` and `summary` were added by the amendment of
+    2026-10-27 at the end of this page.
 
 12. **The catalogue API** is read-only and lists every item of the `open` and `licensed` scopes to anyone, metadata only
     (no tarball, no manifest file contents beyond `stackra`):
@@ -274,6 +275,39 @@ Nothing checks the deletions of decision 17; they are owner steps logged in Line
 2. **Perpetual fallback.** An expired licence does not keep access to versions released before its expiry. Revisit at
    the first customer contract that asks for it.
 3. **Mirror.** Decision 16 stays off until the owner switches it on.
+
+## Amendment 2026-10-27 (owner decision): the package fields of `stackra` and the member metadata
+
+**Context.** Every member's `package.json` carried a description, licence and exports, but no keywords, homepage, bugs,
+author or engines, and nothing an agent could read to place a member without opening its code: its tier, its
+category, where it runs and when to reach for it. The owner decided on 2026-10-27 that every member of this repository
+carries both, in one checked shape, and that decision 11's `stackra` field is where the agent-readable part lives.
+
+**Decision.** This amends decision 11; the kinds and the other kinds' fields are unchanged.
+
+1. **The `package` kind carries four more keys.** `"stackra": { "kind": "package", "tier", "category", "runtimes",
+"summary" }`. `tier` is `lib`, `app`, `service` or `config` (the turbo tier tag without `tier:`); `category` is the
+   `packages/<category>` folder (`tooling` included) and is absent for apps, services and Workers; `runtimes` is a
+   non-empty set from the file contract's `Runtime:` vocabulary (`isomorphic`, `node`, `browser`, `worker`,
+   `react-native`), read from the headers of the files its export entries name; `summary` is one sentence for agents on
+   when to reach for the member, never a copy of `description`. `STACKRA_MANIFEST_SCHEMA` (`@stackra/skills/contracts`,
+   with the vocabularies `StackraTier`, `StackraCategory` and `StackraRuntime`) checks them and keeps them optional, so
+   a `package` item published from elsewhere still parses; `exports` and `description` are never repeated there.
+2. **Every member of this repository writes `"kind": "package"` and all four keys**, and the npm fields `keywords`
+   (`"stackra"`, the category, then 3 to 8 domain terms; no tier or runtime words), `repository` with its `directory`,
+   `homepage` (`https://github.com/figentra/stackra/tree/main/<dir>#readme`), `bugs`
+   (`https://github.com/figentra/stackra/issues`), `author` (`Figentra (https://figentra.com)`) and `engines`
+   (`{ "node": ">=24.0.0" }`). Versions, `private` and `publishConfig` are not part of this amendment.
+3. **Turbo tags follow the field.** A member's `turbo.jsonc` `tags` are exactly `tier:<tier>`, then `category:<category>`
+   (packages only), then `runtime:<r>` for each runtime in `runtimes` order. Exactly one tier tag stays the rule, and the
+   boundary rules of the root `turbo.jsonc` still name tier tags only.
+4. **`pnpm validate` enforces it** (`checkMemberMetadata` of `@stackra/repo-checks`, run in the Stackra repository): it
+   refuses a missing field, a `stackra` field the built `STACKRA_MANIFEST_SCHEMA` refuses (CI builds before it
+   validates), a tier or category that disagrees with the folder, and turbo tags that differ from the field. `pnpm new`
+   and `stackra new` write the fields, so a new member passes.
+
+**Consequences.** Agents and the catalogue read a member's tier, category, runtimes and purpose from `package.json`
+alone, and `turbo run --filter` can select by category or runtime tag. Each new member needs a `--summary` sentence.
 
 ## Supersedes and sources
 

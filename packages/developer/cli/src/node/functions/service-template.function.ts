@@ -14,6 +14,8 @@
  *                     0305 (rule 15); ADR 0091 and 0124 (Encore is generated); ADR 0282 (consequences); ADR 0349
  *                     (decision 2: product package names); STA-1210.
  */
+import { npmMetadataFor, turboTagsFor } from "@stackra/repo-checks/node";
+
 import type { TemplateFile } from "#node/types/template-file.type";
 import type { TemplateOptions } from "#node/types/template-options.type";
 
@@ -34,12 +36,24 @@ export function serviceTemplate(options: TemplateOptions): readonly TemplateFile
   const { name, description, packageName, stackraVersion } = options;
   const area = options.area ?? "";
   const tasks = ["dev", "build", "typecheck", "lint", "test"];
+  const { repository, homepage, bugs, author, engines } = npmMetadataFor(`services/${name}`);
+  // Only the Stackra repository itself depends on `workspace:*`; a product service links nothing of ours.
+  const inStackra = stackraVersion === "workspace:*";
+  const stackra = {
+    kind: "package",
+    tier: "service",
+    runtimes: ["node"],
+    ...(options.summary !== undefined && { summary: options.summary }),
+  };
   const packageJson = {
     name: packageName,
     version: "0.0.0",
     private: true,
     description,
+    keywords: ["stackra"],
+    ...(inStackra && { homepage, bugs }),
     license: "UNLICENSED",
+    ...(inStackra && { author, repository }),
     type: "module",
     sideEffects: false,
     imports: {
@@ -70,6 +84,8 @@ export function serviceTemplate(options: TemplateOptions): readonly TemplateFile
       typescript: "catalog:build",
       vitest: "catalog:quality",
     },
+    engines,
+    stackra,
   };
   return [
     { path: "package.json", content: `${JSON.stringify(packageJson, null, 2)}\n` },
@@ -85,9 +101,9 @@ export function serviceTemplate(options: TemplateOptions): readonly TemplateFile
     {
       path: "turbo.jsonc",
       content: [
-        "// Turborepo package configuration: extends the root turbo.jsonc and declares this member's one tier tag.",
+        "// Turborepo package configuration: extends the root turbo.jsonc and declares this member's tags.",
         "// Owner: release-operations · Secrets: forbidden",
-        '{ "$schema": "https://turborepo.dev/schema.json", "extends": ["//"], "tags": ["tier:service"] }',
+        `{ "$schema": "https://turborepo.dev/schema.json", "extends": ["//"], "tags": ${JSON.stringify(turboTagsFor(stackra))} }`,
         "",
       ].join("\n"),
     },

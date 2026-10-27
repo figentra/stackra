@@ -57,6 +57,9 @@ export const {
   testFileFor,
   isBannedFolder,
   categoryOf,
+  tierFor,
+  npmMetadataFor,
+  turboTagsFor,
 } = checks;
 
 /**

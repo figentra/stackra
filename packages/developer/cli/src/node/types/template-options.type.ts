@@ -31,4 +31,7 @@ export type TemplateOptions = {
 
   /** A service's `ApiArea` case (`App`, `Admin`, `Public`, `Platform`). */
   readonly area?: string;
+
+  /** One sentence for agents on when to reach for the member: `stackra.summary` (ADR 0453 decision 11). */
+  readonly summary?: string;
 };

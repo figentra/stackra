@@ -55,6 +55,7 @@ describe("NEW_COMMAND", () => {
     const { code, output } = run(["package", "loyalty-kit"], {
       category: "data",
       description: "Loyalty points.",
+      summary: "Reach for it to reward repeat buyers.",
     });
     expect(await code).toBe(0);
     const folder = join(root, "packages/data/loyalty-kit");
@@ -64,6 +65,23 @@ describe("NEW_COMMAND", () => {
       unknown
     >;
     expect(pkg).toMatchObject({ name: "@stackra/loyalty-kit", description: "Loyalty points." });
+    // ADR 0453 decision 11 (amendment of 2026-10-27): the npm metadata, the `stackra` field and its turbo tags.
+    expect(pkg).toMatchObject({
+      keywords: ["stackra", "data"],
+      homepage: "https://github.com/figentra/stackra/tree/main/packages/data/loyalty-kit#readme",
+      author: "Figentra (https://figentra.com)",
+      engines: { node: ">=24.0.0" },
+      stackra: {
+        kind: "package",
+        tier: "lib",
+        category: "data",
+        runtimes: ["isomorphic"],
+        summary: "Reach for it to reward repeat buyers.",
+      },
+    });
+    expect(readFileSync(join(folder, "turbo.jsonc"), "utf8")).toContain(
+      '"tags": ["tier:lib","category:data","runtime:isomorphic"]',
+    );
     expect(readFileSync(join(folder, "stackra.config.ts"), "utf8")).toContain("definePackage({})");
     expect(readFileSync(join(folder, "LICENSE"), "utf8")).toBe("MIT\n");
     expect(existsSync(join(folder, "src/main.ts"))).toBe(false);
@@ -71,6 +89,9 @@ describe("NEW_COMMAND", () => {
 
   it("creates a service with its area", async () => {
     expect(await run(["service", "orders"], { area: "app" }).code).toBe(0);
+    expect(
+      JSON.parse(readFileSync(join(root, "services/orders/package.json"), "utf8")) as unknown,
+    ).toMatchObject({ stackra: { kind: "package", tier: "service", runtimes: ["node"] } });
     expect(readFileSync(join(root, "services/orders/stackra.config.ts"), "utf8")).toContain(
       "defineService({ area: ApiArea.App })",
     );

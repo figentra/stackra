@@ -19,12 +19,26 @@ import { parse } from "yaml";
 import { stripJsonc } from "../jsonc.mjs";
 import { BINARY_RE, parseEntries, scaffold } from "../scaffold.mjs";
 import { CATEGORY_NAMES, ENTRY_NAMES, MODULE_GROUPS, OPTIONAL_ENTRY_NAMES } from "../structure.mjs";
-import { check, checkExports, checkService, checkYamlFlowMaps } from "../validate-repository.mjs";
+import {
+  check,
+  checkExports,
+  checkMemberMetadata,
+  checkService,
+  checkYamlFlowMaps,
+} from "../validate-repository.mjs";
 
 const TOKENS = /\{\{\s*(NAME|PASCAL|TITLE|DESCRIPTION|PORT|CATEGORY|ENTRIES)\s*\}\}/;
 const tmp = () => mkdtempSync(join(tmpdir(), "scaffold-"));
 const render = (kind, name, extra = {}) =>
-  scaffold({ kind, name, root: tmp(), format: false, description: 'Say "hi".', ...extra });
+  scaffold({
+    kind,
+    name,
+    root: tmp(),
+    format: false,
+    description: 'Say "hi".',
+    summary: "Reach for it in tests.",
+    ...extra,
+  });
 const json = (dest, f) => JSON.parse(stripJsonc(readFileSync(join(dest, f), "utf8")));
 
 const cases = [
@@ -64,6 +78,11 @@ for (const [kind, name, extra] of cases)
       tsconfig: files.includes("tsconfig.json") ? json(dest, "tsconfig.json") : undefined,
     });
     assert.deepEqual(findings, []);
+    assert.deepEqual(
+      checkMemberMetadata({ dir: rel, pkg, turbo: json(dest, "turbo.jsonc") }),
+      [],
+      "the npm metadata, stackra field and turbo tags pnpm validate requires",
+    );
     if (kind === "service") assert.deepEqual(checkService({ dir: rel, pkg, paths: files }), []);
     if (kind === "package") assert.deepEqual(checkExports(pkg.exports), []);
   });
@@ -147,7 +166,9 @@ test("a service is the v3 shape: config, root module, modules, runway v3, no mai
   const { dest, rel, files } = render("service", "notes");
   const pkg = json(dest, "package.json");
   assert.equal(pkg.name, "@figentra/service-notes");
-  assert.equal(pkg.stackra, undefined);
+  // v3: no `stackra.module` (ADR 0090); the field holds only the ADR 0453 decision 11 metadata.
+  assert.equal(pkg.stackra.module, undefined);
+  assert.deepEqual(pkg.stackra.runtimes, ["node"]);
   assert.equal(pkg.scripts.start, undefined);
   assertV3Root(files);
   for (const f of [
@@ -338,6 +359,7 @@ test("description is JSON-escaped and the target repo's LICENSE is copied", () =
     name: "billing",
     category: "data",
     description: "Billing.",
+    summary: "Reach for it in tests.",
     root,
     format: false,
   });
@@ -346,6 +368,7 @@ test("description is JSON-escaped and the target repo's LICENSE is copied", () =
     kind: "service",
     name: "billing",
     description: "Billing.",
+    summary: "Reach for it in tests.",
     root,
     format: false,
   });
@@ -358,6 +381,7 @@ test("next free port skips taken ones", () => {
     kind: "app:console",
     name: "one",
     description: "One.",
+    summary: "Reach for it in tests.",
     root,
     format: false,
   });
@@ -366,6 +390,7 @@ test("next free port skips taken ones", () => {
     kind: "app:console",
     name: "two",
     description: "Two.",
+    summary: "Reach for it in tests.",
     root,
     format: false,
   });
@@ -378,6 +403,7 @@ test("dry run writes nothing", () => {
     kind: "service",
     name: "dry",
     description: "Dry.",
+    summary: "Reach for it in tests.",
     root,
     dryRun: true,
   });
@@ -388,7 +414,10 @@ test("dry run writes nothing", () => {
 test("rejections", () => {
   const root = tmp();
   const bad = (o, re) =>
-    assert.throws(() => scaffold({ root, format: false, description: "Ok.", ...o }), re);
+    assert.throws(
+      () => scaffold({ root, format: false, description: "Ok.", summary: "Use it.", ...o }),
+      re,
+    );
   bad({ kind: "package", name: "Bad_Name", category: "data" }, /invalid name/);
   bad({ kind: "package", name: "ok" }, /--category is required/);
   bad({ kind: "package", name: "ok", category: "nope" }, /--category/);
@@ -402,7 +431,16 @@ test("rejections", () => {
   for (const description of [undefined, "", "  "])
     bad({ kind: "service", name: "ok", description }, /--description is required/);
   bad({ kind: "package", name: "ok", category: "data", description: undefined }, /--description/);
-  scaffold({ kind: "service", name: "dup", description: "Dup.", root, format: false });
+  scaffold({
+    kind: "service",
+    name: "dup",
+    description: "Dup.",
+    summary: "Use it.",
+    root,
+    format: false,
+  });
+  for (const summary of [undefined, " ", "Ok."])
+    bad({ kind: "service", name: "ok", summary }, /--summary is required/);
   bad({ kind: "service", name: "dup" }, /already exists/);
   // The 13 categories (settlement Q3.2, ADR 0302 adds design-system); tooling is a separate tier, not a category.
   assert.equal(CATEGORY_NAMES.length, 13);

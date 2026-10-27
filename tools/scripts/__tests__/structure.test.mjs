@@ -44,6 +44,7 @@ test("scaffold accepts exactly the structure categories and writes them under pa
       category,
       entries: [],
       description: "Sample.",
+      summary: "Reach for it in tests.",
       dryRun: true,
     });
     assert.equal(rel, `packages/${category}/sample`);
@@ -72,6 +73,7 @@ test("scaffold writes every category to packages/<category>/<name> on disk", () 
       root,
       category,
       description: "Sample.",
+      summary: "Reach for it in tests.",
       format: false,
     });
     assert.equal(rel, `packages/${category}/sample`);

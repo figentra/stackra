@@ -55,10 +55,35 @@ export type PackageManifest = {
       }
     | undefined;
 
-  /** The v2 service root module (ADR 0090). */
+  /** Search terms: "stackra", the category, then domain terms (ADR 0453 decision 11, amendment of 2026-10-27). */
+  readonly keywords?: readonly string[] | undefined;
+
+  /** The member's README on GitHub. */
+  readonly homepage?: string | undefined;
+
+  /** Where issues are filed. */
+  readonly bugs?: { readonly url?: string | undefined } | undefined;
+
+  /** Who publishes it, as npm shows it: `Figentra (https://figentra.com)`. */
+  readonly author?: string | undefined;
+
+  /** The Node versions it supports. */
+  readonly engines?: { readonly node?: string | undefined } | undefined;
+
+  /** The `stackra` field: the registry kind and agent metadata (ADR 0453 decision 11), and a v2 service's module. */
   readonly stackra?:
     | {
-        /** The path of the root module, `./src/<name>.module.ts`. */
+        /** The registry item kind; `package` for every member. */
+        readonly kind?: string | undefined;
+        /** The tier tag without `tier:`. */
+        readonly tier?: string | undefined;
+        /** The `packages/<category>` folder. */
+        readonly category?: string | undefined;
+        /** Where its entries run. */
+        readonly runtimes?: readonly string[] | undefined;
+        /** When an agent reaches for it. */
+        readonly summary?: string | undefined;
+        /** The path of the v2 root module, `./src/<name>.module.ts` (ADR 0090). */
         readonly module?: string | undefined;
       }
     | undefined;

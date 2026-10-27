@@ -50,6 +50,9 @@ Every member declares exactly one tier in its `turbo.jsonc`:
 - `tier:app` - Apps and Cloudflare Worker members under `workers/` (never depend on services; ADR 0284)
 - `tier:service` - Services in plain TypeScript; Encore is generated into `.stackra/encore` (ADR 0124)
 
+After the tier tag come `category:<c>` (packages only) and one `runtime:<r>` per entry of the `package.json`
+`stackra.runtimes`, in that order (ADR 0453 decision 11, amendment of 2026-10-27); the boundary rules read tier tags only.
+
 ## Placement Test
 
 1. **Is it deployed?** → `tier:service` or `tier:app` (a Cloudflare Worker goes in `workers/<name>`, ADR 0284)

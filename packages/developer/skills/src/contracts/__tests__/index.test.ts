@@ -1,10 +1,12 @@
 /**
  * Stackra file contract:
- * Purpose: the consumer contract of the `./contracts` entry: exactly its values, `StackraKind`'s five codes, and the
- *          shapes of `StackraManifest`, `CatalogueItem`, `CataloguePage` and `ItemsLock`.
+ * Purpose: the consumer contract of the `./contracts` entry: exactly its values, `StackraKind`'s five codes, the
+ *          package vocabularies (`StackraTier`, `StackraCategory`, `StackraRuntime`), and the shapes of
+ *          `StackraManifest`, `CatalogueItem`, `CataloguePage` and `ItemsLock`.
  * Boundary: test only; imports the stand-in barrel through its `#contracts` alias.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0294 (decision 15); ADR 0453 (decisions 11 and 12).
+ * Governing contract: ADR 0022 (test placement); ADR 0294 (decision 15); ADR 0453 (decisions 11 and 12, amendment of
+ *                     2026-10-27).
  */
 import { Enum } from "@stackra/contracts";
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
@@ -17,7 +19,7 @@ import type {
   ItemsLockEntry,
   StackraManifest,
 } from "#contracts/index";
-import { StackraKind } from "#contracts/index";
+import { StackraCategory, StackraKind, StackraRuntime, StackraTier } from "#contracts/index";
 
 describe("@stackra/skills/contracts", () => {
   it("exports exactly its values", () => {
@@ -27,7 +29,10 @@ describe("@stackra/skills/contracts", () => {
       "ITEMS_LOCK_SCHEMA",
       "ITEM_PACKAGE_NAME_PATTERN",
       "STACKRA_MANIFEST_SCHEMA",
+      "StackraCategory",
       "StackraKind",
+      "StackraRuntime",
+      "StackraTier",
     ]);
   });
 
@@ -36,11 +41,43 @@ describe("@stackra/skills/contracts", () => {
     expectTypeOf<StackraKind>().toEqualTypeOf<"package" | "skill" | "agent" | "mcp" | "plugin">();
   });
 
+  it("lists the tiers, the package categories and the header runtimes", () => {
+    expect(Enum.values(StackraTier)).toEqual(["lib", "app", "service", "config"]);
+    expect(Enum.values(StackraCategory)).toEqual([
+      "application",
+      "commerce",
+      "communication",
+      "cross-cutting",
+      "data",
+      "design-system",
+      "developer",
+      "experience",
+      "foundation",
+      "infrastructure",
+      "runtime",
+      "security",
+      "state",
+      "tooling",
+    ]);
+    expect(Enum.values(StackraRuntime)).toEqual([
+      "isomorphic",
+      "node",
+      "browser",
+      "worker",
+      "react-native",
+    ]);
+  });
+
   it("types the manifest, the catalogue and the lock", () => {
     expectTypeOf<StackraManifest["kind"]>().toEqualTypeOf<StackraKind>();
     expectTypeOf<Extract<StackraManifest, { kind: "mcp" }>["mcp"]>().toEqualTypeOf<
       Readonly<Record<string, unknown>>
     >();
+    type PackageField = Extract<StackraManifest, { kind: "package" }>;
+    expectTypeOf<PackageField["tier"]>().toEqualTypeOf<StackraTier | undefined>();
+    expectTypeOf<PackageField["category"]>().toEqualTypeOf<StackraCategory | undefined>();
+    expectTypeOf<PackageField["runtimes"]>().toEqualTypeOf<readonly StackraRuntime[] | undefined>();
+    expectTypeOf<PackageField["summary"]>().toEqualTypeOf<string | undefined>();
     expectTypeOf<CatalogueItem["access"]>().toEqualTypeOf<"open" | "licensed">();
     expectTypeOf<CatalogueItem["stackra"]>().toEqualTypeOf<StackraManifest>();
     expectTypeOf<CataloguePage["next"]>().toEqualTypeOf<string | null>();

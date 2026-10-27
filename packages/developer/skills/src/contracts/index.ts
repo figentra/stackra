@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `./contracts` entry of @stackra/skills until `stackra gen` writes the entry barrels
- *          (STA-339): the registry item kinds (`StackraKind`), the `stackra` field (`StackraManifest`), the catalogue
+ *          (STA-339): the registry item kinds (`StackraKind`), the `stackra` field (`StackraManifest`) and its package
+ *          vocabularies (`StackraTier`, `StackraCategory`, `StackraRuntime`), the catalogue
  *          API shapes (`CatalogueItem`, `CataloguePage`), the `stackra-items.lock.yaml` shape (`ItemsLock`) and their
  *          schemas, shared by the registry Worker and the CLI.
  * Boundary: names each re-export and declares nothing. The leaf entry: it imports no other entry of this package
@@ -14,7 +15,10 @@ export { CATALOGUE_PAGE_SCHEMA } from "#contracts/constants/catalogue-page-schem
 export { ITEM_PACKAGE_NAME_PATTERN } from "#contracts/constants/item-package-name-pattern.constant";
 export { ITEMS_LOCK_SCHEMA } from "#contracts/constants/items-lock-schema.constant";
 export { STACKRA_MANIFEST_SCHEMA } from "#contracts/constants/stackra-manifest-schema.constant";
+export { StackraCategory } from "#contracts/enums/stackra-category.enum";
 export { StackraKind } from "#contracts/enums/stackra-kind.enum";
+export { StackraRuntime } from "#contracts/enums/stackra-runtime.enum";
+export { StackraTier } from "#contracts/enums/stackra-tier.enum";
 export type { CatalogueItem } from "#contracts/types/catalogue-item.type";
 export type { CataloguePage } from "#contracts/types/catalogue-page.type";
 export type { ItemsLock } from "#contracts/types/items-lock.type";

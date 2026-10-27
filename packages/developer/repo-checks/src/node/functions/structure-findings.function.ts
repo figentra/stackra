@@ -3,13 +3,14 @@
  * Purpose: `structureFindings(context, options)`, the `structure` phase of `stackra check` (what `pnpm validate` ran
  *          as validate-repository.mjs, minus the config and catalogue checks): test placement and forbidden files,
  *          the runway schemas and files, member imports, the Expo form factor and window sizing, the brand NOTICE, and
- *          per member its manifest, required files and service shape.
+ *          per member its manifest, required files and service shape, and in the Stackra repository its npm and
+ *          `stackra` metadata.
  * Boundary: reads the listed files and runs `pnpm -r list`; returns findings and never prints. The runway check loads
  *           the built `@stackra/runway` (local member first, then the installed package); unbuilt is a finding when
  *           `options.ci` and the member is local, otherwise a notice through `options.warn`.
  * Runtime: node
  * Governing contract: ADR 0022; ADR 0025; ADR 0090; ADR 0124; ADR 0177; ADR 0195; ADR 0233; ADR 0296; STA-461;
- *                     ADR 0024 (decision 2: the brand NOTICE).
+ *                     ADR 0024 (decision 2: the brand NOTICE); ADR 0453 (decision 11, amendment of 2026-10-27).
  */
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
@@ -19,6 +20,7 @@ import { pathToFileURL } from "node:url";
 import { checkImports } from "#node/functions/check-imports.function";
 import { checkIosFormFactor } from "#node/functions/check-ios-form-factor.function";
 import { checkMemberFiles } from "#node/functions/check-member-files.function";
+import { checkMemberMetadata } from "#node/functions/check-member-metadata.function";
 import { checkMember } from "#node/functions/check-member.function";
 import { checkRunwayFiles } from "#node/functions/check-runway-files.function";
 import { checkRunwaySchemas } from "#node/functions/check-runway-schemas.function";
@@ -39,6 +41,25 @@ import type { RunwayApi } from "#node/types/runway-api.type";
 
 /** The runway member inside this repository (core); products use the installed package. */
 const RUNWAY_DIR = "packages/developer/runway";
+
+/** The member that owns `STACKRA_MANIFEST_SCHEMA`, and its built `./contracts` entry. */
+const SKILLS_DIR = "packages/developer/skills";
+const SKILLS_CONTRACTS = `${SKILLS_DIR}/dist/contracts.mjs`;
+
+/**
+ * The one `stackra` field schema, from the built `@stackra/skills/contracts`, or undefined before it is built: its
+ * sources import `@stackra/contracts`, which plain Node loads only from its build (ADR 0233).
+ */
+async function loadManifestSchema(
+  root: string,
+): Promise<Parameters<typeof checkMemberMetadata>[0]["schema"]> {
+  const entry = join(root, SKILLS_CONTRACTS);
+  if (!existsSync(entry)) return undefined;
+  const contracts = (await import(pathToFileURL(entry).href)) as {
+    readonly STACKRA_MANIFEST_SCHEMA: Parameters<typeof checkMemberMetadata>[0]["schema"];
+  };
+  return contracts.STACKRA_MANIFEST_SCHEMA;
+}
 
 /** An app's own source, where a screen lays itself out. */
 const isAppSource = (p: string): boolean =>
@@ -131,6 +152,21 @@ export async function structureFindings(
     report("brand-notice", "apps/docs", ["src/assets/brand/NOTICE missing (ADR 0024)"]);
 
   const rootLicense = maybe("LICENSE");
+  // ADR 0453 decision 11 (amendment of 2026-10-27): the member metadata rules are the Stackra repository's own.
+  const isStackraRepo =
+    (JSON.parse(maybe("package.json") ?? "{}") as PackageManifest).name === "stackra";
+  const manifestSchema = isStackraRepo ? await loadManifestSchema(root) : undefined;
+  if (isStackraRepo && !manifestSchema) {
+    // CI builds before it validates, as for runway; locally the other metadata rules still run.
+    if (options.ci)
+      report("member-metadata", SKILLS_DIR, [
+        "not built, so no stackra field was checked against STACKRA_MANIFEST_SCHEMA: build @stackra/skills before `pnpm validate`",
+      ]);
+    else
+      options.warn(
+        "validate: stackra fields not checked against STACKRA_MANIFEST_SCHEMA: @stackra/skills is not built (pnpm turbo run build --filter=@stackra/skills)",
+      );
+  }
   for (const { dir, path } of members) {
     const at = (f: string): unknown =>
       existsSync(join(path, f)) ? readJsonc(join(path, f)) : undefined;
@@ -153,6 +189,17 @@ export async function structureFindings(
             : (at("tsconfig.json") as Parameters<typeof checkMember>[0]["tsconfig"]),
       }),
     );
+    if (isStackraRepo && dir !== "")
+      report(
+        "member-metadata",
+        dir,
+        checkMemberMetadata({
+          dir,
+          pkg,
+          turbo: at("turbo.jsonc") as Parameters<typeof checkMemberMetadata>[0]["turbo"],
+          schema: manifestSchema,
+        }),
+      );
     if (dir !== "")
       report(
         "member-files",

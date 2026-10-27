@@ -38,8 +38,9 @@
   //   tier:lib     — packages/*/*; never depend on a deployable
   //   tier:app     — apps/* and workers/* (ADR 0284); consume config and libs, talk to services over the wire only
   //   tier:service — services/*; top of the graph
-  // Each member declares its tag in its own turbo.jsonc (`"tags": ["tier:lib"]`); validate-repository
-  // checks that every member has exactly one tier tag matching its directory.
+  // Each member declares its tags in its own turbo.jsonc: exactly one tier tag matching its directory, then
+  // `category:<c>` (packages only) and `runtime:<r>` per entry of its package.json `stackra.runtimes`
+  // (ADR 0453 decision 11, amendment of 2026-10-27). validate-repository checks both; only tier tags have rules here.
   "boundaries": {
     "tags": {
       "tier:config": {

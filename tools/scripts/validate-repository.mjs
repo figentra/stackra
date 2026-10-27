@@ -27,6 +27,7 @@ export const {
   expectedName,
   checkMember: check,
   checkMemberFiles: checkFiles,
+  checkMemberMetadata,
   checkExports,
   isV2Service,
   checkService,

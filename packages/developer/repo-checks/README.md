@@ -31,7 +31,9 @@ finds honouring `.gitignore`) and returns `RawFinding`s
 (`{ phase, tool, rule, path, line, column, message, severity, fixable, adr }`), the shape `stackra check --format json`
 prints.
 
-The single checks stay exported (`checkMember`, `checkMemberFiles`, `checkExports`, `checkService`,
+The single checks stay exported (`checkMember`, `checkMemberFiles`, `checkMemberMetadata` (the npm metadata, the
+`stackra` field and its turbo tags of ADR 0453 decision 11, run in the Stackra repository only, with the built
+`STACKRA_MANIFEST_SCHEMA` of `@stackra/skills`), `checkExports`, `checkService`,
 `checkTestPlacement`, `checkJsonConfigs`, `checkRunwaySchemas`, `checkRunwayFiles`, `checkYamlFlowMaps`,
 `checkImports`, `checkIosFormFactor`, `checkWindowSizing`, `checkDocFile`, `checkCatalogues`, `checkGitignore`), and so
 do the structure tables (`CATEGORIES`, `ENTRIES`, `MODULE_GROUPS`, `APP_GROUPS`, `PACKAGE_FOLDERS`, `MEMBER_ROOT`,
