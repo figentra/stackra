@@ -1,3 +1,5 @@
+<!-- Stackra file contract. Purpose: agent rules for @stackra/infra-cloudflare: where code goes, the Pulumi and secret rules. Boundary: documentation only. Runtime: documentation. Governing contract: ADR 0171 (decision 6); ADR 0453; ADR 0007. -->
+
 # AGENTS — @stackra/infra-cloudflare
 
 The Cloudflare half of the core Pulumi stack (ADR 0171 decision 6): zones and DNS, Worker custom domains, R2 buckets,
@@ -16,6 +18,7 @@ service uses. Member at `packages/infrastructure/infra-cloudflare`
 | A function that declares Pulumi resources  | `src/node/functions/<name>.function.ts`     |
 | A test                                     | `__tests__/<name>.<kind>.test.ts` beside it |
 | A Pulumi mock helper                       | `src/node/functions/__tests__/fixtures/`    |
+| The Stackra registry Worker's resources    | `src/node/registry/` (ADR 0453)             |
 
 ## Rules
 
@@ -39,6 +42,10 @@ service uses. Member at `packages/infrastructure/infra-cloudflare`
   `@stackra/identity/contracts`' `loginDirectoryPrefix`, passed in by the host; never spell a `dir:` key here and never
   import `@stackra/identity`. The handler never logs or echoes the identifier and never writes KV; regions write through
   `loginDirectoryKvRequest`.
+
+- The registry Worker (ADR 0453) has its own folder, `src/node/registry/`. Its R2 bucket and D1 database are
+  protected (tarballs are immutable, D1 is the only record); its KV namespace is a cache. Its custom domain is declared
+  by `registryWorker`, never also under `cloudflareZone`'s `workers`.
 
 ## PII
 

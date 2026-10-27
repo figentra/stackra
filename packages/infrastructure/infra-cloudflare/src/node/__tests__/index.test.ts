@@ -20,6 +20,7 @@ describe("@stackra/infra-cloudflare/node", () => {
       "edgeWorker",
       "loginDirectoryWorker",
       "r2Bucket",
+      "registryWorker",
       "resolveRef",
       "storefrontEdge",
       "zoneEdge",

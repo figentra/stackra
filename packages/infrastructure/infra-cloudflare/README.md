@@ -1,3 +1,5 @@
+<!-- Stackra file contract. Purpose: the README of @stackra/infra-cloudflare: the Cloudflare core stack programs, their inputs and entries. Boundary: documentation only. Runtime: documentation. Governing contract: ADR 0171 (decision 6); ADR 0453; ADR 0007. -->
+
 # @stackra/infra-cloudflare
 
 The Cloudflare half of the core Pulumi stack (ADR 0171 decision 6) as TypeScript programs: the zones and their DNS,
@@ -38,6 +40,7 @@ Agents never run `pulumi` and never call Cloudflare. The programs run in the pri
 | `./node` | `cloudflareZone`, `zoneEdge`, `devTunnel`, `accessGate`, `r2Bucket`      | the parts, for a stack that composes its own                       |
 | `./node` | `edgeWorker`                                                             | the OS edge Worker's KV, routes, rollout and locked origins        |
 | `./node` | `loginDirectoryWorker`                                                   | the login directory Worker's global KV namespace and routes        |
+| `./node` | `registryWorker`                                                         | the Stackra registry's R2, D1, KV and custom domain (ADR 0453)     |
 | `./node` | `resolveRef(value)`                                                      | a runway value, with `ref:<key>.<path>` read from the stack config |
 
 ## The two inputs

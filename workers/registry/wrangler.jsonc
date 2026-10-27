@@ -1,0 +1,60 @@
+// Stackra file contract:
+// Purpose: the Cloudflare Worker `stackra-registry`, the Stackra npm registry at npm.stackra.figentra.com (ADR 0453):
+//          its script (dist/main.mjs, built by tsdown), the R2, D1 and KV bindings, the custom domain and every limit
+//          as a Worker var (ADR 0453 decision 19).
+// Owner: release-operations · Secrets: REGISTRY_SIGNING_KEY is a Worker secret set by CI from Infisical `prod`
+//        `/registry` (ADR 0173); CI passes CLOUDFLARE_API_TOKEN from Infisical in the environment. No secret is in this file.
+// Carve-out (ADR 0284 decision 8): hand-written until `stackra gen` emits Workers config from runway.yaml (ADR 0168).
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "stackra-registry",
+  // Figentra Technologies L.L.C. An account id is an identifier, not a credential; the API token grants access.
+  "account_id": "d861f9ac9df28b7f0b1298cc0c89bc9d",
+  "main": "./dist/main.mjs",
+  // Pinned: bumped on purpose, never set to "today" on every deploy.
+  "compatibility_date": "2026-10-01",
+  // The bucket, database and namespace are Pulumi resources of @stackra/infra-cloudflare (`registryWorker`).
+  // The ids below are the owner's to fill from that stack's outputs before the first deploy (ADR 0453 chores).
+  "r2_buckets": [{ "binding": "TARBALLS", "bucket_name": "stackra-registry" }],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "stackra-registry",
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      // Numbered migrations; CI applies them with `wrangler d1 migrations apply` before the deploy.
+      "migrations_dir": "migrations",
+    },
+  ],
+  "kv_namespaces": [{ "binding": "CACHE", "id": "00000000000000000000000000000000" }],
+  // Every limit and TTL is a setting (ADR 0453 decision 19); src/settings/read-settings.ts refuses a missing one.
+  "vars": {
+    "REGISTRY_HOST": "npm.stackra.figentra.com",
+    // registry.maxTarballBytes: 50 MiB.
+    "REGISTRY_MAX_TARBALL_BYTES": 52428800,
+    // The unpacked size a tarball may reach while the publish checks read it (a gzip bomb guard).
+    "REGISTRY_MAX_UNPACKED_BYTES": 104857600,
+    // registry.publishTokenSeconds: the OIDC-exchanged publish token lives 15 minutes.
+    "REGISTRY_PUBLISH_TOKEN_SECONDS": 900,
+    // registry.tokenCacheSeconds: a licence check is cached this long per data centre (the revocation bound).
+    "REGISTRY_TOKEN_CACHE_SECONDS": 60,
+    // registry.licence.graceDays and registry.licence.maxTokens.
+    "REGISTRY_LICENCE_GRACE_DAYS": 14,
+    "REGISTRY_LICENCE_MAX_TOKENS": 20,
+    "REGISTRY_OIDC_ISSUER": "https://token.actions.githubusercontent.com",
+    // The GitHub OIDC key set stays in KV this long.
+    "REGISTRY_OIDC_KEYS_SECONDS": 3600,
+    // Cache-Control max-age of an open packument.
+    "REGISTRY_OPEN_PACKUMENT_MAX_AGE": 60,
+    "REGISTRY_CATALOGUE_MAX_LIMIT": 100,
+    // Where `npm login` is pointed instead (it answers 403).
+    "REGISTRY_LICENCE_DOCS_URL": "https://docs.stackra.figentra.com/licensing",
+    // The current signing key's `expires` in /-/npm/v1/keys ("" while it has none), and the rotated keys that stay
+    // listed: a JSON array of { "key": "<SPKI DER, base64>", "expires": "<ISO date>" }.
+    "REGISTRY_SIGNING_KEY_EXPIRES": "",
+    "REGISTRY_RETIRED_KEYS": "[]",
+  },
+  // A Custom Domain, as stackra-static. The npflared `npm-registry` Worker gives the name up first (ADR 0453 decision 17).
+  "routes": [{ "pattern": "npm.stackra.figentra.com", "custom_domain": true }],
+  "workers_dev": false,
+  "preview_urls": false,
+}
