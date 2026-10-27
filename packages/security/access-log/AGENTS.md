@@ -14,6 +14,7 @@ decisions 3, 5 and 6). Member at `packages/security/access-log` (`tier:lib`), in
 | The facet                                         | `src/core/decorators/`                           |
 | The model, its migration, a macro, a factory      | `src/node/models/`, `src/node/database/*/`       |
 | A server driver, the job and its schemas          | `src/node/{drivers,actions,schemas}/`            |
+| A permission (`<Model>Permissions`)               | `src/node/access/`                               |
 | A fake or a matcher                               | `src/testing/`                                   |
 | A label                                           | `assets/lang/{en,ar}/access_log.json`            |
 | A test                                            | `__tests__/<name>.<kind>.test.ts` beside it      |

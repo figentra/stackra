@@ -7,7 +7,7 @@ pgaudit covers direct database sessions; this package covers the application.
 
 **Tier:** `tier:lib` (`packages/security/access-log`). Entries `.`, `./contracts`, `./node` and `./testing`. Depends on
 `@stackra/actions`, `@stackra/config`, `@stackra/container`, `@stackra/contracts`, `@stackra/database`,
-`@stackra/errors`, `@stackra/model`, `@stackra/tenancy` and `@stackra/validation`.
+`@stackra/errors`, `@stackra/iam`, `@stackra/model`, `@stackra/tenancy` and `@stackra/validation`.
 
 ## Use
 
@@ -45,22 +45,23 @@ or query call throws, because `RequestContext` has no actor to log.
 
 ## What is here
 
-| Entry         | Symbol                                                                | Use                                                            |
-| ------------- | --------------------------------------------------------------------- | -------------------------------------------------------------- |
-| `.`           | `AccessLogged`                                                        | the class facet, made with `createDecorator`                   |
-| `.`           | `AccessLogService`                                                    | builds each record; fails open, or closed for `failClosed`     |
-| `.`           | `AccessLogConfig`, `AccessLogOptions`, `AccessLogConfig$`             | `sink`, `retentionDays` (400, ≥90), `failClosed` classes       |
-| `.`           | `MemoryAccessLogSinkDriver`                                           | one chain in memory, for tests and `sink: "memory"`            |
-| `.`           | `OutboxAccessLogSinkDriver`, `AccessRecorded`                         | `sink: "outbox"`: each record to the audit service as an event |
-| `.`           | `linkAccessRecord`, `findChainBreak`                                  | build the next link; find the first broken link of a run       |
-| `.`           | `AccessLogWriteFailedError`, `ACCESS_LOG_WRITE_FAILED`                | the sink's refusal and the log event, one code                 |
-| `./contracts` | `AccessLogSink`                                                       | the port                                                       |
-| `./contracts` | `AccessRecord`, `AccessLink`, `AccessLoggedOptions`                   | types                                                          |
-| `./node`      | `AccessLogModule`, `AccessLogExplorer`                                | the root module and the facet's Explorer                       |
-| `./node`      | `PostgresAccessLogSinkDriver`, `AccessLogEntry`                       | the production sink and its tenant-owned, append-only table    |
-| `./node`      | `DataClassificationMacro`                                             | `t.dataClassification(column)` for any host table              |
-| `./node`      | `PurgeAccessLogAction`, `PurgeAccessLogInput`, `PurgeAccessLogOutput` | the nightly retention job                                      |
-| `./testing`   | `AccessLogSinkFake`, `AccessLogEntryFactory`, `toHaveLoggedAccess`    | a failing-capable fake, rows, the matcher                      |
+| Entry         | Symbol                                                                | Use                                                               |
+| ------------- | --------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| `.`           | `AccessLogged`                                                        | the class facet, made with `createDecorator`                      |
+| `.`           | `AccessLogService`                                                    | builds each record; fails open, or closed for `failClosed`        |
+| `.`           | `AccessLogConfig`, `AccessLogOptions`, `AccessLogConfig$`             | `sink`, `retentionDays` (400, ≥90), `failClosed` classes          |
+| `.`           | `MemoryAccessLogSinkDriver`                                           | one chain in memory, for tests and `sink: "memory"`               |
+| `.`           | `OutboxAccessLogSinkDriver`, `AccessRecorded`                         | `sink: "outbox"`: each record to the audit service as an event    |
+| `.`           | `linkAccessRecord`, `findChainBreak`                                  | build the next link; find the first broken link of a run          |
+| `.`           | `AccessLogWriteFailedError`, `ACCESS_LOG_WRITE_FAILED`                | the sink's refusal and the log event, one code                    |
+| `./contracts` | `AccessLogSink`                                                       | the port                                                          |
+| `./contracts` | `AccessRecord`, `AccessLink`, `AccessLoggedOptions`                   | types                                                             |
+| `./node`      | `AccessLogModule`, `AccessLogExplorer`                                | the root module and the facet's Explorer                          |
+| `./node`      | `PostgresAccessLogSinkDriver`, `AccessLogEntry`                       | the production sink and its tenant-owned, append-only table       |
+| `./node`      | `DataClassificationMacro`                                             | `t.dataClassification(column)` for any host table                 |
+| `./node`      | `PurgeAccessLogAction`, `PurgeAccessLogInput`, `PurgeAccessLogOutput` | the nightly retention job                                         |
+| `./node`      | `AccessLogEntryPermissions`                                           | `purge` (L2, system): the permission the retention job runs under |
+| `./testing`   | `AccessLogSinkFake`, `AccessLogEntryFactory`, `toHaveLoggedAccess`    | a failing-capable fake, rows, the matcher                         |
 
 No symbol is exported from two entries. `src/{contracts,core,node,testing}/index.ts` are stand-in barrels until gen
 writes the entry barrels (STA-339).

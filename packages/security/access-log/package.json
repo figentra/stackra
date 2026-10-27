@@ -105,6 +105,7 @@
     "@stackra/database": "workspace:*",
     "@stackra/errors": "workspace:*",
     "@stackra/events": "workspace:*",
+    "@stackra/iam": "workspace:*",
     "@stackra/model": "workspace:*",
     "@stackra/support": "workspace:*",
     "@stackra/tenancy": "workspace:*",

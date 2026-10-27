@@ -15,6 +15,7 @@ describe("@stackra/access-log/node", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(node).sort()).toEqual([
       "AccessLogEntry",
+      "AccessLogEntryPermissions",
       "AccessLogExplorer",
       "AccessLogModule",
       "DataClassificationMacro",
