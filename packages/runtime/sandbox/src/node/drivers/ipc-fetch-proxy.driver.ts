@@ -31,7 +31,9 @@ export class IpcFetchProxyDriver extends Driver(SandboxFetchProxy) {
 
   private next = 0;
 
-  /** @param send - posts a message to the pool. */
+  /**
+   * @param send - posts a message to the pool.
+   */
   constructor(send: (message: PoolReply) => void) {
     super();
     this.send = send;

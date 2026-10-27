@@ -140,7 +140,9 @@ export class Sandbox extends Service {
   /** The audited egress of `fetch`. */
   private readonly proxy: SandboxFetchProxy;
 
-  /** @param proxy - the egress the host binds for `SandboxFetchProxy`. */
+  /**
+   * @param proxy - the egress the host binds for `SandboxFetchProxy`.
+   */
   constructor(proxy: SandboxFetchProxy) {
     super();
     this.proxy = proxy;

@@ -66,7 +66,9 @@ export class SandboxPool extends Service {
 
   private isClosing = false;
 
-  /** @param proxy - the egress the host binds for `SandboxFetchProxy`. */
+  /**
+   * @param proxy - the egress the host binds for `SandboxFetchProxy`.
+   */
   constructor(proxy: SandboxFetchProxy) {
     super();
     this.proxy = proxy;
