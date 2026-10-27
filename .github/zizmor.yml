@@ -24,4 +24,4 @@ rules:
       # the `$/…` form is not adopted until a run on GitHub has proven it for these three callers.
       - deploy-docs.yml:37
       - deploy-static.yml:48
-      - release.yml:41
+      - release.yml:66
