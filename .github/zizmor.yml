@@ -12,3 +12,16 @@ rules:
     config:
       policies:
         "*": hash-pin
+  # zizmor 1.31 audits; each accepted finding names one file:line and its reason.
+  artipacked:
+    ignore:
+      # The checkout persists the App token on purpose: changesets pushes the version branch and tags with it. The only
+      # upload in this job is the SBOM, two named files (sbom.cdx.json and its sigstore bundle), never .git.
+      - runway-npm.yml:96
+  self-repository:
+    ignore:
+      # Local reusable-workflow calls stay `./.github/workflows/…` (ADR 0168, called by SHA from other repositories);
+      # the `$/…` form is not adopted until a run on GitHub has proven it for these three callers.
+      - deploy-docs.yml:37
+      - deploy-static.yml:48
+      - release.yml:42
