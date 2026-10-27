@@ -7,7 +7,7 @@ Purpose: the agent rules of @stackra/gen: where code goes, entries and barrels, 
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
 Governing contract: ADR 0294; ADR 0295; ADR 0305; ADR 0260 (generated clients and typed events); ADR 0263; ADR 0162 and ADR 0222
-                    (the translated and upload shape kinds); ADR 0338 (a replica query's `ReplicaPage` output); STA-1290 (the shipped shape kind); STA-1293 (i18n, clients for apps, undeclared packages); STA-1296 (client modules and permission sets, config overrides, the root Vitest shim); STA-1298 (package lang namespaces in `I18n`, `i18n_key_missing`, `i18n_namespace_clash`); STA-1309 (catalogue loaders); STA-1306 (the quality-gate refusals); STA-1316 (the docs site); STA-1322 (the Encore app file); STA-1251 (`searchable_semantic_ai_never`); ADR 0438 (shell slots and fills, stackra-03).
+                    (the translated and upload shape kinds); ADR 0338 (a replica query's `ReplicaPage` output); STA-1290 (the shipped shape kind); STA-1293 (i18n, clients for apps, undeclared packages); STA-1296 (client modules and permission sets, config overrides, the root Vitest shim); STA-1298 (package lang namespaces in `I18n`, `i18n_key_missing`, `i18n_namespace_clash`); STA-1309 (catalogue loaders); STA-1306 (the quality-gate refusals); STA-1316 (the docs site); STA-1322 (the Encore app file); STA-1251 (`searchable_semantic_ai_never`); ADR 0438 (shell slots and fills, stackra-03); ADR 0436 (surface targets, `modulepreloadOf`, stackra-04).
 -->
 
 The Stackra compiler. Member at `packages/developer/gen` (`tier:lib`), in the programming model v3.1 shape (ADR 0294,
@@ -205,7 +205,17 @@ The gen refusals of the 2026-10-27 coverage audit, section 4. Each carries its f
   `slot_props_mismatch`, `slot_fill_duplicate` (two fills of a `one` slot in a member) and `slot_key_duplicate`.
 - The manifest lists `slots` (key, const, entry, surface, cardinality, props) and the resolved `fills` (slot key,
   const, entry, surface, props) for the OS registry. Not yet: a registration file for fills, and a break in
-  `compareManifests` when a slot is removed or its props change (stackra-04 or a follow-up batch).
+  `compareManifests` when a slot is removed or its props change (a follow-up batch).
+
+## Surface targets and extension bundles (ADR 0436, stackra-04)
+
+- `surfacesOf` derives the manifest's `surfaces` (surface, `targets: "<surface>@<major>"`, shell package) from the
+  dependencies' committed manifests that declare `slots`; never authored, never read from source. The member's own
+  slots make it a shell, so they add no target.
+- `checkSurfaces` (full pass only) refuses `surface_targets_conflict`. Whether the edge serves a line is the registry's
+  check at publish (Runway, stackra-13), not gen's.
+- `ExtensionBundleManifest` is the shape `@stackra/vite-plugin` writes as `bundle.manifest.json`; `modulepreloadOf`
+  stays pure and isomorphic so the OS Worker can call it. Gen never builds a bundle: that is the Vite preset's.
 
 ## Rules that fail the build
 

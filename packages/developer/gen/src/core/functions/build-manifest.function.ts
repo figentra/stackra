@@ -22,7 +22,9 @@
  *          with its derived key, kind, counted model, `where` filter and the action and query keys it gates (STA-903).
  *          It lists each shell slot the member declares in `slots` (key, const, entry, surface, cardinality, props) and
  *          each fill whose slot resolves in `fills` (slot key, const, entry, surface, props), for the OS registry
- *          (ADR 0438, stackra-03).
+ *          (ADR 0438, stackra-03). It lists in `surfaces` each surface a shell dependency's slots sit on, with the
+ *          shell line the member targets there (`targets: "console@3"`, from that shell's major) and the shell
+ *          package, for the extension-bundle build and the registry's compatibility check (ADR 0436, stackra-04).
  * Boundary: pure. A config's schema never reaches the manifest (ADR 0305 rule 34). Sections owned by later targets
  *           (ui, settings, migrations, infra, ...) are written by those targets when they land.
  * Runtime: isomorphic
@@ -66,6 +68,7 @@ import { routeKey } from "#core/functions/route-key.function";
 import { sequenceKey } from "#core/functions/sequence-key.function";
 import { slotOf } from "#core/functions/slot-of.function";
 import { snakeCase } from "#core/functions/snake-case.function";
+import { surfacesOf } from "#core/functions/surfaces-of.function";
 import { tableName } from "#core/functions/table-name.function";
 import { toolHints } from "#core/functions/tool-hints.function";
 import { toolName } from "#core/functions/tool-name.function";
@@ -1003,6 +1006,9 @@ export function buildManifest(ir: MemberIR): {
         : 1,
     );
 
+  // The shell line it targets on each surface (ADR 0436, stackra-04).
+  const surfaces: Entry[] = surfacesOf(ir).map((target) => ({ ...target }));
+
   const manifest: Entry = {
     $comment: MANIFEST_NOTICE,
     member: ir.member,
@@ -1019,6 +1025,7 @@ export function buildManifest(ir: MemberIR): {
     ...(ir.layout === "app" ? { blocks, routes } : {}),
     ...(slots.length > 0 ? { slots } : {}),
     ...(fills.length > 0 ? { fills } : {}),
+    ...(surfaces.length > 0 ? { surfaces } : {}),
     schemas,
   };
   return { manifest: manifest as unknown as StackraManifest, errors };

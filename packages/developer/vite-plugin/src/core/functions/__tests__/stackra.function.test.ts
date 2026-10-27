@@ -1,13 +1,15 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `stackra`: called, it returns the preset's own plugins; `stackra.viteConfig` is the whole
- *          config builder the generated `.stackra/vite.config.ts` calls.
+ *          config builder the generated `.stackra/vite.config.ts` calls; `stackra.bundleConfig` the extension-bundle
+ *          config builder.
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0261 (decision 4); ADR 0295 (decision 5).
  */
 import { describe, expect, it } from "@stackra/testing";
 
+import { bundleConfig } from "#core/functions/bundle-config.function";
 import { stackra } from "#core/functions/stackra.function";
 import { viteConfig } from "#core/functions/vite-config.function";
 
@@ -22,5 +24,9 @@ describe("stackra", () => {
 
   it("carries viteConfig for the generated config", () => {
     expect(stackra.viteConfig).toBe(viteConfig);
+  });
+
+  it("carries bundleConfig for the extension-bundle build", () => {
+    expect(stackra.bundleConfig).toBe(bundleConfig);
   });
 });

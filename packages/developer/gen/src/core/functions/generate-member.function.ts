@@ -17,7 +17,8 @@
  *           or a key no merged catalogue ships (`i18n_namespace_clash`, `i18n_key_missing`, STA-1298), and so is a broken
  *           convention (`checkConventions`, STA-1306), a semantic `@Searchable` over an `ai: never` field
  *           (`checkSemanticSearch`, STA-1251) or a slot fill that breaks its slot's contract (`checkSlotFills`,
- *           ADR 0438) on the full pass only. Other per-target outputs (navigation trees, the rest of the Encore app, ...)
+ *           ADR 0438) or two shell dependencies on one surface with different lines (`checkSurfaces`,
+ *           `surface_targets_conflict`, ADR 0436) on the full pass only. Other per-target outputs (navigation trees, the rest of the Encore app, ...)
  *           are added by their owning targets.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 10, 22 and 26); ADR 0295 (decisions 5 and 7); ADR 0305 (rules 15, 16 and
@@ -34,6 +35,7 @@ import { checkSemanticSearch } from "#core/functions/check-semantic-search.funct
 import { checkI18n } from "#core/functions/check-i18n.function";
 import { checkIdentityLock } from "#core/functions/check-identity-lock.function";
 import { checkSlotFills } from "#core/functions/check-slot-fills.function";
+import { checkSurfaces } from "#core/functions/check-surfaces.function";
 import { emitBlocks } from "#core/functions/emit-blocks.function";
 import { emitBoot } from "#core/functions/emit-boot.function";
 import { emitClients } from "#core/functions/emit-clients.function";
@@ -114,13 +116,15 @@ export function generateMember(
   }
   // The i18n target refuses a namespace clash and a key no merged catalogue ships (STA-1298); the quality-gate
   // conventions refuse here too, never in the manifest pass, so `stackra gen --manifests` still writes (STA-1306).
-  // The slot contract refuses a fill of an undeclared slot, another surface or other props (ADR 0438).
+  // The slot contract refuses a fill of an undeclared slot, another surface or other props (ADR 0438); one surface on
+  // two shell lines is refused too (ADR 0436).
   all.push(
     ...clients.errors,
     ...checkI18n(ir),
     ...checkConventions(ir, manifest),
     ...checkSemanticSearch(ir),
     ...checkSlotFills(ir),
+    ...checkSurfaces(ir),
   );
   if (all.length > 0) return { files: [], errors: all, manifest };
 

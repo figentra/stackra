@@ -12,7 +12,8 @@ Governing contract: ADR 0294; ADR 0295; ADR 0260 (generated clients); ADR 0261; 
                     (client modules and permission sets, config overrides, the root Vitest shim); STA-1298 (package lang
                     namespaces merged into `I18n`, missing keys and namespace clashes refused); STA-1251
                     (`searchable_semantic_ai_never`); ADR 0438 (shell slots and
-                    fills, stackra-03).
+                    fills, stackra-03); ADR 0436 (surface targets and the extension bundle's modulepreload list,
+                    stackra-04).
 -->
 
 The Stackra compiler. Gen reads a member's source through the TypeScript compiler API, derives every identity and
@@ -93,6 +94,15 @@ Gen lists `slots` and `fills` in the manifest for the OS registry and refuses, o
 manifest declares (`slot_undeclared`), on another surface (`slot_surface_mismatch`), built against other props than
 the shell's committed manifest (`slot_props_mismatch`), a second fill of a `one` slot (`slot_fill_duplicate`) and two
 own slots with one key (`slot_key_duplicate`); non-static options are `slot_options_not_constant`.
+
+Surface targets (ADR 0436, stackra-04): a dependency whose committed manifest declares slots is the shell of the
+surfaces those slots sit on, and its major is the line the member targets there. Gen writes `surfaces` to the
+manifest (`[{ surface: "console", targets: "console@3", shell: "@os/console-shell" }]`; `surfacesOf`), which the
+extension-bundle build of `@stackra/vite-plugin` copies into `bundle.manifest.json` and the registry checks against the
+lines the edge serves. Two shell dependencies on one surface at different majors are refused on the full run
+(`surface_targets_conflict`, `checkSurfaces`). `modulepreloadOf(shellEntry, bundleBase, bundleManifest)` is the pure,
+isomorphic list of URLs the edge Worker preloads: the shell's entry, then the bundle's entry and static chunks; its
+input type is `ExtensionBundleManifest`.
 
 An event's wire name is always `<module>.<name>.v<n>` (`orders.order.paid.v1`): there is no member-level or
 service-key-prefixed wire name, and a `name` that starts with the module or member key is refused

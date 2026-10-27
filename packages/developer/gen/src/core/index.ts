@@ -4,13 +4,14 @@
  *          the shape compiler, wiring, the member module, entries, the entity files, registrations, boot, the inbound
  *          webhook route, prefixes, an app's route tables and blocks, the generated service clients, the tool configs,
  *          the openapi projection, the docs-site target and its `DocsConfig` base, the public id prefix registry and
- *          the IR types), until `stackra gen` writes the
+ *          the IR types, the surface targets and the extension bundle's modulepreload list), until `stackra gen` writes the
  *          entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. Isomorphic: no file system and no TypeScript host here; those
  *           are `./node`. The case helpers, the import printer and the emitters' path helpers stay internal.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision; ADR 0127 2026-10-24 note (`ir`
- *                     and `source` fold into gen); ADR 0438 (the slot and fill IR types, stackra-03).
+ *                     and `source` fold into gen); ADR 0438 (the slot and fill IR types, stackra-03); ADR 0436 (surface targets, the
+ *                     extension bundle manifest and `modulepreloadOf`, stackra-04).
  */
 export { DocsConfig } from "#core/bases/docs-config.base";
 export { CLIENTS_SPECIFIER } from "#core/constants/clients-specifier.constant";
@@ -25,6 +26,7 @@ export { actionKey } from "#core/functions/action-key.function";
 export { blockKey } from "#core/functions/block-key.function";
 export { buildManifest } from "#core/functions/build-manifest.function";
 export { checkIdentityLock } from "#core/functions/check-identity-lock.function";
+export { checkSurfaces } from "#core/functions/check-surfaces.function";
 export { compareManifests } from "#core/functions/compare-manifests.function";
 export { configKeyOf } from "#core/functions/config-key-of.function";
 export { cronJobId } from "#core/functions/cron-job-id.function";
@@ -57,12 +59,14 @@ export { generateMember } from "#core/functions/generate-member.function";
 export { integrationKey } from "#core/functions/integration-key.function";
 export { jsonSchemaOf } from "#core/functions/json-schema-of.function";
 export { modelKey } from "#core/functions/model-key.function";
+export { modulepreloadOf } from "#core/functions/modulepreload-of.function";
 export { openApiOf } from "#core/functions/open-api-of.function";
 export { permissionKey } from "#core/functions/permission-key.function";
 export { portKey } from "#core/functions/port-key.function";
 export { rootModuleOf } from "#core/functions/root-module-of.function";
 export { routeKey } from "#core/functions/route-key.function";
 export { sequenceKey } from "#core/functions/sequence-key.function";
+export { surfacesOf } from "#core/functions/surfaces-of.function";
 export { tableName } from "#core/functions/table-name.function";
 export { toolHints } from "#core/functions/tool-hints.function";
 export { toolName } from "#core/functions/tool-name.function";
@@ -77,6 +81,7 @@ export type { DocsSiteInput } from "#core/types/docs-site-input.type";
 export type { DocsSite } from "#core/types/docs-site.type";
 export type { DocsTab } from "#core/types/docs-tab.type";
 export type { EntityIR } from "#core/types/entity-ir.type";
+export type { ExtensionBundleManifest } from "#core/types/extension-bundle-manifest.type";
 export type { EnumIR } from "#core/types/enum-ir.type";
 export type { FacetUse } from "#core/types/facet-use.type";
 export type { FieldDefault } from "#core/types/field-default.type";
@@ -93,6 +98,7 @@ export type { RelationIR } from "#core/types/relation-ir.type";
 export type { ShapeIR } from "#core/types/shape-ir.type";
 export type { SlotFillIR } from "#core/types/slot-fill-ir.type";
 export type { SlotIR } from "#core/types/slot-ir.type";
+export type { SurfaceTarget } from "#core/types/surface-target.type";
 export type { TokenRef } from "#core/types/token-ref.type";
 export type { ToolHints } from "#core/types/tool-hints.type";
 export type { TypeDesc } from "#core/types/type-desc.type";

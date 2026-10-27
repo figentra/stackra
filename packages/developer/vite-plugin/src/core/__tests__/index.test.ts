@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: the consumer contract of the `.` entry: the template's generated Vite configs import `stackra` and call
- *          `stackra.viteConfig(app, options)` with the console's and the web member's option shapes; `stackra` is the
- *          entry's only value.
+ *          `stackra.viteConfig(app, options)` with the console's and the web member's option shapes, and
+ *          `stackra.bundleConfig(options)` builds an extension bundle; `stackra` is the entry's only value.
  * Boundary: test only; imports the stand-in barrel through its alias. The option literals mirror the template's
  *           generated `.stackra/vite.config.ts` files and are type-checked, not run.
  * Runtime: node (vitest)
@@ -13,7 +13,7 @@ import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 import type { Plugin, UserConfig } from "vite";
 
 import * as entry from "#core/index";
-import type { ViteConfigOptions } from "#core/index";
+import type { BundleConfigOptions, ViteConfigOptions } from "#core/index";
 
 describe("@stackra/vite-plugin", () => {
   it("exports exactly stackra", () => {
@@ -26,6 +26,10 @@ describe("@stackra/vite-plugin", () => {
       [app: AppDefinition, options: ViteConfigOptions]
     >();
     expectTypeOf(entry.stackra.viteConfig).returns.toEqualTypeOf<Promise<UserConfig>>();
+    expectTypeOf(entry.stackra.bundleConfig).parameters.toEqualTypeOf<
+      [options: BundleConfigOptions]
+    >();
+    expectTypeOf(entry.stackra.bundleConfig).returns.toEqualTypeOf<Promise<UserConfig>>();
   });
 
   it("accepts the console's and the web member's generated options", () => {

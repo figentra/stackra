@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: the consumer contract of the `.` entry: the pure compiler (identities, manifest and its checks, shape
  *          compiler, wiring, member module, entries, entities, registrations, boot, webhooks, prefixes, routes, blocks,
- *          generated service clients, tool configs, openapi projection, the prefix registry) is exported and nothing
+ *          generated service clients, tool configs, openapi projection, the prefix registry, the surface targets and
+ *          the bundle modulepreload list) is exported and nothing
  *          internal is (the case helpers, the import printer, the platform evaluator, the emitters' path helpers), and
  *          the IR types resolve.
  * Boundary: test only; imports the stand-in barrel through its `#core` alias.
@@ -39,6 +40,7 @@ describe("@stackra/gen", () => {
       "blockKey",
       "buildManifest",
       "checkIdentityLock",
+      "checkSurfaces",
       "compareManifests",
       "configKeyOf",
       "cronJobId",
@@ -71,12 +73,14 @@ describe("@stackra/gen", () => {
       "integrationKey",
       "jsonSchemaOf",
       "modelKey",
+      "modulepreloadOf",
       "openApiOf",
       "permissionKey",
       "portKey",
       "rootModuleOf",
       "routeKey",
       "sequenceKey",
+      "surfacesOf",
       "tableName",
       "toolHints",
       "toolName",
