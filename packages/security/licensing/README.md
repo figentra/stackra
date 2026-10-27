@@ -1,11 +1,12 @@
 # @stackra/licensing
 
-The licence verifier of ADR 0178. Keygen holds the licences; this package checks a Keygen signed licence file offline,
-says where the install stands under it (active, grace, read-only), and runs the opt-in online key check for a
-connected install. It never calls home on its own, and no standing deletes data.
+Licensing of ADR 0178, both sides. Keygen holds the licences. The issuing service (OS licensing) writes them through
+the `LicenceIssuer` port. An install checks a Keygen signed licence file offline, says where it stands under it
+(active, grace, read-only), runs the opt-in online key check when connected, and an on-prem install signs its usage
+reports with its own key. Nothing here calls home on its own, and no standing deletes data.
 
 **Tier:** `tier:lib` (`packages/security/licensing`). Entry `.` only. Depends on `@stackra/contracts`,
-`@stackra/errors` and `@stackra/transport`.
+`@stackra/errors`, `@stackra/support` and `@stackra/transport`.
 
 ## What is here
 
@@ -20,6 +21,12 @@ connected install. It never calls home on its own, and no standing deletes data.
 | `LicenceFileInvalidError`                                                    | a file that cannot be trusted; `reason` says why                                |
 | `LicenceCheckUnavailableError`                                               | Keygen gave no verdict; keep the offline standing                               |
 | `Licence`, `LicenceFileOptions`, `LicenceKeyCheck`, `LicenceKeyCheckOptions` | types                                                                           |
+| `LicenceIssuer`, `KeygenLicenceIssuerDriver`, `MemoryLicenceIssuerDriver`    | the issuing port (create, renew, check out, suspend) and its two drivers        |
+| `IssuerConfig`, `IssuerConfig$`, `IssuerOptions`                             | key `licensing.issuer`: `driver` (`keygen` or `memory`), `productToken` secret  |
+| `LicenceIssuerUnavailableError`                                              | Keygen gave no usable answer to an issuing call; retry                          |
+| `generateInstallKey`, `installSigner`                                        | an on-prem install's ES256 key: made once, then a `Signer` from its secret      |
+| `signUsageReport`, `usageReportMessage`                                      | the usage-report exporter, and the bytes its signature covers                   |
+| `LicenceDraft`, `UsageReportPayload`, `SignedUsageReport`, `InstallKey`      | types                                                                           |
 
 ## Verifying an install offline
 
@@ -73,8 +80,49 @@ export class LicensingConfig extends BaseLicensingConfig {
 // const licence = await container.get(LicenceVerifier).verify(file);
 ```
 
+## Issuing licences (the issuing service only)
+
+```ts
+import { KeygenLicenceIssuerDriver } from "@stackra/licensing";
+
+const id = await issuer.create({ policyId, name: "Acme on-prem", expiry, metadata }); // Keygen's id
+await issuer.update(id, { expiry: renewedTo, metadata }); // renewal or a new snapshot
+const file = await issuer.checkOut(id, 30 * 86_400); // a freshly signed file, with entitlements
+await issuer.suspend(id); // revoked: the next check and file say so; the install keeps its data
+```
+
+`IssuerConfig.driver` picks the driver (`memory` in dev and preview, `keygen` in staging and production). The origin
+and account are `LicensingConfig`'s, the same the verifier reads; the product token is the `KEYGEN_PRODUCT_TOKEN`
+secret. An install never sets either.
+
+## Usage reports from an on-prem install
+
+```ts
+import { generateInstallKey, installSigner, signUsageReport } from "@stackra/licensing";
+
+// Once, at install time: keep the private key as a secret, give the public key to the operator to register.
+const { privateKey, publicKey } = await generateInstallKey("acme-onprem-1");
+
+// Each period: sign and export the report the operator uploads.
+const signer = await installSigner("acme-onprem-1", installKeySecret);
+const report = await signUsageReport(
+  {
+    version: 1,
+    licenceId,
+    periodStart: "2027-01-01T00:00:00.000Z",
+    periodEnd: "2027-04-01T00:00:00.000Z",
+    lines,
+  },
+  signer,
+);
+```
+
+The signature covers `usageReportMessage(payload)`, the canonical JSON of the payload; the issuing service verifies
+the same bytes with `verifySignature` of `@stackra/contracts` and the registered public key.
+
 ## Not here
 
-- Issuing, renewing and revoking licences: the billing-to-Keygen webhook (ADR 0178 decision 2).
-- The signing key: Keygen and Infisical KMS hold it; this package only ever sees the public verify key.
+- Deciding when to issue, the licence terms and the true-up: the issuing service (OS licensing, ADR 0178 decision 2).
+- Counting usage per meter: the install's metering hands `signUsageReport` its lines.
+- The file signing key: Keygen and Infisical KMS hold it; this package only ever sees the public verify key.
 - Checking the `Keygen-Signature` of the online response; the signed offline file stays the source of truth.

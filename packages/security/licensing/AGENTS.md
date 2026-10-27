@@ -1,6 +1,7 @@
 # AGENTS — @stackra/licensing
 
-The licence verifier (ADR 0178). Member at `packages/security/licensing` (`tier:lib`), in the programming model v3.1
+Licensing (ADR 0178): the licence verifier and install signer an install runs, and the licence issuer the issuing
+service (OS licensing) runs. Member at `packages/security/licensing` (`tier:lib`), in the programming model v3.1
 shape (ADR 0294, 0305). Entry `.` only.
 
 ## Where code goes
@@ -21,14 +22,18 @@ shape (ADR 0294, 0305). Entry `.` only.
 - `src/core/index.ts` is a stand-in barrel until gen writes the entry barrels (STA-339); add every new public file to
   it and to `src/core/__tests__/index.test.ts`.
 - `decodeBase64`, `decryptLicence`, `isRecord` and `readLicence` stay internal.
+- `usageReportMessage` is public on purpose: the install signs and the issuing service verifies the same bytes.
 
 ## This package
 
-- No phone-home (ADR 0178 decision 5): `checkLicenceKey` is the only network call and runs only when the caller asks.
+- No phone-home (ADR 0178 decision 5): `checkLicenceKey` is the only network call an install makes, and only when the
+  caller asks. The issuer drivers run only in the issuing service; a usage report leaves an install by hand.
 - Expiry is a standing, never a refusal (decision 4). Nothing here deletes or hides data.
 - The licence API origin, account and verify key are `LicensingConfig` values; never write an origin in code.
 - Web Crypto only (`crypto.subtle`, Ed25519 and AES-GCM); no crypto dependency.
-- No parameter properties, no `#private` fields, no decorators (`erasableSyntaxOnly`).
+- No parameter properties, no `#private` fields. The one decorator is `@Secret` on `IssuerOptions.productToken`
+  (ADR 0173), hence the `decorators-react` and decorators vitest presets.
+- The usage-report bytes (`usageReportMessage`) never change: a new form is a new payload `version`.
 
 ## PII and secrets
 
@@ -37,3 +42,5 @@ shape (ADR 0294, 0305). Entry `.` only.
 | Licence key      | `verifyLicenceFile`, `checkLicenceKey` | Used to decrypt or sent in the body to Keygen; never stored, logged or put in a refusal. |
 | Verify key       | `verifyLicenceFile`                    | Public; never a secret.                                                                  |
 | Licence metadata | `Licence.metadata`                     | Returned as the signed file states it; never logged here.                                |
+| Product token    | `IssuerConfig.productToken`            | `KEYGEN_PRODUCT_TOKEN` secret; sent as the bearer only; never logged or in a refusal.    |
+| Install key      | `generateInstallKey`, `installSigner`  | Private JWK returned once for the secret store; imported non-extractable; never quoted.  |

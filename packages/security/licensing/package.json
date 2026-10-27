@@ -2,7 +2,7 @@
   "name": "@stackra/licensing",
   "version": "0.0.0",
   "private": true,
-  "description": "Stackra licence verifier: the LicenceVerifier port and its Keygen driver over the LicensingConfig configuration (API origin, account, verify key), reading a signed licence file offline, deriving the soft-enforcement standing (active, grace, read-only), and running the opt-in online key check for connected installs",
+  "description": "Stackra licensing: the LicenceIssuer port and its Keygen and memory drivers for the issuing service, the on-prem install signer and usage-report exporter, and the LicenceVerifier port and its Keygen driver over the LicensingConfig configuration (API origin, account, verify key), reading a signed licence file offline, deriving the soft-enforcement standing (active, grace, read-only), and running the opt-in online key check for connected installs",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -57,6 +57,7 @@
     "@stackra/container": "workspace:*",
     "@stackra/contracts": "workspace:*",
     "@stackra/errors": "workspace:*",
+    "@stackra/support": "workspace:*",
     "@stackra/transport": "workspace:*",
     "@stackra/validation": "workspace:*",
     "zod": "catalog:"
