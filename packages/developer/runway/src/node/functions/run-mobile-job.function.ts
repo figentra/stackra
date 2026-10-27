@@ -17,6 +17,9 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
+import { buildConfig } from "@stackra/config";
+
+import { RunwayConfig } from "#config/runway.config";
 import { DeployKind } from "#core/enums/deploy-kind.enum";
 import { RunwayInvalidError } from "#core/errors/runway-invalid.error";
 import { RunwayUnresolvedError } from "#core/errors/runway-unresolved.error";
@@ -188,7 +191,8 @@ export async function runMobileJob(request: MobileJobRequest): Promise<MobileJob
     },
     scope: { mobile: { profile: channel } },
   };
-  const eas = new EasProviderDriver({
+  // The template checkout is any folder, which the config schema (folders inside the repository) refuses.
+  const eas = Object.assign(new EasProviderDriver(buildConfig(RunwayConfig)), {
     projectDir: templateDir,
     ...(request.run === undefined ? {} : { run: request.run }),
   });

@@ -68,7 +68,8 @@ export class EasProviderDriver extends Driver(RunwayProvider) {
   /** The command runner, `runCommand`; a test or a dry run replaces it. */
   run: CommandRunner = runCommand;
 
-  private readonly projectDir: string;
+  /** The folder the commands run in, `easProjectDir`; the mobile job points it at its template checkout. */
+  projectDir: string;
 
   /**
    * @param config - holds the mobile app's folder (`easProjectDir`), relative to the repository root.
