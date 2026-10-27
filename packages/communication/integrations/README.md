@@ -6,7 +6,9 @@ Purpose: the package's reader guide: Integrations, Connections and their stores,
          contracts (commerce, EDI, fraud scoring, document stores) and the gateway that resolves them, wallet pass
          issuing (`./node`), the voice channel (Speech port, meters, recording consent, handover, the SIP trunk
          driver in `./node`), accounting journals (account mapping per Connection, the recorded-case runner of
-         accounting drivers), the webhook recipe types, and what is not here.
+         accounting drivers), marketplaces, 3PLs and ad platforms (the ad-platform contract, hashed match keys, the
+         recorded-case runners, the Meta home and the OS connector list with its doc links, STA-793), the webhook
+         recipe types, and what is not here.
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
 Governing contract: ADR 0308; ADR 0348; ADR 0355; ADR 0356; ADR 0376; ADR 0443; ADR 0447.
@@ -65,6 +67,8 @@ voice meter writes to) and `@stackra/market-packs` (`valueOf`); `./node` adds `@
 | `./contracts`: `FraudScoringConnector`, `FraudScore`, `FraudDecision`                                                   | a fraud score, shaped as the `fraud` facts a rule tests                                              |
 | `./contracts`: `DocumentStoreConnector`, `StoredDocument`, `DocumentFile`                                               | iManage, NetDocuments, SharePoint: list, fetch and file documents                                    |
 | `./testing`: `MemoryFulfilmentProvider`                                                                                 | the memory 3PL: one fulfilment per reference, `ship` plays the warehouse                             |
+| `./contracts`: `AdPlatformConnector`, `ConversionEvent`, `MatchKeys`, `AdBatchResult`; `matchKeysOf`                    | server-side conversions and audience sync of an ad platform, people hashed first (see Marketplaces)  |
+| `./testing`: `runConnectorCase`, `ConnectorCase`, `runFulfilmentCase`, `FulfilmentCase`, `MemoryAdPlatform`             | the recorded-case runners every connector driver passes, and the memory ad platform                  |
 | `./contracts`: `PayrollConnector`, `PayInput`, `PayInputKind`; `assertPayInputs`; `./testing`: `MemoryPayrollConnector` | pay inputs (hours, sessions, tips, commission) pushed to the tenant's payroll provider               |
 | `MarketPackProviderDefaultsDriver`, `ProviderPackSource`, `./contracts`: `ProviderMode`; `ProviderCandidate`            | the market-pack `ProviderDefaults` for every capability, and the failover list's own-or-managed mode |
 | `./contracts`: `VoiceGateway`, `CallInstruction`, `CallStatus`, `RecordingConsent`; `recordingPlan`                     | the telephony port per Market; recording from the pack's consent rule                                |
@@ -260,6 +264,12 @@ const placed = await sip.call(outbound);
 `OAuth2ClientCredentials` (a token cached per credential), `ApiKey` (a header or a query parameter), `Basic`, `Jwt`
 (HS256, RS256 or ES256, signed per call) and `None`. A provider outside the six is a driver that signs its own requests.
 
+An OAuth token goes in `authorization: Bearer <token>` unless `auth.token` says otherwise:
+`token: { header: "x-amz-access-token", format: "{accessToken}" }` (Amazon SP-API), `{ header: "access-token", format:
+"{accessToken}" }` (TikTok). Headers every call needs besides the credentials are the Integration's `headers`, each
+with its placeholders (`headers: { "developer-token": "{developerToken}" }`, Google Ads); a call's own headers win over
+them, and the credentials win over both.
+
 ## Levels
 
 `ConnectionLevel.User` is the user the call acts for; `ConnectionLevel.Scope` is the call's scope node, then each node
@@ -360,6 +370,45 @@ first and post nothing), reads the chart and checks every recorded call was made
 provider's public API documentation says `certification: "pending"` (owner D3, 2026-10-27); a sandbox capture replaces
 it with `"sandbox"`. `MemoryAccountingConnector` is the memory driver for tests and local hosts.
 
+## Marketplaces, 3PLs and ad platforms (STA-793)
+
+Stackra ships the contracts and the shared machinery; every vendor Connection is an OS integrations connector (ADR 0443
+decision 7), built from the vendor's public API documentation and marked certification pending (owner D4, 2026-10-27).
+
+- A marketplace or shop implements `SalesChannelConnector` (`ConnectorKind.SalesChannel`, and `ProductFeed` for its
+  listings where it has them); a 3PL or WMS implements `FulfilmentProviderConnector`; a shopping or ad catalogue
+  implements `ProductFeedConnector`; an ad platform implements `AdPlatformConnector` (`ConnectorKind.AdPlatform`,
+  `gateway.ads()`): `sendConversions(events)` for its conversions API and `syncAudience(audience, members, mode)` for its
+  customer audiences.
+- A person reaches an ad platform only as `MatchKeys`: `matchKeysOf(person, { phone })` trims and lowercases the email
+  and SHA-256 hashes it, the phone and our id. The phone format is the Connection's setting: `e164` (Google Ads, TikTok)
+  or `digits` (Meta, Snap). Our event names map to the platform's on the Connection; a conversion's `eventId` is the
+  pixel's, so the platform counts it once. Consent is checked before a `ConversionEvent` is built.
+- Webhooks need no new machinery: Salla's `x-salla-signature` and Meta's `x-hub-signature-256` are `hmac` recipes
+  (`WebhookSignature`), Amazon notifies through SQS or EventBridge (no webhook), and any other scheme is a
+  `WebhookSchemeRecipe`. The recipes are OS integrations data.
+- Each connector ships recorded cases beside its driver and passes them: `runFulfilmentCase(make, case)` for a 3PL
+  (the hand-over is made twice and must return one fulfilment), `runConnectorCase(make, case)` for every other contract
+  (each step's method, arguments and result or refusal, over `replayIntegrationApi`). `certification: "pending"` until a
+  sandbox capture replaces the recording.
+- Meta has one Integration, in OS integrations: its Connection serves WhatsApp (the `@stackra/notifications`
+  `ConnectionWhatsAppTransportDriver` and `MetaWhatsAppInboundDriver` read it), the catalogue (`ProductFeed`), the
+  conversions API and audiences (`AdPlatform`) and the pixel. There is no second Meta Integration anywhere.
+
+The OS connectors (os-104), with the public documentation each is built from:
+
+| Connector                                                                  | Contracts                                               | Auth                                                                                                         | Public docs                                                                                         |
+| -------------------------------------------------------------------------- | ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------- |
+| Amazon (SP-API)                                                            | `SalesChannelConnector`, `ProductFeedConnector`         | `OAuth2Code` (Login with Amazon), `token: { header: "x-amz-access-token" }`, regional `baseUrl`              | https://developer-docs.amazon.com/sp-api/                                                           |
+| noon                                                                       | `SalesChannelConnector`                                 | per noon's partner API                                                                                       | https://partners.noon.com (seller-gated docs; scope to confirm)                                     |
+| Salla                                                                      | `SalesChannelConnector`                                 | `OAuth2Code`, `hmac` webhook recipe                                                                          | https://docs.salla.dev/                                                                             |
+| Zid                                                                        | `SalesChannelConnector`                                 | `OAuth2Code`, `token: { header: "x-manager-token" }`, `headers: { authorization: "Bearer {authorization}" }` | https://docs.zid.sa/                                                                                |
+| Meta (one Integration)                                                     | `AdPlatformConnector`, `ProductFeedConnector`, WhatsApp | `OAuth2Code` (system user token), `hmac` webhook recipe                                                      | https://developers.facebook.com/docs/marketing-api/conversions-api                                  |
+| TikTok                                                                     | `AdPlatformConnector`, `ProductFeedConnector`           | `OAuth2Code`, `token: { header: "access-token" }`                                                            | https://business-api.tiktok.com/portal/docs                                                         |
+| Snap                                                                       | `AdPlatformConnector`, `ProductFeedConnector`           | `OAuth2Code`                                                                                                 | https://developers.snap.com/api/marketing-api/Conversions-API                                       |
+| Google Ads, Merchant Center                                                | `AdPlatformConnector`, `ProductFeedConnector`           | `OAuth2Code`, `headers: { "developer-token": "{developerToken}" }`                                           | https://developers.google.com/google-ads/api/docs/start, https://developers.google.com/merchant/api |
+| One 3PL per launch country (COM-113, on the first design partner's demand) | `FulfilmentProviderConnector`                           | per provider                                                                                                 | the chosen provider's API docs                                                                      |
+
 ## Payroll
 
 The `payroll` category's Connections implement `PayrollConnector.pushPayInputs(batch, idempotencyKey)`: one pay
@@ -410,8 +459,8 @@ record and an array repeats its key.
   payment gateways `@stackra/payments`'; carriers OS integrations connectors behind `@stackra/shipping`.
 - Accounting provider drivers (Xero, QuickBooks Online, Zoho Books, Qoyod, Daftra, later Odoo) and their recordings:
   OS integrations connectors (ADR 0443 decision 7), certification pending.
-- Ad-platform and marketplace Integrations: not built yet (see the spec's open items). The Google Wallet
-  Integration itself (base URL, `OAuth2JwtBearer` auth) is an OS connector (R3-8); `./node` takes its `api`.
+- Marketplace, 3PL and ad-platform Integrations: OS integrations connectors (see Marketplaces, 3PLs and ad
+  platforms), certification pending. The Google Wallet Integration itself (base URL, `OAuth2JwtBearer` auth) is an OS connector (R3-8); `./node` takes its `api`.
 - Wallet pass device updates (the Apple pass web service and push, Google object patches on record change) and
   revocation: not built yet (STA-791).
 

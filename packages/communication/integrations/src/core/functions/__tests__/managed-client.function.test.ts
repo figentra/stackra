@@ -2,13 +2,14 @@
  * Stackra file contract:
  * Purpose: unit tests of `managedClient`: it joins paths to the base URL and refuses another origin, authenticates by
  *          each auth type (an API key from the connection before the platform's secret, Basic, a signed JWT, an OAuth
- *          bearer), sends a form body when the call or the Integration asks, retries only what is safe, honours the idempotency header, keeps to the rate limits, and turns a
+ *          bearer, or a token in the header and layout the Integration names), adds the declared headers under the
+ *          call's own, sends a form body when the call or the Integration asks, retries only what is safe, honours the idempotency header, keeps to the rate limits, and turns a
  *          4xx into `ProviderRefusedError` and spent retries into `ProviderUnavailableError` without a credential in
  *          either.
  * Boundary: test only; `fetch` is stubbed, the secret store answers from a map, the clock is frozen and the buckets
  *           are the memory driver of `@stackra/actions`.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0308 (rules 4, 6, 13 and 20); ADR 0217.
+ * Governing contract: ADR 0022 (test placement); ADR 0308 (rules 4, 6, 13 and 20); ADR 0217; STA-793.
  */
 import { MemoryRateLimitStoreDriver } from "@stackra/actions";
 import { Secret } from "@stackra/config";
@@ -292,6 +293,41 @@ describe("managedClient", () => {
     await expect(clientOf(new OAuthIntegration()).get("/x")).rejects.toThrow(
       /through a connection/,
     );
+  });
+
+  it("sends an OAuth token in the header and layout the Integration names", async () => {
+    class MarketplaceIntegration extends Integration({
+      ...BASE,
+      provider: "market",
+      auth: {
+        type: AuthType.OAuth2ClientCredentials,
+        tokenUrl: "https://auth.mail.example/token",
+        clientId: "{clientId}",
+        clientSecret: "{clientSecret}",
+        token: { header: "x-access-token", format: "{accessToken}" },
+      },
+    }) {}
+    const fetchMock = stubFetch(() => json({}));
+    await clientOf(new MarketplaceIntegration(), { accessToken: async () => "access-2" }).get("/x");
+    expect(headerOf(fetchMock, 0, "x-access-token")).toBe("access-2");
+    expect(headerOf(fetchMock, 0, "authorization")).toBeNull();
+  });
+
+  it("adds the declared headers with their placeholders, under the call's own and the credentials", async () => {
+    class HeadedIntegration extends Integration({
+      ...BASE,
+      provider: "headed",
+      auth: { type: AuthType.ApiKey, header: "authorization", format: "Bearer {apiKey}" },
+      headers: { "x-developer-token": "{apiKey}", "x-account": "main", authorization: "nope" },
+    }) {
+      @Secret("MAIL_API_KEY")
+      apiKey!: string;
+    }
+    const fetchMock = stubFetch(() => json({}));
+    await clientOf(new HeadedIntegration()).get("/x", { headers: { "x-account": "child" } });
+    expect(headerOf(fetchMock, 0, "x-developer-token")).toBe("platform-key");
+    expect(headerOf(fetchMock, 0, "x-account")).toBe("child");
+    expect(headerOf(fetchMock, 0, "authorization")).toBe("Bearer platform-key");
   });
 
   it("sends a form body when the call asks, repeating array fields", async () => {

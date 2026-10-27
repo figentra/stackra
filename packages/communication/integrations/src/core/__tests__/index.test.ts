@@ -80,6 +80,7 @@ describe("@stackra/integrations", () => {
       "credentialRef",
       "handoverSteps",
       "mapJournal",
+      "matchKeysOf",
       "postJournal",
       "postMappedJournal",
       "recordingPlan",

@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `managedClient`, the client behind `integration.api` and `connection.api`: it joins a path to the
  *          Integration's `baseUrl`, so a call never leaves its origin (the egress allowlist), adds the credentials
- *          of the Integration's `auth` type, keeps to its rate limits, retries what is safe to retry, and turns every
+ *          of the Integration's `auth` type (an OAuth token in the header and layout `auth.token` names) and its
+ *          declared `headers`, keeps to its rate limits, retries what is safe to retry, and turns every
  *          provider outcome into a value or a typed refusal.
  * Boundary: internal; `IntegrationRuntime#client` builds it. JSON in and out, or a form body when the call or the
  *           Integration's `requestBody` asks. A
@@ -13,7 +14,7 @@
  *           are `ProviderUnavailableError`. No credential, token or response body is ever put in an error. A bucket
  *           key names the connection id (or `platform`), never a credential.
  * Runtime: isomorphic
- * Governing contract: ADR 0308 (rules 4, 6, 13 and 20); ADR 0217 (token buckets); ADR 0140 (refusals).
+ * Governing contract: ADR 0308 (rules 4, 6, 13 and 20); ADR 0217 (token buckets); ADR 0140 (refusals); STA-793.
  */
 import type { Connection } from "#core/bases/connection.base";
 import { AuthType } from "#core/enums/auth-type.enum";
@@ -144,7 +145,11 @@ export function managedClient(options: ManagedClientOptions): IntegrationApi {
           throw new TypeError(
             `${name} authenticates with OAuth, so it calls only through a connection that holds its tokens`,
           );
-        headers.set("authorization", `Bearer ${await options.accessToken()}`);
+        const token = await options.accessToken();
+        headers.set(
+          auth.token?.header ?? "authorization",
+          (auth.token?.format ?? "Bearer {accessToken}").replace("{accessToken}", token),
+        );
         return;
       }
     }
@@ -179,6 +184,8 @@ export function managedClient(options: ManagedClientOptions): IntegrationApi {
     const url = urlOf(path, request.query);
     const form = request.form ?? declared.requestBody === "form";
     const headers = new Headers(request.headers);
+    for (const [header, value] of Object.entries(declared.headers ?? {}))
+      if (!headers.has(header)) headers.set(header, resolve(value));
     if (!headers.has("accept")) headers.set("accept", "application/json");
     if (body !== undefined)
       headers.set("content-type", form ? "application/x-www-form-urlencoded" : "application/json");

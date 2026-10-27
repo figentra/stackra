@@ -2,15 +2,16 @@
  * Stackra file contract:
  * Purpose: `ConnectorKind`, the connector kinds an Integration with the connector role may declare: a carrier, a
  *          fulfilment provider, a sales channel (a marketplace, a delivery app or another shop), a product feed, an EDI
- *          network, a fraud scorer and a document store.
+ *          network, a fraud scorer, a document store and an ad platform.
  * Boundary: an `Enum.of` value plus the type of the same name. Each kind names the interface its Connection implements:
  *           `CarrierGateway` of `@stackra/shipping`, and `FulfilmentProviderConnector`, `SalesChannelConnector`,
- *           `ProductFeedConnector`, `EdiConnector`, `FraudScoringConnector` and `DocumentStoreConnector` of
+ *           `ProductFeedConnector`, `EdiConnector`, `FraudScoringConnector`, `DocumentStoreConnector` and
+ *           `AdPlatformConnector` of
  *           `./contracts`. A kind is a capability `connectionsOf` looks up; it is not a sixth `IntegrationRole`.
  *           Which connectors a Market lists is data (`connector-catalogue`).
  * Runtime: isomorphic
  * Governing contract: ADR 0355 (decisions 1 and 6); ADR 0218 (decision 3); ADR 0447 (decisions 2 to 5); COM-147,
- *                     COM-301; COM-296; R3-SO-07.
+ *                     COM-301; COM-296; R3-SO-07; STA-793 (ad platform).
  */
 import { Enum } from "@stackra/contracts";
 
@@ -35,6 +36,8 @@ export const ConnectorKind = Enum.of({
   FraudScoring: "fraud_scoring",
   /** A document management system we list, fetch and file documents in (`DocumentStoreConnector`). */
   DocumentStore: "document_store",
+  /** Server-side conversions and customer audiences of an ad platform (`AdPlatformConnector`). */
+  AdPlatform: "ad_platform",
 });
 
 /** One of the codes above. */

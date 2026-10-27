@@ -2,13 +2,13 @@
  * Stackra file contract:
  * Purpose: `readIntegrationOptions`, the check `Integration({ ... })` runs when a class is declared: a provider code,
  *          a known category, known levels, a complete `auth` for its type, an http(s) base URL (or an https one with
- *          placeholders), known roles and connector kinds, well-formed rate limits, retries, health schedule and
- *          webhooks. It returns the options to record, `multiple` defaulted.
+ *          placeholders), lowercase extra headers and OAuth token headers, known roles and connector kinds, well-formed
+ *          rate limits, retries, health schedule and webhooks. It returns the options to record, `multiple` defaulted.
  * Boundary: internal. A mistake here is the author's, so it throws a `TypeError` or `RangeError` on import, never a
  *           refusal. Placeholders are not resolved here: gen fails one that names no field
  *           (`integration_placeholder_unknown`), and the managed client refuses it at call time.
  * Runtime: isomorphic
- * Governing contract: ADR 0308 (rules 1, 6, 9, 10, 13 to 15); ADR 0305 (rule 2).
+ * Governing contract: ADR 0308 (rules 1, 6, 9, 10, 13 to 15); ADR 0305 (rule 2); STA-793 (headers, token placement).
  */
 import { Enum } from "@stackra/contracts";
 
@@ -54,6 +54,10 @@ const isPlaceholderUrl = (value: unknown): boolean =>
   /\{[A-Za-z_$][\w$]*\}/.test(value) &&
   value.startsWith("https://") &&
   isHttpUrl(value.replace(/\{[A-Za-z_$][\w$]*\}/g, "placeholder"));
+
+/** Whether `value` is a lowercase HTTP header name. */
+const isHeaderName = (value: unknown): boolean =>
+  isText(value) && /^[a-z0-9!#$%&'*+.^_`|~-]+$/.test(value);
 
 /** Whether `value` is a whole number from 1. */
 const isCount = (value: unknown): boolean => Number.isInteger(value) && (value as number) >= 1;
@@ -161,6 +165,24 @@ export function readIntegrationOptions(
     case AuthType.None:
       break;
   }
+  if ("token" in auth && auth.token !== undefined)
+    ensure(
+      (auth.token.header === undefined || isHeaderName(auth.token.header)) &&
+        (auth.token.format === undefined ||
+          (isText(auth.token.format) && auth.token.format.includes("{accessToken}"))),
+      "auth",
+      "token needs a lowercase header and a format with {accessToken}",
+    );
+  ensure(
+    options.headers === undefined ||
+      (typeof options.headers === "object" &&
+        options.headers !== null &&
+        Object.entries(options.headers).every(
+          ([name, value]) => isHeaderName(name) && isText(value),
+        )),
+    "headers",
+    "need lowercase names and text values",
+  );
   ensure(
     options.requestBody === undefined || ["json", "form"].includes(options.requestBody),
     "requestBody",

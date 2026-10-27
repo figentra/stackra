@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `ConnectorGateway`, the one place a module gets the Connection of a connector kind: the fulfilment provider
- *          (3PL, WMS), the sales channel, the product feed, the EDI network, the fraud scorer or the document store,
+ *          (3PL, WMS), the sales channel, the product feed, the EDI network, the fraud scorer, the document store or the
+ *          ad platform,
  *          for one provider when the caller names it (a channel order reloads its own channel), otherwise the one
  *          ADR 0356 picks for the tenant and Market.
  * Boundary: a service over `ProviderResolver` and `connectionsOf`; it adds no rule of its own. The capability passed
@@ -11,10 +12,11 @@
  *           (`(channel) => channel.setMenu !== undefined`). It names no provider and no Market.
  * Runtime: isomorphic
  * Governing contract: ADR 0447 (decisions 2 and 3); ADR 0356 (decisions 1 and 2); ADR 0355 (decisions 1 and 6);
- *                     STA-904; COM-147; COM-301.
+ *                     STA-904; COM-147; COM-301; STA-793 (ad platforms).
  */
 import { Service } from "@stackra/container";
 
+import type { AdPlatformConnector } from "#contracts/ads/ad-platform-connector.type";
 import type { DocumentStoreConnector } from "#contracts/types/document-store-connector.type";
 import type { EdiConnector } from "#contracts/types/edi-connector.type";
 import type { FraudScoringConnector } from "#contracts/types/fraud-scoring-connector.type";
@@ -111,6 +113,17 @@ export class ConnectorGateway extends Service {
     query: ConnectorQuery<DocumentStoreConnector> = {},
   ): Promise<Connection & DocumentStoreConnector> {
     return this.of(ConnectorKind.DocumentStore, query);
+  }
+
+  /**
+   * An ad platform (conversions API and audiences).
+   *
+   * @throws NoProviderError when none serves.
+   */
+  async ads(
+    query: ConnectorQuery<AdPlatformConnector> = {},
+  ): Promise<Connection & AdPlatformConnector> {
+    return this.of(ConnectorKind.AdPlatform, query);
   }
 
   /** The Connection of `kind`, narrowed to `query.provider` when given. */

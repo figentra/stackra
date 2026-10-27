@@ -4,7 +4,7 @@
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0355 (decision 1); ADR 0231; ADR 0447 (the edi, fraud-scoring and document-store
- *                     kinds).
+ *                     kinds); STA-793 (the ad-platform kind).
  */
 import { Enum } from "@stackra/contracts";
 import { describe, expect, it } from "@stackra/testing";
@@ -29,6 +29,7 @@ describe("IntegrationRole and ConnectorKind", () => {
       "edi",
       "fraud_scoring",
       "document_store",
+      "ad_platform",
     ]);
   });
 });

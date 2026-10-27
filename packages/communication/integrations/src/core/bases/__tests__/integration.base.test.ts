@@ -5,7 +5,7 @@
  *          the `api` once, and every malformed option is refused when the class is declared.
  * Boundary: test only; the runtime is a stand-in whose `client` returns a marker.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0308 (rules 1, 3, 6, 9 and 13); ADR 0305 (rule 2).
+ * Governing contract: ADR 0022 (test placement); ADR 0308 (rules 1, 3, 6, 9 and 13); ADR 0305 (rule 2); STA-793.
  */
 import { Secret } from "@stackra/config";
 import { kindOf } from "@stackra/container";
@@ -119,6 +119,19 @@ describe("Integration", () => {
         },
       }),
     ).toThrow(/needs a level/);
+    expect(
+      refuse({
+        auth: {
+          type: AuthType.OAuth2ClientCredentials,
+          tokenUrl: "https://provider.example/token",
+          clientId: "{clientId}",
+          clientSecret: "{clientSecret}",
+          token: { header: "x-access-token", format: "{token}" },
+        },
+      }),
+    ).toThrow(/accessToken/);
+    expect(refuse({ headers: { "Developer-Token": "{developerToken}" } })).toThrow(/headers/);
+    expect(refuse({ headers: { "developer-token": "" } })).toThrow(/headers/);
     expect(refuse({ baseUrl: "ftp://api.resend.com" })).toThrow(/baseUrl/);
     expect(refuse({ baseUrl: "http://{host}/api" })).toThrow(/baseUrl/);
     expect(refuse({ roles: [IntegrationRole.Driver, IntegrationRole.Driver] })).toThrow(/roles/);

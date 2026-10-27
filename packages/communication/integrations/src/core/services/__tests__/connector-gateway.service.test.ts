@@ -5,7 +5,7 @@
  *          the resolver runs, and the filter and the Market pass through.
  * Boundary: test only; the resolver is a stand-in that records its calls.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0447 (decisions 2 and 3); ADR 0356 (decision 2).
+ * Governing contract: ADR 0022; ADR 0447 (decisions 2 and 3); ADR 0356 (decision 2); STA-793 (`ads`).
  */
 import { describe, expect, it } from "@stackra/testing";
 
@@ -52,9 +52,22 @@ class NoonConnection extends Connection<NoonIntegration> {
   }
 }
 
+class AdNetIntegration extends Integration({
+  ...BASE,
+  provider: "adnet",
+  category: IntegrationCategory.Marketing,
+  connectors: [ConnectorKind.AdPlatform, ConnectorKind.ProductFeed],
+}) {}
+class AdNetConnection extends Connection<AdNetIntegration> {
+  async check(): Promise<ConnectedAccount> {
+    return ConnectedAccount.create({ id: "adnet" });
+  }
+}
+
 registerConnections([
   { connection: ShipBobConnection, integration: ShipBobIntegration, key: "fulfilment.shipbob" },
   { connection: NoonConnection, integration: NoonIntegration, key: "channels.noon" },
+  { connection: AdNetConnection, integration: AdNetIntegration, key: "ads.adnet" },
 ]);
 
 /** A filter the gateway passes through untouched. */
@@ -86,7 +99,12 @@ describe(ConnectorGateway, () => {
     await new ConnectorGateway(resolver).channel({ provider: "noon", accepts, market: "sa" });
     expect(calls[0]).toEqual(["sales_channel", { noon: NoonConnection }, accepts, "sa"]);
     await new ConnectorGateway(resolver).feed();
-    expect(calls[1]?.slice(0, 2)).toEqual(["product_feed", { noon: NoonConnection }]);
+    expect(calls[1]?.slice(0, 2)).toEqual([
+      "product_feed",
+      { noon: NoonConnection, adnet: AdNetConnection },
+    ]);
+    await new ConnectorGateway(resolver).ads({ provider: "adnet" });
+    expect(calls[2]?.slice(0, 2)).toEqual(["ad_platform", { adnet: AdNetConnection }]);
   });
 
   it("refuses a provider with no registered Connection of the kind", async () => {

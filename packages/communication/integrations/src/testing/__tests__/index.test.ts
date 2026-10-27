@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: the consumer contract of the `./testing` entry: the template's tests import `fakeIntegrationApi` and
- *          `makeConnection` from it, the memory connectors and the accounting recorded-case runner are the other
+ *          `makeConnection` from it, the memory connectors and the recorded-case runners (accounting, any connector,
+ *          fulfilment) are the other
  *          values with the plugin, and the helpers return what the template passes on (an `IntegrationApi`, the
  *          connection class's instance).
  * Boundary: test only; imports the stand-in barrel through its `#testing` alias.
@@ -18,12 +19,15 @@ describe("@stackra/integrations/testing", () => {
     expect(Object.keys(testing).sort()).toEqual([
       "INTEGRATIONS_TESTING_PLUGIN",
       "MemoryAccountingConnector",
+      "MemoryAdPlatform",
       "MemoryFulfilmentProvider",
       "MemoryPayrollConnector",
       "fakeIntegrationApi",
       "makeConnection",
       "replayIntegrationApi",
       "runAccountingCase",
+      "runConnectorCase",
+      "runFulfilmentCase",
     ]);
     expect(testing.INTEGRATIONS_TESTING_PLUGIN.name).toBe("@stackra/integrations");
   });

@@ -2,12 +2,14 @@
  * Stackra file contract:
  * Purpose: `IntegrationOptions`, what `Integration({ ... })` takes: the static description of one provider, the same
  *          for every scope and user: who may hold a connection, how a call authenticates, where the API is, its rate
- *          limits and retries, the health schedule, webhook verification and the listing.
+ *          limits and retries, the headers every call carries, the health schedule, webhook verification and the
+ *          listing.
  * Boundary: a type only; the options are checked when the class is declared and kept in the kind registry. The key,
  *           labels, logo, permissions, webhook path, egress allowlist and scope fingerprint are derived by gen and
  *           locked in the manifest (ADR 0308 rule 19), never options.
  * Runtime: isomorphic
- * Governing contract: ADR 0308 (rules 1, 6, 9, 10, 13 to 15); ADR 0305 (rule 2: a kind with options is called).
+ * Governing contract: ADR 0308 (rules 1, 6, 9, 10, 13 to 15); ADR 0305 (rule 2: a kind with options is called);
+ *                     STA-793 (`headers`).
  */
 import type { ConnectionLevel } from "#core/enums/connection-level.enum";
 import type { ConnectorKind } from "#core/enums/connector-kind.enum";
@@ -56,6 +58,12 @@ export interface IntegrationOptions {
    * placeholder in the host (`https://{host}`) is filled from the credential set, for a provider run per region.
    */
   readonly baseUrl?: string;
+
+  /**
+   * Headers every call carries besides the credentials, by lowercase name, each value with its `{field}` placeholders
+   * (Google Ads' `developer-token: "{developerToken}"`). A call's own headers win, and the credentials win over both.
+   */
+  readonly headers?: Readonly<Record<string, string>>;
 
   /** The provider's documented rate limits. */
   readonly rateLimits?: readonly RateLimit[];

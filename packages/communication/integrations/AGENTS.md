@@ -3,7 +3,7 @@
 <!--
 Stackra file contract:
 Purpose: the agent rules of @stackra/integrations: where code goes, entries and barrels, the package rules (connector
-         kinds and the capability lookup included) and PII.
+         kinds and the capability lookup, ad platforms and the connector recorded-case runners included) and PII.
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
 Governing contract: ADR 0294; ADR 0305; ADR 0308; ADR 0348; ADR 0355; ADR 0356; ADR 0376; ADR 0443; ADR 0447.
@@ -31,6 +31,10 @@ Provider integrations, connections and their store (ADR 0308). Member at `packag
 | Accounting: a contract   | `src/contracts/accounting/<name>.<kind>.ts` |
 | Accounting: core         | `src/core/accounting/<name>.<kind>.ts`      |
 | Accounting: testing kit  | `src/testing/accounting/<name>.<kind>.ts`   |
+| Ads: a contract          | `src/contracts/ads/<name>.<kind>.ts`        |
+| Ads: core                | `src/core/ads/<name>.<kind>.ts`             |
+| Ads: testing kit         | `src/testing/ads/<name>.<kind>.ts`          |
+| Connector case runners   | `src/testing/connectors/<name>.<kind>.ts`   |
 | Voice: a leaf contract   | `src/contracts/voice/<name>.<kind>.ts`      |
 | Voice: anything else     | `src/core/voice/<name>.<kind>.ts`           |
 | Voice: the SIP trunk     | `src/node/sip/<name>.<kind>.ts`             |
@@ -118,6 +122,13 @@ Provider integrations, connections and their store (ADR 0308). Member at `packag
   drivers are OS connectors; the recorded-case runner (`replayIntegrationApi`, `runAccountingCase`) stays here, names
   no vendor, and throws a `TypeError` that names the call and the differing part, never a body. A recording from public
   docs is `certification: "pending"`.
+- Marketplaces, 3PLs and ad platforms (STA-793): vendor Connections are OS connectors (ADR 0443 d7); here are only the
+  contracts, `matchKeysOf`, the auth placement (`auth.token`, the Integration's `headers`) and the runners. A person
+  reaches an ad platform only through `matchKeysOf` (hashed); never put a plain email or phone in a `ConversionEvent`
+  or an audience member. Event-name mappings, phone formats, pixel, ad-account and audience ids are Connection
+  settings, never constants. A connector driver passes `runConnectorCase` (and a 3PL `runFulfilmentCase`) with
+  recordings from public docs marked `certification: "pending"`. Meta is one Integration (WhatsApp, catalogue, ads,
+  pixel) in OS integrations; never add a second.
 - Meters: `voice.minutes` and `speech.seconds` are written only through `VoiceMeter` (the existing `usage.recorded`
   event, `sum`, exact units); rounding and prices are rate-card data. Speech seconds are counted from raw bytes, so
   `AudioEncoding` stays uncompressed; adding a compressed codec needs another way to measure.
@@ -141,4 +152,5 @@ Provider integrations, connections and their store (ADR 0308). Member at `packag
 | Wallet pass content     | `WalletPassRequest`, `IssuedWalletPass`    | Lock-screen data only (ADR 0348 d5); built and signed in memory, never stored or logged here.  |
 | Call and lane audio     | `Speech`, `SpeechService`, `AudioDevice`   | Streamed through for one call or lane turn; never stored or logged here.                       |
 | Transcripts             | `Transcript`                               | Returned to the caller only; never stored or logged here.                                      |
+| Ad match keys           | `MatchKeys`, `ConversionEvent`             | SHA-256 hashed by `matchKeysOf` before a connector sees them; IP and user agent pass unhashed. |
 | Connected account label | `ConnectedAccount`, store records          | The provider's account id and name or domain, shown to the owner in the console.               |

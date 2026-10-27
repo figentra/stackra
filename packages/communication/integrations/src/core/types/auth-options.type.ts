@@ -5,9 +5,11 @@
  *          integration names its header.
  * Boundary: a type only; the members are not exported (read one with `Extract<AuthOptions, { type: ... }>`). Every
  *           string that carries a credential is a `{field}` placeholder resolved on the Connection first, then on the
- *           Integration (ADR 0308 rule 4), never a value. The word scope means an OAuth scope only here (rule 5).
+ *           Integration (ADR 0308 rule 4), never a value. The word scope means an OAuth scope only here (rule 5). An
+ *           OAuth token goes in `authorization: Bearer <token>` unless `token` names another header or layout
+ *           (`x-amz-access-token: <token>`, `access-token: <token>`), STA-793.
  * Runtime: isomorphic
- * Governing contract: ADR 0308 (rules 4 to 8); RFC 6749 (OAuth 2.0); RFC 7636 (PKCE); RFC 7519 (JWT); RFC 7523 (JWT
+ * Governing contract: ADR 0308 (rules 4 to 8); STA-793 (token placement); RFC 6749 (OAuth 2.0); RFC 7636 (PKCE); RFC 7519 (JWT); RFC 7523 (JWT
  *                     bearer grant).
  */
 import type { AuthType } from "#core/enums/auth-type.enum";
@@ -20,6 +22,14 @@ type ClientAuthentication = "basic" | "body";
 interface RefreshPolicy {
   /** How long before expiry the token is renewed. */
   readonly buffer?: Interval;
+}
+
+/** Where an OAuth access token is sent: `authorization` and `"Bearer {accessToken}"` when left out. */
+interface TokenPlacement {
+  /** The header, lowercase (`x-amz-access-token`). */
+  readonly header?: string;
+  /** The value written, with `{accessToken}` where the token goes (`"{accessToken}"`). */
+  readonly format?: string;
 }
 
 /** Authorization code with PKCE; the connection holds the tokens and the managed client refreshes them on use. */
@@ -41,6 +51,8 @@ interface OAuth2CodeAuth {
   readonly clientAuthentication?: ClientAuthentication;
   /** When the access token is renewed. */
   readonly refresh?: RefreshPolicy;
+  /** Where the access token is sent, for a provider that does not take a bearer header. */
+  readonly token?: TokenPlacement;
 }
 
 /** Client credentials: the client trades its own id and secret for a short-lived token, cached until it expires. */
@@ -58,6 +70,8 @@ interface OAuth2ClientCredentialsAuth {
   readonly clientAuthentication?: ClientAuthentication;
   /** When the cached token is renewed. */
   readonly refresh?: RefreshPolicy;
+  /** Where the access token is sent, for a provider that does not take a bearer header. */
+  readonly token?: TokenPlacement;
 }
 
 /**
@@ -86,6 +100,8 @@ interface OAuth2JwtBearerAuth {
   readonly expiresIn?: Interval;
   /** When the cached token is renewed. */
   readonly refresh?: RefreshPolicy;
+  /** Where the access token is sent, for a provider that does not take a bearer header. */
+  readonly token?: TokenPlacement;
 }
 
 /** A static key, in exactly one of a header or a query parameter. */
