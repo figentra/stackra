@@ -97,6 +97,7 @@
   "dependencies": {
     "@stackra/actions": "workspace:*",
     "@stackra/container": "workspace:*",
+    "@stackra/content": "workspace:*",
     "@stackra/contracts": "workspace:*",
     "@stackra/database": "workspace:*",
     "@stackra/errors": "workspace:*",
@@ -106,6 +107,7 @@
     "@stackra/outbox": "workspace:*",
     "@stackra/queue": "workspace:*",
     "@stackra/rules": "workspace:*",
+    "@stackra/scheduler": "workspace:*",
     "@stackra/validation": "workspace:*",
     "zod": "catalog:"
   },
