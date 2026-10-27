@@ -43,18 +43,18 @@ export class ColumnChangeRecord implements ColumnChange {
     this.name = name;
   }
 
-  /** See `ColumnChange.nullable`. */
+  /** Records `DROP NOT NULL` on the column, as `ColumnChange.nullable` describes. */
   nullable(): this {
     return this.setNullability("null");
   }
 
-  /** See `ColumnChange.notNull`. */
+  /** Records `SET NOT NULL` on the column, as `ColumnChange.notNull` describes. */
   notNull(): this {
     return this.setNullability("not null");
   }
 
   /**
-   * See `ColumnChange.type`.
+   * Records a type conversion of the column, as `ColumnChange.type` describes.
    *
    * @throws TypeError for a type the blueprint does not write, the same type on both sides, a blank `using`, or a
    *         second type change of the column.

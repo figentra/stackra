@@ -5,7 +5,7 @@
  * Boundary: checks the document as `ExperienceKind.PrintDocument` and draws it before calling the engine, so a refused
  *           document never reaches it. The HTML holds inline data only (images as `data:` URLs written by blocks), so
  *           the engine fetches nothing. An engine failure propagates as the engine threw it.
- * Runtime: node (the PDF engine runs beside the server)
+ * Runtime: node
  * Governing contract: ADR 0270 (decision 6); ADR 0365 (decision 2).
  */
 import { ExperienceKind } from "#contracts/enums/experience-kind.enum";

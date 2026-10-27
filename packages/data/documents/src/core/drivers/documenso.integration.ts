@@ -19,7 +19,7 @@ import {
 } from "@stackra/integrations";
 
 /**
- * Documenso, self-hosted.
+ * Describes how a Connection reaches a self-hosted Documenso instance for e-signature.
  *
  * @example
  * const SIGNING: ProviderDrivers<ESignatureConnection> = { documenso: DocumensoConnection };

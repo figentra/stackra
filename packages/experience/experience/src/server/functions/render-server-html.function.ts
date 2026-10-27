@@ -7,7 +7,7 @@
  *           (a block outside the kind, refused props, a malformed tree, the size bounds) `InvalidDocumentError`.
  *           Nothing in a document is evaluated; a node's `input` is ignored (the host resolves data into `data`).
  *           The direction comes from the host's locale setting.
- * Runtime: isomorphic (node on the server)
+ * Runtime: node
  * Governing contract: ADR 0270 (decisions 6 and 7); ADR 0110 (decisions 4 and 6); ADR 0365 (decision 2: inline data).
  */
 import { Renamed, schemaOf } from "@stackra/validation";

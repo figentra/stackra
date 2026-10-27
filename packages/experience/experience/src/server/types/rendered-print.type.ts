@@ -11,6 +11,6 @@ export interface RenderedPrint {
   /** The HTML handed to the engine. */
   readonly html: string;
 
-  /** The PDF. */
+  /** The PDF file the engine printed from `html`, as raw bytes. */
   readonly pdf: Uint8Array;
 }

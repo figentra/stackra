@@ -10,4 +10,7 @@
  */
 
 /** A shell's import map. */
-export type ImportMap = { readonly imports: Readonly<Record<string, string>> };
+export type ImportMap = {
+  /** Each bare specifier or `/`-ending prefix mapped to the URL of the shared module the shell serves for it. */
+  readonly imports: Readonly<Record<string, string>>;
+};

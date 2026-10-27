@@ -11,7 +11,7 @@ import type { GeoPoint } from "#contracts/types/geo-point.type";
 import type { TimeWindow } from "#contracts/types/time-window.type";
 
 /**
- * A stop.
+ * One place a vehicle must visit, with its load and its delivery window.
  *
  * @example
  * const stop: RouteStop = { stopId: "ord_1", location, demand: { chilled: 2, ambient: 5 }, window: slot };

@@ -10,7 +10,7 @@ import type { GeoPoint } from "#contracts/types/geo-point.type";
 import type { TimeWindow } from "#contracts/types/time-window.type";
 
 /**
- * A vehicle.
+ * One vehicle the planner can load, with its shift, start, end and capacity.
  *
  * @example
  * const van: RouteVehicle = { vehicleId: "van_1", start: depot, shift, capacity: { chilled: 20, ambient: 60 } };

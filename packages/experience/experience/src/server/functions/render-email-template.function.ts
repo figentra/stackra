@@ -5,7 +5,7 @@
  * Boundary: email-safe blocks only: the document is checked as `ExperienceKind.EmailTemplate`, so a block that does
  *           not declare that kind is refused. It does not send: the host hands the result to the mail driver or the
  *           notifications service. Throws as `renderServerHtml` does.
- * Runtime: isomorphic (node on the server)
+ * Runtime: node
  * Governing contract: ADR 0270 (decisions 6, 7 and 12).
  */
 import { ExperienceKind } from "#contracts/enums/experience-kind.enum";

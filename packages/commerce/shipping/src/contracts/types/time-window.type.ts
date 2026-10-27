@@ -9,7 +9,7 @@
  */
 
 /**
- * An interval.
+ * The span of time a stop may be served in or a vehicle may work.
  *
  * @example
  * const slot: TimeWindow = { from: "2026-10-25T09:00:00+03:00", to: "2026-10-25T11:00:00+03:00" };
