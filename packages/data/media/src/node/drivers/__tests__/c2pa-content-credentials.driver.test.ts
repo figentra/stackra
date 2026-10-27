@@ -53,7 +53,16 @@ function driver(signed = true, timestampUrl = ""): C2paContentCredentialsDriver 
   if (signed)
     secrets.set("MEDIA_C2PA_SIGNING_CERTIFICATE", "CERT").set("MEDIA_C2PA_SIGNING_KEY", "KEY");
   return new C2paContentCredentialsDriver(
-    buildConfig(MediaConfig, { values: { c2pa: { algorithm: "ps256", timestampUrl } }, secrets }),
+    buildConfig(MediaConfig, {
+      values: {
+        c2pa: {
+          algorithm: "ps256",
+          timestampUrl,
+          formats: ["image/jpeg", "image/png", "image/webp"],
+        },
+      },
+      secrets,
+    }),
   );
 }
 

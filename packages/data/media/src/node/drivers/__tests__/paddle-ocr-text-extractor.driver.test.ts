@@ -74,9 +74,9 @@ describe("PaddleOcrTextExtractorDriver", () => {
     await expect(extractor().extract(bytes, "text/plain", ["ar"])).rejects.toBeInstanceOf(
       RangeError,
     );
-    await expect(extractor(0).extract(bytes, "image/png", ["ar"])).rejects.toBeInstanceOf(
-      RangeError,
-    );
+    await expect(
+      extractor(1).extract(new Uint8Array(2), "image/png", ["ar"]),
+    ).rejects.toBeInstanceOf(RangeError);
     await expect(extractor().extract(bytes, "image/png", ["ar", "zh"])).rejects.toThrow(/zh/);
     expect(fetch).not.toHaveBeenCalled();
   });
