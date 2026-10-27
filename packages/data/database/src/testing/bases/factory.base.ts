@@ -72,13 +72,13 @@ export abstract class Factory<M extends object> implements RelationSource<M> {
   /** The factories of the rows each built row has. */
   private children: readonly Factory<object>[] = [];
 
-  /** The attributes of one row, before states and overrides. */
-  abstract definition(faker: Faker): Attributes<M>;
-
   /** A fresh factory of this class. */
   static new<F>(this: new () => F): F {
     return new this();
   }
+
+  /** The attributes of one row, before states and overrides. */
+  abstract definition(faker: Faker): Attributes<M>;
 
   /**
    * Builds `amount` rows instead of one; call it last in a chain.

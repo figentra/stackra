@@ -38,11 +38,17 @@ export function operationAction<M extends object>(
   const { actors = [ActorKind.User, ActorKind.Agent], ...rest } = options;
 
   /** The generated action. */
-  class OperationAction extends Action({ ...rest, key: `${key}.${operation}`, actors }) {
+  class OperationAction extends Action({
+    ...rest,
+    key: `${key}.${operation}`,
+    actors,
+  }) {
     /** The service it writes through. */
     private readonly service: CrudService<M>;
 
-    /** @param service - the model's service. */
+    /**
+     * @param service - the model's service.
+     */
     constructor(service: CrudService<M>) {
       super();
       this.service = service;

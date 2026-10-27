@@ -9,7 +9,7 @@ The MikroORM layer on Postgres. Member at `packages/data/database` (`tier:lib`),
 | You are writing…                                                     | It goes in…                                                                   |
 | -------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
 | A kind base (`CrudService`, `Migration`, `Macro`, …)                 | `src/core/bases/<name>.base.ts`                                               |
-| The `Factory` base and the other test helpers                        | `src/testing/{bases,constants,types}/`, `*.fixture.ts`                        |
+| The `Factory` base and the other test helpers                        | `src/testing/{bases,constants,types}/`, `use-postgres.ts`                     |
 | The `memory` driver of `Database` (PGlite, unit tier only)           | `src/testing/drivers/memory-database.driver.ts`                               |
 | A port (`Database`, which carries `Database.current()`)              | `src/core/ports/<name>.port.ts`                                               |
 | A port or type with no core dependency (`VisibilityFilter`, `Where`) | `src/contracts/{ports,types}/`                                                |

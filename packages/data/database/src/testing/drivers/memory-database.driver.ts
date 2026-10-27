@@ -83,6 +83,11 @@ export class MemoryDatabaseDriver extends Driver(Database) {
     return this.instance;
   }
 
+  /** The container's shutdown hook: `app.close()` closes the database it built. */
+  onApplicationShutdown(): Promise<void> {
+    return this.close();
+  }
+
   /** See `Database.em`. */
   em(): EntityManager {
     const root = this.orm.em;
@@ -124,11 +129,6 @@ export class MemoryDatabaseDriver extends Driver(Database) {
     this.instance = undefined;
     this.prepared = undefined;
     await orm?.close(true);
-  }
-
-  /** The container's shutdown hook: `app.close()` closes the database it built. */
-  onApplicationShutdown(): Promise<void> {
-    return this.close();
   }
 
   /** Creates the extensions and the schema once, on PGlite itself, so it never waits on the connection it serves. */

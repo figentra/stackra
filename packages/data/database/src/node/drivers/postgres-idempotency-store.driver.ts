@@ -38,7 +38,9 @@ export class PostgresIdempotencyStoreDriver extends Driver(IdempotencyStore) {
   /** The connected database each call opens its own transaction on. */
   private readonly database: Database;
 
-  /** @param database - the connected database. */
+  /**
+   * @param database - the connected database.
+   */
   constructor(database: Database) {
     super();
     this.database = database;

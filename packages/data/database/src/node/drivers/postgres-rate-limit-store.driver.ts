@@ -37,7 +37,9 @@ export class PostgresRateLimitStoreDriver extends Driver(RateLimitStore) {
   /** The connected database each take opens its own transaction on. */
   private readonly database: Database;
 
-  /** @param database - the connected database. */
+  /**
+   * @param database - the connected database.
+   */
   constructor(database: Database) {
     super();
     this.database = database;

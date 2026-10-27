@@ -12,7 +12,7 @@
  */
 import { kindOf } from "@stackra/container";
 
-import type { MigrationBase } from "#core/bases/migration.base";
+import type { MigrationBase } from "#core/bases/migration-base.base";
 import { quoteIdentifier } from "#core/functions/quote-identifier.function";
 import { SchemaRecord } from "#core/records/schema.record";
 import type { CompileOptions } from "#core/types/compile-options.type";

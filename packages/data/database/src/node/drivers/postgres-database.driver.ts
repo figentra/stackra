@@ -39,7 +39,9 @@ export class PostgresDatabaseDriver extends Driver(Database) {
   /** The MikroORM instance. */
   readonly orm: MikroORM;
 
-  /** @param orm - a connected MikroORM instance; use `connect` instead. */
+  /**
+   * @param orm - a connected MikroORM instance; use `connect` instead.
+   */
   constructor(orm: MikroORM) {
     super();
     this.orm = orm;

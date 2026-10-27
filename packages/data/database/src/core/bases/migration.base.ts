@@ -11,21 +11,12 @@
  */
 import { createKind } from "@stackra/container";
 
+import { MigrationBase } from "#core/bases/migration-base.base";
 import type { MigrationClass } from "#core/types/migration-class.type";
 import type { MigrationOptions } from "#core/types/migration-options.type";
-import type { SchemaBuilder } from "#core/types/schema-builder.type";
 
 /** A migration id: `<module>.<NNNN>_<snake stem>`. */
 const MIGRATION_ID = /^[a-z][a-z0-9_]*\.\d{4}_[a-z0-9_]+$/;
-
-/** The instance side every migration shares. */
-export abstract class MigrationBase {
-  /** Type-only kind brand, so a class of another kind cannot stand in for a migration. */
-  declare readonly "~kind": "migration";
-
-  /** Records the schema changes, in order, on `schema`; the compiler turns them into SQL steps. */
-  abstract up(schema: SchemaBuilder): void;
-}
 
 /** A migration instance. */
 export type Migration = MigrationBase;

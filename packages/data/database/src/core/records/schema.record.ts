@@ -54,7 +54,9 @@ export class SchemaRecord implements SchemaBuilder {
   /** The operations, in the order `up` recorded them. */
   private readonly operations: Operation[] = [];
 
-  /** @param macros - the macros every blueprint installs. */
+  /**
+   * @param macros - the macros every blueprint installs.
+   */
   constructor(macros: readonly MacroClass[]) {
     this.macros = macros;
   }

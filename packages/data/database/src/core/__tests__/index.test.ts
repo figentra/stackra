@@ -62,6 +62,9 @@ class Variant extends Model.with(HasPublicId("var")) {
 
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: merged with the generated [OptionalProps] augmentation below
 class Order extends Model.with(HasPublicId("ord"), Timestamps) {
+  @OneToMany(() => OrderLine, (line) => line.order, { orphanRemoval: true })
+  lines = new Collection<OrderLine>(this);
+
   customerId!: PublicId<"usr">;
 
   status: "pending_payment" | "paid" = "pending_payment";
@@ -69,9 +72,6 @@ class Order extends Model.with(HasPublicId("ord"), Timestamps) {
   totalMinor = 0;
 
   paidAt: Date | null = null;
-
-  @OneToMany(() => OrderLine, (line) => line.order, { orphanRemoval: true })
-  lines = new Collection<OrderLine>(this);
 }
 
 // The generated `[OptionalProps]` augmentation, as `.stackra/gen/entities/orders.ts` writes it.

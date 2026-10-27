@@ -28,7 +28,7 @@ import { SequenceService } from "#core/services/sequence.service";
 import type { Blueprint } from "#core/types/blueprint.type";
 import type { SchemaBuilder } from "#core/types/schema-builder.type";
 import { CreateSequenceTablesMigration } from "#node/database/migrations/0001-create-sequence-tables.migration";
-import { usePostgres } from "#testing/use-postgres.fixture";
+import { usePostgres } from "#testing/use-postgres";
 
 const acme: ScopeRef = { id: "scp_01ja0000000000000000000001", path: "platform.acme" };
 const globex: ScopeRef = { id: "scp_01ja0000000000000000000003", path: "platform.globex" };
@@ -71,7 +71,11 @@ class ReceiptSequence extends Sequence({
   reserve: { size: 5 },
 }) {}
 
-class TillSequence extends Sequence({ key: "till", series: ["deviceId"], reserve: { size: 10 } }) {}
+class TillSequence extends Sequence({
+  key: "till",
+  series: ["deviceId"],
+  reserve: { size: 10 },
+}) {}
 
 registerSequences([
   { type: ReceiptSequence, key: "pos.receipt" },

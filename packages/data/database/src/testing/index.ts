@@ -17,4 +17,4 @@ export type { Counted } from "#testing/types/counted.type";
 export type { Faker } from "#testing/types/faker.type";
 export type { PostgresFixture } from "#testing/types/postgres-fixture.type";
 export type { UsePostgresOptions } from "#testing/types/use-postgres-options.type";
-export { usePostgres } from "#testing/use-postgres.fixture";
+export { usePostgres } from "#testing/use-postgres";

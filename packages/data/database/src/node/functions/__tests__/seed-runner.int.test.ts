@@ -14,7 +14,7 @@ import { compileMigration } from "#core/functions/compile-migration.function";
 import { CreateSeedRecordsMigration } from "#node/database/migrations/0003-create-seed-records.migration";
 import { applySeed } from "#node/functions/apply-seed.function";
 import { seedState } from "#node/functions/seed-state.function";
-import { usePostgres } from "#testing/use-postgres.fixture";
+import { usePostgres } from "#testing/use-postgres";
 
 const postgres = usePostgres({
   entities: [],

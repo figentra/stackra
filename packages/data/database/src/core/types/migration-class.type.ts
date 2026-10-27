@@ -6,7 +6,7 @@
  * Runtime: node
  * Governing contract: ADR 0159 as amended by ADR 0294 and ADR 0305.
  */
-import type { MigrationBase } from "#core/bases/migration.base";
+import type { MigrationBase } from "#core/bases/migration-base.base";
 
 /** A migration class. */
 export type MigrationClass = abstract new () => MigrationBase;

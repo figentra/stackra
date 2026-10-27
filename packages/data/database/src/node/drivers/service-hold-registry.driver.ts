@@ -29,7 +29,9 @@ export class ServiceHoldRegistryDriver extends Driver(HoldRegistry) {
   /** The call to the holds service. */
   private readonly channel: HoldChannel;
 
-  /** @param channel - the service's call to the holds keeper. */
+  /**
+   * @param channel - the service's call to the holds keeper.
+   */
   constructor(channel: HoldChannel) {
     super();
     this.channel = channel;

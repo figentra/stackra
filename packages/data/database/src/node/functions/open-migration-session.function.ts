@@ -13,21 +13,10 @@ import { join } from "node:path";
 import { MikroORM } from "@mikro-orm/postgresql";
 
 import { readMigrationFiles } from "#node/functions/read-migration-files.function";
-import type { MigrationFile } from "#node/functions/read-migration-files.function";
+import type { MigrationSession } from "#node/types/migration-session.type";
 
 /** The folder under the member root that gen writes the ordered SQL to. shortcut: gen's final path is STA-339. */
 const MIGRATIONS_FOLDER = join(".stackra", "migrations");
-
-/** What the callback works with. */
-export interface MigrationSession {
-  readonly files: readonly MigrationFile[];
-
-  /** Runs `sql`; `wrap` puts it in one transaction. */
-  readonly execute: (sql: string, wrap: boolean) => Promise<void>;
-
-  /** Reads the recorded state. */
-  readonly state: () => Promise<{ readonly version: number; readonly dirty: boolean }>;
-}
 
 /**
  * Opens a session for `run`.

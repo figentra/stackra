@@ -14,7 +14,8 @@ import type { ScopeRef } from "@stackra/contracts";
 import { afterEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 
-import { Projection, ProjectionBase } from "#core/bases/projection.base";
+import { Projection } from "#core/bases/projection.base";
+import { ProjectionBase } from "#core/bases/projection-base.base";
 import { ACTIVE_DATABASE } from "#core/constants/active-database.constant";
 import { Database } from "#core/ports/database.port";
 
@@ -38,12 +39,15 @@ function connect(answer: (sql: string) => unknown[] = () => []) {
     em(): EntityManager {
       return em;
     }
+
     transaction<T>(work: () => Promise<T>): Promise<T> {
       return work();
     }
+
     withScope<T>(_scopes: unknown, work: () => Promise<T>): Promise<T> {
       return work();
     }
+
     async close(): Promise<void> {
       await Promise.resolve();
     }

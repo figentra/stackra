@@ -14,7 +14,9 @@ export class ColumnGroupRecord implements ColumnGroup {
   /** The grouped columns, in the order they were written. */
   readonly columns: readonly ColumnRecord[];
 
-  /** @param columns - the grouped columns. */
+  /**
+   * @param columns - the grouped columns.
+   */
   constructor(columns: readonly ColumnRecord[]) {
     this.columns = columns;
   }

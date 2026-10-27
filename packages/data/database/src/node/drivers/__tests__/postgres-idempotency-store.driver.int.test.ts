@@ -13,7 +13,7 @@ import { describe, expect, it } from "@stackra/testing";
 import { compileMigration } from "#core/functions/compile-migration.function";
 import { CreateActionStoreTablesMigration } from "#node/database/migrations/0002-create-action-store-tables.migration";
 import { PostgresIdempotencyStoreDriver } from "#node/drivers/postgres-idempotency-store.driver";
-import { usePostgres } from "#testing/use-postgres.fixture";
+import { usePostgres } from "#testing/use-postgres";
 
 const postgres = usePostgres({
   entities: [],

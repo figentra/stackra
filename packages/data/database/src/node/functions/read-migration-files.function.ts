@@ -11,26 +11,7 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
-/** One compiled step file. */
-export interface MigrationFile {
-  /** The sequence number: the `schema_migrations.version` it sets. */
-  readonly version: number;
-
-  /** The file name without `.up.sql`. */
-  readonly name: string;
-
-  /** The migration it belongs to: the name without the sequence and the trailing step number. */
-  readonly batch: string;
-
-  /** Whether the runner wraps it in one transaction. */
-  readonly transactional: boolean;
-
-  /** The statement text. */
-  readonly sql: string;
-
-  /** The inverse text, or `undefined` when the step is irreversible. */
-  readonly inverse: string | undefined;
-}
+import type { MigrationFile } from "#node/types/migration-file.type";
 
 /**
  * Lists the folder's migration files in sequence order.

@@ -38,11 +38,17 @@ export function operationQuery<M extends object>(
   const { actors = [ActorKind.User, ActorKind.Agent], ...rest } = options;
 
   /** The generated query. */
-  class OperationQuery extends Query({ ...rest, key: `${key}.${operation}`, actors }) {
+  class OperationQuery extends Query({
+    ...rest,
+    key: `${key}.${operation}`,
+    actors,
+  }) {
     /** The service or repository it reads through. */
     private readonly source: CrudService<M>;
 
-    /** @param source - the service, or the model's repository. */
+    /**
+     * @param source - the service, or the model's repository.
+     */
     constructor(source: CrudService<M>) {
       super();
       this.source = source;

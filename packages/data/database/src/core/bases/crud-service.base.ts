@@ -303,6 +303,16 @@ export abstract class CrudService<M extends object> extends Service implements R
     );
   }
 
+  /** The entity manager of the running context; a raw query in a subclass method goes through it (ADR 0160). */
+  protected em(): EntityManager {
+    return Database.current().em();
+  }
+
+  /** The model this service is typed against. */
+  protected model(): AnyClass<M> {
+    return modelOf<M>(this.constructor);
+  }
+
   /** One aggregate of `field`'s column over the visible rows matching `where`, as a number (0 for no row). */
   private async aggregate(
     expression: (column: string) => string,
@@ -318,15 +328,5 @@ export abstract class CrudService<M extends object> extends Service implements R
       .where((await visibleFilter(model, where)) as QBFilterQuery<M>)
       .execute("get")) as Record<string, unknown> | undefined;
     return Number(row?.["total"] ?? 0);
-  }
-
-  /** The entity manager of the running context; a raw query in a subclass method goes through it (ADR 0160). */
-  protected em(): EntityManager {
-    return Database.current().em();
-  }
-
-  /** The model this service is typed against. */
-  protected model(): AnyClass<M> {
-    return modelOf<M>(this.constructor);
   }
 }

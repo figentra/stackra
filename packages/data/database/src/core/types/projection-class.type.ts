@@ -6,7 +6,7 @@
  * Runtime: node
  * Governing contract: ADR 0294 (decision 16); ADR 0305 (rule 5).
  */
-import type { ProjectionBase } from "#core/bases/projection.base";
+import type { ProjectionBase } from "#core/bases/projection-base.base";
 
 /** A projection class over rows of `S`. */
 export type ProjectionClass<S extends object = object> = new () => ProjectionBase<S>;

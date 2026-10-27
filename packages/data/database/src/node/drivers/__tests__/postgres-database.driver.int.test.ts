@@ -33,7 +33,7 @@ import { table } from "#core/functions/table.function";
 import type { Blueprint } from "#core/types/blueprint.type";
 import type { SchemaBuilder } from "#core/types/schema-builder.type";
 import { PostgresDatabaseDriver } from "#node/drivers/postgres-database.driver";
-import { usePostgres } from "#testing/use-postgres.fixture";
+import { usePostgres } from "#testing/use-postgres";
 
 const acme: ScopeRef = { id: "scp_01ja0000000000000000000001", path: "platform.acme" };
 const shop: ScopeRef = { id: "scp_01ja0000000000000000000002", path: "platform.acme.shop_eu" };
