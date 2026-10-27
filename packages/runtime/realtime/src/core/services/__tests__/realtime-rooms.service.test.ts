@@ -66,6 +66,7 @@ function roomsOf(rooms: Record<string, number | boolean> = {}) {
         values: {
           rooms: {
             maxMembers: 2,
+            countAcrossInstances: true,
             maxMessageBytes: 64,
             maxMessagesPerSecond: 3,
             idleCloseSeconds: 60,

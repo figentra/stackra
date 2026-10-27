@@ -24,6 +24,6 @@ describe("QueueOptions", () => {
   });
 
   it("types driver as the QueueDriver driver names", () => {
-    expectTypeOf<QueueOptions["driver"]>().toEqualTypeOf<"postgres" | "memory">();
+    expectTypeOf<QueueOptions["driver"]>().toEqualTypeOf<"postgres" | "memory" | "broker">();
   });
 });

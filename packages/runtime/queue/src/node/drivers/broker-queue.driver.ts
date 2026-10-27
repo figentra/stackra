@@ -59,7 +59,7 @@ export class BrokerQueueDriver extends Driver(QueueDriver) {
    *
    * @throws JobNotDueError when `job` is not due at `now`.
    */
-  claim(job: QueuedJob, now: Date): Promise<QueuedJob> {
+  override claim(job: QueuedJob, now: Date): Promise<QueuedJob> {
     if (job.runAt.getTime() > now.getTime())
       return Promise.reject(JobNotDueError.create({ runAt: job.runAt.toISOString() }));
     const claimed: QueuedJob = Object.freeze({

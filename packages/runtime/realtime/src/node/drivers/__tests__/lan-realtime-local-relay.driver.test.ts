@@ -19,18 +19,23 @@ const PORT = 47_913;
 
 const ORIGIN = `http://127.0.0.1:${PORT}`;
 
+// Its own port: fetch pools keep-alive sockets per origin, and one to the previous test's closed relay would fail the probe.
+const DISCOVERY_PORT = 47_914;
+
+const DISCOVERY_ORIGIN = `http://127.0.0.1:${DISCOVERY_PORT}`;
+
 class VenueSecrets extends SecretStore {
   get(name: string): string | undefined {
     return name === "REALTIME_LOCAL_RELAY_KEY" ? "venue-key" : undefined;
   }
 }
 
-/** A relay driver with the venue key, on the test port, probing `peers`. */
-function relayWith(peers: string[] = []): LanRealtimeLocalRelayDriver {
+/** A relay driver with the venue key, on `port`, probing `peers`. */
+function relayWith(peers: string[] = [], port = PORT): LanRealtimeLocalRelayDriver {
   return new LanRealtimeLocalRelayDriver(
     buildConfig(RealtimeConfig, {
       values: {
-        localRelayPort: PORT,
+        localRelayPort: port,
         localRelayAddress: "127.0.0.1",
         localRelayPeers: peers,
         localRelayProbeMs: 500,
@@ -86,13 +91,13 @@ describe(LanRealtimeLocalRelayDriver, () => {
   });
 
   it("discovers the first answering peer, or none", async () => {
-    hosting = relayWith();
+    hosting = relayWith([], DISCOVERY_PORT);
     await hosting.host();
-    await expect(relayWith(["http://127.0.0.1:1", ORIGIN]).discover()).resolves.toEqual({
-      origin: ORIGIN,
+    await expect(relayWith(["http://127.0.0.1:1", DISCOVERY_ORIGIN]).discover()).resolves.toEqual({
+      origin: DISCOVERY_ORIGIN,
       token: "venue-key",
     });
     await hosting.stop();
-    await expect(relayWith([ORIGIN]).discover()).resolves.toBeNull();
+    await expect(relayWith([DISCOVERY_ORIGIN]).discover()).resolves.toBeNull();
   });
 });

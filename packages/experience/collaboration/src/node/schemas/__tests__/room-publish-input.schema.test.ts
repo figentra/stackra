@@ -7,6 +7,7 @@
  * Governing contract: ADR 0022; ADR 0269; ADR 0346 (decisions 4 and 5).
  */
 import { describe, expect, it } from "@stackra/testing";
+import { schemaOf } from "@stackra/validation";
 
 import { RoomPublishInput } from "#node/schemas/room-publish-input.schema";
 
@@ -17,11 +18,17 @@ describe("RoomPublishInput", () => {
       t: "update",
       data: "AAE=",
     });
-    expect(RoomPublishInput.create({ key: "k1", t: "presence" }).data).toBeNull();
+    expect(schemaOf(RoomPublishInput).parse({ key: "k1", t: "presence" })).toEqual({
+      key: "k1",
+      t: "presence",
+      data: null,
+    });
   });
 
   it("refuses an unknown kind or an empty key", () => {
-    expect(() => RoomPublishInput.create({ key: "k1", t: "welcome" as never })).toThrow();
-    expect(() => RoomPublishInput.create({ key: "", t: "presence" })).toThrow();
+    expect(() =>
+      RoomPublishInput.create({ key: "k1", t: "welcome" as never, data: null }),
+    ).toThrow();
+    expect(() => RoomPublishInput.create({ key: "", t: "presence", data: null })).toThrow();
   });
 });

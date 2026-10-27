@@ -15,7 +15,7 @@ import type { QueueDriver } from "#contracts/ports/queue-driver.port";
 
 describe("DriverRegistry['queue.QueueDriver']", () => {
   it("narrows DriverName<QueueDriver> to the shipped drivers", () => {
-    expectTypeOf<DriverName<QueueDriver>>().toEqualTypeOf<"postgres" | "memory">();
+    expectTypeOf<DriverName<QueueDriver>>().toEqualTypeOf<"postgres" | "memory" | "broker">();
     expectTypeOf<DriverRegistry["queue.QueueDriver"]>().toEqualTypeOf<DriverName<QueueDriver>>();
   });
 });
