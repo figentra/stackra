@@ -6,6 +6,9 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 3); WCAG 2.2 SC 2.1.1; ADR 0022 (test placement).
  */
+// HeroUI Pro reads matchMedia as its modules load, which jsdom lacks; the stub runs before them.
+import "#src/__tests__/stub-browser-apis";
+
 import { fireEvent, render, screen } from "@testing-library/react";
 
 import { ProResourceScheduler } from "#src/routes/pro-resource-scheduler/pro-resource-scheduler";
