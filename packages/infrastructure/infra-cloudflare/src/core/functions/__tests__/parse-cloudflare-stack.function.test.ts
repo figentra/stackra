@@ -2,7 +2,9 @@
  * Stackra file contract:
  * Purpose: unit tests of `parseCloudflareStack`: an empty config gets its defaults, a full config keeps its zones,
  *          buckets, tunnels and Access with the defaults filled, and tunnels without the dev zone, a Worker host or
- *          fallback origin outside its zone, a bad record name and an unknown key each fail naming their path.
+ *          fallback origin outside its zone, a bad record name and an unknown key each fail naming their path; the
+ *          edge Worker block gets its defaults and refuses shares that do not add up, a tunnel origin without its
+ *          service, three signing keys and a regional host outside its zone.
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0171 (decision 6), ADR 0290 (decisions 1 to 6, 11 and 15),
@@ -50,6 +52,7 @@ describe("parseCloudflareStack", () => {
       edge: false,
       records: {},
       workers: {},
+      regional: {},
     });
     expect(stack.buckets).toEqual({ "turbo-cache": { expireDays: 7 } });
     expect(stack.tunnels).toEqual({ akouta: { members: ["console"] }, box: {} });
@@ -102,5 +105,46 @@ describe("parseCloudflareStack", () => {
       "zones.figentra.com.workers.static.example.org",
       "zones.figentra.com.fallbackOrigin",
     ]);
+  });
+
+  it("defaults the edge Worker block", () => {
+    expect(
+      parseCloudflareStack({ edgeWorker: { script: "figentra-edge", signingKeys: ["k1"] } })
+        .edgeWorker,
+    ).toEqual({
+      script: "figentra-edge",
+      namespaces: { edge: {} },
+      routes: {},
+      origins: {},
+      signingKeys: ["k1"],
+    });
+  });
+
+  it("refuses a bad edge Worker block and a foreign regional host", () => {
+    const issues = thrownIssues(() =>
+      parseCloudflareStack({
+        edgeWorker: {
+          script: "figentra-edge",
+          rollout: [
+            { version: "a", percent: 10 },
+            { version: "b", percent: 80 },
+          ],
+          origins: { eu: { hostname: "api.figentra.com", lock: "tunnel" } },
+          signingKeys: ["k1", "k2", "k3"],
+        },
+      }),
+    );
+    expect(issues.map((issue) => issue.path)).toEqual([
+      "edgeWorker.rollout",
+      "edgeWorker.origins.eu.service",
+      "edgeWorker.signingKeys",
+    ]);
+    expect(
+      thrownIssues(() =>
+        parseCloudflareStack({
+          zones: { "figentra.com": { regional: { "api.example.org": "eu" } } },
+        }),
+      ).map((issue) => issue.path),
+    ).toEqual(["zones.figentra.com.regional.api.example.org"]);
   });
 });

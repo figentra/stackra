@@ -3,16 +3,19 @@
  * Purpose: `CLOUDFLARE_STACK_SCHEMA`, the core stack's Cloudflare config, the facts the root runway does not hold yet:
  *          the dev zone, each zone's options (plan, edge, SaaS fallback origin, records, Worker domains), the R2
  *          buckets with their expiry (the Turborepo cache), the dev tunnels by label and the Access gate (GitHub
- *          organisation, identity provider, operator surfaces, bypassed paths, service tokens).
+ *          organisation, identity provider, operator surfaces, bypassed paths, service tokens) and the OS edge Worker
+ *          (KV namespaces, routes, gradual deployment, locked origins, signing-key ids).
  * Boundary: internal; `parseCloudflareStack` reads it. Names and ids only: no API token, tunnel token or service-token
  *           secret ever sits here. `identityProviderId` may be a `ref:` value, resolved from Pulumi stack config.
  * Runtime: isomorphic
  * Governing contract: ADR 0171 (decision 6: the core stack), ADR 0026 (the R2 cache and its expiry), ADR 0290
- *                     (decisions 1 to 6, 11 and 15), ADR 0289 (decision 4: tunnels as a runway kind).
+ *                     (decisions 1 to 6, 11 and 15), ADR 0289 (decision 4: tunnels as a runway kind), ADR 0437
+ *                     (the edge Worker).
  */
 import { z } from "zod";
 
 import { DNS_LABEL_SCHEMA } from "#core/constants/dns-label-schema.constant";
+import { EDGE_WORKER_SCHEMA } from "#core/constants/edge-worker-schema.constant";
 import { HOSTNAME_SCHEMA } from "#core/constants/hostname-schema.constant";
 import { ZONE_OPTIONS_SCHEMA } from "#core/constants/zone-options-schema.constant";
 
@@ -49,6 +52,8 @@ export const CLOUDFLARE_STACK_SCHEMA = z
         serviceTokens: z.array(DNS_LABEL_SCHEMA).default([]),
       })
       .optional(),
+    /** The OS edge Worker in front of every web host (ADR 0437). */
+    edgeWorker: EDGE_WORKER_SCHEMA.optional(),
   })
   .superRefine(
     (stack, context) => {
@@ -71,6 +76,12 @@ export const CLOUDFLARE_STACK_SCHEMA = z
             code: "custom",
             path: ["zones", zone, "fallbackOrigin"],
             message: `${options.fallbackOrigin} is not under ${zone}`,
+          });
+        for (const host of Object.keys(options.regional).filter(outside))
+          context.addIssue({
+            code: "custom",
+            path: ["zones", zone, "regional", host],
+            message: `${host} is not under ${zone}`,
           });
       }
     },

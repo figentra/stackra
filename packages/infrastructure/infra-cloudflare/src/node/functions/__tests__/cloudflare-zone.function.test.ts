@@ -3,7 +3,7 @@
  * Purpose: unit tests of `cloudflareZone`: the zone is imported by its runway id; records are named in full, proxied
  *          by the edge rule only when their type can be, automatic in TTL when proxied, and adopted by id when they
  *          carry one; a Worker custom domain and the SaaS fallback origin sit on the zone; `proxy: none` proxies
- *          nothing unasked.
+ *          nothing unasked; a regional host gets its regional hostname.
  * Boundary: test only; Pulumi under mocks, so no provider or cloud call.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0171 (decision 6), ADR 0175 (decision 1), ADR 0290 (decisions 3
@@ -138,6 +138,25 @@ describe("cloudflareZone", () => {
     expect(declaredAs(declared, "cloudflare:index/dnsRecord:DnsRecord")[0]?.inputs).toMatchObject({
       proxied: false,
       ttl: 300,
+    });
+  });
+
+  it("keeps a regional host inside its region", async () => {
+    const zone = cloudflareZone({
+      accountId: "acc-1",
+      name: "figentra.com",
+      zoneId: "zone-1",
+      options: ZONE_OPTIONS_SCHEMA.parse({ regional: { "api-ksa.figentra.com": "sa" } }),
+      proxy: "all",
+    });
+    await settled(zone);
+
+    expect(inputsByName(declared, "cloudflare:index/regionalHostname:RegionalHostname")).toEqual({
+      "api-ksa.figentra.com-regional": {
+        zoneId: "zone-1",
+        hostname: "api-ksa.figentra.com",
+        regionKey: "sa",
+      },
     });
   });
 });

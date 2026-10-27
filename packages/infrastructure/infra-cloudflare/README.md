@@ -15,21 +15,27 @@ Agents never run `pulumi` and never call Cloudflare. The programs run in the pri
 
 ## What is here
 
-| Entry    | Symbol                                                              | Use                                                                |
-| -------- | ------------------------------------------------------------------- | ------------------------------------------------------------------ |
-| `.`      | `parseEdge(root)`                                                   | the root runway's `edge` block, checked and defaulted              |
-| `.`      | `parseCloudflareStack(document)`                                    | the stack config, checked and defaulted                            |
-| `.`      | `tunnelIngress(tunnel)`                                             | a tunnel's ingress: `<member>-<dev>.<dev zone>` to each dev port   |
-| `.`      | `devPortsOf(runways)`                                               | each member runway's `environments.dev.port`                       |
-| `.`      | `rateLimitFor(edge, plan)`                                          | the per-IP rule a plan can hold for the runway's limit             |
-| `.`      | `parseStorefront(settings)`, `shopperLimitRules(policy)`            | a tenant's campaign settings checked; the per-shopper edge rules   |
-| `.`      | `CloudflareHealthIndicatorDriver`                                   | the health driver: an edge host answers                            |
-| `.`      | `ZonePlan`, `WafMode`, `BotMode`                                    | enums                                                              |
-| `.`      | `CloudflareConfigInvalidError`                                      | every input failure, with each path                                |
-| `.`      | `EdgePolicy`, `CloudflareStack`, `ZoneOptions`, `TunnelIngressRule` | types                                                              |
-| `./node` | `cloudflareCoreStack({ root, stack, ports })`                       | the whole Cloudflare stack in one call; returns every resource     |
-| `./node` | `cloudflareZone`, `zoneEdge`, `devTunnel`, `accessGate`, `r2Bucket` | the parts, for a stack that composes its own                       |
-| `./node` | `resolveRef(value)`                                                 | a runway value, with `ref:<key>.<path>` read from the stack config |
+| Entry    | Symbol                                                                   | Use                                                                |
+| -------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------ |
+| `.`      | `parseEdge(root)`                                                        | the root runway's `edge` block, checked and defaulted              |
+| `.`      | `parseCloudflareStack(document)`                                         | the stack config, checked and defaulted                            |
+| `.`      | `tunnelIngress(tunnel)`                                                  | a tunnel's ingress: `<member>-<dev>.<dev zone>` to each dev port   |
+| `.`      | `devPortsOf(runways)`                                                    | each member runway's `environments.dev.port`                       |
+| `.`      | `rateLimitFor(edge, plan)`                                               | the per-IP rule a plan can hold for the runway's limit             |
+| `.`      | `parseStorefront(settings)`, `shopperLimitRules(policy)`                 | a tenant's campaign settings checked; the per-shopper edge rules   |
+| `.`      | `edgeKvKey(kind, ...parts)`                                              | a key of the edge Worker's KV copy (`host:`, `boot:`, `shell:`, …) |
+| `.`      | `signingKeySlots(keyIds)`                                                | the two active edge-signing keys as secret names; the newest signs |
+| `.`      | `customHostnameRequest(call)`, `customHostnameState(result)`             | the Cloudflare for SaaS calls tenancy makes, and their state       |
+| `.`      | `regionalHostnameRequest(call)`                                          | keep a scope's custom hostname in one region (data localisation)   |
+| `.`      | `CloudflareHealthIndicatorDriver`                                        | the health driver: an edge host answers                            |
+| `.`      | `ZonePlan`, `WafMode`, `BotMode`, `OriginLock`, `CustomHostnameState`    | enums                                                              |
+| `.`      | `CloudflareConfigInvalidError`                                           | every input failure, with each path                                |
+| `.`      | `EdgePolicy`, `CloudflareStack`, `ZoneOptions`, `TunnelIngressRule`      | types                                                              |
+| `.`      | `EdgeWorker`, `EdgeKvKeyParts`, `SigningKeySlot`, `CloudflareApiRequest` | types                                                              |
+| `./node` | `cloudflareCoreStack({ root, stack, ports })`                            | the whole Cloudflare stack in one call; returns every resource     |
+| `./node` | `cloudflareZone`, `zoneEdge`, `devTunnel`, `accessGate`, `r2Bucket`      | the parts, for a stack that composes its own                       |
+| `./node` | `edgeWorker`                                                             | the OS edge Worker's KV, routes, rollout and locked origins        |
+| `./node` | `resolveRef(value)`                                                      | a runway value, with `ref:<key>.<path>` read from the stack config |
 
 ## The two inputs
 
@@ -124,13 +130,14 @@ export const tunnelIds = Object.fromEntries(
 
 ## What each part declares
 
-| Part             | Resources                                                                                                                                                             |
-| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `cloudflareZone` | the zone, imported by its runway id and protected; its records (full names, proxied by the edge rule, adopted by id); Worker custom domains; the SaaS fallback origin |
-| `zoneEdge`       | `min_tls_version`, `always_use_https`, HSTS (one year, no subdomains, no preload) when asked; the WAF, rate-limit and cache rulesets; bot management                  |
-| `devTunnel`      | a named tunnel with its ingress held by Cloudflare, and a proxied CNAME per dev host to `<tunnel id>.cfargotunnel.com`                                                |
-| `accessGate`     | GitHub-organisation, service-token and bypass policies; applications over `*.<dev zone>`, the operator URIs and the bypassed paths; one service token per machine     |
-| `r2Bucket`       | the bucket and, with `expireDays`, a lifecycle rule deleting older objects                                                                                            |
+| Part             | Resources                                                                                                                                                                                 |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `cloudflareZone` | the zone, imported by its runway id and protected; its records (full names, proxied by the edge rule, adopted by id); Worker custom domains; the SaaS fallback origin; regional hostnames |
+| `zoneEdge`       | `min_tls_version`, `always_use_https`, HSTS (one year, no subdomains, no preload) when asked; the WAF, rate-limit and cache rulesets; bot management                                      |
+| `devTunnel`      | a named tunnel with its ingress held by Cloudflare, and a proxied CNAME per dev host to `<tunnel id>.cfargotunnel.com`                                                                    |
+| `accessGate`     | GitHub-organisation, service-token and bypass policies; applications over `*.<dev zone>`, the operator URIs and the bypassed paths; one service token per machine                         |
+| `r2Bucket`       | the bucket and, with `expireDays`, a lifecycle rule deleting older objects                                                                                                                |
+| `edgeWorker`     | KV namespaces; Worker routes; the gradual deployment; per origin a tunnel (mTLS: authenticated origin pulls on its zone) and an Access app admitting the Worker's token                   |
 
 The edge by plan:
 
@@ -138,6 +145,55 @@ The edge by plan:
 | ---- | ------------------------------- | --------------------------------------- | -------------------------------------------------- |
 | free | Cloudflare Free Managed Ruleset | Bot Fight Mode                          | 10 s (the runway's rate kept: 600/60 s → 100/10 s) |
 | pro  | Cloudflare Managed Ruleset      | Super Bot Fight Mode, managed challenge | 10 s or 60 s                                       |
+
+## The edge Worker (ADR 0437)
+
+One OS Worker fronts every web host. Its code deploys from CI with wrangler; this stack holds what surrounds it, from
+the `edgeWorker` block of the stack config:
+
+```yaml
+edgeWorker:
+  script: figentra-edge
+  namespaces: # default: one `edge` namespace for every key family
+    edge: {}
+    edge-eu:
+      jurisdiction: eu # data localisation for the namespace
+  routes:
+    figentra.com: ["*.shop.figentra.com/*"]
+  rollout: # gradual deployment over versions wrangler uploaded; shares add up to 100
+    - version: 8f1c…
+      percent: 10
+    - version: 2b7a…
+      percent: 90
+  origins:
+    me-central:
+      hostname: api-me-central.figentra.com
+      lock: tunnel # or mtls (authenticated origin pulls on the hostname's zone)
+      service: http://localhost:4000
+  signingKeys: [k2026-10, k2026-07] # newest first: the Worker signs with it, the API accepts both
+```
+
+- **KV keys** are built by `edgeKvKey` (`host:<hostname>`, `boot:<product>:<surface>:<scope>`, `shell:<surface>:<line>`,
+  `release:<product>:<surface>`, `canary:<product>:<surface>`, `wellknown:<hostname>:<file>`); Runway writes platform
+  rows, the OS edge projector the rest.
+- **Rollout**: the deploy job's health gate moves the shares (steps and threshold are OS settings) and this stack
+  applies them; a version missing from `rollout` gets no traffic.
+- **Origin lock**: every origin sits behind an Access application that admits only the Worker's service token; a
+  tunnel origin has no public ingress, an mTLS origin verifies Cloudflare's client certificate.
+- **Signing keys**: `signingKeySlots` names each secret (`STACKRA_EDGE_SIGNING_KEY_<ID>`); rotate by adding a key in
+  front and dropping the oldest. The values are the owner's to place.
+
+## Custom domains and regional services (ADR 0276, 0437 decisions 10 and 12)
+
+The OS tenancy service creates and deletes each scope's custom hostname at run time on the zone holding the SaaS
+`fallbackOrigin`. `customHostnameRequest` describes each call (create with a TXT-validated DV certificate and the scope
+id in custom metadata; get; delete) and `customHostnameState` maps Cloudflare's report onto `pending_ownership`,
+`pending_certificate`, `active` or `failed` (tenancy decides `pending_dns` and `removed` itself).
+
+For a regulated market (KSA: NCA, JUR-215), a host can be kept in one Cloudflare region: a platform host through its
+zone's `regional` stack config (`api-ksa.figentra.com: <region key>`), a scope's custom hostname through
+`regionalHostnameRequest`. Whether a market needs it and which region key is the market pack's launch-gate answer from
+counsel and infrastructure; nothing here decides it.
 
 ## Storefront waiting room and per-shopper limits
 
@@ -178,8 +234,18 @@ These touch accounts, purchases or secrets, so the owner does them; nothing here
 - Import a phase entry-point ruleset made by hand before the first `up` on that zone (a zone holds one per phase).
 - Move a zone to Pro (a purchase) before setting `plan: pro`.
 - Buy the plan that includes waiting rooms and cookie or header rate-limit keys before a storefront uses them.
+- Place each edge-signing key value (`STACKRA_EDGE_SIGNING_KEY_<ID>`) in Infisical for the Worker and the API, and the
+  Worker's origin service-token secret as a Worker secret; run each origin tunnel's cloudflared with its token.
+- Enable Cloudflare for SaaS and, for a regulated market, the regional services and data localisation add-on (a
+  purchase) before a `regional` host or `jurisdiction` is set.
 
 ## Not built
+
+- The edge Worker itself, the projector and the API's signature check are OS members (`workers/edge`,
+  `services/edge-projector`); the automatic rollback on error rate is the deploy job's.
+- Per-hostname authenticated origin pulls with an uploaded client certificate: it would put a private key through the
+  stack; the zone-level Cloudflare certificate is used.
+- The KSA TLS answer (ADR 0437 decision 12): the option is built, the decision is counsel's and infrastructure's.
 
 - The Turborepo cache Worker and the preview router Worker are Worker members deployed by wrangler from CI (ADR 0289
   decisions 1, 2 and 7); this stack holds their bucket and domains only.

@@ -17,6 +17,7 @@ describe("@stackra/infra-cloudflare/node", () => {
       "cloudflareCoreStack",
       "cloudflareZone",
       "devTunnel",
+      "edgeWorker",
       "r2Bucket",
       "resolveRef",
       "storefrontEdge",

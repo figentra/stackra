@@ -10,7 +10,15 @@
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
 import * as infraCloudflare from "#core/index";
-import type { CloudflareStack, EdgePolicy, TunnelIngressRule, ZoneOptions } from "#core/index";
+import type {
+  CloudflareApiRequest,
+  CloudflareStack,
+  EdgePolicy,
+  EdgeWorker,
+  SigningKeySlot,
+  TunnelIngressRule,
+  ZoneOptions,
+} from "#core/index";
 
 describe("@stackra/infra-cloudflare", () => {
   it("exports exactly its values", () => {
@@ -18,14 +26,21 @@ describe("@stackra/infra-cloudflare", () => {
       "BotMode",
       "CloudflareConfigInvalidError",
       "CloudflareHealthIndicatorDriver",
+      "CustomHostnameState",
+      "OriginLock",
       "WafMode",
       "ZonePlan",
+      "customHostnameRequest",
+      "customHostnameState",
       "devPortsOf",
+      "edgeKvKey",
       "parseCloudflareStack",
       "parseEdge",
       "parseStorefront",
       "rateLimitFor",
+      "regionalHostnameRequest",
       "shopperLimitRules",
+      "signingKeySlots",
       "tunnelIngress",
     ]);
   });
@@ -34,5 +49,10 @@ describe("@stackra/infra-cloudflare", () => {
     expectTypeOf<EdgePolicy["proxy"]>().toEqualTypeOf<"all" | "none">();
     expectTypeOf<CloudflareStack["zones"][string]>().toEqualTypeOf<ZoneOptions>();
     expectTypeOf<TunnelIngressRule["service"]>().toEqualTypeOf<string>();
+    expectTypeOf<NonNullable<CloudflareStack["edgeWorker"]>>().toEqualTypeOf<EdgeWorker>();
+    expectTypeOf<SigningKeySlot["signs"]>().toEqualTypeOf<boolean>();
+    expectTypeOf<CloudflareApiRequest["method"]>().toEqualTypeOf<
+      "GET" | "POST" | "PATCH" | "DELETE"
+    >();
   });
 });

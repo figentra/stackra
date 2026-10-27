@@ -5,7 +5,8 @@
  *          tunnel exposes the members' dev ports on the dev zone under `<project>-<dev>`, Access guards the dev zone
  *          with the resolved identity provider, and the Turborepo cache bucket expires; a runway without a Cloudflare
  *          account, and a stack zone the runway does not name, fail before any resource is declared; a storefront on an
- *          edge zone gets its waiting rooms and hot-item limits, one on a non-edge zone or naming a foreign host fails.
+ *          edge zone gets its waiting rooms and hot-item limits, one on a non-edge zone or naming a foreign host fails;
+ *          the edge Worker lands on the runway zones, and a route zone or origin host outside them fails.
  * Boundary: test only; Pulumi under mocks with an in-memory stack config, so no provider or cloud call.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0171 (decisions 6 and 7), ADR 0290 (decisions 1 to 6 and 15),
@@ -154,5 +155,41 @@ describe("cloudflareCoreStack", () => {
       "storefront.figentra.cloud.campaigns.spring-drop.host",
       "storefront.figentra.cloud.campaigns.quiet.host",
     ]);
+  });
+
+  it("puts the edge Worker on the runway zones", async () => {
+    const withWorker = parseCloudflareStack({
+      edgeWorker: {
+        script: "figentra-edge",
+        routes: { "figentra.com": ["*.shop.figentra.com/*"] },
+        origins: { "me-central": { hostname: "api-me-central.figentra.com", lock: "mtls" } },
+        signingKeys: ["k2026-10"],
+      },
+    });
+    const core = cloudflareCoreStack({ root, stack: withWorker });
+    await settled(core);
+
+    expect(inputsByName(declared, "cloudflare:index/workersRoute:WorkersRoute")).toEqual({
+      "figentra-edge-figentra.com-route-0": {
+        zoneId: "zone-com",
+        pattern: "*.shop.figentra.com/*",
+        script: "figentra-edge",
+      },
+    });
+    expect(core.edgeWorker?.originPulls).toHaveLength(1);
+  });
+
+  it("refuses an edge Worker route or origin outside the runway zones", () => {
+    const foreign = parseCloudflareStack({
+      edgeWorker: {
+        script: "figentra-edge",
+        routes: { "acme.example": ["*/*"] },
+        origins: { eu: { hostname: "api.acme.example", lock: "mtls" } },
+        signingKeys: ["k1"],
+      },
+    });
+    expect(
+      thrownIssues(() => cloudflareCoreStack({ root, stack: foreign })).map((issue) => issue.path),
+    ).toEqual(["edgeWorker.routes.acme.example", "edgeWorker.origins.eu.hostname"]);
   });
 });

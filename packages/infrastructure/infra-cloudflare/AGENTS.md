@@ -1,7 +1,9 @@
 # AGENTS — @stackra/infra-cloudflare
 
 The Cloudflare half of the core Pulumi stack (ADR 0171 decision 6): zones and DNS, Worker custom domains, R2 buckets,
-dev tunnels, Access and the edge, read from the root runway. Member at `packages/infrastructure/infra-cloudflare`
+dev tunnels, Access, the edge and the OS edge Worker's surroundings (KV, routes, gradual deployment, origin lock;
+ADR 0437), read from the root runway; plus the Cloudflare for SaaS and regional-hostname call builders the OS tenancy
+service uses. Member at `packages/infrastructure/infra-cloudflare`
 (`tier:lib`). Entries `.` (isomorphic checks and planners) and `./node` (the Pulumi programs).
 
 ## Where code goes
@@ -27,6 +29,12 @@ dev tunnels, Access and the edge, read from the root runway. Member at `packages
 - A setting whose value Cloudflare leaves untyped (`ZoneSetting.value`) keeps the API's own snake_case keys.
 - The Cloudflare plan decides the managed ruleset, the bot setting and the rate-limit windows; keep `rateLimitFor` and
   `MANAGED_RULESET_IDS` in step with Cloudflare's plan table.
+
+- The edge Worker's code and version uploads are wrangler's; `edgeWorker` only moves traffic between uploaded versions
+  and never holds a signing-key value (only the slot names from `signingKeySlots`).
+- Custom hostnames are created and deleted at run time by OS tenancy through `customHostnameRequest`, never declared in
+  the stack; new names stay scope-named (`scopeId`, `scope`), never tenant-named (ADR 0323).
+- Regional services are an option per host; never default a market into one.
 
 ## PII
 

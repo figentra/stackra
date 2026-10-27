@@ -2,12 +2,14 @@
  * Stackra file contract:
  * Purpose: `ZONE_OPTIONS_SCHEMA`, what the core stack config says about one zone of the root runway: its plan, whether
  *          the runway edge applies, the Cloudflare for SaaS fallback origin, its DNS records (keyed by a stable name,
- *          each with an optional import id) and its Worker custom domains.
+ *          each with an optional import id), its Worker custom domains and the hosts kept in one region by
+ *          Cloudflare's regional services (data localisation for regulated markets).
  * Boundary: internal; the stack schema composes it, and `cloudflareCoreStack` parses `{}` through it for a runway zone
  *           the stack config does not list. Record content is public DNS data, never a secret.
  * Runtime: isomorphic
  * Governing contract: ADR 0171 (decision 6: zones and DNS in the core stack), ADR 0290 (decisions 3, 13, 15 and 19),
- *                     ADR 0284 (decision 9: the core stack adopts the static Worker's domain), ADR 0276 (decision 4).
+ *                     ADR 0284 (decision 9: the core stack adopts the static Worker's domain), ADR 0276 (decision 4),
+ *                     ADR 0437 (decision 12: regulated markets), ADR 0353 (data residency).
  */
 import { Enum } from "@stackra/contracts";
 import { z } from "zod";
@@ -58,4 +60,10 @@ export const ZONE_OPTIONS_SCHEMA = z.strictObject({
       }),
     )
     .default({}),
+  /**
+   * Hostname under this zone → the Cloudflare regional-services region key (such as `eu`) whose points of presence
+   * alone terminate its TLS. An option for a regulated market's hosts; which market needs it is the market pack's
+   * launch-gate answer (ADR 0437 decision 12), never a default here.
+   */
+  regional: z.record(HOSTNAME_SCHEMA, z.string().min(1)).default({}),
 });

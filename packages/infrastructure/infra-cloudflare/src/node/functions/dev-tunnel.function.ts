@@ -5,7 +5,8 @@
  *          cloudflared and never holds a DNS-edit token.
  * Boundary: declares Pulumi resources only; the ingress comes from `tunnelIngress`. The tunnel token is never an output
  *           here: it reaches the machine from Infisical `/agents` through `infisical run` and never touches disk.
- *           Access in front of the hosts is `accessGate`'s.
+ *           Access in front of the hosts is `accessGate`'s. `edgeWorker` reuses it for a regional API origin's tunnel
+ *           (ADR 0437 decision 5), with its own record comment.
  * Runtime: node
  * Governing contract: ADR 0290 (decisions 2, 4, 5 and 6).
  */
@@ -26,8 +27,16 @@ export function devTunnel(args: {
   readonly zoneId: pulumi.Input<string>;
   readonly name: string;
   readonly ingress: readonly TunnelIngressRule[];
+  /** The DNS record comment; a dev tunnel's by default. */
+  readonly comment?: string | undefined;
 }) {
-  const { accountId, zoneId, name, ingress } = args;
+  const {
+    accountId,
+    zoneId,
+    name,
+    ingress,
+    comment = `Dev tunnel ${name} (ADR 0290 decision 5)`,
+  } = args;
   const tunnel = new cloudflare.ZeroTrustTunnelCloudflared(`tunnel-${name}`, {
     accountId,
     name,
@@ -49,7 +58,7 @@ export function devTunnel(args: {
             content: pulumi.interpolate`${tunnel.id}.cfargotunnel.com`,
             proxied: true,
             ttl: 1,
-            comment: `Dev tunnel ${name} (ADR 0290 decision 5)`,
+            comment,
           }),
         ],
   );

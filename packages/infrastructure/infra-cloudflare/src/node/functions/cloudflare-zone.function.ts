@@ -2,13 +2,14 @@
  * Stackra file contract:
  * Purpose: `cloudflareZone(args)`, one zone of the core stack: the zone itself, imported by its runway id and
  *          protected so no run deletes it; its DNS records (adopting hand-made ones by id); its Worker custom domains;
- *          and the Cloudflare for SaaS fallback origin tenant hostnames point at.
+ *          the Cloudflare for SaaS fallback origin tenant hostnames point at; and the regional hostnames that keep a
+ *          regulated market's hosts inside one region (data localisation).
  * Boundary: declares Pulumi resources only; the edge (settings, rulesets, bots) is `zoneEdge`'s. Tenant custom
  *           hostnames are created and deleted by the tenancy service at runtime (ADR 0276 decision 8), never here.
  *           Worker scripts and assets deploy from CI with wrangler (ADR 0284 decision 6); only their domains are here.
  * Runtime: node
  * Governing contract: ADR 0171 (decision 6), ADR 0175 (decision 1), ADR 0290 (decisions 3, 15 and 19), ADR 0284
- *                     (decision 9), ADR 0276 (decision 4).
+ *                     (decision 9), ADR 0276 (decision 4), ADR 0437 (decision 12), ADR 0353.
  */
 import * as cloudflare from "@pulumi/cloudflare";
 
@@ -71,5 +72,13 @@ export function cloudflareZone(args: {
           zoneId: zone.id,
           origin: options.fallbackOrigin,
         });
-  return { zone, records, workers, fallbackOrigin };
+  const regional = Object.entries(options.regional).map(
+    ([hostname, regionKey]) =>
+      new cloudflare.RegionalHostname(`${hostname}-regional`, {
+        zoneId: zone.id,
+        hostname,
+        regionKey,
+      }),
+  );
+  return { zone, records, workers, fallbackOrigin, regional };
 }
