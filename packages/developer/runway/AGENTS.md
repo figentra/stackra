@@ -5,7 +5,7 @@ Stackra file contract:
 Purpose: the agent rules of @stackra/runway: where code goes, the schema, deploy, secrets and event fan-out rules, PII.
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
-Governing contract: ADR 0296; ADR 0352; ADR 0002 (2026-10-27 amendment, the `mintlify` provider); ADR 0400; ADR 0444 (`providers.tools`); ADR 0441; ADR 0439 (the mobile job); ADR 0441 as amended (D17 brand step, D19 capture job); ADR 0453 (`providers.npm`); STA-863; ADR 0260 (decision 4: the relay fan-out
+Governing contract: ADR 0296; ADR 0352; ADR 0002 (2026-10-27 amendment, the `mintlify` provider); ADR 0400; ADR 0444 (`providers.tools`); ADR 0441; ADR 0439 (the mobile job); ADR 0441 as amended (D17 brand step, D19 capture job); ADR 0453 (`providers.npm`); ADR 0437 and app-shells 5.3, 15.7, 16.3, 16.4, 16.7 (the publish step); STA-863; ADR 0260 (decision 4: the relay fan-out
                     is gen's).
 -->
 
@@ -24,6 +24,7 @@ Runway format version 3 (ADR 0296) as code. Member at `packages/developer/runway
 | A Node-only function (reads files)      | `src/node/functions/<name>.function.ts`     |
 | A port (the deploy provider)            | `src/core/ports/<name>.port.ts`             |
 | A deploy provider driver (runs a CLI)   | `src/node/drivers/<name>.driver.ts`         |
+| A Node-only driver's config             | `src/node/config/<name>.config.ts`          |
 | A test                                  | `__tests__/<name>.<kind>.test.ts` beside it |
 
 ## Rules
@@ -59,6 +60,11 @@ Runway format version 3 (ADR 0296) as code. Member at `packages/developer/runway
 - The capture job (`screenshotCaptureJob`) is plain data printed before it runs; `runScreenshotCapture` runs it on a
   Mac CI runner only. Defaults live in `SCREENSHOT_CAPTURE_DEFAULTS`; app, locale and screen ids are checked before
   they become paths.
+- The publish step (`publishProduct`, `publishShell`, `promoteCanary`) writes the edge KV copy only through the
+  `EdgeKvWriter` port (@stackra/app `./contracts`) and only platform rows: never a scope's `host:`, `boot:` or
+  `wellknown:` row (the edge projector's). Every check runs before the first upload or write. Thresholds, windows,
+  folders, commands and headers live in `EDGE_PUBLISH_SETTINGS`; a timer alone never promotes a canary. Agents never
+  run `wrangler kv` or `wrangler r2` against a real namespace or bucket: tests use `MemoryEdgeKv` and fake runners.
 - A runway holds secret names only. `definesFor` inlines public vars (`VITE_`, `EXPO_PUBLIC_`, `RENDERER_VITE_`) and
   never the TLS paths.
 - A provider takes `RunwayConfig` (`src/config/runway.config.ts`, key `runway`) by constructor type, never an options

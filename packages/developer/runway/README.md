@@ -9,7 +9,8 @@ Runtime: none
 Governing contract: ADR 0296; ADR 0352; ADR 0400; ADR 0444 (the tools stack block); ADR 0148 (decisions 3 and 6);
                     ADR 0260 (decision 4); ADR 0441 (decision 3: surfaces, mobile); ADR 0439 (the mobile job); ADR 0436;
                     ADR 0441 as amended (D17 the brand step, D19 the capture job); STA-863 (lanes); ADR 0453
-                    (decision 6: `providers.npm.registry`).
+                    (decision 6: `providers.npm.registry`); ADR 0437 and app-shells 4.2, 5.3, 15 and 16 (the publish
+                    step, stackra-07).
 -->
 
 Runway format version 3 as code: the schemas of the root runway (WHERE things run and how they are packed) and of the
@@ -17,7 +18,8 @@ app and service member runways (WHAT a member needs), the topology placement che
 tool configs call so no port, origin or feed URL is typed outside a `runway.yaml`.
 
 **Tier:** `tier:lib` (`packages/developer/runway`). Entries `.` and `./node`, plus the asset paths
-`./schema/{root,app,service}.json`. Depends on `@stackra/contracts`, `@stackra/validation`, zod and yaml.
+`./schema/{root,app,service}.json`. Depends on `@stackra/contracts`, `@stackra/validation`, `@stackra/config`, `@stackra/container`, `@stackra/app`
+(its `./contracts` only: the `EdgeKvWriter` port and `EdgeKvPrefix`), zod and yaml.
 
 ## What is here
 
@@ -42,6 +44,11 @@ tool configs call so no port, origin or feed URL is typed outside a `runway.yaml
 | `./node`    | `runMobileJob(request)`, `MobileJobRequest`, `MobileJobResult`                                                    | the mobile job: Expo config from `mobile`, capability stripping, EAS build                                        |
 | `./node`    | `runBrandStep(request)`, `committedBrandOutputs`, `BRAND_STEP_SETTINGS`, `BrandStepRequest`, `BrandStepRun`       | the brand step: @stackra/brand-kit per surface, app and white-label scope; the committed-outputs check            |
 | `./node`    | `screenshotCaptureJob(request)`, `runScreenshotCapture`, `SCREENSHOT_CAPTURE_DEFAULTS`, `ScreenshotCaptureJob`, … | the store-screenshot capture job on a Mac CI runner                                                               |
+| `./node`    | `publishProduct(request)`, `ProductPublishRequest`, `ProductPublishResult`                                        | the publish step: bundles to R2, platform `host:`/`wellknown:` rows, the `release:` pointer or the canary         |
+| `./node`    | `publishShell`, `promoteCanary`, `canaryVerdict`, `EDGE_PUBLISH_SETTINGS`, `EdgeCanary`, `CanarySample`, …        | the shell canary list and health-gated promotion of release and shell canaries                                    |
+| `./node`    | `checkShellCompatibility(request)`, `checkOpsReview(review)`                                                      | the shell compatibility gate and the ops second-reviewer gate                                                     |
+| `./node`    | `platformRows`, `readBundles`, `uploadBundle`, `bundleSurfaces`                                                   | the publish step's parts: rows from the root runway, built bundles, the R2 upload, the surfaces that bundle       |
+| `./node`    | `WranglerEdgeKvDriver`, `EdgeKvConfig`, `EdgeKvOptions`                                                           | the `wrangler` driver of `EdgeKvWriter` (@stackra/app) and the namespace it writes                                |
 | `./node`    | `capabilityConfig(catalogue, flags)`, `MobileCapability`, `MobileStoreAccount`, …                                 | what a template line keeps and strips for a product's capability flags                                            |
 | `.`         | `RunwayKind`, `RunwayEnvironment`, `TopologyMode`, `RequirementEngine`, `CacheEviction`                           | enums                                                                                                             |
 | `.`         | `RunwayInvalidError`, `RunwayUnresolvedError`, `RunwayDeployFailedError`                                          | errors                                                                                                            |
@@ -170,6 +177,43 @@ the demo-data simulator build, and per locale launch in that language, open the 
 overrides any of them. `runScreenshotCapture(job, repository)` runs exactly that list, on a Mac CI runner only (never a
 developer's Mac). Not built: the CI workflow that schedules it (it needs a Mac runner), and the app's handling of the
 two links (the mobile template line's).
+
+## The publish step
+
+`publishProduct` (`./node`) publishes a product checkout's web surfaces to one environment (ADR 0436 decisions 4 and
+10, app-shells 4.2 and 5.3). Runway writes these edge KV rows by hand until the OS edge projector exists
+(app-shells 16.10), through the `EdgeKvWriter` port of `@stackra/app/contracts`; `WranglerEdgeKvDriver` is its
+`wrangler kv key put|delete --remote` driver, configured with `EdgeKvConfig.namespaceId`.
+
+1. When the root runway has `surfaces.ops`, the change needs a second reviewer: `checkOpsReview` counts the approvals
+   besides the author's (`EDGE_PUBLISH_SETTINGS.opsReviewers`, app-shells 16.7).
+2. Builds the platform rows (`platformRows`): a `host:<hostname>` row (product, surface, home region, status, realm,
+   canonical host) for every `host` and `hosts` entry of every web surface, and the app-link files
+   (`wellknown:<host>:apple-app-site-association`, `wellknown:<host>:assetlinks.json`) of every mobile app on its
+   `identity.links` hosts. A host name is relative to `environments.<env>.domains.zone` (`console.mezzora` →
+   `console.mezzora.figentra.com`, D9) unless it already ends in that zone or ends in `.` (a product's own domain,
+   `mezzora.com.`); every host of a surface names the canonical one (D2). The home region is the request's, else the
+   environment's first. Apple team ids and Android certificate fingerprints are request data (`appLinks`).
+3. Reads each bundle surface's one built bundle (`<bundleDir>/<surface>/<version>/bundle.manifest.json`, written by
+   `stackra.bundleConfig`) and refuses one whose `targets` is not a shell line the edge serves (`served`).
+4. With every check passed, uploads each bundle to the asset store (`wrangler r2 object put`, under
+   `<product>/<surface>/<version>/`, immutable), writes the platform rows, then per surface the `canary:` row (the
+   release, the internal and demo `canaryScopes` and its start, D6), or the `release:` row on a `firstRelease`.
+
+A refused publish uploads and writes nothing. `promoteCanary` judges a canary on a schedule with `canaryVerdict`: it
+promotes only after `canary.windowHours` and `canary.minRequests` with the error rate at or under
+`canary.maxErrorRate` (a timer alone never promotes, app-shells 16.4), rolls back once the minimum is served over the
+threshold, and holds otherwise. A release promotion writes `release:` and then removes `canary:`; a rollback removes
+`canary:`. `publishShell` puts a new shell release on the canary list of `shell:<surface>:<line>` (the current release
+plus `canary`, app-shells 16.3), and `promoteCanary` with a shell promotion writes the canary or the current release
+back alone. `checkShellCompatibility` is the gate the OS release runs first (app-shells 15.7): in every product
+checkout it runs the `compatibility` build with the next shell's import map, then refuses a bundle whose target the
+edge will not serve or whose imports the next map does not resolve, listing every break at once. Every threshold,
+window, folder, command and header is in `EDGE_PUBLISH_SETTINGS`.
+
+Not built here: the registry manifest publish (ADR 0109) and the registry's own release refusal, the ops release that
+takes `contributes`, the landing seed import, removing rows of hosts a runway no longer lists, the metrics query that
+fills a `CanarySample`, and the CI workflows that call these functions.
 
 ## Dev lanes and the repository index
 
