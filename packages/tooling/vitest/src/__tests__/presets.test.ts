@@ -11,6 +11,10 @@ describe("@stackra/vitest-config", () => {
   it("base preset refuses empty suites and enables globals", () => {
     expect(stackraVitest.test?.globals).toBe(true);
     expect(stackraVitest.test?.passWithNoTests).toBe(false);
+    // Every member loads workspace sources, and any of them may declare a decorated class (ADR 0005).
+    const oxc = (stackraVitest as { oxc?: { decorator?: Record<string, boolean> } }).oxc;
+    expect(oxc?.decorator?.legacy).toBe(true);
+    expect(oxc?.decorator?.emitDecoratorMetadata).toBe(false);
   });
 
   it("decorators preset adds the legacy decorator transform without metadata or setup files", () => {
