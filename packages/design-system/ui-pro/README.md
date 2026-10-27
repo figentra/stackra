@@ -25,17 +25,18 @@ component with nothing in the vocabulary to map (most charts, Markdown, Timeline
 
 ## Compositions
 
-Five web components are the package's own compositions, not one HeroUI Pro component each:
+Six web components are the package's own compositions, not one HeroUI Pro component each:
 
-| Component           | Built on                                     | Use                                                                                                                                                                  |
-| ------------------- | -------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `AssistantPanel`    | layout, `@stackra/ui`'s `AiMark`             | the sidekick's panel: the assistant's name and AI label, header actions, the conversation, the composer                                                              |
-| `ApprovalCard`      | `ChatTool`                                   | an agent's tool call waiting for a human: approve, reject, escalate; the decided state after (ADR 0360)                                                              |
-| `PlanView`          | `Timeline`                                   | an agent's plan, step by step with its status read out in words (ADR 0245 decision 8)                                                                                |
-| `ResourceScheduler` | its own markup (HeroUI Pro has no scheduler) | a day or week of bookings per staff, room or chair; drag or arrow keys to move, Shift or the bottom edge to resize, snapped; processing gaps leave the resource free |
-| `SignatureField`    | its own SVG box, `@stackra/ui`'s `TextField` | sign by drawing or by typing a name (the keyboard way); reports SVG path data or the name                                                                            |
+| Component           | Built on                                     | Use                                                                                                                                                                   |
+| ------------------- | -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `AssistantPanel`    | layout, `@stackra/ui`'s `AiMark`             | the sidekick's panel: the assistant's name and AI label, header actions, the conversation, the composer                                                               |
+| `ApprovalCard`      | `ChatTool`                                   | an agent's tool call waiting for a human: approve, reject, escalate; the decided state after (ADR 0360)                                                               |
+| `PlanView`          | `Timeline`                                   | an agent's plan, step by step with its status read out in words (ADR 0245 decision 8)                                                                                 |
+| `ResourceScheduler` | its own markup (HeroUI Pro has no scheduler) | a day or week of bookings per staff, room or chair; drag or arrow keys to move, Shift or the bottom edge to resize, snapped; processing gaps leave the resource free  |
+| `SignatureField`    | its own SVG box, `@stackra/ui`'s `TextField` | sign by drawing or by typing a name (the keyboard way); reports SVG path data or the name                                                                             |
+| `WorkflowCanvas`    | its own markup and SVG (no Pro graph)        | an automation as a graph: trigger and steps in flow columns, arrows with branch conditions, run status per step; arrow keys walk the graph, pressing selects (OS-230) |
 
-The scheduler and the signature field propose and report only: the caller saves a moved booking, and binding a
+The scheduler and the signature field propose and report only, and the workflow canvas only selects (the caller maps an automation document onto its nodes and edges and edits the step): the caller saves a moved booking, and binding a
 signature to a document is `@stackra/documents`' e-signature port. Opening hours, the working week (`days`) and the
 step (`slotMinutes`) are the caller's data, never defaults here.
 

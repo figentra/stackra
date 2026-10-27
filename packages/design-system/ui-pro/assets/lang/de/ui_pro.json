@@ -46,5 +46,8 @@
     "move_next": "In die nächste Spalte verschieben",
     "lengthen": "Verlängern",
     "shorten": "Verkürzen"
+  },
+  "workflow_canvas": {
+    "leads_to": "Führt zu {steps}"
   }
 }

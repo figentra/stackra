@@ -46,5 +46,8 @@
     "move_next": "نقل إلى العمود التالي",
     "lengthen": "إطالة",
     "shorten": "تقصير"
+  },
+  "workflow_canvas": {
+    "leads_to": "يؤدي إلى {steps}"
   }
 }

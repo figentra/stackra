@@ -3,7 +3,7 @@
  * Purpose: `UI_PRO_KEYS`, the typed keys of this package's own texts in `assets/lang/<locale>/ui_pro.json`: the
  *          status words of approvals, plan steps and scheduler views, and the default names of the chat, code block,
  *          navbar, sidebar and table-of-contents buttons, and
- *          the screen-reader actions of a scheduler booking.
+ *          the screen-reader actions of a scheduler booking, and where a workflow canvas node leads.
  * Boundary: internal; the web and native entries import it by path. Each key exists in every base locale this package
  *           ships, which the catalogue-completeness check proves.
  * Runtime: isomorphic
@@ -25,5 +25,6 @@ export const UI_PRO_KEYS = keys({
     sidebar: ["toggle", "resize"],
     table_of_contents: ["on_this_page"],
     scheduler: ["move_earlier", "move_later", "move_previous", "move_next", "lengthen", "shorten"],
+    workflow_canvas: ["leads_to"],
   },
 });

@@ -149,3 +149,6 @@ export type { ToggleButtonGroupContractProps } from "#contracts/types/toggle-but
 export type { TrendChipContractProps } from "#contracts/types/trend-chip-contract-props.type";
 export type { WheelPickerContractProps } from "#contracts/types/wheel-picker-contract-props.type";
 export type { WheelPickerGroupContractProps } from "#contracts/types/wheel-picker-group-contract-props.type";
+export type { WorkflowCanvasContractProps } from "#contracts/types/workflow-canvas-contract-props.type";
+export type { WorkflowEdge } from "#contracts/types/workflow-edge.type";
+export type { WorkflowNode } from "#contracts/types/workflow-node.type";

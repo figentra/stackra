@@ -46,5 +46,8 @@
     "move_next": "Mover a la columna siguiente",
     "lengthen": "Alargar",
     "shorten": "Acortar"
+  },
+  "workflow_canvas": {
+    "leads_to": "Lleva a {steps}"
   }
 }

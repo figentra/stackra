@@ -218,3 +218,5 @@ export { TrendChip } from "#react/trend-chip/trend-chip";
 export type { TrendChipProps } from "#react/trend-chip/trend-chip.props";
 export { Widget } from "#react/widget/widget";
 export type { WidgetProps } from "#react/widget/widget.props";
+export { WorkflowCanvas } from "#react/workflow-canvas/workflow-canvas";
+export type { WorkflowCanvasProps } from "#react/workflow-canvas/workflow-canvas.props";

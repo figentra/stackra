@@ -44,7 +44,7 @@ extending the kind's base class. The group table is the docs page `standards/str
   `src/react/<name>/` over `@heroui-pro/react` or `src/native/<name>/` over `heroui-native-pro`, each with
   `__tests__/`. The `@stackra/ui` props vocabulary (ADR 0303 decision 7) maps onto HeroUI Pro's names; every other prop
   passes through. Compound parts are HeroUI Pro's own, typed in a parts interface.
-- A composition (`AssistantPanel`, `ApprovalCard`, `PlanView`, `ResourceScheduler`, `SignatureField`) is built from
+- A composition (`AssistantPanel`, `ApprovalCard`, `PlanView`, `ResourceScheduler`, `SignatureField`, `WorkflowCanvas`) is built from
   this package's wrappers and `@stackra/ui`, with its pure math in `src/core/functions/` (internal, tested); use it
   only where HeroUI Pro has no component. Every drag has a keyboard way (WCAG 2.5.7).
 - Names follow the grammar: Pro `Command` is `ActionPalette` (ADR 0294 decision 23); `FloatingToc` and `Fab` are
