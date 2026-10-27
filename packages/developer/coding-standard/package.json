@@ -61,6 +61,7 @@
     "clean": "rm -rf dist coverage .turbo"
   },
   "devDependencies": {
+    "@stackra/container": "workspace:*",
     "@stackra/testing": "workspace:*",
     "@stackra/tsdown-config": "workspace:*",
     "@stackra/typescript-config": "workspace:*",
