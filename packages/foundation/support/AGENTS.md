@@ -10,7 +10,7 @@ programming model v3.1 shape (ADR 0294, 0305).
 - One entry, `.`, backed by `src/core/`. No `./contracts`, `./node` or other entry: support has no ports, no module
   and no renderers.
 - Zero `dependencies`, zero `peerDependencies`, no workspace import. Dev dependencies come from catalogs or
-  `workspace:*` only.
+  `workspace:*` only; `@stackra/container` is one only because gen's wiring and test setup import it.
 - No host globals: no `process`, `window`, `Date.now()`, `new Date()` without an argument, `Math.random()` or host
   locale and time zone reads. The caller passes the time in. Web Crypto is the one platform API used: `crypto.subtle`
   by `canonicalHash`, `signedToken` and `oneTimeCode`, `crypto.getRandomValues` by `oneTimeCode` only.
