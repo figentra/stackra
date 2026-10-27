@@ -18,7 +18,7 @@ import { Duration, Enum } from "@stackra/contracts";
 import { Backoff } from "@stackra/queue";
 import { duration } from "@stackra/validation";
 
-import { WorkflowBase } from "#core/bases/workflow.base";
+import { WorkflowBase } from "#core/bases/workflow-base.base";
 import { Step } from "#core/decorators/step.decorator";
 import { workflowKey } from "#core/functions/workflow-key.function";
 import type { StepOptions } from "#core/types/step-options.type";

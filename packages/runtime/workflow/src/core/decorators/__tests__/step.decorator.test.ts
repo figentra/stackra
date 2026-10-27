@@ -63,7 +63,7 @@ describe("Step", () => {
   it("fits a step only, so it does not compile on output", () => {
     class OutputWorkflow extends Workflow({}) {
       // @ts-expect-error -- `output` builds the result; it is not a step
-      @Step({})
+      @Step
       output(): number {
         return 1;
       }

@@ -6,7 +6,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 25: each factory returns an exported, named class type).
  */
-import type { WorkflowBase } from "#core/bases/workflow.base";
+import type { WorkflowBase } from "#core/bases/workflow-base.base";
 
 /** The base class of one workflow with input `I`. */
 export type WorkflowClass<I> = abstract new () => WorkflowBase<I>;

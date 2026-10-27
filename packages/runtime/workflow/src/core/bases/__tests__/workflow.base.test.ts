@@ -10,7 +10,8 @@
 import { kindOf } from "@stackra/container";
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
-import { Workflow, WorkflowBase } from "#core/bases/workflow.base";
+import { Workflow } from "#core/bases/workflow.base";
+import { WorkflowBase } from "#core/bases/workflow-base.base";
 import type { Run } from "#core/types/run.type";
 
 interface PlaceInput {

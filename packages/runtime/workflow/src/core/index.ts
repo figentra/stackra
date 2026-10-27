@@ -16,7 +16,7 @@
 export { WorkflowConfig } from "#config/workflow.config";
 export { Signal } from "#core/bases/signal.base";
 export { Workflow } from "#core/bases/workflow.base";
-export type { WorkflowBase } from "#core/bases/workflow.base";
+export type { WorkflowBase } from "#core/bases/workflow-base.base";
 export { AUTOMATION_DOCUMENT_SCHEMA as AutomationDocument$ } from "#core/constants/automation-document-schema.constant";
 export { CHECKLIST_CUSTOMIZATION_SCHEMA as ChecklistCustomization$ } from "#core/constants/checklist-customization-schema.constant";
 export { CHECKLIST_TEMPLATE_SCHEMA as ChecklistTemplate$ } from "#core/constants/checklist-template-schema.constant";

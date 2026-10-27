@@ -7,7 +7,7 @@
  *           the class is defined and recorded in the kind registry; the engine reads the steps when it first runs the
  *           class. A binding: dependencies are constructor parameters. It runs only through the engine (`ctx.run` from
  *           an action, or `startOn`), never by calling a step from another class; no step body waits or sleeps, so the
- *           same class runs on any engine driver. `WorkflowBase` is the instance base; the entry exports it as a type.
+ *           same class runs on any engine driver. `WorkflowBase` (its own file) is the instance base.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 3, 16, 18 and 25); ADR 0151 (0294 note: the class is the graph); ADR 0101
  *                     (0294 note: only an action or `startOn` starts a run); ADR 0102 (decision 5).
@@ -15,17 +15,9 @@
 import { createKind } from "@stackra/container";
 import { duration } from "@stackra/validation";
 
+import { WorkflowBase } from "#core/bases/workflow-base.base";
 import type { WorkflowClass } from "#core/types/workflow-class.type";
 import type { WorkflowOptions } from "#core/types/workflow-options.type";
-
-/** The instance side every workflow shares. */
-export abstract class WorkflowBase<I = unknown> {
-  /** Type-only kind brand, so a class of another kind cannot stand in for a workflow. */
-  declare readonly "~kind": "workflow";
-
-  /** Type-only: the run's input, which `Run<W>` reads. */
-  declare readonly "~input": I;
-}
 
 /** A workflow instance. */
 export type Workflow<I = unknown> = WorkflowBase<I>;
