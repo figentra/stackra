@@ -3,6 +3,16 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra tenancy: tenant isolation in Postgres (the BelongsToTenant trait, the t.belongsToTenant() macro with its generated equality policy on tenant_id, TenantIsolationService.withTenant), the tenant level contributed to the scope tree as data (TenancyScopes, TENANT_SCOPE_LEVEL, TENANT_SCOPE_ALIAS), the tenancy step of the scope resolver chain, and the client's TenantSwitcher with useTenant and useTenantSwitcher, sandbox tenants (SandboxTenantService) and consented cross-tenant shares (TenantShareService, revocationPlan) with their ports and memory drivers, the nullable BelongsToTenantOrPlatform, tenant tokens for anonymous calls (TenantTokenService), the TenantBillingContacts port, and test helpers in ./testing",
+  "keywords": [
+    "multi-tenant",
+    "postgres",
+    "row-level-security",
+    "sandbox",
+    "security",
+    "stackra",
+    "tenancy",
+    "tenant-isolation"
+  ],
   "homepage": "https://github.com/figentra/stackra/tree/main/packages/security/tenancy#readme",
   "bugs": {
     "url": "https://github.com/figentra/stackra/issues"
@@ -134,6 +144,7 @@
     "runtimes": [
       "isomorphic",
       "node"
-    ]
+    ],
+    "summary": "Use it when a model's rows must be isolated per tenant in Postgres, when code needs the current tenant or a tenant switcher, or for sandbox tenants and consented cross-tenant shares; it is the only package that declares the tenant concept."
   }
 }

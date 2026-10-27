@@ -3,6 +3,15 @@
   "version": "0.0.1",
   "private": true,
   "description": "Stackra hosted static files: the Cloudflare static-assets Worker behind static.stackra.figentra.com.",
+  "keywords": [
+    "cdn",
+    "cloudflare",
+    "hosting",
+    "json-schema",
+    "stackra",
+    "static-assets",
+    "worker"
+  ],
   "homepage": "https://github.com/figentra/stackra/tree/main/workers/static#readme",
   "bugs": {
     "url": "https://github.com/figentra/stackra/issues"
@@ -60,6 +69,7 @@
     "tier": "app",
     "runtimes": [
       "node"
-    ]
+    ],
+    "summary": "Change this to publish a new kind of static file or JSON Schema at static.stackra.figentra.com; it has no Worker script, only a build step that lays out the assets."
   }
 }

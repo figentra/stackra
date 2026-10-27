@@ -3,6 +3,15 @@
   "version": "0.1.0",
   "private": true,
   "description": "Shared oxlint presets. A workspace's .oxlintrc.jsonc extends exactly one role preset and declares no rules of its own.",
+  "keywords": [
+    "code-style",
+    "lint-presets",
+    "linting",
+    "oxlint",
+    "stackra",
+    "static-analysis",
+    "tooling"
+  ],
   "homepage": "https://github.com/figentra/stackra/tree/main/packages/tooling/oxlint#readme",
   "bugs": {
     "url": "https://github.com/figentra/stackra/issues"
@@ -53,6 +62,7 @@
     "category": "tooling",
     "runtimes": [
       "node"
-    ]
+    ],
+    "summary": "Use it when creating or changing a workspace's .oxlintrc.jsonc: extend exactly one role preset from this package's src/, and add or change lint rules here, never in the workspace."
   }
 }

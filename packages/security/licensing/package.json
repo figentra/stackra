@@ -3,6 +3,16 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra licensing: the LicenceIssuer port and its Keygen and memory drivers for the issuing service, the on-prem install signer and usage-report exporter, and the LicenceVerifier port and its Keygen driver over the LicensingConfig configuration (API origin, account, verify key), reading a signed licence file offline, deriving the soft-enforcement standing (active, grace, read-only), and running the opt-in online key check for connected installs",
+  "keywords": [
+    "keygen",
+    "licence",
+    "licensing",
+    "offline-verification",
+    "on-prem",
+    "security",
+    "stackra",
+    "usage-reporting"
+  ],
   "homepage": "https://github.com/figentra/stackra/tree/main/packages/security/licensing#readme",
   "bugs": {
     "url": "https://github.com/figentra/stackra/issues"
@@ -89,6 +99,7 @@
     "category": "security",
     "runtimes": [
       "isomorphic"
-    ]
+    ],
+    "summary": "Use it when an install must verify its signed licence offline and derive its standing (active, grace, read-only), or when the issuing service writes licences through the LicenceIssuer port."
   }
 }

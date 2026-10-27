@@ -3,6 +3,14 @@
   "version": "0.0.1",
   "private": true,
   "description": "Example service.",
+  "keywords": [
+    "example",
+    "module",
+    "service",
+    "stackra",
+    "starter",
+    "template"
+  ],
   "homepage": "https://github.com/figentra/stackra/tree/main/services/example#readme",
   "bugs": {
     "url": "https://github.com/figentra/stackra/issues"
@@ -60,6 +68,7 @@
     "runtimes": [
       "node"
     ],
+    "summary": "Read or copy it as the reference layout of a Stackra service (an entry plus the root module named in stackra.module); it holds no business logic.",
     "module": "./src/example.module.ts"
   }
 }

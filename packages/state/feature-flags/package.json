@@ -3,6 +3,15 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra feature flags: the Flag({ default, expires, removalIssue, scopes }) kind, typed flag refs, the FlagProvider port with its config and PostHog drivers, the FlagReader, FeatureFlagsConfig with its shipped schema, useFlag and fakeFlags, and the feature-flags oxlint plugin with its no-plan-targeting rule",
+  "keywords": [
+    "experiments",
+    "feature-flags",
+    "feature-toggles",
+    "posthog",
+    "rollout",
+    "stackra",
+    "state"
+  ],
   "homepage": "https://github.com/figentra/stackra/tree/main/packages/state/feature-flags#readme",
   "bugs": {
     "url": "https://github.com/figentra/stackra/issues"
@@ -140,6 +149,7 @@
     "runtimes": [
       "isomorphic",
       "node"
-    ]
+    ],
+    "summary": "Reach for this to declare a typed release switch or experiment arm and read it in code or React; a commercial right is never a flag and belongs in @stackra/entitlements."
   }
 }

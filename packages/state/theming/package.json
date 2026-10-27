@@ -3,6 +3,16 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra theming: the colour scheme a user picks (light, dark, system), persisted per device and resolved against the system preference, the ThemingConfig look over @stackra/tokens themes with its shipped schema, the SystemColorScheme port with its memory, browser and appearance drivers, useColorScheme and fakeColorScheme",
+  "keywords": [
+    "appearance",
+    "color-scheme",
+    "dark-mode",
+    "design-tokens",
+    "stackra",
+    "state",
+    "themes",
+    "theming"
+  ],
   "homepage": "https://github.com/figentra/stackra/tree/main/packages/state/theming#readme",
   "bugs": {
     "url": "https://github.com/figentra/stackra/issues"
@@ -166,6 +176,7 @@
       "node",
       "browser",
       "react-native"
-    ]
+    ],
+    "summary": "Reach for this to read or change a user's light, dark or system colour scheme on a device, or to configure a member's theme and logo over @stackra/tokens."
   }
 }

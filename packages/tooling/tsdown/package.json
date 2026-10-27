@@ -3,6 +3,16 @@
   "version": "0.1.0",
   "private": true,
   "description": "Shared tsdown build preset for libraries: ESM, dts, sourcemaps, tree-shaking, optional legacy-decorator transform.",
+  "keywords": [
+    "build",
+    "bundler",
+    "decorators",
+    "dts",
+    "esm",
+    "stackra",
+    "tooling",
+    "tsdown"
+  ],
   "homepage": "https://github.com/figentra/stackra/tree/main/packages/tooling/tsdown#readme",
   "bugs": {
     "url": "https://github.com/figentra/stackra/issues"
@@ -45,6 +55,7 @@
     "category": "tooling",
     "runtimes": [
       "node"
-    ]
+    ],
+    "summary": "Use it in a library's tsdown.config.ts through library() to build its entries to ESM with types and sourcemaps; build options change here, not per member."
   }
 }

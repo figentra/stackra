@@ -3,6 +3,16 @@
   "version": "0.0.1",
   "private": true,
   "description": "Stackra's Turborepo remote cache: a Cloudflare Worker serving Turborepo's v8 artifacts API from an R2 bucket.",
+  "keywords": [
+    "build-cache",
+    "ci",
+    "cloudflare",
+    "r2",
+    "remote-cache",
+    "stackra",
+    "turborepo",
+    "worker"
+  ],
   "homepage": "https://github.com/figentra/stackra/tree/main/workers/turbo-cache#readme",
   "bugs": {
     "url": "https://github.com/figentra/stackra/issues"
@@ -60,6 +70,7 @@
     "tier": "app",
     "runtimes": [
       "worker"
-    ]
+    ],
+    "summary": "Change this when working on the Turborepo remote cache that CI and developers reach through TURBO_API and TURBO_TOKEN; it serves the v8 artifacts API from R2."
   }
 }

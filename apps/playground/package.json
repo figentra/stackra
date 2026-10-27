@@ -3,6 +3,17 @@
   "version": "0.0.1",
   "private": true,
   "description": "The Stackra Design System playground: every @stackra/ui component on its own route, in light and dark and in left-to-right and right-to-left, checked by Playwright and axe.",
+  "keywords": [
+    "app",
+    "axe",
+    "component-review",
+    "design-system",
+    "heroui",
+    "playground",
+    "playwright",
+    "rtl",
+    "stackra"
+  ],
   "homepage": "https://github.com/figentra/stackra/tree/main/apps/playground#readme",
   "bugs": {
     "url": "https://github.com/figentra/stackra/issues"
@@ -106,6 +117,7 @@
     "tier": "app",
     "runtimes": [
       "browser"
-    ]
+    ],
+    "summary": "Use it to view or review every @stackra/ui component in light, dark, left-to-right and right-to-left, and add a route here for each new component; it is a dev tool and is never deployed."
   }
 }

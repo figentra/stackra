@@ -3,6 +3,15 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra tab coordination: leader election between the tabs and windows of one device through Web Locks, with a BroadcastChannel heartbeat fallback and an in-memory fallback, the leader flag as a @stackra/state signal, and withTabLock for one task at a time",
+  "keywords": [
+    "broadcast-channel",
+    "leader-election",
+    "multi-tab",
+    "mutex",
+    "stackra",
+    "state",
+    "web-locks"
+  ],
   "homepage": "https://github.com/figentra/stackra/tree/main/packages/state/coordinator#readme",
   "bugs": {
     "url": "https://github.com/figentra/stackra/issues"
@@ -84,6 +93,7 @@
     "category": "state",
     "runtimes": [
       "isomorphic"
-    ]
+    ],
+    "summary": "Use it when only one tab or window of a device may run a task (drain the offline queue, hold the realtime socket, refresh a token) and another must take over when that one closes."
   }
 }

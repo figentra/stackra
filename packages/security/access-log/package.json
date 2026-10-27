@@ -3,6 +3,16 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra access log: the @AccessLogged class facet and its Explorer, which write one access record per call of a marked action, query or service to the AccessLogSink port; a per-tenant SHA-256 hash chain over the records (linkAccessRecord, findChainBreak); memory and Postgres sinks; the append-only AccessLogEntry table with its migration and the t.dataClassification() macro; the retention job; and the sink fake and toHaveLoggedAccess matcher for tests",
+  "keywords": [
+    "access-log",
+    "audit-trail",
+    "data-classification",
+    "hash-chain",
+    "retention",
+    "security",
+    "stackra",
+    "tamper-evident"
+  ],
   "homepage": "https://github.com/figentra/stackra/tree/main/packages/security/access-log#readme",
   "bugs": {
     "url": "https://github.com/figentra/stackra/issues"
@@ -134,6 +144,7 @@
     "runtimes": [
       "isomorphic",
       "node"
-    ]
+    ],
+    "summary": "Reach for this when an action, query or service touches personal data and every call must leave a tamper-evident, per-tenant access record; it owns the @AccessLogged facet, the sinks, the hash chain and its verification."
   }
 }

@@ -3,6 +3,16 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra settings: the Settings({ scopes, navigation }) kind and the @Setting field decorator, SettingsReader resolving a module's group through the scope cascade with locks, the SettingValueStore port with its memory and Postgres drivers and the stored-settings table, the generated-key helpers settingKeys and settingsPage, SettingsResolver with market-pack legal floors, provenance, live and sandbox keys, revisions, four-eyes approval and schedules, YAML settings packs with diff and apply, the Promotable port with its settings driver, the native SettingsForm and fakeSettings",
+  "keywords": [
+    "admin-settings",
+    "approvals",
+    "preferences",
+    "scope-cascade",
+    "settings",
+    "settings-packs",
+    "stackra",
+    "state"
+  ],
   "homepage": "https://github.com/figentra/stackra/tree/main/packages/state/settings#readme",
   "bugs": {
     "url": "https://github.com/figentra/stackra/issues"
@@ -155,6 +165,7 @@
       "isomorphic",
       "node",
       "react-native"
-    ]
+    ],
+    "summary": "Reach for this when a module exposes runtime values that admins or users change per scope, with locks, revisions, approval and schedules; deploy-time values belong in @stackra/config and secrets never go here."
   }
 }

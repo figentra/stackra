@@ -3,6 +3,17 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra IAM: the Permissions, Permission (L0 to L4), Policy<M> and Role({ grants }) kinds, Decision, Risk and SystemRole, the embedded policy decision point over a versioned policy snapshot (scoped grants that inherit downward, roles, explicit deny with rules conditions, record visibility rules, the delegation bound), the action pipeline's AccessControl driver, the record-visibility query filter (./node), the scope package's GrantedScopes driver, usePermission and the actors test helpers; the store-backed production PolicySource, field-level rules, conditions on dimensions other services own, time-boxed break-glass, existence-only hits and restricted permissions",
+  "keywords": [
+    "access-control",
+    "authorization",
+    "break-glass",
+    "iam",
+    "permissions",
+    "policy",
+    "rbac",
+    "security",
+    "stackra"
+  ],
   "homepage": "https://github.com/figentra/stackra/tree/main/packages/security/iam#readme",
   "bugs": {
     "url": "https://github.com/figentra/stackra/issues"
@@ -149,6 +160,7 @@
     "runtimes": [
       "isomorphic",
       "node"
-    ]
+    ],
+    "summary": "Use it to declare a model's permissions, roles and record policies and to answer who may do what on which records, including the action pipeline's access check and the record-visibility filter on reads."
   }
 }

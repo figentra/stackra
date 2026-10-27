@@ -3,6 +3,17 @@
   "version": "0.0.1",
   "private": true,
   "description": "The Stackra registry: the npm-compatible Cloudflare Worker behind npm.stackra.figentra.com (R2 tarballs, D1 metadata, KV caches, the kinds catalogue).",
+  "keywords": [
+    "cloudflare",
+    "d1",
+    "kv",
+    "licensing",
+    "npm-registry",
+    "package-registry",
+    "r2",
+    "stackra",
+    "worker"
+  ],
   "homepage": "https://github.com/figentra/stackra/tree/main/workers/registry#readme",
   "bugs": {
     "url": "https://github.com/figentra/stackra/issues"
@@ -53,6 +64,7 @@
     "tier": "app",
     "runtimes": [
       "worker"
-    ]
+    ],
+    "summary": "Change this when working on how @stackra and @stackra-pro items are published, stored or served over the npm protocol at npm.stackra.figentra.com, including licence-gated reads."
   }
 }

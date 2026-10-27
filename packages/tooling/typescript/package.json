@@ -3,6 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "description": "Shared tsconfig presets. A workspace extends exactly one role preset and adds no compiler options of its own.",
+  "keywords": [
+    "compiler-options",
+    "presets",
+    "stackra",
+    "tooling",
+    "tsconfig",
+    "typescript"
+  ],
   "homepage": "https://github.com/figentra/stackra/tree/main/packages/tooling/typescript#readme",
   "bugs": {
     "url": "https://github.com/figentra/stackra/issues"
@@ -61,6 +69,7 @@
     "category": "tooling",
     "runtimes": [
       "node"
-    ]
+    ],
+    "summary": "Use it as the single extends of a workspace's tsconfig.json, picking the role preset (node, library, decorators, runtime and the others); compiler options change here, never in a member."
   }
 }

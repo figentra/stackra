@@ -3,6 +3,13 @@
   "version": "0.0.1",
   "private": true,
   "description": "Stackra console.",
+  "keywords": [
+    "admin-console",
+    "app",
+    "back-office",
+    "console",
+    "stackra"
+  ],
   "homepage": "https://github.com/figentra/stackra/tree/main/apps/console#readme",
   "bugs": {
     "url": "https://github.com/figentra/stackra/issues"
@@ -56,6 +63,7 @@
     "tier": "app",
     "runtimes": [
       "node"
-    ]
+    ],
+    "summary": "The Stackra console app; today it is only a placeholder entry, so work here only when building the console shell itself."
   }
 }

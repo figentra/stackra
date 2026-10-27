@@ -3,6 +3,14 @@
   "version": "0.0.1",
   "private": true,
   "description": "Health service.",
+  "keywords": [
+    "health",
+    "health-check",
+    "liveness",
+    "module",
+    "service",
+    "stackra"
+  ],
   "homepage": "https://github.com/figentra/stackra/tree/main/services/health#readme",
   "bugs": {
     "url": "https://github.com/figentra/stackra/issues"
@@ -60,6 +68,7 @@
     "runtimes": [
       "node"
     ],
+    "summary": "The health service, today an entry and an empty HealthModule named in stackra.module; work here when adding health-check endpoints.",
     "module": "./src/health.module.ts"
   }
 }

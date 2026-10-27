@@ -3,6 +3,15 @@
   "version": "0.0.1",
   "private": true,
   "description": "Stackra documentation site — Mintlify (docs.json + MDX).",
+  "keywords": [
+    "adr",
+    "app",
+    "documentation",
+    "mdx",
+    "mintlify",
+    "stackra",
+    "system-map"
+  ],
   "homepage": "https://github.com/figentra/stackra/tree/main/apps/docs#readme",
   "bugs": {
     "url": "https://github.com/figentra/stackra/issues"
@@ -43,6 +52,7 @@
     "tier": "app",
     "runtimes": [
       "browser"
-    ]
+    ],
+    "summary": "Edit this when writing or changing Stackra documentation pages, ADRs or the system map; it is the Mintlify site, not a TypeScript member."
   }
 }
