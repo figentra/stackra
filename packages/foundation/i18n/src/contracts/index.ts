@@ -13,7 +13,6 @@ export { Geocoder } from "#contracts/ports/geocoder.port";
 export { TranslationProvider } from "#contracts/ports/translation-provider.port";
 export type { AddressSuggestion } from "#contracts/types/address-suggestion.type";
 export type { AutocompleteQuery } from "#contracts/types/autocomplete-query.type";
-export type { GeoPoint } from "#contracts/types/geo-point.type";
 export type { GeocodeQuery } from "#contracts/types/geocode-query.type";
 export type { GeocodeResult } from "#contracts/types/geocode-result.type";
 export type { TranslationRequest } from "#contracts/types/translation-request.type";

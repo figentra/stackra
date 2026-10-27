@@ -6,7 +6,8 @@
  * Runtime: isomorphic
  * Governing contract: R3-SO-09 (vehicle capacity and compartments, shifts); GRO-129.
  */
-import type { GeoPoint } from "#contracts/types/geo-point.type";
+import type { GeoPoint } from "@stackra/contracts";
+
 import type { TimeWindow } from "#contracts/types/time-window.type";
 
 /**

@@ -1,18 +1,19 @@
 /**
  * Stackra file contract:
  * Purpose: pins the exports of the `./contracts` entry of @stackra/rules: `FieldType`, `Operator` and `SeedResult` at
- *          run time, and the types `FactField`, `FactSource`, `GeoPoint`, `OutcomeKind` and `OutcomeParam` at compile
- *          time (a source with an enum field, a point and an outcome kind with a floored parameter typecheck; a field
- *          without a label and an abbreviated point are refused).
+ *          run time, and the types `FactField`, `FactSource`, `OutcomeKind` and `OutcomeParam` at compile time (a source
+ *          with an enum field, a geo fact as the one `GeoPoint` of @stackra/contracts, and an outcome kind with a
+ *          floored parameter typecheck; a field without a label and an abbreviated point are refused).
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0294 (decision 15); ADR 0331 (decisions 3, 4 and 11).
  */
+import type { GeoPoint } from "@stackra/contracts";
 import type { I18nKey } from "@stackra/i18n";
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
 import * as contracts from "#contracts/index";
-import type { FactField, FactSource, GeoPoint, OutcomeKind, OutcomeParam } from "#contracts/index";
+import type { FactField, FactSource, OutcomeKind, OutcomeParam } from "#contracts/index";
 import { FieldType } from "#contracts/enums/field-type.enum";
 import { Operator } from "#contracts/enums/operator.enum";
 

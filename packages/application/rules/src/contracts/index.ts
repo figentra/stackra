@@ -15,6 +15,5 @@ export { Operator } from "#contracts/enums/operator.enum";
 export { SeedResult } from "#contracts/enums/seed-result.enum";
 export type { FactField } from "#contracts/types/fact-field.type";
 export type { FactSource } from "#contracts/types/fact-source.type";
-export type { GeoPoint } from "#contracts/types/geo-point.type";
 export type { OutcomeKind } from "#contracts/types/outcome-kind.type";
 export type { OutcomeParam } from "#contracts/types/outcome-param.type";

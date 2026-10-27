@@ -7,7 +7,7 @@
  * Runtime: isomorphic
  * Governing contract: R3-SO-09 (`DistanceMatrix`); GRO-136 (live promise reads distance).
  */
-import type { GeoPoint } from "#contracts/types/geo-point.type";
+import type { GeoPoint } from "@stackra/contracts";
 
 /**
  * A matrix request.

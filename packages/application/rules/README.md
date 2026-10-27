@@ -26,7 +26,7 @@ and operators; it is never an expression and never runs code (ADR 0154, ADR 0227
 | Entry         | Symbol                                                                 | Use                                                                      |
 | ------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------ |
 | `./contracts` | `FieldType`, `Operator`                                                | the field types and the operator set each one fixes (IAM may reuse it)   |
-| `./contracts` | `FactSource`, `FactField`, `GeoPoint`                                  | what a consumer registers, and a geo fact (types)                        |
+| `./contracts` | `FactSource`, `FactField`                                              | what a consumer registers (types); a geo fact is `@stackra/contracts` `GeoPoint` |
 | `./contracts` | `OutcomeKind`, `OutcomeParam`, `SeedResult`                            | the outcomes a consumer registers; what a seed did                       |
 | `./contracts` | `FIELD_KEY`                                                            | the one key casing (camelCase) every registry tests keys with            |
 | `.`           | `Rules`                                                                | one consumer's registry of fact sources and the check of a condition     |

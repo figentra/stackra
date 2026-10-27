@@ -7,9 +7,8 @@
  * Runtime: isomorphic
  * Governing contract: OS-182; OS-370; ADR 0305.
  */
+import type { GeoPoint } from "@stackra/contracts";
 import type { Address } from "@stackra/validation";
-
-import type { GeoPoint } from "#contracts/types/geo-point.type";
 
 /** A geocoded place. */
 export interface GeocodeResult {

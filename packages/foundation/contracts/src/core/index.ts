@@ -55,6 +55,7 @@ export type { AwsKmsSignerOptions } from "#core/types/aws-kms-signer-options.typ
 export type { Branded } from "#core/types/branded.type";
 export type { DataKey } from "#core/types/data-key.type";
 export type { Email } from "#core/types/email.type";
+export type { GeoPoint } from "#core/types/geo-point.type";
 export type { HealthReport } from "#core/types/health-report.type";
 export type { Json } from "#core/types/json.type";
 export type { PackageDefinition } from "#core/types/package-definition.type";

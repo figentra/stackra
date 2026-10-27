@@ -13,10 +13,10 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0331 (decisions 1, 2, 3, 6, 7 and 9); ADR 0220 (money).
  */
-import type { Json } from "@stackra/contracts";
+import type { GeoPoint, Json } from "@stackra/contracts";
 import { Money } from "@stackra/money";
 
-import { type FactField, FieldType, type GeoPoint, Operator } from "#contracts/index";
+import { type FactField, FieldType, Operator } from "#contracts/index";
 import { millisecondsOf } from "#core/functions/milliseconds-of.function";
 import { moneyOf } from "#core/functions/money-of.function";
 import type { Condition } from "#core/types/condition.type";

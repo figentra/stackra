@@ -8,9 +8,8 @@
  * Runtime: isomorphic
  * Governing contract: OS-182 (geocoding providers per market); ADR 0356; ADR 0294 (decision 16).
  */
-import { Port } from "@stackra/contracts";
+import { type GeoPoint, Port } from "@stackra/contracts";
 
-import type { GeoPoint } from "#contracts/types/geo-point.type";
 import type { GeocodeQuery } from "#contracts/types/geocode-query.type";
 import type { GeocodeResult } from "#contracts/types/geocode-result.type";
 

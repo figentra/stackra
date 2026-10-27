@@ -7,9 +7,8 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0331 (decisions 3 and 4); ADR 0220 (money).
  */
+import type { GeoPoint } from "@stackra/contracts";
 import type { Money } from "@stackra/money";
-
-import type { GeoPoint } from "#contracts/index";
 
 /** One fact: the runtime value of a registered field. */
 export type FactValue = string | number | Money | Date | readonly string[] | GeoPoint;

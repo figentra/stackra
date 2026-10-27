@@ -9,9 +9,9 @@
  * Governing contract: ADR 0266 (memory drivers first); ADR 0269 (fakes are real drivers); R3-SO-09; GRO-136.
  */
 import { Driver } from "@stackra/container";
+import type { GeoPoint } from "@stackra/contracts";
 
 import { DistanceMatrix } from "#contracts/ports/distance-matrix.port";
-import type { GeoPoint } from "#contracts/types/geo-point.type";
 import type { TravelMatrix } from "#contracts/types/travel-matrix.type";
 import type { TravelMatrixRequest } from "#contracts/types/travel-matrix-request.type";
 

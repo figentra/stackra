@@ -18,7 +18,6 @@ export type { CapabilityGateways } from "#contracts/types/capability-gateways.ty
 export type { CarrierEvent } from "#contracts/types/carrier-event.type";
 export type { CarrierGateway } from "#contracts/types/carrier-gateway.type";
 export type { CustomsItem } from "#contracts/types/customs-item.type";
-export type { GeoPoint } from "#contracts/types/geo-point.type";
 export type { LabelDocument } from "#contracts/types/label-document.type";
 export type { LabelGateway } from "#contracts/types/label-gateway.type";
 export type { LabelRequest } from "#contracts/types/label-request.type";
