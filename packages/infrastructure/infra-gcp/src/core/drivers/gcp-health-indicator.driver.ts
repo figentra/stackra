@@ -2,8 +2,8 @@
  * Stackra file contract:
  * Purpose: `GcpHealthIndicatorDriver`, this package's driver of the contracts `HealthIndicator` port (`gcp`): the dependency is
  *          up when Google Cloud's regional endpoint for the deployment's region (Cloud Run's) answers. One GET, bounded by a timeout; any answer below 500 is `up` (the endpoint is reachable; an unsigned request is refused, as it should be), 429 is `degraded`, 500 and above is `down`.
- * Boundary: `Driver(HealthIndicator)`, so the container records the port it implements. The target is runway data passed in by the
- *           wiring; no credential is sent and none is read. A failure reports `down` with the host only, never a
+ * Boundary: `Driver(HealthIndicator)`, so the container records the port it implements. The target is `InfraGcpConfig`, runway data the
+ *           wiring injects; no credential is sent and none is read. A failure reports `down` with the host only, never a
  *           response body, and never throws.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 16 and 17: each infra package ships its dependency's driver), ADR 0354,
@@ -13,11 +13,13 @@ import { Driver } from "@stackra/container";
 import { Duration, HealthIndicator, HealthStatus } from "@stackra/contracts";
 import type { HealthReport } from "@stackra/contracts";
 
+import type { InfraGcpConfig } from "#config/infra-gcp.config";
+
 /**
  * The `gcp` health indicator: probes the dependency with one bounded GET and maps the answer to a status.
  *
  * @example
- * const indicator = new GcpHealthIndicatorDriver({ region: "me-central2" });
+ * const indicator = new GcpHealthIndicatorDriver(buildConfig(InfraGcpConfig, { values: { region: "me-central2" } }));
  * await indicator.check(); // { status: "up", latency: "PT0.12S" }
  */
 export class GcpHealthIndicatorDriver extends Driver(HealthIndicator) {
@@ -28,34 +30,25 @@ export class GcpHealthIndicatorDriver extends Driver(HealthIndicator) {
 
   private readonly host: string;
 
-  private readonly fetch: typeof fetch;
-
-  private readonly timeout: Duration;
+  private readonly timeout = Duration.seconds(5);
 
   /**
-   * @param options.fetch - the fetch to use; the global one when absent.
-   * @param options.timeout - how long a check may take; five seconds when absent.
-   * @throws TypeError when the target is malformed.
+   * @param config - the target, from the runway's `config.infra_gcp`.
+   * @throws TypeError when the target is malformed or unset.
    */
-  constructor(options: {
-    readonly region: string;
-    readonly fetch?: typeof fetch;
-    readonly timeout?: Duration;
-  }) {
+  constructor(config: InfraGcpConfig) {
     super();
-    if (!/^[a-z]+(-[a-z]+)+\d+$/.test(options.region))
-      throw new TypeError(`"${options.region}" is not a GCP region such as me-central2`);
-    this.url = `https://${options.region}-run.googleapis.com/`;
+    if (!/^[a-z]+(-[a-z]+)+\d+$/.test(config.region))
+      throw new TypeError(`"${config.region}" is not a GCP region such as me-central2`);
+    this.url = `https://${config.region}-run.googleapis.com/`;
     this.host = new URL(this.url).host;
-    this.fetch = options.fetch ?? ((input, init) => globalThis.fetch(input, init));
-    this.timeout = options.timeout ?? Duration.seconds(5);
   }
 
   /** One GET against the target. */
   override async check(): Promise<HealthReport> {
     const started = Date.now();
     try {
-      const response = await this.fetch(this.url, {
+      const response = await fetch(this.url, {
         method: "GET",
         signal: AbortSignal.timeout(Duration.toMilliseconds(this.timeout)),
       });

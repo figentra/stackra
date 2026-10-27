@@ -2,13 +2,16 @@
  * Stackra file contract:
  * Purpose: unit tests of `GcpHealthIndicatorDriver`: a `HealthIndicator` named `gcp` that GETs its target, reports `up` with
  *          a latency, maps the answer's status, and reports `down` (never throws) when the request fails.
- * Boundary: test only; `fetch` is a fake, nothing leaves the process.
+ * Boundary: test only; the global `fetch` is stubbed, nothing leaves the process.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 16 and 17); registry gaps R-27 and R-36.
  */
+import { buildConfig } from "@stackra/config";
 import { HealthIndicator } from "@stackra/contracts";
-import { describe, expect, it } from "@stackra/testing";
+import { afterEach, describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 
+import { InfraGcpConfig } from "#config/infra-gcp.config";
 import { GcpHealthIndicatorDriver } from "#core/drivers/gcp-health-indicator.driver";
 
 /** The URLs the fake fetch was asked for. */
@@ -21,8 +24,15 @@ function indicatorAnswering(status: number | null): GcpHealthIndicatorDriver {
     if (status === null) throw new TypeError("fetch failed");
     return new Response(null, { status });
   }) as typeof globalThis.fetch;
-  return new GcpHealthIndicatorDriver({ region: "me-central2", fetch });
+  vi.stubGlobal("fetch", fetch);
+  return new GcpHealthIndicatorDriver(
+    buildConfig(InfraGcpConfig, { values: { region: "me-central2" } }),
+  );
 }
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
 
 describe("GcpHealthIndicatorDriver", () => {
   it("is a named health indicator that GETs its target", async () => {
@@ -52,6 +62,7 @@ describe("GcpHealthIndicatorDriver", () => {
   });
 
   it("refuses a malformed target", () => {
-    expect(() => new GcpHealthIndicatorDriver({ region: "Dammam" })).toThrow(TypeError);
+    expect(() => buildConfig(InfraGcpConfig, { values: { region: "Dammam" } })).toThrow();
+    expect(() => new GcpHealthIndicatorDriver(buildConfig(InfraGcpConfig))).toThrow(TypeError);
   });
 });

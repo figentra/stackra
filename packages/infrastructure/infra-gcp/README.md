@@ -12,14 +12,14 @@ job, driven by `stackra runway infra` (ADR 0354 decision 5).
 
 ## What is here
 
-| Entry       | Symbol                                                                                    | Use                                                                       |
-| ----------- | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
-| `.`         | `gcpBaselineConfig(root, env, origins)`                                                   | one environment's typed config, plain JSON (gen writes it to a file)      |
-| `.`         | `gcpRuntimeConfig(root, env, dedicated?)`, `serviceAccountId`, `GcpHealthIndicatorDriver` | the runtime config (Cloud SQL); the 30-character guard; the health driver |
-| `./node`    | `gcpBaseline(config)`                                                                     | the environment stack                                                     |
-| `./node`    | `gcpRuntime(config, { keyId? })`                                                          | the runtime stack: Cloud SQL Postgres with backups and recovery           |
-| `./node`    | `resolveRef(value)`                                                                       | a `ref:<path>` value read from the stack config                           |
-| `./testing` | `mockPulumi(config?)`, `outputOf(output)`                                                 | Pulumi's mocks and an output reader, for tests of a composed program      |
+| Entry       | Symbol                                                                                                      | Use                                                                                                         |
+| ----------- | ----------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `.`         | `gcpBaselineConfig(root, env, origins)`                                                                     | one environment's typed config, plain JSON (gen writes it to a file)                                        |
+| `.`         | `gcpRuntimeConfig(root, env, dedicated?)`, `serviceAccountId`, `GcpHealthIndicatorDriver`, `InfraGcpConfig` | the runtime config (Cloud SQL); the 30-character guard; the health driver; its target is `config.infra_gcp` |
+| `./node`    | `gcpBaseline(config)`                                                                                       | the environment stack                                                                                       |
+| `./node`    | `gcpRuntime(config, { keyId? })`                                                                            | the runtime stack: Cloud SQL Postgres with backups and recovery                                             |
+| `./node`    | `resolveRef(value)`                                                                                         | a `ref:<path>` value read from the stack config                                                             |
+| `./testing` | `mockPulumi(config?)`, `outputOf(output)`                                                                   | Pulumi's mocks and an output reader, for tests of a composed program                                        |
 
 `.` never loads Pulumi, so gen can derive the config without it.
 

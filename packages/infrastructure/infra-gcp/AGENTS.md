@@ -27,6 +27,8 @@ program) and `./testing` (Pulumi's mocks).
   this package. No secret value is read anywhere, and no service account key or HMAC key is created.
 - An egress address is `retainOnDelete`: a partner allow-lists it, so a stack change never releases it. Reserve the
   addresses here; attaching them to a Cloud NAT is the network's job.
+- The health driver's target is `InfraGcpConfig` (`src/config/infra-gcp.config.ts`, key `infra_gcp`), injected by type:
+  the runway's `config.infra_gcp` sets it. Never a constructor options object (gen's `token_not_a_class`).
 
 ## PII
 

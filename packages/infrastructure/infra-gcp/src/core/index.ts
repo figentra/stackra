@@ -10,6 +10,8 @@
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision; ADR 0127 (the infrastructure
  *                     category); ADR 0354 (decision 3).
  */
+export { InfraGcpConfig } from "#config/infra-gcp.config";
+export { InfraGcpConfig$ } from "#core/constants/infra-gcp-config-schema.constant";
 export { GcpHealthIndicatorDriver } from "#core/drivers/gcp-health-indicator.driver";
 export { gcpBaselineConfig } from "#core/functions/gcp-baseline-config.function";
 export { gcpRuntimeConfig } from "#core/functions/gcp-runtime-config.function";
