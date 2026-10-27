@@ -1,6 +1,10 @@
 /**
- * Proves the presets compose: the decorators preset keeps the base options and adds the oxc decorator flags
+ * Stackra file contract:
+ * Purpose: proves the presets compose: the decorators preset keeps the base options and adds the oxc decorator flags
  * without metadata emission or setup files (ADR-0005); the react preset switches the environment to jsdom.
+ * Boundary: test only.
+ * Runtime: node (vitest)
+ * Governing contract: ADR 0022 (test placement).
  */
 import { describe, expect, it } from "vitest";
 import { stackraVitest } from "../preset.ts";
