@@ -1,0 +1,6 @@
+import { IntegrationEvent } from "@stackra/events";
+import type { PublicId } from "@stackra/contracts";
+
+export class CataloguePublished extends IntegrationEvent({ name: "catalogue.published" }) {
+  id!: PublicId<"itm">;
+}

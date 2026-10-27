@@ -1,0 +1,35 @@
+{
+  "name": "@golden/service-catalogue",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "@stackra/actions": "workspace:*",
+    "@stackra/app": "workspace:*",
+    "@stackra/clients": "workspace:*",
+    "@stackra/config": "workspace:*",
+    "@stackra/container": "workspace:*",
+    "@stackra/contracts": "workspace:*",
+    "@stackra/errors": "workspace:*",
+    "@stackra/events": "workspace:*",
+    "@stackra/locking": "workspace:*",
+    "@stackra/money": "workspace:*",
+    "@stackra/outbox": "workspace:*",
+    "@stackra/queue": "workspace:*",
+    "@stackra/scheduler": "workspace:*",
+    "@stackra/settings": "workspace:*",
+    "@stackra/testing": "workspace:*",
+    "@stackra/tsdown-config": "workspace:*",
+    "@stackra/validation": "workspace:*",
+    "@stackra/vitest-config": "workspace:*"
+  },
+  "imports": {
+    "#config/*": ["./src/config/*.ts", "./src/config/*.tsx"],
+    "#contracts/*": ["./src/contracts/*.ts", "./src/contracts/*.tsx"],
+    "#core/*": ["./src/core/*.ts", "./src/core/*.tsx"],
+    "#node/*": ["./src/node/*.ts", "./src/node/*.tsx"],
+    "#react/*": ["./src/react/*.ts", "./src/react/*.tsx"],
+    "#native/*": ["./src/native/*.ts", "./src/native/*.tsx"],
+    "#testing/*": ["./src/testing/*.ts", "./src/testing/*.tsx"],
+    "#modules/*": ["./src/modules/*.ts", "./src/modules/*.tsx"]
+  }
+}

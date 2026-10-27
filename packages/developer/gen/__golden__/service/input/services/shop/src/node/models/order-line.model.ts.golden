@@ -1,0 +1,13 @@
+import { HasPublicId, ManyToOne, Model } from "@stackra/model";
+import type { Link, Ref } from "@stackra/model";
+import { Customer } from "#node/models/customer.model";
+import { Order } from "#node/models/order.model";
+
+export class OrderLine extends Model.with(HasPublicId("oln")) {
+  @ManyToOne(() => Order, { onDelete: "cascade" })
+  order!: Ref<Order>;
+
+  note!: string | null;
+
+  customer!: Link<Customer> | null;
+}

@@ -1,0 +1,5 @@
+import { Module } from "@stackra/container";
+
+import { ShopService } from "#core/services/shop.service";
+
+export class ShopModule extends Module({ exports: [ShopService] }) {}

@@ -1,0 +1,6 @@
+import { Service } from "@stackra/container";
+export class BadTokenService extends Service {
+  constructor(private readonly name: string) {
+    super();
+  }
+}

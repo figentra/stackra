@@ -1,0 +1,6 @@
+import { IntegrationEvent } from "@stackra/events";
+import type { PublicId } from "@stackra/contracts";
+
+export class OrderPaid extends IntegrationEvent({ name: "order.paid" }) {
+  orderId!: PublicId<"ord">;
+}

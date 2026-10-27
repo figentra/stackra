@@ -1,0 +1,12 @@
+import { Driver } from "@stackra/container";
+
+import { PaymentGateway } from "#contracts/ports/payment-gateway.port";
+import { ShopConfig } from "#config/shop.config";
+
+export class StripePaymentGatewayDriver extends Driver(PaymentGateway) {
+  constructor(private readonly config: ShopConfig) {
+    super();
+  }
+
+  async charge(): Promise<void> {}
+}

@@ -1,0 +1,5 @@
+import { Enum } from "@stackra/contracts";
+
+export const OrderStatus = Enum.of({ Pending: "pending", Paid: "paid", Cancelled: "cancelled" });
+
+export type OrderStatus = Enum.Value<typeof OrderStatus>;

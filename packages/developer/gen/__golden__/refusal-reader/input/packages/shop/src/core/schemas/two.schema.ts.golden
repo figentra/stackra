@@ -1,0 +1,3 @@
+import { Schema } from "@stackra/validation";
+export class One extends Schema {}
+export class Two extends Schema {}

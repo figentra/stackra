@@ -1,0 +1,7 @@
+import { Listener } from "@stackra/events";
+
+import { OrderPaid } from "#node/events/order-paid.event";
+
+export class ShipOnOrderPaidListener extends Listener {
+  async handle(event: OrderPaid): Promise<void> {}
+}

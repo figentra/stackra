@@ -1,0 +1,5 @@
+import { Enum } from "@stackra/contracts";
+
+export const CatalogueStatus = Enum.of({ Draft: "draft", Live: "live" });
+
+export type CatalogueStatus = Enum.Value<typeof CatalogueStatus>;

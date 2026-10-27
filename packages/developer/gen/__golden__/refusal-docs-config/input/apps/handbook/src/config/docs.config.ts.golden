@@ -1,0 +1,8 @@
+export class HandbookDocsConfig {
+  name = "Handbook";
+  theme = "mint";
+  colors = { primary: "#0B0D0F" };
+  favicon = "favicon.svg";
+  navigation = [{ tab: "Guides", groups: [{ group: "Start", pages: ["index", { folder: "guides" }] }] }];
+}
+export class Other {}

@@ -1,0 +1,3 @@
+import { HasPublicId, Model } from "@stackra/model";
+
+export class Customer extends Model.with(HasPublicId("cus")) {}

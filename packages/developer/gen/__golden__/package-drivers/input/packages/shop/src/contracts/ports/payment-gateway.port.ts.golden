@@ -1,0 +1,6 @@
+import { Port } from "@stackra/contracts";
+
+/** Charges a payment. */
+export abstract class PaymentGateway extends Port {
+  abstract charge(amount: number): Promise<void>;
+}

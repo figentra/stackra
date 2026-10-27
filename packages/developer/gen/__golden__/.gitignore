@@ -1,0 +1,6 @@
+# Stackra file contract:
+# Purpose: keep the golden expected trees tracked: the root .gitignore ignores any `.stackra/site/` (a docs app's
+#          generated Mintlify root), but here it is the committed expected output of the docs fixture.
+# Boundary: packages/developer/gen/__golden__ only.
+# Owner: release-operations · Secrets: forbidden
+!**/.stackra/site/

@@ -1,0 +1,6 @@
+import type { PublicId } from "@stackra/contracts";
+import { Schema } from "@stackra/validation";
+
+export class PublishChannelsInput extends Schema {
+  id!: PublicId<"itm">;
+}

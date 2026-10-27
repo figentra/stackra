@@ -1,0 +1,8 @@
+import { Service } from "@stackra/container";
+import type { CatalogueClient } from "#stackra/clients/catalogue";
+
+export class SyncService extends Service {
+  constructor(private readonly catalogue: CatalogueClient) {
+    super();
+  }
+}

@@ -1,0 +1,7 @@
+import { Permission, Permissions } from "@stackra/actions";
+
+export class OrderPermissions extends Permissions {
+  static readonly read = Permission.L0;
+
+  static readonly cancel = Permission.L2;
+}

@@ -1,0 +1,8 @@
+import type { DriverName } from "@stackra/container";
+import { Schema } from "@stackra/validation";
+
+import type { PaymentGateway } from "#contracts/ports/payment-gateway.port";
+
+export class ShopOptions extends Schema {
+  gateway: DriverName<PaymentGateway> = "stripe";
+}

@@ -1,0 +1,7 @@
+import { Schema } from "@stackra/validation";
+
+import { ChannelsStatus } from "#contracts/enums/channels-status.enum";
+
+export class PublishChannelsOutput extends Schema {
+  status: ChannelsStatus = ChannelsStatus.Live;
+}

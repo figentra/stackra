@@ -1,0 +1,19 @@
+import { Field, Int, Str, Schema } from "@stackra/validation";
+import { OrderStatus } from "#contracts/enums/order-status.enum";
+
+interface Loose { a: string }
+const LIMIT: number = Number("5");
+
+export class Banned extends Schema {
+  count!: number;
+  mode!: "a" | "b";
+  loose!: Loose;
+  status = OrderStatus.Paid;
+  createdAt: Date = new Date();
+  @Int({ max: LIMIT })
+  capped!: number;
+  @Field(OrderStatus)
+  hatched!: string;
+  @Str({ max: 3 })
+  misplaced!: boolean;
+}

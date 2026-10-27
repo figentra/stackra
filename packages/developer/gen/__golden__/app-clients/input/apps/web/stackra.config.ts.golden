@@ -1,0 +1,3 @@
+import { ApiArea, defineApp, Target } from "@stackra/contracts";
+
+export default defineApp({ targets: [Target.Web], area: ApiArea.App });

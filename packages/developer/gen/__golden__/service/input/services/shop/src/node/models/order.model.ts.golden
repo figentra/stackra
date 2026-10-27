@@ -1,0 +1,13 @@
+import { Collection, HasPublicId, Model, OneToMany, Timestamps } from "@stackra/model";
+import { OrderLine } from "#node/models/order-line.model";
+
+export class Order extends Model.with(HasPublicId("ord"), Timestamps) {
+  status: string = "pending";
+
+  @OneToMany(() => OrderLine, (line) => line.order, { orphanRemoval: true })
+  lines = new Collection<OrderLine>(this);
+
+  get isOpen(): boolean {
+    return this.status === "pending";
+  }
+}

@@ -1,0 +1,4 @@
+# Golden fixture root runway with no providers.encore.app: a service is refused encore_app_missing.
+providers:
+  cloudflare:
+    account: golden

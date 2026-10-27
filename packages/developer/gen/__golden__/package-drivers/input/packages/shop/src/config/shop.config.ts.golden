@@ -1,0 +1,5 @@
+import { Config } from "@stackra/config";
+
+import { ShopOptions } from "#core/schemas/shop-options.schema";
+
+export class ShopConfig extends Config({ schema: ShopOptions, env: { gateway: "STACKRA_SHOP_GATEWAY" } }) {}

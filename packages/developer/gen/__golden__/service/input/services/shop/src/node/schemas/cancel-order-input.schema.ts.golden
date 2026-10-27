@@ -1,0 +1,13 @@
+import type { PublicId } from "@stackra/contracts";
+import { Int, Schema, Str, Trim } from "@stackra/validation";
+
+export class CancelOrderInput extends Schema {
+  orderId!: PublicId<"ord">;
+
+  @Trim
+  @Str({ max: 200 })
+  reason?: string;
+
+  @Int({ min: 1, max: 5 })
+  attempts = 1;
+}

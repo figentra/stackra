@@ -1,0 +1,6 @@
+import { Listener } from "@stackra/events";
+import type { CataloguePublished } from "#stackra/clients/catalogue";
+
+export class ListOnCataloguePublishedListener extends Listener {
+  async handle(event: CataloguePublished): Promise<void> {}
+}

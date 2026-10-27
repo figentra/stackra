@@ -1,0 +1,2 @@
+// Reason: legacy loader
+export default {};

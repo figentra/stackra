@@ -1,0 +1,10 @@
+import { Action } from "@stackra/actions";
+
+import { PublishCatalogueInput } from "#node/schemas/publish-catalogue-input.schema";
+import { PublishCatalogueOutput } from "#node/schemas/publish-catalogue-output.schema";
+
+export class PublishCatalogueAction extends Action({ key: "catalogue.publish", actors: ["user"] }) {
+  async handle(input: PublishCatalogueInput): Promise<PublishCatalogueOutput> {
+    return PublishCatalogueOutput.create({ status: "live" });
+  }
+}

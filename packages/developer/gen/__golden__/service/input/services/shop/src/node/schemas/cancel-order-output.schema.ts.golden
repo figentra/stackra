@@ -1,0 +1,9 @@
+import { Schema } from "@stackra/validation";
+
+import { OrderStatus } from "#contracts/enums/order-status.enum";
+
+export class CancelOrderOutput extends Schema {
+  status: OrderStatus = OrderStatus.Cancelled;
+
+  cancelledAt!: Date | null;
+}

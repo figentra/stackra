@@ -1,0 +1,7 @@
+import { Permission, Permissions } from "@stackra/actions";
+
+export class CataloguePermissions extends Permissions {
+  static readonly read = Permission.L0;
+
+  static readonly publish = Permission.L2;
+}

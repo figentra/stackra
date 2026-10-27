@@ -1,0 +1,17 @@
+import { Action } from "@stackra/actions";
+
+import { ShopService } from "#core/services/shop.service";
+import { OrderNotCancellableError } from "#node/errors/order-not-cancellable.error";
+import { CancelOrderInput } from "#node/schemas/cancel-order-input.schema";
+import { CancelOrderOutput } from "#node/schemas/cancel-order-output.schema";
+
+export class CancelOrderAction extends Action({ key: "order.cancel", actors: ["user"] }) {
+  constructor(private readonly shop: ShopService) {
+    super();
+  }
+
+  async handle(input: CancelOrderInput): Promise<CancelOrderOutput> {
+    if (input.attempts > 3) throw new OrderNotCancellableError({});
+    return CancelOrderOutput.create({ status: "cancelled", cancelledAt: null });
+  }
+}

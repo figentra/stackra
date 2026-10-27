@@ -1,0 +1,7 @@
+import { Driver } from "@stackra/container";
+
+import { PaymentGateway } from "#contracts/ports/payment-gateway.port";
+
+export class ManualPaymentGatewayDriver extends Driver(PaymentGateway) {
+  async charge(): Promise<void> {}
+}

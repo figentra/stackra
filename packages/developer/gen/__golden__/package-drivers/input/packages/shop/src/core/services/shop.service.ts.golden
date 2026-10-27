@@ -1,0 +1,24 @@
+import { Lifetime, Service, type Named } from "@stackra/container";
+import { Clock } from "@stackra/contracts";
+
+import { PaymentGateway } from "#contracts/ports/payment-gateway.port";
+import { Audited } from "#core/functions/audited.function";
+import { OrderNotCancellableError } from "#node/errors/order-not-cancellable.error";
+
+@Audited({ reason: "money" })
+@Lifetime(Lifetime.Request)
+export class ShopService extends Service {
+  constructor(private readonly clock: Clock, private readonly gateway: PaymentGateway, private readonly fallback: Named<PaymentGateway, "fallback">) {
+    super();
+  }
+
+  async cancel(): Promise<void> {
+    throw OrderNotCancellableError.create({});
+  }
+
+  list(): string[] {
+    return [];
+  }
+
+  private hidden(): void {}
+}

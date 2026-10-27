@@ -1,0 +1,3 @@
+import { ErrorKind, Refusal } from "@stackra/errors";
+
+export class OrderNotCancellableError extends Refusal({ kind: ErrorKind.FailedPrecondition }) {}

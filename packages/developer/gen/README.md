@@ -454,6 +454,14 @@ dependency): one method per public entry, with the bearer token, `Stackra-Versio
 the ADR 0140 envelope as `ApiError`. Only public entries are ever written; packaging and publishing are the release
 pipeline's.
 
+## Golden snapshots (STA-1320)
+
+`__golden__/` holds one fixture workspace per member kind (service, package with drivers, app with clients, docs
+app, consumer of another service's manifest, package lang) and one per whole-run refusal, each with its committed
+expected output. `src/node/__tests__/golden.test.ts` runs gen over them and diffs. Refresh deliberately, on ci-box:
+`UPDATE_GOLDEN=1 pnpm --filter @stackra/gen exec vitest run src/node/__tests__/golden.test.ts`. Layout and fixtures:
+`__golden__/README.md`.
+
 ## Not here
 
 Per-target outputs land with the target that owns them: an app's browser clients, navigation trees and the `keys` `toRoot` takes,

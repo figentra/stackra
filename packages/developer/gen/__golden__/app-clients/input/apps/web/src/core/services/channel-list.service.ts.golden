@@ -1,0 +1,8 @@
+import { Service } from "@stackra/container";
+import type { ChannelsClient } from "#stackra/clients/channels";
+
+export class ChannelListService extends Service {
+  constructor(private readonly channels: ChannelsClient) {
+    super();
+  }
+}

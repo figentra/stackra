@@ -1,0 +1,3 @@
+import { createDecorator } from "@stackra/container";
+
+export const Audited = createDecorator<{ reason: string }>({ kind: "audited", target: "class", kinds: ["service"] });

@@ -1,0 +1,4 @@
+# Golden fixture root runway: only the key gen reads (providers.encore.app, STA-1322).
+providers:
+  encore:
+    app: golden-fixture

@@ -1,0 +1,6 @@
+import { IntegrationEvent } from "@stackra/events";
+import type { PublicId } from "@stackra/contracts";
+
+export class ChannelsPublished extends IntegrationEvent({ name: "channels.published" }) {
+  id!: PublicId<"itm">;
+}

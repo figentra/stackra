@@ -1,0 +1,1 @@
+export { ShopService } from "#core/services/shop.service";

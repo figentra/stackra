@@ -1,0 +1,7 @@
+import { Schema } from "@stackra/validation";
+
+import { CatalogueStatus } from "#contracts/enums/catalogue-status.enum";
+
+export class PublishCatalogueOutput extends Schema {
+  status: CatalogueStatus = CatalogueStatus.Live;
+}

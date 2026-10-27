@@ -24,6 +24,7 @@ The Stackra compiler. Member at `packages/developer/gen` (`tier:lib`), in the pr
 | Metro's transformer                                 | `src/metro-transformer/functions/`          |
 | Constants and types                                 | `src/<entry>/{constants,types}/`            |
 | A test                                              | `__tests__/<name>.<kind>.test.ts` beside it |
+| A golden fixture (STA-1320)                         | `__golden__/<fixture>/` (see its AGENTS.md) |
 
 ## Entries and barrels
 

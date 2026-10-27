@@ -1,0 +1,4 @@
+/**
+ * Reason: the PWA plugin needs a custom manifest path.
+ */
+export default {};

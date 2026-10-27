@@ -1,0 +1,6 @@
+import { Action } from "@stackra/actions";
+export class UntypedAction extends Action({ key: "order.untyped" }) {
+  async handle(input: string): Promise<number> {
+    return input.length;
+  }
+}
