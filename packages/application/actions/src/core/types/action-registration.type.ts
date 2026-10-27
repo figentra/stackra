@@ -12,13 +12,13 @@
 import type { AnyClass } from "@stackra/container";
 
 import type { Effect } from "#contracts/enums/effect.enum";
-import type { ActionBase } from "#core/bases/action.base";
-import type { QueryBase } from "#core/bases/query.base";
+import type { Action } from "#core/bases/action.base";
+import type { Query } from "#core/bases/query.base";
 
 /** The derived identity of one action or query. */
 export interface ActionRegistration {
   /** The action or query class. */
-  readonly type: AnyClass<ActionBase | QueryBase>;
+  readonly type: AnyClass<Action | Query>;
 
   /** The locked key, `<module>.<model>.<verb>@<major>` (`orders.order.create@1`). */
   readonly key: string;

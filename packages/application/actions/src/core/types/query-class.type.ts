@@ -6,7 +6,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 16 and 25).
  */
-import type { QueryBase } from "#core/bases/query.base";
+import type { Query } from "#core/bases/query.base";
 
 /** The base class of one query. */
-export type QueryClass = abstract new () => QueryBase;
+export type QueryClass = abstract new () => Query;

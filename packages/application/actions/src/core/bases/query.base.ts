@@ -19,7 +19,7 @@ import type { QueryContext } from "#core/types/query-context.type";
 import type { QueryOptions } from "#core/types/query-options.type";
 
 /** The instance side every query shares. */
-export abstract class QueryBase {
+abstract class QueryBase {
   /** Type-only kind brand, so a class of another kind cannot stand in for a query. */
   declare readonly "~kind": "query";
 

@@ -6,7 +6,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 16 and 25).
  */
-import type { ActionBase } from "#core/bases/action.base";
+import type { Action } from "#core/bases/action.base";
 
 /** The base class of one action. */
-export type ActionClass = abstract new () => ActionBase;
+export type ActionClass = abstract new () => Action;

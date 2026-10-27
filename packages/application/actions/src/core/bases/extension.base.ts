@@ -17,7 +17,7 @@ import type { ExtensionOptions } from "#core/types/extension-options.type";
 import type { SlotHandler } from "#core/types/slot-handler.type";
 
 /** The instance side: one abstract `handle` typed from the slot `S`. */
-export abstract class ExtensionBase<S extends AnySlot> {
+abstract class ExtensionBase<S extends AnySlot> {
   /** Type-only kind brand, so a class of another kind cannot stand in for an extension. */
   declare readonly "~kind": "extension";
 

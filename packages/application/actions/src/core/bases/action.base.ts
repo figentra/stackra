@@ -38,7 +38,7 @@ const CRON = /^\S+(?:\s+\S+){4}$/;
 const METER_NAME = /^[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)*$/;
 
 /** The instance side every action shares. */
-export abstract class ActionBase {
+abstract class ActionBase {
   /** Type-only kind brand, so a class of another kind cannot stand in for an action. */
   declare readonly "~kind": "action";
 

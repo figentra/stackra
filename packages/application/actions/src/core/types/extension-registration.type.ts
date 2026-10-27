@@ -10,7 +10,7 @@
  */
 import type { AnyClass } from "@stackra/container";
 
-import type { ExtensionBase } from "#core/bases/extension.base";
+import type { Extension } from "#core/bases/extension.base";
 import type { ExtensionPoint } from "#core/bases/extension-point.base";
 
 /** One extension of one slot. */
@@ -23,9 +23,9 @@ export interface ExtensionRegistration {
 
   /**
    * The extension class, of any slot. Its slot type argument is gone at runtime, so the row keeps the kind brand and
-   * not the `handle` signature (which `ExtensionBase<AnySlot>` would erase to `never`).
+   * not the `handle` signature (which `Extension<AnySlot>` would erase to `never`).
    */
-  readonly extension: AnyClass<Pick<ExtensionBase<never>, "~kind">>;
+  readonly extension: AnyClass<Pick<Extension<never>, "~kind">>;
 
   /** Its place in the chain; the class's `order` option, else `0`, when absent. */
   readonly order?: number;

@@ -83,10 +83,10 @@ import type { AuditEntry } from "#contracts/types/audit-entry.type";
 import type { CallDescriptor } from "#contracts/types/call-descriptor.type";
 import type { RateLimitBucket } from "#contracts/types/rate-limit-bucket.type";
 import type { ReplicaRow } from "#contracts/types/replica-row.type";
-import type { ActionBase } from "#core/bases/action.base";
+import type { Action } from "#core/bases/action.base";
 import type { Interceptor } from "#core/bases/interceptor.base";
 import type { Precondition } from "#core/bases/precondition.base";
-import type { QueryBase } from "#core/bases/query.base";
+import type { Query } from "#core/bases/query.base";
 import { ACTION_REGISTRY } from "#core/constants/action-registry.constant";
 import { AFTER_COMMIT_FAILED } from "#core/constants/after-commit-failed.constant";
 import { CALL_DEFAULTS } from "#core/constants/call-defaults.constant";
@@ -154,7 +154,7 @@ interface CallState {
 
 /** Everything one call carries through the steps. */
 interface Call {
-  readonly type: AnyClass<ActionBase | QueryBase>;
+  readonly type: AnyClass<Action | Query>;
   readonly kind: "action" | "query";
   readonly options: Recorded;
   readonly registration: ActionRegistration | undefined;
@@ -199,7 +199,7 @@ export class ActionPipeline {
    * @throws Refusal from any step or from `handle`: the call's refusal.
    * @throws TypeError when `type` is not an action or a query; Error when a required port is not bound.
    */
-  async execute<C extends AnyClass<ActionBase | QueryBase>>(
+  async execute<C extends AnyClass<Action | Query>>(
     type: C,
     input: CallInput<InstanceType<C>>,
     request: CallOptions,
@@ -221,7 +221,7 @@ export class ActionPipeline {
    * @throws Refusal from any step it runs.
    * @throws TypeError when `type` is not an action; Error when a required port (the outbox included) is not bound.
    */
-  async propose<C extends AnyClass<ActionBase>>(
+  async propose<C extends AnyClass<Action>>(
     type: C,
     input: CallInput<InstanceType<C>>,
     request: CallOptions,
@@ -244,7 +244,7 @@ export class ActionPipeline {
   }
 
   /** The call `type` makes under `request`: its options, identity, descriptor, state and context. */
-  private prepare(type: AnyClass<ActionBase | QueryBase>, request: CallOptions): Call {
+  private prepare(type: AnyClass<Action | Query>, request: CallOptions): Call {
     const record = kindOf(type);
     if (record?.kind !== "action" && record?.kind !== "query")
       throw new TypeError(
