@@ -283,6 +283,9 @@ catalogs:
   # @stackra/media (stackra-25): sharp compositing and fflate unzip at the versions the OSV overrides pin, and unpdf
   # for in-region PDF text extraction. Keep sharp and fflate equal to their overrides.
   media:
+    # C2PA content credentials (stackra-26): native, Node 22 or later. 0.9.10, not 0.9.11: 0.9.11 was published the
+    # day it was requested, and a native package waits at least a day like everything else (ADR 0019).
+    "@contentauth/c2pa-node": 0.9.10
     fflate: 0.8.3
     sharp: 0.35.5
     unpdf: 1.9.1
@@ -496,6 +499,9 @@ allowBuilds:
   # Uniwind Pro, installed under the `uniwind` alias: both names, as Uniwind's docs say for pnpm.
   uniwind: true
   uniwind-pro: true
+  # C2PA (stackra-26): its postinstall fetches or builds the native binding. Off until a run that needs the binding
+  # proves it and the owner approves the download; the batch's tests run on recorded fixtures.
+  "@contentauth/c2pa-node": false
   # Skia (STA-416, native charts): the postinstall copies the prebuilt Apple and Android libraries from its own
   # platform packages into libs/, with no download; the native build needs them.
   "@shopify/react-native-skia": true
