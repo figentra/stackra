@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: proves `useGlassMaterial` answers `liquid` only where Liquid Glass and its API both run and the settings
  *          allow it, `solid` before the settings have answered and while reduced transparency or darker system
- *          colours is on, `solid` wherever Liquid Glass is missing (Android, earlier iOS), switches every mounted
+ *          colours is on, `solid` wherever Liquid Glass is missing (Android, earlier iOS, an app that does not link it), switches every mounted
  *          control together when a setting changes, and listens once for all of them until the last unmounts.
  * Boundary: React Native does not run in vitest, so react-native's AccessibilityInfo and expo-glass-effect's checks are
  *           stand-ins each test sets. The hook keeps its settings at module level, so every test imports a fresh copy.
@@ -19,6 +19,7 @@ const device = vi.hoisted(() => ({
   handlers: new Map<string, () => void>(),
   liquid: true,
   api: true,
+  linked: true,
 }));
 
 vi.mock("react-native", () => ({
@@ -33,7 +34,10 @@ vi.mock("react-native", () => ({
 }));
 
 vi.mock("expo-glass-effect", () => ({
-  isLiquidGlassAvailable: () => device.liquid,
+  isLiquidGlassAvailable: () => {
+    if (!device.linked) throw new Error("Cannot find native module 'ExpoGlassEffect'");
+    return device.liquid;
+  },
   isGlassEffectAPIAvailable: () => device.api,
 }));
 
@@ -53,6 +57,7 @@ describe("useGlassMaterial", () => {
     device.handlers.clear();
     device.liquid = true;
     device.api = true;
+    device.linked = true;
   });
 
   it("is solid until the settings answer, then Liquid Glass", async () => {
@@ -70,6 +75,14 @@ describe("useGlassMaterial", () => {
   ])("is solid when Liquid Glass is %s and its API %s", async (liquid, api) => {
     device.liquid = liquid;
     device.api = api;
+    const useGlassMaterial = await freshHook();
+    const { result } = renderHook(() => useGlassMaterial());
+    await settle();
+    expect(result.current).toBe("solid");
+  });
+
+  it("is solid, not a crash, in an app that does not link expo-glass-effect", async () => {
+    device.linked = false;
     const useGlassMaterial = await freshHook();
     const { result } = renderHook(() => useGlassMaterial());
     await settle();

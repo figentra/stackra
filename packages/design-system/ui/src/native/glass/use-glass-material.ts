@@ -57,12 +57,23 @@ function subscribe(listener: () => void): () => void {
 const readSettings = () => settings;
 
 /**
+ * Whether Liquid Glass can be drawn. Both checks: some iOS 26 betas report Liquid Glass without the API, and GlassView
+ * crashes there. `expo-glass-effect` is an optional peer: in an app that does not link it the check throws, and the
+ * control draws solid.
+ */
+const LIQUID_GLASS = (() => {
+  try {
+    return isLiquidGlassAvailable() && isGlassEffectAPIAvailable();
+  } catch {
+    return false;
+  }
+})();
+
+/**
  * The material a native glass control draws now.
  * @returns `liquid` where Liquid Glass runs and the settings allow it, otherwise `solid`
  */
 export function useGlassMaterial(): GlassMaterial {
   const current = useSyncExternalStore(subscribe, readSettings);
-  // Both checks: some iOS 26 betas report Liquid Glass without the API, and GlassView crashes there.
-  const hasLiquidGlass = isLiquidGlassAvailable() && isGlassEffectAPIAvailable();
-  return hasLiquidGlass && current === "clear" ? "liquid" : "solid";
+  return LIQUID_GLASS && current === "clear" ? "liquid" : "solid";
 }
