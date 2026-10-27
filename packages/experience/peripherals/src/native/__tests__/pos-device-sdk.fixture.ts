@@ -27,23 +27,36 @@ type StandInDevice = {
   readonly remove: Mock<() => void>;
 };
 
-/** The recorded SDK answers and the stand-in module. */
-export const POS_DEVICE_SDK = {
-  /** Each family's printer statuses; `fault` is Sunmi 505 no printer, PAX 4 malfunction, iMin -1 not connected. */
-  status: {
-    sunmi: { ready: 1, outOfPaper: 4, overheated: 5, fault: 505 },
-    pax: { ready: 0, outOfPaper: 2, overheated: 8, fault: 4 },
-    imin: { ready: 0, outOfPaper: 7, overheated: 5, fault: -1 },
-  },
+/** Each family's printer statuses; `fault` is Sunmi 505 no printer, PAX 4 malfunction, iMin -1 not connected. */
+const STATUS = {
+  sunmi: { ready: 1, outOfPaper: 4, overheated: 5, fault: 505 },
+  pax: { ready: 0, outOfPaper: 2, overheated: 8, fault: 4 },
+  imin: { ready: 0, outOfPaper: 7, overheated: 5, fault: -1 },
+} as const;
 
-  /** `onScan` payloads: a decoded EAN-13, a GS1 element string, and payloads the bridge must drop. */
-  scan: {
-    ean13: { code: "6291041500213" },
-    gs1: { code: "01062910415002133103001250" },
-    empty: { code: "" },
-    notText: { code: 6291041500213 },
-    missing: {},
-  },
+/** `onScan` payloads: a decoded EAN-13, a GS1 element string, and payloads the bridge must drop. */
+const SCAN = {
+  ean13: { code: "6291041500213" },
+  gs1: { code: "01062910415002133103001250" },
+  empty: { code: "" },
+  notText: { code: 6291041500213 },
+  missing: {},
+} as const;
+
+/** The fixture's written type: the declaration build cannot name vitest's internal `Procedure` from an inferred one. */
+interface PosDeviceSdk {
+  readonly status: typeof STATUS;
+  readonly scan: typeof SCAN;
+  /** Puts a stand-in module named `module` on the Expo registry that answers `status`. */
+  install(module: string, status: number): StandInDevice;
+  /** Removes the stand-in registry. */
+  uninstall(): void;
+}
+
+/** The recorded SDK answers and the stand-in module. */
+export const POS_DEVICE_SDK: PosDeviceSdk = {
+  status: STATUS,
+  scan: SCAN,
 
   /** Puts a stand-in module named `module` on the Expo registry that answers `status`. */
   install(module: string, status: number): StandInDevice {
@@ -71,4 +84,4 @@ export const POS_DEVICE_SDK = {
   uninstall(): void {
     delete (globalThis as { expo?: unknown }).expo;
   },
-} as const;
+};
