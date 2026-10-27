@@ -25,7 +25,7 @@ const PACK: MarketPack = {
 describe("MemoryResolvedPackSourceDriver", () => {
   it("serves a frozen copy of its packs", async () => {
     const given = [PACK];
-    const source = new MemoryResolvedPackSourceDriver(given);
+    const source = new MemoryResolvedPackSourceDriver().use(given);
     given.pop();
     expect(source).toBeInstanceOf(ResolvedPackSource);
     const packs = await source.packs();

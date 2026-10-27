@@ -50,7 +50,8 @@ The market-pack loader. Member at `packages/foundation/market-packs` (`tier:lib`
   the `FileSystem` port of `@stackra/filesystem`, and shipped data assets are read through `AssetLibrary` of
   `@stackra/assets`. Use both through their public entries only.
 - **Serving.** A service injects `ResolvedPackSource` (exported by `MarketPacksModule`); the `store` driver fetches the
-  hashes in `MarketPacksConfig` from `PackStore` and verifies them, the `memory` driver serves packs handed to it. The OS
+  hashes in `MarketPacksConfig` from `PackStore` and verifies them, the `memory` driver serves packs handed to it
+  with `use(packs)` (built with no arguments, as gen wires class tokens only). The OS
   loader is a further driver or a host `@Replaces`.
 - **Publish check.** `PackSchemaRegistry` holds the section schemas (JSON Schema per key, registered as data by their
   owners) and `overlayFloorIssues` refuses an overlay that loosens a parent floor. Both return issues, never throw. A
