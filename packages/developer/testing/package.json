@@ -81,7 +81,6 @@
   "devDependencies": {
     "@axe-core/playwright": "catalog:e2e",
     "@playwright/test": "catalog:e2e",
-    "@stackra/navigation": "workspace:*",
     "@stackra/tsdown-config": "workspace:*",
     "@stackra/typescript-config": "workspace:*",
     "@stackra/vitest-config": "workspace:*",
@@ -105,7 +104,6 @@
   "peerDependencies": {
     "@axe-core/playwright": "catalog:e2e",
     "@playwright/test": "catalog:e2e",
-    "@stackra/navigation": "workspace:*",
     "@testing-library/dom": "catalog:frontend",
     "@testing-library/react": "catalog:frontend",
     "@testing-library/react-native": "catalog:frontend",
@@ -119,9 +117,6 @@
       "optional": true
     },
     "@playwright/test": {
-      "optional": true
-    },
-    "@stackra/navigation": {
       "optional": true
     },
     "@testing-library/dom": {

@@ -19,8 +19,8 @@ import { vi } from "vitest";
 | `Fake`, `Fake.of(Port)`                                                                                                  | the base of every `*.fake.ts`: `record(name, value)`, `calls(name)`; unimplemented port methods are `vi.fn()` spies                                                |
 | `createMatcher(name, fn)`                                                                                                | registers an `expect` matcher on import and returns it; type it by augmenting `Matchers`                                                                           |
 | `factory<T>(defaults)`                                                                                                   | plain test data for `*.fixture.ts`: `build(overrides)` at index 0, `buildMany(n, overrides)` at `0..n-1`                                                           |
-| `testScopeRef(label?, { under })`                                                                                      | a test tenant's scope reference `{ id, path }`: path `platform.<label>` (or under `under`), id hashed from it as `scopeRefOf` does; no label is a new `tenant_<n>` |
-| `testScopeId(label?, { under })`                                                                                            | that tenant's id (`testScopeRef(label).id`): a tenant id is its scope node's `scp_` id (ADR 0327 d8)                                                             |
+| `testScopeRef(label?, { under })`                                                                                        | a test tenant's scope reference `{ id, path }`: path `platform.<label>` (or under `under`), id hashed from it as `scopeRefOf` does; no label is a new `tenant_<n>` |
+| `testScopeId(label?, { under })`                                                                                         | that tenant's id (`testScopeRef(label).id`): a tenant id is its scope node's `scp_` id (ADR 0327 d8)                                                               |
 | types `Matchers`, `FakeConstructor`, `FakeRecorder`, `FactoryDefaults`, `FixtureBuilder`, `TestScopeRef`                 | the shapes behind the helpers above                                                                                                                                |
 
 `.` is generic: it has no workspace dependency and no domain type. Domain helpers (`createTestingModule`, `run`,
@@ -30,8 +30,8 @@ actors, `toRefuseWith`, …) live in the `./testing` entry of the package that o
 ## `./react` and `./native`
 
 Thin, provider-agnostic wrappers over Testing Library. The render helpers depend on no workspace package, so every
-package's tests can use them; a framework package passes its own providers. `./react` also offers navigation's route
-helpers, so an app's route tests import one entry.
+package's tests can use them; a framework package passes its own providers. Route tests import navigation's route
+helpers from `@stackra/navigation/testing`.
 
 | Entry      | Export                                           | What it does                                                                                                          |
 | ---------- | ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------- |
@@ -39,8 +39,6 @@ helpers, so an app's route tests import one entry.
 | `./react`  | `renderHook(hook, { providers, wrapper, ... })`  | the same for a hook                                                                                                   |
 | `./react`  | `userEvent`                                      | user-event with the house default: one `userEvent.setup()` session per render, used by every call until the test ends |
 | `./react`  | `screen`, `within`, `act`                        | Testing Library's own                                                                                                 |
-| `./react`  | `renderRoute`, `renderLayout`                    | `@stackra/navigation/testing`'s: mount a route (by class or `Routes.<key>`) or a layout under a router stub           |
-| `./react`  | `runRouteLoader`, `runRouteSubmit`, `routeMeta`  | the same package's: run a loader, a submit or `meta` with a fake route context                                        |
 | `./native` | `render`, `renderHook`, `userEvent`              | the same over `@testing-library/react-native` 14, whose renders are asynchronous: `await render(...)`                 |
 | `./native` | `screen`, `act`                                  | the library's own                                                                                                     |
 | `./native` | `axe(view)`, `toHaveNoViolations`                | `expect(await axe(view)).toHaveNoViolations()`: pressables have a name, images a label, headings a name               |
@@ -60,14 +58,14 @@ it("cancels", async () => {
 - A web test switches itself to jsdom with `// @vitest-environment jsdom`. `./native` imports the library's `pure`
   entry, so no jest matchers or global hooks are installed.
 - `axe` on native checks three rules over the host tree, not axe-core's set (there is no React Native runner).
-- The route helpers are `@stackra/navigation/testing`'s own objects. `@stackra/navigation` is an optional peer and
-  a dev dependency here, so `./react` resolves; navigation's tests import vitest directly, so there is no turbo cycle.
-  An app that uses them already depends on navigation.
+- Route helpers (`renderRoute`, `renderLayout`, `runRouteLoader`, `runRouteSubmit`, `routeMeta`) come from
+  `@stackra/navigation/testing` directly. This package depends on no workspace package: every package's tests use it,
+  so an edge back to navigation is a turbo build cycle.
 - `./native` has no `renderRoute` (STA-348 #45 stays open): mounting a React Navigation screen needs a native route
   table and native testing parts, which `@stackra/navigation/testing` does not export (it is web only). Tracked
   dependency: add the native `renderRoute(Routes.<key>, { locale, clients, session, storage, consent, flags, platform,
-analytics })` to `@stackra/navigation/testing` first, returning `{ navigation, i18n, tenancy, ... }`; then
-  `./native` offers it, as `./react` does, and the mobile template tests resolve `@stackra/testing/native`.
+analytics })` to `@stackra/navigation/testing` first, returning `{ navigation, i18n, tenancy, ... }`; the mobile
+  template tests then import it from there.
 
 ## `./e2e`
 

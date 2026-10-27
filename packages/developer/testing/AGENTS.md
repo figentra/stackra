@@ -9,9 +9,9 @@ The generic test kit. Member at `packages/developer/testing` (`tier:lib`), in th
   decision 6). `./node` and `./contract` are added only when something imports them (owner decision 14).
 - `.` is generic (ADR 0269 decision 2): its only runtime edge is the `vitest` peer. No workspace import, no domain
   type, nothing that knows a module, action, permission or event. `src/__tests__/package-boundary.test.ts` checks it.
-- `./native` and `./e2e` import no `@stackra/*` package; `./react` imports only `@stackra/navigation/testing`, whose
-  route helpers it re-exports (registry v3.1). `@stackra/navigation` is an optional peer and never a dev dependency:
-  every package's tests depend on this one, so a dev edge back is a cycle in the turbo graph. Third-party edges
+- `./react`, `./native` and `./e2e` import no `@stackra/*` package, and no `@stackra/*` package is a dependency of any
+  kind (only the `*-config` presets as dev dependencies): every package's tests depend on this one, so any edge back
+  is a cycle in the turbo graph. Route helpers come from `@stackra/navigation/testing` directly. Third-party edges
   (Testing Library, React, React Native, Playwright, axe) are optional peers. Entries import `.` internals one way and
   never each other, so the small wrapper helper is kept in each.
 - No house provider here: the renders take `providers` and `wrapper`, and framework packages compose theirs. The route

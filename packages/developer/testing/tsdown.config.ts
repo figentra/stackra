@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: build config of @stackra/testing: one tsdown entry per package.json export (core `.` is `index`). Each
  *          names a stand-in barrel until gen writes the entry barrels (ADR 0294 decision 15, STA-339). vitest, React,
- *          React Native, the Testing Library packages, Playwright, axe and @stackra/navigation are peer dependencies, so
+ *          React Native, the Testing Library packages, Playwright and axe are peer dependencies, so
  *          tsdown leaves them external and the consumer's own instances are the ones re-exported.
  * Boundary: build configuration only; a tool config gen will write into `.stackra/` (ADR 0295 decision 5).
  * Runtime: node
