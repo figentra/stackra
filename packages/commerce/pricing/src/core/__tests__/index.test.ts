@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: the contract of the `.` entry: the registry row's primitives, the pure evaluation (`resolvePrice`,
- *          `evaluateFormula`, `taxByRates`), `PriceKind` and the tax memory driver are exported, nothing else, and they
+ *          `evaluateFormula`, `taxByRates`), `PriceKind` and the tax memory and connection drivers
+ *          are exported, nothing else, and they
  *          compose with `@stackra/money`.
  * Boundary: test only; imports the stand-in barrel through its `#core` alias and the runner through @stackra/testing.
  * Runtime: node (vitest)
@@ -18,6 +19,7 @@ describe("@stackra/pricing", () => {
     expect(Object.keys(entry).sort()).toEqual([
       "BILLING_PACK_KEYS",
       "BillingPeriod",
+      "ConnectionTaxProviderDriver",
       "GraduatedPrice",
       "MemoryTaxProviderDriver",
       "OfferBenefitKind",

@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: the consumer contract of the `./contracts` entry: the `TaxProvider` port is its one runtime export, and the
- *          request, line, address, quote and taxed-line types resolve.
+ *          request, line, address, quote, taxed-line and gateway types resolve.
  * Boundary: test only; imports the stand-in barrel through its `#contracts` alias.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decision 15).
@@ -10,7 +10,14 @@ import type { Money } from "@stackra/money";
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
 import * as contracts from "#contracts/index";
-import type { TaxAddress, TaxLine, TaxQuote, TaxRequest, TaxedLine } from "#contracts/index";
+import type {
+  TaxAddress,
+  TaxGateway,
+  TaxLine,
+  TaxQuote,
+  TaxRequest,
+  TaxedLine,
+} from "#contracts/index";
 
 describe("@stackra/pricing/contracts", () => {
   it("exports exactly the port at run time", () => {
@@ -23,5 +30,6 @@ describe("@stackra/pricing/contracts", () => {
     expectTypeOf<TaxQuote["lines"]>().toEqualTypeOf<readonly TaxedLine[]>();
     expectTypeOf<TaxQuote["total"]>().toEqualTypeOf<Money>();
     expectTypeOf<TaxedLine["rate"]>().toEqualTypeOf<string>();
+    expectTypeOf<ReturnType<TaxGateway["quote"]>>().toEqualTypeOf<Promise<TaxQuote>>();
   });
 });

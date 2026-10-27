@@ -2,11 +2,13 @@
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `.` entry of @stackra/pricing, which has several public files, until `stackra gen`
  *          writes the entry barrels (STA-339).
- * Boundary: names each re-export and declares nothing. The `TaxProvider` port is exported from `./contracts` only.
+ * Boundary: names each re-export and declares nothing. The `TaxProvider` port is exported from `./contracts` only;
+ *           `ConnectionTaxProviderDriver` is its production driver (ADR 0379).
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision.
  */
 export { BILLING_PACK_KEYS } from "#core/constants/billing-pack-keys.constant";
+export { ConnectionTaxProviderDriver } from "#core/drivers/connection-tax-provider.driver";
 export { MemoryTaxProviderDriver } from "#core/drivers/memory-tax-provider.driver";
 export { BillingPeriod } from "#core/enums/billing-period.enum";
 export { OfferBenefitKind } from "#core/enums/offer-benefit-kind.enum";
@@ -49,5 +51,6 @@ export type { RateCard } from "#core/types/rate-card.type";
 export type { ResolvedPrice } from "#core/types/resolved-price.type";
 export type { TaxRateTable } from "#core/types/tax-rate-table.type";
 export type { TaxRate } from "#core/types/tax-rate.type";
+export type { TaxTables } from "#core/types/tax-tables.type";
 export { GraduatedPrice } from "#core/values/graduated-price.value";
 export { PricePoint } from "#core/values/price-point.value";

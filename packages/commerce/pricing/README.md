@@ -1,3 +1,11 @@
+<!--
+Stackra file contract:
+Purpose: the README of @stackra/pricing: what it holds, its entries, the pure evaluation and the tax drivers.
+Boundary: documentation only; the records and the vendor tax Connections are OS code (ADR 0219, ADR 0443).
+Runtime: none (Markdown)
+Governing contract: ADR 0294; ADR 0337; ADR 0379.
+-->
+
 # @stackra/pricing
 
 Pricing primitives on `@stackra/money`: the price points a market rounds its prices to, and graduated per-unit bands
@@ -5,14 +13,15 @@ for metered usage over an included amount. The pricing engine (price resolution,
 pricing service; this package holds only the arithmetic it and other services share.
 
 **Tier:** `tier:lib` (`packages/commerce/pricing`), entries `.` and `./contracts`. Depends on `@stackra/money`,
-`@stackra/contracts` and `@stackra/container`; isomorphic, with no clock, locale, environment or network read.
+`@stackra/contracts` and `@stackra/container` (and `@stackra/integrations` for types); isomorphic, with no clock,
+locale, environment or network read of its own (a provider quote goes through the resolved Connection).
 
 ## Entry points
 
-| Import                       | Holds                        | Exports                                                                                                                                                                                                                                                         |
-| ---------------------------- | ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@stackra/pricing`           | `src/core/`: isomorphic code | `PricePoint`, `GraduatedPrice`, `PriceTier`, `PriceKind`, `resolvePrice`, `evaluateFormula`, `taxByRates`, `MemoryTaxProviderDriver` and the types `PriceList`, `ItemPrice`, `PriceAdjustment`, `PriceFormula`, `FormulaTerm`, `PriceQuery`, `ResolvedPrice`, … |
-| `@stackra/pricing/contracts` | `src/contracts/`: the port   | `TaxProvider`, `TaxRequest`, `TaxLine`, `TaxAddress`, `TaxQuote`, `TaxedLine`                                                                                                                                                                                   |
+| Import                       | Holds                        | Exports                                                                                                                                                                                                                                                                                        |
+| ---------------------------- | ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@stackra/pricing`           | `src/core/`: isomorphic code | `PricePoint`, `GraduatedPrice`, `PriceTier`, `PriceKind`, `resolvePrice`, `evaluateFormula`, `taxByRates`, `MemoryTaxProviderDriver`, `ConnectionTaxProviderDriver` and the types `PriceList`, `ItemPrice`, `PriceAdjustment`, `PriceFormula`, `FormulaTerm`, `PriceQuery`, `ResolvedPrice`, … |
+| `@stackra/pricing/contracts` | `src/contracts/`: the port   | `TaxProvider`, `TaxGateway`, `TaxRequest`, `TaxLine`, `TaxAddress`, `TaxQuote`, `TaxedLine`                                                                                                                                                                                                    |
 
 Entry barrels are generated, never authored (ADR 0294 decision 15); until `stackra gen` writes them (STA-339),
 `src/core/index.ts` is a stand-in barrel.
@@ -101,12 +110,30 @@ await tax.quote(request); // the TaxProvider the market pack names (a provider d
   rounded once with the table's rounding.
 - A class with no row refuses; a zero-rated class has a `"0"` row.
 
+### The production driver
+
+```ts
+import { ConnectionTaxProviderDriver } from "@stackra/pricing";
+
+const tax = new ConnectionTaxProviderDriver(resolver, TAX_CONNECTIONS, tables); // TAX_CONNECTIONS: OS integrations
+const quote = await tax.quote(request); // `sa`: its own table; `us`: the resolved `tax` Connection (Stripe Tax)
+const transaction = await tax.record(quote, invoice.id); // null for a table quote
+await tax.void(transaction); // a refund or a cancelled invoice
+```
+
+- `tables.table(request)` answers the Market's own table when its pack's `tax.engine` is `rates`, or null when it is
+  `provider` (ADR 0379 decision 2).
+- A provider quote's `source` and a transaction id are `<provider>:<connectionId>:<provider's id>`; store them on the
+  order or invoice (decision 5) so a refund reaches the same account.
+- The provider is `ProviderResolver`'s choice under `tax`: the scope's own Connection (Avalara, TaxJar) wins, else the
+  Market's managed one (Stripe Tax for `us`), all pack data.
+
 ## Not here
 
 - Price models as a kind: the old `@PriceModel` decorator is not a v3 kind, and adding a pricing kind needs an ADR.
 - The records (price lists, Markets, channels, tax registrations): the OS pricing service (ADR 0219 decision 5, ADR
   0244).
-- Tax provider drivers (US sales tax): OS integrations connectors behind `TaxProvider`.
+- Tax provider Connections (Stripe Tax, Avalara, TaxJar): OS integrations, implementing `TaxGateway` (ADR 0443).
 
 ## Tasks
 

@@ -1,3 +1,11 @@
+<!--
+Stackra file contract:
+Purpose: the agent rules of @stackra/pricing: where code goes, its dependencies and what never lands here.
+Boundary: documentation only.
+Runtime: none (Markdown)
+Governing contract: ADR 0294; ADR 0337; ADR 0379; ADR 0443.
+-->
+
 # AGENTS — @stackra/pricing
 
 Pricing primitives on `@stackra/money`. Member at `packages/commerce/pricing` (`tier:lib`), in the programming model
@@ -5,15 +13,15 @@ v3.1 shape (ADR 0294, 0305). Entries `.` and `./contracts` (the `TaxProvider` po
 
 ## Where code goes
 
-| You are writing…             | It goes in…                                 |
-| ---------------------------- | ------------------------------------------- |
-| A value class (`PricePoint`) | `src/core/values/<name>.value.ts`           |
-| A type (`PriceTier`)         | `src/core/types/<name>.type.ts`             |
-| An enum (`PriceKind`)        | `src/core/enums/<name>.enum.ts`             |
-| A pure evaluation function   | `src/core/functions/<name>.function.ts`     |
-| A port or its types          | `src/contracts/{ports,types}/`              |
-| A memory driver              | `src/core/drivers/<name>.driver.ts`         |
-| A test                       | `__tests__/<name>.<kind>.test.ts` beside it |
+| You are writing…              | It goes in…                                 |
+| ----------------------------- | ------------------------------------------- |
+| A value class (`PricePoint`)  | `src/core/values/<name>.value.ts`           |
+| A type (`PriceTier`)          | `src/core/types/<name>.type.ts`             |
+| An enum (`PriceKind`)         | `src/core/enums/<name>.enum.ts`             |
+| A pure evaluation function    | `src/core/functions/<name>.function.ts`     |
+| A port or its types           | `src/contracts/{ports,types}/`              |
+| A memory or connection driver | `src/core/drivers/<name>.driver.ts`         |
+| A test                        | `__tests__/<name>.<kind>.test.ts` beside it |
 
 ## Entries and barrels
 
@@ -32,8 +40,14 @@ v3.1 shape (ADR 0294, 0305). Entries `.` and `./contracts` (the `TaxProvider` po
 - Configuration, not code: no rate, tax class, markup, price point, channel or country appears here. They arrive as
   data (catalogue records, market-pack tax tables and rate-source keys).
 - A missing rate, input or tax row is a `RangeError`, never a zero and never a guess.
-- Runtime dependencies are `@stackra/money`, `@stackra/contracts` and `@stackra/container` (the memory driver).
-  Refusals are `RangeError`s.
+- Runtime dependencies are `@stackra/money`, `@stackra/contracts` and `@stackra/container` (the drivers), and
+  `@stackra/integrations` for types only (`ProviderResolver`, `ProviderDrivers`, `Connection`). Refusals are
+  `RangeError`s. Pricing must stay unreachable from `@stackra/integrations` and what it
+  depends on, or the dependency closes a cycle.
+- `ConnectionTaxProviderDriver` is the production `TaxProvider` (ADR 0379): pack data (`TaxTables`, the host's reader
+  of `market-pack:<code>.tax.engine`) picks `taxByRates` or the `tax` Connection `ProviderResolver` resolves. It names
+  no vendor. Stripe Tax (managed default for `us`), Avalara and TaxJar are `TaxGateway` Connections in OS integrations
+  (ADR 0443 decision 7); never add a vendor Connection here.
 - All arithmetic goes through `Money`; never compute on `minor` directly, and never round except by a `Rounding` the
   caller names.
 - Value classes are plain data (no `#private` fields, not frozen, private constructor, static builder), like `Money`.
