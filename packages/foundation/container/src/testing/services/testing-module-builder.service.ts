@@ -118,7 +118,9 @@ export class TestingModuleBuilder {
   /** Work run on the compiled app, in order, before `compile()` resolves. */
   private readonly steps: ((app: TestingApp) => void | Promise<void>)[] = [];
 
-  /** @param roots - the modules to boot. */
+  /**
+   * @param roots - the modules to boot.
+   */
   constructor(roots: readonly ModuleClass[]) {
     this.roots = roots;
   }

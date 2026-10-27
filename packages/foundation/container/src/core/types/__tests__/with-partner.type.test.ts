@@ -12,7 +12,7 @@
  */
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
-import { Service } from "#core/bases/service.base";
+import type { Service } from "#core/bases/service.base";
 import { createKind } from "#core/functions/create-kind.function";
 import { kindOf } from "#core/functions/kind-of.function";
 import { registerKind } from "#core/functions/register-kind.function";
