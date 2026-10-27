@@ -3,6 +3,17 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra shipping: the carrier ports (rate quote, label with cancel, pickup with cancel, tracking, pickup point and locker search, return label) that OS integrations connectors implement, the CarrierGateways port that picks a carrier per scope and Market through the Connection, the DistanceMatrix and RouteSolver routing ports with memory drivers, tracking-state normalisation over a connector's code map, PDF and ZPL label documents, dimensional and chargeable weight, and a CarrierGateways fake in ./testing",
+  "keywords": [
+    "carriers",
+    "commerce",
+    "logistics",
+    "parcel-tracking",
+    "route-planning",
+    "shipping",
+    "shipping-labels",
+    "stackra",
+    "zpl"
+  ],
   "homepage": "https://github.com/figentra/stackra/tree/main/packages/commerce/shipping#readme",
   "bugs": {
     "url": "https://github.com/figentra/stackra/issues"
@@ -110,6 +121,7 @@
     "runtimes": [
       "isomorphic",
       "node"
-    ]
+    ],
+    "summary": "Use when code quotes rates, buys or cancels labels, books pickups, tracks parcels or plans routes through a carrier; the carrier is picked per scope and Market, so callers never name one."
   }
 }

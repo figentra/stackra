@@ -3,6 +3,16 @@
   "version": "0.0.0",
   "private": true,
   "description": "Pricing on @stackra/money: price points, graduated tiers, the pure price evaluation over price lists by currency, Market, sales channel and date with fixed, graduated and formula prices, the tax rate-table engine and the TaxProvider port",
+  "keywords": [
+    "commerce",
+    "markets",
+    "price-lists",
+    "pricing",
+    "stackra",
+    "tax",
+    "tax-rates",
+    "tiered-pricing"
+  ],
   "homepage": "https://github.com/figentra/stackra/tree/main/packages/commerce/pricing#readme",
   "bugs": {
     "url": "https://github.com/figentra/stackra/issues"
@@ -91,6 +101,7 @@
     "category": "commerce",
     "runtimes": [
       "isomorphic"
-    ]
+    ],
+    "summary": "Use when resolving what an item costs for a currency, Market, sales channel and date, or computing tax from rate tables, as pure functions on top of @stackra/money."
   }
 }

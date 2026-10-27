@@ -3,6 +3,17 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra SEO: the SEO chain of a route (app defaults, static seo, meta(), tenant record), hreflang alternates and locale paths callable from client code, the JSON-LD escaper, canonical redirects, robots groups per crawler, paged sitemaps within the protocol limits, the SeoConfig configuration, and the Open Graph image renderer for servers and Workers",
+  "keywords": [
+    "canonical-url",
+    "cross-cutting",
+    "hreflang",
+    "json-ld",
+    "open-graph",
+    "robots-txt",
+    "seo",
+    "sitemap",
+    "stackra"
+  ],
   "homepage": "https://github.com/figentra/stackra/tree/main/packages/cross-cutting/seo#readme",
   "bugs": {
     "url": "https://github.com/figentra/stackra/issues"
@@ -122,6 +133,7 @@
       "isomorphic",
       "node",
       "worker"
-    ]
+    ],
+    "summary": "Use when a route needs meta tags, hreflang alternates, JSON-LD, canonical redirects, robots rules, paged sitemaps or a rendered Open Graph image, on a server or a Worker."
   }
 }

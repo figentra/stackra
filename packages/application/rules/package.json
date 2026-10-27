@@ -3,6 +3,16 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra rules: one condition engine for every rule consumer. A condition tree of all, any and not over field, operator and value leaves; fixed operator sets per field type (FieldType, Operator); fact sources and outcome kinds a consumer registers (FactSource, OutcomeKind); Rules, which checks tenant-written conditions and outcomes against them; evaluate, deterministic with the time as a fact and explained by tree path; decide, which guards every outcome against the market-pack floors; OutcomeDispatcher, which routes outcomes to the consumer's handlers; versioned RuleSet records on HasRevisions with RuleSetService, seeded from versioned rule-set packs; the cross-service condition-field registry (ConditionFieldService) with one camelCase key casing (FIELD_KEY); the AI action permission matrix and pack approval-floor readers for resolveApproval; and the RuleBuilder component",
+  "keywords": [
+    "application",
+    "business-rules",
+    "conditions",
+    "decision-engine",
+    "evaluation",
+    "no-code",
+    "rules-engine",
+    "stackra"
+  ],
   "homepage": "https://github.com/figentra/stackra/tree/main/packages/application/rules#readme",
   "bugs": {
     "url": "https://github.com/figentra/stackra/issues"
@@ -142,6 +152,7 @@
       "isomorphic",
       "node",
       "browser"
-    ]
+    ],
+    "summary": "Reach for it whenever tenant-editable logic needs a condition tree (eligibility, criteria, routing, outcomes) instead of hard-coded branches; it owns the condition model, field operators, deterministic evaluation and outcome guards."
   }
 }

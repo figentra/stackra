@@ -3,6 +3,18 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra actions: the Action, Query, Precondition, ExtensionPoint, Extension and Interceptor kind bases, the fixed action pipeline (tenancy, permission, precondition, entitlement, flag, idempotency, interceptors, handle), the idempotency and rate-limit stores behind ports, RequestContext, the RateLimitConfig configuration and the action testing helpers, the approval step (ApprovalGate), effect tags (bulk included), structural actions guarded by LiveConfigurationGuard, meters with the usage.recorded event, the outbox AuditTrail driver, and the Valkey idempotency and rate-limit stores with StoresConfig",
+  "keywords": [
+    "actions",
+    "application",
+    "approvals",
+    "command-pipeline",
+    "extension-points",
+    "idempotency",
+    "permissions",
+    "queries",
+    "rate-limiting",
+    "stackra"
+  ],
   "homepage": "https://github.com/figentra/stackra/tree/main/packages/application/actions#readme",
   "bugs": {
     "url": "https://github.com/figentra/stackra/issues"
@@ -128,6 +140,7 @@
     "runtimes": [
       "isomorphic",
       "node"
-    ]
+    ],
+    "summary": "Reach for it whenever you write a module's actions, queries, preconditions, interceptors or extension points; it owns the fixed pipeline (tenancy, permission, idempotency, rate limit, approval) every Stackra mutation and read runs through."
   }
 }

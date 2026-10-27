@@ -3,6 +3,16 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra ledger: double-entry primitives over an append-only entry model. Journal<M> appends once per (account, reference), derives balances from entries, refuses a debit below a balance floor, reverses entries set-wise (clamped at the floor) and posts balanced multi-line entries; the @Journaled class facet maps a model's fields; journalOf(Model) is the class token gen wires (both in ./node); the @Journaled facet also names the currency field, so postings share one currency and balances are per currency",
+  "keywords": [
+    "accounting",
+    "append-only",
+    "balances",
+    "commerce",
+    "double-entry",
+    "journal",
+    "ledger",
+    "stackra"
+  ],
   "homepage": "https://github.com/figentra/stackra/tree/main/packages/commerce/ledger#readme",
   "bugs": {
     "url": "https://github.com/figentra/stackra/issues"
@@ -93,6 +103,7 @@
     "category": "commerce",
     "runtimes": [
       "node"
-    ]
+    ],
+    "summary": "Use when a model must keep balances (points, wallets, stored value, credit) as an append-only double-entry journal with balance floors and reversals instead of a mutable balance column."
   }
 }

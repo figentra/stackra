@@ -3,6 +3,16 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra versioning: the Change kind base for integration event versions and dated response changes, the transforms that serve an older version (downgrade, upgrade), and the Stackra-Version resolution with its Deprecation and Sunset headers",
+  "keywords": [
+    "api-versioning",
+    "communication",
+    "deprecation",
+    "event-versioning",
+    "schema-migration",
+    "stackra",
+    "sunset-header",
+    "versioning"
+  ],
   "homepage": "https://github.com/figentra/stackra/tree/main/packages/communication/versioning#readme",
   "bugs": {
     "url": "https://github.com/figentra/stackra/issues"
@@ -84,6 +94,7 @@
     "category": "communication",
     "runtimes": [
       "isomorphic"
-    ]
+    ],
+    "summary": "Use when an integration event or API response changes shape and older clients must keep receiving the old version through Stackra-Version, with Deprecation and Sunset headers."
   }
 }

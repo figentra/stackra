@@ -3,6 +3,16 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra generated-client runtime: the ref factories gen writes into #stackra/clients (actions, queries, events, refusals, shapes, widgets, modules, permissions, intents), ServiceClient with call and queue, the HTTP ClientTransport and MutationSender drivers, the React query and action hooks, the Worker's public clients and forwarded facts, and fakeClient",
+  "keywords": [
+    "api-client",
+    "application",
+    "fake-client",
+    "generated-client",
+    "react-hooks",
+    "rpc",
+    "stackra",
+    "transport"
+  ],
   "homepage": "https://github.com/figentra/stackra/tree/main/packages/application/clients#readme",
   "bugs": {
     "url": "https://github.com/figentra/stackra/issues"
@@ -159,6 +169,7 @@
       "isomorphic",
       "node",
       "worker"
-    ]
+    ],
+    "summary": "Use when code calls another service's actions, queries or events through the generated #stackra/clients refs from a server, a Worker or React, and use fakeClient to stub those calls in tests."
   }
 }

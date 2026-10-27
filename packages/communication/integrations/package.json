@@ -3,6 +3,16 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra integrations: the Integration kind base that describes a provider (roles, levels, the seven auth types including the service-account JWT bearer grant, JSON or form request bodies, a base URL with per-region placeholders, rate limits, retries, webhooks, the app market listing), the Connection kind base for one stored credential set, the ConnectionStore port with its local and hosted drivers, the ConnectionHost driver over the integrations service's generated client, the public OAuth token call, the ProviderResolver that picks a provider per tenant and Market (ADR 0356), the managed client, the Pass kind for wallet passes with their issuing (./node: the Apple Wallet .pkpass bundle signed through the CmsSigner port and its pkijs driver, Google Wallet objects and save links through the JWT bearer Integration), accounting journals, the commerce connector and telephony contracts, the voice channel (the Speech port with SpeechService over the region map, the AudioDevice port, the voice.minutes and speech.seconds meters, recording consent from the pack and handover to a human, and in ./node the SIP trunk VoiceGateway with its RTP audio device), managed-or-bring-your-own connections with the ManagedProvisioning port and its provider-category, catalogue and provisioning-template seeds (./contracts); vendor connectors live in the OS integrations service",
+  "keywords": [
+    "api-credentials",
+    "app-market",
+    "communication",
+    "connections",
+    "connectors",
+    "integrations",
+    "oauth",
+    "stackra"
+  ],
   "homepage": "https://github.com/figentra/stackra/tree/main/packages/communication/integrations#readme",
   "bugs": {
     "url": "https://github.com/figentra/stackra/issues"
@@ -122,6 +132,7 @@
     "runtimes": [
       "isomorphic",
       "node"
-    ]
+    ],
+    "summary": "Use when a module talks to a third-party provider: describe it as an Integration, keep each tenant's credentials as a Connection, and resolve them through the ConnectionStore instead of reading secrets directly."
   }
 }

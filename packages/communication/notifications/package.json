@@ -3,6 +3,18 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra notifications: the Notification({ category }) kind base, Recipient, the Notifier port with its memory driver and NotificationsConfig, the mail, SMS, WhatsApp, push, in-app and chat channel ports, connection transports that send through the provider chosen per tenant and Market over the host's vendor connectors (OS integrations), Web Push with dead-device revocation, the template cascade with content-free variants, quiet hours with mandatory categories, escalation, the .mail.tsx class-component bodies rendered with useMail, and the notifications Notifier driver (./node)",
+  "keywords": [
+    "communication",
+    "email",
+    "in-app",
+    "notifications",
+    "push-notifications",
+    "sms",
+    "stackra",
+    "templates",
+    "web-push",
+    "whatsapp"
+  ],
   "homepage": "https://github.com/figentra/stackra/tree/main/packages/communication/notifications#readme",
   "bugs": {
     "url": "https://github.com/figentra/stackra/issues"
@@ -153,6 +165,7 @@
     "runtimes": [
       "isomorphic",
       "node"
-    ]
+    ],
+    "summary": "Use when a module must tell a person something by mail, SMS, WhatsApp, push, in-app or chat; it owns the Notification kind, channel ports, templates, quiet hours and escalation, while the host picks the provider."
   }
 }

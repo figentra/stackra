@@ -3,6 +3,16 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra product analytics delivery: AnalyticsEvent instances sent through the AnalyticsDriver port only once the visitor's consent category is granted, a bounded ordered queue for events fired before the decision that is sent on acceptance and dropped on refusal (ADR 0298), the AnalyticsConfig configuration with its shipped schema, the none, memory and PostHog drivers (and a native PostHog driver that flushes when the app goes to the background), the React useAnalytics hook and the fakeAnalytics test helper",
+  "keywords": [
+    "analytics",
+    "consent",
+    "cross-cutting",
+    "event-tracking",
+    "posthog",
+    "product-analytics",
+    "react-hooks",
+    "stackra"
+  ],
   "homepage": "https://github.com/figentra/stackra/tree/main/packages/cross-cutting/analytics#readme",
   "bugs": {
     "url": "https://github.com/figentra/stackra/issues"
@@ -151,6 +161,7 @@
       "isomorphic",
       "node",
       "react-native"
-    ]
+    ],
+    "summary": "Use when sending product analytics events from web or native clients; it holds events until the visitor's consent is granted and hides the vendor (PostHog, memory or none) behind the AnalyticsDriver port."
   }
 }
