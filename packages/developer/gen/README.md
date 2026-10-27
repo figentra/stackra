@@ -13,7 +13,7 @@ Governing contract: ADR 0294; ADR 0295; ADR 0260 (generated clients); ADR 0261; 
                     namespaces merged into `I18n`, missing keys and namespace clashes refused); STA-1251
                     (`searchable_semantic_ai_never`); ADR 0438 (shell slots and
                     fills, stackra-03); ADR 0436 (surface targets and the extension bundle's modulepreload list,
-                    stackra-04); ADR 0336 (model additions, stackra-64).
+                    stackra-04); ADR 0336 (model additions, stackra-64); ADR 0452 (the system graph, stackra-59).
 -->
 
 The Stackra compiler. Gen reads a member's source through the TypeScript compiler API, derives every identity and
@@ -161,6 +161,25 @@ Not built yet: the side table's migration (the edition writes it: the base id as
 `after:` the base's), nesting the fields on the base's queries and actions, the layer 2b panel placements and the
 field-level `@Renamed` check against the base version.
 
+## The system graph (ADR 0452)
+
+Every full run also writes `.stackra/graph.json`, the member's part of the system map (`memberGraphOf`): its modules,
+the services it calls through a generated client, the integration events it publishes and the ones its listeners
+consume (wire names from the producer's committed manifest), its model tables, the packages it builds on and its ports
+with their driver candidates. Nothing is authored; it comes from the IR and the manifest.
+
+Two steps in `./node` turn those into the map. `writeRepoGraph(root, repo)` finds every member graph under a repo,
+stamps each node `<repo>.<member>` with its folder, reads the flows the repo declares once in `stackra.flows.json`
+(`{ "flows": [{ "id", "title", "summary"?, "steps": [{ "from", "to", "kind", "label", "event"?, "data"? }] }] }`, a
+step naming node ids, `actor.<key>` or `provider.<key>`) and writes `stackra.graph.json` at the root.
+`mergeSystemGraphs(paths, out)` merges the os, commerce, product and stackra repo graphs into one. Both go through
+`systemGraph`, which resolves calls (same repo first) and events into `edges`, derives each node's `usedBy` and flow
+tags (`flows`), and lists in `gaps` what does not resolve: an unanswered or ambiguous call, an event nobody publishes,
+a flow step naming no node, a duplicate id. Gaps are never refusals, since one repo's graph points at others.
+
+Not built yet: a `stackra graph` command in `@stackra/cli` (the steps are library calls until then), the docs renderer
+(stackra-60) and flow tags declared on actions and events (the flow file is the one source for now).
+
 ## Platform field types
 
 Besides `string`, `@Int`/`@Num` numbers, `boolean`, `Date`, enums and the member's own Schema classes, a shape field
@@ -223,6 +242,7 @@ OpenAPI document and the generated clients type it. Any other output is `action_
 | `.stackra/entry/*.ts`                                   | every member                                   | a package's entry barrels; a service's `server` (which hands `createApp` its `boot`), an app's `browser` and `native` entries                                                                                                                                                                                                                                                                                                                                                                                                                |
 | `.stackra/{tsdown,vitest}.config.ts`, `vitest.setup.ts` | package, service                               | the build, the unit tier on the coverage gate, and the setup with registrations, wiring, factory partners, `@stackra/database/testing` and `@stackra/clients/testing` (when declared) and `await loadMemberSchemas(root)`                                                                                                                                                                                                                                                                                                                    |
 | `vitest.config.ts` (member root)                        | package, service                               | the gitignored shim re-exporting `.stackra/vitest.config.ts`, since `vitest run` reads only the root; written only when none exists. An authored one that imports `./.stackra/vitest.config` (`mergeConfig(generated, ...)`) is kept; any other is refused (`shim_authored`)                                                                                                                                                                                                                                                                 |
+| `.stackra/graph.json`                                   | every member                                   | the member's part of the system graph: modules, called services, events out and in, tables, packages, ports and driver candidates (ADR 0452)                                                                                                                                                                                                                                                                                                                                                                                                 |
 
 ## Generated service clients
 

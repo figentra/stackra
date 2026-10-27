@@ -4,7 +4,7 @@
  *          one entity file per module, wiring, member module, registrations, boot, the inbound webhook route,
  *          prefixes, server entry, tool configs), of an app (route tables and blocks per runtime, client entries) and
  *          of a package (no openapi, entry barrels), no file at all when discovery, the manifest or the identity lock
- *          refuses, and `@Renamed` accepted by the lock.
+ *          refuses, and `@Renamed` accepted by the lock. Every full run ends with the member graph (ADR 0452).
  * Boundary: test only; runs on the IR fixtures.
  * The root `vitest.config.ts` shim is listed with the tool configs (STA-1296).
  * Runtime: node (vitest)
@@ -38,6 +38,7 @@ describe("generateMember", () => {
       ".stackra/vitest.config.ts",
       ".stackra/vitest.setup.ts",
       "vitest.config.ts",
+      ".stackra/graph.json",
     ]);
     expect(JSON.parse(files[0]?.content ?? "{}")).toEqual(JSON.parse(JSON.stringify(manifest)));
     expect(files[0]?.content.endsWith("}\n")).toBe(true);
@@ -66,6 +67,7 @@ describe("generateMember", () => {
       ".stackra/vitest.config.ts",
       ".stackra/vitest.setup.ts",
       "vitest.config.ts",
+      ".stackra/graph.json",
     ]);
     const server = files.find((file) => file.path === ".stackra/entry/server.ts")?.content;
     expect(server).toContain('import "#stackra/registrations";');
@@ -85,6 +87,7 @@ describe("generateMember", () => {
       ".stackra/gen/blocks/browser.ts",
       ".stackra/entry/browser.ts",
       ".stackra/entry/native.ts",
+      ".stackra/graph.json",
     ]);
     expect(manifest["routes"]).toEqual([
       {

@@ -6,7 +6,8 @@
  *          registrations, a service's boot and inbound webhook route, a service's Encore CronJobs, broker-delivered
  *          queue topics, integration event topics and (for a relay service) the subscriptions to every product topic, the public id prefixes, an app's route tables and blocks, the public SDKs (TypeScript, Python and PHP) of the actions marked public, one generated client per consumed
  *          service (injected, listened to, or imported by any file, so an app's routes count), `#stackra/i18n` from
- *          the lang catalogues and those of the declared `@stackra/*` packages, the package entries or runtime entries, and the tool configs, after the identity checks and,
+ *          the lang catalogues and those of the declared `@stackra/*` packages, the package entries or runtime entries, the tool configs and the
+ *          member's part of the system graph (`.stackra/graph.json`, ADR 0452), after the identity checks and,
  *          against the committed manifest, the `@Renamed` lock.
  * Boundary: pure: returns files, never writes them. Any error (discovery's, the manifest's or the lock's) means no
  *           file at all, so a broken run never leaves half an output behind. Two narrower passes break cycles between
@@ -25,7 +26,7 @@
  *                     36); ADR 0097 (decision 3); registry v3.1 section 5 (gen-core items 2 to 6 and gap G1); ADR 0148
  *                     (decisions 3, 4 and 6: Encore CronJobs and Pub/Sub in SaaS); ADR 0260 (decision 3: one
  *                     generated client per service; decision 4: the relay hears every event; a cycle between services is allowed at the manifest level); STA-1293 (the i18n target, clients
- *                     imported by any file, undeclared packages refused).
+ *                     imported by any file, undeclared packages refused); ADR 0452 (the member graph).
  */
 import type { StackraManifest } from "@stackra/contracts";
 
@@ -55,6 +56,7 @@ import { emitSdks } from "#core/functions/emit-sdks.function";
 import { emitToolConfigs } from "#core/functions/emit-tool-configs.function";
 import { emitWebhooks } from "#core/functions/emit-webhooks.function";
 import { emitWiring } from "#core/functions/emit-wiring.function";
+import { memberGraphOf } from "#core/functions/member-graph-of.function";
 import { openApiOf } from "#core/functions/open-api-of.function";
 import { schemaModules } from "#core/functions/schema-modules.function";
 import { undeclaredPackages } from "#core/functions/undeclared-packages.function";
@@ -189,5 +191,7 @@ export function generateMember(
     "generated_dependency_missing",
   );
   if (elsewhere.length > 0) return { files: [], errors: elsewhere, manifest };
+  // The member's part of the system graph, read by the repo step (ADR 0452).
+  files.push({ path: ".stackra/graph.json", content: json(memberGraphOf(ir, manifest)) });
   return { files, errors: [], manifest };
 }

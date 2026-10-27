@@ -1,0 +1,66 @@
+---
+title: "0452 — The system graph: a member graph per gen run, a repo graph and one merge step"
+description: "Proposed · 2026-10-27"
+---
+
+{/* Stackra file contract: Purpose: records how gen emits the live system map's data: a graph part per member, a graph per repo with its declared flows, and one merge across the os, commerce and product repos. Boundary: decision record only; the renderer is docs work (stackra-60) and the CLI command is a later batch. Runtime: docs. Governing contract: ADR 0294; ADR 0260; STA-845; batch stackra-59 (STA-1071). */}
+
+<Note>
+  Proposed (STA-845 part 1, batch stackra-59). Replaces the one-off map built by hand from the
+  catalogues on 2026-10-26 with data gen derives on every run, so the map cannot drift from the
+  code. Reads with [0260](/adr/0260-cross-service-calls-through-injected-clients-and-events)
+  (clients and events from the producer's manifest).
+</Note>
+
+## Context
+
+The owner wants one map of the whole system: products, Commerce, the OS, Stackra packages and outside providers, and
+how data moves between them, at three levels (the whole system, one flow step by step, one service). A one-off map was
+built by hand from the catalogues; it drifted within a day (the gap list in its own `meta`). Gen already reads
+everything the map needs: each member's modules, the clients it injects or imports, the events its listeners consume
+and the wire names their producers publish, its models and tables, its packages and the drivers it binds. What is
+missing is a file that collects it and a step that joins the repos.
+
+## Decision
+
+1. **A member graph per gen run.** Every full `stackra gen` run writes `.stackra/graph.json` beside the member's other
+   generated files, derived by `memberGraphOf` from the IR and the built manifest: `modules`, `calls` (service keys of
+   `#stackra/clients/<service>`, injected or imported), `eventsOut` and `eventsIn` (integration event wire names,
+   consumed ones resolved through the producer's committed manifest), `tables`, `packages` (`@stackra/*` and every
+   dependency that commits a manifest) and `drivers` (port key and driver candidates, the provider drivers). Nothing in
+   it is authored.
+2. **A repo graph and one merge step, the same derivation.** `writeRepoGraph(root, repo)` (`@stackra/gen/node`) finds
+   the member graphs under a repo, gives each node the id `<repo>.<member>` and its folder, and writes
+   `stackra.graph.json` at the repo root. `mergeSystemGraphs(paths, out)` merges the os, commerce, product and
+   stackra repo graphs into one system graph. Both call `systemGraph`, which resolves each call to a node (the same
+   repo first, else the only node answering it) and each consumed event to every publisher, derives each node's
+   `usedBy` (callers and package users), and lists `gaps` in words: an unanswered or ambiguous call, an event nobody
+   publishes, a flow step naming no node, a duplicate id. A gap never fails a run, because one repo's graph points at
+   others; the merged graph is where gaps should reach zero.
+3. **Flows are declared once, as configuration.** Each repo declares its flows in `stackra.flows.json` at the root:
+   an id, a title, a summary and ordered steps (`from`, `to`, `kind` `call` or `event`, `label`, optional `event` and
+   `data`), where a step names node ids, `actor.<key>` or `provider.<key>`. The graph derives each node's flow tags
+   (`flows`) from the steps, so level 2 of the map is generated from the same file. Tags on actions and events are not
+   added now: they would need option changes in the runtime packages, and one file per repo is enough to start.
+4. **One shape.** A repo graph and the merged graph are the same `SystemGraph` (`version: 1`, `repos`, `nodes`,
+   `flows`, `edges`, `gaps`), so a renderer reads either and merging merged graphs is the same step.
+
+## Consequences
+
+- The docs renderer (stackra-60) reads the merged graph; it needs no hand edits.
+- Every member's next gen run adds one generated file; repo graphs exist only after each member has been generated.
+- Until a `stackra graph` command exists in `@stackra/cli`, the repo and merge steps are library calls a CI job or
+  script makes.
+- The map's quality follows the code's: a service that injects no client of another service shows no call to it.
+
+## Enforcement
+
+- `memberGraphOf`, `systemGraph`, `writeRepoGraph` and `mergeSystemGraphs` have unit tests in `@stackra/gen`; the
+  generate-member test lists `.stackra/graph.json` in every full run.
+- The gaps of the merged graph are the review list for STA-845's "every service appears with its real event names".
+
+## Supersedes and sources
+
+Supersedes nothing. Sources: STA-845; the one-off map `handover/system-map/graph.json` (its node and flow shape);
+[0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming) (the committed manifest is the IR);
+[0260](/adr/0260-cross-service-calls-through-injected-clients-and-events).

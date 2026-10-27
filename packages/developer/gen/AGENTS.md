@@ -7,7 +7,7 @@ Purpose: the agent rules of @stackra/gen: where code goes, entries and barrels, 
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
 Governing contract: ADR 0294; ADR 0295; ADR 0305; ADR 0260 (generated clients and typed events); ADR 0263; ADR 0162 and ADR 0222
-                    (the translated and upload shape kinds); ADR 0338 (a replica query's `ReplicaPage` output); STA-1290 (the shipped shape kind); STA-1293 (i18n, clients for apps, undeclared packages); STA-1296 (client modules and permission sets, config overrides, the root Vitest shim); STA-1298 (package lang namespaces in `I18n`, `i18n_key_missing`, `i18n_namespace_clash`); STA-1309 (catalogue loaders); STA-1306 (the quality-gate refusals); STA-1316 (the docs site); STA-1322 (the Encore app file); STA-1251 (`searchable_semantic_ai_never`); ADR 0438 (shell slots and fills, stackra-03); ADR 0436 (surface targets, `modulepreloadOf`, stackra-04); ADR 0336 (model additions, stackra-64).
+                    (the translated and upload shape kinds); ADR 0338 (a replica query's `ReplicaPage` output); STA-1290 (the shipped shape kind); STA-1293 (i18n, clients for apps, undeclared packages); STA-1296 (client modules and permission sets, config overrides, the root Vitest shim); STA-1298 (package lang namespaces in `I18n`, `i18n_key_missing`, `i18n_namespace_clash`); STA-1309 (catalogue loaders); STA-1306 (the quality-gate refusals); STA-1316 (the docs site); STA-1322 (the Encore app file); STA-1251 (`searchable_semantic_ai_never`); ADR 0438 (shell slots and fills, stackra-03); ADR 0436 (surface targets, `modulepreloadOf`, stackra-04); ADR 0336 (model additions, stackra-64); ADR 0452 (the system graph, stackra-59).
 -->
 
 The Stackra compiler. Member at `packages/developer/gen` (`tier:lib`), in the programming model v3.1 shape (ADR 0294,
@@ -221,6 +221,21 @@ The gen refusals of the 2026-10-27 coverage audit, section 4. Each carries its f
   check at publish (Runway, stackra-13), not gen's.
 - `ExtensionBundleManifest` is the shape `@stackra/vite-plugin` writes as `bundle.manifest.json`; `modulepreloadOf`
   stays pure and isomorphic so the OS Worker can call it. Gen never builds a bundle: that is the Vite preset's.
+
+## The system graph (ADR 0452, stackra-59)
+
+- `memberGraphOf(ir, manifest)` is the one place a member's graph part is derived; `generateMember` writes it last, as
+  `.stackra/graph.json`, on the full pass only. Read it from the IR and the built manifest, never from source again,
+  and keep every list sorted.
+- Calls are the `#stackra/clients/<service>` services (injected or imported); consumed events resolve their wire name
+  from the producer's manifest as the events target does. A new kind of edge is a field on `MemberGraph`, a case in
+  `systemGraph`, and tests.
+- `systemGraph` is the only derivation of a repo graph and of the merged graph: `writeRepoGraph` and
+  `mergeSystemGraphs` (`./node`) only read and write files. A repo graph and the merged graph have one shape, so a
+  merge of merged graphs is the same step. `usedBy` and `flows` are always derived again.
+- Flows are declared once per repo in `stackra.flows.json` (configuration). Anything that does not resolve is a gap,
+  never a refusal; never make a missing node in another repo fail a run.
+- Not here: the CLI command (`@stackra/cli`) and the docs renderer (stackra-60).
 
 ## Rules that fail the build
 

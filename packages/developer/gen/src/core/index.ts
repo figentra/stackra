@@ -12,13 +12,15 @@
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision; ADR 0127 2026-10-24 note (`ir`
  *                     and `source` fold into gen); ADR 0438 (the slot and fill IR types, stackra-03); ADR 0436 (surface targets, the
  *                     extension bundle manifest and `modulepreloadOf`, stackra-04); ADR 0336 (`additionsOf`,
- *                     `AdditionEntry`, stackra-64).
+ *                     `AdditionEntry`, stackra-64); ADR 0452 (the system graph: `memberGraphOf`, `systemGraph`,
+ *                     `GRAPH_NOTICE` and the graph types, stackra-59).
  */
 export { DocsConfig } from "#core/bases/docs-config.base";
 export { CLIENTS_SPECIFIER } from "#core/constants/clients-specifier.constant";
 export { DOCS_CONFIG_FILE } from "#core/constants/docs-config-file.constant";
 export { DOCS_SITE_DIR } from "#core/constants/docs-site-dir.constant";
 export { EFFECT_TAGS } from "#core/constants/effect-tags.constant";
+export { GRAPH_NOTICE } from "#core/constants/graph-notice.constant";
 export { GENERATED_NOTICE } from "#core/constants/generated-notice.constant";
 export { INTEGRATION_ROLES } from "#core/constants/integration-roles.constant";
 export { MANIFEST_NOTICE } from "#core/constants/manifest-notice.constant";
@@ -58,6 +60,7 @@ export { eventName } from "#core/functions/event-name.function";
 export { folderKey } from "#core/functions/folder-key.function";
 export { formatGenError } from "#core/functions/format-gen-error.function";
 export { generateMember } from "#core/functions/generate-member.function";
+export { memberGraphOf } from "#core/functions/member-graph-of.function";
 export { integrationKey } from "#core/functions/integration-key.function";
 export { jsonSchemaOf } from "#core/functions/json-schema-of.function";
 export { modelKey } from "#core/functions/model-key.function";
@@ -69,6 +72,7 @@ export { rootModuleOf } from "#core/functions/root-module-of.function";
 export { routeKey } from "#core/functions/route-key.function";
 export { sequenceKey } from "#core/functions/sequence-key.function";
 export { surfacesOf } from "#core/functions/surfaces-of.function";
+export { systemGraph } from "#core/functions/system-graph.function";
 export { tableName } from "#core/functions/table-name.function";
 export { toolHints } from "#core/functions/tool-hints.function";
 export { toolName } from "#core/functions/tool-name.function";
@@ -94,6 +98,7 @@ export type { FileExports } from "#core/types/file-exports.type";
 export type { GenError } from "#core/types/gen-error.type";
 export type { GeneratedFile } from "#core/types/generated-file.type";
 export type { ManifestBreak } from "#core/types/manifest-break.type";
+export type { MemberGraph } from "#core/types/member-graph.type";
 export type { MemberIR } from "#core/types/member-ir.type";
 export type { OpenApiDocument } from "#core/types/open-api-document.type";
 export type { RegexValue } from "#core/types/regex-value.type";
@@ -102,6 +107,10 @@ export type { ShapeIR } from "#core/types/shape-ir.type";
 export type { SlotFillIR } from "#core/types/slot-fill-ir.type";
 export type { SlotIR } from "#core/types/slot-ir.type";
 export type { SurfaceTarget } from "#core/types/surface-target.type";
+export type { SystemGraph } from "#core/types/system-graph.type";
+export type { GraphEdge } from "#core/types/graph-edge.type";
+export type { GraphFlow } from "#core/types/graph-flow.type";
+export type { GraphNode } from "#core/types/graph-node.type";
 export type { TokenRef } from "#core/types/token-ref.type";
 export type { ToolHints } from "#core/types/tool-hints.type";
 export type { TypeDesc } from "#core/types/type-desc.type";
