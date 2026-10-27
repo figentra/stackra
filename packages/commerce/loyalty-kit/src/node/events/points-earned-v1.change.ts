@@ -28,7 +28,7 @@ export class PointsEarnedV1Change extends Change<PointsEarned>({
   sunset: "2027-04-01",
 }) {
   /** Points credited to the member. */
-  @Int()
+  @Int({ min: 0 })
   points!: number;
 
   /** The member credited. */

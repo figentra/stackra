@@ -18,11 +18,11 @@ import { z } from "zod";
  */
 export class PointsIssuedView extends Schema {
   /** Points earned today. */
-  @Int()
+  @Int({ min: 0 })
   earned!: number;
 
   /** Points redeemed today, as a positive number. */
-  @Int()
+  @Int({ min: 0 })
   redeemed!: number;
 }
 

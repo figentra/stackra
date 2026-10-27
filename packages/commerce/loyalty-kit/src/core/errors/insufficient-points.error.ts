@@ -21,10 +21,10 @@ export class InsufficientPointsError extends Refusal({
   retryable: false,
 }) {
   /** Points the member holds now. */
-  @Int()
+  @Int({ min: 0 })
   balance!: number;
 
   /** Points the caller asked for. */
-  @Int()
+  @Int({ min: 0 })
   requested!: number;
 }

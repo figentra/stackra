@@ -8,6 +8,7 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0294 (decision 15); ADR 0369.
  */
+import { Enum } from "@stackra/contracts";
 import { Money } from "@stackra/money";
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
@@ -169,7 +170,7 @@ describe("@stackra/shipping/contracts", () => {
       TrackingGateway = {
       id: "con_1",
       provider: "carrier_a",
-      capabilities: Object.values(CarrierCapability),
+      capabilities: Enum.values(CarrierCapability),
       trackingMap: {},
       quote: async () => [],
       createLabel: async (request) => ({

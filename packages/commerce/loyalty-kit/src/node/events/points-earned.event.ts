@@ -28,11 +28,11 @@ export class PointsEarned extends IntegrationEvent({
   version: 2,
 }) {
   /** Points credited to the member. */
-  @Int()
+  @Int({ min: 0 })
   points!: number;
 
   /** The member's balance after the credit. */
-  @Int()
+  @Int({ min: 0 })
   balanceAfter!: number;
 
   /** The member credited. */

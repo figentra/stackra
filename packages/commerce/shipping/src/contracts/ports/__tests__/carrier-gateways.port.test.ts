@@ -51,7 +51,7 @@ describe("CarrierGateways", () => {
   });
 
   it("is implemented by a driver subclass", async () => {
-    const carriers = new LiteralCarrierGateways();
+    const carriers: CarrierGateways = new LiteralCarrierGateways();
     expect(await carriers.forMarket("zz", [CarrierCapability.Rates])).toBe(gateway);
     expect(await carriers.allForMarket("zz", [])).toEqual([gateway]);
     expect(await carriers.byConnection("carrier_a", "con_1")).toBe(gateway);

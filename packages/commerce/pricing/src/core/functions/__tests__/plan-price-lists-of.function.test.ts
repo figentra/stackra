@@ -9,15 +9,18 @@ import { describe, expect, it } from "@stackra/testing";
 
 import { planPriceListsOf } from "#core/functions/plan-price-lists-of.function";
 
+/** The first row, named so a test can vary it without an index read. */
+const LOW_MONTH = {
+  id: "low-usd-pro-m",
+  regionalTier: "low",
+  currency: "USD",
+  tier: "pro",
+  period: "month",
+  amount: "29.00",
+};
+
 const ROWS = [
-  {
-    id: "low-usd-pro-m",
-    regionalTier: "low",
-    currency: "USD",
-    tier: "pro",
-    period: "month",
-    amount: "29.00",
-  },
+  LOW_MONTH,
   {
     id: "low-usd-pro-y",
     regionalTier: "low",
@@ -47,9 +50,11 @@ describe("planPriceListsOf", () => {
   });
 
   it("refuses bad and repeated rows", () => {
-    expect(() => planPriceListsOf([{ ...ROWS[0], period: "week" }])).toThrow(/unknown period week/);
-    expect(() => planPriceListsOf([{ ...ROWS[0], tier: "" }])).toThrow(/needs text tier/);
-    expect(() => planPriceListsOf([ROWS[0], { ...ROWS[0], id: "again" }])).toThrow(
+    expect(() => planPriceListsOf([{ ...LOW_MONTH, period: "week" }])).toThrow(
+      /unknown period week/,
+    );
+    expect(() => planPriceListsOf([{ ...LOW_MONTH, tier: "" }])).toThrow(/needs text tier/);
+    expect(() => planPriceListsOf([LOW_MONTH, { ...LOW_MONTH, id: "again" }])).toThrow(
       /row again repeats/,
     );
   });

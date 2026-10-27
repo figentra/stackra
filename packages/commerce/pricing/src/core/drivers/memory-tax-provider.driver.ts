@@ -25,11 +25,11 @@ import type { TaxRateTable } from "#core/types/tax-rate-table.type";
  * await tax.quote(request);
  */
 export class MemoryTaxProviderDriver extends Driver(TaxProvider) {
-  /** The rows the next quote uses; empty, so every class refuses until a test sets rows. */
-  table: TaxRateTable = { source: "memory", rounding: Rounding.HalfEven, rates: [] };
-
   /** Every request, in order. */
   readonly requests: TaxRequest[] = [];
+
+  /** The rows the next quote uses; empty, so every class refuses until a test sets rows. */
+  table: TaxRateTable = { source: "memory", rounding: Rounding.HalfEven, rates: [] };
 
   /** Records the request and taxes it from `table`. */
   async quote(request: TaxRequest): Promise<TaxQuote> {

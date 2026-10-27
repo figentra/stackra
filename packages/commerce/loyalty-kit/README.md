@@ -186,7 +186,8 @@ membership tag; today every live person is a member.
   account's `entries` relation, which journal rows leave empty until the backfill; it keeps the earn's time of day.
   `LoyaltyAccount` drops that inverse `entries` collection (nothing reads it now, and it made the two models import
   each other); `LedgerEntry.account` still points at the account, which is all `Factory.has` needs.
-- **Smaller fixes:** `@Int()` is called (the sample wrote `@Int` bare); dependencies are fields assigned in the
+- **Smaller fixes:** point fields carry `@Int({ min: 0 })` (the sample wrote `@Int` bare, which does not typecheck, and an empty
+  call is refused by `no-empty-decorator`); dependencies are fields assigned in the
   constructor (no parameter properties, for `erasableSyntaxOnly`); ports declare their `~key`; the model declares its
   three filter indexes with `@Index`; `PointsIssuedQuery` never reports `-0`; the demo ids are lowercase, as minted ids
   are; the settings' silver-below-gold rule is checked by the stand-in schema.
