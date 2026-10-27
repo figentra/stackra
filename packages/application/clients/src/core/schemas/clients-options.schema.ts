@@ -7,7 +7,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0146 (config classes); ADR 0294 (decision 26: one shape, one schema).
  */
-import { registerSchemas, Schema } from "@stackra/validation";
+import { Int, registerSchemas, Schema } from "@stackra/validation";
 
 import { CLIENTS_CONFIG_SCHEMA } from "#core/constants/clients-config-schema.constant";
 
@@ -21,6 +21,14 @@ import { CLIENTS_CONFIG_SCHEMA } from "#core/constants/clients-config-schema.con
  * }
  */
 export class ClientsOptions extends Schema {
+  /** Seconds one request may take before it fails as a timeout. */
+  @Int
+  timeoutSeconds = 30;
+
+  /** Attempts of a call that is safe to repeat, the first included. */
+  @Int
+  attempts = 3;
+
   /** The API origin the HTTP transport joins each route to; empty means the page's own origin. */
   baseUrl = "";
 
@@ -32,12 +40,6 @@ export class ClientsOptions extends Schema {
 
   /** The dated API version sent as `Stackra-Version`; empty sends none, so the producer serves its newest. */
   apiVersion = "";
-
-  /** Seconds one request may take before it fails as a timeout. */
-  timeoutSeconds = 30;
-
-  /** Attempts of a call that is safe to repeat, the first included. */
-  attempts = 3;
 }
 
 registerSchemas([[ClientsOptions, CLIENTS_CONFIG_SCHEMA]]);
