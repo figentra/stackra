@@ -9,7 +9,11 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0210 (decision 6); ADR 0427 (decision 1); ADR 0152 (0294 note: held signals).
  */
+import { Field } from "@stackra/validation";
+import { z } from "zod";
+
 import { Signal } from "#core/bases/signal.base";
+import { KEPT_RECORDS_SCHEMA } from "#core/constants/kept-records-schema.constant";
 import type { KeptRecords } from "#core/types/kept-records.type";
 
 /**
@@ -29,12 +33,14 @@ import type { KeptRecords } from "#core/types/kept-records.type";
  * ```
  */
 export class AllServicesAcked extends Signal {
+  /** What each service kept, by member key; a service that kept nothing is absent (STA-1312). */
+  // reason: KeptRecords is this package's interface; its shipped KeptRecords$ holds the rules
+  @Field(z.record(z.string(), z.array(KEPT_RECORDS_SCHEMA)))
+  kept!: Record<string, KeptRecords[]>;
+
   /** The subject every service acked. */
   subject!: string;
 
   /** The services that acked it. */
   services!: string[];
-
-  /** What each service kept, by member key; a service that kept nothing is absent (STA-1312). */
-  kept!: Record<string, KeptRecords[]>;
 }

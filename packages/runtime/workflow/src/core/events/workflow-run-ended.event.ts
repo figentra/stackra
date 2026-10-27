@@ -12,7 +12,7 @@
  */
 import type { PublicId } from "@stackra/contracts";
 import { DomainEvent } from "@stackra/events";
-import { registerSchemas } from "@stackra/validation";
+import { Field, Int, registerSchemas } from "@stackra/validation";
 
 import { WORKFLOW_RUN_ENDED_SCHEMA } from "#core/constants/workflow-run-ended-schema.constant";
 import type { WorkflowRunStatus } from "#core/enums/workflow-run-status.enum";
@@ -29,23 +29,26 @@ import type { WorkflowError } from "#core/types/workflow-error.type";
  * }
  */
 export class WorkflowRunEnded extends DomainEvent {
+  /** The version it ran on. */
+  @Int({ min: 1 })
+  version!: number;
+
+  /** The error it compensated, failed or was cancelled with; absent when it completed. */
+  // reason: WorkflowError is this package's interface; the shipped WorkflowRunEnded$ holds its rules
+  @Field(WORKFLOW_RUN_ENDED_SCHEMA.shape.error)
+  error?: WorkflowError;
+
   /** The id of the run that ended. */
   runId!: PublicId<"wfr">;
 
   /** Its workflow key. */
   workflow!: string;
 
-  /** The version it ran on. */
-  version!: number;
-
   /** The automation it ran; absent for a coded run or a plan. */
   automationId?: PublicId<"wfa">;
 
   /** How it ended: `completed`, `compensated`, `failed` or `cancelled`. */
   status!: WorkflowRunStatus;
-
-  /** The error it compensated, failed or was cancelled with; absent when it completed. */
-  error?: WorkflowError;
 }
 
 registerSchemas([[WorkflowRunEnded, WORKFLOW_RUN_ENDED_SCHEMA]]);

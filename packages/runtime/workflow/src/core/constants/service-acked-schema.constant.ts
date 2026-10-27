@@ -8,24 +8,14 @@
  */
 import { z } from "zod";
 
+import { KEPT_RECORDS_SCHEMA } from "#core/constants/kept-records-schema.constant";
+
 /** The shipped `ServiceAcked$`. */
 export const SERVICE_ACKED_SCHEMA = z.object({
   subject: z.string().min(1).max(255),
   service: z.string().regex(/^[a-z][a-z0-9_]{0,62}$/, "Expected a member key such as commerce"),
   kept: z
-    .array(
-      z.object({
-        kind: z
-          .string()
-          .max(255)
-          .regex(
-            /^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+$/,
-            "Expected a model key such as orders.order",
-          ),
-        reason: z.enum(["hold", "retention"]),
-        count: z.number().int().min(0),
-      }),
-    )
+    .array(KEPT_RECORDS_SCHEMA)
     .max(200)
     .optional(),
 });

@@ -12,7 +12,7 @@
  */
 import type { PublicId } from "@stackra/contracts";
 import { DomainEvent } from "@stackra/events";
-import { registerSchemas } from "@stackra/validation";
+import { Int, registerSchemas } from "@stackra/validation";
 
 import { WORKFLOW_RUN_STARTED_SCHEMA } from "#core/constants/workflow-run-started-schema.constant";
 
@@ -27,14 +27,15 @@ import { WORKFLOW_RUN_STARTED_SCHEMA } from "#core/constants/workflow-run-starte
  * }
  */
 export class WorkflowRunStarted extends DomainEvent {
+  /** The version it is pinned to. */
+  @Int({ min: 1 })
+  version!: number;
+
   /** The id of the run that started. */
   runId!: PublicId<"wfr">;
 
   /** Its workflow key (`workflow.document` for an automation or a plan). */
   workflow!: string;
-
-  /** The version it is pinned to. */
-  version!: number;
 
   /** The automation it runs; absent for a coded run or a plan. */
   automationId?: PublicId<"wfa">;

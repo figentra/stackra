@@ -12,12 +12,19 @@
  */
 import type { OptionalProps } from "@stackra/database";
 import { HasPublicId, Model, Timestamps, Versioned } from "@stackra/model";
+import { Field } from "@stackra/validation";
+import { z } from "zod";
 
-import type { KeptRecords } from "#core/index";
+import { type KeptRecords, KeptRecords$ } from "#core/index";
 
 /** One subject's acks. Traits add `id`, the timestamps and the version; the indexes are the migration's. */
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: merged with the [OptionalProps] augmentation below
 export class ServiceAckSet extends Model.with(HasPublicId("wfk"), Timestamps, Versioned) {
+  /** What each service that acked kept, by member key; a service that kept nothing is absent. */
+  // reason: KeptRecords is this package's interface; its shipped KeptRecords$ holds the rules
+  @Field(z.record(z.string(), z.array(KeptRecords$)))
+  kept: Record<string, KeptRecords[]> = {};
+
   /** What the acks are for (a tenant's public id). */
   subject!: string;
 
@@ -26,9 +33,6 @@ export class ServiceAckSet extends Model.with(HasPublicId("wfk"), Timestamps, Ve
 
   /** The member keys of the services that acked so far. */
   acked: string[] = [];
-
-  /** What each service that acked kept, by member key; a service that kept nothing is absent. */
-  kept: Record<string, KeptRecords[]> = {};
 
   /** When the last expected service acked; null while one is missing. */
   completedAt: Date | null = null;

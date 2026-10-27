@@ -34,7 +34,7 @@ steps last first when one fails (ADR 0102, 0151, 0152, 0292).
 | `WorkflowTemplatePack$`, `SeedResult`                                | `.`         | default automations as a versioned seed document                             |
 | `Automation`, `AutomationService`, `AutomationRevision`              | `./node`    | versioned automations: draft, dry run, publish as a principal, seed          |
 | `PublisherAccess`, `MemoryPublisherAccessDriver`, `AutomationPaused` | `.`         | an automation never exceeds its publisher; it pauses when access is lost     |
-| `ServiceAcked`, `AllServicesAcked`, `KeptRecords`                    | `.`         | the cross-service "service acked" contract and the await-all signal          |
+| `ServiceAcked`, `AllServicesAcked`, `KeptRecords`, `KeptRecords$`    | `.`         | the cross-service "service acked" contract and the await-all signal          |
 | `ServiceAckSet`, `ServiceAckService`                                 | `./node`    | the acks a workflow waits for on one subject                                 |
 | `ChecklistTemplate$`, `ChecklistCustomization$`, `IndustryProfile$`  | `.`         | checklist templates, a scope's customization, industry profiles (seed data)  |
 | `ChecklistAudience`, `checklistView`, `checkCustomization`, …        | `.`         | locked steps, scope and user progress, `ChecklistStepCompleted`/`Completed`  |

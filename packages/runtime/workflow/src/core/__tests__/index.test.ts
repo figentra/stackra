@@ -41,6 +41,7 @@ describe("@stackra/workflow", () => {
       "DryRunOutcome",
       "ForEachItemsInvalidError",
       "IndustryProfile$",
+      "KeptRecords$",
       "MemoryPublisherAccessDriver",
       "MemoryWorkflowJournalDriver",
       "NativeWorkflowRunnerDriver",

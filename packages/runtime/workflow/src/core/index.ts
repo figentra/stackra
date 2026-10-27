@@ -6,7 +6,7 @@
  *          check and dry run, the workflow template pack and their refusals) until `stackra gen` writes the entry
  *          barrels (STA-339).
  * Boundary: names each re-export and declares nothing. The shipped schemas are re-exported under their generated names
- *           (`WorkflowConfig$`, `AutomationDocument$`, `WorkflowTemplatePack$`). The plans, keys, id minting and
+ *           (`WorkflowConfig$`, `AutomationDocument$`, `WorkflowTemplatePack$`, `KeptRecords$`). The plans, keys, id minting and
  *           defaults stay internal. The Postgres journal and the explorer are `./node`'s, the test driver
  *           `./testing`'s. There is no `./contracts`: the journal port and the run records name the status enums, which
  *           the template imports from `.`, so they live here together.
@@ -21,6 +21,7 @@ export { AUTOMATION_DOCUMENT_SCHEMA as AutomationDocument$ } from "#core/constan
 export { CHECKLIST_CUSTOMIZATION_SCHEMA as ChecklistCustomization$ } from "#core/constants/checklist-customization-schema.constant";
 export { CHECKLIST_TEMPLATE_SCHEMA as ChecklistTemplate$ } from "#core/constants/checklist-template-schema.constant";
 export { INDUSTRY_PROFILE_SCHEMA as IndustryProfile$ } from "#core/constants/industry-profile-schema.constant";
+export { KEPT_RECORDS_SCHEMA as KeptRecords$ } from "#core/constants/kept-records-schema.constant";
 export { WORKFLOW_CONFIG_SCHEMA as WorkflowConfig$ } from "#core/constants/workflow-config-schema.constant";
 export { WORKFLOW_TEMPLATE_PACK_SCHEMA as WorkflowTemplatePack$ } from "#core/constants/workflow-template-pack-schema.constant";
 export { Step } from "#core/decorators/step.decorator";

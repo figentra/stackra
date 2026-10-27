@@ -14,8 +14,10 @@
  *                     21); ADR 0134, ADR 0189 (erasure acks report what was kept).
  */
 import { IntegrationEvent } from "@stackra/events";
-import { registerSchemas } from "@stackra/validation";
+import { Field, registerSchemas } from "@stackra/validation";
+import { z } from "zod";
 
+import { KEPT_RECORDS_SCHEMA } from "#core/constants/kept-records-schema.constant";
 import { SERVICE_ACKED_SCHEMA } from "#core/constants/service-acked-schema.constant";
 import type { KeptRecords } from "#core/types/kept-records.type";
 
@@ -33,14 +35,16 @@ import type { KeptRecords } from "#core/types/kept-records.type";
  * );
  */
 export class ServiceAcked extends IntegrationEvent({ name: "service.acked" }) {
+  /** The records the service kept instead of disposing of them; absent or empty when it kept none. */
+  // reason: KeptRecords is this package's interface; its shipped KeptRecords$ holds the rules
+  @Field(z.array(KEPT_RECORDS_SCHEMA).max(200))
+  kept?: KeptRecords[];
+
   /** What was acked: the id the waiting workflow expects acks for (a tenant's public id). */
   subject!: string;
 
   /** The acking service's member key (`commerce`). */
   service!: string;
-
-  /** The records the service kept instead of disposing of them; absent or empty when it kept none. */
-  kept?: KeptRecords[];
 }
 
 // shortcut: registered here until gen writes the package's #stackra/schemas registration (STA-339).

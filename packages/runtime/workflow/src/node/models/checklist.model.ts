@@ -14,12 +14,18 @@
 import type { PublicId } from "@stackra/contracts";
 import type { OptionalProps } from "@stackra/database";
 import { HasPublicId, Model, Timestamps } from "@stackra/model";
+import { Field } from "@stackra/validation";
 
-import type { ChecklistTemplate } from "#core/index";
+import { type ChecklistTemplate, ChecklistTemplate$ } from "#core/index";
 
 /** A scope's checklist. Traits add `id` and the timestamps; the indexes are the migration's. */
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: merged with the [OptionalProps] augmentation below
 export class Checklist extends Model.with(HasPublicId("wfc"), Timestamps) {
+  /** The template as last seeded. */
+  // reason: ChecklistTemplate is the output of this package's shipped ChecklistTemplate$, so the hatch names that schema
+  @Field(ChecklistTemplate$)
+  template!: ChecklistTemplate;
+
   /** The scope node the checklist belongs to. */
   scopeId!: PublicId<"scp">;
 
@@ -28,9 +34,6 @@ export class Checklist extends Model.with(HasPublicId("wfc"), Timestamps) {
 
   /** The template key (`workflow-template:commerce:onboarding`). */
   key!: string;
-
-  /** The template as last seeded. */
-  template!: ChecklistTemplate;
 
   /** The unlocked steps the scope hides. */
   hidden: string[] = [];
