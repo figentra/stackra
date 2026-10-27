@@ -24,7 +24,7 @@ describe("@stackra/infra-github/node", () => {
     expectTypeOf(node.readGithubRules).parameters.toEqualTypeOf<[directory: string]>();
     expectTypeOf(node.readGithubRules).returns.toEqualTypeOf<GithubRules>();
     expectTypeOf(node.githubStack).parameters.toEqualTypeOf<
-      [plan: GithubPlan, rules: GithubRules, config?: pulumi.Config]
+      [plan: GithubPlan, rules: GithubRules, config?: pulumi.Config | undefined]
     >();
     expectTypeOf(node.githubStack).returns.toEqualTypeOf<GithubStack>();
   });

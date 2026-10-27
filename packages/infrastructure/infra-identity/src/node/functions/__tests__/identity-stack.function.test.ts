@@ -88,7 +88,10 @@ function valueOf<T>(output: Output<T>): Promise<T> {
 /** Waits until every resource of the stack is registered. */
 async function settle(stack: IdentityStack): Promise<void> {
   await valueOf(
-    all([stack.orgId, stack.projectId, stack.firstPartyClients, ...Object.values(stack.machines)]),
+    all([
+      stack.firstPartyClients,
+      all([stack.orgId, stack.projectId, ...Object.values(stack.machines)]),
+    ]),
   );
   await new Promise((resolve) => setTimeout(resolve, 10));
 }

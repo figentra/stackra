@@ -26,7 +26,7 @@ describe("@stackra/infra-identity", () => {
 
   it("types the seed check and the plan", () => {
     expectTypeOf(core.parseIdentitySeed).parameters.toEqualTypeOf<
-      [document: unknown, source?: string]
+      [document: unknown, source?: string | undefined]
     >();
     expectTypeOf(core.parseIdentitySeed).returns.toEqualTypeOf<IdentitySeed>();
     expectTypeOf(core.identityPlan).parameters.toEqualTypeOf<
