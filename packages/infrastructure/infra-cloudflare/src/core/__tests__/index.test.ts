@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: the consumer contract of the `.` entry: the edge and stack checks, the tunnel and rate-limit planners, the
- *          dev-port reader, the enums and the error are exported, nothing else is (the zod schemas and ruleset ids
+ *          dev-port reader, the login directory handler and KV calls, the enums and the error are exported, nothing else is (the zod schemas and ruleset ids
  *          stay internal, the Pulumi programs are `./node`'s), and the public types resolve.
  * Boundary: test only; imports the stand-in barrel through its `#core` alias.
  * Runtime: node (vitest)
@@ -15,6 +15,8 @@ import type {
   CloudflareStack,
   EdgePolicy,
   EdgeWorker,
+  LoginDirectoryKv,
+  LoginDirectoryOptions,
   SigningKeySlot,
   TunnelIngressRule,
   ZoneOptions,
@@ -34,6 +36,8 @@ describe("@stackra/infra-cloudflare", () => {
       "customHostnameState",
       "devPortsOf",
       "edgeKvKey",
+      "loginDirectoryHandler",
+      "loginDirectoryKvRequest",
       "parseCloudflareStack",
       "parseEdge",
       "parseStorefront",
@@ -51,6 +55,7 @@ describe("@stackra/infra-cloudflare", () => {
     expectTypeOf<TunnelIngressRule["service"]>().toEqualTypeOf<string>();
     expectTypeOf<NonNullable<CloudflareStack["edgeWorker"]>>().toEqualTypeOf<EdgeWorker>();
     expectTypeOf<SigningKeySlot["signs"]>().toEqualTypeOf<boolean>();
+    expectTypeOf<LoginDirectoryOptions["kv"]>().toEqualTypeOf<LoginDirectoryKv>();
     expectTypeOf<CloudflareApiRequest["method"]>().toEqualTypeOf<
       "GET" | "POST" | "PATCH" | "DELETE"
     >();

@@ -12,46 +12,48 @@ screen reads, and the claims mapping that turns a provider's token into a Stackr
 
 ## What is here
 
-| Entry         | Symbol                                                                                                     | Use                                                                                          |
-| ------------- | ---------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| `.`           | `IdentityConfig`                                                                                           | the configuration (key `identity`): flow per target, device client, scopes, idle rule        |
-| `.`           | `IdentityConfig$`                                                                                          | the shipped schema a member's generated override extends                                     |
-| `.`           | `AuthFlow`                                                                                                 | `bff`, `pkce`                                                                                |
-| `.`           | `SessionStatus`                                                                                            | `loading`, `signed_in`, `signed_out`, `revoked`                                              |
-| `.`           | `SessionService`                                                                                           | the client's session: state, listeners, sign-in, sign-out, idle rule                         |
-| `.`           | `BffSessionStoreDriver`                                                                                    | the web's session: the BFF and its cookie                                                    |
-| `.`           | `PkceSessionStoreDriver`                                                                                   | the device's session: PKCE, tokens in the `secrets` storage area                             |
-| `.`           | `MemorySessionStoreDriver`                                                                                 | tests and previews                                                                           |
-| `.`           | `SessionClientSessionDriver`                                                                               | `@stackra/clients`' `ClientSession`: the bearer token and `X-Scope-Path`                     |
-| `.`           | `SessionOfflineSessionDriver`                                                                              | `@stackra/query`'s `OfflineSession`: revoked and signed-in signals, the local sign-out       |
-| `.`           | `MemoryIdentityResolverDriver`                                                                             | the contracts' `IdentityResolver` over principals in memory                                  |
-| `.`           | `IDENTITY_CLAIMS`, `sessionUserOf`                                                                         | the Stackra claim names, and claims to a `SessionUser`                                       |
-| `.`           | `SignInCancelledError`, `SessionRevokedError`                                                              | refusals                                                                                     |
-| `./contracts` | `SessionStore`                                                                                             | the port of a flow (`load`, `signIn`, `signOut`, `accessToken`)                              |
-| `./contracts` | `SignInBrowser`                                                                                            | the platform step of PKCE: open the hosted sign-in, hand back the redirect                   |
-| `./contracts` | `SessionUser`                                                                                              | the signed-in user: id, address, name, permissions, memberships                              |
-| `.`           | `AssuranceLevel`, `assuranceOf`, `requireAssurance`, `stepUpSignIn`, `StepUpRequiredError`                 | step-up: the session's level and age, the refusal, the re-authentication                     |
-| `.`           | `signInProvidersOf`, `externalSignIn`                                                                      | a market's external sign-in providers (pack data) and the hint that sends sign-in there      |
-| `.`           | `StaffPinService`, `StorageStaffPinStoreDriver`, `MemoryStaffPinStoreDriver`                               | staff PIN quick-switch and manager override on a shared device                               |
-| `.`           | `ApiKeyKind`, `mintApiKey`, `parseApiKey`, `checkPublishableKey`, `isOriginAllowed`                        | secret and publishable keys; the origin-bound Storefront key                                 |
-| `.`           | `ApiKeyVerifierService`, `hashApiKey`, `MemoryApiKeyStoreDriver`                                           | the gateway's verification of a key by its hash, over the `ApiKeyStore` port                 |
-| `.`           | `ZitadelIdpAdminDriver`, `MemoryIdpAdminDriver`, `IdpAdminConfig`                                          | the `IdpAdmin` port: users, machine users, sessions, device flow, login policy, methods      |
-| `.`           | `MemoryAutomationPrincipalsDriver`                                                                         | the `AutomationPrincipals` port in memory: one principal per automation (ADR 0153)           |
-| `.`           | `GuardianActingService`, `MemoryGuardianshipDriver`                                                        | a guardian acting for a minor, after the relationship check                                  |
-| `.`           | `VerificationService`, `MemoryVerificationDriver`                                                          | KYC and KYB through the providers the market pack lists                                      |
-| `./contracts` | `Verification`, `VerificationKind`, `VerificationStatus`, `StaffPinStore`, `Guardianship`, `SignInOptions` | the verification, PIN and guardianship ports; sign-in extras                                 |
-| `./contracts` | `IdpSecondFactor`                                                                                          | the second factors a login policy offers (`totp`, `u2f`, `otp_email`, `otp_sms`)             |
-| `./contracts` | `AutomationPrincipals`, `AutomationPrincipalInput`                                                         | mint and revoke the principal an automation runs as (ADR 0153 decision 2)                    |
-| `.`           | `SignInMethod`, `signInMethodsOf`                                                                          | the built-in sign-in methods a market offers (pack data), less the scope's switched-off ones |
-| `.`           | `AppApprovalService`, `MemoryAppApprovalChallengesDriver`                                                  | sign-in and step-up by approving on the mobile app (number matching, QR)                     |
-| `.`           | `AppApprovalRequested`, `AppApprovalApproved`, `AppApprovalDenied`                                         | `sessions.app_approval.{requested,approved,denied}.v1`; notifications pushes on the first    |
-| `./contracts` | `AppApprovalChallenges`, `AppApprovalChallenge`, `AppApprovalPurpose`, `AppApprovalStatus`                 | the challenge store and the bound devices                                                    |
-| `./react`     | `useAppApprovalWait`                                                                                       | the web's waiting screen: the number, the QR token, the poll                                 |
-| `./native`    | `useAppApprovalSheet`                                                                                      | the app's approve sheet: requester details, numbers, biometric check, approve, deny, scan    |
-| `./native`    | `ExpoSignInBrowserDriver`                                                                                  | Expo: the system authentication session and the app's link                                   |
-| `./desktop`   | `ElectronSignInBrowserDriver`                                                                              | Electron main: the system browser and a loopback redirect                                    |
-| `./react`     | `useSession`, `SessionValue`, `SignedInSession`                                                            | the session in a component                                                                   |
-| `./testing`   | `fakeSession`, `SessionFake`, `fakeIdentity`                                                               | a session in any status with spied actions; a resolver over named principals                 |
+| Entry         | Symbol                                                                                                       | Use                                                                                            |
+| ------------- | ------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------- |
+| `.`           | `IdentityConfig`                                                                                             | the configuration (key `identity`): flow per target, device client, scopes, idle rule          |
+| `.`           | `IdentityConfig$`                                                                                            | the shipped schema a member's generated override extends                                       |
+| `.`           | `AuthFlow`                                                                                                   | `bff`, `pkce`                                                                                  |
+| `.`           | `SessionStatus`                                                                                              | `loading`, `signed_in`, `signed_out`, `revoked`                                                |
+| `.`           | `SessionService`                                                                                             | the client's session: state, listeners, sign-in, sign-out, idle rule                           |
+| `.`           | `BffSessionStoreDriver`                                                                                      | the web's session: the BFF and its cookie                                                      |
+| `.`           | `PkceSessionStoreDriver`                                                                                     | the device's session: PKCE, tokens in the `secrets` storage area                               |
+| `.`           | `MemorySessionStoreDriver`                                                                                   | tests and previews                                                                             |
+| `.`           | `SessionClientSessionDriver`                                                                                 | `@stackra/clients`' `ClientSession`: the bearer token and `X-Scope-Path`                       |
+| `.`           | `SessionOfflineSessionDriver`                                                                                | `@stackra/query`'s `OfflineSession`: revoked and signed-in signals, the local sign-out         |
+| `.`           | `MemoryIdentityResolverDriver`                                                                               | the contracts' `IdentityResolver` over principals in memory                                    |
+| `.`           | `IDENTITY_CLAIMS`, `sessionUserOf`                                                                           | the Stackra claim names, and claims to a `SessionUser`                                         |
+| `.`           | `SignInCancelledError`, `SessionRevokedError`                                                                | refusals                                                                                       |
+| `./contracts` | `SessionStore`                                                                                               | the port of a flow (`load`, `signIn`, `signOut`, `accessToken`)                                |
+| `./contracts` | `SignInBrowser`                                                                                              | the platform step of PKCE: open the hosted sign-in, hand back the redirect                     |
+| `./contracts` | `SessionUser`                                                                                                | the signed-in user: id, address, name, permissions, memberships                                |
+| `.`           | `AssuranceLevel`, `assuranceOf`, `requireAssurance`, `stepUpSignIn`, `StepUpRequiredError`                   | step-up: the session's level and age, the refusal, the re-authentication                       |
+| `.`           | `signInProvidersOf`, `externalSignIn`                                                                        | a market's external sign-in providers (pack data) and the hint that sends sign-in there        |
+| `.`           | `StaffPinService`, `StorageStaffPinStoreDriver`, `MemoryStaffPinStoreDriver`                                 | staff PIN quick-switch and manager override on a shared device                                 |
+| `.`           | `ApiKeyKind`, `mintApiKey`, `parseApiKey`, `checkPublishableKey`, `isOriginAllowed`                          | secret and publishable keys; the origin-bound Storefront key                                   |
+| `.`           | `ApiKeyVerifierService`, `hashApiKey`, `MemoryApiKeyStoreDriver`                                             | the gateway's verification of a key by its hash, over the `ApiKeyStore` port                   |
+| `.`           | `ZitadelIdpAdminDriver`, `MemoryIdpAdminDriver`, `IdpAdminConfig`                                            | the `IdpAdmin` port: users, machine users, sessions, device flow, login policy, methods        |
+| `.`           | `MemoryAutomationPrincipalsDriver`                                                                           | the `AutomationPrincipals` port in memory: one principal per automation (ADR 0153)             |
+| `.`           | `GuardianActingService`, `MemoryGuardianshipDriver`                                                          | a guardian acting for a minor, after the relationship check                                    |
+| `.`           | `VerificationService`, `MemoryVerificationDriver`                                                            | KYC and KYB through the providers the market pack lists                                        |
+| `./contracts` | `Verification`, `VerificationKind`, `VerificationStatus`, `StaffPinStore`, `Guardianship`, `SignInOptions`   | the verification, PIN and guardianship ports; sign-in extras                                   |
+| `./contracts` | `IdpSecondFactor`                                                                                            | the second factors a login policy offers (`totp`, `u2f`, `otp_email`, `otp_sms`)               |
+| `./contracts` | `AutomationPrincipals`, `AutomationPrincipalInput`                                                           | mint and revoke the principal an automation runs as (ADR 0153 decision 2)                      |
+| `.`           | `SignInMethod`, `signInMethodsOf`                                                                            | the built-in sign-in methods a market offers (pack data), less the scope's switched-off ones   |
+| `.`           | `AppApprovalService`, `MemoryAppApprovalChallengesDriver`                                                    | sign-in and step-up by approving on the mobile app (number matching, QR)                       |
+| `.`           | `AppApprovalRequested`, `AppApprovalApproved`, `AppApprovalDenied`                                           | `sessions.app_approval.{requested,approved,denied}.v1`; notifications pushes on the first      |
+| `./contracts` | `AppApprovalChallenges`, `AppApprovalChallenge`, `AppApprovalPurpose`, `AppApprovalStatus`                   | the challenge store and the bound devices                                                      |
+| `.`           | `LoginDirectoryWriterService`, `LoginDirectoryConfig`, `MemoryLoginDirectoryStoreDriver`                     | this region's rows of the global login directory: `record` and `forget` identifiers (ADR 0451) |
+| `./contracts` | `LoginDirectoryStore`, `loginDirectoryPrefix`, `LoginIdentifierKind`, `LoginIdentifier`, `LoginDirectoryKey` | the directory store port and the one key format, shared with the edge Worker                   |
+| `./react`     | `useAppApprovalWait`                                                                                         | the web's waiting screen: the number, the QR token, the poll                                   |
+| `./native`    | `useAppApprovalSheet`                                                                                        | the app's approve sheet: requester details, numbers, biometric check, approve, deny, scan      |
+| `./native`    | `ExpoSignInBrowserDriver`                                                                                    | Expo: the system authentication session and the app's link                                     |
+| `./desktop`   | `ElectronSignInBrowserDriver`                                                                                | Electron main: the system browser and a loopback redirect                                      |
+| `./react`     | `useSession`, `SessionValue`, `SignedInSession`                                                              | the session in a component                                                                     |
+| `./testing`   | `fakeSession`, `SessionFake`, `fakeIdentity`                                                                 | a session in any status with spied actions; a resolver over named principals                   |
 
 ## Configuring a member
 
@@ -167,6 +169,18 @@ WebCrypto. No `SignInBrowser` driver ships here yet: the Expo and Electron ones 
   own KYB and KYC of a tenant) is pinned to platform Connections (`{ pin: "managed" }`) and an `own` candidate is
   skipped again here; `tenant` (a tenant checking its customers) takes the tenant's own Connection first, then the
   managed one. The result carries the `mode` that answered. Vendor Connections live in the OS integrations service.
+
+## The login directory (ADR 0451)
+
+Sign-in finds a person's region through a global directory that holds keyed hashes only (ADR 0353 decision 4).
+`loginDirectoryPrefix` is the one key format: the identifier normalised (email lower-cased, phone E.164), HMAC-SHA-256
+under the directory key, `dir:<key id>:<kind>:<hex>:`. A region writes `<prefix><region>`; the edge Worker
+(`@stackra/infra-cloudflare`'s `loginDirectoryHandler`) lists the prefix.
+
+The host's listeners on its own identity events call `LoginDirectoryWriterService`: `record` on an account created or
+an identifier verified, `forget` of the old and `record` of the new on a change, `forget` of all on delete. Configure
+`LoginDirectoryConfig` per region (`region`, `keyId`; the key is the `IDENTITY_LOGIN_DIRECTORY_KEY` secret) and bind a
+`LoginDirectoryStore` driver that sends `loginDirectoryKvRequest` calls. Tenant handles are tenancy's, not here.
 
 ## The claims
 

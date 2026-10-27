@@ -35,7 +35,13 @@ service uses. Member at `packages/infrastructure/infra-cloudflare`
 - Custom hostnames are created and deleted at run time by OS tenancy through `customHostnameRequest`, never declared in
   the stack; new names stay scope-named (`scopeId`, `scope`), never tenant-named (ADR 0323).
 - Regional services are an option per host; never default a market into one.
+- The login directory (ADR 0451) is its own Worker and namespace, never the edge Worker's. Its key format is
+  `@stackra/identity/contracts`' `loginDirectoryPrefix`, passed in by the host; never spell a `dir:` key here and never
+  import `@stackra/identity`. The handler never logs or echoes the identifier and never writes KV; regions write through
+  `loginDirectoryKvRequest`.
 
 ## PII
 
-None. The inputs are zone names, record contents, ids and a GitHub organisation name; no person's data and no secret.
+None stored. The inputs are zone names, record contents, ids and a GitHub organisation name. The one exception in
+transit: `loginDirectoryHandler` reads an email or phone from a request body, hands it to the host's hash and drops it;
+it is never logged, echoed or written.

@@ -27,6 +27,8 @@ Agents never run `pulumi` and never call Cloudflare. The programs run in the pri
 | `.`      | `signingKeySlots(keyIds)`                                                | the two active edge-signing keys as secret names; the newest signs |
 | `.`      | `customHostnameRequest(call)`, `customHostnameState(result)`             | the Cloudflare for SaaS calls tenancy makes, and their state       |
 | `.`      | `regionalHostnameRequest(call)`                                          | keep a scope's custom hostname in one region (data localisation)   |
+| `.`      | `loginDirectoryHandler(options)`                                         | the login directory Worker's handler: an identifier to its regions |
+| `.`      | `loginDirectoryKvRequest(call)`                                          | a region's KV bulk put or delete of its directory rows             |
 | `.`      | `CloudflareHealthIndicatorDriver`                                        | the health driver: an edge host answers                            |
 | `.`      | `ZonePlan`, `WafMode`, `BotMode`, `OriginLock`, `CustomHostnameState`    | enums                                                              |
 | `.`      | `CloudflareConfigInvalidError`                                           | every input failure, with each path                                |
@@ -35,6 +37,7 @@ Agents never run `pulumi` and never call Cloudflare. The programs run in the pri
 | `./node` | `cloudflareCoreStack({ root, stack, ports })`                            | the whole Cloudflare stack in one call; returns every resource     |
 | `./node` | `cloudflareZone`, `zoneEdge`, `devTunnel`, `accessGate`, `r2Bucket`      | the parts, for a stack that composes its own                       |
 | `./node` | `edgeWorker`                                                             | the OS edge Worker's KV, routes, rollout and locked origins        |
+| `./node` | `loginDirectoryWorker`                                                   | the login directory Worker's global KV namespace and routes        |
 | `./node` | `resolveRef(value)`                                                      | a runway value, with `ref:<key>.<path>` read from the stack config |
 
 ## The two inputs
@@ -195,6 +198,33 @@ zone's `regional` stack config (`api-ksa.figentra.com: <region key>`), a scope's
 `regionalHostnameRequest`. Whether a market needs it and which region key is the market pack's launch-gate answer from
 counsel and infrastructure; nothing here decides it.
 
+## The login directory Worker (ADR 0451)
+
+The global login directory of ADR 0353 decision 4 is a Worker of its own, not the OS edge Worker. A sign-in page posts
+`{ "kind": "email", "value": "…" }` to the directory route; `loginDirectoryHandler` hashes it through the `prefixOf` the
+host passes (`@stackra/identity/contracts`' `loginDirectoryPrefix` with the Worker's key), lists the KV keys under the
+prefix and answers `{ "regions": [...] }` in the deployment's order, `no-store`. Any method but POST is 405; a body that
+is not a small JSON identifier, or does not normalise, is 400.
+
+```ts
+import { loginDirectoryPrefix } from "@stackra/identity/contracts";
+import { loginDirectoryHandler } from "@stackra/infra-cloudflare";
+
+export default {
+  fetch: (request: Request, env: Env) =>
+    loginDirectoryHandler({
+      kv: env.DIRECTORY,
+      regions: env.REGIONS.split(","),
+      prefixOf: (id) => loginDirectoryPrefix(id, { id: env.KEY_ID, secret: env.DIRECTORY_KEY }),
+    })(request),
+};
+```
+
+Each region keeps its own rows (`dir:<key id>:<kind>:<hash>:<region>`) with `loginDirectoryKvRequest`: `put` is a bulk
+write, `remove` a bulk delete, sent by the region's `LoginDirectoryStore` driver with its own KV-scoped token.
+`loginDirectoryWorker` declares the namespace (global, no jurisdiction) and the routes, such as
+`login.<product-domain>/directory`.
+
 ## Storefront waiting room and per-shopper limits
 
 A storefront's drops and campaigns are tenant settings the storefront exports for the edge stack (ADR 0402); nothing is
@@ -246,6 +276,9 @@ These touch accounts, purchases or secrets, so the owner does them; nothing here
 - Per-hostname authenticated origin pulls with an uploaded client certificate: it would put a private key through the
   stack; the zone-level Cloudflare certificate is used.
 - The KSA TLS answer (ADR 0437 decision 12): the option is built, the decision is counsel's and infrastructure's.
+- The login directory Worker member, its region list and key bindings, and the regions' KV-scoped API tokens are the
+  OS's and the owner's; `loginDirectoryWorker` is not part of `cloudflareCoreStack` yet (a stack composes it).
+- Tenant handles in the directory (OS-30) are tenancy's; hostnames come from the edge KV `host:` rows.
 
 - The Turborepo cache Worker and the preview router Worker are Worker members deployed by wrangler from CI (ADR 0289
   decisions 1, 2 and 7); this stack holds their bucket and domains only.

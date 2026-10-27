@@ -5,7 +5,8 @@
  *          `OfflineSession` and memory `IdentityResolver` drivers, step-up, external sign-in, staff PINs, API keys and
  *          their verification by hash, automation principals in memory, the identity provider admin drivers (ZITADEL, memory) with their configuration,
  *          guardians acting for minors, KYC and KYB verification, the built-in sign-in methods, app approval (number
- *          matching and QR, sign-in and step-up) with its memory driver and events, and the refusals) until `stackra gen` writes the
+ *          matching and QR, sign-in and step-up) with its memory driver and events, the login directory writer with its
+ *          configuration and memory driver, and the refusals) until `stackra gen` writes the
  *          entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. `SessionStore`, `SignInBrowser` and `SessionUser` are exported
  *           from `./contracts` only (ADR 0294 decision 15). The shipped schema is re-exported under its generated name
@@ -16,9 +17,11 @@
  */
 export { IdentityConfig } from "#config/identity.config";
 export { IdpAdminConfig } from "#config/idp-admin.config";
+export { LoginDirectoryConfig } from "#config/login-directory.config";
 export { IDENTITY_CLAIMS } from "#core/constants/identity-claims.constant";
 export { IDENTITY_CONFIG_SCHEMA as IdentityConfig$ } from "#core/constants/identity-config-schema.constant";
 export { IDP_ADMIN_CONFIG_SCHEMA as IdpAdminConfig$ } from "#core/constants/idp-admin-config-schema.constant";
+export { LOGIN_DIRECTORY_CONFIG_SCHEMA as LoginDirectoryConfig$ } from "#core/constants/login-directory-config-schema.constant";
 export { BffSessionStoreDriver } from "#core/drivers/bff-session-store.driver";
 export { MemoryApiKeyStoreDriver } from "#core/drivers/memory-api-key-store.driver";
 export { MemoryAppApprovalChallengesDriver } from "#core/drivers/memory-app-approval-challenges.driver";
@@ -26,6 +29,7 @@ export { MemoryAutomationPrincipalsDriver } from "#core/drivers/memory-automatio
 export { MemoryGuardianshipDriver } from "#core/drivers/memory-guardianship.driver";
 export { MemoryIdpAdminDriver } from "#core/drivers/memory-idp-admin.driver";
 export { MemoryIdentityResolverDriver } from "#core/drivers/memory-identity-resolver.driver";
+export { MemoryLoginDirectoryStoreDriver } from "#core/drivers/memory-login-directory-store.driver";
 export { MemorySessionStoreDriver } from "#core/drivers/memory-session-store.driver";
 export { MemoryStaffPinStoreDriver } from "#core/drivers/memory-staff-pin-store.driver";
 export { MemoryVerificationDriver } from "#core/drivers/memory-verification.driver";
@@ -68,9 +72,11 @@ export { signInProvidersOf } from "#core/functions/sign-in-providers-of.function
 export { stepUpSignIn } from "#core/functions/step-up-sign-in.function";
 export { IdentityOptions } from "#core/schemas/identity-options.schema";
 export { IdpAdminOptions } from "#core/schemas/idp-admin-options.schema";
+export { LoginDirectoryOptions } from "#core/schemas/login-directory-options.schema";
 export { ApiKeyVerifierService } from "#core/services/api-key-verifier.service";
 export { AppApprovalService } from "#core/services/app-approval.service";
 export { GuardianActingService } from "#core/services/guardian-acting.service";
+export { LoginDirectoryWriterService } from "#core/services/login-directory-writer.service";
 export { SessionService } from "#core/services/session.service";
 export { StaffPinService } from "#core/services/staff-pin.service";
 export { VerificationService } from "#core/services/verification.service";

@@ -68,6 +68,9 @@ model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./desktop`, `./n
   never in an event or a log. A grant is data; the host's BFF opens or raises the session at the provider.
 - A guardian acting for a minor, a manager override and a step-up grant nothing themselves: the IAM decision point still
   decides the action.
+- The login directory (ADR 0451): `loginDirectoryPrefix` in `./contracts` is the only code that spells a `dir:` key;
+  the writer writes only keys ending in its own region, never the identifier in clear, never a read. It declares no
+  event: the host's listeners call it. Never log an identifier or the `IDENTITY_LOGIN_DIRECTORY_KEY` secret.
 - No parameter properties and no `#private` fields: apps typecheck this source under `erasableSyntaxOnly`.
 
 ## Rules that fail the build
@@ -84,3 +87,5 @@ model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./desktop`, `./n
 | Picture URL       | `SessionUser.avatarUrl`                | shown only                                                               |
 | Tokens            | the `secrets` storage area (PKCE only) | kept where the platform protects secrets; dropped on sign-out and revoke |
 | Principal address | `MemoryIdentityResolverDriver`         | resolved at the moment of use, never stored by a caller (ADR 0134)       |
+| Email, phone      | `loginDirectoryPrefix`, the writer     | HMAC-hashed before it leaves the region; never stored, logged or sent    |
+| Directory key     | `LoginDirectoryConfig.secret`          | a secret by name (`IDENTITY_LOGIN_DIRECTORY_KEY`); never logged          |

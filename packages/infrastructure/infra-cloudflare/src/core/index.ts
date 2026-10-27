@@ -4,13 +4,14 @@
  *          (STA-339): the isomorphic half of the Cloudflare core stack (the checks of the root runway's `edge` and of
  *          the stack config and of a storefront's campaign settings, the tunnel ingress, rate-limit and per-shopper
  *          limit planners, the dev-port reader), the edge Worker's KV keys and signing-key slots, the Cloudflare for
- *          SaaS custom-hostname and regional-hostname calls the OS tenancy service makes, their enums, error and types.
+ *          SaaS custom-hostname and regional-hostname calls the OS tenancy service makes, the login directory Worker's
+ *          handler and its KV bulk calls, their enums, error and types.
  *          Also the package's `HealthIndicator` driver (`CloudflareHealthIndicatorDriver`).
  * Boundary: names each re-export and declares nothing. The zod schemas and the managed ruleset ids stay internal; the
  *           Pulumi programs are `./node`'s, because Pulumi runs under Node only.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision; ADR 0127 (the infrastructure
- *                     category); ADR 0171 (decision 2); ADR 0437; ADR 0276.
+ *                     category); ADR 0171 (decision 2); ADR 0437; ADR 0276; ADR 0451.
  */
 export { CloudflareHealthIndicatorDriver } from "#core/drivers/cloudflare-health-indicator.driver";
 export { BotMode } from "#core/enums/bot-mode.enum";
@@ -23,6 +24,8 @@ export { customHostnameRequest } from "#core/functions/custom-hostname-request.f
 export { customHostnameState } from "#core/functions/custom-hostname-state.function";
 export { devPortsOf } from "#core/functions/dev-ports-of.function";
 export { edgeKvKey } from "#core/functions/edge-kv-key.function";
+export { loginDirectoryHandler } from "#core/functions/login-directory-handler.function";
+export { loginDirectoryKvRequest } from "#core/functions/login-directory-kv-request.function";
 export { parseCloudflareStack } from "#core/functions/parse-cloudflare-stack.function";
 export { parseEdge } from "#core/functions/parse-edge.function";
 export { parseStorefront } from "#core/functions/parse-storefront.function";
@@ -36,6 +39,8 @@ export type { CloudflareStack } from "#core/types/cloudflare-stack.type";
 export type { EdgeKvKeyParts } from "#core/types/edge-kv-key-parts.type";
 export type { EdgePolicy } from "#core/types/edge-policy.type";
 export type { EdgeWorker } from "#core/types/edge-worker.type";
+export type { LoginDirectoryKv } from "#core/types/login-directory-kv.type";
+export type { LoginDirectoryOptions } from "#core/types/login-directory-options.type";
 export type { ShopperLimitRule } from "#core/types/shopper-limit-rule.type";
 export type { SigningKeySlot } from "#core/types/signing-key-slot.type";
 export type { StorefrontPolicy } from "#core/types/storefront-policy.type";

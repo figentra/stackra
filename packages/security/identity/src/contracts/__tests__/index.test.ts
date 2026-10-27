@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: the consumer contract of the `./contracts` entry: the gen wiring imports `SessionStore` from
- *          `@stackra/identity/contracts`; it and `SignInBrowser` are the only values exported, and `SessionUser`
+ *          `@stackra/identity/contracts`; exactly the listed values are exported (the login directory's key format among them), and `SessionUser`
  *          resolves to the signed-in user with the tenancy package's memberships.
  * Boundary: test only; imports the stand-in barrel through its `#contracts` alias.
  * Runtime: node (vitest)
@@ -26,6 +26,8 @@ describe("@stackra/identity/contracts", () => {
       "Guardianship",
       "IdpAdmin",
       "IdpSecondFactor",
+      "LoginDirectoryStore",
+      "LoginIdentifierKind",
       "SessionStore",
       "SignInBrowser",
       "StaffPinStore",
@@ -33,6 +35,7 @@ describe("@stackra/identity/contracts", () => {
       "VerificationKind",
       "VerificationStatus",
       "VerificationUse",
+      "loginDirectoryPrefix",
     ]);
   });
 
