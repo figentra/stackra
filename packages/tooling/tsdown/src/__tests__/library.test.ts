@@ -1,6 +1,11 @@
 /**
- * Proves `library()` returns the agreed shape (ESM, dts, sourcemap, clean, treeshake) and that the decorators
- * flag installs the inputOptions hook which adds the legacy transform and swallows only the known conflict log.
+ * Stackra file contract:
+ * Purpose: proves `library()` returns the agreed shape (ESM, dts, sourcemap, clean, treeshake) and that the decorators
+ *          flag installs the inputOptions hook which adds the legacy transform and swallows only the known conflict
+ *          log.
+ * Boundary: test only; imports the subject by relative path (a package cannot depend on itself).
+ * Runtime: node (vitest)
+ * Governing contract: ADR 0022 (test placement); ADR 0025 (build output); ADR 0005 (legacy decorators).
  */
 import { describe, expect, it, vi } from "vitest";
 import { library } from "../index.ts";
