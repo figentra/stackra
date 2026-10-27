@@ -9,7 +9,7 @@
  */
 import type { Model } from "@stackra/model";
 
-import type { StateMachineBase } from "#core/bases/state-machine.base";
+import type { StateMachineBase } from "#core/bases/state-machine-base.base";
 
 /** The members of `T` beyond the machine base. */
 type Own<T, M extends Model> = Exclude<keyof T, keyof StateMachineBase<M>>;

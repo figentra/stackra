@@ -8,7 +8,7 @@
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision.
  */
 export { StateMachine } from "#core/bases/state-machine.base";
-export type { StateMachineBase } from "#core/bases/state-machine.base";
+export type { StateMachineBase } from "#core/bases/state-machine-base.base";
 export { Transition } from "#core/decorators/transition.decorator";
 export { TransitionNotAllowedError } from "#core/errors/transition-not-allowed.error";
 export { StateTransitioned } from "#core/events/state-transitioned.event";

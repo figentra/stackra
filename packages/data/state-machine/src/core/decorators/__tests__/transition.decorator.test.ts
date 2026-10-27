@@ -23,12 +23,18 @@ class Product extends Model {
 }
 
 class ProductStateMachine extends StateMachine<Product>({ field: "status" }) {
-  @Transition({ from: ProductStatus.Draft, to: ProductStatus.Active })
+  @Transition({
+    from: ProductStatus.Draft,
+    to: ProductStatus.Active,
+  })
   activate(_product: Product): void {
     // the decorator writes the status; nothing else changes
   }
 
-  @Transition({ from: ProductStatus.Active, to: ProductStatus.Archived })
+  @Transition({
+    from: ProductStatus.Active,
+    to: ProductStatus.Archived,
+  })
   archive(_product: Product): void {
     // the decorator writes the status; nothing else changes
   }
@@ -64,14 +70,20 @@ describe("Transition", () => {
   it("refuses a field and a class that is not a state machine", () => {
     expect(() => {
       class OnField extends StateMachine<Product>({ field: "status" }) {
-        @Transition({ from: ProductStatus.Draft, to: ProductStatus.Active })
+        @Transition({
+          from: ProductStatus.Draft,
+          to: ProductStatus.Active,
+        })
         activate = 1;
       }
       return OnField;
     }).toThrow(TypeError);
     expect(() => {
       class Plain {
-        @Transition({ from: ProductStatus.Draft, to: ProductStatus.Active })
+        @Transition({
+          from: ProductStatus.Draft,
+          to: ProductStatus.Active,
+        })
         activate(): void {
           // never reached: the decorator throws at class definition
         }

@@ -51,7 +51,10 @@ class Order extends Model.with(HasPublicId("ord")) {
 }
 
 class OrderStateMachine extends StateMachine<Order>({ field: "status" }) {
-  @Transition({ from: OrderStatus.PendingPayment, to: OrderStatus.Paid })
+  @Transition({
+    from: OrderStatus.PendingPayment,
+    to: OrderStatus.Paid,
+  })
   markPaid(order: Order, paymentId: string, capturedAt: Date): string {
     order.paymentId = paymentId;
     order.paidAt = capturedAt;
@@ -59,37 +62,58 @@ class OrderStateMachine extends StateMachine<Order>({ field: "status" }) {
     return paymentId;
   }
 
-  @Transition({ from: OrderStatus.PendingPayment, to: OrderStatus.Cancelled })
+  @Transition({
+    from: OrderStatus.PendingPayment,
+    to: OrderStatus.Cancelled,
+  })
   cancel(order: Order, note: string): void {
     order.note = note;
   }
 
-  @Transition({ from: [OrderStatus.PendingPayment, OrderStatus.Paid], to: OrderStatus.Expired })
+  @Transition({
+    from: [OrderStatus.PendingPayment, OrderStatus.Paid],
+    to: OrderStatus.Expired,
+  })
   expire(order: Order): void {
     order.note = "expired";
   }
 
-  @Transition({ from: OrderStatus.PendingPayment, to: OrderStatus.Paid })
+  @Transition({
+    from: OrderStatus.PendingPayment,
+    to: OrderStatus.Paid,
+  })
   decline(_order: Order): void {
     throw new RangeError("declined");
   }
 
-  @Transition({ from: OrderStatus.PendingPayment, to: OrderStatus.Paid })
+  @Transition({
+    from: OrderStatus.PendingPayment,
+    to: OrderStatus.Paid,
+  })
   async capture(order: Order, paymentId: string): Promise<string> {
     await Promise.resolve();
     order.paymentId = paymentId;
     return paymentId;
   }
 
-  @Transition({ from: OrderStatus.PendingPayment, to: OrderStatus.Paid })
+  @Transition({
+    from: OrderStatus.PendingPayment,
+    to: OrderStatus.Paid,
+  })
   async captureDeclined(_order: Order): Promise<void> {
     await Promise.resolve();
     throw new RangeError("declined");
   }
 }
 
-class SilentOrderStateMachine extends StateMachine<Order>({ field: "status", history: false }) {
-  @Transition({ from: OrderStatus.PendingPayment, to: OrderStatus.Cancelled })
+class SilentOrderStateMachine extends StateMachine<Order>({
+  field: "status",
+  history: false,
+}) {
+  @Transition({
+    from: OrderStatus.PendingPayment,
+    to: OrderStatus.Cancelled,
+  })
   cancel(order: Order): void {
     order.note = "cancelled";
   }
