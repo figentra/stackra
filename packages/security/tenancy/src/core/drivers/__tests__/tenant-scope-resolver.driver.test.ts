@@ -52,7 +52,7 @@ const requestOf = (tenantId?: PublicId) => ({
   actor: {
     kind: ActorKind.Job,
     id: "job_01j9z3k4m5n6p7q8r9s0t1v2w3" as const,
-    ...(tenantId === undefined ? {} : { tenantId }),
+    ...(tenantId === undefined ? {} : { scopeId: tenantId }),
   },
 });
 

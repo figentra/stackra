@@ -11,13 +11,13 @@
  * Governing contract: ADR 0343 (decisions 1 to 7).
  */
 import { Service } from "@stackra/container";
-import { Clock, type PublicId } from "@stackra/contracts";
+import type { Clock, PublicId } from "@stackra/contracts";
 
 import { ShareStatus } from "#core/enums/share-status.enum";
 import { ShareTransitionInvalidError } from "#core/errors/share-transition-invalid.error";
 import { TransferRefusedError } from "#core/errors/transfer-refused.error";
-import { TenantShares } from "#core/ports/tenant-shares.port";
-import { TransferCheck } from "#core/ports/transfer-check.port";
+import type { TenantShares } from "#core/ports/tenant-shares.port";
+import type { TransferCheck } from "#core/ports/transfer-check.port";
 import type { ShareProposal } from "#core/types/share-proposal.type";
 import type { ShareRelease } from "#core/types/share-release.type";
 import type { SharedRecordRef } from "#core/types/shared-record-ref.type";

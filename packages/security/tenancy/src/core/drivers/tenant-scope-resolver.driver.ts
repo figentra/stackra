@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `TenantScopeResolverDriver`, the tenancy step of the scope resolver chain: the scope node of the tenant the
- *          verified caller acts in (`actor.tenantId`), asked after the header and the claim and before the root.
+ *          verified caller acts in (`actor.scopeId`), asked after the header and the claim and before the root.
  * Boundary: a `ScopeResolver` driver. The tenant id comes from the verified credential, never from input, so it is not
  *           checked against grants; an id that is not a tenant id, a node the tree does not show, or a node at another
  *           level passes the request on (`undefined`). A host places it in the chain with its override of
@@ -12,8 +12,8 @@
  */
 import { Driver } from "@stackra/container";
 import type { ScopeRef } from "@stackra/contracts";
-import { ScopeResolver, ScopeTree } from "@stackra/scope/contracts";
-import type { ScopeRequest } from "@stackra/scope/contracts";
+import { ScopeResolver } from "@stackra/scope/contracts";
+import type { ScopeRequest, ScopeTree } from "@stackra/scope/contracts";
 
 import { TenancyScopes } from "#core/enums/tenancy-scopes.enum";
 import { isTenantId } from "#core/functions/is-tenant-id.function";
@@ -40,7 +40,9 @@ export class TenantScopeResolverDriver extends Driver(ScopeResolver) {
   /** Where the tenant's node is looked up. */
   private readonly tree: ScopeTree;
 
-  /** @param tree - the scope tree. */
+  /**
+   * @param tree - the scope tree.
+   */
   constructor(tree: ScopeTree) {
     super();
     this.tree = tree;
@@ -48,9 +50,9 @@ export class TenantScopeResolverDriver extends Driver(ScopeResolver) {
 
   /** The caller's tenant node, or `undefined` when the caller acts in no tenant the tree shows. */
   async resolve(request: ScopeRequest): Promise<ScopeRef | undefined> {
-    const { tenantId } = request.actor;
-    if (tenantId === undefined || !isTenantId(tenantId)) return undefined;
-    const node = await this.tree.node(tenantId);
+    const { scopeId } = request.actor;
+    if (scopeId === undefined || !isTenantId(scopeId)) return undefined;
+    const node = await this.tree.node(scopeId);
     return node?.level === TenancyScopes.Tenant ? node : undefined;
   }
 }

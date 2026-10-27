@@ -10,11 +10,11 @@
  * Governing contract: ADR 0280 (decisions 1 to 3 and 5); ADR 0210 (decision 8).
  */
 import { Service } from "@stackra/container";
-import { Clock, type PublicId } from "@stackra/contracts";
+import type { Clock, PublicId } from "@stackra/contracts";
 
 import { TenantEnvironment } from "#core/enums/tenant-environment.enum";
 import { SandboxNotFoundError } from "#core/errors/sandbox-not-found.error";
-import { SandboxTenants } from "#core/ports/sandbox-tenants.port";
+import type { SandboxTenants } from "#core/ports/sandbox-tenants.port";
 import type { SandboxTenant } from "#core/types/sandbox-tenant.type";
 
 /**

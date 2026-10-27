@@ -78,7 +78,7 @@ await database.withScope(scope, () =>
 );
 ```
 
-`withTenant` opens a transaction (a savepoint inside one) and sets `app.tenant_id` to `actor.tenantId`, or `''` for a
+`withTenant` opens a transaction (a savepoint inside one) and sets `app.tenant_id` to `actor.scopeId`, or `''` for a
 platform call. A model with `BelongsToTenant` takes that tenant when a row is created; outside a tenant call the field
 stays unset and Postgres refuses the insert. A model with the trait lists `tenantId` in its `[OptionalProps]`, so
 `CrudService.insert` may leave it out.
@@ -106,7 +106,7 @@ other-purpose token; the caller then runs `withTenant` with that tenant on the a
 ```ts
 const tenantId = await tokens.resolve(presented, "calendar.feed");
 if (tenantId === undefined) throw new NotFoundError();
-await tenancy.withTenant({ ...anonymous, tenantId }, () => feeds.render(presented));
+await tenancy.withTenant({ ...anonymous, scopeId: tenantId }, () => feeds.render(presented));
 ```
 
 ## Billing contacts
@@ -135,7 +135,7 @@ An organisation keeps the tenant level and takes its own alias (`app::scope.orga
 
 ## The resolver step
 
-`TenantScopeResolverDriver` answers the node of `actor.tenantId` when that node is at the tenant level. A host places it
+`TenantScopeResolverDriver` answers the node of `actor.scopeId` when that node is at the tenant level. A host places it
 after the header and the claim and before the root (ADR 0327 d7) by overriding the scope package's chain:
 
 ```ts

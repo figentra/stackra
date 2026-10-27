@@ -14,7 +14,7 @@
  *                     (memberships); ADR 0294 (decisions 16 and 17).
  */
 import { Service } from "@stackra/container";
-import { ActiveScopeService } from "@stackra/scope";
+import type { ActiveScopeService } from "@stackra/scope";
 
 import { TenantMembershipMissingError } from "#core/errors/tenant-membership-missing.error";
 import type { TenantMembership } from "#core/types/tenant-membership.type";
@@ -30,24 +30,6 @@ const NONE: readonly TenantMembership[] = Object.freeze([]);
  * await switcher.switchTo(remembered ?? switcher.memberships()[0].tenantId);
  */
 export class TenantSwitcher extends Service {
-  /** The active scope the switch sets. */
-  private readonly scope: ActiveScopeService;
-
-  /** The memberships, frozen. */
-  private list: readonly TenantMembership[] = NONE;
-
-  /** The active membership, or `null`. */
-  private active: TenantMembership | null = null;
-
-  /** Who to call after a change. */
-  private readonly listeners = new Set<() => void>();
-
-  /** @param scope - the client's active scope, which follows the active tenant. */
-  constructor(scope: ActiveScopeService) {
-    super();
-    this.scope = scope;
-  }
-
   /** The active membership, or `null` before one is chosen or for a user with none. */
   readonly current = (): TenantMembership | null => this.active;
 
@@ -87,6 +69,26 @@ export class TenantSwitcher extends Service {
     if (membership === undefined) throw TenantMembershipMissingError.create();
     this.activate(membership);
   };
+
+  /** The active scope the switch sets. */
+  private readonly scope: ActiveScopeService;
+
+  /** The memberships, frozen. */
+  private list: readonly TenantMembership[] = NONE;
+
+  /** The active membership, or `null`. */
+  private active: TenantMembership | null = null;
+
+  /** Who to call after a change. */
+  private readonly listeners = new Set<() => void>();
+
+  /**
+   * @param scope - the client's active scope, which follows the active tenant.
+   */
+  constructor(scope: ActiveScopeService) {
+    super();
+    this.scope = scope;
+  }
 
   /** Sets the active membership and scope, then tells every subscriber. */
   private activate(membership: TenantMembership | null): void {

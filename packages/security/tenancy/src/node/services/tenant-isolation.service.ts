@@ -15,7 +15,7 @@
  */
 import { Service } from "@stackra/container";
 import type { Actor } from "@stackra/contracts";
-import { Database } from "@stackra/database";
+import type { Database } from "@stackra/database";
 
 import { isTenantId } from "#core/index";
 import { ACTIVE_TENANT } from "#node/constants/active-tenant.constant";
@@ -33,20 +33,22 @@ export class TenantIsolationService extends Service {
   /** The service's database. */
   private readonly database: Database;
 
-  /** @param database - the connected database. */
+  /**
+   * @param database - the connected database.
+   */
   constructor(database: Database) {
     super();
     this.database = database;
   }
 
   /**
-   * Runs `work` in a transaction (a savepoint inside one) with `app.tenant_id` set to `actor.tenantId`, `''` when the
+   * Runs `work` in a transaction (a savepoint inside one) with `app.tenant_id` set to `actor.scopeId`, `''` when the
    * actor acts in no tenant.
    *
-   * @throws TypeError when `actor.tenantId` is set but is not a tenant id (`scp_…`), a wiring error.
+   * @throws TypeError when `actor.scopeId` is set but is not a tenant id (`scp_…`), a wiring error.
    */
   withTenant<T>(actor: Actor, work: () => Promise<T>): Promise<T> {
-    const { tenantId } = actor;
+    const { scopeId: tenantId } = actor;
     if (tenantId !== undefined && !isTenantId(tenantId))
       throw new TypeError(`"${tenantId}" is not a tenant id: the public id of a scope node`);
     return this.database.transaction(async () => {

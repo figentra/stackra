@@ -4,7 +4,7 @@
  *          purpose, resolve a presented token to its tenant (for that purpose only), and revoke one.
  * Boundary: over `TenantTokens`. A token is `ttk_` and 64 hex characters of 32 random bytes; only its SHA-256 is
  *           stored, so a leaked table opens nothing. The resolved tenant is the one the caller then hands to
- *           `withTenant` as the anonymous actor's `tenantId`, so the tenant still never comes from a body or a header;
+ *           `withTenant` as the anonymous actor's `scopeId`, so the tenant still never comes from a body or a header;
  *           the record the token opens (a feed, a link) is the caller's own, read inside that tenant. A token of
  *           another purpose, a malformed or an unknown one resolves to `undefined` alike, so a probe learns nothing.
  * Runtime: isomorphic
@@ -15,7 +15,7 @@ import { Service } from "@stackra/container";
 import type { PublicId } from "@stackra/contracts";
 
 import { isTenantId } from "#core/functions/is-tenant-id.function";
-import { TenantTokens } from "#core/ports/tenant-tokens.port";
+import type { TenantTokens } from "#core/ports/tenant-tokens.port";
 
 /** A token: the prefix and 64 lowercase hex characters. */
 const TOKEN = /^ttk_[0-9a-f]{64}$/;
@@ -35,13 +35,15 @@ async function hashOf(token: string): Promise<string> {
  *
  * @example
  * const token = await tokens.issue(tenantId, "calendar.feed");
- * const tenantId = await tokens.resolve(presented, "calendar.feed"); // then withTenant({ ...anonymous, tenantId }, …)
+ * const tenantId = await tokens.resolve(presented, "calendar.feed"); // then withTenant({ ...anonymous, scopeId: tenantId }, …)
  */
 export class TenantTokenService extends Service {
   /** The store. */
   private readonly store: TenantTokens;
 
-  /** @param store - where token hashes are kept. */
+  /**
+   * @param store - where token hashes are kept.
+   */
   constructor(store: TenantTokens) {
     super();
     this.store = store;

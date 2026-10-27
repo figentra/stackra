@@ -36,9 +36,9 @@ describe("tenancy testing helpers", () => {
     expect(tenantActor(tenantId)).toMatchObject({
       kind: ActorKind.User,
       realm: Realm.Staff,
-      tenantId,
+      scopeId: tenantId,
     });
-    expect(isTenantId(tenantActor().tenantId ?? "")).toBe(true);
+    expect(isTenantId(tenantActor().scopeId ?? "")).toBe(true);
   });
 
   it("runAsTenant fills the tenant traits without a database", () => {

@@ -25,10 +25,10 @@ const TENANT = "scp_01j9z3k4m5n6p7q8r9s0t1v2wa";
 class Ticket extends Model.with(HasPublicId("tkt"), BelongsToTenant) {}
 
 /** A job acting in `tenantId`, or in none. */
-const jobIn = (tenantId?: Actor["tenantId"]): Actor => ({
+const jobIn = (tenantId?: Actor["scopeId"]): Actor => ({
   kind: ActorKind.Job,
   id: "job_01j9z3k4m5n6p7q8r9s0t1v2w3",
-  ...(tenantId === undefined ? {} : { tenantId }),
+  ...(tenantId === undefined ? {} : { scopeId: tenantId }),
 });
 
 /** A recording database whose transaction runs the work. */
