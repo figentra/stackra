@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the in-memory `MediaDisk` for tests and `disk: "memory"`: the same sign, stat, move and URL contract as the
+ * Purpose: the in-memory `MediaDisk` for tests and `disk: "memory"`: the same sign, stat, read, move and URL contract as the
  *          S3 disk, held in `Map`s for the life of the container, plus `receive`, the store's side of a client's
  *          signed `PUT`, so a test uploads exactly as a browser would.
  * Boundary: the memory driver every capability ships first (ADR 0266); isomorphic, so it ships from `.`. `receive`
@@ -120,6 +120,13 @@ export class MemoryMediaDiskDriver extends Driver(MediaDisk) {
       contentType: object.contentType,
       metadata: { ...object.metadata },
     };
+  }
+
+  /** A copy of the bytes at `path`, so a caller that changes it does not change the stored object. */
+  async read(path: string): Promise<Uint8Array> {
+    const object = this.objects.get(path);
+    if (object === undefined) throw new FileNotFoundError(path);
+    return object.bytes.slice();
   }
 
   /** Moves the object at `from` to `to`, as S3's copy and delete do. */

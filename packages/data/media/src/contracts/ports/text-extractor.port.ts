@@ -3,8 +3,9 @@
  * Purpose: the `TextExtractor` port: OCR and text extraction from an uploaded document or image, Arabic included, for
  *          search, the agent's context and data entry.
  * Boundary: an abstract class that is its own token, keyed `media.TextExtractor`. `languages` is the list of BCP 47
- *           hints the caller takes from the tenant's language settings; a driver that cannot read one of them refuses
- *           rather than returning garbled text. Which OCR provider runs is a driver choice in config, never code.
+ *           hints the caller takes from the scope's language settings; a driver that cannot read one of them refuses
+ *           rather than returning garbled text. Which OCR provider runs is a driver choice in config, never code;
+ *           `document` (`./node`) reads the text layer of DOCX and PDF in process, so it runs in the caller's region.
  * Runtime: isomorphic
  * Governing contract: ADR 0222; ADR 0192; ADR 0294 (decisions 4 and 16); OS-150, OS-154.
  */

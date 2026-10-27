@@ -16,6 +16,7 @@ export { MediaDisk } from "#contracts/ports/media-disk.port";
 export { TextExtractor } from "#contracts/ports/text-extractor.port";
 export type { ContentCredential } from "#contracts/types/content-credential.type";
 export type { ExtractedText } from "#contracts/types/extracted-text.type";
+export type { ImageLayer } from "#contracts/types/image-layer.type";
 export type { ImageTransform } from "#contracts/types/image-transform.type";
 export type { MediaObject } from "#contracts/types/media-object.type";
 export type { ScanResult } from "#contracts/types/scan-result.type";

@@ -1,6 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: the consumer contract of the `./contracts` entry: it exports the `MediaDisk` port (the template's wiring
+ * Purpose: the consumer contract of the `./contracts` entry (the `MediaDisk` port with `read`, `ImageLayer` on
+ *          `ImageTransform`): it exports the `MediaDisk` port (the template's wiring
  *          names it as a driver port, keyed `media.MediaDisk`) and nothing else at run time, and its types resolve.
  * Boundary: test only; imports the stand-in barrel through its `#contracts` alias.
  * Runtime: node (vitest)
@@ -10,7 +11,14 @@ import { Port } from "@stackra/contracts";
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
 import * as contracts from "#contracts/index";
-import type { MediaDisk, MediaObject, SignedUpload, UploadRequest } from "#contracts/index";
+import type {
+  ImageLayer,
+  ImageTransform,
+  MediaDisk,
+  MediaObject,
+  SignedUpload,
+  UploadRequest,
+} from "#contracts/index";
 
 describe("@stackra/media/contracts", () => {
   it("exports exactly its values", () => {
@@ -29,6 +37,8 @@ describe("@stackra/media/contracts", () => {
     expectTypeOf<MediaDisk["~key"]>().toEqualTypeOf<"media.MediaDisk">();
     expectTypeOf<SignedUpload["method"]>().toEqualTypeOf<"PUT">();
     expectTypeOf<MediaObject["contentType"]>().toEqualTypeOf<string | null>();
+    expectTypeOf<ImageTransform["layers"]>().toEqualTypeOf<readonly ImageLayer[] | undefined>();
+    expectTypeOf<MediaDisk["read"]>().toEqualTypeOf<(path: string) => Promise<Uint8Array>>();
     expectTypeOf<UploadRequest["metadata"]>().toEqualTypeOf<Readonly<Record<string, string>>>();
   });
 });

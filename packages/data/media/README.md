@@ -3,20 +3,23 @@
 <!--
 Stackra file contract:
 Purpose: the reader guide of @stackra/media: buckets, the upload flow, `Upload<Bucket>` in shapes and gen's
-         schema for it, variants, configuration, scanning and testing.
+         schema for it, variants, configuration, scanning, server-side processing (byte reads, image transforms with
+         compositing, DOCX and PDF text extraction) and testing.
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
-Governing contract: ADR 0222; ADR 0294 (decision 26); STA-1218 (gen's `upload` shape kind).
+Governing contract: ADR 0222; ADR 0294 (decision 26); STA-1218 (gen's `upload` shape kind); ADR 0234 and R3-SO-13
+                    (text extraction in region); STA-789.
 -->
 
 Stackra media: the `Bucket` kind, signed direct uploads that `MediaLibrary` claims into a bucket, the `MediaDisk` port
-with its memory and S3/R2 drivers, the client `Uploader` port with its memory and HTTP drivers, `MediaConfig`, the
+with its memory and S3/R2 drivers, the `sharp` image transformer with compositing, the in-region `document` text
+extractor (DOCX and PDF), the client `Uploader` port with its memory and HTTP drivers, `MediaConfig`, the
 `upload.create` action, `useUpload`, `useImageVariant` and `fakeUpload`.
 
 **Tier:** `tier:lib` (`packages/data/media`). Entries `.`, `./contracts`, `./node`, `./react` and `./testing`. Depends
 on `@stackra/contracts`, `@stackra/container`, `@stackra/config`, `@stackra/validation`, `@stackra/errors`,
-`@stackra/actions`, `@stackra/filesystem` (the shared bucket and its public URL), zod and the AWS SDK S3 client; React is
-an optional peer of `./react`.
+`@stackra/actions`, `@stackra/filesystem` (the shared bucket and its public URL), zod, the AWS SDK S3 client, sharp
+(libvips), unpdf (pdf.js) and fflate; React is an optional peer of `./react`.
 
 ## What is here
 
@@ -31,8 +34,11 @@ an optional peer of `./react`.
 | `.`           | `MemoryMediaDiskDriver`                                                                                                | `disk: memory`, with `receive` playing the store's side of a signed `PUT`            |
 | `.`           | `UploadBucketMismatchError`, `UploadExpiredError`, `UploadIncompleteError`, `UploadRejectedError`, `UploadFailedError` | the refusals                                                                         |
 | `.`           | `registerBuckets`                                                                                                      | how gen's entry hands over the derived bucket keys                                   |
-| `./contracts` | `MediaDisk`, `SignedUpload`, `UploadRequest`, `MediaObject`                                                            | the store port and the types it speaks                                               |
+| `./contracts` | `MediaDisk`, `SignedUpload`, `UploadRequest`, `MediaObject`                                                            | the store port (`read` gives the bytes for server-side work) and its types           |
+| `./contracts` | `ImageTransformer`, `ImageTransform`, `ImageLayer`, `TextExtractor`, `ExtractedText`                                   | the processing ports and the types they speak                                        |
 | `./node`      | `S3MediaDiskDriver`                                                                                                    | `disk: s3`: AWS S3, Cloudflare R2 or MinIO                                           |
+| `./node`      | `SharpImageTransformerDriver`                                                                                          | `ImageTransformer` on sharp: resize, composite layers, re-encode, no metadata        |
+| `./node`      | `DocumentTextExtractorDriver`                                                                                          | `TextExtractor` for DOCX and PDF text layers, in process (in region)                 |
 | `./node`      | `CreateUploadAction`, `CreateUploadInput`, `CreateUploadOutput`                                                        | `media.upload.create@1`, `POST /uploads`                                             |
 | `./react`     | `useUpload`, `useImageVariant`                                                                                         | upload a file; size an image                                                         |
 | `./testing`   | `fakeUpload`                                                                                                           | a finished upload in a test, on the memory disk                                      |
@@ -126,9 +132,29 @@ after a day, which removes uploads nobody claimed.
 `clamav` streams the bytes to clamd (`INSTREAM`) where GuardDuty is not offered (GCP Dammam, a local stack), and
 `memory` finds only the EICAR test file. Verdicts are `clean`, `infected`, `pending` and `failed`.
 
-`ImageTransformer` (resize and re-encode without metadata), `TextExtractor` (OCR and text extraction with BCP 47
-language hints, Arabic included) and `ContentCredentials` (signed C2PA manifests on AI-generated images) are ports in
-`./contracts`; their engines are drivers a host binds.
+`MediaDisk.read(path)` gives the stored bytes to server-side work (a scanner's `read`, a transform, an extraction);
+a client still reads through `url` or `temporaryUrl`. A missing object is `FileNotFoundError`.
+
+`ImageTransformer` resizes, composites and re-encodes without metadata. The `sharp` driver (`./node`) applies the EXIF
+orientation, fits the image inside the box without enlarging it, then places each layer (a watermark, a personalised
+name or logo rendered to a PNG) at `left`/`top` or a `gravity`, the last on top:
+
+```ts
+const card = await images.transform(await disk.read(file.path), {
+  width: 600,
+  format: "webp",
+  quality: 80,
+  layers: [{ bytes: watermark, gravity: "southeast" }],
+});
+```
+
+`TextExtractor` reads text with BCP 47 language hints. The `document` driver (`./node`) reads a DOCX body and a PDF's
+text layer in process, so a privileged file never leaves the region the service runs in; it reports the hints whose
+script it found. A scanned PDF has no text layer and gives empty text: send it to an OCR driver. Arabic OCR and
+`ContentCredentials` (signed C2PA manifests on AI-generated images) have no driver here yet (stackra-26).
+
+Nothing in this package injects the processing ports: the host binds the driver it wants. `sharp` and `document` have
+no memory twin; a test runs them on in-memory bytes.
 
 ## Testing
 

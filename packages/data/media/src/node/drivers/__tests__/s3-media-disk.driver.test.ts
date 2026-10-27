@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `S3MediaDiskDriver`: a real SigV4 presigned `PUT` that signs the content type and keeps the
- *          metadata as signed headers (not query parameters), the commands it sends for stat, move and delete,
+ *          metadata as signed headers (not query parameters), the commands it sends for stat, read, move and delete,
  *          not-found mapping, both URL forms, and a refused config.
  * Boundary: test only; `S3Client.prototype.send` is replaced, so no request leaves the process. Presigning is local
  *           computation, run with fake credentials set through the environment for the test only.
@@ -11,6 +11,7 @@
 import {
   CopyObjectCommand,
   DeleteObjectCommand,
+  GetObjectCommand,
   HeadObjectCommand,
   S3Client,
 } from "@aws-sdk/client-s3";
@@ -110,6 +111,21 @@ describe("S3MediaDiskDriver", () => {
     });
     expect(send.mock.calls[0]?.[0]).toBeInstanceOf(HeadObjectCommand);
     expect(await disk().stat("uploads/gone")).toBeNull();
+  });
+
+  it("reads an object's bytes with a GET, and refuses a missing one", async () => {
+    const send = answer((command) => {
+      if ((command as GetObjectCommand).input.Key === "uploads/gone") throw missing("NoSuchKey");
+      return { Body: { transformToByteArray: async () => new Uint8Array([7, 8]) } };
+    });
+    expect([...(await disk().read("public/a.png"))]).toEqual([7, 8]);
+    const get = send.mock.calls[0]?.[0] as GetObjectCommand;
+    expect(get).toBeInstanceOf(GetObjectCommand);
+    expect(get.input).toEqual({
+      Bucket: "acme-files",
+      Key: "public/a.png",
+    });
+    await expect(disk().read("uploads/gone")).rejects.toBeInstanceOf(FileNotFoundError);
   });
 
   it("rethrows a store error that is not a missing object", async () => {

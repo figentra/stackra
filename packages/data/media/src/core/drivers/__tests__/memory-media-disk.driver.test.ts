@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `MemoryMediaDiskDriver`: a signed `PUT` is kept only with a known signature, before expiry
- *          and with every signed header unchanged; stat, move, delete and both URL forms follow the port.
+ *          and with every signed header unchanged; stat, read, move, delete and both URL forms follow the port.
  * Boundary: test only; no network. A hand-moved clock drives expiry.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0266 (memory drivers first); ADR 0222 (decision 2).
@@ -99,6 +99,17 @@ describe("MemoryMediaDiskDriver", () => {
     bytes.fill(9);
     await disk.move("uploads/upl_1", "public/a.png");
     expect((await disk.stat("public/a.png"))?.size).toBe(2);
+  });
+
+  it("reads a copy of the stored bytes, and refuses to read nothing", async () => {
+    const { disk } = setup();
+    const target = await disk.signUpload("uploads/upl_1", REQUEST);
+    await disk.receive(target.url, target.headers, new Uint8Array([1, 2, 3]));
+    const read = await disk.read("uploads/upl_1");
+    expect([...read]).toEqual([1, 2, 3]);
+    read.fill(9);
+    expect([...(await disk.read("uploads/upl_1"))]).toEqual([1, 2, 3]);
+    await expect(disk.read("uploads/none")).rejects.toBeInstanceOf(FileNotFoundError);
   });
 
   it("moves an object, and refuses to move nothing", async () => {

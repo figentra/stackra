@@ -1,8 +1,9 @@
 /**
  * Stackra file contract:
  * Purpose: the `MediaDisk` port: the store media lives in, with the two things a plain disk lacks: a signed URL a
- *          client uploads to directly, and a server-side move out of the upload area. `MediaLibrary` injects it;
- *          config `media.disk` picks the driver (`memory`, `s3`).
+ *          client uploads to directly, and a server-side move out of the upload area; plus `read`, the stored bytes for
+ *          server-side work (scanning, image transforms, text extraction). `MediaLibrary` injects it; config
+ *          `media.disk` picks the driver (`memory`, `s3`).
  * Boundary: an abstract class that is its own token, keyed `media.MediaDisk`. Paths are made by `MediaLibrary`
  *           (`uploads/<id>`, `<visibility>/<bucket>/<id>.<ext>`), never by a client. A leaf file: it imports nothing
  *           outside `src/contracts` but the `Port` base and `Duration`.
@@ -35,6 +36,13 @@ export abstract class MediaDisk extends Port {
 
   /** The size, media type and metadata of the object at `path`; `null` when nothing is stored there. */
   abstract stat(path: string): Promise<MediaObject | null>;
+
+  /**
+   * The bytes of the object at `path`, for server-side processing only; a client reads through `url` or `temporaryUrl`.
+   *
+   * @throws FileNotFoundError (from `@stackra/filesystem`) when nothing is stored at `path`.
+   */
+  abstract read(path: string): Promise<Uint8Array>;
 
   /**
    * Moves the object at `from` to `to`, keeping its media type, inside the store.

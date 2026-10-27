@@ -7,8 +7,9 @@
  *           which runway syncs from Infisical, or an instance role). The metadata headers are left unhoisted, so they
  *           stay signed headers the client must send unchanged (S3 refuses a changed one); the bucket's CORS rule must
  *           allow `content-type` and `x-amz-meta-*` on `PUT`. The size is not signed (a browser sets Content-Length
- *           itself): `MediaLibrary.claim` checks it. A missing object is `null` from `stat` and a `FileNotFoundError`
- *           from `move`; any other store error is rethrown as it is.
+ *           itself): `MediaLibrary.claim` checks it. `read` is a GET of the whole object into memory (processing
+ *           only). A missing object is `null` from `stat` and a `FileNotFoundError` from `read` and `move`; any other
+ *           store error is rethrown as it is.
  * Runtime: node
  * Governing contract: ADR 0222 (decisions 1 to 3); ADR 0173 (secrets); ADR 0294 (decision 16).
  */
@@ -124,6 +125,19 @@ export class S3MediaDiskDriver extends Driver(MediaDisk) {
     } catch (error) {
       if (isNotFound(error)) return null;
       throw error;
+    }
+  }
+
+  /** The bytes of the object at `path` (a GET read whole into memory). */
+  async read(path: string): Promise<Uint8Array> {
+    try {
+      const object = await this.client.send(
+        new GetObjectCommand({ Bucket: this.bucket, Key: path }),
+      );
+      if (object.Body === undefined) throw new FileNotFoundError(path);
+      return await object.Body.transformToByteArray();
+    } catch (error) {
+      throw isNotFound(error) ? new FileNotFoundError(path) : error;
     }
   }
 
