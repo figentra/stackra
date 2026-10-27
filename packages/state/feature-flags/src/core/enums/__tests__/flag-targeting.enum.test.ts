@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
- * Purpose: unit and type tests of `FlagTargeting`: the three subjects with snake_case codes that are the keys of
- *          `FlagSubjects`, and the template's case name (`FlagTargeting.Visitor`).
+ * Purpose: unit and type tests of `FlagTargeting`: the three subjects with snake_case codes that name the keys of
+ *          `FlagSubjects` (the stored `tenant` code reads the `scope` key), and the template's case name
+ *          (`FlagTargeting.Visitor`).
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0213 (decision 3); ADR 0231.
@@ -18,7 +19,9 @@ describe("FlagTargeting", () => {
     expect(FlagTargeting.Visitor).toBe("visitor");
   });
 
-  it("names exactly the keys of FlagSubjects", () => {
-    expectTypeOf<FlagTargeting>().toEqualTypeOf<keyof FlagSubjects>();
+  it("names exactly the keys of FlagSubjects, the stored tenant code reading the scope key", () => {
+    expectTypeOf<Exclude<FlagTargeting, typeof FlagTargeting.Scope> | "scope">().toEqualTypeOf<
+      keyof FlagSubjects
+    >();
   });
 });

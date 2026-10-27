@@ -14,8 +14,8 @@
 import { Service } from "@stackra/container";
 import { Duration } from "@stackra/contracts";
 
-import { FeatureFlagsConfig } from "#config/feature-flags.config";
-import { FlagProvider } from "#contracts/ports/flag-provider.port";
+import type { FeatureFlagsConfig } from "#config/feature-flags.config";
+import type { FlagProvider } from "#contracts/ports/flag-provider.port";
 import { FlagTargeting } from "#core/enums/flag-targeting.enum";
 import type { FlagRef } from "#core/types/flag-ref.type";
 import type { FlagSubjects } from "#core/types/flag-subjects.type";
@@ -28,6 +28,18 @@ import type { FlagSubjects } from "#core/types/flag-subjects.type";
  * reader.get(Flags.orders.quick_order); // the provider's value, or the flag's default
  */
 export class FlagReader extends Service {
+  /**
+   * Calls `listener` whenever values change; the shape `useSyncExternalStore` takes.
+   *
+   * @returns removes the listener.
+   */
+  readonly subscribe = (listener: () => void): (() => void) => {
+    this.listeners.add(listener);
+    return () => {
+      this.listeners.delete(listener);
+    };
+  };
+
   private readonly config: FeatureFlagsConfig;
 
   private readonly provider: FlagProvider;
@@ -83,18 +95,6 @@ export class FlagReader extends Service {
     const timer = setInterval(refresh, Duration.toMilliseconds(this.config.refreshEvery));
     return () => clearInterval(timer);
   }
-
-  /**
-   * Calls `listener` whenever values change; the shape `useSyncExternalStore` takes.
-   *
-   * @returns removes the listener.
-   */
-  readonly subscribe = (listener: () => void): (() => void) => {
-    this.listeners.add(listener);
-    return () => {
-      this.listeners.delete(listener);
-    };
-  };
 
   /** Replaces the values and notifies every subscriber; for a subclass that sets values itself (a fake). */
   protected publish(values: Readonly<Record<string, boolean>>): void {

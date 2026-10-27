@@ -12,7 +12,7 @@
  */
 import { Driver } from "@stackra/container";
 
-import { FeatureFlagsConfig } from "#config/feature-flags.config";
+import type { FeatureFlagsConfig } from "#config/feature-flags.config";
 import { FlagProvider } from "#contracts/ports/flag-provider.port";
 import type { FlagContext } from "#contracts/types/flag-context.type";
 
@@ -23,7 +23,9 @@ const SCOPE_GROUP = "tenant";
 export class PosthogFlagProviderDriver extends Driver(FlagProvider) {
   private readonly config: FeatureFlagsConfig;
 
-  /** @param config - holds the PostHog project key and host. */
+  /**
+   * @param config - holds the PostHog project key and host.
+   */
   constructor(config: FeatureFlagsConfig) {
     super();
     this.config = config;

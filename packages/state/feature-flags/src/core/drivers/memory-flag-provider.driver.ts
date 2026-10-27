@@ -11,6 +11,7 @@
 import { Driver } from "@stackra/container";
 
 import { FlagProvider } from "#contracts/ports/flag-provider.port";
+import type { FlagContext } from "#contracts/types/flag-context.type";
 
 /**
  * Serves the values a test sets.
@@ -33,7 +34,7 @@ export class MemoryFlagProviderDriver extends Driver(FlagProvider) {
   }
 
   /** A copy of the values set so far, whoever asks. */
-  values(): Promise<Readonly<Record<string, boolean>>> {
+  values(_context?: FlagContext): Promise<Readonly<Record<string, boolean>>> {
     return Promise.resolve({ ...this.known });
   }
 }

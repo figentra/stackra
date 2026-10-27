@@ -19,7 +19,10 @@ import { Flag, FlagReader, flagRefs } from "#core/index";
 import { useFlag } from "#react/flag/use-flag";
 import { fakeFlags } from "#testing/functions/fake-flags.function";
 
-class PricingYearlyFirstFlag extends Flag({ default: false, expires: "2027-03-31" }) {}
+class PricingYearlyFirstFlag extends Flag({
+  default: false,
+  expires: "2027-03-31",
+}) {}
 
 const Flags = flagRefs({ web: { pricing_yearly_first: PricingYearlyFirstFlag } });
 

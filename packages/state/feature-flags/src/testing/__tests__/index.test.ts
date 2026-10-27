@@ -8,7 +8,7 @@
  */
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
-import { FlagReader } from "#core/index";
+import type { FlagReader } from "#core/index";
 import * as testing from "#testing/index";
 import type { FlagsFake } from "#testing/index";
 

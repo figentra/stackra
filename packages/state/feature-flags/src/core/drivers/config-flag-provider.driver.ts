@@ -8,14 +8,16 @@
  */
 import { Driver } from "@stackra/container";
 
-import { FeatureFlagsConfig } from "#config/feature-flags.config";
+import type { FeatureFlagsConfig } from "#config/feature-flags.config";
 import { FlagProvider } from "#contracts/ports/flag-provider.port";
 
 /** Serves the configured values. */
 export class ConfigFlagProviderDriver extends Driver(FlagProvider) {
   private readonly config: FeatureFlagsConfig;
 
-  /** @param config - holds the values by flag key. */
+  /**
+   * @param config - holds the values by flag key.
+   */
   constructor(config: FeatureFlagsConfig) {
     super();
     this.config = config;

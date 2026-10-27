@@ -16,7 +16,10 @@ import type { FlagRef } from "#core/types/flag-ref.type";
 
 class HelpCentreFlag extends Flag({ default: false }) {}
 
-class PricingYearlyFirstFlag extends Flag({ default: false, expires: "2027-03-31" }) {}
+class PricingYearlyFirstFlag extends Flag({
+  default: false,
+  expires: "2027-03-31",
+}) {}
 
 const Flags = flagRefs({
   web: { pricing_yearly_first: PricingYearlyFirstFlag, help_centre: HelpCentreFlag },
