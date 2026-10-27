@@ -31,10 +31,3 @@ effectiveUntil = 2027-01-31
 id = "GHSA-86w9-cpqp-85rv"
 ignoreUntil = 2027-01-31
 reason = "node-forge RSA PKCS#1 v1.5 verification: no fixed release; dev-only use through @expo/cli code signing"
-
-# adm-zip: one advisory has no fix even in 0.6.1 (the override lifts the other six). Only the Mintlify docs CLI and
-# preview use it, on archives Mintlify itself downloads.
-[[IgnoredVulns]]
-id = "GHSA-vwc7-r8mq-g2x9"
-ignoreUntil = 2027-01-31
-reason = "adm-zip symlink-following extraction: no fixed release; dev-only use through the Mintlify docs CLI"
