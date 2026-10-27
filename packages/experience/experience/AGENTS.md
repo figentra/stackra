@@ -1,8 +1,10 @@
+<!-- Stackra file contract: Purpose: the agent guide to @stackra/experience. Boundary: this package only. Runtime: docs. Governing contract: ADR 0110; ADR 0270; ADR 0440. -->
+
 # AGENTS — @stackra/experience
 
 The `Block` kind, `LocalizedText`, the L2 document format and validator, the `Renderer` port, the web and native
-`DocumentRenderer`, and the edge HTML render. Member at `packages/experience/experience` (`tier:lib`), in the
-programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./edge`, `./react`, `./native`.
+`DocumentRenderer`, the edge HTML render and the node renderer of email templates and print documents. Member at `packages/experience/experience` (`tier:lib`), in the
+programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./edge`, `./server`, `./react`, `./native`.
 
 ## Where code goes
 
@@ -15,6 +17,7 @@ programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./ed
 | Web drawing                   | `src/react/<name>/`, `src/react/drivers/`      |
 | Native drawing                | `src/native/<name>/`, `src/native/drivers/`    |
 | Edge HTML (the Worker)        | `src/edge/<group>/`                            |
+| Node HTML, email, PDF         | `src/server/<group>/`                          |
 | A test                        | `__tests__/<name>.<kind>.test.ts(x)` beside it |
 
 ## This package
@@ -36,6 +39,10 @@ programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./ed
   `EdgeBlock`s the OS passes; any other key (a product's block) and a block that `accepts` a query become a placeholder
   the shell hydrates. It never throws: a failure or a budget overrun returns `ok: false` with the revision and the
   Worker serves the shell (ADR 0440). An edge block escapes every prop with `escapeHtml`.
+- `./server` is the node renderer of `email_template` and `print_document` documents: it runs `validateDocument`
+  against the kind and throws (`UnknownBlockError`, `InvalidDocumentError`) before drawing, never draws a placeholder,
+  never runs a query (the host passes `data`), and prints through `@stackra/documents/contracts` `PdfEngine` only
+  (never documents' `.`). A server block escapes every prop and data value with `escapeHtml`.
 - `src/*/index.ts` are stand-in barrels until gen writes them (STA-339).
 
 ## Rules that fail the build

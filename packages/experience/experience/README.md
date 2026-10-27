@@ -1,39 +1,45 @@
+<!-- Stackra file contract: Purpose: the guide to @stackra/experience. Boundary: describes this package only. Runtime: docs. Governing contract: ADR 0110; ADR 0270; ADR 0440; ADR 0365. -->
+
 # @stackra/experience
 
 Stackra experience: the `Block` kind, `LocalizedText`, the L2 document format and its validator, the `Renderer` port,
-the web and native `DocumentRenderer`, and the edge render of a published document to HTML (`./edge`). A block is
+the web and native `DocumentRenderer`, the edge render of a published document to HTML (`./edge`), and the node
+renderer of email templates and print documents (`./server`, PDF through `@stackra/documents`). A block is
 registered code (a props class and a component); a document is data that names block keys and their props, never
 markup, CSS or logic (ADR 0110, 0154). The renderer resolves each key to the block registered on its target and
 refuses an unknown one.
 
-**Tier:** `tier:lib` (`packages/experience/experience`). Entries `.`, `./contracts`, `./edge`, `./react` and
-`./native`.
+**Tier:** `tier:lib` (`packages/experience/experience`). Entries `.`, `./contracts`, `./edge`, `./server`, `./react`
+and `./native`.
 Depends on `@stackra/contracts`, `@stackra/container`, `@stackra/errors`, `@stackra/validation` (block schemas and
 `@Renamed`), `@stackra/clients` (the queries blocks accept), `@stackra/i18n` (the locale), `@stackra/icons` (the
-`IconName` type), `@stackra/ui` (the loading placeholder) and `zod`; React is an optional peer of `./react` and
+`IconName` type), `@stackra/ui` (the loading placeholder), `@stackra/documents` (the `PdfEngine` port, `./contracts`
+only) and `zod`; React is an optional peer of `./react` and
 `./native`.
 
 ## What is here
 
-| Entry         | Symbol                                                                          | Use                                                                                                            |
-| ------------- | ------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| `.`           | `Block`, `BlockCategory`                                                        | the kind base: `class XBlock extends Block({ category, icon, accepts? }) {}`                                   |
-| `.`           | `LocalizedText`                                                                 | a prop written once per locale (`{ en: "…", ar: "…" }`)                                                        |
-| `.`           | `BlockProps`                                                                    | `Component<BlockProps<typeof XBlock>>`: the props as the visitor sees them                                     |
-| `.`           | `registerBlocks`                                                                | the generated wiring's call linking each block to its key and component                                        |
-| `.`           | `registeredBlocks`                                                              | a read-only copy of the registered block classes by key, for the builder                                       |
-| `.`           | `resolveDocument`, `UnknownBlockError`, `InvalidDocumentError`                  | the document validator every renderer runs first, and its refusals                                             |
-| `.`           | `validateDocument`, `blockKinds`                                                | the server-side validator: every problem of a document against its kind                                        |
-| `.`           | `commitTheme`, `rollbackTheme`, `diffTheme`, `validateTheme`                    | section-based themes with numbered revisions, rollback and a reviewed diff                                     |
-| `.`           | `BlockClass`, `BlockOptions`, `BlockEntry`, `ResolvedNode`                      | types                                                                                                          |
-| `.`           | `Theme`, `ThemeRevision`, `ThemeChange`, `ThemeDiff`, `ValidateDocumentOptions` | types                                                                                                          |
-| `./contracts` | `Renderer`                                                                      | the port; drivers `react` and `native`                                                                         |
-| `./contracts` | `DocumentNode`, `BlockEvent`, `BlockEventHandlers`, `RenderContext`             | the document format, read by the builder and collaboration                                                     |
-| `./contracts` | `ExperienceKind`, `DocumentProblem`                                             | the document kinds (page, screen, form, email template, print document, theme section) and a validator problem |
-| `./edge`      | `renderEdgeDocument`, `EdgeRenderFailure`, `EDGE_RENDER_LIMITS`, `escapeHtml`   | the OS edge Worker's HTML render of a published document, its fallback codes and budget                        |
-| `./edge`      | `EdgeBlock`, `EdgeBlockContext`, `EdgeRenderOptions`, `EdgeRenderResult`        | types                                                                                                          |
-| `./react`     | `DocumentRenderer`, `ReactRendererDriver`                                       | `<DocumentRenderer document={page.root} />` on the web                                                         |
-| `./native`    | `DocumentRenderer`, `NativeRendererDriver`, `BlockProps`                        | the same on a phone; native `BlockProps` adds `onEvent`                                                        |
+| Entry         | Symbol                                                                                                             | Use                                                                                                            |
+| ------------- | ------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------- |
+| `.`           | `Block`, `BlockCategory`                                                                                           | the kind base: `class XBlock extends Block({ category, icon, accepts? }) {}`                                   |
+| `.`           | `LocalizedText`                                                                                                    | a prop written once per locale (`{ en: "…", ar: "…" }`)                                                        |
+| `.`           | `BlockProps`                                                                                                       | `Component<BlockProps<typeof XBlock>>`: the props as the visitor sees them                                     |
+| `.`           | `registerBlocks`                                                                                                   | the generated wiring's call linking each block to its key and component                                        |
+| `.`           | `registeredBlocks`                                                                                                 | a read-only copy of the registered block classes by key, for the builder                                       |
+| `.`           | `resolveDocument`, `UnknownBlockError`, `InvalidDocumentError`                                                     | the document validator every renderer runs first, and its refusals                                             |
+| `.`           | `validateDocument`, `blockKinds`                                                                                   | the server-side validator: every problem of a document against its kind                                        |
+| `.`           | `commitTheme`, `rollbackTheme`, `diffTheme`, `validateTheme`                                                       | section-based themes with numbered revisions, rollback and a reviewed diff                                     |
+| `.`           | `BlockClass`, `BlockOptions`, `BlockEntry`, `ResolvedNode`                                                         | types                                                                                                          |
+| `.`           | `Theme`, `ThemeRevision`, `ThemeChange`, `ThemeDiff`, `ValidateDocumentOptions`                                    | types                                                                                                          |
+| `./contracts` | `Renderer`                                                                                                         | the port; drivers `react` and `native`                                                                         |
+| `./contracts` | `DocumentNode`, `BlockEvent`, `BlockEventHandlers`, `RenderContext`                                                | the document format, read by the builder and collaboration                                                     |
+| `./contracts` | `ExperienceKind`, `DocumentProblem`                                                                                | the document kinds (page, screen, form, email template, print document, theme section) and a validator problem |
+| `./edge`      | `renderEdgeDocument`, `EdgeRenderFailure`, `EDGE_RENDER_LIMITS`, `escapeHtml`                                      | the OS edge Worker's HTML render of a published document, its fallback codes and budget                        |
+| `./edge`      | `EdgeBlock`, `EdgeBlockContext`, `EdgeRenderOptions`, `EdgeRenderResult`                                           | types                                                                                                          |
+| `./server`    | `renderEmailTemplate`, `renderPrintDocument`, `renderServerHtml`, `escapeHtml`                                     | the node renderer: a studio email template to HTML and text, a print document to PDF through `PdfEngine`       |
+| `./server`    | `ServerBlock`, `ServerBlockContext`, `ServerRenderOptions`, `PrintRenderOptions`, `RenderedEmail`, `RenderedPrint` | types                                                                                                          |
+| `./react`     | `DocumentRenderer`, `ReactRendererDriver`                                                                          | `<DocumentRenderer document={page.root} />` on the web                                                         |
+| `./native`    | `DocumentRenderer`, `NativeRendererDriver`, `BlockProps`                                                           | the same on a phone; native `BlockProps` adds `onEvent`                                                        |
 
 ## Declaring a block
 
@@ -96,6 +102,45 @@ const problems = validateDocument(body.root, { kind: ExperienceKind.EmailTemplat
 throws on the document: it returns every problem in tree order, `invalid_node`, `unknown_block`, `kind_not_allowed`,
 `invalid_props` (with the refused prop paths, never their values), `duplicate_id`, `too_deep` (over 32 levels) and
 `too_many_blocks` (over 10,000), with tighter bounds if the caller passes them.
+
+## Rendering on the server: email templates and print documents
+
+A studio email template or print document is an L2 document of kind `email_template` or `print_document`. The node
+renderer (`./server`, no React) draws it to one self-contained HTML page; an email gets a plain-text part, a print
+document is printed to PDF through the `PdfEngine` the host bound (@stackra/documents, ADR 0365).
+
+```ts
+import { renderEmailTemplate, renderPrintDocument } from "@stackra/experience/server";
+
+const { html, text } = renderEmailTemplate(template.root, {
+  locale,
+  direction, // the locale's setting: "ltr" | "rtl"
+  blocks: MAIL_BLOCKS,
+  data: { order, recipient },
+  title: subject,
+});
+
+const { pdf } = await renderPrintDocument(layout.root, {
+  locale,
+  direction,
+  blocks: PRINT_BLOCKS,
+  data: { order },
+  engine, // the bound PdfEngine
+  page: { widthMm: 80, marginMm: 2 }, // a roll: no height
+});
+```
+
+- **Checked first, then drawn.** The whole document goes through `validateDocument` against its kind: a key none of
+  `blocks` has throws `UnknownBlockError`; a block that does not declare the kind (email-safe blocks only in an email
+  template), refused props or an overrun of the size bounds throw `InvalidDocumentError`. Nothing is drawn and the
+  engine is never called for a refused document.
+- **Server blocks.** Each `ServerBlock` is a key, its block class and a pure `html(props, children, { locale, path,
+data })` that writes every prop and data value through `escapeHtml`. Unlike the edge, there is no placeholder: an
+  email or a PDF has no browser to hydrate one. A `@Renamed` old key still resolves.
+- **Data, not queries.** The host resolves the render's values (the order, the recipient) into `data`; a node's
+  `input` is ignored and no query runs. Images are `data:` URLs, so the engine fetches nothing.
+- **Not here.** Sending (the `Mailer` driver or the notifications service), the email subject's storage, the
+  `PdfEngine` driver and the studio preview wiring are the host's.
 
 ## Themes
 

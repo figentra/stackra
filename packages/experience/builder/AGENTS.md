@@ -1,3 +1,5 @@
+<!-- Stackra file contract: Purpose: the agent guide to @stackra/builder. Boundary: this package only. Runtime: docs. Governing contract: ADR 0270; ADR 0426. -->
+
 # AGENTS — @stackra/builder
 
 The editor kernel for every builder document kind (ADR 0270 decision 4). Member at `packages/experience/builder`
@@ -25,6 +27,8 @@ The editor kernel for every builder document kind (ADR 0270 decision 4). Member 
   registry does not have. `parseDocumentNode` is the trust boundary for structure, and `problems()` for props.
 - Yjs is imported only in `src/react/shared-editor/`. `.` and `./contracts` load no CRDT and no React.
 - The shared reader keeps to what `parseDocumentNode` accepts, so a peer's bad block is hidden, never fatal.
+- No rendering: an email template or a print document is rendered by `@stackra/experience/server` (HTML, text, PDF
+  through `PdfEngine`); never add a renderer or a `@stackra/documents` dependency here.
 - No UI chrome: surfaces, drag and drop, the inspector and publish live in the apps and the content type.
 - Structured kinds (automations, forms) use `DocumentEditor`; their checks never throw (`automationProblems`,
   `formProblems`), and a save refuses what they report. A form condition is a `@stackra/rules` condition, never a

@@ -13,6 +13,7 @@ export default library({
   index: "src/core/index.ts",
   contracts: "src/contracts/index.ts",
   edge: "src/edge/index.ts",
+  server: "src/server/index.ts",
   react: "src/react/index.ts",
   native: "src/native/index.ts",
 });

@@ -1,3 +1,5 @@
+<!-- Stackra file contract: Purpose: the guide to @stackra/builder. Boundary: describes this package only. Runtime: docs. Governing contract: ADR 0270; ADR 0426. -->
+
 # @stackra/builder
 
 Stackra builder: the one editor kernel for every builder document kind (ADR 0270 decision 4). Pages, screens, forms,
@@ -73,6 +75,11 @@ A partner theme's sections are edited with a reviewed `kit` (`{ key, blocks }`):
 the app market approved and the first-party blocks it trusts, and the editor offers and inserts nothing outside it.
 `problems()` reports `block_not_allowed` for a stored block the kind or kit does not allow, so publish refuses it;
 `@stackra/experience`'s `validateDocument` makes the same check on the server.
+
+The builder edits an email template or a print document; it never renders one. The studio preview, the send and the
+PDF go through `@stackra/experience/server` (`renderEmailTemplate`, `renderPrintDocument` through the bound
+`PdfEngine`), which checks the saved document against the same kind before drawing it, so a render-only host never
+depends on this package (ADR 0270).
 
 ## Hooks
 
