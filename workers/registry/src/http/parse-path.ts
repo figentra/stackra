@@ -3,7 +3,7 @@
  * Purpose: `parsePath`: the route of a request path.
  * Boundary: pure; no method check and no lookup (the router does both).
  * Runtime: worker
- * Governing contract: ADR 0453 (decisions 4 and 12).
+ * Governing contract: ADR 0453 (decisions 4, 12 and 14).
  */
 import type { RegistryRoute } from "#src/interfaces/registry-route.type";
 
@@ -43,6 +43,9 @@ function parseDash(path: string): RegistryRoute {
       ? UNKNOWN
       : { kind: "attestations", name, version: attested.slice(at + 1) };
   }
+  if (path === "/-/stackra/v1/licences") return { kind: "licences", rest: [] };
+  const licences = after("/-/stackra/v1/licences/");
+  if (licences !== null) return { kind: "licences", rest: licences.split("/") };
   const item = after("/-/stackra/v1/catalogue/");
   if (item !== null) {
     const name = scoped(item);

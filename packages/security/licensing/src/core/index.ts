@@ -14,6 +14,7 @@ export { LICENSING_CONFIG_SCHEMA as LicensingConfig$ } from "#core/constants/lic
 export { KeygenLicenceIssuerDriver } from "#core/drivers/keygen-licence-issuer.driver";
 export { KeygenLicenceVerifierDriver } from "#core/drivers/keygen-licence-verifier.driver";
 export { MemoryLicenceIssuerDriver } from "#core/drivers/memory-licence-issuer.driver";
+export { RegistryLicenceIssuerDriver } from "#core/drivers/registry-licence-issuer.driver";
 export { LicenceStanding } from "#core/enums/licence-standing.enum";
 export { LicenceCheckUnavailableError } from "#core/errors/licence-check-unavailable.error";
 export { LicenceFileInvalidError } from "#core/errors/licence-file-invalid.error";

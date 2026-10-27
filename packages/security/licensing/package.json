@@ -2,13 +2,14 @@
   "name": "@stackra/licensing",
   "version": "0.0.0",
   "private": true,
-  "description": "Stackra licensing: the LicenceIssuer port and its Keygen and memory drivers for the issuing service, the on-prem install signer and usage-report exporter, and the LicenceVerifier port and its Keygen driver over the LicensingConfig configuration (API origin, account, verify key), reading a signed licence file offline, deriving the soft-enforcement standing (active, grace, read-only), and running the opt-in online key check for connected installs",
+  "description": "Stackra licensing: the LicenceIssuer port and its registry (default), Keygen and memory drivers, the Stackra registry licence API contract (./contracts) for the issuing service, the on-prem install signer and usage-report exporter, and the LicenceVerifier port and its Keygen driver over the LicensingConfig configuration (API origin, account, verify key), reading a signed licence file offline, deriving the soft-enforcement standing (active, grace, read-only), and running the opt-in online key check for connected installs",
   "keywords": [
     "keygen",
     "licence",
     "licensing",
     "offline-verification",
     "on-prem",
+    "registry",
     "security",
     "stackra",
     "usage-reporting"
@@ -39,6 +40,11 @@
       "./src/config/*",
       "./src/config/*.ts"
     ],
+    "#contracts/*": [
+      "./src/contracts/*",
+      "./src/contracts/*.ts",
+      "./src/contracts/*/index.ts"
+    ],
     "#core/*": [
       "./src/core/*",
       "./src/core/*.ts",
@@ -50,6 +56,11 @@
       "@stackra/source": "./src/core/index.ts",
       "types": "./dist/index.d.mts",
       "default": "./dist/index.mjs"
+    },
+    "./contracts": {
+      "@stackra/source": "./src/contracts/index.ts",
+      "types": "./dist/contracts.d.mts",
+      "default": "./dist/contracts.mjs"
     }
   },
   "publishConfig": {

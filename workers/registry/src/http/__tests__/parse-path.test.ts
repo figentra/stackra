@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `parsePath` and `splitName`: every route of ADR 0453 decision 4, `%2f` and `/` forms, and
+ * Purpose: unit tests of `parsePath` and `splitName`: every route of ADR 0453 decision 4, the licence API (decision 14), `%2f` and `/` forms, and
  *          the unknown paths.
  * Boundary: pure.
  * Runtime: node (vitest)
@@ -42,6 +42,11 @@ describe("parsePath", () => {
       { kind: "attestations", name: "@stackra/core", version: "1.0.0" },
     ],
     ["/-/stackra/v1/catalogue", { kind: "catalogue" }],
+    ["/-/stackra/v1/licences", { kind: "licences", rest: [] }],
+    [
+      "/-/stackra/v1/licences/lic_1/tokens/tok_1",
+      { kind: "licences", rest: ["lic_1", "tokens", "tok_1"] },
+    ],
     ["/-/stackra/v1/catalogue/@stackra/core", { kind: "catalogueItem", name: "@stackra/core" }],
     ["/-/stackra/v1/entitlements", { kind: "entitlements" }],
   ])("parses %s", (path, route) => {

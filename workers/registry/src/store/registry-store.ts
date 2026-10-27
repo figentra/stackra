@@ -2,9 +2,11 @@
  * Stackra file contract:
  * Purpose: `RegistryStore`: the registry's D1 access.
  * Boundary: SQL over the D1 binding only; no rule is decided here. Writes that belong together go in one D1 batch
- *           (one transaction). The licence tables are stackra-183's.
+ *           (one transaction). The licence tables are `LicenceStore`'s (src/licence); this class reads only
+ *           `name_rules` of migration 0002, for the read rule and the catalogue.
  * Runtime: worker
- * Governing contract: ADR 0453 (decision 3); migrations/0001_registry.sql.
+ * Governing contract: ADR 0453 (decision 3); ADR 0461 (decision 3); migrations/0001_registry.sql and
+ *                     0002_licences.sql.
  */
 import type { AuditEvent } from "#src/interfaces/audit-event.interface";
 import type { CatalogueQuery } from "#src/interfaces/catalogue-query.interface";
@@ -29,6 +31,15 @@ export class RegistryStore {
   /** A scope row, or null for an unknown scope. */
   scope(scope: string): Promise<ScopeRow | null> {
     return this.db.prepare("SELECT * FROM scopes WHERE scope = ?1").bind(scope).first<ScopeRow>();
+  }
+
+  /** The `name_rules` read rule of one name (it tightens its scope's), or null when the scope's rule applies. */
+  async nameRule(name: string): Promise<"internal" | null> {
+    const row = await this.db
+      .prepare("SELECT read_rule FROM name_rules WHERE name = ?1")
+      .bind(name)
+      .first<{ read_rule: "internal" }>();
+    return row?.read_rule ?? null;
   }
 
   /** Every trusted publisher of a scope. */
@@ -207,6 +218,7 @@ export class RegistryStore {
          LEFT JOIN dist_tags t ON t.name = p.name AND t.tag = 'latest'
          LEFT JOIN versions v ON v.name = p.name AND v.version = t.version
          WHERE s.read_rule IN ('open', 'licensed')
+           AND NOT EXISTS (SELECT 1 FROM name_rules r WHERE r.name = p.name)
            AND (?1 IS NULL OR p.kind = ?1)
            AND (?2 IS NULL OR p.scope = ?2)
            AND (?3 IS NULL OR p.name LIKE ?3 ESCAPE '\\'

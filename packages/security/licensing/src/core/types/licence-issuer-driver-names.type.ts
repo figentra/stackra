@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the `DriverRegistry` entry of `LicenceIssuer`, so `DriverName<LicenceIssuer>` is `"keygen" | "memory"`.
+ * Purpose: the `DriverRegistry` entry of `LicenceIssuer`, so `DriverName<LicenceIssuer>` is `"registry" | "keygen" | "memory"`.
  * Boundary: a module augmentation only; the stand-in for the one gen writes into `#stackra/wiring` (STA-339).
  *           `issuer-options.schema.ts` imports this file so the augmentation travels with the config shape.
  * Runtime: isomorphic
@@ -10,7 +10,7 @@ import type { LICENCE_ISSUER_DRIVERS } from "#core/constants/licence-issuer-driv
 
 declare module "@stackra/container" {
   interface DriverRegistry {
-    /** The driver names of `LicenceIssuer` (`keygen`, `memory`). */
+    /** The driver names of `LicenceIssuer` (`registry`, `keygen`, `memory`). */
     "licensing.LicenceIssuer": (typeof LICENCE_ISSUER_DRIVERS)[number];
   }
 }

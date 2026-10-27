@@ -4,10 +4,10 @@
  *          a new expiry and metadata, check out a freshly signed file, and suspend.
  * Boundary: an abstract class that is its own token, keyed `licensing.LicenceIssuer`, beside `LicenceVerifier`. Issuing
  *           runs only in the service that sells licences (OS licensing), never on an install; an install only verifies.
- *           Drivers: `keygen` (`KeygenLicenceIssuerDriver`) and `memory` (`MemoryLicenceIssuerDriver`); `IssuerConfig`
- *           names the one in use.
+ *           Drivers: `registry` (`RegistryLicenceIssuerDriver`, the default), `keygen` (`KeygenLicenceIssuerDriver`,
+ *           on-prem) and `memory` (`MemoryLicenceIssuerDriver`); `IssuerConfig` names the one in use.
  * Runtime: isomorphic
- * Governing contract: ADR 0178 (decisions 1 to 3); ADR 0263 (ports and drivers); OS ADR 0039 d5 and d7.
+ * Governing contract: ADR 0178 (decisions 1 to 3); ADR 0263 (ports and drivers); OS ADR 0039 d5 and d7; ADR 0453 (decision 15).
  */
 import { Port } from "@stackra/contracts";
 

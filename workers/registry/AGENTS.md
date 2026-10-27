@@ -18,12 +18,18 @@ The Stackra npm registry, Cloudflare Worker `stackra-registry` at `npm.stackra.f
   account. CI deploys.
 - Every limit, TTL and URL is a `REGISTRY_*` var read by `readSettings`; never a constant in a handler. Scopes, read
   rules, licence rules and trusted publishers are D1 rows, added by a new numbered migration, never by code.
-- Never edit an applied migration; add the next number. The licence tables are stackra-183's migration.
+- Never edit an applied migration; add the next number. Per-name read rules are `name_rules` rows; they only tighten.
 - Versions are immutable: no route deletes or overwrites a version, a tarball or a bundle (R2 writes go through
   `putOnce`). Deprecation is the only change to a version.
 - Never proxy or fetch a package from another registry; an unknown name is 404.
-- Tokens: store only SHA-256 hashes (`stkp_` publish tokens here, `stkl_` licence tokens in stackra-183); never log,
-  echo or put a token into an error message or cache key.
+- Tokens: store only SHA-256 hashes (`stkp_` publish tokens, `stkl_` licence tokens, issuer tokens); never log, echo
+  or put a token into an error message or cache key. A licence token appears once, in the answer that minted it, never
+  in an Idempotency-Key receipt.
+- The licence API (`src/licence/`) answers `RegistryLicence` of `@stackra/licensing/contracts` (a type-only import);
+  change the contract there first. It needs an issuer token and an Idempotency-Key on every call, commits a call's
+  writes with its receipt and audit row in one batch, and never sets `licences.internal`.
+- An `internal` name (scope rule or `name_rules` row) is read only by a licence with `internal` set; never let a
+  customer grant cover it.
 - An `open` scope never reads the Authorization header. A `licensed` scope reads licences only through the
   `LicenceCheck` port (`src/access/licence-check.port.ts`).
 - Responses use `json`/`failure` (npm's `{ error }` shape); Cache-Control follows ADR 0453 decision 5.
@@ -37,9 +43,9 @@ The Stackra npm registry, Cloudflare Worker `stackra-registry` at `npm.stackra.f
 
 ## PII
 
-| Data                     | Where                 | Handling                                                                       |
-| ------------------------ | --------------------- | ------------------------------------------------------------------------------ |
-| Licence holder reference | licence check, whoami | an opaque Figentra OS account reference; returned to its own token holder only |
-| Downloads                | D1 `downloads_daily`  | counts per package, licence and day; no IP address, no user agent              |
-| Publisher identity       | D1 `audit_events`     | repository and workflow run URL of a CI job; no person                         |
-| Tokens                   | D1 `publish_tokens`   | SHA-256 hashes only; expired rows are deleted on the next exchange             |
+| Data                     | Where                                                  | Handling                                                                       |
+| ------------------------ | ------------------------------------------------------ | ------------------------------------------------------------------------------ |
+| Licence holder reference | licence check, whoami                                  | an opaque Figentra OS account reference; returned to its own token holder only |
+| Downloads                | D1 `downloads_daily`                                   | counts per package, licence and day; no IP address, no user agent              |
+| Publisher identity       | D1 `audit_events`                                      | repository and workflow run URL of a CI job; no person                         |
+| Tokens                   | D1 `publish_tokens`, `licence_tokens`, `issuer_tokens` | SHA-256 hashes only; expired publish rows are deleted on the next exchange     |

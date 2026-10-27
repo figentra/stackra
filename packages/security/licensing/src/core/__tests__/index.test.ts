@@ -39,6 +39,7 @@ describe("@stackra/licensing", () => {
       "LicensingConfig$",
       "LicensingOptions",
       "MemoryLicenceIssuerDriver",
+      "RegistryLicenceIssuerDriver",
       "checkLicenceKey",
       "generateInstallKey",
       "installSigner",

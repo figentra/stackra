@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: in-memory fakes of the R2 bucket, the KV namespace and the edge cache, and `MemoryLicenceCheck`, the
- *          in-memory fake of the `LicenceCheck` port (stackra-183 fills the real one). Each fake records every call
+ *          in-memory fake of the `LicenceCheck` port (the real one is `D1LicenceCheck`, tested over node:sqlite). Each fake records every call
  *          with all its arguments.
  * Boundary: test fixtures only; no expiry is simulated (KV and cache entries live for the test).
  * Runtime: node (vitest)
@@ -119,5 +119,6 @@ export const activeLicence = (overrides: Partial<LicenceView> = {}): LicenceView
   notBefore: null,
   expiresAt: null,
   grants: [{ scope: "@stackra-pro", names: "*" }],
+  internal: false,
   ...overrides,
 });

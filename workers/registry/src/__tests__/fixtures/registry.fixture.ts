@@ -20,6 +20,7 @@ import { toBase64Url } from "#src/bytes/to-base64-url";
 import { tarballDigests } from "#src/publish/tarball-digests";
 import { createSigner } from "#src/signing/create-signer";
 import { RegistryStore } from "#src/store/registry-store";
+import { LicenceStore } from "#src/licence/licence-store";
 import {
   MemoryKv,
   MemoryLicenceCheck,
@@ -173,6 +174,7 @@ export async function createTestRegistry() {
 
   const deps: RegistryDeps = {
     store: new RegistryStore(db),
+    licenceStore: new LicenceStore(db),
     tarballs,
     cache,
     licences,
@@ -247,6 +249,7 @@ export async function createTestRegistry() {
 
   return {
     deps,
+    db,
     sqlite,
     tarballs,
     cache,

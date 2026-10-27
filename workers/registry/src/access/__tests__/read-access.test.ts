@@ -1,11 +1,11 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of the scope read rule: `bearer`, `licenceRefusal` (status, not-before, grace days, grants by
- *          name and `*`) and `readAccess` (open ignores tokens, licensed 401/403), and of `cachedLicenceCheck` (a hit
+ *          name and `*`) and `readAccess` (open ignores tokens, licensed 401/403, internal needs an internal licence), and of `cachedLicenceCheck` (a hit
  *          skips the port, unknown tokens are not cached, the key is the token hash).
  * Boundary: pure, over the in-memory licence check and edge cache.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0453 (decisions 3, 10 and 13).
+ * Governing contract: ADR 0022 (test placement); ADR 0453 (decisions 3, 10 and 13); ADR 0461 (decision 3).
  */
 import {
   activeLicence,
@@ -88,6 +88,25 @@ describe("readAccess", () => {
     expect(await read("Bearer stkl_none")).toEqual(expect.objectContaining({ status: 401 }));
     expect(await read("Bearer stkl_s")).toEqual(
       expect.objectContaining({ status: 403, reason: "licence is suspended" }),
+    );
+  });
+
+  it("reads an internal name only with an internal licence, never with a customer `*` grant", async () => {
+    const licences = new MemoryLicenceCheck();
+    licences.licences.set("stkl_customer", activeLicence());
+    licences.licences.set("stkl_figentra", activeLicence({ internal: true }));
+    licences.licences.set("stkl_figentra_nogrant", activeLicence({ internal: true, grants: [] }));
+    const INTERNAL: ScopeRow = { ...PRO, read_rule: "internal" };
+    const read = (token: string) =>
+      readAccess(INTERNAL, "@stackra-pro/ui", `Bearer ${token}`, licences, SETTINGS, NOW);
+    expect(await read("stkl_customer")).toEqual({
+      allowed: false,
+      status: 403,
+      reason: "@stackra-pro/ui is internal",
+    });
+    expect(await read("stkl_figentra")).toEqual(expect.objectContaining({ allowed: true }));
+    expect(await read("stkl_figentra_nogrant")).toEqual(
+      expect.objectContaining({ allowed: false, status: 403 }),
     );
   });
 });

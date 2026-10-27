@@ -3,7 +3,7 @@
  * Purpose: `handleRequest`: the registry's answer to one request.
  * Boundary: dispatch only; each handler owns its rule.
  * Runtime: worker
- * Governing contract: ADR 0453 (decisions 4 and 12).
+ * Governing contract: ADR 0453 (decisions 4, 12 and 14).
  */
 import { catalogueItem } from "#src/catalogue/catalogue-item";
 import { handleEntitlements } from "#src/catalogue/handle-entitlements";
@@ -21,6 +21,7 @@ import { handleTarball } from "#src/npm/handle-tarball";
 import { handleUnpublish } from "#src/npm/handle-unpublish";
 import { handleVersion } from "#src/npm/handle-version";
 import { handleWhoami } from "#src/npm/handle-whoami";
+import { handleLicences } from "#src/licence/handle-licences";
 import { exchangeToken } from "#src/oidc/exchange-token";
 import { putPackage } from "#src/publish/put-package";
 import { writeDistTag } from "#src/publish/write-dist-tag";
@@ -76,6 +77,8 @@ async function dispatch(request: Request, deps: RegistryDeps): Promise<Response>
       return method === "GET" ? catalogueItem(deps, route.name) : notAllowed("GET");
     case "entitlements":
       return method === "GET" ? handleEntitlements(deps, request) : notAllowed("GET");
+    case "licences":
+      return handleLicences(deps, request, route.rest);
     case "unknown":
       return failure(404, "not_found");
   }

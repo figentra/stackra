@@ -1,10 +1,12 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `IssuerConfig`: the defaults (driver `keygen`, no token), the derived key `licensing.issuer`,
- *          a host override to the `memory` driver, and a boot refusal for an unknown driver.
+ * Purpose: unit tests of `IssuerConfig`: the defaults (driver `registry`, the registry origin, no tokens), a refused
+ *          registry origin with a path, the derived key `licensing.issuer`, a host override to the `memory` driver,
+ *          and a boot refusal for an unknown driver.
  * Boundary: test only; builds through @stackra/config's `buildConfig`, as `createApp` does.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 19 and 20); ADR 0178 (decision 2).
+ * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 19 and 20); ADR 0178 (decision 2); ADR 0453
+ *                     (decision 15).
  */
 import { buildConfig, ConfigInvalidError, configKey } from "@stackra/config";
 import type { DriverName } from "@stackra/container";
@@ -19,10 +21,18 @@ class DevIssuerConfig extends IssuerConfig {
 }
 
 describe("IssuerConfig", () => {
-  it("defaults to the keygen driver with no token", () => {
+  it("defaults to the registry driver with no tokens", () => {
     const config = buildConfig(IssuerConfig);
-    expect(config.driver).toBe("keygen");
+    expect(config.driver).toBe("registry");
+    expect(config.registryUrl).toBe("https://npm.stackra.figentra.com");
+    expect(config.issuerToken).toBe("");
     expect(config.productToken).toBe("");
+  });
+
+  it("refuses a registry origin with a path", () => {
+    expect(() =>
+      buildConfig(IssuerConfig, { values: { registryUrl: "https://npm.example/x" } }),
+    ).toThrow(ConfigInvalidError);
   });
 
   it("derives the key licensing.issuer", () => {

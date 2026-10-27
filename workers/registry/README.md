@@ -1,4 +1,4 @@
-<!-- Stackra file contract. Purpose: the README of @figentra/worker-registry, the Stackra npm registry Worker: routes, storage, publishing, read rules, settings, layout and deploy. Boundary: documentation only; ADR 0453 is the decision. Runtime: documentation. Governing contract: ADR 0453; ADR 0284; ADR 0007. -->
+<!-- Stackra file contract. Purpose: the README of @figentra/worker-registry, the Stackra npm registry Worker: routes, storage, publishing, read rules, the licence engine and its API, settings, layout and deploy. Boundary: documentation only; ADR 0453 is the decision. Runtime: documentation. Governing contract: ADR 0453; ADR 0284; ADR 0007. -->
 
 # @figentra/worker-registry
 
@@ -18,7 +18,9 @@ R2 holds the bytes, D1 the truth, KV the caches. It never proxies an upstream.
 
 `@stackra` reads need no token (a token sent is ignored). `@stackra-pro` reads need a licence token whose licence is
 active, inside its dates plus the grace days, with a grant covering the name: no or unknown token is 401, anything
-else refused is 403.
+else refused is 403. A name with an `internal` row in `name_rules` (today `@stackra-pro/ui`, ADR 0461 decision 3) is
+read only by an internal licence whose grants cover it; a customer licence, `names: "*"` included, gets 403, and the
+catalogue never lists it.
 
 ## Routes
 
@@ -38,11 +40,49 @@ else refused is 403.
 | `GET /-/stackra/v1/catalogue?kind=&scope=&q=&cursor=&limit=` | `CataloguePage`, newest publish first                           | none                       |
 | `GET /-/stackra/v1/catalogue/@scope/name`                    | one `CatalogueItem` with its versions                           | none                       |
 | `GET /-/stackra/v1/entitlements`                             | `{ holder, grants, expiresAt, status }`                         | licence token              |
+| `/-/stackra/v1/licences…`                                    | the licence API (below)                                         | issuer token               |
 | `PUT /-/user/*`                                              | 403: there is no login, see the licence docs                    | —                          |
 | `DELETE` of a package or version                             | 405: versions are immutable                                     | —                          |
 | anything else (search, audit, unknown or unscoped names)     | 404                                                             | —                          |
 
-The licence API (`/-/stackra/v1/licences`) is stackra-183's.
+## Licences
+
+A licence is a `licences` row (`holder_ref`, the opaque Figentra OS account; `status` `active`, `suspended` or
+`revoked`; `not_before`, `expires_at`; `internal`), its `licence_grants` (one row per scope and name, `*` for every
+name; only `licensed` scopes) and its `licence_tokens`: `stkl_` and 43 base64url characters (32 random bytes), shown
+once, stored as SHA-256 only, at most `REGISTRY_LICENCE_MAX_TOKENS` live ones, each revocable on its own. Reads stop
+when the licence is suspended or revoked and `REGISTRY_LICENCE_GRACE_DAYS` after `expires_at`; the edge cache means a
+change is seen within `REGISTRY_TOKEN_CACHE_SECONDS`. `D1LicenceCheck` (`src/licence/`) is the `LicenceCheck` bound in
+`main.ts`.
+
+The licence API, the OS billing hook; it answers `RegistryLicence` of `@stackra/licensing/contracts`, and the
+`registry` `LicenceIssuer` driver of `@stackra/licensing` is its client:
+
+| Method and path                                               | Body                                                      | Answers |
+| ------------------------------------------------------------- | --------------------------------------------------------- | ------- |
+| `POST /-/stackra/v1/licences`                                 | `{ holderRef, grants, notBefore, expiresAt, tokenLabel }` | 201     |
+| `PATCH /-/stackra/v1/licences/:id`                            | `{ expiresAt }` and/or `{ grants }`                       | 200     |
+| `POST /-/stackra/v1/licences/:id/suspend`, `resume`, `revoke` | —                                                         | 200     |
+| `POST /-/stackra/v1/licences/:id/tokens`                      | `{ label }`                                               | 201     |
+| `DELETE /-/stackra/v1/licences/:id/tokens/:tokenId`           | —                                                         | 200     |
+
+Every call sends `Authorization: Bearer <issuer token>` (401 otherwise) and `Idempotency-Key` (the OS event id; 400
+without). A repeat of the same request answers the stored body with `idempotent-replayed: true` and `issuedToken: null`
+(a token is shown once); the same key with another request is 409. Body errors are 400, a grant on a scope that is not
+`licensed` or one token too many is 422, an unknown licence or token is 404, anything but `revoke` on a revoked
+licence is 409. Every call writes an `audit_events` row (`licence.<action>`, the licence id, `issuer:<label>`, the key).
+
+### Issuer tokens
+
+The owner makes one per caller (OS billing), stores its value in Infisical `prod` `/registry` as
+`REGISTRY_ISSUER_TOKEN` (the name `@stackra/licensing`'s `IssuerConfig` reads) and inserts only its hash:
+`INSERT INTO issuer_tokens (hash, label, created_at) VALUES ('<sha256 hex>', 'os-billing', '<now>')`, through the
+migration CI job or the Cloudflare dashboard. Rotate by inserting the new hash, then setting `revoked_at` on the old row.
+
+### Internal licences
+
+Only the owner sets `licences.internal = 1` (Figentra's own products, ADR 0461 decision 7); the licence API never does,
+so no billing event can open an internal name. Issue the licence through the API, then set the flag on its id.
 
 ## Publishing
 
@@ -70,7 +110,7 @@ Every limit is a Worker var in `wrangler.jsonc` (`src/settings/read-settings.ts`
 | `REGISTRY_PUBLISH_TOKEN_SECONDS`  | `registry.publishTokenSeconds` | 900                                           |
 | `REGISTRY_TOKEN_CACHE_SECONDS`    | `registry.tokenCacheSeconds`   | 60                                            |
 | `REGISTRY_LICENCE_GRACE_DAYS`     | `registry.licence.graceDays`   | 14                                            |
-| `REGISTRY_LICENCE_MAX_TOKENS`     | `registry.licence.maxTokens`   | 20 (read by stackra-183)                      |
+| `REGISTRY_LICENCE_MAX_TOKENS`     | `registry.licence.maxTokens`   | 20 live tokens per licence                    |
 | `REGISTRY_OIDC_ISSUER`            | —                              | `https://token.actions.githubusercontent.com` |
 | `REGISTRY_OIDC_KEYS_SECONDS`      | —                              | 3600                                          |
 | `REGISTRY_OPEN_PACKUMENT_MAX_AGE` | —                              | 60 (also the keys and catalogue max-age)      |
@@ -88,13 +128,14 @@ secret.
 | Path                      | Holds                                                                                    |
 | ------------------------- | ---------------------------------------------------------------------------------------- |
 | `wrangler.jsonc`          | Worker name, script, bindings, vars, the custom domain                                   |
-| `migrations/`             | numbered D1 migrations; `0001_registry.sql` seeds the scopes and trusted publishers      |
+| `migrations/`             | numbered D1 migrations; `0001` scopes and publishers, `0002` licences and `name_rules`   |
 | `src/main.ts`             | the Worker entry: builds the dependencies, hands over to `handleRequest`                 |
 | `src/http/`               | `parsePath`, `splitName`, the router, `json` and `failure`                               |
 | `src/npm/`                | the npm read routes (`handle*`), packument rendering and its KV cache, R2 keys           |
 | `src/publish/`            | publish and dist-tag writes, publish auth, tarball reader, digests, content checks       |
 | `src/oidc/`               | GitHub OIDC verification, the key set, publisher matching, the token exchange            |
-| `src/access/`             | the `LicenceCheck` port and its empty binding, the edge-cache wrapper, the read rule     |
+| `src/access/`             | the `LicenceCheck` port, the edge-cache wrapper, the read rule (`gate`, `readAccess`)    |
+| `src/licence/`            | the licence API, `LicenceStore`, `D1LicenceCheck`, token minting, grant folding          |
 | `src/signing/`            | the ECDSA P-256 signer, keyids, DER signatures                                           |
 | `src/catalogue/`          | the catalogue API and entitlements                                                       |
 | `src/store/`              | `RegistryStore`, every D1 query                                                          |
@@ -120,8 +161,9 @@ Never run `wrangler deploy` or `wrangler d1 migrations apply --remote` by hand. 
 
 ## Not here yet
 
-- The licence engine (D1 tables, the licence API, the D1 `LicenceCheck` adapter): stackra-183. Until then
-  `main.ts` binds `noLicences`, so every `@stackra-pro` read is refused.
+- A signed offline licence file for on-prem from the registry (ADR 0453 decision 15, `LICENCE_SIGNING_KEY`): the
+  `keygen` driver of `@stackra/licensing` covers on-prem until it is built.
+- Pruning old `licence_requests` receipts (they are small and kept).
 - `@stackra/skills/contracts` (`StackraKind`, `StackraManifest`, `CatalogueItem`, `CataloguePage`): stackra-184. The
   same shapes live in `src/interfaces/` (`stackra-kind.type.ts`, `catalogue-item.interface.ts`, …) and
   `src/constants/stackra-kinds.constant.ts` until then.

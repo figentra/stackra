@@ -2,16 +2,17 @@
  * Stackra file contract:
  * Purpose: the Worker entry of `stackra-registry` (ADR 0453): builds `RegistryDeps` from the environment (settings
  *          from the vars, the signer from REGISTRY_SIGNING_KEY, the D1 store, the GitHub key set through KV, the
- *          licence check behind the edge cache) and hands each request to `handleRequest`.
- * Boundary: wiring only. The licence check is `noLicences` until stackra-183 binds its D1 adapter here.
+ *          D1 licence check behind the edge cache, the licence API's store) and hands each request to `handleRequest`.
+ * Boundary: wiring only.
  * Runtime: worker
- * Governing contract: ADR 0453 (decisions 2, 3 and 19).
+ * Governing contract: ADR 0453 (decisions 2, 3, 13, 14 and 19); stackra-183 (STA-1335).
  */
 import { cachedLicenceCheck } from "#src/access/cached-licence-check";
-import { noLicences } from "#src/access/no-licences";
 import { handleRequest } from "#src/http/handle-request";
 import type { EdgeCache } from "#src/interfaces/edge-cache.interface";
 import type { RegistryEnv } from "#src/interfaces/registry-env.interface";
+import { D1LicenceCheck } from "#src/licence/d1-licence-check";
+import { LicenceStore } from "#src/licence/licence-store";
 import { jwksSource } from "#src/oidc/jwks-source";
 import { readSettings } from "#src/settings/read-settings";
 import type { Signer } from "#src/interfaces/signer.interface";
@@ -43,7 +44,8 @@ export default {
       store: new RegistryStore(env.DB),
       tarballs: env.TARBALLS,
       cache: env.CACHE,
-      licences: cachedLicenceCheck(noLicences, edge, settings.tokenCacheSeconds),
+      licenceStore: new LicenceStore(env.DB),
+      licences: cachedLicenceCheck(new D1LicenceCheck(env.DB), edge, settings.tokenCacheSeconds),
       signer: await current.signer,
       oidcKeys: jwksSource(env.CACHE, fetch, settings.oidcIssuer, settings.oidcKeysSeconds),
       settings,

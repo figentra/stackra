@@ -17,7 +17,7 @@ const CACHE_ORIGIN = "https://licence-check.stackra-registry.internal";
  * The licence check behind the edge cache.
  *
  * @example
- * const licences = cachedLicenceCheck(noLicences, caches.default, settings.tokenCacheSeconds);
+ * const licences = cachedLicenceCheck(new D1LicenceCheck(env.DB), caches.default, settings.tokenCacheSeconds);
  */
 export function cachedLicenceCheck(
   inner: LicenceCheck,

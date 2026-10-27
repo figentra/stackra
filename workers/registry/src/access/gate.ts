@@ -1,10 +1,10 @@
 /**
  * Stackra file contract:
- * Purpose: `gate`: the scope read rule for `name`: the scope and licence, or the refusal response (404 for an unknown
- *          scope).
+ * Purpose: `gate`: the read rule for `name`: the scope row (its `read_rule` tightened by a `name_rules` row, such as
+ *          `@stackra-pro/ui` `internal`) and licence, or the refusal response (404 for an unknown scope).
  * Boundary: reads only; never proxies an upstream (an unknown name is 404).
  * Runtime: worker
- * Governing contract: ADR 0453 (decisions 4, 5, 9, 10 and 13).
+ * Governing contract: ADR 0453 (decisions 4, 5, 9, 10 and 13); ADR 0461 (decision 3).
  */
 import { readAccess } from "#src/access/read-access";
 import { failure } from "#src/http/failure";
@@ -27,8 +27,12 @@ export async function gate(
   request: Request,
   name: string,
 ): Promise<Gate | Response> {
-  const scope = await deps.store.scope(splitName(name).scope);
-  if (scope === null) return failure(404, "not_found");
+  const [row, nameRule] = await Promise.all([
+    deps.store.scope(splitName(name).scope),
+    deps.store.nameRule(name),
+  ]);
+  if (row === null) return failure(404, "not_found");
+  const scope: ScopeRow = nameRule === null ? row : { ...row, read_rule: nameRule };
   const access = await readAccess(
     scope,
     name,

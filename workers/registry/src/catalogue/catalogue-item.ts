@@ -2,9 +2,9 @@
  * Stackra file contract:
  * Purpose: `catalogueItem`: `GET /-/stackra/v1/catalogue/@scope/name`.
  * Boundary: metadata only, to anyone, for the `open` and `licensed` scopes; never a tarball or file contents beyond
- *           the `stackra` field. `internal` scopes are not listed.
+ *           the `stackra` field. `internal` scopes and `internal` names (`name_rules`) are not listed.
  * Runtime: worker
- * Governing contract: ADR 0453 (decisions 11, 12 and 13).
+ * Governing contract: ADR 0453 (decisions 11, 12 and 13); ADR 0461 (decision 3).
  */
 import { itemOf } from "#src/catalogue/item-of";
 import { publicCache } from "#src/catalogue/public-cache";
@@ -17,7 +17,12 @@ import type { RegistryDeps } from "#src/interfaces/registry-deps.interface";
 export async function catalogueItem(deps: RegistryDeps, name: string): Promise<Response> {
   const pkg = await deps.store.package(name);
   const scope = pkg === null ? null : await deps.store.scope(pkg.scope);
-  if (pkg === null || scope === null || scope.read_rule === "internal")
+  if (
+    pkg === null ||
+    scope === null ||
+    scope.read_rule === "internal" ||
+    (await deps.store.nameRule(name)) !== null
+  )
     return failure(404, "not_found");
   const [versions, distTags] = await Promise.all([
     deps.store.versions(name),

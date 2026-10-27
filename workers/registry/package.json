@@ -44,6 +44,7 @@
     "clean": "rm -rf dist .turbo .wrangler"
   },
   "devDependencies": {
+    "@stackra/licensing": "workspace:*",
     "@stackra/tsdown-config": "workspace:*",
     "@stackra/typescript-config": "workspace:*",
     "@stackra/vitest-config": "workspace:*",
