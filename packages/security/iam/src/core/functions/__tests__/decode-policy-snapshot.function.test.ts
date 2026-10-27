@@ -1,10 +1,10 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `decodePolicySnapshot`: an event's JSON becomes a snapshot with its instants as dates and its
- *          missing lists empty; a malformed payload is refused.
+ *          missing lists empty; an older event's `segments` key is ignored (ADR 0462); a malformed payload is refused.
  * Boundary: test only.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0208 (decisions 1 to 4).
+ * Governing contract: ADR 0022; ADR 0208 (decisions 1 to 4); ADR 0462.
  */
 import { describe, expect, it } from "@stackra/testing";
 
@@ -43,6 +43,7 @@ describe("decodePolicySnapshot", () => {
     expect(snapshot.breakGlass?.[0]?.startsAt).toEqual(new Date("2026-10-25T08:00:00Z"));
     expect(snapshot.visibility).toEqual([]);
     expect(snapshot.fields).toEqual([]);
+    expect("segments" in snapshot).toBe(false);
   });
 
   it.each([
@@ -51,7 +52,6 @@ describe("decodePolicySnapshot", () => {
     [{ version: 1, grants: [{ scope: ACME }] }],
     [{ version: 1, grants: [{ role: "x", scope: ACME, expiresAt: "soon" }] }],
     [{ version: 1, roles: { x: [1] } }],
-    [{ version: 1, segments: [1] }],
     [{ version: 1, denies: ["x"] }],
     [{ version: 1, breakGlass: [{ role: "x", scope: ACME }] }],
   ])("refuses %j", (json) => {

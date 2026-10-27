@@ -113,7 +113,6 @@
     "@stackra/model": "workspace:*",
     "@stackra/rules": "workspace:*",
     "@stackra/scope": "workspace:*",
-    "@stackra/segments": "workspace:*",
     "@stackra/validation": "workspace:*",
     "zod": "catalog:"
   },

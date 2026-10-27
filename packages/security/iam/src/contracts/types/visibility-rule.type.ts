@@ -6,7 +6,7 @@
  *           never replaces it (ADR 0333 decision 5). A deny beats an allow; a record no rule matches gets no answer
  *           here (`Decision.Abstain`), because no default is decided (ADR 0333 decision 7).
  * Runtime: isomorphic
- * Governing contract: ADR 0333 (decisions 1 to 3 and 7); ADR 0208 (decision 3); ADR 0331.
+ * Governing contract: ADR 0333 (decisions 1 to 3 and 7, as amended by ADR 0462); ADR 0208 (decision 3); ADR 0331.
  */
 import type { Condition } from "@stackra/rules";
 
@@ -19,7 +19,7 @@ import type { Audience } from "#contracts/types/audience.type";
  * @example
  * const privateSale: VisibilityRule = {
  *   model: "catalogue.product",
- *   audience: { kind: "segment", id: vipId },
+ *   audience: { kind: "role", key: SystemRole.Manager },
  *   capability: Capability.Use,
  *   condition: { field: "record.collection", operator: Operator.Equals, value: "private_sale" },
  * };

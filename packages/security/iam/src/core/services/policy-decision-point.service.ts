@@ -23,7 +23,7 @@
  *           rules in force for a record (hidden, read-only).
  * Runtime: isomorphic
  * Governing contract: ADR 0208 (decisions 1 to 4, and the 0327 and 0333 notes); ADR 0132 (decision 5); ADR 0333
- *                     (decisions 2, 3 and 7); ADR 0099 (as amended by 0294); ADR 0098 (the actor chain); ADR 0351
+ *                     (decisions 2, 3 and 7, as amended by ADR 0462); ADR 0099 (as amended by 0294); ADR 0098 (the actor chain); ADR 0351
  *                     (decisions 3 and 4); STA-595 (field rules, break-glass, restricted permissions).
  */
 import { Service } from "@stackra/container";
@@ -120,16 +120,17 @@ function valueAt(facts: unknown, path: string): unknown {
   return value;
 }
 
-/** Whether the principal of `snapshot`, acting at `scope` with `grants`, is in `audience` (everyone when absent). */
+/**
+ * Whether the principal acting at `scope` with `grants` is in `audience` (everyone when absent). IAM knows no segments:
+ * a segment-targeted business rule is a `@stackra/rules` condition (ADR 0462 decision 1).
+ */
 function inAudience(
   audience: Audience | undefined,
-  snapshot: PolicySnapshot,
   grants: readonly Grant[],
   scope: ScopeRef | undefined,
 ): boolean {
   if (audience === undefined) return true;
   if (!("kind" in audience)) return scope !== undefined && isWithinScope(scope.path, audience.path);
-  if (audience.kind === "segment") return snapshot.segments.includes(audience.id);
   return grants.some((grant) => grant.role === audience.key);
 }
 
@@ -260,7 +261,7 @@ export class PolicyDecisionPointService extends Service {
     let allowed = false;
     for (const rule of snapshot.visibility) {
       if (rule.model !== model || rule.capability !== capability) continue;
-      if (!inAudience(rule.audience, snapshot, grants, options.scope)) continue;
+      if (!inAudience(rule.audience, grants, options.scope)) continue;
       if (!conditionHolds(rule.condition, record, at, this.live, rule.deny === true)) continue;
       if (rule.deny === true) return Decision.Deny;
       allowed = true;
@@ -295,7 +296,7 @@ export class PolicyDecisionPointService extends Service {
     const denies: Condition[] = [];
     for (const rule of snapshot.visibility) {
       if (rule.model !== model || rule.capability !== capability) continue;
-      if (!inAudience(rule.audience, snapshot, grants, options.scope)) continue;
+      if (!inAudience(rule.audience, grants, options.scope)) continue;
       const deny = rule.deny === true;
       const tested = testable(rule.condition, options.rules, deny);
       (deny ? denies : allows).push(this.withDimensions(model, rule.condition, tested, deny));
@@ -331,7 +332,7 @@ export class PolicyDecisionPointService extends Service {
     const readOnly = new Set<string>();
     for (const rule of snapshot.fields ?? []) {
       if (rule.model !== model) continue;
-      if (!inAudience(rule.audience, snapshot, grants, options.scope)) continue;
+      if (!inAudience(rule.audience, grants, options.scope)) continue;
       const record =
         options.record === undefined && rule.condition !== undefined ? null : options.record;
       if (!conditionHolds(rule.condition, record, at, this.live, true)) continue;
@@ -409,7 +410,7 @@ export class PolicyDecisionPointService extends Service {
       (deny) =>
         (grant !== undefined || deny.breakable !== true) &&
         coversPermission(deny.permission, key, true) &&
-        inAudience(deny.audience, snapshot, grants, options.scope) &&
+        inAudience(deny.audience, grants, options.scope) &&
         conditionHolds(deny.condition, options.record, at, this.live, true),
     );
     if (rule !== -1)

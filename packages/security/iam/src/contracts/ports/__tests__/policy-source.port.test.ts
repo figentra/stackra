@@ -20,7 +20,6 @@ class EmptyPolicySourceDriver extends Driver(PolicySource) {
       version: 0,
       grants: [],
       roles: {},
-      segments: [],
       denies: [],
       visibility: [],
     });

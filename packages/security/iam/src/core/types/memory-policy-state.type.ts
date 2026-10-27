@@ -1,10 +1,10 @@
 /**
  * Stackra file contract:
- * Purpose: `MemoryPolicyState`, everything `MemoryPolicySourceDriver.load` takes: grants and segment memberships per
- *          principal (or for every principal), and the roles and rules in force.
+ * Purpose: `MemoryPolicyState`, everything `MemoryPolicySourceDriver.load` takes: grants per principal (or for every
+ *          principal), and the roles and rules in force. No segment memberships: IAM knows no segments (ADR 0462).
  * Boundary: a type only, for tests and local runs; a row without `principal` applies to every principal.
  * Runtime: isomorphic
- * Governing contract: ADR 0208 (decisions 1 to 3); ADR 0333 (decision 2).
+ * Governing contract: ADR 0208 (decisions 1 to 3); ADR 0333 (decision 2, as amended by ADR 0462).
  */
 import type { PublicId } from "@stackra/contracts";
 
@@ -17,9 +17,6 @@ export interface MemoryPolicyState {
 
   /** Custom and provisioned roles by key, each with the permission keys it holds. */
   readonly roles?: Readonly<Record<string, readonly string[]>>;
-
-  /** Segment memberships, each for one principal or (without `principal`) for every principal. */
-  readonly segments?: readonly { readonly segment: PublicId; readonly principal?: PublicId }[];
 
   /** The explicit denies in force. */
   readonly denies?: readonly DenyRule[];

@@ -26,7 +26,6 @@ const at = (version: number): PolicySnapshot => ({
   version,
   grants: [{ role: "manager", scope: { id: "scp_01j9z3k4m5n6p7q8r9s0t1v2w1", path: "platform" } }],
   roles: {},
-  segments: [],
   denies: [],
   visibility: [],
 });

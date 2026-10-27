@@ -4,9 +4,10 @@
  *          instant (a grant's expiry, a break-glass window) turned back into a `Date`.
  * Boundary: pure; the event payload is untrusted until it passes here. Anything malformed throws, so a bad event is
  *           never stored as a policy (a consumer keeps the snapshot it holds). Conditions stay as they came; the
- *           decision point checks them against the record's registry when it reads them.
+ *           decision point checks them against the record's registry when it reads them. A `segments` key an
+ *           older event carries is ignored: IAM knows no segments (ADR 0462 decision 1).
  * Runtime: isomorphic
- * Governing contract: ADR 0208 (decisions 1 to 4: snapshots pushed by events); ADR 0141 (integration events).
+ * Governing contract: ADR 0208 (decisions 1 to 4: snapshots pushed by events); ADR 0141 (integration events); ADR 0462.
  */
 import type { PublicId, ScopeRef } from "@stackra/contracts";
 
@@ -88,9 +89,6 @@ export function decodePolicySnapshot(json: unknown): PolicySnapshot {
     )
   )
     throw new TypeError("a policy snapshot's roles are not lists of permission keys");
-  const segments = listOf(json.segments, "segments");
-  if (!segments.every((segment) => typeof segment === "string"))
-    throw new TypeError("a policy snapshot's segments are not ids");
   const rules = (what: string) =>
     listOf(json[what], what).map((rule) => {
       if (!isObject(rule)) throw new TypeError(`a policy snapshot's ${what} hold a non-object`);
@@ -100,7 +98,6 @@ export function decodePolicySnapshot(json: unknown): PolicySnapshot {
     version: json.version,
     grants: listOf(json.grants, "grants").map(grantOf),
     roles: roles as PolicySnapshot["roles"],
-    segments: segments as readonly PublicId[],
     denies: rules("denies") as unknown as PolicySnapshot["denies"],
     visibility: rules("visibility") as unknown as PolicySnapshot["visibility"],
     fields: rules("fields") as unknown as NonNullable<PolicySnapshot["fields"]>,

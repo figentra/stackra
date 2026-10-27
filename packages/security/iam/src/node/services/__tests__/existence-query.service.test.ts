@@ -7,11 +7,11 @@
  * Boundary: test only; the source is `MemoryPolicySourceDriver`, the clock fixed, the call context a settable stand-in,
  *           and the database a stand-in whose query builder records its calls (`Database.current` spied).
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0333 (decision 2, the existence capability); STA-933.
+ * Governing contract: ADR 0022; ADR 0333 (decision 2, the existence capability, as amended by ADR 0462); STA-933.
  */
 import { ContextStorage } from "@stackra/actions/contracts";
 import { Driver } from "@stackra/container";
-import { type Actor, ActorKind, Clock, type PublicId, Realm } from "@stackra/contracts";
+import { type Actor, ActorKind, Clock, Realm, type ScopeRef } from "@stackra/contracts";
 import { Database } from "@stackra/database";
 import { Model, Visibility } from "@stackra/model";
 import { Rules } from "@stackra/rules";
@@ -28,7 +28,9 @@ import { registerVisibility } from "#node/functions/register-visibility.function
 import { ExistenceQueryService } from "#node/services/existence-query.service";
 
 const NOW = new Date("2026-10-25T09:00:00Z");
-const VIP: PublicId<"seg"> = "seg_01j9z3k4m5n6p7q8r9s0t1v2v1";
+const ROOT: ScopeRef = { id: "scp_01j9z3k4m5n6p7q8r9s0t1v2r1", path: "platform" };
+/** A business role standing in for a customer group; IAM knows no segments (ADR 0462 decision 1). */
+const VIP = { kind: "role", key: "vip" } as const;
 const MATTER_ID = "mat_01j9z3k4m5n6p7q8r9s0t1v2m1";
 const OPEN = { field: "record.status", operator: Operator.Equals, value: "open" } as const;
 const OPEN_FILTER = { $and: [{ $not: { status: null } }, { status: { $eq: "open" } }] };
@@ -79,13 +81,13 @@ class Matter extends Model.with() {
 
 class Invoice extends Model.with() {}
 
-/** The VIP segment sees open matters. */
+/** VIP holders see open matters. */
 const SEE_OPEN: MemoryPolicyState = {
-  segments: [{ principal: customer.id, segment: VIP }],
+  grants: [{ principal: customer.id, role: VIP.key, scope: ROOT }],
   visibility: [
     {
       model: "legal.matter",
-      audience: { kind: "segment", id: VIP },
+      audience: VIP,
       capability: Capability.See,
       condition: OPEN,
     },
@@ -148,7 +150,7 @@ describe(ExistenceQueryService, () => {
         ...(SEE_OPEN.visibility ?? []),
         {
           model: "legal.matter",
-          audience: { kind: "segment", id: VIP },
+          audience: VIP,
           capability: Capability.Exists,
         },
       ],

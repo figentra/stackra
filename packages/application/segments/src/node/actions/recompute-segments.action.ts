@@ -7,9 +7,10 @@
  *           `CronScopes` driver lists, and each run reads only the segments of its scope session; a segment's recompute
  *           runs in the segment's own scope, so row-level security applies to every read. Recomputing is idempotent:
  *           a retry, or two runs of one segment, change membership once (the membership table is unique per segment
- *           and subject).
+ *           and subject). Its permission, `segments.segment.recompute`, is `SegmentPermissions.recompute`, held only by
+ *           the platform (ADR 0462 decision 1).
  * Runtime: node
- * Governing contract: ADR 0332 (decision 3); ADR 0148 (decisions 1, 4 and 5); ADR 0305 (rules 28 and 30).
+ * Governing contract: ADR 0332 (decision 3); ADR 0148 (decisions 1, 4 and 5); ADR 0305 (rules 28 and 30); ADR 0462.
  */
 import { Action } from "@stackra/actions";
 import { ActorKind } from "@stackra/contracts";

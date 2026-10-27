@@ -1,21 +1,26 @@
+<!-- Purpose: the guide to @stackra/segments: segments, membership, the recompute job, its permissions and the fact source it supplies to @stackra/rules. Boundary: documentation of packages/application/segments only. Runtime: none (Markdown). Governing contract: ADR 0332; ADR 0331; ADR 0462. -->
+
 # @stackra/segments
 
 Stackra segments: named audiences over any subject model (users, customers, contacts, companies), defined once and read
-by every consumer: notification audiences, promotions, analytics and IAM visibility rules (ADR 0332). A segment is
+by every consumer: notification audiences, promotions, analytics and business rules (ADR 0332). Segments is an optional
+add-on above `@stackra/iam` and `@stackra/rules`: a segment is a business level, not a permission level, so IAM knows
+no segments and a segment-targeted rule ("VIP customers cannot cancel") is a `@stackra/rules` condition on
+`segments.ids` (ADR 0462 decision 1). A segment is
 dynamic (the published revision of a `@stackra/rules` rule set decides its members) or manual (a static list). Its
 membership is materialised in a table and recomputed on the subject's row changes, hourly per scope and on a newly
 published revision; every change of membership emits `MembershipEntered` or `MembershipLeft` through the outbox.
 
 **Tier:** `tier:lib` (`packages/application/segments`). Entries `./contracts`, `.`, `./node` and `./testing`. Depends on
 `@stackra/actions`, `@stackra/container`, `@stackra/contracts`, `@stackra/database`, `@stackra/errors`,
-`@stackra/events`, `@stackra/model`, `@stackra/outbox`, `@stackra/queue`, `@stackra/rules`, `@stackra/validation` and
+`@stackra/events`, `@stackra/iam` (for `Permissions`), `@stackra/model`, `@stackra/outbox`, `@stackra/queue`, `@stackra/rules`, `@stackra/validation` and
 zod. The package names no subject model and knows no commerce.
 
 ## What is here
 
 | Symbol                                | Entry         | Use                                                                                      |
 | ------------------------------------- | ------------- | ---------------------------------------------------------------------------------------- |
-| `SegmentRef`                          | `./contracts` | `{ kind: "segment", id }`, the audience a consumer stores (IAM's audience union)         |
+| `SegmentRef`                          | `./contracts` | `{ kind: "segment", id }`, the audience a consumer stores                                |
 | `SubjectRef`                          | `./contracts` | `{ model, id }`, the record a membership names: its model key and public id              |
 | `SegmentSubject`                      | `./contracts` | what a consumer implements per subject model: `rules`, `ids(after, limit)`, `facts(ids)` |
 | `SegmentKind`                         | `./contracts` | `Dynamic` or `Manual`                                                                    |
@@ -28,6 +33,9 @@ zod. The package names no subject model and knows no commerce.
 | `RecomputeSegmentsInput`              | `./node`      | its input: `segmentId`, absent for the hourly run                                        |
 | `SubjectChangeService`                | `./node`      | the outbox change consumer of every registered subject model                             |
 | `Segment`, `SegmentMembership`        | `./node`      | the models: `segments.segments` and `segments.segment_memberships`                       |
+| `SEGMENT_FACTS`                       | `.`           | the fact source `segments.ids` a rules registry registers (`rules.register`)             |
+| `SegmentFactProviderDriver`           | `./node`      | the `FactProvider` driver: a subject's segment ids, for `factsFrom` of @stackra/rules    |
+| `SegmentPermissions`                  | `./node`      | `segments.segment.recompute`, system-held (`Permission.L1.system()`), the job's          |
 | `SEGMENTS_TESTING_PLUGIN`             | `./testing`   | connects a testing app's `SegmentService` to the app                                     |
 
 ## Covering a subject model

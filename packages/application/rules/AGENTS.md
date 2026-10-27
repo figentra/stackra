@@ -6,7 +6,7 @@ Purpose: the agent rules of @stackra/rules: where code goes, entries and barrels
          floors, fact-source registration, pack defaults) and PII.
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
-Governing contract: ADR 0294; ADR 0305; ADR 0331; ADR 0455.
+Governing contract: ADR 0294; ADR 0305; ADR 0331; ADR 0455; ADR 0462.
 -->
 
 One condition engine for every rule consumer: the condition tree, the operator sets, fact sources, the check, the
@@ -30,6 +30,7 @@ the programming model v3.1 shape (ADR 0294, 0305). Entries `./contracts`, `.`, `
 | A migration                                  | `src/node/database/migrations/<NNNN>-<name>.migration.ts` |
 | The rule builder and its parts               | `src/react/rule-builder/`                                 |
 | A word the builder or the matrix shows       | `assets/lang/<locale>/rules.json` (seven locales)         |
+| A port an add-on binds (`FactProvider`)      | `src/core/ports/`                                         |
 | A test                                       | `__tests__/<name>.<kind>.test.ts(x)` beside it            |
 
 ## Entries and barrels
@@ -60,6 +61,9 @@ the programming model v3.1 shape (ADR 0294, 0305). Entries `./contracts`, `.`, `
 - `Rules` is frozen except for its fact sources: `register` adds an edition's sources after `create` (ADR 0455), never
   replaces or removes one, and checks them as `create` does. A condition naming an unregistered source stays
   `field_unknown`. `ConditionFieldService.sync` reads `rules.fields()`, so sync after the edition registers.
+- An add-on's facts come through the `FactProvider` port and `factsFrom` (ADR 0462 decision 1); this package never
+  depends on an add-on (`@stackra/segments` and the like depend on it), never names one in code, and still loads no
+  facts in `evaluate`.
 - `crossedFloor` handles every `FloorBound` (`min`, `max`, `list`); a list floor sits on a `list` parameter only.
 - No tenant vocabulary (R-59, ADR 0323): rule sets are keyed by the contracts `ScopeRef`.
 - Field error codes are snake_case and never echo a value; explanation steps never carry a fact's value.

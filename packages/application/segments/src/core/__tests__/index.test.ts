@@ -1,10 +1,10 @@
 /**
  * Stackra file contract:
- * Purpose: the consumer contract of the `.` entry: the two membership events and the kind refusal are its values, and
+ * Purpose: the consumer contract of the `.` entry: the two membership events, the kind refusal and `SEGMENT_FACTS` are its values, and
  *          nothing else is.
  * Boundary: test only; imports the stand-in barrel through its `#core` alias.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0269; ADR 0294 (decision 15).
+ * Governing contract: ADR 0022 (test placement); ADR 0269; ADR 0294 (decision 15); ADR 0462.
  */
 import { describe, expect, it } from "@stackra/testing";
 
@@ -15,6 +15,7 @@ describe("@stackra/segments", () => {
     expect(Object.keys(segments).sort()).toEqual([
       "MembershipEntered",
       "MembershipLeft",
+      "SEGMENT_FACTS",
       "SegmentKindMismatchError",
     ]);
   });

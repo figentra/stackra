@@ -19,7 +19,6 @@ const NOTHING: PolicySnapshot = Object.freeze({
   version: 0,
   grants: [],
   roles: {},
-  segments: [],
   denies: [],
   visibility: [],
 });

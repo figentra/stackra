@@ -1,13 +1,13 @@
 /**
  * Stackra file contract:
  * Purpose: pins the exports of the `.` entry of @stackra/rules: `Rules`, `evaluate`, `decide`, `guardFloors`,
- *          `OutcomeDispatcher`, `RuleOutcome`, `Condition$`, `FactSource$`, `RuleSetPack$`, `packRuleSetOf`, the three refusals and `RuleSetPublished` at run time, none of `./contracts`' symbols, and the condition, fact and evaluation
+ *          `OutcomeDispatcher`, `RuleOutcome`, `Condition$`, `FactSource$`, `RuleSetPack$`, `packRuleSetOf`, `FactProvider`, `factsFrom`, the three refusals and `RuleSetPublished` at run time, none of `./contracts`' symbols, and the condition, fact and evaluation
  *          types at compile time (a tree and an evaluation typecheck; an abbreviated leaf key and an unknown
  *          operator are refused).
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0294 (decision 15: one symbol, one entry); ADR 0331 (decisions 2, 6 and 7);
- *                     ADR 0455.
+ *                     ADR 0455; ADR 0462 (decision 1).
  */
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
@@ -19,6 +19,7 @@ import type {
   EvaluateOptions,
   Evaluation,
   EvaluationStep,
+  FactSubject,
   FactValue,
   Facts,
   RuleField,
@@ -32,6 +33,7 @@ describe("@stackra/rules", () => {
       "APPROVAL_FLOOR_KEY",
       "Condition$",
       "ConditionInvalidError",
+      "FactProvider",
       "FactSource$",
       "OutcomeDispatcher",
       "OutcomeInvalidError",
@@ -43,6 +45,7 @@ describe("@stackra/rules", () => {
       "actionPermissionRowsOf",
       "decide",
       "evaluate",
+      "factsFrom",
       "guardFloors",
       "packApprovalFloorOf",
       "packRuleSetOf",
@@ -78,5 +81,6 @@ describe("@stackra/rules", () => {
     >();
     expectTypeOf<RuleField["path"]>().toEqualTypeOf<string>();
     expectTypeOf<RulesOptions["key"]>().toEqualTypeOf<string>();
+    expectTypeOf<FactSubject>().toEqualTypeOf<{ readonly model: string; readonly id: string }>();
   });
 });

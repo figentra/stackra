@@ -9,18 +9,12 @@
  * Boundary: test only; the source is `MemoryPolicySourceDriver`, the clock fixed, the call context a settable stand-in.
  *           The registry is cleared before each test.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0333 (decisions 1 to 5 and 7, and its amendment: relations); ADR 0208 (decision 3); STA-933.
+ * Governing contract: ADR 0022; ADR 0333 (decisions 1 to 5 and 7, and its amendment: relations;
+ *                     ADR 0462: no segment audience); ADR 0208 (decision 3); STA-933.
  */
 import { ContextStorage } from "@stackra/actions/contracts";
 import { Driver } from "@stackra/container";
-import {
-  type Actor,
-  ActorKind,
-  Clock,
-  type PublicId,
-  Realm,
-  type ScopeRef,
-} from "@stackra/contracts";
+import { type Actor, ActorKind, Clock, Realm, type ScopeRef } from "@stackra/contracts";
 import { VisibilityFilter } from "@stackra/database/contracts";
 import { ManyToOne, Model, Visibility } from "@stackra/model";
 import type { Ref } from "@stackra/model";
@@ -42,7 +36,9 @@ import { registerVisibility } from "#node/functions/register-visibility.function
 
 const NOW = new Date("2026-10-25T09:00:00Z");
 const ACME: ScopeRef = { id: "scp_01j9z3k4m5n6p7q8r9s0t1v2w1", path: "platform.acme" };
-const VIP: PublicId<"seg"> = "seg_01j9z3k4m5n6p7q8r9s0t1v2v1";
+const ROOT: ScopeRef = { id: "scp_01j9z3k4m5n6p7q8r9s0t1v2r1", path: "platform" };
+/** A business role standing in for a customer group; IAM knows no segments (ADR 0462 decision 1). */
+const VIP = { kind: "role", key: "vip" } as const;
 
 const customer: Actor = {
   kind: ActorKind.User,
@@ -115,14 +111,16 @@ class LoopB extends Model.with() {
   a!: Ref<LoopA>;
 }
 
-/** The VIP segment may see open matters; managers see every matter at their node. */
+/** VIP holders may see open matters; managers see every matter at their node. */
 const STATE: MemoryPolicyState = {
-  segments: [{ principal: customer.id, segment: VIP }],
-  grants: [{ principal: staff.id, role: SystemRole.Manager, scope: ACME }],
+  grants: [
+    { principal: customer.id, role: VIP.key, scope: ROOT },
+    { principal: staff.id, role: SystemRole.Manager, scope: ACME },
+  ],
   visibility: [
     {
       model: "legal.matter",
-      audience: { kind: "segment", id: VIP },
+      audience: VIP,
       capability: Capability.See,
       condition: OPEN,
     },
@@ -200,7 +198,7 @@ describe(IamVisibilityFilterDriver, () => {
         ...(STATE.visibility ?? []),
         {
           model: "legal.matter",
-          audience: { kind: "segment", id: VIP },
+          audience: VIP,
           capability: Capability.Exists,
         },
       ],

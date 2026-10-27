@@ -1,4 +1,4 @@
-<!-- Purpose: the guide to @stackra/iam: what each entry exports, declaring access, how a check decides, record visibility in reads, existence-only queries and filtered aggregates, restricted permissions. Boundary: documentation of packages/security/iam only. Runtime: none (Markdown). Governing contract: ADR 0208, 0132, 0333; STA-933. -->
+<!-- Purpose: the guide to @stackra/iam: what each entry exports, declaring access, how a check decides, record visibility in reads, existence-only queries and filtered aggregates, restricted permissions. Boundary: documentation of packages/security/iam only. Runtime: none (Markdown). Governing contract: ADR 0208, 0132, 0333 (as amended by 0462); STA-933. -->
 
 # @stackra/iam
 
@@ -8,8 +8,9 @@ check in process from the principal's policy snapshot (ADR 0208, 0132, 0333).
 
 **Tier:** `tier:lib` (`packages/security/iam`). Entries `.`, `./contracts`, `./node`, `./react` and `./testing`.
 Depends on `@stackra/actions`, `@stackra/container`, `@stackra/contracts`, `@stackra/errors`, `@stackra/rules`,
-`@stackra/scope`, `@stackra/segments` (its `./contracts` only, for the `SegmentRef` audience) and, for `./node` only,
-`@stackra/database`, `@stackra/model` and `@stackra/validation`.
+`@stackra/scope` and, for `./node` only, `@stackra/database`, `@stackra/model` and `@stackra/validation`. IAM is
+permission-only and knows no segments (ADR 0462): an audience is a scope node or a role. A segment-targeted business
+rule ("VIP customers cannot cancel") is a `@stackra/rules` condition that the optional `@stackra/segments` add-on feeds.
 
 ## What is here
 
@@ -42,7 +43,7 @@ Depends on `@stackra/actions`, `@stackra/container`, `@stackra/contracts`, `@sta
 | `./node`      | `registerVisibility`, `VisibilityRegistration`                                          | what gen's entry tells the query filter about each declaring model            |
 | `./node`      | `ExistenceQueryService`                                                                 | the existence-only query: which records match, as id-and-model hits only      |
 | `./contracts` | `PolicySnapshot`, `Grant`, `DenyRule`, `VisibilityRule`, `Audience`, `Capability`       | the policy as data                                                            |
-| `./contracts` | `Audience$`                                                                             | the shipped schema of `Audience`, for a shape field (scope, segment, role)    |
+| `./contracts` | `Audience$`                                                                             | the shipped schema of `Audience`, for a shape field (scope or role)           |
 | `./react`     | `usePermission`                                                                         | `const can = usePermission(); can(OrderPermissions.create)`                   |
 | `./testing`   | `actors`, `IAM_TESTING_PLUGIN`                                                          | test callers; the plugin that opens the memory policy                         |
 
@@ -125,7 +126,7 @@ connectVisibilityFilter(container); // with IamVisibilityFilterDriver bound to V
 ```
 
 - `visibleCondition(actor, capability, model, options)` settles each rule's audience for the principal (a scope node
-  at or above where the call acts, a segment it belongs to, a role it holds there) and returns one `@stackra/rules`
+  at or above where the call acts, or a role it holds there) and returns one `@stackra/rules`
   condition: no deny rule's condition holds and, unless `unmatched` is `Allow`, an allow rule's does. Each stored
   condition is checked against the model's attributes first; without registered attributes a conditional allow
   matches nothing and a conditional deny everything.

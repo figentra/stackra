@@ -1,14 +1,14 @@
 /**
  * Stackra file contract:
  * Purpose: the contract of the `./contracts` entry: the port and `Capability` are its only values, and the snapshot,
- *          grant, rule and audience types resolve to their shapes.
+ *          grant, rule and audience types resolve to their shapes; an audience is a scope or a role, never a segment
+ *          (ADR 0462).
  * Boundary: test only; imports the stand-in barrel through its `#contracts` alias.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0269; ADR 0294 (decision 15).
+ * Governing contract: ADR 0022; ADR 0269; ADR 0294 (decision 15); ADR 0462 (decision 1).
  */
-import type { PublicId, ScopeRef } from "@stackra/contracts";
+import type { ScopeRef } from "@stackra/contracts";
 import type { Condition } from "@stackra/rules";
-import type { SegmentRef } from "@stackra/segments/contracts";
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
 import * as contracts from "#contracts/index";
@@ -38,13 +38,14 @@ describe("@stackra/iam/contracts", () => {
   it("resolves its public types", () => {
     expectTypeOf<Grant["scope"]>().toEqualTypeOf<ScopeRef>();
     expectTypeOf<Grant["expiresAt"]>().toEqualTypeOf<Date | undefined>();
-    expectTypeOf<Audience>().toEqualTypeOf<ScopeRef | SegmentRef | RoleRef>();
-    expectTypeOf<Extract<Audience, { kind: "segment" }>>().toEqualTypeOf<SegmentRef>();
-    expectTypeOf<SegmentRef["id"]>().toEqualTypeOf<PublicId<"seg">>();
+    expectTypeOf<Audience>().toEqualTypeOf<ScopeRef | RoleRef>();
+    expectTypeOf<Extract<Audience, { kind: "segment" }>>().toEqualTypeOf<never>();
     expectTypeOf<RoleRef["kind"]>().toEqualTypeOf<"role">();
     expectTypeOf<DenyRule["condition"]>().toEqualTypeOf<Condition | undefined>();
     expectTypeOf<VisibilityRule["capability"]>().toEqualTypeOf<Capability>();
-    expectTypeOf<PolicySnapshot["segments"]>().toEqualTypeOf<readonly PublicId[]>();
+    expectTypeOf<keyof PolicySnapshot>().toEqualTypeOf<
+      "version" | "grants" | "roles" | "denies" | "visibility" | "fields" | "breakGlass"
+    >();
     expectTypeOf<PolicySnapshot["denies"]>().toEqualTypeOf<readonly DenyRule[]>();
   });
 });

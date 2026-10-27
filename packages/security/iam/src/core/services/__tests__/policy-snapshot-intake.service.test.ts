@@ -28,7 +28,6 @@ const json = (version: number): unknown =>
         },
       ],
       roles: {},
-      segments: [],
       denies: [],
       visibility: [],
     } satisfies PolicySnapshot),

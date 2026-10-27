@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: unit tests of `PolicyDecisionPointService`: grants inherit downward and expire, a call without a scope acts
  *          at the root, a wildcard counts only in a system role, module roles come from `registerRoles`, a system
- *          permission is the platform's only, deny overrides allow (by role, scope node and segment audiences), a
+ *          permission is the platform's only, deny overrides allow (by role and scope node audiences), a
  *          conditional deny is tested only against a record and fails closed without a fact source, every link of
  *          the actor chain must hold the permission, visibility answers deny over allow and abstains with no
  *          matching rule, the visible condition of a query joins the rules of the principal's audiences by the deny
@@ -13,17 +13,11 @@
  *           `@stackra/rules` trees. The registries are cleared before each test.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0208 (decisions 1 to 4; enforcement: deny-overrides-allow and the delegation
- *                     bound); ADR 0132 (decision 5); ADR 0333 (decisions 2, 3 and 7); ADR 0331 (decisions 6 and 11).
+ *                     bound); ADR 0132 (decision 5); ADR 0333 (decisions 2, 3 and 7, as amended by ADR 0462: no segment
+ *                     audience); ADR 0331 (decisions 6 and 11).
  */
 import { Driver } from "@stackra/container";
-import {
-  type Actor,
-  ActorKind,
-  Clock,
-  type PublicId,
-  Realm,
-  type ScopeRef,
-} from "@stackra/contracts";
+import { type Actor, ActorKind, Clock, Realm, type ScopeRef } from "@stackra/contracts";
 import { ConditionInvalidError, Rules } from "@stackra/rules";
 import { type FactField, FieldType, Operator } from "@stackra/rules/contracts";
 import { beforeEach, describe, expect, it } from "@stackra/testing";
@@ -70,7 +64,8 @@ const ROOT: ScopeRef = { id: "scp_01j9z3k4m5n6p7q8r9s0t1v2r1", path: "platform" 
 const ACME: ScopeRef = { id: "scp_01j9z3k4m5n6p7q8r9s0t1v2w1", path: "platform.acme" };
 const ACME_EU: ScopeRef = { id: "scp_01j9z3k4m5n6p7q8r9s0t1v2w2", path: "platform.acme.eu" };
 const GLOBEX: ScopeRef = { id: "scp_01j9z3k4m5n6p7q8r9s0t1v2w3", path: "platform.globex" };
-const VIP: PublicId<"seg"> = "seg_01j9z3k4m5n6p7q8r9s0t1v2v1";
+/** A business role standing in for a customer group; IAM knows no segments (ADR 0462 decision 1). */
+const VIP = { kind: "role", key: "vip" } as const;
 
 const staff: Actor = {
   kind: ActorKind.User,
@@ -199,20 +194,20 @@ describe("PolicyDecisionPointService", () => {
       );
     });
 
-    it("lets a deny beat the grant, for a role, a scope node and a segment audience", async () => {
-      const denied = (audience: MemoryPolicyState["denies"]) =>
-        pdpOver({
-          ...MANAGER_AT_ACME,
-          segments: [{ principal: staff.id, segment: VIP }],
-          denies: audience ?? [],
-        });
-      const byRole = denied([
-        { permission: "orders.order.cancel", audience: { kind: "role", key: SystemRole.Manager } },
-      ]);
-      const byScope = denied([{ permission: "orders.*", audience: ACME_EU }]);
-      const bySegment = denied([
-        { permission: "orders.order.cancel", audience: { kind: "segment", id: VIP } },
-      ]);
+    it("lets a deny beat the grant, for a role and a scope node audience", async () => {
+      const byRole = pdpOver({
+        ...MANAGER_AT_ACME,
+        denies: [
+          {
+            permission: "orders.order.cancel",
+            audience: { kind: "role", key: SystemRole.Manager },
+          },
+        ],
+      });
+      const byScope = pdpOver({
+        ...MANAGER_AT_ACME,
+        denies: [{ permission: "orders.*", audience: ACME_EU }],
+      });
 
       expect(await byRole.explain(staff, "orders.order.cancel", { scope: ACME })).toEqual({
         allowed: false,
@@ -223,7 +218,6 @@ describe("PolicyDecisionPointService", () => {
       });
       expect(await byScope.check(staff, "orders.order.cancel", { scope: ACME_EU })).toBe(false);
       expect(await byScope.check(staff, "orders.order.cancel", { scope: ACME })).toBe(true);
-      expect(await bySegment.check(staff, "orders.order.cancel", { scope: ACME })).toBe(false);
     });
 
     it("tests a conditional deny only against a record, and denies when the record has no fact source", async () => {
@@ -279,18 +273,18 @@ describe("PolicyDecisionPointService", () => {
 
   describe("visibility", () => {
     const PRIVATE_SALE: MemoryPolicyState = {
-      segments: [{ principal: customer.id, segment: VIP }],
+      grants: [{ principal: customer.id, role: VIP.key, scope: ROOT }],
       visibility: [
         {
           model: "orders.order",
-          audience: { kind: "segment", id: VIP },
+          audience: VIP,
           capability: Capability.See,
           condition: IN_EU,
         },
         { model: "orders.order", audience: ROOT, capability: Capability.Use, deny: true },
         {
           model: "orders.order",
-          audience: { kind: "segment", id: VIP },
+          audience: VIP,
           capability: Capability.Use,
         },
       ],
@@ -335,12 +329,14 @@ describe("PolicyDecisionPointService", () => {
   describe("visibleCondition", () => {
     const IN_US: Condition = { field: "record.region", operator: Operator.Equals, value: "us" };
     const RULES: MemoryPolicyState = {
-      segments: [{ principal: customer.id, segment: VIP }],
-      grants: [{ principal: staff.id, role: SystemRole.Manager, scope: ACME }],
+      grants: [
+        { principal: customer.id, role: VIP.key, scope: ROOT },
+        { principal: staff.id, role: SystemRole.Manager, scope: ACME },
+      ],
       visibility: [
         {
           model: "orders.order",
-          audience: { kind: "segment", id: VIP },
+          audience: VIP,
           capability: Capability.See,
           condition: IN_EU,
         },

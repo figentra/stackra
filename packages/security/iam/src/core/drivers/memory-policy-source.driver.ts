@@ -42,12 +42,11 @@ export class MemoryPolicySourceDriver extends Driver(PolicySource) {
 
   /** The snapshot of `principal`. */
   snapshot(principal: Actor): Promise<PolicySnapshot> {
-    const { grants, roles, segments, denies, visibility, fields, breakGlass } = this.state;
+    const { grants, roles, denies, visibility, fields, breakGlass } = this.state;
     return Promise.resolve({
       version: this.version,
       grants: rowsOf(grants, principal.id),
       roles: roles ?? {},
-      segments: rowsOf(segments, principal.id).map((row) => row.segment),
       denies: denies ?? [],
       visibility: visibility ?? [],
       fields: fields ?? [],

@@ -4,7 +4,7 @@
  *          raises the version, and a snapshot holds the principal's own rows and the rows for everyone.
  * Boundary: test only.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0208 (decisions 1 to 3).
+ * Governing contract: ADR 0022; ADR 0208 (decisions 1 to 3); ADR 0462 (no segment memberships).
  */
 import { type Actor, ActorKind, Realm, type ScopeRef } from "@stackra/contracts";
 import { describe, expect, it } from "@stackra/testing";
@@ -33,7 +33,6 @@ describe("MemoryPolicySourceDriver", () => {
       version: 0,
       grants: [],
       roles: {},
-      segments: [],
       denies: [],
       visibility: [],
       fields: [],
@@ -49,7 +48,6 @@ describe("MemoryPolicySourceDriver", () => {
         { principal: ann.id, role: SystemRole.Manager, scope: ROOT },
       ],
       roles: { staff: ["orders.order.read"] },
-      segments: [{ principal: bob.id, segment: "seg_01j9z3k4m5n6p7q8r9s0t1v2v1" }],
       denies: [{ permission: "orders.order.cancel" }],
     });
     const forAnn = await source.snapshot(ann);
@@ -58,8 +56,7 @@ describe("MemoryPolicySourceDriver", () => {
     expect(forAnn.version).toBe(1);
     expect(forAnn.grants.map((grant) => grant.role)).toEqual(["staff", "manager"]);
     expect(forBob.grants.map((grant) => grant.role)).toEqual(["staff"]);
-    expect(forAnn.segments).toEqual([]);
-    expect(forBob.segments).toEqual(["seg_01j9z3k4m5n6p7q8r9s0t1v2v1"]);
+    expect("segments" in forBob).toBe(false);
     expect(forBob.denies).toEqual([{ permission: "orders.order.cancel" }]);
   });
 

@@ -35,7 +35,6 @@ const at = (version: number): PolicySnapshot => ({
     },
   ],
   roles: { manager: ["orders.order.read"] },
-  segments: [],
   denies: [],
   visibility: [],
 });

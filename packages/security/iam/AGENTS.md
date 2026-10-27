@@ -1,4 +1,4 @@
-<!-- Purpose: the agent rules of @stackra/iam: where code goes, entries and barrels, the package's fail-closed rules and PII handling. Boundary: documentation of packages/security/iam only. Runtime: none (Markdown). Governing contract: ADR 0208, 0132, 0333; STA-933. -->
+<!-- Purpose: the agent rules of @stackra/iam: where code goes, entries and barrels, the package's fail-closed rules and PII handling. Boundary: documentation of packages/security/iam only. Runtime: none (Markdown). Governing contract: ADR 0208, 0132, 0333 (as amended by 0462); STA-933. -->
 
 # AGENTS — @stackra/iam
 
@@ -31,8 +31,9 @@ Permissions, policies, roles and the embedded policy decision point (ADR 0208, 0
 - `.` stays isomorphic: anything that reaches `@stackra/database` or `@stackra/model` (server only) goes in `./node`.
 - The registries (`PERMISSION_REGISTRY`, `ROLE_REGISTRY`, `POLICY_REGISTRY`, `VISIBILITY_REGISTRY`) stay internal;
   never export them.
-- `SegmentRef` is `@stackra/segments/contracts`' own; import it from there and never redeclare or re-export it.
-  segments must never depend on iam.
+- IAM is permission-only and knows no segments (ADR 0462 decision 1): `Audience` is `ScopeRef | RoleRef`, and iam must
+  never depend on `@stackra/segments`. Segments is an add-on above iam and rules; segment-targeted rules are
+  `@stackra/rules` conditions.
 - A contracts type a shape field may name ships its schema next to it, exported as `<Type>$` (`Audience$`, built on
   `@stackra/validation`'s `ScopeRef$`; ADR 0294 decision 26, STA-1284).
 
@@ -71,6 +72,5 @@ Permissions, policies, roles and the embedded policy decision point (ADR 0208, 0
 | Data         | Where                                  | Handling                                                       |
 | ------------ | -------------------------------------- | -------------------------------------------------------------- |
 | Principal id | `Actor`, `AccessExplanation.principal` | A public id; passed to the source and the audit, never logged. |
-| Segment ids  | `PolicySnapshot.segments`              | Membership references only; never logged.                      |
 | Record facts | `RecordFacts.facts`                    | Read for one evaluation and dropped; never stored or logged.   |
 | Rule values  | the filter `whereOf` builds            | Bound as query parameters; never written into SQL or logged.   |

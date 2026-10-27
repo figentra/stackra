@@ -1,0 +1,158 @@
+---
+title: "0462 — IAM knows no segments, segments is an add-on with its own permissions, and one table of layering exemptions"
+description: "Accepted · 2026-10-28"
+---
+
+{/* Stackra file contract. Purpose: ADR 0462 (Accepted 2026-10-28), the owner's decision on STA-1365 item 9: IAM is permission-only and knows no segments (an audience is a scope or a role); segment-targeted business rules live in the rules engine through a fact provider; segments is an optional add-on above iam and rules with its own permissions, the recompute job's system-held; plus the one table of layering exemptions that gen and lint both honour, and the amendment notes of ADR 0333 decision 2, ADR 0332 and the other pages it amends. Boundary: decision text; the code is batch stackra-211 (STA-1368); gen and lint changes belong to STA-1365; the index row and docs nav belong to stackra-90; the amended ADRs are not edited, their amendment notes are in this page only. Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0003, 0098, 0099, 0132, 0208, 0232, 0269, 0294, 0305, 0331, 0332, 0333; STA-1365, STA-1366, STA-1368; notes handover/batches/permission-and-exemption-audit.md. */}
+
+<Note>
+  Accepted 2026-10-28 by the owner (STA-1368, batch stackra-211). It replaces the proposal of
+  2026-10-27 (stackra-210), which offered option A or B and recommended B. Reserved number: 0462, the
+  next free after 0461 on every branch and worktree of stackra/core on 2026-10-27.
+</Note>
+
+## Context
+
+`@stackra/segments` declares one action, `segments.segment.recompute@1` (`RecomputeSegmentsAction`), the hourly
+membership recompute. Its only actor is `ActorKind.Job`. gen refused it with `permission_unknown`, because no
+`Permissions` class declared `segments.segment.recompute`. Segments could not declare one: the `Permissions` base lives
+in `@stackra/iam`, and `@stackra/iam` depended on `@stackra/segments` for one type, `SegmentRef`, in its `Audience`
+union (`ScopeRef | SegmentRef | RoleRef`). The import would have closed a package cycle, which turbo refuses
+(BUILDER-RULES rule 6c). The owner asked on 2026-10-27 to settle this in the ADRs and to find every other case like it.
+
+The stackra-210 audit (`notes/handover/batches/permission-and-exemption-audit.md`) read core at `4a12b67`, OS `main`
+at `72f073d8` and Commerce `commerce/wave-a` at `543d625`:
+
+- Of 689 actions, 2 declare no permission. One is RecomputeSegments, the only one where a cycle is the cause. The other
+  is OS `traffic.hit.record`, a public anonymous counter whose authors chose no permission; it is not a job.
+- 66 actions have only Job or System actors. 65 declare a permission: 25 system-held (`Permission.Lx.system()`, "held
+  only by the platform; no role may grant it") and 40 grantable.
+- The iam-to-segments edge was that one type import.
+- The same layering shape, a low package that cannot use a kind base above it, occurs in 9 more classes and one
+  generated file: 7 `@stackra/contracts` drivers that cannot call `Driver(port)`, the `@stackra/config` and
+  `@stackra/container` errors that cannot extend `Refusal`, and the `@stackra/testing` test setup. Lint accepts most of
+  these through path exemptions in `stackra/base-matches-suffix`; gen refuses all of them. The audit finds 8 classes
+  of exemption where the two disagree (STA-1365 items 1 to 4, 8 and 9).
+
+The owner's decision of 2026-10-28, in their words: "segment is a business level, not a permission level", and "I want
+a segment to be like ... an add-on".
+
+## Decision
+
+1. **IAM is permission-only and knows no segments; segment targeting is business logic in the rules engine; segments
+   is an add-on with its own permissions.** (Owner, 2026-10-28.)
+   - **IAM.** An audience of a deny, visibility or field rule is a scope node or a role: `Audience = ScopeRef |
+     RoleRef`. `Audience$` refuses `{ kind: "segment" }`. `PolicySnapshot` carries no segment memberships, and the
+     decision point and the visibility filter match no segment. `@stackra/iam` does not depend on
+     `@stackra/segments`. `Permissions`, `Permission` and `Risk` stay in `@stackra/iam`; nothing moves to
+     `@stackra/actions`.
+   - **Rules.** A rule that targets a segment ("VIP customers cannot cancel an order") is a business rule, a
+     `@stackra/rules` condition on a fact: `{ field: "segments.ids", operator: "includes", value: "seg_…" }`. The
+     engine gains one small port, `FactProvider` (`source`, `factsOf(subject)`), and `factsFrom(providers, subject)`,
+     which gathers each bound provider's facts under its source key. It completes the existing registration hook,
+     `Rules.register` ([0455](/adr/0455-rules-pack-defaults-without-a-scope-registered-fact-sources-list-floors-and-sections-without-a-base-pack)), which already lets a later package
+     add a source's description. `@stackra/rules` never depends on an add-on and still loads no facts in `evaluate`.
+   - **Segments.** `@stackra/segments` is an optional add-on above `@stackra/iam` and `@stackra/rules`. It depends on
+     both; neither depends on it. It declares `SegmentPermissions`, whose `recompute` is system-held
+     (`Permission.L1.system()`), so `RecomputeSegmentsAction` derives `segments.segment.recompute` and gen's
+     `permission_unknown` passes. Every action segments adds later declares its permission there. It supplies the
+     `SEGMENT_FACTS` source and `SegmentFactProviderDriver`, the rules `FactProvider` driver that reads materialised
+     membership.
+   - **Every action has a permission.** gen's `permission_unknown` keeps refusing an action without one, whatever its
+     actors. A job's permission is system-held. The OS `traffic.hit.record` case stays a product refusal and takes a
+     `Permission.L0` static.
+
+   Rejected options:
+
+   | Option | What it was | Why rejected |
+   | ------ | ----------- | ------------ |
+   | A | gen accepts a Job- or System-only action without a permission (row E9), with a new `risk:` option as the risk source | A second way to write a job for 66 actions to fix 1; the call loses its permission, risk and IAM record, so the actor list becomes the only gate and a later `User` or `Service` actor silently gets an unguarded action |
+   | B | Move `Permissions`, `Permission` and `Risk` from `@stackra/iam` into `@stackra/actions`, with re-exports from iam (the 2026-10-27 recommendation) | The owner keeps permissions in IAM: a permission is IAM's concept, and the move only worked around an edge that should not exist. It also kept a segment inside IAM's audience, which the owner rejects: a segment is a business level |
+   | Move `SegmentRef` down | Move the `SegmentRef` type into `@stackra/contracts` or iam's own contracts, so iam no longer imports segments | It breaks the cycle but keeps segments as a permission-level audience inside IAM, the coupling the owner rejects; IAM would still evaluate segment membership in every snapshot |
+
+2. **One table of layering exemptions, honoured by every kind check.** gen (`kind_unregistered_base`,
+   `kind_suffix_mismatch`, `token_not_a_class`, `event_base_abstract`, `generated_dependency_missing`,
+   `permission_unknown`) and lint (`stackra/base-matches-suffix`) read the same rows. Each row names the placement test
+   and why it holds. A placement that matches no row gets the ordinary kind rule (ADR 0294 R3) in both checks. A new
+   row is added only by amending this ADR.
+
+   | #   | Placement (the test both checks apply)                                                                     | Accepted form                                                  | Why                                                                                                                                                                                                                                                                                                      | Sites on 2026-10-27 |
+   | --- | ---------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------: |
+   | E1  | A `.driver.ts` class in `packages/foundation/contracts/src/`                                               | `extends <Port>`, the port imported by a local path            | `@stackra/container`, which exports `Driver(port)`, depends on `@stackra/contracts`: calling `Driver` there is a cycle. The port is its own token, so the class still binds                                                                                                                              |                   7 |
+   | E2  | A `.error.ts` class in a package that `@stackra/errors` reaches (config, container, contracts, validation) | `extends Error`, the class name ending in `Error`              | `@stackra/errors`, which exports `Refusal`, depends on these packages: extending `Refusal` there is a cycle                                                                                                                                                                                              |                   2 |
+   | E3  | A `.error.ts` class in `packages/developer/*` or `packages/infrastructure/*`                               | `extends Error`, the class name ending in `Error`              | Build-, generate- and deploy-time tool errors that never cross the API, so they carry no wire envelope ([0140](/adr/0140-error-envelope-and-error-kinds)); owner decision 2026-10-24. Not a cycle: these packages could import `Refusal`. Elsewhere a `.error.ts` class extends `Refusal` in both checks |                  17 |
+   | E4  | A `.service.ts` class with no base under a package's `src/testing/`                                        | no base                                                        | A test harness (`TestingApp`, `TestingModuleBuilder`) that a test builds, never a container binding ([0269](/adr/0269-stackra-testing-package-entries-and-helper-placement))                                                                                                                             |                   2 |
+   | E5  | `Container` in `packages/foundation/container/src/core/services/container.service.ts`                      | no base                                                        | The container builds every Service, so it cannot be one                                                                                                                                                                                                                                                  |                   1 |
+   | E6  | `ActionPipeline` in `packages/application/actions/src/core/services/action-pipeline.service.ts`            | no base                                                        | The runtime and the testing module build it per `Resolver`; it is never a container binding, and extending `Service` would make its resolver parameter a `token_not_a_class` refusal                                                                                                                     |                   1 |
+   | E7  | A class in the `src/core/bases/` folder of the package that exports that kind base                         | extends the kind's parent base (`DomainEvent extends Event`)   | It is the kind base, not a user class of the kind                                                                                                                                                                                                                                                        |                   4 |
+   | E8  | The member `@stackra/testing`                                                                              | gen writes its test setup without `@stackra/container/testing` | `@stackra/container` depends on `@stackra/testing`, and rule 6c keeps `@stackra/testing` free of every `@stackra/*` dependency except the `*-config` presets                                                                                                                                             |                   1 |
+
+   E5 and E6 replace the `oxlint-disable-next-line stackra/base-matches-suffix` comments in those two files: the row is
+   the reason, so the disable comments go once lint reads the table. E2 and E3 cover all 19 `.error.ts` classes that
+   extend `Error` today, so narrowing lint from "any class whose name ends in `Error`" to these two rows breaks nothing.
+   The proposal's row E9 (a Job- or System-only action with no permission) existed only for option A, which is
+   rejected; it is not added.
+
+3. **Amendments.** This record amends the pages below; they are not edited, and this list is their amendment note:
+   - [0333](/adr/0333-record-visibility-rules-who-can-see-which-records) decision 2: the audience of a visibility rule
+     is a scope node or a role, never a segment. Showing a record to a segment's members is a business rule over
+     `segments.ids` in the consumer that owns the record (decision 1 of this record), not a visibility rule. Decisions
+     3 to 7 of 0333 are unchanged.
+   - [0332](/adr/0332-stackra-segments-audiences-defined-by-rules): segments is an optional add-on above
+     `@stackra/iam` and `@stackra/rules`, never a dependency of either. In decision 5, "visibility rules" no longer read
+     membership; business rules read it through the `FactProvider` driver of segments. Context's "the visibility rules
+     of 0333" is replaced by "business rules". Segments declares its own permissions; its recompute job's is
+     system-held.
+   - [0098](/adr/0098-actions-are-the-unit): the planned gen check "rejects an action without a permission" holds for
+     every action, jobs included; a job's permission is system-held.
+   - [0331](/adr/0331-stackra-rules-one-condition-engine-for-every-rule-consumer) decision 4: besides the facts a
+     consumer computes, a fact source may be supplied by an add-on through the `FactProvider` port and `factsFrom`.
+   - [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming) R3 and decision 16: "a class extends
+     exactly one kind base exported by a `@stackra/*` package" has the exemptions of decision 2, and no others.
+   - [0003](/adr/0003-tier-dependency-direction): within `tier:lib`, a package that a kind base's package depends on
+     uses the matching row of decision 2, never a new upward dependency.
+   - [0232](/adr/0232-stackra-errors-package): `Refusal` is the error base everywhere except rows E2 and E3.
+   - [0269](/adr/0269-stackra-testing-package-entries-and-helper-placement): row E4 is the harness rule, and row E8
+     the generated setup of the testing package itself.
+   - [0132](/adr/0132-permissions-catalogue-and-policy-providers) and [0099](/adr/0099-risk-scale-l0-to-l4) are not
+     amended: `Permissions`, `Permission` and `Risk` stay in `@stackra/iam`, and every action keeps its risk.
+
+## Consequences
+
+- Every action has a permission and a risk. The 40 job-only actions that use a grantable verb today stay valid;
+  whether they should move to `.system()` verbs is a product clean-up, not part of this record.
+- IAM snapshots get smaller and IAM evaluates no business grouping. A rule stored with a segment audience before this
+  record no longer parses (`Audience$`); an older snapshot event's `segments` key is ignored. No such rule ships in
+  core, OS or Commerce at the time of writing (the audit found segment audiences only in iam's own tests).
+- A consumer that wants a segment-targeted rule registers `SEGMENT_FACTS` on its `Rules` and passes
+  `factsFrom(providers, subject)` with its own facts. Without segments installed, the source is absent and such a rule
+  is `field_unknown` at save, as any unknown field is.
+- The package graph: `@stackra/segments` depends on `@stackra/iam` and `@stackra/rules`; `@stackra/iam` depends on
+  neither segments nor anything that reaches it; `@stackra/rules` does not depend on segments or iam. No cycle.
+- gen and lint read one table, so a member that passes lint no longer fails gen on placement (STA-1365 items 1 to 4,
+  8 and 9). The `oxlint-disable` comments in `container.service.ts` and `action-pipeline.service.ts` go away.
+- Someone must keep the table: a new row is an amendment of this record, never a new path pattern in one checker.
+- STA-1365 items 5 to 7 (`AreaStorageDriver`, `ProviderDrivers<…>` in documents, `I18nKey`) are gen reading gaps,
+  not exemptions, and stay with STA-1365.
+
+## Enforcement
+
+- built — stackra-211 (STA-1368): `Audience` is `ScopeRef | RoleRef` with its exact-set type test and `Audience$` test;
+  iam's `package.json` has no `@stackra/segments`; `FactProvider` and `factsFrom` in `@stackra/rules`;
+  `SegmentPermissions`, `SEGMENT_FACTS` and `SegmentFactProviderDriver` in `@stackra/segments`. Gated by the testing
+  session on landing.
+- planned — STA-1365: gen honours rows E1 to E8 and reads the same table as lint.
+- planned — STA-1365 or a batch filed for it: `stackra/base-matches-suffix`
+  (`packages/developer/coding-standard/src/core/constants/base-matches-suffix-rule.constant.ts`) reads the table in
+  place of its `BELOW_CONTAINER` and `TESTING_ENTRY` patterns and its "name ends in the kind" acceptance for errors.
+  The home of the shared table must be a package both checks can import without a cycle (rule 6c).
+- turbo refuses a package cycle, so an edge back from iam or rules to segments fails every task.
+
+## Supersedes and sources
+
+Supersedes: none (it replaces its own proposal of 2026-10-27). Amends 0003, 0098, 0232, 0269, 0294, 0331, 0332 and
+0333, as decision 3 says.
+
+Sources: the owner's decision of 2026-10-28 (STA-1368); the owner's request of 2026-10-27 on STA-1365; Linear
+STA-1365 (items 1 to 9), STA-1366 and STA-1368; `notes/handover/batches/permission-and-exemption-audit.md`
+(stackra-210); the STA-344 lane rows in `notes/handover/batches/HANDOFF.md`.

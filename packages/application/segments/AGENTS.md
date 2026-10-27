@@ -1,3 +1,5 @@
+<!-- Purpose: the agent rules of @stackra/segments: where code goes, entries, the package rules and PII. Boundary: documentation of packages/application/segments only. Runtime: none (Markdown). Governing contract: ADR 0332; ADR 0462. -->
+
 # AGENTS — @stackra/segments
 
 Named audiences over any subject model, dynamic (a `@stackra/rules` rule set) or manual, with materialised membership
@@ -13,6 +15,8 @@ and `MembershipEntered`/`MembershipLeft` integration events (ADR 0332). Member a
 | A model, a migration                            | `src/node/models/`, `src/node/database/migrations/` |
 | A service, the job, its input, the registration | `src/node/{services,actions,schemas,functions}/`    |
 | A testing helper or plugin                      | `src/testing/`                                      |
+| A `Permissions` class                           | `src/node/access/<model>.permissions.ts`            |
+| A driver of another package's port              | `src/node/drivers/`                                 |
 | A test                                          | `__tests__/<name>.<kind>.test.ts` beside it         |
 
 ## Entries and barrels
@@ -38,6 +42,12 @@ and `MembershipEntered`/`MembershipLeft` integration events (ADR 0332). Member a
   the row-change seam is a change consumer.
 - No parameter properties and no `#private` fields: services typecheck this source under `erasableSyntaxOnly`. Never
   import `@mikro-orm/*` (ADR 0097 decision 2).
+
+- Segments is an add-on above @stackra/iam and @stackra/rules (ADR 0462 decision 1): it depends on both, and neither
+  may ever depend on it. Business rules target a segment through `SEGMENT_FACTS` and `SegmentFactProviderDriver`
+  (the rules `FactProvider` port), never through an IAM audience.
+- Every action declares its permission in a `Permissions` class here; a job's permission is system-held
+  (`Permission.Lx.system()`).
 
 ## Rules that fail the build
 

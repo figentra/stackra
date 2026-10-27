@@ -5,10 +5,10 @@
  *          audiences, the shipped `Audience$` (STA-1284), `Capability` and `FieldAccess`) until `stackra gen` writes the
  *          entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. The leaf entry: it imports no other entry of this package
- *           (ADR 0294 decision 15). `SegmentRef` is @stackra/segments' and `ScopeRef` @stackra/contracts', so neither
- *           is re-exported here.
+ *           (ADR 0294 decision 15). `ScopeRef` is @stackra/contracts', so it is not re-exported here. IAM knows no
+ *           segments (ADR 0462 decision 1).
  * Runtime: isomorphic
- * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision.
+ * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision; ADR 0462 (decision 1).
  */
 export { AUDIENCE_SCHEMA as Audience$ } from "#contracts/constants/audience-schema.constant";
 export { Capability } from "#contracts/enums/capability.enum";

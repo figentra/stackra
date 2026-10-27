@@ -7,7 +7,8 @@ Purpose: the package's reader guide: the condition engine, fact sources and thei
          readers and the rule builder.
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
-Governing contract: ADR 0331; ADR 0370; ADR 0425; ADR 0455; config-model sections 4 to 6.
+Governing contract: ADR 0331; ADR 0370; ADR 0425; ADR 0455; ADR 0462 (decision 1: `FactProvider`); config-model
+                    sections 4 to 6.
 -->
 
 Stackra rules: one condition engine for every rule consumer (ADR 0331). Segments, discounts, pricing rules, related
@@ -41,6 +42,7 @@ and operators; it is never an expression and never runs code (ADR 0154, ADR 0227
 | `.`           | `ACTION_PERMISSION_RULES`, `actionPermissionRowsOf`                    | the AI action permission matrix as a rule set, and its reader            |
 | `.`           | `packApprovalFloorOf`, `APPROVAL_FLOOR_KEY`                            | a market pack's AI approval floor (`ai.approval_floor`) for the resolver |
 | `.`           | `packRuleSetOf`, `rules.register`                                      | a pack's default rule set with no scope; an edition's fact sources       |
+| `.`           | `FactProvider`, `factsFrom`, `FactSubject`                             | an add-on's facts about a subject (segment membership), keyed by source  |
 | `./node`      | `RuleSet`, `RuleSetService`, `RuleSetRevision`                         | versioned rule sets on `HasRevisions`, and their service                 |
 | `./node`      | `ConditionField`, `ConditionFieldService`                              | the cross-service condition-field registry (`rules.condition_fields`)    |
 | `./react`     | `RuleBuilder`, `RuleBuilderProps`                                      | the rule-builder panel on `@stackra/ui`                                  |
@@ -83,6 +85,20 @@ init, before it saves or evaluates a rule that names them. Until then a conditio
 
 ```ts
 DELIVERY_RULES.register(EXPRESS_EDITION_FACTS); // throws TypeError for a repeated or misdeclared source
+```
+
+An add-on that knows facts the consumer does not (segment membership) binds a driver to the `FactProvider` port: its
+`source` is registered as above, and `factsFrom(providers, subject)` returns each provider's facts under its source key
+for the consumer to pass to `evaluate`. This is how a business rule targets a segment ("VIP customers cannot cancel":
+`{ field: "segments.ids", operator: "includes", value: "seg_…" }`) without the engine or IAM knowing segments
+(ADR 0462 decision 1). Two providers of one source key throw.
+
+```ts
+const facts = {
+  order: { total },
+  ...(await factsFrom(providers, { model: "commerce.customer", id })),
+};
+evaluate(CANCEL_RULES, condition, facts, { now });
 ```
 
 Keys have one casing: a source, field, outcome kind and parameter key is camelCase (`FIELD_KEY`, `channelId`, never
