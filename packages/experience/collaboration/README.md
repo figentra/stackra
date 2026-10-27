@@ -27,7 +27,7 @@ entitlement.
 | `.`           | `CommentCreated`, `MentionCreated`, `checkMentions`, three refusals                     | events, the mention floors, `comment_tombstoned` and others    |
 | `./node`      | `CommentThread`, `Comment`, `CommentRevision`, `CommentMention`, `CommentService`       | the tables (`collaboration.0002_create_comments`) and service  |
 | `./testing`   | `MemoryMentionDirectoryDriver`                                                          | a fixed set of known mention targets                           |
-| `./node`      | `RoomPublishAction`, `RoomPublishInput`                                                 | `collaboration.room.publish`: a stream member's messages       |
+| `./node`      | `RoomPublishAction`, `RoomPublishInput`, `RoomPermissions`                              | `collaboration.room.publish`: a stream member's messages       |
 
 ## Comments
 
