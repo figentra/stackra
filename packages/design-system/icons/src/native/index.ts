@@ -6,8 +6,6 @@
  * Runtime: react-native
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision.
  */
-export {
-  IconRegistryProvider,
-  type IconRegistryProviderProps,
-} from "#native/icon-registry-provider/icon-registry-provider";
+export { IconRegistryProvider } from "#native/icon-registry-provider/icon-registry-provider";
+export type { IconRegistryProviderProps } from "#native/icon-registry-provider/icon-registry-provider.props";
 export { useIcon } from "#native/icon-registry-provider/use-icon";

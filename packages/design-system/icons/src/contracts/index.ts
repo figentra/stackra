@@ -9,6 +9,7 @@
 export { IconAlias } from "#contracts/enums/icon-alias.enum";
 export { LucideIconName } from "#contracts/enums/lucide-icon-name.enum";
 export type { CustomIconName } from "#contracts/types/custom-icon-name.type";
-export type { IconComponent, IconComponentProps } from "#contracts/types/icon-component.type";
+export type { IconComponent } from "#contracts/types/icon-component.type";
+export type { IconComponentProps } from "#contracts/types/icon-component-props.type";
 export type { IconName } from "#contracts/types/icon-name.type";
 export type { IconRegistry } from "#contracts/types/icon-registry.type";
