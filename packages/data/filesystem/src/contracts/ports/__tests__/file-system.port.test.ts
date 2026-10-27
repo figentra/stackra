@@ -17,31 +17,40 @@ import type { FileStat } from "#contracts/types/file-stat.type";
 
 /** The smallest class that implements every member. */
 class StubFileSystem extends FileSystem {
+  /** What each `write` stored, in call order. */
+  readonly written: [string, Uint8Array | string, unknown][] = [];
+
+  /** What `read` answers. */
+  stored = new Uint8Array();
+
   async exists(): Promise<boolean> {
     return false;
   }
-  /** What `read` answers. */
-  stored = new Uint8Array();
+
   async read(): Promise<Uint8Array> {
     return this.stored;
   }
-  /** What each `write` stored, in call order. */
-  readonly written: [string, Uint8Array | string, unknown][] = [];
+
   async write(path: string, contents: Uint8Array | string, options?: unknown): Promise<void> {
     this.written.push([path, contents, options]);
   }
+
   async delete(): Promise<boolean> {
     return false;
   }
+
   async list(): Promise<string[]> {
     return [];
   }
+
   async stat(path: string): Promise<FileStat> {
     return { path, size: 0, lastModified: null, contentType: null };
   }
+
   url(path: string): string {
     return `https://files.test/${path}`;
   }
+
   async temporaryUrl(path: string): Promise<string> {
     return this.url(path);
   }

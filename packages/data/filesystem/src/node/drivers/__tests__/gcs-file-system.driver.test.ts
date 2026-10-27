@@ -20,7 +20,7 @@ import { GcsFileSystemDriver } from "#node/drivers/gcs-file-system.driver";
 
 /** What the stand-in store holds and records. */
 const store = vi.hoisted(() => ({
-  objects: new Map<string, { data: Buffer; contentType?: string }>(),
+  objects: new Map<string, { data: Buffer; contentType?: string | undefined }>(),
   options: [] as unknown[],
   buckets: [] as string[],
   signed: [] as unknown[],
@@ -31,27 +31,37 @@ vi.mock("@google-cloud/storage", async () => {
   const { Readable } = await import("node:stream");
   const notFound = () => Object.assign(new Error("No such object"), { code: 404 });
   class File {
-    constructor(readonly name: string) {}
+    readonly name: string;
+
+    constructor(name: string) {
+      this.name = name;
+    }
+
     async exists() {
       return [store.objects.has(this.name)];
     }
+
     async download() {
       const object = store.objects.get(this.name);
       if (object === undefined) throw notFound();
       return [object.data];
     }
+
     createReadStream() {
       const object = store.objects.get(this.name);
       if (object === undefined) throw notFound();
       return Readable.from([object.data]);
     }
+
     async save(data: string | Buffer, options: { contentType?: string }) {
       store.objects.set(this.name, { data: Buffer.from(data), contentType: options.contentType });
     }
+
     async delete() {
       if (!store.objects.delete(this.name)) throw notFound();
       return [{}];
     }
+
     async getMetadata() {
       const object = store.objects.get(this.name);
       if (object === undefined) throw notFound();
@@ -63,6 +73,7 @@ vi.mock("@google-cloud/storage", async () => {
         },
       ];
     }
+
     async getSignedUrl(options: unknown) {
       store.signed.push(options);
       return [`https://storage.googleapis.com/signed/${this.name}`];
@@ -72,6 +83,7 @@ vi.mock("@google-cloud/storage", async () => {
     constructor(options: unknown) {
       store.options.push(options);
     }
+
     bucket(name: string) {
       store.buckets.push(name);
       return {
