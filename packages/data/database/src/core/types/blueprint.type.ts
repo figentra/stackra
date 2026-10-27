@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `Blueprint`, what `schema.create(table, (t) => ...)` and `schema.table(table, (t) => ...)` hand a migration:
- *          the column types, the partner macros of the model traits and field types, the scope-tree columns, indexes,
- *          the primary key, column groups and generated row-level-security policies.
+ *          the column types, the partner macros of the model traits and field types, the scope-tree columns, changes of
+ *          existing columns, indexes, the primary key, column groups and generated row-level-security policies.
  * Boundary: a type only, and an interface so a package's macros merge into it: gen writes
  *           `declare module "@stackra/database" { interface Blueprint { dataClassification(column: string): ColumnGroup } }`
  *           from each `*.macro.ts`, and the compiler installs the macro under that name. Names are literals relative to
@@ -14,6 +14,7 @@
  *                     ADR 0327 (decisions 3, 8 and 9: `scope_id`, `scope_path`, isolation in the database);
  *                     `.agents/rules/tenancy.md`; ADR 0294 (decision 28: links); ADR 0135 (public ids); ADR 0231 (names).
  */
+import type { ColumnChange } from "#core/types/column-change.type";
 import type { ColumnDefinition } from "#core/types/column-definition.type";
 import type { ColumnGroup } from "#core/types/column-group.type";
 import type { ForeignKeyColumn } from "#core/types/foreign-key-column.type";
@@ -95,6 +96,14 @@ export interface Blueprint {
 
   /** `Translated` fields: one `jsonb` locale map per field. */
   translatable(fields: readonly string[]): ColumnGroup;
+
+  /**
+   * Changes the existing column `column` (`schema.table` only): `t.change("lot_id").nullable()`,
+   * `t.change("note").type("text", { from: "varchar(200)" })`. The change is written before the columns the blueprint
+   * adds, each statement with its inverse; a column is changed once per blueprint and never in the blueprint that adds
+   * it.
+   */
+  change(column: string): ColumnChange;
 
   /** An index over `columns`, named `idx_<table>_<columns>`. */
   index(columns: readonly string[]): TableIndex;

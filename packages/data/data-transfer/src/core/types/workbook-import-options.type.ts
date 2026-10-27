@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `WorkbookImportOptions`, one call of `ImportRunner.runSheets`: the run id, the rows of a workbook, the
- *          sheets to import in dependency order with their mappings and targets, and the batch size.
+ *          sheets to import in dependency order with their mappings and targets, the batch size, and whether it is a
+ *          dry run.
  * Boundary: a type only. `batchSize` is the caller's setting; a sheet the options do not name is read past and
  *           ignored. Mapping profiles from a seed pack supply each sheet's `mapping`.
  * Runtime: isomorphic
@@ -24,4 +25,10 @@ export interface WorkbookImportOptions {
 
   /** Rows per batch (valid and refused together); a batch never spans two sheets. */
   readonly batchSize: number;
+
+  /**
+   * Checks every row without writing: no target `upsert`, no ledger record, no resume cursor. The report counts the
+   * rows that would be written (`valid`) and lists every refused row. False by default.
+   */
+  readonly dryRun?: boolean;
 }

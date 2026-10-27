@@ -3,12 +3,14 @@
  * Purpose: `ImportRunner`, the import engine: maps and validates each row, writes valid rows in batches through the
  *          target's `upsert`, records each batch in the `ImportLedger`, resumes a failed or crashed run after each
  *          sheet's cursor, and reverts a whole run inside the caller's undo window. `run` imports one sheet into one
- *          target; `runSheets` imports several sheets of one workbook into several targets in one run.
+ *          target; `runSheets` imports several sheets of one workbook into several targets in one run. Either call with
+ *          `dryRun` checks every row and counts what would be written, writing nothing.
  * Boundary: a service with no state of its own. Batch size and undo window are the caller's settings. A refused row is
  *           reported, never fatal; a batch that throws is rolled back by the target's unit of work and fails the run. A
  *           batch never spans two sheets, so each batch is reverted through its own sheet's target, newest first
  *           (children before the parents they point at). Personal data in rows is passed to the target and never
- *           logged or kept here.
+ *           logged or kept here. A dry run calls no target `upsert` and touches no ledger (no run, batch or settle), so
+ *           it neither resumes nor blocks a later real run under the same id.
  * Runtime: isomorphic
  * Governing contract: ADR 0367 (decisions 6 to 8); ADR 0431 (decisions 1 and 3); ADR 0163 (decision 3); ADR 0263
  *                     (resolved by type).
@@ -84,12 +86,13 @@ export class ImportRunner extends Service {
    * @throws ImportRunClosedError when the run is finished or reverted.
    * @throws RangeError when `batchSize` is not a whole number above zero.
    * @throws TypeError when the rows come from more than one sheet.
-   * @throws whatever the reader or the target throws; the run is then marked failed and resumes on the next call.
+   * @throws whatever the reader or the target throws; the run is then marked failed and resumes on the next call (a
+   *         dry run records nothing).
    */
   async run<T>(options: ImportOptions<T>): Promise<ImportReport> {
     const { mapping, target } = options;
     let only: string | undefined;
-    return this.execute(options.runId, options.rows, options.batchSize, (sheet) => {
+    return this.execute(options, (sheet) => {
       if (only !== undefined && sheet !== only)
         throw new TypeError(
           `An import reads one sheet, but rows came from "${only}" and "${sheet}": pass sheets: [name] to the reader, or use runSheets`,
@@ -115,7 +118,7 @@ export class ImportRunner extends Service {
     if (new Set(names).size !== names.length)
       throw new TypeError(`A workbook import lists each sheet once, got ${names.join(", ")}`);
     let reached = -1;
-    return this.execute(options.runId, options.rows, options.batchSize, (sheet) => {
+    return this.execute(options, (sheet) => {
       const position = names.indexOf(sheet);
       if (position === -1) return undefined;
       if (position < reached)
@@ -172,21 +175,30 @@ export class ImportRunner extends Service {
     await this.ledger.settle(runId, ImportRunState.Reverted, now);
   }
 
-  /** Reads `rows`, imports the sheets `planOf` plans, and settles the run. */
+  /** Reads `rows`, imports the sheets `planOf` plans, and settles the run; on a dry run, only checks them. */
   private async execute(
-    runId: string,
-    rows: AsyncIterable<TabularRow>,
-    batchSize: number,
+    options: {
+      readonly runId: string;
+      readonly rows: AsyncIterable<TabularRow>;
+      readonly batchSize: number;
+      readonly dryRun?: boolean;
+    },
     planOf: Planner,
   ): Promise<ImportReport> {
+    const { runId, rows, batchSize } = options;
+    const dryRun = options.dryRun === true;
     if (!Number.isInteger(batchSize) || batchSize < 1)
       throw new RangeError(
         `A batch holds a whole number of rows above zero, not ${String(batchSize)}`,
       );
-    const run = await this.ledger.open(runId);
-    if (run.state === ImportRunState.Finished || run.state === ImportRunState.Reverted)
-      throw ImportRunClosedError.create({ runId, state: run.state });
-    const committed = await this.ledger.batches(runId);
+    if (!dryRun) {
+      const run = await this.ledger.open(runId);
+      if (run.state === ImportRunState.Finished || run.state === ImportRunState.Reverted)
+        throw ImportRunClosedError.create({ runId, state: run.state });
+    }
+    const committed = dryRun ? [] : await this.ledger.batches(runId);
+    let valid = 0;
+    const refused: RowError[] = [];
     const cursors = new Map<string, number>();
     for (const batch of committed) cursors.set(batch.sheet, batch.lastRow);
     let index = committed.length;
@@ -198,6 +210,13 @@ export class ImportRunner extends Service {
     let lastRow = 0;
     const commit = async (): Promise<void> => {
       if (current === undefined || records.length + errors.length === 0) return;
+      if (dryRun) {
+        valid += records.length;
+        refused.push(...errors);
+        records = [];
+        errors = [];
+        return;
+      }
       const changes = records.length === 0 ? [] : await current.plan.target.upsert(records);
       await this.ledger.append(runId, {
         index,
@@ -246,9 +265,10 @@ export class ImportRunner extends Service {
       }
       await commit();
     } catch (error) {
-      await this.ledger.settle(runId, ImportRunState.Failed, this.clock.now());
+      if (!dryRun) await this.ledger.settle(runId, ImportRunState.Failed, this.clock.now());
       throw error;
     }
+    if (dryRun) return { runId, written: 0, errors: refused, dryRun: true, valid };
     await this.ledger.settle(runId, ImportRunState.Finished, this.clock.now());
     const batches = await this.ledger.batches(runId);
     return {

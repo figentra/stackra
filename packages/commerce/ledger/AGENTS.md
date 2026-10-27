@@ -1,3 +1,5 @@
+<!-- Purpose: agent guide of @stackra/ledger: where code goes, entries, the package rules (no table, locks, floors, currency, extra fields). Boundary: packages/commerce/ledger only. Runtime: none (Markdown). Governing contract: ADR 0220; ADR 0294; ADR 0305; STA-918. -->
+
 # AGENTS — @stackra/ledger
 
 Double-entry primitives over an append-only entry model the consumer owns: `Journal<M>`, the `@Journaled` facet,
@@ -35,6 +37,8 @@ programming model v3.1 shape (ADR 0294, 0305). Entries `.` and `./node`.
   so a consumer that calls it often gives its model an index on (scope column, reference).
 - Amounts are safe integers (points or minor units). A money model names a `currency` field in `@Journaled`: postings share one
   currency and balances are per currency (ADR 0220).
+- Extra fields (`@Journaled({ extra })`, `JournalEntry.extra`): written from the entry, read back on `find`/`lines`,
+  copied onto a reversal. Only listed names are written; never make a balance or a lock depend on one.
 - No document numbering: numbers come from the database `Sequence` primitive (ADR 0342) when it ships.
 - No tenant word here (final review R-59, ADR 0323): scope isolation is the entry table's row-level security.
 - No parameter properties and no `#private` fields: services typecheck this source under `erasableSyntaxOnly`.

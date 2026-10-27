@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `ImportOptions`, one call of `ImportRunner.run`: the run id, the rows, the mapping, the target and the batch
- *          size.
+ *          size, and whether it is a dry run.
  * Boundary: a type only. `batchSize` is the caller's setting. The rows come from one sheet.
  * Runtime: isomorphic
  * Governing contract: ADR 0367 (decision 7).
@@ -27,4 +27,10 @@ export interface ImportOptions<T> {
 
   /** Rows per batch (valid and refused together). */
   readonly batchSize: number;
+
+  /**
+   * Checks every row without writing: no target `upsert`, no ledger record, no resume cursor. The report counts the
+   * rows that would be written (`valid`) and lists every refused row. False by default.
+   */
+  readonly dryRun?: boolean;
 }

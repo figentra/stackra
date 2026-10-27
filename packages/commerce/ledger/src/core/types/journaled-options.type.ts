@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `JournaledOptions`, what the `@Journaled` facet records on an entry model: which of its fields hold the
- *          journal's account, amount, kind, reference, time and currency, and the default balance floor of its accounts.
+ *          journal's account, amount, kind, reference, time and currency, the extra model fields it writes beside them,
+ *          and the default balance floor of its accounts.
  * Boundary: a type only. A field left out keeps the journal's own name (`account`, `amount`, `kind`, `reference`,
  *           `at`), except `currency`, which has no default: a model has a currency dimension only when it names the
  *           field, and then every entry, posting and balance names a currency. A model whose fields already carry those
@@ -41,6 +42,12 @@ export interface JournaledOptions {
    * balance a per-currency sum (ADR 0220).
    */
   readonly currency?: string;
+
+  /**
+   * Model fields the journal writes and reads beside its own (a stock movement's `locationId`, `lotId`, `unitCost`),
+   * filled from an entry's `extra`. None when absent; a name may not repeat one of the journal's own fields.
+   */
+  readonly extra?: readonly string[];
 
   /**
    * The lowest balance a write may leave an account at, unless the call says otherwise; no floor when absent. A

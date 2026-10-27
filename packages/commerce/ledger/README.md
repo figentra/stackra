@@ -1,3 +1,5 @@
+<!-- Purpose: the reader guide of @stackra/ledger: what is exported, the entry model, appends and floors, reversals, balanced postings, currency, extra fields, scope. Boundary: docs of packages/commerce/ledger only. Runtime: none (Markdown). Governing contract: ADR 0220; ADR 0294; STA-918. -->
+
 # @stackra/ledger
 
 Stackra ledger: the double-entry primitives every ledger shares, over an append-only entry model that the consumer owns
@@ -10,16 +12,16 @@ database-bound `Journal` and `journalOf`). Depends on `@stackra/container`,
 
 ## What is here
 
-| Symbol                   | Entry    | Use                                                                                              |
-| ------------------------ | -------- | ------------------------------------------------------------------------------------------------ |
-| `Journal<M>`             | `./node` | `balance`, `find`, `append`, `reverseWhere`, `post` over the entry model `M`                     |
-| `@Journaled(options)`    | `.`      | class facet on the entry model: which fields hold account, amount, kind, reference, at, currency |
-| `journalOf(Model)`       | `./node` | the class token of `Journal<Model>`, as `repositoryOf(Model)` is `Repository<Model>`'s           |
-| `UnbalancedPostingError` | `.`      | `unbalanced_posting` (412): a posting's lines do not sum to zero, or are fewer than two          |
-| `JournalEntry<M>`        | `.`      | one movement in the journal's names; `kind` is the model's own kind type                         |
-| `JournalLine<M>`         | `.`      | one posting line, with the floor its account keeps                                               |
-| `JournalWrite`           | `.`      | `{ written, belowFloor }`, what an append or a posting did                                       |
-| `JournaledOptions`       | `.`      | the facet's field map and default floor                                                          |
+| Symbol                   | Entry    | Use                                                                                                              |
+| ------------------------ | -------- | ---------------------------------------------------------------------------------------------------------------- |
+| `Journal<M>`             | `./node` | `balance`, `find`, `append`, `reverseWhere`, `post` over the entry model `M`                                     |
+| `@Journaled(options)`    | `.`      | class facet on the entry model: which fields hold account, amount, kind, reference, at, currency; `extra` fields |
+| `journalOf(Model)`       | `./node` | the class token of `Journal<Model>`, as `repositoryOf(Model)` is `Repository<Model>`'s                           |
+| `UnbalancedPostingError` | `.`      | `unbalanced_posting` (412): a posting's lines do not sum to zero, or are fewer than two                          |
+| `JournalEntry<M>`        | `.`      | one movement in the journal's names; `kind` is the model's own kind type; `extra` typed by `M`                   |
+| `JournalLine<M>`         | `.`      | one posting line, with the floor its account keeps                                                               |
+| `JournalWrite`           | `.`      | `{ written, belowFloor }`, what an append or a posting did                                                       |
+| `JournaledOptions`       | `.`      | the facet's field map and default floor                                                                          |
 
 ## The entry model
 
@@ -108,6 +110,23 @@ carries an ISO 4217 code (`EUR`; a missing or malformed one is a `RangeError`), 
 (`UnbalancedPostingError` with `currencies` otherwise), and `balance({ account, currency })` sums per currency, as do
 the floor checks and reversals. A model with no `currency` field is single-unit (points): it takes no currency, and a
 currency on its entry is a `TypeError`.
+
+## Extra fields
+
+A journal whose rows carry more than its own five fields lists them in the facet, and each entry fills them in
+`extra`, typed by the model:
+
+```ts
+@Journaled({ account: "variantId", amount: "quantity", extra: ["locationId", "lotId", "unitCostMinor"] })
+export class StockMovement extends Model.with(HasPublicId("smv"), AppendOnly) { ... }
+
+await journal.append({ account: variantId, amount: 12, kind, reference: receiptId, at, extra: { locationId, lotId } });
+```
+
+`find`, `lines` and `reverseWhere` return the listed fields that hold a value in `extra`, and a reversal is written
+with its original's extra fields. An `extra` key the facet does not list is a `TypeError` before anything is written;
+the facet refuses an extra name that repeats one of the journal's own fields. Balances and floors stay per account
+(and currency): an extra field is carried, never summed by.
 
 ## Scope and isolation
 

@@ -1,3 +1,5 @@
+<!-- Purpose: the reader guide of @stackra/data-transfer: what is exported, an import and its dry run, an export, payroll exports, the zip writer. Boundary: docs of packages/data/data-transfer only. Runtime: none (Markdown). Governing contract: ADR 0367; ADR 0431; ADR 0163; STA-918. -->
+
 # @stackra/data-transfer
 
 Tabular import and export for every product (ADR 0367 and ADR 0431, implementing ADR 0163 decisions 3 and 4):
@@ -15,24 +17,24 @@ encoding of a market are inputs the caller reads from settings and market packs.
 
 ## What is here
 
-| Entry         | Symbol                                                                                  | Use                                                             |
-| ------------- | --------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
-| `./contracts` | `TabularReader`, `TabularWriter`, `ImportLedger`                                        | the ports                                                       |
-| `./contracts` | `ImportRunState`                                                                        | `running`, `failed`, `finished`, `reverted`                     |
-| `./contracts` | `ImportTarget`, `ImportChange`, `ImportBatchEntry`, `RowError`, `TabularRow` and others | the types the ports name                                        |
-| `./contracts` | `ImportChange$`, `RowError$`                                                            | their shipped schemas, for a shape field typed with them        |
-| `.`           | `CsvReaderDriver`, `JsonLinesReaderDriver`                                              | read rows                                                       |
-| `.`           | `CsvWriterDriver`, `JsonLinesWriterDriver`, `DatevAsciiWriterDriver`                    | write bytes                                                     |
-| `./node`      | `XlsxReaderDriver`, `XlsxWriterDriver`                                                  | XLSX: every sheet or the chosen ones; several sheets            |
-| `.`           | `MemoryImportLedgerDriver`                                                              | the in-memory ledger (keeps the durable driver contract)        |
-| `.`           | `MemoryTabularReaderDriver`, `MemoryTabularWriterDriver`                                | `memory` tests and dev: rows from held sheets; writes kept      |
-| `.`           | `ImportRunner`                                                                          | `run`, `runSheets` (several sheets, several targets), `revert`  |
-| `.`           | `IMPORT_MAPPING_PROFILE_SCHEMA`, `sheetImportsOf`                                       | a seed-pack mapping profile to `runSheets` sheets               |
-| `.`           | `PAYROLL_EXPORT_PROFILE_SCHEMA`, `payrollSheet`, `datevWriteOptionsOf`                  | pay inputs to a provider's file                                 |
-| `.`           | `previewTabular`, `matchColumns`, `compileMapping`, `normalizeHeader`, `detectEncoding` | the mapping screen's helpers                                    |
-| `.`           | `writeZip`, `ZipEntry`                                                                  | a streamed zip of many files: deflate or store, ZIP64           |
-| `.`           | `TransferLimitExceededError`, `UnreadableEncodingError`                                 | a file past a limit; a file whose text cannot be read (400)     |
-| `.`           | `ImportRunClosedError`, `ImportRunNotFoundError`, `ImportUndoExpiredError`              | a closed run (409); an unknown run (404); past the window (412) |
+| Entry         | Symbol                                                                                  | Use                                                                                             |
+| ------------- | --------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `./contracts` | `TabularReader`, `TabularWriter`, `ImportLedger`                                        | the ports                                                                                       |
+| `./contracts` | `ImportRunState`                                                                        | `running`, `failed`, `finished`, `reverted`                                                     |
+| `./contracts` | `ImportTarget`, `ImportChange`, `ImportBatchEntry`, `RowError`, `TabularRow` and others | the types the ports name                                                                        |
+| `./contracts` | `ImportChange$`, `RowError$`                                                            | their shipped schemas, for a shape field typed with them                                        |
+| `.`           | `CsvReaderDriver`, `JsonLinesReaderDriver`                                              | read rows                                                                                       |
+| `.`           | `CsvWriterDriver`, `JsonLinesWriterDriver`, `DatevAsciiWriterDriver`                    | write bytes                                                                                     |
+| `./node`      | `XlsxReaderDriver`, `XlsxWriterDriver`                                                  | XLSX: every sheet or the chosen ones; several sheets                                            |
+| `.`           | `MemoryImportLedgerDriver`                                                              | the in-memory ledger (keeps the durable driver contract)                                        |
+| `.`           | `MemoryTabularReaderDriver`, `MemoryTabularWriterDriver`                                | `memory` tests and dev: rows from held sheets; writes kept                                      |
+| `.`           | `ImportRunner`                                                                          | `run`, `runSheets` (several sheets, several targets), `revert`; `dryRun` checks without writing |
+| `.`           | `IMPORT_MAPPING_PROFILE_SCHEMA`, `sheetImportsOf`                                       | a seed-pack mapping profile to `runSheets` sheets                                               |
+| `.`           | `PAYROLL_EXPORT_PROFILE_SCHEMA`, `payrollSheet`, `datevWriteOptionsOf`                  | pay inputs to a provider's file                                                                 |
+| `.`           | `previewTabular`, `matchColumns`, `compileMapping`, `normalizeHeader`, `detectEncoding` | the mapping screen's helpers                                                                    |
+| `.`           | `writeZip`, `ZipEntry`                                                                  | a streamed zip of many files: deflate or store, ZIP64                                           |
+| `.`           | `TransferLimitExceededError`, `UnreadableEncodingError`                                 | a file past a limit; a file whose text cannot be read (400)                                     |
+| `.`           | `ImportRunClosedError`, `ImportRunNotFoundError`, `ImportUndoExpiredError`              | a closed run (409); an unknown run (404); past the window (412)                                 |
 
 ## An import
 
@@ -61,6 +63,18 @@ const report = await runner.run({
 // report.errors: [{ sheet, row, issues: [{ field, code, message }] }]
 
 await runner.revert(job.id, productImportTarget, { window: settings.importUndoWindow });
+```
+
+### A dry run
+
+`dryRun: true` on `run` or `runSheets` maps and validates every row exactly as a real run does, but calls no
+target `upsert` and records nothing in the `ImportLedger`: no run, no batch, no cursor. The report has `written: 0`,
+`dryRun: true`, `valid` (the rows that would be written) and every refused row in `errors`. A real run under the same
+id afterwards starts from the first row.
+
+```ts
+const check = await runner.run({ ...options, rows: reader.read(upload(), read), dryRun: true });
+// { runId, written: 0, dryRun: true, valid: 1180, errors: [{ sheet, row, issues }] }
 ```
 
 A CSV file's encoding is its byte order mark, else UTF-8 when its bytes are valid UTF-8, else `fallbackEncoding`.

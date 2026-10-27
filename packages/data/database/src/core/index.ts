@@ -56,6 +56,7 @@ export { Database } from "#core/ports/database.port";
 export { GraphQuery } from "#core/services/graph-query.service";
 export { SequenceService } from "#core/services/sequence.service";
 export type { Blueprint } from "#core/types/blueprint.type";
+export type { ColumnChange } from "#core/types/column-change.type";
 export type { ColumnDefinition } from "#core/types/column-definition.type";
 export type { ColumnGroup } from "#core/types/column-group.type";
 export type { CompileOptions } from "#core/types/compile-options.type";

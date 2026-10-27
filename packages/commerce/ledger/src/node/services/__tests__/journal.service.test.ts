@@ -5,7 +5,8 @@
  *          `null`) and reports a retried debit as a duplicate, serialises concurrent debits so they never overdraw,
  *          reverses set-wise once and cuts a reversal at the floor (the loyalty kit's stale-earn expiry can no longer
  *          go negative), posts balanced lines or nothing, reads a posting's lines back by reference, and refuses floats and a model without `AppendOnly`. A model with a currency field
- *          keeps one ISO 4217 currency per posting and sums balances per currency.
+ *          keeps one ISO 4217 currency per posting and sums balances per currency. A model with `extra` fields writes
+ *          and reads them beside the journal's five, keeps them on a reversal and refuses an unlisted one.
  * Boundary: test only; the entries live in a memory repository that keeps the model's unique (account, reference)
  *           index, and the locks are the real `Locks` over the memory lock driver.
  * Runtime: node (vitest)
@@ -22,6 +23,7 @@ import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
 import { Journaled } from "#core/decorators/journaled.decorator";
 import { UnbalancedPostingError } from "#core/errors/unbalanced-posting.error";
+import type { JournalEntry } from "#core/types/journal-entry.type";
 import { journalOf } from "#node/functions/journal-of.function";
 import type { Journal } from "#node/services/journal.service";
 
@@ -559,5 +561,107 @@ describe("Journal with a currency field", () => {
 
     await expect(journal.append(money("a1", 1, "EUR", "o1"))).rejects.toThrow(TypeError);
     await expect(journal.balance({ account: "a1", currency: "EUR" })).rejects.toThrow(TypeError);
+  });
+});
+
+/** A stock movement row: the journal's five fields plus a location and a lot, listed as extra fields. */
+@Journaled({
+  account: "variantId",
+  amount: "quantity",
+  extra: ["locationId", "lotId"],
+})
+class StockMovement extends Model.with(AppendOnly) {
+  variantId!: string;
+
+  quantity!: number;
+
+  kind!: string;
+
+  reference!: string;
+
+  at!: Date;
+
+  locationId!: string;
+
+  lotId!: string | null;
+}
+
+describe("Journal with extra fields", () => {
+  it("writes the listed extra fields beside its own five and reads them back", async () => {
+    const entries = new MemoryEntries("variantId");
+    const journal = journalOver(StockMovement, entries);
+    await journal.append({
+      account: "v1",
+      amount: 12,
+      kind: "receive",
+      reference: "po-1",
+      at: day(1),
+      extra: { locationId: "loc-1", lotId: "lot-9" },
+    });
+    await journal.append({
+      account: "v1",
+      amount: 3,
+      kind: "receive",
+      reference: "po-2",
+      at: day(2),
+    });
+
+    expect(entries.rows[0]).toEqual({
+      variantId: "v1",
+      quantity: 12,
+      kind: "receive",
+      reference: "po-1",
+      at: day(1),
+      locationId: "loc-1",
+      lotId: "lot-9",
+    });
+    expect(await journal.find({ account: "v1", reference: "po-1" })).toMatchObject({
+      extra: { locationId: "loc-1", lotId: "lot-9" },
+    });
+    expect(await journal.find({ account: "v1", reference: "po-2" })).not.toHaveProperty("extra");
+  });
+
+  it("writes each posting line's extra fields and keeps them on a reversal", async () => {
+    const entries = new MemoryEntries("variantId");
+    const journal = journalOver(StockMovement, entries);
+    await journal.post([
+      { ...line("loc-1:v1", -4), extra: { locationId: "loc-1" } },
+      { ...line("loc-2:v1", 4), extra: { locationId: "loc-2" } },
+    ]);
+
+    expect((await journal.lines("t1")).map((entry) => entry.extra)).toEqual([
+      { locationId: "loc-1" },
+      { locationId: "loc-2" },
+    ]);
+    const reversed = await journal.reverseWhere(
+      { account: "loc-2:v1" },
+      { kind: "reverse", referencePrefix: "undo:", at: day(2) },
+    );
+    expect(reversed).toHaveLength(1);
+    expect(entries.rows.at(-1)).toMatchObject({ reference: "undo:t1", locationId: "loc-2" });
+  });
+
+  it("refuses an extra field the model does not list, before writing", async () => {
+    const entries = new MemoryEntries("variantId");
+    const journal = journalOver(StockMovement, entries);
+    const unlisted = { binId: "b1" } as unknown as { locationId: string };
+
+    await expect(journal.append({ ...line("v1", 1), extra: unlisted })).rejects.toThrow(TypeError);
+    await expect(
+      journal.post([line("a", -1), { ...line("b", 1), extra: unlisted }]),
+    ).rejects.toThrow(TypeError);
+    await expect(
+      journalOver(CashEntry, new MemoryEntries("account")).append({
+        ...line("a1", 1),
+        extra: { account: "x" },
+      }),
+    ).rejects.toThrow(TypeError);
+    expect(entries.rows).toEqual([]);
+  });
+
+  it("types the extra fields by the model", () => {
+    expectTypeOf<NonNullable<JournalEntry<StockMovement>["extra"]>["locationId"]>().toEqualTypeOf<
+      string | undefined
+    >();
   });
 });

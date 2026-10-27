@@ -4,7 +4,8 @@
  *          recorded, a failed batch failing the run and the next call resuming after the cursor without repeating
  *          committed rows, closed runs refused, one sheet only, the whole-run revert inside and past its window and
  *          after a purge, and a workbook import feeding two targets from two sheets, resumed per sheet, refused out of
- *          order, and reverted through each sheet's target.
+ *          order, and reverted through each sheet's target; a dry run (one sheet or a workbook) that counts and reports
+ *          every row while writing nothing to the target or the ledger.
  * Boundary: test only. The target is an in-memory store keyed by SKU; the batch size and window are test data.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0367 (decisions 6 to 8); ADR 0431 (decisions 1 and 3).
@@ -152,6 +153,24 @@ describe("ImportRunner", () => {
     ).rejects.toThrow(TypeError);
   });
 
+  it("checks every row on a dry run, writing nothing to the target or the ledger", async () => {
+    const { runner, store, ledger } = setup();
+    const options = { runId: "imp_dry", mapping: MAPPING, target: store, batchSize: 2 };
+    const report = await runner.run({ ...options, rows: sheet(FILE), dryRun: true });
+    expect(report).toEqual({
+      runId: "imp_dry",
+      written: 0,
+      dryRun: true,
+      valid: 3,
+      errors: [{ sheet: "", row: 3, issues: [expect.objectContaining({ field: "price" })] }],
+    });
+    expect(store.upserted).toEqual([]);
+    expect(await ledger.find("imp_dry")).toBeUndefined();
+    // the same id still runs for real afterwards, from the first row
+    expect((await runner.run({ ...options, rows: sheet(FILE) })).written).toBe(3);
+    expect(store.upserted).toEqual(["a", "c", "d"]);
+  });
+
   it("reverts a whole run inside its window, once", async () => {
     const { runner, store, ledger, clock } = setup();
     store.products.set("c", { sku: "c", price: 1 });
@@ -274,6 +293,25 @@ describe("ImportRunner", () => {
           ["Variants", 4],
         ],
       );
+    });
+
+    it("dry-runs a workbook: counts every sheet's valid rows and reports each refused one", async () => {
+      const { runner, store, ledger } = setup();
+      const variants = new VariantStore();
+      const report = await runner.runSheets({
+        runId: "imp_wdry",
+        rows: workbook(["Products", "Notes", "Variants"]),
+        sheets: plans(store, variants),
+        batchSize: 5,
+        dryRun: true,
+      });
+      expect(report).toMatchObject({ written: 0, dryRun: true, valid: 4 });
+      expect(report.errors).toEqual([
+        { sheet: "Variants", row: 3, issues: [expect.objectContaining({ field: "size" })] },
+      ]);
+      expect(store.products.size).toBe(0);
+      expect(variants.variants.size).toBe(0);
+      expect(await ledger.find("imp_wdry")).toBeUndefined();
     });
 
     it("resumes each sheet after its own cursor", async () => {

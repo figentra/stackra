@@ -1,12 +1,13 @@
 /**
  * Stackra file contract:
- * Purpose: `BlueprintRecord`, the runtime side of `Blueprint` for one table: records columns, indexes, the primary
- *          key and row-level-security policies, installs the member's macros under their names, and compiles to SQL
- *          statements.
+ * Purpose: `BlueprintRecord`, the runtime side of `Blueprint` for one table: records columns, column changes, indexes,
+ *          the primary key and row-level-security policies, installs the member's macros under their names, and
+ *          compiles to SQL statements.
  * Boundary: internal. It enforces the migration safety rules it can see in one table: every column states its
  *           nullability and has a comment; a column added to an existing table is nullable, defaulted or generated;
  *           an index on an existing table is built concurrently in its own step, and one on a table being created
- *           builds in the transaction; no primary key is added to an existing table.
+ *           builds in the transaction; no primary key is added to an existing table; a column change (`t.change`) is
+ *           made only on an existing table, once per column, and never on a column the same blueprint adds.
  * Runtime: node
  * Governing contract: ADR 0159 (decision 3; as amended by ADR 0305); ADR 0239 (equality policy; `equalsOrUnset`,
  *                     STA-1300); ADR 0327 (decisions 3 and 9: scope-tree columns, isolation in the database); ADR 0412 (inherited rows, read only);
@@ -16,9 +17,11 @@ import { constraintName } from "#core/functions/constraint-name.function";
 import { quoteIdentifier } from "#core/functions/quote-identifier.function";
 import { sqlLiteral } from "#core/functions/sql-literal.function";
 import { ColumnRecord } from "#core/records/column.record";
+import { ColumnChangeRecord } from "#core/records/column-change.record";
 import { ColumnGroupRecord } from "#core/records/column-group.record";
 import { TableIndexRecord } from "#core/records/table-index.record";
 import type { Blueprint } from "#core/types/blueprint.type";
+import type { ColumnChange } from "#core/types/column-change.type";
 import type { ColumnDefinition } from "#core/types/column-definition.type";
 import type { CompiledStatement } from "#core/types/compiled-statement.type";
 import type { CompiledStep } from "#core/types/compiled-step.type";
@@ -70,6 +73,9 @@ export class BlueprintRecord {
 
   /** The columns, in the order they were written. */
   private readonly columns: ColumnRecord[] = [];
+
+  /** The changes of existing columns, in the order they were written. */
+  private readonly changes: ColumnChangeRecord[] = [];
 
   /** The indexes, in the order they were written. */
   private readonly indexes: TableIndexRecord[] = [];
@@ -275,6 +281,23 @@ export class BlueprintRecord {
     return new ColumnGroupRecord(fields.map((field) => this.add(new ColumnRecord(field, "jsonb"))));
   }
 
+  /**
+   * Implements `Blueprint.change`, documented there.
+   *
+   * @throws TypeError on a table being created, for a name that is not snake_case, or for a column already changed.
+   */
+  change(column: string): ColumnChange {
+    if (this.creating)
+      throw new TypeError(
+        `${this.table} is created by this migration: define ${column} as it should be instead of changing it`,
+      );
+    if (this.changes.some((known) => known.name === column))
+      throw new TypeError(`${this.table}.${column} is already changed in this blueprint`);
+    const change = new ColumnChangeRecord(column);
+    this.changes.push(change);
+    return change;
+  }
+
   /** Implements `Blueprint.index`, documented there. */
   index(columns: readonly string[]): TableIndexRecord {
     const index = new TableIndexRecord(columns, false);
@@ -426,7 +449,15 @@ export class BlueprintRecord {
       throw new TypeError(
         `${this.table} exists: a primary key is never added to an existing table`,
       );
+    const added = new Set(this.columns.map((column) => column.name));
     const statements: CompiledStatement[] = [];
+    for (const change of this.changes) {
+      if (added.has(change.name))
+        throw new TypeError(
+          `${this.table}.${change.name} is added by this blueprint, so it is defined, not changed`,
+        );
+      statements.push(...change.statements(qualified));
+    }
     const online: CompiledStep[] = [];
     const onlineIndex = (index: TableIndexRecord) =>
       online.push({

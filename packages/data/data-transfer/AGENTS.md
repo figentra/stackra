@@ -1,3 +1,5 @@
+<!-- Purpose: agent guide of @stackra/data-transfer: where code goes, entries, the package rules (configuration, streaming, dry runs), PII. Boundary: packages/data/data-transfer only. Runtime: none (Markdown). Governing contract: ADR 0367; ADR 0431; ADR 0294; ADR 0305; STA-918. -->
+
 # AGENTS — @stackra/data-transfer
 
 Tabular import and export (ADR 0367, ADR 0163 decisions 3 and 4). Member at `packages/data/data-transfer`
@@ -36,6 +38,8 @@ Tabular import and export (ADR 0367, ADR 0163 decisions 3 and 4). Member at `pac
   development only: they hold whole sheets and read or write no bytes, so the streaming rule does not apply to them.
 - A refused row is reported (`RowError`), never fatal. A batch that throws fails the run; the run resumes after its
   cursor.
+- A dry run (`dryRun: true`) never calls a target's `upsert` and never touches the `ImportLedger` (no `open`,
+  `append` or `settle`), so it leaves no run behind; keep any new write path behind the same check.
 - `writeZip` streams: never collect an entry or the archive. ZIP64 is written only when a field overflows, so a small
   archive stays readable by every unzip tool.
 - Only add a symbol a consumer imports today (OS data-exchange, a product importer, the registry row).

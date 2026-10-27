@@ -4,7 +4,8 @@
  *          per (account, reference), the balance as the sum of an account's entries, a debit refused below a balance
  *          floor, set-based reversal cut at the floor, balanced multi-line postings, and a posting's lines read back by
  *          reference. A model that names a currency field has every entry and posting in one ISO
- *          4217 currency and every balance per currency (ADR 0220).
+ *          4217 currency and every balance per currency (ADR 0220). A model that lists `extra` fields has them written
+ *          from each entry's `extra` and read back beside the journal's own five, and a reversal keeps its original's.
  * Boundary: a service over the model's repository; it writes no SQL. Rows are inserted, never updated: the model must
  *           carry `AppendOnly`, and a correction is a reversal. Every write that lowers a balance holds its account's
  *           lock from `Locks` (a transaction-level advisory lock on Postgres, so it lasts until the caller commits), so
@@ -40,6 +41,7 @@ import type { JournalWrite } from "#core/types/journal-write.type";
 type Fields = Readonly<Record<keyof typeof JOURNAL_FIELDS, string>> & {
   readonly floor?: number | undefined;
   readonly currency?: string | undefined;
+  readonly extra?: readonly string[] | undefined;
 };
 
 /** The shape of an ISO 4217 alphabetic code. */
@@ -81,6 +83,22 @@ function currencyOf(entry: { readonly currency?: string }, fields: Fields): stri
   return entry.currency;
 }
 
+/**
+ * The extra fields of `entry` under the model's names.
+ *
+ * @throws TypeError when `entry.extra` names a field the model's `@Journaled({ extra })` does not list.
+ */
+function extraOf(entry: { readonly extra?: object }, fields: Fields): Record<string, unknown> {
+  if (entry.extra === undefined) return {};
+  const listed = new Set(fields.extra ?? []);
+  const unlisted = Object.keys(entry.extra).filter((field) => !listed.has(field));
+  if (unlisted.length > 0)
+    throw new TypeError(
+      `A journal entry names extra fields its model's @Journaled({ extra }) does not list: ${unlisted.join(", ")}`,
+    );
+  return { ...entry.extra };
+}
+
 /** The floor a write keeps: the call's (`null` lifts it), else the model's default; undefined for none. */
 function floorOf(option: number | null | undefined, fields: Fields): number | undefined {
   return option === null ? undefined : (option ?? fields.floor);
@@ -104,6 +122,7 @@ function rowOf<M extends object>(
     [fields.reference]: entry.reference,
     [fields.at]: entry.at,
     ...(fields.currency === undefined ? {} : { [fields.currency]: entry.currency }),
+    ...extraOf(entry, fields),
   };
   // reason: as in `whereOf`, the keys are the model's field names read at run time
   return row as unknown as Parameters<Repository<M>["insert"]>[0];
@@ -112,6 +131,11 @@ function rowOf<M extends object>(
 /** The journal entry of a model row. */
 function entryOf<M extends object>(row: object, fields: Fields): JournalEntry<M> {
   const record = row as Record<string, unknown>;
+  const extra = Object.fromEntries(
+    (fields.extra ?? [])
+      .filter((field) => record[field] !== undefined && record[field] !== null)
+      .map((field) => [field, record[field]]),
+  );
   return {
     account: String(record[fields.account]),
     amount: Number(record[fields.amount]),
@@ -119,6 +143,8 @@ function entryOf<M extends object>(row: object, fields: Fields): JournalEntry<M>
     reference: String(record[fields.reference]),
     at: record[fields.at] as Date,
     ...(fields.currency === undefined ? {} : { currency: String(record[fields.currency]) }),
+    // reason: the keys are the model's listed field names, read from its facet at run time
+    ...(Object.keys(extra).length === 0 ? {} : { extra: extra as JournalEntry<M>["extra"] }),
   };
 }
 
@@ -215,7 +241,8 @@ export abstract class Journal<M extends object> extends Service {
    * @param options - `floor` overrides the model's default floor for this call; `null` lifts it.
    * @returns `written` false when the pair was already applied; `belowFloor` true when the floor refused it.
    * @throws RangeError when the amount is not a safe integer, or the currency is not an ISO 4217 code.
-   * @throws TypeError when the currency is named and the model has no currency field, or the reverse.
+   * @throws TypeError when the currency is named and the model has no currency field, or the reverse, or when `extra`
+   *         names a field the model's `@Journaled({ extra })` does not list.
    * @throws LockUnavailableError when another write held the account for the whole wait.
    */
   async append(
@@ -225,6 +252,7 @@ export abstract class Journal<M extends object> extends Service {
     assertAmount(entry.amount);
     const fields = this.fields();
     const currency = currencyOf(entry, fields);
+    extraOf(entry, fields); // refuse an unlisted extra field before any lock or read
     if (entry.amount >= 0) return (await this.insertOnce(entry, fields)) ? WRITTEN : NOT_WRITTEN;
     const floor = floorOf(options.floor, fields);
     return this.locked([entry.account], async () => {
@@ -316,6 +344,7 @@ export abstract class Journal<M extends object> extends Service {
               reference,
               at: reversal.at,
               ...(entry.currency === undefined ? {} : { currency: entry.currency }),
+              ...(entry.extra === undefined ? {} : { extra: entry.extra }),
             },
             fields,
           ),
@@ -338,11 +367,13 @@ export abstract class Journal<M extends object> extends Service {
    *         (a model with a currency field: every line names an ISO 4217 code and they all match).
    * @throws TypeError when two lines share an (account, reference) pair.
    * @throws RangeError when an amount is not a safe integer.
+   * @throws TypeError when a line's `extra` names a field the model's `@Journaled({ extra })` does not list.
    * @throws LockUnavailableError when another write held an account for the whole wait.
    */
   async post(lines: readonly JournalLine<M>[]): Promise<JournalWrite> {
     for (const line of lines) assertAmount(line.amount);
     const fields = this.fields();
+    for (const line of lines) extraOf(line, fields);
     const currencies = [...new Set(lines.map((line) => currencyOf(line, fields)))];
     const total = lines.reduce((sum, line) => sum + line.amount, 0);
     if (currencies.length > 1)

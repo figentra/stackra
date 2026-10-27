@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `JournalEntry<M>`, one movement on one account as the journal speaks of it: the account, the signed integer
- *          amount, why it exists, the reference that makes it idempotent and when its cause happened. It is not the
+ *          amount, why it exists, the reference that makes it idempotent and when its cause happened, plus the extra
+ *          typed fields its model's `@Journaled({ extra })` lists (a stock movement's location or lot). It is not the
  *          persisted row: `Journal<M>` maps these names onto the model's fields through `@Journaled`.
  * Boundary: a type only. `kind` is the model's own `kind` type when it has one (an `Enum.of` code), else a string.
  *           Amounts are whole units (points or minor units), never a float (ADR 0220).
@@ -36,4 +37,11 @@ export interface JournalEntry<M extends object = object> {
    * refused when it does not: a points journal has no currency.
    */
   readonly currency?: string;
+
+  /**
+   * Model fields written beside the journal's own, typed by the model (`{ locationId, lotId }`). Each key must be
+   * listed in the model's `@Journaled({ extra })`, else the write is refused; reads return the listed fields that hold
+   * a value, and a reversal carries its original's.
+   */
+  readonly extra?: { readonly [K in keyof M]?: M[K] };
 }

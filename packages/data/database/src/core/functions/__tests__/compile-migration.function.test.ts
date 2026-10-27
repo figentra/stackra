@@ -6,7 +6,8 @@
  *          scope-tree columns with their GiST index, generated columns, and every safety refusal (missing nullability or comment,
  *          NOT NULL without a default, non-concurrent index on an existing table, concurrent index on a new one,
  *          unapproved extension, raw statement without an inverse, a policy the table cannot take), and the ICU
- *          collation of a text column (with its refusals).
+ *          collation of a text column (with its refusals), and column changes on an existing table (nullable, NOT NULL,
+ *          type with a stated `from`) with their inverses and refusals.
  * Boundary: test only; pure compilation, no database.
  * Runtime: node (vitest)
  * Governing contract: ADR 0159 (as amended); ADR 0160; ADR 0239; ADR 0327 (decisions 3 and 9);
@@ -159,6 +160,99 @@ describe(compileMigration, () => {
         inverse: ['drop index concurrently if exists "orders"."idx_orders_status_paid_at"'],
       },
     ]);
+  });
+
+  it("changes existing columns before the added ones, each with its inverse", () => {
+    class LoosenBalancesMigration extends Migration {
+      up(schema: SchemaBuilder): void {
+        schema.table("balances", (t: Blueprint) => {
+          t.change("member_id").nullable();
+          t.change("points").type("bigint", { from: "integer" }).notNull();
+          t.change("note").type("text", { from: "varchar(200)", using: 'trim("note")' });
+          t.string("source", 32).nullable().comment("The system the balance was imported from.");
+        });
+      }
+    }
+    const table = '"loyalty"."balances"';
+    expect(compileMigration(LoosenBalancesMigration, { schema: "loyalty" }).steps).toEqual([
+      {
+        sql: [
+          `alter table ${table} alter column "member_id" drop not null`,
+          `alter table ${table} alter column "points" type bigint using "points"::bigint`,
+          `alter table ${table} alter column "points" set not null`,
+          `alter table ${table} alter column "note" type text using trim("note")`,
+          `alter table ${table} add column "source" varchar(32) null`,
+          `comment on column ${table}."source" is 'The system the balance was imported from.'`,
+        ],
+        transactional: true,
+        inverse: [
+          `alter table ${table} drop column if exists "source"`,
+          `alter table ${table} alter column "note" type varchar(200) using "note"::varchar(200)`,
+          `alter table ${table} alter column "points" drop not null`,
+          `alter table ${table} alter column "points" type integer using "points"::integer`,
+          `alter table ${table} alter column "member_id" set not null`,
+        ],
+      },
+    ]);
+  });
+
+  it.each([
+    [
+      "a change on a table being created",
+      "create",
+      (t: Blueprint) => t.change("sku").nullable(),
+      /define sku as it should be/,
+    ],
+    [
+      "a change that changes nothing",
+      "table",
+      (t: Blueprint) => t.change("sku"),
+      /changes nothing/,
+    ],
+    [
+      "a column changed twice",
+      "table",
+      (t: Blueprint) => {
+        t.change("sku").nullable();
+        t.change("sku").type("text", { from: "varchar(64)" });
+      },
+      /already changed/,
+    ],
+    [
+      "a second nullability on one change",
+      "table",
+      (t: Blueprint) => t.change("sku").nullable().notNull(),
+      /already changes its nullability/,
+    ],
+    [
+      "a type the blueprint does not write",
+      "table",
+      (t: Blueprint) => t.change("sku").type("varchar", { from: "text" }),
+      /not a column type/,
+    ],
+    [
+      "a type change to the same type",
+      "table",
+      (t: Blueprint) => t.change("sku").type("text", { from: "text" }),
+      /already text/,
+    ],
+    [
+      "a change of a column the blueprint adds",
+      "table",
+      (t: Blueprint) => {
+        t.string("sku", 64).nullable().comment("The SKU.");
+        t.change("sku").type("text", { from: "varchar(64)" });
+      },
+      /is added by this blueprint/,
+    ],
+  ])("refuses %s", (_name, verb, define, message) => {
+    class BadMigration extends Migration {
+      up(schema: SchemaBuilder): void {
+        if (verb === "create") schema.create("products", define);
+        else schema.table("products", define);
+      }
+    }
+    expect(() => compileMigration(BadMigration, { schema: "catalogue" })).toThrow(message);
   });
 
   it("keeps after, puts each concurrent statement in its own step, and keeps a stated inverse", () => {

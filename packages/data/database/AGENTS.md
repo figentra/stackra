@@ -1,3 +1,5 @@
+<!-- Purpose: agent guide of @stackra/database: where code goes, entries, the package rules (migrations and column changes, scope columns, raw SQL, sequences, projections). Boundary: packages/data/database only. Runtime: none (Markdown). Governing contract: ADR 0097; ADR 0159; ADR 0160; ADR 0294; ADR 0305; STA-918. -->
+
 # AGENTS — @stackra/database
 
 The MikroORM layer on Postgres. Member at `packages/data/database` (`tier:lib`), in the programming model v3.1 shape
@@ -64,6 +66,8 @@ The MikroORM layer on Postgres. Member at `packages/data/database` (`tier:lib`),
   isolation macro live in their owning package.
 - Migration rules the compiler enforces (explicit nullability and comments, expand-only adds, online indexes, approved
   extensions, stated raw inverses) change only with ADR 0159 or 0160.
+- Column changes (`t.change(column)`, `ColumnChangeRecord`): existing tables only, every value a literal, a type change
+  states its `from` so the inverse needs no database read. Never read the live schema to fill a change in.
 - Raw SQL only through `sql` and the `$raw` filter, or in a subclass method with a `// raw-sql:` reason (ADR 0160).
 - A filter operator MikroORM has no typed form for (jsonb contains or path, `ltree` ancestor or descendant) is a
   function returning a parameterised fragment for `$raw` (`jsonContains`, `jsonPath`, `ancestorOf`, `descendantOf`);
