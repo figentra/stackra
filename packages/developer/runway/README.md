@@ -8,7 +8,8 @@ Boundary: documentation only; the event topics and subscriptions are gen's outpu
 Runtime: none
 Governing contract: ADR 0296; ADR 0352; ADR 0400; ADR 0444 (the tools stack block); ADR 0148 (decisions 3 and 6);
                     ADR 0260 (decision 4); ADR 0441 (decision 3: surfaces, mobile); ADR 0439 (the mobile job); ADR 0436;
-                    STA-863 (lanes); ADR 0453 (decision 6: `providers.npm.registry`).
+                    ADR 0441 as amended (D17 the brand step, D19 the capture job); STA-863 (lanes); ADR 0453
+                    (decision 6: `providers.npm.registry`).
 -->
 
 Runway format version 3 as code: the schemas of the root runway (WHERE things run and how they are packed) and of the
@@ -20,31 +21,33 @@ tool configs call so no port, origin or feed URL is typed outside a `runway.yaml
 
 ## What is here
 
-| Entry       | Symbol                                                                                  | Use                                                                         |
-| ----------- | --------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
-| `.`         | `baseUrlOf(member)`                                                                     | a member's dev origin: the generated Playwright `baseURL`                   |
-| `.`         | `devPorts(member)`                                                                      | dev origin, port, host and Electron dev ports: the generated Electron entry |
-| `.`         | `updateFeed(member)`                                                                    | the desktop update feed of the build's environment, or `null` in dev        |
-| `.`         | `parseRunway(kind, document, source?)`                                                  | check a parsed runway against its version 3 schema                          |
-| `.`         | `checkPlacement(root, members)`                                                         | every topology placement failure, for `stackra validate`                    |
-| `.`         | `checkRegions(root)`, `regionsOf(root, environment)`                                    | region failures for `stackra validate`; an environment's resolved regions   |
-| `.`         | `checkPorts(root, members)`, `PortIssue`                                                | every duplicate effective dev port across the repository lanes, both owners |
-| `.`         | `RunwayCloud`                                                                           | `aws`, `gcp`: the cloud a region names                                      |
-| `.`         | `runwayJsonSchema(kind)`                                                                | the zod schemas as JSON Schema, tested against the shipped canonical files  |
-| `.`         | `deployTargets(root, environment)`                                                      | every place a release lands, in release order (regions, dedicated tenants)  |
-| `.`         | `deploy`, `promote`, `rollback`                                                         | ship, promote and roll back a release through the providers                 |
-| `.`         | `withDeployLock`, `DeployLock`, `RunwayLockedError`                                     | one apply per environment at a time (ADR 0435)                              |
-| `.`         | `RunwayProvider`                                                                        | the provider port: plan, apply, verify, rollback and current (ADR 0352 d3)  |
-| `./node`    | `EncoreCloudProviderDriver`, `EasProviderDriver`, `MintlifyProviderDriver`              | the `encore-cloud`, `eas` and `mintlify` providers                          |
-| `./node`    | `runCommand`, `CommandRunner`                                                           | how a provider runs its CLI, with no shell                                  |
-| `./node`    | `runMobileJob(request)`, `MobileJobRequest`, `MobileJobResult`                          | the mobile job: Expo config from `mobile`, capability stripping, EAS build  |
-| `./node`    | `capabilityConfig(catalogue, flags)`, `MobileCapability`, `MobileStoreAccount`, …       | what a template line keeps and strips for a product's capability flags      |
-| `.`         | `RunwayKind`, `RunwayEnvironment`, `TopologyMode`, `RequirementEngine`, `CacheEviction` | enums                                                                       |
-| `.`         | `RunwayInvalidError`, `RunwayUnresolvedError`, `RunwayDeployFailedError`                | errors                                                                      |
-| `./node`    | `definesFor(member, environment)`                                                       | the bundler `define` map: public vars and the injected runway facts         |
-| `./node`    | `devServer(member)`                                                                     | the Vite `server` block from the dev facts                                  |
-| `./node`    | `readRunway(file, kind)`                                                                | read, YAML-parse and check one runway file                                  |
-| `./schema/` | `root.json`, `app.json`, `service.json`                                                 | `$schema: "@stackra/runway/schema/app.json"` in a runway file               |
+| Entry       | Symbol                                                                                                            | Use                                                                                                    |
+| ----------- | ----------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `.`         | `baseUrlOf(member)`                                                                                               | a member's dev origin: the generated Playwright `baseURL`                                              |
+| `.`         | `devPorts(member)`                                                                                                | dev origin, port, host and Electron dev ports: the generated Electron entry                            |
+| `.`         | `updateFeed(member)`                                                                                              | the desktop update feed of the build's environment, or `null` in dev                                   |
+| `.`         | `parseRunway(kind, document, source?)`                                                                            | check a parsed runway against its version 3 schema                                                     |
+| `.`         | `checkPlacement(root, members)`                                                                                   | every topology placement failure, for `stackra validate`                                               |
+| `.`         | `checkRegions(root)`, `regionsOf(root, environment)`                                                              | region failures for `stackra validate`; an environment's resolved regions                              |
+| `.`         | `checkPorts(root, members)`, `PortIssue`                                                                          | every duplicate effective dev port across the repository lanes, both owners                            |
+| `.`         | `RunwayCloud`                                                                                                     | `aws`, `gcp`: the cloud a region names                                                                 |
+| `.`         | `runwayJsonSchema(kind)`                                                                                          | the zod schemas as JSON Schema, tested against the shipped canonical files                             |
+| `.`         | `deployTargets(root, environment)`                                                                                | every place a release lands, in release order (regions, dedicated tenants)                             |
+| `.`         | `deploy`, `promote`, `rollback`                                                                                   | ship, promote and roll back a release through the providers                                            |
+| `.`         | `withDeployLock`, `DeployLock`, `RunwayLockedError`                                                               | one apply per environment at a time (ADR 0435)                                                         |
+| `.`         | `RunwayProvider`                                                                                                  | the provider port: plan, apply, verify, rollback and current (ADR 0352 d3)                             |
+| `./node`    | `EncoreCloudProviderDriver`, `EasProviderDriver`, `MintlifyProviderDriver`                                        | the `encore-cloud`, `eas` and `mintlify` providers                                                     |
+| `./node`    | `runCommand`, `CommandRunner`                                                                                     | how a provider runs its CLI, with no shell                                                             |
+| `./node`    | `runMobileJob(request)`, `MobileJobRequest`, `MobileJobResult`                                                    | the mobile job: Expo config from `mobile`, capability stripping, EAS build                             |
+| `./node`    | `runBrandStep(request)`, `committedBrandOutputs`, `BRAND_STEP_SETTINGS`, `BrandStepRequest`, `BrandStepRun`       | the brand step: @stackra/brand-kit per surface, app and white-label scope; the committed-outputs check |
+| `./node`    | `screenshotCaptureJob(request)`, `runScreenshotCapture`, `SCREENSHOT_CAPTURE_DEFAULTS`, `ScreenshotCaptureJob`, … | the store-screenshot capture job on a Mac CI runner                                                    |
+| `./node`    | `capabilityConfig(catalogue, flags)`, `MobileCapability`, `MobileStoreAccount`, …                                 | what a template line keeps and strips for a product's capability flags                                 |
+| `.`         | `RunwayKind`, `RunwayEnvironment`, `TopologyMode`, `RequirementEngine`, `CacheEviction`                           | enums                                                                                                  |
+| `.`         | `RunwayInvalidError`, `RunwayUnresolvedError`, `RunwayDeployFailedError`                                          | errors                                                                                                 |
+| `./node`    | `definesFor(member, environment)`                                                                                 | the bundler `define` map: public vars and the injected runway facts                                    |
+| `./node`    | `devServer(member)`                                                                                               | the Vite `server` block from the dev facts                                                             |
+| `./node`    | `readRunway(file, kind)`                                                                                          | read, YAML-parse and check one runway file                                                             |
+| `./schema/` | `root.json`, `app.json`, `service.json`                                                                           | `$schema: "@stackra/runway/schema/app.json"` in a runway file                                          |
 
 The old `./ports` entry is folded into `.` and the old `./vite` entry into `./node` (ADR 0127, 2026-10-24 note).
 
@@ -126,9 +129,46 @@ await runMobileJob({
 });
 ```
 
-Not yet in the job: store submission (`eas submit` under the resolved account), the scope theme's icon and splash
-(`@stackra/brand-kit` through stackra-13), installing the app's `packages`, per-locale store names, the app-link files
+Not yet in the job: store submission (`eas submit` under the resolved account), wiring the brand step's icon and
+splash into the Expo config (the step builds them, see below), installing the app's `packages`, per-locale store names, the app-link files
 on the edge, and the app id pattern check of ADR 0439 decision 6.
+
+## The brand step
+
+`runBrandStep` (`./node`) runs `@stackra/brand-kit` (its `stackra-brand-kit` binary, on the CI job's PATH; runway takes
+no dependency on the kit) once per web surface of the root runway (`ops` excluded, it has no shell) and once per
+mobile app, each with the `BrandOutput` codes its kind needs (`BRAND_STEP_SETTINGS.outputs`) and its own folder under
+`.stackra/brand` (`web/<surface>`, `mobile/<app>`). A scope-started white-label build passes `variant` (app, scope id,
+and the scope's theme as a kit folder the job wrote) and gets one run of the app icon, adaptive icon and splash under
+`.stackra/brand/scopes/<scope>/<app>`. `parentKitDir` passes a parent kit (the OS theme) as data; `check: true` runs
+the kit's `--check` and writes nothing.
+
+After a write, `committedBrandOutputs` reads each run's `asset-manifest.json` and asks `git ls-files` which listed file
+(or manifest) is tracked; any hit fails the step with `RunwayInvalidError` (generated outputs are never committed,
+ADR 0441 as amended, D17).
+
+```ts
+import { runBrandStep } from "@stackra/runway/node";
+
+await runBrandStep({ repository: ".", parentKitDir: "../os/tools/brand-kit/figentra" });
+await runBrandStep({
+  repository: ".",
+  variant: { app: "shopper", scope: "sc_42", kitDir: ".stackra/scope-kits/sc_42" },
+});
+```
+
+## The store-screenshot capture job
+
+`screenshotCaptureJob` (`./node`) defines the capture of one app's store screenshots from the real app on a simulator
+with demo data, per locale (ADR 0441 as amended, D19): from `mobile.<app>.identity` (iOS bundle id and URL scheme) and
+every `assets/store/<app>/<locale>/captions.json`, the ordered `xcrun simctl` commands that boot the simulator, install
+the demo-data simulator build, and per locale launch in that language, open the demo link
+(`{scheme}://demo?locale={locale}`), open each captioned screen (`{scheme}://store-screenshot/{screen}`) and save
+`.stackra/screenshots/<app>/<locale>/<screen>.png`, the folder @stackra/brand-kit's store frames read.
+`SCREENSHOT_CAPTURE_DEFAULTS` holds the runner label, simulator, folders, link templates and settle time; a request
+overrides any of them. `runScreenshotCapture(job, repository)` runs exactly that list, on a Mac CI runner only (never a
+developer's Mac). Not built: the CI workflow that schedules it (it needs a Mac runner), and the app's handling of the
+two links (the mobile template line's).
 
 ## Dev lanes and the repository index
 

@@ -5,7 +5,7 @@ Stackra file contract:
 Purpose: the agent rules of @stackra/runway: where code goes, the schema, deploy, secrets and event fan-out rules, PII.
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
-Governing contract: ADR 0296; ADR 0352; ADR 0002 (2026-10-27 amendment, the `mintlify` provider); ADR 0400; ADR 0444 (`providers.tools`); ADR 0441; ADR 0439 (the mobile job); ADR 0453 (`providers.npm`); STA-863; ADR 0260 (decision 4: the relay fan-out
+Governing contract: ADR 0296; ADR 0352; ADR 0002 (2026-10-27 amendment, the `mintlify` provider); ADR 0400; ADR 0444 (`providers.tools`); ADR 0441; ADR 0439 (the mobile job); ADR 0441 as amended (D17 brand step, D19 capture job); ADR 0453 (`providers.npm`); STA-863; ADR 0260 (decision 4: the relay fan-out
                     is gen's).
 -->
 
@@ -52,6 +52,13 @@ Runway format version 3 (ADR 0296) as code. Member at `packages/developer/runway
   never hard-code a capability, module, plugin or permission here, and never hide a feature at run time instead. It
   never publishes a white-label build under the platform's Apple account without the 4.2.6 and 4.3 record, and takes
   store accounts resolved (`storeAccountsOf`, @stackra/infra-mobile); it never reads a store key.
+- The brand step (`runBrandStep`) runs the @stackra/brand-kit binary and never imports the kit; output codes and
+  folders live in `BRAND_STEP_SETTINGS`. Generated brand files stay under `.stackra/brand` and are never committed:
+  `committedBrandOutputs` fails the step on any tracked file a kit manifest lists. Do not edit @stackra/brand-kit from
+  here; a white-label run reads the scope's theme only as a kit folder another job wrote.
+- The capture job (`screenshotCaptureJob`) is plain data printed before it runs; `runScreenshotCapture` runs it on a
+  Mac CI runner only. Defaults live in `SCREENSHOT_CAPTURE_DEFAULTS`; app, locale and screen ids are checked before
+  they become paths.
 - A runway holds secret names only. `definesFor` inlines public vars (`VITE_`, `EXPO_PUBLIC_`, `RENDERER_VITE_`) and
   never the TLS paths.
 
