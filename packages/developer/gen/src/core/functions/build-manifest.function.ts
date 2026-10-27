@@ -20,6 +20,9 @@
  *          wire name is always `<module>.<name>.v<n>`, never member-level or service-key prefixed, STA-1255). It lists each declared rule outcome kind (`RuleOutcome({...})`) in `outcomes`; each agent (key, task, tools as
  *          action keys) in `agents` and each wallet pass kind in `passes`; and each entitlement in `entitlements`
  *          with its derived key, kind, counted model, `where` filter and the action and query keys it gates (STA-903).
+ *          It lists each shell slot the member declares in `slots` (key, const, entry, surface, cardinality, props) and
+ *          each fill whose slot resolves in `fills` (slot key, const, entry, surface, props), for the OS registry
+ *          (ADR 0438, stackra-03).
  * Boundary: pure. A config's schema never reaches the manifest (ADR 0305 rule 34). Sections owned by later targets
  *           (ui, settings, migrations, infra, ...) are written by those targets when they land.
  * Runtime: isomorphic
@@ -61,6 +64,7 @@ import { publicSpecifier } from "#core/functions/public-specifier.function";
 import { rootModuleOf } from "#core/functions/root-module-of.function";
 import { routeKey } from "#core/functions/route-key.function";
 import { sequenceKey } from "#core/functions/sequence-key.function";
+import { slotOf } from "#core/functions/slot-of.function";
 import { snakeCase } from "#core/functions/snake-case.function";
 import { tableName } from "#core/functions/table-name.function";
 import { toolHints } from "#core/functions/tool-hints.function";
@@ -966,6 +970,39 @@ export function buildManifest(ir: MemberIR): {
         }))
     : [];
 
+  // The shell slots it declares and the fills it binds, for the OS registry and a filler's check (ADR 0438).
+  const slots: Entry[] = [...(ir.slots ?? [])]
+    .sort((left, right) => (left.key < right.key ? -1 : left.key > right.key ? 1 : 0))
+    .map((slot) => ({
+      key: slot.key,
+      name: slot.name,
+      from: packageSpecifier(ir.package, slot.file),
+      surface: slot.surface,
+      cardinality: slot.cardinality,
+      props: slot.props,
+    }));
+  const fills: Entry[] = (ir.fills ?? [])
+    .flatMap((fill) => {
+      const slot = slotOf(ir, fill.slot);
+      return slot === undefined
+        ? []
+        : [
+            {
+              slot: slot.key,
+              name: fill.name,
+              from: packageSpecifier(ir.package, fill.file),
+              surface: fill.surface,
+              props: fill.props,
+            },
+          ];
+    })
+    .sort((left, right) =>
+      `${String(left["slot"])} ${String(left["name"])}` <
+      `${String(right["slot"])} ${String(right["name"])}`
+        ? -1
+        : 1,
+    );
+
   const manifest: Entry = {
     $comment: MANIFEST_NOTICE,
     member: ir.member,
@@ -980,6 +1017,8 @@ export function buildManifest(ir: MemberIR): {
     ...sections,
     ...(configs.length > 0 ? { config: configs } : {}),
     ...(ir.layout === "app" ? { blocks, routes } : {}),
+    ...(slots.length > 0 ? { slots } : {}),
+    ...(fills.length > 0 ? { fills } : {}),
     schemas,
   };
   return { manifest: manifest as unknown as StackraManifest, errors };

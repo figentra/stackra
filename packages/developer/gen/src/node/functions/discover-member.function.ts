@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `discoverMember`, gen's discovery: opens the member's program behind the host seam, reads every kind
- *          class, shape, enum and file export of its own sources (sorted by path), its dependency package names and the
+ *          class, shape, enum, shell slot, slot fill and file export of its own sources (sorted by path), its dependency package names and the
  *          committed manifests of those that ship one, the committed manifests of the services it injects a client
  *          of or listens to an event of (for a member with a relay, every publishing sibling service's; and which of those exist beside it in the workspace), the services any of its files imports a client from, its lang catalogues
  *          (`assets/lang/<locale>/*.json`) and those its declared `@stackra/*` packages ship, the `I18n` keys its files use, its modules and its authored root module, and fills each `DriverName<Port>` field with the driver names
@@ -12,7 +12,7 @@
  * Governing contract: ADR 0294 (decisions 10, 20, 25 and 26); ADR 0305 (rules 15, 16 and 42); ADR 0090 as amended
  *                     (discovery from the member's folders); ADR 0260 (decisions 3 and 4: clients and events from the
  *                     producer's manifest); STA-1293 (client imports and lang
- *                     catalogues); STA-1298 (package catalogues and key references).
+ *                     catalogues); STA-1298 (package catalogues and key references); ADR 0438 (slots and fills).
  */
 import { existsSync, readdirSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -26,6 +26,8 @@ import type { EnumIR } from "#core/types/enum-ir.type";
 import type { FileExports } from "#core/types/file-exports.type";
 import type { MemberIR } from "#core/types/member-ir.type";
 import type { ShapeIR } from "#core/types/shape-ir.type";
+import type { SlotFillIR } from "#core/types/slot-fill-ir.type";
+import type { SlotIR } from "#core/types/slot-ir.type";
 import type { TypeDesc } from "#core/types/type-desc.type";
 import { createSourceReader } from "#node/functions/create-source-reader.function";
 import { openHost } from "#node/functions/open-host.function";
@@ -83,8 +85,12 @@ export async function discoverMember(
     const shapes: ShapeIR[] = [];
     const enums: EnumIR[] = [];
     const files: FileExports[] = [];
+    const slots: SlotIR[] = [];
+    const fills: SlotFillIR[] = [];
     for (const file of reader.sources) {
       classes.push(...reader.classes(file));
+      slots.push(...reader.slots(file));
+      fills.push(...reader.fills(file));
       shapes.push(...reader.shapes(file));
       enums.push(...reader.enums(file));
       files.push(reader.exports(file));
@@ -183,6 +189,8 @@ export async function discoverMember(
       shapes: filled,
       enums,
       files,
+      ...(slots.length > 0 ? { slots } : {}),
+      ...(fills.length > 0 ? { fills } : {}),
       packages: facts.dependencies,
       dependencies,
       ...(services.length > 0 ? { services } : {}),

@@ -10,7 +10,7 @@
  *           are `./node`. The case helpers, the import printer and the emitters' path helpers stay internal.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision; ADR 0127 2026-10-24 note (`ir`
- *                     and `source` fold into gen).
+ *                     and `source` fold into gen); ADR 0438 (the slot and fill IR types, stackra-03).
  */
 export { DocsConfig } from "#core/bases/docs-config.base";
 export { CLIENTS_SPECIFIER } from "#core/constants/clients-specifier.constant";
@@ -91,6 +91,8 @@ export type { OpenApiDocument } from "#core/types/open-api-document.type";
 export type { RegexValue } from "#core/types/regex-value.type";
 export type { RelationIR } from "#core/types/relation-ir.type";
 export type { ShapeIR } from "#core/types/shape-ir.type";
+export type { SlotFillIR } from "#core/types/slot-fill-ir.type";
+export type { SlotIR } from "#core/types/slot-ir.type";
 export type { TokenRef } from "#core/types/token-ref.type";
 export type { ToolHints } from "#core/types/tool-hints.type";
 export type { TypeDesc } from "#core/types/type-desc.type";

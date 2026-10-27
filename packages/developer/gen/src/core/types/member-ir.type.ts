@@ -1,13 +1,14 @@
 /**
  * Stackra file contract:
  * Purpose: `MemberIR`, everything discovery read from one member: its facts, modules, kind classes, shapes, enums,
- *          file exports, its lang catalogues and those its declared packages ship, its `I18n` key references, the services its files import a client from, the committed manifests of its dependencies and of the services it injects a client of (and, for a relay service, of every publishing sibling), and which
+ *          file exports, shell slots and slot fills, its lang catalogues and those its declared packages ship, its `I18n` key references, the services its files import a client from, the committed manifests of its dependencies and of the services it injects a client of (and, for a relay service, of every publishing sibling), and which
  *          of those services exist in the workspace. Every gen output is a pure function of it.
  * Boundary: a type only. The committed `stackra.manifest.json` is the IR other members read (ADR 0127 2026-10-24
  *           note: `ir` folds into gen); this in-memory form never leaves a gen run.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 10, 20 and 25); ADR 0295 (decisions 1 and 7); ADR 0305 (rules 15 and 16); ADR 0260
- *                     (decision 3: clients from the producer's manifest); STA-1298 (package catalogues, key references).
+ *                     (decision 3: clients from the producer's manifest); STA-1298 (package catalogues, key references);
+ *                     ADR 0438 (shell slots and fills, stackra-03).
  */
 import type { StackraManifest } from "@stackra/contracts";
 
@@ -17,6 +18,8 @@ import type { EnumIR } from "#core/types/enum-ir.type";
 import type { FileExports } from "#core/types/file-exports.type";
 import type { GenError } from "#core/types/gen-error.type";
 import type { ShapeIR } from "#core/types/shape-ir.type";
+import type { SlotFillIR } from "#core/types/slot-fill-ir.type";
+import type { SlotIR } from "#core/types/slot-ir.type";
 
 /** What gen read from one member. */
 export interface MemberIR {
@@ -58,6 +61,12 @@ export interface MemberIR {
 
   /** The exports of each source file. */
   readonly files: readonly FileExports[];
+
+  /** Every exported `defineSlot` the member declares (a shell package). Absent when none (ADR 0438). */
+  readonly slots?: readonly SlotIR[];
+
+  /** Every exported `fillSlot` the member declares (a product UI package). Absent when none (ADR 0438). */
+  readonly fills?: readonly SlotFillIR[];
 
   /**
    * Every dependency package name (dependencies, then devDependencies), so the boot knows the platform packages a

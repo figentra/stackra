@@ -22,7 +22,9 @@
  *          as constants, and a shipped `X$` of a declared package the program never loaded is still found (STA-1296).
  *          `kind_base_name_reserved`, `partner_mismatch` for a same-stem kind (a Resource), `secret_name_missing` and
  *          each file's exported class names (STA-1306). A `@Classify(Class)` facet carries its data class's constant
- *          effects as `options.dataClass` (STA-1251).
+ *          effects as `options.dataClass` (STA-1251). Each exported `defineSlot<P>` and `fillSlot` of `@stackra/panel`
+ *          reads with its options, import and props record, and a non-constant fill is `slot_options_not_constant`
+ *          (ADR 0438).
  * Boundary: test only; writes the fixture under `.cache/` and opens TypeScript on it.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decision 26, 2026-10-23 item 13, decision 28); ADR 0305
@@ -1076,5 +1078,81 @@ describe("createSourceReader on data classes", async () => {
       $class: "ClinicalNoteDataClass",
       dataClass: { key: "clinical_note", ai: "never" },
     });
+  });
+});
+
+/** A shell slot, a fill of it and a fill gen cannot read (ADR 0438), over a stand-in @stackra/panel. */
+const SLOT_SOURCES: Readonly<Record<string, string>> = {
+  "node_modules/@stackra/panel/package.json": JSON.stringify({
+    name: "@stackra/panel",
+    types: "./index.d.ts",
+  }),
+  "node_modules/@stackra/panel/index.d.ts": [
+    'export interface Slot<P extends object = object> { readonly key: string; readonly surface: string; readonly cardinality: "one" | "many"; readonly props?: P }',
+    'export declare function defineSlot<P extends object>(options: { readonly key: string; readonly surface: string; readonly cardinality?: "one" | "many" }): Slot<P>;',
+    "export declare function fillSlot<P extends object>(slot: Slot<P>, component: (props: P) => unknown, options: { readonly surface: string }): { readonly slot: Slot<P> };",
+    "",
+  ].join("\n"),
+  "src/core/types/brand-panel-props.type.ts":
+    "export interface BrandPanelProps { readonly brand: string; readonly tagline?: string }\n",
+  "src/core/slots/brand-panel.slot.ts": [
+    'import { defineSlot } from "@stackra/panel";',
+    'import type { BrandPanelProps } from "#core/types/brand-panel-props.type";',
+    'export const BrandPanel = defineSlot<BrandPanelProps>({ key: "auth.sign_in.brand_panel", surface: "console" });',
+    "",
+  ].join("\n"),
+  "src/core/fills/mezzora-brand.fill.ts": [
+    'import { fillSlot } from "@stackra/panel";',
+    'import { BrandPanel } from "#core/slots/brand-panel.slot";',
+    'export const MezzoraBrand = fillSlot(BrandPanel, (props) => props.brand, { surface: "console" });',
+    "",
+  ].join("\n"),
+  "src/core/fills/loose.fill.ts": [
+    'import { fillSlot } from "@stackra/panel";',
+    'import { BrandPanel } from "#core/slots/brand-panel.slot";',
+    'const surface = String("console");',
+    "export const Loose = fillSlot(BrandPanel, () => null, { surface });",
+    "",
+  ].join("\n"),
+};
+
+describe("createSourceReader on shell slots and fills", async () => {
+  const root = writeFixtureMember("console-ui", SLOT_SOURCES);
+  const host = await openHost(join(root, "tsconfig.json"));
+  const reader = createSourceReader(host, readMemberFacts(root));
+  const slots = reader.sources.flatMap((file) => reader.slots(file));
+  const fills = reader.sources.flatMap((file) => reader.fills(file));
+  host.close();
+
+  it("reads a defineSlot's options, import path and props record", () => {
+    expect(slots).toHaveLength(1);
+    expect(slots[0]).toMatchObject({
+      name: "BrandPanel",
+      file: "src/core/slots/brand-panel.slot.ts",
+      importPath: "#core/slots/brand-panel.slot",
+      key: "auth.sign_in.brand_panel",
+      surface: "console",
+      cardinality: "one",
+    });
+    expect(Object.keys(slots[0]?.props ?? {})).toEqual(["brand", "tagline?"]);
+    expect(slots[0]?.props["brand"]).toBe("string");
+  });
+
+  it("reads a fill's slot by its import, its surface and the slot's props", () => {
+    expect(fills.map((fill) => fill.name)).toEqual(["MezzoraBrand"]);
+    expect(fills[0]).toMatchObject({
+      file: "src/core/fills/mezzora-brand.fill.ts",
+      slot: { name: "BrandPanel", from: "#core/slots/brand-panel.slot" },
+      surface: "console",
+    });
+    expect(fills[0]?.props).toEqual(slots[0]?.props);
+  });
+
+  it("refuses a fill whose surface is not a constant", () => {
+    expect(
+      reader.errors
+        .filter((error) => error.code === "slot_options_not_constant")
+        .map((error) => error.subject),
+    ).toEqual(["Loose"]);
   });
 });

@@ -1,5 +1,14 @@
 # @stackra/panel
 
+<!--
+Stackra file contract:
+Purpose: the package's reader guide: the panel kinds, builders, slots (widget places and shell slots), placement
+         layers and renderers.
+Boundary: documentation only; the code and the ADRs win on any difference.
+Runtime: none
+Governing contract: ADR 0164; ADR 0307; ADR 0306; ADR 0336; ADR 0350; ADR 0438 (shell slots, stackra-03).
+-->
+
 Stackra's panel: the admin and portal surfaces modules declare and one renderer draws (ADR 0164, ADR 0307). A module
 declares a `Resource` (one model's List, View, Create and Edit pages in one area), a `Widget` (a query bound to a
 display), a `Document` (a saved Page or Dashboard of registered blocks) and an app declares its `Panel`s. Builders are
@@ -23,6 +32,7 @@ into `.`). Depends on `@stackra/actions`, `@stackra/clients`, `@stackra/containe
 | `.`        | `Bind`, `Drill`, `DateRange`, `Blocks`                                                                                                                                      | binds, drill-downs, date filter values, document blocks        |
 | `.`        | `Column`, `Filter`, `View`, `Entry`, `Section`, `Relation`, `Placement`, `FormField`, `FormStep`, `WidgetDisplay`                                                           | the data constructors gen writes into `#stackra/resources`     |
 | `.`        | `slots`, `panels`, `resource`, `document`, `widget`, `registerWidgets`                                                                                                      | what gen calls in `#stackra/slots`, `panels`, `resources`      |
+| `.`        | `defineSlot`, `fillSlot`, `Slot` (t), `SlotFill` (t), `SlotOptions` (t), `SlotCardinality` (t), `SlotComponent` (t)                                                         | shell slots a product fills (ADR 0438)                         |
 | `.`        | `describeResource`, `describeWidget`, `resolvePlacements`                                                                                                                   | what gen records; the placement layer rule                     |
 | `.`        | `SavedView` (`SavedView$`), `ViewStore` (t), `groupRows`, `ViewGroup` (t), `Aggregate`, `ViewSharing`                                                                       | saved views with grouping, sub-grouping, totals and sharing    |
 | `.`        | `visibleFields`                                                                                                                                                             | the form fields a display mode shows                           |
@@ -107,6 +117,25 @@ totals sends its own totals.
 (`FormField.from(key, { essential: true })`, or `.essential()` in a `form(f)` member); a repeater, grid or step stays
 when a field inside it is essential. A mode is display only (ADR 0359 decision 2): a hidden field keeps its value, and
 nothing about what the viewer may do changes. The switch is `@stackra/ui`'s `ModeSwitch`.
+
+## Shell slots (ADR 0438)
+
+A shell (the OS console, ops, landing or mobile app) is built and deployed once, so a product changes it through
+slots, never by shadowing its files. The shell package declares each slot with its props type, and a product's UI
+package fills it with a component of that type:
+
+```ts
+export const SignInBrandPanel = defineSlot<BrandPanelProps>({
+  key: "auth.sign_in.brand_panel",
+  surface: "console",
+});
+export const MezzoraBrandPanel = fillSlot(SignInBrandPanel, BrandPanel, { surface: "console" });
+```
+
+`cardinality` is `one` (default: the fill replaces the shell's default) or `many`. TypeScript checks the component's
+props; gen lists both in the manifest (`slots`, `fills`) for the OS registry and refuses a fill of an undeclared slot,
+on another surface or built against other props than the shell's committed manifest. A fill changes presentation
+only. `Slot` is a shell place; `SlotRef` (`slots({...})`) stays a widget place inside a panel.
 
 ## Edition slots
 

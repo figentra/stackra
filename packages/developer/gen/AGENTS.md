@@ -7,7 +7,7 @@ Purpose: the agent rules of @stackra/gen: where code goes, entries and barrels, 
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
 Governing contract: ADR 0294; ADR 0295; ADR 0305; ADR 0260 (generated clients and typed events); ADR 0263; ADR 0162 and ADR 0222
-                    (the translated and upload shape kinds); ADR 0338 (a replica query's `ReplicaPage` output); STA-1290 (the shipped shape kind); STA-1293 (i18n, clients for apps, undeclared packages); STA-1296 (client modules and permission sets, config overrides, the root Vitest shim); STA-1298 (package lang namespaces in `I18n`, `i18n_key_missing`, `i18n_namespace_clash`); STA-1309 (catalogue loaders); STA-1306 (the quality-gate refusals); STA-1316 (the docs site); STA-1322 (the Encore app file); STA-1251 (`searchable_semantic_ai_never`).
+                    (the translated and upload shape kinds); ADR 0338 (a replica query's `ReplicaPage` output); STA-1290 (the shipped shape kind); STA-1293 (i18n, clients for apps, undeclared packages); STA-1296 (client modules and permission sets, config overrides, the root Vitest shim); STA-1298 (package lang namespaces in `I18n`, `i18n_key_missing`, `i18n_namespace_clash`); STA-1309 (catalogue loaders); STA-1306 (the quality-gate refusals); STA-1316 (the docs site); STA-1322 (the Encore app file); STA-1251 (`searchable_semantic_ai_never`); ADR 0438 (shell slots and fills, stackra-03).
 -->
 
 The Stackra compiler. Member at `packages/developer/gen` (`tier:lib`), in the programming model v3.1 shape (ADR 0294,
@@ -191,6 +191,21 @@ The gen refusals of the 2026-10-27 coverage audit, section 4. Each carries its f
   `providers.encore.app`, refused as `encore_app_missing` without it (never a default id); an `encore.app` at the member
   or repository root is `encore_app_stray`. The root runway is read by a block-YAML lookup because gen does not depend
   on `@stackra/runway`; move to `readRunway` once it does.
+
+## Shell slots and fills (ADR 0438, stackra-03)
+
+- A shell package declares `export const X = defineSlot<Props>({ key, surface, cardinality? })`; a product UI package
+  fills it with `export const Y = fillSlot(X, Component, { surface })`, both from `@stackra/panel`. The reader takes
+  only exported consts whose callee is imported from `@stackra/panel`; options are static (`slot_options_not_constant`).
+- The props record is read from the `props` type of the `Slot<P>` value (prop name, `?` when optional, to the
+  checker's type text, sorted). A fill's props come from the slot type it was compiled against, so a product built
+  against an older shell differs from the shell's committed manifest (`slot_props_mismatch`).
+- `slotOf` resolves a fill's slot from the member's own slots or a dependency's committed manifest (`slots`), never
+  from the dependency's source. `checkSlotFills` (full pass only) refuses `slot_undeclared`, `slot_surface_mismatch`,
+  `slot_props_mismatch`, `slot_fill_duplicate` (two fills of a `one` slot in a member) and `slot_key_duplicate`.
+- The manifest lists `slots` (key, const, entry, surface, cardinality, props) and the resolved `fills` (slot key,
+  const, entry, surface, props) for the OS registry. Not yet: a registration file for fills, and a break in
+  `compareManifests` when a slot is removed or its props change (stackra-04 or a follow-up batch).
 
 ## Rules that fail the build
 

@@ -11,7 +11,8 @@
  *           and the renderers' helpers are internal: the `./react` and `./native` entries import them by path. The
  *           kind instance bases are types only, so no class skips its options.
  * Runtime: isomorphic
- * Governing contract: ADR 0294 (decision 15); ADR 0307; the STA-347 stand-in barrel decision.
+ * Governing contract: ADR 0294 (decision 15); ADR 0307; the STA-347 stand-in barrel decision; ADR 0438 (`defineSlot`,
+ *                     `fillSlot` and the shell slot types, stackra-03).
  */
 export type { DocumentBase } from "#core/bases/document-base.base";
 export { Document } from "#core/bases/document.base";
@@ -55,8 +56,10 @@ export { ViewSharing } from "#core/enums/view-sharing.enum";
 export { WidgetSize } from "#core/enums/widget-size.enum";
 export { activeContributions } from "#core/functions/active-contributions.function";
 export { describeResource } from "#core/functions/describe-resource.function";
+export { defineSlot } from "#core/functions/define-slot.function";
 export { describeWidget } from "#core/functions/describe-widget.function";
 export { document } from "#core/functions/document.function";
+export { fillSlot } from "#core/functions/fill-slot.function";
 export { groupRows } from "#core/functions/group-rows.function";
 export { lineEditorOf } from "#core/functions/line-editor-of.function";
 export { panels } from "#core/functions/panels.function";
@@ -119,9 +122,14 @@ export type { ResourceRoutesOptions } from "#core/types/resource-routes-options.
 export type { ResourceRoutes } from "#core/types/resource-routes.type";
 export type { ResourceTree } from "#core/types/resource-tree.type";
 export type { SectionBuilder } from "#core/types/section-builder.type";
+export type { SlotCardinality } from "#core/types/slot-cardinality.type";
+export type { SlotComponent } from "#core/types/slot-component.type";
+export type { SlotFill } from "#core/types/slot-fill.type";
 export type { SlotGroup } from "#core/types/slot-group.type";
+export type { SlotOptions } from "#core/types/slot-options.type";
 export type { SlotRef } from "#core/types/slot-ref.type";
 export type { SlotTree } from "#core/types/slot-tree.type";
+export type { Slot } from "#core/types/slot.type";
 export type { SortNode } from "#core/types/sort-node.type";
 export type { TableNode } from "#core/types/table-node.type";
 export type { Table } from "#core/types/table.type";

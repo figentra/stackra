@@ -1,5 +1,14 @@
 # AGENTS — @stackra/panel
 
+<!--
+Stackra file contract:
+Purpose: the agent rules of @stackra/panel: where code goes, the package rules (shell slots included) and the rules
+         that fail the build.
+Boundary: documentation only; the code and the ADRs win on any difference.
+Runtime: none
+Governing contract: ADR 0164; ADR 0307; ADR 0306; ADR 0336; ADR 0350; ADR 0438 (shell slots, stackra-03).
+-->
+
 The panel: the `Resource`, `Widget`, `Document` and `Panel` kinds, their pure builders, the metric shapes and the time
 range input, typed slots and placement layers, the data constructors gen writes, and the web and native renderers
 (ADR 0164, ADR 0307, ADR 0306, ADR 0336 layer 2b). Member at `packages/experience/panel` (`tier:lib`), in the
@@ -47,6 +56,9 @@ programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./react`, `./native
 - No tenant vocabulary: layer 4 is a scope node's copy (R-59).
 - A display mode is display only: `visibleFields` hides, never denies. A saved view stores declared keys only.
 - A `LineEntry` slot shows exactly one editor, the highest layer's; never merge editors.
+- Shell slots (ADR 0438): `defineSlot<Props>` in the shell package, `fillSlot` in the product's UI package, each an
+  exported const with static options so gen reads them. `Slot.props` is type-only; never set it at run time. A shell
+  slot is not a `SlotRef` (a widget place); keep the two apart.
 - No parameter properties and no `#private` fields: apps typecheck this source under `erasableSyntaxOnly`.
 
 ## Rules that fail the build

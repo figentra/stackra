@@ -11,7 +11,8 @@ Governing contract: ADR 0294; ADR 0295; ADR 0260 (generated clients); ADR 0261; 
                     shipped shape kind); STA-1293 (the i18n target, clients for apps, undeclared packages refused); STA-1296
                     (client modules and permission sets, config overrides, the root Vitest shim); STA-1298 (package lang
                     namespaces merged into `I18n`, missing keys and namespace clashes refused); STA-1251
-                    (`searchable_semantic_ai_never`).
+                    (`searchable_semantic_ai_never`); ADR 0438 (shell slots and
+                    fills, stackra-03).
 -->
 
 The Stackra compiler. Gen reads a member's source through the TypeScript compiler API, derives every identity and
@@ -85,6 +86,13 @@ to an own model) whose `@Classify` data class says `ai: never`: semantic search 
 provider, which ADR 0380 forbids for that class. The reader puts the data class's constant effects on the `@Classify`
 facet (`options.dataClass`). `SearchableOptions` in `@stackra/model` has no `semantic` field yet, so the check refuses
 nothing until it does.
+
+Shell slots (ADR 0438, stackra-03): a shell package declares `export const X = defineSlot<Props>({ key, surface })`
+and a product UI package fills it with `export const Y = fillSlot(X, Component, { surface })` (both `@stackra/panel`).
+Gen lists `slots` and `fills` in the manifest for the OS registry and refuses, on the full run, a fill whose slot no
+manifest declares (`slot_undeclared`), on another surface (`slot_surface_mismatch`), built against other props than
+the shell's committed manifest (`slot_props_mismatch`), a second fill of a `one` slot (`slot_fill_duplicate`) and two
+own slots with one key (`slot_key_duplicate`); non-static options are `slot_options_not_constant`.
 
 An event's wire name is always `<module>.<name>.v<n>` (`orders.order.paid.v1`): there is no member-level or
 service-key-prefixed wire name, and a `name` that starts with the module or member key is refused

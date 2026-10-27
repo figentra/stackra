@@ -30,7 +30,10 @@
  *                     STA-1306 (`kind_base_name_reserved`, `secret_name_missing`, `partner_mismatch` for every
  *                     same-stem kind, and each file's exported class names for `kind_unregistered_base`);
  *                     STA-1251 (a `@Classify(Class)` facet carries its data class's constant effects as
- *                     `options.dataClass`, read from the `DataClass({...})` its chain extends, own or a package's).
+ *                     `options.dataClass`, read from the `DataClass({...})` its chain extends, own or a package's);
+ *                     ADR 0438 (each exported `defineSlot<P>` and `fillSlot` of `@stackra/panel`: options as
+ *                     constants, the slot's `props` type as a record, the fill's slot by its import;
+ *                     `slot_options_not_constant`).
  */
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -55,6 +58,8 @@ import type { FieldRule } from "#core/types/field-rule.type";
 import type { GenError } from "#core/types/gen-error.type";
 import type { RelationIR } from "#core/types/relation-ir.type";
 import type { ShapeIR } from "#core/types/shape-ir.type";
+import type { SlotFillIR } from "#core/types/slot-fill-ir.type";
+import type { SlotIR } from "#core/types/slot-ir.type";
 import type { TokenRef } from "#core/types/token-ref.type";
 import type { TypeDesc } from "#core/types/type-desc.type";
 import { KIND_BASES } from "#node/constants/kind-bases.constant";
@@ -2266,6 +2271,58 @@ export function createSourceReader(
       (statement) => host.kind(statement) === "ClassDeclaration" && statement.name !== undefined,
     );
 
+  // Shell slots and fills (ADR 0438): `export const X = defineSlot<P>({...})` / `fillSlot(Slot, Component, {...})`
+  // with the callee imported from @stackra/panel.
+  const panelCalls = (file: TsNode, callee: string): { declaration: TsNode; call: TsNode }[] => {
+    const found: { declaration: TsNode; call: TsNode }[] = [];
+    if (importsOf(file.fileName ?? "").get(callee) !== "@stackra/panel") return found;
+    for (const statement of file.statements ?? []) {
+      if (host.kind(statement) !== "VariableStatement" || !has(statement, "ExportKeyword"))
+        continue;
+      for (const declaration of statement.declarationList?.declarations ?? []) {
+        const call = declaration.initializer;
+        if (
+          call !== undefined &&
+          declaration.name !== undefined &&
+          host.kind(call) === "CallExpression" &&
+          call.expression !== undefined &&
+          host.text(call.expression) === callee
+        )
+          found.push({ declaration, call });
+      }
+    }
+    return found;
+  };
+  // The props record of the `Slot<P>` typed at `at`: each prop of `P` (`name?` when optional) to its type text.
+  const slotPropsOf = (at: TsNode): Record<string, string> => {
+    const symbol = host
+      .properties(host.typeAt(at))
+      .find((property) => host.symbolName(property) === "props");
+    if (symbol === undefined) return {};
+    const type = host.typeOfSymbol(symbol);
+    const defined = (host.unionMembers(type) ?? [type]).filter(
+      (member) => !host.typeHas(member, "Undefined"),
+    );
+    const props = defined.length === 1 && defined[0] !== undefined ? defined[0] : type;
+    const out: Record<string, string> = {};
+    for (const property of [...host.properties(props)].sort((left, right) =>
+      host.symbolName(left) < host.symbolName(right) ? -1 : 1,
+    ))
+      out[`${host.symbolName(property)}${host.symbolHas(property, "Optional") ? "?" : ""}`] =
+        host.typeText(host.typeOfSymbol(property));
+    return out;
+  };
+  const notConstant = (node: TsNode, subject: string, call: string): void =>
+    fail(
+      node,
+      subject,
+      "slot_options_not_constant",
+      `gen cannot read the ${call} options of ${subject} without running it`,
+      call === "defineSlot"
+        ? 'write `export const X = defineSlot<Props>({ key: "area.slot_name", surface: "console" })` with literal values'
+        : 'write `export const X = fillSlot(ImportedSlot, Component, { surface: "console" })` with a literal surface',
+    );
+
   return {
     sources,
     errors,
@@ -2294,6 +2351,61 @@ export function createSourceReader(
       classNodes(file)
         .map(readShape)
         .filter((found): found is ShapeIR => found !== undefined),
+    slots: (file) => {
+      const path = file.fileName ?? "";
+      const found: SlotIR[] = [];
+      for (const { declaration, call } of panelCalls(file, "defineSlot")) {
+        const name = nameOf(declaration.name);
+        const options = constant(call.arguments?.[0]);
+        const key = isPlainObject(options) ? options["key"] : undefined;
+        const surface = isPlainObject(options) ? options["surface"] : undefined;
+        const cardinality = isPlainObject(options) ? (options["cardinality"] ?? "one") : undefined;
+        if (
+          typeof key !== "string" ||
+          typeof surface !== "string" ||
+          typeof cardinality !== "string"
+        ) {
+          notConstant(declaration, name, "defineSlot");
+          continue;
+        }
+        found.push({
+          name,
+          file: rel(path),
+          importPath: importPathOf(path),
+          key,
+          surface,
+          cardinality,
+          props: declaration.name === undefined ? {} : slotPropsOf(declaration.name),
+        });
+      }
+      return found;
+    },
+    fills: (file) => {
+      const path = file.fileName ?? "";
+      const found: SlotFillIR[] = [];
+      for (const { declaration, call } of panelCalls(file, "fillSlot")) {
+        const name = nameOf(declaration.name);
+        const slot = call.arguments?.[0];
+        const symbol = slot === undefined ? undefined : host.symbolAt(slot);
+        const options = constant(call.arguments?.[2]);
+        const surface = isPlainObject(options) ? options["surface"] : undefined;
+        if (slot === undefined || symbol === undefined || typeof surface !== "string") {
+          notConstant(declaration, name, "fillSlot");
+          continue;
+        }
+        const { line, column } = host.position(declaration);
+        found.push({
+          name,
+          file: rel(path),
+          line,
+          column,
+          slot: refOf(slot, symbol),
+          surface,
+          props: slotPropsOf(slot),
+        });
+      }
+      return found;
+    },
     enums: (file) => {
       const found: EnumIR[] = [];
       const path = file.fileName ?? "";
