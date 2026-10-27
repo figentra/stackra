@@ -4,14 +4,10 @@
  *          feature modules join `imports`. Replaced by the reference services (FW10).
  * Boundary: declares the root module class and its feature-module list; no providers and no routes.
  * Runtime: node
- * Governing contract: ADR 0007 (documentation); ADR 0090 (root module).
+ * Governing contract: ADR 0007 (documentation); ADR 0090 (root module); ADR 0294 (decision 25, the Module kind base).
  * Owner: the service owner · Secrets: forbidden
  */
+import { Module } from "@stackra/container";
 
 /** The root module of the health service. Its `imports` list holds the feature modules the service hosts. */
-// shortcut: a plain class until @stackra/container ships `@Module` (STA-76); then `@Module({ imports: [] })`.
-// oxlint-disable-next-line typescript/no-extraneous-class -- a module is a class (ADR 0005); @Module replaces the field
-export class HealthModule {
-  /** Feature modules this service hosts. */
-  static readonly imports: readonly unknown[] = [];
-}
+export class HealthModule extends Module({ imports: [] }) {}
