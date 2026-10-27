@@ -14,6 +14,8 @@ import type { PackEntry } from "#core/types/pack-entry.type";
 describe("PackEntry", () => {
   it("is one entry of a pack", () => {
     expectTypeOf<PackEntry>().toEqualTypeOf<MarketPack["entries"][number]>();
-    expectTypeOf<NonNullable<PackEntry["floor"]>["bound"]>().toEqualTypeOf<"min" | "max" | "list">();
+    expectTypeOf<NonNullable<PackEntry["floor"]>["bound"]>().toEqualTypeOf<
+      "min" | "max" | "list"
+    >();
   });
 });

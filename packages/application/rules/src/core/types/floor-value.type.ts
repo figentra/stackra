@@ -9,7 +9,4 @@
  */
 
 /** A number, a money amount in minor units, or a list of strings. */
-export type FloorValue =
-  | number
-  | { readonly minor: number; readonly currency: string }
-  | string[];
+export type FloorValue = number | { readonly minor: number; readonly currency: string } | string[];
