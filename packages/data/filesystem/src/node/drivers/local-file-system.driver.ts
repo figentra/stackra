@@ -72,7 +72,7 @@ export class LocalFileSystemDriver extends Driver(FileSystem) {
       return new Uint8Array(await readFile(join(this.root, key)));
     } catch (error) {
       if (isMissing(error) || (error as { code?: unknown }).code === "EISDIR")
-        throw new FileNotFoundError(key);
+        throw FileNotFoundError.create({ path: key });
       throw error;
     }
   }
@@ -81,12 +81,12 @@ export class LocalFileSystemDriver extends Driver(FileSystem) {
   override async readStream(path: string): Promise<ReadableStream<Uint8Array>> {
     const key = normalizePath(path);
     const handle = await open(join(this.root, key), "r").catch((error: unknown) => {
-      throw isMissing(error) ? new FileNotFoundError(key) : error;
+      throw isMissing(error) ? FileNotFoundError.create({ path: key }) : error;
     });
     // A folder opens for reading on Linux, so it is refused here, as `read` refuses it.
     if (!(await handle.stat()).isFile()) {
       await handle.close();
-      throw new FileNotFoundError(key);
+      throw FileNotFoundError.create({ path: key });
     }
     // Node's web stream type is the same object as the global one; only the declarations differ.
     return Readable.toWeb(handle.createReadStream()) as unknown as ReadableStream<Uint8Array>;
@@ -140,10 +140,10 @@ export class LocalFileSystemDriver extends Driver(FileSystem) {
     const key = normalizePath(path);
     try {
       const facts = await stat(join(this.root, key));
-      if (!facts.isFile()) throw new FileNotFoundError(key);
+      if (!facts.isFile()) throw FileNotFoundError.create({ path: key });
       return { path: key, size: facts.size, lastModified: facts.mtime, contentType: null };
     } catch (error) {
-      if (isMissing(error)) throw new FileNotFoundError(key);
+      if (isMissing(error)) throw FileNotFoundError.create({ path: key });
       throw error;
     }
   }

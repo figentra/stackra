@@ -103,7 +103,7 @@ export class EncoreBucketFileSystemDriver extends Driver(FileSystem) {
    */
   private async existing(path: string): Promise<string> {
     const key = normalizePath(path);
-    if (!(await this.bucket.exists(key))) throw new FileNotFoundError(key);
+    if (!(await this.bucket.exists(key))) throw FileNotFoundError.create({ path: key });
     return key;
   }
 }

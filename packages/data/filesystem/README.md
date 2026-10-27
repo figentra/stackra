@@ -19,7 +19,7 @@ main-process driver, and `FilesystemConfig`, which picks the driver.
 | `.`           | `FilesystemConfig`, `FilesystemConfig$` | key `filesystem`: `disk`, `root`, `url`, `s3`, `gcs`                                 |
 | `.`           | `FilesystemOptions`                     | the shape of the configuration, for restating a field type in an override            |
 | `.`           | `MemoryFileSystemDriver`                | `disk: memory`: a `Map`, for tests and as the safe default                           |
-| `.`           | `FileNotFoundError`                     | what `read` and `stat` throw when nothing is stored under a key                      |
+| `.`           | `FileNotFoundError`                     | the `NotFound` refusal `read` and `stat` throw when nothing is stored under a key    |
 | `./node`      | `LocalFileSystemDriver`                 | `disk: local`: a folder (`root`), atomic writes                                      |
 | `./node`      | `S3FileSystemDriver`                    | `disk: s3`: AWS S3, Cloudflare R2 or MinIO; presigned temporary URLs                 |
 | `./node`      | `GcsFileSystemDriver`                   | `disk: gcs`: Google Cloud Storage (in-country GCP, ADR 0354); V4 signed URLs         |

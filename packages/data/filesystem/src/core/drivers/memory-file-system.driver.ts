@@ -108,7 +108,7 @@ export class MemoryFileSystemDriver extends Driver(FileSystem) {
   /** The stored file under a normalised key. */
   private find(key: string): StoredFile {
     const file = this.files.get(key);
-    if (file === undefined) throw new FileNotFoundError(key);
+    if (file === undefined) throw FileNotFoundError.create({ path: key });
     return file;
   }
 }

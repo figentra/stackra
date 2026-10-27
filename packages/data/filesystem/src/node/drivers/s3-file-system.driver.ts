@@ -107,10 +107,10 @@ export class S3FileSystemDriver extends Driver(FileSystem) {
       const output = await this.client.send(
         new GetObjectCommand({ Bucket: this.bucket, Key: key }),
       );
-      if (output.Body === undefined) throw new FileNotFoundError(key);
+      if (output.Body === undefined) throw FileNotFoundError.create({ path: key });
       return await output.Body.transformToByteArray();
     } catch (error) {
-      throw isNotFound(error) ? new FileNotFoundError(key) : error;
+      throw isNotFound(error) ? FileNotFoundError.create({ path: key }) : error;
     }
   }
 
@@ -121,10 +121,10 @@ export class S3FileSystemDriver extends Driver(FileSystem) {
       const output = await this.client.send(
         new GetObjectCommand({ Bucket: this.bucket, Key: key }),
       );
-      if (output.Body === undefined) throw new FileNotFoundError(key);
+      if (output.Body === undefined) throw FileNotFoundError.create({ path: key });
       return output.Body.transformToWebStream() as ReadableStream<Uint8Array>;
     } catch (error) {
-      throw isNotFound(error) ? new FileNotFoundError(key) : error;
+      throw isNotFound(error) ? FileNotFoundError.create({ path: key }) : error;
     }
   }
 
@@ -249,7 +249,7 @@ export class S3FileSystemDriver extends Driver(FileSystem) {
         contentType: head.ContentType ?? null,
       };
     } catch (error) {
-      throw isNotFound(error) ? new FileNotFoundError(key) : error;
+      throw isNotFound(error) ? FileNotFoundError.create({ path: key }) : error;
     }
   }
 

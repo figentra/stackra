@@ -12,7 +12,7 @@
 import "#core/types/file-system-driver-names.type";
 
 import type { DriverName } from "@stackra/container";
-import { registerSchemas, Schema } from "@stackra/validation";
+import { Field, registerSchemas, Schema } from "@stackra/validation";
 
 import type { FileSystem } from "#contracts/ports/file-system.port";
 import { FILESYSTEM_CONFIG_SCHEMA } from "#core/constants/filesystem-config-schema.constant";
@@ -27,16 +27,9 @@ import { FILESYSTEM_CONFIG_SCHEMA } from "#core/constants/filesystem-config-sche
  * }
  */
 export class FilesystemOptions extends Schema {
-  /** Which driver runs; names are the driver file prefixes. `memory` is safe everywhere and keeps nothing. */
-  disk: DriverName<FileSystem> = "memory";
-
-  /** The local disk's folder, resolved against the working directory; the Electron disk's, under `userData`. */
-  root = "storage";
-
-  /** The base URL public files are served from (a CDN or the static route); `null` when the disk is private. */
-  url: string | null = null;
-
   /** The S3-compatible bucket of the `s3` disk: AWS S3, Cloudflare R2 or MinIO. */
+  // reason: a nested driver option a host override replaces whole; the shipped config schema holds its rules
+  @Field(FILESYSTEM_CONFIG_SCHEMA.shape.s3)
   s3: {
     /** The bucket name; required by the `s3` disk. */
     bucket: string;
@@ -49,12 +42,23 @@ export class FilesystemOptions extends Schema {
   } = { bucket: "", region: "us-east-1", endpoint: null, forcePathStyle: false };
 
   /** The Google Cloud Storage bucket of the `gcs` disk (the in-country GCP environments, ADR 0354). */
+  // reason: a nested driver option a host override replaces whole; the shipped config schema holds its rules
+  @Field(FILESYSTEM_CONFIG_SCHEMA.shape.gcs)
   gcs: {
     /** The bucket name; required by the `gcs` disk. */
     bucket: string;
     /** The project the client bills to; `null` reads it from the environment's credentials. */
     projectId: string | null;
   } = { bucket: "", projectId: null };
+
+  /** Which driver runs; names are the driver file prefixes. `memory` is safe everywhere and keeps nothing. */
+  disk: DriverName<FileSystem> = "memory";
+
+  /** The local disk's folder, resolved against the working directory; the Electron disk's, under `userData`. */
+  root = "storage";
+
+  /** The base URL public files are served from (a CDN or the static route); `null` when the disk is private. */
+  url: string | null = null;
 }
 
 registerSchemas([[FilesystemOptions, FILESYSTEM_CONFIG_SCHEMA]]);

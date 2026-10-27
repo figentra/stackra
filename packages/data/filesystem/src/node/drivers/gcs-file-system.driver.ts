@@ -79,7 +79,7 @@ export class GcsFileSystemDriver extends Driver(FileSystem) {
       const [contents] = await this.bucket.file(key).download();
       return new Uint8Array(contents);
     } catch (error) {
-      throw isNotFound(error) ? new FileNotFoundError(key) : error;
+      throw isNotFound(error) ? FileNotFoundError.create({ path: key }) : error;
     }
   }
 
@@ -93,7 +93,7 @@ export class GcsFileSystemDriver extends Driver(FileSystem) {
     const key = normalizePath(path);
     const file = this.bucket.file(key);
     const [found] = await file.exists();
-    if (!found) throw new FileNotFoundError(key);
+    if (!found) throw FileNotFoundError.create({ path: key });
     return Readable.toWeb(file.createReadStream()) as unknown as ReadableStream<Uint8Array>;
   }
 
@@ -139,7 +139,7 @@ export class GcsFileSystemDriver extends Driver(FileSystem) {
         contentType: metadata.contentType ?? null,
       };
     } catch (error) {
-      throw isNotFound(error) ? new FileNotFoundError(key) : error;
+      throw isNotFound(error) ? FileNotFoundError.create({ path: key }) : error;
     }
   }
 
