@@ -7,11 +7,13 @@
  *           only (`crypto.subtle`), so it runs in Node, Workers and the browser alike. The key is imported as
  *           non-extractable and never logged.
  * Runtime: isomorphic
- * Governing contract: ADR 0308 (rule 6); RFC 7519 (JWT); RFC 7515 (JWS compact form); RFC 7518 (algorithms).
+ * Governing contract: ADR 0308 (rule 6); RFC 7519 (JWT); RFC 7515 (JWS compact form); RFC 7518 (algorithms);
+ *                     owner D10 2026-10-28 (stackra-223): `expiresIn` is a `Duration`.
  */
+import { Duration } from "@stackra/contracts";
+
 import type { AuthType } from "#core/enums/auth-type.enum";
 import { encodeBase64 } from "#core/functions/encode-base64.function";
-import { intervalMs } from "#core/functions/interval-ms.function";
 import type { AuthOptions } from "#core/types/auth-options.type";
 
 /** What a JWT is signed from: the `auth` options of a JWT integration, or the same fields of a JWT bearer one. */
@@ -69,7 +71,8 @@ export async function signJwt(
     ...(auth.subject === undefined ? {} : { sub: resolve(auth.subject) }),
     ...(auth.audience === undefined ? {} : { aud: resolve(auth.audience) }),
     iat: issuedAt,
-    exp: issuedAt + Math.floor(intervalMs(auth.expiresIn ?? "5m") / 1000),
+    exp:
+      issuedAt + Math.floor(Duration.toMilliseconds(auth.expiresIn ?? Duration.minutes(5)) / 1000),
   };
   const input = `${encodeBase64(JSON.stringify(header), "base64url")}.${encodeBase64(JSON.stringify(claims), "base64url")}`;
   const secret = resolve(auth.key);

@@ -4,10 +4,12 @@
  *          reports the welcome and later frames (dropping malformed ones and anything before the welcome), sends only
  *          while open, reconnects after a drop and after a refused token, and stops on close; when the socket closes
  *          unopened it streams the room over server-sent events and sends through `RoomTokens.publish` with the key.
- * Boundary: test only; `WebSocket` and `fetch` are fakes and timers are faked.
+ * Boundary: test only; `WebSocket` and `fetch` are fakes and timers are faked. The cap was `maxBackoffSeconds`
+ *           (30 and 1) before stackra-223 and is now `maxBackoff` (`Duration.seconds(30)` and `(1)`).
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0346 (decisions 1 and 5).
  */
+import { Duration } from "@stackra/contracts";
 import type { RealtimeTarget } from "@stackra/realtime/contracts";
 import { afterEach, beforeEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
@@ -58,7 +60,7 @@ describe("openRoom", () => {
         onFrame: (frame) => events.push(["frame", frame.t]),
         onDown: () => events.push(["down"]),
       },
-      { maxBackoffSeconds: 30 },
+      { maxBackoff: Duration.seconds(30) },
     );
     await settle();
     const socket = FakeWebSocket.opened[0];
@@ -86,7 +88,7 @@ describe("openRoom", () => {
       tokens,
       { document: "pag_1" },
       { onWelcome: () => undefined, onFrame: () => undefined, onDown: () => undefined },
-      { maxBackoffSeconds: 1 },
+      { maxBackoff: Duration.seconds(1) },
     );
     await settle();
     expect(FakeWebSocket.opened).toHaveLength(0);
@@ -131,7 +133,7 @@ describe("openRoom", () => {
         onFrame: (frame) => events.push(["frame", frame.t]),
         onDown: () => events.push(["down"]),
       },
-      { maxBackoffSeconds: 30 },
+      { maxBackoff: Duration.seconds(30) },
     );
     await settle();
     await settle();

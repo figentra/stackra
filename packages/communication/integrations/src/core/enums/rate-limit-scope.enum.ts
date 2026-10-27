@@ -14,7 +14,7 @@ import { Enum } from "@stackra/contracts";
  * The scopes of an outbound rate limit.
  *
  * @example
- * rateLimits: [{ requests: 10, per: "1s", by: RateLimitScope.Credential }]
+ * rateLimits: [{ requests: 10, per: Duration.seconds(1), by: RateLimitScope.Credential }]
  */
 export const RateLimitScope = Enum.of({
   /** One bucket per credential used: each connection, and the platform's own credentials. */

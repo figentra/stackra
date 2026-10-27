@@ -1,13 +1,13 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `createPublicClients`: a public query and action carry the pinned version, the locale, the
- *          market and the forwarded facts; a network failure is retried with a retry policy; any area but the public
- *          one is refused.
+ *          market and the forwarded facts; a network failure is retried with a retry policy (the contracts
+ *          `RetryPolicy`; `on` became `retryOn` in stackra-223); any area but the public one is refused.
  * Boundary: test only; `fetch` is stubbed, so nothing reaches a network.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0082 (API areas); ADR 0118; ADR 0140.
  */
-import { ApiArea, HttpMethod } from "@stackra/contracts";
+import { ApiArea, HttpMethod, RetryOn } from "@stackra/contracts";
 import { Locale } from "@stackra/i18n";
 import { afterEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
@@ -15,7 +15,6 @@ import { z } from "zod";
 
 import { actionRef } from "#core/functions/action-ref.function";
 import { queryRef } from "#core/functions/query-ref.function";
-import { RetryOn } from "#server/enums/retry-on.enum";
 import { createPublicClients } from "#server/functions/create-public-clients.function";
 
 class ListPlansQuery extends queryRef("billing.catalog.plan.list", {
@@ -67,7 +66,10 @@ describe("createPublicClients", () => {
       .mockRejectedValueOnce(new TypeError("fetch failed"))
       .mockResolvedValue(Response.json({ trialDays: 7 }));
     vi.stubGlobal("fetch", fetch);
-    const clients = createPublicClients({ ...BASE, retry: { attempts: 2, on: RetryOn.Network } });
+    const clients = createPublicClients({
+      ...BASE,
+      retry: { attempts: 2, retryOn: RetryOn.Network },
+    });
     expect(await clients.query(ListPlansQuery, { product: "stackra" })).toEqual({ trialDays: 7 });
     expect(fetch).toHaveBeenCalledTimes(2);
   });

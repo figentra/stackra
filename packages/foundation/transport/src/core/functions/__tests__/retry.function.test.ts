@@ -2,13 +2,14 @@
  * Stackra file contract:
  * Purpose: unit tests of `retry`: what is safe to repeat (idempotent methods, or a request with an Idempotency-Key)
  *          is retried after a network failure, a timeout and a 429 or 503, each attempt with the full body; a POST
- *          without a key is sent once; `retryable: false`, a long `Retry-After`, a non-retryable status, the option
- *          switches and the attempt limit stop it; a caller's abort ends a wait; bad attempts are refused.
- * Boundary: test only; a scripted fetch, and delays of zero.
+ *          without a key is sent once; `retryable: false`, a long `Retry-After`, a non-retryable status,
+ *          `RetryOn.Network` and the attempt limit stop it; a caller's abort ends a wait; bad attempts are refused.
+ * Boundary: test only; a scripted fetch, and a `base` of zero. The default waits (200 ms doubling to 5 s, as before
+ *           stackra-223) are pinned in the contracts `backoffDelay` test.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269; ADR 0140; ADR 0138; ADR 0217.
  */
-import { Duration } from "@stackra/contracts";
+import { Duration, RetryOn } from "@stackra/contracts";
 import { describe, expect, it } from "@stackra/testing";
 
 import { RequestTimedOutError } from "#core/errors/request-timed-out.error";
@@ -23,7 +24,7 @@ type Outcome = (() => Response) | Error;
 function scripted(options: Partial<RetryOptions>, ...outcomes: Outcome[]) {
   const bodies: string[] = [];
   const send = createTransport({
-    middleware: [retry({ attempts: 3, delay: () => Duration.seconds(0), ...options })],
+    middleware: [retry({ attempts: 3, base: Duration.seconds(0), ...options })],
     fetch: async (request) => {
       if (request.signal.aborted) throw new DOMException("aborted", "AbortError");
       bodies.push(await request.text());
@@ -129,14 +130,14 @@ describe("retry", () => {
     expect(bodies).toHaveLength(2);
   });
 
-  it("honours network: false and refused: false", async () => {
-    const quiet = scripted({ network: false }, networkDown(), ok);
-    await expect(quiet.send(new Request(url))).rejects.toThrow(TypeError);
-    expect(quiet.bodies).toHaveLength(1);
-
-    const plain = scripted({ refused: false }, unavailable, ok);
+  it("retries only a network failure with RetryOn.Network (was refused: false)", async () => {
+    const plain = scripted({ retryOn: RetryOn.Network }, unavailable, ok);
     expect((await plain.send(new Request(url))).status).toBe(503);
     expect(plain.bodies).toHaveLength(1);
+
+    const dropped = scripted({ retryOn: RetryOn.Network }, networkDown(), ok);
+    expect((await dropped.send(new Request(url))).status).toBe(200);
+    expect(dropped.bodies).toHaveLength(2);
   });
 
   it("does not retry an error that is not a network failure", async () => {
@@ -146,7 +147,7 @@ describe("retry", () => {
   });
 
   it("ends a wait when the caller aborts and fails with the abort", async () => {
-    const { send, bodies } = scripted({ delay: () => Duration.seconds(10) }, networkDown(), ok);
+    const { send, bodies } = scripted({ base: Duration.seconds(10) }, networkDown(), ok);
     const controller = new AbortController();
     const sent = send(new Request(url, { signal: controller.signal }));
     setTimeout(() => controller.abort(), 5);

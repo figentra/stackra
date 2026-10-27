@@ -59,7 +59,7 @@ import type { RunOrigin } from "#core/types/run-origin.type";
 import type { StepContext } from "#core/types/step-context.type";
 import type { WorkflowRun } from "#core/types/workflow-run.type";
 
-vi.mock("@stackra/queue", async (importOriginal) => ({
+vi.mock("@stackra/contracts", async (importOriginal) => ({
   ...(await importOriginal<Record<string, unknown>>()),
   backoffDelay: () => 0,
 }));

@@ -9,10 +9,10 @@
  *           The body is the raw text as received; a `{body}` inside it is never expanded. Header names are lowercase.
  * Runtime: isomorphic
  * Governing contract: ADR 0308 (rules 15 and 17); ADR 0224 (decision 2); config-model (the recipe is data).
+ *                     Stackra-223: a stored recipe's short form (`"5m"`) reads through `Duration.parse`.
  */
 import { Duration } from "@stackra/contracts";
 import type { WebhookSignature } from "@stackra/integrations";
-import { duration } from "@stackra/validation";
 
 import { decodeBase64 } from "#core/functions/decode-base64.function";
 import { decodeHex } from "#core/functions/decode-hex.function";
@@ -85,7 +85,7 @@ export async function verifyHmacWebhook(
   if (
     recipe.tolerance !== undefined &&
     Math.abs(now.getTime() - Number(timestamp) * 1000) >
-      Duration.toMilliseconds(duration(recipe.tolerance))
+      Duration.toMilliseconds(Duration.parse(recipe.tolerance))
   )
     return false;
   const id = recipe.idHeader === undefined ? undefined : headers[recipe.idHeader];

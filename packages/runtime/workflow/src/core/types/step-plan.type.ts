@@ -7,7 +7,7 @@
  * Governing contract: ADR 0294 (decision 18).
  */
 import type { AnyClass } from "@stackra/container";
-import type { Backoff } from "@stackra/queue";
+import type { Backoff } from "@stackra/contracts";
 
 /** One step of a plan. */
 export interface StepPlan {

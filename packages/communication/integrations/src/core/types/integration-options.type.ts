@@ -9,8 +9,10 @@
  *           locked in the manifest (ADR 0308 rule 19), never options.
  * Runtime: isomorphic
  * Governing contract: ADR 0308 (rules 1, 6, 9, 10, 13 to 15); ADR 0305 (rule 2: a kind with options is called);
- *                     STA-793 (`headers`).
+ *                     STA-793 (`headers`); owner D10 2026-10-28 (stackra-223: `retry` is the contracts `RetryPolicy`).
  */
+import type { RetryPolicy } from "@stackra/contracts";
+
 import type { ConnectionLevel } from "#core/enums/connection-level.enum";
 import type { ConnectorKind } from "#core/enums/connector-kind.enum";
 import type { IntegrationCategory } from "#core/enums/integration-category.enum";
@@ -20,7 +22,6 @@ import type { HealthCheck } from "#core/types/health-check.type";
 import type { IntegrationListing } from "#core/types/integration-listing.type";
 import type { IntegrationWebhooks } from "#core/types/integration-webhooks.type";
 import type { RateLimit } from "#core/types/rate-limit.type";
-import type { RetryPolicy } from "#core/types/retry-policy.type";
 
 /**
  * The options of `Integration({ ... })`.
@@ -68,8 +69,14 @@ export interface IntegrationOptions {
   /** The provider's documented rate limits. */
   readonly rateLimits?: readonly RateLimit[];
 
-  /** How a failed call is retried. */
-  readonly retry?: RetryPolicy;
+  /**
+   * How the managed client retries a call the provider did not answer, timed out, rate limited or failed with a 5xx:
+   * the shared `RetryPolicy` (3 attempts, `base` 200 ms doubling, `max` 30 s when left out, as before stackra-223; a
+   * `Retry-After` answer wins, and `max` also bounds a wait for a full rate-limit bucket), plus the header the provider
+   * deduplicates on. The failures it retries are fixed by ADR 0308, so it takes no `retryOn`. A `POST` or `PATCH` retries only when the call passes an idempotency key and that header is
+   * named, so a retried call never acts twice.
+   */
+  readonly retry?: Partial<Omit<RetryPolicy, "retryOn">> & { readonly idempotencyHeader?: string };
 
   /**
    * How the managed client encodes a request body: JSON when left out, a form (`application/x-www-form-urlencoded`)

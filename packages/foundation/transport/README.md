@@ -1,5 +1,13 @@
 # @stackra/transport
 
+<!--
+Stackra file contract:
+Purpose: the package's reader guide: the transport pipeline, its middleware (retry, timeout, idempotency, version) and the stream readers.
+Boundary: documentation only; the code and the ADRs win on any difference.
+Runtime: none
+Governing contract: ADR 0118; ADR 0138; ADR 0140; ADR 0260; owner D10 2026-10-28 (stackra-223: one RetryPolicy, backoffDelay and Duration).
+-->
+
 The HTTP client pipeline under Stackra's generated clients: standard `Request` in, standard `Response` out, through
 middleware for the bearer token, retries, timeouts, the `Idempotency-Key` and the `Stackra-Version` header, plus
 readers for NDJSON and server-sent-event bodies.
@@ -51,7 +59,9 @@ const response = await send(new Request(`${apiUrl}/orders`, { method: "POST", bo
 
 `retry` never repeats a `POST` or `PATCH` without an `Idempotency-Key`. It retries a fetch failure, a
 `RequestTimedOutError`, and the statuses of the retryable `ErrorKind`s (429, 503), honouring `Retry-After` up to
-`maxWait` and an envelope that says `retryable: false`.
+`maxWait` and an envelope that says `retryable: false`. Its options are the contracts `RetryPolicy` plus `maxWait`:
+`base` 200 ms doubling, `max` 5 s when left out, and `retryOn: RetryOn.Network` retries no refusal (it replaced the
+`network`, `refused` and `delay` options in stackra-223).
 
 On Expo, pass `fetch: nativeFetch` from `@stackra/transport/native`; React Native's own fetch buffers the whole body.
 

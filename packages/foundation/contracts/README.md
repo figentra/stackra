@@ -1,5 +1,13 @@
 # @stackra/contracts
 
+<!--
+Stackra file contract:
+Purpose: the package's reader guide: what @stackra/contracts exports (bases, enums, ports, types, `Duration`, the retry policy and `backoffDelay`, the config helpers) and how to use it.
+Boundary: documentation only; the code and the ADRs win on any difference.
+Runtime: none
+Governing contract: ADR 0294; ADR 0295; ADR 0127 2026-10-24 note; owner D10 2026-10-28 (stackra-223: one RetryPolicy, backoffDelay and Duration).
+-->
+
 The leaf vocabulary of Stackra: the `Port` and `Enum` bases, actor and id types, `Duration`, the platform enums, the
 core ports `Clock`, `Logger`, `IdentityResolver`, `PrincipalDirectory`, `HealthIndicator`, `KeyProvider`, `FieldCipher` and `Signer`, the manifest type and the four `stackra.config.ts` helpers.
 
@@ -14,6 +22,7 @@ package may import it; it imports nothing.
 | `Enum`                                                                                                                                    | kind base | `export const X = Enum.of({...})` plus `export type X = Enum.Value<typeof X>` |
 | `Duration`                                                                                                                                | value     | `Duration.minutes(10)` is `"PT10M"`; `parse`, `toMilliseconds`                |
 | `ActorKind`, `ApiArea`, `DataClassification`, `HttpMethod`, `Realm`, `SortDirection`, `Target`, `Tone`, `MigrationRunner`, `HealthStatus` | enums     | the platform's closed sets                                                    |
+| `RetryPolicy`, `Backoff`, `Jitter`, `RetryOn`, `backoffDelay(policy, attempt)`                                                            | retry     | the one retry shape and backoff formula (stackra-223)                         |
 | `Clock`, `Logger`, `IdentityResolver`, `PrincipalDirectory`                                                                               | ports     | inject by type; drivers live in container, logger and identity                |
 | `HealthIndicator`, `KeyProvider`, `FieldCipher`, `Signer`                                                                                 | ports     | a probed dependency; data keys; seal and open a field; sign; drivers below    |
 | `Actor`, `PublicId<P>`, `Branded<T, B>`, `Email`, `Url`, `Json`, `VerifiedPrincipal`, `HealthReport`, `DataKey`                           | types     | the caller, ids and value types the shape compiler knows                      |
@@ -21,6 +30,11 @@ package may import it; it imports nothing.
 | `mintPublicId(prefix, time?)`                                                                                                             | function  | the one public-id minter (UUIDv7, ADR 0135)                                   |
 | `StackraManifest`                                                                                                                         | type      | reading a committed `stackra.manifest.json`                                   |
 | `defineApp`, `defineService`, `definePackage`, `defineWorker`                                                                             | functions | the one call in a member's `stackra.config.ts`                                |
+
+`Duration.parse` also reads the short form (`"200ms"`, `"30s"`, `"6h"`, `"1d"`), which replaced the integrations
+`Interval` string. A retrying package keeps its own `base` and `max` defaults as a frozen constant and passes them to
+`backoffDelay`; the curve is capped at `max` before the jitter (`Jitter.Equal` keeps the upper half, `Jitter.Added`
+adds up to half again).
 
 ## Data classification and principals
 

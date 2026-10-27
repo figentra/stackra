@@ -5,6 +5,8 @@
  * Boundary: a frozen namespace object plus the type of the same name. The value is the string itself, so it is JSON,
  *           a config value and a wire value as it is, and two equal lengths are `===`. Only fixed lengths exist: days,
  *           hours, minutes and seconds (years and months vary, so they are refused). Precision is one millisecond.
+ *           `parse` also reads the short form (`"200ms"`, `"30s"`, `"5m"`, `"6h"`, `"1d"`) that replaced the
+ *           integrations `Interval` string (stackra-223).
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 26: `Duration.*` is a constant gen evaluates), ADR 0127 2026-10-24 note (the
  *                     leaf vocabulary).
@@ -23,6 +25,18 @@ const WEEK = 7 * DAY;
 /** `PnW`, then `PnD` and `T` with `nH`, `nM`, `nS`; each number may have a decimal fraction. */
 const ISO_DURATION =
   /^P(?:(\d+(?:\.\d+)?)W)?(?:(\d+(?:\.\d+)?)D)?(?:T(?:(\d+(?:\.\d+)?)H)?(?:(\d+(?:\.\d+)?)M)?(?:(\d+(?:\.\d+)?)S)?)?$/;
+
+/** The short form: a number and one lowercase unit (`"200ms"`, `"1.5s"`, `"6h"`). */
+const SHORT_DURATION = /^(\d+(?:\.\d+)?)(ms|s|m|h|d)$/;
+
+/** Milliseconds per short-form unit. */
+const SHORT_UNITS: Readonly<Record<string, number>> = {
+  ms: 1,
+  s: SECOND,
+  m: MINUTE,
+  h: HOUR,
+  d: DAY,
+};
 
 /** Milliseconds of an ISO 8601 duration, or `undefined` when it is not one this type accepts. */
 function millisecondsOf(text: string): number | undefined {
@@ -90,15 +104,21 @@ export const Duration = Object.freeze({
   days: (amount: number): Duration => fromMilliseconds(amount * DAY),
 
   /**
-   * Reads an ISO 8601 duration from outside (an environment value, a wire value) into its canonical form, so
-   * `Duration.parse("PT600S") === Duration.minutes(10)`. Weeks are read as seven days.
-   * @throws RangeError when `text` is not a duration of weeks, days, hours, minutes and seconds.
+   * Reads an ISO 8601 duration, or the short form (`"200ms"`, `"30s"`, `"5m"`, `"6h"`, `"1d"`), from outside (an
+   * environment value, a wire value, an Integration option) into its canonical form, so
+   * `Duration.parse("PT600S") === Duration.parse("10m")`. Weeks are read as seven days.
+   * @throws RangeError when `text` is neither the short form nor a duration of weeks, days, hours, minutes and
+   *         seconds.
    */
   parse(text: string): Duration {
-    const milliseconds = millisecondsOf(text);
+    const short = SHORT_DURATION.exec(text);
+    const milliseconds =
+      short === null
+        ? millisecondsOf(text)
+        : Number(short[1]) * (SHORT_UNITS[short[2] ?? ""] ?? Number.NaN);
     if (milliseconds === undefined)
       throw new RangeError(
-        `"${text}" is not an ISO 8601 duration of days, hours, minutes and seconds`,
+        `"${text}" is not a duration: write a number and ms, s, m, h or d ("30s"), or ISO 8601 ("PT30S")`,
       );
     return fromMilliseconds(milliseconds);
   },

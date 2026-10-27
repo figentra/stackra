@@ -1,6 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: unit and type tests of `Duration`: canonical ISO 8601 output, equal lengths are `===`, `parse` normalises
+ *          ISO 8601 and the short form (`"200ms"`, `"6h"`)
  *          and refuses calendar units and malformed text, `toMilliseconds` round-trips, the constructors are pure and
  *          refuse negative and non-finite amounts, and a raw string is not a Duration.
  * Boundary: test only; imports the subject through its `#core` alias and the runner through @stackra/testing.
@@ -41,16 +42,37 @@ describe("Duration", () => {
     ["P1DT0.5S", "P1DT0.5S"],
     ["PT36H", "P1DT12H"],
     ["PT0S", "PT0S"],
+    ["200ms", "PT0.2S"],
+    ["1.5s", "PT1.5S"],
+    ["30s", "PT30S"],
+    ["5m", "PT5M"],
+    ["6h", "PT6H"],
+    ["1d", "P1D"],
+    ["0ms", "PT0S"],
   ])("parses %s as %s", (text, expected) => {
     expect(Duration.parse(text)).toBe(expected);
   });
 
-  it.each(["", "P", "PT", "P1DT", "1D", "P1Y", "P1M", "PT-1S", "PT1,5S", "pt1s", "P1H"])(
-    "refuses %j",
-    (text) => {
-      expect(() => Duration.parse(text)).toThrow(RangeError);
-    },
-  );
+  it.each([
+    "",
+    "P",
+    "PT",
+    "P1DT",
+    "1D",
+    "P1Y",
+    "P1M",
+    "PT-1S",
+    "PT1,5S",
+    "pt1s",
+    "P1H",
+    "-1s",
+    "1w",
+    "s",
+    "1S",
+    "1 s",
+  ])("refuses %j", (text) => {
+    expect(() => Duration.parse(text)).toThrow(RangeError);
+  });
 
   it("reads back the length in milliseconds", () => {
     expect(Duration.toMilliseconds(Duration.minutes(10))).toBe(600_000);

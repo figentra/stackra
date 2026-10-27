@@ -11,8 +11,10 @@
  *           sooner. On the stream a send is fire-and-forget: a publish the host cannot make, or that is refused, is
  *           dropped as a send on a closed socket is.
  * Runtime: isomorphic
- * Governing contract: ADR 0346 (decisions 1, 3 and 5); ADR 0225 (decision 1: WebSocket with an SSE fallback).
+ * Governing contract: ADR 0346 (decisions 1, 3 and 5); ADR 0225 (decision 1: WebSocket with an SSE fallback); owner
+ *                     D10 2026-10-28 (stackra-223: the contracts `backoffDelay`, `maxBackoff` as a `Duration`).
  */
+import { backoffDelay, Duration, Jitter } from "@stackra/contracts";
 import { REALTIME_ROOM_PATH } from "@stackra/realtime";
 import type { RoomFrame } from "@stackra/realtime/contracts";
 import { readServerSentEvents } from "@stackra/transport";
@@ -22,8 +24,8 @@ import type { CollaborationRoom } from "#contracts/types/collaboration-room.type
 import type { RoomHandlers } from "#core/types/room-handlers.type";
 import type { RoomLink } from "#core/types/room-link.type";
 
-/** The first retry waits about this long. */
-const BASE_MS = 500;
+/** The reconnect wait before stackra-223 moved the formula to @stackra/contracts: 500 ms doubling, equal jitter. */
+const RECONNECT = Object.freeze({ base: Duration.parse("500ms"), jitter: Jitter.Equal });
 
 /** `WebSocket.OPEN`. */
 const OPEN = 1;
@@ -33,14 +35,14 @@ const OPEN = 1;
  *
  * @throws TypeError (on connect) when the token's origin is empty and there is no page origin.
  * @example
- * const link = openRoom(tokens, { document: page.id }, { onWelcome, onFrame, onDown }, { maxBackoffSeconds: 30 });
+ * const link = openRoom(tokens, { document: page.id }, { onWelcome, onFrame, onDown }, { maxBackoff: Duration.seconds(30) });
  * link.send({ t: "presence", data: {} });
  */
 export function openRoom(
   tokens: RoomTokens,
   room: CollaborationRoom,
   handlers: RoomHandlers,
-  options: { readonly maxBackoffSeconds: number },
+  options: { readonly maxBackoff: Duration },
 ): RoomLink {
   let closed = false;
   let attempt = 0;
@@ -52,9 +54,11 @@ export function openRoom(
 
   const retry = (): void => {
     if (closed) return;
-    const cap = Math.min(options.maxBackoffSeconds * 1000, BASE_MS * 2 ** Math.min(attempt, 30));
     attempt += 1;
-    timer = setTimeout(() => void connect(), cap / 2 + Math.random() * (cap / 2));
+    timer = setTimeout(
+      () => void connect(),
+      backoffDelay({ ...RECONNECT, max: options.maxBackoff }, attempt),
+    );
   };
 
   /** Reports one frame's text; answers whether the link is now welcomed. */

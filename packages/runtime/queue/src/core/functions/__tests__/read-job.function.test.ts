@@ -8,11 +8,10 @@
  * Governing contract: ADR 0022; ADR 0269; ADR 0305 (rules 28 and 30); ADR 0148 (decision 1).
  */
 import { Action, Query } from "@stackra/actions";
-import { ActorKind, Duration } from "@stackra/contracts";
+import { ActorKind, Backoff, Duration } from "@stackra/contracts";
 import { describe, expect, it } from "@stackra/testing";
 
 import { JOB_TYPES } from "#core/constants/job-types.constant";
-import { Backoff } from "#core/enums/backoff.enum";
 import { readJob } from "#core/functions/read-job.function";
 import { registerJobs } from "#core/functions/register-jobs.function";
 
@@ -64,7 +63,8 @@ class RenamedHookAction extends Action({
 class SlowBackoffAction extends Action({
   key: "backoff.slow",
   actors: [ActorKind.System],
-  job: { backoff: "glacial" },
+  // a stored code from outside the type, as an older manifest could hold
+  job: { backoff: "glacial" as Backoff },
 }) {
   async handle(): Promise<void> {}
 }

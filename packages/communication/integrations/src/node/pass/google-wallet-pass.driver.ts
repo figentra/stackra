@@ -11,10 +11,12 @@
  *           and `options`, and the constructor takes only the injected `SecretStore` (ADR 0294 rule 17). Not yet certified against a live issuer
  *           account (STA-791 acceptance: the save link works).
  * Runtime: node
- * Governing contract: ADR 0348 (decision 5); ADR 0308 (rules 6 and 13); RFC 7523; Google Wallet API "Save link".
+ * Governing contract: ADR 0348 (decision 5); ADR 0308 (rules 6 and 13); RFC 7523; Google Wallet API "Save link";
+ *                     owner D10 2026-10-28 (stackra-223): `saveLinkLifetime` is a `Duration`.
  */
 import type { SecretStore } from "@stackra/config/contracts";
 import { Driver } from "@stackra/container";
+import { Duration } from "@stackra/contracts";
 
 import { ProviderRefusedError } from "#core/errors/provider-refused.error";
 import { signJwt } from "#core/functions/sign-jwt.function";
@@ -83,7 +85,8 @@ export abstract class GoogleWalletPassDriver extends Driver(WalletPassIssuer) {
         key: "{privateKey}",
         issuer: this.options.serviceAccountEmail,
         audience: "google",
-        expiresIn: this.options.saveLinkLifetime ?? "1d",
+        // configuration may hold the short form (`"1d"`), so it is read, not trusted
+        expiresIn: Duration.parse(this.options.saveLinkLifetime ?? Duration.days(1)),
       },
       (template) => (template === "{privateKey}" ? key : template),
       request.issuedAt,

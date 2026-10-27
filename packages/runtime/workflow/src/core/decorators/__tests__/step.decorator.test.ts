@@ -8,7 +8,7 @@
  * Governing contract: ADR 0022; ADR 0269; ADR 0294 (decisions 6 and 18).
  */
 import { DecoratorTarget } from "@stackra/container";
-import { Backoff } from "@stackra/queue";
+import { Backoff } from "@stackra/contracts";
 import { describe, expect, it } from "@stackra/testing";
 
 import { Signal } from "#core/bases/signal.base";

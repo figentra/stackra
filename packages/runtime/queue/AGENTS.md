@@ -1,5 +1,13 @@
 # AGENTS — @stackra/queue
 
+<!--
+Stackra file contract:
+Purpose: the agent rules of @stackra/queue.
+Boundary: documentation only; the code and the ADRs win on any difference.
+Runtime: none
+Governing contract: ADR 0148; ADR 0294; owner D10 2026-10-28 (stackra-223: one RetryPolicy, backoffDelay and Duration).
+-->
+
 The runtime of an action's `job:` option: the queue service, the worker, the `QueueDriver` port with the memory and
 Postgres drivers, the `JobDispatcher` driver behind `ctx.dispatch`, and the test helpers (ADR 0148, ADR 0305 rule 28).
 Member at `packages/runtime/queue` (`tier:lib`), in the programming model v3.1 shape (ADR 0294, 0305). Entries `.`,
@@ -32,7 +40,8 @@ Member at `packages/runtime/queue` (`tier:lib`), in the programming model v3.1 s
 ## This package
 
 - A driver stores and reserves; it never runs a job, computes a backoff or reads a clock. The worker passes `now` and
-  the retry time, so every driver behaves the same.
+  the retry time, so every driver behaves the same. The wait is the contracts `backoffDelay` over `JOB_BACKOFF`;
+  never write a backoff formula here (stackra-223).
 - `QueueWorkerService.process` hands a delivered job to `driver.claim` before it runs; a store driver keeps the default
   (the job as it is, already reserved). The `broker` driver holds a claimed job in memory only until the worker records
   its outcome in the same call, so `retry`, `deadLetter` and `remove` must follow its `claim` in one process.

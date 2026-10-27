@@ -1,5 +1,13 @@
 # @stackra/outbox
 
+<!--
+Stackra file contract:
+Purpose: the package's reader guide: the transactional outbox, its relay, the inbox and the drivers.
+Boundary: documentation only; the code and the ADRs win on any difference.
+Runtime: none
+Governing contract: ADR 0078; ADR 0221; ADR 0148; owner D10 2026-10-28 (stackra-223: one RetryPolicy, backoffDelay and Duration).
+-->
+
 Stackra outbox: the answer to "must another service learn of a committed change, even if this process dies after the
 commit?" (ADR 0078). Integration events, and the row changes of watched models, are written to an outbox table in the
 same transaction as the change; a relay publishes them after the commit, one relay per service under a lock, with
@@ -57,7 +65,8 @@ await relay.work({ signal: shutdown.signal });
 Every tick, the relay that wins the `outbox.relay` lock (`Locks.tryWith`) takes up to 100 due messages, oldest first:
 an event is published through the `EventPublisher` as an `EventEnvelope`, a row change is handed to every change
 consumer of its model the container binds, in the row's scope. A delivered message is deleted; a failed one waits an
-exponential backoff (from ten seconds, capped at an hour) and is dead-lettered after its tenth attempt
+exponential backoff (from ten seconds, capped at an hour: the contracts `backoffDelay` over the queue's
+`JOB_BACKOFF`) and is dead-lettered after its tenth attempt
 (`outbox.message_dead` is logged). An idle relay polls every second. Delivery is at least once.
 
 `outbox.batchWindowSeconds` (default `0`, at most `60`) lets due messages gather: a tick that finds fewer than a full

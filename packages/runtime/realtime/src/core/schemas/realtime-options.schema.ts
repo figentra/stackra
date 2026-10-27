@@ -15,7 +15,8 @@
  *           it is the `REALTIME_VALKEY_URL` secret; the venue relay's shared key is the `REALTIME_LOCAL_RELAY_KEY`
  *           secret.
  * Runtime: isomorphic
- * Governing contract: ADR 0225 (decision 1); ADR 0294 (decisions 4, 19 and 26); ADR 0295 (decision 10).
+ * Governing contract: ADR 0225 (decision 1); ADR 0294 (decisions 4, 19 and 26); ADR 0295 (decision 10); owner D10
+ *                     2026-10-28 (stackra-223: `maxBackoff` is a `Duration`, was `maxBackoffSeconds`).
  */
 import { Secret } from "@stackra/config";
 import type { DriverName } from "@stackra/container";
@@ -41,10 +42,6 @@ export class RealtimeOptions extends Schema {
   /** Seconds in the background before the connection is suspended, when `reconnectOnForeground` is on. */
   @Int({ min: 0 })
   backgroundGraceSeconds = 60;
-
-  /** The longest wait between reconnect attempts, in seconds. */
-  @Int({ min: 1 })
-  maxBackoffSeconds = 30;
 
   /** The `valkey` fan-out's server (`redis://` or `rediss://`, with its password); empty until the secret is set. */
   @Secret("REALTIME_VALKEY_URL")
@@ -105,6 +102,9 @@ export class RealtimeOptions extends Schema {
 
   /** The realms whose sessions may hear tenant channels; a principal always hears its own channel. */
   channelRealms: Realm[] = [Realm.Platform, Realm.Staff, Realm.Customer];
+
+  /** The longest wait between reconnect attempts (the `max` of the reconnect `RetryPolicy`); at least one second. */
+  maxBackoff: Duration = Duration.seconds(30);
 
   /** How long a subscribe token, and the connection it opens, lasts; at least ten seconds. */
   subscribeTokenTtl: Duration = Duration.minutes(15);

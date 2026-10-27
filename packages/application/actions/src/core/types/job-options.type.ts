@@ -7,8 +7,11 @@
  *           method of the action the queue calls once after the last retry.
  * Runtime: isomorphic
  * Governing contract: ADR 0305 (rules 28 and 30: `job` is off by default; `job_without_system_actor`); owner decision
- *                     2026-10-24 (no `@Job` or `@Queue`).
+ *                     2026-10-24 (no `@Job` or `@Queue`); owner D10 2026-10-28 (stackra-223: `backoff` is the
+ *                     contracts `Backoff`).
  */
+import type { Backoff } from "@stackra/contracts";
+
 import type { JobCron } from "#core/types/job-cron.type";
 
 /** An action's job surface. */
@@ -25,8 +28,8 @@ export interface JobOptions {
   /** Retries after the first failure, a whole number from 0. */
   readonly retries?: number;
 
-  /** The queue's backoff code between retries (`Backoff.Exponential`). */
-  readonly backoff?: string;
+  /** The `RetryPolicy` curve between retries (`Backoff.Exponential`, from @stackra/contracts). */
+  readonly backoff?: Backoff;
 
   /** Keep a run that failed its last retry in the dead-letter queue. */
   readonly deadLetter?: boolean;

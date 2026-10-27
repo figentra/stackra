@@ -1,5 +1,13 @@
 # AGENTS — @stackra/contracts
 
+<!--
+Stackra file contract:
+Purpose: the agent rules of @stackra/contracts: where code goes and the rules of the leaf vocabulary.
+Boundary: documentation only; the code and the ADRs win on any difference.
+Runtime: none
+Governing contract: ADR 0294; ADR 0127 2026-10-24 note; owner D10 2026-10-28 (stackra-223: one RetryPolicy, backoffDelay and Duration).
+-->
+
 The leaf vocabulary of Stackra. Member at `packages/foundation/contracts` (`tier:lib`), in the programming model v3
 shape (ADR 0294, 0295). Entry `.` only.
 
@@ -37,6 +45,10 @@ The whole package is one `.` entry, so its enums, ports and types sit under `src
 - A new `DataClassification` code is appended, never inserted or renamed: codes are stored, and stored checks
   (`@stackra/access-log`'s `t.dataClassification`) list them literally.
 - `Duration` values are canonical ISO 8601 strings; keep `Duration.*` pure, because gen evaluates them in defaults.
+  `Duration.parse` also reads the short form (`"200ms"`, `"6h"`); no package declares another interval string.
+- `RetryPolicy` and `backoffDelay` are the one retry shape and formula (stackra-223). A package keeps its defaults as
+  a frozen constant and passes them in; it never declares another policy type or backoff formula. `Backoff` codes are
+  stored on jobs and automation documents: append, never rename.
 
 ## Rules that fail the build
 

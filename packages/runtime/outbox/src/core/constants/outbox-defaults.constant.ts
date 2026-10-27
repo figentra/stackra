@@ -8,8 +8,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0078 (decision 4); ADR 0221 (decision 5: under five seconds of lag); ADR 0148 (backoff).
  */
-import { Duration } from "@stackra/contracts";
-import { Backoff } from "@stackra/queue";
+import { Backoff, Duration } from "@stackra/contracts";
 
 /** The relay defaults. */
 export const OUTBOX_DEFAULTS = Object.freeze({
@@ -17,7 +16,7 @@ export const OUTBOX_DEFAULTS = Object.freeze({
   batchSize: 100,
   /** Deliveries a message gets; the last failure dead-letters it. */
   attempts: 10,
-  /** The wait between failed deliveries. */
+  /** The curve between failed deliveries, under the queue's `JOB_BACKOFF` waits. */
   backoff: Backoff.Exponential,
   /** The pause of an idle or locked-out relay. */
   pollInterval: Duration.seconds(1),

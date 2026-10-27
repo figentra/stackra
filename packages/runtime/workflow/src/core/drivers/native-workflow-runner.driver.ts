@@ -45,7 +45,7 @@ import { ContextStorage, WorkflowRunner } from "@stackra/actions/contracts";
 import type { CallDescriptor } from "@stackra/actions/contracts";
 import { Driver, kindOf } from "@stackra/container";
 import type { AnyClass } from "@stackra/container";
-import { Duration, Logger } from "@stackra/contracts";
+import { backoffDelay, Duration, Logger } from "@stackra/contracts";
 import type { Clock, Json, PublicId } from "@stackra/contracts";
 import { isRefusal, WorkflowTimedOutError } from "@stackra/errors";
 import { EventBus } from "@stackra/events";
@@ -53,7 +53,7 @@ import type { Event } from "@stackra/events";
 import { EventOutbox } from "@stackra/events/contracts";
 import type { EventMeta, RecordedEvent } from "@stackra/events/contracts";
 import type { Locks } from "@stackra/locking";
-import { backoffDelay } from "@stackra/queue";
+import { JOB_BACKOFF } from "@stackra/queue";
 import { duration } from "@stackra/validation";
 
 import type { WorkflowConfig } from "#config/workflow.config";
@@ -816,7 +816,7 @@ export class NativeWorkflowRunnerDriver extends Driver(WorkflowRunner) {
           ...(progress === undefined ? {} : { progress }),
           startedAt: latest.record?.startedAt ?? at,
         };
-        const delay = backoffDelay(step.backoff, attempt);
+        const delay = backoffDelay({ ...JOB_BACKOFF, backoff: step.backoff }, attempt);
         const late =
           current.deadlineAt !== undefined &&
           this.clock.now().getTime() + delay >= current.deadlineAt.getTime();

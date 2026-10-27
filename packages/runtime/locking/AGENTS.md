@@ -1,5 +1,13 @@
 # AGENTS — @stackra/locking
 
+<!--
+Stackra file contract:
+Purpose: the agent rules of @stackra/locking.
+Boundary: documentation only; the code and the ADRs win on any difference.
+Runtime: none
+Governing contract: ADR 0103; ADR 0149; owner D10 2026-10-28 (stackra-223: one RetryPolicy, backoffDelay and Duration).
+-->
+
 Named server-side locks: the `Locks` service, the `LockDriver` port, the memory and Postgres drivers and the
 token-sequence migration (ADR 0103, ADR 0149). Member at `packages/runtime/locking` (`tier:lib`), in the programming
 model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./node`.
@@ -27,7 +35,7 @@ model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./node`.
 
 ## This package
 
-- A driver never waits and never sorts: `Locks` normalises the keys, polls `tryAcquire` with backoff and runs the
+- A driver never waits and never sorts: `Locks` normalises the keys, polls `tryAcquire` with backoff (the contracts `backoffDelay`, 10 ms doubling to 160 ms) and runs the
   renewal timer, so every driver behaves the same and no statement blocks inside a caller's transaction.
 - Postgres locks are transaction-level advisory locks: they end with the transaction, so `renew` and `release` send
   nothing. Never switch to session-level locks through the pooled entity manager: an unlock can land on another

@@ -8,6 +8,7 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0294 (decision 15).
  */
+import { Backoff } from "@stackra/contracts";
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
 import { QUEUE_CONFIG_SCHEMA } from "#core/constants/queue-config-schema.constant";
@@ -20,6 +21,7 @@ describe("@stackra/queue", () => {
       "BrokerConfig",
       "BrokerConfig$",
       "BrokerOptions",
+      "JOB_BACKOFF",
       "JobNotDueError",
       "JobOutcome",
       "JobTimedOutError",
@@ -33,7 +35,6 @@ describe("@stackra/queue", () => {
       "QueueService",
       "TopicBrokerPublisherDriver",
       "UnknownJobError",
-      "backoffDelay",
       "queues",
       "registerBrokerTopics",
       "registerJobs",
@@ -49,5 +50,6 @@ describe("@stackra/queue", () => {
     expect(Queues.Maintenance).toBe("maintenance");
     expectTypeOf(Queues.Default).toEqualTypeOf<"default">();
     expect(queue.Backoff.Exponential).toBe("exponential");
+    expect(queue.Backoff).toBe(Backoff);
   });
 });

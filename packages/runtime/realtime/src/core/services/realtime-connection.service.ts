@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `RealtimeConnection`, the client's one realtime connection: started by the host's realtime context with the
  *          session's subscribe-token source after sign-in and stopped on sign-out, it opens a link through the
- *          selected `RealtimeTransport`, reconnects with capped, jittered backoff, suspends in the background and
+ *          selected `RealtimeTransport`, reconnects with capped, jittered backoff (the contracts `backoffDelay`: one
+ *          second doubling, equal jitter, up to `maxBackoff`), suspends in the background and
  *          resumes on foreground when configured, and hands each refresh to the listeners of its event.
  * Boundary: a singleton service. It asks the token source before every attempt (tokens are one-time), and a source
  *           that answers `undefined` means signed out: the connection stops. Only the newest attempt's callbacks
@@ -13,6 +14,7 @@
  *                     (decisions 16 and 17).
  */
 import { Service } from "@stackra/container";
+import { backoffDelay, Duration, Jitter } from "@stackra/contracts";
 import type { TokenSource } from "@stackra/transport";
 
 import type { RealtimeConfig } from "#config/realtime.config";
@@ -20,9 +22,11 @@ import type { RealtimeTransport } from "#contracts/ports/realtime-transport.port
 import type { RealtimeLink } from "#contracts/types/realtime-link.type";
 import type { RealtimeMessage } from "#contracts/types/realtime-message.type";
 import { RealtimeStatus } from "#core/enums/realtime-status.enum";
-import { backoffDelay } from "#core/functions/backoff-delay.function";
 import type { RealtimeConnectionState } from "#core/types/realtime-connection-state.type";
 import type { RealtimeEventRef } from "#core/types/realtime-event-ref.type";
+
+/** The reconnect wait before stackra-223 moved the formula to @stackra/contracts: one second doubling, equal jitter. */
+const RECONNECT = Object.freeze({ base: Duration.seconds(1), jitter: Jitter.Equal });
 
 /**
  * The client realtime connection.
@@ -203,7 +207,7 @@ export class RealtimeConnection extends Service {
     clearTimeout(this.retryTimer);
     this.retryTimer = setTimeout(
       () => this.connect(),
-      backoffDelay(this.attempt++, this.config.maxBackoffSeconds),
+      backoffDelay({ ...RECONNECT, max: this.config.maxBackoff }, ++this.attempt),
     );
   }
 

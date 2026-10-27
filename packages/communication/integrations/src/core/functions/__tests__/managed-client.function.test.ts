@@ -9,12 +9,14 @@
  * Boundary: test only; `fetch` is stubbed, the secret store answers from a map, the clock is frozen and the buckets
  *           are the memory driver of `@stackra/actions`.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0308 (rules 4, 6, 13 and 20); ADR 0217; STA-793.
+ * Governing contract: ADR 0022 (test placement); ADR 0308 (rules 4, 6, 13 and 20); ADR 0217; STA-793; stackra-223
+ *                     (`retry.base` was `retry.backoff: "1ms"`; the default 200 ms doubling to 30 s is pinned in the
+ *                     contracts `backoffDelay` test).
  */
 import { MemoryRateLimitStoreDriver } from "@stackra/actions";
 import { Secret } from "@stackra/config";
 import { SecretStore } from "@stackra/config/contracts";
-import { Clock } from "@stackra/contracts";
+import { Clock, Duration } from "@stackra/contracts";
 import { afterEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 
@@ -53,7 +55,7 @@ const BASE = {
   category: IntegrationCategory.Email,
   levels: [ConnectionLevel.Scope],
   baseUrl: "https://api.mail.example/v1",
-  retry: { idempotencyHeader: "Idempotency-Key", attempts: 3, backoff: "1ms" },
+  retry: { idempotencyHeader: "Idempotency-Key", attempts: 3, base: Duration.parse("1ms") },
 } as const;
 
 class MailIntegration extends Integration({
@@ -223,7 +225,7 @@ describe("managedClient", () => {
       ...BASE,
       provider: "limited",
       auth: { type: AuthType.None },
-      rateLimits: [{ requests: 1, per: "1h", by: RateLimitScope.Integration }],
+      rateLimits: [{ requests: 1, per: Duration.hours(1), by: RateLimitScope.Integration }],
     }) {}
     stubFetch(() => json({}));
     const limits = new MemoryRateLimitStoreDriver();

@@ -8,9 +8,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0148 (decision 1 and consequences); ADR 0305 (rule 28).
  */
-import { Duration } from "@stackra/contracts";
-
-import { Backoff } from "#core/enums/backoff.enum";
+import { Backoff, Duration } from "@stackra/contracts";
 
 /** The job defaults. */
 export const JOB_DEFAULTS = Object.freeze({

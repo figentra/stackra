@@ -1,5 +1,13 @@
 # @stackra/workflow
 
+<!--
+Stackra file contract:
+Purpose: the package's reader guide: durable workflows, steps, waits, retries, undo, automations and their runner.
+Boundary: documentation only; the code and the ADRs win on any difference.
+Runtime: none
+Governing contract: ADR 0102; ADR 0151; ADR 0152; ADR 0294; owner D10 2026-10-28 (stackra-223: one RetryPolicy, backoffDelay and Duration).
+-->
+
 Stackra workflows: the answer to "this action crosses modules, calls an external system, must undo an earlier effect
 when a later one fails, waits for a human or an event, or must survive a restart" (ADR 0101). A workflow is a class
 whose public async methods are its steps; the native engine runs them in process, records every run and step in a
@@ -75,7 +83,8 @@ An action starts it with `ctx.run(RedeemPointsWorkflow, input)`; another action 
 - **Each step is a transaction of its own**, which also writes the step's journal row, so a run's steps commit whatever
   the calling action does. Results are stored as JSON: a later step reads `run.results.<step>` as plain data (a `Date`
   comes back as its ISO text).
-- **Retries**: `retry: { attempts, backoff }`. A refusal that is not retryable fails the step at once; any other error
+- **Retries**: `retry: { attempts, backoff }`, the `attempts` and `Backoff` curve of the contracts `RetryPolicy`; the
+  waits are the queue's `JOB_BACKOFF` (`StepRetry` is gone, stackra-223). A refusal that is not retryable fails the step at once; any other error
   takes the next attempt after the backoff, unless the run timeout would pass first. A retry waits in process.
 - **Compensation**: when a step fails or times out, every done step with an `undo<Step>` is undone, last first, each in
   its own transaction; the run ends `compensated` and `ctx.run` rejects with the step's error (`workflow_timed_out` for a

@@ -27,6 +27,5 @@ export type { ListenerClass } from "#core/types/listener-class.type";
 export type { ListenerContext } from "#core/types/listener-context.type";
 export type { ListenerDelivery } from "#core/types/listener-delivery.type";
 export type { ListenerOptions } from "#core/types/listener-options.type";
-export type { ListenerRetry } from "#core/types/listener-retry.type";
 export type { WebhookEventClass } from "#core/types/webhook-event-class.type";
 export type { WebhookEventOptions } from "#core/types/webhook-event-options.type";

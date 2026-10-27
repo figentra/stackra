@@ -1,5 +1,13 @@
 # @stackra/actions
 
+<!--
+Stackra file contract:
+Purpose: the package's reader guide: actions, queries, the pipeline, call options, jobs and the testing kit.
+Boundary: documentation only; the code and the ADRs win on any difference.
+Runtime: none
+Governing contract: ADR 0098; ADR 0294; ADR 0305; owner D10 2026-10-28 (stackra-223: one RetryPolicy, backoffDelay and Duration).
+-->
+
 Stackra actions: the `Action`, `Query`, `Precondition`, `ExtensionPoint`, `Extension` and `Interceptor` kind bases, the
 fixed action pipeline, the idempotency and rate-limit stores behind ports, `RequestContext`, the `RateLimitConfig`
 configuration and the action testing helpers.
@@ -112,7 +120,8 @@ A query whose response is not JSON (an iCalendar feed, a CSV) returns `rawBody(c
 transport tests the output with `isRawBody` and sends the body as is with that content type. An ordinary output with
 `contentType` and `body` fields stays JSON: only the `~raw` marker counts.
 
-An action that also runs as a job declares `job: { queue, unique, timeout, retries, cron }`; `cron: { schedule,
+An action that also runs as a job declares `job: { queue, unique, timeout, retries, backoff, cron }` (`backoff` is the
+contracts `Backoff` curve); `cron: { schedule,
 perScope: true }` runs once per scope the scheduler's `CronScopes` driver lists instead of once for the platform.
 
 ## Governance in the pipeline

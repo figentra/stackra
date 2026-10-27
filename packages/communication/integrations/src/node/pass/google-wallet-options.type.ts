@@ -6,9 +6,10 @@
  * Boundary: a type only; configuration the host reads from the Google Wallet Connection or its config, never code.
  *           The key is a secret name (`GOOGLE_WALLET_ISSUER_KEY`, ADR 0348 decision 5), never a value.
  * Runtime: isomorphic
- * Governing contract: ADR 0348 (decision 5); ADR 0173; ADR 0356 (configuration, not code).
+ * Governing contract: ADR 0348 (decision 5); ADR 0173; ADR 0356 (configuration, not code);
+ *                     owner D10 2026-10-28 (stackra-223: `Duration` replaced `Interval`).
  */
-import type { Interval } from "#core/types/interval.type";
+import type { Duration } from "@stackra/contracts";
 
 /** The deployment's Google Wallet data. */
 export interface GoogleWalletOptions {
@@ -24,6 +25,6 @@ export interface GoogleWalletOptions {
   /** The secret holding the service account's PKCS #8 PEM private key; `GOOGLE_WALLET_ISSUER_KEY` when left out. */
   readonly keySecret?: string;
 
-  /** How long a save link stays valid after it is issued; `"1d"` when left out. */
-  readonly saveLinkLifetime?: Interval;
+  /** How long a save link stays valid after it is issued; `Duration.days(1)` when left out. */
+  readonly saveLinkLifetime?: Duration;
 }

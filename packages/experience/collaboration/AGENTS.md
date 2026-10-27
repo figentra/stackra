@@ -1,5 +1,13 @@
 # AGENTS — @stackra/collaboration
 
+<!--
+Stackra file contract:
+Purpose: the agent rules of @stackra/collaboration.
+Boundary: documentation only; the code and the ADRs win on any difference.
+Runtime: none
+Governing contract: ADR 0346; ADR 0294; owner D10 2026-10-28 (stackra-223: one RetryPolicy, backoffDelay and Duration).
+-->
+
 Presence, cursors, the Yjs binding and snapshots. Member at `packages/experience/collaboration` (`tier:lib`), in the
 programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./react`, `./testing`.
 
@@ -21,6 +29,8 @@ programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./re
 
 ## This package
 
+- `openRoom` reconnects through the contracts `backoffDelay` (500 ms doubling, equal jitter, up to realtime's
+  `maxBackoff`); never inline a backoff formula (stackra-223).
 - Yjs is imported only in `src/react/shared-document/`; `.` and `./contracts` stay CRDT-free behind `DocumentReplica`.
 - `LiveCollaborationEntitlement` gates presence, cursors and co-editing, never editing or snapshots.
 - A peer's principal is stamped by the server driver; never accept one from a client.

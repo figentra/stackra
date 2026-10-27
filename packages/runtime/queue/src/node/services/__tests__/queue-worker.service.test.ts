@@ -21,7 +21,7 @@ import {
 } from "@stackra/actions";
 import { AccessControl, IdempotencyStore } from "@stackra/actions/contracts";
 import { type AnyClass, Driver } from "@stackra/container";
-import { type Actor, ActorKind, Clock, Duration, Logger, Realm } from "@stackra/contracts";
+import { type Actor, ActorKind, Backoff, Clock, Duration, Logger, Realm } from "@stackra/contracts";
 import { Database } from "@stackra/database";
 import { ErrorKind, isRefusal, Refusal } from "@stackra/errors";
 import { describe, expect, it } from "@stackra/testing";
@@ -29,7 +29,6 @@ import { vi } from "vitest";
 
 import { JobStatus } from "#contracts/index";
 import { MemoryQueueDriver } from "#core/drivers/memory-queue.driver";
-import { Backoff } from "#core/enums/backoff.enum";
 import { JobOutcome } from "#core/enums/job-outcome.enum";
 import { JobTimedOutError } from "#core/errors/job-timed-out.error";
 import { UnknownJobError } from "#core/errors/unknown-job.error";

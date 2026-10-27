@@ -11,7 +11,8 @@ Purpose: the package's reader guide: Integrations, Connections and their stores,
          envelope and mailbox connector with its recorded-case runner, the webhook recipe types, and what is not here.
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
-Governing contract: ADR 0308; ADR 0348; ADR 0355; ADR 0356; ADR 0376; ADR 0443; ADR 0447.
+Governing contract: ADR 0308; ADR 0348; ADR 0355; ADR 0356; ADR 0376; ADR 0443; ADR 0447; owner D10 2026-10-28
+                    (stackra-223: `Duration` and `RetryPolicy`).
 -->
 
 Provider integrations (ADR 0308). An **Integration** describes a provider once, the same for every scope and user:
@@ -85,9 +86,9 @@ export class ResendIntegration extends Integration({
   levels: [ConnectionLevel.Scope],
   auth: { type: AuthType.ApiKey, header: "Authorization", format: "Bearer {apiKey}" },
   baseUrl: "https://api.resend.com",
-  rateLimits: [{ requests: 10, per: "1s", by: RateLimitScope.Credential }],
+  rateLimits: [{ requests: 10, per: Duration.seconds(1), by: RateLimitScope.Credential }],
   retry: { idempotencyHeader: "Idempotency-Key" },
-  health: { every: "6h", failAfter: 3 },
+  health: { every: Duration.hours(6), failAfter: 3 },
   webhooks: {
     scheme: SignatureScheme.StandardWebhooks,
     secret: "{webhookSecret}",
@@ -111,6 +112,11 @@ export class ResendConnection extends Connection<ResendIntegration> {
   }
 }
 ```
+
+Every length of time is a `Duration` from `@stackra/contracts` (`Duration.seconds(1)`, or `Duration.parse("200ms")`
+for the short form); the `Interval` string is gone (stackra-223). `retry` is the contracts `RetryPolicy` plus
+`idempotencyHeader`: 3 attempts, `base` 200 ms doubling, `max` 30 s when left out (`backoff` and `maxDelay` became
+`base` and `max`).
 
 A `{field}` placeholder resolves on the connection first, then on the Integration, so a scope's own key wins over the
 platform's with no second mechanism. A secret is always a name; its value is read blind at call time.

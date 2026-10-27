@@ -7,8 +7,10 @@
  *          among them) resolve.
  * Boundary: test only; imports the stand-in barrel through its `#core` alias.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0294 (decision 15).
+ * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0294 (decision 15);
+ *                     stackra-223 (a listener's `retry` is the contracts `RetryPolicy`; `ListenerRetry` is gone).
  */
+import type { RetryPolicy } from "@stackra/contracts";
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
 import * as events from "#core/index";
@@ -21,7 +23,6 @@ import type {
   ListenerContext,
   ListenerDelivery,
   ListenerOptions,
-  ListenerRetry,
   WebhookEventClass,
   WebhookEventOptions,
 } from "#core/index";
@@ -55,7 +56,7 @@ describe("@stackra/events", () => {
       BroadcastOptions | undefined
     >();
     expectTypeOf<IntegrationEventOptions["crossRegion"]>().toEqualTypeOf<boolean | undefined>();
-    expectTypeOf<ListenerOptions["retry"]>().toEqualTypeOf<ListenerRetry | undefined>();
+    expectTypeOf<ListenerOptions["retry"]>().toEqualTypeOf<RetryPolicy | undefined>();
     expectTypeOf<ListenerContext["now"]>().returns.toEqualTypeOf<Date>();
     expectTypeOf<ListenerDelivery["listener"]>().toEqualTypeOf<events.Listener>();
     expectTypeOf<WebhookEventOptions["type"]>().toEqualTypeOf<string>();

@@ -1,5 +1,13 @@
 # @stackra/validation
 
+<!--
+Stackra file contract:
+Purpose: the package's reader guide: Schema classes, field decorators and the runtime helpers generated code imports.
+Boundary: documentation only; the code and the ADRs win on any difference.
+Runtime: none
+Governing contract: ADR 0095; ADR 0294; owner D10 2026-10-28 (stackra-223: one RetryPolicy, backoffDelay and Duration).
+-->
+
 Shapes and field rules for Stackra. A shape is a class: its field types are its rules, its initializers its defaults,
 and a few typed field decorators refine it. `stackra gen` compiles each shape to one zod schema (`X$`) and registers it
 here, so `validate(X, raw)` and `X.create(...)` find it. Authors write no zod except through `@Field(zod)`.
@@ -21,6 +29,8 @@ Depends on `@stackra/contracts`, `@stackra/container` and `zod`; one-time codes 
 | `Assert`, `Fields`, `Same`                                          | the types of each generated `X$Check`                                              |
 | `FieldDecorator`, `ShapeClass`                                      | the types behind a field decorator and a derived shape class                       |
 | `Address$`, `ScopeRef$`, `Actor$`, `Signature$`, `SignerPublicKey$` | the shipped schemas of `Address` and of the contracts types a shape field may name |
+
+`duration(text)` is `Duration.parse`, which reads the short form itself since stackra-223.
 
 `Enum` is `@stackra/contracts`'; `money()` and `currencyCode()` are `@stackra/money`'s.
 

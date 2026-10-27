@@ -7,9 +7,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0305 (rules 28 and 30); ADR 0148 (decision 1).
  */
-import type { ActorKind, Duration } from "@stackra/contracts";
-
-import type { Backoff } from "#core/enums/backoff.enum";
+import type { ActorKind, Backoff, Duration } from "@stackra/contracts";
 
 /** The job settings of one action. */
 export interface JobPlan {

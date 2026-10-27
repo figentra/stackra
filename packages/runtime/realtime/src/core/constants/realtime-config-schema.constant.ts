@@ -10,7 +10,8 @@
  *           defaults equal `RealtimeOptions`' initializers (tested). No object-level refinement, so `.extend(...)`
  *           stays possible.
  * Runtime: isomorphic
- * Governing contract: ADR 0294 (decision 26: a package ships its own `X$`); ADR 0225 (decision 1).
+ * Governing contract: ADR 0294 (decision 26: a package ships its own `X$`); ADR 0225 (decision 1); owner D10
+ *                     2026-10-28 (stackra-223: `maxBackoff` is a `Duration`, was `maxBackoffSeconds`).
  */
 import { Duration, Enum, Realm } from "@stackra/contracts";
 import { z } from "zod";
@@ -22,6 +23,13 @@ const ORIGIN = /^(https?:\/\/[^/\s]+)?$/;
 
 /** The shortest subscribe token lifetime accepted: ten seconds, enough to connect over a slow network. */
 const MIN_TOKEN_TTL_MS = 10_000;
+
+/** The shortest reconnect cap accepted: one second, the first reconnect wait. */
+const MIN_MAX_BACKOFF_MS = 1000;
+
+/** Whether `value` is a `Duration` of at least one second. */
+const isMaxBackoff = (value: unknown): value is Duration =>
+  typeof value === "string" && Duration.toMilliseconds(value as Duration) >= MIN_MAX_BACKOFF_MS;
 
 /** Whether `value` is a `Duration` of at least ten seconds. */
 const isTokenTtl = (value: unknown): value is Duration =>
@@ -38,7 +46,9 @@ export const REALTIME_CONFIG_SCHEMA = z.object({
     .default(Duration.minutes(15)),
   reconnectOnForeground: z.boolean().default(false),
   backgroundGraceSeconds: z.number().int().min(0).default(60),
-  maxBackoffSeconds: z.number().int().min(1).default(30),
+  maxBackoff: z
+    .custom<Duration>(isMaxBackoff, { message: "maxBackoff is a Duration of at least 1s" })
+    .default(Duration.seconds(30)),
   fanout: z.enum(["local", "memory", "valkey"]).default("local"),
   fanoutValkeyUrl: z.string().default(""),
   fanoutChannel: z.string().min(1).default("realtime:fanout"),

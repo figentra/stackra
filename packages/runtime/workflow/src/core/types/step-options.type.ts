@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `StepOptions<W>`, the options of `@Step`: the steps it runs after, the condition it runs on, its heartbeat,
- *          retries, the signal or event it waits for with the correlation that picks it, and its timeout.
+ *          retries (the contracts `RetryPolicy`, stackra-223), the signal or event it waits for with the correlation that picks it, and its timeout.
  * Boundary: a type only; `W` types the callbacks (`@Step<MyWorkflow>({ correlate: (run) => ... })`). `when` and
  *           `correlate` are pure functions of the run (the purity lint, ADR 0151): no clock, no I/O. Durations are text
  *           (`"15m"`). With `waitFor`, `timeout` bounds the wait; without it, it aborts the step's `abortSignal`. An
@@ -12,11 +12,11 @@
  *                     note: waits, timeouts, heartbeats).
  */
 import type { AnyClass } from "@stackra/container";
+import type { RetryPolicy } from "@stackra/contracts";
 import type { Event } from "@stackra/events";
 
 import type { Signal } from "#core/bases/signal.base";
 import type { Run } from "#core/types/run.type";
-import type { StepRetry } from "#core/types/step-retry.type";
 
 /** The options of one step. */
 export interface StepOptions<W> {
@@ -29,8 +29,12 @@ export interface StepOptions<W> {
   /** The longest gap between two `ctx.heartbeat(...)` calls; a step that misses one is aborted and retried. */
   readonly heartbeat?: string;
 
-  /** Attempts and backoff; one attempt when absent. */
-  readonly retry?: StepRetry;
+  /**
+   * Attempts (a whole number from 1) and the `Backoff` curve (exponential when absent) of the shared `RetryPolicy`;
+   * one attempt when absent. The waits are the queue's `JOB_BACKOFF`. A refusal that is not retryable fails the
+   * step at once whatever the budget.
+   */
+  readonly retry?: Pick<RetryPolicy, "attempts" | "backoff">;
 
   /** The signal or event the run parks for before this step; the step receives it as its third argument. */
   readonly waitFor?: AnyClass<Signal> | AnyClass<Event>;

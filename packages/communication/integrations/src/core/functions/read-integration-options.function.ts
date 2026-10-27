@@ -8,9 +8,10 @@
  *           refusal. Placeholders are not resolved here: gen fails one that names no field
  *           (`integration_placeholder_unknown`), and the managed client refuses it at call time.
  * Runtime: isomorphic
- * Governing contract: ADR 0308 (rules 1, 6, 9, 10, 13 to 15); ADR 0305 (rule 2); STA-793 (headers, token placement).
+ * Governing contract: ADR 0308 (rules 1, 6, 9, 10, 13 to 15); ADR 0305 (rule 2); STA-793 (headers, token placement);
+ *                     owner D10 2026-10-28 (stackra-223): the lengths are `Duration`s.
  */
-import { Enum } from "@stackra/contracts";
+import { backoffDelay, Duration, Enum } from "@stackra/contracts";
 
 import { AuthType } from "#core/enums/auth-type.enum";
 import { ConnectionLevel } from "#core/enums/connection-level.enum";
@@ -18,9 +19,7 @@ import { ConnectorKind } from "#core/enums/connector-kind.enum";
 import { IntegrationCategory } from "#core/enums/integration-category.enum";
 import { IntegrationRole } from "#core/enums/integration-role.enum";
 import { RateLimitScope } from "#core/enums/rate-limit-scope.enum";
-import { intervalMs } from "#core/functions/interval-ms.function";
 import type { IntegrationOptions } from "#core/types/integration-options.type";
-import type { Interval } from "#core/types/interval.type";
 
 /** A provider code: lowercase words joined by `-` or `_`. */
 const PROVIDER = /^[a-z0-9]+(?:[-_][a-z0-9]+)*$/;
@@ -62,11 +61,15 @@ const isHeaderName = (value: unknown): boolean =>
 /** Whether `value` is a whole number from 1. */
 const isCount = (value: unknown): boolean => Number.isInteger(value) && (value as number) >= 1;
 
-/** Reads an optional interval, so a malformed one throws its `RangeError` here. */
-function checkInterval(value: Interval | undefined, positive = false): void {
+/** Reads an optional duration, so a malformed one (a raw `"5 minutes"`) throws its `RangeError` here. */
+function checkDuration(value: Duration | undefined, positive = false): void {
   if (value === undefined) return;
-  if (intervalMs(value) <= 0 && positive)
-    throw new RangeError(`"${value}" must be longer than zero`);
+  const milliseconds = Duration.toMilliseconds(value);
+  if (Number.isNaN(milliseconds))
+    throw new RangeError(
+      `"${value}" is not a Duration: write Duration.seconds(1) or Duration.parse("1s")`,
+    );
+  if (milliseconds <= 0 && positive) throw new RangeError(`"${value}" must be longer than zero`);
 }
 
 /**
@@ -119,7 +122,7 @@ export function readIntegrationOptions(
         "auth",
         "of a JWT needs an algorithm and a key",
       );
-      checkInterval(auth.expiresIn, true);
+      checkDuration(auth.expiresIn, true);
       break;
     case AuthType.OAuth2Code:
       ensure(
@@ -140,7 +143,7 @@ export function readIntegrationOptions(
         "levels",
         "of an authorization code integration needs a level to hold the tokens",
       );
-      checkInterval(auth.refresh?.buffer);
+      checkDuration(auth.refresh?.buffer);
       break;
     case AuthType.OAuth2ClientCredentials:
       ensure(
@@ -148,7 +151,7 @@ export function readIntegrationOptions(
         "auth",
         "of client credentials needs tokenUrl, clientId and clientSecret",
       );
-      checkInterval(auth.refresh?.buffer);
+      checkDuration(auth.refresh?.buffer);
       break;
     case AuthType.OAuth2JwtBearer:
       ensure(
@@ -159,8 +162,8 @@ export function readIntegrationOptions(
         "auth",
         "of a JWT bearer grant needs tokenUrl, key, issuer and an RS256 or ES256 algorithm",
       );
-      checkInterval(auth.expiresIn, true);
-      checkInterval(auth.refresh?.buffer);
+      checkDuration(auth.expiresIn, true);
+      checkDuration(auth.refresh?.buffer);
       break;
     case AuthType.None:
       break;
@@ -218,17 +221,20 @@ export function readIntegrationOptions(
       "rateLimits",
       "need whole requests from 1 and a RateLimitScope",
     );
-    checkInterval(limit.per, true);
+    checkDuration(limit.per, true);
   }
   ensure(
     options.retry?.attempts === undefined || isCount(options.retry.attempts),
     "retry",
     "needs attempts from 1",
   );
-  checkInterval(options.retry?.backoff);
-  checkInterval(options.retry?.maxDelay);
+  checkDuration(options.retry?.base);
+  checkDuration(options.retry?.max);
+  // a bad curve, jitter or multiplier throws its RangeError here, not on the first retry
+  if (options.retry !== undefined)
+    backoffDelay({ base: Duration.seconds(1), max: Duration.seconds(1), ...options.retry }, 1);
   if (options.health !== undefined) {
-    checkInterval(options.health.every, true);
+    checkDuration(options.health.every, true);
     ensure(
       options.health.failAfter === undefined || isCount(options.health.failAfter),
       "health",
@@ -265,7 +271,7 @@ export function readIntegrationOptions(
         "webhooks",
         "signature needs a header, an HMAC hash, an encoding, a payload with {body}, and a timestamp for {timestamp} or a tolerance",
       );
-      checkInterval(signature.tolerance, true);
+      checkDuration(signature.tolerance, true);
     }
   }
   return { ...options, roles: options.roles ?? [], multiple: options.multiple ?? false };

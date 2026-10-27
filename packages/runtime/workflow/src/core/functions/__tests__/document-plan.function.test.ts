@@ -9,10 +9,9 @@
  * Governing contract: ADR 0022; ADR 0152 (decisions 2 and 5).
  */
 import { Action } from "@stackra/actions";
-import { ActorKind } from "@stackra/contracts";
+import { ActorKind, Backoff } from "@stackra/contracts";
 import { DomainEvent } from "@stackra/events";
 import type { I18nKey } from "@stackra/i18n";
-import { Backoff } from "@stackra/queue";
 import { FieldType, Operator } from "@stackra/rules/contracts";
 import { describe, expect, it } from "@stackra/testing";
 

@@ -14,8 +14,11 @@
  *           are `ProviderUnavailableError`. No credential, token or response body is ever put in an error. A bucket
  *           key names the connection id (or `platform`), never a credential.
  * Runtime: isomorphic
- * Governing contract: ADR 0308 (rules 4, 6, 13 and 20); ADR 0217 (token buckets); ADR 0140 (refusals); STA-793.
+ * Governing contract: ADR 0308 (rules 4, 6, 13 and 20); ADR 0217 (token buckets); ADR 0140 (refusals); STA-793;
+ *                     owner D10 2026-10-28 (stackra-223): the waits are the contracts `backoffDelay`.
  */
+import { backoffDelay, Duration } from "@stackra/contracts";
+
 import type { Connection } from "#core/bases/connection.base";
 import { AuthType } from "#core/enums/auth-type.enum";
 import { RateLimitScope } from "#core/enums/rate-limit-scope.enum";
@@ -23,7 +26,6 @@ import { ProviderRefusedError } from "#core/errors/provider-refused.error";
 import { ProviderUnavailableError } from "#core/errors/provider-unavailable.error";
 import { encodeBase64 } from "#core/functions/encode-base64.function";
 import { integrationOptionsOf } from "#core/functions/integration-options-of.function";
-import { intervalMs } from "#core/functions/interval-ms.function";
 import { placeholderLookup } from "#core/functions/placeholder-lookup.function";
 import { providerCodeOf } from "#core/functions/provider-code-of.function";
 import { resolvePlaceholders } from "#core/functions/resolve-placeholders.function";
@@ -31,6 +33,13 @@ import { signJwt } from "#core/functions/sign-jwt.function";
 import type { IntegrationApi } from "#core/types/integration-api.type";
 import type { ManagedClientOptions } from "#core/types/managed-client-options.type";
 import type { RequestOptions } from "#core/types/request-options.type";
+
+/** The retry an Integration gets when it states none, unchanged by stackra-223: 3 attempts, 200 ms doubling, 30 s. */
+const RETRY = Object.freeze({
+  attempts: 3,
+  base: Duration.parse("200ms"),
+  max: Duration.seconds(30),
+});
 
 /** Methods that act the same however often they are sent. */
 const IDEMPOTENT_METHODS: readonly string[] = ["GET", "HEAD", "PUT", "DELETE"];
@@ -97,10 +106,9 @@ export function managedClient(options: ManagedClientOptions): IntegrationApi {
   const { provider, auth } = declared;
   const lookup = placeholderLookup(integration, connection, secrets);
   const resolve = (template: string): string => resolvePlaceholders(template, lookup);
-  const attempts = declared.retry?.attempts ?? 3;
-  const backoff = intervalMs(declared.retry?.backoff ?? "200ms");
-  const maxDelay = intervalMs(declared.retry?.maxDelay ?? "30s");
-  const idempotencyHeader = declared.retry?.idempotencyHeader;
+  const { idempotencyHeader, ...policy } = { ...RETRY, ...declared.retry };
+  const { attempts } = policy;
+  const maxDelay = Duration.toMilliseconds(policy.max);
 
   /** The full URL of `path`: always joined under the base URL, so even an absolute URL stays on its origin. */
   function urlOf(path: string, query: RequestOptions["query"]): URL {
@@ -162,7 +170,7 @@ export function managedClient(options: ManagedClientOptions): IntegrationApi {
       const key = `integrations:${name}:${owner}:${index}`;
       const bucket = {
         capacity: limit.requests,
-        tokensPerSecond: (limit.requests * 1000) / intervalMs(limit.per),
+        tokensPerSecond: (limit.requests * 1000) / Duration.toMilliseconds(limit.per),
       };
       let decision = await limits.take(key, bucket, clock.now());
       if (!decision.allowed && decision.retryAfterMs <= maxDelay) {
@@ -228,7 +236,7 @@ export function managedClient(options: ManagedClientOptions): IntegrationApi {
           { cause: failure },
         );
       await sleep(
-        Math.min(retryAfterMs(response, clock.now()) ?? backoff * 2 ** (attempt - 1), maxDelay),
+        Math.min(retryAfterMs(response, clock.now()) ?? backoffDelay(policy, attempt), maxDelay),
       );
     }
   }

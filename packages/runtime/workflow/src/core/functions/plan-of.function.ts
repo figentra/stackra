@@ -14,8 +14,7 @@
  */
 import { kindOf } from "@stackra/container";
 import type { AnyClass } from "@stackra/container";
-import { Duration, Enum } from "@stackra/contracts";
-import { Backoff } from "@stackra/queue";
+import { Backoff, Duration, Enum } from "@stackra/contracts";
 import { duration } from "@stackra/validation";
 
 import { WorkflowBase } from "#core/bases/workflow-base.base";

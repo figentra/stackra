@@ -4,8 +4,10 @@
  *          expiry, and an RS256 and an ES256 token signed with a PKCS #8 PEM key verify with the public key.
  * Boundary: test only; keys are generated per test with Web Crypto, never fixtures of real keys.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0308 (rule 6); RFC 7519; RFC 7515.
+ * Governing contract: ADR 0022 (test placement); ADR 0308 (rule 6); RFC 7519; RFC 7515; stackra-223 (`expiresIn`
+ *                     is a `Duration`, was `"10m"`).
  */
+import { Duration } from "@stackra/contracts";
 import { describe, expect, it } from "@stackra/testing";
 
 import { encodeBase64 } from "#core/functions/encode-base64.function";
@@ -45,7 +47,7 @@ describe("signJwt", () => {
         keyId: "k1",
         issuer: "stackra",
         audience: "provider",
-        expiresIn: "10m",
+        expiresIn: Duration.minutes(10),
       },
       (template) => (template === "{key}" ? "shared-secret" : template),
       NOW,

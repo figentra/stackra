@@ -7,7 +7,8 @@
  *           on every welcome, so the owner resends its full state after each reconnect (ADR 0346 decision 6: the CRDT
  *           makes the merge safe). A malformed update from a peer is dropped.
  * Runtime: isomorphic
- * Governing contract: ADR 0346 (decisions 4, 5 and 7); ADR 0225 (decision 2); ADR 0270 (decisions 5 and 6).
+ * Governing contract: ADR 0346 (decisions 4, 5 and 7); ADR 0225 (decision 2); ADR 0270 (decisions 5 and 6); owner D10
+ *                     2026-10-28 (stackra-223: realtime's `maxBackoff`).
  */
 import { Driver } from "@stackra/container";
 import type { RealtimeConfig } from "@stackra/realtime";
@@ -34,7 +35,7 @@ export class RealtimeSyncTransportDriver extends Driver(SyncTransport) {
 
   /**
    * @param tokens - issues the room token before each connect.
-   * @param config - the longest wait between reconnects (`maxBackoffSeconds`).
+   * @param config - the longest wait between reconnects (`maxBackoff`).
    */
   constructor(tokens: RoomTokens, config: RealtimeConfig) {
     super();
@@ -56,7 +57,7 @@ export class RealtimeSyncTransportDriver extends Driver(SyncTransport) {
         },
         onDown: () => handlers.onClose(),
       },
-      { maxBackoffSeconds: this.config.maxBackoffSeconds },
+      { maxBackoff: this.config.maxBackoff },
     );
     return {
       send: (update) => link.send({ t: "update", data: encodeUpdate(update) }),

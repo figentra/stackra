@@ -11,12 +11,11 @@
 import type { Action, ActionOptions } from "@stackra/actions";
 import { kindOf } from "@stackra/container";
 import type { AnyClass } from "@stackra/container";
-import { ActorKind, Enum } from "@stackra/contracts";
+import { ActorKind, Backoff, Enum } from "@stackra/contracts";
 import { duration } from "@stackra/validation";
 
 import { JOB_DEFAULTS } from "#core/constants/job-defaults.constant";
 import { JOB_TYPES } from "#core/constants/job-types.constant";
-import { Backoff } from "#core/enums/backoff.enum";
 import { registerJobs } from "#core/functions/register-jobs.function";
 import type { JobPlan } from "#core/types/job-plan.type";
 

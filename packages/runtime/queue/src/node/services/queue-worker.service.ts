@@ -23,20 +23,20 @@ import type { Action, Resolver } from "@stackra/actions";
 import { IdempotencyStore, UnitOfWork } from "@stackra/actions/contracts";
 import { Service } from "@stackra/container";
 import type { AnyClass } from "@stackra/container";
-import { Duration, Logger } from "@stackra/contracts";
+import { backoffDelay, Duration, Logger } from "@stackra/contracts";
 import type { Actor, Clock } from "@stackra/contracts";
 import { Database } from "@stackra/database";
 import { isRefusal } from "@stackra/errors";
 
 import type { QueueDriver } from "#contracts/index";
 import type { JobError, QueuedJob } from "#contracts/index";
+import { JOB_BACKOFF } from "#core/constants/job-backoff.constant";
 import { JOB_DEFAULTS } from "#core/constants/job-defaults.constant";
 import { JOB_TYPES } from "#core/constants/job-types.constant";
 import { QUEUE_LOG_EVENTS } from "#core/constants/queue-log-events.constant";
 import { JobOutcome } from "#core/enums/job-outcome.enum";
 import { JobTimedOutError } from "#core/errors/job-timed-out.error";
 import { UnknownJobError } from "#core/errors/unknown-job.error";
-import { backoffDelay } from "#core/functions/backoff-delay.function";
 import { readJob } from "#core/functions/read-job.function";
 import type { JobPlan } from "#core/types/job-plan.type";
 import type { JobRun } from "#core/types/job-run.type";
@@ -233,7 +233,9 @@ export class QueueWorkerService extends Service {
     const failure = this.failureOf(error);
     const retryable = !isRefusal(error) || error.retryable;
     if (retryable && job.attempts <= plan.retries) {
-      const retryAt = new Date(now.getTime() + backoffDelay(plan.backoff, job.attempts));
+      const retryAt = new Date(
+        now.getTime() + backoffDelay({ ...JOB_BACKOFF, backoff: plan.backoff }, job.attempts),
+      );
       await this.driver.retry(job.id, retryAt, failure);
       return Object.freeze({ job, outcome: JobOutcome.Retried, error, retryAt });
     }

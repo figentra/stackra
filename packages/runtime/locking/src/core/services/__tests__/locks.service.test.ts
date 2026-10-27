@@ -3,7 +3,8 @@
  * Purpose: unit tests of `Locks`: `with` holds the keys sorted and each once inside the driver's `within`, waits for a
  *          held key and runs once it is free, refuses `lock_unavailable` after waiting the TTL, renews the lease so long
  *          work outlives its TTL, and releases however the work ends; `tryWith` runs only when the keys are free and
- *          never waits; every lease carries its `Locks`' owner; a zero TTL is a `RangeError`.
+ *          never waits; every lease carries its `Locks`' owner; a zero TTL is a `RangeError`; the waits between tries
+ *          keep their values from before stackra-223 (10 ms doubling to 160 ms).
  * Boundary: test only; the memory driver, wrapped to record each call, over a host-time clock that vitest's fake
  *           timers move.
  * Runtime: node (vitest)
@@ -122,6 +123,22 @@ describe(Locks, () => {
     await vi.advanceTimersByTimeAsync(200);
     await second;
     expect(order).toEqual(["first in", "first out", "second"]);
+  });
+
+  it("waits between tries as before stackra-223: 10, 20, 40, 80, then 160 ms", async () => {
+    const { driver, locks } = setup();
+    await driver.tryAcquire(["a"], "other", Duration.minutes(1));
+    const waiting = locks.with("a", TTL, async () => {}).catch(() => undefined);
+    const tries = () => driver.calls.filter((call) => call === "try a").length - 1;
+    // tries at 0, 10, 30, 70, 150, 310 and 470 ms
+    await vi.advanceTimersByTimeAsync(309);
+    expect(tries()).toBe(5);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(tries()).toBe(6);
+    await vi.advanceTimersByTimeAsync(160);
+    expect(tries()).toBe(7);
+    await vi.advanceTimersByTimeAsync(3000);
+    await waiting;
   });
 
   it("refuses lock_unavailable when a key stays held for the whole ttl, without running the work", async () => {

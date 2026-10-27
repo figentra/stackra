@@ -1,5 +1,13 @@
 # AGENTS — @stackra/realtime
 
+<!--
+Stackra file contract:
+Purpose: the agent rules of @stackra/realtime.
+Boundary: documentation only; the code and the ADRs win on any difference.
+Runtime: none
+Governing contract: ADR 0225; ADR 0294; owner D10 2026-10-28 (stackra-223: one RetryPolicy, backoffDelay and Duration).
+-->
+
 The realtime hub, the broadcaster, the client connection and the drivers of both ports. Member at
 `packages/runtime/realtime` (`tier:lib`), in the programming model v3.1 shape (ADR 0294, 0305). Entries `.`,
 `./contracts`, `./react`, `./testing`.
@@ -20,6 +28,8 @@ The realtime hub, the broadcaster, the client connection and the drivers of both
 
 ## This package
 
+- The reconnect wait is the contracts `backoffDelay` (1 s doubling, equal jitter, up to `maxBackoff`, a `Duration`
+  that replaced `maxBackoffSeconds` in stackra-223). Never write a backoff formula or a `*Seconds` backoff field here.
 - A refresh carries the channel, the wire name and the occurrence id only, never the payload (ADR 0225).
 - The channel is derived from the broadcast's audience. Never accept a channel from a client, and never widen a
   channel that cannot be filled.

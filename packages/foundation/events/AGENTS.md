@@ -1,5 +1,13 @@
 # AGENTS — @stackra/events
 
+<!--
+Stackra file contract:
+Purpose: the agent rules of @stackra/events.
+Boundary: documentation only; the code and the ADRs win on any difference.
+Runtime: none
+Governing contract: ADR 0078; ADR 0294; owner D10 2026-10-28 (stackra-223: one RetryPolicy, backoffDelay and Duration).
+-->
+
 Event and listener kind bases, the in-process bus and the event testing helpers. Member at
 `packages/foundation/events` (`tier:lib`), in the programming model v3.1 shape (ADR 0294, 0305). Entries `.`,
 `./contracts`, `./devtools`, `./testing`.
@@ -25,6 +33,7 @@ Event and listener kind bases, the in-process bus and the event testing helpers.
 
 ## This package
 
+- A listener's `retry` is the contracts `RetryPolicy`; never declare a retry type here (stackra-223).
 - A subscription is a class, never a wire name: `registerListeners` and `EventBus#subscribe` take any class, so a
   consumed service's generated event class (typed by its payload) stands beside a local one (ADR 0260 decision 4).
 - `connect(container)` and `disconnect()` are called by the generated boot only (ADR 0263); `disconnect` removes the

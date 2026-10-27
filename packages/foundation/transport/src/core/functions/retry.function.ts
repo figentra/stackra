@@ -9,9 +9,10 @@
  *           sends a clone, so the body is read once per attempt. A caller's abort ends a wait at once, and the next
  *           attempt then fails with the platform's abort error.
  * Runtime: isomorphic
- * Governing contract: ADR 0140 (retryable kinds, decision 3); ADR 0138 (idempotency); ADR 0217 (`Retry-After`).
+ * Governing contract: ADR 0140 (retryable kinds, decision 3); ADR 0138 (idempotency); ADR 0217 (`Retry-After`); owner
+ *                     D10 2026-10-28 (stackra-223: the waits are the contracts `backoffDelay`).
  */
-import { Duration } from "@stackra/contracts";
+import { backoffDelay, Duration, RetryOn } from "@stackra/contracts";
 import { isRefusal } from "@stackra/errors";
 
 import { IDEMPOTENT_METHODS } from "#core/constants/idempotent-methods.constant";
@@ -21,9 +22,8 @@ import { RequestTimedOutError } from "#core/errors/request-timed-out.error";
 import type { Middleware } from "#core/types/middleware.type";
 import type { RetryOptions } from "#core/types/retry-options.type";
 
-/** 200 ms, doubling per attempt, at most 5 s. */
-const backoff = (attempt: number): Duration =>
-  Duration.seconds(Math.min(0.2 * 2 ** (attempt - 1), 5));
+/** The waits when the options name none, unchanged by stackra-223: 200 ms, doubling per attempt, at most 5 s. */
+const WAITS = Object.freeze({ base: Duration.parse("200ms"), max: Duration.seconds(5) });
 
 /**
  * Retries what is safe to repeat.
@@ -33,7 +33,10 @@ const backoff = (attempt: number): Duration =>
  * @throws RangeError when `attempts` is not a whole number of at least 1.
  */
 export function retry(options: RetryOptions): Middleware {
-  const { attempts, network = true, refused = true, delay = backoff } = options;
+  const { attempts, retryOn = RetryOn.Retryable } = options;
+  const refused = retryOn === RetryOn.Retryable;
+  const policy = { ...WAITS, ...options };
+  const delay = (attempt: number): number => backoffDelay(policy, attempt);
   if (!Number.isInteger(attempts) || attempts < 1)
     throw new RangeError(`retry needs a whole number of attempts of at least 1, got ${attempts}`);
   const maxWait = Duration.toMilliseconds(options.maxWait ?? Duration.seconds(30));
@@ -45,12 +48,12 @@ export function retry(options: RetryOptions): Middleware {
       try {
         response = await next(last ? request : request.clone());
       } catch (error) {
-        if (last || !network || request.signal.aborted || !isNetworkFailure(error)) throw error;
-        await wait(Duration.toMilliseconds(delay(attempt)), request.signal);
+        if (last || request.signal.aborted || !isNetworkFailure(error)) throw error;
+        await wait(delay(attempt), request.signal);
         continue;
       }
       if (last || !refused || !RETRYABLE_STATUSES.has(response.status)) return response;
-      const after = retryAfter(response) ?? Duration.toMilliseconds(delay(attempt));
+      const after = retryAfter(response) ?? delay(attempt);
       if (after > maxWait || (await refusesRetry(response))) return response;
       await response.body?.cancel();
       await wait(after, request.signal);

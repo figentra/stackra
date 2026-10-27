@@ -9,7 +9,7 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0294 (decision 18); ADR 0151 (0294 note).
  */
-import { Backoff } from "@stackra/queue";
+import { Backoff } from "@stackra/contracts";
 import { DomainEvent } from "@stackra/events";
 import { describe, expect, it } from "@stackra/testing";
 

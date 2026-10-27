@@ -19,8 +19,7 @@
  *                     ADR 0154 (no code in tenant data); ADR 0294 (decision 26); OS-232 (for-each, its count
  *                     configured).
  */
-import { Enum } from "@stackra/contracts";
-import { Backoff } from "@stackra/queue";
+import { Backoff, Enum } from "@stackra/contracts";
 import { duration } from "@stackra/validation";
 import { z } from "zod";
 

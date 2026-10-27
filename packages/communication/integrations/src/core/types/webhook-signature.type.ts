@@ -9,9 +9,10 @@
  *           a provider that signs fields of the body in its own order, encrypts the body or sends a token instead has
  *           no recipe and is verified by lookup.
  * Runtime: isomorphic
- * Governing contract: ADR 0308 (rule 15); ADR 0224 (webhooks); config-model (configuration, not code).
+ * Governing contract: ADR 0308 (rule 15); ADR 0224 (webhooks); config-model (configuration, not code); owner D10
+ *                     2026-10-28 (stackra-223: `tolerance` is a `Duration`; a stored short form reads with `Duration.parse`).
  */
-import type { Interval } from "#core/types/interval.type";
+import type { Duration } from "@stackra/contracts";
 
 /**
  * An HMAC signature recipe.
@@ -24,7 +25,7 @@ import type { Interval } from "#core/types/interval.type";
  *   algorithm: "SHA-256",
  *   encoding: "hex",
  *   payload: "{timestamp}.{body}",
- *   tolerance: "5m",
+ *   tolerance: Duration.minutes(5),
  * };
  */
 export interface WebhookSignature {
@@ -65,5 +66,5 @@ export interface WebhookSignature {
   readonly payload: string;
 
   /** How far the timestamp may be from the receiver's clock, either way; left out, the age is not checked. */
-  readonly tolerance?: Interval;
+  readonly tolerance?: Duration;
 }

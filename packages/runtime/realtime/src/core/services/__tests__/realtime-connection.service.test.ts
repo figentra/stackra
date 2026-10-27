@@ -4,13 +4,15 @@
  *          goes live; a signed-out token source stops it; a lost link or a failed token reconnects after the backoff;
  *          listeners get only their event's refreshes and can unsubscribe, and a throwing listener is logged and spares the rest;
  *          restart and stop ignore the old link; background suspension and foreground resume follow the config.
- * Boundary: test only; the transport is the memory driver, timers are faked.
+ * Boundary: test only; the transport is the memory driver, timers are faked. `maxBackoff: 1s` (was
+ *           `maxBackoffSeconds: 1` before stackra-223) caps the first reconnect at one second.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0225 (decision 1); ADR 0295 (decision 10).
  */
 import { buildConfig } from "@stackra/config";
 import type { ConfigLayers } from "@stackra/config";
 import { Service } from "@stackra/container";
+import { Duration } from "@stackra/contracts";
 import { afterEach, beforeEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 
@@ -111,7 +113,7 @@ describe("RealtimeConnection", () => {
   });
 
   it("reconnects after the backoff when the link is lost, with a new token", async () => {
-    const { connection, transport } = connectionOf({ values: { maxBackoffSeconds: 1 } });
+    const { connection, transport } = connectionOf({ values: { maxBackoff: Duration.seconds(1) } });
     connection.start(counter());
     await settle(0);
     transport.drop();
@@ -122,7 +124,7 @@ describe("RealtimeConnection", () => {
   });
 
   it("retries after the backoff when the token source fails", async () => {
-    const { connection } = connectionOf({ values: { maxBackoffSeconds: 1 } });
+    const { connection } = connectionOf({ values: { maxBackoff: Duration.seconds(1) } });
     const tokens = vi
       .fn<() => Promise<string | undefined>>()
       .mockRejectedValueOnce(new Error("offline"))

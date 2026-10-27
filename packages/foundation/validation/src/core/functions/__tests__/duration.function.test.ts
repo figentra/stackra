@@ -29,6 +29,10 @@ describe("duration()", () => {
     expect(duration("60s")).toBe("PT1M");
   });
 
+  it("is Duration.parse, the one parser since stackra-223", () => {
+    for (const text of ["200ms", "6h", "PT30S"]) expect(duration(text)).toBe(Duration.parse(text));
+  });
+
   it.each(["", "60", "5 m", "1y", "-5s", "P1M", "soon"])("refuses %j", (text) => {
     expect(() => duration(text)).toThrow(RangeError);
   });

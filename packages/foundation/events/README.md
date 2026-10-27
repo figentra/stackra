@@ -1,5 +1,13 @@
 # @stackra/events
 
+<!--
+Stackra file contract:
+Purpose: the package's reader guide: event kinds, listeners, the in-process bus and the test helpers.
+Boundary: documentation only; the code and the ADRs win on any difference.
+Runtime: none
+Governing contract: ADR 0078; ADR 0294; owner D10 2026-10-28 (stackra-223: one RetryPolicy, backoffDelay and Duration).
+-->
+
 Stackra events: the four event kind bases, the `Listener` kind base, the in-process bus, event recording kept off the
 aggregate, the `EventOutbox` and `RegionBus` ports and the event testing helpers.
 
@@ -28,6 +36,8 @@ those import it (ADR 0305 rule 20).
 | `./testing`   | `dispatch`, `drainEvents`, `drainOutbox`, `deliverRemoteEvent`                 | run events and listeners in a test                                  |
 | `./testing`   | `OutboxFake`, `toEmit`, `toRecord`, `PublishedEvents`, `EVENTS_TESTING_PLUGIN` | the outbox fake, the matchers, `app.events`, `app.listeners`        |
 | `./testing`   | `RegionBusFake`                                                                | the in-memory `RegionBus`; `sent()`                                 |
+
+A listener's `retry` is the contracts `RetryPolicy` (`ListenerRetry` is gone, stackra-223).
 
 ## Declaring events
 

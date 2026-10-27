@@ -1,5 +1,13 @@
 # AGENTS — @stackra/workflow
 
+<!--
+Stackra file contract:
+Purpose: the agent rules of @stackra/workflow.
+Boundary: documentation only; the code and the ADRs win on any difference.
+Runtime: none
+Governing contract: ADR 0102; ADR 0294; owner D10 2026-10-28 (stackra-223: one RetryPolicy, backoffDelay and Duration).
+-->
+
 Durable workflows: the `Workflow` and `Signal` kind bases, `@Step`, `Run<W>` and `StepContext`, the native engine (the
 `WorkflowRunner` driver behind `ctx.run` and `ctx.signal`), the `WorkflowJournal` port with memory and Postgres
 journals, the boot explorer and the in-process test driver (ADR 0101, 0102, 0151, 0152, 0292). Member at
@@ -35,6 +43,8 @@ journals, the boot explorer and the in-process test driver (ADR 0101, 0102, 0151
 
 ## This package
 
+- A step's `retry` is `Pick<RetryPolicy, "attempts" | "backoff">` from @stackra/contracts and its waits are the
+  queue's `JOB_BACKOFF` through the contracts `backoffDelay`; never declare a retry type here (stackra-223).
 - A kind base assigns no fields in its constructor (ADR 0294 decision 25). `Run<W>` keeps its conditionals on the naked
   `W`, or `Run<this>` stops resolving inside a class (STA-335 spike).
 - `@Step` records only (`createDecorator`); `planOf` reads it with `Step.members` and checks every option once per

@@ -9,8 +9,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0152 (decisions 1, 2 and 5); ADR 0122 (decision 3); ADR 0331 (decisions 1 and 6).
  */
-import { Duration } from "@stackra/contracts";
-import { Backoff } from "@stackra/queue";
+import { Backoff, Duration } from "@stackra/contracts";
 import { type Condition, evaluate } from "@stackra/rules";
 import { duration } from "@stackra/validation";
 

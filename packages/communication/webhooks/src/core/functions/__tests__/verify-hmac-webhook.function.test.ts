@@ -7,8 +7,9 @@
  *          answer false; an empty secret is a configuration error.
  * Boundary: test only; Web Crypto runs for real and every signature is made here, so no vendor value is quoted.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0308 (rule 15).
+ * Governing contract: ADR 0022; ADR 0308 (rule 15); stackra-223 (`tolerance` is a `Duration`, was `"5m"`).
  */
+import { Duration } from "@stackra/contracts";
 import type { WebhookSignature } from "@stackra/integrations";
 import { describe, expect, it } from "@stackra/testing";
 
@@ -25,7 +26,7 @@ const STRIPE: WebhookSignature = {
   algorithm: "SHA-256",
   encoding: "hex",
   payload: "{timestamp}.{body}",
-  tolerance: "5m",
+  tolerance: Duration.minutes(5),
 };
 
 const CHECKOUT: WebhookSignature = {
@@ -94,7 +95,7 @@ describe("verifyHmacWebhook", () => {
       secretEncoding: "base64",
       secretPrefix: "key_",
       payload: "{id}:{timestamp}:{body}",
-      tolerance: "1m",
+      tolerance: Duration.minutes(1),
     };
     const signature = await mac(raw, `m1:${T}:${BODY}`, "base64", "SHA-512");
     const secret = `key_${btoa("raw-key-bytes")}`;

@@ -1,5 +1,13 @@
 # AGENTS — @stackra/transport
 
+<!--
+Stackra file contract:
+Purpose: the agent rules of @stackra/transport.
+Boundary: documentation only; the code and the ADRs win on any difference.
+Runtime: none
+Governing contract: ADR 0138; ADR 0140; owner D10 2026-10-28 (stackra-223: one RetryPolicy, backoffDelay and Duration).
+-->
+
 The HTTP client pipeline. Member at `packages/foundation/transport` (`tier:lib`), in the programming model v3.1 shape
 (ADR 0294, 0305). Entries `.` and `./native`.
 
@@ -26,7 +34,8 @@ The HTTP client pipeline. Member at `packages/foundation/transport` (`tier:lib`)
 - A middleware never mutates the request it is given: header middleware go through `withHeader`.
 - `retry` repeats only what is safe to repeat (idempotent method or `Idempotency-Key`). Never loosen that.
 - Retryable statuses come from `ErrorKind` (`RETRYABLE_STATUSES`); never write a status list by hand (ADR 0140).
-- `TransportError` and `RetryOn` belong to `@stackra/clients`; do not declare them here.
+- `TransportError` belongs to `@stackra/clients`; `RetryOn`, `RetryPolicy` and `backoffDelay` belong to
+  `@stackra/contracts` (stackra-223). Declare none of them here.
 - Use `AbortController` and `setTimeout`, not `AbortSignal.timeout` or `AbortSignal.any` (Hermes lacks them).
 - No parameter properties, no `#private` fields, no decorators in its own source: it keeps to erasable syntax, though its
   `decorators-react` preset turns the check off so tsc can read the decorated sources of @stackra/config and

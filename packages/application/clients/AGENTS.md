@@ -1,5 +1,13 @@
 # AGENTS — @stackra/clients
 
+<!--
+Stackra file contract:
+Purpose: the agent rules of @stackra/clients.
+Boundary: documentation only; the code and the ADRs win on any difference.
+Runtime: none
+Governing contract: ADR 0260; ADR 0140; owner D10 2026-10-28 (stackra-223: one RetryPolicy, backoffDelay and Duration).
+-->
+
 The runtime of the generated clients: the ref factories gen writes `#stackra/clients/<service>` over, `ServiceClient`,
 the HTTP transport, the offline-queue sender, the React hooks, the Worker's public clients, and `fakeClient`. Member
 at `packages/application/clients` (`tier:lib`), in the programming model v3.1 shape (ADR 0294, 0305). Entries `.`,
@@ -22,6 +30,8 @@ at `packages/application/clients` (`tier:lib`), in the programming model v3.1 sh
 
 ## This package
 
+- The public clients' `retry` is the contracts `RetryPolicy`, passed to the transport's `retry` as it is; `RetryOn`
+  lives in @stackra/contracts and `./server` only re-exports it (stackra-223).
 - A ref describes a call; a `ClientTransport` driver makes it. Topology picks the driver (ADR 0260 decision 6), so
   nothing here knows whether a call is in process or over the network. This package ships only `http`.
 - A key known only at runtime goes through `DynamicClient`, which builds an unregistered ref per call (JSON in, the

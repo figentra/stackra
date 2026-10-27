@@ -10,18 +10,19 @@
  *           (`x-amz-access-token: <token>`, `access-token: <token>`), STA-793.
  * Runtime: isomorphic
  * Governing contract: ADR 0308 (rules 4 to 8); STA-793 (token placement); RFC 6749 (OAuth 2.0); RFC 7636 (PKCE); RFC 7519 (JWT); RFC 7523 (JWT
- *                     bearer grant).
+ *                     bearer grant); owner D10 2026-10-28 (stackra-223: `Duration` replaced `Interval`).
  */
+import type { Duration } from "@stackra/contracts";
+
 import type { AuthType } from "#core/enums/auth-type.enum";
-import type { Interval } from "#core/types/interval.type";
 
 /** How a client presents its id and secret at a token endpoint: a Basic header (RFC 6749 2.3.1) or form fields. */
 type ClientAuthentication = "basic" | "body";
 
-/** When a token is renewed: `buffer` before its stated expiry, `"60s"` when left out. */
+/** When a token is renewed: `buffer` before its stated expiry, `Duration.seconds(60)` when left out. */
 interface RefreshPolicy {
   /** How long before expiry the token is renewed. */
-  readonly buffer?: Interval;
+  readonly buffer?: Duration;
 }
 
 /** Where an OAuth access token is sent: `authorization` and `"Bearer {accessToken}"` when left out. */
@@ -96,8 +97,8 @@ interface OAuth2JwtBearerAuth {
   readonly audience?: string;
   /** The OAuth scopes the token is asked for, sent as the `scope` claim. */
   readonly scopes?: readonly string[];
-  /** How long an assertion lives; `"1h"` when left out (Google's longest). */
-  readonly expiresIn?: Interval;
+  /** How long an assertion lives; `Duration.hours(1)` when left out (Google's longest). */
+  readonly expiresIn?: Duration;
   /** When the cached token is renewed. */
   readonly refresh?: RefreshPolicy;
   /** Where the access token is sent, for a provider that does not take a bearer header. */
@@ -139,8 +140,8 @@ interface JwtAuth {
   readonly subject?: string;
   /** The `aud` claim. */
   readonly audience?: string;
-  /** How long a token lives; `"5m"` when left out. */
-  readonly expiresIn?: Interval;
+  /** How long a token lives; `Duration.minutes(5)` when left out. */
+  readonly expiresIn?: Duration;
   /** The header the token is sent in, as `Bearer <jwt>`; `Authorization` when left out. */
   readonly header?: string;
 }

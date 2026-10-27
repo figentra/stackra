@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `RealtimeConfig`: a configuration over `RealtimeOptions` keyed `realtime`, built with its
  *          dev-safe defaults, the template's mobile and commerce overrides, a runway values layer, refused values,
- *          and the generated host schemas' `Base$.extend(...)` form over `RealtimeConfig$`.
+ *          and the generated host schemas' `Base$.extend(...)` form over `RealtimeConfig$`. The mobile override was
+ *          `maxBackoffSeconds = 60` before stackra-223 and is now `maxBackoff = Duration.seconds(60)`.
  * Boundary: test only; the overrides restate the template's `apps/mobile/src/config/realtime.config.ts` and
  *           `services/commerce/src/config/realtime.config.ts`, and the extends restate their generated schemas.
  * Runtime: node (vitest)
@@ -24,7 +25,7 @@ class MobileRealtimeConfig extends BaseRealtimeConfig {
 
   override backgroundGraceSeconds = 30;
 
-  override maxBackoffSeconds = 60;
+  override maxBackoff = Duration.seconds(60);
 }
 
 /** The template's commerce override. */
@@ -57,7 +58,7 @@ describe("RealtimeConfig", () => {
     const mobile = buildConfig(MobileRealtimeConfig);
     expect(mobile.reconnectOnForeground).toBe(true);
     expect(mobile.backgroundGraceSeconds).toBe(30);
-    expect(mobile.maxBackoffSeconds).toBe(60);
+    expect(mobile.maxBackoff).toBe(Duration.seconds(60));
     const commerce = buildConfig(CommerceRealtimeConfig);
     expect(commerce.channelRealms).toEqual(["tenant"]);
     expect(commerce.subscribeTokenTtl).toBe("PT5M");
@@ -89,7 +90,7 @@ describe("RealtimeConfig", () => {
     const Mobile$ = REALTIME_CONFIG_SCHEMA.extend({
       reconnectOnForeground: shape.reconnectOnForeground.unwrap().default(true),
       backgroundGraceSeconds: shape.backgroundGraceSeconds.unwrap().default(30),
-      maxBackoffSeconds: shape.maxBackoffSeconds.unwrap().default(60),
+      maxBackoff: shape.maxBackoff.unwrap().default(Duration.seconds(60)),
     });
     const {
       fanoutValkeyUrl: _mobileSecret,

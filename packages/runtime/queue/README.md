@@ -1,5 +1,13 @@
 # @stackra/queue
 
+<!--
+Stackra file contract:
+Purpose: the package's reader guide: queued jobs, their options and defaults, the drivers, the worker and the testing helpers.
+Boundary: documentation only; the code and the ADRs win on any difference.
+Runtime: none
+Governing contract: ADR 0148; ADR 0294; ADR 0305; owner D10 2026-10-28 (stackra-223: one RetryPolicy, backoffDelay and Duration).
+-->
+
 Stackra queue: the runtime of an action's `job:` option. It stores jobs, runs each attempt through the action pipeline
 with a timeout, retries with backoff and jitter, keeps a dead-letter queue with redrive, and ships the memory and
 Postgres (`SKIP LOCKED`) drivers (ADR 0148, ADR 0305 rule 28).
@@ -17,7 +25,7 @@ Postgres (`SKIP LOCKED`) drivers (ADR 0148, ADR 0305 rule 28).
 | `QueueService`                                      | `.`           | `push(Action, input, options)`, `deadLetters(queue?)`, `redrive(id)`                               |
 | `QueueJobDispatcherDriver`                          | `.`           | the `JobDispatcher` driver behind `ctx.dispatch(Action, input)`                                    |
 | `registerJobs`                                      | `.`           | gen's entry registers the job actions with their locked keys                                       |
-| `backoffDelay`                                      | `.`           | the wait after a failed attempt, in milliseconds                                                   |
+| `JOB_BACKOFF`                                       | `.`           | a job's waits (10 s base, half again, 1 h cap) for `backoffDelay`                                  |
 | `JobOutcome`, `JobRun`, `PushOptions`               | `.`           | how an attempt ended; what `push` takes                                                            |
 | `JobTimedOutError`, `UnknownJobError`               | `.`           | `job_timed_out` (retryable) and `unknown_job` (dead-lettered at once)                              |
 | `QueueConfig`, `QueueConfig$`                       | `.`           | key `queue`: `driver` (`postgres` default, `memory`, `broker`)                                     |
@@ -28,6 +36,9 @@ Postgres (`SKIP LOCKED`) drivers (ADR 0148, ADR 0305 rule 28).
 | `QueueWorkerService`                                | `./node`      | `connect(container)`, then `work(queue, { signal, concurrency })`, `drain()`, `process(job)`       |
 | `PostgresQueueDriver`                               | `./node`      | the default driver: `queue.jobs`, reserved with `FOR UPDATE SKIP LOCKED`                           |
 | `drainQueue`, `runJob`, `toDeadLetter`              | `./testing`   | run due jobs; run one job to its end; assert a dead letter                                         |
+
+`Backoff` is the @stackra/contracts enum, re-exported here; the wait is the contracts `backoffDelay` over
+`JOB_BACKOFF` (stackra-223), with the values the queue's own formula had.
 
 ## A job is an action
 

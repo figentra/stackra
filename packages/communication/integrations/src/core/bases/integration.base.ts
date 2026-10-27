@@ -69,7 +69,7 @@ class IntegrationBase {
  *   levels: [ConnectionLevel.Scope],
  *   auth: { type: AuthType.ApiKey, header: "Authorization", format: "Bearer {apiKey}" },
  *   baseUrl: "https://api.resend.com",
- *   rateLimits: [{ requests: 10, per: "1s", by: RateLimitScope.Credential }],
+ *   rateLimits: [{ requests: 10, per: Duration.seconds(1), by: RateLimitScope.Credential }],
  *   retry: { idempotencyHeader: "Idempotency-Key" },
  * }) {
  *   @Secret("RESEND_API_KEY")

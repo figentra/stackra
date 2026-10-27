@@ -1,5 +1,13 @@
 # @stackra/realtime
 
+<!--
+Stackra file contract:
+Purpose: the package's reader guide: the realtime connection, transports, rooms, fan-out, the venue relay and configuration (`maxBackoff` is a `Duration`, was `maxBackoffSeconds`).
+Boundary: documentation only; the code and the ADRs win on any difference.
+Runtime: none
+Governing contract: ADR 0225; ADR 0346; ADR 0294; owner D10 2026-10-28 (stackra-223: one RetryPolicy, backoffDelay and Duration).
+-->
+
 Stackra realtime: live, data-free refreshes from a service to the sessions allowed to see them. A service
 broadcasts an integration event that declares `broadcast: { permission, audience }`. Each session that holds the
 permission on the matching channel gets the event's wire name and occurrence id, never its payload, and then
@@ -105,7 +113,7 @@ export class RealtimeConfig extends BaseRealtimeConfig {
 export class RealtimeConfig extends BaseRealtimeConfig {
   override reconnectOnForeground = true;
   override backgroundGraceSeconds = 30;
-  override maxBackoffSeconds = 60;
+  override maxBackoff = Duration.seconds(60);
 }
 ```
 

@@ -5,10 +5,13 @@
  *          the `api` once, and every malformed option is refused when the class is declared.
  * Boundary: test only; the runtime is a stand-in whose `client` returns a marker.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0308 (rules 1, 3, 6, 9 and 13); ADR 0305 (rule 2); STA-793.
+ * Governing contract: ADR 0022 (test placement); ADR 0308 (rules 1, 3, 6, 9 and 13); ADR 0305 (rule 2); STA-793;
+ *                     stackra-223 (the lengths are `Duration`s; a raw `Interval` string is refused).
  */
 import { Secret } from "@stackra/config";
 import { kindOf } from "@stackra/container";
+import { Duration } from "@stackra/contracts";
+import type { Backoff, Jitter } from "@stackra/contracts";
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 import { vi } from "vitest";
 
@@ -31,9 +34,9 @@ const RESEND: IntegrationOptions = {
   levels: [ConnectionLevel.Scope],
   auth: { type: AuthType.ApiKey, header: "Authorization", format: "Bearer {apiKey}" },
   baseUrl: "https://api.resend.com",
-  rateLimits: [{ requests: 10, per: "1s", by: RateLimitScope.Credential }],
+  rateLimits: [{ requests: 10, per: Duration.seconds(1), by: RateLimitScope.Credential }],
   retry: { idempotencyHeader: "Idempotency-Key" },
-  health: { every: "6h", failAfter: 3 },
+  health: { every: Duration.hours(6), failAfter: 3 },
   webhooks: { scheme: "standard_webhooks", secret: "{webhookSecret}", eventType: { path: "type" } },
   listing: { docsUrl: "https://resend.com/docs" },
 };
@@ -138,12 +141,21 @@ describe("Integration", () => {
     expect(refuse({ roles: ["oracle" as IntegrationRole] })).toThrow(/roles/);
     expect(refuse({ connectors: [ConnectorKind.SalesChannel] })).toThrow(/connectors/);
     expect(
-      refuse({ rateLimits: [{ requests: 0, per: "1s", by: RateLimitScope.Credential }] }),
+      refuse({
+        rateLimits: [{ requests: 0, per: Duration.seconds(1), by: RateLimitScope.Credential }],
+      }),
     ).toThrow(/rateLimits/);
     expect(
-      refuse({ rateLimits: [{ requests: 10, per: "0s", by: RateLimitScope.Credential }] }),
+      refuse({
+        rateLimits: [{ requests: 10, per: Duration.seconds(0), by: RateLimitScope.Credential }],
+      }),
     ).toThrow(RangeError);
     expect(refuse({ retry: { attempts: 0 } })).toThrow(/attempts/);
+    // a raw `Interval` string from before stackra-223 is refused; `Duration.parse("200ms")` reads it
+    expect(refuse({ retry: { base: "200ms" as Duration } })).toThrow(RangeError);
+    expect(refuse({ retry: { backoff: "random" as Backoff } })).toThrow(RangeError);
+    expect(refuse({ retry: { jitter: "full" as Jitter } })).toThrow(RangeError);
+    expect(refuse({ health: { every: "6h" as Duration } })).toThrow(RangeError);
     expect(
       refuse({
         webhooks: { scheme: "standard_webhooks", secret: "", eventType: { path: "type" } },
@@ -201,7 +213,7 @@ describe("Integration", () => {
             algorithm: "SHA-256",
             encoding: "hex",
             payload: "{timestamp}.{body}",
-            tolerance: "5m",
+            tolerance: Duration.minutes(5),
           },
         },
       }),

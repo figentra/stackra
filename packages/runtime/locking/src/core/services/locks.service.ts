@@ -10,20 +10,18 @@
  *           @stackra/search's), so it carries no `Service` suffix.
  * Runtime: isomorphic
  * Governing contract: ADR 0103 (decision 1); ADR 0149 (decisions 2 and 3; decision 4's method decorator is dropped,
- *                     registry A9); ADR 0294 (decisions 16 and 17: dependencies by constructor type); ADR 0263.
+ *                     registry A9); ADR 0294 (decisions 16 and 17: dependencies by constructor type); ADR 0263; owner D10
+ *                     2026-10-28 (stackra-223: the contracts `backoffDelay`).
  */
 import { Service } from "@stackra/container";
 import type { Clock } from "@stackra/contracts";
-import { Duration } from "@stackra/contracts";
+import { backoffDelay, Duration } from "@stackra/contracts";
 
 import type { LockDriver, LockLease } from "#contracts/index";
 import { LockUnavailableError } from "#core/errors/lock-unavailable.error";
 
-/** The first wait between two tries, in milliseconds; it doubles up to `RETRY_MS * 2 ** RETRY_DOUBLINGS`. */
-const RETRY_MS = 10;
-
-/** How many times the wait between tries doubles: 10, 20, 40, 80, then 160 ms. */
-const RETRY_DOUBLINGS = 4;
+/** The wait between two tries, unchanged by stackra-223: 10 ms doubling (10, 20, 40, 80), then 160 ms. */
+const RETRY = Object.freeze({ base: Duration.parse("10ms"), max: Duration.parse("160ms") });
 
 /** The keys sorted, each once. */
 const keysOf = (keys: string | readonly string[]): readonly string[] =>
@@ -138,7 +136,7 @@ export class Locks extends Service {
       const left = deadline - this.clock.now().getTime();
       if (left <= 0) throw LockUnavailableError.create();
       // oxlint-disable-next-line no-await-in-loop -- the backoff between two tries
-      await sleep(Math.min(left, RETRY_MS * 2 ** Math.min(attempt, RETRY_DOUBLINGS)));
+      await sleep(Math.min(left, backoffDelay(RETRY, attempt + 1)));
     }
   }
 

@@ -7,7 +7,8 @@
  *           public call is a `GET` or idempotent, so retries follow the transport's safe-to-repeat rule; a refusal the
  *           envelope marks not retryable is never retried. The forwarded facts are awaited once and reused.
  * Runtime: isomorphic
- * Governing contract: ADR 0082 (API areas); ADR 0237 (generated gateway); ADR 0118; ADR 0140; ADR 0260.
+ * Governing contract: ADR 0082 (API areas); ADR 0237 (generated gateway); ADR 0118; ADR 0140; ADR 0260; owner D10
+ *                     2026-10-28 (stackra-223: `retry` is the contracts `RetryPolicy`).
  */
 import { ApiArea } from "@stackra/contracts";
 import { createTransport, retry, stackraVersion } from "@stackra/transport";
@@ -21,7 +22,6 @@ import type { CallRef } from "#core/types/call-ref.type";
 import type { QueryRef } from "#core/types/query-ref.type";
 import type { RefInput } from "#core/types/ref-input.type";
 import type { RefOutput } from "#core/types/ref-output.type";
-import { RetryOn } from "#server/enums/retry-on.enum";
 import type { PublicClients } from "#server/types/public-clients.type";
 import type { PublicClientsOptions } from "#server/types/public-clients-options.type";
 
@@ -40,10 +40,7 @@ export function createPublicClients(options: PublicClientsOptions): PublicClient
     );
   const middleware: Middleware[] = [];
   if (options.version !== undefined) middleware.push(stackraVersion(options.version));
-  if (options.retry !== undefined)
-    middleware.push(
-      retry({ attempts: options.retry.attempts, refused: options.retry.on === RetryOn.Retryable }),
-    );
+  if (options.retry !== undefined) middleware.push(retry(options.retry));
   const transport = createTransport({ middleware });
   const headers: Record<string, string> = {};
   if (options.locale !== undefined) headers["Accept-Language"] = options.locale;

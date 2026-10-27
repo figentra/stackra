@@ -20,12 +20,12 @@
  */
 import type { Resolver } from "@stackra/actions";
 import { Service } from "@stackra/container";
-import { Duration, Logger } from "@stackra/contracts";
+import { backoffDelay, Duration, Logger } from "@stackra/contracts";
 import type { Clock } from "@stackra/contracts";
 import type { Database } from "@stackra/database";
 import { isRefusal } from "@stackra/errors";
 import type { Locks } from "@stackra/locking";
-import { backoffDelay } from "@stackra/queue";
+import { JOB_BACKOFF } from "@stackra/queue";
 
 import type { OutboxConfig } from "#config/outbox.config";
 import { MessageKind } from "#contracts/index";
@@ -164,7 +164,8 @@ export class OutboxRelayService extends Service {
       const attempt = message.attempts + 1;
       if (attempt < OUTBOX_DEFAULTS.attempts) {
         const availableAt = new Date(
-          now.getTime() + backoffDelay(OUTBOX_DEFAULTS.backoff, attempt),
+          now.getTime() +
+            backoffDelay({ ...JOB_BACKOFF, backoff: OUTBOX_DEFAULTS.backoff }, attempt),
         );
         await this.driver.retry(message.id, availableAt, failure);
         return;

@@ -10,12 +10,14 @@
  *           `refresh.buffer` before it expires, by one call however many requests wait for it. An `OAuth2Code`
  *           integration calls only through a connection.
  * Runtime: isomorphic
- * Governing contract: ADR 0308 (rules 3, 4, 6, 7, 12, 13 and 20); ADR 0173 (secrets); ADR 0294 (decision 17).
+ * Governing contract: ADR 0308 (rules 3, 4, 6, 7, 12, 13 and 20); ADR 0173 (secrets); ADR 0294 (decision 17);
+ *                     owner D10 2026-10-28 (stackra-223): the lengths are `Duration`s.
  */
 import type { RateLimitStore } from "@stackra/actions/contracts";
 import type { SecretStore } from "@stackra/config/contracts";
 import { Service } from "@stackra/container";
 import type { Clock } from "@stackra/contracts";
+import { Duration } from "@stackra/contracts";
 
 import type { Connection } from "#core/bases/connection.base";
 import type { Integration } from "#core/bases/integration.base";
@@ -23,7 +25,6 @@ import { AuthType } from "#core/enums/auth-type.enum";
 import { ProviderRefusedError } from "#core/errors/provider-refused.error";
 import { ProviderUnavailableError } from "#core/errors/provider-unavailable.error";
 import { integrationOptionsOf } from "#core/functions/integration-options-of.function";
-import { intervalMs } from "#core/functions/interval-ms.function";
 import { managedClient } from "#core/functions/managed-client.function";
 import { placeholderLookup } from "#core/functions/placeholder-lookup.function";
 import { requestToken } from "#core/functions/request-token.function";
@@ -187,7 +188,7 @@ export class IntegrationRuntime extends Service {
     const key = this.keyOf(integration, connection);
     const known = this.tokens.get(key);
     const current = known === undefined ? undefined : await known.catch(() => undefined);
-    const buffer = intervalMs(auth.refresh?.buffer ?? "60s");
+    const buffer = Duration.toMilliseconds(auth.refresh?.buffer ?? Duration.seconds(60));
     if (
       current !== undefined &&
       (current.expiresAt === undefined ||
@@ -229,7 +230,7 @@ export class IntegrationRuntime extends Service {
           key: auth.key,
           issuer: auth.issuer,
           audience: auth.audience ?? auth.tokenUrl,
-          expiresIn: auth.expiresIn ?? "1h",
+          expiresIn: auth.expiresIn ?? Duration.hours(1),
           ...(auth.keyId === undefined ? {} : { keyId: auth.keyId }),
           ...(auth.subject === undefined ? {} : { subject: auth.subject }),
         },

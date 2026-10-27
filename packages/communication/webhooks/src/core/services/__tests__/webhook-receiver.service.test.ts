@@ -10,11 +10,12 @@
  * Boundary: test only; the connection store, the outbox and the clock are in-test fakes, the secret store a map of test
  *           values, and Web Crypto runs for real.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0308 (rules 15, 16 and 20); ADR 0078 (decision 4).
+ * Governing contract: ADR 0022; ADR 0308 (rules 15, 16 and 20); ADR 0078 (decision 4); stackra-223 (`tolerance`).
  */
 import { Secret } from "@stackra/config";
 import { SecretStore } from "@stackra/config/contracts";
 import type { Clock } from "@stackra/contracts";
+import { Duration } from "@stackra/contracts";
 import { NotFoundError } from "@stackra/errors";
 import { WebhookEvent } from "@stackra/events";
 import type { EventOutbox } from "@stackra/events/contracts";
@@ -96,7 +97,7 @@ class GatewayIntegration extends Integration({
       algorithm: "SHA-256",
       encoding: "hex",
       payload: "{timestamp}.{body}",
-      tolerance: "5m",
+      tolerance: Duration.minutes(5),
     },
   },
 }) {

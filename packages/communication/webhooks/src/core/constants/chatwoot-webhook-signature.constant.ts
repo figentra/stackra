@@ -8,8 +8,10 @@
  *           bound every timed recipe here uses. Written from Chatwoot's published scheme; certification against a live
  *           instance is pending (D3).
  * Runtime: isomorphic
- * Governing contract: ADR 0448 (decision 3); ADR 0308 (rule 15); STA-805; OS-204, OS-206.
+ * Governing contract: ADR 0448 (decision 3); ADR 0308 (rule 15); STA-805; OS-204, OS-206; stackra-223 (`tolerance`
+ *                     is a `Duration`).
  */
+import { Duration } from "@stackra/contracts";
 import type { WebhookSignature } from "@stackra/integrations";
 
 /**
@@ -25,5 +27,5 @@ export const CHATWOOT_WEBHOOK_SIGNATURE: WebhookSignature = {
   algorithm: "SHA-256",
   encoding: "hex",
   payload: "{timestamp}.{body}",
-  tolerance: "5m",
+  tolerance: Duration.minutes(5),
 };

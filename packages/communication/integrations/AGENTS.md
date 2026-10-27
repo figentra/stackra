@@ -7,7 +7,7 @@ Purpose: the agent rules of @stackra/integrations: where code goes, entries and 
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
 Governing contract: ADR 0294; ADR 0305; ADR 0308; ADR 0348; ADR 0355; ADR 0356; ADR 0376; ADR 0443; ADR 0447;
-                    stackra-46 (EDI envelope).
+                    stackra-46 (EDI envelope); stackra-223 (`Duration`, `RetryPolicy`).
 -->
 
 Provider integrations, connections and their store (ADR 0308). Member at `packages/communication/integrations`
@@ -54,6 +54,8 @@ Provider integrations, connections and their store (ADR 0308). Member at `packag
 
 ## This package
 
+- Lengths of time are the contracts `Duration` and retries the contracts `RetryPolicy` and `backoffDelay`
+  (stackra-223); never declare an interval string, a retry shape or a backoff formula here.
 - A secret is a name (`@Secret("RESEND_API_KEY")`), never a value. An Integration's `@Secret` fields stay unset on the
   instance: the managed client reads them blind from the `SecretStore` at call time. A connection's secret fields are
   non-enumerable, so they never spread, serialise or log.

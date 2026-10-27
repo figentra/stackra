@@ -9,6 +9,7 @@
  *           the room's `left` frame.
  * Runtime: isomorphic
  * Governing contract: ADR 0346 (decisions 4 to 6); ADR 0225 (decision 2: presence and cursors); ADR 0270 (decision 6).
+ *                     Owner D10 2026-10-28 (stackra-223: realtime's `maxBackoff`).
  */
 import { Driver } from "@stackra/container";
 import type { PublicId } from "@stackra/contracts";
@@ -110,7 +111,7 @@ export class RealtimePresenceChannelDriver extends Driver(PresenceChannel) {
           handlers.onClose();
         },
       },
-      { maxBackoffSeconds: this.realtime.maxBackoffSeconds },
+      { maxBackoff: this.realtime.maxBackoff },
     );
     const flush = () => {
       pending = undefined;

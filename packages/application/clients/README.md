@@ -1,5 +1,13 @@
 # @stackra/clients
 
+<!--
+Stackra file contract:
+Purpose: the package's reader guide: typed client refs, the client transport, the public server clients and the fakes.
+Boundary: documentation only; the code and the ADRs win on any difference.
+Runtime: none
+Governing contract: ADR 0260; ADR 0082; ADR 0140; owner D10 2026-10-28 (stackra-223: one RetryPolicy, backoffDelay and Duration).
+-->
+
 The runtime of Stackra's generated clients. `stackra gen` writes `#stackra/clients/<service>` from each producer's
 committed manifest as classes over this package's factories; this package makes the calls. It holds the ref factories,
 `ServiceClient` with `call` and `queue`, the HTTP `ClientTransport` driver, the drivers of `@stackra/query`'s offline
@@ -33,6 +41,9 @@ and zod. React is an optional peer for `./react`.
 | `./server`    | `createPublicClients`, `RetryOn`, `PublicClients`                                | a Worker's anonymous calls to the public area                   |
 | `./worker`    | `forwardedFacts`                                                                 | the visitor facts a Worker forwards to the gateway              |
 | `./testing`   | `fakeClient`, `ClientFake`, `fakeClientError`, `memoryTransport`                 | a scripted client for tests; the `memory` `ClientTransport`     |
+
+`RetryOn` is the @stackra/contracts code, re-exported by `./server`; `createPublicClients`' `retry` is the contracts
+`RetryPolicy` (`on` became `retryOn`, stackra-223).
 
 ## Generated clients
 
