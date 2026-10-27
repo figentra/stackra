@@ -8,12 +8,13 @@
  *           `LicenceFileInvalidError`; a verify key that is not 64 hex characters is a configuration bug (RangeError).
  *           Built on Web Crypto (`crypto.subtle`, Ed25519 and AES-GCM), so it runs in Node, browsers and workers.
  * Runtime: isomorphic
- * Governing contract: ADR 0178 (decisions 1, 2, 5 and 6); ADR 0076 (on-prem and air-gapped).
+ * Governing contract: ADR 0178 (decisions 1, 2, 5 and 6); ADR 0076 (on-prem and air-gapped);
+ *                     stackra-224 (decodeBase64 and isRecord from @stackra/support).
  */
+import { decodeBase64, isRecord } from "@stackra/support";
+
 import { LicenceFileInvalidError } from "#core/errors/licence-file-invalid.error";
-import { decodeBase64 } from "#core/functions/decode-base64.function";
 import { decryptLicence } from "#core/functions/decrypt-licence.function";
-import { isRecord } from "#core/functions/is-record.function";
 import { readLicence } from "#core/functions/read-licence.function";
 import type { Licence } from "#core/types/licence.type";
 import type { LicenceFileOptions } from "#core/types/licence-file-options.type";
@@ -35,11 +36,9 @@ function parseJson(bytes: Uint8Array): unknown {
 
 /** Base64 to bytes, or refuses the file as malformed. */
 function bytesOf(text: string): Uint8Array<ArrayBuffer> {
-  try {
-    return decodeBase64(text);
-  } catch (error) {
-    throw LicenceFileInvalidError.create({ reason: "malformed" }, { cause: error });
-  }
+  const bytes = decodeBase64(text);
+  if (bytes === undefined) throw LicenceFileInvalidError.create({ reason: "malformed" });
+  return bytes;
 }
 
 /**

@@ -11,9 +11,9 @@
  */
 import { Enum } from "@stackra/contracts";
 import { isoDateTime } from "@stackra/validation";
+import { isRecord } from "@stackra/support";
 
 import { type FactField, FieldType, Operator } from "#contracts/index";
-import { isRecord } from "#core/functions/is-record.function";
 import { millisecondsOf } from "#core/functions/milliseconds-of.function";
 import { moneyOf } from "#core/functions/money-of.function";
 

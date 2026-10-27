@@ -11,6 +11,7 @@
  * Governing contract: ADR 0270 (decisions 6 and 7); ADR 0110 (decisions 4 and 6); ADR 0365 (decision 2: inline data).
  */
 import { Renamed, schemaOf } from "@stackra/validation";
+import { escapeHtml } from "@stackra/support";
 
 import type { ExperienceKind } from "#contracts/enums/experience-kind.enum";
 import { InvalidDocumentError } from "#core/errors/invalid-document.error";
@@ -18,7 +19,6 @@ import { UnknownBlockError } from "#core/errors/unknown-block.error";
 import { localizeValue } from "#core/functions/localize-value.function";
 import { validateDocument } from "#core/functions/validate-document.function";
 import type { BlockClass } from "#core/types/block-class.type";
-import { escapeHtml } from "#edge/functions/escape-html.function";
 import type { ServerBlock } from "#server/types/server-block.type";
 import type { ServerRenderOptions } from "#server/types/server-render-options.type";
 

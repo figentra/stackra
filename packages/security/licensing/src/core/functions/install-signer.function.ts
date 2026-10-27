@@ -9,8 +9,7 @@
  * Governing contract: ADR 0178 (decision 5); ADR 0173; ADR 0416; OS licensing SPEC open question 2.
  */
 import { MemorySignerDriver, type Signer } from "@stackra/contracts";
-
-import { isRecord } from "#core/functions/is-record.function";
+import { isRecord } from "@stackra/support";
 
 /** The Web Crypto algorithm of ES256. */
 const ES256 = { name: "ECDSA", namedCurve: "P-256" } as const;

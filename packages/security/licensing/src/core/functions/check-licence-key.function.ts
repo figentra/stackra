@@ -11,10 +11,10 @@
  * Governing contract: ADR 0178 (decision 5); ADR 0260 (calls go through the transport).
  */
 import { createTransport } from "@stackra/transport";
+import { isRecord } from "@stackra/support";
 
 import { LICENSING_CONFIG_SCHEMA } from "#core/constants/licensing-config-schema.constant";
 import { LicenceCheckUnavailableError } from "#core/errors/licence-check-unavailable.error";
-import { isRecord } from "#core/functions/is-record.function";
 import type { LicenceKeyCheck } from "#core/types/licence-key-check.type";
 import type { LicenceKeyCheckOptions } from "#core/types/licence-key-check-options.type";
 

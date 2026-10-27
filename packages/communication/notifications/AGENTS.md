@@ -38,8 +38,8 @@ Messages to people (ADR 0086, 0223 as amended by 0294; R-26). Member at `package
 - `contracts` is the leaf. `react` imports `core`; `node` imports `core` and the internal mail renderer of `react`;
   `testing` imports them all. No symbol is exported from two entries:
   `MemoryNotifier` in `./testing` is the type of `MemoryNotifierDriver` in `.`.
-- `MailMessage` is exported as a type only. `prepareNotification`, `htmlToText`, `NotificationBase`, the mail renderer
-  and `MailTools` stay internal.
+- `MailMessage` is exported as a type only. `prepareNotification`, `NotificationBase`, the mail renderer and `MailTools`
+  stay internal. `base64url` and `htmlToText` are `@stackra/support`'s (stackra-224); never add a copy here.
 
 ## This package
 

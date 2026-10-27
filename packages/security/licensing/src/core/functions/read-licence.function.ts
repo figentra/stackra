@@ -9,9 +9,9 @@
  * Governing contract: ADR 0178 (decisions 1 and 6, EN6).
  */
 import type { Json } from "@stackra/contracts";
+import { isRecord } from "@stackra/support";
 
 import { LicenceFileInvalidError } from "#core/errors/licence-file-invalid.error";
-import { isRecord } from "#core/functions/is-record.function";
 import type { Licence } from "#core/types/licence.type";
 
 /** A date field, or `undefined` when it is absent, `null` or not a date. */

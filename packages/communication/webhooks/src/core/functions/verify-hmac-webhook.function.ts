@@ -13,8 +13,8 @@
  */
 import { Duration } from "@stackra/contracts";
 import type { WebhookSignature } from "@stackra/integrations";
+import { decodeBase64 } from "@stackra/support";
 
-import { decodeBase64 } from "#core/functions/decode-base64.function";
 import { decodeHex } from "#core/functions/decode-hex.function";
 
 /** The signature values and the timestamp a header holds under `recipe`. */

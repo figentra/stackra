@@ -8,7 +8,8 @@
  * Runtime: node
  * Governing contract: ADR 0441 (as amended: D19 store frames and captions from assets/store).
  */
-import { escapeXml } from "#core/functions/escape-xml.function";
+import { escapeXml } from "@stackra/support";
+
 import { wrapCaption } from "#core/functions/wrap-caption.function";
 import type { StoreFrameContent } from "#core/types/store-frame-content.type";
 

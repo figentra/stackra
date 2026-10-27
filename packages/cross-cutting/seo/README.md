@@ -6,7 +6,7 @@ crawler, sitemaps paged within the protocol limits, and the Open Graph image of 
 
 **Tier:** `tier:lib` (`packages/cross-cutting/seo`). Entries `.`, `./contracts`, `./server` and `./worker` (the old
 `./og`, `./robots` and `./sitemap` entries are folded in). Depends on `@stackra/config`, `@stackra/container`,
-`@stackra/contracts`, `@stackra/i18n`, `@stackra/validation`, zod, satori and `@resvg/resvg-wasm`.
+`@stackra/contracts`, `@stackra/i18n`, `@stackra/support` (`escapeXml`), `@stackra/validation`, zod, satori and `@resvg/resvg-wasm`.
 
 ## What is here
 

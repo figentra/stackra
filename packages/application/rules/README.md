@@ -18,7 +18,8 @@ and operators; it is never an expression and never runs code (ADR 0154, ADR 0227
 
 **Tier:** `tier:lib` (`packages/application/rules`). Entries `./contracts`, `.`, `./node` and `./react`. Depends on
 `@stackra/actions` and `@stackra/ai` (types of the matrix rows only), `@stackra/content`, `@stackra/contracts`, `@stackra/database`, `@stackra/errors`, `@stackra/events`, `@stackra/i18n`,
-`@stackra/market-packs`, `@stackra/model`, `@stackra/money`, `@stackra/ui` and `@stackra/validation`.
+`@stackra/market-packs`, `@stackra/model`, `@stackra/money`, `@stackra/support` (`isRecord`), `@stackra/ui` and
+`@stackra/validation`.
 
 ## What is here
 

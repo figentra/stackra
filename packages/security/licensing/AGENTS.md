@@ -25,7 +25,8 @@ decision 14; it imports no other entry). Free, never moved to `@stackra-pro` (AD
 
 - `src/core/index.ts` is a stand-in barrel until gen writes the entry barrels (STA-339); add every new public file to
   it and to `src/core/__tests__/index.test.ts`.
-- `decodeBase64`, `decryptLicence`, `isRecord` and `readLicence` stay internal.
+- `decryptLicence` and `readLicence` stay internal. `decodeBase64` and `isRecord` are `@stackra/support`'s (stackra-224):
+  `decodeBase64` answers `undefined` for bad text, so a caller refuses with `malformed` itself.
 - `usageReportMessage` is public on purpose: the install signs and the issuing service verifies the same bytes.
 
 ## This package

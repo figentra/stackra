@@ -96,6 +96,7 @@
     "@stackra/contracts": "workspace:*",
     "@stackra/errors": "workspace:*",
     "@stackra/money": "workspace:*",
+    "@stackra/support": "workspace:*",
     "typescript": "catalog:build",
     "typescript6": "catalog:tooling"
   },

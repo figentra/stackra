@@ -78,6 +78,7 @@
     "@stackra/container": "workspace:*",
     "@stackra/contracts": "workspace:*",
     "@stackra/market-packs": "workspace:*",
+    "@stackra/support": "workspace:*",
     "zod": "catalog:"
   },
   "devDependencies": {

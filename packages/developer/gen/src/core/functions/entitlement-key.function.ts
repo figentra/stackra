@@ -7,7 +7,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 20 and 22); ADR 0215 (decision 1); STA-903.
  */
-import { snakeCase } from "#core/functions/snake-case.function";
+import { snakeCase } from "@stackra/support";
 
 /**
  * The key of an entitlement class.

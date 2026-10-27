@@ -23,12 +23,11 @@
  *                     are drivers); ADR 0078 (decisions 2 to 4: inbox deduplication).
  */
 import type { StackraManifest } from "@stackra/contracts";
+import { camelCase, kebabCase } from "@stackra/support";
 
 import { CLIENTS_SPECIFIER } from "#core/constants/clients-specifier.constant";
 import { ENCORE_APP_IMPORT } from "#core/constants/encore-app-import.constant";
-import { camelCase } from "#core/functions/camel-case.function";
 import { generatedHeader } from "#core/functions/generated-header.function";
-import { kebabCase } from "#core/functions/kebab-case.function";
 import { serviceManifest } from "#core/functions/service-manifest.function";
 import type { GeneratedFile } from "#core/types/generated-file.type";
 import type { MemberIR } from "#core/types/member-ir.type";

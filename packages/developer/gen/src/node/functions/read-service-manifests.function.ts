@@ -14,8 +14,8 @@ import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 
 import type { StackraManifest } from "@stackra/contracts";
+import { kebabCase } from "@stackra/support";
 
-import { kebabCase } from "#core/functions/kebab-case.function";
 import type { MemberIR } from "#core/types/member-ir.type";
 
 /**

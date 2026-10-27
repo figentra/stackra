@@ -8,10 +8,10 @@
  * Runtime: isomorphic
  * Governing contract: RFC 8292 (VAPID); RFC 7515 (JWS).
  */
-import { base64url } from "#core/functions/base64url.function";
+import { base64url } from "@stackra/support";
 
 /** `value` as JSON, base64url-encoded: one JWT segment. */
-const encode = (value: object) => base64url(new TextEncoder().encode(JSON.stringify(value)));
+const encode = (value: object) => base64url.encode(new TextEncoder().encode(JSON.stringify(value)));
 
 /**
  * The VAPID header for `endpoint`.
@@ -34,8 +34,8 @@ export async function vapidAuthorization(input: {
     {
       kty: "EC",
       crv: "P-256",
-      x: base64url(point.slice(1, 33)),
-      y: base64url(point.slice(33, 65)),
+      x: base64url.encode(point.slice(1, 33)),
+      y: base64url.encode(point.slice(33, 65)),
       d: input.privateKey,
     },
     { name: "ECDSA", namedCurve: "P-256" },
@@ -53,5 +53,5 @@ export async function vapidAuthorization(input: {
     key,
     new TextEncoder().encode(unsigned),
   );
-  return `vapid t=${unsigned}.${base64url(signature)}, k=${input.publicKey}`;
+  return `vapid t=${unsigned}.${base64url.encode(signature)}, k=${input.publicKey}`;
 }

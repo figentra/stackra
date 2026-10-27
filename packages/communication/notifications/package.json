@@ -124,6 +124,7 @@
     "@stackra/integrations": "workspace:*",
     "@stackra/money": "workspace:*",
     "@stackra/outbox": "workspace:*",
+    "@stackra/support": "workspace:*",
     "@stackra/validation": "workspace:*",
     "zod": "catalog:"
   },

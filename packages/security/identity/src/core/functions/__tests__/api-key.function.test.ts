@@ -10,12 +10,12 @@
  */
 import { buildConfig } from "@stackra/config";
 import { describe, expect, it } from "@stackra/testing";
+import { crc32 } from "@stackra/support";
 
 import { IdentityConfig } from "#config/identity.config";
 import { ApiKeyKind } from "#core/enums/api-key-kind.enum";
 import { ApiKeyRejectedError } from "#core/errors/api-key-rejected.error";
 import { checkPublishableKey } from "#core/functions/check-publishable-key.function";
-import { crc32 } from "#core/functions/crc32.function";
 import { isOriginAllowed } from "#core/functions/is-origin-allowed.function";
 import { mintApiKey } from "#core/functions/mint-api-key.function";
 import { parseApiKey } from "#core/functions/parse-api-key.function";

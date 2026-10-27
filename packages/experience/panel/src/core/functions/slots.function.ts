@@ -9,9 +9,9 @@
  * Governing contract: ADR 0307 (rule 18: slots are typed places); ADR 0294 (decision 20: derived identities).
  */
 import { Enum } from "@stackra/contracts";
+import { snakeCase } from "@stackra/support";
 
 import { Place } from "#core/enums/place.enum";
-import { snakeCase } from "#core/functions/snake-case.function";
 import type { SlotGroup } from "#core/types/slot-group.type";
 import type { SlotRef } from "#core/types/slot-ref.type";
 import type { SlotTree } from "#core/types/slot-tree.type";

@@ -12,8 +12,8 @@ import { NumberingSystem, formatMessage } from "@stackra/i18n";
 import { Money } from "@stackra/money";
 import type { ComponentType } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
+import { htmlToText } from "@stackra/support";
 
-import { htmlToText } from "#core/functions/html-to-text.function";
 import type { MailBody } from "#react/mail/mail-body.type";
 import { MailContext } from "#react/mail/mail-context";
 import type { MailRenderOptions } from "#react/mail/mail-render-options.type";

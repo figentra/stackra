@@ -7,7 +7,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 26: the driver registry); ADR 0263 (drivers by file prefix).
  */
-import { kebabCase } from "#core/functions/kebab-case.function";
+import { kebabCase } from "@stackra/support";
 
 /**
  * The driver name of a driver file.

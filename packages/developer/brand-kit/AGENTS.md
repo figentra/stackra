@@ -41,6 +41,8 @@ shape (ADR 0294, 0305). Entries `./contracts`, `.` and the `stackra-brand-kit` b
   generator.
 - Generated files are never committed; the asset manifest lists them for that check (stackra-13).
 - New third-party dependencies (font measuring, image encoding) are catalog entries, handed to the integration batch.
+- `escapeXml` is `@stackra/support`'s (stackra-224): it refuses a character XML 1.0 cannot carry (a control character in
+  a caption is a `TypeError`, not dropped).
 
 ## Not here
 

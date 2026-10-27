@@ -10,7 +10,7 @@ XLSX, DATEV ASCII) from per-provider profiles, and a streaming zip writer (defla
 
 **Tier:** `tier:lib` (`packages/data/data-transfer`). Entries `.`, `./contracts` and `./node` (XLSX only, so a browser
 never loads exceljs). Depends on `@stackra/container`,
-`@stackra/contracts`, `@stackra/errors`, `exceljs` and `zod`.
+`@stackra/contracts`, `@stackra/errors`, `@stackra/support` (`crc32`), `exceljs` and `zod`.
 
 Mechanism only (ADR 0363): row and byte limits, the preview size, the batch size, the undo window and the legacy
 encoding of a market are inputs the caller reads from settings and market packs. The package has no default for any.

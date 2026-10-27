@@ -4,7 +4,8 @@
  *          as words.
  * Boundary: test only.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0231 (snake_case codes, acronyms as words).
+ * Governing contract: ADR 0022 (test placement); ADR 0231 (snake_case codes, acronyms as words);
+ *                     stackra-224 (moved from gen, panel cases).
  */
 import { describe, expect, it } from "@stackra/testing";
 
@@ -19,5 +20,8 @@ describe("snakeCase", () => {
     expect(snakeCase("access log entry")).toBe("access_log_entry");
     expect(snakeCase("ApiClient2Factory")).toBe("api_client2_factory");
     expect(snakeCase("already_snake")).toBe("already_snake");
+    expect(snakeCase("SalesOverview")).toBe("sales_overview");
+    expect(snakeCase("Column1")).toBe("column1");
+    expect(snakeCase("APIKeys")).toBe("api_keys");
   });
 });

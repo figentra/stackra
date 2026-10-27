@@ -33,8 +33,8 @@ The market-pack loader. Member at `packages/foundation/market-packs` (`tier:lib`
 ## Entries and barrels
 
 - `src/core/index.ts` is a stand-in barrel until gen writes the entry barrels (STA-339); add every new public file to
-  it and to the export list in `src/core/__tests__/index.test.ts`. `canonicalJson`, `compareVersions`, `packLabel` and
-  `subjectOf` stay internal; `pickPack` is public (ADR 0455).
+  it and to the export list in `src/core/__tests__/index.test.ts`. `compareVersions`, `packLabel` and `subjectOf` stay
+  internal; `canonicalJson` is @stackra/support's (stackra-224), so the content hash is the one canonical form; `pickPack` is public (ADR 0455).
 
 ## This package
 
@@ -71,7 +71,7 @@ The market-pack loader. Member at `packages/foundation/market-packs` (`tier:lib`
 - The content hash covers the pack exactly as shipped (canonical JSON); never hash a parsed copy in `verifyPack`.
 - A section's keys carry its prefix, so a product can never overwrite a base value.
 - Runtime dependencies are `@stackra/assets`, `@stackra/config`, `@stackra/container`, `@stackra/contracts`,
-  `@stackra/errors`, `@stackra/filesystem`, `@stackra/validation` and `zod`; crypto is Web Crypto.
+  `@stackra/errors`, `@stackra/filesystem`, `@stackra/support`, `@stackra/validation` and `zod`; crypto is Web Crypto.
 - Only add a symbol a consumer imports today (the market-pack loader row in `notes/handover/stackra-package-needs.md`).
 
 ## Rules that fail the build

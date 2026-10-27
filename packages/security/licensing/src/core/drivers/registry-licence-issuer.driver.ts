@@ -17,13 +17,13 @@
 import { Driver } from "@stackra/container";
 import type { Json } from "@stackra/contracts";
 import { createTransport } from "@stackra/transport";
+import { isRecord } from "@stackra/support";
 
 import type { IssuerConfig } from "#config/issuer.config";
 import type { RegistryLicence } from "#contracts/types/registry-licence.type";
 import type { RegistryLicenceCommand } from "#contracts/types/registry-licence-command.type";
 import type { RegistryLicenceGrant } from "#contracts/types/registry-licence-grant.type";
 import { LicenceIssuerUnavailableError } from "#core/errors/licence-issuer-unavailable.error";
-import { isRecord } from "#core/functions/is-record.function";
 import { LicenceIssuer } from "#core/ports/licence-issuer.port";
 import type { LicenceDraft } from "#core/types/licence-draft.type";
 

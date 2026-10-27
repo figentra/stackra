@@ -24,7 +24,8 @@ locks it in the committed `stackra.manifest.json`, compiles shape classes to zod
 member module and the entries, and compiles class components to function components.
 
 **Tier:** `tier:lib` (`packages/developer/gen`). Entries `.`, `./node`, `./testing` and the `./metro-transformer` tool
-hook (ADR 0127, 2026-10-24 note). Depends on `@stackra/contracts`, `@stackra/errors`, `@stackra/money`, `typescript`
+hook (ADR 0127, 2026-10-24 note). Depends on `@stackra/contracts`, `@stackra/errors`, `@stackra/money`, `@stackra/support`
+(case helpers), `typescript`
 7.0.2 (with 6.0.3 as `typescript6`, the fallback host) and `@babel/core`. It folds the old `ir` and `source` packages:
 the committed manifest is the IR, and source is read behind one host seam, never through ts-morph.
 

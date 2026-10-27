@@ -7,8 +7,9 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0301 (decision 2); the sitemaps.org protocol 0.9.
  */
+import { escapeXml } from "@stackra/support";
+
 import { checkSitemapLimits } from "#core/functions/check-sitemap-limits.function";
-import { escapeXml } from "#core/functions/escape-xml.function";
 
 /** The opening of a sitemap index. */
 const OPEN =

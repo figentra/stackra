@@ -14,6 +14,7 @@ import { PdfEngine, type PdfPage } from "@stackra/documents/contracts";
 import { describe, expect, it } from "@stackra/testing";
 import { registerSchemas, Renamed } from "@stackra/validation";
 import { z } from "zod";
+import { escapeHtml } from "@stackra/support";
 
 import { ExperienceKind } from "#contracts/enums/experience-kind.enum";
 import { Block } from "#core/bases/block.base";
@@ -21,7 +22,6 @@ import { BlockCategory } from "#core/enums/block-category.enum";
 import { InvalidDocumentError } from "#core/errors/invalid-document.error";
 import { UnknownBlockError } from "#core/errors/unknown-block.error";
 import type { LocalizedText } from "#core/types/localized-text.type";
-import { escapeHtml } from "#edge/functions/escape-html.function";
 import { renderEmailTemplate } from "#server/functions/render-email-template.function";
 import { renderPrintDocument } from "#server/functions/render-print-document.function";
 import { renderServerHtml } from "#server/functions/render-server-html.function";
@@ -147,7 +147,7 @@ describe("renderEmailTemplate", () => {
   it("returns the HTML and its text part", () => {
     const email = renderEmailTemplate(DOCUMENT, OPTIONS);
     expect(email.html).toContain("<h1>طلب &lt;1&gt;</h1>");
-    expect(email.text).toBe("طلب <1>\nHi Sara & co");
+    expect(email.text).toBe("طلب <1>\n\nHi Sara & co");
   });
 });
 

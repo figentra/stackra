@@ -8,8 +8,9 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0301 (decision 2); the sitemaps.org protocol 0.9; Google's image and hreflang extensions.
  */
+import { escapeXml } from "@stackra/support";
+
 import { checkSitemapLimits } from "#core/functions/check-sitemap-limits.function";
-import { escapeXml } from "#core/functions/escape-xml.function";
 import type { SitemapEntry } from "#core/types/sitemap-entry.type";
 
 /** The opening of a sitemap file with the three namespaces it uses. */

@@ -3,7 +3,8 @@
  * Purpose: unit tests of `camelCase`, which names a route's id parameter and a facet's manifest key.
  * Boundary: test only.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0231 (JSON keys are camelCase).
+ * Governing contract: ADR 0022 (test placement); ADR 0231 (JSON keys are camelCase); stackra-224 (moved from
+ *                     gen).
  */
 import { describe, expect, it } from "@stackra/testing";
 

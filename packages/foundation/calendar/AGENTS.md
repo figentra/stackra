@@ -31,7 +31,8 @@ times ADR 0414.
 - Dates are `YYYY-MM-DD` Gregorian and arithmetic runs on UTC day numbers; instants are ISO 8601 with an offset.
 - Never guess an unconfirmed Hijri holiday: report `uncertain` and let `uncertainDays` data decide how it counts.
 - Time zones and Umm al-Qura come from `Intl` (ICU); no time-zone or Hijri library is added.
-- Runtime dependencies are `@stackra/contracts`, `@stackra/market-packs` and `zod` only. Refusals are `RangeError`s.
+- Runtime dependencies are `@stackra/contracts`, `@stackra/market-packs`, `@stackra/support` and `zod` only. `ageOn` is
+  support's (re-exported, stackra-224): the leap-day rule lives there and takes `LeapBirthday`'s codes; never add a copy. Refusals are `RangeError`s.
 - Calendar values come from pack keys under `calendar.` (`calendarFromPack`, `leapBirthdayFromPack`,
   `prayerMethodFromPack` for `calendar.prayer_times`); never read a market's data any other way, and never default
   a missing key. The `PrayerTimes` port's computed driver is plain arithmetic; the method is pack data,

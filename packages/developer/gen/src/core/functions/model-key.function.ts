@@ -5,7 +5,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 20: model key).
  */
-import { snakeCase } from "#core/functions/snake-case.function";
+import { snakeCase } from "@stackra/support";
 
 /**
  * The key of a model class.

@@ -3,7 +3,8 @@
  * Purpose: unit tests of `kebabCase`, the URL segment and file stem form, which agrees with `snakeCase` on breaks.
  * Boundary: test only.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0231 (URL paths are kebab-case).
+ * Governing contract: ADR 0022 (test placement); ADR 0231 (URL paths are kebab-case); stackra-224
+ *                     (moved from gen).
  */
 import { describe, expect, it } from "@stackra/testing";
 

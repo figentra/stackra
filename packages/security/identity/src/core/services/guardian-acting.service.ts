@@ -7,15 +7,16 @@
  *           failed. Only a signed-in user acts for someone; an agent or a service never does here. The guardian's own
  *           permissions still decide the action (the IAM decision point), so this grants nothing.
  * Runtime: isomorphic
- * Governing contract: OS-284 (a guardian acting for a minor); ADR 0361 (decisions 2 and 3); ACA-57, ACA-60, ACA-68.
+ * Governing contract: OS-284 (a guardian acting for a minor); ADR 0361 (decisions 2 and 3); ACA-57, ACA-60, ACA-68;
+ *                     stackra-224 (ageOn from @stackra/support).
  */
 import { Service } from "@stackra/container";
 import type { Clock } from "@stackra/contracts";
 import { type Actor, ActorKind, type PublicId } from "@stackra/contracts";
+import { ageOn } from "@stackra/support";
 
 import type { Guardianship } from "#contracts/index";
 import { GuardianshipMissingError } from "#core/errors/guardianship-missing.error";
-import { ageOn } from "#core/functions/age-on.function";
 import type { ActForOptions } from "#core/types/act-for-options.type";
 import type { DelegatedPrincipal } from "#core/types/delegated-principal.type";
 
@@ -47,7 +48,7 @@ export class GuardianActingService extends Service {
    *
    * @throws GuardianshipMissingError when `guardian` is not a user, has no live link to `minor`, the link restricts the
    *         purpose, or `minor` is of age.
-   * @throws RangeError when `birthDate` or `on` is not `YYYY-MM-DD`.
+   * @throws RangeError when `birthDate` or `on` is not `YYYY-MM-DD`, or `on` is before `birthDate`.
    */
   async actFor(
     guardian: Actor,
@@ -66,7 +67,7 @@ export class GuardianActingService extends Service {
       throw GuardianshipMissingError.create();
     if (options.birthDate !== undefined && options.ageOfMajority !== undefined) {
       const on = options.on ?? now.toISOString().slice(0, 10);
-      if (ageOn(options.birthDate, on) >= options.ageOfMajority)
+      if (ageOn(options.birthDate, on, options.leapBirthday ?? "march_1") >= options.ageOfMajority)
         throw GuardianshipMissingError.create();
     }
     return {

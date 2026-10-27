@@ -14,12 +14,24 @@ describe("@stackra/support", () => {
   it("exports exactly the public runtime symbols", () => {
     expect(Object.keys(entry).sort()).toEqual([
       "Quantity",
+      "ageOn",
+      "base64url",
+      "camelCase",
       "canonicalHash",
       "canonicalJson",
       "code128",
+      "crc32",
+      "decodeBase64",
+      "escapeHtml",
+      "escapeXml",
+      "htmlToText",
+      "isRecord",
+      "kebabCase",
       "oneTimeCode",
+      "pascalCase",
       "restrictedGtin",
       "signedToken",
+      "snakeCase",
       "time",
     ]);
   });

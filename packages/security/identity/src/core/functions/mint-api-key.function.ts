@@ -7,11 +7,12 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0278 (decisions 3 to 5); COM-56 (publishable Storefront key).
  */
+import { crc32 } from "@stackra/support";
+
 import type { IdentityConfig } from "#config/identity.config";
 import type { ApiKeyKind } from "#core/enums/api-key-kind.enum";
 import { BASE62 } from "#core/constants/base62.constant";
 import { base62Of } from "#core/functions/base62-of.function";
-import { crc32 } from "#core/functions/crc32.function";
 
 /** Characters of random body. */
 const BODY_LENGTH = 30;

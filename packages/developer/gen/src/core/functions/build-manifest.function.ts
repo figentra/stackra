@@ -42,6 +42,7 @@
 import { Enum } from "@stackra/contracts";
 import type { Json, StackraManifest } from "@stackra/contracts";
 import { ErrorKind, refusalCode } from "@stackra/errors";
+import { camelCase, snakeCase } from "@stackra/support";
 
 import { EFFECT_TAGS } from "#core/constants/effect-tags.constant";
 import { INTEGRATION_ROLES } from "#core/constants/integration-roles.constant";
@@ -51,7 +52,6 @@ import { REPLICA_PAGE_SCHEMA } from "#core/constants/replica-page-schema.constan
 import { actionKey } from "#core/functions/action-key.function";
 import { additionsOf } from "#core/functions/additions-of.function";
 import { blockKey } from "#core/functions/block-key.function";
-import { camelCase } from "#core/functions/camel-case.function";
 import { configKeyOf } from "#core/functions/config-key-of.function";
 import { cronJobId } from "#core/functions/cron-job-id.function";
 import { deriveEndpoint } from "#core/functions/derive-endpoint.function";
@@ -70,7 +70,6 @@ import { rootModuleOf } from "#core/functions/root-module-of.function";
 import { routeKey } from "#core/functions/route-key.function";
 import { sequenceKey } from "#core/functions/sequence-key.function";
 import { slotOf } from "#core/functions/slot-of.function";
-import { snakeCase } from "#core/functions/snake-case.function";
 import { surfacesOf } from "#core/functions/surfaces-of.function";
 import { tableName } from "#core/functions/table-name.function";
 import { toolHints } from "#core/functions/tool-hints.function";

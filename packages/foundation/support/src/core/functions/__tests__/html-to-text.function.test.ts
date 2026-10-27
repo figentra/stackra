@@ -4,7 +4,8 @@
  *          stripped, Outlook conditional comments and the head dropped, and whitespace collapsed.
  * Boundary: test only; the inputs are shaped like React Email's rendered markup.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0223 (mail bodies rendered to HTML and text).
+ * Governing contract: ADR 0022 (test placement); ADR 0223 (mail bodies rendered to HTML and text); stackra-224
+ *                     (moved from notifications).
  */
 import { describe, expect, it } from "@stackra/testing";
 
@@ -27,6 +28,15 @@ describe("htmlToText", () => {
     const html =
       "<p>  one <!--[if mso]><i>&#8202;</i><![endif]-->  two&nbsp; </p><br/><div>three</div>";
     expect(htmlToText(html)).toBe("one two\n\nthree");
+  });
+
+  it("reads the experience renderer's markup back", () => {
+    expect(
+      htmlToText(
+        "<html><head><title>Subject</title></head><body><h1>A &amp; B</h1><p>Line<br>two</p>" +
+          '<a href="https://x.test/t">Track</a></body></html>',
+      ),
+    ).toBe("A & B\n\nLine\ntwo\n\nTrack (https://x.test/t)");
   });
 
   it("prints a bare link as its address", () => {

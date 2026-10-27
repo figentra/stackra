@@ -23,6 +23,8 @@
  *                     ADR 0260 (decisions 3 and 6: an injected client over the transport the topology picks); ADR 0266
  *                     (memory first: a test's `useDrivers("memory")` finds the packages' memory candidates).
  */
+import { snakeCase } from "@stackra/support";
+
 import { BINDING_KINDS } from "#core/constants/binding-kinds.constant";
 import { CLIENTS_SPECIFIER } from "#core/constants/clients-specifier.constant";
 import { MODEL_TOKENS } from "#core/constants/model-tokens.constant";
@@ -34,7 +36,6 @@ import { importLines } from "#core/functions/import-lines.function";
 import { modelKey } from "#core/functions/model-key.function";
 import { portKey } from "#core/functions/port-key.function";
 import { rootModuleOf } from "#core/functions/root-module-of.function";
-import { snakeCase } from "#core/functions/snake-case.function";
 import { webhookIntegrations } from "#core/functions/webhook-integrations.function";
 import type { ClassRef } from "#core/types/class-ref.type";
 import type { ClassValue } from "#core/types/class-value.type";

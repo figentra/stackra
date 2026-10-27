@@ -8,7 +8,7 @@ screen reads, and the claims mapping that turns a provider's token into a Stackr
 **Tier:** `tier:lib` (`packages/security/identity`). Entries `.`, `./contracts`, `./react` and `./testing`. Depends on
 `@stackra/clients`, `@stackra/config`, `@stackra/container`, `@stackra/contracts`, `@stackra/errors`,
 `@stackra/iam`, `@stackra/query` (the offline stores' session port), `@stackra/scope`, `@stackra/storage`,
-`@stackra/tenancy`, `@stackra/transport`, `@stackra/validation` and zod; React is an optional peer of `./react`, vitest of `./testing`.
+`@stackra/support` (`ageOn`, `crc32`), `@stackra/tenancy`, `@stackra/transport`, `@stackra/validation` and zod; React is an optional peer of `./react`, vitest of `./testing`.
 
 ## What is here
 

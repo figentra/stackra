@@ -9,7 +9,7 @@
  * Runtime: node
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision; ADR 0270 (decision 6).
  */
-export { escapeHtml } from "#edge/functions/escape-html.function";
+export { escapeHtml } from "@stackra/support";
 export { renderEmailTemplate } from "#server/functions/render-email-template.function";
 export { renderPrintDocument } from "#server/functions/render-print-document.function";
 export { renderServerHtml } from "#server/functions/render-server-html.function";

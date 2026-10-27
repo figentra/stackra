@@ -6,7 +6,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 20: widget, block, route); ADR 0270 (decision 3).
  */
-import { snakeCase } from "#core/functions/snake-case.function";
+import { snakeCase } from "@stackra/support";
 
 /**
  * The key of the block whose class file is `file`, relative to the member root.

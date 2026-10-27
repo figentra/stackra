@@ -6,7 +6,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0370 (decision 2).
  */
-import { canonicalJson } from "#core/functions/canonical-json.function";
+import { canonicalJson } from "@stackra/support";
 
 /**
  * The content hash of `value`.

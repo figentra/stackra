@@ -4,8 +4,9 @@
  * Boundary: names each re-export and declares nothing. The day-number, time-zone, RRULE and range helpers stay
  *           internal; consumers use the functions below. The schemas are re-exported under their generated names
  *           (`BusinessCalendar$`, `PrayerMethod$`, `HijriDate$`, `IsoDate$`, `WorkingWeek$`).
+ *           `ageOn` is @stackra/support's, re-exported so callers keep one import with `LeapBirthday` (stackra-224).
  * Runtime: isomorphic
- * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision; ADR 0366; ADR 0387.
+ * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision; ADR 0366; ADR 0387; stackra-224.
  */
 export { BUSINESS_CALENDAR_SCHEMA as BusinessCalendar$ } from "#core/constants/business-calendar-schema.constant";
 export { PRAYER_METHOD_SCHEMA as PrayerMethod$ } from "#core/constants/prayer-method-schema.constant";
@@ -22,7 +23,7 @@ export { LeapBirthday } from "#core/enums/leap-birthday.enum";
 export { UncertainDays } from "#core/enums/uncertain-days.enum";
 export { addBusinessDays } from "#core/functions/add-business-days.function";
 export { addWorkingMinutes } from "#core/functions/add-working-minutes.function";
-export { ageOn } from "#core/functions/age-on.function";
+export { ageOn } from "@stackra/support";
 export { calendarFromPack } from "#core/functions/calendar-from-pack.function";
 export { dayStatus } from "#core/functions/day-status.function";
 export { findSlots } from "#core/functions/find-slots.function";

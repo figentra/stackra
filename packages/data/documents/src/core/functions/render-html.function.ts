@@ -10,8 +10,9 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0365 (decision 2).
  */
+import { escapeHtml } from "@stackra/support";
+
 import { base64Of } from "#core/functions/base64-of.function";
-import { escapeHtml } from "#core/functions/escape-html.function";
 import type { ImageAsset } from "#core/types/image-asset.type";
 import type { QrMatrix } from "#core/types/qr-matrix.type";
 import type { ResolvedDocument } from "#core/types/resolved-document.type";

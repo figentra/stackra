@@ -23,10 +23,10 @@
  *                     STA-1365 (items 1, 2 and 4).
  */
 import type { StackraManifest } from "@stackra/contracts";
+import { pascalCase } from "@stackra/support";
 
 import { BELOW_CONTAINER_PACKAGES } from "#core/constants/below-container-packages.constant";
 import { KIND_FILES } from "#core/constants/kind-files.constant";
-import { pascalCase } from "#core/functions/pascal-case.function";
 import type { GenError } from "#core/types/gen-error.type";
 import type { MemberIR } from "#core/types/member-ir.type";
 

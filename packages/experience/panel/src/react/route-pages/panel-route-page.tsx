@@ -12,8 +12,8 @@ import type { AnyClass } from "@stackra/container";
 import { kindOf } from "@stackra/container";
 import type { ApiArea } from "@stackra/contracts";
 import type { ReactElement } from "react";
+import { snakeCase } from "@stackra/support";
 
-import { snakeCase } from "#core/functions/snake-case.function";
 import { PanelShell } from "#react/panel-shell/panel-shell";
 
 /**

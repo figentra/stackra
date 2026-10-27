@@ -17,9 +17,10 @@
  *                     (decisions 3 and 5); ADR 0039 (the API reference on Mintlify); ADR 0158 (from the manifest,
  *                     never a hand-kept openapi.json); STA-1316.
  */
+import { kebabCase } from "@stackra/support";
+
 import { DOCS_CONFIG_FILE } from "#core/constants/docs-config-file.constant";
 import { DOCS_OWNED_KEYS } from "#core/constants/docs-owned-keys.constant";
-import { kebabCase } from "#core/functions/kebab-case.function";
 import { openApiOf } from "#core/functions/open-api-of.function";
 import type { DocsGroup } from "#core/types/docs-group.type";
 import type { DocsSiteInput } from "#core/types/docs-site-input.type";

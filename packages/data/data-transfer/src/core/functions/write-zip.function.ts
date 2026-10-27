@@ -9,7 +9,8 @@
  * Governing contract: ADR 0367 (decision 2); APPNOTE.TXT 6.3 (4.3 layout, 4.4.4 bit 3, 4.3.14 to 4.3.16 and 4.5.3
  *                     ZIP64).
  */
-import { crc32 } from "#core/functions/crc32.function";
+import { crc32 } from "@stackra/support";
+
 import type { ZipEntry } from "#core/types/zip-entry.type";
 
 /** The largest value a 32-bit field holds; at or past it the field is `0xffffffff` and ZIP64 carries the value. */

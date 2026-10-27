@@ -8,8 +8,7 @@
  * Governing contract: ADR 0220 (money in minor units); ADR 0331 (decision 3).
  */
 import { Money } from "@stackra/money";
-
-import { isRecord } from "#core/functions/is-record.function";
+import { isRecord } from "@stackra/support";
 
 /** The amount, or `undefined` for anything but a safe-integer minor amount in an ISO 4217 currency. */
 export function moneyOf(value: unknown): Money | undefined {

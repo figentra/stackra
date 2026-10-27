@@ -12,9 +12,10 @@
  * Governing contract: ADR 0417 (X2-19: a publish check refuses an overlay floor looser than its parent); ADR 0370
  *                     (decision 6); ADR 0363 (decision 4); ADR 0455 (decision 2: list floors).
  */
+import { canonicalJson } from "@stackra/support";
+
 import { FloorBound } from "#core/enums/floor-bound.enum";
 import { PackIssueCode } from "#core/enums/pack-issue-code.enum";
-import { canonicalJson } from "#core/functions/canonical-json.function";
 import { valuesOn } from "#core/functions/values-on.function";
 import type { MarketPack } from "#core/types/market-pack.type";
 import type { PackEntry } from "#core/types/pack-entry.type";

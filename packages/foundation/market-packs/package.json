@@ -84,6 +84,7 @@
     "@stackra/contracts": "workspace:*",
     "@stackra/errors": "workspace:*",
     "@stackra/filesystem": "workspace:*",
+    "@stackra/support": "workspace:*",
     "@stackra/validation": "workspace:*",
     "zod": "catalog:"
   },

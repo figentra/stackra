@@ -9,8 +9,9 @@
  * Governing contract: ADR 0305 (rules 15 and 16: the module is optional; a generated `<Key>Module`); ADR 0295
  *                     (decision 7: the entry passes the root module).
  */
+import { pascalCase } from "@stackra/support";
+
 import { BINDING_KINDS } from "#core/constants/binding-kinds.constant";
-import { pascalCase } from "#core/functions/pascal-case.function";
 import type { ClassRef } from "#core/types/class-ref.type";
 import type { MemberIR } from "#core/types/member-ir.type";
 

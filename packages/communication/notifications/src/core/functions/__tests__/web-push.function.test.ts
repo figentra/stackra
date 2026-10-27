@@ -8,8 +8,8 @@
  * Governing contract: ADR 0022; ADR 0269; RFC 8291; RFC 8292.
  */
 import { describe, expect, it } from "@stackra/testing";
+import { base64url } from "@stackra/support";
 
-import { base64url } from "#core/functions/base64url.function";
 import { encryptWebPush } from "#core/functions/encrypt-web-push.function";
 import { vapidAuthorization } from "#core/functions/vapid-authorization.function";
 
@@ -28,7 +28,7 @@ async function hkdf(
 describe("base64url", () => {
   it("round-trips without padding", () => {
     const bytes = new Uint8Array([251, 255, 0, 1]);
-    expect(base64url(bytes)).toBe("-_8AAQ");
+    expect(base64url.encode(bytes)).toBe("-_8AAQ");
     expect([...base64url.decode("-_8AAQ")]).toEqual([...bytes]);
   });
 });
@@ -39,7 +39,7 @@ describe("vapidAuthorization", () => {
       "sign",
       "verify",
     ])) as CryptoKeyPair;
-    const publicKey = base64url(await crypto.subtle.exportKey("raw", pair.publicKey));
+    const publicKey = base64url.encode(await crypto.subtle.exportKey("raw", pair.publicKey));
     const { d } = await crypto.subtle.exportKey("jwk", pair.privateKey);
     const header = await vapidAuthorization({
       endpoint: "https://fcm.googleapis.com/fcm/send/abc",
@@ -74,8 +74,8 @@ describe("encryptWebPush", () => {
     const userPublic = new Uint8Array(await crypto.subtle.exportKey("raw", user.publicKey));
     const auth = crypto.getRandomValues(new Uint8Array(16));
     const body = await encryptWebPush('{"title":"Hi"}', {
-      p256dh: base64url(userPublic),
-      auth: base64url(auth),
+      p256dh: base64url.encode(userPublic),
+      auth: base64url.encode(auth),
     });
 
     const salt = body.slice(0, 16);

@@ -12,11 +12,11 @@
  */
 import { Driver } from "@stackra/container";
 import { createTransport } from "@stackra/transport";
+import { isRecord } from "@stackra/support";
 
 import type { IssuerConfig } from "#config/issuer.config";
 import type { LicensingConfig } from "#config/licensing.config";
 import { LicenceIssuerUnavailableError } from "#core/errors/licence-issuer-unavailable.error";
-import { isRecord } from "#core/functions/is-record.function";
 import { LicenceIssuer } from "#core/ports/licence-issuer.port";
 import type { LicenceDraft } from "#core/types/licence-draft.type";
 

@@ -14,7 +14,7 @@ and `./native`.
 Depends on `@stackra/contracts`, `@stackra/container`, `@stackra/errors`, `@stackra/validation` (block schemas and
 `@Renamed`), `@stackra/clients` (the queries blocks accept), `@stackra/i18n` (the locale), `@stackra/icons` (the
 `IconName` type), `@stackra/ui` (the loading placeholder), `@stackra/documents` (the `PdfEngine` port, `./contracts`
-only) and `zod`; React is an optional peer of `./react` and
+only), `@stackra/support` (`escapeHtml`, which `./edge` and `./server` re-export, and `htmlToText`) and `zod`; React is an optional peer of `./react` and
 `./native`.
 
 ## What is here

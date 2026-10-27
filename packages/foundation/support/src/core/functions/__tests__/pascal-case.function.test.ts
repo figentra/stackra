@@ -3,7 +3,7 @@
  * Purpose: unit tests of `pascalCase`, which names the generated `<Key>Module`.
  * Boundary: test only.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0305 (rule 16).
+ * Governing contract: ADR 0022 (test placement); ADR 0305 (rule 16); stackra-224 (moved from gen).
  */
 import { describe, expect, it } from "@stackra/testing";
 
@@ -14,5 +14,6 @@ describe("pascalCase", () => {
     expect(pascalCase("loyalty_kit")).toBe("LoyaltyKit");
     expect(pascalCase("commerce")).toBe("Commerce");
     expect(pascalCase("access-log")).toBe("AccessLog");
+    expect(pascalCase("state-machine")).toBe("StateMachine");
   });
 });

@@ -14,11 +14,11 @@
  */
 import { kindOf } from "@stackra/container";
 import { Renamed, schemaOf } from "@stackra/validation";
+import { escapeHtml } from "@stackra/support";
 
 import { localizeValue } from "#core/functions/localize-value.function";
 import { EDGE_RENDER_LIMITS } from "#edge/constants/edge-render-limits.constant";
 import { EdgeRenderFailure } from "#edge/enums/edge-render-failure.enum";
-import { escapeHtml } from "#edge/functions/escape-html.function";
 import type { EdgeBlock } from "#edge/types/edge-block.type";
 import type { EdgeRenderOptions } from "#edge/types/edge-render-options.type";
 import type { EdgeRenderResult } from "#edge/types/edge-render-result.type";

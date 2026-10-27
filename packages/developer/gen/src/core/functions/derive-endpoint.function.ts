@@ -7,10 +7,9 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 21: endpoints follow a convention); ADR 0305 (rule 28); ADR 0082.
  */
-import { camelCase } from "#core/functions/camel-case.function";
-import { kebabCase } from "#core/functions/kebab-case.function";
+import { camelCase, kebabCase, snakeCase } from "@stackra/support";
+
 import { plural } from "#core/functions/plural.function";
-import { snakeCase } from "#core/functions/snake-case.function";
 import type { Endpoint } from "#core/types/endpoint.type";
 
 /** The actor codes that reach a public endpoint. */

@@ -12,8 +12,8 @@
  * Governing contract: ADR 0308 (rule 15); RFC 7519; RFC 7515; STA-1357.
  */
 import type { WebhookSchemeRecipe } from "@stackra/integrations";
+import { decodeBase64 } from "@stackra/support";
 
-import { decodeBase64 } from "#core/functions/decode-base64.function";
 import { schemeValue } from "#core/functions/scheme-value.function";
 import type { InboundWebhook } from "#core/types/inbound-webhook.type";
 

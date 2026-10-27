@@ -4,7 +4,7 @@
  *          pass unchanged, and a character XML 1.0 cannot carry is refused.
  * Boundary: test only.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0269; ADR 0301 (decision 2).
+ * Governing contract: ADR 0022; ADR 0269; ADR 0301 (decision 2); stackra-224 (moved from seo).
  */
 import { describe, expect, it } from "@stackra/testing";
 

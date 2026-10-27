@@ -7,7 +7,7 @@
  * Runtime: isomorphic
  * Governing contract: the Standard Webhooks specification; ADR 0173 (nobody reads a value).
  */
-import { decodeBase64 } from "#core/functions/decode-base64.function";
+import { decodeBase64 } from "@stackra/support";
 
 /** The prefix of a Standard Webhooks secret. */
 const SECRET_PREFIX = "whsec_";

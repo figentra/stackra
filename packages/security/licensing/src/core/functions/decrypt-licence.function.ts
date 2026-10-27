@@ -6,10 +6,11 @@
  *           text). Refuses with `LicenceFileInvalidError`: `licence_key_required` without a key, `malformed` for a bad
  *           shape, `decryption_failed` when the key does not open it. The key is never kept or put in a refusal.
  * Runtime: isomorphic
- * Governing contract: ADR 0178 (decisions 1 and 2).
+ * Governing contract: ADR 0178 (decisions 1 and 2); stackra-224 (decodeBase64 from @stackra/support).
  */
+import { decodeBase64 } from "@stackra/support";
+
 import { LicenceFileInvalidError } from "#core/errors/licence-file-invalid.error";
-import { decodeBase64 } from "#core/functions/decode-base64.function";
 
 /**
  * Decrypts an encrypted licence file's dataset.
@@ -26,18 +27,9 @@ export async function decryptLicence(
     throw LicenceFileInvalidError.create({ reason: "licence_key_required" });
   const parts = enc.split(".");
   if (parts.length !== 3) throw LicenceFileInvalidError.create({ reason: "malformed" });
-  let ciphertext: Uint8Array<ArrayBuffer>;
-  let iv: Uint8Array<ArrayBuffer>;
-  let tag: Uint8Array<ArrayBuffer>;
-  try {
-    [ciphertext, iv, tag] = parts.map(decodeBase64) as [
-      Uint8Array<ArrayBuffer>,
-      Uint8Array<ArrayBuffer>,
-      Uint8Array<ArrayBuffer>,
-    ];
-  } catch (error) {
-    throw LicenceFileInvalidError.create({ reason: "malformed" }, { cause: error });
-  }
+  const [ciphertext, iv, tag] = parts.map((part) => decodeBase64(part));
+  if (ciphertext === undefined || iv === undefined || tag === undefined)
+    throw LicenceFileInvalidError.create({ reason: "malformed" });
   const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(licenceKey));
   const key = await crypto.subtle.importKey("raw", digest, "AES-GCM", false, ["decrypt"]);
   // Web Crypto takes the tag appended to the ciphertext.

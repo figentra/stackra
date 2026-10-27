@@ -16,12 +16,13 @@
  *                     20 and 28: tables per module schema, links); ADR 0159; the STA-335 entity-schema spike; ADR 0162
  *                     (decision 2: per-locale columns).
  */
+import { snakeCase } from "@stackra/support";
+
 import { entitiesName } from "#core/functions/entities-name.function";
 import { generatedHeader } from "#core/functions/generated-header.function";
 import { importLines } from "#core/functions/import-lines.function";
 import { modelKey } from "#core/functions/model-key.function";
 import { plural } from "#core/functions/plural.function";
-import { snakeCase } from "#core/functions/snake-case.function";
 import type { ClassRef } from "#core/types/class-ref.type";
 import type { FieldIR } from "#core/types/field-ir.type";
 import type { MemberIR } from "#core/types/member-ir.type";

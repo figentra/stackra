@@ -4,7 +4,7 @@
  *          `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. The ports, `ImportRunState` and the contract types are exported
  *           from `./contracts` only (ADR 0294 decision 15); the XLSX drivers from `./node` only, so a browser never
- *           pulls exceljs (ADR 0431 decision 5). The CSV parser, decoders, limits, cell conversions, `crc32` and the constants
+ *           pulls exceljs (ADR 0431 decision 5). The CSV parser, decoders, limits, cell conversions and the constants
  *           other than the two profile schemas stay internal.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision.

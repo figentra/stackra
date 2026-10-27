@@ -50,6 +50,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 
 import { refusalCode } from "@stackra/errors";
+import { snakeCase } from "@stackra/support";
 
 import { BELOW_CONTAINER_PACKAGES } from "#core/constants/below-container-packages.constant";
 import { CLIENTS_SPECIFIER } from "#core/constants/clients-specifier.constant";
@@ -58,7 +59,6 @@ import { folderKey } from "#core/functions/folder-key.function";
 import { platformConstant } from "#core/functions/platform-constant.function";
 import { publicSpecifier } from "#core/functions/public-specifier.function";
 import { shippedSpecifier } from "#core/functions/shipped-specifier.function";
-import { snakeCase } from "#core/functions/snake-case.function";
 import type { ClassRef } from "#core/types/class-ref.type";
 import type { ClassValue } from "#core/types/class-value.type";
 import type { DeclaredClass } from "#core/types/declared-class.type";

@@ -16,7 +16,7 @@ icons, splash screens, favicons, the web manifest and store-screenshot frames wi
 compares a fresh build with the asset manifest already in the output folder. Generated files are never committed;
 the asset manifest lists every one of them for the never-committed check (stackra-13).
 
-It depends on no Figentra code. A parent kit (for Figentra products, `figentra/os/tools/brand-kit/figentra`) is a
+It depends on no Figentra code (only `@stackra/contracts`, `@stackra/support` for `escapeXml` and `@stackra/tokens`). A parent kit (for Figentra products, `figentra/os/tools/brand-kit/figentra`) is a
 folder of data passed as `--parent-kit-dir`: its `tokens/theme.json` sits under the kit's theme, and its endorsement
 mark is a file the checklist looks for (`<by|powered-by>-<parent>*.svg` under `logos/` or `marks/`).
 

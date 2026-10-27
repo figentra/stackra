@@ -6,8 +6,9 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 20: model table; one Postgres schema per module); ADR 0238.
  */
+import { snakeCase } from "@stackra/support";
+
 import { plural } from "#core/functions/plural.function";
-import { snakeCase } from "#core/functions/snake-case.function";
 
 /**
  * The schema-qualified table of a model class.

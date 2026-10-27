@@ -40,8 +40,9 @@ programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./react`, `./native
   `@stackra/navigation/react`); panel depends on navigation, never the reverse. `./react` re-exports `useBreadcrumbs`
   only because the template imports it from here.
 - The records, the widget and resource registries, `PANEL_KEYS`, `widgetsFor`, `widgetInput`, `widgetTitle`, `toneOf`,
-  `changeOf`, `valueAt`, `snakeCase`, `resourceTreeOf`, `resourceLabel`, `tableInput`, `placementsAt`, `recordIdKey` and
+  `changeOf`, `valueAt`, `resourceTreeOf`, `resourceLabel`, `tableInput`, `placementsAt`, `recordIdKey` and
   `inputKind` are internal: `react` and `native` import them by path, and no barrel exports them.
+- Case helpers (`snakeCase`) come from `@stackra/support`; never add a copy here (stackra-224).
 
 ## This package
 

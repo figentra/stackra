@@ -106,6 +106,7 @@
     "@stackra/model": "workspace:*",
     "@stackra/queue": "workspace:*",
     "@stackra/scheduler": "workspace:*",
+    "@stackra/support": "workspace:*",
     "@stackra/validation": "workspace:*",
     "zod": "catalog:"
   },

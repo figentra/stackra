@@ -7,7 +7,7 @@
  *          JSON vs JSONC, runway schemas and files, YAML flow maps, imports, the Expo form factor, window sizing and the
  *          lang catalogues). `stackra check --only config,structure,catalogues` runs the same checks. Also runs the
  *          package-cycle check (`package-cycles.mjs`) and the architecture map drift check (apps/docs
- *          `scripts/architecture-map`), STA-1373.
+ *          `scripts/architecture-map`), STA-1373, and the duplicate-export check (`duplicate-exports.mjs`, stackra-224).
  *          Prints the findings as `<dir>: <finding>` and exits 1; prints nothing on success.
  * Boundary: a thin wrapper; the checks themselves are @stackra/repo-checks'.
  * Runtime: node
@@ -18,6 +18,7 @@
 import { fileURLToPath } from "node:url";
 
 import { architectureMapFindings } from "../../apps/docs/scripts/architecture-map/architecture-map.mjs";
+import { duplicateExportFindings } from "./duplicate-exports.mjs";
 import { packageCycleFindings } from "./package-cycles.mjs";
 import { checks } from "./repo-checks.mjs";
 
@@ -62,6 +63,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
       warn: (text) => console.warn(text),
     })),
     ...packageCycleFindings(ROOT),
+    ...duplicateExportFindings(ROOT),
     ...architectureMapFindings(ROOT),
   ];
   for (const { dir, text } of findings) console.error(`${dir || "."}: ${text}`);

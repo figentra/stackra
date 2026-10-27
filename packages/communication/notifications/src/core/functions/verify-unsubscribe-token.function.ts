@@ -8,8 +8,8 @@
  * Governing contract: RFC 8058 (one-click unsubscribe); RFC 2104 (HMAC); stackra-218 (STA-1376).
  */
 import type { PublicId } from "@stackra/contracts";
+import { base64url } from "@stackra/support";
 
-import { base64url } from "#core/functions/base64url.function";
 import { hmacKey } from "#core/functions/hmac-key.function";
 
 /**

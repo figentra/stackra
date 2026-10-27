@@ -81,6 +81,7 @@
   "dependencies": {
     "@resvg/resvg-wasm": "catalog:",
     "@stackra/contracts": "workspace:*",
+    "@stackra/support": "workspace:*",
     "@stackra/tokens": "workspace:*"
   },
   "devDependencies": {

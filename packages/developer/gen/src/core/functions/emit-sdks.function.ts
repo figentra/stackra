@@ -16,12 +16,10 @@
  *                     refusal envelope); ADR 0158 (the manifest is the source); ADR 0294 (decision 10).
  */
 import type { Json, StackraManifest } from "@stackra/contracts";
+import { camelCase, pascalCase, snakeCase } from "@stackra/support";
 
 import { GENERATED_NOTICE } from "#core/constants/generated-notice.constant";
-import { camelCase } from "#core/functions/camel-case.function";
 import { generatedHeader } from "#core/functions/generated-header.function";
-import { pascalCase } from "#core/functions/pascal-case.function";
-import { snakeCase } from "#core/functions/snake-case.function";
 import { toolName } from "#core/functions/tool-name.function";
 import type { GeneratedFile } from "#core/types/generated-file.type";
 

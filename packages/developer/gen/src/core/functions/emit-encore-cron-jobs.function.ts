@@ -15,9 +15,9 @@
  *                     `handlers`).
  */
 import type { StackraManifest } from "@stackra/contracts";
+import { camelCase } from "@stackra/support";
 
 import { ENCORE_APP_IMPORT } from "#core/constants/encore-app-import.constant";
-import { camelCase } from "#core/functions/camel-case.function";
 import { cronJobId } from "#core/functions/cron-job-id.function";
 import { generatedHeader } from "#core/functions/generated-header.function";
 import type { GeneratedFile } from "#core/types/generated-file.type";

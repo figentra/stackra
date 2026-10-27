@@ -1,9 +1,10 @@
 /**
  * Stackra file contract:
- * Purpose: `camelCase`, the snake_case-to-camelCase conversion that names a route's id parameter (`orderId`).
- * Boundary: pure.
+ * Purpose: `camelCase`, any naming form to camelCase (a route's id parameter `orderId`, a JSON key).
+ * Boundary: public and pure; built on `snakeCase`, so the two never disagree on word breaks.
  * Runtime: isomorphic
- * Governing contract: ADR 0231 (JSON keys and query parameters are camelCase); ADR 0294 (decision 21).
+ * Governing contract: ADR 0305 (one declaration per file); ADR 0231 (JSON keys and query parameters are camelCase);
+ *                     stackra-224 (moved from gen).
  */
 import { snakeCase } from "#core/functions/snake-case.function";
 

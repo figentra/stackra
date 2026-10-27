@@ -9,7 +9,8 @@
  * Runtime: isomorphic
  * Governing contract: the Standard Webhooks specification; ADR 0224 (decision 2); ADR 0308 (rules 15 and 17).
  */
-import { decodeBase64 } from "#core/functions/decode-base64.function";
+import { decodeBase64 } from "@stackra/support";
+
 import { signingKey } from "#core/functions/signing-key.function";
 
 /** How far the sender's clock may be from ours, in seconds, either way (the specification's default). */

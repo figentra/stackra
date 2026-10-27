@@ -10,8 +10,8 @@
  * Governing contract: RFC 8058 (one-click unsubscribe); RFC 2104 (HMAC); ADR 0134; stackra-218 (STA-1376).
  */
 import type { PublicId } from "@stackra/contracts";
+import { base64url } from "@stackra/support";
 
-import { base64url } from "#core/functions/base64url.function";
 import { hmacKey } from "#core/functions/hmac-key.function";
 
 /**
@@ -32,7 +32,7 @@ export async function unsubscribeLink(input: {
     throw new TypeError(
       "unsubscribe link: RFC 8058 needs an https endpoint (notifications.unsubscribeUrl)",
     );
-  const payload = base64url(
+  const payload = base64url.encode(
     new TextEncoder().encode(JSON.stringify({ r: input.recipient, c: input.category })),
   );
   const signature = await crypto.subtle.sign(
@@ -40,6 +40,6 @@ export async function unsubscribeLink(input: {
     await hmacKey(input.key, "sign"),
     new TextEncoder().encode(payload),
   );
-  link.searchParams.set("token", `${payload}.${base64url(signature)}`);
+  link.searchParams.set("token", `${payload}.${base64url.encode(signature)}`);
   return link.toString();
 }

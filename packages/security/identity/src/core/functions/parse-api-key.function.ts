@@ -7,10 +7,11 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0278 (decisions 4 and 5).
  */
+import { crc32 } from "@stackra/support";
+
 import type { IdentityConfig } from "#config/identity.config";
 import type { ApiKeyKind } from "#core/enums/api-key-kind.enum";
 import { base62Of } from "#core/functions/base62-of.function";
-import { crc32 } from "#core/functions/crc32.function";
 import { sameText } from "#core/functions/same-text.function";
 import type { ParsedApiKey } from "#core/types/parsed-api-key.type";
 

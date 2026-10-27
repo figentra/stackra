@@ -8,8 +8,9 @@
  * Runtime: node
  * Governing contract: ADR 0270 (decisions 6, 7 and 12).
  */
+import { htmlToText } from "@stackra/support";
+
 import { ExperienceKind } from "#contracts/enums/experience-kind.enum";
-import { htmlToText } from "#server/functions/html-to-text.function";
 import { renderServerHtml } from "#server/functions/render-server-html.function";
 import type { RenderedEmail } from "#server/types/rendered-email.type";
 import type { ServerRenderOptions } from "#server/types/server-render-options.type";

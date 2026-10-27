@@ -18,7 +18,7 @@ Strings are i18n keys, never literals. The package was `@stackra/mail` (ADR 0294
 **Tier:** `tier:lib` (`packages/communication/notifications`). Entries `.`, `./contracts`, `./node`, `./react` and
 `./testing`. Depends on `@stackra/contracts`, `@stackra/container`, `@stackra/config`, `@stackra/validation`,
 `@stackra/i18n`, `@stackra/money`, `@stackra/assets`, `@stackra/errors`, `@stackra/events` (the `DeliveryRecorded`
-event and the `EventOutbox` it is written to), `@stackra/integrations` (provider Integrations and the provider resolver) and `@stackra/clients` (`./node` queues through it). React is an
+event and the `EventOutbox` it is written to), `@stackra/integrations` (provider Integrations and the provider resolver), `@stackra/clients` (`./node` queues through it) and `@stackra/support` (`base64url`, `htmlToText`). React is an
 optional peer, needed by `./node`, `./react` and `./testing` only.
 
 ## What is here

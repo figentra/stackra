@@ -17,11 +17,11 @@
  */
 import { existsSync, readdirSync } from "node:fs";
 import { dirname, join } from "node:path";
+import { kebabCase } from "@stackra/support";
 
 import { CLIENTS_SPECIFIER } from "#core/constants/clients-specifier.constant";
 import { driverName } from "#core/functions/driver-name.function";
 import { folderKey } from "#core/functions/folder-key.function";
-import { kebabCase } from "#core/functions/kebab-case.function";
 import type { DeclaredClass } from "#core/types/declared-class.type";
 import type { EnumIR } from "#core/types/enum-ir.type";
 import type { FileExports } from "#core/types/file-exports.type";

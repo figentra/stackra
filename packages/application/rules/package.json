@@ -108,6 +108,7 @@
     "@stackra/market-packs": "workspace:*",
     "@stackra/model": "workspace:*",
     "@stackra/money": "workspace:*",
+    "@stackra/support": "workspace:*",
     "@stackra/ui": "workspace:*",
     "@stackra/validation": "workspace:*",
     "zod": "catalog:"

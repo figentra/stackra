@@ -1,14 +1,15 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `ageOn`: whole years before and on a birthday, both leap-birthday rules, and a refusal before birth.
- * Boundary: test only; imports the subject through its `#core` alias and the runner through @stackra/testing.
+ * Purpose: unit tests of `ageOn` as calendar's entry re-exports it from @stackra/support: whole years, both
+ *          `LeapBirthday` rules, and a refusal before birth, so the enum's codes stay the ones support reads.
+ * Boundary: test only; imports the subject through the `#core` entry and the runner through @stackra/testing.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0366.
+ * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0366; stackra-224.
  */
 import { describe, expect, it } from "@stackra/testing";
 
 import { LeapBirthday } from "#core/enums/leap-birthday.enum";
-import { ageOn } from "#core/functions/age-on.function";
+import { ageOn } from "#core/index";
 
 describe("ageOn", () => {
   it("counts whole years", () => {

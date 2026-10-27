@@ -10,7 +10,7 @@ templates, never code. This package also holds the `PdfEngine`, `PdfAssembler` a
 connector, Documenso self-hosted.
 
 **Tier:** `tier:lib` (`packages/data/documents`). Entries `.` and `./contracts`. Depends on `@stackra/config`, `@stackra/container`,
-`@stackra/contracts`, `@stackra/errors`, `@stackra/integrations`, `@stackra/validation`, `zod`, `docx` (DOCX writing) and `uqr` (QR encoding).
+`@stackra/contracts`, `@stackra/errors`, `@stackra/integrations`, `@stackra/support` (`escapeHtml`), `@stackra/validation`, `zod`, `docx` (DOCX writing) and `uqr` (QR encoding).
 
 ## What is here
 

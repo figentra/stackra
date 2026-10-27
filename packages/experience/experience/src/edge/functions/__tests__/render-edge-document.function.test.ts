@@ -12,12 +12,12 @@ import { queryRef } from "@stackra/clients";
 import { describe, expect, it } from "@stackra/testing";
 import { registerSchemas, Renamed } from "@stackra/validation";
 import { z } from "zod";
+import { escapeHtml } from "@stackra/support";
 
 import { Block } from "#core/bases/block.base";
 import { BlockCategory } from "#core/enums/block-category.enum";
 import type { LocalizedText } from "#core/types/localized-text.type";
 import { EdgeRenderFailure } from "#edge/enums/edge-render-failure.enum";
-import { escapeHtml } from "#edge/functions/escape-html.function";
 import { renderEdgeDocument } from "#edge/functions/render-edge-document.function";
 import type { EdgeBlock } from "#edge/types/edge-block.type";
 

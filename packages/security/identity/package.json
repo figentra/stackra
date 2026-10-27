@@ -132,6 +132,7 @@
     "@stackra/query": "workspace:*",
     "@stackra/scope": "workspace:*",
     "@stackra/storage": "workspace:*",
+    "@stackra/support": "workspace:*",
     "@stackra/tenancy": "workspace:*",
     "@stackra/transport": "workspace:*",
     "@stackra/validation": "workspace:*",

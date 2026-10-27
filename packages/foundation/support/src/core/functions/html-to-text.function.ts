@@ -1,12 +1,14 @@
 /**
  * Stackra file contract:
- * Purpose: `htmlToText(html)`, the plain-text part of a rendered mail: the HTML's visible text, a line break per block,
- *          each link's address after its label, and entities decoded.
- * Boundary: internal and pure. It reads markup React rendered (well-formed, attribute values double-quoted), not
- *           arbitrary HTML: comments (Outlook conditionals included), `head`, `style`, `script` and `title` are
- *           dropped, images are skipped, and no line is wrapped.
+ * Purpose: `htmlToText(html)`, the plain-text part of a rendered mail: the HTML's visible text, a blank line after each
+ *          block and a line break per `<br>`, each link's address after its label, and entities decoded.
+ * Boundary: public and pure. It reads markup a renderer wrote (React Email, the experience server renderer:
+ *           well-formed, attribute values double-quoted), not arbitrary HTML: comments (Outlook conditionals
+ *           included), `head`, `style`, `script` and `title` are dropped, images are skipped, and no line is wrapped.
  * Runtime: isomorphic
- * Governing contract: ADR 0223 (mail bodies are rendered to HTML and text; no runtime template engine, R-26).
+ * Governing contract: ADR 0305 (one declaration per file); ADR 0223 (mail bodies rendered to HTML and text);
+ *                     ADR 0270 (decision 6); stackra-224 (one copy, was notifications and experience; the notifications
+ *                     form kept).
  */
 
 /** The named entities React and React Email emit; numeric entities are decoded separately. */
@@ -56,7 +58,7 @@ export function htmlToText(html: string): string {
     .replace(/<br\s*\/?>/gi, "\n")
     .replace(/<hr\b[^>]*>/gi, "\n\n---\n\n")
     .replace(/<\/t[dh]>/gi, " ")
-    .replace(/<\/(p|div|h[1-6]|tr|table|li|ul|ol|section|blockquote|pre)>/gi, "\n\n")
+    .replace(/<\/(p|div|h[1-6]|tr|table|li|ul|ol|section|header|footer|blockquote|pre)>/gi, "\n\n")
     .replace(/<[^>]*>/g, "");
   return decode(flat)
     .split("\n")

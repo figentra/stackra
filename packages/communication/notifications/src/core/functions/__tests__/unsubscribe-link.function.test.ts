@@ -9,8 +9,8 @@
  */
 import type { PublicId } from "@stackra/contracts";
 import { describe, expect, it } from "@stackra/testing";
+import { base64url } from "@stackra/support";
 
-import { base64url } from "#core/functions/base64url.function";
 import { unsubscribeLink } from "#core/functions/unsubscribe-link.function";
 import { verifyUnsubscribeToken } from "#core/functions/verify-unsubscribe-token.function";
 
@@ -42,7 +42,9 @@ describe("unsubscribe token", () => {
     );
     await expect(verifyUnsubscribeToken(token, "another-key")).resolves.toBeUndefined();
     const [, signature] = token.split(".");
-    const forged = base64url(new TextEncoder().encode(JSON.stringify({ r: USER, c: "activity" })));
+    const forged = base64url.encode(
+      new TextEncoder().encode(JSON.stringify({ r: USER, c: "activity" })),
+    );
     await expect(verifyUnsubscribeToken(`${forged}.${signature}`, KEY)).resolves.toBeUndefined();
     await expect(verifyUnsubscribeToken("not-a-token", KEY)).resolves.toBeUndefined();
     await expect(verifyUnsubscribeToken("a.b.c", KEY)).resolves.toBeUndefined();

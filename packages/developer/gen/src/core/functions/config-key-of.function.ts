@@ -8,7 +8,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 20: config key); ADR 0305 (rule 34).
  */
-import { snakeCase } from "#core/functions/snake-case.function";
+import { snakeCase } from "@stackra/support";
 
 /**
  * The key of a configuration class.

@@ -17,7 +17,8 @@ fetches signed packs by content hash. Its code holds no pack content; the draft 
 (ADR 0363, ADR 0370, ADR 0385).
 
 **Tier:** `tier:lib` (`packages/foundation/market-packs`), entry `.` only. Depends on `@stackra/assets`,
-`@stackra/container`, `@stackra/contracts`, `@stackra/errors`, `@stackra/filesystem` and `zod`; isomorphic and offline. Hashing and signatures use Web Crypto (SHA-256, Ed25519).
+`@stackra/container`, `@stackra/contracts`, `@stackra/errors`, `@stackra/filesystem`, `@stackra/support` (`canonicalJson`)
+and `zod`; isomorphic and offline. Hashing and signatures use Web Crypto (SHA-256, Ed25519).
 
 ## Entry points
 

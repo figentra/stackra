@@ -16,7 +16,7 @@ against the secret its Integration names and routes it to its `WebhookEvent<I>` 
 **Tier:** `tier:lib` (`packages/communication/webhooks`). Entries `.`, `./contracts`, `./node` and `./testing`. Depends
 on `@stackra/actions`, `@stackra/config`, `@stackra/container`, `@stackra/contracts`, `@stackra/database`,
 `@stackra/errors`, `@stackra/events`, `@stackra/integrations`, `@stackra/model`, `@stackra/queue`,
-`@stackra/validation` and zod.
+`@stackra/support` (`decodeBase64`), `@stackra/validation` and zod.
 
 ## What is here
 

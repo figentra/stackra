@@ -101,6 +101,7 @@
     "@stackra/navigation": "workspace:*",
     "@stackra/pricing": "workspace:*",
     "@stackra/query": "workspace:*",
+    "@stackra/support": "workspace:*",
     "@stackra/ui": "workspace:*",
     "@stackra/validation": "workspace:*",
     "zod": "catalog:"

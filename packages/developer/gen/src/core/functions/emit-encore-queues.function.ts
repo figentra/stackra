@@ -15,11 +15,10 @@
  *                     encore-pubsub); ADR 0136 (decision 3: jobs derive their Idempotency-Keys); ADR 0091 and 0124.
  */
 import type { StackraManifest } from "@stackra/contracts";
+import { camelCase, kebabCase } from "@stackra/support";
 
 import { ENCORE_APP_IMPORT } from "#core/constants/encore-app-import.constant";
-import { camelCase } from "#core/functions/camel-case.function";
 import { generatedHeader } from "#core/functions/generated-header.function";
-import { kebabCase } from "#core/functions/kebab-case.function";
 import type { GeneratedFile } from "#core/types/generated-file.type";
 import type { MemberIR } from "#core/types/member-ir.type";
 

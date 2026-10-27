@@ -6,7 +6,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0308 (rule 19: gen derives the keys); ADR 0294 (decision 20).
  */
-import { snakeCase } from "#core/functions/snake-case.function";
+import { snakeCase } from "@stackra/support";
 
 /**
  * The key of an Integration class.

@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `.` entry of @stackra/licensing, until `stackra gen` writes the entry barrels (STA-339).
- * Boundary: names each re-export and declares nothing. `decodeBase64`, `decryptLicence`, `isRecord` and `readLicence`
- *           stay internal. The shipped schema is
+ * Boundary: names each re-export and declares nothing. `decryptLicence` and `readLicence` stay internal
+ *           (`decodeBase64` and `isRecord` are @stackra/support's since stackra-224). The shipped schema is
  *           re-exported under its generated name (`LicensingConfig$`, `IssuerConfig$`).
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision; ADR 0127 2026-10-24 note.

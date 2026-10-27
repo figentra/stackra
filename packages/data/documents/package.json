@@ -83,6 +83,7 @@
     "@stackra/contracts": "workspace:*",
     "@stackra/errors": "workspace:*",
     "@stackra/integrations": "workspace:*",
+    "@stackra/support": "workspace:*",
     "@stackra/validation": "workspace:*",
     "docx": "catalog:documents",
     "uqr": "catalog:documents",

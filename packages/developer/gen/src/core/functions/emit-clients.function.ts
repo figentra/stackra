@@ -24,12 +24,11 @@
 import type { StackraManifest } from "@stackra/contracts";
 import { Enum } from "@stackra/contracts";
 import { ErrorKind } from "@stackra/errors";
+import { camelCase, pascalCase } from "@stackra/support";
 
 import { CLIENTS_SPECIFIER } from "#core/constants/clients-specifier.constant";
-import { camelCase } from "#core/functions/camel-case.function";
 import { generatedHeader } from "#core/functions/generated-header.function";
 import { importLines } from "#core/functions/import-lines.function";
-import { pascalCase } from "#core/functions/pascal-case.function";
 import { serviceManifest } from "#core/functions/service-manifest.function";
 import { zodOfJsonSchema } from "#core/functions/zod-of-json-schema.function";
 import type { GenError } from "#core/types/gen-error.type";

@@ -18,7 +18,7 @@ presents it.
 **Tier:** `tier:lib` (`packages/experience/panel`). Entries `.`, `./react` and `./native` (the old `./schemas` is folded
 into `.`). Depends on `@stackra/actions`, `@stackra/clients`, `@stackra/container`, `@stackra/contracts`,
 `@stackra/errors`, `@stackra/experience`, `@stackra/i18n`, `@stackra/iam`, `@stackra/icons`, `@stackra/money`,
-`@stackra/navigation` (the breadcrumb trail and the route pages), `@stackra/query`, `@stackra/ui`,
+`@stackra/navigation` (the breadcrumb trail and the route pages), `@stackra/query`, `@stackra/support` (`snakeCase`), `@stackra/ui`,
 `@stackra/validation` and zod. React, React Router and React Native are optional peers.
 
 ## What is here

@@ -12,10 +12,10 @@
  */
 import { Enum } from "@stackra/contracts";
 import type { FieldErrors } from "@stackra/errors";
+import { isRecord } from "@stackra/support";
 
 import { type FactField, FieldType, Operator } from "#contracts/index";
 import { fitsOperand } from "#core/functions/fits-operand.function";
-import { isRecord } from "#core/functions/is-record.function";
 
 /** The deepest a tree may nest, the root counting as 1. */
 const MAX_DEPTH = 8;

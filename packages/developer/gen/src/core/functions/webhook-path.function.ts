@@ -6,7 +6,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0308 (rules 16 and 19: the webhook path is derived and locked); ADR 0224 as amended.
  */
-import { kebabCase } from "#core/functions/kebab-case.function";
+import { kebabCase } from "@stackra/support";
 
 /**
  * The webhook path of an Integration class.

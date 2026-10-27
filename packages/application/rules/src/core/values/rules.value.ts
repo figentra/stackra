@@ -21,6 +21,7 @@ import { Enum } from "@stackra/contracts";
 import type { FieldErrors } from "@stackra/errors";
 import type { ResolvedValue } from "@stackra/market-packs";
 import { z } from "zod";
+import { isRecord } from "@stackra/support";
 
 import {
   type FactField,
@@ -35,7 +36,6 @@ import { OutcomeInvalidError } from "#core/errors/outcome-invalid.error";
 import { conditionProblems } from "#core/functions/condition-problems.function";
 import { crossedFloor } from "#core/functions/crossed-floor.function";
 import { fitsOperand } from "#core/functions/fits-operand.function";
-import { isRecord } from "#core/functions/is-record.function";
 import { outcomeKindOf } from "#core/functions/outcome-kind-of.function";
 import type { Condition } from "#core/types/condition.type";
 import type { Outcome } from "#core/types/outcome.type";

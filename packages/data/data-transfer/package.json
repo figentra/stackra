@@ -87,6 +87,7 @@
     "@stackra/container": "workspace:*",
     "@stackra/contracts": "workspace:*",
     "@stackra/errors": "workspace:*",
+    "@stackra/support": "workspace:*",
     "exceljs": "catalog:exceljs",
     "zod": "catalog:"
   },

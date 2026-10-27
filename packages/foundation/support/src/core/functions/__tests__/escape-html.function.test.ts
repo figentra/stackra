@@ -4,11 +4,11 @@
  *          `null` and `undefined` are empty.
  * Boundary: test only.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0440; ADR 0110 (decision 4).
+ * Governing contract: ADR 0022; ADR 0440; ADR 0110 (decision 4); stackra-224 (moved from experience).
  */
 import { describe, expect, it } from "@stackra/testing";
 
-import { escapeHtml } from "#edge/functions/escape-html.function";
+import { escapeHtml } from "#core/functions/escape-html.function";
 
 describe("escapeHtml", () => {
   it("escapes markup characters", () => {

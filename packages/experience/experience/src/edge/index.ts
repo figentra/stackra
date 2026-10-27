@@ -11,7 +11,7 @@
  */
 export { EDGE_RENDER_LIMITS } from "#edge/constants/edge-render-limits.constant";
 export { EdgeRenderFailure } from "#edge/enums/edge-render-failure.enum";
-export { escapeHtml } from "#edge/functions/escape-html.function";
+export { escapeHtml } from "@stackra/support";
 export { renderEdgeDocument } from "#edge/functions/render-edge-document.function";
 export type { EdgeBlock } from "#edge/types/edge-block.type";
 export type { EdgeBlockContext } from "#edge/types/edge-block-context.type";

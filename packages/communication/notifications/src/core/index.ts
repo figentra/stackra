@@ -10,8 +10,8 @@
  * Boundary: names each re-export and declares nothing. `MailTransport` and `OutboundMail` are not here: they are
  *           exported from `./contracts` only (ADR 0294 decision 15). `MailMessage` is a type here: the Notifier builds
  *           it. The shipped schema is re-exported under its generated name (`NotificationsConfig$`).
- *           `prepareNotification`, `htmlToText`, `NotificationBase`, the base64url, VAPID and Web Push
- *           helpers and `mailFeatures` stay internal.
+ *           `prepareNotification`, `NotificationBase`, the VAPID and Web Push helpers and `mailFeatures` stay
+ *           internal (`base64url` and `htmlToText` are @stackra/support's since stackra-224).
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision; ADR 0127 2026-10-24 note.
  */

@@ -1,4 +1,4 @@
-<!-- Purpose: the rules an agent follows when changing @stackra/support. Boundary: packages/foundation/support only. Runtime: docs. Governing contract: ADR 0294, ADR 0305; STA-934. -->
+<!-- Purpose: the rules an agent follows when changing @stackra/support. Boundary: packages/foundation/support only. Runtime: docs. Governing contract: ADR 0294, ADR 0305; STA-934; stackra-224. -->
 
 # AGENTS — @stackra/support
 
@@ -23,6 +23,12 @@ programming model v3.1 shape (ADR 0294, 0305).
 - `canonicalJson` is frozen: every audit chain and signed checkpoint hashes its output (ADR 0416). Never change it.
 - A helper is added when a package or service imports it, never ahead of a consumer. Port `str`, `arr`, `async` and
   `object` from the Figentra OS source only then.
+- One home per helper (stackra-224): the encoding (`base64url`, `decodeBase64`, `crc32`), markup (`escapeHtml`,
+  `escapeXml`, `htmlToText`), `isRecord`, case (`snakeCase`, `kebabCase`, `camelCase`, `pascalCase`) and `ageOn`
+  helpers live only here; a package imports them and never keeps a copy. `tools/scripts/duplicate-exports.mjs` fails
+  `pnpm validate` on a second definition; an intended exception goes in its allow-list with the reason.
+- Changing a helper's output changes every importer: `snakeCase` names derived identities (gen), `htmlToText` writes
+  mail text parts, `ageOn` decides guardian checks. Treat a change like a `canonicalJson` change: an ADR first.
 - One declaration per file (ADR 0305); a file opens with the Stackra file contract and every export carries TSDoc.
 - `src/core/index.ts` is a stand-in barrel until gen writes it (STA-339): add each public file to it and to the export
   list in `src/core/__tests__/index.test.ts`.

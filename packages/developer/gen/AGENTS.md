@@ -38,6 +38,8 @@ The Stackra compiler. Member at `packages/developer/gen` (`tier:lib`), in the pr
 - Output is deterministic: files sorted by path, stable key order. Every refusal has a snake_case code, a position and
   a fix; when there is one, nothing is written.
 - Identity formulas live in one place each (ADR 0294 decision 20); other packages call them, never copy them.
+- The case helpers (`snakeCase`, `kebabCase`, `camelCase`, `pascalCase`) are `@stackra/support`'s (stackra-224); gen
+  imports them and never keeps a copy, so its word breaks are the ones every package uses.
 - A generated registration calls only a function its package exports, with rows from the locked identities, and is
   written only when it has a row. A new public id prefix of a platform package is a reviewed row in
   `PUBLIC_ID_PREFIXES` (ADR 0135 rule 2). The member named after a prefix owner's module may host that model under its

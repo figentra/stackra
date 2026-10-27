@@ -16,12 +16,12 @@ import { AuthType, Integration, IntegrationCategory, IntegrationRole } from "@st
 import { fakeIntegrationApi } from "@stackra/integrations/testing";
 import { afterEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
+import { base64url } from "@stackra/support";
 
 import { PushTokenStore } from "#contracts/ports/push-token-store.port";
 import { SendLog } from "#contracts/ports/send-log.port";
 import type { PushTarget } from "#contracts/types/push-target.type";
 import { DevicePushTransportDriver } from "#core/drivers/device-push-transport.driver";
-import { base64url } from "#core/functions/base64url.function";
 
 /** A stand-in for the host's Expo Integration (the vendor one lives in the OS integrations service). */
 class ExpoIntegration extends Integration({
@@ -68,7 +68,9 @@ async function keys() {
     "deriveBits",
   ])) as CryptoKeyPair;
   const secrets: Record<string, string> = {
-    WEB_PUSH_VAPID_PUBLIC_KEY: base64url(await crypto.subtle.exportKey("raw", vapid.publicKey)),
+    WEB_PUSH_VAPID_PUBLIC_KEY: base64url.encode(
+      await crypto.subtle.exportKey("raw", vapid.publicKey),
+    ),
     WEB_PUSH_VAPID_PRIVATE_KEY: (await crypto.subtle.exportKey("jwk", vapid.privateKey)).d ?? "",
     WEB_PUSH_VAPID_SUBJECT: "mailto:push@platform.example",
   };
@@ -78,8 +80,8 @@ async function keys() {
         return secrets[name];
       }
     })(),
-    p256dh: base64url(await crypto.subtle.exportKey("raw", browser.publicKey)),
-    auth: base64url(crypto.getRandomValues(new Uint8Array(16))),
+    p256dh: base64url.encode(await crypto.subtle.exportKey("raw", browser.publicKey)),
+    auth: base64url.encode(crypto.getRandomValues(new Uint8Array(16))),
   };
 }
 

@@ -1,11 +1,16 @@
-<!-- Purpose: the reader-facing guide to @stackra/support: what each helper does and how to call it. Boundary: packages/foundation/support only. Runtime: docs. Governing contract: ADR 0294, ADR 0305; STA-934. -->
+<!-- Purpose: the reader-facing guide to @stackra/support: what each helper does and how to call it. Boundary: packages/foundation/support only. Runtime: docs. Governing contract: ADR 0294, ADR 0305; STA-934; stackra-224. -->
 
 # @stackra/support
 
 Dependency-free pure helpers for Stackra packages and services, grown on demand. It holds `time`, `Quantity` (an
 exact amount with a unit, rounded to a step or priced in minor units), `signedToken` (purpose-bound, expiring HMAC
 tokens), `oneTimeCode` (single-use codes stored as a peppered HMAC), `canonicalJson` and `canonicalHash` (the one canonical form chains and signatures hash),
-`restrictedGtin` (GS1 restricted-circulation numbers) and `code128` (a Code 128 and GS1-128 encoder); string, array, async and object helpers are added when a package first needs them, not before.
+`restrictedGtin` (GS1 restricted-circulation numbers), `code128` (a Code 128 and GS1-128 encoder), the encoding
+helpers `base64url`, `decodeBase64` and `crc32`, the markup helpers `escapeHtml`, `escapeXml` and `htmlToText`, the
+guard `isRecord`, the case helpers `snakeCase`, `kebabCase`, `camelCase` and `pascalCase`, and `ageOn`. Every one has a
+single home here: a package imports it and never keeps a copy (`tools/scripts/duplicate-exports.mjs` fails `pnpm
+validate` on a second definition). Other string, array, async and object helpers are added when a package first needs
+them, not before.
 
 **Tier:** `tier:lib` (`packages/foundation/support`). Laid out in the programming model v3.1 (ADR 0294, 0305).
 No workspace dependency, no runtime dependency, no host globals: it runs unchanged in Node, Encore, browsers,
@@ -14,9 +19,9 @@ workers and React Native. The one exception is Web Crypto, needed by `canonicalH
 
 ## Entry points
 
-| Import             | Holds                        | Exports today                                                                                                                                                                                                                                                           |
-| ------------------ | ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@stackra/support` | `src/core/`: isomorphic code | `time`, `Quantity`, `canonicalJson`, `canonicalHash`, `signedToken`, `oneTimeCode`, `restrictedGtin`, `code128`; types `QuantityUnit`, `QuantityRounding`, `Rational`, `SigningKeySource`, `SignedTokenCheck`, `OneTimeCodeRecord`, `OneTimeCodeCheck`, `Code128Symbol` |
+| Import             | Holds                        | Exports today                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| ------------------ | ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@stackra/support` | `src/core/`: isomorphic code | `time`, `Quantity`, `canonicalJson`, `canonicalHash`, `signedToken`, `oneTimeCode`, `restrictedGtin`, `code128`, `base64url`, `decodeBase64`, `crc32`, `escapeHtml`, `escapeXml`, `htmlToText`, `isRecord`, `snakeCase`, `kebabCase`, `camelCase`, `pascalCase`, `ageOn`; types `QuantityUnit`, `QuantityRounding`, `Rational`, `SigningKeySource`, `SignedTokenCheck`, `OneTimeCodeRecord`, `OneTimeCodeCheck`, `Code128Symbol` |
 
 The package has the one entry `.` (ADR 0127, 2026-10-24 note). Entry barrels are generated, never authored
 (ADR 0294 decision 15); until `stackra gen` writes them (STA-339) `src/core/index.ts` is a stand-in barrel.
@@ -56,8 +61,8 @@ const expiresAt = time.addDays(issuedAt, 30);
 
 `canonicalJson(value)` writes one text per value: object keys sorted at every depth, `undefined` members dropped,
 array order kept, dates as ISO 8601 UTC. `canonicalHash(value)` is the SHA-256 of that text as 64 lowercase hex. A
-hash chain link, a signed checkpoint and a content address all use them, so writers and verifiers never drift; the
-form is frozen (ADR 0416).
+hash chain link, a signed checkpoint and a content address (`@stackra/market-packs`' pack hash, since stackra-224)
+all use them, so writers and verifiers never drift; the form is frozen (ADR 0416).
 
 ```ts
 import { canonicalHash } from "@stackra/support";
@@ -128,6 +133,47 @@ const result = await oneTimeCode.verify(keys, record, typed, { purpose: "pickup"
   Validating a GTIN is `@stackra/validation`'s job.
 - `code128(data, { gs1 })`: symbol values and module widths, code set C for digit runs and B for text; with `gs1`, a
   leading FNC1 and FNC1 for each `\u001d` separator. Printable ASCII only; drawing is the caller's.
+
+## Encoding, markup, guards, case and age
+
+One home each (stackra-224 moved the copies other packages kept here).
+
+```ts
+import {
+  ageOn,
+  base64url,
+  crc32,
+  escapeHtml,
+  htmlToText,
+  isRecord,
+  kebabCase,
+} from "@stackra/support";
+
+const jwtPart = base64url.encode(new TextEncoder().encode(JSON.stringify(claims)));
+const checksum = crc32(chunk, previous); // or crc32("text"), the UTF-8 bytes
+const html = `<h1>${escapeHtml(props.title)}</h1>`;
+const text = htmlToText(html);
+if (isRecord(body) && isRecord(body.data)) read(body.data.id);
+kebabCase("LoyaltyLedger"); // "loyalty-ledger"
+ageOn(birthDate, today, pack.leapBirthday); // the 29 February rule is pack data
+```
+
+| Helper                                              | Does                                                                                                                                              |
+| --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `base64url.encode`, `base64url.decode`              | unpadded URL-safe Base64 of bytes or an `ArrayBuffer`; `decode` accepts trailing `=` and throws a `RangeError` outside the alphabet               |
+| `decodeBase64(text)`                                | standard Base64 to bytes, whitespace ignored; `undefined` for bad text (never throws), so the caller refuses with its own reason                  |
+| `crc32(input, previous?)`                           | CRC-32 (IEEE) of bytes or a string's UTF-8 bytes, continued from an earlier chunk's value                                                         |
+| `escapeHtml(value)`                                 | `& < > " '` as entities; `null` and `undefined` are `""`, anything else is `String(value)`                                                        |
+| `escapeXml(value)`                                  | the five XML entities; a character XML 1.0 cannot carry (a control character) is a `TypeError`                                                    |
+| `htmlToText(html)`                                  | the text part of rendered mail HTML: a blank line after each block, `<br>` as a line break, `label (href)` links, entities decoded                |
+| `isRecord(value, keys?)`                            | a non-null, non-array object, and with `keys` one with no other own key                                                                           |
+| `snakeCase`, `kebabCase`, `camelCase`, `pascalCase` | any naming form (Pascal, camel, kebab, dotted, spaced) to that case; digits stay with the word before them; an all-capitals run is one word       |
+| `ageOn(birth, on, leapBirthday)`                    | whole years between two `YYYY-MM-DD` dates; a 29 February birthday counts on `february_28` or `march_1` in a common year, as the market pack says |
+
+- `ageOn` has no default rule: the caller passes the market pack's value (`@stackra/calendar` re-exports it beside
+  its `LeapBirthday` enum). It throws a `RangeError` for a date that is not `YYYY-MM-DD` or `on` before `birth`.
+- `@stackra/coding-standard` keeps its own `kebabCase` and `pascalCase`: it has no workspace dependency by design, and
+  its `kebabCase` splits acronym runs for file names. The duplicate-export check lists it as an intended copy.
 
 ## Tasks
 

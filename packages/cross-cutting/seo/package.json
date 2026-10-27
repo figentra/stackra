@@ -104,6 +104,7 @@
     "@stackra/container": "workspace:*",
     "@stackra/contracts": "workspace:*",
     "@stackra/i18n": "workspace:*",
+    "@stackra/support": "workspace:*",
     "@stackra/validation": "workspace:*",
     "satori": "catalog:",
     "zod": "catalog:"

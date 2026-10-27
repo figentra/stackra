@@ -7,7 +7,7 @@
  * Runtime: isomorphic
  * Governing contract: RFC 8291; RFC 8188; ADR 0223 (decision 1: web push with VAPID).
  */
-import { base64url } from "#core/functions/base64url.function";
+import { base64url } from "@stackra/support";
 
 /** The record size written in the header. */
 const RECORD_SIZE = 4096;
