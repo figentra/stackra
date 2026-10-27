@@ -109,6 +109,7 @@
   "dependencies": {
     "@stackra/config": "workspace:*",
     "@stackra/container": "workspace:*",
+    "@stackra/errors": "workspace:*",
     "@stackra/validation": "workspace:*"
   },
   "devDependencies": {

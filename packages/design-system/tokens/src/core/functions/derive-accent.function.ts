@@ -75,16 +75,18 @@ function accentOf(
     } else if (HEX.test(value)) {
       given = { css: value, hex: value.toUpperCase(), lch: lchOfHex(value) };
     } else
-      throw new InvalidThemeError(base.name, [
-        `accent "${accent}" is not an opaque oklch(L C H) or #RRGGBB colour`,
-      ]);
+      throw InvalidThemeError.create({
+        themeName: base.name,
+        problems: [`accent "${accent}" is not an opaque oklch(L C H) or #RRGGBB colour`],
+      });
     return { light: given, dark: given };
   }
   const { hue, chroma } = accent;
   if (!(hue >= 0 && hue <= 360 && chroma >= 0 && chroma <= 0.37))
-    throw new InvalidThemeError(base.name, [
-      `accent hue ${hue} and chroma ${chroma} are outside 0 to 360 and 0 to 0.37`,
-    ]);
+    throw InvalidThemeError.create({
+      themeName: base.name,
+      problems: [`accent hue ${hue} and chroma ${chroma} are outside 0 to 360 and 0 to 0.37`],
+    });
   const { accent: current } = base.colors;
   const at = (lightness: number) => {
     const lch: Lch = [lightness, chroma, hue];

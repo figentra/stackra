@@ -6,7 +6,8 @@
  * Boundary: one resolved pack for every target, so it serves a run at one holder; a booted service binds the OS driver
  *           that reads each tenant's pin instead. A group whose keys are not registered in this process is refused,
  *           never treated as floor-free (fail closed, as `RegisteredFloorGuardDriver`). The date is the clock's UTC
- *           day. Floors are pack data; no number here.
+ *           day. Floors are pack data; no number here. Built with `over(pack, clock)`: the constructor takes only the
+ *           clock, because a constructor parameter is a DI token and a resolved pack is data (ADR 0294 decision 17).
  * Runtime: isomorphic
  * Governing contract: ADR 0370 (decision 6); ADR 0395 (decision 5); ADR 0419 (decision 2); config-model section 3.
  */
@@ -23,23 +24,33 @@ import { settingFloorsOf } from "#core/functions/setting-floors-of.function";
  * Floors from one resolved market pack.
  *
  * @example
- * const floors = new MarketPackSettingFloorSourceDriver(resolvePack(packs, "sa"), new SystemClockDriver());
+ * const floors = MarketPackSettingFloorSourceDriver.over(resolvePack(packs, "sa"), new SystemClockDriver());
  */
 export class MarketPackSettingFloorSourceDriver extends Driver(SettingFloorSource) {
-  /** The holder's resolved pack. */
-  private readonly pack: ResolvedPack;
+  /** The holder's resolved pack, set by `over`. */
+  private pack!: ResolvedPack;
 
   /** The one source of today. */
   private readonly clock: Clock;
 
   /**
+   * @param clock - the clock whose UTC day picks the floors in force.
+   */
+  constructor(clock: Clock) {
+    super();
+    this.clock = clock;
+  }
+
+  /**
+   * The floors of one holder's resolved market pack.
+   *
    * @param pack - the holder's resolved market pack.
    * @param clock - the clock whose UTC day picks the floors in force.
    */
-  constructor(pack: ResolvedPack, clock: Clock) {
-    super();
-    this.pack = pack;
-    this.clock = clock;
+  static over(pack: ResolvedPack, clock: Clock): MarketPackSettingFloorSourceDriver {
+    const source = new MarketPackSettingFloorSourceDriver(clock);
+    source.pack = pack;
+    return source;
   }
 
   /**

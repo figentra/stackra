@@ -43,7 +43,8 @@ export function fakeResolver(
   const floors = new MemorySettingFloorSourceDriver();
   for (const [group, seeded] of Object.entries(options.floors ?? {})) floors.seed(group, seeded);
   const revisions = new MemorySettingRevisionStoreDriver();
-  const clock = new SettingsClockFake(options.now ?? new Date());
+  const clock = new SettingsClockFake();
+  if (options.now !== undefined) clock.at = options.now;
   const entitlements = new MemorySettingEntitlementSourceDriver().grant(...(options.grants ?? []));
   return {
     resolver: new SettingsResolver(values, floors, revisions, clock, entitlements),

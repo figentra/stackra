@@ -192,6 +192,9 @@ export function defineTheme(theme: Theme): Theme {
     else seen.add(name);
 
   if (problems.length > 0)
-    throw new InvalidThemeError(typeof theme.name === "string" ? theme.name : "", problems);
+    throw InvalidThemeError.create({
+      themeName: typeof theme.name === "string" ? theme.name : "",
+      problems,
+    });
   return theme;
 }

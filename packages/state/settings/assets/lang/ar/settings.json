@@ -11,5 +11,41 @@
   },
   "form": {
     "not_saved": "لم يُحفظ هذا الإعداد. حاول مرة أخرى."
+  },
+  "enums": {
+    "setting_environment": {
+      "live": "البيئة الفعلية",
+      "sandbox": "بيئة التجربة",
+      "setup": "الإعداد الأولي"
+    },
+    "setting_revision_status": {
+      "pending": "بانتظار الاعتماد",
+      "scheduled": "مجدول",
+      "applied": "مطبَّق",
+      "rejected": "مرفوض"
+    },
+    "setting_scope": {
+      "platform": "المنصة",
+      "product": "المنتج",
+      "node": "العقدة",
+      "user": "المستخدم"
+    },
+    "setting_source": {
+      "default": "القيمة الافتراضية",
+      "layer": "محدد في مستوى",
+      "floor": "الحد الأدنى القانوني",
+      "entitlement": "حد الخطة"
+    },
+    "setting_type": {
+      "boolean": "تشغيل أو إيقاف",
+      "integer": "عدد صحيح",
+      "number": "رقم",
+      "string": "نص",
+      "connection": "اتصال"
+    },
+    "settings_mode": {
+      "developer": "المطوِّر",
+      "normal": "عادي"
+    }
   }
 }

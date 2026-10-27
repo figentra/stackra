@@ -16,5 +16,5 @@ import type { FakeQueueOptions } from "#testing/types/fake-queue-options.type";
  * render(<OfflineBanner />, { queue: fakeQueue({ pending: 2 }) });
  */
 export function fakeQueue(options: FakeQueueOptions = {}): QueueFake {
-  return new QueueFake(options);
+  return QueueFake.with(options);
 }

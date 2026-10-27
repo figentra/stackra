@@ -13,12 +13,24 @@
 import type { PublicId } from "@stackra/contracts";
 import type { OptionalProps } from "@stackra/database";
 import { HasPublicId, Model, Timestamps } from "@stackra/model";
+import { Field } from "@stackra/validation";
 
 import type { SettingEnvironment, SettingRevisionStatus, SettingValue } from "#contracts/index";
+import { SETTING_VALUES_SCHEMA } from "#node/constants/setting-values-schema.constant";
 
 /** One revision. Traits add `id` and the timestamps; the indexes are the migration's. */
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: merged with the [OptionalProps] augmentation below
 export class StoredSettingRevision extends Model.with(HasPublicId("ssr"), Timestamps) {
+  /** The values it sets, by path in the group. */
+  // reason: SettingValue is a union of scalars, which no shape type states
+  @Field(SETTING_VALUES_SCHEMA)
+  values!: Readonly<Record<string, SettingValue>>;
+
+  /** The resolved values of the changed paths before it. */
+  // reason: SettingValue is a union of scalars, which no shape type states
+  @Field(SETTING_VALUES_SCHEMA)
+  previous!: Readonly<Record<string, SettingValue>>;
+
   /** The group key (`orders`). */
   groupKey!: string;
 
@@ -31,17 +43,11 @@ export class StoredSettingRevision extends Model.with(HasPublicId("ssr"), Timest
   /** The user of a user revision; `null` otherwise. */
   userId!: PublicId<"usr"> | null;
 
-  /** The values it sets, by path in the group. */
-  values!: Readonly<Record<string, SettingValue>>;
-
   /** The paths it removes. */
   removed!: readonly string[];
 
   /** The written paths it locks; `null` keeps each written path's lock. */
   locked!: readonly string[] | null;
-
-  /** The resolved values of the changed paths before it. */
-  previous!: Readonly<Record<string, SettingValue>>;
 
   /** Who made it. */
   author!: string;

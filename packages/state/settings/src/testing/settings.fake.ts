@@ -34,7 +34,7 @@ function flatten(patch: object): Record<string, SettingValue> {
  * A reader over fixed values that records page writes.
  *
  * @example
- * const settings = new SettingsFake([[OrdersSettings, { acceptingOrders: false }]]);
+ * const settings = new SettingsFake().set(OrdersSettings, { acceptingOrders: false });
  * await settings.get(OrdersSettings); // acceptingOrders: false, every other field its default
  */
 export class SettingsFake extends SettingsReader {
@@ -44,12 +44,9 @@ export class SettingsFake extends SettingsReader {
   /** The memory store the fake reads, kept so `set` can seed it mid-test. */
   private readonly memory: MemorySettingValueStoreDriver;
 
-  /**
-   * @param entries - each settings class with the values the test gives it.
-   */
-  constructor(entries: readonly (readonly [AnyClass<Settings>, object])[] = []) {
+  /** Takes nothing (a constructor parameter is a DI token, ADR 0294 decision 17); `set` seeds each class. */
+  constructor() {
     const store = new MemorySettingValueStoreDriver();
-    for (const [type, patch] of entries) store.seed(settingsKeyOf(type), flatten(patch));
     super(store);
     this.memory = store;
   }

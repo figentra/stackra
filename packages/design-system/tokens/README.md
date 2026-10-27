@@ -75,7 +75,8 @@ Derive each hex with `oklchToHex` rather than typing it: a typed hex drifts from
 step as numbers (milliseconds and cubic-bezier control points), the form web Motion and native Reanimated play, so both
 platforms animate with the theme's own steps (ADR 0329).
 
-`defineTheme` throws `InvalidThemeError` (code `invalid_theme`, category `validation`) listing every missing role, empty
+`defineTheme` throws `InvalidThemeError` (a validation `Refusal`, code `invalid_theme`, details `themeName` and
+`problems`) listing every missing role, empty
 value, bad hex, non-kebab token name, two tokens that would write the same CSS custom property (a palette entry named
 `radius` or `space-1`, say), and every value outside its kind's grammar. The grammars are allow-lists (a colour is hex,
 `oklch()`, `oklab()`, `rgb()`, `hsl()`, `var()` or a few keywords; a length is a number with `px`, `rem`, `em` or `%`;

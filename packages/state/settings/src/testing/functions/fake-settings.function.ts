@@ -24,5 +24,8 @@ import type { SettingsPatch } from "#testing/types/settings-patch.type";
 export function fakeSettings<const T extends readonly Settings[]>(entries?: {
   readonly [I in keyof T]: readonly [AnyClass<T[I]>, NoInfer<SettingsPatch<T[I]>>];
 }): SettingsFake {
-  return new SettingsFake((entries ?? []) as readonly (readonly [AnyClass<Settings>, object])[]);
+  const fake = new SettingsFake();
+  for (const [type, patch] of (entries ?? []) as readonly (readonly [AnyClass<Settings>, object])[])
+    fake.set(type, patch as never);
+  return fake;
 }

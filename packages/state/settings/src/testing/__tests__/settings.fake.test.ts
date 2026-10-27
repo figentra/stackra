@@ -57,9 +57,9 @@ const PAGE = settingsPage("orders", { scope: SettingScope.Platform });
 
 describe(SettingsFake, () => {
   it("resolves seeded values through the real schema, defaults elsewhere", async () => {
-    const fake = new SettingsFake([
-      [OrdersSettings, { cancellation: { customersMayCancel: false } }],
-    ]);
+    const fake = new SettingsFake().set(OrdersSettings, {
+      cancellation: { customersMayCancel: false },
+    });
     const orders = await fake.get(OrdersSettings);
     expect(orders).toBeInstanceOf(OrdersSettings);
     expect({ ...orders }).toEqual({
@@ -84,7 +84,7 @@ describe(SettingsFake, () => {
   });
 
   it("takes new values mid-test without recording a write", async () => {
-    const fake = new SettingsFake([[OrdersSettings, { acceptingOrders: false }]]);
+    const fake = new SettingsFake().set(OrdersSettings, { acceptingOrders: false });
     fake.set(OrdersSettings, { cancellation: { customersMayCancel: false } });
     expect({ ...(await fake.get(OrdersSettings)) }).toEqual({
       acceptingOrders: false,

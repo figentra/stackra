@@ -183,15 +183,20 @@ describe("defineTheme", () => {
     ]);
   });
 
-  it("carries the validation category, the snake_case code and every problem in its message", () => {
-    const error = new InvalidThemeError("acme", ["a is empty", "b is missing"]);
+  it("is a validation refusal with the snake_case code and every problem in its details", () => {
+    const error = InvalidThemeError.create({
+      themeName: "acme",
+      problems: ["a is empty", "b is missing"],
+    });
+    expect(error).toBeInstanceOf(Error);
     expect([error.name, error.code, error.category, error.themeName]).toEqual([
       "InvalidThemeError",
       "invalid_theme",
       "validation",
       "acme",
     ]);
-    expect(error.message).toBe('Theme "acme" is invalid: a is empty; b is missing');
+    expect(error.problems).toEqual(["a is empty", "b is missing"]);
+    expect(error.details).toEqual({ themeName: "acme", problems: ["a is empty", "b is missing"] });
   });
 
   it("refuses a type style the native renderer cannot turn into px", () => {

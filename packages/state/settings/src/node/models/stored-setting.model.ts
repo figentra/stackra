@@ -14,12 +14,19 @@
 import type { PublicId } from "@stackra/contracts";
 import type { OptionalProps } from "@stackra/database";
 import { HasPublicId, Model, Timestamps } from "@stackra/model";
+import { Field } from "@stackra/validation";
 
 import type { SettingValue } from "#contracts/index";
+import { SETTING_VALUES_SCHEMA } from "#node/constants/setting-values-schema.constant";
 
 /** One holder's values of one group. Traits add `id` and the timestamps; the indexes are the migration's. */
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: merged with the [OptionalProps] augmentation below
 export class StoredSetting extends Model.with(HasPublicId("sst"), Timestamps) {
+  /** The holder's values by path in the group. */
+  // reason: SettingValue is a union of scalars, which no shape type states
+  @Field(SETTING_VALUES_SCHEMA)
+  values!: Readonly<Record<string, SettingValue>>;
+
   /** The group key, which is the module key (`orders`). */
   groupKey!: string;
 
@@ -31,9 +38,6 @@ export class StoredSetting extends Model.with(HasPublicId("sst"), Timestamps) {
 
   /** The user of a user row; `null` on a node row. */
   userId!: PublicId<"usr"> | null;
-
-  /** The holder's values by path in the group. */
-  values!: Readonly<Record<string, SettingValue>>;
 
   /** The paths the holder locks for every holder below it. */
   locked!: readonly string[];

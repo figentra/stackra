@@ -53,22 +53,31 @@ function tokenSetProblem(tokenSet: unknown): string | undefined {
  */
 export function parseThemeJson(text: string, base: Theme): Theme {
   if (text.length > MAX_LENGTH)
-    throw new InvalidThemeError("", [`the file is over ${MAX_LENGTH} characters`]);
+    throw InvalidThemeError.create({
+      themeName: "",
+      problems: [`the file is over ${MAX_LENGTH} characters`],
+    });
   let data: unknown;
   try {
     data = JSON.parse(text);
   } catch {
-    throw new InvalidThemeError("", ["the file is not JSON"]);
+    throw InvalidThemeError.create({ themeName: "", problems: ["the file is not JSON"] });
   }
-  if (!isRecord(data)) throw new InvalidThemeError("", ["the file is not a JSON object"]);
+  if (!isRecord(data))
+    throw InvalidThemeError.create({ themeName: "", problems: ["the file is not a JSON object"] });
   if (data.format === THEME_JSON_FORMATS.theme) return defineTheme(data.theme as Theme);
   if (DIFF_FORMATS.has(data.format)) {
-    if (!isRecord(data.changes)) throw new InvalidThemeError("", ["changes is not an object"]);
+    if (!isRecord(data.changes))
+      throw InvalidThemeError.create({ themeName: "", problems: ["changes is not an object"] });
     const problem = tokenSetProblem(data.tokenSet);
-    if (problem !== undefined) throw new InvalidThemeError("", [problem]);
+    if (problem !== undefined)
+      throw InvalidThemeError.create({ themeName: "", problems: [problem] });
     return mergeTheme(base, aliasThemeDiff(data.changes as ThemeDiff));
   }
   if (data.format !== undefined)
-    throw new InvalidThemeError("", [`"${String(data.format)}" is not a theme format`]);
+    throw InvalidThemeError.create({
+      themeName: "",
+      problems: [`"${String(data.format)}" is not a theme format`],
+    });
   return defineTheme(data as unknown as Theme);
 }

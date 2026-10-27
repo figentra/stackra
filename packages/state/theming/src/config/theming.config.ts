@@ -4,8 +4,8 @@
  *          theme colour, the splash, self-hosted fonts and the tenant colour switch.
  * Boundary: a configuration class over `ThemingOptions` with no env map. A host overrides it as
  *           `class ThemingConfig extends BaseThemingConfig` with `override` members only, inheriting the key. Its defaults are gen constants:
- *           `ColorScheme` is a string union, and the base `themeColor` and `splash` are computed from `STACKRA_THEME`, so
- *           an override writes them whole, never `{ ...this.splash }`. Gen reads
+ *           `ColorScheme` is a string union, and the base `themeColor` and `splash` are the constant
+ *           `STACKRA_BACKGROUND` (pinned to `STACKRA_THEME` by test). Gen reads
  *           it for the icons, manifests and splash it writes; the generated root mounts the design system provider
  *           with its theme and the `ColorSchemeService` scheme. Holds no secret.
  * Runtime: isomorphic

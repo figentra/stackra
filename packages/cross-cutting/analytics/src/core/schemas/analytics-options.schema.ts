@@ -14,7 +14,7 @@
  */
 import { ConsentCategory } from "@stackra/consent";
 import type { DriverName } from "@stackra/container";
-import { registerSchemas, Schema } from "@stackra/validation";
+import { Int, registerSchemas, Schema } from "@stackra/validation";
 
 import type { AnalyticsDriver } from "#contracts/ports/analytics-driver.port";
 import { ANALYTICS_CONFIG_SCHEMA } from "#core/constants/analytics-config-schema.constant";
@@ -29,14 +29,18 @@ import { ANALYTICS_CONFIG_SCHEMA } from "#core/constants/analytics-config-schema
  * }
  */
 export class AnalyticsOptions extends Schema {
+  /** Events that may wait for a decision (0 to 1,000); later ones are dropped so the earliest, the first view, stay. */
+  @Int({
+    min: 0,
+    max: 1000,
+  })
+  queueLimit = 100;
+
   /** The registered `AnalyticsDriver` that sends; `none` sends nothing, `memory` keeps events, `posthog` sends there. */
   driver: DriverName<AnalyticsDriver> = "none";
 
   /** The consent category that must be granted before any event leaves the device; never `necessary`. */
   consentCategory: ConsentCategory = ConsentCategory.Analytics;
-
-  /** Events that may wait for a decision (0 to 1,000); later ones are dropped so the earliest, the first view, stay. */
-  queueLimit = 100;
 
   /** A vendor driver records a page (or screen) view per navigation. */
   autocapturePageviews = false;

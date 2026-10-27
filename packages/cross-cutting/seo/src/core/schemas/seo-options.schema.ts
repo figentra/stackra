@@ -10,9 +10,9 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0301 (decisions 2, 3 and 7); ADR 0294 (decision 19); ADR 0305 (conventions 1).
  */
-import { Enum } from "@stackra/contracts";
-import { Int, Schema, Str } from "@stackra/validation";
+import { Field, Int, Schema, Str } from "@stackra/validation";
 
+import { SeoConfig$ } from "#core/constants/seo-config-schema.constant";
 import { OgKind } from "#core/enums/og-kind.enum";
 
 /** The options of `SeoConfig`. */
@@ -36,8 +36,20 @@ export class SeoOptions extends Schema {
    * `robots.txt` groups by user agent: `*` is every crawler, another key adds that crawler's own group. A rule in
    * one group never applies to another crawler.
    */
+  // reason: a map of inline robots groups; the shipped schema checks each user agent and path
+  @Field(SeoConfig$.shape.robots)
   robots: Record<string, { allow: string[]; disallow: string[] }> = {
     "*": { allow: ["/"], disallow: [] },
+  };
+
+  /** The Open Graph image route: the kinds it answers, the image size and its edge lifetime in seconds. */
+  // reason: an inline object an override assigns whole; the shipped schema checks its kinds and pixel bounds
+  @Field(SeoConfig$.shape.og)
+  og: { kinds: OgKind[]; width: number; height: number; cacheSeconds: number } = {
+    kinds: [OgKind.Site, OgKind.Page, OgKind.Product],
+    width: 1200,
+    height: 630,
+    cacheSeconds: 86_400,
   };
 
   /** Search parameters that turn a page into `noindex`. */
@@ -45,14 +57,6 @@ export class SeoOptions extends Schema {
 
   /** Also write the sitemap sources of the consumed manifests (builder pages, storefront products). */
   consumedSitemaps = false;
-
-  /** The Open Graph image route: the kinds it answers, the image size and its edge lifetime in seconds. */
-  og: { kinds: OgKind[]; width: number; height: number; cacheSeconds: number } = {
-    kinds: Enum.values(OgKind),
-    width: 1200,
-    height: 630,
-    cacheSeconds: 86_400,
-  };
 
   /** Emit hreflang alternates in every head. */
   hreflang = true;

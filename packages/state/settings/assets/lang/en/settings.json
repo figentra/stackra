@@ -11,5 +11,41 @@
   },
   "form": {
     "not_saved": "This setting was not saved. Try again."
+  },
+  "enums": {
+    "setting_environment": {
+      "live": "Live",
+      "sandbox": "Sandbox",
+      "setup": "Setup"
+    },
+    "setting_revision_status": {
+      "pending": "Pending approval",
+      "scheduled": "Scheduled",
+      "applied": "Applied",
+      "rejected": "Rejected"
+    },
+    "setting_scope": {
+      "platform": "Platform",
+      "product": "Product",
+      "node": "Node",
+      "user": "User"
+    },
+    "setting_source": {
+      "default": "Default",
+      "layer": "Set by a level",
+      "floor": "Legal minimum",
+      "entitlement": "Plan limit"
+    },
+    "setting_type": {
+      "boolean": "On or off",
+      "integer": "Whole number",
+      "number": "Number",
+      "string": "Text",
+      "connection": "Connection"
+    },
+    "settings_mode": {
+      "developer": "Developer",
+      "normal": "Normal"
+    }
   }
 }

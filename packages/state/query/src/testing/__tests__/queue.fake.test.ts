@@ -13,7 +13,7 @@ import { QueueFake } from "#testing/queue.fake";
 
 describe("QueueFake", () => {
   it("is a mutation queue seeded at once", () => {
-    const queue = new QueueFake({ pending: 2, conflicts: 1 });
+    const queue = QueueFake.with({ pending: 2, conflicts: 1 });
     expect(queue).toBeInstanceOf(MutationQueue);
     expect(queue.pending).toBe(2);
     expect(queue.items.map((item) => item.id)).toEqual(["fake_mutation_1", "fake_mutation_2"]);
@@ -22,7 +22,7 @@ describe("QueueFake", () => {
   });
 
   it("keeps every call on a drain and discards like the app", async () => {
-    const queue = new QueueFake({ pending: 1, conflicts: 1 });
+    const queue = QueueFake.with({ pending: 1, conflicts: 1 });
     await queue.drain();
     expect(queue.pending).toBe(1);
     await queue.discard("fake_mutation_2");
@@ -30,7 +30,7 @@ describe("QueueFake", () => {
   });
 
   it("starts empty without options", () => {
-    const queue = new QueueFake();
+    const queue = QueueFake.with();
     expect(queue.pending).toBe(0);
     expect(queue.conflicts).toEqual([]);
   });

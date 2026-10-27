@@ -45,14 +45,15 @@ function seededCall(index: number, now: Date): PendingMutation {
  * A mutation queue seeded by the test.
  *
  * @example
- * const queue = new QueueFake({ pending: 2 });
+ * const queue = QueueFake.with({ pending: 2 });
  * queue.pending; // 2
  */
 export class QueueFake extends MutationQueue {
   /**
-   * @param options - how many calls wait and how many conflicts need a person.
+   * A queue not open yet; `QueueFake.with` opens and seeds one. It takes nothing, because a constructor parameter is a
+   * DI token (ADR 0294 decision 17).
    */
-  constructor(options: FakeQueueOptions = {}) {
+  constructor() {
     const clock = Object.assign(Object.create(Clock.prototype) as Clock, { now: () => new Date() });
     const leader = Object.assign(Object.create(QueueLeader.prototype) as QueueLeader, {
       isLeader: { get: () => true, subscribe: () => () => undefined },
@@ -77,9 +78,18 @@ export class QueueFake extends MutationQueue {
       device,
       lock,
     );
-    const now = clock.now();
+  }
+
+  /**
+   * A queue seeded with waiting calls and conflicts.
+   *
+   * @param options - how many calls wait and how many conflicts need a person.
+   */
+  static with(options: FakeQueueOptions = {}): QueueFake {
+    const queue = new QueueFake();
+    const now = new Date();
     const pending = options.pending ?? 0;
-    this.seed(
+    queue.seed(
       "query.queue.fake",
       DEVICE,
       Array.from({ length: pending }, (_, index) => seededCall(index + 1, now)),
@@ -92,5 +102,6 @@ export class QueueFake extends MutationQueue {
         }),
       ),
     );
+    return queue;
   }
 }

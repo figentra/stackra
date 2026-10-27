@@ -151,7 +151,7 @@ applied like any other (ADR 0359 decision 8, ADR 0395).
 
 `stackra settings:diff` and `settings:apply` call `settingsDiff` and `settingsApply` from `./node` in the member's
 folder: a YAML pack against a scope node's own values, applied as sandbox revisions with locks checked. `settingsApply`
-takes `market`, the holder's resolved market pack; with it, `MarketPackSettingFloorSourceDriver` checks the group's
+takes `market`, the holder's resolved market pack; with it, `MarketPackSettingFloorSourceDriver.over(market, clock)` checks the group's
 legal floors, and without it a group whose keys carry a legal floor is refused (the run cannot see the holder's market).
 Entitlement-gated keys are refused by the runner, which knows no plan. The test helper
 `fakeResolver({ values, floors, grants, now })` in `./testing` builds a real resolver over memory drivers and a

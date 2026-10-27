@@ -51,7 +51,7 @@ export async function openSettingsSession<T>(
       const floors =
         market === undefined
           ? new RegisteredFloorGuardDriver()
-          : new MarketPackSettingFloorSourceDriver(market, clock);
+          : MarketPackSettingFloorSourceDriver.over(market, clock);
       const resolver = new SettingsResolver(store, floors, revisions, clock);
       return run(new SettingsPackService(store, resolver));
     });

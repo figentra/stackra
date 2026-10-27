@@ -59,7 +59,7 @@ const PACK: ResolvedPack = {
 const CLOCK = { now: () => new Date("2026-10-26T09:00:00.000Z") } as unknown as Clock;
 
 describe(MarketPackSettingFloorSourceDriver, () => {
-  const source = new MarketPackSettingFloorSourceDriver(PACK, CLOCK);
+  const source = MarketPackSettingFloorSourceDriver.over(PACK, CLOCK);
 
   it("answers the pack's floors on a registered group", async () => {
     expect(source).toBeInstanceOf(SettingFloorSource);
