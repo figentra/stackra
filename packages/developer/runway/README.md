@@ -21,33 +21,34 @@ tool configs call so no port, origin or feed URL is typed outside a `runway.yaml
 
 ## What is here
 
-| Entry       | Symbol                                                                                                            | Use                                                                                                    |
-| ----------- | ----------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| `.`         | `baseUrlOf(member)`                                                                                               | a member's dev origin: the generated Playwright `baseURL`                                              |
-| `.`         | `devPorts(member)`                                                                                                | dev origin, port, host and Electron dev ports: the generated Electron entry                            |
-| `.`         | `updateFeed(member)`                                                                                              | the desktop update feed of the build's environment, or `null` in dev                                   |
-| `.`         | `parseRunway(kind, document, source?)`                                                                            | check a parsed runway against its version 3 schema                                                     |
-| `.`         | `checkPlacement(root, members)`                                                                                   | every topology placement failure, for `stackra validate`                                               |
-| `.`         | `checkRegions(root)`, `regionsOf(root, environment)`                                                              | region failures for `stackra validate`; an environment's resolved regions                              |
-| `.`         | `checkPorts(root, members)`, `PortIssue`                                                                          | every duplicate effective dev port across the repository lanes, both owners                            |
-| `.`         | `RunwayCloud`                                                                                                     | `aws`, `gcp`: the cloud a region names                                                                 |
-| `.`         | `runwayJsonSchema(kind)`                                                                                          | the zod schemas as JSON Schema, tested against the shipped canonical files                             |
-| `.`         | `deployTargets(root, environment)`                                                                                | every place a release lands, in release order (regions, dedicated tenants)                             |
-| `.`         | `deploy`, `promote`, `rollback`                                                                                   | ship, promote and roll back a release through the providers                                            |
-| `.`         | `withDeployLock`, `DeployLock`, `RunwayLockedError`                                                               | one apply per environment at a time (ADR 0435)                                                         |
-| `.`         | `RunwayProvider`                                                                                                  | the provider port: plan, apply, verify, rollback and current (ADR 0352 d3)                             |
-| `./node`    | `EncoreCloudProviderDriver`, `EasProviderDriver`, `MintlifyProviderDriver`                                        | the `encore-cloud`, `eas` and `mintlify` providers                                                     |
-| `./node`    | `runCommand`, `CommandRunner`                                                                                     | how a provider runs its CLI, with no shell                                                             |
-| `./node`    | `runMobileJob(request)`, `MobileJobRequest`, `MobileJobResult`                                                    | the mobile job: Expo config from `mobile`, capability stripping, EAS build                             |
-| `./node`    | `runBrandStep(request)`, `committedBrandOutputs`, `BRAND_STEP_SETTINGS`, `BrandStepRequest`, `BrandStepRun`       | the brand step: @stackra/brand-kit per surface, app and white-label scope; the committed-outputs check |
-| `./node`    | `screenshotCaptureJob(request)`, `runScreenshotCapture`, `SCREENSHOT_CAPTURE_DEFAULTS`, `ScreenshotCaptureJob`, … | the store-screenshot capture job on a Mac CI runner                                                    |
-| `./node`    | `capabilityConfig(catalogue, flags)`, `MobileCapability`, `MobileStoreAccount`, …                                 | what a template line keeps and strips for a product's capability flags                                 |
-| `.`         | `RunwayKind`, `RunwayEnvironment`, `TopologyMode`, `RequirementEngine`, `CacheEviction`                           | enums                                                                                                  |
-| `.`         | `RunwayInvalidError`, `RunwayUnresolvedError`, `RunwayDeployFailedError`                                          | errors                                                                                                 |
-| `./node`    | `definesFor(member, environment)`                                                                                 | the bundler `define` map: public vars and the injected runway facts                                    |
-| `./node`    | `devServer(member)`                                                                                               | the Vite `server` block from the dev facts                                                             |
-| `./node`    | `readRunway(file, kind)`                                                                                          | read, YAML-parse and check one runway file                                                             |
-| `./schema/` | `root.json`, `app.json`, `service.json`                                                                           | `$schema: "@stackra/runway/schema/app.json"` in a runway file                                          |
+| Entry       | Symbol                                                                                                            | Use                                                                                                               |
+| ----------- | ----------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `.`         | `baseUrlOf(member)`                                                                                               | a member's dev origin: the generated Playwright `baseURL`                                                         |
+| `.`         | `devPorts(member)`                                                                                                | dev origin, port, host and Electron dev ports: the generated Electron entry                                       |
+| `.`         | `updateFeed(member)`                                                                                              | the desktop update feed of the build's environment, or `null` in dev                                              |
+| `.`         | `parseRunway(kind, document, source?)`                                                                            | check a parsed runway against its version 3 schema                                                                |
+| `.`         | `checkPlacement(root, members)`                                                                                   | every topology placement failure, for `stackra validate`                                                          |
+| `.`         | `checkRegions(root)`, `regionsOf(root, environment)`                                                              | region failures for `stackra validate`; an environment's resolved regions                                         |
+| `.`         | `checkPorts(root, members)`, `PortIssue`                                                                          | every duplicate effective dev port across the repository lanes, both owners                                       |
+| `.`         | `RunwayCloud`                                                                                                     | `aws`, `gcp`: the cloud a region names                                                                            |
+| `.`         | `runwayJsonSchema(kind)`                                                                                          | the zod schemas as JSON Schema, tested against the shipped canonical files                                        |
+| `.`         | `deployTargets(root, environment)`                                                                                | every place a release lands, in release order (regions, dedicated tenants)                                        |
+| `.`         | `deploy`, `promote`, `rollback`                                                                                   | ship, promote and roll back a release through the providers                                                       |
+| `.`         | `withDeployLock`, `DeployLock`, `RunwayLockedError`                                                               | one apply per environment at a time (ADR 0435)                                                                    |
+| `.`         | `RunwayProvider`                                                                                                  | the provider port: plan, apply, verify, rollback and current (ADR 0352 d3)                                        |
+| `.`         | `RunwayConfig`, `RunwayConfig$`                                                                                   | what the providers need beyond the runway: the Encore app id and tree, the mobile and docs folders (key `runway`) |
+| `./node`    | `EncoreCloudProviderDriver`, `EasProviderDriver`, `MintlifyProviderDriver`                                        | the `encore-cloud`, `eas` and `mintlify` providers                                                                |
+| `./node`    | `runCommand`, `CommandRunner`                                                                                     | how a provider runs its CLI, with no shell                                                                        |
+| `./node`    | `runMobileJob(request)`, `MobileJobRequest`, `MobileJobResult`                                                    | the mobile job: Expo config from `mobile`, capability stripping, EAS build                                        |
+| `./node`    | `runBrandStep(request)`, `committedBrandOutputs`, `BRAND_STEP_SETTINGS`, `BrandStepRequest`, `BrandStepRun`       | the brand step: @stackra/brand-kit per surface, app and white-label scope; the committed-outputs check            |
+| `./node`    | `screenshotCaptureJob(request)`, `runScreenshotCapture`, `SCREENSHOT_CAPTURE_DEFAULTS`, `ScreenshotCaptureJob`, … | the store-screenshot capture job on a Mac CI runner                                                               |
+| `./node`    | `capabilityConfig(catalogue, flags)`, `MobileCapability`, `MobileStoreAccount`, …                                 | what a template line keeps and strips for a product's capability flags                                            |
+| `.`         | `RunwayKind`, `RunwayEnvironment`, `TopologyMode`, `RequirementEngine`, `CacheEviction`                           | enums                                                                                                             |
+| `.`         | `RunwayInvalidError`, `RunwayUnresolvedError`, `RunwayDeployFailedError`                                          | errors                                                                                                            |
+| `./node`    | `definesFor(member, environment)`                                                                                 | the bundler `define` map: public vars and the injected runway facts                                               |
+| `./node`    | `devServer(member)`                                                                                               | the Vite `server` block from the dev facts                                                                        |
+| `./node`    | `readRunway(file, kind)`                                                                                          | read, YAML-parse and check one runway file                                                                        |
+| `./schema/` | `root.json`, `app.json`, `service.json`                                                                           | `$schema: "@stackra/runway/schema/app.json"` in a runway file                                                     |
 
 The old `./ports` entry is folded into `.` and the old `./vite` entry into `./node` (ADR 0127, 2026-10-24 note).
 
@@ -266,14 +267,13 @@ with `deploy.on: promote`; `rollback` returns each target to its record from an 
 records from the release log, ADR 0352 decision 7).
 
 ```ts
-import { promote } from "@stackra/runway";
+import { buildConfig } from "@stackra/config";
+import { promote, RunwayConfig } from "@stackra/runway";
 import { EasProviderDriver, EncoreCloudProviderDriver, readRunway } from "@stackra/runway/node";
 
 const root = readRunway("runway.yaml", "root");
-const providers = [
-  new EncoreCloudProviderDriver({ app: "acme" }),
-  new EasProviderDriver({ projectDir: "apps/mobile" }),
-];
+const config = buildConfig(RunwayConfig, { values: { encoreApp: "acme" } });
+const providers = [new EncoreCloudProviderDriver(config), new EasProviderDriver(config)];
 const results = await promote(root, "staging", "production", providers); // one record per target
 ```
 

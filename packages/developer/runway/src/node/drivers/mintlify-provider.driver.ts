@@ -20,6 +20,7 @@ import { Driver } from "@stackra/container";
 import { HealthStatus } from "@stackra/contracts";
 import type { HealthReport } from "@stackra/contracts";
 
+import type { RunwayConfig } from "#config/runway.config";
 import { RunwayInvalidError } from "#core/errors/runway-invalid.error";
 import { RunwayUnresolvedError } from "#core/errors/runway-unresolved.error";
 import { RunwayProvider } from "#core/ports/runway-provider.port";
@@ -42,25 +43,24 @@ const TRAILER = "Source";
  * Publishes a docs app's generated site to the deploy branch Mintlify builds.
  *
  * @example
- * const mintlify = new MintlifyProviderDriver({ projectDir: "apps/docs" });
+ * const mintlify = new MintlifyProviderDriver(buildConfig(RunwayConfig));
  * mintlify.plan(target, sha); // stackra build, stackra lint, git init/add/commit, git fetch, git push
  */
 export class MintlifyProviderDriver extends Driver(RunwayProvider) {
   /** The runway destination this provider serves. */
   override readonly destination = "mintlify";
 
+  /** The command runner, `runCommand`; a test or a dry run replaces it. */
+  run: CommandRunner = runCommand;
+
   private readonly projectDir: string;
 
-  private readonly run: CommandRunner;
-
   /**
-   * @param options.projectDir - the docs app's folder, relative to the repository root.
-   * @param options.run - the command runner; `runCommand` when absent.
+   * @param config - holds the docs app's folder (`mintlifyProjectDir`), relative to the repository root.
    */
-  constructor(options: { readonly projectDir: string; readonly run?: CommandRunner }) {
+  constructor(config: RunwayConfig) {
     super();
-    this.projectDir = options.projectDir;
-    this.run = options.run ?? runCommand;
+    this.projectDir = config.mintlifyProjectDir;
   }
 
   /** Build and check the site, commit it as one orphan commit, and push it to the deploy branch. */

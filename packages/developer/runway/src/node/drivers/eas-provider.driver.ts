@@ -15,6 +15,7 @@ import { Driver } from "@stackra/container";
 import { HealthStatus } from "@stackra/contracts";
 import type { HealthReport } from "@stackra/contracts";
 
+import type { RunwayConfig } from "#config/runway.config";
 import { RunwayInvalidError } from "#core/errors/runway-invalid.error";
 import { RunwayUnresolvedError } from "#core/errors/runway-unresolved.error";
 import { RunwayProvider } from "#core/ports/runway-provider.port";
@@ -57,25 +58,24 @@ function itemsOf(out: string): Record<string, unknown>[] {
  * The `eas` runway provider: builds or publishes over-the-air updates through EAS.
  *
  * @example
- * const eas = new EasProviderDriver({ projectDir: "apps/mobile" });
+ * const eas = new EasProviderDriver(buildConfig(RunwayConfig));
  * await deploy(root, "production", sha, [encore, eas]);
  */
 export class EasProviderDriver extends Driver(RunwayProvider) {
   /** The runway destination this provider serves. */
   override readonly destination = "eas";
 
+  /** The command runner, `runCommand`; a test or a dry run replaces it. */
+  run: CommandRunner = runCommand;
+
   private readonly projectDir: string;
 
-  private readonly run: CommandRunner;
-
   /**
-   * @param options.projectDir - the mobile app's folder, relative to the repository root.
-   * @param options.run - the command runner; `runCommand` when absent.
+   * @param config - holds the mobile app's folder (`easProjectDir`), relative to the repository root.
    */
-  constructor(options: { readonly projectDir: string; readonly run?: CommandRunner }) {
+  constructor(config: RunwayConfig) {
     super();
-    this.projectDir = options.projectDir;
-    this.run = options.run ?? runCommand;
+    this.projectDir = config.easProjectDir;
   }
 
   /** The build or update command. */

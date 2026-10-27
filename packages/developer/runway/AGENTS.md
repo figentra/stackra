@@ -61,6 +61,8 @@ Runway format version 3 (ADR 0296) as code. Member at `packages/developer/runway
   they become paths.
 - A runway holds secret names only. `definesFor` inlines public vars (`VITE_`, `EXPO_PUBLIC_`, `RENDERER_VITE_`) and
   never the TLS paths.
+- A provider takes `RunwayConfig` (`src/config/runway.config.ts`, key `runway`) by constructor type, never an options
+  object (gen's `token_not_a_class`); its `run` field is the command runner a test or a dry run replaces.
 
 ## PII
 

@@ -8,8 +8,10 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0352 (decision 3); ADR 0002 (2026-10-27 amendment); STA-1316.
  */
+import { buildConfig } from "@stackra/config";
 import { describe, expect, it } from "@stackra/testing";
 
+import { RunwayConfig } from "#config/runway.config";
 import { RunwayInvalidError } from "#core/errors/runway-invalid.error";
 import { RunwayUnresolvedError } from "#core/errors/runway-unresolved.error";
 import type { DeployTarget } from "#core/types/deploy-target.type";
@@ -39,9 +41,15 @@ function fakeRunner(answers: Record<string, string>): { run: CommandRunner; call
   return { run, calls };
 }
 
+/** The provider over the default runway config, running its commands through `run` when given. */
+function mintlify(run?: CommandRunner): MintlifyProviderDriver {
+  const driver = new MintlifyProviderDriver(buildConfig(RunwayConfig));
+  return run === undefined ? driver : Object.assign(driver, { run });
+}
+
 describe("MintlifyProviderDriver", () => {
   it("plans the checks, the orphan site commit and the push to the deploy branch", () => {
-    const driver = new MintlifyProviderDriver({ projectDir: "apps/docs" });
+    const driver = mintlify();
     expect(
       driver
         .plan(DOCS, SHA)
@@ -59,7 +67,7 @@ describe("MintlifyProviderDriver", () => {
 
   it("applies from the release checkout and verifies by the trailer", async () => {
     const { run, calls } = fakeRunner({ "git rev-parse": `${SHA}\n`, "git log": `${SHA}\n` });
-    const driver = new MintlifyProviderDriver({ projectDir: "apps/docs", run });
+    const driver = mintlify(run);
     const record = await driver.apply(DOCS, SHA);
     expect(record).toEqual({ target: "production/docs", sha: SHA, reference: "docs-site" });
     expect(calls).toHaveLength(8);
@@ -68,13 +76,13 @@ describe("MintlifyProviderDriver", () => {
 
   it("refuses another checkout", async () => {
     const { run } = fakeRunner({ "git rev-parse": "b".repeat(40) });
-    const driver = new MintlifyProviderDriver({ projectDir: "apps/docs", run });
+    const driver = mintlify(run);
     await expect(driver.apply(DOCS, SHA)).rejects.toThrow(RunwayUnresolvedError);
   });
 
   it("has no current site when the branch is missing, and refuses a rollback", async () => {
     const { run } = fakeRunner({ "git fetch": "throw" });
-    const driver = new MintlifyProviderDriver({ projectDir: "apps/docs", run });
+    const driver = mintlify(run);
     expect(await driver.current(DOCS)).toBeNull();
     expect(
       (await driver.verify(DOCS, { target: DOCS.id, sha: SHA, reference: "docs-site" })).status,
@@ -85,7 +93,7 @@ describe("MintlifyProviderDriver", () => {
   });
 
   it("refuses a target without a deploy branch", () => {
-    const driver = new MintlifyProviderDriver({ projectDir: "apps/docs" });
+    const driver = mintlify();
     expect(() => driver.plan({ ...DOCS, settings: {} }, SHA)).toThrow(RunwayInvalidError);
     expect(() => driver.plan({ ...DOCS, settings: { branch: "../main" } }, SHA)).toThrow(
       RunwayInvalidError,

@@ -11,6 +11,8 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision; ADR 0127 2026-10-24 note.
  */
+export { RunwayConfig } from "#config/runway.config";
+export { RunwayConfig$ } from "#core/constants/runway-config-schema.constant";
 export { CacheEviction } from "#core/enums/cache-eviction.enum";
 export { DeployKind } from "#core/enums/deploy-kind.enum";
 export { RequirementEngine } from "#core/enums/requirement-engine.enum";

@@ -15,6 +15,7 @@ import { Driver } from "@stackra/container";
 import { HealthStatus } from "@stackra/contracts";
 import type { HealthReport } from "@stackra/contracts";
 
+import type { RunwayConfig } from "#config/runway.config";
 import { RunwayInvalidError } from "#core/errors/runway-invalid.error";
 import { RunwayProvider } from "#core/ports/runway-provider.port";
 import type { DeployRecord } from "#core/types/deploy-record.type";
@@ -40,36 +41,35 @@ function fieldOf(block: unknown, key: string): unknown {
  * The `encore-cloud` runway provider: deploys by pushing the commit to the environment's branch.
  *
  * @example
- * const encore = new EncoreCloudProviderDriver({ app: root.providers?.encore?.app ?? "" });
+ * const encore = new EncoreCloudProviderDriver(
+ *   buildConfig(RunwayConfig, { values: { encoreApp: root.providers?.encore?.app ?? "" } }),
+ * );
  * await deploy(root, "staging", sha, [encore]);
  */
 export class EncoreCloudProviderDriver extends Driver(RunwayProvider) {
   /** The runway destination this provider serves. */
   override readonly destination = "encore-cloud";
 
-  private readonly remote: string;
+  /** The command runner, `runCommand`; a test or a dry run replaces it. */
+  run: CommandRunner = runCommand;
 
-  private readonly run: CommandRunner;
+  private readonly remote: string;
 
   private readonly cwd: string | undefined;
 
   /**
-   * @param options.app - the Encore Cloud app id (`providers.encore.app`).
-   * @param options.run - the command runner; `runCommand` when absent.
-   * @param options.cwd - the git working tree that holds the commits; the current folder when absent.
-   * @throws TypeError when the app id is not one.
+   * @param config - holds the Encore Cloud app id (`encoreApp`, from `providers.encore.app`) and the git working
+   *                 tree that holds the commits (`encoreCwd`; the current folder when empty).
+   * @throws TypeError when the app id is unset or not one.
    */
-  constructor(options: {
-    readonly app: string;
-    readonly run?: CommandRunner;
-    readonly cwd?: string;
-  }) {
+  constructor(config: RunwayConfig) {
     super();
-    if (!APP.test(options.app))
-      throw new TypeError(`"${options.app}" is not an Encore Cloud app id (providers.encore.app)`);
-    this.remote = `encore://${options.app}`;
-    this.run = options.run ?? runCommand;
-    this.cwd = options.cwd;
+    if (!APP.test(config.encoreApp))
+      throw new TypeError(
+        `"${config.encoreApp}" is not an Encore Cloud app id (providers.encore.app)`,
+      );
+    this.remote = `encore://${config.encoreApp}`;
+    this.cwd = config.encoreCwd || undefined;
   }
 
   /** The push of `sha` to the target's branch. */

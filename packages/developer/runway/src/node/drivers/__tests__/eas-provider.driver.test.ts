@@ -8,8 +8,10 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0352 (decision 3), ADR 0180, ADR 0344.
  */
+import { buildConfig } from "@stackra/config";
 import { describe, expect, it } from "@stackra/testing";
 
+import { RunwayConfig } from "#config/runway.config";
 import { RunwayInvalidError } from "#core/errors/runway-invalid.error";
 import { RunwayUnresolvedError } from "#core/errors/runway-unresolved.error";
 import { deployTargets } from "#core/functions/deploy-targets.function";
@@ -30,6 +32,11 @@ function fakeRunner(answers: Record<string, string>): { run: CommandRunner; call
   return { run, calls };
 }
 
+/** The provider over the default runway config, running its commands through `run`. */
+function eas(run: CommandRunner): EasProviderDriver {
+  return Object.assign(new EasProviderDriver(buildConfig(RunwayConfig)), { run });
+}
+
 const mobile = deployTargets(DEPLOY_ROOT, "production").find(
   (target) => target.kind === "mobile",
 ) as DeployTarget;
@@ -42,7 +49,7 @@ describe("EasProviderDriver", () => {
       "eas build": JSON.stringify([{ id: "build-ios" }, { id: "build-android" }]),
       "eas build:view": JSON.stringify({ status: "FINISHED" }),
     });
-    const driver = new EasProviderDriver({ projectDir: "apps/mobile", run });
+    const driver = eas(run);
 
     const record = await driver.apply(mobile, SHA);
 
@@ -58,16 +65,12 @@ describe("EasProviderDriver", () => {
   });
 
   it("reports a running build as degraded and a failed one as down", async () => {
-    const running = new EasProviderDriver({
-      projectDir: "apps/mobile",
-      run: fakeRunner({ "eas build:view": JSON.stringify({ status: "IN_PROGRESS" }) }).run,
-    });
+    const running = eas(
+      fakeRunner({ "eas build:view": JSON.stringify({ status: "IN_PROGRESS" }) }).run,
+    );
     const record = { target: mobile.id, sha: SHA, reference: "build-ios" };
     expect((await running.verify(mobile, record)).status).toBe("degraded");
-    const failed = new EasProviderDriver({
-      projectDir: "apps/mobile",
-      run: fakeRunner({ "eas build:view": JSON.stringify({ status: "ERRORED" }) }).run,
-    });
+    const failed = eas(fakeRunner({ "eas build:view": JSON.stringify({ status: "ERRORED" }) }).run);
     expect((await failed.verify(mobile, record)).status).toBe("down");
   });
 
@@ -78,7 +81,7 @@ describe("EasProviderDriver", () => {
       "eas update:republish": JSON.stringify([{ group: "group-3" }]),
       "eas update:list": JSON.stringify({ currentPage: [{ gitCommitHash: SHA }] }),
     });
-    const driver = new EasProviderDriver({ projectDir: "apps/mobile", run });
+    const driver = eas(run);
 
     const record = await driver.apply(update, SHA);
     const back = await driver.rollback(update, {
@@ -97,10 +100,7 @@ describe("EasProviderDriver", () => {
   });
 
   it("refuses another checkout, a store build rollback and a missing channel", async () => {
-    const driver = new EasProviderDriver({
-      projectDir: "apps/mobile",
-      run: fakeRunner({ "git rev-parse": "b".repeat(40) }).run,
-    });
+    const driver = eas(fakeRunner({ "git rev-parse": "b".repeat(40) }).run);
     await expect(driver.apply(mobile, SHA)).rejects.toThrow(RunwayUnresolvedError);
     await expect(
       driver.rollback(mobile, { target: mobile.id, sha: SHA, reference: "x" }),

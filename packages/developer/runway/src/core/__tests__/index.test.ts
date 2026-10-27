@@ -33,6 +33,8 @@ describe("@stackra/runway", () => {
       "DeployKind",
       "RequirementEngine",
       "RunwayCloud",
+      "RunwayConfig",
+      "RunwayConfig$",
       "RunwayDeployFailedError",
       "RunwayEnvironment",
       "RunwayInvalidError",

@@ -7,8 +7,10 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0352 (decision 3), ADR 0400.
  */
+import { buildConfig } from "@stackra/config";
 import { describe, expect, it } from "@stackra/testing";
 
+import { RunwayConfig } from "#config/runway.config";
 import { RunwayInvalidError } from "#core/errors/runway-invalid.error";
 import { deployTargets } from "#core/functions/deploy-targets.function";
 import { parseRunway } from "#core/functions/parse-runway.function";
@@ -30,11 +32,17 @@ function fakeRunner(head: string | null): { run: CommandRunner; calls: string[] 
   return { run, calls };
 }
 
+/** The provider of the `acme` app, running its commands through `run`. */
+function encore(run: CommandRunner): EncoreCloudProviderDriver {
+  const config = buildConfig(RunwayConfig, { values: { encoreApp: "acme" } });
+  return Object.assign(new EncoreCloudProviderDriver(config), { run });
+}
+
 const [ksa, firm] = deployTargets(DEPLOY_ROOT, "production") as [DeployTarget, DeployTarget];
 
 describe("EncoreCloudProviderDriver", () => {
   it("plans a push of the commit to the region's branch", () => {
-    const driver = new EncoreCloudProviderDriver({ app: "acme", run: fakeRunner(null).run });
+    const driver = encore(fakeRunner(null).run);
     expect(driver.destination).toBe("encore-cloud");
     expect(driver.plan(ksa, SHA)).toEqual([
       { command: "git", args: ["push", "encore://acme", `${SHA}:refs/heads/ksa`] },
@@ -44,7 +52,7 @@ describe("EncoreCloudProviderDriver", () => {
 
   it("applies, verifies and reads the branch", async () => {
     const { run, calls } = fakeRunner(SHA);
-    const driver = new EncoreCloudProviderDriver({ app: "acme", run });
+    const driver = encore(run);
 
     const record = await driver.apply(ksa, SHA);
 
@@ -55,7 +63,7 @@ describe("EncoreCloudProviderDriver", () => {
   });
 
   it("reports down when the branch holds another commit", async () => {
-    const driver = new EncoreCloudProviderDriver({ app: "acme", run: fakeRunner(OLD).run });
+    const driver = encore(fakeRunner(OLD).run);
     expect(await driver.verify(ksa, { target: ksa.id, sha: SHA, reference: SHA })).toEqual({
       status: "down",
       detail: `ksa points to ${OLD}, not ${SHA}`,
@@ -64,7 +72,7 @@ describe("EncoreCloudProviderDriver", () => {
 
   it("rolls back by force-pushing the earlier commit", async () => {
     const { run, calls } = fakeRunner(OLD);
-    const driver = new EncoreCloudProviderDriver({ app: "acme", run });
+    const driver = encore(run);
     const record = await driver.rollback(ksa, { target: ksa.id, sha: OLD, reference: OLD });
     expect(calls).toEqual([`git push encore://acme +${OLD}:refs/heads/ksa`]);
     expect(record.sha).toBe(OLD);
@@ -77,8 +85,9 @@ describe("EncoreCloudProviderDriver", () => {
       environments: { staging: { destinations: { services: "encore-cloud" } } },
     });
     const [target] = deployTargets(root, "staging") as [DeployTarget];
-    const driver = new EncoreCloudProviderDriver({ app: "acme", run: fakeRunner(null).run });
+    const driver = encore(fakeRunner(null).run);
     expect(() => driver.plan(target, SHA)).toThrow(RunwayInvalidError);
-    expect(() => new EncoreCloudProviderDriver({ app: "Acme App" })).toThrow(TypeError);
+    expect(() => buildConfig(RunwayConfig, { values: { encoreApp: "Acme App" } })).toThrow();
+    expect(() => new EncoreCloudProviderDriver(buildConfig(RunwayConfig))).toThrow(TypeError);
   });
 });
