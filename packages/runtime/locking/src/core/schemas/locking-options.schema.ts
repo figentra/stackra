@@ -13,7 +13,7 @@ import "#core/types/lock-driver-names.type";
 
 import { Secret } from "@stackra/config";
 import type { DriverName } from "@stackra/container";
-import { registerSchemas, Schema } from "@stackra/validation";
+import { Field, registerSchemas, Schema } from "@stackra/validation";
 
 import type { LockDriver } from "#contracts/ports/lock-driver.port";
 import { LOCKING_CONFIG_SCHEMA } from "#core/constants/locking-config-schema.constant";
@@ -31,14 +31,16 @@ export class LockingOptions extends Schema {
   @Secret("LOCKING_VALKEY_URL")
   valkeyUrl = "";
 
-  /** Which driver runs: `postgres` holds advisory locks in the service's database; `memory` in the process. */
-  driver: DriverName<LockDriver> = "postgres";
-
   /** The `valkey` driver's keys. */
+  // reason: a nested driver option a host override replaces whole; the shipped config schema holds its rules
+  @Field(LOCKING_CONFIG_SCHEMA.shape.valkey)
   valkey: {
     /** Put in front of every lock key, so members that share one server never share a lock by accident. */
     keyPrefix: string;
   } = { keyPrefix: "lock:" };
+
+  /** Which driver runs: `postgres` holds advisory locks in the service's database; `memory` in the process. */
+  driver: DriverName<LockDriver> = "postgres";
 }
 
 registerSchemas([[LockingOptions, LOCKING_CONFIG_SCHEMA]]);
