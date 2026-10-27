@@ -37,7 +37,7 @@ import type { JournalLine } from "#core/types/journal-line.type";
 import type { JournalWrite } from "#core/types/journal-write.type";
 
 /** The model's field of each journal name, and its default floor. */
-type Fields = typeof JOURNAL_FIELDS & {
+type Fields = Readonly<Record<keyof typeof JOURNAL_FIELDS, string>> & {
   readonly floor?: number | undefined;
   readonly currency?: string | undefined;
 };
