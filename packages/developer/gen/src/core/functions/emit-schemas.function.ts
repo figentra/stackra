@@ -18,7 +18,8 @@
  *           `Remote<Name>`), picked, omitted or made partial first when it derives from it (STA-1363).
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 26: the shape compiler); ADR 0305 (rules 1 and 14); registry v3.1 gap G1;
- *                     ADR 0162 (decision 2); ADR 0222 (decision 2); ADR 0260 (decision 2: remote shapes).
+ *                     ADR 0162 (decision 2); ADR 0222 (decision 2); ADR 0260 (decision 2: remote shapes); STA-1365
+ *                     (an `I18nKey` field is a string cast to the brand).
  */
 import { generatedHeader } from "#core/functions/generated-header.function";
 import { importLines } from "#core/functions/import-lines.function";
@@ -127,6 +128,10 @@ function zodOf(
       if (type.brand === "currency_code") {
         use(imports, "@stackra/money", "currencyCode");
         return "currencyCode()";
+      }
+      if (type.brand === "i18n_key") {
+        use(imports, "@stackra/i18n", "I18nKey", true);
+        return "z.string().transform((value) => value as I18nKey)";
       }
       use(imports, "@stackra/contracts", "Email", true);
       return "z.email().transform((value) => value as Email)";

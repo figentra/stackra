@@ -1,4 +1,4 @@
-<!-- Stackra file contract: Purpose: the guide to @stackra/documents. Boundary: describes this package only. Runtime: docs. Governing contract: ADR 0365; ADR 0356. -->
+<!-- Stackra file contract: Purpose: the guide to @stackra/documents. Boundary: describes this package only. Runtime: docs. Governing contract: ADR 0365; ADR 0356; STA-1365. -->
 
 # @stackra/documents
 
@@ -86,10 +86,10 @@ self-hosted (owner decision R2-6): a `DocumensoConnection` holds the instance's 
 `DOCUMENSO_API_KEY`) and `timeoutMs` for the PDF upload and download.
 
 ```ts
-import { ConnectionESignatureDriver, DocumensoConnection } from "@stackra/documents";
+import { ConnectionESignatureDriver } from "@stackra/documents";
 import { SignatureStatus } from "@stackra/documents/contracts";
 
-const provider = new ConnectionESignatureDriver(resolver, { documenso: DocumensoConnection });
+const provider = new ConnectionESignatureDriver(resolver); // routes over { documenso: DocumensoConnection }
 const envelope = await provider.send(request); // id "documenso:conn_…:42"
 if ((await provider.status(envelope.id)).status === SignatureStatus.Signed)
   await files.store(await provider.download(envelope.id));
@@ -116,7 +116,8 @@ tenant's Connection or the Market's default (ADR 0356), and its price is a rate 
 
 - Other PDF engines: another `PdfEngine` or `PdfAssembler` driver lives with the runtime that hosts its engine.
 - Hosting the engine: the Gotenberg container is the deployment's (runway), not this package's.
-- Other e-signature providers (DocuSign, Nafath, UAE Pass): Connections in the OS integrations service (R3-8), passed
-  to `ConnectionESignatureDriver` in the host's map.
+- Other e-signature providers (DocuSign, Nafath, UAE Pass): Connections in the OS integrations service (R3-8). The
+  host subclasses `ConnectionESignatureDriver` and overrides `protected readonly drivers` with its map; the
+  constructor takes the resolver only, a class token (STA-1365).
 - Tax QR payloads and e-invoice XML: `@stackra/fiscal`. Storing, versioning and watermarking files: OS files.
 - The studio surface of the `print` kind: `@stackra/builder`.

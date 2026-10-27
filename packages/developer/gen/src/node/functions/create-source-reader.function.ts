@@ -37,17 +37,26 @@
  *                     derived or extending shapes take a `remote` base; `Settings.pick` of `#stackra/settings` is a
  *                     schema kind; a default naming a missing enum case is `shape_default_member_unresolved`); stackra-209
  *                     (a `Settings.pick([...])` class compiles over the picked keys of the member's own settings classes,
- *                     `settings_key_unresolved` otherwise).
+ *                     `settings_key_unresolved` otherwise); STA-1365 (as the `base-matches-suffix` lint: a class extending
+ *                     an `…Error` in an `.error.ts` file, a base-less class in a `src/testing/` `.service.ts` file and a
+ *                     class under an `oxlint-disable-next-line stackra/base-matches-suffix -- reason:` line are left out of
+ *                     a file's exported classes, so never `kind_unregistered_base`; an abstract class is a kind base,
+ *                     never `event_base_abstract`, and is never built, so its constructor is not read; a class without
+ *                     a constructor takes the nearest one its chain declares; a port-kind class in a `.driver.ts` file of
+ *                     a package below the container is built by hand, so its constructor is not read; `I18nKey` of a
+ *                     `@stackra/*` package reads as the `i18n_key` brand, a string).
  */
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 
 import { refusalCode } from "@stackra/errors";
 
+import { BELOW_CONTAINER_PACKAGES } from "#core/constants/below-container-packages.constant";
 import { CLIENTS_SPECIFIER } from "#core/constants/clients-specifier.constant";
 import { MODEL_TOKENS } from "#core/constants/model-tokens.constant";
 import { folderKey } from "#core/functions/folder-key.function";
 import { platformConstant } from "#core/functions/platform-constant.function";
+import { publicSpecifier } from "#core/functions/public-specifier.function";
 import { shippedSpecifier } from "#core/functions/shipped-specifier.function";
 import { snakeCase } from "#core/functions/snake-case.function";
 import type { ClassRef } from "#core/types/class-ref.type";
@@ -163,6 +172,13 @@ const BUILT_IN_ERRORS = new Set([
   "TypeError",
   "URIError",
 ]);
+
+/** The lint's own exemption written above a class: `// oxlint-disable-next-line stackra/base-matches-suffix -- reason: …`. */
+const BASE_LINT_DISABLED =
+  /^\s*\/\/\s*oxlint-disable-next-line\s.*\bstackra\/base-matches-suffix\b.*--\s*reason:\s*\S/;
+
+/** A `.service.ts` file of a package's testing entry: its base-less classes are harnesses, never bindings (lint `TESTING_ENTRY`). */
+const TESTING_HARNESS = /(?:^|\/)src\/testing\/(?:.*\/)?[^/]+\.service\.ts$/;
 
 /** Whether a path is a test file or sits in a `__tests__` folder. */
 function isTest(path: string): boolean {
@@ -1171,6 +1187,8 @@ export function createSourceReader(
       if (name === "Url") return { kind: "brand", brand: "url" };
       if (name === "Email") return { kind: "brand", brand: "email" };
       if (name === "CurrencyCode") return { kind: "brand", brand: "currency_code" };
+      // A lang key is a string on the wire and in its column (STA-1365 item 7).
+      if (name === "I18nKey") return { kind: "brand", brand: "i18n_key" };
       if (name === "Translated") return { kind: "translated", form: "value" };
       if (name === "TranslatedStrings") return { kind: "translated", form: "strings" };
       if (name === "Upload") {
@@ -2265,7 +2283,14 @@ export function createSourceReader(
     const info = name === "" ? undefined : kindInfo(node);
     if (info === undefined) return undefined;
     const path = host.fileName(node);
-    if (info.kind === "event")
+    // An abstract class is a kind base (`DomainEvent extends Event` in @stackra/events), never built or emitted.
+    const isAbstract = has(node, "AbstractKeyword");
+    // Below the container a driver extends its port and is built by hand, never by the container (STA-1365 item 4).
+    const portDriver =
+      info.kind === "port" &&
+      path.endsWith(".driver.ts") &&
+      BELOW_CONTAINER_PACKAGES.has(packageOf(path) ?? "");
+    if (info.kind === "event" && !isAbstract)
       fail(
         node.name ?? node,
         name,
@@ -2298,10 +2323,27 @@ export function createSourceReader(
     checkPartner(node, info.kind, partner, options);
 
     const members = node.members ?? [];
-    const constructor = members.find((member) => host.kind(member) === "Constructor");
+    // The container calls the nearest constructor the chain declares: the class's own, else its base's (STA-1365 item 5).
+    const constructor =
+      isAbstract || portDriver
+        ? undefined
+        : info.chain
+            .map((link) =>
+              (link.members ?? []).find((member) => host.kind(member) === "Constructor"),
+            )
+            .find((found) => found !== undefined);
+    // A package base's tokens are named by that package's own `#…` paths: the member imports them from its entries.
+    const owner = constructor === undefined ? "" : host.fileName(constructor);
+    const lift = (ref: ClassRef): ClassRef =>
+      isOwn(owner) ? ref : { ...ref, from: publicSpecifier(packageOf(owner) ?? "", ref.from) };
     const deps = (constructor?.parameters ?? [])
       .map((parameter) => tokenOf(parameter, name))
-      .filter((token): token is TokenRef => token !== undefined);
+      .filter((token): token is TokenRef => token !== undefined)
+      .map((token) => ({
+        ...token,
+        class: lift(token.class),
+        ...(token.of !== undefined ? { of: lift(token.of) } : {}),
+      }));
 
     const facets: FacetUse[] = [];
     let lifetime: string | undefined;
@@ -2401,6 +2443,17 @@ export function createSourceReader(
       traits,
       ...(renamed !== undefined ? { renamed } : {}),
     };
+  };
+
+  // The classes the `base-matches-suffix` lint lets sit in a kind file without a kind base, so gen does too (STA-1365).
+  const lintExempt = (statement: TsNode, file: string): boolean => {
+    const heritage = heritageOf(statement);
+    const base =
+      heritage === undefined ? undefined : host.text(heritage.target).split(/[.(<\s]/)[0];
+    // A class of the same kind (`extends Error`): the lint reads the base's name, never its import.
+    if (file.endsWith(".error.ts") && base?.endsWith("Error") === true) return true;
+    if (heritage === undefined && TESTING_HARNESS.test(file)) return true;
+    return BASE_LINT_DISABLED.test(host.leading(statement).trimEnd().split("\n").at(-1) ?? "");
   };
 
   const classNodes = (file: TsNode): TsNode[] =>
@@ -2586,7 +2639,8 @@ export function createSourceReader(
           record(nameOf(statement.name), true);
         else if (statement.name !== undefined) {
           record(nameOf(statement.name), false);
-          if (kind === "ClassDeclaration") classes.push(nameOf(statement.name));
+          if (kind === "ClassDeclaration" && !lintExempt(statement, rel(path)))
+            classes.push(nameOf(statement.name));
         }
       }
       const isIndex = /\/index\.tsx?$/.test(path);

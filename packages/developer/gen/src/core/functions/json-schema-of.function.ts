@@ -11,7 +11,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 10 and 26; amendment 2026-10-26: a bare `PublicId` is any prefix, a union
  *                     its prefixes); ADR 0158 (openapi.json is a projection of the manifest); ADR 0162 (decision 2);
- *                     ADR 0222 (decision 2).
+ *                     ADR 0222 (decision 2); STA-1365 (an `I18nKey` is a plain string).
  */
 import type { Json } from "@stackra/contracts";
 
@@ -107,6 +107,7 @@ function typeSchema(
         ...(type.bucket === undefined ? {} : { "x-stackra-bucket": type.bucket }),
       };
     case "brand":
+      if (type.brand === "i18n_key") return { type: "string" };
       return type.brand === "currency_code"
         ? { type: "string", pattern: "^[A-Z]{3}$" }
         : { type: "string", format: type.brand === "url" ? "uri" : "email" };

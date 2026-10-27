@@ -4,11 +4,12 @@
  *          Vitest on the decorators preset with the coverage gate, the unit tier only and the generated setup, and the
  *          setup that loads the registrations when they exist, the database testing entry for a member on
  *          `@stackra/database`, registers the wiring, awaits the member's schemas and pairs each factory with its
- *          model; no tsdown without entries, and nothing for an app or a worker.
+ *          model; no tsdown without entries, and nothing for an app or a worker. A member off `@stackra/container`
+ *          (`@stackra/testing`, rule 6c) gets a setup with no container import, wiring or schemas (STA-1365 item 8).
  * Boundary: test only; runs on the IR fixtures.
  * The root `vitest.config.ts` shim is listed with the tool configs (STA-1296).
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0295 (decision 5); ADR 0182; ADR 0263 (decision 12).
+ * Governing contract: ADR 0022 (test placement); ADR 0295 (decision 5); ADR 0182; ADR 0263 (decision 12); STA-1365.
  */
 import { describe, expect, it } from "@stackra/testing";
 
@@ -74,6 +75,22 @@ describe("emitToolConfigs", () => {
     expect(content(".stackra/vitest.setup.ts")).toContain('import "@stackra/clients/testing";');
     const bare = emitToolConfigs(COMMERCE_IR, { entries: [], registrations: false });
     expect(bare[1]?.content).not.toContain("@stackra/clients/testing");
+  });
+
+  it("writes a container-free setup for a member off @stackra/container, and the container one otherwise", () => {
+    const testing = {
+      ...COMMERCE_IR,
+      package: "@stackra/testing",
+      packages: ["@stackra/vitest-config"],
+    };
+    const setup = emitToolConfigs(testing, { entries: [], registrations: false })[1]?.content ?? "";
+    expect(setup).not.toContain("@stackra/");
+    expect(setup).not.toContain("registerWiring");
+    expect(setup).not.toContain("#stackra/wiring");
+    const declared = { ...testing, packages: ["@stackra/container", "@stackra/vitest-config"] };
+    expect(emitToolConfigs(declared, { entries: [], registrations: false })[1]?.content).toContain(
+      'from "@stackra/container/testing"',
+    );
   });
 
   it("leaves out what a member does not have", () => {

@@ -8,7 +8,8 @@
  * Boundary: test only; runs on the IR fixtures.
  * The root `vitest.config.ts` shim is listed with the tool configs (STA-1296).
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 10, 22 and 26); ADR 0295 (decision 7).
+ * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 10, 22 and 26); ADR 0295 (decision 7);
+ *                     STA-1365 (no wiring and no container import for a member off `@stackra/container`).
  */
 import { describe, expect, it } from "@stackra/testing";
 
@@ -111,6 +112,21 @@ describe("generateMember", () => {
     expect(paths).toContain(".stackra/entry/node.ts");
     expect(paths).not.toContain(".stackra/entry/server.ts");
     expect(paths).toContain(".stackra/tsdown.config.ts");
+  });
+
+  it("writes no wiring and no container import for a member off @stackra/container (STA-1365)", () => {
+    // A member with no kind class, like @stackra/testing: before STA-1365 its wiring and setup imported the container.
+    const { files, errors } = generateMember({
+      ...LOYALTY_KIT_IR,
+      package: "@stackra/testing",
+      packages: ["@stackra/tsdown-config", "@stackra/vitest-config"],
+      classes: [],
+      shapes: [],
+      enums: [],
+    });
+    expect(errors).toEqual([]);
+    expect(files.map((file) => file.path)).not.toContain(".stackra/gen/wiring.ts");
+    expect(files.map((file) => file.path)).not.toContain(".stackra/gen/module.ts");
   });
 
   it("writes nothing when any check refuses", () => {

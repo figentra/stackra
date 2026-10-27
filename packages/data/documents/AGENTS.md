@@ -1,4 +1,4 @@
-<!-- Stackra file contract: Purpose: the agent guide to @stackra/documents. Boundary: this package only. Runtime: docs. Governing contract: ADR 0365; ADR 0356. -->
+<!-- Stackra file contract: Purpose: the agent guide to @stackra/documents. Boundary: this package only. Runtime: docs. Governing contract: ADR 0365; ADR 0356; STA-1365. -->
 
 # AGENTS — @stackra/documents
 
@@ -41,7 +41,8 @@ drivers, fiscal's `HybridPdf` binding, the e-signature port (ADR 0365), its `con
 - The `gotenberg` drivers inject `DocumentsConfig` (key `documents`), never an endpoint object: a constructor takes
   class tokens only (ADR 0294 decision 17). The engine's header is the `DOCUMENTS_GOTENBERG_AUTHORIZATION` secret.
 - E-signature: `ConnectionESignatureDriver` routes the port through `ProviderResolver` (capability `e-signature`) and
-  prefixes envelope ids `<provider>:<connectionId>:<id>`. A provider here is an Integration and Connection pair in
+  prefixes envelope ids `<provider>:<connectionId>:<id>`. Its constructor takes the resolver only; the provider map is
+  the overridable `drivers` member (Documenso by default), never a constructor argument (STA-1365). A provider here is an Integration and Connection pair in
   `src/core/drivers/` (`documenso.integration.ts`, `documenso.connection.ts`) whose Connection answers
   `ESignatureConnection`; other vendors are OS integrations (R3-8). JSON calls go through `connection.api`; only
   presigned storage URLs use plain `fetch`, and their failures are `ProviderUnavailableError`.
@@ -67,4 +68,4 @@ drivers, fiscal's `HybridPdf` binding, the e-signature port (ADR 0365), its `con
 | Render data (names, orders)  | `renderDocument`, `resolveDocument`      | Read by path into the output only; never logged, never put in a refusal (paths only).                |
 | Drawn signature, signer name | `signForm`, `SignedForm`                 | Placed in the PDF and returned; the caller stores and audits it. The signature is hashed.            |
 | Signer contacts              | `SignatureRequest`, `ESignatureProvider` | Sent only to the provider the scope's Connection names (Documenso: name, email); never in a refusal. |
-| Rendered documents, invoices | `PdfEngine`, `PdfAssembler` drivers      | Sent only to the engine at `DocumentsConfig.gotenbergUrl`; never logged or put in a refusal.           |
+| Rendered documents, invoices | `PdfEngine`, `PdfAssembler` drivers      | Sent only to the engine at `DocumentsConfig.gotenbergUrl`; never logged or put in a refusal.         |

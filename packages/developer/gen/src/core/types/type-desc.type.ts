@@ -8,7 +8,7 @@
  * Governing contract: ADR 0294 (decisions 4 and 26: the TypeScript type is the rule); the STA-335 type-to-schema spike;
  *                     ADR 0162 (decision 2: `Translated` per-locale values); ADR 0222 (decision 2: `Upload<Bucket>`
  *                     tokens); STA-1290 (a `@stackra/*` type with a shipped `X$` is the `shipped` kind); STA-1293 (a hatch
- *                     carries its imports, type-only ones marked).
+ *                     carries its imports, type-only ones marked); STA-1365 (`I18nKey` is the `i18n_key` brand).
  */
 
 /** The meaning of one shape field type. */
@@ -31,8 +31,8 @@ export type TypeDesc =
   | { readonly kind: "translated"; readonly form: "value" | "strings" }
   /** `Upload<Bucket>` (`@stackra/media`): an upload token `{ id: "upl_…" }`; `bucket` is the bucket class, if named. */
   | { readonly kind: "upload"; readonly bucket?: string }
-  /** A branded string: `Url`, `Email` or `CurrencyCode`. */
-  | { readonly kind: "brand"; readonly brand: "url" | "email" | "currency_code" }
+  /** A branded string: `Url`, `Email`, `CurrencyCode` or `I18nKey` (a lang key, STA-1365). */
+  | { readonly kind: "brand"; readonly brand: "url" | "email" | "currency_code" | "i18n_key" }
   /**
    * `PublicId<"ord">` (`prefix`); `PublicId<"crl" | "prl">` (`prefixes`, `prefix` empty); a bare `PublicId`, a
    * polymorphic reference with any registered prefix (`prefix` empty, no `prefixes`).

@@ -7,7 +7,7 @@ Purpose: the agent rules of @stackra/gen: where code goes, entries and barrels, 
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
 Governing contract: ADR 0294; ADR 0295; ADR 0305; ADR 0260 (generated clients and typed events); ADR 0263; ADR 0162 and ADR 0222
-                    (the translated and upload shape kinds); ADR 0338 (a replica query's `ReplicaPage` output); STA-1290 (the shipped shape kind); STA-1293 (i18n, clients for apps, undeclared packages); STA-1296 (client modules and permission sets, config overrides, the root Vitest shim); STA-1298 (package lang namespaces in `I18n`, `i18n_key_missing`, `i18n_namespace_clash`); STA-1309 (catalogue loaders); STA-1306 (the quality-gate refusals); STA-1316 (the docs site); STA-1363 (consumed services' lang, remote shapes, `Settings.pick`); stackra-209 (`#stackra/settings`, `settings_key_unresolved`); STA-1322 (the Encore app file); STA-1251 (`searchable_semantic_ai_never`); ADR 0438 (shell slots and fills, stackra-03); ADR 0436 (surface targets, `modulepreloadOf`, stackra-04); ADR 0336 (model additions, stackra-64); ADR 0452 (the system graph, stackra-59).
+                    (the translated and upload shape kinds); ADR 0338 (a replica query's `ReplicaPage` output); STA-1290 (the shipped shape kind); STA-1293 (i18n, clients for apps, undeclared packages); STA-1296 (client modules and permission sets, config overrides, the root Vitest shim); STA-1298 (package lang namespaces in `I18n`, `i18n_key_missing`, `i18n_namespace_clash`); STA-1309 (catalogue loaders); STA-1306 (the quality-gate refusals); STA-1316 (the docs site); STA-1363 (consumed services' lang, remote shapes, `Settings.pick`); stackra-209 (`#stackra/settings`, `settings_key_unresolved`); STA-1322 (the Encore app file); STA-1251 (`searchable_semantic_ai_never`); ADR 0438 (shell slots and fills, stackra-03); ADR 0436 (surface targets, `modulepreloadOf`, stackra-04); ADR 0336 (model additions, stackra-64); ADR 0452 (the system graph, stackra-59); STA-1365 (gen agrees with the base-matches-suffix lint, `I18nKey`, members off the container).
 -->
 
 The Stackra compiler. Member at `packages/developer/gen` (`tier:lib`), in the programming model v3.1 shape (ADR 0294,
@@ -198,6 +198,13 @@ The gen refusals of the 2026-10-27 coverage audit, section 4. Each carries its f
   lead with its module key, `OrdersDemoSeeder`, names compare without case), `empty_module`, `sibling_not_exported` (an injected service only), `module_cycle`,
   `migration_numbering` (per `database/migrations/` folder, from 0001 without gaps), `event_name_shape` (an
   integration event's `name` is `<aggregate>.<verb>`) and `override_legacy_name` (under `src/overrides/`).
+  Gen and the `base-matches-suffix` lint agree (STA-1365): the reader leaves out of `FileExports.classes` the classes the
+  lint accepts with no kind base (`extends …Error` in `.error.ts`, a base-less `src/testing/` `.service.ts` class, a
+  class under the lint's disable line with a `reason:`); a port-kind class in a `.driver.ts` of a
+  `BELOW_CONTAINER_PACKAGES` member is no `kind_suffix_mismatch` and has no tokens. Keep both lists in step with the
+  lint when either changes. An abstract class is never `event_base_abstract` and its constructor is never read; a
+  class without one inherits its chain's nearest. `usesContainer` false (a member declaring packages without
+  `@stackra/container`) means no wiring, no member module and a container-free setup.
 - `checkSemanticSearch` (core, full pass only, STA-1251): `searchable_semantic_ai_never`, a `semantic: true`
   `@Searchable` text path that ends at a field whose `@Classify` facet's `options.dataClass.ai` is `never`. The reader
   fills `options.dataClass` from the `DataClass({...})` from `@stackra/*` the class's chain extends (`dataClassOf`).

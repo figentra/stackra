@@ -10,7 +10,7 @@
  * Boundary: test only; asserts on the generated source text.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decision 26); ADR 0305 (rules 1 and 14); registry v3.1 G1;
- *                     ADR 0162; ADR 0222.
+ *                     ADR 0162; ADR 0222; STA-1365 (`I18nKey`).
  */
 import { describe, expect, it } from "@stackra/testing";
 
@@ -272,6 +272,32 @@ describe("emitSchemas", () => {
     expect(content).toMatch(
       /import (?:type )?\{[^}]*\bPublicId\b[^}]*\} from "@stackra\/contracts";/,
     );
+  });
+
+  it("decodes an I18nKey as a string cast to the brand (STA-1365)", () => {
+    const labelled: ShapeIR = {
+      name: "Labelled",
+      kind: "schema",
+      module: "orders",
+      file: "src/modules/orders/schemas/labelled.schema.ts",
+      importPath: "#modules/orders/schemas/labelled.schema",
+      fields: [
+        {
+          name: "label",
+          optional: false,
+          nullable: false,
+          type: { kind: "brand", brand: "i18n_key" },
+          rules: [],
+        },
+      ],
+      relations: [],
+    };
+    const content = emitSchemas(
+      { ...COMMERCE_IR, shapes: [labelled], enums: [], classes: [] },
+      "orders",
+    );
+    expect(content).toContain("  label: z.string().transform((value) => value as I18nKey),");
+    expect(content).toMatch(/import type \{ I18nKey \} from "@stackra\/i18n";/);
   });
 
   it("imports a package's shipped schema under an alias instead of compiling it (STA-1290)", () => {

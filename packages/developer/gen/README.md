@@ -15,7 +15,8 @@ Governing contract: ADR 0294; ADR 0295; ADR 0260 (generated clients); ADR 0261; 
                     fills, stackra-03); ADR 0436 (surface targets and the extension bundle's modulepreload list,
                     stackra-04); ADR 0336 (model additions, stackra-64); ADR 0452 (the system graph, stackra-59);
                     STA-1363 (consumed services' lang, forms over remote shapes, `Settings.pick`, unresolved enum
-                    cases); stackra-209 (the `#stackra/settings` keys and `Settings.pick` forms).
+                    cases); stackra-209 (the `#stackra/settings` keys and `Settings.pick` forms); STA-1365 (gen agrees with the
+                    base-matches-suffix lint, `I18nKey`, members off the container).
 -->
 
 The Stackra compiler. Gen reads a member's source through the TypeScript compiler API, derives every identity and
@@ -192,6 +193,7 @@ may use these platform types (each read only when declared in a `@stackra/*` pac
 | ---------------------------------------------- | ---------------------------------------------------------- | ------------------------------------------------------------------------------- |
 | `PublicId<"ord">`, `Money`, `Duration`, `Json` | `publicId("ord")`, `money()`, `duration`, `json()`         | pattern, `{ minor, currency }`, `format: duration`, any                         |
 | `Url`, `Email`, `CurrencyCode`                 | `url()`, `z.email()`, `currencyCode()`                     | `format: uri`, `format: email`, `^[A-Z]{3}$`                                    |
+| `I18nKey` (`@stackra/i18n`, STA-1365)          | `z.string().transform((value) => value as I18nKey)`        | `string` (a string column on a model)                                           |
 | `Translated` (`@stackra/model`)                | locale map `.transform((values) => Translated.of(values))` | `object` of locale tag to string, `x-stackra-type: translated`                  |
 | `TranslatedStrings` (`@stackra/validation`)    | locale map `.transform((values) => ({ values }))`          | the same locale map                                                             |
 | `Upload<Bucket>` (`@stackra/media`)            | `Upload.schema`                                            | `{ id: "upl_…" }`, `x-stackra-type: upload`, `x-stackra-bucket: <Bucket class>` |
@@ -307,6 +309,15 @@ export class StorefrontService extends Service {
   `RemoteCreateOrderInput.schema.pick({ lines: true }).extend({ ...own fields })` in `#stackra/schemas`: the remote
   fields come from the client class's `schema` static, never re-read. A class extending `Settings.pick([...])` of
   `#stackra/settings` is a schema kind (no `kind_unregistered_base`).
+- **Gen agrees with the `base-matches-suffix` lint (STA-1365).** No `kind_unregistered_base` for what the lint accepts:
+  a class extending `Error` (any `…Error`) in an `.error.ts` file, a base-less class in a `src/testing/` `.service.ts`
+  file (a harness such as `TestingApp`), and a class under
+  `// oxlint-disable-next-line stackra/base-matches-suffix -- reason: …` (`Container`, `ActionPipeline`). A driver of
+  `@stackra/contracts` (below the container) extends its port: no `kind_suffix_mismatch` and no constructor tokens. An
+  abstract class is a kind base: never `event_base_abstract`, and its constructor (often protected) is never read; a
+  class without a constructor takes the nearest one its chain declares, a package base's tokens mapped to that
+  package's entries. A member off `@stackra/container` (`@stackra/testing`, rule 6c) gets no wiring, no member module
+  and a setup without `@stackra/container/testing`.
 - **Settings keys (stackra-209).** `emitSettings` writes `#stackra/settings`: `Settings = settingKeys({...})` with one
   key per setting field of each settings class (a section's fields flattened under the section), carrying its type
   (`boolean`, `integer` for an `@Int` number, `number`, `string` for a string, enum or brand, `connection` for a

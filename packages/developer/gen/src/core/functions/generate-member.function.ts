@@ -27,7 +27,8 @@
  *                     36); ADR 0097 (decision 3); registry v3.1 section 5 (gen-core items 2 to 6 and gap G1); ADR 0148
  *                     (decisions 3, 4 and 6: Encore CronJobs and Pub/Sub in SaaS); ADR 0260 (decision 3: one
  *                     generated client per service; decision 4: the relay hears every event; a cycle between services is allowed at the manifest level); STA-1293 (the i18n target, clients
- *                     imported by any file, undeclared packages refused); ADR 0452 (the member graph).
+ *                     imported by any file, undeclared packages refused); ADR 0452 (the member graph); STA-1365 (a
+ *                     member off `@stackra/container` gets no wiring and no member module, `usesContainer`).
  */
 import type { StackraManifest } from "@stackra/contracts";
 
@@ -58,6 +59,7 @@ import { emitSettings } from "#core/functions/emit-settings.function";
 import { emitToolConfigs } from "#core/functions/emit-tool-configs.function";
 import { emitWebhooks } from "#core/functions/emit-webhooks.function";
 import { emitWiring } from "#core/functions/emit-wiring.function";
+import { usesContainer } from "#core/functions/uses-container.function";
 import { memberGraphOf } from "#core/functions/member-graph-of.function";
 import { openApiOf } from "#core/functions/open-api-of.function";
 import { schemaModules } from "#core/functions/schema-modules.function";
@@ -151,8 +153,10 @@ export function generateMember(
     if (entities !== undefined)
       files.push({ path: `.stackra/gen/entities/${module}.ts`, content: entities });
   }
-  files.push({ path: ".stackra/gen/wiring.ts", content: emitWiring(ir) });
-  const memberModule = emitMemberModule(ir);
+  // A member off the container (`@stackra/testing`, rule 6c) has nothing to wire and no module (STA-1365 item 8).
+  const container = usesContainer(ir);
+  if (container) files.push({ path: ".stackra/gen/wiring.ts", content: emitWiring(ir) });
+  const memberModule = container ? emitMemberModule(ir) : undefined;
   if (memberModule !== undefined)
     files.push({ path: ".stackra/gen/module.ts", content: memberModule });
   const optional: readonly (readonly [string, string | undefined])[] = [

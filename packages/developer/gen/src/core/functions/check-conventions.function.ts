@@ -13,12 +13,18 @@
  *           `<stem>.<suffix>.ts` name whose suffix is a `KIND_FILES` row are checked. Default applied 2026-10-27
  *           (owner may override): a service may also be named by its stem alone (`EventBus`), a seeder may lead with its
  *           module key (`OrdersDemoSeeder`, as the Seeder base's example), names compare without case (`WhatsApp`), and only an injected service counts for `sibling_not_exported`.
+ *           As the `base-matches-suffix` lint does (STA-1365): a driver of a package below the container
+ *           (`BELOW_CONTAINER_PACKAGES`) extends its port, so a port-kind class in its `.driver.ts` file is no
+ *           `kind_suffix_mismatch`; the classes the lint lets extend no kind base never reach `file.classes` (the reader
+ *           leaves them out).
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (R1 to R3, decisions 13 and 24); ADR 0305 (rules 1 to 3 and 15 to 18, conventions 4);
- *                     ADR 0263 (sibling exports and module cycles); ADR 0159 (migrations are frozen); STA-1306.
+ *                     ADR 0263 (sibling exports and module cycles); ADR 0159 (migrations are frozen); STA-1306;
+ *                     STA-1365 (items 1, 2 and 4).
  */
 import type { StackraManifest } from "@stackra/contracts";
 
+import { BELOW_CONTAINER_PACKAGES } from "#core/constants/below-container-packages.constant";
 import { KIND_FILES } from "#core/constants/kind-files.constant";
 import { pascalCase } from "#core/functions/pascal-case.function";
 import type { GenError } from "#core/types/gen-error.type";
@@ -86,11 +92,14 @@ export function checkConventions(ir: MemberIR, manifest: StackraManifest): GenEr
 
   // Kind files: the class's kind matches the suffix, and its name is derived from the file.
   const kinded = new Set<string>();
+  const belowContainer = BELOW_CONTAINER_PACKAGES.has(ir.package);
   for (const declared of ir.classes) {
     kinded.add(`${declared.file}#${declared.name}`);
     const at = kindFile(declared.file);
     const row = KIND_FILES[declared.kind];
     if (at === undefined || row === undefined) continue;
+    // Below the container a driver cannot call `Driver(port)`, so it extends the port itself (as the lint allows).
+    if (belowContainer && declared.kind === "port" && at.suffix === "driver") continue;
     if (row.file !== at.suffix) {
       errors.push(
         error(

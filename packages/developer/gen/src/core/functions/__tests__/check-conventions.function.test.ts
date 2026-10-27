@@ -4,11 +4,12 @@
  *          (a service may drop its suffix, names compare without case), `kind_unregistered_base`, `empty_module`,
  *          `sibling_not_exported`, `module_cycle`, `migration_numbering`, `event_name_shape` and
  *          `override_legacy_name` each refuse with a fix; and `generateMember` refuses on them in the full pass but
- *          still writes the manifest pass.
+ *          still writes the manifest pass. A port-kind class in a `.driver.ts` file passes in a package below the
+ *          container (`@stackra/contracts`) and is `kind_suffix_mismatch` anywhere else (STA-1365 item 4).
  * Boundary: test only; pure IR in, refusals out.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (R1 to R3, decisions 13 and 24); ADR 0305 (rules 1 to 3
- *                     and 15 to 18); ADR 0263; ADR 0141; STA-1306.
+ *                     and 15 to 18); ADR 0263; ADR 0141; STA-1306; STA-1365.
  */
 import { describe, expect, it } from "@stackra/testing";
 
@@ -96,6 +97,17 @@ describe("checkConventions", () => {
         ),
       ),
     ).toEqual(["kind_suffix_mismatch VoidOrderAction", "kind_class_name RefundAction"]);
+  });
+
+  it("lets a package below the container extend its port in a driver file, and nobody else (STA-1365)", () => {
+    const driver = declared(
+      "MemorySignerDriver",
+      "port",
+      "orders",
+      "src/modules/orders/drivers/memory-signer.driver.ts",
+    );
+    expect(refused({ ...withClasses(driver), package: "@stackra/contracts" })).toEqual([]);
+    expect(refused(withClasses(driver))).toEqual(["kind_suffix_mismatch MemorySignerDriver"]);
   });
 
   it("names the expected class in the kind_class_name fix", () => {

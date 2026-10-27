@@ -13,12 +13,15 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0295 (decision 5: gen writes every tool file into `.stackra/`); ADR 0182 (test tiers and
  *                     coverage); ADR 0025 (build output); ADR 0263 (decision 12: testing modules); STA-1293 (the database
- *                     testing entry and the member's schemas in the setup).
+ *                     testing entry and the member's schemas in the setup); STA-1365 (a member off
+ *                     `@stackra/container`, `usesContainer`, gets a setup without the wiring, the schemas and
+ *                     `@stackra/container/testing`).
  */
 import { generatedHeader } from "#core/functions/generated-header.function";
 import { ROOT_VITEST_SHIM } from "#core/constants/root-vitest-shim.constant";
 import { importLines } from "#core/functions/import-lines.function";
 import type { GeneratedFile } from "#core/types/generated-file.type";
+import { usesContainer } from "#core/functions/uses-container.function";
 import type { MemberIR } from "#core/types/member-ir.type";
 
 /**
@@ -86,16 +89,22 @@ export function emitToolConfigs(
     "",
   ].join("\n");
 
-  const imports = new Map<string, Map<string, boolean>>([
-    [
-      "@stackra/container/testing",
-      new Map([
-        ["loadMemberSchemas", false],
-        ["registerWiring", false],
-      ]),
-    ],
-    ["#stackra/wiring", new Map([["wiring", false]])],
-  ]);
+  // A member off the container (`@stackra/testing`, rule 6c) has no wiring: its setup loads only what it has (STA-1365).
+  const container = usesContainer(ir);
+  const imports = new Map<string, Map<string, boolean>>(
+    container
+      ? [
+          [
+            "@stackra/container/testing",
+            new Map([
+              ["loadMemberSchemas", false],
+              ["registerWiring", false],
+            ]),
+          ],
+          ["#stackra/wiring", new Map([["wiring", false]])],
+        ]
+      : [],
+  );
   const pairs: string[] = [];
   for (const declared of ir.classes) {
     const model = declared.partner;
@@ -116,8 +125,7 @@ export function emitToolConfigs(
       boundary: "loaded by Vitest before every test file; a server never loads it.",
       runtime: "node",
     }),
-    'import { fileURLToPath } from "node:url";',
-    "",
+    ...(container ? ['import { fileURLToPath } from "node:url";', ""] : []),
     // The memory database driver and `app.repository(...)`, when the member runs on the database.
     ...(ir.packages?.includes("@stackra/database") === true
       ? ['import "@stackra/database/testing";']
@@ -129,8 +137,12 @@ export function emitToolConfigs(
     ...(generated.registrations ? ['import "#stackra/registrations";'] : []),
     ...importLines(imports),
     "",
-    "registerWiring(wiring);",
-    'await loadMemberSchemas(fileURLToPath(new URL("..", import.meta.url)));',
+    ...(container
+      ? [
+          "registerWiring(wiring);",
+          'await loadMemberSchemas(fileURLToPath(new URL("..", import.meta.url)));',
+        ]
+      : []),
     ...(pairs.length > 0 ? ["registerModelPartners([", ...pairs, "]);"] : []),
     "",
   ].join("\n");

@@ -28,7 +28,11 @@
  *          `remote` base; `Settings.pick` of `#stackra/settings` is a schema kind; a renamed enum case in a default is
  *          `shape_default_member_unresolved` (STA-1363). A `Settings.pick([...])` class compiles over the picked keys of
  *          the member's own settings classes, a section's key included, and an unknown key is `settings_key_unresolved`
- *          (stackra-209).
+ *          (stackra-209). The forms the `base-matches-suffix` lint accepts (STA-1365): `extends Error` in an `.error.ts`
+ *          file, a `src/testing/` harness and a class under the lint's disable line with a reason are not listed for
+ *          `kind_unregistered_base` (other bases and a reasonless disable are); an abstract `Event` base is no
+ *          `event_base_abstract`; an abstract base's protected constructor is not read, a subclass takes the nearest
+ *          one; a driver extending its port has no tokens only in `@stackra/contracts`; `I18nKey` is the `i18n_key` brand.
  * Boundary: test only; writes the fixture under `.cache/` and opens TypeScript on it.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decision 26, 2026-10-23 item 13, decision 28); ADR 0305
@@ -1404,5 +1408,203 @@ describe("createSourceReader on Settings.pick over the member's own settings (st
     expect(codes).toContain("settings_key_unresolved BadPolicyForm");
     expect(codes).not.toContain("settings_key_unresolved OrderPolicyForm");
     expect(shapes.some((shape) => shape.name === "BadPolicyForm")).toBe(false);
+  });
+});
+
+/** A port of this member and a driver that extends it directly, as `@stackra/contracts` writes them (STA-1365 item 4). */
+const PORT_DRIVER_SOURCES: Readonly<Record<string, string>> = {
+  "src/contracts/ports/signer.port.ts": [
+    'import { Port } from "@stackra/contracts";',
+    "export abstract class Signer extends Port {",
+    "  abstract sign(data: string): Promise<string>;",
+    "}",
+    "",
+  ].join("\n"),
+  "src/core/drivers/memory-signer.driver.ts": [
+    'import { Signer } from "#contracts/ports/signer.port";',
+    "export class MemorySignerDriver extends Signer {",
+    "  constructor(private readonly keyId: string) {",
+    "    super();",
+    "  }",
+    "  async sign(data: string): Promise<string> {",
+    "    return this.keyId + data;",
+    "  }",
+    "}",
+    "",
+  ].join("\n"),
+};
+
+/** The forms the `base-matches-suffix` lint accepts and gen used to refuse, each beside its refused twin (STA-1365). */
+const LINT_SOURCES: Readonly<Record<string, string>> = {
+  ...PORT_DRIVER_SOURCES,
+  "node_modules/@stackra/i18n/package.json": JSON.stringify({
+    name: "@stackra/i18n",
+    types: "./index.d.ts",
+  }),
+  "node_modules/@stackra/i18n/index.d.ts":
+    'export type I18nKey = string & { readonly "~brand": "i18n.I18nKey" };\n',
+  // Item 1: `extends Error` in an `.error.ts` file; a class of no kind there is still listed.
+  "src/core/errors/config-invalid.error.ts": "export class ConfigInvalidError extends Error {}\n",
+  "src/core/errors/stray.error.ts": "export class StrayThing extends Map<string, string> {}\n",
+  // Item 2: a testing-entry harness and a class under the lint's own disable line; without a reason, it is listed.
+  "src/testing/services/harness.service.ts": "export class HarnessService {}\n",
+  "src/core/services/pipeline.service.ts": [
+    "/** Built per resolver. */",
+    "// oxlint-disable-next-line stackra/base-matches-suffix -- reason: built per resolver, never a container service",
+    "export class PipelineService {}",
+    "",
+  ].join("\n"),
+  "src/core/services/unexplained.service.ts": [
+    "// oxlint-disable-next-line stackra/base-matches-suffix",
+    "export class UnexplainedService {}",
+    "",
+  ].join("\n"),
+  "src/core/services/loose.service.ts": "export class LooseService {}\n",
+  // Item 3: an abstract kind base over Event is not a user event; a concrete one still is.
+  "src/node/events/kind-base.event.ts": [
+    'import { Event } from "@stackra/events";',
+    "export abstract class KindBaseEvent extends Event {}",
+    "",
+  ].join("\n"),
+  "src/node/events/stray.event.ts": [
+    'import { Event } from "@stackra/events";',
+    "export class StrayEvent extends Event {}",
+    "",
+  ].join("\n"),
+  // Item 5: an abstract base's protected constructor is never read; a subclass takes the nearest constructor.
+  "src/core/services/clock.service.ts": [
+    'import { Service } from "@stackra/container";',
+    "export class ClockService extends Service {}",
+    "",
+  ].join("\n"),
+  "src/core/services/area.service.ts": [
+    'import { Service } from "@stackra/container";',
+    "export abstract class AreaService extends Service {",
+    "  protected constructor(readonly backends: Readonly<Record<string, string>>) {",
+    "    super();",
+    "  }",
+    "}",
+    "",
+  ].join("\n"),
+  "src/core/services/web-area.service.ts": [
+    'import { AreaService } from "#core/services/area.service";',
+    "export class WebAreaService extends AreaService {",
+    "  constructor() {",
+    "    super({});",
+    "  }",
+    "}",
+    "",
+  ].join("\n"),
+  "src/core/services/concrete-area.service.ts": [
+    'import { Service } from "@stackra/container";',
+    "export class ConcreteAreaService extends Service {",
+    "  constructor(readonly backends: Readonly<Record<string, string>>) {",
+    "    super();",
+    "  }",
+    "}",
+    "",
+  ].join("\n"),
+  "src/core/services/base-timer.service.ts": [
+    'import { Service } from "@stackra/container";',
+    'import { ClockService } from "#core/services/clock.service";',
+    "export class BaseTimerService extends Service {",
+    "  constructor(readonly clock: ClockService) {",
+    "    super();",
+    "  }",
+    "}",
+    "",
+  ].join("\n"),
+  "src/core/services/timer.service.ts": [
+    'import { BaseTimerService } from "#core/services/base-timer.service";',
+    "export class TimerService extends BaseTimerService {}",
+    "",
+  ].join("\n"),
+  // Item 7: `I18nKey` of a @stackra package is a string brand; a local brand is still unknown.
+  "src/core/schemas/labelled.schema.ts": [
+    'import type { I18nKey } from "@stackra/i18n";',
+    'import { Schema } from "@stackra/validation";',
+    'type LocalKey = string & { readonly "~brand": "local" };',
+    "export class Labelled extends Schema {",
+    "  label!: I18nKey;",
+    "  local!: LocalKey;",
+    "}",
+    "",
+  ].join("\n"),
+};
+
+describe("createSourceReader on the forms the base-matches-suffix lint accepts (STA-1365)", async () => {
+  const root = writeFixtureMember("lint", LINT_SOURCES);
+  const host = await openHost(join(root, "tsconfig.json"));
+  const reader = createSourceReader(host, readMemberFacts(root));
+  const classes = reader.sources.flatMap((file) => reader.classes(file));
+  const shapes = reader.sources.flatMap((file) => reader.shapes(file));
+  const exported = reader.sources.map((file) => reader.exports(file));
+  host.close();
+  const codes = [...new Set(reader.errors.map((error) => `${error.code} ${error.subject}`))];
+  const listed = (file: string) => exported.find((found) => found.file === file)?.classes;
+
+  it("leaves `extends Error` in an .error.ts file out of the checked classes, and keeps any other base", () => {
+    expect(listed("src/core/errors/config-invalid.error.ts")).toBeUndefined();
+    expect(listed("src/core/errors/stray.error.ts")).toEqual(["StrayThing"]);
+  });
+
+  it("leaves out a testing harness and a class under the lint's disable line with a reason", () => {
+    expect(listed("src/testing/services/harness.service.ts")).toBeUndefined();
+    expect(listed("src/core/services/pipeline.service.ts")).toBeUndefined();
+    expect(listed("src/core/services/unexplained.service.ts")).toEqual(["UnexplainedService"]);
+    expect(listed("src/core/services/loose.service.ts")).toEqual(["LooseService"]);
+  });
+
+  it("never refuses an abstract kind base as an event, and still refuses a concrete one", () => {
+    expect(codes).not.toContain("event_base_abstract KindBaseEvent");
+    expect(codes).toContain("event_base_abstract StrayEvent");
+  });
+
+  it("reads no constructor of an abstract base, and the nearest one of a subclass", () => {
+    expect(codes).not.toContain("token_not_a_class AreaService.constructor");
+    expect(codes).toContain("token_not_a_class ConcreteAreaService.constructor");
+    expect(classes.find((declared) => declared.name === "WebAreaService")?.deps).toEqual([]);
+    expect(classes.find((declared) => declared.name === "TimerService")?.deps).toEqual([
+      { class: { name: "ClockService", from: "#core/services/clock.service" } },
+    ]);
+  });
+
+  it("refuses a driver that extends its port outside a package below the container", () => {
+    expect(codes).toContain("token_not_a_class MemorySignerDriver.constructor");
+  });
+
+  it("reads I18nKey as the i18n_key brand, and a local brand as unknown", () => {
+    const labelled = shapes.find((shape) => shape.name === "Labelled");
+    expect(labelled?.fields.find((field) => field.name === "label")?.type).toEqual({
+      kind: "brand",
+      brand: "i18n_key",
+    });
+    expect(codes).toContain("shape_unknown_type Labelled.local");
+  });
+});
+
+describe("createSourceReader on a driver of @stackra/contracts (STA-1365)", async () => {
+  const root = writeFixtureMember("contracts", {
+    ...PORT_DRIVER_SOURCES,
+    "package.json": JSON.stringify({
+      name: "@stackra/contracts",
+      version: "1.0.0",
+      type: "module",
+      imports: {
+        "#contracts/*": ["./src/contracts/*.ts"],
+        "#core/*": ["./src/core/*.ts"],
+      },
+    }),
+  });
+  const host = await openHost(join(root, "tsconfig.json"));
+  const reader = createSourceReader(host, readMemberFacts(root));
+  const classes = reader.sources.flatMap((file) => reader.classes(file));
+  host.close();
+
+  it("reads the driver as its port's kind with no constructor tokens and no refusal", () => {
+    const driver = classes.find((declared) => declared.name === "MemorySignerDriver");
+    expect(driver?.kind).toBe("port");
+    expect(driver?.deps).toEqual([]);
+    expect(reader.errors.map((error) => error.code)).not.toContain("token_not_a_class");
   });
 });

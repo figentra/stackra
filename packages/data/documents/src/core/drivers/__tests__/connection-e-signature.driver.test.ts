@@ -2,11 +2,12 @@
  * Stackra file contract:
  * Purpose: unit tests of `ConnectionESignatureDriver`: `send` resolves the `e-signature` provider and prefixes the
  *          envelope id with provider and Connection; follow-ups reload that Connection and pass the provider's own id;
- *          an id it did not answer is not found.
+ *          an id it did not answer is not found; the default map is Documenso's, and a host's subclass overrides
+ *          `drivers` (the constructor takes the resolver only, STA-1365).
  * Boundary: test only; the resolver is an in-memory stand-in and the Connection a `DocumensoConnection` whose calls
  *           are replaced, so no store and no provider is reached.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0269; ADR 0356 (decision 2); ADR 0365 (decision 5).
+ * Governing contract: ADR 0022; ADR 0269; ADR 0356 (decision 2); ADR 0365 (decision 5); STA-1365.
  */
 import type { IntegrationApi, ProviderResolver } from "@stackra/integrations";
 import { makeConnection } from "@stackra/integrations/testing";
@@ -18,6 +19,11 @@ import { DocumensoConnection } from "#core/drivers/documenso.connection";
 import { SignatureEnvelopeNotFoundError } from "#core/errors/signature-envelope-not-found.error";
 
 const DRIVERS = { documenso: DocumensoConnection };
+
+/** A host's driver over its own map. */
+class HostESignatureDriver extends ConnectionESignatureDriver {
+  protected override readonly drivers = DRIVERS;
+}
 
 /** An open envelope with the provider's id. */
 const envelope = (id: string) => ({ id, reference: "frm_1", status: SignatureStatus.Sent });
@@ -53,7 +59,7 @@ function setup() {
       return connection;
     },
   } as unknown as ProviderResolver;
-  return { driver: new ConnectionESignatureDriver(resolver, DRIVERS), asked };
+  return { driver: new HostESignatureDriver(resolver), asked, resolver };
 }
 
 describe("ConnectionESignatureDriver", () => {
@@ -83,6 +89,20 @@ describe("ConnectionESignatureDriver", () => {
       "cancel 42",
     ]);
     expect(asked).toContain("byConnection documenso conn_00000000000000000000000001 true");
+  });
+
+  it("routes over Documenso by default", async () => {
+    const seen: object[] = [];
+    const { resolver } = setup();
+    const driver = new ConnectionESignatureDriver({
+      ...resolver,
+      async byConnection(drivers: object) {
+        seen.push(drivers);
+        throw new Error("stop");
+      },
+    } as unknown as ProviderResolver);
+    await expect(driver.status("documenso:conn_1:42")).rejects.toThrow("stop");
+    expect(seen).toEqual([{ documenso: DocumensoConnection }]);
   });
 
   it("refuses an id it did not answer", async () => {

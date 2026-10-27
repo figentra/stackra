@@ -6,7 +6,7 @@
  *          `x-stackra-schema` (STA-1290).
  * Boundary: test only; runs on the commerce IR fixture.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 10 and 26); ADR 0158; ADR 0162; ADR 0222.
+ * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 10 and 26); ADR 0158; ADR 0162; ADR 0222; STA-1365 (`I18nKey`).
  */
 import { describe, expect, it } from "@stackra/testing";
 
@@ -165,6 +165,30 @@ describe("jsonSchemaOf", () => {
       type: "string",
       pattern: "^(crl|prl)_[0-9A-Za-z]{26}$",
     });
+  });
+
+  it("describes an I18nKey as a plain string (STA-1365)", () => {
+    const labelled: ShapeIR = {
+      name: "Labelled",
+      kind: "schema",
+      module: "orders",
+      file: "src/modules/orders/schemas/labelled.schema.ts",
+      importPath: "#modules/orders/schemas/labelled.schema",
+      fields: [
+        {
+          name: "label",
+          optional: false,
+          nullable: false,
+          type: { kind: "brand", brand: "i18n_key" },
+          rules: [],
+        },
+      ],
+      relations: [],
+    };
+    const schema = jsonSchemaOf(labelled, COMMERCE_IR.shapes) as {
+      properties: Record<string, unknown>;
+    };
+    expect(schema.properties["label"]).toEqual({ type: "string" });
   });
 
   it("references a package's shipped schema instead of describing it again (STA-1290)", () => {
