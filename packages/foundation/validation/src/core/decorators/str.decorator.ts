@@ -5,6 +5,8 @@
  * Boundary: made with `createDecorator`, so it records its options and installs no accessor; gen reads the literal
  *           options from source and compiles them into `X$`. Typed against its field, so tsc refuses it on a field
  *           that is not a string (or a string array with `each`). It may mark the shape kinds only.
+ *           Written bare (`@Str`) when it has no options (ADR 0294 R6 bans `@Str()`): legacy decorators then call it
+ *           with the prototype and the field name, and it records `{}`.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 6 and 26); ADR 0095 as amended.
  */
@@ -39,9 +41,16 @@ export function Str(
 ): FieldDecorator<readonly string[]>;
 /** The single-value form: `@Str(options)` on a string field, or on a translated field (each locale's string). */
 export function Str(options?: StrOptions): FieldDecorator<string | TranslatedStrings>;
-/** Implementation of both forms: records `options` on the field. */
-export function Str(options: StrOptions = {}): unknown {
-  return STR(options);
+/** The bare form: `@Str` on a string field, with no options. */
+export function Str<K extends string, O extends { [P in K]?: string | TranslatedStrings | null }>(
+  target: O,
+  property: K,
+): void;
+/** Implementation of every form: records `options` on the field, or `{}` when written bare. */
+export function Str(options: StrOptions | object = {}, property?: string | symbol): unknown {
+  // Bare `@Str`: the first argument is the prototype and the second the field name.
+  if (property !== undefined) return STR({})(options, property);
+  return STR(options as StrOptions);
 }
 
 /** The options recorded on each field of a class and its ancestors. */

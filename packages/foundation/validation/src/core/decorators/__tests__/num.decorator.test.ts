@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: unit and type tests of `@Num`: it records bounds and `exclusiveMin`, takes a number list or map with
- *          `each: true`, is typed against its field and is refused outside the shape kinds.
+ * Purpose: unit and type tests of `@Num`: it records bounds and `exclusiveMin`, records `{}` when written bare, takes
+ *          a number list or map with `each: true`, is typed against its field and is refused outside the shape kinds.
  * Boundary: test only; imports the subject through its `#core` alias and the runner through @stackra/testing.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0294 (decisions 4, 6
@@ -28,14 +28,18 @@ class LoyaltyOptions extends Schema {
     each: true,
   })
   rates: Record<string, number> = {};
+
+  @Num
+  ratio = 0.5;
 }
 
 describe("Num", () => {
-  it("records its options per field", () => {
+  it("records its options per field, and {} when written bare", () => {
     const members = Num.members(LoyaltyOptions);
     expect(members.get("earnPerMinor")).toEqual({ exclusiveMin: 0 });
     expect(members.get("weights")).toEqual({ min: 0, max: 1, each: true });
     expect(members.get("rates")).toEqual({ min: 0, each: true });
+    expect(members.get("ratio")).toEqual({});
   });
 
   it("is refused by tsc on a string", () => {

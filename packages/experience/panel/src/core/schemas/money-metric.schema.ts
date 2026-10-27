@@ -26,11 +26,11 @@ export class MoneyMetric extends Schema {
   static readonly schema = MONEY_METRIC_SCHEMA;
 
   /** The amount over the period in minor units; null when there is nothing yet. */
-  @Int()
+  @Int
   value!: number | null;
 
   /** The amount over the period before it in minor units; null without a comparison. */
-  @Int()
+  @Int
   previous!: number | null;
 
   /** One amount per bucket of the period in minor units, oldest first; null without a series. */
@@ -38,7 +38,7 @@ export class MoneyMetric extends Schema {
   series!: number[] | null;
 
   /** The target over the period in minor units; null without one. */
-  @Int()
+  @Int
   target!: number | null;
 
   /** The currency of every amount above. */

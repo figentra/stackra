@@ -26,7 +26,7 @@ class CreateOrderInput extends Schema {
   @List({ unique: true })
   tags: readonly string[] = [];
 
-  @List()
+  @List
   notes?: string[];
 }
 

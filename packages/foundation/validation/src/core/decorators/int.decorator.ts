@@ -5,6 +5,8 @@
  * Boundary: made with `createDecorator`, so it records its options and installs no accessor; gen compiles it to
  *           `z.number().int()`. Typed against its field, so tsc refuses it on a string. It may mark the shape kinds
  *           only.
+ *           Written bare (`@Int`) when it has no options (ADR 0294 R6 bans `@Int()`): legacy decorators then call it
+ *           with the prototype and the field name, and it records `{}`.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 4, 6 and 26); ADR 0095 as amended.
  */
@@ -38,9 +40,16 @@ export function Int(
 ): FieldDecorator<readonly number[] | Readonly<Record<string, number>>>;
 /** The single-value form: `@Int(options)` on a number field. */
 export function Int(options?: IntOptions): FieldDecorator<number>;
-/** Implementation of both forms: records `options` on the field. */
-export function Int(options: IntOptions = {}): unknown {
-  return INT(options);
+/** The bare form: `@Int` on a number field, with no options. */
+export function Int<K extends string, O extends { [P in K]?: number | null }>(
+  target: O,
+  property: K,
+): void;
+/** Implementation of every form: records `options` on the field, or `{}` when written bare. */
+export function Int(options: IntOptions | object = {}, property?: string | symbol): unknown {
+  // Bare `@Int`: the first argument is the prototype and the second the field name.
+  if (property !== undefined) return INT({})(options, property);
+  return INT(options as IntOptions);
 }
 
 /** The options recorded on each field of a class and its ancestors. */

@@ -114,7 +114,8 @@ if (!form.success) return ctx.fieldErrors(form.error);
 
 A `number` carries `@Int` or `@Num`; `?:` is optional (absent, never `undefined`); `| null` is nullable. tsc refuses
 `@Int` on a string, `@List` on a field that is not an array, and a `@Field(zod)` whose output the field cannot hold.
-Decorators record only: gen reads them from source, and they never install an accessor.
+Decorators record only: gen reads them from source, and they never install an accessor. A rule with no options is
+written bare (`@Int`, `@Str`, `@Num`, `@List`), never `@Int()` (ADR 0294 R6, `stackra/no-empty-decorator`).
 
 ## The registry
 

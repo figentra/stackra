@@ -4,6 +4,8 @@
  *          exclusive lower bound and the message key of a failure; with `each: true`, each value of a list or map.
  * Boundary: made with `createDecorator`, so it records its options and installs no accessor; gen compiles it to
  *           `z.number()`. Typed against its field, so tsc refuses it on a string. It may mark the shape kinds only.
+ *           Written bare (`@Num`) when it has no options (ADR 0294 R6 bans `@Num()`): legacy decorators then call it
+ *           with the prototype and the field name, and it records `{}`.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 4, 6 and 26); ADR 0095 as amended.
  */
@@ -34,9 +36,16 @@ export function Num(
 ): FieldDecorator<readonly number[] | Readonly<Record<string, number>>>;
 /** The single-value form: `@Num(options)` on a number field. */
 export function Num(options?: NumOptions): FieldDecorator<number>;
-/** Implementation of both forms: records `options` on the field. */
-export function Num(options: NumOptions = {}): unknown {
-  return NUM(options);
+/** The bare form: `@Num` on a number field, with no options. */
+export function Num<K extends string, O extends { [P in K]?: number | null }>(
+  target: O,
+  property: K,
+): void;
+/** Implementation of every form: records `options` on the field, or `{}` when written bare. */
+export function Num(options: NumOptions | object = {}, property?: string | symbol): unknown {
+  // Bare `@Num`: the first argument is the prototype and the second the field name.
+  if (property !== undefined) return NUM({})(options, property);
+  return NUM(options as NumOptions);
 }
 
 /** The options recorded on each field of a class and its ancestors. */

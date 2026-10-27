@@ -26,11 +26,11 @@ export class CountMetric extends Schema {
   static readonly schema = COUNT_METRIC_SCHEMA;
 
   /** The count over the period; null when there is nothing to count yet. */
-  @Int()
+  @Int
   value!: number | null;
 
   /** The count over the period before it; null without a comparison. */
-  @Int()
+  @Int
   previous!: number | null;
 
   /** One count per bucket of the period, oldest first; null without a series. */
@@ -38,7 +38,7 @@ export class CountMetric extends Schema {
   series!: number[] | null;
 
   /** The target over the period; null without one. */
-  @Int()
+  @Int
   target!: number | null;
 
   /**

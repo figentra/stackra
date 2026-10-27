@@ -20,7 +20,7 @@ class Quantities extends Schema {
   })
   quantity = 1;
 
-  @Int()
+  @Int
   optional?: number;
 
   @Int({ min: 0 })
@@ -40,7 +40,7 @@ class Quantities extends Schema {
 }
 
 describe("Int", () => {
-  it("records its options per field, and {} when called bare", () => {
+  it("records its options per field, and {} when written bare", () => {
     const members = Int.members(Quantities);
     expect(members.get("quantity")).toEqual({
       min: 1,

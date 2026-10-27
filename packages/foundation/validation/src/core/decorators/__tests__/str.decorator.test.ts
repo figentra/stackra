@@ -31,7 +31,7 @@ class ContactInput extends Schema {
   })
   supported = ["2026-10-01", "2027-03-01"];
 
-  @Str()
+  @Str
   nickname: string | null = null;
 }
 
