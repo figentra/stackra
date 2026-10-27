@@ -1,10 +1,10 @@
 /**
  * Stackra file contract:
- * Purpose: `MemoryScopeTreeDriver`, the in-process `ScopeTree`: the entries it was built with, read by id, by path and
+ * Purpose: `MemoryScopeTreeDriver`, the in-process `ScopeTree`: the entries it was seeded with, read by id, by path and
  *          along the path for ancestors and descendants. The driver of tests, local runs and a client that already
  *          holds the nodes it may see.
- * Boundary: holds a copy of the entries and never changes it; what a caller may see is what it was given (the Postgres
- *           driver leaves that to row-level security). Ancestors come root first and descendants in path order, as the
+ * Boundary: holds a copy of the entries `seed` gave it (none before); what a caller may see is what it was given
+ *           (the Postgres driver leaves that to row-level security). Ancestors come root first and descendants in path order, as the
  *           port states.
  * Runtime: isomorphic
  * Governing contract: ADR 0327 (decisions 1 and 3); ADR 0266 (memory drivers first); ADR 0294 (decision 16).
@@ -24,20 +24,22 @@ const byPathOrder = (a: ScopeEntry, b: ScopeEntry): number =>
  * A tree over a fixed list.
  *
  * @example
- * const tree = new MemoryScopeTreeDriver([
+ * const tree = new MemoryScopeTreeDriver().seed([
  *   { id: "scp_01j9z3k4m5n6p7q8r9s0t1v2w3", path: "platform", level: "platform", name: "Platform" },
  * ]);
  */
 export class MemoryScopeTreeDriver extends Driver(ScopeTree) {
   /** The entries, in path order. */
-  private readonly entries: readonly ScopeEntry[];
+  private entries: readonly ScopeEntry[] = [];
 
   /**
-   * @param entries - the nodes this tree holds.
+   * Sets the nodes this tree holds, replacing any before.
+   *
+   * @returns this tree, to chain.
    */
-  constructor(entries: readonly ScopeEntry[]) {
-    super();
+  seed(entries: readonly ScopeEntry[]): this {
     this.entries = [...entries].sort(byPathOrder);
+    return this;
   }
 
   /** The node with public id `id`, or `undefined` when none is visible. */

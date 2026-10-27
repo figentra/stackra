@@ -34,5 +34,5 @@ export function fakeScopeTree(
       entries.set(at, { ...scopeRefOf(at), level, name: label });
     });
   }
-  return new MemoryScopeTreeDriver([...entries.values()]);
+  return new MemoryScopeTreeDriver().seed([...entries.values()]);
 }

@@ -54,7 +54,7 @@ class AcmeGrantsDriver extends Driver(GrantedScopes) {
 }
 
 const step = new HeaderScopeResolverDriver(
-  new MemoryScopeTreeDriver([ACME, ACME_EU, OTHER]),
+  new MemoryScopeTreeDriver().seed([ACME, ACME_EU, OTHER]),
   new AcmeGrantsDriver(),
 );
 

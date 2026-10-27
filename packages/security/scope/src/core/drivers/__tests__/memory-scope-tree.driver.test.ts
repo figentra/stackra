@@ -38,7 +38,7 @@ const LOOKALIKE: ScopeEntry = {
   name: "Acme EU Ltd",
 };
 
-const tree = new MemoryScopeTreeDriver([ACME_EU, LOOKALIKE, ROOT, ACME]);
+const tree = new MemoryScopeTreeDriver().seed([ACME_EU, LOOKALIKE, ROOT, ACME]);
 
 describe(MemoryScopeTreeDriver, () => {
   it("is a ScopeTree", () => {

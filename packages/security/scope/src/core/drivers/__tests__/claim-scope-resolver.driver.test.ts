@@ -24,7 +24,7 @@ const ACME: ScopeEntry = {
 
 const AGENT: Actor = { kind: ActorKind.Agent, id: "agt_01j9z3k4m5n6p7q8r9s0t1v2w1" };
 
-const step = new ClaimScopeResolverDriver(new MemoryScopeTreeDriver([ACME]));
+const step = new ClaimScopeResolverDriver(new MemoryScopeTreeDriver().seed([ACME]));
 
 describe(ClaimScopeResolverDriver, () => {
   it("is a ScopeResolver", () => {

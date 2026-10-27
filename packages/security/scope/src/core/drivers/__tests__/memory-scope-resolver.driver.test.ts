@@ -32,7 +32,10 @@ const SHOP: ScopeEntry = {
 
 const actor = { kind: ActorKind.Job, id: "job_01j9z3k4m5n6p7q8r9s0t1v2w1" } as const;
 const resolver = (entries: readonly ScopeEntry[]): MemoryScopeResolverDriver =>
-  new MemoryScopeResolverDriver(new MemoryScopeTreeDriver(entries), buildConfig(ScopeConfig));
+  new MemoryScopeResolverDriver(
+    new MemoryScopeTreeDriver().seed(entries),
+    buildConfig(ScopeConfig),
+  );
 
 describe(MemoryScopeResolverDriver, () => {
   it("is a ScopeResolver that answers the claim's node", async () => {

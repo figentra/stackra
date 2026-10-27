@@ -9,13 +9,16 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0327 (decisions 2 and 4); ADR 0294 (decision 19); ADR 0305 (conventions 1).
  */
-import { Schema } from "@stackra/validation";
+import { Field, Schema } from "@stackra/validation";
 
 import type { ScopeLevel } from "#contracts/index";
+import { ScopeConfig$ } from "#core/constants/scope-config-schema.constant";
 
 /** The options of `ScopeConfig`. */
 export class ScopeOptions extends Schema {
   /** The levels, root first; a node sits at its parent's level when that level is recursive, else at the next one. */
+  // reason: a level is a contracts interface with no `X$`; `ScopeConfig$` holds its rules
+  @Field(ScopeConfig$.shape.levels)
   levels: ScopeLevel[] = [
     { key: "platform", recursive: false },
     { key: "product", recursive: false },

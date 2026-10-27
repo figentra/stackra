@@ -134,7 +134,7 @@ function driverOver(state: MemoryPolicyState, bindings: Map<AnyClass, object> = 
   const pdp = new PolicyDecisionPointService(source, new FixedClockDriver());
   const driver = new IamAccessControlDriver(
     pdp,
-    new MemoryScopeTreeDriver([
+    new MemoryScopeTreeDriver().seed([
       { ...ROOT, level: "platform", name: "Platform" },
       { ...ACME, level: "product", name: "Acme" },
     ]),

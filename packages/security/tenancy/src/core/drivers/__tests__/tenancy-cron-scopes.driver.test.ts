@@ -45,7 +45,7 @@ const config = buildConfig(ScopeConfig);
 describe(TenancyCronScopesDriver, () => {
   it("is a CronScopes that lists every tenant, child tenants included, as scope refs", async () => {
     const driver = new TenancyCronScopesDriver(
-      new MemoryScopeTreeDriver([ROOT, PRODUCT, ORGANISATION, SHOP]),
+      new MemoryScopeTreeDriver().seed([ROOT, PRODUCT, ORGANISATION, SHOP]),
       config,
     );
     expect(driver).toBeInstanceOf(CronScopes);
@@ -56,7 +56,10 @@ describe(TenancyCronScopesDriver, () => {
   });
 
   it("lists none when the tree shows no root", async () => {
-    const driver = new TenancyCronScopesDriver(new MemoryScopeTreeDriver([PRODUCT, SHOP]), config);
+    const driver = new TenancyCronScopesDriver(
+      new MemoryScopeTreeDriver().seed([PRODUCT, SHOP]),
+      config,
+    );
     await expect(driver.list()).resolves.toEqual([]);
   });
 });

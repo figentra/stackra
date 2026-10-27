@@ -45,7 +45,7 @@ const TENANT: ScopeEntry = {
 };
 const ABSENT = "scp_01j9z3k4m5n6p7q8r9s0t1v2w9";
 
-const tree = new MemoryScopeTreeDriver([ROOT, PRODUCT, TENANT]);
+const tree = new MemoryScopeTreeDriver().seed([ROOT, PRODUCT, TENANT]);
 
 /** A job acting in `tenantId`, or in none. */
 const requestOf = (tenantId?: PublicId) => ({

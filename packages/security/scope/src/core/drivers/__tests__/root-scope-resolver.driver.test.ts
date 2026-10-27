@@ -29,13 +29,13 @@ const request = { actor: { kind: ActorKind.Job, id: "job_01j9z3k4m5n6p7q8r9s0t1v
 describe(RootScopeResolverDriver, () => {
   it("is a ScopeResolver that answers the configured root", async () => {
     const step = new RootScopeResolverDriver(
-      new MemoryScopeTreeDriver([ROOT, GLOBAL]),
+      new MemoryScopeTreeDriver().seed([ROOT, GLOBAL]),
       buildConfig(ScopeConfig),
     );
     expect(step).toBeInstanceOf(ScopeResolver);
     await expect(step.resolve()).resolves.toBe(ROOT);
     const own = new RootScopeResolverDriver(
-      new MemoryScopeTreeDriver([ROOT, GLOBAL]),
+      new MemoryScopeTreeDriver().seed([ROOT, GLOBAL]),
       buildConfig(ScopeConfig, { values: { root: "global" } }),
     );
     await expect(own.resolve()).resolves.toBe(GLOBAL);
@@ -43,7 +43,7 @@ describe(RootScopeResolverDriver, () => {
 
   it("passes when the tree shows no root", async () => {
     const step = new RootScopeResolverDriver(
-      new MemoryScopeTreeDriver([]),
+      new MemoryScopeTreeDriver().seed([]),
       buildConfig(ScopeConfig),
     );
     await expect((step as ScopeResolver).resolve(request)).resolves.toBeUndefined();

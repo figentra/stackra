@@ -31,7 +31,7 @@ describe("SCOPE_PATH_CLAIM", () => {
       [SCOPE_PATH_CLAIM]: "platform.acme",
     };
     const claim = verifiedClaims[SCOPE_PATH_CLAIM];
-    const step = new ClaimScopeResolverDriver(new MemoryScopeTreeDriver([ACME]));
+    const step = new ClaimScopeResolverDriver(new MemoryScopeTreeDriver().seed([ACME]));
     await expect(
       step.resolve({
         actor: { kind: ActorKind.Agent, id: "agt_01j9z3k4m5n6p7q8r9s0t1v2w1" },

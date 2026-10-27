@@ -13,25 +13,25 @@ its resolver, and imports it; it never re-exports it.
 
 ## What is here
 
-| Entry         | Symbol                                                                             | Use                                                                  |
-| ------------- | ---------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
-| `.`           | `ScopeConfig`, `ScopeConfig$`                                                      | the levels in order, the root's path and the level aliases (data)    |
-| `.`           | `HeaderScopeResolverDriver`, `ClaimScopeResolverDriver`, `RootScopeResolverDriver` | the steps of the resolver chain                                      |
-| `.`           | `ChainScopeResolverDriver`                                                         | the chain: header, claim, root; `scope_unresolved` when none answers |
-| `.`           | `MemoryScopeResolverDriver`                                                        | `memory`: the claim, then the root; no header (STA-1308)             |
-| `.`           | `MemoryScopeTreeDriver`                                                            | a `ScopeTree` over a fixed list (tests, local runs, a client)        |
-| `.`           | `ActiveScopeService`, `SCOPE_PATH_HEADER`                                          | the client's current scope and the one header that carries it        |
-| `.`           | `SCOPE_PATH_CLAIM`                                                                 | the token claim the claim step reads (identity writes it)            |
-| `.`           | `childLevelsOf`, `isScopePath`, `isWithinScope`, `scopeLevelLabel`                 | the level rule, the path rule, the grant test, a level's lang key    |
-| `.`           | `ScopeUnresolvedError`, `ScopeLevelInvalidError`, `ScopeLabelInvalidError`         | refusals                                                             |
-| `.`           | `ScopeMoveInvalidError`                                                            | the refusal of a move under the node itself                          |
-| `./contracts` | `ScopeTree`, `ScopeResolver`, `GrantedScopes`                                      | the ports                                                            |
-| `./contracts` | `ScopeEntry`, `ScopeLevel`, `ScopeNodeDraft`, `ScopeRequest`                       | types                                                                |
-| `./node`      | `ScopeNode`, `ScopeNodeService`, `ScopeMoved`, `PostgresScopeTreeDriver`           | the node table, adding and moving nodes, the server's `ScopeTree`    |
-| `./node`      | `ScopeDepthEntitlement`                                                            | the plan right that bounds the tree's depth (declared only)          |
-| `./react`     | `useScope`                                                                         | the active scope in a component, web and native                      |
-| `./native`    | `rememberActiveScope`                                                              | a device app restores its last scope from `prefs` and keeps it       |
-| `./testing`   | `scopeRefOf`, `fakeScopeTree`                                                      | stable test refs for a path; a memory tree of paths and ancestors    |
+| Entry         | Symbol                                                                             | Use                                                                   |
+| ------------- | ---------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| `.`           | `ScopeConfig`, `ScopeConfig$`                                                      | the levels in order, the root's path and the level aliases (data)     |
+| `.`           | `HeaderScopeResolverDriver`, `ClaimScopeResolverDriver`, `RootScopeResolverDriver` | the steps of the resolver chain                                       |
+| `.`           | `ChainScopeResolverDriver`                                                         | the chain: header, claim, root; `scope_unresolved` when none answers  |
+| `.`           | `MemoryScopeResolverDriver`                                                        | `memory`: the claim, then the root; no header (STA-1308)              |
+| `.`           | `MemoryScopeTreeDriver`                                                            | a `ScopeTree` over the list `seed` sets (tests, local runs, a client) |
+| `.`           | `ActiveScopeService`, `SCOPE_PATH_HEADER`                                          | the client's current scope and the one header that carries it         |
+| `.`           | `SCOPE_PATH_CLAIM`                                                                 | the token claim the claim step reads (identity writes it)             |
+| `.`           | `childLevelsOf`, `isScopePath`, `isWithinScope`, `scopeLevelLabel`                 | the level rule, the path rule, the grant test, a level's lang key     |
+| `.`           | `ScopeUnresolvedError`, `ScopeLevelInvalidError`, `ScopeLabelInvalidError`         | refusals                                                              |
+| `.`           | `ScopeMoveInvalidError`                                                            | the refusal of a move under the node itself                           |
+| `./contracts` | `ScopeTree`, `ScopeResolver`, `GrantedScopes`                                      | the ports                                                             |
+| `./contracts` | `ScopeEntry`, `ScopeLevel`, `ScopeNodeDraft`, `ScopeRequest`                       | types                                                                 |
+| `./node`      | `ScopeNode`, `ScopeNodeService`, `ScopeMoved`, `PostgresScopeTreeDriver`           | the node table, adding and moving nodes, the server's `ScopeTree`     |
+| `./node`      | `ScopeDepthEntitlement`                                                            | the plan right that bounds the tree's depth (declared only)           |
+| `./react`     | `useScope`                                                                         | the active scope in a component, web and native                       |
+| `./native`    | `rememberActiveScope`                                                              | a device app restores its last scope from `prefs` and keeps it        |
+| `./testing`   | `scopeRefOf`, `fakeScopeTree`                                                      | stable test refs for a path; a memory tree of paths and ancestors     |
 
 ## Levels are data
 
@@ -130,6 +130,9 @@ createTestingModule(AppModule)
   .compile();
 const acme = scopeRefOf("platform.acme");
 ```
+
+`MemoryScopeTreeDriver` takes no constructor argument, since gen reads every constructor parameter as an injected
+class: `new MemoryScopeTreeDriver().seed(entries)` sets its nodes and returns the tree.
 
 ## Not here
 

@@ -21,7 +21,7 @@ import { isScopePath } from "#core/functions/is-scope-path.function";
  * The claim, else the root.
  *
  * @example
- * await new MemoryScopeResolverDriver(new MemoryScopeTreeDriver(entries), config).resolve({ actor, claim: "platform.acme" });
+ * await new MemoryScopeResolverDriver(new MemoryScopeTreeDriver().seed(entries), config).resolve({ actor, claim: "platform.acme" });
  */
 export class MemoryScopeResolverDriver extends Driver(ScopeResolver) {
   /** Where the nodes are looked up. */

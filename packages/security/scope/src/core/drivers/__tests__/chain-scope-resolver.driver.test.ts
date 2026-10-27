@@ -67,7 +67,7 @@ class ContributedScopeResolverDriver extends Driver(ScopeResolver) {
 
 /** The steps over `entries`. */
 function stepsOver(entries: readonly ScopeEntry[]) {
-  const tree = new MemoryScopeTreeDriver(entries);
+  const tree = new MemoryScopeTreeDriver().seed(entries);
   return [
     new HeaderScopeResolverDriver(tree, new AcmeGrantsDriver()),
     new ClaimScopeResolverDriver(tree),
