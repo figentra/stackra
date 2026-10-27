@@ -6,7 +6,7 @@ Purpose: the agent rules of @stackra/integrations: where code goes, entries and 
          kinds and the capability lookup included) and PII.
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
-Governing contract: ADR 0294; ADR 0305; ADR 0308; ADR 0348; ADR 0355; ADR 0356; ADR 0447.
+Governing contract: ADR 0294; ADR 0305; ADR 0308; ADR 0348; ADR 0355; ADR 0356; ADR 0376; ADR 0447.
 -->
 
 Provider integrations, connections and their store (ADR 0308). Member at `packages/communication/integrations`
@@ -28,6 +28,8 @@ Provider integrations, connections and their store (ADR 0308). Member at `packag
 | A type                   | `src/core/types/<name>.type.ts`             |
 | A fake or testing helper | `src/testing/<group>/<name>.<kind>.ts`      |
 | Wallet pass issuing      | `src/node/pass/<name>.<kind>.ts`            |
+| Voice: a leaf contract   | `src/contracts/voice/<name>.<kind>.ts`      |
+| Voice: anything else     | `src/core/voice/<name>.<kind>.ts`           |
 | A test                   | `__tests__/<name>.<kind>.test.ts` beside it |
 
 ## Entries and barrels
@@ -96,6 +98,17 @@ Provider integrations, connections and their store (ADR 0308). Member at `packag
   the `CmsSigner` port is in `./contracts`. Certificates and keys are read by secret name at each call and never put in
   an error; the Google Wallet Integration (JWT bearer auth) stays an OS connector, the driver only takes its `api`.
   Pass labels are lang keys the host resolves into `WalletPassRequest.labels`; never hard-code wording.
+- Voice (ADR 0376 decision 7): `VoiceGateway` (calls) and `Speech` (streaming STT and TTS) are two interfaces a
+  Connection implements; vendor Connections are OS connectors. The speech provider comes from the tenant's data region
+  (`region-map:<region>.providers.speech` through `RegionMapSource`), never the market pack: `SpeechService` builds its
+  own `ProviderResolver` over `RegionMapProviderDefaultsDriver`; never bind that driver as the container's
+  `ProviderDefaults`. Dialects, the recording consent rule and its wording are pack keys read by `VoicePack`; a missing
+  rule is `explicit`. Never hard-code a dialect, a notice, a provider or a price.
+- Meters: `voice.minutes` and `speech.seconds` are written only through `VoiceMeter` (the existing `usage.recorded`
+  event, `sum`, exact units); rounding and prices are rate-card data. Speech seconds are counted from raw bytes, so
+  `AudioEncoding` stays uncompressed; adding a compressed codec needs another way to measure.
+- A device's microphone and speaker are the `AudioDevice` port; its production drivers live with the device
+  (platform, peripherals), `MemoryAudioDeviceDriver` here.
 
 ## PII
 
@@ -107,4 +120,6 @@ Provider integrations, connections and their store (ADR 0308). Member at `packag
 | Fraud score requests    | `FraudScoreRequest`                        | Contact, IP, device and addresses travel for one score; never stored or logged here.           |
 | Documents               | `DocumentFile`                             | Bytes held in memory for one call; never stored or logged here.                                |
 | Wallet pass content     | `WalletPassRequest`, `IssuedWalletPass`    | Lock-screen data only (ADR 0348 d5); built and signed in memory, never stored or logged here.  |
+| Call and lane audio     | `Speech`, `SpeechService`, `AudioDevice`   | Streamed through for one call or lane turn; never stored or logged here.                       |
+| Transcripts             | `Transcript`                               | Returned to the caller only; never stored or logged here.                                      |
 | Connected account label | `ConnectedAccount`, store records          | The provider's account id and name or domain, shown to the owner in the console.               |

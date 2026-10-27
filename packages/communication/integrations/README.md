@@ -4,7 +4,8 @@
 Stackra file contract:
 Purpose: the package's reader guide: Integrations, Connections and their stores, the provider resolver, the connector
          contracts (commerce, EDI, fraud scoring, document stores) and the gateway that resolves them, wallet pass
-         issuing (`./node`), and what is not here.
+         issuing (`./node`), the voice channel (Speech port, meters, recording consent, handover), and what is not
+         here.
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
 Governing contract: ADR 0308; ADR 0348; ADR 0355; ADR 0356; ADR 0376; ADR 0447.
@@ -21,7 +22,8 @@ is safe and turns every provider outcome into a value or a typed refusal. This p
 issuing) and `./testing`.
 Depends on `@stackra/actions` (the `RateLimitStore`, and `RequestContext` for the `request` connection context),
 `@stackra/config` (`@Secret`, `SecretStore`), `@stackra/container`, `@stackra/contracts`, `@stackra/errors`, and the
-`Money` and `Address` types of `@stackra/money` and `@stackra/validation`; `./node` adds `@stackra/data-transfer`
+`Money` and `Address` types of `@stackra/money` and `@stackra/validation`, `@stackra/events` (the `EventOutbox` the
+voice meter writes to) and `@stackra/market-packs` (`valueOf`); `./node` adds `@stackra/data-transfer`
 (`writeZip`), `pkijs` and `asn1js`.
 
 ## What is here
@@ -62,6 +64,7 @@ Depends on `@stackra/actions` (the `RateLimitStore`, and `RequestContext` for th
 | `./contracts`: `PayrollConnector`, `PayInput`, `PayInputKind`; `assertPayInputs`; `./testing`: `MemoryPayrollConnector` | pay inputs (hours, sessions, tips, commission) pushed to the tenant's payroll provider               |
 | `MarketPackProviderDefaultsDriver`, `ProviderPackSource`, `./contracts`: `ProviderMode`; `ProviderCandidate`            | the market-pack `ProviderDefaults` for every capability, and the failover list's own-or-managed mode |
 | `./contracts`: `VoiceGateway`, `CallInstruction`, `CallStatus`, `RecordingConsent`; `recordingPlan`                     | the telephony port per Market; recording from the pack's consent rule                                |
+| `./contracts`: `Speech`, `AudioDevice`; `SpeechService`, `VoicePack`, `VoiceMeter`                                      | streaming STT and TTS per data region, device audio, voice meters (see Voice channel)                |
 | `./contracts`: `StoreAccountConnector`, `StoreApp`, `MobileStore`                                                       | a merchant's own App Store Connect key or Google Play service account (D14)                          |
 | `Pass`, `PassContent`                                                                                                   | the wallet pass kind a module declares (ADR 0348 decision 5)                                         |
 
@@ -152,6 +155,56 @@ const { saveUrl } = await google.issue(request); // https://pay.google.com/gp/v/
 A pass kind's labels are lang keys; the host passes their text in `labels`. Identifiers, styles and classes are the
 deployment's data; the certificates and keys are secrets read by name (`GOOGLE_WALLET_ISSUER_KEY`), never values.
 Neither driver is certified yet against a registered pass type or a live issuer account.
+
+## Voice channel (`src/*/voice/`, ADR 0376 decision 7)
+
+Telephony is two ports: `VoiceGateway` places and steers calls (Twilio, the Saudi carrier's SIP driver of stackra-43),
+`Speech` streams recognition and synthesis over raw audio. A call's audio, a drive-through lane's microphone and a
+till speaker all reach the same `Speech`.
+
+| Symbol                                                                                 | Use                                                                                                                 |
+| -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `./contracts`: `Speech`, `SpeechRequest`, `Transcript`, `AudioFormat`, `AudioEncoding` | the speech provider interface a Connection implements: `listen` (streaming STT), `speak` (streaming TTS)            |
+| `SpeechService`, `SpeechSession`                                                       | picks the region's speech Connection, streams through it, meters `speech.seconds`; `listenOn`/`sayOn` over a device |
+| `./contracts`: `RegionMapSource`; `RegionMapProviderDefaultsDriver`                    | the provider list of `region-map:<region>.providers.speech`, bound by the OS tenancy and markets service            |
+| `./contracts`: `AudioDevice`; `MemoryAudioDeviceDriver`                                | a local microphone and speaker (lane, till, kiosk); the memory one for development and tests                        |
+| `VoicePack`                                                                            | the pack's dialects (`speech.dialects`), the voice, the consent rule and its notice and question text               |
+| `consentSteps`, `handoverSteps`                                                        | the call steps of a recording plan, and of a handover to a human with its fallback                                  |
+| `VoiceMeter`, `VOICE_METERS`, `VoiceUsage`, `audioSeconds`                             | `usage.recorded` on `voice.minutes` per finished call and `speech.seconds` per stream, through the outbox           |
+
+```ts
+const speech = await voicePack.voice(market, tenantVoice); // the pack's dialect when the tenant's is not offered
+const plan = await voicePack.plan(market, settings.recordCalls);
+const steps = [
+  ...consentSteps(plan, await voicePack.consentText(market, speech.language), speech, {
+    actionUrl,
+    timeoutSeconds: 5,
+  }),
+  { kind: "listen", speech, actionUrl, timeoutSeconds: 5 },
+];
+// Later, the AI receptionist cannot help:
+await voice.redirect(
+  ref,
+  handoverSteps({ to: settings.handoverNumber, timeoutSeconds: 20, announce, speech }),
+);
+// The call ended (status webhook):
+await voiceMeter.call(await voice.lookup(ref), { reference: ref, scopeId });
+
+// A drive-through lane:
+const session = { drivers: SPEECH_CONNECTIONS, usage: { reference: laneSessionId, scopeId } };
+for await (const heard of speechService.listenOn(lane, { speech, format, signal }, session))
+  if (heard.final) await order(heard.text);
+await speechService.sayOn(lane, reply, { speech, format }, session);
+```
+
+- Configuration, not code: dialects, the consent rule and its wording are market-pack data; the provider is region-map
+  data; the human's number, ring time and whether to record are tenant settings; prices and rounding of the two meters
+  are the `rate-card:voice-minutes` data. A pack without a consent rule is treated as `explicit`.
+- `zeroRetention: true` (the caller's choice for health and privileged speech) serves only a provider whose
+  `retainsAudio` is false; the region map already keeps the audio in region.
+- Not built here: vendor speech Connections (OS integrations, R3-8), a platform microphone or peripherals-bridge
+  `AudioDevice` driver (device side), understanding the caller's spoken yes or no (the conversation's), the SIP driver
+  (stackra-43).
 
 ## The six auth types
 

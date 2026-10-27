@@ -3,7 +3,9 @@
  * Purpose: Stand-in barrel: the `./contracts` entry of @stackra/integrations, the leaf entry with the `CmsSigner`,
  *          `ConnectionContext`, `ProviderDefaults`, `MarketContext` and `ManagedProvisioning` ports, the managed-or-BYO
  *          words and records, and the interfaces a provider's Connection implements (accounting, the commerce
- *          connectors, the EDI, fraud-scoring and document-store connectors, telephony, the store accounts), until `stackra gen` writes the entry barrels (STA-339).
+ *          connectors, the EDI, fraud-scoring and document-store connectors, telephony, the store accounts), and the
+ *          voice folder (`Speech`, the `AudioDevice` and `RegionMapSource` ports, `AudioEncoding` and the stream types),
+ *          until `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. The leaf: it imports no other entry of this package (only
  *           `@stackra/contracts`, and the `Money` and `Address` types of `@stackra/money` and `@stackra/validation`).
  *           Each is exported here only, never from `.` (ADR 0294 decision 15). `ConnectionStore` and `ConnectionHost` stay
@@ -74,3 +76,10 @@ export type { StoreApp } from "#contracts/types/store-app.type";
 export type { StoredDocument } from "#contracts/types/stored-document.type";
 export type { StoredDocumentPage } from "#contracts/types/stored-document-page.type";
 export type { VoiceGateway } from "#contracts/types/voice-gateway.type";
+export { AudioDevice } from "#contracts/voice/audio-device.port";
+export { AudioEncoding } from "#contracts/voice/audio-encoding.enum";
+export { RegionMapSource } from "#contracts/voice/region-map-source.port";
+export type { AudioFormat } from "#contracts/voice/audio-format.type";
+export type { Speech } from "#contracts/voice/speech.type";
+export type { SpeechRequest } from "#contracts/voice/speech-request.type";
+export type { Transcript } from "#contracts/voice/transcript.type";

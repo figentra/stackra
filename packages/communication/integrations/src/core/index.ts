@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `.` entry of @stackra/integrations, which has several public files, until `stackra gen`
  *          writes the entry barrels (STA-339). No vendor Integration is here: Chatwoot moved to the OS integrations
- *          service with the other connectors (R3-8, STA-1281).
+ *          service with the other connectors (R3-8, STA-1281). The voice folder adds `SpeechService`, `VoicePack`,
+ *          `VoiceMeter`, the region-map and memory audio drivers, `VOICE_METERS` and the consent and handover steps.
  * Boundary: names each re-export and declares nothing. The provider-category, catalogue and managed-provisioning
  *           template seeds are exported for the registry and the seeders. The managed client's internals (`managedClient`, the placeholder
  *           lookup, the JWT signer) and the registries stay internal; `requestToken` is public for a store host's code
@@ -83,3 +84,14 @@ export type { RequestOptions } from "#core/types/request-options.type";
 export type { RetryPolicy } from "#core/types/retry-policy.type";
 export type { TokenRequest } from "#core/types/token-request.type";
 export type { WebhookSignature } from "#core/types/webhook-signature.type";
+export { audioSeconds } from "#core/voice/audio-seconds.function";
+export { consentSteps } from "#core/voice/consent-steps.function";
+export { handoverSteps } from "#core/voice/handover-steps.function";
+export { MemoryAudioDeviceDriver } from "#core/voice/memory-audio-device.driver";
+export { RegionMapProviderDefaultsDriver } from "#core/voice/region-map-provider-defaults.driver";
+export { SpeechService } from "#core/voice/speech.service";
+export { VOICE_METERS } from "#core/voice/voice-meters.constant";
+export { VoiceMeter } from "#core/voice/voice-meter.service";
+export { VoicePack } from "#core/voice/voice-pack.service";
+export type { SpeechSession } from "#core/voice/speech-session.type";
+export type { VoiceUsage } from "#core/voice/voice-usage.type";

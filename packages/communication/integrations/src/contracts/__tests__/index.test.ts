@@ -14,6 +14,8 @@ import * as core from "#core/index";
 describe("@stackra/integrations/contracts", () => {
   it("exports exactly its ports and enums", () => {
     expect(Object.keys(contracts).sort()).toEqual([
+      "AudioDevice",
+      "AudioEncoding",
       "CallStatus",
       "ChannelPaymentMethod",
       "CmsSigner",
@@ -29,6 +31,7 @@ describe("@stackra/integrations/contracts", () => {
       "ProviderSource",
       "ProvisioningStatus",
       "RecordingConsent",
+      "RegionMapSource",
     ]);
   });
 
