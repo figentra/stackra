@@ -851,6 +851,9 @@ importers:
       '@internationalized/date':
         specifier: catalog:frontend
         version: 3.12.4
+      '@stackra/app':
+        specifier: workspace:*
+        version: link:../../packages/runtime/app
       '@stackra/container':
         specifier: workspace:*
         version: link:../../packages/foundation/container
@@ -957,6 +960,9 @@ importers:
       '@stackra/events':
         specifier: workspace:*
         version: link:../../foundation/events
+      '@stackra/iam':
+        specifier: workspace:*
+        version: link:../../security/iam
       '@stackra/integrations':
         specifier: workspace:*
         version: link:../../communication/integrations
@@ -2147,6 +2153,9 @@ importers:
       '@stackra/events':
         specifier: workspace:*
         version: link:../../foundation/events
+      '@stackra/iam':
+        specifier: workspace:*
+        version: link:../../security/iam
       '@stackra/integrations':
         specifier: workspace:*
         version: link:../integrations
@@ -2348,6 +2357,9 @@ importers:
       '@stackra/contracts':
         specifier: workspace:*
         version: link:../../foundation/contracts
+      '@stackra/errors':
+        specifier: workspace:*
+        version: link:../../foundation/errors
       '@stackra/filesystem':
         specifier: workspace:*
         version: link:../filesystem
@@ -2424,6 +2436,9 @@ importers:
       '@stackra/model':
         specifier: workspace:*
         version: link:../model
+      '@stackra/validation':
+        specifier: workspace:*
+        version: link:../../foundation/validation
       zod:
         specifier: 'catalog:'
         version: 4.6.7
@@ -2604,6 +2619,9 @@ importers:
       '@stackra/integrations':
         specifier: workspace:*
         version: link:../../communication/integrations
+      '@stackra/validation':
+        specifier: workspace:*
+        version: link:../../foundation/validation
       docx:
         specifier: catalog:documents
         version: 9.10.0
@@ -2668,6 +2686,9 @@ importers:
       '@stackra/contracts':
         specifier: workspace:*
         version: link:../../foundation/contracts
+      '@stackra/errors':
+        specifier: workspace:*
+        version: link:../../foundation/errors
       '@stackra/validation':
         specifier: workspace:*
         version: link:../../foundation/validation
@@ -2741,6 +2762,9 @@ importers:
       '@stackra/filesystem':
         specifier: workspace:*
         version: link:../filesystem
+      '@stackra/iam':
+        specifier: workspace:*
+        version: link:../../security/iam
       '@stackra/validation':
         specifier: workspace:*
         version: link:../../foundation/validation
@@ -3140,6 +3164,9 @@ importers:
       '@stackra/container':
         specifier: workspace:*
         version: link:../../foundation/container
+      '@stackra/errors':
+        specifier: workspace:*
+        version: link:../../foundation/errors
       '@stackra/validation':
         specifier: workspace:*
         version: link:../../foundation/validation
@@ -3405,6 +3432,9 @@ importers:
 
   packages/developer/coding-standard:
     devDependencies:
+      '@stackra/container':
+        specifier: workspace:*
+        version: link:../../foundation/container
       '@stackra/testing':
         specifier: workspace:*
         version: link:../testing
@@ -3650,6 +3680,9 @@ importers:
         specifier: 'catalog:'
         version: 2.9.1
     devDependencies:
+      '@stackra/container':
+        specifier: workspace:*
+        version: link:../../foundation/container
       '@stackra/contracts':
         specifier: workspace:*
         version: link:../../foundation/contracts
@@ -3689,6 +3722,9 @@ importers:
 
   packages/developer/runway:
     dependencies:
+      '@stackra/config':
+        specifier: workspace:*
+        version: link:../../foundation/config
       '@stackra/container':
         specifier: workspace:*
         version: link:../../foundation/container
@@ -3884,6 +3920,9 @@ importers:
         specifier: catalog:frontend
         version: 2.0.0(supports-color@10.2.2)(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))(workbox-build@7.4.1(supports-color@10.2.2))(workbox-window@7.4.1)
     devDependencies:
+      '@stackra/container':
+        specifier: workspace:*
+        version: link:../../foundation/container
       '@stackra/testing':
         specifier: workspace:*
         version: link:../testing
@@ -4047,6 +4086,9 @@ importers:
       '@stackra/events':
         specifier: workspace:*
         version: link:../../foundation/events
+      '@stackra/iam':
+        specifier: workspace:*
+        version: link:../../security/iam
       '@stackra/model':
         specifier: workspace:*
         version: link:../../data/model
@@ -5211,6 +5253,9 @@ importers:
 
   packages/foundation/support:
     devDependencies:
+      '@stackra/container':
+        specifier: workspace:*
+        version: link:../container
       '@stackra/testing':
         specifier: workspace:*
         version: link:../../developer/testing
@@ -5254,6 +5299,9 @@ importers:
         specifier: workspace:*
         version: link:../errors
     devDependencies:
+      '@stackra/container':
+        specifier: workspace:*
+        version: link:../container
       '@stackra/testing':
         specifier: workspace:*
         version: link:../../developer/testing
@@ -5342,6 +5390,9 @@ importers:
       '@pulumi/aws':
         specifier: catalog:infra
         version: 7.50.0(supports-color@10.2.2)(typescript@7.0.2)
+      '@stackra/config':
+        specifier: workspace:*
+        version: link:../../foundation/config
       '@stackra/container':
         specifier: workspace:*
         version: link:../../foundation/container
@@ -5351,6 +5402,9 @@ importers:
       '@stackra/runway':
         specifier: workspace:*
         version: link:../../developer/runway
+      '@stackra/validation':
+        specifier: workspace:*
+        version: link:../../foundation/validation
       zod:
         specifier: 'catalog:'
         version: 4.6.7
@@ -5397,6 +5451,9 @@ importers:
       '@pulumi/aws':
         specifier: catalog:infra
         version: 7.50.0(supports-color@10.2.2)(typescript@7.0.2)
+      '@stackra/config':
+        specifier: workspace:*
+        version: link:../../foundation/config
       '@stackra/container':
         specifier: workspace:*
         version: link:../../foundation/container
@@ -5406,6 +5463,12 @@ importers:
       '@stackra/runway':
         specifier: workspace:*
         version: link:../../developer/runway
+      '@stackra/validation':
+        specifier: workspace:*
+        version: link:../../foundation/validation
+      zod:
+        specifier: 'catalog:'
+        version: 4.6.7
     devDependencies:
       '@pulumi/pulumi':
         specifier: catalog:infra
@@ -5449,6 +5512,9 @@ importers:
       '@pulumi/cloudflare':
         specifier: catalog:infra
         version: 6.22.0(supports-color@10.2.2)(typescript@7.0.2)
+      '@stackra/config':
+        specifier: workspace:*
+        version: link:../../foundation/config
       '@stackra/container':
         specifier: workspace:*
         version: link:../../foundation/container
@@ -5458,6 +5524,9 @@ importers:
       '@stackra/runway':
         specifier: workspace:*
         version: link:../../developer/runway
+      '@stackra/validation':
+        specifier: workspace:*
+        version: link:../../foundation/validation
       zod:
         specifier: 'catalog:'
         version: 4.6.7
@@ -5504,6 +5573,9 @@ importers:
       '@pulumi/gcp':
         specifier: catalog:infra
         version: 9.37.1(supports-color@10.2.2)(typescript@7.0.2)
+      '@stackra/config':
+        specifier: workspace:*
+        version: link:../../foundation/config
       '@stackra/container':
         specifier: workspace:*
         version: link:../../foundation/container
@@ -5513,6 +5585,9 @@ importers:
       '@stackra/runway':
         specifier: workspace:*
         version: link:../../developer/runway
+      '@stackra/validation':
+        specifier: workspace:*
+        version: link:../../foundation/validation
       zod:
         specifier: 'catalog:'
         version: 4.6.7
@@ -5562,6 +5637,9 @@ importers:
       '@pulumi/pulumi':
         specifier: catalog:infra
         version: 3.268.0(supports-color@10.2.2)(typescript@7.0.2)
+      '@stackra/config':
+        specifier: workspace:*
+        version: link:../../foundation/config
       '@stackra/container':
         specifier: workspace:*
         version: link:../../foundation/container
@@ -5571,6 +5649,9 @@ importers:
       '@stackra/runway':
         specifier: workspace:*
         version: link:../../developer/runway
+      '@stackra/validation':
+        specifier: workspace:*
+        version: link:../../foundation/validation
       zod:
         specifier: 'catalog:'
         version: 4.6.7
@@ -5617,6 +5698,9 @@ importers:
       '@pulumiverse/zitadel':
         specifier: catalog:infra
         version: 0.2.0(supports-color@10.2.2)(typescript@7.0.2)
+      '@stackra/config':
+        specifier: workspace:*
+        version: link:../../foundation/config
       '@stackra/container':
         specifier: workspace:*
         version: link:../../foundation/container
@@ -5626,6 +5710,9 @@ importers:
       '@stackra/runway':
         specifier: workspace:*
         version: link:../../developer/runway
+      '@stackra/validation':
+        specifier: workspace:*
+        version: link:../../foundation/validation
       yaml:
         specifier: 'catalog:'
         version: 2.9.1
@@ -5672,6 +5759,9 @@ importers:
       '@pulumi/pulumi':
         specifier: catalog:infra
         version: 3.268.0(supports-color@10.2.2)(typescript@7.0.2)
+      '@stackra/config':
+        specifier: workspace:*
+        version: link:../../foundation/config
       '@stackra/container':
         specifier: workspace:*
         version: link:../../foundation/container
@@ -5684,6 +5774,12 @@ importers:
       '@stackra/runway':
         specifier: workspace:*
         version: link:../../developer/runway
+      '@stackra/validation':
+        specifier: workspace:*
+        version: link:../../foundation/validation
+      zod:
+        specifier: 'catalog:'
+        version: 4.6.7
     devDependencies:
       '@stackra/testing':
         specifier: workspace:*
@@ -5727,6 +5823,9 @@ importers:
       '@pulumiverse/sentry':
         specifier: catalog:infra
         version: 0.0.9(supports-color@10.2.2)(typescript@7.0.2)
+      '@stackra/config':
+        specifier: workspace:*
+        version: link:../../foundation/config
       '@stackra/container':
         specifier: workspace:*
         version: link:../../foundation/container
@@ -5736,6 +5835,9 @@ importers:
       '@stackra/runway':
         specifier: workspace:*
         version: link:../../developer/runway
+      '@stackra/validation':
+        specifier: workspace:*
+        version: link:../../foundation/validation
       pulumi-better-uptime:
         specifier: catalog:infra
         version: 0.22.4(@pulumi/pulumi@3.268.0(supports-color@10.2.2)(typescript@7.0.2))
@@ -5801,6 +5903,9 @@ importers:
       '@pulumi/pulumi':
         specifier: catalog:infra
         version: 3.268.0(supports-color@10.2.2)(typescript@7.0.2)
+      '@stackra/container':
+        specifier: workspace:*
+        version: link:../../foundation/container
       '@stackra/testing':
         specifier: workspace:*
         version: link:../../developer/testing
@@ -6001,6 +6106,9 @@ importers:
       '@stackra/errors':
         specifier: workspace:*
         version: link:../../foundation/errors
+      '@stackra/iam':
+        specifier: workspace:*
+        version: link:../../security/iam
       '@stackra/storage':
         specifier: workspace:*
         version: link:../../data/storage
@@ -6555,6 +6663,9 @@ importers:
       '@stackra/events':
         specifier: workspace:*
         version: link:../../foundation/events
+      '@stackra/iam':
+        specifier: workspace:*
+        version: link:../iam
       '@stackra/model':
         specifier: workspace:*
         version: link:../../data/model
@@ -7242,6 +7353,9 @@ importers:
 
   packages/state/coordinator:
     dependencies:
+      '@stackra/container':
+        specifier: workspace:*
+        version: link:../../foundation/container
       '@stackra/contracts':
         specifier: workspace:*
         version: link:../../foundation/contracts
