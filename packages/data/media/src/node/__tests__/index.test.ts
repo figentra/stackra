@@ -24,6 +24,7 @@ describe("@stackra/media/node", () => {
       "PaddleOcrTextExtractorDriver",
       "S3MediaDiskDriver",
       "SharpImageTransformerDriver",
+      "UploadPermissions",
     ]);
   });
 });

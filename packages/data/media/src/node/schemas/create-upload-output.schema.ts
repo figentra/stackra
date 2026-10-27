@@ -10,21 +10,23 @@
  * Governing contract: ADR 0294 (decisions 4 and 26); ADR 0305 (Input and Output in their own files); ADR 0222
  *                     (decision 2).
  */
-import { registerSchemas, Schema } from "@stackra/validation";
+import { Field, registerSchemas, Schema } from "@stackra/validation";
 
 import type { Upload } from "#core/values/upload.value";
 import { CREATE_UPLOAD_OUTPUT_SCHEMA } from "#node/constants/create-upload-output-schema.constant";
 
 /** The token and where to put the bytes. */
 export class CreateUploadOutput extends Schema {
+  /** The HTTP method of the upload, always `PUT`. */
+  // reason: one literal method, not an enum of choices; the shipped CreateUploadOutput$ holds it
+  @Field(CREATE_UPLOAD_OUTPUT_SCHEMA.shape.method)
+  method!: "PUT";
+
   /** The token to send to the claiming action. */
   upload!: Upload;
 
   /** The signed URL. */
   url!: string;
-
-  /** The HTTP method of the upload, always `PUT`. */
-  method!: "PUT";
 
   /** The headers to send with the bytes, exactly as given. */
   headers!: Record<string, string>;

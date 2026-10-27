@@ -134,10 +134,10 @@ export class S3MediaDiskDriver extends Driver(MediaDisk) {
       const object = await this.client.send(
         new GetObjectCommand({ Bucket: this.bucket, Key: path }),
       );
-      if (object.Body === undefined) throw new FileNotFoundError(path);
+      if (object.Body === undefined) throw FileNotFoundError.create({ path });
       return await object.Body.transformToByteArray();
     } catch (error) {
-      throw isNotFound(error) ? new FileNotFoundError(path) : error;
+      throw isNotFound(error) ? FileNotFoundError.create({ path }) : error;
     }
   }
 
@@ -152,7 +152,7 @@ export class S3MediaDiskDriver extends Driver(MediaDisk) {
         }),
       );
     } catch (error) {
-      throw isNotFound(error) ? new FileNotFoundError(from) : error;
+      throw isNotFound(error) ? FileNotFoundError.create({ path: from }) : error;
     }
     await this.client.send(new DeleteObjectCommand({ Bucket: this.bucket, Key: from }));
   }

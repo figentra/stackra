@@ -7,6 +7,7 @@
  * Runtime: node
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision; ADR 0127 2026-10-24 note.
  */
+export { UploadPermissions } from "#node/access/upload.permissions";
 export { CreateUploadAction } from "#node/actions/create-upload.action";
 export { C2paContentCredentialsDriver } from "#node/drivers/c2pa-content-credentials.driver";
 export { ClamavFileScannerDriver } from "#node/drivers/clamav-file-scanner.driver";

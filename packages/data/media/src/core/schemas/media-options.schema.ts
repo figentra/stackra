@@ -17,7 +17,7 @@ import "#core/types/media-driver-names.type";
 import { Secret } from "@stackra/config";
 import type { DriverName } from "@stackra/container";
 import { Duration } from "@stackra/contracts";
-import { registerSchemas, Schema } from "@stackra/validation";
+import { Field, registerSchemas, Schema } from "@stackra/validation";
 
 import type { FileScanner } from "#contracts/ports/file-scanner.port";
 import type { MediaDisk } from "#contracts/ports/media-disk.port";
@@ -42,22 +42,9 @@ export class MediaOptions extends Schema {
   @Secret("MEDIA_C2PA_SIGNING_KEY")
   c2paSigningKey = "";
 
-  /** The server's store; names are the driver file prefixes. `memory` keeps nothing and is safe everywhere. */
-  disk: DriverName<MediaDisk> = "memory";
-
-  /** The client's uploader: `http` in an app, `memory` in tests. */
-  uploader: DriverName<Uploader> = "memory";
-
-  /** How long a signed upload URL, and the token it was issued with, stay valid; at most seven days. */
-  uploadExpiresIn: Duration = Duration.hours(1);
-
-  /** Where the `http` uploader asks for a signed URL: the `upload.create` endpoint of the media module. */
-  uploadEndpoint = "/api/uploads";
-
-  /** The malware scanner: `guard_duty` where GuardDuty runs in the region, `clamav` elsewhere, `memory` in tests. */
-  scanner: DriverName<FileScanner> = "memory";
-
   /** The clamd daemon the `clamav` scanner streams to, and the largest file it sends (clamd's `StreamMaxLength`). */
+  // reason: a nested driver option a host override replaces whole; the shipped config schema holds its rules
+  @Field(MEDIA_CONFIG_SCHEMA.shape.clamav)
   clamav: {
     /** The daemon's host. */
     host: string;
@@ -72,6 +59,8 @@ export class MediaOptions extends Schema {
    * the service in that region, so a scan never leaves it (R3-SO-13). `languages` are the ones the deployed
    * recognition model reads; a hint outside them is refused.
    */
+  // reason: a nested driver option a host override replaces whole; the shipped config schema holds its rules
+  @Field(MEDIA_CONFIG_SCHEMA.shape.ocr)
   ocr: {
     /** The service's `POST /ocr` URL. */
     endpoint: string;
@@ -92,6 +81,8 @@ export class MediaOptions extends Schema {
    * How the `c2pa` content-credentials driver signs: the COSE algorithm of the key, an RFC 3161 time-stamp authority
    * (empty for none) and the image types it signs.
    */
+  // reason: a nested driver option a host override replaces whole; the shipped config schema holds its rules
+  @Field(MEDIA_CONFIG_SCHEMA.shape.c2pa)
   c2pa: {
     /** The signing algorithm of `c2paSigningKey`. */
     algorithm: C2paAlgorithm;
@@ -100,6 +91,21 @@ export class MediaOptions extends Schema {
     /** The image media types the driver signs and reads. */
     formats: string[];
   } = { algorithm: "es256", timestampUrl: "", formats: ["image/jpeg", "image/png", "image/webp"] };
+
+  /** The server's store; names are the driver file prefixes. `memory` keeps nothing and is safe everywhere. */
+  disk: DriverName<MediaDisk> = "memory";
+
+  /** The client's uploader: `http` in an app, `memory` in tests. */
+  uploader: DriverName<Uploader> = "memory";
+
+  /** How long a signed upload URL, and the token it was issued with, stay valid; at most seven days. */
+  uploadExpiresIn: Duration = Duration.hours(1);
+
+  /** Where the `http` uploader asks for a signed URL: the `upload.create` endpoint of the media module. */
+  uploadEndpoint = "/api/uploads";
+
+  /** The malware scanner: `guard_duty` where GuardDuty runs in the region, `clamav` elsewhere, `memory` in tests. */
+  scanner: DriverName<FileScanner> = "memory";
 }
 
 registerSchemas([[MediaOptions, MEDIA_CONFIG_SCHEMA]]);

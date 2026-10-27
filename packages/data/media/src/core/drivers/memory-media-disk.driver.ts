@@ -125,14 +125,14 @@ export class MemoryMediaDiskDriver extends Driver(MediaDisk) {
   /** A copy of the bytes at `path`, so a caller that changes it does not change the stored object. */
   async read(path: string): Promise<Uint8Array> {
     const object = this.objects.get(path);
-    if (object === undefined) throw new FileNotFoundError(path);
+    if (object === undefined) throw FileNotFoundError.create({ path });
     return object.bytes.slice();
   }
 
   /** Moves the object at `from` to `to`, as S3's copy and delete do. */
   async move(from: string, to: string): Promise<void> {
     const object = this.objects.get(from);
-    if (object === undefined) throw new FileNotFoundError(from);
+    if (object === undefined) throw FileNotFoundError.create({ path: from });
     this.objects.set(to, object);
     this.objects.delete(from);
   }
