@@ -11,6 +11,7 @@
  * Runtime: node
  * Governing contract: ADR 0352 (decision 3), ADR 0180 and ADR 0344 (EAS builds and updates), ADR 0170 (rollback).
  */
+import { Driver } from "@stackra/container";
 import { HealthStatus } from "@stackra/contracts";
 import type { HealthReport } from "@stackra/contracts";
 
@@ -59,7 +60,7 @@ function itemsOf(out: string): Record<string, unknown>[] {
  * const eas = new EasProviderDriver({ projectDir: "apps/mobile" });
  * await deploy(root, "production", sha, [encore, eas]);
  */
-export class EasProviderDriver extends RunwayProvider {
+export class EasProviderDriver extends Driver(RunwayProvider) {
   override readonly destination = "eas";
 
   private readonly projectDir: string;

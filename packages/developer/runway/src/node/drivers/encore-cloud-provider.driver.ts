@@ -11,6 +11,7 @@
  * Governing contract: ADR 0352 (decision 3), ADR 0289 (decision 5: Encore Cloud), STA-136 (the generated app deploys
  *                     to Encore Cloud), ADR 0400.
  */
+import { Driver } from "@stackra/container";
 import { HealthStatus } from "@stackra/contracts";
 import type { HealthReport } from "@stackra/contracts";
 
@@ -42,7 +43,7 @@ function fieldOf(block: unknown, key: string): unknown {
  * const encore = new EncoreCloudProviderDriver({ app: root.providers?.encore?.app ?? "" });
  * await deploy(root, "staging", sha, [encore]);
  */
-export class EncoreCloudProviderDriver extends RunwayProvider {
+export class EncoreCloudProviderDriver extends Driver(RunwayProvider) {
   override readonly destination = "encore-cloud";
 
   private readonly remote: string;

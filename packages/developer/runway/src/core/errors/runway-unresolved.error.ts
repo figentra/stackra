@@ -15,7 +15,9 @@
  * baseUrlOf("console"); // throws when `.stackra/dev/ports.json` does not exist: "run `stackra dev` first"
  */
 export class RunwayUnresolvedError extends Error {
-  /** @param message - what is missing and how to provide it. */
+  /**
+   * @param message - what is missing and how to provide it.
+   */
   constructor(message: string) {
     super(message);
     this.name = "RunwayUnresolvedError";

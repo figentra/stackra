@@ -451,6 +451,7 @@ function stubRunway(
 ) {
   class RunwayInvalidError extends Error {
     readonly issues: readonly Issue[];
+
     constructor(source: string, issues: readonly Issue[]) {
       super(source);
       this.issues = issues;

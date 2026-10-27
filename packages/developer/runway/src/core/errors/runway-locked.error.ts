@@ -22,7 +22,9 @@ export class RunwayLockedError extends Error {
   /** The environment whose lock is held. */
   readonly environment: string;
 
-  /** @param environment - the environment whose lock is held. */
+  /**
+   * @param environment - the environment whose lock is held.
+   */
   constructor(environment: string) {
     super(`Another apply is running in ${environment}; run again once it ends`);
     this.name = "RunwayLockedError";

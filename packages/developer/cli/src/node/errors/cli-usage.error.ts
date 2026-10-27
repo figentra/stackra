@@ -14,7 +14,9 @@
  * throw new CliUsageError("unknown tier: load (expected unit or e2e)");
  */
 export class CliUsageError extends Error {
-  /** @param message - what is wrong with the command line. */
+  /**
+   * @param message - what is wrong with the command line.
+   */
   constructor(message: string) {
     super(message);
     this.name = "CliUsageError";
