@@ -74,6 +74,75 @@
       // the MCP server spawns it from PATH (`pnpm exec stackra mcp`) instead of declaring it (a cycle).
       "ignoreBinaries": ["encore", "stackra"],
     },
+    // Packages only gen's .stackra output imports (registrations: outbox, queue, scheduler; wiring: actions, content,
+    // database), declared for it (generated_dependency_missing).
+    // shortcut: gen writes no .stackra for these members while shim_authored refuses them; drop these blocks once
+    // stackra-163 lands and the .stackra entries above see the imports.
+    "packages/application/achievements": {
+      "entry": ["stackra.config.ts", ".stackra/**/*.{ts,tsx}"],
+      "project": ["src/**/*.{ts,tsx}"],
+      "ignoreDependencies": ["@stackra/content", "@stackra/outbox"],
+    },
+    "packages/application/ai": {
+      "entry": ["stackra.config.ts", ".stackra/**/*.{ts,tsx}"],
+      "project": ["src/**/*.{ts,tsx}"],
+      "ignoreDependencies": ["@stackra/outbox"],
+    },
+    "packages/application/segments": {
+      "entry": ["stackra.config.ts", ".stackra/**/*.{ts,tsx}"],
+      "project": ["src/**/*.{ts,tsx}"],
+      "ignoreDependencies": ["@stackra/content", "@stackra/scheduler"],
+    },
+    "packages/commerce/loyalty-kit": {
+      "entry": ["stackra.config.ts", ".stackra/**/*.{ts,tsx}"],
+      "project": ["src/**/*.{ts,tsx}"],
+      "ignoreDependencies": ["@stackra/outbox", "@stackra/queue", "@stackra/scheduler"],
+    },
+    "packages/communication/notifications": {
+      "entry": ["stackra.config.ts", ".stackra/**/*.{ts,tsx}"],
+      "project": ["src/**/*.{ts,tsx}"],
+      "ignoreDependencies": ["@stackra/outbox"],
+    },
+    "packages/communication/webhooks": {
+      "entry": ["stackra.config.ts", ".stackra/**/*.{ts,tsx}"],
+      "project": ["src/**/*.{ts,tsx}"],
+      "ignoreDependencies": ["@stackra/scheduler"],
+    },
+    "packages/data/documents": {
+      "entry": ["stackra.config.ts", ".stackra/**/*.{ts,tsx}"],
+      "project": ["src/**/*.{ts,tsx}"],
+      "ignoreDependencies": ["@stackra/actions"],
+    },
+    "packages/experience/collaboration": {
+      "entry": ["stackra.config.ts", ".stackra/**/*.{ts,tsx}"],
+      "project": ["src/**/*.{ts,tsx}"],
+      "ignoreDependencies": ["@stackra/outbox"],
+    },
+    "packages/runtime/workflow": {
+      "entry": ["stackra.config.ts", ".stackra/**/*.{ts,tsx}"],
+      "project": ["src/**/*.{ts,tsx}"],
+      "ignoreDependencies": ["@stackra/outbox"],
+    },
+    "packages/security/access-log": {
+      "entry": ["stackra.config.ts", ".stackra/**/*.{ts,tsx}"],
+      "project": ["src/**/*.{ts,tsx}"],
+      "ignoreDependencies": ["@stackra/outbox", "@stackra/queue", "@stackra/scheduler"],
+    },
+    "packages/security/entitlements": {
+      "entry": ["stackra.config.ts", ".stackra/**/*.{ts,tsx}"],
+      "project": ["src/**/*.{ts,tsx}"],
+      "ignoreDependencies": ["@stackra/database"],
+    },
+    "packages/security/identity": {
+      "entry": ["stackra.config.ts", ".stackra/**/*.{ts,tsx}"],
+      "project": ["src/**/*.{ts,tsx}"],
+      "ignoreDependencies": ["@stackra/outbox"],
+    },
+    "packages/security/scope": {
+      "entry": ["stackra.config.ts", ".stackra/**/*.{ts,tsx}"],
+      "project": ["src/**/*.{ts,tsx}"],
+      "ignoreDependencies": ["@stackra/outbox"],
+    },
     "apps/*": {
       // gen finds the root module by name (ADR 0294 R12); src/main.* is the stand-in entry until gen writes it; a
       // component folder's index.ts is its public surface (ADR 0294 decision 14).
