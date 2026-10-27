@@ -1,14 +1,15 @@
 /**
  * Stackra file contract:
  * Purpose: `CustomField`, one stored custom field definition: the scope node it is defined at, the key of the model it
- *          extends, and the definition itself (key, registered type, label per locale, required, the type's bounds and
- *          choices in `rules`).
+ *          extends and the runtime subtype within it (`''` for the whole model), and the definition itself (key,
+ *          registered type, label per locale, required, the type's bounds and choices in `rules`).
  * Boundary: data and nothing else (ADR 0154). Key `content.custom_field`, table `content.custom_fields`, under forced
- *           row-level security on `scope_path`; unique per scope, model and key. Rows are added through
+ *           row-level security on `scope_path`; unique per scope, model, subtype and key. Rows are added through
  *           `CustomFieldService.define`, never with `new`; the ORM loads rows without running the constructor.
  * Runtime: node
- * Governing contract: ADR 0116 (decision CT2); ADR 0327 (decisions 3 and 9: keyed by `scope_id`); ADR 0162
- *                     (translated label); ADR 0294 (decisions 4, 11, 20 and 27); ADR 0135 (public ids).
+ * Governing contract: ADR 0116 (decision CT2) as amended by ADR 0226; ADR 0327 (decisions 3 and 9: keyed by
+ *                     `scope_id`); ADR 0162 (translated label); ADR 0294 (decisions 4, 11, 20 and 27); ADR 0135
+ *                     (public ids).
  */
 import type { PublicId } from "@stackra/contracts";
 import type { OptionalProps } from "@stackra/database";
@@ -31,6 +32,9 @@ export class CustomField extends Model.with(
 
   /** The key of the model the field extends (`catalogue.product`). */
   model!: string;
+
+  /** The runtime type of the model the field belongs to (a content type key); `''` for the whole model. */
+  subtype = "";
 
   /** The value's camelCase key on a record. */
   key!: string;

@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: the consumer contract of the `./node` entry: it exports the two traits, the three models, the service and
- *          the entitlement, nothing else, and none of the `.` entry's symbols.
+ * Purpose: the consumer contract of the `./node` entry: it exports the root module, the traits, the three models, the
+ *          services and the entitlement, nothing else, and none of the `.` entry's symbols.
  * Boundary: test only; imports the stand-in barrel through its `#node` alias.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0294 (decision 15: one symbol, one entry).
@@ -14,6 +14,7 @@ import * as node from "#node/index";
 describe("@stackra/content/node", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(node).sort()).toEqual([
+      "ContentModule",
       "CustomField",
       "CustomFieldLimitEntitlement",
       "CustomFieldService",

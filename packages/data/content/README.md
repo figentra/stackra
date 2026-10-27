@@ -5,7 +5,7 @@ only (ADR 0116, ADR 0154, ADR 0226). A scope adds a field to a model as a stored
 record's values live in a side table and are checked against those definitions on every write.
 
 **Tier:** `tier:lib` (`packages/data/content`). Entries `.` and `./node`. Depends on `@stackra/actions` (the call's
-scope through `RequestContext`), `@stackra/contracts`, `@stackra/database`, `@stackra/entitlements`, `@stackra/errors`
+scope through `RequestContext`), `@stackra/container` (the root module), `@stackra/contracts`, `@stackra/database`, `@stackra/entitlements`, `@stackra/errors`
 and `@stackra/model`.
 
 ## What is here
@@ -15,6 +15,7 @@ and `@stackra/model`.
 | `.`      | `ContentEntryType`                                                                       | the built-in content types (`Faq`, `Testimonial`, `Page`, ...)      |
 | `.`      | `CustomFieldType`                                                                        | the registered field types, with their bounds and choices case data |
 | `.`      | `CustomFieldDefinition`, `CustomFieldChoice`, `CustomFieldValue`                         | the stored definition, a select's choice, a stored value (types)    |
+| `.`      | `CustomFieldTarget`                                                                      | a model key, or a model key and a runtime subtype (type)            |
 | `.`      | `CustomFieldDefinition$`, `CustomFieldValue$`                                            | their shipped schemas, for a shape field typed with them            |
 | `.`      | `checkCustomFieldDefinition`, `checkCustomFields`                                        | the two checks: a definition, and a record's values                 |
 | `.`      | `CustomFieldDefinitionInvalidError`, `CustomFieldsInvalidError`, `CustomFieldTakenError` | refusals (400, 400, 409)                                            |
@@ -23,6 +24,8 @@ and `@stackra/model`.
 | `./node` | `CustomFieldService`                                                                     | define, list, write and read                                        |
 | `./node` | `CustomFieldLimitEntitlement`                                                            | the plan limit on how many fields a scope defines (declared only)   |
 | `./node` | `HasRevisions`, `Revision`                                                               | the trait of a model that keeps numbered revisions, and their table |
+| `./node` | `RevisionService`                                                                        | draft, publish, schedule and roll back revisions                    |
+| `./node` | `ContentModule`                                                                          | the root module: exports `CustomFieldService` and `RevisionService` |
 
 `.` is isomorphic: a browser that imports `ContentEntryType` pulls no ORM.
 
@@ -64,7 +67,24 @@ await fields.read("catalogue.product", product.id); // { shoeSize: "43" }
   long text 10,000, a URL 2,048 (http or https only) and an email 254.
 - Values are checked by `checkCustomFields`: every key defined, every required value present, `null` clears an optional
   field, and a refusal (`custom_fields_invalid`) names each refused key without echoing its value.
-- A repeated key for a model in a scope refuses `custom_field_taken`.
+- A repeated key for a target in a scope refuses `custom_field_taken`.
+- A model whose records split into types defined at runtime (ADR 0226: a content service's tenant content types) gives
+  each type its own fields: pass `{ model, subtype }` as the target, the subtype a snake_case type key.
+
+```ts
+const recipe = { model: "entries.entry", subtype: "recipe" };
+await fields.define(recipe, {
+  key: "servings",
+  type: CustomFieldType.Number,
+  label,
+  required: true,
+});
+await fields.write(recipe, entry.id, { servings: 4 }); // checked against the recipe type's fields only
+```
+
+A subtype's definitions are its own; the whole model's (`"entries.entry"`, subtype `''`) are not merged in. A
+record's values are one row whatever its subtype, so the caller passes the record's current target on each write.
+
 - The number of fields a scope may define is `CustomFieldLimitEntitlement` (`content.custom_field_limit`), a limit
   counting `CustomField`; the host's defining action is the gated call.
 
@@ -82,6 +102,12 @@ revision without `publishedAt` is a draft; publishing sets it, and publishing an
 `publish`, `current`, `rollback`, and for `Schedulable` models `schedule(…, at, campaign)`, `unschedule(campaign)` and
 `publishDue(now)`, which the tenant schedule of `@stackra/scheduler` calls. A preview is `findOneOrFail` by number.
 
+## Hosting
+
+`ContentModule` (`src/node/content.module.ts`) exports `CustomFieldService` and `RevisionService`, so a service that
+lists `@stackra/content` as a dependency injects either into its own services. Gen discovers both from
+`src/node/services/` and runs the package's migrations (0001 to 0004) in the host's database, found by their paths.
+
 ## Publishing and slugs
 
 ```ts
@@ -96,8 +122,9 @@ isPublished(page, clock.now()); // published, or scheduled for a time that has c
 
 ## Tables
 
-`content.custom_fields` holds `id` (`cfd_…`), the scope (`scope_id`, `scope_path`), `model`, `key`, `type`, `label`
-(jsonb per locale), `required` and `rules` (choices and bounds, jsonb), unique on scope, model and key.
+`content.custom_fields` holds `id` (`cfd_…`), the scope (`scope_id`, `scope_path`), `model`, `subtype` (`''` for the
+whole model), `key`, `type`, `label` (jsonb per locale), `required` and `rules` (choices and bounds, jsonb), unique on
+scope, model, subtype and key.
 `content.custom_field_value_sets` holds `id` (`cfv_…`), the scope, `model`, `record_id` and `values` (jsonb by field
 key), unique on model and record id. `content.revisions` holds `id` (`rev_…`), the scope, `model`, `record_id`,
 `number`, `data` (jsonb), `published_at`, `scheduled_at` and `campaign` (nullable), unique on model, record id and number. All three force
@@ -106,6 +133,7 @@ application code adds an isolation filter.
 
 ## Not here
 
-- The built-in content type models, tenant-defined content types at runtime and headless delivery: later, each with its model design.
+- The built-in content type models, the store of types defined at runtime and headless delivery: the content
+  service's. This package gives such a type its fields through the `subtype` target.
 - Removing a definition: `CrudService` has no delete; its policy is a data-wave decision.
 - The collaborative-editing `SnapshotStore` driver: the content service owns it (ADR 0270).

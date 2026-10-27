@@ -4,7 +4,8 @@
  *          label, refuses a bad model key or definition, and turns a unique violation into `custom_field_taken`;
  *          `definitionsOf` reads the scope's definitions in order and maps them back; `write` checks values against
  *          them and creates or changes the record's one row; `read` returns the stored values or `{}`; without an
- *          explicit scope each takes the call's scope, and refuses a call that has none.
+ *          explicit scope each takes the call's scope, and refuses a call that has none; a target with a runtime
+ *          subtype defines, lists and checks that subtype's own fields, and a malformed subtype is refused.
  * Boundary: test only; a fake `Database` hands out a recording entity manager and a stand-in `RequestContext` answers
  *           the call's scope, so no database and no pipeline run.
  * Runtime: node (vitest)
@@ -94,6 +95,7 @@ describe(CustomFieldService, () => {
       scopeId: SCOPE.id,
       scopePath: SCOPE.path,
       model: PRODUCT,
+      subtype: "",
       key: "giftWrap",
       type: "boolean",
       required: true,
@@ -149,7 +151,7 @@ describe(CustomFieldService, () => {
     const em = connect([storedField()]);
     expect(await serviceOf().definitionsOf(SCOPE, PRODUCT)).toEqual([GIFT_WRAP]);
     expect(em.find.mock.calls[0]?.[0]).toBe(CustomField);
-    expect(em.find.mock.calls[0]?.[1]).toEqual({ scopeId: SCOPE.id, model: PRODUCT });
+    expect(em.find.mock.calls[0]?.[1]).toEqual({ scopeId: SCOPE.id, model: PRODUCT, subtype: "" });
     expect(em.find.mock.calls[0]?.[2]).toEqual({ orderBy: { createdAt: "asc", id: "asc" } });
   });
 
@@ -195,7 +197,7 @@ describe(CustomFieldService, () => {
       key: "giftWrap",
     });
     expect(await service.definitionsOf(PRODUCT)).toEqual([GIFT_WRAP]);
-    expect(em.find.mock.calls[0]?.[1]).toEqual({ scopeId: SCOPE.id, model: PRODUCT });
+    expect(em.find.mock.calls[0]?.[1]).toEqual({ scopeId: SCOPE.id, model: PRODUCT, subtype: "" });
     const recordId = "prd_01j9z3k4m5n6p7q8r9s0t1v2w3";
     await service.write(PRODUCT, recordId, { giftWrap: true });
     expect(em.create).toHaveBeenLastCalledWith(CustomFieldValueSet, {
@@ -225,5 +227,41 @@ describe(CustomFieldService, () => {
     });
     connect();
     expect(await serviceOf().read(PRODUCT, "prd_01j9z3k4m5n6p7q8r9s0t1v2w4")).toEqual({});
+  });
+
+  it("defines, lists and checks the fields of a runtime subtype on their own", async () => {
+    const recipe = { model: "entries.entry", subtype: "recipe" };
+    const em = connect([
+      Object.assign(storedField(), { model: recipe.model, subtype: recipe.subtype }),
+    ]);
+    const field = await serviceOf().define(SCOPE, recipe, GIFT_WRAP);
+    expect(field).toMatchObject({ model: "entries.entry", subtype: "recipe", key: "giftWrap" });
+    expect(await serviceOf().definitionsOf(SCOPE, recipe)).toEqual([GIFT_WRAP]);
+    expect(em.find.mock.calls[0]?.[1]).toEqual({
+      scopeId: SCOPE.id,
+      model: "entries.entry",
+      subtype: "recipe",
+    });
+    const recordId = "ent_01j9z3k4m5n6p7q8r9s0t1v2w3";
+    await serviceOf().write(SCOPE, recipe, recordId, { giftWrap: true });
+    expect(em.findOne.mock.calls[0]?.[1]).toEqual({ model: "entries.entry", recordId });
+    expect(em.find.mock.calls[1]?.[1]).toEqual({
+      scopeId: SCOPE.id,
+      model: "entries.entry",
+      subtype: "recipe",
+    });
+  });
+
+  it("treats `{ model }` as the whole model and refuses a malformed subtype", async () => {
+    const em = connect();
+    await serviceOf().definitionsOf(SCOPE, { model: PRODUCT });
+    expect(em.find.mock.calls[0]?.[1]).toEqual({ scopeId: SCOPE.id, model: PRODUCT, subtype: "" });
+    const refused = await serviceOf()
+      .define(SCOPE, { model: PRODUCT, subtype: "Blog Post" }, GIFT_WRAP)
+      .catch((error: unknown) => error);
+    expect(isRefusal(refused, CustomFieldDefinitionInvalidError)).toBe(true);
+    expect((refused as CustomFieldDefinitionInvalidError).fieldErrors).toEqual({
+      subtype: "invalid_format",
+    });
   });
 });

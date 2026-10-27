@@ -14,6 +14,7 @@ at `packages/data/content` (`tier:lib`), in the programming model v3.1 shape (AD
 | An internal schema             | `src/core/constants/<name>-schema.constant.ts`            |
 | A model, its service           | `src/node/{models,services}/`                             |
 | A trait                        | `src/node/traits/<name>.trait.ts`                         |
+| An export a host injects       | `exports` of `src/node/content.module.ts`                 |
 | A migration                    | `src/node/database/migrations/<NNNN>-<name>.migration.ts` |
 | An entitlement                 | `src/node/access/<name>.entitlement.ts`                   |
 | A test                         | `__tests__/<name>.<kind>.test.ts` beside it               |
@@ -36,6 +37,8 @@ at `packages/data/content` (`tier:lib`), in the programming model v3.1 shape (AD
 - No tenant vocabulary (R-59, ADR 0323): every table is keyed by the contracts `ScopeRef`.
 - `CustomFieldService` keeps the explicit `ScopeRef` argument first; when it is left out the scope is the call's
   (`RequestContext.current().scope`), never request input.
+- A custom field target is a model key, or a model key and a runtime subtype; a subtype's definitions are never merged
+  with the whole model's.
 - A revision's `data` is written once; a change is a new revision, never an update of `data`.
 - Isolation is the database's: never add an application-level `WHERE` filter for isolation; selecting `scopeId` picks
   the node whose definitions apply.
