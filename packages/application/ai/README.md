@@ -51,6 +51,12 @@ the one MCP gateway in the `ai` service serves it.
 the `VectorIndex` (both from `@stackra/search/contracts`) for the top-k hits in the caller's scope, and returns
 `RetrievedPassage`s. A `Facts` subclass injects the two ports and returns the passages from `provide`.
 
+**One vector store (ADR 0465).** Every embedding lives in `search.vector_items` behind `VectorIndex`; this package
+keeps no vector table. Migration `ai.0002_drop_embeddings` drops `ai.embeddings` and the `Embedding` model is gone
+(nothing ever wrote it). Conversation memory, when it lands, upserts through `VectorIndex` with
+`{ conversationId, messageId, embedder, contentHash }` as item metadata and the caller's scope; the message text stays
+sealed in `ai.messages`, so a memory item's `text` is the passage the model may see back, nothing more.
+
 ```ts
 export class ArticleFacts extends Facts<Article> {
   constructor(index: VectorIndex, embedder: Embedder) {

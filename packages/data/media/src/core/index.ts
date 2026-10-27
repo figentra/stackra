@@ -1,11 +1,12 @@
 /**
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `.` entry of @stackra/media (the `Bucket` kind and its enums, the `Upload` token,
- *          `MediaLibrary`, the configuration and its shipped schema, the `Uploader` port, the memory and HTTP drivers,
+ *          `MediaLibrary`, the configuration and its shipped schema, the `Uploader` port, the memory and HTTP uploaders,
+ *          the memory scanner,
  *          the refusals and `registerBuckets`) until `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. The shipped schema is re-exported under its generated name
- *           (`MediaConfig$`). The path, key and id helpers stay internal. `MediaDisk` is `./contracts`'; the S3 disk
- *           and the `upload.create` action are `./node`'s.
+ *           (`MediaConfig$`). The path, key and id helpers stay internal. The store is `FileSystem` of
+ *           @stackra/filesystem (ADR 0465); the `upload.create` action is `./node`'s.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision; ADR 0127 2026-10-24 note.
  */
@@ -14,7 +15,6 @@ export { Bucket } from "#core/bases/bucket.base";
 export { MEDIA_CONFIG_SCHEMA as MediaConfig$ } from "#core/constants/media-config-schema.constant";
 export { HttpUploaderDriver } from "#core/drivers/http-uploader.driver";
 export { MemoryFileScannerDriver } from "#core/drivers/memory-file-scanner.driver";
-export { MemoryMediaDiskDriver } from "#core/drivers/memory-media-disk.driver";
 export { MemoryUploaderDriver } from "#core/drivers/memory-uploader.driver";
 export { BucketVisibility } from "#core/enums/bucket-visibility.enum";
 export { ImageFormat } from "#core/enums/image-format.enum";

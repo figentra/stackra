@@ -1,22 +1,22 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `MediaLibrary`: an upload is signed with the bucket key and expiry as signed metadata, a
- *          bucket's type and size rules hold at signing and again at claim, a claim moves the file to its bucket path
- *          once, and a foreign, expired, missing, malformed or oversized upload is refused.
- * Boundary: test only; the memory disk stands in for S3 and receives the bytes as a browser's signed `PUT` would. A
- *           hand-moved clock drives expiry.
+ * Purpose: unit tests of `MediaLibrary` over a `FileSystem` disk (ADR 0465): an upload is signed with its media type
+ *          and its bucket key and expiry are recorded beside it, a bucket's type and size rules hold at signing and
+ *          again at claim, a claim moves the file to its bucket path once and drops the record, a disk that cannot sign
+ *          refuses, and a foreign, expired, missing, malformed or oversized upload is refused.
+ * Boundary: test only; the memory `FileSystem` disk stands in for S3 and receives the bytes as a browser's signed `PUT`
+ *           would. A hand-moved clock drives expiry.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0222 (decisions 1 to 3).
  */
 import { buildConfig } from "@stackra/config";
 import { Clock, Duration } from "@stackra/contracts";
-import { FilesystemConfig } from "@stackra/filesystem";
+import { FilesystemConfig, MemoryFileSystemDriver } from "@stackra/filesystem";
 import { afterEach, describe, expect, it } from "@stackra/testing";
 
 import { MediaConfig } from "#config/media.config";
 import { Bucket } from "#core/bases/bucket.base";
 import { BUCKET_REGISTRY } from "#core/constants/bucket-registry.constant";
-import { MemoryMediaDiskDriver } from "#core/drivers/memory-media-disk.driver";
 import { BucketVisibility } from "#core/enums/bucket-visibility.enum";
 import { MediaType } from "#core/enums/media-type.enum";
 import { UploadBucketMismatchError } from "#core/errors/upload-bucket-mismatch.error";
@@ -51,7 +51,7 @@ class InvoicesBucket extends Bucket({
 /** A library over a memory disk serving from `https://cdn.test`. */
 function setup(values: { uploadExpiresIn?: Duration } = {}) {
   const clock = new TestClock();
-  const disk = new MemoryMediaDiskDriver(
+  const disk = new MemoryFileSystemDriver(
     buildConfig(FilesystemConfig, { values: { url: "https://cdn.test" } }),
     clock,
   );
@@ -61,7 +61,7 @@ function setup(values: { uploadExpiresIn?: Duration } = {}) {
 
 /** Puts `bytes` to the pending upload's signed URL as a browser would. */
 async function put(
-  disk: MemoryMediaDiskDriver,
+  disk: MemoryFileSystemDriver,
   pending: PendingUpload,
   bytes = new Uint8Array(4),
 ): Promise<void> {
@@ -73,8 +73,8 @@ afterEach(() => {
 });
 
 describe("MediaLibrary.createUpload", () => {
-  it("signs a PUT that binds the media type, the bucket key and the expiry", async () => {
-    const { media } = setup();
+  it("signs a PUT that binds the media type and records the bucket key and the expiry", async () => {
+    const { disk, media } = setup();
     const pending = await media.createUpload(ProductImagesBucket, {
       mediaType: MediaType.Png,
       size: 4,
@@ -83,11 +83,28 @@ describe("MediaLibrary.createUpload", () => {
     expect(pending.method).toBe("PUT");
     expect(pending.url).toMatch(/^https:\/\/cdn\.test\/uploads\/upl_\w{26}\?signature=/);
     expect(pending.expiresAt).toEqual(new Date("2026-10-24T10:00:00.000Z"));
-    expect(pending.headers).toEqual({
-      "content-type": "image/png",
-      "x-meta-bucket": "product_images",
-      "x-meta-expires": "2026-10-24T10:00:00.000Z",
+    expect(pending.headers).toEqual({ "content-type": "image/png" });
+    const record = await disk.read(`uploads/${pending.upload.id}.json`);
+    expect(JSON.parse(new TextDecoder().decode(record))).toEqual({
+      bucket: "product_images",
+      expires: "2026-10-24T10:00:00.000Z",
     });
+  });
+
+  it("refuses on a disk that cannot sign uploads, and records nothing", async () => {
+    const { disk, clock } = setup();
+    class UnsignedDisk extends MemoryFileSystemDriver {
+      override async signUpload(): Promise<never> {
+        throw new TypeError("This disk cannot sign uploads");
+      }
+    }
+    const unsigned = new UnsignedDisk(buildConfig(FilesystemConfig), clock);
+    const media = new MediaLibrary(unsigned, buildConfig(MediaConfig), clock);
+    await expect(
+      media.createUpload(ProductImagesBucket, { mediaType: MediaType.Png, size: 4 }),
+    ).rejects.toThrow(TypeError);
+    expect(await unsigned.list("uploads/")).toEqual([]);
+    expect(await disk.list("uploads/")).toEqual([]);
   });
 
   it("takes the upload lifetime from MediaConfig", async () => {
@@ -146,7 +163,7 @@ describe("MediaLibrary.claim", () => {
       mediaType: MediaType.Png,
       size: 4,
     });
-    expect(await disk.stat(`uploads/${pending.upload.id}`)).toBeNull();
+    expect(await disk.list("uploads/")).toEqual([]);
     expect(await disk.stat(path)).toMatchObject({ size: 4, contentType: "image/png" });
   });
 
@@ -157,7 +174,6 @@ describe("MediaLibrary.claim", () => {
       mediaType: MediaType.Jpeg,
       size: 4,
     });
-    expect(pending.headers["x-meta-bucket"]).toBe("catalogue.product_images");
     await put(disk, pending);
     const file = await media.claim(pending.upload, ProductImagesBucket);
     expect(file.path).toBe(`public/catalogue/product_images/${pending.upload.id}.jpeg`);
@@ -232,7 +248,37 @@ describe("MediaLibrary.claim", () => {
       code: "upload_rejected",
       reason: "size",
     });
-    expect(await disk.stat(`uploads/${pending.upload.id}`)).toBeNull();
+    expect(await disk.list("uploads/")).toEqual([]);
+  });
+
+  it("refuses an upload whose record is not readable", async () => {
+    const { disk, media } = setup();
+    const pending = await media.createUpload(ProductImagesBucket, {
+      mediaType: MediaType.Png,
+      size: 4,
+    });
+    await put(disk, pending);
+    await disk.write(`uploads/${pending.upload.id}.json`, "not json");
+    await expect(media.claim(pending.upload, ProductImagesBucket)).rejects.toBeInstanceOf(
+      UploadIncompleteError,
+    );
+  });
+
+  it("refuses a file stored with a media type the bucket does not take", async () => {
+    const { disk, media } = setup();
+    const pending = await media.createUpload(ProductImagesBucket, {
+      mediaType: MediaType.Png,
+      size: 4,
+    });
+    // an Encore bucket signs no header, so the store keeps whatever type the client sent
+    await disk.write(`uploads/${pending.upload.id}`, new Uint8Array(4), {
+      contentType: "application/pdf",
+    });
+    await expect(media.claim(pending.upload, ProductImagesBucket)).rejects.toMatchObject({
+      code: "upload_rejected",
+      reason: "media_type",
+    });
+    expect(await disk.list("uploads/")).toEqual([]);
   });
 
   it("stores a private bucket's file under private/ and links it for a while", async () => {

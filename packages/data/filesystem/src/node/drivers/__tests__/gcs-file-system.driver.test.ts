@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `GcsFileSystemDriver`: the bucket and project it builds its client with, the calls it makes
- *          for each method, not-found mapping, streamed downloads, sorted listing and the V4 signed URL request with its seven-day limit.
+ *          for each method, not-found mapping, streamed downloads, sorted listing, the move, and the V4 signed read and
+ *          upload requests with their seven-day limit.
  * Boundary: test only; `@google-cloud/storage` is replaced by an in-memory stand-in, so no request leaves the process
  *           and no credential is read.
  * Runtime: node (vitest)
@@ -72,6 +73,14 @@ vi.mock("@google-cloud/storage", async () => {
           contentType: object.contentType,
         },
       ];
+    }
+
+    async move(destination: string) {
+      const object = store.objects.get(this.name);
+      if (object === undefined) throw notFound();
+      store.objects.set(destination, object);
+      store.objects.delete(this.name);
+      return [new File(destination)];
     }
 
     async getSignedUrl(options: unknown) {
@@ -181,5 +190,35 @@ describe("GcsFileSystemDriver", () => {
     await files.write("imports/orders.csv", "a,b");
     expect(await new Response(await files.readStream("imports/orders.csv")).text()).toBe("a,b");
     await expect(files.readStream("missing.csv")).rejects.toThrow(FileNotFoundError);
+  });
+
+  it("moves an object with the store's move and maps a missing one", async () => {
+    const files = disk();
+    await files.write("uploads/a", "x", { contentType: "image/png" });
+    await files.move("uploads/a", "public/a.png");
+    expect(await files.exists("uploads/a")).toBe(false);
+    expect(await files.stat("public/a.png")).toMatchObject({ contentType: "image/png" });
+    await expect(files.move("uploads/a", "public/b.png")).rejects.toThrow(FileNotFoundError);
+  });
+
+  it("signs a V4 upload PUT that binds the content type", async () => {
+    const files = disk();
+    const target = await files.signUpload("uploads/upl_1", {
+      contentType: "image/png",
+      expiresIn: Duration.hours(1),
+    });
+    expect(target).toEqual({
+      url: "https://storage.googleapis.com/signed/uploads/upl_1",
+      method: "PUT",
+      headers: { "content-type": "image/png" },
+    });
+    expect(store.signed[0]).toMatchObject({
+      version: "v4",
+      action: "write",
+      contentType: "image/png",
+    });
+    await expect(
+      files.signUpload("uploads/x", { contentType: "image/png", expiresIn: Duration.days(8) }),
+    ).rejects.toThrow(RangeError);
   });
 });

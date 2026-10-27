@@ -11,20 +11,21 @@ main-process driver, and `FilesystemConfig`, which picks the driver.
 
 ## What is here
 
-| Entry         | Symbol                                  | Use                                                                                  |
-| ------------- | --------------------------------------- | ------------------------------------------------------------------------------------ |
-| `./contracts` | `FileSystem`                            | the port: `exists`, `read`, `write`, `delete`, `list`, `stat`, `url`, `temporaryUrl` |
-| `./contracts` | `EncoreBucket`                          | the slice of an Encore bucket the `encore_bucket` disk drives                        |
-| `./contracts` | `FileStat`, `WriteOptions`              | types: `{ path, size, lastModified, contentType }`, `{ contentType? }`               |
-| `.`           | `FilesystemConfig`, `FilesystemConfig$` | key `filesystem`: `disk`, `root`, `url`, `s3`, `gcs`                                 |
-| `.`           | `FilesystemOptions`                     | the shape of the configuration, for restating a field type in an override            |
-| `.`           | `MemoryFileSystemDriver`                | `disk: memory`: a `Map`, for tests and as the safe default                           |
-| `.`           | `FileNotFoundError`                     | the `NotFound` refusal `read` and `stat` throw when nothing is stored under a key    |
-| `./node`      | `LocalFileSystemDriver`                 | `disk: local`: a folder (`root`), atomic writes                                      |
-| `./node`      | `S3FileSystemDriver`                    | `disk: s3`: AWS S3, Cloudflare R2 or MinIO; presigned temporary URLs                 |
-| `./node`      | `GcsFileSystemDriver`                   | `disk: gcs`: Google Cloud Storage (in-country GCP, ADR 0354); V4 signed URLs         |
-| `./node`      | `EncoreBucketFileSystemDriver`          | `disk: encore_bucket`: the bucket the generated Encore app binds                     |
-| `./desktop`   | `ElectronFileSystemDriver`              | `disk: electron`: the desktop app's files under `userData/<root>`                    |
+| Entry         | Symbol                                  | Use                                                                                                        |
+| ------------- | --------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `./contracts` | `FileSystem`                            | the port: `exists`, `read`, `write`, `delete`, `list`, `stat`, `url`, `temporaryUrl`, `move`, `signUpload` |
+| `./contracts` | `EncoreBucket`                          | the slice of an Encore bucket the `encore_bucket` disk drives                                              |
+| `./contracts` | `FileStat`, `WriteOptions`              | types: `{ path, size, lastModified, contentType }`, `{ contentType? }`                                     |
+| `./contracts` | `SignedUpload`, `UploadRequest`         | types: `{ url, method: "PUT", headers }`, `{ contentType, expiresIn }`                                     |
+| `.`           | `FilesystemConfig`, `FilesystemConfig$` | key `filesystem`: `disk`, `root`, `url`, `s3`, `gcs`                                                       |
+| `.`           | `FilesystemOptions`                     | the shape of the configuration, for restating a field type in an override                                  |
+| `.`           | `MemoryFileSystemDriver`                | `disk: memory`: a `Map`, for tests and as the safe default; `receive` plays a signed `PUT`                 |
+| `.`           | `FileNotFoundError`                     | the `NotFound` refusal `read` and `stat` throw when nothing is stored under a key                          |
+| `./node`      | `LocalFileSystemDriver`                 | `disk: local`: a folder (`root`), atomic writes                                                            |
+| `./node`      | `S3FileSystemDriver`                    | `disk: s3`: AWS S3, Cloudflare R2 or MinIO; presigned temporary URLs                                       |
+| `./node`      | `GcsFileSystemDriver`                   | `disk: gcs`: Google Cloud Storage (in-country GCP, ADR 0354); V4 signed URLs                               |
+| `./node`      | `EncoreBucketFileSystemDriver`          | `disk: encore_bucket`: the bucket the generated Encore app binds                                           |
+| `./desktop`   | `ElectronFileSystemDriver`              | `disk: electron`: the desktop app's files under `userData/<root>`                                          |
 
 ## Using a disk
 
@@ -63,14 +64,24 @@ const body = await this.files.readStream("imports/orders.csv");
 for await (const text of body.pipeThrough(new TextDecoderStream())) parser.push(text);
 ```
 
-| Driver          | `url()`                 | `temporaryUrl()`                     | `stat().contentType` | `stat().lastModified` |
-| --------------- | ----------------------- | ------------------------------------ | -------------------- | --------------------- |
-| `memory`        | `filesystem.url` + key  | the URL with an unsigned `expires`   | kept                 | the `Clock`'s now     |
-| `local`         | `filesystem.url` + key  | refuses: nothing checks a signature  | `null`               | file time             |
-| `s3`            | `filesystem.url` + key  | SigV4 presigned GET (at most 7 days) | kept                 | object time           |
-| `gcs`           | `filesystem.url` + key  | V4 signed GET (at most 7 days)       | kept                 | object update time    |
-| `encore_bucket` | the bucket's public URL | Encore signed download URL           | kept                 | `null`                |
-| `electron`      | `file:` URL             | the same `file:` URL                 | `null`               | file time             |
+| Driver          | `url()`                                               | `temporaryUrl()`                     | `signUpload()`                           | `move()`            | `stat().contentType` | `stat().lastModified` |
+| --------------- | ----------------------------------------------------- | ------------------------------------ | ---------------------------------------- | ------------------- | -------------------- | --------------------- |
+| `memory`        | `filesystem.url` (else `https://files.invalid`) + key | the URL with an unsigned `expires`   | a signature `receive` checks             | map move            | kept                 | the `Clock`'s now     |
+| `local`         | `filesystem.url` + key                                | refuses: nothing checks a signature  | refuses (`TypeError`)                    | rename              | `null`               | file time             |
+| `s3`            | `filesystem.url` + key                                | SigV4 presigned GET (at most 7 days) | SigV4 presigned PUT, content type signed | copy and delete     | kept                 | object time           |
+| `gcs`           | `filesystem.url` + key                                | V4 signed GET (at most 7 days)       | V4 signed PUT, content type signed       | the store's move    | kept                 | object update time    |
+| `encore_bucket` | the bucket's public URL                               | Encore signed download URL           | Encore signed upload URL, nothing signed | read, write, delete | kept                 | `null`                |
+| `electron`      | `file:` URL                                           | the same `file:` URL                 | refuses (`TypeError`)                    | read, write, delete | `null`               | file time             |
+
+### Direct uploads and moves
+
+`signUpload(key, { contentType, expiresIn })` returns `{ url, method: "PUT", headers }`: the client puts the whole file
+to `url` with exactly those headers, so the bytes never pass through a service (ADR 0222 decision 2). The size is never
+signed (a browser sets Content-Length), and an Encore bucket signs no header, so the caller checks `stat(key)` after the
+upload. `move(from, to)` keeps the media type; the default reads, writes and deletes, and the memory, local, s3 and gcs
+disks use the store's own move. `@stackra/media` runs its signed uploads and claims through these two members on any
+disk (ADR 0465; the old `MediaDisk` port and its S3 driver were folded in here, stackra-226). The bucket of the s3 and
+gcs disks needs a CORS rule that allows `content-type` on `PUT`.
 
 ## Choosing the disk
 

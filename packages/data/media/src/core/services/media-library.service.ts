@@ -4,20 +4,26 @@
  *          (`createUpload`), claims a finished upload for a bucket (`claim`), and links a private file
  *          (`temporaryUrl`).
  * Boundary: the bytes never pass through it (ADR 0222 decision 2): the client puts them to `uploads/<id>` on the
- *           `MediaDisk` through a signed URL that binds the media type, the bucket key and the expiry as signed
- *           metadata, so the token itself carries only the id. `claim` trusts nothing the client sent but the id: it
- *           reads what the store received, refuses a foreign bucket, an expired token, a missing object and a file
- *           the bucket does not take (deleting that file), then moves it to `<visibility>/<bucket>/<id>.<ext>`. A
- *           second claim of the same token finds nothing and is refused. Keeps no state of its own.
+ *           `FileSystem` disk through a signed URL (`FileSystem.signUpload`), and the token itself carries only the id.
+ *           What the server must remember about the upload (the bucket key and the expiry) it writes itself beside it,
+ *           as `uploads/<id>.json`, so every disk works, an Encore bucket included, which signs no metadata (ADR 0465;
+ *           before stackra-226 it was signed metadata on the old `MediaDisk`). `claim` trusts nothing the client sent
+ *           but the id: it reads that record and what the store received, refuses a foreign bucket, an expired token,
+ *           a missing object and a file the bucket does not take (deleting that file and its record), then moves it to
+ *           `<visibility>/<bucket>/<id>.<ext>` and deletes the record. A second claim of the same token finds no
+ *           record and is refused. Keeps no state of its own. The local and Electron disks cannot sign uploads, so
+ *           `createUpload` refuses on them.
  * Runtime: isomorphic
- * Governing contract: ADR 0222 (decisions 1 to 3); ADR 0294 (decisions 16 and 17); ADR 0263 (classes are the tokens).
+ * Governing contract: ADR 0222 (decisions 1 to 3); ADR 0294 (decisions 16 and 17); ADR 0263 (classes are the tokens);
+ *                     ADR 0465 (one object-storage port).
  */
 import { Service } from "@stackra/container";
 import type { Clock } from "@stackra/contracts";
 import { Duration } from "@stackra/contracts";
+import { FileNotFoundError } from "@stackra/filesystem";
+import type { FileStat, FileSystem } from "@stackra/filesystem/contracts";
 
 import type { MediaConfig } from "#config/media.config";
-import type { MediaDisk } from "#contracts/ports/media-disk.port";
 import type { BucketBase } from "#core/bases/bucket-base.base";
 import type { MediaType } from "#core/enums/media-type.enum";
 import { UploadBucketMismatchError } from "#core/errors/upload-bucket-mismatch.error";
@@ -36,6 +42,28 @@ import { Upload } from "#core/values/upload.value";
 /** Where uploads wait for their claim. */
 const UPLOADS = "uploads/";
 
+/** What the server remembers about one upload, written beside it as `uploads/<id>.json`. */
+type UploadRecord = { readonly bucket: string; readonly expires: string };
+
+/** The record of a staged upload, or `null` when there is none or it does not parse. */
+async function recordOf(disk: FileSystem, path: string): Promise<UploadRecord | null> {
+  let text: string;
+  try {
+    text = new TextDecoder().decode(await disk.read(path));
+  } catch (error) {
+    if (error instanceof FileNotFoundError) return null;
+    throw error;
+  }
+  try {
+    const record = JSON.parse(text) as Partial<UploadRecord> | null;
+    return typeof record?.bucket === "string" && typeof record.expires === "string"
+      ? { bucket: record.bucket, expires: record.expires }
+      : null;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Issues and claims uploads.
  *
@@ -45,18 +73,18 @@ const UPLOADS = "uploads/";
  * product.images = [...product.images, { url: file.url, alt: input.alt }];
  */
 export class MediaLibrary extends Service {
-  private readonly disk: MediaDisk;
+  private readonly disk: FileSystem;
 
   private readonly config: MediaConfig;
 
   private readonly clock: Clock;
 
   /**
-   * @param disk - the media store.
+   * @param disk - the store: the one `FileSystem` disk `filesystem.disk` picks.
    * @param config - the upload lifetime (`uploadExpiresIn`).
    * @param clock - the time source of expiry.
    */
-  constructor(disk: MediaDisk, config: MediaConfig, clock: Clock) {
+  constructor(disk: FileSystem, config: MediaConfig, clock: Clock) {
     super();
     this.disk = disk;
     this.config = config;
@@ -68,7 +96,7 @@ export class MediaLibrary extends Service {
    *
    * @throws UploadRejectedError when the bucket does not accept `mediaType`, or `size` is not a whole number from 1 up
    *         to the bucket's `maxBytes`.
-   * @throws TypeError when `bucket` does not extend `Bucket({...})`.
+   * @throws TypeError when `bucket` does not extend `Bucket({...})`, or the disk cannot sign uploads (local, Electron).
    */
   async createUpload<B extends BucketBase>(
     bucket: BucketClass<B>,
@@ -85,8 +113,11 @@ export class MediaLibrary extends Service {
     const expiresAt = new Date(this.clock.now().getTime() + Duration.toMilliseconds(lifetime));
     const target = await this.disk.signUpload(`${UPLOADS}${id}`, {
       contentType: request.mediaType,
-      metadata: { bucket: key, expires: expiresAt.toISOString() },
       expiresIn: lifetime,
+    });
+    const record: UploadRecord = { bucket: key, expires: expiresAt.toISOString() };
+    await this.disk.write(`${UPLOADS}${id}.json`, JSON.stringify(record), {
+      contentType: "application/json",
     });
     return { ...target, upload: { id }, expiresAt };
   }
@@ -104,15 +135,24 @@ export class MediaLibrary extends Service {
     const key = bucketKeyOf(bucket);
     if (!Upload.schema.safeParse(upload).success) throw UploadIncompleteError.create();
     const staged = `${UPLOADS}${upload.id}`;
-    const object = await this.disk.stat(staged);
-    if (object === null) throw UploadIncompleteError.create();
-    if (object.metadata["bucket"] !== key) throw UploadBucketMismatchError.create({ bucket: key });
-    // A missing or unreadable expiry is NaN, which fails the comparison: refused as expired.
-    if (!(Date.parse(object.metadata["expires"] ?? "") >= this.clock.now().getTime()))
+    const recordPath = `${staged}.json`;
+    const record = await recordOf(this.disk, recordPath);
+    if (record === null) throw UploadIncompleteError.create();
+    if (record.bucket !== key) throw UploadBucketMismatchError.create({ bucket: key });
+    // An unreadable expiry is NaN, which fails the comparison: refused as expired.
+    if (!(Date.parse(record.expires) >= this.clock.now().getTime()))
       throw UploadExpiredError.create();
+    let object: FileStat;
+    try {
+      object = await this.disk.stat(staged);
+    } catch (error) {
+      if (error instanceof FileNotFoundError) throw UploadIncompleteError.create();
+      throw error;
+    }
     const mediaType = options.accept.find((type) => type === object.contentType);
     if (mediaType === undefined || object.size < 1 || object.size > options.maxBytes) {
       await this.disk.delete(staged);
+      await this.disk.delete(recordPath);
       throw UploadRejectedError.create({
         bucket: key,
         reason: mediaType === undefined ? "media_type" : "size",
@@ -120,6 +160,7 @@ export class MediaLibrary extends Service {
     }
     const path = filePathOf(bucket, upload.id, mediaType);
     await this.disk.move(staged, path);
+    await this.disk.delete(recordPath);
     return {
       id: upload.id,
       bucket: key,

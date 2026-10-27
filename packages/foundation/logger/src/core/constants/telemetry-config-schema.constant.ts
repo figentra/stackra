@@ -1,14 +1,16 @@
 /**
  * Stackra file contract:
  * Purpose: `TELEMETRY_CONFIG_SCHEMA`, the zod schema this package ships for `TelemetryConfig` (exported as
- *          `TelemetryConfig$`): the reporter DSN, error, trace and replay sampling, web vitals, the quality budgets and
- *          the Lighthouse run.
+ *          `TelemetryConfig$`): whether errors and native crashes are reported, trace and replay sampling, web vitals,
+ *          the quality budgets and the Lighthouse run.
  * Boundary: the stand-in for what gen writes for this package. Every field and every nested field has a default, so
  *           `.parse({})` gives the full defaults, `.shape.<field>.parse(undefined)` gives a nested default and a host's
  *           generated `TelemetryConfig$` extends it with `Base$.shape.<field>.unwrap().default(...)`. The defaults
- *           equal `TelemetryOptions`' initializers (tested).
+ *           equal `TelemetryOptions`' initializers (tested). No DSN and no error sampling: both are `SentryConfig`'s
+ *           (@stackra/errors), the one Sentry source (ADR 0465, stackra-226); a leftover `dsn` or `errors.sampleRate`
+ *           value is dropped by the parse.
  * Runtime: isomorphic
- * Governing contract: ADR 0294 (decision 26: a package ships its own `X$`); ADR 0184; ADR 0183 (budgets).
+ * Governing contract: ADR 0294 (decision 26: a package ships its own `X$`); ADR 0184; ADR 0183 (budgets); ADR 0465.
  */
 import { z } from "zod";
 
@@ -23,14 +25,12 @@ const SCORE = z.number().min(0).max(1);
 
 /** The shipped `TelemetryConfig$`. */
 export const TELEMETRY_CONFIG_SCHEMA = z.object({
-  dsn: z.url().nullable().default(null),
   errors: z
     .object({
       enabled: z.boolean().default(false),
-      sampleRate: RATE.default(1),
       nativeCrashes: z.boolean().default(false),
     })
-    .default(() => ({ enabled: false, sampleRate: 1, nativeCrashes: false })),
+    .default(() => ({ enabled: false, nativeCrashes: false })),
   traces: z.object({ sampleRate: RATE.default(0) }).default(() => ({ sampleRate: 0 })),
   replay: z
     .object({

@@ -3,7 +3,8 @@
  * Purpose: unit tests of `S3FileSystemDriver`: the commands it sends for each call, the bucket, region, endpoint and
  *          path style it builds its client with, not-found mapping, paged listing, a real SigV4 presigned URL, and the
  *          streamed write: one PUT under a part, equal 8 MiB parts then the rest and a completion above, an abort when
- *          the stream fails.
+ *          the stream fails; a move by server-side copy and delete, and a presigned upload `PUT` that signs the content
+ *          type and carries no checksum (moved from the old `S3MediaDiskDriver` tests).
  * Boundary: test only; `S3Client.prototype.send` is replaced, so no request leaves the process. Presigning is local
  *           computation, run with fake credentials set through the environment for the test only.
  * Runtime: node (vitest)
@@ -13,6 +14,7 @@ import type { GetObjectCommand, ListObjectsV2Command } from "@aws-sdk/client-s3"
 import {
   AbortMultipartUploadCommand,
   CompleteMultipartUploadCommand,
+  CopyObjectCommand,
   CreateMultipartUploadCommand,
   DeleteObjectCommand,
   HeadObjectCommand,
@@ -252,6 +254,52 @@ describe("S3FileSystemDriver", () => {
     expect(await new Response(await files.readStream("hi.txt")).text()).toBe("hi");
     await expect(files.readStream("missing.txt")).rejects.toThrow(FileNotFoundError);
     await expect(files.readStream("../x")).rejects.toThrow(RangeError);
+  });
+
+  it("moves by a server-side copy and a delete", async () => {
+    const send = answer(() => ({}));
+    await disk().move("uploads/upl 1", "public/products/upl_1.png");
+    const [copy, remove] = send.mock.calls.map(([command]) => command);
+    expect(copy).toBeInstanceOf(CopyObjectCommand);
+    expect((copy as CopyObjectCommand).input).toEqual({
+      Bucket: "acme-files",
+      Key: "public/products/upl_1.png",
+      CopySource: "acme-files/uploads/upl%201",
+    });
+    expect(remove).toBeInstanceOf(DeleteObjectCommand);
+    expect((remove as DeleteObjectCommand).input).toEqual({
+      Bucket: "acme-files",
+      Key: "uploads/upl 1",
+    });
+  });
+
+  it("refuses to move nothing and deletes nothing", async () => {
+    const send = answer(() => {
+      throw missing("NoSuchKey");
+    });
+    await expect(disk().move("uploads/upl_1", "public/x.png")).rejects.toThrow(FileNotFoundError);
+    expect(send).toHaveBeenCalledTimes(1);
+  });
+
+  it("presigns an upload PUT that signs the content type and carries no checksum", async () => {
+    vi.stubEnv("AWS_ACCESS_KEY_ID", "TEST_ONLY_ACCESS_KEY_ID");
+    vi.stubEnv("AWS_SECRET_ACCESS_KEY", "test-only-not-a-secret");
+    const target = await disk().signUpload("uploads/upl_1", {
+      contentType: "image/png",
+      expiresIn: Duration.minutes(10),
+    });
+    const link = new URL(target.url);
+    expect(link.hostname).toBe("acme-files.s3.us-east-1.amazonaws.com");
+    expect(link.pathname).toBe("/uploads/upl_1");
+    expect(link.searchParams.get("X-Amz-Expires")).toBe("600");
+    expect(link.searchParams.get("X-Amz-SignedHeaders")?.split(";")).toEqual(
+      expect.arrayContaining(["content-type", "host"]),
+    );
+    expect([...link.searchParams.keys()].some((name) => /checksum/i.test(name))).toBe(false);
+    expect(target).toMatchObject({ method: "PUT", headers: { "content-type": "image/png" } });
+    await expect(
+      disk().signUpload("../x", { contentType: "image/png", expiresIn: Duration.minutes(1) }),
+    ).rejects.toThrow(RangeError);
   });
 });
 

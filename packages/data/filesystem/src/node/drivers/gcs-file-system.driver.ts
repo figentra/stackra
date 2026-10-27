@@ -1,17 +1,19 @@
 /**
  * Stackra file contract:
  * Purpose: the Google Cloud Storage `FileSystem` (`disk: "gcs"`), for the in-country GCP environments (Dammam for
- *          KSA). Temporary URLs are V4 signed GETs.
+ *          KSA). Temporary URLs are V4 signed GETs; signed uploads are V4 signed `PUT`s that sign the content type; a
+ *          move is the store's own rewrite and delete.
  * Boundary: holds no credential: the client reads Application Default Credentials (workload identity on GKE or Cloud
  *           Run, `GOOGLE_APPLICATION_CREDENTIALS` locally), and signing a URL uses the bound service account's
  *           `signBlob` when no key file is present. Every key passes `normalizePath`. A missing object is a
  *           `FileNotFoundError`; any other store error is rethrown as it is. Which environment runs this disk is
  *           runway's `filesystem.disk` value, never code. `readStream` checks the object exists, then streams
- *           the download, so a missing object rejects before the stream.
+ *           the download, so a missing object rejects before the stream. The bucket's CORS rule must allow
+ *           `content-type` on `PUT` for direct uploads; the size is not signed, the caller checks it after the upload.
  * Runtime: node
  * Governing contract: ADR 0354 (two clouds: a driver for both where object storage differs); ADR 0222 (decision 1);
  *                     ADR 0234 (decision 7); ADR 0173 (secrets); ADR 0294 (decision 16);
- *                     ADR 0413 (streamed reads, STA-1259).
+ *                     ADR 0413 (streamed reads, STA-1259); ADR 0222 (decision 2: presigned uploads); ADR 0465.
  */
 import { Readable } from "node:stream";
 
@@ -23,6 +25,8 @@ import { Duration } from "@stackra/contracts";
 import type { FilesystemConfig } from "#config/filesystem.config";
 import { FileSystem } from "#contracts/ports/file-system.port";
 import type { FileStat } from "#contracts/types/file-stat.type";
+import type { SignedUpload } from "#contracts/types/signed-upload.type";
+import type { UploadRequest } from "#contracts/types/upload-request.type";
 import type { WriteOptions } from "#contracts/types/write-options.type";
 import { FileNotFoundError } from "#core/errors/file-not-found.error";
 import { normalizePath } from "#core/functions/normalize-path.function";
@@ -105,6 +109,33 @@ export class GcsFileSystemDriver extends Driver(FileSystem) {
         resumable: false,
         ...(options?.contentType === undefined ? {} : { contentType: options.contentType }),
       });
+  }
+
+  /** Moves the object under `from` to `to` inside the bucket, keeping its content type and metadata. */
+  override async move(from: string, to: string): Promise<void> {
+    const source = normalizePath(from);
+    try {
+      await this.bucket.file(source).move(normalizePath(to));
+    } catch (error) {
+      throw isNotFound(error) ? FileNotFoundError.create({ path: source }) : error;
+    }
+  }
+
+  /**
+   * A V4 signed `PUT` of `path` that signs the content type, valid for `expiresIn`.
+   *
+   * @throws RangeError when `expiresIn` is longer than seven days (the V4 limit).
+   */
+  override async signUpload(path: string, request: UploadRequest): Promise<SignedUpload> {
+    const ms = Duration.toMilliseconds(request.expiresIn);
+    if (ms > MAX_SIGNED_MS) throw new RangeError("A GCS signed URL lives at most seven days");
+    const [url] = await this.bucket.file(normalizePath(path)).getSignedUrl({
+      version: "v4",
+      action: "write",
+      contentType: request.contentType,
+      expires: Date.now() + ms,
+    });
+    return { url, method: "PUT", headers: { "content-type": request.contentType } };
   }
 
   /** Removes the object under `path`; false when there was none (the 404 of the delete says so). */

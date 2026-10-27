@@ -1,8 +1,9 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `MemoryFileSystemDriver`: a driver of `FileSystem` that stores copies, lists by prefix,
- *          reports size, time and type, refuses keys outside the disk and builds public and expiring URLs.
- * Boundary: test only; a fixed clock stands in for the system clock.
+ *          reports size, time and type, refuses keys outside the disk, builds public and expiring URLs (a reserved
+ *          base without `filesystem.url`), moves a file, and signs an upload whose `PUT` it receives or refuses.
+ * Boundary: test only; a fixed clock stands in for the system clock, a hand-moved one for upload expiry.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0266.
  */
@@ -109,6 +110,60 @@ describe("MemoryFileSystemDriver", () => {
     expect(await files.temporaryUrl("a.png", Duration.minutes(10))).toBe(
       "https://files.test/a.png?expires=2026-10-24T09%3A10%3A00.000Z",
     );
-    expect(() => disk(null).url("a.png")).toThrow(/filesystem\.url/);
+    expect(disk(null).url("a.png")).toBe("https://files.invalid/a.png");
+  });
+
+  it("moves a file with its media type and refuses to move nothing", async () => {
+    const files = disk();
+    await files.write("uploads/a", new Uint8Array([1]), { contentType: "image/png" });
+    await files.move("uploads/a", "public/a.png");
+    expect(await files.exists("uploads/a")).toBe(false);
+    expect(await files.stat("public/a.png")).toMatchObject({ size: 1, contentType: "image/png" });
+    await expect(files.move("uploads/a", "public/b.png")).rejects.toThrow(FileNotFoundError);
+  });
+
+  it("signs an upload that binds the media type and stores what a client puts", async () => {
+    const files = disk();
+    const target = await files.signUpload("uploads/upl_1", {
+      contentType: "image/png",
+      expiresIn: Duration.hours(1),
+    });
+    expect(target.method).toBe("PUT");
+    expect(target.url).toMatch(/^https:\/\/files\.test\/uploads\/upl_1\?signature=/);
+    expect(target.headers).toEqual({ "content-type": "image/png" });
+    expect(
+      await files.receive(target.url, { "Content-Type": "image/png" }, new Uint8Array(3)),
+    ).toBe(200);
+    expect(await files.stat("uploads/upl_1")).toMatchObject({ size: 3, contentType: "image/png" });
+  });
+
+  it("refuses a PUT with a changed header, an unknown signature or after expiry", async () => {
+    let now = NOW.getTime();
+    const files = new MemoryFileSystemDriver(
+      buildConfig(FilesystemConfig),
+      new (class extends Clock {
+        now(): Date {
+          return new Date(now);
+        }
+      })(),
+    );
+    const target = await files.signUpload("uploads/upl_1", {
+      contentType: "image/png",
+      expiresIn: Duration.minutes(1),
+    });
+    const bytes = new Uint8Array(1);
+    expect(await files.receive(target.url, { "content-type": "image/gif" }, bytes)).toBe(403);
+    expect(
+      await files.receive("https://files.invalid/x?signature=nope", target.headers, bytes),
+    ).toBe(403);
+    now += 60_001;
+    expect(await files.receive(target.url, target.headers, bytes)).toBe(403);
+    expect(await files.exists("uploads/upl_1")).toBe(false);
+  });
+
+  it("refuses to sign a key outside the disk", async () => {
+    await expect(
+      disk().signUpload("../x", { contentType: "image/png", expiresIn: Duration.hours(1) }),
+    ).rejects.toThrow(RangeError);
   });
 });

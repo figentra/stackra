@@ -12,7 +12,7 @@ redaction, the `LogReporter` port with its console driver, and two configuration
 | Symbol                                | Use                                                                                                          |
 | ------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
 | `LoggingConfig`, `LoggingConfig$`     | key `logger.logging`: `level`, `channels`, `sampleRate`, `redaction.extraFields`                             |
-| `TelemetryConfig`, `TelemetryConfig$` | key `logger.telemetry`: `dsn`, `errors`, `traces`, `replay`, `vitals`, `budgets`, `lighthouse`               |
+| `TelemetryConfig`, `TelemetryConfig$` | key `logger.telemetry`: `errors`, `traces`, `replay`, `vitals`, `budgets`, `lighthouse`                      |
 | `LoggingOptions`, `TelemetryOptions`  | the shapes of the two configurations, for restating a field type in an override                              |
 | `ChannelLoggerDriver`                 | the driver of `Logger`: filters, samples, redacts, hands a `LogRecord` to the reporter                       |
 | `ConsoleLogReporterDriver`            | where records go (the `LogReporter` port, `./contracts`); the console driver writes one JSON line per record |
@@ -63,6 +63,11 @@ export class LoggingConfig extends BaseLoggingConfig {
 A nested object is replaced whole, so an override spreads a base instance's value (tsc refuses `this.<field>` in
 the field's own initializer). `TelemetryConfig` defaults are dev-safe: nothing is reported, no replay, ADR 0183's
 budgets, no Lighthouse path.
+
+`TelemetryConfig` holds no DSN and no error sampling (ADR 0465): `SentryConfig` of `@stackra/errors` is the one Sentry
+source (`dsnSecret`, `sampleRate`), and a client reporter reads both there. `errors.enabled` and `errors.nativeCrashes`
+stay here. Migrating: move a `logger.telemetry.dsn` value to the secret `SentryConfig.dsnSecret` names and
+`errors.sampleRate` to `errors.sentry.sampleRate`; a leftover value is dropped by the schema.
 
 ## OTLP
 

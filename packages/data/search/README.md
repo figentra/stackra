@@ -11,7 +11,8 @@ Governing contract: ADR 0221; ADR 0160; ADR 0294; ADR 0404; STA-1251 (word helpe
 Stackra search: Postgres hybrid search over a model's `@Searchable` index (ADR 0221). A query injects `Search` and asks
 `search.in(Product)` for ranked rows; the index lives in the model's own table, in the columns the `t.searchable(...)`
 migration macro writes, so a search runs in the caller's transaction under the same row-level security as the data.
-A `VectorIndex` stores embedded passages for semantic retrieval (pgvector in Postgres, ADR 0160).
+A `VectorIndex` stores embedded passages for semantic retrieval (pgvector in Postgres, ADR 0160). It is the platform's
+one vector store (ADR 0465): `@stackra/ai` reads and writes through it and keeps no vector table of its own.
 
 **Tier:** `tier:lib` (`packages/data/search`). Entries `.`, `./contracts`, `./node` and `./testing`. Depends on `@stackra/config`,
 `@stackra/container`, `@stackra/contracts`, `@stackra/database`, `@stackra/errors`, `@stackra/model`,

@@ -25,7 +25,6 @@ class MobileTelemetryConfig extends BaseTelemetryConfig {
   override errors: TelemetryConfig["errors"] = {
     ...BASE.errors,
     enabled: true,
-    sampleRate: 1,
     nativeCrashes: true,
   };
 
@@ -41,7 +40,7 @@ class MobileTelemetryConfig extends BaseTelemetryConfig {
 }
 
 class WebTelemetryConfig extends BaseTelemetryConfig {
-  override errors: TelemetryConfig["errors"] = { ...BASE.errors, enabled: true, sampleRate: 1 };
+  override errors: TelemetryConfig["errors"] = { ...BASE.errors, enabled: true };
 
   override replay: TelemetryConfig["replay"] = { ...BASE.replay, onErrorSampleRate: 0 };
 
@@ -66,12 +65,14 @@ describe("TelemetryConfig", () => {
     const config = buildConfig(TelemetryConfig);
     expect({ ...config }).toEqual(TELEMETRY_CONFIG_SCHEMA.parse({}));
     expect(config.errors.enabled).toBe(false);
-    expect(config.dsn).toBeNull();
+    // the DSN and the error sampling are SentryConfig's (ADR 0465)
+    expect("dsn" in config).toBe(false);
+    expect("sampleRate" in config.errors).toBe(false);
   });
 
   it("applies the mobile override, keeping the base's other nested values", () => {
     const config = buildConfig(MobileTelemetryConfig);
-    expect(config.errors).toEqual({ enabled: true, sampleRate: 1, nativeCrashes: true });
+    expect(config.errors).toEqual({ enabled: true, nativeCrashes: true });
     expect(config.replay).toEqual({ onErrorSampleRate: 1, consent: "crash_replay" });
     expect(config.budgets).toMatchObject({ coldStartMs: 1500, lcpMs: 2500 });
     expect(config.vitals).toEqual({ enabled: false });
@@ -96,7 +97,6 @@ describe("TelemetryConfig", () => {
       errors: shape.errors.unwrap().default(() => ({
         ...shape.errors.parse(undefined),
         enabled: true,
-        sampleRate: 1,
         nativeCrashes: true,
       })),
       traces: shape.traces.unwrap().default(() => ({

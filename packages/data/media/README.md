@@ -7,45 +7,42 @@ Purpose: the reader guide of @stackra/media: buckets, the upload flow, `Upload<B
          compositing, DOCX and PDF text extraction, Arabic OCR, C2PA content credentials) and testing.
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
-Governing contract: ADR 0222; ADR 0294 (decision 26); STA-1218 (gen's `upload` shape kind); ADR 0234 and R3-SO-13
+Governing contract: ADR 0222; ADR 0465 (one object-storage port); ADR 0294 (decision 26); STA-1218 (gen's `upload` shape kind); ADR 0234 and R3-SO-13
                     (text extraction in region); R2-5, M7 (self-hosted OCR default); ADR 0173; COM-73, COM-294;
                     STA-789.
 -->
 
-Stackra media: the `Bucket` kind, signed direct uploads that `MediaLibrary` claims into a bucket, the `MediaDisk` port
-with its memory and S3/R2 drivers, the `sharp` image transformer with compositing, the in-region `document` text
+Stackra media: the `Bucket` kind, signed direct uploads that `MediaLibrary` claims into a bucket, stored on the
+`FileSystem` disk of `@stackra/filesystem` (memory, local, S3/R2, GCS or Encore bucket, ADR 0465), the `sharp` image transformer with compositing, the in-region `document` text
 extractor (DOCX and PDF), the in-region `paddle_ocr` text extractor (Arabic OCR), the `c2pa` content credentials, the client `Uploader` port with its memory and HTTP drivers, `MediaConfig`, the
 `upload.create` action, `useUpload`, `useImageVariant` and `fakeUpload`.
 
 **Tier:** `tier:lib` (`packages/data/media`). Entries `.`, `./contracts`, `./node`, `./react` and `./testing`. Depends
 on `@stackra/contracts`, `@stackra/container`, `@stackra/config`, `@stackra/validation`, `@stackra/errors`,
-`@stackra/actions`, `@stackra/filesystem` (the shared bucket and its public URL), zod, the AWS SDK S3 client, sharp
+`@stackra/actions`, `@stackra/filesystem` (the disk media stores on), zod, the AWS SDK S3 client (GuardDuty tags), sharp
 (libvips), unpdf (pdf.js), fflate and `@contentauth/c2pa-node` (c2pa-rs); React is an optional peer of `./react`.
 
 ## What is here
 
-| Entry         | Symbol                                                                                                                 | Use                                                                                  |
-| ------------- | ---------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| `.`           | `Bucket`                                                                                                               | the kind base of a `models/<name>.bucket.ts` declaration                             |
-| `.`           | `BucketVisibility`, `MediaType`, `ImageFormat`                                                                         | who reads a bucket; accepted types (IANA codes); variant formats                     |
-| `.`           | `Upload`                                                                                                               | the token an action input takes instead of bytes; `Upload.schema` is its wire schema |
-| `.`           | `MediaLibrary`                                                                                                         | `createUpload`, `claim`, `temporaryUrl`                                              |
-| `.`           | `MediaConfig`, `MediaConfig$`, `MediaOptions`                                                                          | key `media`: `disk`, `uploader`, `uploadExpiresIn`, `uploadEndpoint`                 |
-| `.`           | `Uploader`, `MemoryUploaderDriver`, `HttpUploaderDriver`                                                               | the client side of an upload                                                         |
-| `.`           | `MemoryMediaDiskDriver`                                                                                                | `disk: memory`, with `receive` playing the store's side of a signed `PUT`            |
-| `.`           | `UploadBucketMismatchError`, `UploadExpiredError`, `UploadIncompleteError`, `UploadRejectedError`, `UploadFailedError` | the refusals                                                                         |
-| `.`           | `registerBuckets`                                                                                                      | how gen's entry hands over the derived bucket keys                                   |
-| `./contracts` | `MediaDisk`, `SignedUpload`, `UploadRequest`, `MediaObject`                                                            | the store port (`read` gives the bytes for server-side work) and its types           |
-| `./contracts` | `ImageTransformer`, `ImageTransform`, `ImageLayer`, `TextExtractor`, `ExtractedText`                                   | the processing ports and the types they speak                                        |
-| `./contracts` | `ContentCredentials`, `ContentCredential`                                                                              | the C2PA port and the claim it signs                                                 |
-| `./node`      | `S3MediaDiskDriver`                                                                                                    | `disk: s3`: AWS S3, Cloudflare R2 or MinIO                                           |
-| `./node`      | `SharpImageTransformerDriver`                                                                                          | `ImageTransformer` on sharp: resize, composite layers, re-encode, no metadata        |
-| `./node`      | `DocumentTextExtractorDriver`                                                                                          | `TextExtractor` for DOCX and PDF text layers, in process (in region)                 |
-| `./node`      | `PaddleOcrTextExtractorDriver`                                                                                         | `TextExtractor` OCR with Arabic, via the in-region PaddleOCR service (cert. pending) |
-| `./node`      | `C2paContentCredentialsDriver`                                                                                         | `ContentCredentials` on c2pa-rs: sign and read C2PA manifests (cert. pending)        |
-| `./node`      | `CreateUploadAction`, `CreateUploadInput`, `CreateUploadOutput`                                                        | `media.upload.create@1`, `POST /uploads`                                             |
-| `./react`     | `useUpload`, `useImageVariant`                                                                                         | upload a file; size an image                                                         |
-| `./testing`   | `fakeUpload`                                                                                                           | a finished upload in a test, on the memory disk                                      |
+| Entry         | Symbol                                                                                                                 | Use                                                                                    |
+| ------------- | ---------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| `.`           | `Bucket`                                                                                                               | the kind base of a `models/<name>.bucket.ts` declaration                               |
+| `.`           | `BucketVisibility`, `MediaType`, `ImageFormat`                                                                         | who reads a bucket; accepted types (IANA codes); variant formats                       |
+| `.`           | `Upload`                                                                                                               | the token an action input takes instead of bytes; `Upload.schema` is its wire schema   |
+| `.`           | `MediaLibrary`                                                                                                         | `createUpload`, `claim`, `temporaryUrl`                                                |
+| `.`           | `MediaConfig`, `MediaConfig$`, `MediaOptions`                                                                          | key `media`: `uploader`, `uploadExpiresIn`, `uploadEndpoint`, `scanner`, `ocr`, `c2pa` |
+| `.`           | `Uploader`, `MemoryUploaderDriver`, `HttpUploaderDriver`                                                               | the client side of an upload                                                           |
+| `.`           | `UploadBucketMismatchError`, `UploadExpiredError`, `UploadIncompleteError`, `UploadRejectedError`, `UploadFailedError` | the refusals                                                                           |
+| `.`           | `registerBuckets`                                                                                                      | how gen's entry hands over the derived bucket keys                                     |
+| `./contracts` | `ImageTransformer`, `ImageTransform`, `ImageLayer`, `TextExtractor`, `ExtractedText`                                   | the processing ports and the types they speak                                          |
+| `./contracts` | `ContentCredentials`, `ContentCredential`                                                                              | the C2PA port and the claim it signs                                                   |
+| `./node`      | `SharpImageTransformerDriver`                                                                                          | `ImageTransformer` on sharp: resize, composite layers, re-encode, no metadata          |
+| `./node`      | `DocumentTextExtractorDriver`                                                                                          | `TextExtractor` for DOCX and PDF text layers, in process (in region)                   |
+| `./node`      | `PaddleOcrTextExtractorDriver`                                                                                         | `TextExtractor` OCR with Arabic, via the in-region PaddleOCR service (cert. pending)   |
+| `./node`      | `C2paContentCredentialsDriver`                                                                                         | `ContentCredentials` on c2pa-rs: sign and read C2PA manifests (cert. pending)          |
+| `./node`      | `CreateUploadAction`, `CreateUploadInput`, `CreateUploadOutput`                                                        | `media.upload.create@1`, `POST /uploads`                                               |
+| `./react`     | `useUpload`, `useImageVariant`                                                                                         | upload a file; size an image                                                           |
+| `./testing`   | `fakeUpload`                                                                                                           | a finished upload in a test, on the memory `FileSystem` disk                           |
 
 ## Declaring a bucket
 
@@ -68,15 +65,20 @@ The bytes never pass through a service.
 
 1. The client calls `useUpload()` and then the returned function with a `File`. The `http` uploader posts
    `{ bucket, mediaType, size }` to `media.uploadEndpoint` (`media.upload.create@1`).
-2. `MediaLibrary.createUpload` checks the bucket's types and size, mints `upl_…`, and signs a `PUT` of
-   `uploads/<id>`. The media type, the bucket key and the expiry are signed into the request, so the client cannot
-   change them. The token carries the id only.
+2. `MediaLibrary.createUpload` checks the bucket's types and size, mints `upl_…`, signs a `PUT` of `uploads/<id>`
+   through `FileSystem.signUpload` (the media type is signed where the disk can: S3, R2, GCS, memory) and writes the
+   bucket key and the expiry beside it as `uploads/<id>.json`, which the client cannot reach. The token carries the
+   id only.
 3. The client puts the bytes to the signed URL and sends the token to an action (`image: Upload<ProductImagesBucket>`).
-4. The action calls `media.claim(input.image, ProductImagesBucket)`. The claim reads what the store received, then
-   refuses in this order: nothing there (`UploadIncompleteError`), another bucket (`UploadBucketMismatchError`), past
-   its expiry (`UploadExpiredError`), and a type or size the bucket does not take (`UploadRejectedError`, after deleting
-   the file). Otherwise it moves the file to `<visibility>/<bucket key as folders>/<id>.<subtype>` and returns
-   `{ id, bucket, path, url, mediaType, size }`. A second claim of the same token finds nothing.
+4. The action calls `media.claim(input.image, ProductImagesBucket)`. The claim reads the record and what the store
+   received, then refuses in this order: no record (`UploadIncompleteError`), another bucket
+   (`UploadBucketMismatchError`), past its expiry (`UploadExpiredError`), no file (`UploadIncompleteError`), and a type
+   or size the bucket does not take (`UploadRejectedError`, after deleting the file and its record). Otherwise it moves
+   the file to `<visibility>/<bucket key as folders>/<id>.<subtype>` with `FileSystem.move`, deletes the record and
+   returns `{ id, bucket, path, url, mediaType, size }`. A second claim of the same token finds no record.
+
+The local and Electron disks cannot sign uploads, so `createUpload` refuses there (`TypeError`); use the memory disk in
+development and tests. An Encore bucket signs no header, so the type the claim checks is the one the client sent.
 
 ### `Upload<Bucket>` in a shape
 
@@ -106,13 +108,12 @@ bucket's `variants` are recorded for gen and runway; this package does not run t
 
 ## Configuration
 
-Runway sets `config.media` per environment. The bucket, region and public base URL are `config.filesystem`'s, because
-media shares the store's bucket per region and environment:
+Runway sets `config.media` per environment. The disk, bucket, region and public base URL are `config.filesystem`'s:
+media stores on the one `FileSystem` disk per region and environment (ADR 0465):
 
 ```yaml
 config:
   media:
-    disk: s3 # memory | s3
     uploader: http # memory | http (an app's setting)
     uploadExpiresIn: PT1H # at most seven days
     scanner: guard_duty # memory | clamav | guard_duty
@@ -124,6 +125,7 @@ config:
       timeoutMs: 60000
     c2pa: { algorithm: es256, timestampUrl: "", formats: [image/jpeg, image/png, image/webp] }
   filesystem:
+    disk: s3 # memory | local | s3 | gcs | encore_bucket
     url: https://cdn.acme.test
     s3:
       bucket: acme-files
@@ -131,11 +133,20 @@ config:
       endpoint: https://<account>.r2.cloudflarestorage.com
 ```
 
-No credential value is configuration. The S3 driver uses the AWS SDK's default chain. The C2PA certificate chain and
+No credential value is configuration. The disks use their SDK's default chain (see `@stackra/filesystem`). The C2PA certificate chain and
 its private key (PEM) are the secrets `MEDIA_C2PA_SIGNING_CERTIFICATE` and `MEDIA_C2PA_SIGNING_KEY`, read blind from the
 secret store into `c2paSigningCertificate` and `c2paSigningKey`; they are empty until the certificate is issued. The bucket's CORS rule must allow `PUT`
-from the app's origins with the `content-type` and `x-amz-meta-*` headers. A lifecycle rule should expire `uploads/`
-after a day, which removes uploads nobody claimed.
+from the app's origins with the `content-type` header. A lifecycle rule should expire `uploads/` after a day, which
+removes uploads nobody claimed and their records.
+
+### Migrating from `MediaDisk` (stackra-226)
+
+- Drop `config.media.disk`; set `config.filesystem.disk` instead (a leftover `media.disk` value is ignored).
+- `MediaDisk`, `MemoryMediaDiskDriver`, `S3MediaDiskDriver`, `MediaObject`, `SignedUpload` and `UploadRequest` are
+  gone. Inject `FileSystem` (`@stackra/filesystem/contracts`) and use `MemoryFileSystemDriver` in tests;
+  `SignedUpload` and `UploadRequest` (without `metadata`) are `@stackra/filesystem/contracts`' now.
+- Uploads signed before the change carry no `uploads/<id>.json` record, so their claim is refused as incomplete; they
+  expire within `uploadExpiresIn` anyway. Ship the change between upload windows or let the client retry.
 
 ## Scanning and processing
 
@@ -144,7 +155,7 @@ after a day, which removes uploads nobody claimed.
 `clamav` streams the bytes to clamd (`INSTREAM`) where GuardDuty is not offered (GCP Dammam, a local stack), and
 `memory` finds only the EICAR test file. Verdicts are `clean`, `infected`, `pending` and `failed`.
 
-`MediaDisk.read(path)` gives the stored bytes to server-side work (a scanner's `read`, a transform, an extraction);
+`FileSystem.read(path)` gives the stored bytes to server-side work (a scanner's `read`, a transform, an extraction);
 a client still reads through `url` or `temporaryUrl`. A missing object is `FileNotFoundError`.
 
 `ImageTransformer` resizes, composites and re-encodes without metadata. The `sharp` driver (`./node`) applies the EXIF
@@ -190,8 +201,10 @@ const image = await fakeUpload(app, ProductImagesBucket, { mediaType: MediaType.
 const foreign = await fakeUpload(app, null, { mediaType: MediaType.Png }); // refused as another bucket's
 ```
 
-A service that injects `MediaLibrary` gets it bound by gen over the memory disk under `.useDrivers("memory")`
-(STA-1297); it declares `@stackra/filesystem` beside `@stackra/media`, since the disks read `FilesystemConfig`.
+A service that injects `MediaLibrary` gets it bound over the memory `FileSystem` disk under `.useDrivers("memory")`
+(STA-1297); it declares `@stackra/filesystem` beside `@stackra/media`, since media stores on its disk. Until gen's
+`PLATFORM_BINDINGS` row names `FileSystem` instead of `MediaDisk` (a follow-up for the gen package), a host binds
+`MediaLibrary` with `deps: [FileSystem, MediaConfig, Clock]` itself.
 
 `fakeUpload` goes through `createUpload` and the memory disk's `receive`, so the bucket's rules apply as in production.
 In a browser test, the `memory` uploader returns a fresh token for every file and records it in `uploads`.

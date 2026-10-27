@@ -1,11 +1,12 @@
 /**
  * Stackra file contract:
  * Purpose: `MEDIA_CONFIG_SCHEMA`, the zod schema this package ships for `MediaConfig` (exported as `MediaConfig$`): the
- *          server's disk, the client's uploader, how long an upload stays valid, where the HTTP uploader asks for
+ *          client's uploader, how long an upload stays valid, where the HTTP uploader asks for
  *          one, the in-region OCR service and the C2PA signing slot.
  * Boundary: the stand-in for what gen writes for this package. Every field has a default, so `.parse({})` gives the
  *           full defaults; they equal `MediaOptions`' initializers (tested). The upload lifetime is at most seven days,
- *           the SigV4 limit of a signed URL. The S3 driver reads the AWS credential chain; the C2PA
+ *           the SigV4 limit of a signed URL. No `disk` field: media stores on the one `FileSystem` disk that
+ *           `filesystem.disk` picks (ADR 0465, stackra-226). The C2PA
  *           certificate and key are `@Secret` names (empty strings until set), never values in a layer.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 26: a package ships its own `X$`); ADR 0173 (no secret values in config).
@@ -14,7 +15,6 @@ import { Duration } from "@stackra/contracts";
 import { z } from "zod";
 
 import { C2PA_ALGORITHMS } from "#core/constants/c2pa-algorithms.constant";
-import { MEDIA_DISKS } from "#core/constants/media-disks.constant";
 import { MEDIA_SCANNERS } from "#core/constants/media-scanners.constant";
 import { MEDIA_UPLOADERS } from "#core/constants/media-uploaders.constant";
 
@@ -34,7 +34,6 @@ function isUploadLifetime(value: unknown): value is Duration {
 
 /** The shipped `MediaConfig$`. */
 export const MEDIA_CONFIG_SCHEMA = z.object({
-  disk: z.enum(MEDIA_DISKS).default("memory"),
   uploader: z.enum(MEDIA_UPLOADERS).default("memory"),
   uploadExpiresIn: z
     .custom<Duration>(isUploadLifetime, {

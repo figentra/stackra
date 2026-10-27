@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: the consumer contract of the `./node` entry of @stackra/ai: the eight table models, the two Postgres stores
- *          and the tenant-key cast are exported, and nothing else.
+ * Purpose: the consumer contract of the `./node` entry of @stackra/ai: the seven table models (no `Embedding`: ADR 0465),
+ *          the two Postgres stores and the tenant-key cast are exported, and nothing else.
  * Boundary: test only; imports the stand-in barrel through its `#node` alias.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decision 15); ADR 0399.
@@ -15,7 +15,6 @@ describe("@stackra/ai/node", () => {
     expect(Object.keys(node).sort()).toEqual([
       "A2aTask",
       "Conversation",
-      "Embedding",
       "Message",
       "PostgresConversationStoreDriver",
       "PostgresRunStoreDriver",

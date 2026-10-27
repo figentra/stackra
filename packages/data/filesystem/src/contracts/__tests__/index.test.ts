@@ -7,10 +7,17 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0294 (decision 15).
  */
+import type { Duration } from "@stackra/contracts";
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
 import * as contracts from "#contracts/index";
-import type { FileStat, WriteOptions, WriteStreamSource } from "#contracts/index";
+import type {
+  FileStat,
+  SignedUpload,
+  UploadRequest,
+  WriteOptions,
+  WriteStreamSource,
+} from "#contracts/index";
 
 describe("@stackra/filesystem/contracts", () => {
   it("exports exactly its values", () => {
@@ -20,6 +27,11 @@ describe("@stackra/filesystem/contracts", () => {
   it("resolves its public types", () => {
     expectTypeOf<FileStat["lastModified"]>().toEqualTypeOf<Date | null>();
     expectTypeOf<FileStat["contentType"]>().toEqualTypeOf<string | null>();
+    expectTypeOf<SignedUpload["method"]>().toEqualTypeOf<"PUT">();
+    expectTypeOf<UploadRequest>().toEqualTypeOf<{
+      readonly contentType: string;
+      readonly expiresIn: Duration;
+    }>();
     expectTypeOf<WriteOptions["contentType"]>().toEqualTypeOf<string | undefined>();
     expectTypeOf<WriteStreamSource>().toEqualTypeOf<
       ReadableStream<Uint8Array> | AsyncIterable<Uint8Array | string>

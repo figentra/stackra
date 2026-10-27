@@ -62,5 +62,9 @@ Governing ADRs: 0140 (envelope and kinds), 0232 (this package), 0294 (decisions 
   Sentry envelope POSTed with `fetch` to the project of the DSN secret (`SentryConfig.dsnSecret`, `SENTRY_DSN` by
   default), tagged with the environment, the release and a refusal's code, sampled by `sampleRate`. It sends no
   request, user or input. Call `flush()` before a process ends.
+- `SentryConfig` is the one Sentry source (ADR 0465): the DSN (by secret name) and the share of errors reported live
+  here only. `@stackra/logger`'s `TelemetryConfig` keeps the client switches Sentry's config has no field for
+  (`errors.enabled`, `errors.nativeCrashes`, trace and replay sampling, vitals) and a client reporter reads the DSN and
+  `sampleRate` from `SentryConfig`. Before stackra-226 both held a DSN and an error rate.
 - `LiveReadOnlyError` (`live_read_only`, 409) is the refusal of a structural-configuration write in live (ADR 0359
   decision 3); the action pipeline raises it through its `LiveConfigurationGuard`.

@@ -31,20 +31,25 @@ Entries `.`, `./contracts`, `./node`, `./react`, `./testing`.
 ## This package
 
 - The bytes never pass through a service (ADR 0222 decision 2). Never add an endpoint that takes a file body.
-- A token carries the upload id only. The bucket key, media type and expiry are signed into the upload and read back
-  from the store at claim. Never trust a bucket, type or size the client sends at claim time.
+- Media stores on the one `FileSystem` disk of `@stackra/filesystem` (`signUpload`, `move`, `stat`, `read`); there is
+  no media disk port any more (ADR 0465, stackra-226). Never add a storage port or driver here: extend `FileSystem`.
+- A token carries the upload id only. The bucket key and expiry are written by the server beside the upload
+  (`uploads/<id>.json`) and read back at claim; the media type is signed where the disk can and always checked against
+  the bucket at claim. Never trust a bucket, type or size the client sends at claim time.
 - Every stored path is built by the server from a registered key, a checked id and an enum media type. Never put
   client text into a path.
-- `claim` refuses before it moves, and deletes a file its bucket does not take. A second claim must find nothing.
+- `claim` refuses before it moves, and deletes a file its bucket does not take with its record. A second claim must
+  find no record.
 - Stored paths start with the visibility (`public/`, `private/`); the CDN serves `public/` only.
 - No tenant vocabulary (R-59): isolation is the signed token and the unguessable id.
 - `Upload.schema` is the wire schema gen writes for every `Upload<Bucket>` field (gen's `upload` kind, STA-1218), and
   gen's JSON Schema mirrors it (`{ id: "upl_…" }`). Change the token's wire form only together with gen's
   `jsonSchemaOf`.
-- A host binds `MediaLibrary` through gen's `PLATFORM_BINDINGS` row (`MediaDisk`, `MediaConfig`, `Clock`), and its
-  `MediaDisk`, `Uploader` and `FileScanner` candidates come from this package's manifest (STA-1297): `memory` for each,
-  so `.useDrivers("memory")` binds it. The memory and S3 disks take `FilesystemConfig`, so a host that injects
-  `MediaLibrary` declares `@stackra/filesystem` too (gen refuses otherwise, `generated_dependency_missing`).
+- A host binds `MediaLibrary` with `FileSystem`, `MediaConfig` and `Clock`. Gen's `PLATFORM_BINDINGS` row still names
+  `MediaDisk` until the gen package follows (handed to the integration batch); until then a host binds it itself. Its
+  `Uploader` and `FileScanner` candidates come from this package's manifest (STA-1297) and `FileSystem`'s from
+  `@stackra/filesystem`'s: `memory` for each, so `.useDrivers("memory")` binds it. A host that injects `MediaLibrary`
+  declares `@stackra/filesystem` too (gen refuses otherwise, `generated_dependency_missing`).
 - No memory candidate (STA-1297 sweep): nothing here injects `ImageTransformer`, `TextExtractor` or
   `ContentCredentials`. `./node` ships `sharp` (`ImageTransformer`), `document` (`TextExtractor`, DOCX and PDF),
   `paddle_ocr` (`TextExtractor`, OCR with Arabic) and `c2pa` (`ContentCredentials`). The host binds the driver it wants.
@@ -52,7 +57,7 @@ Entries `.`, `./contracts`, `./node`, `./react`, `./testing`.
   Never claim them certified; re-record the fixtures against the live service and a signed image first.
 - The C2PA certificate and key are `@Secret` fields only (`MEDIA_C2PA_SIGNING_CERTIFICATE`, `MEDIA_C2PA_SIGNING_KEY`).
   Never sign with a bundled or test certificate in a driver; an empty secret is a refusal.
-- `MediaDisk.read` is for server-side processing only (scan, transform, extract). Never return its bytes from an
+- `FileSystem.read` of a media path is for server-side processing only (scan, transform, extract). Never return its bytes from an
   action: clients read through `url` or `temporaryUrl`.
 - Processing runs in process: `sharp`, `document` and `c2pa` call no provider (a `c2pa` time-stamp authority gets a
   hash only), so the bytes stay in the service's region (R3-SO-13). `paddle_ocr` sends bytes to `media.ocr.endpoint`
@@ -67,10 +72,10 @@ Entries `.`, `./contracts`, `./node`, `./react`, `./testing`.
 
 ## PII
 
-| Data                  | Where                  | Handling                                                                       |
-| --------------------- | ---------------------- | ------------------------------------------------------------------------------ |
-| Uploaded files        | the media store        | Read only by `MediaDisk.read` for processing; never logged or put in an error. |
-| Scans sent to OCR     | the in-region service  | Only to `media.ocr.endpoint`; the service keeps nothing.                       |
-| C2PA signing key      | the secret store       | A `@Secret` field; never logged, never in an error.                            |
-| Signed upload URLs    | `upload.create` output | A short-lived credential for one object; returned to the caller only.          |
-| Upload and bucket ids | refusal details, paths | Ids only.                                                                      |
+| Data                  | Where                  | Handling                                                                        |
+| --------------------- | ---------------------- | ------------------------------------------------------------------------------- |
+| Uploaded files        | the `FileSystem` disk  | Read only by `FileSystem.read` for processing; never logged or put in an error. |
+| Scans sent to OCR     | the in-region service  | Only to `media.ocr.endpoint`; the service keeps nothing.                        |
+| C2PA signing key      | the secret store       | A `@Secret` field; never logged, never in an error.                             |
+| Signed upload URLs    | `upload.create` output | A short-lived credential for one object; returned to the caller only.           |
+| Upload and bucket ids | refusal details, paths | Ids only.                                                                       |

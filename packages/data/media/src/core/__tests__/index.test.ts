@@ -33,7 +33,6 @@ describe("@stackra/media", () => {
       "MediaOptions",
       "MediaType",
       "MemoryFileScannerDriver",
-      "MemoryMediaDiskDriver",
       "MemoryUploaderDriver",
       "Upload",
       "UploadBucketMismatchError",

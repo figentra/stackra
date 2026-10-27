@@ -64,6 +64,8 @@ Postgres drivers, the `t.searchable(...)` macro and the text-function migration 
   alternative is on unless a read passes `arabizi: false`; it only adds a spelling, so the switch narrows and never
   widens.
 - `Search.across` filters are per model (`Map<model, filters>`), each checked by that model's `SearchIndex`.
+- `VectorIndex` (`search.vector_items`) is the platform's one vector store (ADR 0465): @stackra/ai retrieves and will
+  store conversation memory through it, and keeps no vector table of its own. Add a vector need here, not a table.
 - `PgvectorVectorIndexDriver` works at the one dimension `search.embedder.dimensions`: it refuses other sizes and
   queries `"embedding"::vector(n)` where `vector_dims("embedding") = n`, the partial HNSW index's exact expression and
   predicate (migration 0004 for 1024). Change the query and the index together; `n` is interpolated only as the checked

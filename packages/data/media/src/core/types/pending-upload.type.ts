@@ -4,9 +4,10 @@
  *          action, the signed URL and headers it puts the bytes with, and when both stop working.
  * Boundary: a type only; the wire form is `CreateUploadOutput` in `./node`.
  * Runtime: isomorphic
- * Governing contract: ADR 0222 (decision 2: presigned uploads).
+ * Governing contract: ADR 0222 (decision 2: presigned uploads); ADR 0465 (`SignedUpload` is @stackra/filesystem's).
  */
-import type { SignedUpload } from "#contracts/types/signed-upload.type";
+import type { SignedUpload } from "@stackra/filesystem/contracts";
+
 import type { BucketBase } from "#core/bases/bucket-base.base";
 import type { Upload } from "#core/values/upload.value";
 

@@ -34,7 +34,15 @@ v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./node`, `./desktop`.
 - `readStream` reads `read` into one chunk by default; a driver overrides it when its store streams (local and
   Electron file handles, the S3 GET body, the GCS download). It settles only after the file is found, so not-found
   rejects the call, never the stream.
-- One disk per member; named disks, uploads and tenant file records belong elsewhere (README, "Not here").
+- `move` and `signUpload` (folded in from media's `MediaDisk`, ADR 0465, stackra-226) are implemented port members:
+  `move` reads, writes and deletes by default, `signUpload` refuses with a `TypeError`. A driver overrides `move` when
+  its store moves (memory, local rename, S3 copy and delete, GCS move) and `signUpload` when it can sign a `PUT` (memory,
+  S3, GCS, Encore). A signed upload signs the content type where the store can, never the size. `EncoreBucket` gained
+  `signedUploadUrl`; gen's generated bucket driver must forward it.
+- The memory disk's `url` falls back to `https://files.invalid` when `filesystem.url` is unset, so tests that upload and
+  claim run on the default config; every other disk refuses without it.
+- One disk per member; named disks and tenant file records belong elsewhere (README, "Not here"). Upload rules
+  (buckets, accepted types, claims) are `@stackra/media`'s, on top of `signUpload` and `move`.
 - `FilesystemHealthIndicatorDriver` is the `HealthIndicator` driver: it asks the disk whether `health.path` exists (a missing path is an answer), bounded by `health.timeout`; `health.critical: false` reports `degraded` instead of `down`. It reports the error's name, never its message.
 
 ## Rules that fail the build

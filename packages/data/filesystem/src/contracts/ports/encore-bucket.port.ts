@@ -4,7 +4,8 @@
  *          this package drives an Encore bucket without importing `encore.dev`.
  * Boundary: an abstract class that is its own token, keyed `filesystem.EncoreBucket`. The generated Encore app
  *           (`.stackra/encore`, ADR 0091 and 0124) declares the bucket and binds a driver that forwards each call to
- *           it (`upload` takes `Buffer.from(data)` there). The method names and shapes are Encore's.
+ *           it (`upload` takes `Buffer.from(data)` there). The method names and shapes are Encore's. `signedUploadUrl`
+ *           was added for the disk's signed uploads (stackra-226); gen's bucket driver forwards it like the rest.
  * Runtime: isomorphic
  * Governing contract: ADR 0124 (no hand-written Encore in a member); ADR 0260 (a package that needs a runtime defines
  *                     a port); ADR 0294 (decisions 15 and 16).
@@ -65,6 +66,12 @@ export abstract class EncoreBucket extends Port {
    * @throws Error when the bucket is not public.
    */
   abstract publicUrl(name: string): string;
+
+  /** A URL that accepts one `PUT` of `name` for `ttl` seconds. */
+  abstract signedUploadUrl(
+    name: string,
+    options: { readonly ttl: number },
+  ): Promise<{ readonly url: string }>;
 
   /** A URL that reads `name` for `ttl` seconds. */
   abstract signedDownloadUrl(

@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `MediaConfig`: key `media`, the defaults, a runway layer that picks the S3 disk and the HTTP
- *          uploader, a refused driver name, a host override, and the C2PA certificate read blind from the secret store.
+ * Purpose: unit tests of `MediaConfig`: key `media`, the defaults, a runway layer that picks the HTTP uploader and the
+ *          clamav scanner (no `disk`: ADR 0465), a refused driver name, a host override, and the C2PA certificate read blind from the secret store.
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0294 (decisions 4, 19 and 20); ADR 0146 as amended.
@@ -24,19 +24,18 @@ describe("MediaConfig", () => {
 
   it("defaults to the memory drivers and a one-hour upload", () => {
     const config = buildConfig(MediaConfig);
-    expect(config.disk).toBe("memory");
     expect(config.uploader).toBe("memory");
     expect(config.uploadExpiresIn).toBe(Duration.hours(1));
     expect(config.uploadEndpoint).toBe("/api/uploads");
   });
 
   it("takes a runway layer", () => {
-    const config = buildConfig(MediaConfig, { values: { disk: "s3", uploader: "http" } });
-    expect([config.disk, config.uploader]).toEqual(["s3", "http"]);
+    const config = buildConfig(MediaConfig, { values: { uploader: "http", scanner: "clamav" } });
+    expect([config.uploader, config.scanner]).toEqual(["http", "clamav"]);
   });
 
   it("refuses a driver this package does not ship", () => {
-    expect(() => buildConfig(MediaConfig, { values: { disk: "local" as never } })).toThrow(
+    expect(() => buildConfig(MediaConfig, { values: { uploader: "s3" as never } })).toThrow(
       ConfigInvalidError,
     );
   });

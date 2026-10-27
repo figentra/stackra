@@ -4,11 +4,12 @@
  *          installs. Public files are served by whatever serves `filesystem.url`.
  * Boundary: every key passes `normalizePath`, so no key reaches outside `root`. A write goes to a temporary file in
  *           the same folder and is renamed into place, so a crash never leaves a half-written file under the key. It
- *           keeps no content type and cannot sign URLs. `readStream` opens the file first, so a missing file rejects
- *           before any byte flows, then streams it from that open handle.
+ *           keeps no content type and cannot sign URLs or uploads (`signUpload` is the port's refusal). `readStream`
+ *           opens the file first, so a missing file rejects before any byte flows, then streams it from that open
+ *           handle. `move` is a rename, so it never copies the bytes.
  * Runtime: node
  * Governing contract: ADR 0234 (decision 7); ADR 0222 (decision 1: local disk driver); ADR 0294 (decision 16); ADR 0413
- *                     (streamed reads, STA-1259).
+ *                     (streamed reads, STA-1259); ADR 0465.
  */
 import { randomUUID } from "node:crypto";
 import { mkdir, open, readdir, readFile, rename, rm, stat, writeFile } from "node:fs/promises";
@@ -102,6 +103,19 @@ export class LocalFileSystemDriver extends Driver(FileSystem) {
       await rename(temporary, target);
     } catch (error) {
       await rm(temporary, { force: true });
+      throw error;
+    }
+  }
+
+  /** Renames the file under `from` to `to`, making `to`'s folder first. */
+  override async move(from: string, to: string): Promise<void> {
+    const key = normalizePath(from);
+    const target = this.pathOf(to);
+    await mkdir(dirname(target), { recursive: true });
+    try {
+      await rename(join(this.root, key), target);
+    } catch (error) {
+      if (isMissing(error)) throw FileNotFoundError.create({ path: key });
       throw error;
     }
   }

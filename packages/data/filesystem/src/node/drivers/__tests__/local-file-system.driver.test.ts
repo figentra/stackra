@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `LocalFileSystemDriver`: a driver of `FileSystem` over a real folder that writes atomically,
- *          lists files only, streams reads from disk, maps missing files to `FileNotFoundError`, keeps every key inside its root and refuses to
- *          sign URLs.
+ *          lists files only, streams reads from disk, maps missing files to `FileNotFoundError`, keeps every key inside its root, moves by
+ *          rename, and refuses to sign URLs and uploads.
  * Boundary: test only; each test gets a fresh folder under the OS temporary directory, removed afterwards.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0222 (decision 1).
@@ -137,5 +137,17 @@ describe("LocalFileSystemDriver", () => {
     await expect(files.readStream("missing.csv")).rejects.toThrow(FileNotFoundError);
     await expect(files.readStream("big")).rejects.toThrow(FileNotFoundError);
     await expect(files.readStream("../escape.csv")).rejects.toThrow(RangeError);
+  });
+
+  it("moves a file by rename, refuses to move nothing and to sign an upload", async () => {
+    const files = disk();
+    await files.write("uploads/a", "x");
+    await files.move("uploads/a", "public/deep/a.png");
+    expect(await files.exists("uploads/a")).toBe(false);
+    expect(new TextDecoder().decode(await files.read("public/deep/a.png"))).toBe("x");
+    await expect(files.move("uploads/a", "public/b.png")).rejects.toThrow(FileNotFoundError);
+    await expect(
+      files.signUpload("uploads/b", { contentType: "image/png", expiresIn: Duration.hours(1) }),
+    ).rejects.toThrow(TypeError);
   });
 });

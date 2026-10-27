@@ -24,6 +24,9 @@ describe("EncoreBucket", () => {
   it("has Encore's method shapes", () => {
     expectTypeOf<EncoreBucket["download"]>().returns.toEqualTypeOf<Promise<Uint8Array>>();
     expectTypeOf<EncoreBucket["exists"]>().returns.toEqualTypeOf<Promise<boolean>>();
+    expectTypeOf<EncoreBucket["signedUploadUrl"]>().returns.toEqualTypeOf<
+      Promise<{ readonly url: string }>
+    >();
     expectTypeOf<EncoreBucket["signedDownloadUrl"]>()
       .parameter(1)
       .toEqualTypeOf<{ readonly ttl: number }>();

@@ -61,6 +61,11 @@ class MemoryBucket extends EncoreBucket {
     return `https://bucket.encore.test/${name}`;
   }
 
+  async signedUploadUrl(name: string, options: { ttl: number }): Promise<{ url: string }> {
+    this.lastSigned = { name, ttl: options.ttl };
+    return { url: `https://bucket.encore.test/${name}?upload=1` };
+  }
+
   async signedDownloadUrl(name: string, options: { ttl: number }): Promise<{ url: string }> {
     this.lastSigned = { name, ttl: options.ttl };
     return { url: `https://bucket.encore.test/${name}?signed=1` };
@@ -134,5 +139,29 @@ describe("EncoreBucketFileSystemDriver", () => {
     const files = new EncoreBucketFileSystemDriver(new MemoryBucket());
     await expect(files.write("../x", "y")).rejects.toThrow(RangeError);
     expect(() => files.url("a/../../b")).toThrow(RangeError);
+  });
+
+  it("signs an upload through the bucket's signed upload URL, in whole seconds", async () => {
+    const bucket = new MemoryBucket();
+    const files = new EncoreBucketFileSystemDriver(bucket);
+    expect(
+      await files.signUpload("uploads/upl_1", {
+        contentType: "image/png",
+        expiresIn: Duration.seconds(90.5),
+      }),
+    ).toEqual({
+      url: "https://bucket.encore.test/uploads/upl_1?upload=1",
+      method: "PUT",
+      headers: { "content-type": "image/png" },
+    });
+    expect(bucket.lastSigned).toEqual({ name: "uploads/upl_1", ttl: 91 });
+  });
+
+  it("moves an object by read, write with its content type and remove", async () => {
+    const files = new EncoreBucketFileSystemDriver(new MemoryBucket());
+    await files.write("uploads/a", "x", { contentType: "image/png" });
+    await files.move("uploads/a", "public/a.png");
+    expect(await files.exists("uploads/a")).toBe(false);
+    expect(await files.stat("public/a.png")).toMatchObject({ size: 1, contentType: "image/png" });
   });
 });

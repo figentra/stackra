@@ -20,6 +20,8 @@ The driver behind the `Logger` port, its reporter and two configurations. Member
 - Every record passes `redact` before any reporter sees it. A new reporter reuses `redact`; never bypass it.
 - `.` stays bundle-safe (no `node:*`); the console reporter writes through `console`, the OTLP reporter through `fetch`.
 - `src/{core,contracts}/index.ts` are stand-in barrels until gen writes the entry barrels (STA-339).
+- `TelemetryConfig` holds no Sentry DSN and no error sampling: `SentryConfig` of `@stackra/errors` is the one Sentry
+  source (ADR 0465). Never add them back; this package does not depend on `@stackra/errors`.
 
 ## Rules that fail the build
 

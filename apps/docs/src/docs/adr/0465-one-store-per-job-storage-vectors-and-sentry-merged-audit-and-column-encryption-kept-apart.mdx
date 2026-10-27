@@ -1,0 +1,116 @@
+---
+title: "0465 — One store per job: storage, vectors and Sentry merged; audit and column encryption kept apart"
+description: "Accepted · 2026-10-28"
+---
+
+{/* Stackra file contract. Purpose: ADR 0465 (Accepted 2026-10-28, owner decision D10, the gap-analysis redundancy cleanup), recording which overlapping stores were merged (media's MediaDisk into FileSystem, ai.embeddings into search's VectorIndex, logger's Sentry DSN and error rate into SentryConfig), which stay separate and why (the action AuditTrail and the access log; model EncryptedFields and ai ScopeKeyCast), and two naming rules (test doubles, lint-rule homes). Boundary: decision text; the code is batch stackra-226 (STA-1384) in packages/data/{filesystem,media,search}, packages/application/ai, packages/foundation/{errors,logger}; the ADR index row and docs nav belong to stackra-90. Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0100, 0160, 0184, 0188, 0212, 0222, 0234, 0266, 0269, 0300, 0409; notes handover/gap-analysis (data R2 and R5, security-identity redundancy 1, devx-ops R1, R4 and R6, cross-redundancy 19). */}
+
+<Note>
+  Reserved number: 0465, the next free after 0464 (drafted at 127cee9 on
+  feat/c6-showcase-figentra-brand) on every branch and worktree of stackra/core on 2026-10-28.
+</Note>
+
+## Context
+
+The gap analysis of 2026-10-28 (notes `handover/gap-analysis`) found jobs done twice in core, each with its own store
+or config. Owner decision D10 put the cleanup into 0.1.0: merge what is the same job, and record in one ADR what stays
+apart and why. Five pairs were named:
+
+1. **Object storage.** `FileSystem` (`@stackra/filesystem`: memory, local, S3/R2, GCS, Encore bucket, Electron) and
+   `MediaDisk` (`@stackra/media`: memory and S3/R2 only), with two S3 drivers. Media could not run on GCS (the KSA
+   lane), an Encore bucket or a local folder, although infra provisions a files bucket there.
+2. **Vectors.** `search.vector_items` behind `VectorIndex` (pgvector, HNSW, scope-filtered), which `retrieve()` already
+   reads, and `ai.embeddings`, a second pgvector table with an `Embedding` model that nothing wrote.
+3. **Sentry.** `SentryConfig` (`errors.sentry`: DSN by secret name, `sampleRate`, environment, release) and
+   `TelemetryConfig` (`logger.telemetry`: a `dsn` value and `errors.sampleRate`, beside trace, replay and vitals).
+4. **Audit.** The `AuditTrail` port of `@stackra/actions` (one `AuditEntryRecorded` per action call, sent through the
+   outbox) and `@stackra/access-log` (`@AccessLogged` reads of personal data, a per-scope SHA-256 hash chain, memory,
+   Postgres and outbox sinks, retention).
+5. **Column encryption.** `EncryptedFields` of `@stackra/model` seals a field with the authenticated context
+   `<model key>.<field>`; `ScopeKeyCast` of `@stackra/ai` seals the ai tables with
+   `<schema>.<table>.<column>@<scopeId>`. Both use the one `FieldCipher`.
+
+Two naming questions came with them: test doubles (`FlagsFake` beside `MemoryFlagProviderDriver`; 36 `*.fake.ts` files
+beside 123 `memory-*.driver.ts` files) and lint rules (`@stackra/oxlint-config` says "add or change lint rules here",
+`@stackra/coding-standard` says "the house lint rules", and packages ship `./lint` plugins).
+
+## Decision
+
+1. **One object-storage port: `FileSystem`.** `FileSystem` gains two implemented members: `move(from, to)` (default:
+   read, write with the media type, delete; the memory, local, S3 and GCS disks use the store's own move) and
+   `signUpload(path, { contentType, expiresIn })` (default: a `TypeError`; the memory, S3/R2, GCS and Encore bucket
+   disks sign a `PUT`). `SignedUpload` and `UploadRequest` move to `@stackra/filesystem/contracts`; `UploadRequest`
+   carries no metadata, because an Encore bucket cannot sign any. `EncoreBucket` gains `signedUploadUrl`. `MediaDisk`,
+   its memory and S3 drivers, `MediaObject` and the `media.disk` setting are removed; `MediaLibrary` takes `FileSystem`
+   and writes the upload's bucket key and expiry beside it as `uploads/<id>.json`, which the client's signed URL
+   cannot reach, instead of signed metadata. The claim still checks the stored type and size against the bucket.
+2. **One vector store: `VectorIndex`.** `search.vector_items` is the platform's vector store. `@stackra/ai` removes the
+   `Embedding` model and ships migration `ai.0002_drop_embeddings`; no data moves, since nothing wrote the table.
+   Conversation memory stores through `VectorIndex.upsert` with `conversationId`, `messageId`, `embedder` and
+   `contentHash` as item metadata, in the caller's scope; message text stays sealed in `ai.messages`.
+3. **One Sentry source: `SentryConfig`.** It owns the DSN (by secret name) and the share of errors reported, for server
+   and client reporters. `TelemetryConfig` drops `dsn` and `errors.sampleRate`, keeps `errors.enabled`,
+   `errors.nativeCrashes`, trace and replay sampling, vitals, budgets and Lighthouse, and a client reporter reads the
+   DSN and the rate from `SentryConfig`. `@stackra/logger` takes no dependency on `@stackra/errors` for this.
+4. **Audit stays two stores, on purpose.** They answer different questions and fail differently:
+   - `AuditTrail` (actions) records **writes**: every action call, allowed or refused, after its unit of work, as an
+     integration event. It keeps no store and no chain in core: the audit service chains and stores it (ADR 0212
+     decision 4). It must never block a call.
+   - `@stackra/access-log` records **reads of personal data**: who saw which classified record, chained per scope in
+     core so a gap is provable, with retention, and it fails closed for configured classes and privileged surfaces
+     (ADR 0409). It runs on the read path.
+     Both feed the audit service. Merging them would put a hash chain and a fail-closed rule on every write, or drop
+     them from reads. A later batch may implement `AuditTrail` with an access-log sink on the same chain (gap analysis
+     data R5, P1); that is new capability, not this cleanup.
+5. **Column encryption stays two paths; no crypto migration now.** The authenticated contexts differ
+   (`<model key>.<field>` vs `<schema>.<table>.<column>@<scopeId>`), so a value sealed by one does not open under the
+   other, and moving the ai tables would mean re-sealing every row. They stay:
+   - `EncryptedFields` (`@stackra/model`) is the default for a model field: transparent to the ORM, bound to the field.
+   - `ScopeKeyCast` (`@stackra/ai`) is for the ai tables only: it binds the scope, so a sealed message copied into
+     another scope's row does not open.
+     New code uses `EncryptedFields`; nothing new adopts `ScopeKeyCast`. A merge needs, first, a scope binding in
+     `EncryptedFields` and a re-seal job (gap analysis security P2, the key-rotation `reencrypt` job), then its own ADR.
+6. **Test doubles.** A port's test double is its `memory` driver (`Memory<Name>Driver`, `src/core/drivers/`, chosen by
+   `.useDrivers("memory")`). A `*Fake` (`src/testing/`) exists only for a service or helper that is not a port, or that
+   wraps one with test setters, as `FlagsFake` wraps `FlagReader`. No mass rename: existing fakes stay; new code
+   follows the rule, and a fake that only restates a port's memory driver is removed when its package is next touched.
+7. **Lint-rule homes.** `@stackra/oxlint-config` (`packages/tooling/oxlint`) holds presets and rule levels only, never
+   rule code. `@stackra/coding-standard` holds the house rule code (the oxlint JS plugin). A package's `./lint` plugin
+   holds a rule that needs that package's own types or registry (`@stackra/feature-flags/lint`). Each package's
+   summary says so; no rule moves now.
+
+## Consequences
+
+- Media runs on every disk that can sign an upload (memory, S3/R2, GCS, Encore bucket) and claims on every disk. The
+  local and Electron disks refuse `createUpload`; development uses the memory disk. On an Encore bucket the client's
+  content type is not signed, so the claim's type check is the only guard there.
+- An upload signed before the change has no record and its claim is refused as incomplete; it expires within
+  `media.uploadExpiresIn`. A runway `media.disk` value is ignored; `filesystem.disk` picks the store.
+- Gen's `PLATFORM_BINDINGS` row for `MediaLibrary` still names `MediaDisk` and must name `FileSystem` from
+  `@stackra/filesystem/contracts`; gen's generated Encore bucket driver must forward `signedUploadUrl`. Both are gen's
+  paths, handed to the integration batch; until then a host binds `MediaLibrary` itself.
+- The template's telemetry overrides that set `errors.sampleRate` must drop it.
+- Two audit stores and two column-encryption paths remain, each with one stated job; a reviewer refuses a third.
+
+## Enforcement
+
+Tests beside the code: `file-system.port.test.ts` (the default `move` and `signUpload`), each disk's driver test (its
+`move` and `signUpload`), `media-library.service.test.ts` (the record, the claim, a disk that cannot sign), the media
+and filesystem barrel tests (exact export sets, no `MediaDisk`), `media-config-schema.constant.test.ts` (no `disk`),
+`0002-drop-embeddings.migration.test.ts`, and the logger telemetry schema and config tests (no `dsn`, no
+`errors.sampleRate`). Decisions 4 to 7 are review rules.
+
+## Sources
+
+Notes `handover/gap-analysis`: `data.md` (media disk drivers, R2, R5), `security-identity.md` (redundancy 1, the audit
+note), `ai-automation.md` (R3), `devx-ops.md` (R1, R4, R6), `cross-redundancy.md` (19). Related: ADR
+[0222](/adr/0222-files-and-media-storage-drivers-uploads-scanning-and-public-assets),
+[0234](/adr/0234-module-assets-and-storage), [0160](/adr/0160-raw-sql-at-runtime-and-the-approved-postgres-extensions),
+[0100](/adr/0100-ai-model-and-ownership),
+[0184](/adr/0184-telemetry-opentelemetry-otlp-slis-heartbeats-and-log-retention),
+[0212](/adr/0212-audit-evidence-access-logs-hash-chain-and-retention),
+[0409](/adr/0409-access-log-fails-closed-for-configured-classes-and-privileged-surfaces-and-an-outbox-sink),
+[0188](/adr/0188-operator-access-and-the-encryption-key-hierarchy),
+[0266](/adr/0266-capabilities-phase-in-one-option-one-driver-memory-first),
+[0269](/adr/0269-stackra-testing-package-entries-and-helper-placement),
+[0300](/adr/0300-published-tooling-presets-and-enforced-spell-checking). STA-1384, batch stackra-226.

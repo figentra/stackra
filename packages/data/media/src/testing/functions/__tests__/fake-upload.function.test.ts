@@ -3,7 +3,8 @@
  * Purpose: unit tests of `fakeUpload`: the template's two cases (a fake upload the claim accepts at the URL it
  *          predicted, and a `null`-bucket token the claim refuses as foreign), the bucket's rules still applying, the
  *          given bytes, and a refused non-memory disk.
- * Boundary: test only; a container binds a memory disk and a `MediaLibrary`, wrapped in a `TestingApp`.
+ * Boundary: test only; a container binds the memory `FileSystem` disk (ADR 0465) and a `MediaLibrary`, wrapped in a
+ *           `TestingApp`.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269 (decision 3); ADR 0222 (decision 2).
  */
@@ -12,17 +13,16 @@ import { Container } from "@stackra/container";
 import type { Token } from "@stackra/container";
 import { TestingApp } from "@stackra/container/testing";
 import { Clock } from "@stackra/contracts";
-import { FilesystemConfig } from "@stackra/filesystem";
+import { FilesystemConfig, MemoryFileSystemDriver } from "@stackra/filesystem";
+import { FileSystem } from "@stackra/filesystem/contracts";
 import { describe, expect, it } from "@stackra/testing";
 
 import { MediaConfig } from "#config/media.config";
-import { MediaDisk } from "#contracts/index";
 import {
   Bucket,
   BucketVisibility,
   MediaLibrary,
   MediaType,
-  MemoryMediaDiskDriver,
   UploadBucketMismatchError,
   UploadRejectedError,
 } from "#core/index";
@@ -43,16 +43,16 @@ class ProductImagesBucket extends Bucket({
 }) {}
 
 /** A testing app over a memory disk serving from `https://cdn.test`, or over `disk` when given. */
-async function compile(disk?: MediaDisk) {
+async function compile(disk?: FileSystem) {
   const clock = new FixedClock();
-  const memory = new MemoryMediaDiskDriver(
+  const memory = new MemoryFileSystemDriver(
     buildConfig(FilesystemConfig, { values: { url: "https://cdn.test" } }),
     clock,
   );
   const media = new MediaLibrary(memory, buildConfig(MediaConfig), clock);
   const container = await Container.create([], {
     overrides: new Map<Token, object>([
-      [MediaDisk, disk ?? memory],
+      [FileSystem, disk ?? memory],
       [MediaLibrary, media],
     ]),
   });
@@ -89,11 +89,11 @@ describe("fakeUpload", () => {
       mediaType: MediaType.Jpeg,
       bytes: new Uint8Array(32),
     });
-    expect((await memory.stat(`uploads/${image.id}`))?.size).toBe(32);
+    expect((await memory.stat(`uploads/${image.id}`)).size).toBe(32);
   });
 
-  it("refuses an app whose media disk is not the memory disk", async () => {
-    const { app } = await compile(Object.create(MediaDisk.prototype) as MediaDisk);
+  it("refuses an app whose file system disk is not the memory disk", async () => {
+    const { app } = await compile(Object.create(FileSystem.prototype) as FileSystem);
     await expect(
       fakeUpload(app, ProductImagesBucket, { mediaType: MediaType.Png }),
     ).rejects.toThrow(/useDrivers\("memory"\)/);

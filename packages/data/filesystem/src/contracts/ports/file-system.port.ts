@@ -6,20 +6,26 @@
  * Boundary: an abstract class that is its own token, keyed `filesystem.FileSystem`. A key is relative, `/`-separated,
  *           with no `..` segment; every driver refuses one that is not. Runtime tenant files and their key layout are
  *           the files service's (ADR 0222); a disk only stores bytes. A leaf file: it imports nothing outside
- *           `src/contracts` but the `Port` base and `Duration`. `writeStream` and `readStream` are the implemented
- *           members: `writeStream` buffers the stream and calls `write` (the S3 driver overrides it with a multipart
- *           upload); `readStream` reads the whole file with `read` and serves it as one chunk (the local, Electron,
- *           S3 and GCS drivers override it to stream from the store).
+ *           `src/contracts` but the `Port` base and `Duration`. `writeStream`, `readStream`, `move` and `signUpload`
+ *           are the implemented members: `writeStream` buffers the stream and calls `write` (the S3 driver overrides it
+ *           with a multipart upload); `readStream` reads the whole file with `read` and serves it as one chunk (the
+ *           local, Electron, S3 and GCS drivers override it to stream from the store); `move` reads, writes and
+ *           deletes (the memory, local, S3 and GCS drivers override it with the store's own move); `signUpload`
+ *           refuses (the memory, S3, GCS and Encore bucket drivers sign; the local and Electron disks cannot). The
+ *           last two came from @stackra/media's `MediaDisk`, folded in here (stackra-226), so media runs on every disk.
  * Runtime: isomorphic
  * Governing contract: ADR 0234 (decision 7: the only storage API, disks injected); ADR 0222 (decision 1: drivers);
  *                     ADR 0413 (streamed writes; streamed reads follow the same shape, STA-1259);
- *                     ADR 0294 (decisions 4, 15 and 16); ADR 0263 (ports resolve by type).
+ *                     ADR 0222 (decision 2: presigned uploads); ADR 0294 (decisions 4, 15 and 16); ADR 0263 (ports
+ *                     resolve by type); ADR 0465 (one object-storage port).
  */
 import { type Duration, Port } from "@stackra/contracts";
 
 import { byteChunks } from "#contracts/functions/byte-chunks.function";
 import { concatBytes } from "#contracts/functions/concat-bytes.function";
 import type { FileStat } from "#contracts/types/file-stat.type";
+import type { SignedUpload } from "#contracts/types/signed-upload.type";
+import type { UploadRequest } from "#contracts/types/upload-request.type";
 import type { WriteOptions } from "#contracts/types/write-options.type";
 import type { WriteStreamSource } from "#contracts/types/write-stream-source.type";
 
@@ -112,6 +118,41 @@ export abstract class FileSystem extends Port {
    * @throws RangeError when `path` is not a key inside the disk.
    */
   abstract delete(path: string): Promise<boolean>;
+
+  /**
+   * Moves the file under `from` to `to`, keeping its media type, replacing what was at `to`. This default reads the
+   * file, writes it under `to` and deletes `from`, so it holds the file in memory once and drops any store metadata
+   * but the media type; a disk with its own move overrides it (memory, local, S3, GCS).
+   *
+   * @throws FileNotFoundError (from `@stackra/filesystem`) when nothing is stored under `from`.
+   * @throws RangeError when `from` or `to` is not a key inside the disk.
+   * @example
+   * await this.files.move("uploads/upl_01…", "public/products/upl_01….png");
+   */
+  async move(from: string, to: string): Promise<void> {
+    const { contentType } = await this.stat(from);
+    await this.write(to, await this.read(from), contentType === null ? {} : { contentType });
+    await this.delete(from);
+  }
+
+  /**
+   * A URL that accepts one `PUT` of a file under `path` on the request's terms until it expires, so a client uploads
+   * straight to the store and the bytes never pass through a service (ADR 0222 decision 2). This default refuses: a
+   * disk that can sign overrides it (memory, S3 and R2, GCS, Encore bucket).
+   *
+   * @throws TypeError when the disk cannot sign uploads (the local and Electron disks).
+   * @throws RangeError when `path` is not a key inside the disk.
+   * @example
+   * const target = await this.files.signUpload("uploads/upl_01…", {
+   *   contentType: "image/png",
+   *   expiresIn: Duration.hours(1),
+   * });
+   */
+  async signUpload(_path: string, _request: UploadRequest): Promise<SignedUpload> {
+    throw new TypeError(
+      "This disk cannot sign uploads: use the memory, s3, gcs or encore_bucket disk for direct uploads",
+    );
+  }
 
   /**
    * Every key that starts with `prefix`, at any depth, sorted. A prefix ending in `/` is a folder; the empty prefix

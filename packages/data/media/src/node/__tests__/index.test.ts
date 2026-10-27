@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: the consumer contract of the `./node` entry: it exports the S3 disk (a candidate of the template's
- *          `media.MediaDisk` driver choice), the scanners, the `sharp` image transformer, the `document` and
+ * Purpose: the consumer contract of the `./node` entry: it exports the scanners (no S3 disk: media stores through
+ *          `FileSystem`, ADR 0465), the `sharp` image transformer, the `document` and
  *          `paddle_ocr` text extractors, the `c2pa` content credentials and the `upload.create` action with its input and output, nothing else.
  * Boundary: test only; imports the stand-in barrel through its `#node` alias.
  * Runtime: node (vitest)
@@ -22,7 +22,6 @@ describe("@stackra/media/node", () => {
       "DocumentTextExtractorDriver",
       "GuardDutyFileScannerDriver",
       "PaddleOcrTextExtractorDriver",
-      "S3MediaDiskDriver",
       "SharpImageTransformerDriver",
       "UploadPermissions",
     ]);

@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: `MediaConfig`, the media configuration (key `media`): the `disk` and `uploader` driver choices runway sets
- *          per environment, the upload lifetime and the upload endpoint.
+ * Purpose: `MediaConfig`, the media configuration (key `media`): the `uploader` and `scanner` driver choices runway
+ *          sets per environment, the upload lifetime and the upload endpoint.
  * Boundary: a configuration class over `MediaOptions` with no env map; runway's `config.media` layer sets it. A host
  *           overrides it as `class MediaConfig extends BaseMediaConfig` with `override` members only.
  * Runtime: isomorphic

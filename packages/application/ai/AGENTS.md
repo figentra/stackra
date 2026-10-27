@@ -64,6 +64,8 @@ ADR 0100 tables, the Postgres stores and `ScopeKeyCast`; storage home: ADR 0399)
   with `checkIdentifier`. A reason or flag is a code, never the caught text. Compile patterns in the constructor.
 - `AiMeter` writes `usage.recorded` on `ai.tokens` only (direction in the key, model in `subject`); prices and caps
   are rate-card and entitlement data.
+- One vector store (ADR 0465): embed and recall through `VectorIndex` and `Embedder` of `@stackra/search/contracts`.
+  Never add a vector column or embeddings table here; `ai.embeddings` was dropped by migration 0002.
 - Only add a symbol a consumer imports today (the template, a package, or the registry row).
 
 ## Rules that fail the build

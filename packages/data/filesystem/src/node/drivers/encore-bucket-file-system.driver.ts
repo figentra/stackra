@@ -4,9 +4,14 @@
  *          generated Encore app declares, reached through the `EncoreBucket` port.
  * Boundary: imports no `encore.dev` (ADR 0124): the generated app binds `EncoreBucket`. Every key passes
  *           `normalizePath`. `read`, `stat` and `delete` ask `exists` first, because Encore's not-found error class
- *           lives in `encore.dev`. An Encore bucket reports no modification time, so `lastModified` is `null`.
+ *           lives in `encore.dev`. An Encore bucket reports no modification time, so `lastModified` is `null`. A
+ *           signed upload is Encore's `signedUploadUrl`, which signs no header: the content type in the returned
+ *           headers is what the client should send, and the store keeps whatever it does send, so a caller checks
+ *           `stat(path).contentType` after the upload (media's claim does). `move` is the port's default (read,
+ *           write, delete): the port has no copy.
  * Runtime: node
- * Governing contract: ADR 0091 and 0124 (Encore is generated); ADR 0234 (decision 7); ADR 0294 (decision 16).
+ * Governing contract: ADR 0091 and 0124 (Encore is generated); ADR 0234 (decision 7); ADR 0294 (decision 16);
+ *                     ADR 0222 (decision 2: presigned uploads); ADR 0465.
  */
 import { Driver } from "@stackra/container";
 import { Duration } from "@stackra/contracts";
@@ -14,6 +19,8 @@ import { Duration } from "@stackra/contracts";
 import type { EncoreBucket } from "#contracts/ports/encore-bucket.port";
 import { FileSystem } from "#contracts/ports/file-system.port";
 import type { FileStat } from "#contracts/types/file-stat.type";
+import type { SignedUpload } from "#contracts/types/signed-upload.type";
+import type { UploadRequest } from "#contracts/types/upload-request.type";
 import type { WriteOptions } from "#contracts/types/write-options.type";
 import { FileNotFoundError } from "#core/errors/file-not-found.error";
 import { normalizePath } from "#core/functions/normalize-path.function";
@@ -94,6 +101,13 @@ export class EncoreBucketFileSystemDriver extends Driver(FileSystem) {
   async temporaryUrl(path: string, expiresIn: Duration): Promise<string> {
     const ttl = Math.ceil(Duration.toMilliseconds(expiresIn) / 1000);
     return (await this.bucket.signedDownloadUrl(normalizePath(path), { ttl })).url;
+  }
+
+  /** Encore's signed upload URL of `path`, valid for `expiresIn` rounded up to whole seconds. */
+  override async signUpload(path: string, request: UploadRequest): Promise<SignedUpload> {
+    const ttl = Math.ceil(Duration.toMilliseconds(request.expiresIn) / 1000);
+    const { url } = await this.bucket.signedUploadUrl(normalizePath(path), { ttl });
+    return { url, method: "PUT", headers: { "content-type": request.contentType } };
   }
 
   /**

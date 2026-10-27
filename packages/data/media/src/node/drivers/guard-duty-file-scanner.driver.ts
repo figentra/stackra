@@ -6,7 +6,8 @@
  *           turns the protection plan on); this driver never sends bytes. No tag yet is `pending`: the caller asks
  *           again or waits for GuardDuty's event. `NO_THREATS_FOUND` is `clean`, `THREATS_FOUND` is `infected`, any
  *           other status (`UNSUPPORTED`, `ACCESS_DENIED`, `FAILED`) is `failed` with the status as its detail. The
- *           bucket is `filesystem.s3.bucket`, the one `S3MediaDiskDriver` writes; credentials are the SDK's chain.
+ *           bucket is `filesystem.s3.bucket`, the one `S3FileSystemDriver` of @stackra/filesystem writes (media stores
+ *           there since ADR 0465); credentials are the SDK's chain.
  * Runtime: node
  * Governing contract: ADR 0354 (GuardDuty in region); ADR 0222; ADR 0173 (no credential in config); OS-142.
  */
@@ -25,7 +26,7 @@ const STATUS_TAG = "GuardDutyMalwareScanStatus";
  * Reads GuardDuty's verdict from the object's tags.
  *
  * @example
- * // runway.yaml (uae): config.media: { disk: s3, scanner: guard_duty }
+ * // runway.yaml (uae): config.filesystem: { disk: s3 }; config.media: { scanner: guard_duty }
  */
 export class GuardDutyFileScannerDriver extends Driver(FileScanner) {
   /** The client every call goes through. */

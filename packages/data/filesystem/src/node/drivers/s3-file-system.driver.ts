@@ -1,21 +1,28 @@
 /**
  * Stackra file contract:
  * Purpose: the S3-compatible `FileSystem` (`disk: "s3"`): AWS S3, Cloudflare R2 or MinIO, chosen by
- *          `filesystem.s3.{region, endpoint, forcePathStyle}`. Temporary URLs are SigV4 presigned GETs. A streamed write
+ *          `filesystem.s3.{region, endpoint, forcePathStyle}`. Temporary URLs are SigV4 presigned GETs and signed uploads
+ *          SigV4 presigned `PUT`s that sign the content type; a move is a server-side copy and delete. A streamed write
  *          is a multipart upload in 8 MiB parts and a streamed read is the GET body as a web stream, so a large export or
  *          import never sits in memory whole.
  * Boundary: holds no credential: the AWS SDK reads its default chain (`AWS_ACCESS_KEY_ID` and
  *           `AWS_SECRET_ACCESS_KEY`, which runway syncs from Infisical, or an instance role). Every key passes
  *           `normalizePath`. A missing object is a `FileNotFoundError`; any other store error is rethrown as it is. Every
  *           part but the last is exactly `PART_SIZE` (R2 needs equal parts; S3 needs at least 5 MiB), a stream shorter
- *           than one part is one PUT, and a failed upload is aborted so no part is left billed or visible.
+ *           than one part is one PUT, and a failed upload is aborted so no part is left billed or visible. Uploads are
+ *           presigned by a second client that computes no request checksum (a checksum of the empty body at signing time
+ *           would refuse the browser's real bytes), so the writes keep the SDK's default checksums; the bucket's CORS
+ *           rule must allow `content-type` on `PUT`. The size is not signed (a browser sets Content-Length itself): the
+ *           caller checks it after the upload (media's claim does). Took over `S3MediaDiskDriver` (stackra-226).
  * Runtime: node
  * Governing contract: ADR 0222 (decision 1: S3, R2 and MinIO drivers); ADR 0234 (decision 7); ADR 0173 (secrets);
- *                     ADR 0294 (decision 16); ADR 0413 (streamed writes).
+ *                     ADR 0294 (decision 16); ADR 0413 (streamed writes); ADR 0222 (decision 2: presigned uploads);
+ *                     ADR 0465.
  */
 import {
   AbortMultipartUploadCommand,
   CompleteMultipartUploadCommand,
+  CopyObjectCommand,
   CreateMultipartUploadCommand,
   DeleteObjectCommand,
   GetObjectCommand,
@@ -34,6 +41,8 @@ import { FileSystem } from "#contracts/ports/file-system.port";
 import { byteChunks } from "#contracts/functions/byte-chunks.function";
 import { concatBytes } from "#contracts/functions/concat-bytes.function";
 import type { FileStat } from "#contracts/types/file-stat.type";
+import type { SignedUpload } from "#contracts/types/signed-upload.type";
+import type { UploadRequest } from "#contracts/types/upload-request.type";
 import type { WriteOptions } from "#contracts/types/write-options.type";
 import type { WriteStreamSource } from "#contracts/types/write-stream-source.type";
 import { FileNotFoundError } from "#core/errors/file-not-found.error";
@@ -54,6 +63,10 @@ function isNotFound(error: unknown): boolean {
   );
 }
 
+/** Whole seconds of `duration`, rounded up, as the presigner takes them. */
+const secondsOf = (duration: Duration): number =>
+  Math.ceil(Duration.toMilliseconds(duration) / 1000);
+
 /**
  * Keeps files in an S3-compatible bucket.
  *
@@ -64,6 +77,9 @@ function isNotFound(error: unknown): boolean {
 export class S3FileSystemDriver extends Driver(FileSystem) {
   /** The client every call goes through. */
   readonly client: S3Client;
+
+  /** The client signed uploads are presigned with: the same bucket, no request checksum. */
+  private readonly signer: S3Client;
 
   private readonly bucket: string;
 
@@ -80,11 +96,9 @@ export class S3FileSystemDriver extends Driver(FileSystem) {
       throw new TypeError("The s3 disk needs a bucket: set `filesystem.s3.bucket`");
     this.bucket = bucket;
     this.base = config.url;
-    this.client = new S3Client({
-      region,
-      forcePathStyle,
-      ...(endpoint === null ? {} : { endpoint }),
-    });
+    const options = { region, forcePathStyle, ...(endpoint === null ? {} : { endpoint }) };
+    this.client = new S3Client(options);
+    this.signer = new S3Client({ ...options, requestChecksumCalculation: "WHEN_REQUIRED" });
   }
 
   /** Whether an object is stored under `path` (a HEAD request). */
@@ -210,6 +224,41 @@ export class S3FileSystemDriver extends Driver(FileSystem) {
     }
   }
 
+  /** Copies the object under `from` to `to` inside the bucket, keeping its content type and metadata, then deletes it. */
+  override async move(from: string, to: string): Promise<void> {
+    const source = normalizePath(from);
+    try {
+      await this.client.send(
+        new CopyObjectCommand({
+          Bucket: this.bucket,
+          Key: normalizePath(to),
+          CopySource: `${this.bucket}/${source.split("/").map(encodeURIComponent).join("/")}`,
+        }),
+      );
+    } catch (error) {
+      throw isNotFound(error) ? FileNotFoundError.create({ path: source }) : error;
+    }
+    await this.client.send(new DeleteObjectCommand({ Bucket: this.bucket, Key: source }));
+  }
+
+  /**
+   * A presigned `PUT` of `path` that signs the content type, valid for `expiresIn` rounded up to whole seconds.
+   *
+   * @throws Error when `expiresIn` is longer than seven days (the SigV4 limit).
+   */
+  override async signUpload(path: string, request: UploadRequest): Promise<SignedUpload> {
+    const url = await getSignedUrl(
+      this.signer,
+      new PutObjectCommand({
+        Bucket: this.bucket,
+        Key: normalizePath(path),
+        ContentType: request.contentType,
+      }),
+      { expiresIn: secondsOf(request.expiresIn), signableHeaders: new Set(["content-type"]) },
+    );
+    return { url, method: "PUT", headers: { "content-type": request.contentType } };
+  }
+
   /** Removes the object under `path`; false when there was none (S3's DELETE does not say, so it asks first). */
   async delete(path: string): Promise<boolean> {
     if (!(await this.exists(path))) return false;
@@ -267,7 +316,7 @@ export class S3FileSystemDriver extends Driver(FileSystem) {
     return getSignedUrl(
       this.client,
       new GetObjectCommand({ Bucket: this.bucket, Key: normalizePath(path) }),
-      { expiresIn: Math.ceil(Duration.toMilliseconds(expiresIn) / 1000) },
+      { expiresIn: secondsOf(expiresIn) },
     );
   }
 }

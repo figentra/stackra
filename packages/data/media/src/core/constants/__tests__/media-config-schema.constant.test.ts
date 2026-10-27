@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `MEDIA_CONFIG_SCHEMA` (`MediaConfig$`): full defaults from `{}`, only this package's driver
- *          names, an upload lifetime above zero and at most seven days, and the OCR and C2PA settings.
+ * Purpose: unit tests of `MEDIA_CONFIG_SCHEMA` (`MediaConfig$`): full defaults from `{}` with no `disk` (ADR 0465),
+ *          only this package's driver names, an upload lifetime above zero and at most seven days, and the OCR and C2PA settings.
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0294 (decision 26).
@@ -14,7 +14,6 @@ import { MEDIA_CONFIG_SCHEMA } from "#core/constants/media-config-schema.constan
 describe("MEDIA_CONFIG_SCHEMA", () => {
   it("gives the full defaults", () => {
     expect(MEDIA_CONFIG_SCHEMA.parse({})).toEqual({
-      disk: "memory",
       uploader: "memory",
       uploadExpiresIn: "PT1H",
       uploadEndpoint: "/api/uploads",
@@ -37,12 +36,16 @@ describe("MEDIA_CONFIG_SCHEMA", () => {
   });
 
   it("takes only this package's drivers", () => {
-    expect(MEDIA_CONFIG_SCHEMA.parse({ disk: "s3", uploader: "http" })).toMatchObject({
-      disk: "s3",
+    expect(MEDIA_CONFIG_SCHEMA.parse({ uploader: "http", scanner: "guard_duty" })).toMatchObject({
       uploader: "http",
+      scanner: "guard_duty",
     });
-    expect(MEDIA_CONFIG_SCHEMA.safeParse({ disk: "local" }).success).toBe(false);
+    expect(MEDIA_CONFIG_SCHEMA.safeParse({ scanner: "virustotal" }).success).toBe(false);
     expect(MEDIA_CONFIG_SCHEMA.safeParse({ uploader: "tus" }).success).toBe(false);
+  });
+
+  it("drops a leftover disk value: the store is filesystem.disk (ADR 0465)", () => {
+    expect(MEDIA_CONFIG_SCHEMA.parse({ disk: "s3" })).not.toHaveProperty("disk");
   });
 
   it("takes an upload lifetime above zero and up to seven days", () => {

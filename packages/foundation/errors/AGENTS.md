@@ -35,6 +35,8 @@ shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./react`, `./testing`.
 - No parameter properties and no `#private` fields: apps typecheck this source under `erasableSyntaxOnly`.
 - `memory` ErrorReporter (STA-1308): `MemoryErrorReporterDriver` keeps reported errors in `errors` for a test.
   `sentry` is this package's other driver; `ConsoleErrorReporterDriver` (`@stackra/app`) is boot's fallback.
+- `SentryConfig` is the one Sentry source (ADR 0465): never add a DSN or an error rate elsewhere (logger's
+  `TelemetryConfig` dropped its copies); a new Sentry setting goes here.
 
 ## Rules that fail the build
 

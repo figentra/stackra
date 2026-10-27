@@ -2,14 +2,14 @@
  * Stackra file contract:
  * Purpose: unit and type tests of the `FileSystem` port: a `Port` whose drivers are its instances, keyed
  *          `filesystem.FileSystem`, with the method shapes every disk implements; the default `writeStream` buffers the
- *          stream into one `write`, a failing stream writes nothing, and the default `readStream` serves `read` as one
- *          chunk.
+ *          stream into one `write`, a failing stream writes nothing, the default `readStream` serves `read` as one
+ *          chunk, the default `move` reads, writes with the media type and deletes, and the default `signUpload`
+ *          refuses.
  * Boundary: test only; a minimal subclass stands in for a driver.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0294 (decision 16).
  */
-import type { Duration } from "@stackra/contracts";
-import { Port } from "@stackra/contracts";
+import { Duration, Port } from "@stackra/contracts";
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
 import { FileSystem } from "#contracts/ports/file-system.port";
@@ -19,6 +19,9 @@ import type { FileStat } from "#contracts/types/file-stat.type";
 class StubFileSystem extends FileSystem {
   /** What each `write` stored, in call order. */
   readonly written: [string, Uint8Array | string, unknown][] = [];
+
+  /** What each `delete` removed, in call order. */
+  readonly deleted: string[] = [];
 
   /** What `read` answers. */
   stored = new Uint8Array();
@@ -35,7 +38,8 @@ class StubFileSystem extends FileSystem {
     this.written.push([path, contents, options]);
   }
 
-  async delete(): Promise<boolean> {
+  async delete(path: string): Promise<boolean> {
+    this.deleted.push(path);
     return false;
   }
 
@@ -115,5 +119,30 @@ describe("FileSystem", () => {
       throw new Error("not there");
     };
     await expect(disk.readStream("x.csv")).rejects.toThrow("not there");
+  });
+
+  it("moves by read, write with the media type, and delete by default", async () => {
+    const disk = new StubFileSystem();
+    disk.stored = new Uint8Array([1, 2]);
+    disk.stat = async (path) => ({ path, size: 2, lastModified: null, contentType: "image/png" });
+    await disk.move("uploads/a", "public/a.png");
+    expect(disk.written).toEqual([
+      ["public/a.png", new Uint8Array([1, 2]), { contentType: "image/png" }],
+    ]);
+    expect(disk.deleted).toEqual(["uploads/a"]);
+  });
+
+  it("moves without a media type when the disk keeps none", async () => {
+    const disk = new StubFileSystem();
+    await disk.move("a", "b");
+    expect(disk.written).toEqual([["b", new Uint8Array(), {}]]);
+  });
+
+  it("refuses to sign an upload by default", async () => {
+    const disk = new StubFileSystem();
+    await expect(
+      disk.signUpload("uploads/a", { contentType: "image/png", expiresIn: Duration.hours(1) }),
+    ).rejects.toThrow(TypeError);
+    expect(disk.written).toEqual([]);
   });
 });

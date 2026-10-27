@@ -4,10 +4,12 @@
  *          release every report is tagged with, and the share of errors reported.
  * Boundary: a shape class; it registers this package's own schema (`SENTRY_CONFIG_SCHEMA`) for itself when the module
  *           loads. The DSN is a secret by name (`dsnSecret`), read through the `SecretStore` port by the driver, never
- *           a value here. The defaults report nothing until the secret is set.
+ *           a value here. The defaults report nothing until the secret is set. The one Sentry source (ADR 0465,
+ *           stackra-226): logger's `TelemetryConfig` holds no DSN and no error sampling and defers to this class, for
+ *           server and client reporters alike.
  * Runtime: isomorphic
  * Governing contract: ADR 0184 (decision 6: Sentry handles crash reports); ADR 0173 (secrets by name); ADR 0294
- *                     (decisions 19 and 26).
+ *                     (decisions 19 and 26); ADR 0465 (one Sentry config).
  */
 import { Num, registerSchemas, Schema } from "@stackra/validation";
 

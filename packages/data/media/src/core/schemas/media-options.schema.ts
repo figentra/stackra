@@ -1,13 +1,13 @@
 /**
  * Stackra file contract:
- * Purpose: `MediaOptions`, the shape of `MediaConfig`: which disk the server stores media on, which uploader the client
- *          uses, how long an upload stays valid, where the HTTP uploader asks for a signed URL, the in-region OCR
+ * Purpose: `MediaOptions`, the shape of `MediaConfig`: which uploader the client uses, how long an upload stays valid, where the HTTP uploader asks for a signed URL, the in-region OCR
  *          service and the C2PA signing slot.
  * Boundary: a shape class; it registers this package's own schema (`MEDIA_CONFIG_SCHEMA`) for itself when the module
  *           loads, so `buildConfig(MediaConfig)` validates with no generated file. Deploy-time values only; the one
  *           credential, the C2PA certificate chain and key, is two `@Secret` names resolved blind from the secret store
- *           (ADR 0173), empty until the certificate exists. The bucket, region and public base URL are
- *           `FilesystemConfig`'s: media shares the store's bucket per region and environment (ADR 0222 decision 1).
+ *           (ADR 0173), empty until the certificate exists. The disk, bucket, region and public base URL are
+ *           `FilesystemConfig`'s: media stores on the one `FileSystem` disk per region and environment (ADR 0222
+ *           decision 1; ADR 0465, which dropped the `disk` field here).
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 4, 19 and 26); ADR 0305 (rule 34); ADR 0222 (decisions 1 and 2); ADR 0173;
  *                     R3-SO-13; STA-789.
@@ -20,7 +20,6 @@ import { Duration } from "@stackra/contracts";
 import { Field, registerSchemas, Schema } from "@stackra/validation";
 
 import type { FileScanner } from "#contracts/ports/file-scanner.port";
-import type { MediaDisk } from "#contracts/ports/media-disk.port";
 import { MEDIA_CONFIG_SCHEMA } from "#core/constants/media-config-schema.constant";
 import type { Uploader } from "#core/ports/uploader.port";
 import type { C2paAlgorithm } from "#core/types/c2pa-algorithm.type";
@@ -30,7 +29,7 @@ import type { C2paAlgorithm } from "#core/types/c2pa-algorithm.type";
  *
  * @example
  * export class MediaConfig extends BaseMediaConfig {
- *   override disk: DriverName<MediaDisk> = "s3";
+ *   override scanner: DriverName<FileScanner> = "clamav";
  * }
  */
 export class MediaOptions extends Schema {
@@ -91,9 +90,6 @@ export class MediaOptions extends Schema {
     /** The image media types the driver signs and reads. */
     formats: string[];
   } = { algorithm: "es256", timestampUrl: "", formats: ["image/jpeg", "image/png", "image/webp"] };
-
-  /** The server's store; names are the driver file prefixes. `memory` keeps nothing and is safe everywhere. */
-  disk: DriverName<MediaDisk> = "memory";
 
   /** The client's uploader: `http` in an app, `memory` in tests. */
   uploader: DriverName<Uploader> = "memory";
