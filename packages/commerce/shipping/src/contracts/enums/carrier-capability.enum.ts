@@ -4,7 +4,7 @@
  *          courier pickups, report tracking events, search pickup points and lockers, and buy return labels. Each code
  *          names one gateway interface of this entry.
  * Boundary: an `Enum.of` value plus the type of the same name, in the leaf entry. A connector declares the codes it
- *           serves on its gateway; `hasCapability` narrows a gateway by them. Codes are snake_case.
+ *           serves on its gateway; `hasCarrierCapability` narrows a gateway by them. Codes are snake_case.
  * Runtime: isomorphic
  * Governing contract: ADR 0369 (decision 2; open questions 1 and 3, COM-156); ADR 0231 (snake_case codes).
  */

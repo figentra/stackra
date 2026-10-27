@@ -35,7 +35,7 @@ export { PreVerificationCapExceededError } from "#core/errors/pre-verification-c
 export { ResolutionReasonRequiredError } from "#core/errors/resolution-reason-required.error";
 export { RestrictedTenderUnavailableError } from "#core/errors/restricted-tender-unavailable.error";
 export { SoftPosUnavailableError } from "#core/errors/soft-pos-unavailable.error";
-export { hasCapability } from "#core/functions/has-capability.function";
+export { hasPaymentCapability } from "#core/functions/has-payment-capability.function";
 export { modeOf } from "#core/functions/mode-of.function";
 export { splitTender } from "#core/functions/split-tender.function";
 export { totalOf } from "#core/functions/total-of.function";

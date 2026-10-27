@@ -108,6 +108,7 @@ describe("@stackra/contracts", () => {
       "Tracer",
       "backoffDelay",
       "brand",
+      "capabilityGuard",
       "defineApp",
       "definePackage",
       "defineService",

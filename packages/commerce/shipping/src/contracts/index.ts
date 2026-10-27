@@ -14,7 +14,7 @@ export { TrackingState } from "#contracts/enums/tracking-state.enum";
 export { CarrierGateways } from "#contracts/ports/carrier-gateways.port";
 export { DistanceMatrix } from "#contracts/ports/distance-matrix.port";
 export { RouteSolver } from "#contracts/ports/route-solver.port";
-export type { CapabilityGateways } from "#contracts/types/capability-gateways.type";
+export type { CarrierCapabilityGateways } from "#contracts/types/carrier-capability-gateways.type";
 export type { CarrierEvent } from "#contracts/types/carrier-event.type";
 export type { CarrierGateway } from "#contracts/types/carrier-gateway.type";
 export type { CustomsItem } from "#contracts/types/customs-item.type";

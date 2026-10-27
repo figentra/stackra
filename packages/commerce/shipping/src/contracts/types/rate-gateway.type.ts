@@ -12,7 +12,7 @@ import type { RateRequest } from "#contracts/types/rate-request.type";
  * The carrier gateway that quotes live rates.
  *
  * @example
- * if (hasCapability(gateway, CarrierCapability.Rates)) quotes = await gateway.quote(request);
+ * if (hasCarrierCapability(gateway, CarrierCapability.Rates)) quotes = await gateway.quote(request);
  */
 export interface RateGateway {
   /**

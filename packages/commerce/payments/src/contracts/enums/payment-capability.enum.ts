@@ -7,7 +7,7 @@
  *          increment of an authorised hold (a tab).
  * Boundary: an `Enum.of` value plus the type of the same name, in the leaf entry. A driver lists its capabilities;
  *           `PaymentGateways#forMarket` keeps only providers that have every capability a call needs, and
- *           `hasCapability` narrows a gateway to the matching port. Codes are snake_case.
+ *           `hasPaymentCapability` narrows a gateway to the matching port. Codes are snake_case.
  * Runtime: isomorphic
  * Governing contract: ADR 0357 (decisions 2 and 5); ADR 0356 (decision 2); ADR 0231; ADR 0445; ADR 0446; STA-1024.
  */

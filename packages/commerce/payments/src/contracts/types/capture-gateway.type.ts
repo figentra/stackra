@@ -15,7 +15,7 @@ import type { ProviderPayment } from "#contracts/types/provider-payment.type";
  * Capture and void (`PaymentCapability.Capture`).
  *
  * @example
- * if (hasCapability(gateway, PaymentCapability.Capture)) await gateway.capture(request);
+ * if (hasPaymentCapability(gateway, PaymentCapability.Capture)) await gateway.capture(request);
  */
 export interface CaptureGateway {
   /** Takes all or part of an authorised payment. */

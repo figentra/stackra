@@ -1,9 +1,10 @@
 /**
  * Stackra file contract:
- * Purpose: `CapabilityGateways`, which interface each `CarrierCapability` code stands for.
- * Boundary: a type map in the leaf entry; `hasCapability(gateway, code)` narrows a `CarrierGateway` with it.
+ * Purpose: `CarrierCapabilityGateways`, which interface each `CarrierCapability` code stands for.
+ * Boundary: a type map in the leaf entry; `hasCarrierCapability(gateway, code)` narrows a `CarrierGateway` with it.
  * Runtime: isomorphic
- * Governing contract: ADR 0369 (decision 2; open questions 1 and 3).
+ * Governing contract: ADR 0369 (decision 2; open questions 1 and 3); STA-1383 (renamed from
+ *                     `CapabilityGateways`).
  */
 import type { LabelGateway } from "#contracts/types/label-gateway.type";
 import type { PickupGateway } from "#contracts/types/pickup-gateway.type";
@@ -16,9 +17,9 @@ import type { TrackingGateway } from "#contracts/types/tracking-gateway.type";
  * Capability code to interface.
  *
  * @example
- * type Labels = CapabilityGateways["labels"]; // LabelGateway
+ * type Labels = CarrierCapabilityGateways["labels"]; // LabelGateway
  */
-export interface CapabilityGateways {
+export interface CarrierCapabilityGateways {
   /** The gateway for live rates. */
   readonly rates: RateGateway;
 

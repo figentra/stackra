@@ -41,7 +41,7 @@ import type { ConnectedAccountLimits } from "#contracts/ports/connected-account-
 import type { PaymentGateways } from "#contracts/ports/payment-gateways.port";
 import type { PaymentRecords } from "#contracts/ports/payment-records.port";
 import type { AgentCheckoutRequest } from "#contracts/types/agent-checkout-request.type";
-import type { CapabilityGateways } from "#contracts/types/capability-gateways.type";
+import type { PaymentCapabilityGateways } from "#contracts/types/payment-capability-gateways.type";
 import type { CheckoutRequest } from "#contracts/types/checkout-request.type";
 import type { CheckoutSession } from "#contracts/types/checkout-session.type";
 import type { IncrementRequest } from "#contracts/types/increment-request.type";
@@ -63,7 +63,7 @@ import { PaymentUnknownError } from "#core/errors/payment-unknown.error";
 import { PayoutHeldError } from "#core/errors/payout-held.error";
 import { PreVerificationCapExceededError } from "#core/errors/pre-verification-cap-exceeded.error";
 import { ResolutionReasonRequiredError } from "#core/errors/resolution-reason-required.error";
-import { hasCapability } from "#core/functions/has-capability.function";
+import { hasPaymentCapability } from "#core/functions/has-payment-capability.function";
 import { isLostAnswer } from "#core/functions/is-lost-answer.function";
 import { modeOf } from "#core/functions/mode-of.function";
 import { totalOf } from "#core/functions/total-of.function";
@@ -461,7 +461,7 @@ export class PaymentService extends Service {
    */
   async paymentMethods(market: string): Promise<readonly string[] | null> {
     const gateway = await this.gateways.forMarket(market, [PaymentCapability.Checkout]);
-    return hasCapability(gateway, PaymentCapability.Methods) ? gateway.paymentMethods() : null;
+    return hasPaymentCapability(gateway, PaymentCapability.Methods) ? gateway.paymentMethods() : null;
   }
 
   /**
@@ -549,7 +549,7 @@ export class PaymentService extends Service {
   private async onToken<K extends "tokens" | "pre_auth">(
     request: TokenCharge,
     capability: K,
-    call: (gateway: CapabilityGateways[K]) => Promise<ProviderPayment>,
+    call: (gateway: PaymentCapabilityGateways[K]) => Promise<ProviderPayment>,
   ): Promise<PaymentRecord> {
     if (request.initiator === ChargeInitiator.Merchant && !request.method.merchantInitiated)
       throw MerchantInitiatedNotAllowedError.create({ reference: request.reference });
@@ -606,8 +606,8 @@ export class PaymentService extends Service {
   private capable<K extends PaymentCapability>(
     gateway: PaymentGateway,
     capability: K,
-  ): PaymentGateway & CapabilityGateways[K] {
-    if (hasCapability(gateway, capability)) return gateway;
+  ): PaymentGateway & PaymentCapabilityGateways[K] {
+    if (hasPaymentCapability(gateway, capability)) return gateway;
     throw CapabilityUnsupportedError.create({ provider: gateway.provider, capability });
   }
 

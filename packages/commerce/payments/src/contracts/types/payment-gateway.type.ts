@@ -5,7 +5,7 @@
  * Boundary: an interface a provider's `Connection` class implements, not a container port: the tenant's or the
  *           platform's Connection chooses the provider per call (ADR 0356 decision 2), so the driver is the connection
  *           itself, reached through `PaymentGateways`. The optional ports (`CaptureGateway`, `TokenGateway` and the rest) are
- *           narrowed to with `hasCapability`. `mode` is the connection's `mode` field (`own-key` when absent).
+ *           narrowed to with `hasPaymentCapability`. `mode` is the connection's `mode` field (`own-key` when absent).
  * Runtime: isomorphic
  * Governing contract: ADR 0357 (decisions 1, 2, 5 and 6); ADR 0356 (decision 2); ADR 0358 (decision 3).
  */

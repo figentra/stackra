@@ -10,7 +10,7 @@ import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
 import * as contracts from "#contracts/index";
 import type {
-  CapabilityGateways,
+  PaymentCapabilityGateways,
   IncrementalAuthGateway,
   MethodsGateway,
   PaymentConnectionMode,
@@ -47,13 +47,13 @@ describe("@stackra/payments/contracts", () => {
   });
 
   it("maps each capability to its port", () => {
-    expectTypeOf<CapabilityGateways["tokens"]>().toEqualTypeOf<TokenGateway>();
-    expectTypeOf<CapabilityGateways["methods"]>().toEqualTypeOf<MethodsGateway>();
-    expectTypeOf<CapabilityGateways["restricted_tender"]>().toEqualTypeOf<PaymentGateway>();
-    expectTypeOf<CapabilityGateways["terminal_pin"]>().toEqualTypeOf<TerminalGateway>();
-    expectTypeOf<CapabilityGateways["soft_pos"]>().toEqualTypeOf<TerminalGateway>();
-    expectTypeOf<CapabilityGateways["pre_auth"]>().toEqualTypeOf<PreAuthGateway>();
-    expectTypeOf<CapabilityGateways["incremental_auth"]>().toEqualTypeOf<IncrementalAuthGateway>();
+    expectTypeOf<PaymentCapabilityGateways["tokens"]>().toEqualTypeOf<TokenGateway>();
+    expectTypeOf<PaymentCapabilityGateways["methods"]>().toEqualTypeOf<MethodsGateway>();
+    expectTypeOf<PaymentCapabilityGateways["restricted_tender"]>().toEqualTypeOf<PaymentGateway>();
+    expectTypeOf<PaymentCapabilityGateways["terminal_pin"]>().toEqualTypeOf<TerminalGateway>();
+    expectTypeOf<PaymentCapabilityGateways["soft_pos"]>().toEqualTypeOf<TerminalGateway>();
+    expectTypeOf<PaymentCapabilityGateways["pre_auth"]>().toEqualTypeOf<PreAuthGateway>();
+    expectTypeOf<PaymentCapabilityGateways["incremental_auth"]>().toEqualTypeOf<IncrementalAuthGateway>();
   });
 
   it("types the four connection modes", () => {

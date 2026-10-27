@@ -14,7 +14,7 @@ import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
 import * as entry from "#contracts/index";
 import type {
-  CapabilityGateways,
+  CarrierCapabilityGateways,
   CarrierCapability as CarrierCapabilityCode,
   CarrierEvent,
   CarrierGateway,
@@ -167,13 +167,13 @@ describe("@stackra/shipping/contracts", () => {
   });
 
   it("maps each capability code to its gateway interface", () => {
-    expectTypeOf<CapabilityGateways["rates"]>().toEqualTypeOf<RateGateway>();
-    expectTypeOf<CapabilityGateways["labels"]>().toEqualTypeOf<LabelGateway>();
-    expectTypeOf<CapabilityGateways["pickups"]>().toEqualTypeOf<PickupGateway>();
-    expectTypeOf<CapabilityGateways["tracking"]>().toEqualTypeOf<TrackingGateway>();
-    expectTypeOf<CapabilityGateways["pickup_points"]>().toEqualTypeOf<PickupPointGateway>();
-    expectTypeOf<CapabilityGateways["returns"]>().toEqualTypeOf<ReturnLabelGateway>();
-    expectTypeOf<keyof CapabilityGateways>().toEqualTypeOf<CarrierCapabilityCode>();
+    expectTypeOf<CarrierCapabilityGateways["rates"]>().toEqualTypeOf<RateGateway>();
+    expectTypeOf<CarrierCapabilityGateways["labels"]>().toEqualTypeOf<LabelGateway>();
+    expectTypeOf<CarrierCapabilityGateways["pickups"]>().toEqualTypeOf<PickupGateway>();
+    expectTypeOf<CarrierCapabilityGateways["tracking"]>().toEqualTypeOf<TrackingGateway>();
+    expectTypeOf<CarrierCapabilityGateways["pickup_points"]>().toEqualTypeOf<PickupPointGateway>();
+    expectTypeOf<CarrierCapabilityGateways["returns"]>().toEqualTypeOf<ReturnLabelGateway>();
+    expectTypeOf<keyof CarrierCapabilityGateways>().toEqualTypeOf<CarrierCapabilityCode>();
   });
 
   it("lets one connection implement every gateway", async () => {

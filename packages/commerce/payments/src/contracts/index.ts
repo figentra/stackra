@@ -29,7 +29,7 @@ export { TenderEligibility } from "#contracts/ports/tender-eligibility.port";
 export type { AgentCheckoutRequest } from "#contracts/types/agent-checkout-request.type";
 export type { AgentConfirmation } from "#contracts/types/agent-confirmation.type";
 export type { BalancePart } from "#contracts/types/balance-part.type";
-export type { CapabilityGateways } from "#contracts/types/capability-gateways.type";
+export type { PaymentCapabilityGateways } from "#contracts/types/payment-capability-gateways.type";
 export type { CaptureGateway } from "#contracts/types/capture-gateway.type";
 export type { CaptureRequest } from "#contracts/types/capture-request.type";
 export type { CheckoutRequest } from "#contracts/types/checkout-request.type";

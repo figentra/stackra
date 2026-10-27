@@ -1,9 +1,10 @@
 /**
  * Stackra file contract:
- * Purpose: `CapabilityGateways`, which port each `PaymentCapability` code stands for.
- * Boundary: a type map in the leaf entry; `hasCapability(gateway, code)` narrows a `PaymentGateway` with it.
+ * Purpose: `PaymentCapabilityGateways`, which port each `PaymentCapability` code stands for.
+ * Boundary: a type map in the leaf entry; `hasPaymentCapability(gateway, code)` narrows a `PaymentGateway` with it.
  * Runtime: isomorphic
- * Governing contract: ADR 0357 (decision 2); ADR 0445; ADR 0446; STA-1024.
+ * Governing contract: ADR 0357 (decision 2); ADR 0445; ADR 0446; STA-1024; STA-1383 (renamed from
+ *                     `CapabilityGateways`).
  */
 import type { CaptureGateway } from "#contracts/types/capture-gateway.type";
 import type { DisputeGateway } from "#contracts/types/dispute-gateway.type";
@@ -20,9 +21,9 @@ import type { TokenGateway } from "#contracts/types/token-gateway.type";
  * Capability code to port.
  *
  * @example
- * type Tokens = CapabilityGateways["tokens"]; // TokenGateway
+ * type Tokens = PaymentCapabilityGateways["tokens"]; // TokenGateway
  */
-export interface CapabilityGateways {
+export interface PaymentCapabilityGateways {
   /** A hosted checkout. */
   readonly checkout: PaymentGateway;
 

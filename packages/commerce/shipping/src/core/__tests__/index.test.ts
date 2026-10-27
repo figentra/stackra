@@ -22,7 +22,7 @@ describe("@stackra/shipping", () => {
       "batchZpl",
       "chargeableWeight",
       "dimensionalWeight",
-      "hasCapability",
+      "hasCarrierCapability",
       "labelDocument",
       "normaliseTracking",
     ]);

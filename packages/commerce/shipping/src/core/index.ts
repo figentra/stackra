@@ -14,6 +14,6 @@ export { NoCarrierError } from "#core/errors/no-carrier.error";
 export { batchZpl } from "#core/functions/batch-zpl.function";
 export { chargeableWeight } from "#core/functions/chargeable-weight.function";
 export { dimensionalWeight } from "#core/functions/dimensional-weight.function";
-export { hasCapability } from "#core/functions/has-capability.function";
+export { hasCarrierCapability } from "#core/functions/has-carrier-capability.function";
 export { labelDocument } from "#core/functions/label-document.function";
 export { normaliseTracking } from "#core/functions/normalise-tracking.function";

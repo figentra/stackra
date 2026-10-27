@@ -15,7 +15,7 @@ import type { ProviderPayment } from "#contracts/types/provider-payment.type";
  * Incremental authorisation (`PaymentCapability.IncrementalAuth`).
  *
  * @example
- * if (hasCapability(gateway, PaymentCapability.IncrementalAuth)) await gateway.increment(request);
+ * if (hasPaymentCapability(gateway, PaymentCapability.IncrementalAuth)) await gateway.increment(request);
  */
 export interface IncrementalAuthGateway {
   /** Adds `request.amount` to the hold; the answer's `amount` is the whole hold, tip included. */

@@ -33,6 +33,7 @@ export { Target } from "#core/enums/target.enum";
 export { Tone } from "#core/enums/tone.enum";
 export { backoffDelay } from "#core/functions/backoff-delay.function";
 export { brand } from "#core/functions/brand.function";
+export { capabilityGuard } from "#core/functions/capability-guard.function";
 export { defineApp } from "#core/functions/define-app.function";
 export { definePackage } from "#core/functions/define-package.function";
 export { defineService } from "#core/functions/define-service.function";
