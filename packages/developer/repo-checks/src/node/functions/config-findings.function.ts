@@ -12,6 +12,7 @@ import { join } from "node:path";
 import { checkGitignore } from "#node/functions/check-gitignore.function";
 import { checkJsonConfigs } from "#node/functions/check-json-configs.function";
 import { checkYamlFlowMaps } from "#node/functions/check-yaml-flow-maps.function";
+import { fillTemplateTokens } from "#node/functions/fill-template-tokens.function";
 import { isRepoOwnedYaml } from "#node/functions/is-repo-owned-yaml.function";
 import type { RawFinding } from "#node/types/raw-finding.type";
 import type { RepoContext } from "#node/types/repo-context.type";
@@ -35,7 +36,10 @@ export function configFindings(context: RepoContext): RawFinding[] {
     ...files
       .filter(isRepoOwnedYaml)
       .flatMap((p) =>
-        of("yaml-flow-maps", checkYamlFlowMaps(p, readFileSync(join(root, p), "utf8"))),
+        of(
+          "yaml-flow-maps",
+          checkYamlFlowMaps(p, fillTemplateTokens(p, readFileSync(join(root, p), "utf8"))),
+        ),
       ),
     ...of(
       "gitignore-stackra",

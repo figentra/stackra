@@ -54,6 +54,19 @@ describe("phase runners", () => {
     ]);
   });
 
+  it("configFindings reads a scaffold template as it renders: `port: {{PORT}}` is no flow map there", () => {
+    const yaml = "environments:\n  dev:\n    port: {{PORT}}\n";
+    const context = repo({
+      ".gitignore": ".stackra/\n",
+      "tools/scaffold/templates/apps/docs/runway.yaml": yaml,
+      "apps/docs/runway.yaml": yaml,
+    });
+    // Unrendered, `{{PORT}}` is two nested flow maps.
+    const flowMap =
+      "apps/docs/runway.yaml:3: flow mapping; write a block mapping (YAML standard, STA-299)";
+    expect(configFindings(context).map((f) => f.text)).toEqual([flowMap, flowMap]);
+  });
+
   it("catalogueFindings and docsFindings read the listed files", () => {
     const context = repo({
       "packages/data/demo/assets/lang/fr/a.json": '{ "x": "y" }',

@@ -27,11 +27,17 @@ shape (ADR 0294, 0305). Entries `./contracts` and `.`. ADR 0441 (as amended).
 
 ## Still missing (skeleton)
 
-`CHANGELOG.md`, `LICENSE` and the runway member file come with stackra-12 (STA-957), with the generator. Root
-`runway.yaml`, the category README and the catalogue row are integration asks (stackra-90).
+The runway member file comes with stackra-12 (STA-957), with the generator. Root `runway.yaml`, the category README
+and the catalogue row are integration asks (stackra-90).
 
 ## Rules that fail the build
 
 - A package never imports an app, a service, `encore.dev`/`~encore/*`, or another package's `src/`.
 - Versions are `catalog:<name>` or `workspace:*` only.
 - No TypeScript `enum` (use `Enum.of`), no `#private` fields, no parameter properties.
+
+## PII
+
+| Data | Where | Handling                                                           |
+| ---- | ----- | ------------------------------------------------------------------ |
+| None | —     | This package reads brand kits and writes assets; no personal data. |

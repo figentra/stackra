@@ -25,6 +25,7 @@ import { checkRunwaySchemas } from "#node/functions/check-runway-schemas.functio
 import { checkService } from "#node/functions/check-service.function";
 import { checkTestPlacement } from "#node/functions/check-test-placement.function";
 import { checkWindowSizing } from "#node/functions/check-window-sizing.function";
+import { fillTemplateTokens } from "#node/functions/fill-template-tokens.function";
 import { isExpoAppConfig } from "#node/functions/is-expo-app-config.function";
 import { isMemberSource } from "#node/functions/is-member-source.function";
 import { isRunwayFile } from "#node/functions/is-runway-file.function";
@@ -100,7 +101,7 @@ export async function structureFindings(
         "",
         checkRunwayFiles({
           files: runwayFiles,
-          read: text,
+          read: (p) => fillTemplateTokens(p, text(p)),
           runway,
           services: members
             .map(({ dir }) => dir)
