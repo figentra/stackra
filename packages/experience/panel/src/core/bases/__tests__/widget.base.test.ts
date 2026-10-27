@@ -10,7 +10,8 @@
 import { kindOf } from "@stackra/container";
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
-import { Widget, WidgetBase } from "#core/bases/widget.base";
+import { WidgetBase } from "#core/bases/widget-base.base";
+import { Widget } from "#core/bases/widget.base";
 import { PlacementLayer } from "#core/enums/placement-layer.enum";
 import { Place } from "#core/enums/place.enum";
 import { TimeRange } from "#core/enums/time-range.enum";

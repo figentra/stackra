@@ -13,16 +13,11 @@
 import { createKind } from "@stackra/container";
 import { ApiArea, Enum } from "@stackra/contracts";
 
+import { DocumentBase } from "#core/bases/document-base.base";
 import { DocumentKind } from "#core/enums/document-kind.enum";
 import { DocumentLayout } from "#core/enums/document-layout.enum";
 import { TimeRange } from "#core/enums/time-range.enum";
 import type { DocumentOptions } from "#core/types/document-options.type";
-
-/** The instance side of a document: data only, so nothing beyond the kind brand. */
-export abstract class DocumentBase {
-  /** Type-only kind brand, so a class of another kind cannot stand in for a document. */
-  declare protected readonly "~kind": "document";
-}
 
 /** The one called form. */
 type DocumentForm = (options: DocumentOptions) => abstract new () => DocumentBase;

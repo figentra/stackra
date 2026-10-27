@@ -13,13 +13,13 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 15); ADR 0307; the STA-347 stand-in barrel decision.
  */
-export type { DocumentBase } from "#core/bases/document.base";
+export type { DocumentBase } from "#core/bases/document-base.base";
 export { Document } from "#core/bases/document.base";
-export type { PanelBase } from "#core/bases/panel.base";
+export type { PanelBase } from "#core/bases/panel-base.base";
 export { Panel } from "#core/bases/panel.base";
-export type { ResourceBase } from "#core/bases/resource.base";
+export type { ResourceBase } from "#core/bases/resource-base.base";
 export { Resource } from "#core/bases/resource.base";
-export type { WidgetBase } from "#core/bases/widget.base";
+export type { WidgetBase } from "#core/bases/widget-base.base";
 export { Widget } from "#core/bases/widget.base";
 export { Bind } from "#core/constants/bind.constant";
 export { Blocks } from "#core/constants/blocks.constant";

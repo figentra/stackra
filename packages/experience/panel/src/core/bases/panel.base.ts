@@ -13,13 +13,8 @@
 import { createKind } from "@stackra/container";
 import { ApiArea, Enum } from "@stackra/contracts";
 
+import { PanelBase } from "#core/bases/panel-base.base";
 import type { PanelOptions } from "#core/types/panel-options.type";
-
-/** The instance side of a panel: data only, so nothing beyond the kind brand. */
-export abstract class PanelBase {
-  /** Type-only kind brand, so a class of another kind cannot stand in for a panel. */
-  declare protected readonly "~kind": "panel";
-}
 
 /** The one called form. */
 type PanelForm = (options: PanelOptions) => abstract new () => PanelBase;

@@ -14,68 +14,11 @@
 import { createKind, type WithPartner } from "@stackra/container";
 import { ApiArea, Enum } from "@stackra/contracts";
 
-import type { Actions } from "#core/types/actions.type";
-import type { Built } from "#core/types/built.type";
-import type { Form } from "#core/types/form.type";
-import type { FormNode } from "#core/types/form-node.type";
-import type { Infolist } from "#core/types/infolist.type";
-import type { InfolistNode } from "#core/types/infolist-node.type";
-import type { PlacementNode } from "#core/types/placement-node.type";
-import type { RelationNode } from "#core/types/relation-node.type";
-import type { Relations } from "#core/types/relations.type";
+import { ResourceBase } from "#core/bases/resource-base.base";
 import type { ResourceOptions } from "#core/types/resource-options.type";
-import type { Table } from "#core/types/table.type";
-import type { TableNode } from "#core/types/table-node.type";
-import type { ViewNode } from "#core/types/view-node.type";
-import type { Views } from "#core/types/views.type";
 
 /** The operation names a resource may declare. */
 const OPERATIONS: ReadonlySet<string> = new Set(["list", "get", "create", "update", "delete"]);
-
-/**
- * The instance side every resource shares: one optional member per builder. A member the class does not override
- * records nothing.
- */
-export abstract class ResourceBase<M extends object, R extends object = M> {
-  /** Type-only kind brand, so a class of another kind cannot stand in for a resource. */
-  declare protected readonly "~kind": "resource";
-
-  /** Type-only: the model the resource is the surface of. */
-  declare protected readonly "~subject"?: M;
-
-  /** The list table; keys are paths of the row `R`. */
-  table(_table: Table<R>): Built<TableNode> | undefined {
-    return undefined;
-  }
-
-  /** The preset views beside the Default view. */
-  views(_views: Views<R>): readonly Built<ViewNode>[] | undefined {
-    return undefined;
-  }
-
-  /**
-   * The Create (and Edit) form. Its parameter is typed by the override (`Form<CreateInput<M>>`, or the create action's
-   * input), so the base takes any form.
-   */
-  form(_form: Form<never>): Built<FormNode> | undefined {
-    return undefined;
-  }
-
-  /** The View page's infolist. */
-  infolist(_infolist: Infolist<R>): Built<InfolistNode> | undefined {
-    return undefined;
-  }
-
-  /** The View page's relation managers. */
-  relations(_relations: Relations<R>): readonly Built<RelationNode>[] | undefined {
-    return undefined;
-  }
-
-  /** The buttons: action runs, export, import and create. */
-  actions(_actions: Actions<R, R>): readonly Built<PlacementNode>[] | undefined {
-    return undefined;
-  }
-}
 
 /** What a called form without its type argument fails with. */
 type Hint =

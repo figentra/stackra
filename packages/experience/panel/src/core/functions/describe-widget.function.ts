@@ -9,7 +9,7 @@
  */
 import { kindOf, type AnyClass } from "@stackra/container";
 
-import type { WidgetBase } from "#core/bases/widget.base";
+import type { WidgetBase } from "#core/bases/widget-base.base";
 import { PlacementLayer } from "#core/enums/placement-layer.enum";
 import { DisplayRecord } from "#core/records/display.record";
 import type { WidgetOptions } from "#core/types/widget-options.type";

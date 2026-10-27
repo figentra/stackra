@@ -9,7 +9,7 @@
  */
 import { kindOf, type AnyClass } from "@stackra/container";
 
-import type { ResourceBase } from "#core/bases/resource.base";
+import type { ResourceBase } from "#core/bases/resource-base.base";
 import { ActionsRecord } from "#core/records/actions.record";
 import { FormRecord } from "#core/records/form.record";
 import { InfolistRecord } from "#core/records/infolist.record";
@@ -38,7 +38,8 @@ export function describeResource(type: AnyClass): ResourceTree {
   const self = Object.create(type.prototype as object) as ResourceBase<object, object>;
   const table = self.table(new TableRecord<object>())?.toNode();
   const views = nodesOf(self.views(new ViewsRecord<object>()));
-  const form = self.form(new FormRecord<never>())?.toNode();
+  // The base's `form` parameter is `never` (the override types it), so the record is handed over as such.
+  const form = self.form(new FormRecord<never>() as never)?.toNode();
   const infolist = self.infolist(new InfolistRecord<object>())?.toNode();
   const relations = nodesOf(self.relations(new RelationsRecord<object>()));
   const actions = nodesOf(self.actions(new ActionsRecord<object, object>()));

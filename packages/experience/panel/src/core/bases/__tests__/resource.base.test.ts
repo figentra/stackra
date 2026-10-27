@@ -12,7 +12,8 @@ import { ApiArea, SortDirection } from "@stackra/contracts";
 import type { I18nKey } from "@stackra/i18n";
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
-import { Resource, ResourceBase } from "#core/bases/resource.base";
+import { ResourceBase } from "#core/bases/resource-base.base";
+import { Resource } from "#core/bases/resource.base";
 import { Bind } from "#core/constants/bind.constant";
 import { DateRange } from "#core/constants/date-range.constant";
 import { ActionPlace } from "#core/enums/action-place.enum";

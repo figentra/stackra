@@ -9,7 +9,8 @@ import { kindOf } from "@stackra/container";
 import { ApiArea } from "@stackra/contracts";
 import { describe, expect, it } from "@stackra/testing";
 
-import { Panel, PanelBase } from "#core/bases/panel.base";
+import { PanelBase } from "#core/bases/panel-base.base";
+import { Panel } from "#core/bases/panel.base";
 
 describe("Panel", () => {
   it("records its mount path and area", () => {

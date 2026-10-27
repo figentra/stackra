@@ -10,7 +10,8 @@ import { kindOf } from "@stackra/container";
 import { ApiArea } from "@stackra/contracts";
 import { describe, expect, it } from "@stackra/testing";
 
-import { Document, DocumentBase } from "#core/bases/document.base";
+import { DocumentBase } from "#core/bases/document-base.base";
+import { Document } from "#core/bases/document.base";
 import { Blocks } from "#core/constants/blocks.constant";
 import { DocumentKind } from "#core/enums/document-kind.enum";
 import { DocumentLayout } from "#core/enums/document-layout.enum";

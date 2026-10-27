@@ -10,6 +10,7 @@
  * Runtime: browser
  * Governing contract: ADR 0424 (decisions 1 and 2); owner RV-22; WCAG 2.2 SC 1.4.1 and 4.1.2.
  */
+import type { I18nKey } from "@stackra/i18n";
 import { useTranslation } from "@stackra/i18n/react";
 import { Button, Card, Icon, IconButton, ProgressBar, Text } from "@stackra/ui/react";
 import type { ReactElement } from "react";
@@ -50,7 +51,8 @@ export function OnboardingChecklist({
         />
         <ol className="mt-3 flex flex-col divide-y divide-separator">
           {view.steps.map((step, index) => {
-            const label = t(step.label);
+            // The steps come from the template's data at runtime, so their lang keys arrive as strings.
+            const label = t(step.label as I18nKey);
             const canCustomise = !step.locked;
             return (
               <li key={step.key} data-step={step.key} className="flex items-center gap-3 py-3">
@@ -65,7 +67,7 @@ export function OnboardingChecklist({
                   </Text>
                   {step.description === undefined ? null : (
                     <Text type="small" tone="muted">
-                      {t(step.description)}
+                      {t(step.description as I18nKey)}
                     </Text>
                   )}
                   {step.locked ? (

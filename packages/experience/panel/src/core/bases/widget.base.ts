@@ -13,7 +13,6 @@
  * Governing contract: ADR 0307 (rules 14 to 19); ADR 0306 (rules 6 to 8 and the layer table); ADR 0336 (decision 4);
  *                     ADR 0305 (rules 5, 8, 43, 44 and 46); ADR 0294 (decisions 16 and 25).
  */
-import type { OutputOf } from "@stackra/actions";
 import {
   createKind,
   kindOf,
@@ -24,11 +23,11 @@ import {
 import { Duration, Enum } from "@stackra/contracts";
 import { duration } from "@stackra/validation";
 
+import { WidgetBase } from "#core/bases/widget-base.base";
 import { PlacementLayer } from "#core/enums/placement-layer.enum";
 import { TimeRange } from "#core/enums/time-range.enum";
 import { WidgetSize } from "#core/enums/widget-size.enum";
 import type { Built } from "#core/types/built.type";
-import type { Display } from "#core/types/display.type";
 import type { DisplayNode } from "#core/types/display-node.type";
 import type { SlotRef } from "#core/types/slot-ref.type";
 import type { WidgetOptions } from "#core/types/widget-options.type";
@@ -47,20 +46,14 @@ const PLACEMENT_LAYERS: readonly string[] = [
   PlacementLayer.App,
 ];
 
-/** The instance side every widget shares: the display it presents its query's answer with. */
-export abstract class WidgetBase<Q extends object> {
-  /** Type-only kind brand, so a class of another kind cannot stand in for a widget. */
-  declare protected readonly "~kind": "widget";
-
-  /** Type-only: the query the widget is bound to. */
-  declare protected readonly "~query"?: Q;
-
-  /** The display, every path a key of the query's output. */
-  abstract display(display: Display<OutputOf<Q>>): Built<DisplayNode>;
-}
-
 /** What a called form without its type argument fails with. */
 type Hint = "Name the query as a type argument: Widget<OrderKpisQuery>({ ... })";
+
+/**
+ * A class `Widget.place` takes: one whose instances present a display. Not `WidgetBase<never>`, which no widget is
+ * (its type-only `~query` takes the query, and no query is `never`); `place` refuses a class that is no widget.
+ */
+type PlaceableWidget = AnyClass<{ display(display: never): Built<DisplayNode> }>;
 
 /** The called form and the placement shadow. */
 interface WidgetForm {
@@ -70,7 +63,7 @@ interface WidgetForm {
   ): abstract new () => WidgetBase<Q>;
 
   /** A placement shadow of `base`: the same widget, moved. */
-  place<W extends AnyClass<WidgetBase<never>>>(base: W, options: WidgetPlaceOptions): W;
+  place<W extends PlaceableWidget>(base: W, options: WidgetPlaceOptions): W;
 }
 
 /** Whether `slot` is absent, `null` or a slot ref. */
@@ -125,7 +118,7 @@ function read(options: WidgetOptions<object> = {}) {
  *
  * @throws TypeError when `base` is not a widget class, or `options` changes something a placement may not.
  */
-function place<W extends AnyClass<WidgetBase<never>>>(base: W, options: WidgetPlaceOptions): W {
+function place<W extends PlaceableWidget>(base: W, options: WidgetPlaceOptions): W {
   const owner = kindOf(base);
   if (owner?.kind !== "widget")
     throw new TypeError("Widget.place(Base, { ... }) places a widget class");

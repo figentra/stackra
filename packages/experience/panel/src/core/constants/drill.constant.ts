@@ -6,7 +6,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0307 (rule 15: the display adds a drill-down).
  */
-import type { ResourceBase } from "#core/bases/resource.base";
+import type { ResourceBase } from "#core/bases/resource-base.base";
 import type { DrillNode } from "#core/types/drill-node.type";
 import type { Path } from "#core/types/path.type";
 
