@@ -36,6 +36,7 @@ class SiteI18nConfig extends I18nConfig {
 
 class UserDigitsConfig extends SiteI18nConfig {
   override locales: Locale[] = [Locale.En, Locale.Ar, Locale.ArEg];
+
   override numerals: NumberingSystem = NumberingSystem.User;
 }
 

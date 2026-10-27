@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 /**
  * Stackra file contract:
  * Purpose: unit tests of `useLocaleChoice()`: `null` before a choice and on the server, `choose` writes the configured
@@ -8,6 +7,7 @@
  * Runtime: node (vitest, jsdom)
  * Governing contract: ADR 0022; ADR 0269; ADR 0297 (decision 4: remembered, never read to redirect).
  */
+// @vitest-environment jsdom
 import { buildConfig } from "@stackra/config";
 import { Container } from "@stackra/container";
 import { ContainerProvider } from "@stackra/container/react";

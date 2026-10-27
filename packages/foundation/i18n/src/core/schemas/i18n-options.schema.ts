@@ -21,15 +21,26 @@ import type { LocaleFormat } from "#core/types/locale-format.type";
 /** The options of `I18nConfig`. */
 export class I18nOptions extends Schema {
   /** Every locale the member ships: base languages and regional overlays. */
-  @List({ min: 1, unique: true })
+  @List({
+    min: 1,
+    unique: true,
+  })
   locales: Locale[] = [Locale.En];
-
-  /** The locale of a visitor nothing else decides for, and the unprefixed web locale. */
-  defaultLocale: Locale = Locale.En;
 
   /** The right-to-left locales: `dir="rtl"`, the native layout flip and one RTL e2e project each. */
   @List({ unique: true })
   rtl: Locale[] = [Locale.Ar, Locale.ArSa, Locale.ArAe, Locale.ArEg];
+
+  /** The cookie the browser writes to remember the visitor's choice; never read to redirect. */
+  @Str({
+    min: 1,
+    max: 64,
+    pattern: /^[A-Za-z0-9_-]+$/,
+  })
+  cookieName = "locale";
+
+  /** The locale of a visitor nothing else decides for, and the unprefixed web locale. */
+  defaultLocale: Locale = Locale.En;
 
   /** Per locale, the locales a missing key falls back to, nearest first (`ar-SA` → `ar` → `en`). */
   fallbacks: Record<string, Locale[]> = {};
@@ -51,8 +62,4 @@ export class I18nOptions extends Schema {
 
   /** Gen fails, instead of warning, on a base locale that misses a namespace. */
   failOnMissingLocale = false;
-
-  /** The cookie the browser writes to remember the visitor's choice; never read to redirect. */
-  @Str({ min: 1, max: 64, pattern: /^[A-Za-z0-9_-]+$/ })
-  cookieName = "locale";
 }
