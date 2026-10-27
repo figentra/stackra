@@ -682,6 +682,9 @@ importers:
       '@stackra/cli':
         specifier: workspace:*
         version: link:../../packages/developer/cli
+      '@stackra/contracts':
+        specifier: workspace:*
+        version: link:../../packages/foundation/contracts
       '@stackra/testing':
         specifier: workspace:*
         version: link:../../packages/developer/testing

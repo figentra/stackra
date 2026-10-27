@@ -101,8 +101,8 @@
       "project": ["src/**/*.ts"],
     },
     "apps/docs": {
-      // Pages are MDX; gen reads src/config/docs.config.ts, and scripts/ holds the system-map writer (ADR 0002, 177).
-      "entry": ["src/config/docs.config.ts", "scripts/**/*.ts"],
+      // Pages are MDX; gen reads stackra.config.ts and src/config/docs.config.ts; scripts/ holds the system-map writer.
+      "entry": ["stackra.config.ts", "src/config/docs.config.ts", "scripts/**/*.ts"],
       "project": ["src/**/*.ts", "scripts/**/*.ts"],
       // `stackra dev` and `stackra lint` run the member's own `mint` (cli resolve-tool), so no script names it.
       "ignoreDependencies": ["mint"],
