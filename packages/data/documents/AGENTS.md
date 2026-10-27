@@ -1,7 +1,9 @@
+<!-- Stackra file contract: Purpose: the agent guide to @stackra/documents. Boundary: this package only. Runtime: docs. Governing contract: ADR 0365; ADR 0356. -->
+
 # AGENTS — @stackra/documents
 
 One print template model, three renderers, signed forms, the PDF engine and assembler ports with their `gotenberg`
-drivers, fiscal's `HybridPdf` binding and the e-signature port (ADR 0365). Member at
+drivers, fiscal's `HybridPdf` binding, the e-signature port (ADR 0365), its `connection` driver and the Documenso connector. Member at
 `packages/data/documents` (`tier:lib`). Entries `.` and `./contracts`.
 
 ## Where code goes
@@ -36,6 +38,12 @@ drivers, fiscal's `HybridPdf` binding and the e-signature port (ADR 0365). Membe
 - A label kind is a `LABEL_PURPOSE` code plus templates, never a renderer branch.
 - `HybridPdfBinding` matches `@stackra/fiscal`'s `HybridPdf` by shape; this package never depends on fiscal.
 - The `gotenberg` drivers use plain `fetch`; every failure is `PdfEngineFailedError` (route and status only).
+- E-signature: `ConnectionESignatureDriver` routes the port through `ProviderResolver` (capability `e-signature`) and
+  prefixes envelope ids `<provider>:<connectionId>:<id>`. A provider here is an Integration and Connection pair in
+  `src/core/drivers/` (`documenso.integration.ts`, `documenso.connection.ts`) whose Connection answers
+  `ESignatureConnection`; other vendors are OS integrations (R3-8). JSON calls go through `connection.api`; only
+  presigned storage URLs use plain `fetch`, and their failures are `ProviderUnavailableError`.
+- The package uses the `decorators` TypeScript and vitest presets for the Connection's `@Secret`.
 
 ## Rules that fail the build
 
@@ -52,9 +60,9 @@ drivers, fiscal's `HybridPdf` binding and the e-signature port (ADR 0365). Membe
 
 ## PII
 
-| Data                         | Where                                    | Handling                                                                                           |
-| ---------------------------- | ---------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| Render data (names, orders)  | `renderDocument`, `resolveDocument`      | Read by path into the output only; never logged, never put in a refusal (paths only).              |
-| Drawn signature, signer name | `signForm`, `SignedForm`                 | Placed in the PDF and returned; the caller stores and audits it. The signature is hashed.          |
-| Signer contacts              | `SignatureRequest`, `ESignatureProvider` | Sent only to the provider the tenant's Connection names; the memory driver keeps it in memory.     |
-| Rendered documents, invoices | `PdfEngine`, `PdfAssembler` drivers      | Sent only to the engine at the deployment's `GotenbergEndpoint`; never logged or put in a refusal. |
+| Data                         | Where                                    | Handling                                                                                             |
+| ---------------------------- | ---------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| Render data (names, orders)  | `renderDocument`, `resolveDocument`      | Read by path into the output only; never logged, never put in a refusal (paths only).                |
+| Drawn signature, signer name | `signForm`, `SignedForm`                 | Placed in the PDF and returned; the caller stores and audits it. The signature is hashed.            |
+| Signer contacts              | `SignatureRequest`, `ESignatureProvider` | Sent only to the provider the scope's Connection names (Documenso: name, email); never in a refusal. |
+| Rendered documents, invoices | `PdfEngine`, `PdfAssembler` drivers      | Sent only to the engine at the deployment's `GotenbergEndpoint`; never logged or put in a refusal.   |

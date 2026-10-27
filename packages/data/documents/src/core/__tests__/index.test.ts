@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: the consumer contract of the `.` entry: the constants, the memory and gotenberg drivers, the hybrid PDF
- *          binding, the format enum, the seven refusals and the public functions are exported and nothing else is (no internal helper, no port); the
+ * Purpose: the consumer contract of the `.` entry: the constants, the memory, connection and gotenberg drivers, the Documenso Integration and Connection, the hybrid PDF
+ *          binding, the format enum, the eight refusals and the public functions are exported and nothing else is (no internal helper, no port); the
  *          public types resolve.
  * Boundary: test only; imports the stand-in barrel through its `#core` alias.
  * Runtime: node (vitest)
@@ -13,6 +13,7 @@ import * as documents from "#core/index";
 import type {
   CurrencyWords,
   DocumentTemplate,
+  ESignatureConnection,
   GotenbergEndpoint,
   ImageAsset,
   ParsedDocumentTemplate,
@@ -30,8 +31,11 @@ describe("@stackra/documents", () => {
     expect(Object.keys(documents).sort()).toEqual([
       "AmountWordsUnavailableError",
       "CURRENCY_WORDS_SCHEMA",
+      "ConnectionESignatureDriver",
       "DOCUMENT_TEMPLATE_SCHEMA",
       "DocumentFormat",
+      "DocumensoConnection",
+      "DocumensoIntegration",
       "DocumentValueError",
       "GotenbergPdfAssemblerDriver",
       "GotenbergPdfEngineDriver",
@@ -44,6 +48,7 @@ describe("@stackra/documents", () => {
       "SignatureEnvelopeClosedError",
       "SignatureEnvelopeNotFoundError",
       "SignatureNotCompleteError",
+      "SignatureSignerUnreachableError",
       "contentHashOf",
       "encodeEan13",
       "encodeQr",
@@ -69,6 +74,9 @@ describe("@stackra/documents", () => {
       "single" | "side-by-side" | "stacked"
     >();
     expectTypeOf<CurrencyWords["exponent"]>().toEqualTypeOf<number>();
+    expectTypeOf<ESignatureConnection["send"]>().toEqualTypeOf<
+      documents.DocumensoConnection["send"]
+    >();
     expectTypeOf<GotenbergEndpoint["timeoutMs"]>().toEqualTypeOf<number>();
     expectTypeOf<ImageAsset["mediaType"]>().toEqualTypeOf<"image/png" | "image/jpeg">();
     expectTypeOf<QrMatrix>().toEqualTypeOf<readonly (readonly boolean[])[]>();

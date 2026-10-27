@@ -2,7 +2,7 @@
   "name": "@stackra/documents",
   "version": "0.0.0",
   "private": true,
-  "description": "Stackra documents: one print-document template model rendered to HTML, PDF (through the PdfEngine port) and DOCX, with bilingual layouts, bidi isolation, Arabic shaping for devices that cannot shape, QR codes, amounts in words, signed form PDFs with a content hash and the ESignatureProvider port",
+  "description": "Stackra documents: one print-document template model rendered to HTML, PDF (through the PdfEngine port) and DOCX, with bilingual layouts, bidi isolation, Arabic shaping for devices that cannot shape, QR codes, amounts in words, signed form PDFs with a content hash, the ESignatureProvider port and its Documenso connector",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -59,9 +59,11 @@
     "clean": "rm -rf dist coverage .turbo"
   },
   "dependencies": {
+    "@stackra/config": "workspace:*",
     "@stackra/container": "workspace:*",
     "@stackra/contracts": "workspace:*",
     "@stackra/errors": "workspace:*",
+    "@stackra/integrations": "workspace:*",
     "docx": "catalog:documents",
     "uqr": "catalog:documents",
     "zod": "catalog:"

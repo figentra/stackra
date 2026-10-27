@@ -1,32 +1,36 @@
+<!-- Stackra file contract: Purpose: the guide to @stackra/documents. Boundary: describes this package only. Runtime: docs. Governing contract: ADR 0365; ADR 0356. -->
+
 # @stackra/documents
 
 One print-document template model rendered to HTML, PDF and DOCX ([ADR 0365](../../../apps/docs/src/adr/0365-documents-one-print-template-model-three-renderers-and-the-e-signature-port.mdx)).
 A template is studio data of the builder kind `print` (ADR 0270): page, one or two locales, a bilingual layout and
 blocks. Receipts, invoices, packing slips, labels, line sheets, certificates, report cards, letters and signed forms are
 templates, never code. This package also holds the `PdfEngine`, `PdfAssembler` and `ESignatureProvider` ports, the
-`gotenberg` drivers of the two PDF ports, and the binding of `@stackra/fiscal`'s `HybridPdf`.
+`gotenberg` drivers of the two PDF ports, the binding of `@stackra/fiscal`'s `HybridPdf`, and the default e-signature
+connector, Documenso self-hosted.
 
-**Tier:** `tier:lib` (`packages/data/documents`). Entries `.` and `./contracts`. Depends on `@stackra/container`,
-`@stackra/contracts`, `@stackra/errors`, `zod`, `docx` (DOCX writing) and `uqr` (QR encoding).
+**Tier:** `tier:lib` (`packages/data/documents`). Entries `.` and `./contracts`. Depends on `@stackra/config`, `@stackra/container`,
+`@stackra/contracts`, `@stackra/errors`, `@stackra/integrations`, `zod`, `docx` (DOCX writing) and `uqr` (QR encoding).
 
 ## What is here
 
-| Symbol                                                                              | Use                                                                                                                                                                                   |
-| ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `renderDocument`                                                                    | template + data → HTML, PDF (through `PdfEngine`) or DOCX, with content hash                                                                                                          |
-| `parseDocumentTemplate`, `resolveDocument`                                          | the steps: check the template, fill it with data                                                                                                                                      |
-| `renderHtml`, `renderDocx`                                                          | the renderers of a resolved document                                                                                                                                                  |
-| `signForm`, `verifyContentHash`, `contentHashOf`                                    | a form signed on a device as a PDF with its hashes; checking a stored file                                                                                                            |
-| `spellAmount`                                                                       | an amount in words (tafqeet), with the currency's names from the market pack                                                                                                          |
-| `encodeQr`, `encodeEan13`                                                           | the QR matrix of a text; the bars and digits of an EAN-13 (GTIN) barcode                                                                                                              |
-| `shapeArabic`, `toVisualOrder`                                                      | Arabic shaping and bidi order for printers and displays that cannot do it                                                                                                             |
-| `MemoryESignatureDriver`                                                            | the `memory` driver of `ESignatureProvider` (tests, sandboxes)                                                                                                                        |
-| `GotenbergPdfEngineDriver`, `GotenbergPdfAssemblerDriver`                           | the `gotenberg` drivers of `PdfEngine` (headless Chromium, shapes Arabic) and `PdfAssembler` (merge, Factur-X hybrid), given a `GotenbergEndpoint`                                    |
-| `HybridPdfBinding`                                                                  | fiscal's `HybridPdf` (`attach`) made by the bound `PdfAssembler`                                                                                                                      |
-| `LABEL_PURPOSE`                                                                     | the purpose codes of the shelf, food and short-dated label templates                                                                                                                  |
-| `DocumentFormat`, `PRINT_DOCUMENT_KIND`, the two schemas                            | the format enum with media types, the kind code, the shipped zod schemas                                                                                                              |
-| seven refusals                                                                      | `invalid_document_template`, `document_value`, `amount_words_unavailable`, `signature_envelope_not_found`, `signature_not_complete`, `signature_envelope_closed`, `pdf_engine_failed` |
-| `./contracts`: `PdfEngine`, `PdfAssembler`, `ESignatureProvider`, `SignatureStatus` | the ports and the normalised envelope status                                                                                                                                          |
+| Symbol                                                                              | Use                                                                                                                                                                                                                   |
+| ----------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `renderDocument`                                                                    | template + data → HTML, PDF (through `PdfEngine`) or DOCX, with content hash                                                                                                                                          |
+| `parseDocumentTemplate`, `resolveDocument`                                          | the steps: check the template, fill it with data                                                                                                                                                                      |
+| `renderHtml`, `renderDocx`                                                          | the renderers of a resolved document                                                                                                                                                                                  |
+| `signForm`, `verifyContentHash`, `contentHashOf`                                    | a form signed on a device as a PDF with its hashes; checking a stored file                                                                                                                                            |
+| `spellAmount`                                                                       | an amount in words (tafqeet), with the currency's names from the market pack                                                                                                                                          |
+| `encodeQr`, `encodeEan13`                                                           | the QR matrix of a text; the bars and digits of an EAN-13 (GTIN) barcode                                                                                                                                              |
+| `shapeArabic`, `toVisualOrder`                                                      | Arabic shaping and bidi order for printers and displays that cannot do it                                                                                                                                             |
+| `MemoryESignatureDriver`                                                            | the `memory` driver of `ESignatureProvider` (tests, sandboxes)                                                                                                                                                        |
+| `ConnectionESignatureDriver`, `DocumensoIntegration`, `DocumensoConnection`         | the `connection` driver of `ESignatureProvider` (ADR 0356 per call) and the Documenso connector it routes to                                                                                                          |
+| `GotenbergPdfEngineDriver`, `GotenbergPdfAssemblerDriver`                           | the `gotenberg` drivers of `PdfEngine` (headless Chromium, shapes Arabic) and `PdfAssembler` (merge, Factur-X hybrid), given a `GotenbergEndpoint`                                                                    |
+| `HybridPdfBinding`                                                                  | fiscal's `HybridPdf` (`attach`) made by the bound `PdfAssembler`                                                                                                                                                      |
+| `LABEL_PURPOSE`                                                                     | the purpose codes of the shelf, food and short-dated label templates                                                                                                                                                  |
+| `DocumentFormat`, `PRINT_DOCUMENT_KIND`, the two schemas                            | the format enum with media types, the kind code, the shipped zod schemas                                                                                                                                              |
+| eight refusals                                                                      | `invalid_document_template`, `document_value`, `amount_words_unavailable`, `signature_envelope_not_found`, `signature_not_complete`, `signature_envelope_closed`, `signature_signer_unreachable`, `pdf_engine_failed` |
+| `./contracts`: `PdfEngine`, `PdfAssembler`, `ESignatureProvider`, `SignatureStatus` | the ports and the normalised envelope status                                                                                                                                                                          |
 
 ## Rendering
 
@@ -73,6 +77,27 @@ template's font families. Its URL, timeout and headers are the deployment's Conn
 `merge` keeps the caller's order; `hybrid` uses the engine's Factur-X route, which embeds the XML, writes the XMP
 facts and converts to PDF/A-3b (the engine names the file `factur-x.xml`, or `xrechnung.xml` for XRECHNUNG).
 
+## E-signature
+
+`ConnectionESignatureDriver` binds `ESignatureProvider` to the provider ADR 0356 picks for the capability
+`e-signature`: the scope's own Connection, else the Market's platform one. The default connector is Documenso,
+self-hosted (owner decision R2-6): a `DocumensoConnection` holds the instance's `host`, its API key (`@Secret`
+`DOCUMENSO_API_KEY`) and `timeoutMs` for the PDF upload and download.
+
+```ts
+import { ConnectionESignatureDriver, DocumensoConnection } from "@stackra/documents";
+import { SignatureStatus } from "@stackra/documents/contracts";
+
+const provider = new ConnectionESignatureDriver(resolver, { documenso: DocumensoConnection });
+const envelope = await provider.send(request); // id "documenso:conn_…:42"
+if ((await provider.status(envelope.id)).status === SignatureStatus.Signed)
+  await files.store(await provider.download(envelope.id));
+```
+
+Documenso signs by email link, so every signer needs an email (`signature_signer_unreachable` otherwise). A cancelled
+envelope is deleted at Documenso, so a later `status` is not found. **Certification pending:** written from
+Documenso's public API v1 documentation and recorded answers; not yet run against a live instance.
+
 ## Labels
 
 Shelf, food and short-dated labels are templates with a `purpose` of `LABEL_PURPOSE.Shelf`, `.Food` or `.ShortDated`.
@@ -90,6 +115,7 @@ tenant's Connection or the Market's default (ADR 0356), and its price is a rate 
 
 - Other PDF engines: another `PdfEngine` or `PdfAssembler` driver lives with the runtime that hosts its engine.
 - Hosting the engine: the Gotenberg container is the deployment's (runway), not this package's.
-- E-signature providers: integrations connectors implement `ESignatureProvider`.
+- Other e-signature providers (DocuSign, Nafath, UAE Pass): Connections in the OS integrations service (R3-8), passed
+  to `ConnectionESignatureDriver` in the host's map.
 - Tax QR payloads and e-invoice XML: `@stackra/fiscal`. Storing, versioning and watermarking files: OS files.
 - The studio surface of the `print` kind: `@stackra/builder`.

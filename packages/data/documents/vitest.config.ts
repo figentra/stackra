@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: test config of @stackra/documents: the vitest preset plus the shared coverage gate. `test` runs the unit
+ * Purpose: test config of @stackra/documents: the decorators vitest preset (the Documenso Connection's `@Secret`) plus the shared coverage gate. `test` runs the unit
  *          tier (`<subject>.test.ts` in `__tests__/`); the infixed tiers (`.int`, `.contract`, `.e2e`, `.load`) run
  *          under their own tasks, so they are excluded here.
  * Boundary: test configuration only; a tool config gen will write into `.stackra/` (ADR 0295 decision 5).
@@ -8,11 +8,11 @@
  * Governing contract: ADR 0182 (test tiers and coverage); ADR 0022 (test placement).
  */
 import { withCoverage } from "@stackra/vitest-config/coverage";
-import { stackraVitest } from "@stackra/vitest-config/preset";
+import { stackraVitestDecorators } from "@stackra/vitest-config/preset-decorators";
 import { defineConfig, mergeConfig } from "vitest/config";
 
 export default mergeConfig(
-  stackraVitest,
+  stackraVitestDecorators,
   defineConfig(
     withCoverage({
       test: {

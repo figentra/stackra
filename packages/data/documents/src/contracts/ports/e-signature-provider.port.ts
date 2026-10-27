@@ -5,7 +5,7 @@
  * Boundary: an abstract class that is its own token, keyed `documents.ESignatureProvider`. The provider for a call is
  *           chosen by the tenant's Connection, else the Market's platform default (ADR 0356); which providers a market
  *           offers is market-pack data and the price is a rate card, never code. Drivers are integrations connectors;
- *           this package ships only the `memory` driver. `send` is idempotent on `reference`. `download` before
+ *           this package ships the `memory` driver and the `connection` driver with the Documenso connector. `send` is idempotent on `reference`. `download` before
  *           `signed` throws `SignatureNotCompleteError`; an unknown id throws `SignatureEnvelopeNotFoundError`;
  *           cancelling a closed envelope throws `SignatureEnvelopeClosedError` (all from `.`).
  * Runtime: isomorphic
