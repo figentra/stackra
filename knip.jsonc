@@ -49,24 +49,26 @@
     },
     "packages/*/*": {
       // stackra.config.ts: the member definition gen reads (ADR 0295 decision 1); it imports `definePackage`, so a
-      // member whose src/ never imports @stackra/contracts still uses it.
-      "entry": ["stackra.config.ts"],
+      // member whose src/ never imports @stackra/contracts still uses it. .stackra/: gen's output (wiring, registrations,
+      // module, entries, test setup) imports packages src/ never does, which the member declares for it
+      // (generated_dependency_missing); knip reads it when gen has run.
+      "entry": ["stackra.config.ts", ".stackra/**/*.{ts,tsx}"],
       "project": ["src/**/*.{ts,tsx}"],
     },
     // A member listed by name replaces the packages/*/* entry for it, so it repeats entry and project.
     // vite-plugin ships CSS that knip compiles (Tailwind), so its project includes it.
     "packages/developer/vite-plugin": {
-      "entry": ["stackra.config.ts"],
+      "entry": ["stackra.config.ts", ".stackra/**/*.{ts,tsx}"],
       "project": ["src/**/*.{ts,tsx,css}"],
     },
     "packages/runtime/cache": {
-      "entry": ["stackra.config.ts"],
+      "entry": ["stackra.config.ts", ".stackra/**/*.{ts,tsx}"],
       "project": ["src/**/*.{ts,tsx}"],
       // `cloudflare:workers` is a workerd built-in module (the ./worker entry), not the npm `cloudflare` SDK.
       "ignoreDependencies": ["cloudflare"],
     },
     "packages/developer/mcp": {
-      "entry": ["stackra.config.ts"],
+      "entry": ["stackra.config.ts", ".stackra/**/*.{ts,tsx}"],
       "project": ["src/**/*.{ts,tsx}"],
       // encore: the Encore CLI (brew, mise.toml); stackra: the bin of @stackra/cli, which depends on @stackra/mcp, so
       // the MCP server spawns it from PATH (`pnpm exec stackra mcp`) instead of declaring it (a cycle).
@@ -75,11 +77,13 @@
     "apps/*": {
       // gen finds the root module by name (ADR 0294 R12); src/main.* is the stand-in entry until gen writes it; a
       // component folder's index.ts is its public surface (ADR 0294 decision 14).
-      "entry": ["src/main.{ts,tsx}", "src/*.module.ts", "src/components/*/index.ts"],
+      "entry": [
+        "src/main.{ts,tsx}",
+        "src/*.module.ts",
+        "src/components/*/index.ts",
+        ".stackra/**/*.{ts,tsx}",
+      ],
       "project": ["src/**/*.{ts,tsx,css}"],
-      // @stackra/app: imported only by gen's `.stackra/entry/<runtime>.ts` (gen refuses generated_dependency_missing
-      // without it), which is gen output that does not exist when knip runs.
-      "ignoreDependencies": ["@stackra/app"],
     },
     "apps/mobile": {
       // The design-system review area is reached through `__DEV__ ? require(...)` in the tab navigator, which knip
@@ -88,6 +92,7 @@
         "src/components/ui/component-page.tsx",
         "src/components/ui/display-settings.tsx",
         "src/screens/design-system-screen.tsx",
+        ".stackra/**/*.{ts,tsx}",
       ],
       "project": ["src/**/*.{ts,tsx,css}"],
       // app.json declares no OTA updates; knip's expo plugin assumes them.
@@ -100,7 +105,7 @@
     },
     "services/*": {
       // gen finds the root module by name (ADR 0294 R12); a v2 service still names it in `stackra.module`.
-      "entry": ["src/*.module.ts"],
+      "entry": ["src/*.module.ts", ".stackra/**/*.{ts,tsx}"],
       "project": ["src/**/*.ts"],
     },
     "apps/docs": {
