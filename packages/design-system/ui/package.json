@@ -7,8 +7,8 @@
     "components",
     "design-system",
     "heroui",
+    "heroui-native",
     "react",
-    "react-native",
     "stackra",
     "ui-kit"
   ],

@@ -5,7 +5,6 @@
   "description": "Stackra documentation site — Mintlify (docs.json + MDX).",
   "keywords": [
     "adr",
-    "app",
     "documentation",
     "mdx",
     "mintlify",

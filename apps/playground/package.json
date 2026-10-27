@@ -4,7 +4,6 @@
   "private": true,
   "description": "The Stackra Design System playground: every @stackra/ui component on its own route, in light and dark and in left-to-right and right-to-left, checked by Playwright and axe.",
   "keywords": [
-    "app",
     "axe",
     "component-review",
     "design-system",

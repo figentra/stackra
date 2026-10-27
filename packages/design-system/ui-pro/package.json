@@ -7,9 +7,9 @@
     "charts",
     "components",
     "design-system",
+    "heroui-native-pro",
     "heroui-pro",
     "react",
-    "react-native",
     "stackra"
   ],
   "homepage": "https://github.com/figentra/stackra/tree/main/packages/design-system/ui-pro#readme",

@@ -11,8 +11,7 @@
     "npm-registry",
     "package-registry",
     "r2",
-    "stackra",
-    "worker"
+    "stackra"
   ],
   "homepage": "https://github.com/figentra/stackra/tree/main/workers/registry#readme",
   "bugs": {

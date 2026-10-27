@@ -8,7 +8,6 @@
     "health-check",
     "liveness",
     "module",
-    "service",
     "stackra"
   ],
   "homepage": "https://github.com/figentra/stackra/tree/main/services/health#readme",

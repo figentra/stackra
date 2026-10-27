@@ -9,8 +9,7 @@
     "hosting",
     "json-schema",
     "stackra",
-    "static-assets",
-    "worker"
+    "static-assets"
   ],
   "homepage": "https://github.com/figentra/stackra/tree/main/workers/static#readme",
   "bugs": {

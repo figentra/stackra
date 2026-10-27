@@ -10,8 +10,7 @@
     "r2",
     "remote-cache",
     "stackra",
-    "turborepo",
-    "worker"
+    "turborepo"
   ],
   "homepage": "https://github.com/figentra/stackra/tree/main/workers/turbo-cache#readme",
   "bugs": {
