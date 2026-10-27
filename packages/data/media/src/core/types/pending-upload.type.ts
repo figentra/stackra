@@ -7,7 +7,7 @@
  * Governing contract: ADR 0222 (decision 2: presigned uploads).
  */
 import type { SignedUpload } from "#contracts/types/signed-upload.type";
-import type { BucketBase } from "#core/bases/bucket.base";
+import type { BucketBase } from "#core/bases/bucket-base.base";
 import type { Upload } from "#core/values/upload.value";
 
 /** An upload that waits for the client's bytes. */

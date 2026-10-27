@@ -10,7 +10,8 @@
 import { kindOf } from "@stackra/container";
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
-import { Bucket, BucketBase } from "#core/bases/bucket.base";
+import { BucketBase } from "#core/bases/bucket-base.base";
+import { Bucket } from "#core/bases/bucket.base";
 import { BucketVisibility } from "#core/enums/bucket-visibility.enum";
 import type { ImageFormat } from "#core/enums/image-format.enum";
 import { MediaType } from "#core/enums/media-type.enum";

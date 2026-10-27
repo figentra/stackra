@@ -13,6 +13,7 @@
 import { createKind } from "@stackra/container";
 import { Enum } from "@stackra/contracts";
 
+import { BucketBase } from "#core/bases/bucket-base.base";
 import { BucketVisibility } from "#core/enums/bucket-visibility.enum";
 import { MediaType } from "#core/enums/media-type.enum";
 import { checkImageVariant } from "#core/functions/check-image-variant.function";
@@ -21,12 +22,6 @@ import type { BucketOptions } from "#core/types/bucket-options.type";
 
 /** A variant name: snake_case words (`card`, `zoom_2x`). */
 const VARIANT_NAME = /^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$/;
-
-/** The instance side every bucket shares. */
-export abstract class BucketBase {
-  /** Type-only kind brand, so a class of another kind cannot stand in for a bucket. */
-  declare readonly "~kind": "bucket";
-}
 
 /** A bucket instance. */
 export type Bucket = BucketBase;

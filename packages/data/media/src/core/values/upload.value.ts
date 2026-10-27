@@ -15,7 +15,7 @@ import type { PublicId } from "@stackra/contracts";
 import { publicId } from "@stackra/validation";
 import { z } from "zod";
 
-import type { BucketBase } from "#core/bases/bucket.base";
+import type { BucketBase } from "#core/bases/bucket-base.base";
 
 /** A finished upload, by id. */
 export type Upload<B extends BucketBase = BucketBase> = {

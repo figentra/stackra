@@ -8,7 +8,7 @@
  */
 import { describe, expect, it } from "@stackra/testing";
 
-import type { BucketBase } from "#core/bases/bucket.base";
+import type { BucketBase } from "#core/bases/bucket-base.base";
 import { Bucket } from "#core/bases/bucket.base";
 import { BucketVisibility } from "#core/enums/bucket-visibility.enum";
 import { MediaType } from "#core/enums/media-type.enum";

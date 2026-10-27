@@ -26,7 +26,9 @@ export class CreateUploadAction extends Action({
   /** The media library that signs it. */
   private readonly media: MediaLibrary;
 
-  /** @param media - the media library that signs it. */
+  /**
+   * @param media - the media library that signs it.
+   */
   constructor(media: MediaLibrary) {
     super();
     this.media = media;

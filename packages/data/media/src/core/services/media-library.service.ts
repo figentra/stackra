@@ -18,7 +18,7 @@ import { Duration } from "@stackra/contracts";
 
 import type { MediaConfig } from "#config/media.config";
 import type { MediaDisk } from "#contracts/ports/media-disk.port";
-import type { BucketBase } from "#core/bases/bucket.base";
+import type { BucketBase } from "#core/bases/bucket-base.base";
 import type { MediaType } from "#core/enums/media-type.enum";
 import { UploadBucketMismatchError } from "#core/errors/upload-bucket-mismatch.error";
 import { UploadExpiredError } from "#core/errors/upload-expired.error";

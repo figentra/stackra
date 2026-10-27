@@ -52,7 +52,9 @@ export class ClamavFileScannerDriver extends Driver(FileScanner) {
 
   private readonly maxBytes: number;
 
-  /** @param config - the clamd address and the largest file streamed (`clamav`). */
+  /**
+   * @param config - the clamd address and the largest file streamed (`clamav`).
+   */
   constructor(config: MediaConfig) {
     super();
     this.host = config.clamav.host;

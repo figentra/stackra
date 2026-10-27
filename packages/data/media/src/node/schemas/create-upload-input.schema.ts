@@ -15,15 +15,15 @@ import { CREATE_UPLOAD_INPUT_SCHEMA } from "#node/constants/create-upload-input-
 
 /** The bucket and the file's type and size. */
 export class CreateUploadInput extends Schema {
+  /** The file's size in bytes. */
+  @Int({ min: 1 })
+  size!: number;
+
   /** The bucket key (`catalogue.product_images`); `null` takes the member's only bucket. */
   bucket!: string | null;
 
   /** The file's media type, as the browser reports it (`File.type`). */
   mediaType!: MediaType;
-
-  /** The file's size in bytes. */
-  @Int({ min: 1 })
-  size!: number;
 }
 
 registerSchemas([[CreateUploadInput, CREATE_UPLOAD_INPUT_SCHEMA]]);

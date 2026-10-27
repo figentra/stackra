@@ -54,7 +54,9 @@ async function failureOf(response: Response): Promise<UploadFailedError> {
 export class HttpUploaderDriver extends Driver(Uploader) {
   private readonly endpoint: string;
 
-  /** @param config - where to ask for a signed URL (`uploadEndpoint`). */
+  /**
+   * @param config - where to ask for a signed URL (`uploadEndpoint`).
+   */
   constructor(config: MediaConfig) {
     super();
     this.endpoint = config.uploadEndpoint;
