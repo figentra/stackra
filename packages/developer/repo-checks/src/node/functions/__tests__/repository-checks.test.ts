@@ -293,7 +293,12 @@ test("checkExports: ADR 0025 dist shape with @stackra/source first; strings are 
     checkExports({ "./a": good, "./tokens.css": "./src/t.css", "./resources/*": "./resources/*" }),
     [],
   );
-  assert.equal(checkExports({ ".": { types: "./dist/a.d.mts", ...good } }).length, 1);
+  assert.equal(
+    checkExports({
+      ".": { types: good.types, "@stackra/source": good["@stackra/source"], default: good.default },
+    }).length,
+    1,
+  );
   assert.equal(checkExports({ ".": { types: "./src/a.ts", default: "./src/a.ts" } }).length, 3);
   assert.equal(checkExports({ ".": "./src/index.ts" }).length, 1);
   assert.equal(checkExports("./dist/index.mjs").length, 1);
@@ -502,9 +507,7 @@ test("checkRunwayFiles: schema issues name file and path; placement issues name 
   };
   const { runway } = stubRunway([
     {
-      environment: "production",
       code: "member_unplaced",
-      subject: "billing",
       message: 'production: "billing" is in no group and the topology has no default group',
     },
   ]);
