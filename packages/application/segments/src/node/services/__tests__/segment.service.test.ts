@@ -182,7 +182,7 @@ afterEach(() => {
 describe(SegmentService, () => {
   it("creates a dynamic segment with a new rule set of the subject's fields", async () => {
     const { service, ruleSets, em } = setup({});
-    const segment = await service.create(ACME, {
+    const segment = await service.open(ACME, {
       name: "Big spenders",
       subject: SUBJECT,
       kind: SegmentKind.Dynamic,
@@ -203,11 +203,11 @@ describe(SegmentService, () => {
 
   it("creates a manual segment with no rule set and refuses an unknown subject", async () => {
     const { service, ruleSets, em } = setup({});
-    await service.create(ACME, { name: "Beta", subject: SUBJECT, kind: SegmentKind.Manual });
+    await service.open(ACME, { name: "Beta", subject: SUBJECT, kind: SegmentKind.Manual });
     expect(ruleSets.open).not.toHaveBeenCalled();
     expect(em.create.mock.calls[0]?.[1]).toMatchObject({ ruleSetId: null });
     const refused = await service
-      .create(ACME, { name: "Beta", subject: "test.unknown", kind: SegmentKind.Manual })
+      .open(ACME, { name: "Beta", subject: "test.unknown", kind: SegmentKind.Manual })
       .catch((error: unknown) => error);
     expect(refused).toBeInstanceOf(InputInvalidError);
     expect((refused as InputInvalidError).fieldErrors).toEqual({ subject: "subject_unknown" });

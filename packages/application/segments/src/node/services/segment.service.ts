@@ -48,7 +48,7 @@ function ruleSetOf(segment: Segment): PublicId<"rset"> {
  * Keeps segments and computes their membership.
  *
  * @example
- * const segment = await segments.create(scope, { name: "VIP", subject: "commerce.customer", kind: SegmentKind.Dynamic });
+ * const segment = await segments.open(scope, { name: "VIP", subject: "commerce.customer", kind: SegmentKind.Dynamic });
  * const revision = await segments.draft(segment.id, input.condition);
  * await segments.publish(segment.id, revision); // queues the recompute
  */
@@ -103,7 +103,7 @@ export class SegmentService extends CrudService<Segment> {
    *
    * @throws InputInvalidError when no registered subject has the key (`subject: subject_unknown`).
    */
-  async create(
+  async open(
     scope: ScopeRef,
     draft: { readonly name: string; readonly subject: string; readonly kind: SegmentKind },
   ): Promise<Segment> {

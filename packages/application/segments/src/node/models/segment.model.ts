@@ -5,7 +5,7 @@
  *          the revision its membership was last computed from.
  * Boundary: data only. Key `segments.segment`, table `segments.segments`, under forced row-level security on
  *           `scope_path`. A dynamic segment links its rule set (`rules.rule_set`) by id; a manual one has none. Its
- *           members are `SegmentMembership` rows. Rows are added through `SegmentService.create`, never with `new`; the
+ *           members are `SegmentMembership` rows. Rows are added through `SegmentService.open`, never with `new`; the
  *           ORM loads rows without running the constructor.
  * Runtime: node
  * Governing contract: ADR 0332 (decisions 1 to 3); ADR 0327 (decisions 3 and 9); ADR 0294 (decisions 4, 11, 20 and

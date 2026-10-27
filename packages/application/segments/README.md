@@ -13,22 +13,22 @@ zod. The package names no subject model and knows no commerce.
 
 ## What is here
 
-| Symbol                                | Entry         | Use                                                                                       |
-| ------------------------------------- | ------------- | ----------------------------------------------------------------------------------------- |
-| `SegmentRef`                          | `./contracts` | `{ kind: "segment", id }`, the audience a consumer stores (IAM's audience union)          |
-| `SubjectRef`                          | `./contracts` | `{ model, id }`, the record a membership names: its model key and public id               |
-| `SegmentSubject`                      | `./contracts` | what a consumer implements per subject model: `rules`, `ids(after, limit)`, `facts(ids)`  |
-| `SegmentKind`                         | `./contracts` | `Dynamic` or `Manual`                                                                     |
-| `MembershipEntered`, `MembershipLeft` | `.`           | the integration events of every membership change (`segments.membership.entered.v1`)      |
-| `SegmentKindMismatchError`            | `.`           | `segment_kind_mismatch` (412): a condition on a manual segment, a hand edit of a dynamic  |
-| `registerSegmentSubjects`             | `./node`      | `[{ key: "commerce.customer", model: Customer, type: CustomerSegmentSubject }]`           |
-| `SegmentService`                      | `./node`      | `create`, `draft`, `publish`, `add`, `remove`, `recompute`, `recomputeSubject`, `connect` |
-| `SegmentMembershipService`            | `./node`      | what consumers read: `has(segment, subject)`, `segmentsOf(subject)`, `members(segment)`   |
-| `RecomputeSegmentsAction`             | `./node`      | the `segment.recompute` job: one segment, or the hourly run of a scope                    |
-| `RecomputeSegmentsInput`              | `./node`      | its input: `segmentId`, absent for the hourly run                                         |
-| `SubjectChangeService`                | `./node`      | the outbox change consumer of every registered subject model                              |
-| `Segment`, `SegmentMembership`        | `./node`      | the models: `segments.segments` and `segments.segment_memberships`                        |
-| `SEGMENTS_TESTING_PLUGIN`             | `./testing`   | connects a testing app's `SegmentService` to the app                                      |
+| Symbol                                | Entry         | Use                                                                                      |
+| ------------------------------------- | ------------- | ---------------------------------------------------------------------------------------- |
+| `SegmentRef`                          | `./contracts` | `{ kind: "segment", id }`, the audience a consumer stores (IAM's audience union)         |
+| `SubjectRef`                          | `./contracts` | `{ model, id }`, the record a membership names: its model key and public id              |
+| `SegmentSubject`                      | `./contracts` | what a consumer implements per subject model: `rules`, `ids(after, limit)`, `facts(ids)` |
+| `SegmentKind`                         | `./contracts` | `Dynamic` or `Manual`                                                                    |
+| `MembershipEntered`, `MembershipLeft` | `.`           | the integration events of every membership change (`segments.membership.entered.v1`)     |
+| `SegmentKindMismatchError`            | `.`           | `segment_kind_mismatch` (412): a condition on a manual segment, a hand edit of a dynamic |
+| `registerSegmentSubjects`             | `./node`      | `[{ key: "commerce.customer", model: Customer, type: CustomerSegmentSubject }]`          |
+| `SegmentService`                      | `./node`      | `open`, `draft`, `publish`, `add`, `remove`, `recompute`, `recomputeSubject`, `connect`  |
+| `SegmentMembershipService`            | `./node`      | what consumers read: `has(segment, subject)`, `segmentsOf(subject)`, `members(segment)`  |
+| `RecomputeSegmentsAction`             | `./node`      | the `segment.recompute` job: one segment, or the hourly run of a scope                   |
+| `RecomputeSegmentsInput`              | `./node`      | its input: `segmentId`, absent for the hourly run                                        |
+| `SubjectChangeService`                | `./node`      | the outbox change consumer of every registered subject model                             |
+| `Segment`, `SegmentMembership`        | `./node`      | the models: `segments.segments` and `segments.segment_memberships`                       |
+| `SEGMENTS_TESTING_PLUGIN`             | `./testing`   | connects a testing app's `SegmentService` to the app                                     |
 
 ## Covering a subject model
 
@@ -68,7 +68,7 @@ subjects at or below its scope node. A subject the facts leave out is gone, and 
 ## Defining a segment
 
 ```ts
-const vip = await segments.create(ctx.scope, {
+const vip = await segments.open(ctx.scope, {
   name: "VIP",
   subject: "commerce.customer",
   kind: SegmentKind.Dynamic,
@@ -76,7 +76,7 @@ const vip = await segments.create(ctx.scope, {
 const revision = await segments.draft(vip.id, input.condition); // ConditionInvalidError when it does not check
 await segments.publish(vip.id, revision); // queues the recompute in the segment's scope
 
-const beta = await segments.create(ctx.scope, {
+const beta = await segments.open(ctx.scope, {
   name: "Beta",
   subject: "commerce.customer",
   kind: SegmentKind.Manual,
