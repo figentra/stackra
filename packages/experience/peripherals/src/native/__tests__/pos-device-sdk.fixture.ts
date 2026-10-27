@@ -10,10 +10,22 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0458; ADR 0459; ADR 0460; ADR 0442 (decision 4); ADR 0022 (test placement).
  */
+import type { Mock } from "vitest";
 import { vi } from "vitest";
+import type { PosDeviceNativeModule } from "#native/types/pos-device-native-module.type";
 
 /** A scan event as the module emits it. */
 type ScanEvent = { readonly code?: unknown };
+
+/** The stand-in module: each `PosDeviceNativeModule` method as a recording mock, plus the scan replay. */
+type StandInDevice = {
+  readonly [K in keyof PosDeviceNativeModule]: Mock<PosDeviceNativeModule[K]>;
+} & {
+  /** Replays a recorded scan event to every listener. */
+  emit(event: ScanEvent): void;
+  /** The `remove` every `addListener` answer carries. */
+  readonly remove: Mock<() => void>;
+};
 
 /** The recorded SDK answers and the stand-in module. */
 export const POS_DEVICE_SDK = {
@@ -34,14 +46,14 @@ export const POS_DEVICE_SDK = {
   },
 
   /** Puts a stand-in module named `module` on the Expo registry that answers `status`. */
-  install(module: string, status: number) {
+  install(module: string, status: number): StandInDevice {
     const listeners: Array<(event: ScanEvent) => void> = [];
-    const remove = vi.fn();
-    const device = {
-      printerStatus: vi.fn(async () => status),
-      printLines: vi.fn(async (_lines: readonly string[]) => undefined),
-      openDrawer: vi.fn(async () => undefined),
-      addListener: vi.fn((_eventName: "onScan", listener: (event: ScanEvent) => void) => {
+    const remove = vi.fn<() => void>();
+    const device: StandInDevice = {
+      printerStatus: vi.fn<PosDeviceNativeModule["printerStatus"]>(async () => status),
+      printLines: vi.fn<PosDeviceNativeModule["printLines"]>(async () => undefined),
+      openDrawer: vi.fn<PosDeviceNativeModule["openDrawer"]>(async () => undefined),
+      addListener: vi.fn<PosDeviceNativeModule["addListener"]>((_eventName, listener) => {
         listeners.push(listener);
         return { remove };
       }),
