@@ -43,7 +43,7 @@ function near(day: PrayerDay, expected: Omit<PrayerDay, "date">): void {
 
 describe("ComputedPrayerTimesDriver", () => {
   it("computes a day with Isha as minutes after Maghrib", async () => {
-    const times = new ComputedPrayerTimesDriver(MINUTES);
+    const times = new ComputedPrayerTimesDriver().use(MINUTES);
     expect(times).toBeInstanceOf(PrayerTimes);
     const day = await times.on("2026-01-01", { latitude: 21.4225, longitude: 39.8262 });
     expect(day.date).toBe("2026-01-01");
@@ -60,7 +60,7 @@ describe("ComputedPrayerTimesDriver", () => {
 
   it("computes a day with an Isha angle", async () => {
     near(
-      await new ComputedPrayerTimesDriver(ANGLES).on("2026-03-20", {
+      await new ComputedPrayerTimesDriver().use(ANGLES).on("2026-03-20", {
         latitude: 30.0444,
         longitude: 31.2357,
       }),
@@ -78,10 +78,12 @@ describe("ComputedPrayerTimesDriver", () => {
   it("places Fajr and Isha by the high-latitude rule, and refuses the day without one", async () => {
     const stockholm = { latitude: 59.3293, longitude: 18.0686 };
     const method = { ...ANGLES, fajrAngle: 18, ishaAngle: 17 };
-    const day = await new ComputedPrayerTimesDriver({
-      ...method,
-      highLatitude: HighLatitudeRule.AngleBased,
-    }).on("2026-06-21", stockholm);
+    const day = await new ComputedPrayerTimesDriver()
+      .use({
+        ...method,
+        highLatitude: HighLatitudeRule.AngleBased,
+      })
+      .on("2026-06-21", stockholm);
     near(day, {
       fajr: "2026-06-20T23:54:00.000Z",
       sunrise: "2026-06-21T01:31:00.000Z",
@@ -90,14 +92,20 @@ describe("ComputedPrayerTimesDriver", () => {
       maghrib: "2026-06-21T20:08:00.000Z",
       isha: "2026-06-21T21:40:00.000Z",
     });
-    await expect(new ComputedPrayerTimesDriver(method).on("2026-06-21", stockholm)).rejects.toThrow(
-      RangeError,
-    );
+    await expect(
+      new ComputedPrayerTimesDriver().use(method).on("2026-06-21", stockholm),
+    ).rejects.toThrow(RangeError);
+  });
+
+  it("refuses a day before a method is set", async () => {
+    await expect(
+      new ComputedPrayerTimesDriver().on("2026-01-01", { latitude: 0, longitude: 0 }),
+    ).rejects.toThrow(RangeError);
   });
 
   it("refuses a bad method, date or place", async () => {
-    expect(() => new ComputedPrayerTimesDriver({ ...ANGLES, ishaMinutes: 90 })).toThrow();
-    const times = new ComputedPrayerTimesDriver(MINUTES);
+    expect(() => new ComputedPrayerTimesDriver().use({ ...ANGLES, ishaMinutes: 90 })).toThrow();
+    const times = new ComputedPrayerTimesDriver().use(MINUTES);
     await expect(times.on("2026-02-30", { latitude: 0, longitude: 0 })).rejects.toThrow(RangeError);
     await expect(times.on("2026-01-01", { latitude: 91, longitude: 0 })).rejects.toThrow(
       RangeError,

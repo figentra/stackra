@@ -17,7 +17,7 @@ import type { PrayerMethod } from "#core/types/prayer-method.type";
  * The method of `resolved` on `on`.
  *
  * @example
- * const times = new ComputedPrayerTimesDriver(prayerMethodFromPack(resolved, today));
+ * const times = new ComputedPrayerTimesDriver().use(prayerMethodFromPack(resolved, today));
  */
 export function prayerMethodFromPack(resolved: ResolvedPack, on: IsoDate): PrayerMethod {
   const value = valueOf(resolved, "calendar.prayer_times", on)?.value;
