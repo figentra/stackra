@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `readMemberFacts`, the facts discovery needs before it reads a class: the member key from the folder name,
- *          the package name, version and dependencies from package.json, the layout from the `define*` call of
+ *          the package name, version and dependencies (and the runtime ones alone, STA-1309) from package.json, the layout from the `define*` call of
  *          `stackra.config.ts` (or the folder the member sits in), and an app's `area` and `targets`.
  * Boundary: reads two files; never runs `stackra.config.ts`. The `define*` call holds static data, so its call name and
  *           the enum cases of `area` and `targets` are read from the text.
@@ -88,5 +88,8 @@ export function readMemberFacts(root: string): MemberFacts {
       ...Object.keys(manifest.dependencies ?? {}),
       ...Object.keys(manifest.devDependencies ?? {}),
     ],
+    ...(manifest.dependencies !== undefined && Object.keys(manifest.dependencies).length > 0
+      ? { runtimeDependencies: Object.keys(manifest.dependencies) }
+      : {}),
   };
 }

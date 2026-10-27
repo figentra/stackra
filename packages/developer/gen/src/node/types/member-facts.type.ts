@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `MemberFacts`, what discovery knows about a member before it reads a class: its root, key, package name
- *          and version, layout, and the facts of its `stackra.config.ts` call.
+ *          and version, layout, its dependencies (runtime ones apart, STA-1309) and the facts of its
+ *          `stackra.config.ts` call.
  * Boundary: a type only; read from package.json, the folder and the `define*` call's syntax tree, never by running
  *           `stackra.config.ts`.
  * Runtime: node
@@ -38,4 +39,10 @@ export interface MemberFacts {
 
   /** The dependency package names, in package.json order (dependencies, then devDependencies). */
   readonly dependencies: readonly string[];
+
+  /**
+   * The runtime dependency names alone (package.json `dependencies`, in order), when the member has any: the packages
+   * whose lang catalogues reach the runtime, so the only ones `#stackra/i18n` merges and loads (STA-1309).
+   */
+  readonly runtimeDependencies?: readonly string[];
 }

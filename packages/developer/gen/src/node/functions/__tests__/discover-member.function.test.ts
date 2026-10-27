@@ -266,4 +266,23 @@ describe("discoverMember i18n (STA-1298)", () => {
       ["loyalty_kit", "enums", "loyalty_tier", "gold"],
     ]);
   });
+
+  it("leaves a devDependency's lang out: it never reaches the runtime (STA-1309)", async () => {
+    const root = writeFixtureMember("customers-dev", {
+      "node_modules/@stackra/loyalty-kit/package.json": JSON.stringify({
+        name: "@stackra/loyalty-kit",
+      }),
+      "node_modules/@stackra/loyalty-kit/assets/lang/en/loyalty_kit.json": JSON.stringify({
+        title: "Loyalty",
+      }),
+      "package.json": JSON.stringify({
+        name: "@fixture/customers-dev",
+        version: "1.0.0",
+        type: "module",
+        devDependencies: { "@stackra/loyalty-kit": "workspace:*" },
+      }),
+    });
+    const ir = await discoverMember(root);
+    expect(ir.packageCatalogues).toBeUndefined();
+  });
 });

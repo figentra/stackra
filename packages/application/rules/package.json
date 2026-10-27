@@ -63,7 +63,8 @@
       "@stackra/source": "./src/react/index.ts",
       "types": "./dist/react.d.mts",
       "default": "./dist/react.mjs"
-    }
+    },
+    "./assets/*": "./assets/*"
   },
   "publishConfig": {
     "access": "public",

@@ -54,7 +54,8 @@
       "@stackra/source": "./src/native/index.ts",
       "types": "./dist/native.d.mts",
       "default": "./dist/native.mjs"
-    }
+    },
+    "./assets/*": "./assets/*"
   },
   "publishConfig": {
     "access": "public",

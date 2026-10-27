@@ -28,6 +28,7 @@ describe("@stackra/i18n", () => {
       "formatMessage",
       "formatQuantity",
       "keys",
+      "loadMessages",
       "localeFormat",
       "mergeCatalogues",
       "normalizeArabic",

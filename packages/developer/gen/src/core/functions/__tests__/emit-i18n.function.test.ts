@@ -3,10 +3,10 @@
  * Purpose: unit tests of `emitI18n`: `#stackra/i18n` with the typed key tree of the base locale (nested objects as
  *          branches, leaves beside children under `_`, `$` notes left out) and the sorted locale list; nothing for a member without
  *          catalogues or without `@stackra/i18n`; a declared package's namespace merged into `I18n` (STA-1298); and
- *          `generateMember` writing `.stackra/gen/i18n.ts`.
+ *          `generateMember` writing `.stackra/gen/i18n.ts`; the catalogue loaders and `loadMessages` (STA-1309).
  * Boundary: test only; asserts on the generated source text.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0268 (R15); STA-1293; STA-1298.
+ * Governing contract: ADR 0022 (test placement); ADR 0268 (R15); STA-1293; STA-1298; STA-1309.
  */
 import { describe, expect, it } from "@stackra/testing";
 
@@ -35,12 +35,41 @@ describe("emitI18n", () => {
 
   it("writes the key tree of the base locale through keys()", () => {
     expect(file?.path).toBe(".stackra/gen/i18n.ts");
-    expect(content).toContain('import { keys } from "@stackra/i18n";');
+    expect(content).toContain('import { keys, loadMessages as load } from "@stackra/i18n";');
     expect(content).toContain("export const I18n = keys({");
     expect(content).toContain('"_": [\n      "title"\n    ],');
     expect(content).toContain('"cart_kind": [\n        "cart",\n        "draft_order"\n      ]');
     expect(content).toContain('"orders": [\n    "title"\n  ]');
     expect(content).not.toContain("$comment");
+  });
+
+  it("writes a loader per namespace and locale file, and loadMessages over them (STA-1309)", () => {
+    expect(content).toContain(
+      '"carts": {\n    "ar": () => import("../../assets/lang/ar/carts.json", { with: { type: "json" } }),',
+    );
+    expect(content).toContain(
+      '"fr": () => import("../../assets/lang/fr/carts.json", { with: { type: "json" } }),',
+    );
+    // orders ships only in en: a locale without a file has no loader.
+    expect(content).toContain(
+      '"orders": {\n    "en": () => import("../../assets/lang/en/orders.json", { with: { type: "json" } }),\n  },',
+    );
+    expect(content).toContain(
+      "export const loadMessages = (locale: string) => load(catalogues, locale);",
+    );
+  });
+
+  it("loads a package's namespace through its ./assets/* export (STA-1309)", () => {
+    const merged =
+      emitI18n({
+        ...COMMERCE_IR,
+        packageCatalogues: [
+          { package: "@stackra/rules", catalogues: { en: { rules: { title: "Rules" } } } },
+        ],
+      })?.content ?? "";
+    expect(merged).toContain(
+      '"rules": {\n    "en": () => import("@stackra/rules/assets/lang/en/rules.json", { with: { type: "json" } }),',
+    );
   });
 
   it("lists the locales, sorted", () => {

@@ -12,6 +12,7 @@
   "files": [
     "dist",
     "src",
+    "assets",
     "stackra.manifest.json",
     "README.md",
     "CHANGELOG.md",
@@ -81,7 +82,8 @@
       "@stackra/source": "./src/testing/index.ts",
       "types": "./dist/testing.d.mts",
       "default": "./dist/testing.mjs"
-    }
+    },
+    "./assets/*": "./assets/*"
   },
   "publishConfig": {
     "access": "public",

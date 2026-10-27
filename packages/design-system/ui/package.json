@@ -111,7 +111,8 @@
       "@stackra/source": "./src/testing/fakes/fake-confirmation-provider.tsx",
       "types": "./dist/testing.d.mts",
       "default": "./dist/testing.mjs"
-    }
+    },
+    "./assets/*": "./assets/*"
   },
   "publishConfig": {
     "access": "public",

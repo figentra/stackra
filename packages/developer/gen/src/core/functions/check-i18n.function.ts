@@ -4,7 +4,10 @@
  *          two packages) ship the same lang namespace, and `i18n_key_missing` when an `I18n.<namespace>.<path>` chain in
  *          the member's files names a key neither its own catalogues nor a merged package's ship (STA-1298; stackra-167
  *          reuses the code).
- * Boundary: pure; reads `i18nTree(ir)` and `ir.i18nReferences`. Nothing is checked for a member that does not declare
+ * Boundary: pure; reads `i18nTree(ir)` and `ir.i18nReferences`. Default applied 2026-10-27 (STA-1309, owner may
+ *           override): only runtime `dependencies` count (a devDependency's lang never reaches the runtime, so discovery
+ *           leaves it out), and a member may not extend a package's namespace: one namespace has one owner and one
+ *           loader set, so a member adds its keys under its own namespace. Nothing is checked for a member that does not declare
  *           `@stackra/i18n` (no `#stackra/i18n` is written). A chain may stop at a branch (`loyalty_tier[tier]`);
  *           segments after a leaf are the string's own members and are not checked.
  * Runtime: isomorphic

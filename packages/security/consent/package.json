@@ -78,7 +78,8 @@
       "@stackra/source": "./src/ui/index.ts",
       "types": "./dist/ui.d.mts",
       "default": "./dist/ui.mjs"
-    }
+    },
+    "./assets/*": "./assets/*"
   },
   "publishConfig": {
     "access": "public",

@@ -37,7 +37,9 @@ Locales, the i18n configuration, the ICU engine and the React hooks. Member at `
 
 - A `Locale` code is a BCP 47 tag in BCP 47 case; URL prefixes are its lowercase form (ADR 0297). A new locale is a new
   case with its endonym.
-- Fallback is resolved by merging catalogues (`mergeCatalogues`, farthest first), never inside `formatMessage`. A key
+- Fallback is resolved by merging catalogues (`mergeCatalogues`, farthest first), never inside `formatMessage`.
+  `loadMessages(catalogues, locale)` is the one consumer of gen's loaders in `#stackra/i18n`: it loads the chain
+  (`ar-SA`, `ar`, `en`) per namespace and merges it (STA-1309). A key
   with no message throws; never return the raw key.
 - Digits and the clock travel as the `-u-hc-…-nu-…` extension (`intlLocale`); do not pass `numberingSystem` or
   `hourCycle` options separately. A locale's week start and clock are `Locale` case data, overridden per locale by

@@ -27,9 +27,10 @@ of `./react`.
 | `.`           | `I18nConfig`                                                                                  | the configuration a member overrides in `src/config/i18n.config.ts`              |
 | `.`           | `I18nConfig$`                                                                                 | its shipped zod schema; generated schemas reuse it with `.extend(...)`           |
 | `.`           | `keys`                                                                                        | gen's `export const I18n = keys({...})` in `#stackra/i18n`                       |
-| `.`           | `mergeCatalogues`                                                                             | gen's `loadMessages`: merges the fallback chain, farthest first                  |
+| `.`           | `mergeCatalogues`                                                                             | merges a fallback chain, farthest first                                          |
+| `.`           | `loadMessages`                                                                                | `loadMessages(catalogues, locale)` over gen's loaders in `#stackra/i18n`         |
 | `.`           | `formatMessage`                                                                               | the ICU engine; gen's server-side `translatorFor`                                |
-| `.`           | `I18nKey`, `LoadCatalogue`                                                                    | types                                                                            |
+| `.`           | `I18nKey`, `LoadCatalogue`, `Messages`                                                        | types                                                                            |
 | `.`           | `normalizeArabic`, `withDigits`, `formatAddress`, `countryName`, `formatLength`, `LengthUnit` | text, address and length helpers (below)                                         |
 | `./contracts` | `TranslationProvider`, `Geocoder`, `AddressAutocomplete`                                      | provider ports (below)                                                           |
 | `./react`     | `useTranslation`                                                                              | `const { t } = useTranslation(); t(I18n.web.nav.home)`                           |
@@ -70,8 +71,9 @@ The defaults are a launch member's: English only, Latin digits, `ar`, `ar-SA`, `
 ## Catalogues and keys
 
 A catalogue is `assets/lang/<locale>/<namespace>.json`, nested by path. A regional overlay (`en-US`, `ar-SA`) holds
-only the keys that differ; gen's `loadMessages` merges the chain farthest first with `mergeCatalogues`, so the nearest
-locale wins key by key. Gen writes the typed tree:
+only the keys that differ; `loadMessages(catalogues, locale)` loads every namespace along the chain (`ar-SA`, `ar`,
+`en`) from the loaders gen writes in `#stackra/i18n` (the member's lang and its declared packages') and merges it
+farthest first with `mergeCatalogues`, so the nearest locale wins key by key. Gen writes the typed tree:
 
 ```ts
 export const I18n = keys({

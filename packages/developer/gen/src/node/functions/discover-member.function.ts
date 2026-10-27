@@ -101,8 +101,9 @@ export async function discoverMember(
       ...clientImports.map((imported) => imported.service),
     ];
     const catalogues = readCatalogues(facts.root);
-    // The lang its declared packages ship, found like their manifests, and the keys its files use (STA-1298).
-    const packageCatalogues = readPackageCatalogues(facts.root, facts.dependencies);
+    // The lang its runtime packages ship, found like their manifests, and the keys its files use (STA-1298). A
+    // devDependency's lang never reaches the runtime, so it is neither merged nor a clash (STA-1309).
+    const packageCatalogues = readPackageCatalogues(facts.root, facts.runtimeDependencies ?? []);
     const i18nReferences = readI18nReferences(facts.root);
     // A relay service hears every integration topic of the product (ADR 0260 decision 4).
     const publishers =

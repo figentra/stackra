@@ -27,6 +27,7 @@ describe("readMemberFacts", () => {
       version: "0.4.0",
       layout: "package",
       dependencies: ["@stackra/contracts"],
+      runtimeDependencies: ["@stackra/contracts"],
     });
   });
 
