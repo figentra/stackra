@@ -12,7 +12,7 @@ import { vi } from "vitest";
 import { ACTIVE_DATABASE } from "#core/constants/active-database.constant";
 import { connectVisibilityFilter } from "#core/functions/connect-visibility-filter.function";
 import { visibleKeysQuery } from "#core/functions/visible-keys-query.function";
-import { Database } from "#core/ports/database.port";
+import type { Database } from "#core/ports/database.port";
 import { VisibilityFilter } from "#contracts/ports/visibility-filter.port";
 
 class Matter {}

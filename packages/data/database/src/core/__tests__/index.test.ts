@@ -23,10 +23,8 @@ import {
   Aggregate,
   CrudService,
   EntitySchema,
-  GraphQuery,
   Macro,
   Migration,
-  OptionalProps,
   Seeder,
   UniqueViolation,
   operationAction,
@@ -44,6 +42,8 @@ import type {
   Repository,
   SchemaBuilder,
   TablePage,
+  GraphQuery,
+  OptionalProps,
 } from "#core/index";
 
 declare module "@stackra/database" {

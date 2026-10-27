@@ -19,7 +19,7 @@ import type { IdempotencyRecord } from "@stackra/actions/contracts";
 import { Driver } from "@stackra/container";
 import { Duration } from "@stackra/contracts";
 
-import { Database } from "#core/ports/database.port";
+import type { Database } from "#core/ports/database.port";
 
 /** The table. */
 const KEYS = '"database"."idempotency_keys"';

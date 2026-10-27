@@ -51,9 +51,10 @@ const cwd = process.cwd.bind(process);
 afterEach(async () => {
   process.cwd = cwd;
   await ACTIVE_DATABASE.current?.close();
-});
+}, 60_000);
 
-describe(MemoryDatabaseDriver, () => {
+// Each case boots a fresh PGlite (WASM Postgres plus four extensions), which takes seconds on a loaded runner.
+describe(MemoryDatabaseDriver, { timeout: 60_000 }, () => {
   it("connects when built and creates the schema from the registered entities", async () => {
     const database = new MemoryDatabaseDriver();
     expect(Database.current()).toBe(database);

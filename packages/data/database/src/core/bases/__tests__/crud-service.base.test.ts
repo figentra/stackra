@@ -80,7 +80,7 @@ function fakeEm() {
   };
   const em = {
     builder,
-    find: vi.fn(async () => []),
+    find: vi.fn(async (..._args: unknown[]) => [] as unknown[]),
     findOne: vi.fn(async () => null),
     findOneOrFail: vi.fn(async (..._args: unknown[]) => new Order()),
     count: vi.fn(async () => 3),

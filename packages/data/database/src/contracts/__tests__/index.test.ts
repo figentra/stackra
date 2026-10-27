@@ -23,6 +23,7 @@ describe("@stackra/database/contracts", () => {
   });
 
   it("types a filter of M", () => {
-    expectTypeOf<Where<{ sku: string }>>().toHaveProperty("sku");
+    expectTypeOf<{ sku: string }>().toExtend<Where<{ sku: string }>>();
+    expectTypeOf<{ sku: number }>().not.toExtend<Where<{ sku: string }>>();
   });
 });

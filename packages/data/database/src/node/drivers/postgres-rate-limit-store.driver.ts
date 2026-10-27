@@ -15,7 +15,7 @@ import { RateLimitStore } from "@stackra/actions/contracts";
 import type { RateLimitBucket, RateLimitDecision } from "@stackra/actions/contracts";
 import { Driver } from "@stackra/container";
 
-import { Database } from "#core/ports/database.port";
+import type { Database } from "#core/ports/database.port";
 
 /** The table. */
 const BUCKETS = '"database"."rate_limit_buckets"';

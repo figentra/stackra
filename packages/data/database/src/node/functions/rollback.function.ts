@@ -32,7 +32,7 @@ export async function rollback(options: {
     if (head === undefined) return { reverted: [] };
     const steps = files.filter((file) => file.batch === head.batch && file.version <= head.version);
     const reverted: string[] = [];
-    for (const file of steps.toReversed()) {
+    for (const file of [...steps].reverse()) {
       if (file.inverse === undefined)
         throw new Error(`${file.name} is irreversible: rollback stops here`);
       await execute(file.inverse, file.transactional);

@@ -98,7 +98,7 @@ describe(MetricsReader, () => {
   it("reads the rows that count through the filter it was given", async () => {
     const { builder, em } = readerReturning({ current: "1", previous: "0" });
     const visible = { $and: [{ status: "paid" }, { status: "visible" }] };
-    const reader = new MetricsReader(
+    const reader = new MetricsReader<Order>(
       em as unknown as EntityManager,
       Order,
       period,
