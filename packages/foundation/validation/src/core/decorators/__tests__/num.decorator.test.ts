@@ -41,16 +41,16 @@ describe("Num", () => {
   it("is refused by tsc on a string", () => {
     class Wrong extends Schema {
       // @ts-expect-error -- @Num on a string field
-      @Num()
+      @Num({ min: 0 })
       ratio!: string;
     }
-    expect(Num.members(Wrong).get("ratio")).toEqual({});
+    expect(Num.members(Wrong).get("ratio")).toEqual({ min: 0 });
   });
 
   it("refuses a class of no shape kind when it is defined", () => {
     expect(() => {
       class Plain {
-        @Num()
+        @Num({ min: 0 })
         ratio = 0.5;
       }
       return Plain;

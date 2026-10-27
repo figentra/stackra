@@ -60,7 +60,7 @@ describe("Str", () => {
   it("refuses a class of no shape kind when it is defined", () => {
     expect(() => {
       class Plain {
-        @Str()
+        @Str({ max: 10 })
         name = "";
       }
       return Plain;

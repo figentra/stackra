@@ -41,7 +41,7 @@ describe("SHAPE_KINDS", () => {
     registerKind(KindBase, kind);
     expect(() => {
       class Shaped extends KindBase {
-        @Int()
+        @Int({ min: 0 })
         count = 0;
       }
       return Shaped;

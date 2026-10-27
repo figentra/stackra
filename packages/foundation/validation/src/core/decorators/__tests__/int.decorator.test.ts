@@ -73,7 +73,7 @@ describe("Int", () => {
   it("is refused by tsc on a string, and on a number list without each", () => {
     class Wrong extends Schema {
       // @ts-expect-error -- @Int on a string field
-      @Int()
+      @Int({ min: 0 })
       code!: string;
 
       // @ts-expect-error -- a number list needs each: true
@@ -90,7 +90,7 @@ describe("Int", () => {
   it("refuses a class of no shape kind when it is defined", () => {
     expect(() => {
       class Plain {
-        @Int()
+        @Int({ min: 0 })
         count = 0;
       }
       return Plain;

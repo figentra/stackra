@@ -50,7 +50,7 @@ describe("List", () => {
   it("refuses a class of no shape kind when it is defined", () => {
     expect(() => {
       class Plain {
-        @List()
+        @List({ min: 1 })
         items: string[] = [];
       }
       return Plain;
