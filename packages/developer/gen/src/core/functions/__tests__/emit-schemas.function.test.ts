@@ -268,7 +268,10 @@ describe("emitSchemas", () => {
       "  principalId: z.string().regex(/^[a-z]{2,6}_[0-9a-hjkmnp-tv-z]{26}$/i).transform((value) => value as PublicId),",
     );
     expect(content).toContain('  listId: z.union([publicId("crl"), publicId("prl")]),');
-    expect(content).toMatch(/import \{[^}]*type PublicId[^}]*\} from "@stackra\/contracts";/);
+    // `importLines` writes `import type { … }` when every name from a module is a type.
+    expect(content).toMatch(
+      /import (?:type )?\{[^}]*\bPublicId\b[^}]*\} from "@stackra\/contracts";/,
+    );
   });
 
   it("imports a package's shipped schema under an alias instead of compiling it (STA-1290)", () => {

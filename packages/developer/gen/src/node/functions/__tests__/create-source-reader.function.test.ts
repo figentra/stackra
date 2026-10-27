@@ -42,7 +42,8 @@ const SOURCES: Readonly<Record<string, string>> = {
     'import { OrderStatus } from "#contracts/enums/order-status.enum";',
     "",
     "interface Loose { a: string }",
-    "const LIMIT: number = 5;",
+    // A const with a constant initializer is a constant (gen AGENTS.md), so the rule reads one computed at run time.
+    'const LIMIT: number = Number("5");',
     "",
     "export class Banned extends Schema {",
     "  count!: number;",

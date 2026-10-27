@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `generatedHeader`, the docblock every generated TypeScript file opens with: the generated notice and its
  *          sources, then the file contract (purpose, boundary, runtime) in the house form.
- * Boundary: pure; wraps lines at 116 columns so the output passes the formatter unchanged.
+ * Boundary: pure; wraps lines at 116 columns so the output passes the formatter unchanged; continuation lines keep
+ *           the leading ` *` of the house docblock.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 10); the house docblock rule (owner decision R-11, 2026-10-24).
  */
@@ -11,9 +12,9 @@ import { GENERATED_NOTICE } from "#core/constants/generated-notice.constant";
 /** The widest line of a generated docblock, so oxfmt leaves it alone. */
 const WIDTH = 116;
 
-/** Wraps `text` after `label`, indenting continuation lines under the text. */
+/** Wraps `text` after `label`; a continuation line keeps the docblock's ` *` and is indented under the text. */
 function wrap(label: string, text: string): string[] {
-  const indent = " ".repeat(label.length);
+  const indent = ` *${" ".repeat(label.length - 2)}`;
   const lines: string[] = [];
   let line = label;
   for (const word of text.split(/\s+/).filter(Boolean)) {

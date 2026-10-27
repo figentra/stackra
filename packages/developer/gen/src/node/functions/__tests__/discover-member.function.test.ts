@@ -34,12 +34,26 @@ describe("discoverMember", async () => {
       version: "1.0.0",
       layout: "package",
       modules: ["shop"],
+      // The fixture's package.json declares what the generated files import (STA-1296), plus the shop's own.
       packages: [
+        "@stackra/actions",
+        "@stackra/app",
         "@stackra/clients",
+        "@stackra/config",
+        "@stackra/container",
         "@stackra/contracts",
         "@stackra/errors",
+        "@stackra/events",
+        "@stackra/locking",
         "@stackra/money",
+        "@stackra/outbox",
+        "@stackra/queue",
+        "@stackra/scheduler",
+        "@stackra/settings",
+        "@stackra/testing",
+        "@stackra/tsdown-config",
         "@stackra/validation",
+        "@stackra/vitest-config",
       ],
     });
     expect(ir.rootModule).toEqual({ name: "ShopModule", from: "#node/shop.module" });

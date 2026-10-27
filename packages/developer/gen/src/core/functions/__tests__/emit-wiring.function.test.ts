@@ -269,7 +269,8 @@ describe("emitWiring", () => {
       '    { key: "locking", provide: LockingConfig },',
     ])
       expect(content).toContain(line);
-    expect(content).toContain('import { LockingConfig } from "@stackra/locking";');
+    // `importLines` merges the names of one module (`import { LockingConfig, Locks } from "@stackra/locking";`).
+    expect(content).toMatch(/import \{[^}]*\bLockingConfig\b[^}]*\} from "@stackra\/locking";/);
     expect(content).not.toContain("MemoryUnreachedDriver");
     expect(content).not.toContain('"locking.LockDriver": ');
   });

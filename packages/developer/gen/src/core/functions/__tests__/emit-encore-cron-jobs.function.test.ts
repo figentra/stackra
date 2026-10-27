@@ -47,9 +47,14 @@ describe("emitEncoreCronJobs", () => {
       emitEncoreCronJobs(LOYALTY_KIT_IR, buildManifest(LOYALTY_KIT_IR).manifest),
     ).toBeUndefined();
     expect(emitEncoreCronJobs(WEB_APP_IR, buildManifest(WEB_APP_IR).manifest)).toBeUndefined();
+    // No cron action and no @stackra/scheduler: a service that runs the scheduler still gets the minute tick.
     const quiet = {
       ...BILLING_IR,
       classes: BILLING_IR.classes.filter((item) => item.kind !== "action"),
+      packages: (BILLING_IR.packages ?? []).filter((name) => name !== "@stackra/scheduler"),
+      dependencies: BILLING_IR.dependencies.filter(
+        (dependency) => dependency.package !== "@stackra/scheduler",
+      ),
     };
     expect(emitEncoreCronJobs(quiet, buildManifest(quiet).manifest)).toBeUndefined();
   });
