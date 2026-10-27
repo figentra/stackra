@@ -1,11 +1,13 @@
 /**
  * Stackra file contract:
  * Purpose: `ToolsRegionPlan`, one region's tools stack: the region's cloud, location and account, its network, its
- *          private namespace, how long its logs are kept, and its tools.
+ *          private namespace, how long its logs are kept, its tools, its Valkey, the tools' databases on the shared
+ *          Postgres server with the admin login parameters, and the role Infisical's sync assumes.
  * Boundary: type only; plain data.
  * Runtime: isomorphic
- * Governing contract: owner decision R3-5 (2026-10-26); ADR 0444; ADR 0354 (decision 4: regions).
+ * Governing contract: owner decision R3-5 (2026-10-26); ADR 0444; ADR 0354 (decision 4: regions); ADR 0238; ADR 0173.
  */
+import type { ToolDatabase } from "#core/types/tool-database.type";
 import type { ToolPlan } from "#core/types/tool-plan.type";
 import type { ToolsNetwork } from "#core/types/tools-network.type";
 
@@ -27,4 +29,12 @@ export type ToolsRegionPlan = {
   readonly logRetentionDays: number;
   /** The tools this region runs. */
   readonly tools: readonly ToolPlan[];
+  /** The region's Valkey, present when a tool reads a cache URL. */
+  readonly cache?: { readonly nodeType: string };
+  /** The tools' databases on the shared Postgres server, created by the stack's one-shot database task. */
+  readonly databases: readonly ToolDatabase[];
+  /** The parameters holding the shared server's admin login (`PGHOST`, `PGUSER`, `PGPASSWORD`), when any database. */
+  readonly databaseAdmin: readonly { readonly name: string; readonly parameter: string }[];
+  /** The role Infisical assumes to write this region's parameters, when the runway names it. */
+  readonly secretsSync?: { readonly principal: string; readonly externalId: string };
 };

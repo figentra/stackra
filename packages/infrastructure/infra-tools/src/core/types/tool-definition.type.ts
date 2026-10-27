@@ -3,9 +3,11 @@
  * Purpose: `ToolDefinition`, one entry of the tools catalogue: the container a self-hosted tool runs as (image, port,
  *          size, command), the public environment and the secret names it reads, the volume it keeps its data on,
  *          the OpenStreetMap extract variables it takes, and the provider category and code its managed Connection
- *          carries.
+ *          carries; the image per provider, the tool it needs, the Valkey variable, its database on the shared server,
+ *          and whether its volume is on EFS or on an EC2 instance's EBS disk.
  * Boundary: type only; `TOOLS_CATALOGUE` holds the defaults and the root runway's `providers.tools.tools.<key>`
- *           overrides them. Secret names only, never a value (ADR 0173).
+ *           overrides them. Secret names only, never a value (ADR 0173). An environment value may hold
+ *           `{namespace}`, replaced by the region's private namespace.
  * Runtime: isomorphic
  * Governing contract: owner decision R3-5 (2026-10-26); ADR 0444; ADR 0173.
  */
@@ -36,4 +38,18 @@ export type ToolDefinition = {
   readonly partOf?: string;
   /** What OS integrations registers the endpoint as: a provider category and the provider's code. */
   readonly connection?: { readonly category: string; readonly provider: string };
+  /** The image per provider code other than the default (OCR's `surya`); the engine is baked into the image. */
+  readonly providerImages?: Readonly<Record<string, string>>;
+  /** Another tool this one reads from at run time (Photon imports from Nominatim's database). */
+  readonly requires?: string;
+  /** The variable that receives the region's Valkey URL (`rediss://<primary>:6379`). */
+  readonly cache?: string;
+  /** Its logical database on the environment's shared Postgres server (ADR 0238), with the extensions it needs. */
+  readonly database?: { readonly name: string; readonly extensions?: readonly string[] };
+  /** Where `volume` lives: `efs` (Fargate, the default) or `ebs` (one EC2 instance with an encrypted disk). */
+  readonly storage?: "efs" | "ebs";
+  /** The EBS disk size in GiB, when `storage` is `ebs`. */
+  readonly diskGb?: number;
+  /** The EC2 instance type, when `storage` is `ebs`. */
+  readonly instanceType?: string;
 };

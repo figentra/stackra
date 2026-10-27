@@ -2,13 +2,16 @@
  * Stackra file contract:
  * Purpose: `toolsStackPlan(root, environment)`, one environment's self-hosted tools stacks from the root runway: for
  *          each region the environment lists (when `providers.tools.environments` includes it), every enabled tool of
- *          the catalogue with the runway's overrides, the region's OpenStreetMap extract in the geocoders' variables,
- *          each secret's parameter, and the endpoint OS integrations registers as a managed Connection.
+ *          the catalogue with the runway's overrides (the image chosen by provider, `{namespace}` filled in), the
+ *          region's OpenStreetMap extract in the geocoders' variables, each secret's parameter, where its volume lives
+ *          (EFS, or EBS on one EC2 instance), its Valkey variable and its endpoint; per region the Valkey, the tools'
+ *          databases on the shared Postgres server and the Infisical role; and the Infisical folders to sync.
  * Boundary: pure and isomorphic; reads the parsed root runway only. Every missing fact (a region's definition,
- *           network or extract, an unknown extract, a tool image no upstream builds) is collected and thrown at once
- *           as `RunwayInvalidError` naming its runway path. A disabled tool also disables the tools `partOf` it.
+ *           network or extract, an unknown extract, a tool image no upstream builds, a required tool turned off, a
+ *           sync principal without an external id) is collected and thrown at once as `RunwayInvalidError` naming its
+ *           runway path. A disabled tool also disables the tools `partOf` it, which read their parent's parameters.
  * Runtime: isomorphic
- * Governing contract: owner decision R3-5 (2026-10-26); ADR 0444; ADR 0296; ADR 0354 (decision 4); ADR 0173.
+ * Governing contract: owner decision R3-5 (2026-10-26); ADR 0444; ADR 0296; ADR 0354 (decision 4); ADR 0173; ADR 0238.
  */
 import { RunwayInvalidError } from "@stackra/runway";
 import type { RootRunway, RunwayEnvironment, RunwayIssue } from "@stackra/runway";
@@ -16,12 +19,19 @@ import type { RootRunway, RunwayEnvironment, RunwayIssue } from "@stackra/runway
 import { OSM_EXTRACTS } from "#core/constants/osm-extracts.constant";
 import { ROOT_SOURCE } from "#core/constants/root-source.constant";
 import { TOOLS_CATALOGUE } from "#core/constants/tools-catalogue.constant";
-import type { ToolKey } from "#core/types/tool-key.type";
 import { TOOLS_RUNWAY_SCHEMA } from "#core/constants/tools-runway-schema.constant";
+import type { ToolDatabase } from "#core/types/tool-database.type";
 import type { ToolDefinition } from "#core/types/tool-definition.type";
+import type { ToolKey } from "#core/types/tool-key.type";
 import type { ToolPlan } from "#core/types/tool-plan.type";
 import type { ToolsRegionPlan } from "#core/types/tools-region-plan.type";
 import type { ToolsStackPlan } from "#core/types/tools-stack-plan.type";
+
+/** The libpq variables of the shared server's admin login, read by the database task. */
+const DATABASE_ADMIN = ["PGHOST", "PGUSER", "PGPASSWORD"] as const;
+
+/** The parameter folder of the admin login, under the secret path. */
+const DATABASE_ADMIN_FOLDER = "postgres";
 
 /**
  * The tools stacks of `environment`.
@@ -44,7 +54,7 @@ export function toolsStackPlan(root: RootRunway, environment: RunwayEnvironment)
   const tools = runway.providers.tools;
   const project = runway.project;
   if (tools === undefined || !tools.environments.includes(environment))
-    return { project, environment, regions: [] };
+    return { project, environment, regions: [], secretsSync: [] };
 
   const issues: RunwayIssue[] = [];
   const regionKeys = runway.environments[environment]?.regions ?? [];
@@ -54,13 +64,27 @@ export function toolsStackPlan(root: RootRunway, environment: RunwayEnvironment)
       message: "List the regions this environment's tools stack runs in",
     });
   const secretsPath = tools.secretsPath ?? `/${project}/${environment}/tools`;
+  const sync = tools.secretsSync;
+  if (sync.principal !== undefined && sync.externalId === undefined)
+    issues.push({
+      path: "providers.tools.secretsSync.externalId",
+      message: "Name the external id Infisical presents when it assumes the sync role",
+    });
   const catalogue: Readonly<Record<string, ToolDefinition>> = TOOLS_CATALOGUE;
+  const isEnabled = (key: string): boolean => tools.tools[key as ToolKey]?.enabled !== false;
+  // Parameter folder to the secret names the stack reads from it.
+  const synced = new Map<string, Set<string>>();
+  const parameterOf = (folder: string, name: string): string => {
+    synced.set(folder, (synced.get(folder) ?? new Set()).add(name));
+    return `${secretsPath}/${folder}/${name}`;
+  };
 
   const regions = regionKeys.map((regionKey): ToolsRegionPlan => {
     const region = runway.regions[regionKey];
     if (region === undefined)
       issues.push({ path: `regions.${regionKey}`, message: "Define this region" });
     const namespace = `${regionKey}.tools.${project}.internal`;
+    const databases: ToolDatabase[] = [];
 
     const planned = Object.entries(catalogue).flatMap(([key, definition]): ToolPlan[] => {
       const override = tools.tools[key as ToolKey] ?? {};
@@ -70,7 +94,18 @@ export function toolsStackPlan(root: RootRunway, environment: RunwayEnvironment)
       if (override.enabled === false || parentOverride.enabled === false) return [];
 
       const path = `providers.tools.tools.${key}`;
-      const image = override.image ?? definition.image ?? parentOverride.image ?? parent?.image;
+      if (definition.requires !== undefined && !isEnabled(definition.requires))
+        issues.push({
+          path: `${path}.enabled`,
+          message: `${key} reads from ${definition.requires}: enable ${definition.requires} or set enabled: false`,
+        });
+      const provider = override.provider ?? definition.connection?.provider;
+      const image =
+        override.image ??
+        (provider === undefined ? undefined : definition.providerImages?.[provider]) ??
+        definition.image ??
+        parentOverride.image ??
+        parent?.image;
       if (image === undefined || image === null) {
         issues.push({
           path: `${path}.image`,
@@ -79,10 +114,11 @@ export function toolsStackPlan(root: RootRunway, environment: RunwayEnvironment)
         return [];
       }
 
-      const environmentVars: Record<string, string> = {
-        ...definition.environment,
-        ...override.environment,
-      };
+      const environmentVars: Record<string, string> = Object.fromEntries(
+        Object.entries({ ...definition.environment, ...override.environment }).map(
+          ([name, value]) => [name, value.replaceAll("{namespace}", namespace)],
+        ),
+      );
       if (definition.extract !== undefined) {
         const extractKey = tools.extracts[regionKey];
         const source =
@@ -106,6 +142,16 @@ export function toolsStackPlan(root: RootRunway, environment: RunwayEnvironment)
         }
       }
 
+      if (definition.database !== undefined)
+        databases.push({
+          tool: key,
+          name: definition.database.name,
+          extensions: definition.database.extensions ?? [],
+          passwordParameter: parameterOf(key, "DATABASE_PASSWORD"),
+        });
+
+      const folder = definition.partOf ?? key;
+      const storage = override.storage ?? definition.storage ?? "efs";
       const port = definition.port;
       const connection = definition.connection;
       return [
@@ -121,16 +167,25 @@ export function toolsStackPlan(root: RootRunway, environment: RunwayEnvironment)
           environment: environmentVars,
           secrets: definition.secrets.map((name) => ({
             name,
-            parameter: `${secretsPath}/${key}/${name}`,
+            parameter: parameterOf(folder, name),
           })),
           ...(definition.volume === undefined ? {} : { volume: definition.volume }),
-          ...(port === undefined || connection === undefined
+          ...(definition.volume === undefined || storage !== "ebs"
+            ? {}
+            : {
+                ebs: {
+                  diskGb: override.diskGb ?? definition.diskGb ?? 100,
+                  instanceType: override.instanceType ?? definition.instanceType ?? "m6i.large",
+                },
+              }),
+          ...(definition.cache === undefined ? {} : { cacheVariable: definition.cache }),
+          ...(port === undefined || connection === undefined || provider === undefined
             ? {}
             : {
                 endpoint: {
                   tool: key,
                   category: connection.category,
-                  provider: override.provider ?? connection.provider,
+                  provider,
                   region: regionKey,
                   baseUrl: `http://${key}.${namespace}:${port}`,
                 },
@@ -156,9 +211,33 @@ export function toolsStackPlan(root: RootRunway, environment: RunwayEnvironment)
       namespace,
       logRetentionDays: tools.logRetentionDays,
       tools: planned,
+      ...(planned.some((tool) => tool.cacheVariable !== undefined)
+        ? { cache: { nodeType: tools.cacheNodeType } }
+        : {}),
+      databases,
+      databaseAdmin:
+        databases.length === 0
+          ? []
+          : DATABASE_ADMIN.map((name) => ({
+              name,
+              parameter: parameterOf(DATABASE_ADMIN_FOLDER, name),
+            })),
+      ...(sync.principal === undefined || sync.externalId === undefined
+        ? {}
+        : { secretsSync: { principal: sync.principal, externalId: sync.externalId } }),
     };
   });
 
   if (issues.length > 0) throw new RunwayInvalidError(ROOT_SOURCE, issues);
-  return { project, environment, regions };
+  return {
+    project,
+    environment,
+    regions,
+    secretsSync: [...synced].map(([folder, names]) => ({
+      environment,
+      source: `${sync.source}/${folder}`,
+      destination: `${secretsPath}/${folder}`,
+      names: [...names],
+    })),
+  };
 }

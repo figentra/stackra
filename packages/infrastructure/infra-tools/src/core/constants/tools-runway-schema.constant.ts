@@ -3,7 +3,9 @@
  * Purpose: `TOOLS_RUNWAY_SCHEMA`, the parts of an already parsed root runway the tools stack reads, checked strictly:
  *          the project, the regions, each environment's region list, and `providers.tools`: the environments that run
  *          the stack, per-tool overrides, the extract each region imports, extra or replaced extracts, each region's
- *          network, the secret parameter path and the log retention.
+ *          network, the secret parameter path, the log retention, the Valkey node type, and the Infisical sync (the
+ *          source folder, and the principal and external id of the role it assumes). A tool override may move its
+ *          volume to EBS (`storage`, `diskGb`, `instanceType`).
  * Boundary: internal; `toolsStackPlan` is its only reader. `@stackra/runway` leaves provider blocks open (`providers`
  *           has a catch-all, "a new vendor needs no schema change"), so `providers.tools` reaches here unchecked and is
  *           checked here. An unknown tool key fails.
@@ -29,6 +31,9 @@ const TOOL = z.strictObject({
   replicas: z.int().min(0).optional(),
   provider: z.string().min(1).optional(),
   environment: z.record(z.string(), z.string()).optional(),
+  storage: z.enum(["efs", "ebs"]).optional(),
+  diskGb: z.int().min(20).optional(),
+  instanceType: z.string().min(1).optional(),
 });
 
 /** The `providers.tools` block. */
@@ -56,6 +61,17 @@ const TOOLS = z.strictObject({
     .regex(/^(\/[A-Za-z0-9_.-]+)+$/, "Expected a parameter path such as /acme/production/tools")
     .optional(),
   logRetentionDays: z.int().min(1).default(30),
+  cacheNodeType: z.string().min(1).default("cache.t4g.micro"),
+  secretsSync: z
+    .strictObject({
+      source: z
+        .string()
+        .regex(/^(\/[A-Za-z0-9_.-]+)+$/)
+        .default("/tools"),
+      principal: z.string().min(1).optional(),
+      externalId: z.string().min(1).optional(),
+    })
+    .default({ source: "/tools" }),
 });
 
 /** The root runway, narrowed to what the tools stack reads. */

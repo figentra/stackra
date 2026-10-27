@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `ToolPlan`, one tool as one region runs it: its resolved container (image, port, size, command,
- *          environment), each secret with the parameter that holds it, its volume and its endpoint.
+ *          environment), each secret with the parameter that holds it, its volume (EFS, or EBS on EC2), its endpoint
+ *          and the variable that receives the region's Valkey URL.
  * Boundary: type only; plain data a test compares and `awsToolsStack` (`./node`) turns into resources.
  * Runtime: isomorphic
  * Governing contract: owner decision R3-5 (2026-10-26); ADR 0444; ADR 0173 (secret names only).
@@ -34,4 +35,8 @@ export type ToolPlan = {
   readonly volume?: string;
   /** Absent for a worker. */
   readonly endpoint?: ToolEndpoint;
+  /** The variable that receives the region's Valkey URL; the program fills it from the cache it declares. */
+  readonly cacheVariable?: string;
+  /** Set when `volume` lives on one EC2 instance's EBS disk instead of EFS. */
+  readonly ebs?: { readonly diskGb: number; readonly instanceType: string };
 };
