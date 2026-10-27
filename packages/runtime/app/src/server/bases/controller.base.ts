@@ -16,7 +16,7 @@ import type { ControllerClass } from "#server/types/controller-class.type";
 import type { ControllerOptions } from "#server/types/controller-options.type";
 
 /** The instance side of every controller; `handle` is abstract, so a controller needs no `override`. */
-export abstract class ControllerBase {
+abstract class ControllerBase {
   /** Type-only kind brand, so a class of another kind cannot stand in for a controller. */
   declare readonly "~kind": "controller";
 
