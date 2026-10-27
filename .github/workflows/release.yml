@@ -5,10 +5,15 @@
 #          a signed CycloneDX SBOM to each release. The job runs in the protected `release` environment, which needs a
 #          required reviewer's approval: a run shows "waiting" until the owner approves it, by design (runbook, release).
 #          The registry's trusted publisher row names THIS file, `refs/heads/main` and the `release` environment.
-# Boundary: the registry URL is set here once (`registry`, the root runway's `providers.npm.registry`); no member's
-#           publishConfig names one. Never npmjs, never Keygen (ADR 0453).
+#          A second path, workflow_dispatch with `prerelease` on main (owner decision D8, stackra-212): the `prerelease`
+#          job publishes only the `packages` filter (default: the five *-config presets) at `<base>-<dist_tag>.<run
+#          number>` (0.1.0-next.<n>) under the `dist_tag` (default `next`). The version is set on the runner only: no
+#          commit, no tag, no version PR, nothing pushed. The normal `release` job does not run on that dispatch.
+# Boundary: the registry URL is set only in this file (the release job's `registry`, the root runway's
+#           `providers.npm.registry`, and the prerelease job's REGISTRY); no member's publishConfig names one. Never
+#           npmjs, never Keygen (ADR 0453).
 # Runtime: GitHub Actions
-# Governing contract: ADR 0453 (decision 6); ADR 0168; ADR 0177 (PK5, the fixed version group).
+# Governing contract: ADR 0453 (decisions 6, 7); ADR 0168; ADR 0174; ADR 0177 (PK5, the fixed version group).
 # Owner: release-operations
 # Secrets: STACKRA_BOT_APP_ID / STACKRA_BOT_PRIVATE_KEY (repository secrets, the stackra-bot app token, owner
 #          decision A1), passed to the provider. Publishing uses GitHub OIDC exchanged at the registry; no token.
@@ -23,6 +28,24 @@ on:
         description: "Run `pnpm -r publish --dry-run` (no version PR, no publish) in the release environment"
         type: boolean
         default: false
+      prerelease:
+        description: "Prerelease only the `packages` below under `dist_tag` (no version PR, nothing committed)"
+        type: boolean
+        default: false
+      packages:
+        description: "Prerelease: space-separated package names to publish"
+        type: string
+        default: >-
+          @stackra/commitlint-config @stackra/oxlint-config @stackra/tsdown-config @stackra/typescript-config
+          @stackra/vitest-config
+      dist_tag:
+        description: "Prerelease: the dist-tag and the prerelease identifier (never `latest`)"
+        type: string
+        default: next
+      base_version:
+        description: "Prerelease: the release the prerelease leads to (one fixed version, ADR 0177 PK5)"
+        type: string
+        default: 0.1.0
 
 # One release run per ref at a time: a second run starting before this one finishes
 # would version the same changesets twice.
@@ -34,6 +57,8 @@ permissions: {}
 jobs:
   release:
     name: Release
+    # A prerelease dispatch runs the job below instead; a push has no inputs, so this is true for every push.
+    if: ${{ !inputs.prerelease }}
     permissions:
       contents: write
       pull-requests: write
@@ -53,3 +78,123 @@ jobs:
     secrets:
       app-id: ${{ secrets.STACKRA_BOT_APP_ID }}
       app-private-key: ${{ secrets.STACKRA_BOT_PRIVATE_KEY }}
+
+  # The prerelease path (stackra-212). The same registry exchange as runway-npm.yml's registry script, per package:
+  # this file, refs/heads/main and the `release` environment are what the publisher row matches, so the job runs here
+  # and only on main. Changesets is not used: `changeset version --snapshot` versions from 0.0.0 or from the pending
+  # bumps and cannot give 0.1.0-next.<n> while every member already says 0.1.0, so the runner's package.json files
+  # get the version directly and are thrown away with the runner.
+  prerelease:
+    name: Prerelease
+    if: ${{ inputs.prerelease && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: release
+    permissions:
+      contents: read # checkout
+      id-token: write # the registry's OIDC exchange and the Sigstore provenance of each tarball
+    env:
+      PACKAGES: ${{ inputs.packages }}
+      DIST_TAG: ${{ inputs.dist_tag }}
+      BASE_VERSION: ${{ inputs.base_version }}
+      REGISTRY: https://npm.stackra.figentra.com/
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false # nothing is pushed
+          submodules: false # .notes is a private owner-only submodule; CI never needs it (STA-178)
+
+      - name: Toolchain (mise)
+        uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
+        with:
+          install_args: node pnpm
+
+      # Inputs arrive through the environment and are checked before use (zizmor template-injection).
+      - name: Inputs
+        id: inputs
+        env:
+          RUN_NUMBER: ${{ github.run_number }}
+        run: |
+          [[ "$DIST_TAG" =~ ^[a-z][a-z0-9-]*$ && "$DIST_TAG" != latest ]] || {
+            echo "::error title=dist_tag::must be lower-case letters, digits or '-', and never latest"; exit 1; }
+          [[ "$BASE_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || {
+            echo "::error title=base_version::must be x.y.z"; exit 1; }
+          filters=""
+          for name in $PACKAGES; do
+            [[ "$name" =~ ^@stackra/[a-z0-9][a-z0-9-]*$ ]] || {
+              echo "::error title=packages::$name is not an @stackra/* package name"; exit 1; }
+            filters="$filters --filter=$name"
+          done
+          [ -n "$filters" ] || { echo "::error title=packages::empty"; exit 1; }
+          echo "filters=${filters# }" >> "$GITHUB_OUTPUT"
+          echo "version=${BASE_VERSION}-${DIST_TAG}.${RUN_NUMBER}" >> "$GITHUB_OUTPUT"
+
+      # ADR 0174, as the normal release: a critical vulnerability with a released fix blocks the publish.
+      - name: Vulnerability scan (Trivy)
+        run: >-
+          mise exec aqua:aquasecurity/trivy@0.76.1 --
+          trivy fs --scanners vuln --severity CRITICAL --ignore-unfixed --exit-code 1 --no-progress .
+
+      - name: Install dependencies
+        run: >-
+          pnpm install --frozen-lockfile --filter=!@figentra/mobile --filter=!@figentra/playground
+          --filter=!@stackra-pro/ui
+
+      - name: Build
+        env:
+          FILTERS: ${{ steps.inputs.outputs.filters }}
+        run: |
+          set -f
+          # shellcheck disable=SC2086 # word splitting of the filter list is the point
+          pnpm turbo run build $FILTERS
+
+      # Runner-only: every selected package gets the one prerelease version, so pnpm publish rewrites a workspace:*
+      # reference between them to it. A workspace dependency outside the filter keeps its own version (runbook).
+      - name: Prerelease version
+        env:
+          VERSION: ${{ steps.inputs.outputs.version }}
+        run: |
+          set -euo pipefail
+          found=0
+          while IFS=$'\t' read -r name private dir; do
+            case " $PACKAGES " in *" $name "*) ;; *) continue ;; esac
+            [ "$private" != true ] || { echo "::error title=private::$name is private and is never published"; exit 1; }
+            jq --arg v "$VERSION" '.version = $v' "$dir/package.json" > "$RUNNER_TEMP/package.json"
+            mv "$RUNNER_TEMP/package.json" "$dir/package.json"
+            echo "$name -> $VERSION"
+            found=$((found + 1))
+          done < <(pnpm -r ls --depth -1 --json | jq -r '.[] | [.name, (.private // false | tostring), .path] | @tsv')
+          [ "$found" -eq "$(wc -w <<< "$PACKAGES")" ] || {
+            echo "::error title=packages::a package in the filter is not in the workspace"; exit 1; }
+
+      # Per package: a GitHub ID token (audience npm:<host>) exchanged for a publish token bound to that one name
+      # (ADR 0453 decision 6), masked and passed as NODE_AUTH_TOKEN; ~/.npmrc names the variable, never the value.
+      - name: Publish
+        env:
+          VERSION: ${{ steps.inputs.outputs.version }}
+        run: |
+          set -euo pipefail
+          host="${REGISTRY#https://}"
+          # shellcheck disable=SC2016 # the literal ${NODE_AUTH_TOKEN} is the point
+          printf '//%s:_authToken=${NODE_AUTH_TOKEN}\n' "$host" >> ~/.npmrc
+          while IFS=$'\t' read -r name dir; do
+            case " $PACKAGES " in *" $name "*) ;; *) continue ;; esac
+            encoded="${name/\//%2f}"
+            # Versions are immutable (ADR 0453 decision 7): a re-run skips what it already published.
+            if curl -fsS -o /dev/null "${REGISTRY}${encoded}/${VERSION}"; then
+              echo "skip ${name}@${VERSION}: already on the registry"
+              continue
+            fi
+            id_token="$(curl -fsS -H "Authorization: bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" \
+              "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=npm:${host%/}" | jq -r '.value')"
+            echo "::add-mask::${id_token}"
+            NODE_AUTH_TOKEN="$(curl -fsS -X POST -H "Authorization: Bearer ${id_token}" \
+              "${REGISTRY}-/npm/v1/oidc/token/exchange/package/${encoded}" | jq -r '.token')"
+            echo "::add-mask::${NODE_AUTH_TOKEN}"
+            export NODE_AUTH_TOKEN
+            (cd "$dir" && pnpm publish --no-git-checks --access public --provenance --tag "$DIST_TAG" \
+              --registry "$REGISTRY")
+            unset NODE_AUTH_TOKEN
+            echo "::notice title=Published::${name}@${VERSION} (${DIST_TAG})"
+          done < <(pnpm -r ls --depth -1 --json | jq -r '.[] | [.name, .path] | @tsv')

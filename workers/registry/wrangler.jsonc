@@ -4,6 +4,7 @@
 //          as a Worker var (ADR 0453 decision 19).
 // Owner: release-operations · Secrets: REGISTRY_SIGNING_KEY is a Worker secret set by CI from Infisical `prod`
 //        `/registry` (ADR 0173); CI passes CLOUDFLARE_API_TOKEN from Infisical in the environment. No secret is in this file.
+// Deploy: CI only, .github/workflows/deploy-registry.yml (runbook in README.md).
 // Carve-out (ADR 0284 decision 8): hand-written until `stackra gen` emits Workers config from runway.yaml (ADR 0168).
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
@@ -14,7 +15,8 @@
   // Pinned: bumped on purpose, never set to "today" on every deploy.
   "compatibility_date": "2026-10-01",
   // The bucket, database and namespace are Pulumi resources of @stackra/infra-cloudflare (`registryWorker`).
-  // The ids below are the owner's to fill from that stack's outputs before the first deploy (ADR 0453 chores).
+  // The zero ids below stay zero in git: deploy-registry.yml replaces them on the runner with the `registry`
+  // environment's REGISTRY_D1_DATABASE_ID and REGISTRY_KV_NAMESPACE_ID and refuses to deploy while one is left.
   "r2_buckets": [{ "binding": "TARBALLS", "bucket_name": "stackra-registry" }],
   "d1_databases": [
     {

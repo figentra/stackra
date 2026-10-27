@@ -1,4 +1,4 @@
-<!-- Stackra file contract. Purpose: the README of @figentra/worker-registry, the Stackra npm registry Worker: routes, storage, publishing, read rules, the licence engine and its API, settings, layout and deploy. Boundary: documentation only; ADR 0453 is the decision. Runtime: documentation. Governing contract: ADR 0453; ADR 0284; ADR 0007. -->
+<!-- Stackra file contract. Purpose: the README of @figentra/worker-registry, the Stackra npm registry Worker: routes, storage, publishing, read rules, the licence engine and its API, settings, layout, deploy and the owner runbook (deploy, first publish of the presets). Boundary: documentation only; ADR 0453 is the decision. Runtime: documentation. Governing contract: ADR 0453; ADR 0284; ADR 0289; ADR 0173; ADR 0007. -->
 
 # @figentra/worker-registry
 
@@ -157,7 +157,129 @@ One exported declaration per file, named after it (ADR 0305 rules 10 to 13).
 | `typecheck` / `lint` / `format`                 | the usual checks                                      |
 
 Never run `wrangler deploy` or `wrangler d1 migrations apply --remote` by hand. CI deploys
-(`.github/workflows/deploy-registry.yml`, GitHub environment `registry`; not written yet).
+(`.github/workflows/deploy-registry.yml`, GitHub environment `registry`), on every push to main that touches this
+member and by hand (Actions, "Deploy registry", Run workflow on `main`).
+
+## Deploy and first publish (owner runbook)
+
+Owner decision D8 (2026-10-28, stackra-212): deploy the registry now and publish only the five tooling presets as
+`0.1.0-next.<n>` under the `next` dist-tag. Every step below is the owner's; agents run none of them. Commands that
+need the account run where `CLOUDFLARE_API_TOKEN` is already in the shell's environment (never pasted into a
+command line).
+
+### 1. Resources
+
+Either through Pulumi, adding `registryWorker` of `@stackra/infra-cloudflare/node` to the Cloudflare stack (no stack
+calls it yet):
+
+```ts
+const registry = registryWorker({
+  accountId,
+  zoneId: zone.id,
+  hostname: "npm.stackra.figentra.com",
+  script: "stackra-registry",
+  bucket: "stackra-registry",
+  database: "stackra-registry",
+  namespace: "stackra-registry-cache",
+  importDomain: "<id of the npflared custom domain, ADR 0453 decision 17>",
+});
+export const registryD1DatabaseId = registry.database.id;
+export const registryKvNamespaceId = registry.namespace.id;
+```
+
+or with wrangler once, from `workers/registry` (the bucket name and the database name must match `wrangler.jsonc`):
+
+```sh
+pnpm exec wrangler r2 bucket create stackra-registry
+pnpm exec wrangler d1 create stackra-registry          # prints database_id
+pnpm exec wrangler kv namespace create stackra-registry-cache   # prints id
+```
+
+Put the two ids into the GitHub environment `registry` (Settings, Environments) as **variables**, not secrets, and
+never into `wrangler.jsonc` (it keeps the zero ids; CI substitutes them on the runner):
+
+| Variable                         | Value                                       |
+| -------------------------------- | ------------------------------------------- |
+| `REGISTRY_D1_DATABASE_ID`        | the D1 uuid                                 |
+| `REGISTRY_KV_NAMESPACE_ID`       | the KV namespace id (32 hex)                |
+| `INFISICAL_REGISTRY_IDENTITY_ID` | the Infisical machine identity the job uses |
+
+Restrict the `registry` environment to `main`. The Infisical identity trusts GitHub OIDC for the subject
+`repo:figentra/stackra:environment:registry` and reads `prod` `/ci` (`CLOUDFLARE_API_TOKEN`) and `prod` `/registry`
+(`REGISTRY_SIGNING_KEY`). The Cloudflare token needs Workers Scripts, D1, Workers KV and Workers Routes edit on the
+account and the zone. The custom domain `npm.stackra.figentra.com` must leave the npflared `npm-registry` Worker first
+(decision 17), or `wrangler deploy` refuses the route.
+
+### 2. Signing key
+
+An ECDSA P-256 key in PKCS#8 PEM (the form `src/signing/create-signer.ts` imports), generated on the owner's machine
+straight into the secrets inbox:
+
+```sh
+openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:P-256 -out ~/Secrets-inbox/REGISTRY_SIGNING_KEY.pem
+printf 'env: prod\npath: /registry\n' > ~/Secrets-inbox/REGISTRY_SIGNING_KEY.target.yaml
+pnpm secrets:import --dry-run   # then the import with the printed --confirm token
+```
+
+### 3. Issuer token
+
+One per licence API caller (OS billing). Make the value, keep only its SHA-256 hex for D1, and import the value to
+Infisical `prod` `/registry` as `REGISTRY_ISSUER_TOKEN` the same way:
+
+```sh
+openssl rand -base64 32 | tr '+/' '-_' | tr -d '=\n' > ~/Secrets-inbox/REGISTRY_ISSUER_TOKEN
+printf 'env: prod\npath: /registry\n' > ~/Secrets-inbox/REGISTRY_ISSUER_TOKEN.target.yaml
+shasum -a 256 < ~/Secrets-inbox/REGISTRY_ISSUER_TOKEN | cut -d' ' -f1   # the hash, safe to show
+pnpm secrets:import --dry-run   # then the import with the printed --confirm token
+```
+
+After the first deploy (step 4 creates the tables), insert the hash:
+
+```sh
+pnpm exec wrangler d1 execute stackra-registry --remote --command \
+  "INSERT INTO issuer_tokens (hash, label, created_at) VALUES ('<sha256 hex>', 'os-billing', '$(date -u +%FT%T.000Z)')"
+```
+
+### 4. Deploy
+
+Run "Deploy registry" on `main`. It tests and builds this member, puts the ids into the runner's `wrangler.jsonc`,
+applies the migrations (`wrangler d1 migrations apply stackra-registry --remote`), runs `wrangler deploy`, sets
+`REGISTRY_SIGNING_KEY` from Infisical through stdin, and waits for `/-/ping` and `/-/npm/v1/keys` to answer 200 with at
+least one key. Without `INFISICAL_REGISTRY_IDENTITY_ID` it builds, tests and deploys nothing. Check by hand too:
+
+```sh
+curl -fsS https://npm.stackra.figentra.com/-/ping
+curl -fsS https://npm.stackra.figentra.com/-/npm/v1/keys   # keytype ecdsa-sha2-nistp256, keyid SHA256:…
+```
+
+### 5. Dry run, then publish `next`
+
+Actions, "Release", Run workflow on `main`:
+
+1. `dry_run` on: packs every published package through the `.pnpmfile.mjs` hook; nothing leaves the runner.
+2. `prerelease` on, `packages` left at its default (the five presets), `dist_tag` `next`, `base_version` `0.1.0`.
+   The `release` environment waits for the owner's approval. The job sets `0.1.0-next.<run number>` on the
+   runner only (nothing is committed, tagged or pushed), builds them, and publishes each through its own OIDC
+   exchange with `pnpm publish --provenance --tag next`. A re-run skips a version that is already there.
+
+`@stackra/oxlint-config` has `@stackra/coding-standard` as a peer (`workspace:*`, which pnpm publish writes as that
+package's own version, `0.0.0` today, when it is not in the filter). If the clean install below fails on that peer,
+add `@stackra/coding-standard` to `packages` and run the prerelease again: both then carry the same `0.1.0-next.<n>`.
+
+### 6. Install from a clean folder
+
+```sh
+mkdir /tmp/stackra-next && cd /tmp/stackra-next
+printf '@stackra:registry=https://npm.stackra.figentra.com/\n' > .npmrc
+pnpm init
+pnpm add -D @stackra/oxlint-config@next @stackra/typescript-config@next @stackra/vitest-config@next \
+  @stackra/tsdown-config@next @stackra/commitlint-config@next
+pnpm view @stackra/oxlint-config dist-tags --registry https://npm.stackra.figentra.com/
+```
+
+Every package installs at `0.1.0-next.<n>`, `latest` is absent (no 0.1.0 yet), and `npm audit signatures` in that
+folder verifies the registry signatures against `/-/npm/v1/keys`. Then the products move to `@stackra/*-config@next`
+and drop their `packages/tooling` copies, one follow-up batch per product.
 
 ## Not here yet
 
@@ -167,5 +289,6 @@ Never run `wrangler deploy` or `wrangler d1 migrations apply --remote` by hand. 
 - `@stackra/skills/contracts` (`StackraKind`, `StackraManifest`, `CatalogueItem`, `CataloguePage`): stackra-184. The
   same shapes live in `src/interfaces/` (`stackra-kind.type.ts`, `catalogue-item.interface.ts`, …) and
   `src/constants/stackra-kinds.constant.ts` until then.
-- The deploy workflow, the runway placement, the real D1 and KV ids in `wrangler.jsonc`, and the move of the custom
-  domain from the npflared Worker (owner, ADR 0453 decision 17).
+- The runway placement of this member (the deploy is its own workflow, not a `runway-cloudflare-workers.yml` caller:
+  that provider has no D1 migration step and no Worker secret), the Pulumi stack call of `registryWorker`, and the
+  move of the custom domain from the npflared Worker (owner, ADR 0453 decision 17; runbook step 1).

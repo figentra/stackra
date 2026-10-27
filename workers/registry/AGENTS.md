@@ -1,4 +1,4 @@
-<!-- Stackra file contract. Purpose: agent rules for @figentra/worker-registry, the Stackra npm registry Worker. Boundary: documentation only. Runtime: documentation. Governing contract: ADR 0453; ADR 0284; ADR 0007. -->
+<!-- Stackra file contract. Purpose: agent rules for @figentra/worker-registry, the Stackra npm registry Worker. Boundary: documentation only. Runtime: documentation. Governing contract: ADR 0453; ADR 0284; ADR 0289; ADR 0007. -->
 
 # AGENTS — @figentra/worker-registry
 
@@ -15,7 +15,9 @@ The Stackra npm registry, Cloudflare Worker `stackra-registry` at `npm.stackra.f
 ## Rules agents follow
 
 - Never run `wrangler deploy`, `wrangler secret …`, `wrangler d1 … --remote` or anything that changes the Cloudflare
-  account. CI deploys.
+  account. CI deploys (`.github/workflows/deploy-registry.yml`); the owner runs the runbook in `README.md`.
+- `wrangler.jsonc` keeps the zero D1 and KV ids: never commit a real resource id. CI substitutes them from the
+  `registry` environment's variables and refuses to deploy while a zero id is left.
 - Every limit, TTL and URL is a `REGISTRY_*` var read by `readSettings`; never a constant in a handler. Scopes, read
   rules, licence rules and trusted publishers are D1 rows, added by a new numbered migration, never by code.
 - Never edit an applied migration; add the next number. Per-name read rules are `name_rules` rows; they only tighten.

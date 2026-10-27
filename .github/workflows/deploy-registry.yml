@@ -1,0 +1,176 @@
+# Stackra file contract:
+# Purpose: deploy workers/registry (the `stackra-registry` Cloudflare Worker, npm.stackra.figentra.com, ADR 0453) from
+#          CI only (ADR 0284): test and build the member, put the real D1 and KV ids into wrangler.jsonc on the runner,
+#          apply the D1 migrations (remote), `wrangler deploy`, set the REGISTRY_SIGNING_KEY Worker secret, then check
+#          /-/ping and /-/npm/v1/keys. Runs on main pushes that touch the member or this file, and by hand.
+# Boundary: a standalone job, not a caller of runway-cloudflare-workers.yml: that provider has no D1 migration step, no
+#           Worker secret and no binding ids, and its folder is not this batch's. The resource ids are never committed:
+#           they come from the `registry` environment's variables (the outputs of infra-cloudflare `registryWorker`,
+#           or the ids printed by the wrangler create commands, runbook in workers/registry/README.md).
+# Runtime: GitHub Actions
+# Governing contract: ADR 0453 (decisions 3, 9, 17, chores); ADR 0284 (decision 8); ADR 0289 (RW3); ADR 0173; ADR 0019.
+# Owner: release-operations
+# Secrets: none in the repository. CLOUDFLARE_API_TOKEN from Infisical `prod` `/ci` and REGISTRY_SIGNING_KEY from
+#          Infisical `prod` `/registry`, both through GitHub OIDC with the identity INFISICAL_REGISTRY_IDENTITY_ID (a
+#          `registry` environment variable, not a secret). Each secret is fetched right before the step that uses it
+#          and blanked in the smoke step. Without the identity id the job tests, builds, prints a notice and deploys
+#          nothing, so main stays green until the owner has run the runbook.
+name: Deploy registry
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "workers/registry/**"
+      - ".github/workflows/deploy-registry.yml"
+  workflow_dispatch:
+
+# One deploy at a time, in order: a newer run waits instead of cancelling one mid-migration.
+concurrency:
+  group: deploy-registry
+  cancel-in-progress: false
+
+# ADR 0019 D2: nothing by default; the job asks for what it needs.
+permissions: {}
+
+jobs:
+  deploy:
+    name: Deploy npm.stackra.figentra.com
+    # workflow_dispatch can name any branch; only main deploys (ADR 0170 decision 6).
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # The owner restricts this environment to main; its name is in the OIDC subject the Infisical identity trusts.
+    environment:
+      name: registry
+      url: https://npm.stackra.figentra.com/-/ping
+    permissions:
+      contents: read # checkout
+      id-token: write # GitHub OIDC token, exchanged with Infisical for /ci and /registry
+    env:
+      INFISICAL_IDENTITY_ID: ${{ vars.INFISICAL_REGISTRY_IDENTITY_ID }}
+      INFISICAL_PROJECT_ID: dd4724f4-7b9a-46ae-a899-b34af2d626b2 # .infisical.yaml workspace id, not a secret
+      INFISICAL_DOMAIN: https://eu.infisical.com
+      REGISTRY_URL: https://npm.stackra.figentra.com
+
+    steps:
+      # ADR 0019 D1: every action is pinned to a full commit SHA, the version in the trailing comment.
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+          submodules: false # .notes is a private owner-only submodule; CI never needs it (STA-178)
+
+      # ADR 0027 D2: node and pnpm come from mise.toml.
+      - name: Toolchain (mise)
+        uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
+        with:
+          install_args: node pnpm
+
+      # The licensed Pro postinstalls (ADR 0310) fail without the gate's tokens, so the three members that pull them
+      # in are not installed; none of them is deployed here (as deploy-static.yml).
+      - name: Install dependencies
+        run: >-
+          pnpm install --frozen-lockfile --filter=!@figentra/mobile --filter=!@figentra/playground
+          --filter=!@stackra-pro/ui
+
+      # A broken build or a failing test never reaches Cloudflare.
+      - name: Test and build
+        run: pnpm turbo run test build --filter=@figentra/worker-registry
+
+      - name: Deploy prerequisites missing
+        if: env.INFISICAL_IDENTITY_ID == ''
+        run: >-
+          echo "::notice title=Deploy skipped::No INFISICAL_REGISTRY_IDENTITY_ID in the registry environment.
+          Built and tested, nothing deployed (runbook: workers/registry/README.md)."
+
+      # The committed file holds zero placeholders; the runner's copy gets the real ids, which are checked for shape
+      # first so a variable can never inject anything into the config.
+      - name: Resource ids
+        if: env.INFISICAL_IDENTITY_ID != ''
+        working-directory: workers/registry
+        env:
+          D1_ID: ${{ vars.REGISTRY_D1_DATABASE_ID }}
+          KV_ID: ${{ vars.REGISTRY_KV_NAMESPACE_ID }}
+        run: |
+          [[ "$D1_ID" =~ ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$ ]] || {
+            echo "::error title=REGISTRY_D1_DATABASE_ID::missing or not a D1 database uuid"; exit 1; }
+          [[ "$KV_ID" =~ ^[0-9a-f]{32}$ ]] || {
+            echo "::error title=REGISTRY_KV_NAMESPACE_ID::missing or not a KV namespace id (32 hex)"; exit 1; }
+          sed -i \
+            -e "s/\"00000000-0000-0000-0000-000000000000\"/\"$D1_ID\"/" \
+            -e "s/\"00000000000000000000000000000000\"/\"$KV_ID\"/" \
+            wrangler.jsonc
+          if grep -Eq '"0{8}-0{4}-0{4}-0{4}-0{12}"|"0{32}"' wrangler.jsonc; then
+            echo "::error title=Placeholder left::wrangler.jsonc still holds a zero id"; exit 1
+          fi
+
+      # Exports only CLOUDFLARE_API_TOKEN; the secret-name filter keeps every other /ci value out of the job.
+      - name: Cloudflare token (Infisical OIDC)
+        if: env.INFISICAL_IDENTITY_ID != ''
+        uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
+        with:
+          method: oidc
+          identity-id: ${{ env.INFISICAL_IDENTITY_ID }}
+          domain: ${{ env.INFISICAL_DOMAIN }}
+          project-id: ${{ env.INFISICAL_PROJECT_ID }}
+          env-slug: prod
+          secret-path: /ci
+          secret-name: CLOUDFLARE_API_TOKEN
+          export-type: env
+
+      # Before the deploy, so the new code never runs against an old schema. Applied migrations are skipped.
+      - name: D1 migrations (remote)
+        if: env.INFISICAL_IDENTITY_ID != ''
+        working-directory: workers/registry
+        run: pnpm exec wrangler d1 migrations apply stackra-registry --remote
+
+      - name: wrangler deploy
+        if: env.INFISICAL_IDENTITY_ID != ''
+        working-directory: workers/registry
+        run: pnpm exec wrangler deploy
+
+      # Fetched only now, so the key is in no earlier step's environment.
+      - name: Signing key (Infisical OIDC)
+        if: env.INFISICAL_IDENTITY_ID != ''
+        uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
+        with:
+          method: oidc
+          identity-id: ${{ env.INFISICAL_IDENTITY_ID }}
+          domain: ${{ env.INFISICAL_DOMAIN }}
+          project-id: ${{ env.INFISICAL_PROJECT_ID }}
+          env-slug: prod
+          secret-path: /registry
+          secret-name: REGISTRY_SIGNING_KEY
+          export-type: env
+
+      # Through stdin, never an argument; setting the same value again is harmless, a rotated value takes effect.
+      - name: REGISTRY_SIGNING_KEY secret
+        if: env.INFISICAL_IDENTITY_ID != ''
+        working-directory: workers/registry
+        run: |
+          [ -n "${REGISTRY_SIGNING_KEY:-}" ] || {
+            echo "::error title=REGISTRY_SIGNING_KEY::missing in Infisical prod /registry"; exit 1; }
+          printf '%s' "$REGISTRY_SIGNING_KEY" | pnpm exec wrangler secret put REGISTRY_SIGNING_KEY
+
+      # Readiness, not just liveness (STA-268): each attempt prints its status; only the end of the budget fails.
+      # /-/npm/v1/keys answers only once the signing key is readable, so it proves the secret too.
+      - name: Smoke test
+        if: env.INFISICAL_IDENTITY_ID != ''
+        env:
+          CLOUDFLARE_API_TOKEN: ""
+          REGISTRY_SIGNING_KEY: ""
+        run: |
+          for path in /-/ping /-/npm/v1/keys; do
+            url="${REGISTRY_URL}${path}"
+            ok=""
+            for attempt in $(seq 1 12); do
+              code="$(curl --silent --output /dev/null --write-out '%{http_code}' --max-time 10 "$url" || true)"
+              if [ "$code" = 200 ]; then ok=1; echo "::notice title=Ready::$url answered 200 on attempt $attempt"; break; fi
+              echo "not serving yet: $url answered ${code:-nothing} (attempt $attempt of 12)"
+              sleep 10
+            done
+            [ -n "$ok" ] || { echo "::error title=Smoke test failed::$url did not answer 200 within two minutes"; exit 1; }
+          done
+          curl --silent --fail "${REGISTRY_URL}/-/npm/v1/keys" | jq -e '.keys | length > 0' > /dev/null || {
+            echo "::error title=No signing key::/-/npm/v1/keys lists no key"; exit 1; }
