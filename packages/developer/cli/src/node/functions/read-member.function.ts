@@ -3,6 +3,8 @@
  * Purpose: `readMember(root)`, the member a tool command runs in: its layout from the `define*` call of
  *          `stackra.config.ts` and an app's targets from its committed `stackra.manifest.json`, which gen writes
  *          before the tool runs.
+ *          A member with `src/config/docs.config.ts` is the docs app whatever its `define*` call (STA-1316); one with
+ *          `src/docs.json` and no `stackra.config.ts` is a docs app in the layout before it (until each sweep).
  * Boundary: reads two files; never runs `stackra.config.ts`. The call name is read from the text, as gen's own member
  *           reader does, because the file holds one static `define*` call.
  * Runtime: node
@@ -12,6 +14,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 
 import type { StackraManifest } from "@stackra/contracts";
+import { DOCS_CONFIG_FILE } from "@stackra/gen";
 
 import type { Member } from "#node/types/member.type";
 
@@ -33,6 +36,8 @@ const LAYOUTS: Readonly<Record<string, Member["layout"]>> = {
  */
 export function readMember(root: string): Member {
   const absolute = resolve(root);
+  if (existsSync(join(absolute, DOCS_CONFIG_FILE)))
+    return { root: absolute, layout: "docs", targets: [] };
   const configPath = join(absolute, "stackra.config.ts");
   if (!existsSync(configPath)) {
     const layout = existsSync(join(absolute, "src", "docs.json")) ? "docs" : "tooling";

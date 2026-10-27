@@ -1,0 +1,12 @@
+# yaml-language-server: $schema=https://static.stackra.figentra.com/schemas/runway/app.json
+# Stackra file contract:
+# Purpose: what the docs site needs per environment: its one dev port, which `stackra dev` passes to `mint dev`.
+# Boundary: a member runway; where the site is published (the `mintlify` destination and its deploy branch) is the
+#           root runway. No var and no secret: the site is static documentation.
+# Governing contract: ADR 0296 (member runway), ADR 0299 (docs runway), ADR 0002 (2026-10-27 amendment)
+$schema: "@stackra/runway/schema/app.json"
+version: 3
+
+environments:
+  dev:
+    port: {{PORT}}

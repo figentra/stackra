@@ -122,7 +122,7 @@ test("app templates take their theme from @stackra/tokens and ship their own cop
   sameBytes(desktop, "assets/app-icon-1024.png", "app-icon/app-icon-light-1024.png");
 
   const docs = render("app:docs", "handbook").dest;
-  assert.equal(json(docs, "src/docs.json").colors.primary, "#0B0D0F");
+  assert.match(read(docs, "src/config/docs.config.ts"), /primary: "#0B0D0F"/);
   assert.equal(
     readText(docs, "src/assets/logo/light.svg"),
     readFileSync(join(BRAND, "logos/stackra-wordmark-light.svg"), "utf8"),
@@ -251,7 +251,7 @@ test("--entries adds react and native folders and aliases; --data adds the modul
 });
 
 // @covers sta-347:FR-004 sta-347:P-003
-test("apps come out in the v3 shape: config, root module, route folders, config classes; docs is exempt", () => {
+test("apps come out in the v3 shape: config, root module, route folders, config classes; docs has no module", () => {
   const appFiles = {
     "app:console": [
       "src/admin.module.ts",
@@ -302,8 +302,15 @@ test("apps come out in the v3 shape: config, root module, route folders, config 
       /shortcut: authored until stackra gen writes[^\n]*STA-339/,
     );
   }
+  // The docs app (ADR 0002, 2026-10-27 amendment): member files at the root, pages in src/docs, no docs.json, no module.
   const docs = render("app:docs", "handbook").files;
-  assert.ok(!docs.includes("stackra.config.ts") && !docs.some((f) => f.endsWith(".module.ts")));
+  for (const f of ["stackra.config.ts", "src/config/docs.config.ts", "src/docs/index.mdx"])
+    assert.ok(docs.includes(f), `app:docs: ${f}`);
+  assert.ok(
+    !docs.some(
+      (f) => f.endsWith(".module.ts") || f.endsWith("docs.json") || /^src\/.*README\.md$/.test(f),
+    ),
+  );
 });
 
 test("parseEntries", () => {

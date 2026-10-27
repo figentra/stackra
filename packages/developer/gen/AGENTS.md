@@ -7,7 +7,7 @@ Purpose: the agent rules of @stackra/gen: where code goes, entries and barrels, 
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
 Governing contract: ADR 0294; ADR 0295; ADR 0305; ADR 0260 (generated clients and typed events); ADR 0263; ADR 0162 and ADR 0222
-                    (the translated and upload shape kinds); ADR 0338 (a replica query's `ReplicaPage` output); STA-1290 (the shipped shape kind); STA-1293 (i18n, clients for apps, undeclared packages); STA-1296 (client modules and permission sets, config overrides, the root Vitest shim); STA-1298 (package lang namespaces in `I18n`, `i18n_key_missing`, `i18n_namespace_clash`); STA-1309 (catalogue loaders); STA-1306 (the quality-gate refusals).
+                    (the translated and upload shape kinds); ADR 0338 (a replica query's `ReplicaPage` output); STA-1290 (the shipped shape kind); STA-1293 (i18n, clients for apps, undeclared packages); STA-1296 (client modules and permission sets, config overrides, the root Vitest shim); STA-1298 (package lang namespaces in `I18n`, `i18n_key_missing`, `i18n_namespace_clash`); STA-1309 (catalogue loaders); STA-1306 (the quality-gate refusals); STA-1316 (the docs site).
 -->
 
 The Stackra compiler. Member at `packages/developer/gen` (`tier:lib`), in the programming model v3.1 shape (ADR 0294,
@@ -18,6 +18,7 @@ The Stackra compiler. Member at `packages/developer/gen` (`tier:lib`), in the pr
 | You are writing…                                    | It goes in…                                 |
 | --------------------------------------------------- | ------------------------------------------- |
 | A pure formula or emitter (IR in, text out)         | `src/core/functions/<name>.function.ts`     |
+| A base class authors extend (`DocsConfig`)          | `src/core/bases/<name>.base.ts`             |
 | Discovery, the host seam, file writing, Vite plugin | `src/node/functions/`                       |
 | The manifest contract helpers                       | `src/testing/functions/`                    |
 | Metro's transformer                                 | `src/metro-transformer/functions/`          |
@@ -149,6 +150,16 @@ The Stackra compiler. Member at `packages/developer/gen` (`tier:lib`), in the pr
 - Public API (OS ADR 0039 d2 and d3): only a manifest entry with `public: true` reaches `emitSdks`; never publish by
   `area`. SDKs come from the manifest, never from `openapi.json` (ADR 0158). A new language is one function in
   `emit-sdks.function.ts` with its test; package names and registries stay the release pipeline's.
+
+## Docs site (STA-1316)
+
+- A member with `src/config/docs.config.ts` is a docs app: `generate` returns `generateDocsSite` before discovery (no
+  module graph, no manifest; the manifest pass writes nothing). Output goes to `.stackra/site/` only, never `src/`.
+- `emitDocsSite` is pure; `generateDocsSite` imports the config (Node strips its types) and reads the fields of the
+  one exported class. Keep `DOCS_OWNED_KEYS` in step with the keys `emitDocsSite` renders; anything else Mintlify
+  takes goes through `raw`.
+- `DocsConfig` lives here (`.` entry) because only gen reads it; no runtime package carries it.
+- The asset check covers media extensions only, so a brand `NOTICE` under `src/assets/` is copied, never refused.
 
 ## Quality-gate refusals (STA-1306)
 

@@ -13,8 +13,8 @@ export type Member = {
   readonly root: string;
 
   /**
-   * `app`, `package`, `service` or `worker` from the `define*` call; `docs` for the Mintlify docs app (no
-   * `stackra.config.ts`, a `src/docs.json`); `tooling` for any other member without `stackra.config.ts` (the
+   * `app`, `package`, `service` or `worker` from the `define*` call; `docs` for the Mintlify docs app (a
+   * `src/config/docs.config.ts`, or in the layout before STA-1316 no `stackra.config.ts` and a `src/docs.json`); `tooling` for any other member without `stackra.config.ts` (the
    * `tier:config` presets), which gen skips.
    */
   readonly layout: "app" | "package" | "service" | "worker" | "docs" | "tooling";

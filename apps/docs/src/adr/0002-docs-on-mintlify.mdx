@@ -1,7 +1,54 @@
 ---
 title: "0002 — Documentation on Mintlify"
-description: "Accepted, amended by 0199, 0299 · 2026-10-19"
+description: "Accepted, amended by 0199, 0299 · 2026-10-19 · amended 2026-10-27 (STA-1316)"
 ---
+
+<Note>
+  Amended 2026-10-27 (STA-1316), by an owner decision of that date: the authored source no longer follows
+  Mintlify's layout, and gen assembles the Mintlify site. This applies to every repository (Stackra core, OS,
+  Commerce and the products); each docs app moves in its own sweep batch. The Decision's "`docs.json` and MDX in
+  `apps/docs/src`" is replaced by the rules below. The rest of this page, and 0299's checks after the build, stand.
+
+1. **Authored layout.** `README.md`, `AGENTS.md`, `package.json`, `stackra.config.ts`, `tsconfig.json` and
+   `runway.yaml` sit at the member root, never in `src/`. `src/config/docs.config.ts` exports one `DocsConfig`
+   subclass: the site name, theme, colours, logo and favicon (paths under `src/assets`), the tabs and navigation
+   groups (a page path, a nested group, or `{ folder }` for every page of a folder, `index` first), the navbar and
+   footer, the services whose API reference the site carries, and `raw` for the Mintlify keys gen does not own. It
+   replaces the hand-written `docs.json`. Pages live in `src/docs/`, images and logos in `src/assets/`, reusable
+   fragments in `src/snippets/`. Nothing else sits in `src/`.
+2. **Where `DocsConfig` lives.** In `@stackra/gen` (its `.` entry), because only gen reads it and every docs app
+   already has gen as a dev dependency; no runtime package carries it. Gen imports the config file and reads the
+   fields of the one exported class (data only, no methods).
+3. **The generated site.** Gen assembles the Mintlify root into `.stackra/site/` (gitignored, never edited):
+   `docs.json` rendered from `DocsConfig`, the pages of `src/docs/` at the site root so `src/docs/guides/x.mdx` is
+   served at `/guides/x`, the assets and snippets, `api-reference/<service>/openapi.json` from each listed service's
+   committed manifest (an API reference tab after the authored tabs), and `llms.txt`. Nothing generated is written
+   into `src/`. This replaces 0299 decision 5 for the site itself: generated docs inputs are not committed.
+4. **Refusals.** Gen refuses a `docs.json`, a `README.md` or any stray file under `src/` (`docs_source_misplaced`),
+   a page outside `src/docs` (`docs_page_outside`), a navigation entry with no page (`docs_page_missing`), a page no
+   entry lists (`docs_page_unlisted`), a logo or favicon with no asset (`docs_asset_missing`), a media asset no page,
+   snippet or config field references (`docs_asset_unreferenced`), an owned key in `raw` (`docs_owned_key`), an API
+   reference service with no committed manifest (`docs_service_unknown`) and a config that does not export one
+   class (`docs_config_invalid`).
+5. **Scripts.** `dev` is `stackra dev`: gen, then `mint dev` in `.stackra/site/` on the member runway's dev port while
+   gen watches `src/`. `build` is `stackra build`: gen, then `mint validate`. `lint` is `stackra lint`: gen, then
+   `mint broken-links` and `mint a11y`. The separate `a11y` script is retired.
+6. **Publishing.** Runway's `mintlify` provider builds and checks the site, commits `.stackra/site/` as one orphan
+   commit with a `Source: <sha>` trailer, and force-pushes it to a deploy branch named in the root runway
+   (`targets.mintlify.branch`). The Mintlify GitHub app builds that branch, with its monorepo path at the root.
+   A self-hosted export was rejected: Mintlify ships none, and its hosting is what 0002 and 0299 chose. Only CI
+   writes the branch, after the checks, so 0299 decision 2 holds without an admin-key call; rollback promotes the
+   last good SHA, which rebuilds the branch.
+
+Enforcement of this note: in place — the docs-site target and its refusals (`emitDocsSite`, `generateDocsSite` in
+`packages/developer/gen`), the `stackra dev|build|lint` wiring (`resolveTool`, `toolCommand` in
+`packages/developer/cli`), the `MintlifyProviderDriver` plan in `packages/developer/runway`, and the scaffold
+template `tools/scaffold/templates/apps/docs`. Planned — the sweeps that move each existing docs app (stackra-177
+for this site; os-112, Commerce and the six products each in their own batch); `targets.mintlify.branch` in each
+root runway and the owner pointing the Mintlify GitHub app at that branch; `runway-mintlify.yml` taking the deploy
+branch instead of the admin-key update.
+
+</Note>
 
 <Note>
   Amended by [0299](/adr/0299-docs-runway): CI deploys the site after `mint validate`, `mint
@@ -33,3 +80,5 @@ GitBook was considered and rejected: Git Sync has no local preview or build step
 ## Enforcement
 
 The `@figentra/docs` member's `build` (`mint validate`) and `lint` (`mint broken-links`) tasks run inside the turbo graph.
+Since the 2026-10-27 amendment they run through `stackra build` and `stackra lint` in the site gen assembles, and gen's
+`docs_*` refusals guard the source layout (`packages/developer/gen/src/core/functions/emit-docs-site.function.ts`).

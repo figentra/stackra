@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `resolveTool`: the tool per task, layout and target, the generated `.stackra/` config passed
- *          when it exists, and the refusals (unknown target or tier as usage errors, no tool as a plain error).
+ *          when it exists, Mintlify in `.stackra/site/` for a docs app with `docs.config.ts` (STA-1316), and the
+ *          refusals (unknown target or tier as usage errors, no tool as a plain error).
  * Boundary: test only; writes throwaway members in the OS temp directory.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0295 (decisions 2 and 5); ADR 0182; ADR 0284.
@@ -145,13 +146,36 @@ describe("resolveTool", () => {
     });
   });
 
-  it("serves the docs app with Mintlify from src and refuses its other tasks", () => {
+  it("serves a docs app not yet swept with Mintlify from src and refuses its other tasks", () => {
     expect(resolveTool("dev", member("docs"), {})).toEqual({
       command: "mint",
       args: ["dev"],
       cwd: join(root, "src"),
     });
     expect(() => resolveTool("typecheck", member("docs"), {})).toThrow(/Mintlify/);
+  });
+
+  it("runs Mintlify in the generated site of a docs app with docs.config.ts", () => {
+    mkdirSync(join(root, "src", "config"), { recursive: true });
+    writeFileSync(join(root, "src", "config", "docs.config.ts"), "");
+    const site = join(root, ".stackra", "site");
+    expect(resolveTool("dev", member("docs"), {})).toEqual({
+      command: "mint",
+      args: ["dev"],
+      cwd: site,
+    });
+    writeFileSync(join(root, "runway.yaml"), "version: 3\nenvironments:\n  dev:\n    port: 3334\n");
+    expect(resolveTool("dev", member("docs"), {}).args).toEqual(["dev", "--port", "3334"]);
+    expect(resolveTool("build", member("docs"), {})).toEqual({
+      command: "mint",
+      args: ["validate"],
+      cwd: site,
+    });
+    expect(resolveTool("lint", member("docs"), {})).toEqual({
+      command: "mint",
+      args: ["broken-links"],
+      cwd: site,
+    });
   });
 
   it("refuses an unknown target or tier as a usage error", () => {

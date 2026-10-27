@@ -6,15 +6,19 @@
   "license": "UNLICENSED",
   "type": "module",
   "scripts": {
-    "dev": "cd src && mint dev --port {{PORT}}",
-    "build": "cd src && mint validate",
-    "lint": "cd src && mint broken-links",
+    "dev": "stackra dev",
+    "build": "stackra build",
+    "lint": "stackra lint",
     "format": "oxfmt --write .",
     "format:check": "oxfmt --check .",
-    "a11y": "cd src && mint a11y",
-    "clean": "rm -rf src/.mintlify .turbo"
+    "clean": "rm -rf .stackra .turbo"
   },
   "devDependencies": {
+    "@stackra/cli": "workspace:*",
+    "@stackra/contracts": "workspace:*",
+    "@stackra/gen": "workspace:*",
+    "@stackra/typescript-config": "workspace:*",
+    "@types/node": "catalog:",
     "mint": "catalog:docs",
     "oxfmt": "catalog:quality"
   }

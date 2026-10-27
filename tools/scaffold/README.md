@@ -2,7 +2,8 @@
 
 `templates/` holds one folder per kind; `tools/scripts/scaffold.mjs` (`pnpm new`) renders them. Kinds are decided in
 ADR 0126, and every member comes out in the programming model v3 shape (ADR 0294 rule R12, ADR 0295): `stackra.config.ts`,
-one root module, no authored `main.ts` or entry barrel; the docs app and the tooling presets are exempt. Usage is in
+one root module, no authored `main.ts` or entry barrel; the docs app has `stackra.config.ts` but no module (its
+site is `src/config/docs.config.ts`, ADR 0002 amendment of 2026-10-27), and the tooling presets are exempt. Usage is in
 `apps/docs/src/guides/scaffolding.mdx`; the group tables are `tools/scripts/structure.mjs`.
 
 | Kind          | Template                             | Lands in                     |

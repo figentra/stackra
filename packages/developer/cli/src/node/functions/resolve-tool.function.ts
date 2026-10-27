@@ -2,18 +2,24 @@
  * Stackra file contract:
  * Purpose: `resolveTool(task, member, options)`, the one tool process a member command starts, chosen by the
  *          member's layout and target: Vite for a web or PWA target, Expo for iOS and Android, tsdown for a package,
- *          Wrangler for a worker, the generated Encore app for a service, Mintlify for the docs app, and vitest, tsc
+ *          Wrangler for a worker, the generated Encore app for a service, Mintlify for the docs app (`dev`,
+ *          `validate` and `broken-links`, in the `.stackra/site/` gen assembles, or in `src/` for a docs app not yet
+ *          moved to that layout, STA-1316), and vitest, tsc
  *          and oxlint everywhere. Each tool reads the config gen wrote into `.stackra/` when there is one, otherwise the
  *          member-root config it finds itself.
- * Boundary: pure apart from checking which generated configs exist; starts nothing. A combination with no tool is
+ * Boundary: pure apart from checking which generated configs exist and reading a docs app's dev port from its
+ *           `runway.yaml` (`environments.dev.port`, the one place a port is written); starts nothing. A combination with no tool is
  *           refused with the reason, never guessed.
  * Runtime: node
  * Governing contract: ADR 0295 (decisions 2 and 5: targets pick the outputs; tool configs live in `.stackra/`); ADR
  *                     0091 and 0124 (Encore is generated into `.stackra/encore`); ADR 0182 (test tiers); ADR 0284
  *                     (workers on Wrangler).
  */
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+
+import { DOCS_CONFIG_FILE, DOCS_SITE_DIR } from "@stackra/gen";
+import { parse } from "yaml";
 
 import { CliUsageError } from "#node/errors/cli-usage.error";
 import type { Member } from "#node/types/member.type";
@@ -74,8 +80,29 @@ export function resolveTool(
       : NATIVE_TARGETS.has(target);
   const platform = target === undefined ? [] : [`--${target}`];
 
-  if (layout === "docs" && task !== "dev")
-    refuse("the docs app runs Mintlify, which only serves `dev`");
+  if (layout === "docs") {
+    // The site gen assembles; a docs app not yet swept to the clean layout keeps Mintlify's root in src/.
+    const site = existsSync(join(root, DOCS_CONFIG_FILE))
+      ? join(root, DOCS_SITE_DIR)
+      : join(root, "src");
+    if (task === "dev") {
+      const runway = join(root, "runway.yaml");
+      const { environments } = existsSync(runway)
+        ? ((parse(readFileSync(runway, "utf8")) ?? {}) as {
+            environments?: { dev?: { port?: unknown } };
+          })
+        : {};
+      const port = environments?.dev?.port;
+      return at(
+        "mint",
+        ["dev", ...(typeof port === "number" ? ["--port", String(port)] : [])],
+        site,
+      );
+    }
+    if (task === "build") return at("mint", ["validate"], site);
+    if (task === "lint") return at("mint", ["broken-links"], site);
+    return refuse("the docs app runs Mintlify, which serves `dev`, `build` and `lint`");
+  }
 
   switch (task) {
     case "lint":
@@ -94,7 +121,6 @@ export function resolveTool(
       return refuse("the app declares no targets");
     }
     case "dev":
-      if (layout === "docs") return at("mint", ["dev"], join(root, "src"));
       if (layout === "worker") return at("wrangler", ["dev", ...config("wrangler.jsonc")]);
       if (layout === "service") {
         const encore = join(root, ".stackra", "encore");

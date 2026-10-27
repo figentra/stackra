@@ -33,6 +33,10 @@ shape (ADR 0294, 0305). No code entry: the package ships `bin.stackra` (`src/nod
 - `stackra gen` orders gen's passes over the members (STA-1232): pass 1 `generate(root, { pass: "manifests" })` for
   every member, then pass 2 in rounds (the refused members and those with `.stackra/gen/clients`) until a round
   writes nothing; only the last round's refusals print. `--manifests` is pass 1 alone; `--check` is one pass 2 round.
+- A docs app (`src/config/docs.config.ts`, STA-1316) is layout `docs`: every `dev|build|lint` runs gen first (lint
+  included), Mintlify runs in `.stackra/site/` (`DOCS_SITE_DIR` of gen), `dev` keeps `watchDocsSite` running beside
+  `mint dev`, and `lint` is `mint broken-links` then `mint a11y`. A docs app still in the old layout (`src/docs.json`)
+  runs Mintlify in `src/` until its sweep.
 - `stackra check` phases return findings and never print them; `runCheck` prints. A phase whose tool cannot start
   returns `skipped: "not installed"`, and a tool that fails without a parsable finding gives one `exit` finding, so a
   failure is never silent. `validate`, `verify`, `code:check` and `code:fix` are `checkCommand` presets, not new code.

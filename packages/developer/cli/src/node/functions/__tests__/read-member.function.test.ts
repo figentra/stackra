@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `readMember`: the layout from each `define*` call, an app's targets from its manifest, the
- *          docs and tooling layouts without `stackra.config.ts`, and the refusal of a config with no `define*` call.
+ *          docs and tooling layouts without `stackra.config.ts`, the docs layout from `src/config/docs.config.ts`
+ *          (STA-1316), and the refusal of a config with no `define*` call.
  * Boundary: test only; writes throwaway members in the OS temp directory.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0295 (decisions 1 and 2).
@@ -64,6 +65,13 @@ describe("readMember", () => {
     mkdirSync(join(root, "src"));
     writeFileSync(join(root, "src", "docs.json"), "{}");
     expect(readMember(root).layout).toBe("docs");
+  });
+
+  it("is docs with src/config/docs.config.ts, whatever stackra.config.ts calls", () => {
+    config("defineApp");
+    mkdirSync(join(root, "src", "config"), { recursive: true });
+    writeFileSync(join(root, "src", "config", "docs.config.ts"), "");
+    expect(readMember(root)).toEqual({ root, layout: "docs", targets: [] });
   });
 
   it("refuses a stackra.config.ts without a define call", () => {

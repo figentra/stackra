@@ -17,7 +17,9 @@
  *           authored root `tsdown.config.ts` that does not import `./.stackra/tsdown.config` when gen writes one
  *           (STA-1306). A root `*.extend.ts` hatch outside the closed set (vite, expo, metro, desktop, pwa) or without
  *           a `Reason:` header is refused as `tool_reason_missing` (STA-1306); whether a hatch changes an owned key is
- *           not checked, since gen does not apply hatches yet.
+ *           not checked, since gen does not apply hatches yet. A docs app (`src/config/docs.config.ts`) takes the
+ *           docs-site run instead (`generateDocsSite`, STA-1316): it has no module graph, writes only
+ *           `.stackra/site/`, and its manifest pass writes nothing.
  * Runtime: node
  * Governing contract: ADR 0294 (decisions 10 and 22: the committed manifest and `stackra gen --check`); ADR 0295
  *                     (decision 5: generated files are overwritten); ADR 0261; ADR 0260 (a cycle between services is
@@ -28,12 +30,14 @@ import { dirname, join } from "node:path";
 
 import type { StackraManifest } from "@stackra/contracts";
 
+import { DOCS_CONFIG_FILE } from "#core/constants/docs-config-file.constant";
 import { GENERATED_NOTICE } from "#core/constants/generated-notice.constant";
 import { ROOT_VITEST_SHIM } from "#core/constants/root-vitest-shim.constant";
 import { generateMember } from "#core/functions/generate-member.function";
 import type { GenError } from "#core/types/gen-error.type";
 import type { GeneratedFile } from "#core/types/generated-file.type";
 import { discoverMember } from "#node/functions/discover-member.function";
+import { generateDocsSite } from "#node/functions/generate-docs-site.function";
 import type { GenerateResult } from "#node/types/generate-result.type";
 
 /** The committed manifest at the member root. */
@@ -131,6 +135,11 @@ export async function generate(
     readonly pass?: "manifests";
   } = {},
 ): Promise<GenerateResult> {
+  // A docs app has no classes to discover: its run assembles the Mintlify site (ADR 0002, 2026-10-27 amendment).
+  if (existsSync(join(root, DOCS_CONFIG_FILE)))
+    return options.pass === "manifests"
+      ? { errors: [], files: [], changed: [] }
+      : generateDocsSite(root, options.check === undefined ? {} : { check: options.check });
   const discover = () =>
     discoverMember(root, options.backend === undefined ? {} : { backend: options.backend });
   const manifestPath = join(root, MANIFEST_FILE);

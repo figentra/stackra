@@ -2,18 +2,26 @@
 
 {{DESCRIPTION}}
 
-A [Mintlify](https://mintlify.com) documentation site. Everything Mintlify reads lives in `src/`: `docs.json`,
-the MDX pages and `assets/` (logo, favicon). The scripts run the `mint` CLI from `src/`.
+A [Mintlify](https://mintlify.com) documentation site. You write the source; `stackra gen` assembles the site Mintlify
+reads into `.stackra/site/` (gitignored, never edited).
 
-Dev and preview/start use port {{PORT}} (http://localhost:{{PORT}}).
+| Path                        | Holds                                                                         |
+| --------------------------- | ----------------------------------------------------------------------------- |
+| `src/config/docs.config.ts` | the site: name, colours, logo, favicon, tabs and navigation, `raw` Mintlify keys |
+| `src/docs/`                 | every page; `src/docs/guides/x.mdx` is served at `/guides/x`                   |
+| `src/assets/`               | images, logos, favicon; a page references them as `/assets/<path>`            |
+| `src/snippets/`             | reusable MDX snippets                                                         |
 
-| Command       | Does                                                   |
-| ------------- | ------------------------------------------------------ |
-| `pnpm dev`    | Local preview                                          |
-| `pnpm build`  | `mint validate`, a strict build that fails on warnings |
-| `pnpm lint`   | `mint broken-links`                                    |
-| `pnpm format` | `oxfmt --write .` (`pnpm format:check` verifies)                                          |
-| `pnpm a11y`   | `mint a11y`                                            |
+Dev uses port {{PORT}} (http://localhost:{{PORT}}).
 
-Add a page: create the `.mdx` in `src/`, then list it under `navigation` in `src/docs.json`.
-Deploy: connect the repository in the Mintlify dashboard and set the monorepo path to `apps/{{NAME}}/src`.
+| Command       | Does                                                                         |
+| ------------- | ---------------------------------------------------------------------------- |
+| `pnpm dev`    | gen in watch mode, then `mint dev` in `.stackra/site`                        |
+| `pnpm build`  | gen, then `mint validate`, a strict build that fails on warnings             |
+| `pnpm lint`   | gen, then `mint broken-links` and `mint a11y`                                |
+| `pnpm format` | `oxfmt --write .` (`pnpm format:check` verifies)                             |
+
+Add a page: create the `.mdx` under `src/docs/`, then list it (or its folder, `{ folder: "guides" }`) in a group of
+`src/config/docs.config.ts`. Gen refuses a page no group lists, a listed page that does not exist, an asset no page
+references, and a `docs.json` or `README.md` under `src/`.
+Deploy: runway's `mintlify` provider pushes `.stackra/site` to the deploy branch the Mintlify GitHub app builds.

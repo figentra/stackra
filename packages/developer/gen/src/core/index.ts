@@ -3,7 +3,8 @@
  * Purpose: Stand-in barrel: the `.` entry of @stackra/gen, the pure compiler (identities, the manifest and its checks,
  *          the shape compiler, wiring, the member module, entries, the entity files, registrations, boot, the inbound
  *          webhook route, prefixes, an app's route tables and blocks, the generated service clients, the tool configs,
- *          the openapi projection, the public id prefix registry and the IR types), until `stackra gen` writes the
+ *          the openapi projection, the docs-site target and its `DocsConfig` base, the public id prefix registry and
+ *          the IR types), until `stackra gen` writes the
  *          entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. Isomorphic: no file system and no TypeScript host here; those
  *           are `./node`. The case helpers, the import printer and the emitters' path helpers stay internal.
@@ -11,7 +12,10 @@
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision; ADR 0127 2026-10-24 note (`ir`
  *                     and `source` fold into gen).
  */
+export { DocsConfig } from "#core/bases/docs-config.base";
 export { CLIENTS_SPECIFIER } from "#core/constants/clients-specifier.constant";
+export { DOCS_CONFIG_FILE } from "#core/constants/docs-config-file.constant";
+export { DOCS_SITE_DIR } from "#core/constants/docs-site-dir.constant";
 export { EFFECT_TAGS } from "#core/constants/effect-tags.constant";
 export { GENERATED_NOTICE } from "#core/constants/generated-notice.constant";
 export { INTEGRATION_ROLES } from "#core/constants/integration-roles.constant";
@@ -30,6 +34,7 @@ export { egressOf } from "#core/functions/egress-of.function";
 export { emitBlocks } from "#core/functions/emit-blocks.function";
 export { emitBoot } from "#core/functions/emit-boot.function";
 export { emitClients } from "#core/functions/emit-clients.function";
+export { emitDocsSite } from "#core/functions/emit-docs-site.function";
 export { emitEncoreCronJobs } from "#core/functions/emit-encore-cron-jobs.function";
 export { emitEncoreQueues } from "#core/functions/emit-encore-queues.function";
 export { emitEntities } from "#core/functions/emit-entities.function";
@@ -66,6 +71,11 @@ export type { ClassRef } from "#core/types/class-ref.type";
 export type { ClassValue } from "#core/types/class-value.type";
 export type { DeclaredClass } from "#core/types/declared-class.type";
 export type { Endpoint } from "#core/types/endpoint.type";
+export type { DocsGroup } from "#core/types/docs-group.type";
+export type { DocsLink } from "#core/types/docs-link.type";
+export type { DocsSiteInput } from "#core/types/docs-site-input.type";
+export type { DocsSite } from "#core/types/docs-site.type";
+export type { DocsTab } from "#core/types/docs-tab.type";
 export type { EntityIR } from "#core/types/entity-ir.type";
 export type { EnumIR } from "#core/types/enum-ir.type";
 export type { FacetUse } from "#core/types/facet-use.type";

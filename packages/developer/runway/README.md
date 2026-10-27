@@ -33,7 +33,7 @@ tool configs call so no port, origin or feed URL is typed outside a `runway.yaml
 | `.`         | `deploy`, `promote`, `rollback`                                                         | ship, promote and roll back a release through the providers                 |
 | `.`         | `withDeployLock`, `DeployLock`, `RunwayLockedError`                                     | one apply per environment at a time (ADR 0435)                              |
 | `.`         | `RunwayProvider`                                                                        | the provider port: plan, apply, verify, rollback and current (ADR 0352 d3)  |
-| `./node`    | `EncoreCloudProviderDriver`, `EasProviderDriver`                                        | the `encore-cloud` and `eas` providers                                      |
+| `./node`    | `EncoreCloudProviderDriver`, `EasProviderDriver`, `MintlifyProviderDriver`              | the `encore-cloud`, `eas` and `mintlify` providers                          |
 | `./node`    | `runCommand`, `CommandRunner`                                                           | how a provider runs its CLI, with no shell                                  |
 | `.`         | `RunwayKind`, `RunwayEnvironment`, `TopologyMode`, `RequirementEngine`, `CacheEviction` | enums                                                                       |
 | `.`         | `RunwayInvalidError`, `RunwayUnresolvedError`, `RunwayDeployFailedError`                | errors                                                                      |
@@ -155,12 +155,16 @@ const providers = [
 const results = await promote(root, "staging", "production", providers); // one record per target
 ```
 
-| Provider       | apply                                                                     | verify                      | rollback                      |
-| -------------- | ------------------------------------------------------------------------- | --------------------------- | ----------------------------- |
-| `encore-cloud` | `git push encore://<app> <sha>:refs/heads/<branch>` (`encore.branch`)     | the branch holds the commit | force-push the earlier commit |
-| `eas`          | `eas build --profile <channel>` or `eas update --channel` (`targets.eas`) | build status, or the group  | republish the earlier group   |
+| Provider       | apply                                                                                                            | verify                                    | rollback                           |
+| -------------- | ---------------------------------------------------------------------------------------------------------------- | ----------------------------------------- | ---------------------------------- |
+| `encore-cloud` | `git push encore://<app> <sha>:refs/heads/<branch>` (`encore.branch`)                                            | the branch holds the commit               | force-push the earlier commit      |
+| `eas`          | `eas build --profile <channel>` or `eas update --channel` (`targets.eas`)                                        | build status, or the group                | republish the earlier group        |
+| `mintlify`     | `stackra build` and `stackra lint`, then `.stackra/site` force-pushed as one commit to `targets.mintlify.branch` | the branch's `Source:` trailer is the SHA | refused: promote the last good SHA |
 
-A store build cannot be rolled back; the EAS provider refuses it. Helm and Zarf output for on-prem waits for the first
+A store build cannot be rolled back; the EAS provider refuses it. The `mintlify` provider (STA-1316, ADR 0002 amendment
+of 2026-10-27) publishes the site gen assembles in a docs app's `.stackra/site/`: the Mintlify GitHub app builds the
+deploy branch, and only CI writes that branch, after the checks. Plans only for now: nothing applies it until the root
+runway names `targets.mintlify.branch` and the owner points the GitHub app at that branch. Helm and Zarf output for on-prem waits for the first
 prospect (ADR 0400).
 
 One apply runs per environment at a time (ADR 0435): wrap a deploy, promotion, rollback or settings promotion in

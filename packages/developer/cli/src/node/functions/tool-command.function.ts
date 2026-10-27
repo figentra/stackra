@@ -4,13 +4,20 @@
  *          runs gen first (except for `lint`, and for members without `stackra.config.ts`), so the tool always sees
  *          fresh generated configs and entries, then starts the tool `resolveTool` picks. At the workspace root it fans
  *          out through `turbo run <task>`, whose member scripts call `stackra <task>` again.
- * Boundary: starts at most one tool; a gen refusal stops before the tool and exits 1.
+ *          A docs app (`src/config/docs.config.ts`, STA-1316) always runs gen first, `lint` included, since Mintlify
+ *          checks the site gen assembles: `dev` keeps gen watching `src/` while `mint dev` runs, and `lint` runs
+ *          `mint broken-links`, then `mint a11y`.
+ * Boundary: starts at most one tool (two in sequence for a docs app's `lint`); a gen refusal stops before the tool
+ *           and exits 1.
  * Runtime: node
  * Governing contract: ADR 0295 (decision 5: tools read the configs gen writes); the task vocabulary rule (root
  *                     commands run `turbo run <task>`); ADR 0182 (test tiers).
  */
 import { existsSync } from "node:fs";
 import { join } from "node:path";
+
+import { DOCS_CONFIG_FILE, formatGenError } from "@stackra/gen";
+import { watchDocsSite } from "@stackra/gen/node";
 
 import { CliUsageError } from "#node/errors/cli-usage.error";
 import { readMember } from "#node/functions/read-member.function";
@@ -60,10 +67,31 @@ export function toolCommand(task: ToolTask, summary: string): CliCommand {
         return runProcess({ command: "turbo", args: ["run", turboTask], cwd }, io);
       }
 
-      if (task !== "lint" && existsSync(join(cwd, "stackra.config.ts"))) {
+      const docs = existsSync(join(cwd, DOCS_CONFIG_FILE));
+      if (docs || (task !== "lint" && existsSync(join(cwd, "stackra.config.ts")))) {
         if (!(await runGen(cwd, { base: cwd }, io))) return 1;
       }
-      return runProcess(resolveTool(task, readMember(cwd), { target, tier }), io);
+      const tool = resolveTool(task, readMember(cwd), { target, tier });
+      if (docs && task === "lint") {
+        const code = await runProcess(tool, io);
+        return code === 0 ? runProcess({ ...tool, args: ["a11y"] }, io) : code;
+      }
+      if (docs && task === "dev") {
+        const watcher = watchDocsSite(
+          cwd,
+          ({ errors, changed }) => {
+            for (const error of errors) io.err(`${formatGenError(error)}\n`);
+            for (const path of changed) io.out(`wrote ${path}\n`);
+          },
+          (error) => io.err(`gen: ${error instanceof Error ? error.message : String(error)}\n`),
+        );
+        try {
+          return await runProcess(tool, io);
+        } finally {
+          watcher.close();
+        }
+      }
+      return runProcess(tool, io);
     },
   };
 }
