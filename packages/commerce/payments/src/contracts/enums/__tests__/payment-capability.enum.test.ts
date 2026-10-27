@@ -22,6 +22,8 @@ describe("PaymentCapability", () => {
       "terminal",
       "terminal_tips",
       "methods",
+      "restricted_tender",
+      "terminal_pin",
     ]);
   });
 });

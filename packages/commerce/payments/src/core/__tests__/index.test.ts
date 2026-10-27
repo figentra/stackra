@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the consumer contract of the `.` entry: the service, the two drivers, the refusals and the helpers are its
+ * Purpose: the consumer contract of the `.` entry: the two services, the four drivers, the refusals and the helpers are its
  *          values; no vendor Integration or Connection (they live in the OS integrations service) and nothing internal
  *          leaks.
  * Boundary: test only; imports the stand-in barrel through its `#core` alias.
@@ -18,7 +18,10 @@ describe("@stackra/payments", () => {
       "ConnectionPaymentGatewaysDriver",
       "InvalidPaymentTransitionError",
       "MemoryPaymentRecordsDriver",
+      "MemoryRestrictedTenderProgramsDriver",
+      "MemoryTenderEligibilityDriver",
       "MerchantInitiatedNotAllowedError",
+      "NoEligibleLinesError",
       "NoPaymentProviderError",
       "PaymentDeclinedError",
       "PaymentFieldRequiredError",
@@ -27,8 +30,11 @@ describe("@stackra/payments", () => {
       "PayoutHeldError",
       "PreVerificationCapExceededError",
       "ResolutionReasonRequiredError",
+      "RestrictedTenderService",
+      "RestrictedTenderUnavailableError",
       "hasCapability",
       "modeOf",
+      "splitTender",
       "totalOf",
     ]);
   });

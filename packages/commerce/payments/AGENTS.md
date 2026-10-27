@@ -1,9 +1,11 @@
+<!-- Purpose: the agent rules of @stackra/payments: where code goes, the vendor boundary, configuration not code, restricted tenders, PII. Boundary: docs of packages/commerce/payments only. Runtime: none (Markdown). Governing contract: ADR 0357; ADR 0445; ADR 0294. -->
+
 # AGENTS — @stackra/payments
 
 The payment ports and the engine's `PaymentService`; no vendor driver (owner decision R3-8: vendor Integrations live
 in the OS integrations service). Member at `packages/commerce/payments`
 (`tier:lib`), in the programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./node` (the
-`PaymentsModule` and the market-pack `MarketPaymentDefaults` driver) and `./testing`.
+`PaymentsModule` and the market-pack `MarketPaymentDefaults` and `RestrictedTenderPrograms` drivers) and `./testing`.
 
 ## Where code goes
 
@@ -37,6 +39,9 @@ when a vendor needs one, additively.
   their values come from `ConnectedAccountLimits` (host data), never from here.
 - Webhook recipes live with their connector in OS integrations; a provider without one is learned by
   `PaymentService.reconcile`.
+- Restricted tenders (ADR 0445): programs are pack data (`payments.restricted-tenders`), eligibility is a rule set
+  behind `TenderEligibility`, and the split is `splitTender` only. No program code, category list or tax rate here;
+  the PIN never reaches this package (`pinEntry` asks the terminal for the step).
 - No parameter properties and no `#private` fields: apps typecheck this source under `erasableSyntaxOnly`.
 
 ## Rules that fail the build

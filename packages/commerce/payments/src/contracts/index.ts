@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: Stand-in barrel: the `./contracts` entry of @stackra/payments (the enums, the five container ports, the
+ * Purpose: Stand-in barrel: the `./contracts` entry of @stackra/payments (the enums, the seven container ports, the
  *          gateway port interfaces and the payment types) until `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. The leaf every other entry may import.
  * Runtime: isomorphic
@@ -12,12 +12,15 @@ export { DisputeStatus } from "#contracts/enums/dispute-status.enum";
 export { PaymentCapability } from "#contracts/enums/payment-capability.enum";
 export { PaymentStatus } from "#contracts/enums/payment-status.enum";
 export { SessionKind } from "#contracts/enums/session-kind.enum";
+export { TenderKind } from "#contracts/enums/tender-kind.enum";
 export { TransferStatus } from "#contracts/enums/transfer-status.enum";
 export { ConnectedAccountLimits } from "#contracts/ports/connected-account-limits.port";
 export { MarketPaymentDefaults } from "#contracts/ports/market-payment-defaults.port";
 export { PaymentGateways } from "#contracts/ports/payment-gateways.port";
 export { PaymentPackSource } from "#contracts/ports/payment-pack-source.port";
 export { PaymentRecords } from "#contracts/ports/payment-records.port";
+export { RestrictedTenderPrograms } from "#contracts/ports/restricted-tender-programs.port";
+export { TenderEligibility } from "#contracts/ports/tender-eligibility.port";
 export type { CapabilityGateways } from "#contracts/types/capability-gateways.type";
 export type { CaptureGateway } from "#contracts/types/capture-gateway.type";
 export type { CaptureRequest } from "#contracts/types/capture-request.type";
@@ -46,7 +49,10 @@ export type { PlatformShare } from "#contracts/types/platform-share.type";
 export type { ProviderChoice } from "#contracts/types/provider-choice.type";
 export type { ProviderPayment } from "#contracts/types/provider-payment.type";
 export type { RefundRequest } from "#contracts/types/refund-request.type";
+export type { RestrictedTenderProgram } from "#contracts/types/restricted-tender-program.type";
 export type { SavedMethod } from "#contracts/types/saved-method.type";
+export type { TenderLine } from "#contracts/types/tender-line.type";
+export type { TenderSplit } from "#contracts/types/tender-split.type";
 export type { TerminalGateway } from "#contracts/types/terminal-gateway.type";
 export type { TerminalRequest } from "#contracts/types/terminal-request.type";
 export type { TerminalSession } from "#contracts/types/terminal-session.type";

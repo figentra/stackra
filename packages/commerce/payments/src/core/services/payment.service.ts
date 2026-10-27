@@ -6,7 +6,8 @@
  *          lost marks the payment `unknown`, nothing may act on it until `reconcile` looks it up at the provider or
  *          a manager `resolve`s it with a reason. On a `connected-account` connection only, a payment above the
  *          pre-verification cap and a payout while payouts are held are refused; the account's enabled payment
- *          methods are read from the provider.
+ *          methods are read from the provider. A `restricted` tender or a PIN step on a request asks the provider
+ *          for the matching capability (the restricted-tender flow itself is `RestrictedTenderService`).
  * Boundary: generic over `PaymentGateways` (which provider serves a call is the Connection's and the Market's data),
  *           `PaymentRecords` (where state lives) and `ConnectedAccountLimits` (the cap and the hold, from the OS
  *           verification record). It never names a provider, a Market, a fee or a limit; caps,
@@ -14,7 +15,8 @@
  *           merchant reference: a retried charge or terminal session with a used reference returns the record.
  * Runtime: isomorphic
  * Governing contract: ADR 0357 (decisions 1, 2, 5 and 6); ADR 0356 (decision 2); ADR 0294 (decisions 15 to 17);
- *                     R4-6 (the cap and the hold apply to connected accounts only); R4-4 (methods from the account).
+ *                     R4-6 (the cap and the hold apply to connected accounts only); R4-4 (methods from the account);
+ *                     ADR 0445 (restricted tenders and the PIN step).
  */
 import { Service } from "@stackra/container";
 import type { Clock } from "@stackra/contracts";
@@ -25,6 +27,7 @@ import { ChargeInitiator } from "#contracts/enums/charge-initiator.enum";
 import { ConnectionMode } from "#contracts/enums/connection-mode.enum";
 import { PaymentCapability } from "#contracts/enums/payment-capability.enum";
 import { PaymentStatus } from "#contracts/enums/payment-status.enum";
+import { TenderKind } from "#contracts/enums/tender-kind.enum";
 import { TransferStatus } from "#contracts/enums/transfer-status.enum";
 import type { ConnectedAccountLimits } from "#contracts/ports/connected-account-limits.port";
 import type { PaymentGateways } from "#contracts/ports/payment-gateways.port";
@@ -123,6 +126,7 @@ export class PaymentService extends Service {
       PaymentCapability.Checkout,
       ...(request.captureLater === true ? [PaymentCapability.Capture] : []),
       ...(request.platform === undefined ? [] : [PaymentCapability.Platform]),
+      ...(request.tender === TenderKind.Restricted ? [PaymentCapability.RestrictedTender] : []),
     ]);
     await this.withinCap(gateway, request.reference, totalOf(request));
     const record = await this.save(
@@ -180,7 +184,8 @@ export class PaymentService extends Service {
   }
 
   /**
-   * Presents `request.amount` on a terminal of a provider of `market`, with a tip prompt when given.
+   * Presents `request.amount` on a terminal of a provider of `market`, with a tip prompt when given, and a PIN step
+   * and a restricted tender when the request asks (the provider must have the matching capability).
    *
    * @throws PaymentUnknownError when the reference's last answer was lost (and when this one is).
    * @throws InvalidPaymentTransitionError when the reference is in use.
@@ -193,6 +198,8 @@ export class PaymentService extends Service {
       PaymentCapability.Terminal,
       ...(request.tipPrompt === undefined ? [] : [PaymentCapability.TerminalTips]),
       ...(request.captureLater === true ? [PaymentCapability.Capture] : []),
+      ...(request.tender === TenderKind.Restricted ? [PaymentCapability.RestrictedTender] : []),
+      ...(request.pinEntry === true ? [PaymentCapability.TerminalPin] : []),
     ]);
     const terminal = this.capable(gateway, PaymentCapability.Terminal);
     await this.withinCap(gateway, request.reference, request.amount);

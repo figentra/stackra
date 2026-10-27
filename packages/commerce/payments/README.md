@@ -1,3 +1,5 @@
+<!-- Purpose: the reader guide of @stackra/payments: what is exported, taking a payment, restricted tenders, the unknown state, provider choice. Boundary: docs of packages/commerce/payments only. Runtime: none (Markdown). Governing contract: ADR 0357; ADR 0445; ADR 0294. -->
+
 # @stackra/payments
 
 Stackra payments: the gateway ports every payment driver implements, the engine's `PaymentService` with the `unknown`
@@ -22,6 +24,10 @@ data (ADR 0356), never code.
 | `MarketPaymentDefaults`                                                                                   | `./contracts` | port the market-pack loader binds: a Market's providers and platform Connections                                                                                                                                                         |
 | `PaymentRecords`                                                                                          | `./contracts` | port: where the engine keeps one `PaymentRecord` per merchant reference                                                                                                                                                                  |
 | `PaymentService`                                                                                          | `.`           | checkout, `payLink`, `charge`, `startTerminal`, `cancelTerminal`, `reconcile`, `capture`, `void`, `refund`, `resolve`                                                                                                                    |
+| `RestrictedTenderService`, `splitTender`                                                                  | `.`           | restricted tenders (EBT, meal vouchers): `split`, `startTerminal`, `checkout`, `captureAtFulfilment`                                                                                                                                     |
+| `TenderKind`, `RestrictedTenderPrograms`, `TenderEligibility`                                             | `./contracts` | the tender kind, and the ports for a Market's programs (pack data) and line eligibility (a rule set)                                                                                                                                     |
+| `MemoryRestrictedTenderProgramsDriver`, `MemoryTenderEligibilityDriver`                                   | `.`           | the `memory` drivers of the two restricted-tender ports                                                                                                                                                                                  |
+| `MarketPackRestrictedTenderProgramsDriver`                                                                | `./node`      | the `market-pack` driver of `RestrictedTenderPrograms` (pack key `payments.restricted-tenders`)                                                                                                                                          |
 | `ConnectionPaymentGatewaysDriver`                                                                         | `.`           | the `connection` driver of `PaymentGateways`: tenant Connection, then Market default                                                                                                                                                     |
 | `MemoryPaymentRecordsDriver`                                                                              | `.`           | the `memory` driver of `PaymentRecords`                                                                                                                                                                                                  |
 | the refusals                                                                                              | `.`           | `PaymentUnknownError`, `NoPaymentProviderError`, `MerchantInitiatedNotAllowedError`, `InvalidPaymentTransitionError`, `CapabilityUnsupportedError`, `PaymentFieldRequiredError`, `PaymentDeclinedError`, `ResolutionReasonRequiredError` |
@@ -43,6 +49,33 @@ const session = await payments.checkout(market, {
 const record = await payments.reconcile(order.id);
 if (record.status === PaymentStatus.Authorized) await payments.capture(order.id);
 ```
+
+## Restricted tenders (ADR 0445)
+
+A restricted tender (EBT SNAP, a meal voucher) pays only the lines its rule set allows. The program is pack data under
+`payments.restricted-tenders` (`code`, `ruleSet`, `taxExempt`, `captureAtFulfilment`, `pinEntry`, `status`);
+eligibility is the host's `TenderEligibility` driver over `@stackra/rules`.
+
+```ts
+const { split, session } = await tenders.startTerminal(market, {
+  reference: `${order.id}:ebt`,
+  terminalId,
+  program: "snap", // a code from the pack
+  lines, // TenderLine: PaymentLine plus tax and category
+  balance, // optional: what the card holds
+});
+// split.remainder goes on an ordinary tender under order.id
+// online, at pickup or delivery, against the picked basket:
+await tenders.captureAtFulfilment(market, {
+  reference: `${order.id}:ebt`,
+  program: "snap",
+  lines: picked,
+});
+```
+
+`TerminalRequest` carries `tender`, `program` and `pinEntry`; a request asks for `restricted_tender` and
+`terminal_pin` capabilities, so only a provider that has them serves it. The PIN is entered on the terminal and never
+reaches the platform. The EBT and meal-voucher processor connectors wait on the owner's processor choice.
 
 ## The unknown state
 
@@ -91,5 +124,5 @@ and `@stackra/integrations`.
 
 ## Decisions
 
-ADR 0357 (payments architecture), ADR 0358 decision 3 (providers are drivers), ADR 0356 (provider per tenant and
+ADR 0445 (restricted tenders and the PIN step), ADR 0357 (payments architecture), ADR 0358 decision 3 (providers are drivers), ADR 0356 (provider per tenant and
 Market through the Connection), ADR 0359 decision 11 (sandbox gateways), ADR 0308 (integrations), ADR 0220 (money).

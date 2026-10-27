@@ -3,7 +3,7 @@
  * Purpose: `CapabilityGateways`, which port each `PaymentCapability` code stands for.
  * Boundary: a type map in the leaf entry; `hasCapability(gateway, code)` narrows a `PaymentGateway` with it.
  * Runtime: isomorphic
- * Governing contract: ADR 0357 (decision 2).
+ * Governing contract: ADR 0357 (decision 2); ADR 0445.
  */
 import type { CaptureGateway } from "#contracts/types/capture-gateway.type";
 import type { DisputeGateway } from "#contracts/types/dispute-gateway.type";
@@ -47,4 +47,10 @@ export interface CapabilityGateways {
 
   /** The account's enabled payment methods. */
   readonly methods: MethodsGateway;
+
+  /** A restricted tender program; the program code travels on the request. */
+  readonly restricted_tender: PaymentGateway;
+
+  /** PIN entry on the terminal. */
+  readonly terminal_pin: TerminalGateway;
 }

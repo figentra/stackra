@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the consumer contract of the `./contracts` entry: exactly the six enums and the three container ports are
+ * Purpose: the consumer contract of the `./contracts` entry: exactly the eight enums and the seven container ports are
  *          its values; the gateway port interfaces and the payment types are type-only.
  * Boundary: test only; imports the stand-in barrel through its `#contracts` alias.
  * Runtime: node (vitest)
@@ -13,6 +13,8 @@ import type {
   CapabilityGateways,
   MethodsGateway,
   PaymentConnectionMode,
+  PaymentGateway,
+  TerminalGateway,
   TokenGateway,
 } from "#contracts/index";
 
@@ -29,7 +31,10 @@ describe("@stackra/payments/contracts", () => {
       "PaymentPackSource",
       "PaymentRecords",
       "PaymentStatus",
+      "RestrictedTenderPrograms",
       "SessionKind",
+      "TenderEligibility",
+      "TenderKind",
       "TransferStatus",
     ]);
   });
@@ -37,6 +42,8 @@ describe("@stackra/payments/contracts", () => {
   it("maps each capability to its port", () => {
     expectTypeOf<CapabilityGateways["tokens"]>().toEqualTypeOf<TokenGateway>();
     expectTypeOf<CapabilityGateways["methods"]>().toEqualTypeOf<MethodsGateway>();
+    expectTypeOf<CapabilityGateways["restricted_tender"]>().toEqualTypeOf<PaymentGateway>();
+    expectTypeOf<CapabilityGateways["terminal_pin"]>().toEqualTypeOf<TerminalGateway>();
   });
 
   it("types the four connection modes", () => {

@@ -1,14 +1,16 @@
 /**
  * Stackra file contract:
  * Purpose: `CheckoutRequest`, what a hosted checkout needs: the merchant's reference, the amount and an optional tip line,
- *          the customer, the basket, where to come back to, and whether to hold, save or split.
+ *          the customer, the basket, where to come back to, whether to hold, save or split, and the tender kind (a
+ *          restricted program pays through the processor's hosted page and PIN pad).
  * Boundary: a type in the leaf entry. `amount` excludes `tip`; the provider is asked for both together and the record keeps
  *           the tip apart for the ledger. `reference` is the idempotency key of the payment.
  * Runtime: isomorphic
- * Governing contract: ADR 0357 (decisions 2, 3 and 5).
+ * Governing contract: ADR 0357 (decisions 2, 3 and 5); ADR 0445.
  */
 import type { Money } from "@stackra/money";
 
+import type { TenderKind } from "#contracts/enums/tender-kind.enum";
 import type { PaymentLine } from "#contracts/types/payment-line.type";
 import type { PaymentParty } from "#contracts/types/payment-party.type";
 import type { PlatformShare } from "#contracts/types/platform-share.type";
@@ -58,4 +60,10 @@ export interface CheckoutRequest {
 
   /** The merchant account and platform fee, for a platform payment (`PaymentCapability.Platform`). */
   readonly platform?: PlatformShare;
+
+  /** What the customer tenders; `card` when absent (`PaymentCapability.RestrictedTender` for `restricted`). */
+  readonly tender?: TenderKind;
+
+  /** The restricted program code, with `tender: restricted`. */
+  readonly program?: string;
 }

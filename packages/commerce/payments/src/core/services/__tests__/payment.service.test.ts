@@ -7,11 +7,11 @@
  *          refused; a terminal payment keeps its tip and a cancel reads the final state; a pay link is reused until
  *          it expires. On a connected account only, a payment above the pre-verification cap and a held payout are
  *          refused; other modes never ask for limits; the account's payment methods are read when the provider reports
- *          them.
+ *          them. A terminal PIN step or a restricted tender is served only by a provider with that capability.
  * Boundary: test only; the service runs over the gateway fake, the gateways fake, the memory records and a fixed
  *           clock.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0269; ADR 0357 (decisions 2, 5 and 6).
+ * Governing contract: ADR 0022; ADR 0269; ADR 0357 (decisions 2, 5 and 6); ADR 0445.
  */
 import { Clock } from "@stackra/contracts";
 import { NotFoundError } from "@stackra/errors";
@@ -23,10 +23,12 @@ import { ChargeInitiator } from "#contracts/enums/charge-initiator.enum";
 import { ConnectionMode } from "#contracts/enums/connection-mode.enum";
 import { PaymentCapability } from "#contracts/enums/payment-capability.enum";
 import { PaymentStatus } from "#contracts/enums/payment-status.enum";
+import { TenderKind } from "#contracts/enums/tender-kind.enum";
 import { MemoryPaymentRecordsDriver } from "#core/drivers/memory-payment-records.driver";
 import { CapabilityUnsupportedError } from "#core/errors/capability-unsupported.error";
 import { InvalidPaymentTransitionError } from "#core/errors/invalid-payment-transition.error";
 import { MerchantInitiatedNotAllowedError } from "#core/errors/merchant-initiated-not-allowed.error";
+import { NoPaymentProviderError } from "#core/errors/no-payment-provider.error";
 import { PaymentUnknownError } from "#core/errors/payment-unknown.error";
 import { PayoutHeldError } from "#core/errors/payout-held.error";
 import { PreVerificationCapExceededError } from "#core/errors/pre-verification-cap-exceeded.error";
@@ -221,6 +223,35 @@ describe("PaymentService", () => {
     });
     await payments.startTerminal("m1", { reference: "chk_2", terminalId: "tmr_1", amount });
     expect((await payments.cancelTerminal("chk_2")).status).toBe(PaymentStatus.Voided);
+  });
+
+  it("serves a PIN step or a restricted tender only from a provider that has it", async () => {
+    const cardOnly = PaymentGatewayFake.with({
+      capabilities: [PaymentCapability.Checkout, PaymentCapability.Terminal],
+    });
+    const plain = new PaymentService(
+      PaymentGatewaysFake.with([cardOnly]),
+      records,
+      clock,
+      ConnectedAccountLimitsFake.with(),
+    );
+    const terminal = { reference: "chk_7", terminalId: "tmr_1", amount };
+    await expect(plain.startTerminal("m1", { ...terminal, pinEntry: true })).rejects.toRefuseWith(
+      refusal(NoPaymentProviderError),
+    );
+    await expect(
+      plain.startTerminal("m1", { ...terminal, tender: TenderKind.Restricted, program: "snap" }),
+    ).rejects.toRefuseWith(refusal(NoPaymentProviderError));
+    await expect(
+      plain.checkout("m1", { ...request, tender: TenderKind.Restricted, program: "snap" }),
+    ).rejects.toRefuseWith(refusal(NoPaymentProviderError));
+    const session = await payments.startTerminal("m1", {
+      ...terminal,
+      pinEntry: true,
+      tender: TenderKind.Restricted,
+      program: "snap",
+    });
+    expect(session.status).toBe(PaymentStatus.Pending);
   });
 
   it("reuses a pay link until it expires", async () => {
