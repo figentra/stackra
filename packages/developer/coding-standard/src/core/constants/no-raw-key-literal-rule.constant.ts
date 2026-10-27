@@ -4,7 +4,11 @@
  *          position is reported; the position takes the constant gen emits (`Icons.House`, a typed key object).
  * Boundary: reads object properties named `icon`, `columnKey`, `routeKey`, `permission` and `permissions` (an array
  *           of literals counts per element). A file named `*.generated.*` or under `generated/` is exempt, because
- *           gen writes the constants there. No autofix: the constant's name is gen's.
+ *           gen writes the constants there. A `*.constant.*` file is exempt too: it is the definition of a module's
+ *           own constant (ADR 0322 decision 3 leaves the `constants/` group unchanged), where a property named
+ *           `permissions` is a member of that constant (`IDENTITY_CLAIMS.permissions`, a claim name) and an `icon`
+ *           is a platform default typed `IconName`, not a declaration that names a generated key. No autofix: the
+ *           constant's name is gen's.
  * Runtime: isomorphic
  * Governing contract: owner decision R-56 (2026-10-24 final review, supersedes R-15); registry v3.1 (notes);
  *                     ADR 0322 (generated key constants).
@@ -14,6 +18,7 @@ import type { Rule } from "#core/types/rule.type";
 
 const POSITIONS = new Set(["icon", "columnKey", "routeKey", "permission", "permissions"]);
 const GENERATED_FILE = /(?:\.generated\.|(?:^|[\\/])generated[\\/])/;
+const CONSTANT_FILE = /\.constant\.[cm]?[jt]sx?$/;
 
 /** Whether `node` is a string literal. */
 const isString = (node: AstNode | null | undefined): node is AstNode =>
@@ -41,7 +46,7 @@ export const NO_RAW_KEY_LITERAL_RULE: Rule = {
     schema: [],
   },
   create(context) {
-    if (GENERATED_FILE.test(context.filename)) return {};
+    if (GENERATED_FILE.test(context.filename) || CONSTANT_FILE.test(context.filename)) return {};
     return {
       Property(node) {
         const position = keyName(node);

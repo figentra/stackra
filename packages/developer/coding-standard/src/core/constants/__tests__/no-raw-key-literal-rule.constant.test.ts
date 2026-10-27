@@ -1,6 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: rule tests of `stackra/no-raw-key-literal`: string literals in icon, column-key, route-key and permission positions are reported.
+ * Purpose: rule tests of `stackra/no-raw-key-literal`: string literals in icon, column-key, route-key and permission
+ *          positions are reported; generated files and a module's own `*.constant.*` definitions are exempt.
  * Boundary: test only; runs the rule through oxlint's RuleTester with the runner from @stackra/testing.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing).
@@ -29,6 +30,14 @@ tester.run(
       { filename: "src/a.ts", code: 'const a = { title: "Home", name: "icon" };' },
       { filename: "src/a.generated.ts", code: 'const a = { icon: "house" };' },
       { filename: "src/generated/a.ts", code: 'const a = { routeKey: "home" };' },
+      {
+        filename: "src/core/constants/identity-claims.constant.ts",
+        code: 'export const IDENTITY_CLAIMS = Object.freeze({ permissions: "urn:stackra:permissions" });',
+      },
+      {
+        filename: "src/core/constants/feedback-by-tone.constant.ts",
+        code: 'export const FEEDBACK_BY_TONE = { success: { icon: "circle-check", role: "status" } };',
+      },
     ],
     invalid: [
       {
@@ -43,6 +52,11 @@ tester.run(
           { messageId: "rawKey", data: { position: "columnKey", literal: '"name"' } },
           { messageId: "rawKey", data: { position: "routeKey", literal: '"home"' } },
         ],
+      },
+      {
+        filename: "src/core/constants/__tests__/a.constant.test.ts",
+        code: 'const a = { icon: "house" };',
+        errors: [{ messageId: "rawKey", data: { position: "icon", literal: '"house"' } }],
       },
       {
         filename: "src/a.ts",
