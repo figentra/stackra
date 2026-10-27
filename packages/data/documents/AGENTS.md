@@ -38,6 +38,8 @@ drivers, fiscal's `HybridPdf` binding, the e-signature port (ADR 0365), its `con
 - A label kind is a `LABEL_PURPOSE` code plus templates, never a renderer branch.
 - `HybridPdfBinding` matches `@stackra/fiscal`'s `HybridPdf` by shape; this package never depends on fiscal.
 - The `gotenberg` drivers use plain `fetch`; every failure is `PdfEngineFailedError` (route and status only).
+- The `gotenberg` drivers inject `DocumentsConfig` (key `documents`), never an endpoint object: a constructor takes
+  class tokens only (ADR 0294 decision 17). The engine's header is the `DOCUMENTS_GOTENBERG_AUTHORIZATION` secret.
 - E-signature: `ConnectionESignatureDriver` routes the port through `ProviderResolver` (capability `e-signature`) and
   prefixes envelope ids `<provider>:<connectionId>:<id>`. A provider here is an Integration and Connection pair in
   `src/core/drivers/` (`documenso.integration.ts`, `documenso.connection.ts`) whose Connection answers
@@ -65,4 +67,4 @@ drivers, fiscal's `HybridPdf` binding, the e-signature port (ADR 0365), its `con
 | Render data (names, orders)  | `renderDocument`, `resolveDocument`      | Read by path into the output only; never logged, never put in a refusal (paths only).                |
 | Drawn signature, signer name | `signForm`, `SignedForm`                 | Placed in the PDF and returned; the caller stores and audits it. The signature is hashed.            |
 | Signer contacts              | `SignatureRequest`, `ESignatureProvider` | Sent only to the provider the scope's Connection names (Documenso: name, email); never in a refusal. |
-| Rendered documents, invoices | `PdfEngine`, `PdfAssembler` drivers      | Sent only to the engine at the deployment's `GotenbergEndpoint`; never logged or put in a refusal.   |
+| Rendered documents, invoices | `PdfEngine`, `PdfAssembler` drivers      | Sent only to the engine at `DocumentsConfig.gotenbergUrl`; never logged or put in a refusal.           |

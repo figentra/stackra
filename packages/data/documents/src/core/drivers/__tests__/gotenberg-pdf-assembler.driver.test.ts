@@ -7,15 +7,19 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0365; ADR 0364.
  */
+import { buildConfig } from "@stackra/config";
 import { kindOf } from "@stackra/container";
 import { afterEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 
+import { DocumentsConfig } from "#config/documents.config";
 import { PdfAssembler } from "#contracts/ports/pdf-assembler.port";
 import { GotenbergPdfAssemblerDriver } from "#core/drivers/gotenberg-pdf-assembler.driver";
 import { DocumentValueError } from "#core/errors/document-value.error";
 
-const ENDPOINT = { url: "http://gotenberg:3000", timeoutMs: 5000 };
+const ENDPOINT = buildConfig(DocumentsConfig, {
+  values: { gotenbergUrl: "http://gotenberg:3000", gotenbergTimeoutMs: 5000 },
+});
 
 /** Stubs `fetch` to answer `bytes` and returns the spy. */
 function answer(bytes = new Uint8Array([9])) {

@@ -8,13 +8,16 @@
  *           call. Gotenberg names the embedded XML itself (`factur-x.xml`, or `xrechnung.xml` for the XRECHNUNG
  *           level), so `HybridPdfInput.fileName` is only the upload's name.
  * Runtime: isomorphic
- * Governing contract: ADR 0365 (decision 2); ADR 0364 (decision 6); ADR 0266 (one option, one driver).
+ * Governing contract: ADR 0365 (decision 2); ADR 0364 (decision 6); ADR 0266 (one option, one driver); ADR 0294
+ *                     (decision 17).
  */
 import { Driver } from "@stackra/container";
 
+import type { DocumentsConfig } from "#config/documents.config";
 import { PdfAssembler } from "#contracts/ports/pdf-assembler.port";
 import type { HybridPdfInput } from "#contracts/types/hybrid-pdf-input.type";
 import { DocumentValueError } from "#core/errors/document-value.error";
+import { gotenbergEndpointOf } from "#core/functions/gotenberg-endpoint-of.function";
 import { postGotenbergForm } from "#core/functions/post-gotenberg-form.function";
 import type { GotenbergEndpoint } from "#core/types/gotenberg-endpoint.type";
 
@@ -27,7 +30,7 @@ function pdfBlob(bytes: Uint8Array): Blob {
  * Merges PDFs and makes hybrid invoices through Gotenberg.
  *
  * @example
- * const assembler = new GotenbergPdfAssemblerDriver({ url: "http://gotenberg:3000", timeoutMs: 30_000 });
+ * const assembler = new GotenbergPdfAssemblerDriver(buildConfig(DocumentsConfig));
  * const labels = await assembler.merge(labelPdfs);
  */
 export class GotenbergPdfAssemblerDriver extends Driver(PdfAssembler) {
@@ -35,11 +38,11 @@ export class GotenbergPdfAssemblerDriver extends Driver(PdfAssembler) {
   private readonly endpoint: GotenbergEndpoint;
 
   /**
-   * @param endpoint - the engine's URL, timeout and headers (from the Connection).
+   * @param config - the documents configuration: the engine's URL, timeout and `authorization` secret.
    */
-  constructor(endpoint: GotenbergEndpoint) {
+  constructor(config: DocumentsConfig) {
     super();
-    this.endpoint = endpoint;
+    this.endpoint = gotenbergEndpointOf(config);
   }
 
   /**

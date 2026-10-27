@@ -35,6 +35,10 @@
   "type": "module",
   "sideEffects": false,
   "imports": {
+    "#config/*": [
+      "./src/config/*",
+      "./src/config/*.ts"
+    ],
     "#contracts/*": [
       "./src/contracts/*",
       "./src/contracts/*.ts",
@@ -78,6 +82,7 @@
     "@stackra/contracts": "workspace:*",
     "@stackra/errors": "workspace:*",
     "@stackra/integrations": "workspace:*",
+    "@stackra/validation": "workspace:*",
     "docx": "catalog:documents",
     "uqr": "catalog:documents",
     "zod": "catalog:"

@@ -10,7 +10,7 @@ templates, never code. This package also holds the `PdfEngine`, `PdfAssembler` a
 connector, Documenso self-hosted.
 
 **Tier:** `tier:lib` (`packages/data/documents`). Entries `.` and `./contracts`. Depends on `@stackra/config`, `@stackra/container`,
-`@stackra/contracts`, `@stackra/errors`, `@stackra/integrations`, `zod`, `docx` (DOCX writing) and `uqr` (QR encoding).
+`@stackra/contracts`, `@stackra/errors`, `@stackra/integrations`, `@stackra/validation`, `zod`, `docx` (DOCX writing) and `uqr` (QR encoding).
 
 ## What is here
 
@@ -25,7 +25,8 @@ connector, Documenso self-hosted.
 | `shapeArabic`, `toVisualOrder`                                                      | Arabic shaping and bidi order for printers and displays that cannot do it                                                                                                                                             |
 | `MemoryESignatureDriver`                                                            | the `memory` driver of `ESignatureProvider` (tests, sandboxes)                                                                                                                                                        |
 | `ConnectionESignatureDriver`, `DocumensoIntegration`, `DocumensoConnection`         | the `connection` driver of `ESignatureProvider` (ADR 0356 per call) and the Documenso connector it routes to                                                                                                          |
-| `GotenbergPdfEngineDriver`, `GotenbergPdfAssemblerDriver`                           | the `gotenberg` drivers of `PdfEngine` (headless Chromium, shapes Arabic) and `PdfAssembler` (merge, Factur-X hybrid), given a `GotenbergEndpoint`                                                                    |
+| `GotenbergPdfEngineDriver`, `GotenbergPdfAssemblerDriver`                           | the `gotenberg` drivers of `PdfEngine` (headless Chromium, shapes Arabic) and `PdfAssembler` (merge, Factur-X hybrid), configured by `DocumentsConfig`                                                                |
+| `DocumentsConfig`, `DocumentsConfig$`                                               | key `documents`: `gotenbergUrl`, `gotenbergTimeoutMs`, and the `DOCUMENTS_GOTENBERG_AUTHORIZATION` secret for the engine's header                                                                                     |
 | `HybridPdfBinding`                                                                  | fiscal's `HybridPdf` (`attach`) made by the bound `PdfAssembler`                                                                                                                                                      |
 | `LABEL_PURPOSE`                                                                     | the purpose codes of the shelf, food and short-dated label templates                                                                                                                                                  |
 | `DocumentFormat`, `PRINT_DOCUMENT_KIND`, the two schemas                            | the format enum with media types, the kind code, the shipped zod schemas                                                                                                                                              |

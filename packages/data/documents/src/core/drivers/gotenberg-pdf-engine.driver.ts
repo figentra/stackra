@@ -6,14 +6,16 @@
  * Boundary: plain `fetch`, no SDK. The HTML is sent as `index.html` untouched; the page size and margins go as form
  *           fields in centimetres (Gotenberg takes in, pt and cm), and a roll (no height) is printed as a single page
  *           as tall as its content. The engine must hold the template's font families (an Arabic one for Arabic);
- *           that is the engine image's, not this package's. Where the engine runs is the `GotenbergEndpoint`.
+ *           that is the engine image's, not this package's. Where the engine runs is `DocumentsConfig`'s.
  * Runtime: isomorphic
- * Governing contract: ADR 0365 (decision 2); ADR 0266 (one option, one driver); ADR 0294 (decision 16).
+ * Governing contract: ADR 0365 (decision 2); ADR 0266 (one option, one driver); ADR 0294 (decisions 16 and 17).
  */
 import { Driver } from "@stackra/container";
 
+import type { DocumentsConfig } from "#config/documents.config";
 import { PdfEngine } from "#contracts/ports/pdf-engine.port";
 import type { PdfPage } from "#contracts/types/pdf-page.type";
+import { gotenbergEndpointOf } from "#core/functions/gotenberg-endpoint-of.function";
 import { postGotenbergForm } from "#core/functions/post-gotenberg-form.function";
 import type { GotenbergEndpoint } from "#core/types/gotenberg-endpoint.type";
 
@@ -29,7 +31,7 @@ function centimetres(mm: number): string {
  * Prints HTML through Gotenberg's Chromium.
  *
  * @example
- * const engine = new GotenbergPdfEngineDriver({ url: "http://gotenberg:3000", timeoutMs: 30_000 });
+ * const engine = new GotenbergPdfEngineDriver(buildConfig(DocumentsConfig));
  * const pdf = await engine.print(renderHtml(resolved), resolved.template.page);
  */
 export class GotenbergPdfEngineDriver extends Driver(PdfEngine) {
@@ -37,11 +39,11 @@ export class GotenbergPdfEngineDriver extends Driver(PdfEngine) {
   private readonly endpoint: GotenbergEndpoint;
 
   /**
-   * @param endpoint - the engine's URL, timeout and headers (from the Connection).
+   * @param config - the documents configuration: the engine's URL, timeout and `authorization` secret.
    */
-  constructor(endpoint: GotenbergEndpoint) {
+  constructor(config: DocumentsConfig) {
     super();
-    this.endpoint = endpoint;
+    this.endpoint = gotenbergEndpointOf(config);
   }
 
   /**

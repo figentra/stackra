@@ -37,6 +37,8 @@ describe("@stackra/documents", () => {
       "DocumensoIntegration",
       "DocumentFormat",
       "DocumentValueError",
+      "DocumentsConfig",
+      "DocumentsConfig$",
       "GotenbergPdfAssemblerDriver",
       "GotenbergPdfEngineDriver",
       "HybridPdfBinding",

@@ -8,9 +8,11 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision.
  */
+export { DocumentsConfig } from "#config/documents.config";
 export { HybridPdfBinding } from "#core/bindings/hybrid-pdf.binding";
 export { CURRENCY_WORDS_SCHEMA } from "#core/constants/currency-words-schema.constant";
 export { DOCUMENT_TEMPLATE_SCHEMA } from "#core/constants/document-template-schema.constant";
+export { DOCUMENTS_CONFIG_SCHEMA as DocumentsConfig$ } from "#core/constants/documents-config-schema.constant";
 export { LABEL_PURPOSE } from "#core/constants/label-purpose.constant";
 export { PRINT_DOCUMENT_KIND } from "#core/constants/print-document-kind.constant";
 export { ConnectionESignatureDriver } from "#core/drivers/connection-e-signature.driver";

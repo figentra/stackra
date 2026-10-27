@@ -7,19 +7,20 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0365 (decision 2).
  */
+import { buildConfig, MemorySecretStoreDriver } from "@stackra/config";
 import { kindOf } from "@stackra/container";
 import { afterEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 
+import { DocumentsConfig } from "#config/documents.config";
 import { PdfEngine } from "#contracts/ports/pdf-engine.port";
 import { GotenbergPdfEngineDriver } from "#core/drivers/gotenberg-pdf-engine.driver";
 import { PdfEngineFailedError } from "#core/errors/pdf-engine-failed.error";
 
-const ENDPOINT = {
-  url: "http://gotenberg:3000/",
-  timeoutMs: 5000,
-  headers: { authorization: "Basic x" },
-};
+const ENDPOINT = buildConfig(DocumentsConfig, {
+  values: { gotenbergUrl: "http://gotenberg:3000/", gotenbergTimeoutMs: 5000 },
+  secrets: new MemorySecretStoreDriver().set("DOCUMENTS_GOTENBERG_AUTHORIZATION", "Basic x"),
+});
 
 const HTML =
   '<!doctype html><html lang="ar" dir="rtl"><body><p>مرحبا <bdi>R-1</bdi></p></body></html>';
