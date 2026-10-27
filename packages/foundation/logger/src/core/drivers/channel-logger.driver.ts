@@ -11,12 +11,13 @@
  *                     (decisions 16 and 17); ADR 0184 (decision 5: no personal data in logs).
  */
 import { Driver } from "@stackra/container";
-import { Clock, Enum, Logger } from "@stackra/contracts";
+import type { Clock } from "@stackra/contracts";
+import { Enum, Logger } from "@stackra/contracts";
 
-import { LoggingConfig } from "#config/logging.config";
+import type { LoggingConfig } from "#config/logging.config";
 import { LogLevel } from "#contracts/enums/log-level.enum";
 import { redact } from "#core/functions/redact.function";
-import { LogReporter } from "#contracts/ports/log-reporter.port";
+import type { LogReporter } from "#contracts/ports/log-reporter.port";
 import type { LogRecord } from "#contracts/types/log-record.type";
 
 /** The levels in severity order: a level's index is its rank. */

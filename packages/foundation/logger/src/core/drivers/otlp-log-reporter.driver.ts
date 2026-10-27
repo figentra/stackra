@@ -11,10 +11,10 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0147 (decision 1: OTLP driver); ADR 0184 (decisions 1, 2 and 5); ADR 0173 (secrets by name).
  */
-import { SecretStore } from "@stackra/config/contracts";
+import type { SecretStore } from "@stackra/config/contracts";
 import { Driver } from "@stackra/container";
 
-import { OtlpConfig } from "#config/otlp.config";
+import type { OtlpConfig } from "#config/otlp.config";
 import { LogReporter } from "#contracts/ports/log-reporter.port";
 import type { LogRecord } from "#contracts/types/log-record.type";
 import { otlpHeaders } from "#core/functions/otlp-headers.function";

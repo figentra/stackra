@@ -23,15 +23,18 @@ import { LogLevel } from "#contracts/enums/log-level.enum";
  * }
  */
 export class LoggingOptions extends Schema {
+  /** The share of debug and info lines kept, 0 to 1; warnings and errors are always kept. */
+  @Num({
+    min: 0,
+    max: 1,
+  })
+  sampleRate = 1;
+
   /** The lowest level written for a channel with no level of its own. */
   level: LogLevel = LogLevel.Info;
 
   /** Channel (the event's module key, `orders`) to the lowest level written for it. */
   channels: Record<string, LogLevel> = {};
-
-  /** The share of debug and info lines kept, 0 to 1; warnings and errors are always kept. */
-  @Num({ min: 0, max: 1 })
-  sampleRate = 1;
 
   /** What is masked besides the built-in credential and personal-data names. */
   redaction: {
