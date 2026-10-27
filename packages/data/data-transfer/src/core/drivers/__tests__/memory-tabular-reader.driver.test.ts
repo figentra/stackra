@@ -32,7 +32,7 @@ async function rowsOf(rows: AsyncIterable<TabularRow>): Promise<TabularRow[]> {
 
 describe("MemoryTabularReaderDriver", () => {
   it("yields every sheet, header first, cells as text", async () => {
-    const reader = new MemoryTabularReaderDriver(SHEETS);
+    const reader = new MemoryTabularReaderDriver().seed(SHEETS);
     expect(reader).toBeInstanceOf(TabularReader);
     const rows = await rowsOf(reader.read([]));
     expect(rows[1]).toEqual({
@@ -51,13 +51,13 @@ describe("MemoryTabularReaderDriver", () => {
 
   it("reads only the sheets asked for", async () => {
     const rows = await rowsOf(
-      new MemoryTabularReaderDriver(SHEETS).read([], { sheets: ["Lines"] }),
+      new MemoryTabularReaderDriver().seed(SHEETS).read([], { sheets: ["Lines"] }),
     );
     expect(rows.every((row) => row.sheet === "Lines")).toBe(true);
   });
 
   it("refuses past the row limit across sheets, headers excluded", async () => {
-    const reader = new MemoryTabularReaderDriver(SHEETS);
+    const reader = new MemoryTabularReaderDriver().seed(SHEETS);
     expect(await rowsOf(reader.read([], { limits: { rows: 3 } }))).toHaveLength(5);
     await expect(rowsOf(reader.read([], { limits: { rows: 2 } }))).rejects.toBeInstanceOf(
       TransferLimitExceededError,

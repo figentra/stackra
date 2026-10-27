@@ -27,7 +27,7 @@ encoding of a market are inputs the caller reads from settings and market packs.
 | `.`           | `CsvWriterDriver`, `JsonLinesWriterDriver`, `DatevAsciiWriterDriver`                    | write bytes                                                                                     |
 | `./node`      | `XlsxReaderDriver`, `XlsxWriterDriver`                                                  | XLSX: every sheet or the chosen ones; several sheets                                            |
 | `.`           | `MemoryImportLedgerDriver`                                                              | the in-memory ledger (keeps the durable driver contract)                                        |
-| `.`           | `MemoryTabularReaderDriver`, `MemoryTabularWriterDriver`                                | `memory` tests and dev: rows from held sheets; writes kept                                      |
+| `.`           | `MemoryTabularReaderDriver`, `MemoryTabularWriterDriver`                                | `memory` tests and dev: rows from `seed(sheets)`; writes kept                                   |
 | `.`           | `ImportRunner`                                                                          | `run`, `runSheets` (several sheets, several targets), `revert`; `dryRun` checks without writing |
 | `.`           | `IMPORT_MAPPING_PROFILE_SCHEMA`, `sheetImportsOf`                                       | a seed-pack mapping profile to `runSheets` sheets                                               |
 | `.`           | `PAYROLL_EXPORT_PROFILE_SCHEMA`, `payrollSheet`, `datevWriteOptionsOf`                  | pay inputs to a provider's file                                                                 |

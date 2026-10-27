@@ -55,7 +55,7 @@ describe("MemoryTabularWriterDriver", () => {
     const writer = new MemoryTabularWriterDriver();
     await drain(writer.write([{ name: "", rows: streamed() }]));
     const cells: (readonly string[])[] = [];
-    for await (const row of new MemoryTabularReaderDriver(writer.written[0] ?? []).read([]))
+    for await (const row of new MemoryTabularReaderDriver().seed(writer.written[0] ?? []).read([]))
       cells.push(row.cells);
     expect(cells).toEqual([
       ["sku", "qty"],

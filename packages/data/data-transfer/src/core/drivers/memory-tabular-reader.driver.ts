@@ -1,13 +1,15 @@
 /**
  * Stackra file contract:
  * Purpose: `MemoryTabularReaderDriver`, the `memory` driver of `TabularReader` for tests and development: it yields the
- *          sheets it was built with as rows, so an importer is tested without writing a CSV file or a workbook.
+ *          sheets it was seeded with (`seed(sheets)`) as rows, so an importer is tested without writing a CSV file or
+ *          a workbook.
  * Boundary: the memory driver the port ships with (ADR 0266); its name is the file prefix (`memory`). It holds its
  *           sheets and ignores the source's bytes, so `encoding`, `fallbackEncoding`, `delimiter` and `limits.bytes`
  *           do not apply; `sheets` and `limits.rows` do. A cell is text as a reader yields it: a `Date` is ISO 8601,
  *           `null` is `""`. Pair it with `MemoryTabularWriterDriver.written` for a round trip.
  * Runtime: isomorphic
- * Governing contract: ADR 0367 (decisions 2 to 4); ADR 0266 (decision 2).
+ * Governing contract: ADR 0367 (decisions 2 to 4); ADR 0266 (decision 2); ADR 0294 (decision 17: a driver's
+ *                     constructor takes class tokens only, so the sheets are seeded).
  */
 import { Driver } from "@stackra/container";
 
@@ -29,18 +31,20 @@ function textOf(cell: TabularCell): string {
  * Reads the sheets it holds.
  *
  * @example
- * const reader = new MemoryTabularReaderDriver([{ name: "", rows: [["sku", "qty"], ["A-1", 2]] }]);
+ * const reader = new MemoryTabularReaderDriver().seed([{ name: "", rows: [["sku", "qty"], ["A-1", 2]] }]);
  */
 export class MemoryTabularReaderDriver extends Driver(TabularReader) {
-  /** The sheets every read yields, header first. */
-  private readonly sheets: readonly TabularSheet[];
+  /** The sheets every read yields, header first; none until seeded. */
+  private sheets: readonly TabularSheet[] = [];
 
   /**
+   * Sets the sheets every read yields, replacing any seeded before.
+   *
    * @param sheets - the sheets to yield, in order (a CSV-like file is one sheet named `""`).
    */
-  constructor(sheets: readonly TabularSheet[]) {
-    super();
+  seed(sheets: readonly TabularSheet[]): this {
     this.sheets = sheets;
+    return this;
   }
 
   /**
