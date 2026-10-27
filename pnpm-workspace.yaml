@@ -109,7 +109,7 @@ catalogs:
     react-dom: 19.3.0
     "@types/react": 19.3.0
     "@types/react-dom": 19.3.0
-    vite: 8.3.2
+    vite: 8.3.3
     "@vitejs/plugin-react": 6.1.1
     tailwindcss: 4.3.3
     "@tailwindcss/vite": 4.3.3
@@ -256,7 +256,7 @@ catalogs:
   # Electron desktop apps (tools/scaffold/templates/apps/desktop, MR7). No member uses it until one is scaffolded;
   # electron's postinstall downloads the binary, so the first desktop app also adds `electron: true` to allowBuilds.
   desktop:
-    electron: 44.5.1
+    electron: 44.9.1
     electron-builder: 26.16.1
   # Deploy CLIs. wrangler builds and deploys the Cloudflare Workers members (workers/static, ADR 0284); CI runs
   # `wrangler deploy` with a token from Infisical /ci, never from a file.
@@ -302,6 +302,32 @@ catalogs:
 overrides:
   "@mintlify/previewing>is-online": "catalog:docs"
   "is-online>public-ip": "catalog:docs"
+  # ADR 0174 (OSV-Scanner in the Quality Gate): transitive versions with known advisories are lifted to the first fixed
+  # release of the same major. Each selector names the vulnerable range only, so a parent that moves past it on its own
+  # drops out of the override; remove a line once no lockfile entry matches its range. Advisories without a same-major
+  # fix are accepted in osv-scanner.toml with their reason.
+  "@modelcontextprotocol/sdk@<1.32.0": "1.32.0"
+  "adm-zip@<0.6.1": "0.6.1"
+  "axios@>=1.0.0 <1.20.0": "1.20.0"
+  "body-parser@>=1.0.0 <1.20.9": "1.20.9"
+  "body-parser@>=2.0.0 <2.4.0": "2.4.0"
+  "fast-uri@>=3.0.0 <3.1.9": "3.1.9"
+  "fflate@>=0.7.0 <0.7.5": "0.7.5"
+  "fflate@>=0.8.0 <0.8.3": "0.8.3"
+  "figlet@<1.11.3": "1.11.3"
+  "js-yaml@>=4.0.0 <4.3.2": "4.3.2"
+  # 0.x: the fix ships only in the next minor; the parents (rehype-katex, micromark math) render docs math only.
+  "katex@<0.18.2": "0.18.2"
+  "postcss-selector-parser@>=6.0.0 <6.1.5": "6.1.5"
+  "qs@>=6.0.0 <6.16.0": "6.16.0"
+  # 0.x: the fix ships only in 0.35; the parents (favicons, sharp-ico, Mintlify prebuild, miniflare) use resize/encode.
+  "sharp@<0.35.5": "0.35.5"
+  "tar@>=7.0.0 <7.5.21": "7.5.21"
+  "undici@>=7.0.0 <7.30.1": "7.30.1"
+  # uuid 7 and 8 (xcode, exceljs) have no fixed release of their own; both call only v4() through the CommonJS entry,
+  # which 11.1.1 still ships.
+  "uuid@<11.1.1": "11.1.1"
+  "zod@>=4.0.0 <4.6.6": "4.6.6"
 
 # ADR 0310: the HeroUI Pro packages on npm are shells whose real package.json arrives with the postinstall download,
 # so pnpm never sees their peers and links none: a Pro module then resolves the hoisted React of another catalog

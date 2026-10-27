@@ -1,0 +1,40 @@
+# Stackra file contract:
+# Purpose: OSV-Scanner policy for the Quality Gate's dependency scan (`osv-scanner scan source --lockfile=pnpm-lock.yaml`,
+#          ADR 0174, STA-310). Every fixable advisory is fixed through pnpm-workspace.yaml (catalog or `overrides`); an
+#          entry here is an advisory with no same-major fix, named by id or by exact package version, with its reason and
+#          a date to look again.
+# Scope: pnpm-lock.yaml
+# Owner: release-operations
+# Secrets: forbidden
+
+# zod 3.x: the fix ships only in zod 4 (4.6.6). The 3.x copies come from dev tooling only, never from a published
+# package: the Mintlify docs CLI (@mintlify/scraping, @mintlify/validation, zod-to-json-schema 3.20) and Expo's CLI.
+# Forcing zod 4 under parents written for 3 breaks them. Our own zod is catalog 4.6.7.
+[[PackageOverrides]]
+name = "zod"
+version = "3.24.0"
+ecosystem = "npm"
+vulnerability.ignore = true
+reason = "GHSA-mrhx-c7xc-m3w5: fixed only in zod 4; dev-only parents (Mintlify CLI) need zod 3"
+effectiveUntil = 2027-01-31
+
+[[PackageOverrides]]
+name = "zod"
+version = "3.25.76"
+ecosystem = "npm"
+vulnerability.ignore = true
+reason = "GHSA-mrhx-c7xc-m3w5: fixed only in zod 4; dev-only parent (@expo/cli) needs zod 3"
+effectiveUntil = 2027-01-31
+
+# node-forge: no fixed release exists. Only Expo's CLI and its code-signing helper use it, at development time.
+[[IgnoredVulns]]
+id = "GHSA-86w9-cpqp-85rv"
+ignoreUntil = 2027-01-31
+reason = "node-forge RSA PKCS#1 v1.5 verification: no fixed release; dev-only use through @expo/cli code signing"
+
+# adm-zip: one advisory has no fix even in 0.6.1 (the override lifts the other six). Only the Mintlify docs CLI and
+# preview use it, on archives Mintlify itself downloads.
+[[IgnoredVulns]]
+id = "GHSA-vwc7-r8mq-g2x9"
+ignoreUntil = 2027-01-31
+reason = "adm-zip symlink-following extraction: no fixed release; dev-only use through the Mintlify docs CLI"
