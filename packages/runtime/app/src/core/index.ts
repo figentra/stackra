@@ -11,7 +11,7 @@
  *                     ADR 0457.
  */
 export { bootApp } from "#core/functions/boot-app.function";
-export { AppWiring } from "#core/services/app-wiring.service";
+export { AppWiring } from "#core/values/app-wiring.value";
 export type { AppMessages } from "#core/types/app-messages.type";
 export type { AppSections } from "#core/types/app-sections.type";
 export type { BootedApp } from "#core/types/booted-app.type";

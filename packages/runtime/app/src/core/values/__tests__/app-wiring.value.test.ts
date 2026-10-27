@@ -7,7 +7,7 @@
  */
 import { describe, expect, it } from "@stackra/testing";
 
-import { AppWiring } from "#core/services/app-wiring.service";
+import { AppWiring } from "#core/values/app-wiring.value";
 
 describe("AppWiring", () => {
   it("keeps the wiring as it is", () => {

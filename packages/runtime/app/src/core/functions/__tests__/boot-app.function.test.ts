@@ -16,7 +16,7 @@ import { describe, expect, it } from "@stackra/testing";
 
 import { ConsoleErrorReporterDriver } from "#core/drivers/console-error-reporter.driver";
 import { bootApp } from "#core/functions/boot-app.function";
-import { AppWiring } from "#core/services/app-wiring.service";
+import { AppWiring } from "#core/values/app-wiring.value";
 
 class SiteI18nConfig extends I18nConfig {
   override locales: Locale[] = [Locale.En, Locale.Ar];

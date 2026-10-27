@@ -3,7 +3,8 @@
  * Purpose: `AppWiring`, the booted member's generated wiring as a container token: `bootApp` binds it, so `Contexts`
  *          and the target runtimes read the sections @stackra/app owns (`contexts`, `messages`) and the bindings from
  *          the container a component or an adapter already holds.
- * Boundary: holds the wiring; it builds nothing. Bound as an override by `bootApp`, never listed in a wiring.
+ * Boundary: a value, not a service: it holds the wiring and builds nothing. Bound as an override by `bootApp`,
+ *           never listed in a wiring, so gen never constructs it.
  * Runtime: isomorphic
  * Governing contract: ADR 0295 (decisions 7, 8 and 10); ADR 0263 (decision 11: sections other packages own).
  */

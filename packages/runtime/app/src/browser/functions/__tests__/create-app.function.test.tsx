@@ -18,7 +18,7 @@ import type { ReactElement, ReactNode } from "react";
 import * as client from "react-dom/client";
 
 import { createApp } from "#browser/functions/create-app.function";
-import { AppWiring } from "#core/services/app-wiring.service";
+import { AppWiring } from "#core/values/app-wiring.value";
 
 vi.mock("react-dom/client", async (importOriginal) => {
   const actual = await importOriginal<typeof client>();

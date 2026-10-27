@@ -20,7 +20,7 @@ import { ErrorReporter } from "@stackra/errors/contracts";
 
 import { ConsoleErrorReporterDriver } from "#core/drivers/console-error-reporter.driver";
 import { envSecrets } from "#core/functions/env-secrets.function";
-import { AppWiring } from "#core/services/app-wiring.service";
+import { AppWiring } from "#core/values/app-wiring.value";
 import type { AppSections } from "#core/types/app-sections.type";
 import type { BootedApp } from "#core/types/booted-app.type";
 import type { BootOptions } from "#core/types/boot-options.type";

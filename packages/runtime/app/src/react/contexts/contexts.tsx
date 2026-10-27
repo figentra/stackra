@@ -15,7 +15,7 @@ import { useContainer } from "@stackra/container/react";
 import { createElement } from "react";
 import type { ReactNode } from "react";
 
-import { AppWiring } from "#core/services/app-wiring.service";
+import { AppWiring } from "#core/values/app-wiring.value";
 import { CONTEXT_REGISTRY } from "#react/contexts/context-registry.constant";
 import type { ContextProps } from "#react/contexts/context-props.type";
 import type { ContextsProps } from "#react/contexts/contexts-props.type";
