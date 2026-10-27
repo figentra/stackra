@@ -14,7 +14,7 @@
 import { Driver } from "@stackra/container";
 
 import { PayloadSeal } from "#contracts/ports/payload-seal.port";
-import { Storage } from "#contracts/ports/storage.port";
+import type { Storage } from "#contracts/ports/storage.port";
 import { PAYLOAD_KEY } from "#core/constants/payload-key.constant";
 
 /** The format tag of a sealed text. */
