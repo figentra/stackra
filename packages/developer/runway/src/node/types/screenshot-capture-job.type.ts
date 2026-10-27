@@ -15,7 +15,7 @@ export type ScreenshotCaptureJob = {
   readonly app: string;
   /** The CI runner label (a Mac runner). */
   readonly runner: string;
-  /** The simulator. */
+  /** The simulator device the screens are captured on. */
   readonly device: string;
   /** Screens per locale, from `<storeDir>/<app>/<locale>/captions.json`. */
   readonly locales: readonly { readonly locale: string; readonly screens: readonly string[] }[];

@@ -34,11 +34,11 @@ export type PackageManifest = {
   /** Where and how it publishes. */
   readonly publishConfig?:
     | {
-        /** `public` for npmjs. */
+        /** `public`: anyone may install it from the registry. */
         readonly access?: string | undefined;
         /** True asks npm for a provenance statement. */
         readonly provenance?: boolean | undefined;
-        /** The registry URL. */
+        /** The registry URL; never set on a member, the release workflow names it (ADR 0453). */
         readonly registry?: string | undefined;
         /** The packed exports of the Pro wrapper. */
         readonly exports?: unknown;

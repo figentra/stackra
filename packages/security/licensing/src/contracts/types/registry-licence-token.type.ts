@@ -15,7 +15,7 @@ export interface RegistryLicenceToken {
   /** Where it is used ("github-actions", "build-mac-2"). */
   readonly label: string;
 
-  /** ISO 8601. */
+  /** When the token was issued, ISO 8601. */
   readonly createdAt: string;
 
   /** ISO 8601 once revoked, else null. */

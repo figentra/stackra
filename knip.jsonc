@@ -54,11 +54,7 @@
       "project": ["src/**/*.{ts,tsx}"],
     },
     // A member listed by name replaces the packages/*/* entry for it, so it repeats entry and project.
-    // ui-pro and vite-plugin ship CSS that knip compiles (Tailwind), so their project includes it.
-    "packages/design-system/ui-pro": {
-      "entry": ["stackra.config.ts"],
-      "project": ["src/**/*.{ts,tsx,css}"],
-    },
+    // vite-plugin ships CSS that knip compiles (Tailwind), so its project includes it.
     "packages/developer/vite-plugin": {
       "entry": ["stackra.config.ts"],
       "project": ["src/**/*.{ts,tsx,css}"],
@@ -112,7 +108,8 @@
   },
   // `mint`: Swift's Mint runner, a fallback in lefthook's generated hooks.
   // Scaffold templates are inert text with {{tokens}}; the generated members are checked once they exist.
-  "ignore": ["tools/scaffold/templates/**", "**/__tests__/fixtures/**"],
+  // dist/ is build output (the tooling presets ship tsc-emitted JS and .d.ts); knip checks the src it is built from.
+  "ignore": ["tools/scaffold/templates/**", "**/__tests__/fixtures/**", "**/dist/**"],
   "ignoreBinaries": ["gitleaks", "mint"],
   "rules": {
     // Catalog entries are declared ahead of the members that consume them; `warn` keeps a dead one visible.

@@ -198,12 +198,18 @@ const filesOk = {
 test("a complete member has no file findings", () =>
   assert.deepEqual(checkMemberFiles(filesOk), []));
 
-test("the HeroUI Pro wrapper skips the npmjs publishConfig, which check replaces; any other package needs it (ADR 0310)", () => {
-  const unpublished = { ...filesOk.pkg, publishConfig: undefined };
-  const at = (name: string): string[] =>
-    checkMemberFiles({ ...filesOk, pkg: { ...unpublished, name } });
-  assert.deepEqual(at("@stackra-pro/ui"), []);
-  assert.equal(at("@stackra/search").length, 1);
+test("every library needs publishConfig access public and provenance true (ADR 0453)", () => {
+  const missing: PackageManifest["publishConfig"][] = [
+    undefined,
+    { access: "public" },
+    { provenance: true },
+    { access: "restricted", provenance: true },
+  ];
+  for (const publishConfig of missing)
+    assert.equal(
+      checkMemberFiles({ ...filesOk, pkg: { ...filesOk.pkg, publishConfig } }).length,
+      1,
+    );
 });
 
 test("a member's publishConfig names no registry: the release workflow's input sets it (ADR 0453)", () => {

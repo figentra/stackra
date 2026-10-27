@@ -11,7 +11,7 @@ import type { RegistryLicenceGrant } from "#contracts/types/registry-licence-gra
 import type { RegistryLicenceToken } from "#contracts/types/registry-licence-token.type";
 
 /**
- * A licence.
+ * A licence as the licence API answers it.
  *
  * @example
  * const { id, issuedToken } = await issuer.apply({ action: "issue", ... }); // issuedToken: "stkl_…", shown once

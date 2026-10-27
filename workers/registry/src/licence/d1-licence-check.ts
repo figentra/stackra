@@ -37,6 +37,7 @@ export class D1LicenceCheck implements LicenceCheck {
     this.db = db;
   }
 
+  /** The licence behind `token`, or null for a non-`stkl_`, unknown or revoked token. */
   async check(token: string): Promise<LicenceView | null> {
     if (!token.startsWith("stkl_")) return null;
     const row = await this.db

@@ -9,7 +9,7 @@
  */
 
 /**
- * One grant.
+ * One scope and the names in it that a licence may read.
  *
  * @example
  * const grant: RegistryLicenceGrant = { scope: "@stackra-pro", names: ["@stackra-pro/sync"] };
