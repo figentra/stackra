@@ -36,7 +36,7 @@ export const REALTIME_CONFIG_SCHEMA = z.object({
   reconnectOnForeground: z.boolean().default(false),
   backgroundGraceSeconds: z.number().int().min(0).default(60),
   maxBackoffSeconds: z.number().int().min(1).default(30),
-  fanout: z.enum(["local", "valkey"]).default("local"),
+  fanout: z.enum(["local", "memory", "valkey"]).default("local"),
   fanoutValkeyUrl: z.string().default(""),
   fanoutChannel: z.string().min(1).default("realtime:fanout"),
   rooms: z
