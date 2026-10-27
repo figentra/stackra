@@ -20,7 +20,7 @@ left-to-right and right-to-left, checked by Playwright and axe. App at `apps/pla
   numbers; never disable the rule.
 - Imports that leave a folder use the `#src/*` alias; no `@/` alias (ADR 0233). Unit tests sit in `__tests__/`
   beside the code; the Playwright suites in `e2e/__tests__/*.e2e.test.ts` (ADR 0022 d3).
-- Versions only via `catalog:<name>` or `workspace:*`. `tsconfig.json` only extends `@stackra/typescript-config/vite`.
+- Versions only via `catalog:<name>` or `workspace:*`. `tsconfig.json` only extends `@stackra/typescript-config/app`.
 - Tasks: `dev`, `build`, `preview`, `typecheck`, `test`, `test:e2e`, `lint`, `format`, `format:check`, `clean`.
 - Done = `pnpm verify` green and `pnpm --filter @figentra/playground test:e2e` green. Secrets: none.
 
