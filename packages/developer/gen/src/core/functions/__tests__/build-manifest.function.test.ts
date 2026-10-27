@@ -9,7 +9,8 @@
  *          `prefix_duplicate`; `event_name_prefixed` (STA-1255); the v3 tool default with `tool_reason_missing`, the public flag with `public_without_endpoint`, effect tags with `effect_unknown`,
  *          Integration roles and listing with `integration_role_unknown`, the `@Replaces` section, and a replica
  *          query's `ReplicaPage` output schema (ADR 0338); a package's drivers with each candidate's class, entry and
- *          tokens and the selecting config class (STA-1297); a package's `config` section (STA-1308).
+ *          tokens and the selecting config class (STA-1297); a package's `config` section (STA-1308); the `agents`,
+ *          `passes` and `entitlements` sections with derived entitlement keys and gates (STA-903).
  * Boundary: test only; runs on the commerce IR fixture.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 10, 20, 21 and 22); ADR 0305 (rules 1, 28 and
@@ -444,6 +445,112 @@ describe("buildManifest", () => {
         (error) => `${error.code} ${error.subject}`,
       ),
     ).toEqual(["identity_missing LateFee"]);
+  });
+
+  it("lists agents, pass kinds and entitlements with their derived keys and gates (STA-903)", () => {
+    const base = declared("CancelOrderAction");
+    const kindClass = (
+      name: string,
+      kind: string,
+      file: string,
+      options: Record<string, unknown>,
+    ): DeclaredClass => ({ ...base, name, kind, file, importPath: `#${file}`, options, deps: [] });
+    const order = { $class: "Order", from: "#modules/orders/models/order.model", kind: "model" };
+    const exports = { $class: "ExportsEntitlement", from: "#x", kind: "entitlement" };
+    const ir: MemberIR = {
+      ...COMMERCE_IR,
+      classes: [
+        ...COMMERCE_IR.classes.map((candidate) =>
+          candidate.name === "ListOrdersQuery"
+            ? { ...candidate, options: { ...candidate.options, entitlement: exports } }
+            : candidate,
+        ),
+        kindClass(
+          "CreateOrderAction",
+          "action",
+          "src/modules/orders/actions/create-order.action.ts",
+          {
+            key: "order.create",
+            actors: ["user"],
+          },
+        ),
+        kindClass(
+          "OrderLimitEntitlement",
+          "entitlement",
+          "src/modules/orders/access/order-limit.entitlement.ts",
+          { kind: "limit", counts: order, where: { archivedAt: null } },
+        ),
+        kindClass(
+          "ExportsEntitlement",
+          "entitlement",
+          "src/modules/orders/access/exports.entitlement.ts",
+          { kind: "feature" },
+        ),
+        kindClass(
+          "OrderAssistantAgent",
+          "agent",
+          "src/modules/orders/ai/order-assistant.agent.ts",
+          {
+            key: "order_assistant",
+            task: "chat",
+            tools: [{ $class: "ListOrdersQuery", from: "#q", kind: "query" }],
+          },
+        ),
+        kindClass("ReceiptPass", "pass", "src/modules/orders/integrations/receipt.pass.ts", {
+          key: "receipt",
+        }),
+      ],
+    };
+    const built = buildManifest(ir);
+    expect(built.errors).toEqual([]);
+    expect(built.manifest["entitlements"]).toEqual([
+      {
+        key: "orders.order_limit",
+        class: "OrderLimitEntitlement",
+        module: "orders",
+        file: "src/modules/orders/access/order-limit.entitlement.ts",
+        kind: "limit",
+        counts: "orders.order",
+        where: { archivedAt: null },
+        gates: ["orders.order.create@1"],
+      },
+      {
+        key: "orders.exports",
+        class: "ExportsEntitlement",
+        module: "orders",
+        file: "src/modules/orders/access/exports.entitlement.ts",
+        kind: "feature",
+        gates: ["orders.order.list@1"],
+      },
+    ]);
+    expect(built.manifest["agents"]).toEqual([
+      {
+        key: "order_assistant",
+        class: "OrderAssistantAgent",
+        module: "orders",
+        file: "src/modules/orders/ai/order-assistant.agent.ts",
+        task: "chat",
+        tools: ["orders.order.list@1"],
+      },
+    ]);
+    expect(built.manifest["passes"]).toEqual([
+      {
+        key: "receipt",
+        class: "ReceiptPass",
+        module: "orders",
+        file: "src/modules/orders/integrations/receipt.pass.ts",
+      },
+    ]);
+    const unkeyed = buildManifest({
+      ...ir,
+      classes: [
+        ...COMMERCE_IR.classes,
+        kindClass("BarePass", "pass", "src/modules/orders/integrations/bare.pass.ts", {}),
+      ],
+    });
+    expect(unkeyed.errors.map((error) => `${error.code} ${error.subject}`)).toEqual([
+      "identity_missing BarePass",
+    ]);
   });
 
   it("locks an Integration's egress entry, a {field} host kept as data, and refuses a base URL it cannot call", () => {

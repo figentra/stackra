@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `createSourceReader`, discovery's analyser over one opened program: it reads each class's kind from the
  *          base its `extends` clause names (bare, called, `Model.with`, `Page.of`, `Widget.place`, an own or a
- *          package class), its options as constants, its partner from the heritage type argument (`Point["slot"]`
+ *          package class), its options as constants (a class thunk, `counts: () => Till`, as its class), its partner from the heritage type argument (`Point["slot"]`
  *          included), its constructor tokens, facets, `handle` signature (a `ReplicaPage` output from a `@stackra/*`
  *          package reads as `replica`, ADR 0338; a listener's parameter is its event class, one from
  *          `#stackra/clients/<service>` by its import, or `EventEnvelope` from `@stackra/outbox` as a relay), refusals, statics and traits; each shape's fields from the declared
@@ -547,12 +547,23 @@ export function createSourceReader(
     const options: Record<string, unknown> = {};
     for (const property of node.properties ?? []) {
       const kind = host.kind(property);
+      // A class thunk (`counts: () => Till`, so a model and its entitlement may import each other) reads as the
+      // class it returns; any other function stays non-constant (STA-903).
+      const thunk =
+        kind === "PropertyAssignment" &&
+        property.initializer !== undefined &&
+        host.kind(property.initializer) === "ArrowFunction" &&
+        (property.initializer.parameters ?? []).length === 0
+          ? constant(property.initializer.body)
+          : undefined;
       const value =
-        kind === "PropertyAssignment"
-          ? constant(property.initializer)
-          : kind === "ShorthandPropertyAssignment"
-            ? constant(property.name)
-            : NOT_CONSTANT;
+        typeof thunk === "object" && thunk !== null && "$class" in thunk
+          ? thunk
+          : kind === "PropertyAssignment"
+            ? constant(property.initializer)
+            : kind === "ShorthandPropertyAssignment"
+              ? constant(property.name)
+              : NOT_CONSTANT;
       const name = nameOf(property.name);
       if (!hasNonConstant(value)) options[name] = value;
       // ADR 0360 d4: `tool: false` carries its reason as a `// reason:` line, as `@Field(zod)` does.

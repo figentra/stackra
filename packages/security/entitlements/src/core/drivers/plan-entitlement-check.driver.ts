@@ -3,7 +3,7 @@
  * Purpose: `PlanEntitlementCheckDriver`, the driver of the action pipeline's entitlement step (`EntitlementCheck` from
  *          `@stackra/actions`): for each registered entitlement that gates the call it asks the `EntitlementSource` for
  *          the grant in the call's scope (`call.scope`, by its id) and, for a limit, the `EntitlementUsage` for the
- *          current count there; a call without a scope asks for the platform-wide grant.
+ *          current count there (narrowed by the limit's `where` filter, STA-913); a call without a scope asks for the platform-wide grant.
  * Boundary: plugs into the step `ActionPipeline` already runs after the preconditions and before the flag step; it adds
  *           no second gate. A right that is not granted refuses `entitlement_required`; a limit already reached
  *           refuses `limit_reached`, unless the grant is a soft limit whose grace period still runs (owner round 3
@@ -74,7 +74,8 @@ export class PlanEntitlementCheckDriver extends Driver(EntitlementCheck) {
     for (const { type, key, gates } of ENTITLEMENT_REGISTRY.values()) {
       if (!gates.includes(call.type)) continue;
       // `Entitlement` records `counts` for a limit and only for a limit.
-      const { kind, counts } = (kindOf(type)?.options ?? {}) as unknown as EntitlementOptions;
+      const { kind, counts, where } = (kindOf(type)?.options ??
+        {}) as unknown as EntitlementOptions;
       const grant = await this.source.grant(type, scope);
       if (grant === undefined || grant === false) throw EntitlementRequiredError.create();
       if (kind === EntitlementKind.Value) {
@@ -95,7 +96,7 @@ export class PlanEntitlementCheckDriver extends Driver(EntitlementCheck) {
       if (!isLimitGrant(grant))
         throw new TypeError(`${key} is a limit, so its source answers a count, not ${grant}`);
       if (limitOf(grant) === Number.POSITIVE_INFINITY) continue;
-      const count = await this.usage.count(counts(), scope);
+      const count = await this.usage.count(counts(), scope, where);
       if (!limitAllows(grant, count, this.clock?.now() ?? new Date()))
         throw LimitReachedError.create({ entitlement: key, limit: limitOf(grant) });
     }

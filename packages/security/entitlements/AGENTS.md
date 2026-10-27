@@ -36,6 +36,9 @@ The `Entitlement` kind, its ports and the plan driver of the pipeline's entitlem
   service that owns it, not here.
 - `EntitlementSource#grant` takes a class or a key (STA-1225). A driver turns either into the key with
   `entitlementKey`, never by its own lookup, so a class and its key always answer the same record.
+- A limit's `where` (`EntitlementFilter`, `./contracts`) is field equality on scalars only, checked at declaration and
+  handed as is to `EntitlementUsage.count`; every place that counts (the plan driver, `LimitReservationService`) passes
+  it (STA-913).
 
 ## This package
 

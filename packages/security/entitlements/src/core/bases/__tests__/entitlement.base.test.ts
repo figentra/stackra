@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: unit and type tests of the `Entitlement` kind base: the template's limit and a feature and a module record
- *          their options, a limit without `counts`, a feature with one and an unknown kind are refused at declaration,
+ *          their options, a limit records its `where` filter, a limit without `counts`, a feature with one or with a `where`, a
+ *          `where` that is not field equality and an unknown kind are refused at declaration,
  *          and the kind is called only.
  * Boundary: test only; the limit restates the template's `catalogue/access/product-limit.entitlement.ts`.
  * Runtime: node (vitest)
@@ -56,6 +57,26 @@ describe("Entitlement", () => {
     expect(() => Entitlement({ kind: EntitlementKind.Feature, counts: () => Product })).toThrow(
       TypeError,
     );
+  });
+
+  it("records a limit's where filter and refuses one elsewhere or of the wrong shape", () => {
+    class TillLimitEntitlement extends Entitlement({
+      kind: EntitlementKind.Limit,
+      counts: () => Product,
+      where: { retiredAt: null },
+    }) {}
+    expect(kindOf(TillLimitEntitlement)?.options["where"]).toEqual({ retiredAt: null });
+    expect(() =>
+      Entitlement({ kind: EntitlementKind.Feature, where: { retiredAt: null } }),
+    ).toThrow(/Only a limit/);
+    expect(() =>
+      Entitlement({
+        kind: EntitlementKind.Limit,
+        counts: () => Product,
+        // @ts-expect-error -- equality on scalars only
+        where: { retiredAt: { lt: "2026-01-01" } },
+      }),
+    ).toThrow(/field equality/);
   });
 
   it("refuses a kind outside EntitlementKind", () => {

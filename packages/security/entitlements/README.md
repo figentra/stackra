@@ -61,6 +61,19 @@ The key (`catalogue.product_limit`) and the label key come from the class name a
 it counts and gen puts its gate on that model's generated create; a feature or a module takes no `counts`. Both rules
 are checked when the class is declared.
 
+A limit may count only some of its records with `where`, field equality on the counted model (STA-913):
+
+```ts
+export class TillLimitEntitlement extends Entitlement({
+  kind: EntitlementKind.Limit,
+  counts: () => Till,
+  where: { retiredAt: null },
+}) {}
+```
+
+A retired till stops counting and frees its place. `where` on a feature or module, or a value that is not a scalar,
+throws a `TypeError` at declaration.
+
 ## The entitlement step
 
 `ActionPipeline` (`@stackra/actions`) runs tenancy, permission, preconditions, then `EntitlementCheck`, then the flag
@@ -81,7 +94,7 @@ For each entitlement that gates the call, the driver asks `EntitlementSource.gra
 
 - `undefined` or `false`: the right is not in the plan, so the call refuses `entitlement_required`.
 - a feature or module granted `true`: the call goes on.
-- a limit granted `n`: the driver asks `EntitlementUsage.count(model, scope)` and refuses `limit_reached` (details
+- a limit granted `n`: the driver asks `EntitlementUsage.count(model, scope, where)` and refuses `limit_reached` (details
   `entitlement` and `limit`) when the count is already `n` or more. `Number.POSITIVE_INFINITY` means no limit and
   counts nothing.
 

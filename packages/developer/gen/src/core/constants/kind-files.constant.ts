@@ -8,7 +8,8 @@
  *           and a file whose suffix is in no row is never checked. Ports name what they are (`PaymentGateway`), so
  *           `port` is a noun kind here.
  * Runtime: isomorphic
- * Governing contract: ADR 0294 (R1 to R3, decision 16: the kind table); ADR 0305 (rules 1 to 3).
+ * Governing contract: ADR 0294 (R1 to R3, decision 16: the kind table); ADR 0305 (rules 1 to 3); STA-903 (`agent`,
+ *                     `pass`).
  */
 
 /** Kind code to its file suffix and class-name suffix. */
@@ -16,6 +17,7 @@ export const KIND_FILES: Readonly<
   Record<string, { readonly file: string; readonly suffix: string }>
 > = Object.freeze({
   action: { file: "action", suffix: "Action" },
+  agent: { file: "agent", suffix: "Agent" },
   analytics_event: { file: "analytics-event", suffix: "" },
   block: { file: "block", suffix: "Block" },
   bridge: { file: "bridge", suffix: "Bridge" },
@@ -45,6 +47,7 @@ export const KIND_FILES: Readonly<
   module: { file: "module", suffix: "Module" },
   notification: { file: "notification", suffix: "Notification" },
   panel: { file: "panel", suffix: "Panel" },
+  pass: { file: "pass", suffix: "Pass" },
   permissions: { file: "permissions", suffix: "Permissions" },
   policy: { file: "policy", suffix: "Policy" },
   port: { file: "port", suffix: "" },

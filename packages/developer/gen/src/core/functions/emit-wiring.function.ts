@@ -10,7 +10,7 @@
  *          keyed by port key for the member's own drivers,
  *          the `@Replaces` replacements and the partners read from type arguments, typed `satisfies Wiring`. Gen adds
  *          the bindings no class declares: one per per-model token (`repositoryOf(M)`, `journalOf(M)` with `[Locks]`),
- *          an Integration's `IntegrationRuntime`, each generated service client (`#stackra/clients/<service>`, with the
+ *          an Integration's `IntegrationRuntime`, an Agent's `AgentRuntime` (STA-903), each generated service client (`#stackra/clients/<service>`, with the
  *          `ClientTransport` the topology picks), the generated inbound webhook route, and the platform services of
  *          `PLATFORM_BINDINGS` where they are injected (`RequestContext` where `CustomFieldService` resolves; `RuleSetService`
  *          with its `repositoryOf(Revision)`).
@@ -54,11 +54,15 @@ const INTEGRATION_RUNTIME: TokenRef = {
   class: { name: "IntegrationRuntime", from: "@stackra/integrations" },
 };
 
-/** The constructor tokens of a class: its own, or the `IntegrationRuntime` of an Integration. */
+/** The one dependency gen gives an Agent that declares no constructor: `Promptable`'s runtime (ADR 0100, STA-903). */
+const AGENT_RUNTIME: TokenRef = { class: { name: "AgentRuntime", from: "@stackra/ai" } };
+
+/** The constructor tokens of a class: its own, or the runtime its kind base takes (Integration, Agent). */
 function depsOf(declared: DeclaredClass): readonly TokenRef[] {
-  return declared.kind === "integration" && declared.deps.length === 0
-    ? [INTEGRATION_RUNTIME]
-    : declared.deps;
+  if (declared.deps.length > 0) return declared.deps;
+  if (declared.kind === "integration") return [INTEGRATION_RUNTIME];
+  if (declared.kind === "agent") return [AGENT_RUNTIME];
+  return declared.deps;
 }
 
 /** The one dependency of a generated service client: the transport driver the topology picks (ADR 0260 d6). */

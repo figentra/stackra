@@ -6,7 +6,8 @@
  *          `CrudService<M>` (and of a platform one it injects, from `PLATFORM_PARTNERS`), the integration events' wire names (its own, and those of the consumed services' events its
  *          listeners import from `#stackra/clients/<service>`, so its inbox rebuilds them), each listener with the event
  *          class it reacts to, the relay listeners, the outbound webhooks, the job actions for the queue
- *          and the scheduler, the connections, the webhook events, the sequences and the `@Searchable` models.
+ *          and the scheduler, the connections, the webhook events, the sequences, the entitlements with the calls they gate (`registerEntitlements`, STA-903)
+ *          and the `@Searchable` models.
  * Boundary: pure. Node only: the server entry and the generated test setup import it before the container boots. A
  *           service registers its own classes and those its hosted packages list in their manifests (imported from
  *           the entry that exports each file); a package registers its own. A call with no row is not written, and a
@@ -15,7 +16,7 @@
  * Governing contract: ADR 0294 (decisions 10, 20 and 22: identities from the manifest); ADR 0097 (decision 5.4);
  *                     ADR 0305 (rule 5: partners); ADR 0141; ADR 0308 (rules 2 and 15); ADR 0224; ADR 0221
  *                     (decision 5); ADR 0342 (decision 5: registered sequences); ADR 0260 (decision 4: typed
- *                     subscriptions by import; a relay is the one all-events listener).
+ *                     subscriptions by import; a relay is the one all-events listener); ADR 0215 and STA-903 (entitlement rows).
  */
 import type { StackraManifest } from "@stackra/contracts";
 
@@ -241,6 +242,23 @@ export function emitRegistrations(ir: MemberIR, manifest: StackraManifest): stri
     }),
   );
 
+  // Each entitlement with its locked key and the calls it gates, so `PlanSnapshotEntitlementSource` resolves every
+  // class and the plan driver knows its gates (STA-903).
+  const actionEntries = (manifest.actions ?? []) as readonly Entry[];
+  call(
+    "registerEntitlements",
+    "@stackra/entitlements",
+    ((manifest["entitlements"] ?? []) as readonly Entry[]).map((entry) => {
+      const type = classOf(entry);
+      if (type === undefined) return undefined;
+      const gates = (Array.isArray(entry["gates"]) ? (entry["gates"] as unknown[]) : [])
+        .map((gate) => actionEntries.find((action) => action["key"] === gate))
+        .map((action) => (action === undefined ? undefined : classOf(action)))
+        .filter((gate): gate is string => gate !== undefined);
+      return `{ type: ${type}, key: ${JSON.stringify(entry["key"])}, gates: [${gates.join(", ")}] }`;
+    }),
+  );
+
   call(
     "registerSearchableModels",
     "@stackra/search/node",
@@ -255,7 +273,7 @@ export function emitRegistrations(ir: MemberIR, manifest: StackraManifest): stri
     purpose:
       `the registrations of ${ir.package}: loads the generated entity and schemas files, then names each class the ` +
       "platform packages look up by its locked identity (entities, model partners, event wire names, listeners, relays, jobs, " +
-      "connections, webhook events, outbound webhooks, sequences and searchable models).",
+      "connections, webhook events, outbound webhooks, sequences, entitlements and searchable models).",
     boundary:
       "imported by the server entry and the generated test setup before the container boots; every row comes from " +
       "the committed identities, so a hand edit is overwritten.",

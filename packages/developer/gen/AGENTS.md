@@ -146,6 +146,10 @@ The Stackra compiler. Member at `packages/developer/gen` (`tier:lib`), in the pr
   `@stackra/rules` node of ADR 0331). Keep both maps in step.
 - `Projection` (ADR 0294 d16, ADR 0163 d1) is a binding kind declared in `@stackra/database`; gen binds it like a
   service. Its rows are that package's versions table, so gen writes no entity or migration for it.
+- `agent` and `pass` (STA-903) are binding kinds: a row in `BINDING_KINDS`, `KIND_FILES` and `KIND_BASES` each, and a
+  written, locked `key`. An Agent with no constructor gets `AgentRuntime` (its deps are a `PLATFORM_BINDINGS` row).
+- Entitlement keys come from `entitlementKey(module, class)` only, and must equal `@stackra/entitlements`'s runtime
+  `entitlementKey`; the `entitlements` section's `gates` feed the `registerEntitlements` call of the registrations.
 
 - Public API (OS ADR 0039 d2 and d3): only a manifest entry with `public: true` reaches `emitSdks`; never publish by
   `area`. SDKs come from the manifest, never from `openapi.json` (ADR 0158). A new language is one function in

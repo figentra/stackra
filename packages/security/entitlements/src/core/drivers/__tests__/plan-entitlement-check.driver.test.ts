@@ -4,7 +4,8 @@
  *          module outside the plan refuses `entitlement_required`, a limit refuses `limit_reached` once the count
  *          reaches the grant (the template's two-product plan), the grant and the count are asked in the call's
  *          `scope` (platform-wide without one), no limit never counts, a grant of the wrong shape is a bug, a soft
- *          limit passes past its allowance while its grace period runs and up to its ceiling, and the driver runs as
+ *          limit passes past its allowance while its grace period runs and up to its ceiling, a filtered limit hands
+ *          its `where` to the usage so a retired till stops counting (STA-913), and the driver runs as
  *          the entitlement step of the real `ActionPipeline`.
  * Boundary: test only; the source is `fakeEntitlements`, the usage a list of rows, the permission step an allow-all.
  * Runtime: node (vitest)
@@ -308,5 +309,65 @@ describe("PlanEntitlementCheckDriver with a value entitlement (STA-824)", () => 
       usage,
     );
     await expect(wrong.check(callOf(ListReportsQuery))).rejects.toThrow(TypeError);
+  });
+});
+
+class Till {}
+
+/** A till limit that stops counting a retired till (STA-913). */
+class TillLimitEntitlement extends Entitlement({
+  kind: EntitlementKind.Limit,
+  counts: () => Till,
+  where: { retiredAt: null },
+}) {}
+
+class RegisterTillAction extends Action({
+  key: "till.register",
+  actors: [ActorKind.User],
+}) {
+  async handle(): Promise<string> {
+    return "registered";
+  }
+}
+
+/** Tills of one scope, each live or retired; counts only those matching `where`. */
+class TillsUsageDriver extends Driver(EntitlementUsage) {
+  tills: { retiredAt: string | null }[] = [];
+
+  filters: unknown[] = [];
+
+  async count(
+    _model: AnyClass,
+    _scope: PublicId | undefined,
+    where?: Readonly<Record<string, unknown>>,
+  ): Promise<number> {
+    this.filters.push(where);
+    return this.tills.filter((till) =>
+      Object.entries(where ?? {}).every(
+        ([field, value]) => till[field as keyof typeof till] === value,
+      ),
+    ).length;
+  }
+}
+
+describe("PlanEntitlementCheckDriver with a filtered limit", () => {
+  beforeEach(() => {
+    ENTITLEMENT_REGISTRY.clear();
+    registerEntitlements([
+      { type: TillLimitEntitlement, key: "pos.till_limit", gates: [RegisterTillAction] },
+    ]);
+  });
+
+  it("hands the limit's where to the usage, so a retired till frees its place", async () => {
+    const usage = new TillsUsageDriver();
+    const check = new PlanEntitlementCheckDriver(
+      fakeEntitlements([[TillLimitEntitlement, 2]]),
+      usage,
+    );
+    usage.tills = [{ retiredAt: null }, { retiredAt: null }];
+    await expect(check.check(callOf(RegisterTillAction))).rejects.toBeInstanceOf(LimitReachedError);
+    usage.tills = [{ retiredAt: null }, { retiredAt: "2026-10-01T00:00:00Z" }];
+    await expect(check.check(callOf(RegisterTillAction))).resolves.toBeUndefined();
+    expect(usage.filters).toEqual([{ retiredAt: null }, { retiredAt: null }]);
   });
 });

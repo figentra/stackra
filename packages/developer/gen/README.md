@@ -111,6 +111,15 @@ first). Refusals: `docs_source_misplaced` (a `docs.json`, `README.md` or stray f
   them) and its `listing` (the entitlement reference) land on its entry; a role outside `INTEGRATION_ROLES` is
   `integration_role_unknown`.
 - **Replacements.** Every `@Replaces(Base)` is listed in a `replaces` section.
+- **Agents and passes (STA-903, ADR 0399, ADR 0348 decision 5).** `agent` and `pass` are binding kinds. An
+  `Agent({ key, task, tools })` lands in `agents` (tools as action keys) and a `Pass({ key })` in `passes`; both keys
+  are written and locked, a missing one is `identity_missing`. An Agent with no constructor is bound with
+  `AgentRuntime`, the way an Integration gets `IntegrationRuntime`.
+- **Entitlements (STA-903, ADR 0215).** Each entitlement lands in `entitlements` with its derived key
+  (`<module>.<snake name without Entitlement>`), kind, counted model, `where` filter and `gates`: a limit gates its
+  counted model's `create` actions, and an action or query naming it in an `entitlement` option is gated by it. The
+  registrations file calls `registerEntitlements` with one row per entitlement, so `PlanSnapshotEntitlementSource`
+  resolves every registered class. A class thunk option (`counts: () => Till`) is read as its class.
 
 ## Platform field types
 
@@ -330,4 +339,4 @@ Per-target outputs land with the target that owns them: an app's browser clients
 panels, resources and widgets, flags, settings pages, migrations, the rest of the Encore app (the server entry
 hands `boot` to `createApp`, whose `EventBus` and `InboxService` connects make the relays and typed subscribers receive), the Vite, Expo, Metro, Wrangler and electron-builder configs, and the worker and desktop main
 entries. The per-kind registrations of actions, permissions, roles, policies, listeners, extensions, workflows,
-entitlements, buckets and segment subjects come with those targets too.
+buckets and segment subjects come with those targets too.

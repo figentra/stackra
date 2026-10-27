@@ -4,7 +4,8 @@
  *          differs from the one the committed manifest locked fails with `identity_changed`, unless the class carries
  *          `@Renamed(old)` naming the locked identity (in full or as written: `orders.order.cancel@1` or
  *          `order.cancel`).
- * Boundary: pure. Locks actions, events, refusals, models, integrations, sequences, rule outcome kinds and an app's blocks and routes.
+ * Boundary: pure. Locks actions, events, refusals, models, integrations, sequences, rule outcome kinds, agents, pass
+ *           kinds, entitlements (STA-903) and an app's blocks and routes.
  *           Only the member's own entries are locked here (an entry with `from` belongs to its package's lock).
  *           A class that disappeared is not a changed identity; the backward-compatibility test reports the removal.
  * Runtime: isomorphic
@@ -23,6 +24,9 @@ const LOCKED = {
   integrations: "key",
   sequences: "key",
   outcomes: "key",
+  agents: "key",
+  passes: "key",
+  entitlements: "key",
   blocks: "key",
   routes: "key",
 } as const;

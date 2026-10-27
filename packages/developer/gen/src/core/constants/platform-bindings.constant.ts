@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `PLATFORM_BINDINGS`, the platform services a member injects whose constructor tokens gen knows, so the
  *          wiring binds each one where it is used: `RequestContext` (where `CustomFieldService` resolves),
- *          `IntegrationRuntime` (the one dependency of every Integration), `Locks` (the dependency of `journalOf`),
+ *          `IntegrationRuntime` (the one dependency of every Integration), `AgentRuntime` (the one dependency of every
+ *          Agent, STA-903), `Locks` (the dependency of `journalOf`),
  *          `WebhookReceiver` (the generated inbound webhook route), `SequenceService` (the one allocator of document
  *          numbers), `SettingsReader` with the market floor source, so the default reader of every service lifts a
  *          value below a legal floor, `SettingsResolver`, and `RuleSetService` over content's revisions repository, so
@@ -15,7 +16,8 @@
  * Governing contract: ADR 0263 (gen writes the wiring); ADR 0294 (decision 17); ADR 0136 (RequestContext); ADR 0308
  *                     (IntegrationRuntime); ADR 0224 (WebhookReceiver); ADR 0342 (decision 5: SequenceService); ADR 0395
  *                     (decision 4: one reader path honours floors); ADR 0370 (decision 6); ADR 0331 (decisions 5 and 6);
- *                     ADR 0222 (MediaLibrary).
+ *                     ADR 0222 (MediaLibrary); ADR 0100
+ *                     (decision 2: AgentRuntime).
  */
 import type { ClassRef } from "#core/types/class-ref.type";
 import type { TokenRef } from "#core/types/token-ref.type";
@@ -29,6 +31,15 @@ export const PLATFORM_BINDINGS: Readonly<Record<string, readonly (ClassRef | Tok
     "@stackra/integrations#IntegrationRuntime": [
       { name: "SecretStore", from: "@stackra/config/contracts" },
       { name: "RateLimitStore", from: "@stackra/actions/contracts" },
+      { name: "Clock", from: "@stackra/contracts" },
+    ],
+    "@stackra/ai#AgentRuntime": [
+      { name: "ConversationStore", from: "@stackra/ai/contracts" },
+      { name: "RunStore", from: "@stackra/ai/contracts" },
+      { name: "ToolDispatcher", from: "@stackra/ai/contracts" },
+      { name: "AgentModels", from: "@stackra/ai/contracts" },
+      { name: "InstructionSource", from: "@stackra/ai/contracts" },
+      { name: "AgentQueue", from: "@stackra/ai/contracts" },
       { name: "Clock", from: "@stackra/contracts" },
     ],
     "@stackra/locking#Locks": [

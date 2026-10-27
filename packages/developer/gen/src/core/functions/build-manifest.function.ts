@@ -17,7 +17,9 @@
  *          `prefix_invalid`, `prefix_taken` and `prefix_duplicate`, `tool_reason_missing`, `effect_unknown`,
  *          `integration_role_unknown`, `egress_invalid`, `sequence_misplaced`, `document_number_unsequenced`,
  *          `cron_job_collision` and `event_name_prefixed` (an event `name` that repeats the module or member key: the
- *          wire name is always `<module>.<name>.v<n>`, never member-level or service-key prefixed, STA-1255). It lists each declared rule outcome kind (`RuleOutcome({...})`) in `outcomes`.
+ *          wire name is always `<module>.<name>.v<n>`, never member-level or service-key prefixed, STA-1255). It lists each declared rule outcome kind (`RuleOutcome({...})`) in `outcomes`; each agent (key, task, tools as
+ *          action keys) in `agents` and each wallet pass kind in `passes`; and each entitlement in `entitlements`
+ *          with its derived key, kind, counted model, `where` filter and the action and query keys it gates (STA-903).
  * Boundary: pure. A config's schema never reaches the manifest (ADR 0305 rule 34). Sections owned by later targets
  *           (ui, settings, migrations, infra, ...) are written by those targets when they land.
  * Runtime: isomorphic
@@ -47,6 +49,7 @@ import { cronJobId } from "#core/functions/cron-job-id.function";
 import { deriveEndpoint } from "#core/functions/derive-endpoint.function";
 import { driverName } from "#core/functions/driver-name.function";
 import { egressOf } from "#core/functions/egress-of.function";
+import { entitlementKey } from "#core/functions/entitlement-key.function";
 import { eventName } from "#core/functions/event-name.function";
 import { integrationKey } from "#core/functions/integration-key.function";
 import { jsonSchemaOf } from "#core/functions/json-schema-of.function";
@@ -86,6 +89,9 @@ const MERGED_SECTIONS = [
   "integrations",
   "sequences",
   "outcomes",
+  "agents",
+  "passes",
+  "entitlements",
 ] as const;
 
 /** `Permission.L2` or `Permission.L2.system()`: the risk level and the system-only marker. */
@@ -626,6 +632,86 @@ export function buildManifest(ir: MemberIR): {
     });
   }
 
+  // Agents (`Agent({ key, task, tools })`, ADR 0399) and wallet pass kinds (`Pass({ key })`, ADR 0348 decision 5): the
+  // written key is the identity, one per member and its hosted packages (STA-903).
+  const actionKeyOf = (value: unknown): Json =>
+    isClassValue(value)
+      ? (actions.find((entry) => entry["class"] === value.$class)?.["key"] ?? value.$class)
+      : jsonOf(value);
+  const agents: Entry[] = [];
+  const passes: Entry[] = [];
+  for (const declared of ir.classes) {
+    if (declared.kind !== "agent" && declared.kind !== "pass") continue;
+    const written = declared.options["key"];
+    if (typeof written !== "string") {
+      fail(
+        declared,
+        "identity_missing",
+        `${declared.kind} has no written \`key\``,
+        declared.kind === "agent"
+          ? 'write `Agent({ key: "shopper_assistant", task: "chat" })`'
+          : 'write `Pass({ key: "loyalty_card" })`',
+      );
+      continue;
+    }
+    claim(`${declared.kind}:${written}`, declared);
+    const entry: Entry = {
+      key: written,
+      class: declared.name,
+      module: declared.module,
+      file: declared.file,
+    };
+    if (declared.kind === "pass") {
+      passes.push(entry);
+      continue;
+    }
+    if (typeof declared.options["task"] === "string") entry["task"] = declared.options["task"];
+    const tools = declared.options["tools"];
+    if (Array.isArray(tools)) entry["tools"] = tools.map(actionKeyOf);
+    if (typeof declared.options["maxSteps"] === "number")
+      entry["maxSteps"] = declared.options["maxSteps"];
+    agents.push(entry);
+  }
+
+  // Entitlements: the derived key and the calls each gates, so the generated entry calls `registerEntitlements` and
+  // every source resolves the class (STA-903). A limit gates its counted model's create action (`<model>.create` in
+  // the model's module); an action or query naming it in an `entitlement` option is gated by it too.
+  const entitlements: Entry[] = [];
+  for (const declared of ir.classes.filter((candidate) => candidate.kind === "entitlement")) {
+    const key = entitlementKey(declared.module, declared.name);
+    claim(`entitlement:${key}`, declared);
+    const entry: Entry = {
+      key,
+      class: declared.name,
+      module: declared.module,
+      file: declared.file,
+      kind: jsonOf(declared.options["kind"]),
+    };
+    const gates = new Set<string>();
+    const counted = declared.options["counts"];
+    if (isClassValue(counted)) {
+      const model = byName.get(counted.$class);
+      const module = model?.kind === "model" ? model.module : undefined;
+      entry["counts"] = module === undefined ? counted.$class : modelKey(module, counted.$class);
+      const create = `${module}.${snakeCase(counted.$class)}.create@`;
+      if (module !== undefined)
+        for (const action of actions)
+          if (action["kind"] === "action" && String(action["key"]).startsWith(create))
+            gates.add(String(action["key"]));
+    }
+    if (declared.options["where"] !== undefined) entry["where"] = jsonOf(declared.options["where"]);
+    for (const call of ir.classes) {
+      if (call.kind !== "action" && call.kind !== "query") continue;
+      const named = call.options["entitlement"];
+      const list = Array.isArray(named) ? named : [named];
+      if (!list.some((item) => isClassValue(item) && item.$class === declared.name)) continue;
+      const gate = actions.find((action) => action["class"] === call.name)?.["key"];
+      if (typeof gate === "string") gates.add(gate);
+    }
+    entry["gates"] = [...gates].sort();
+    entitlements.push(entry);
+  }
+
   // Document numbers: a `@DocumentNumber` field names a sequence of this member or a dependency (ADR 0342
   // enforcement), so no document is numbered by a counter column or a Postgres SEQUENCE.
   const sequenceKeys = new Set([
@@ -851,6 +937,9 @@ export function buildManifest(ir: MemberIR): {
     integrations,
     sequences,
     outcomes,
+    agents,
+    passes,
+    entitlements,
   };
   if (ir.layout !== "package")
     for (const dependency of ir.dependencies) {

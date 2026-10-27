@@ -1,14 +1,15 @@
 /**
  * Stackra file contract:
  * Purpose: `LimitReservationService`, reserve-then-commit for a limit: holds a lock on the limit's key in the scope,
- *          checks the grant and the current count under it, runs the create (the commit) and releases, so two creates
+ *          checks the grant and the current count under it (only the records the limit's `where` filter keeps), runs the create (the commit) and releases, so two creates
  *          racing at the limit can never both pass.
  * Boundary: built on `@stackra/locking`'s `Locks` (one lease per limit and scope, waiting at most the hold TTL) and the
  *           same `EntitlementSource` and `EntitlementUsage` the pipeline's step reads. The create must make the record
  *           countable before it returns (inside its own transaction), or the next holder counts too few. Soft limits
  *           and grace follow `limitAllows`. A limit outside the plan refuses `entitlement_required`.
  * Runtime: isomorphic
- * Governing contract: ADR 0215 (decisions 3 and 4); owner round 3 #18 (fix the race: reserve-then-commit).
+ * Governing contract: ADR 0215 (decisions 3 and 4); owner round 3 #18 (fix the race: reserve-then-commit);
+ *                     STA-913 (the `where` filter).
  */
 import { kindOf, Service } from "@stackra/container";
 import type { Clock } from "@stackra/contracts";
@@ -76,7 +77,7 @@ export class LimitReservationService extends Service {
     hold: Duration = Duration.seconds(30),
   ): Promise<T> {
     const key = entitlementKey(entitlement);
-    const { counts } = (kindOf(entitlement)?.options ?? {}) as unknown as EntitlementOptions;
+    const { counts, where } = (kindOf(entitlement)?.options ?? {}) as unknown as EntitlementOptions;
     if (counts === undefined) throw new TypeError(`${key} is not a limit entitlement`);
     return this.locks.with(`entitlements:${key}:${scope ?? "platform"}`, hold, async () => {
       const grant = await this.source.grant(entitlement, scope);
@@ -84,7 +85,7 @@ export class LimitReservationService extends Service {
       if (!isLimitGrant(grant))
         throw new TypeError(`${key} is a limit, so its source answers a count, not ${grant}`);
       if (limitOf(grant) !== Number.POSITIVE_INFINITY) {
-        const count = await this.usage.count(counts(), scope);
+        const count = await this.usage.count(counts(), scope, where);
         if (!limitAllows(grant, count, this.clock.now()))
           throw LimitReachedError.create({ entitlement: key, limit: limitOf(grant) });
       }

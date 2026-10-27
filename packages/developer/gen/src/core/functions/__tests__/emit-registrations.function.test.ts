@@ -3,8 +3,8 @@
  * Purpose: unit tests of `emitRegistrations`: the generated entity and schemas files loaded first, then one call per
  *          platform registration with a row each, from the locked identities: the hosted packages' entity lists, the
  *          model partners of each `CrudService<M>` (and of an injected platform one, `RuleSetService`), event wire names, jobs for the queue and the scheduler,
- *          connections, webhook events, outbound webhooks, sequences (a hosted package's imported from its entry) and
- *          searchable models; a listener with the event class it imports (its own, or a consumed service's, whose wire
+ *          connections, webhook events, outbound webhooks, sequences (a hosted package's imported from its entry),
+ *          entitlements with the calls they gate (STA-903) and searchable models; a listener with the event class it imports (its own, or a consumed service's, whose wire
  *          name comes from the producer's manifest) and a relay listener; no file for an app or a member with nothing
  *          to register.
  * Boundary: test only; runs on the IR fixtures and the manifests `buildManifest` derives from them.
@@ -178,5 +178,47 @@ describe("emitRegistrations for listeners", () => {
   it("registers a relay listener, which takes every envelope", () => {
     expect(content).toContain("registerRelays([\n  WebhooksRelayListener,\n]);");
     expect(content).toMatch(/import \{[^}]*registerRelays[^}]*\} from "@stackra\/outbox";/);
+  });
+});
+
+describe("emitRegistrations for entitlements", () => {
+  const create: DeclaredClass = {
+    name: "CreateOrderAction",
+    kind: "action",
+    module: "orders",
+    file: "src/modules/orders/actions/create-order.action.ts",
+    importPath: "#modules/orders/actions/create-order.action",
+    options: { key: "order.create", actors: ["user"] },
+    deps: [],
+    facets: [],
+    methods: ["handle"],
+    refusals: [],
+    statics: {},
+    traits: [],
+  };
+  const limit: DeclaredClass = {
+    ...create,
+    name: "OrderLimitEntitlement",
+    kind: "entitlement",
+    file: "src/modules/orders/access/order-limit.entitlement.ts",
+    importPath: "#modules/orders/access/order-limit.entitlement",
+    options: {
+      kind: "limit",
+      counts: { $class: "Order", from: "#modules/orders/models/order.model", kind: "model" },
+    },
+    methods: [],
+  };
+  const content =
+    registrationsOf({ ...COMMERCE_IR, classes: [...COMMERCE_IR.classes, create, limit] }) ?? "";
+
+  it("registers each entitlement with its locked key and the create its limit gates (STA-903)", () => {
+    expect(content).toContain(
+      [
+        "registerEntitlements([",
+        '  { type: OrderLimitEntitlement, key: "orders.order_limit", gates: [CreateOrderAction] },',
+        "]);",
+      ].join("\n"),
+    );
+    expect(content).toContain('import { registerEntitlements } from "@stackra/entitlements";');
   });
 });
