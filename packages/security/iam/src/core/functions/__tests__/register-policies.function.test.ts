@@ -11,7 +11,7 @@ import { type FactField, FieldType } from "@stackra/rules/contracts";
 import { Rules } from "@stackra/rules";
 import { beforeEach, describe, expect, it } from "@stackra/testing";
 
-import { Policy, type PolicyBase } from "#core/bases/policy.base";
+import { Policy } from "#core/bases/policy.base";
 import { POLICY_REGISTRY } from "#core/constants/policy-registry.constant";
 import { registerPolicies } from "#core/functions/register-policies.function";
 import type { PolicyRegistration } from "#core/types/policy-registration.type";
@@ -45,7 +45,7 @@ describe("registerPolicies", () => {
   });
 
   it("refuses a model that is not a class, a policy that is not a policy and rules that are not Rules", () => {
-    const notPolicy = class {} as unknown as AnyClass<PolicyBase<object>>;
+    const notPolicy = class {} as unknown as AnyClass<Policy<object>>;
     expect(() =>
       registerPolicies([{ model: "order", policy: OrderPolicy } as unknown as PolicyRegistration]),
     ).toThrow(/model class/);
