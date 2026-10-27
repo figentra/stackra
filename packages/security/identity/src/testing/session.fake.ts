@@ -5,7 +5,9 @@
  * Boundary: test code only. It starts in its status synchronously and `start()` reads nothing, so its state changes only
  *           through its own calls. By default `signIn` signs the fake user in and `signOut` signs out, through the real
  *           service; a test's own function replaces either. The fake user is `usr_…01`, `user@example.test`, with the
- *           requested number of memberships `scp_…01`, `scp_…02`, … (role `admin`). It is a `SessionService`, so a
+ *           requested number of memberships `scp_…01`, `scp_…02`, … (role `admin`). It takes no constructor argument
+ *           (gen reads every constructor parameter as an injected class); `seed` sets the status. It is a
+ *           `SessionService`, so a
  *           render helper binds it with `.override(SessionService, session)`; its own `status`, `user`, `signIn` and
  *           `signOut` give it the shape of a session value.
  * Runtime: node
@@ -52,27 +54,42 @@ function fakeUser(memberships: number): SessionUser {
  * A session in the status a test needs.
  *
  * @example
- * const session = new SessionFake({ status: SessionStatus.SignedIn, memberships: 2 });
+ * const session = new SessionFake().seed({ status: SessionStatus.SignedIn, memberships: 2 });
  * session.user?.memberships.length; // 2
  */
 export class SessionFake extends SessionService {
-  /**
-   * @param options - the status, the memberships and the actions' stand-ins.
-   */
-  constructor(options: FakeSessionOptions = {}) {
-    const account = fakeUser(options.memberships ?? 1);
-    const status = options.status ?? SessionStatus.SignedOut;
+  /** The memory store under the fake; `seed` gives it the fake user. */
+  private readonly memory: MemorySessionStoreDriver;
+
+  /** A signed-out fake with one membership; `seed` puts it in another status. */
+  constructor() {
+    const memory = new MemorySessionStoreDriver();
     super(
       buildConfig(IdentityConfig),
-      new MemorySessionStoreDriver(account, status === SessionStatus.SignedIn),
+      memory,
       new TenantSwitcher(new ActiveScopeService()),
       new PermissionSnapshotService(),
     );
+    this.memory = memory;
+    this.seed();
+  }
+
+  /**
+   * Puts the fake in the status a test needs, with the fake user and fresh spies for its actions.
+   *
+   * @param options - the status, the memberships and the actions' stand-ins.
+   * @returns this fake, to chain.
+   */
+  seed(options: FakeSessionOptions = {}): this {
+    const account = fakeUser(options.memberships ?? 1);
+    const status = options.status ?? SessionStatus.SignedOut;
+    this.memory.seed(account, status === SessionStatus.SignedIn);
     this.set(
       status === SessionStatus.SignedIn ? { status, user: account } : { status, user: null },
     );
     this.signIn = vi.fn(options.signIn ?? (() => super.signIn()));
     this.signOut = vi.fn(options.signOut ?? (() => super.signOut()));
+    return this;
   }
 
   /** Reads nothing: the fake starts in its status and changes only through its own calls. */

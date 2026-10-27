@@ -41,5 +41,5 @@ export function fakeSession(options?: FakeSessionOptions): SessionValue;
 /** The implementation behind the overloads above. */
 export function fakeSession(options: FakeSessionOptions = {}): SessionValue {
   // The fake's own `status`, `user`, `signIn` and `signOut` are a session value's shape at run time.
-  return new SessionFake(options) as unknown as SessionValue;
+  return new SessionFake().seed(options) as unknown as SessionValue;
 }

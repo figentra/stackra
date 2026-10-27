@@ -24,7 +24,7 @@ const USER: SessionUser = {
 
 describe("MemorySessionStoreDriver", () => {
   it("is a SessionStore that signs its account in and out", async () => {
-    const store = new MemorySessionStoreDriver(USER);
+    const store = new MemorySessionStoreDriver().seed(USER);
     expect(store).toBeInstanceOf(SessionStore);
     expect(await store.load()).toBeNull();
     await store.signIn();
@@ -34,7 +34,7 @@ describe("MemorySessionStoreDriver", () => {
   });
 
   it("may start signed in, and never has a token", async () => {
-    const store = new MemorySessionStoreDriver(USER, true);
+    const store = new MemorySessionStoreDriver().seed(USER, true);
     expect(await store.load()).toBe(USER);
     expect(await store.accessToken()).toBeUndefined();
   });

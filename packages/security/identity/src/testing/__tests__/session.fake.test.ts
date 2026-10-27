@@ -14,14 +14,14 @@ import { SessionFake } from "#testing/session.fake";
 
 describe("SessionFake", () => {
   it("stays in its status when started", async () => {
-    const session = new SessionFake({ status: SessionStatus.Loading });
+    const session = new SessionFake().seed({ status: SessionStatus.Loading });
     await session.start();
     expect(session).toBeInstanceOf(SessionService);
     expect(session.status).toBe(SessionStatus.Loading);
   });
 
   it("signs in a user with the requested memberships", () => {
-    const session = new SessionFake({ status: SessionStatus.SignedIn, memberships: 3 });
+    const session = new SessionFake().seed({ status: SessionStatus.SignedIn, memberships: 3 });
     expect(session.user?.memberships.map((membership) => membership.path)).toEqual([
       "platform.fake.member_1",
       "platform.fake.member_2",

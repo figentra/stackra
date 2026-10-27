@@ -17,7 +17,7 @@
  */
 import { Target } from "@stackra/contracts";
 import type { Url } from "@stackra/contracts";
-import { registerSchemas, Schema } from "@stackra/validation";
+import { Field, Int, registerSchemas, Schema } from "@stackra/validation";
 
 import { IDENTITY_CONFIG_SCHEMA } from "#core/constants/identity-config-schema.constant";
 import { ApiKeyKind } from "#core/enums/api-key-kind.enum";
@@ -33,6 +33,131 @@ import { AuthFlow } from "#core/enums/auth-flow.enum";
  * }
  */
 export class IdentityOptions extends Schema {
+  /** The provider's issuer URL a PKCE client discovers its endpoints from; empty where only the BFF signs in. */
+  // reason: a URL or the empty string, a union beyond `T | null`
+  @Field(IDENTITY_CONFIG_SCHEMA.shape.issuer)
+  issuer: Url | "" = "";
+
+  /** The route reference the router lands on after sign-out; `null` stays on the sign-in route. */
+  // reason: a route reference is any router object, so no field type says it
+  @Field(IDENTITY_CONFIG_SCHEMA.shape.postLogoutRoute)
+  postLogoutRoute: object | null = null;
+
+  /** Minutes without input before a signed-in client signs out (a shared till); `0` never signs out for idling. */
+  @Int({
+    min: 0,
+    max: 1440,
+  })
+  idleMinutes = 0;
+
+  /** Minutes a step-up stays fresh: an action that needs one refuses an older authentication (ADR 0207: 10). */
+  @Int({
+    min: 1,
+    max: 1440,
+  })
+  stepUpMaxAgeMinutes = 10;
+
+  /** Digits a staff PIN has at least. */
+  @Int({
+    min: 4,
+    max: 12,
+  })
+  pinMinLength = 4;
+
+  /** Digits a staff PIN has at most. */
+  @Int({
+    min: 4,
+    max: 12,
+  })
+  pinMaxLength = 8;
+
+  /** PBKDF2-SHA-256 iterations a new staff PIN hash uses. */
+  @Int({
+    min: 100_000,
+  })
+  pinHashIterations = 600_000;
+
+  /** Wrong PINs in a row before the staff member is locked out on that device. */
+  @Int({
+    min: 1,
+    max: 20,
+  })
+  pinMaxAttempts = 5;
+
+  /** Minutes a PIN lockout lasts. */
+  @Int({
+    min: 1,
+    max: 1440,
+  })
+  pinLockoutMinutes = 15;
+
+  /** Seconds a manager override stays usable after the manager's PIN. */
+  @Int({
+    min: 10,
+    max: 3600,
+  })
+  managerOverrideSeconds = 120;
+
+  /** The prefix of each API key kind, registered with secret scanning (ADR 0278 decision 4). */
+  // reason: an object keyed by every API key kind whose prefixes must differ
+  @Field(IDENTITY_CONFIG_SCHEMA.shape.apiKeyPrefixes)
+  apiKeyPrefixes: Record<ApiKeyKind, string> = {
+    [ApiKeyKind.Secret]: "stackra_sk",
+    [ApiKeyKind.Publishable]: "stackra_pk",
+  };
+
+  /**
+   * Seconds a key's `lastUsedAt` may lag: a verification writes it only when it is older than this, so a busy key is
+   * not a write per request. `0` writes on every verification.
+   */
+  @Int({
+    min: 0,
+    max: 86_400,
+  })
+  apiKeyLastUsedSeconds = 60;
+
+  /** Minutes a desktop sign-in waits for the browser to come back before it counts as closed. */
+  @Int({
+    min: 1,
+    max: 60,
+  })
+  signInTimeoutMinutes = 10;
+
+  /** Seconds an app approval waits for the app before it lapses. */
+  @Int({
+    min: 15,
+    max: 600,
+  })
+  appApprovalTtlSeconds = 60;
+
+  /** Digits of the number an app approval shows. */
+  @Int({
+    min: 2,
+    max: 4,
+  })
+  appApprovalDigits = 2;
+
+  /** Wrong numbers the app offers beside the right one. */
+  @Int({
+    min: 1,
+    max: 8,
+  })
+  appApprovalDecoys = 3;
+
+  /** App approval requests one requesting device, or one target, may make per window. */
+  @Int({
+    min: 1,
+    max: 100,
+  })
+  appApprovalMaxRequests = 5;
+
+  /** Minutes of the app approval rate-limit window. */
+  @Int({
+    min: 1,
+    max: 1440,
+  })
+  appApprovalWindowMinutes = 15;
+
   /** The flow per target code; gen's wiring picks the `SessionStore` driver of a target from it. */
   flow: Record<string, AuthFlow> = {
     [Target.Web]: AuthFlow.Bff,
@@ -41,9 +166,6 @@ export class IdentityOptions extends Schema {
     [Target.Ios]: AuthFlow.Pkce,
     [Target.Android]: AuthFlow.Pkce,
   };
-
-  /** The provider's issuer URL a PKCE client discovers its endpoints from; empty where only the BFF signs in. */
-  issuer: Url | "" = "";
 
   /** The public client id a PKCE client presents; never a secret. Empty where only the BFF signs in. */
   clientId = "";
@@ -56,12 +178,6 @@ export class IdentityOptions extends Schema {
 
   /** The device redirect path; the platform's `SignInBrowser` turns it into `<scheme>://auth/callback`. */
   nativeRedirectPath = "auth/callback";
-
-  /** The route reference the router lands on after sign-out; `null` stays on the sign-in route. */
-  postLogoutRoute: object | null = null;
-
-  /** Minutes without input before a signed-in client signs out (a shared till); `0` never signs out for idling. */
-  idleMinutes = 0;
 
   /** Read the session again when a browser window becomes visible. */
   refreshOnFocus = true;
@@ -89,65 +205,14 @@ export class IdentityOptions extends Schema {
     hwk: AssuranceLevel.Aal3,
   };
 
-  /** Minutes a step-up stays fresh: an action that needs one refuses an older authentication (ADR 0207: 10). */
-  stepUpMaxAgeMinutes = 10;
-
-  /** Digits a staff PIN has at least. */
-  pinMinLength = 4;
-
-  /** Digits a staff PIN has at most. */
-  pinMaxLength = 8;
-
-  /** PBKDF2-SHA-256 iterations a new staff PIN hash uses. */
-  pinHashIterations = 600_000;
-
-  /** Wrong PINs in a row before the staff member is locked out on that device. */
-  pinMaxAttempts = 5;
-
-  /** Minutes a PIN lockout lasts. */
-  pinLockoutMinutes = 15;
-
-  /** Seconds a manager override stays usable after the manager's PIN. */
-  managerOverrideSeconds = 120;
-
-  /** The prefix of each API key kind, registered with secret scanning (ADR 0278 decision 4). */
-  apiKeyPrefixes: Record<ApiKeyKind, string> = {
-    [ApiKeyKind.Secret]: "stackra_sk",
-    [ApiKeyKind.Publishable]: "stackra_pk",
-  };
-
-  /**
-   * Seconds a key's `lastUsedAt` may lag: a verification writes it only when it is older than this, so a busy key is
-   * not a write per request. `0` writes on every verification.
-   */
-  apiKeyLastUsedSeconds = 60;
-
   /** The market-pack key mapping each verification kind to its providers, in the order they are tried. */
   verificationPackKey = "verification.drivers";
-
-  /** Minutes a desktop sign-in waits for the browser to come back before it counts as closed. */
-  signInTimeoutMinutes = 10;
 
   /** The market-pack key listing the built-in sign-in methods a market offers (`SignInMethod`), in order. */
   signInMethodsKey = "identity.sign_in_methods";
 
-  /** Seconds an app approval waits for the app before it lapses. */
-  appApprovalTtlSeconds = 60;
-
-  /** Digits of the number an app approval shows. */
-  appApprovalDigits = 2;
-
-  /** Wrong numbers the app offers beside the right one. */
-  appApprovalDecoys = 3;
-
   /** Only a device whose credential is bound to the principal may approve (and see the pending list). */
   appApprovalEnrolledDevicesOnly = true;
-
-  /** App approval requests one requesting device, or one target, may make per window. */
-  appApprovalMaxRequests = 5;
-
-  /** Minutes of the app approval rate-limit window. */
-  appApprovalWindowMinutes = 15;
 
   /** The assurance an app approval reaches (a bound device plus the app's biometric check). */
   appApprovalAssurance: AssuranceLevel = AssuranceLevel.Aal2;

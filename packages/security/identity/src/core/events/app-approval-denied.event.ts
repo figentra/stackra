@@ -10,7 +10,7 @@
  */
 import { Enum, type PublicId } from "@stackra/contracts";
 import { IntegrationEvent } from "@stackra/events";
-import { publicId, registerSchemas } from "@stackra/validation";
+import { Field, publicId, registerSchemas } from "@stackra/validation";
 import { z } from "zod";
 
 import { AppApprovalPurpose } from "#contracts/index";
@@ -22,6 +22,11 @@ import { AppApprovalPurpose } from "#contracts/index";
  * recordEvent(denied, AppApprovalDenied.create({ challengeId, principal, purpose, reason: "denied", device, at }));
  */
 export class AppApprovalDenied extends IntegrationEvent({ name: "app_approval.denied" }) {
+  /** `denied` by the user, or `number_mismatch` when the picked number was not the shown one. */
+  // reason: a two-value wire field kept as a string-literal union so the event payload stays as published
+  @Field(z.enum(["denied", "number_mismatch"]))
+  reason!: "denied" | "number_mismatch";
+
   /** The app approval challenge this event is about. */
   challengeId!: string;
 
@@ -30,9 +35,6 @@ export class AppApprovalDenied extends IntegrationEvent({ name: "app_approval.de
 
   /** Sign-in or step-up. */
   purpose!: AppApprovalPurpose;
-
-  /** `denied` by the user, or `number_mismatch` when the picked number was not the shown one. */
-  reason!: "denied" | "number_mismatch";
 
   /** The answering device. */
   device!: string;

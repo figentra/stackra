@@ -35,7 +35,7 @@ const exParent: Actor = {
 const CHILD = "usr_01j9z3k4m5n6p7q8r9s0t1v2c1";
 
 const guardians = new GuardianActingService(
-  new MemoryGuardianshipDriver([
+  new MemoryGuardianshipDriver().seed([
     { guardian: parent.id, minor: CHILD, relationship: "parent", restrictions: ["pickup"] },
     {
       guardian: exParent.id,

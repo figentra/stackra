@@ -56,7 +56,9 @@ describe("AppApprovalService", () => {
     return new AppApprovalService(
       buildConfig(IdentityConfig, { values: { appApprovalMaxRequests: 3, ...values } }),
       store,
-      new MemoryIdentityResolverDriver({ [USER]: { email: "rana@acme.example", locale: "ar" } }),
+      new MemoryIdentityResolverDriver().seed({
+        [USER]: { email: "rana@acme.example", locale: "ar" },
+      }),
       clock,
     );
   }

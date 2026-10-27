@@ -22,5 +22,5 @@ import { MemoryIdentityResolverDriver } from "#core/index";
 export function fakeIdentity(
   principals: Readonly<Record<PublicId<"usr">, Omit<VerifiedPrincipal, "id">>> = {},
 ): MemoryIdentityResolverDriver {
-  return new MemoryIdentityResolverDriver(principals);
+  return new MemoryIdentityResolverDriver().seed(principals);
 }

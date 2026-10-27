@@ -50,7 +50,7 @@ class KeptErrorReporterDriver extends Driver(ErrorReporter) {
 function sessionOf(signedIn: boolean): SessionService {
   return new SessionService(
     buildConfig(IdentityConfig),
-    new MemorySessionStoreDriver(USER, signedIn),
+    new MemorySessionStoreDriver().seed(USER, signedIn),
     new TenantSwitcher(new ActiveScopeService()),
     new PermissionSnapshotService(),
   );

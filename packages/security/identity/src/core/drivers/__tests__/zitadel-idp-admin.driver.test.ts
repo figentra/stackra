@@ -7,13 +7,14 @@
  *          succeeds; ending a user's sessions searches and deletes each; a device poll maps the RFC 8628 errors; a
  *          user's authentication methods come back as unique `amr` codes; a policy's providers and second factors are
  *          brought to exactly the listed ones.
- * Boundary: test only; a scripted fetch records each request and answers from a queue.
+ * Boundary: test only; a scripted global fetch records each request and answers from a queue.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; RFC 8628; ADR 0410 (STA-834); STA-1264; STA-1263.
  */
 import { buildConfig } from "@stackra/config";
 import { SecretStore } from "@stackra/config/contracts";
-import { describe, expect, it } from "@stackra/testing";
+import { afterEach, describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 
 import { IdpAdminConfig } from "#config/idp-admin.config";
 import { DeviceTokenStatus, IdpSecondFactor } from "#contracts/index";
@@ -63,10 +64,15 @@ function driverWith(answers: readonly (readonly [number, object | string] | Erro
     secrets: new AdminTokenSecrets(),
   });
   const { fetcher, sent } = scripted(answers);
-  return { idp: new ZitadelIdpAdminDriver(config, fetcher), sent };
+  vi.stubGlobal("fetch", fetcher);
+  return { idp: new ZitadelIdpAdminDriver(config), sent };
 }
 
 describe(ZitadelIdpAdminDriver, () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it("refuses to start without a URL and a token", () => {
     expect(() => new ZitadelIdpAdminDriver(buildConfig(IdpAdminConfig))).toThrow(TypeError);
   });

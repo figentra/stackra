@@ -71,7 +71,7 @@ const answerOf = (
 
 describe("runVerificationCase", () => {
   it("passes a driver that answers what was recorded", async () => {
-    const driver = new MemoryVerificationDriver([VerificationKind.Identity], clock);
+    const driver = new MemoryVerificationDriver(clock).seed([VerificationKind.Identity]);
     driver.answer("chk_1", VerificationStatus.Verified);
     const result = await runVerificationCase(
       driver,
@@ -85,7 +85,7 @@ describe("runVerificationCase", () => {
   });
 
   it("reports a wrong status and reasons that differ from the recorded ones", async () => {
-    const driver = new MemoryVerificationDriver([VerificationKind.Identity], clock);
+    const driver = new MemoryVerificationDriver(clock).seed([VerificationKind.Identity]);
     driver.answer("chk_1", VerificationStatus.Rejected);
     const { mismatches } = await runVerificationCase(
       driver,
@@ -98,7 +98,7 @@ describe("runVerificationCase", () => {
   });
 
   it("reports a kind the driver does not answer", async () => {
-    const driver = new MemoryVerificationDriver([VerificationKind.Company], clock);
+    const driver = new MemoryVerificationDriver(clock).seed([VerificationKind.Company]);
     const result = await runVerificationCase(
       driver,
       recorded({ status: VerificationStatus.Verified }),

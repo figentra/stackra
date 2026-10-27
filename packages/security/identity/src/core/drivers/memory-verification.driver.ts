@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `MemoryVerificationDriver`, a `Verification` provider for tests and local runs: it supports the kinds it is
- *          given and answers each check with the status set for its reference (pending by default).
+ *          seeded with and answers each check with the status set for its reference (pending by default).
  * Boundary: process-local; never a real check. It records the requests it saw, without their facts.
  * Runtime: isomorphic
  * Governing contract: OS-54; ADR 0263 (a driver is named by its class: `memory`).
@@ -16,7 +16,7 @@ import type { VerificationKind, VerificationRequest, VerificationResult } from "
  * A provider held in memory.
  *
  * @example
- * const provider = new MemoryVerificationDriver([VerificationKind.Company], clock);
+ * const provider = new MemoryVerificationDriver(clock).seed([VerificationKind.Company]);
  * provider.answer("chk_1", VerificationStatus.Verified);
  */
 export class MemoryVerificationDriver extends Driver(Verification) {
@@ -24,7 +24,7 @@ export class MemoryVerificationDriver extends Driver(Verification) {
   readonly seen: string[] = [];
 
   /** The kinds it answers. */
-  private readonly kinds: readonly VerificationKind[];
+  private kinds: readonly VerificationKind[] = [];
 
   /** The time of an answer. */
   private readonly clock: Clock;
@@ -33,13 +33,21 @@ export class MemoryVerificationDriver extends Driver(Verification) {
   private readonly answers = new Map<string, VerificationStatus>();
 
   /**
-   * @param kinds - the kinds it supports.
    * @param clock - the time an answer carries.
    */
-  constructor(kinds: readonly VerificationKind[], clock: Clock) {
+  constructor(clock: Clock) {
     super();
-    this.kinds = kinds;
     this.clock = clock;
+  }
+
+  /**
+   * Sets the kinds it supports, replacing any before; it supports none until then.
+   *
+   * @returns this provider, to chain.
+   */
+  seed(kinds: readonly VerificationKind[]): this {
+    this.kinds = [...kinds];
+    return this;
   }
 
   /** Sets the status the check `reference` gets. */

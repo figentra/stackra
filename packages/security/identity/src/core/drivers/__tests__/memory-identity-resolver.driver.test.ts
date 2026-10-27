@@ -15,7 +15,7 @@ import { MemoryIdentityResolverDriver } from "#core/drivers/memory-identity-reso
 
 const RANA = "usr_01j9z3k4m5n6p7q8r9s0t1v2w3";
 
-const identity = new MemoryIdentityResolverDriver({
+const identity = new MemoryIdentityResolverDriver().seed({
   [RANA]: { email: "Rana@Acme.example", locale: "ar" },
 });
 

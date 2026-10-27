@@ -7,8 +7,8 @@
  *          to exactly the listed ones); a user's enrolled authentication methods through the
  *          v2 user service, mapped to RFC 8176 `amr` codes.
  * Boundary: one HTTPS call per step, with the service account token of `IdpAdminConfig` as a bearer token and the
- *           configured timeout. Managed or bring-your-own is the configured URL: the platform's ZITADEL or a tenant's
- *           own. A 409 is `IdpUserExistsError`; a timeout, a network failure, a 429 or a 5xx is `IdpAdminUnavailableError`
+ *           configured timeout, through the global fetch. Managed or bring-your-own is the configured URL: the
+ *           platform's ZITADEL or a tenant's own. A 409 is `IdpUserExistsError`; a timeout, a network failure, a 429 or a 5xx is `IdpAdminUnavailableError`
  *           (retryable); any other 4xx is a bug and throws an `Error` naming the method, path and status, never a body.
  *           Ending a session that is already gone (404) succeeds. Personal data and secrets are never logged.
  * Runtime: isomorphic
@@ -92,15 +92,11 @@ export class ZitadelIdpAdminDriver extends Driver(IdpAdmin) {
   /** Milliseconds one call may take. */
   private readonly timeoutMs: number;
 
-  /** The fetch every call goes through. */
-  private readonly fetcher: typeof fetch;
-
   /**
    * @param config - the provider's URL, token and timeout.
-   * @param fetcher - the fetch to use; the global one when left out.
    * @throws TypeError when the URL or the token is not set.
    */
-  constructor(config: IdpAdminConfig, fetcher?: typeof fetch) {
+  constructor(config: IdpAdminConfig) {
     super();
     if (config.url === "" || config.token === "")
       throw new TypeError(
@@ -109,7 +105,6 @@ export class ZitadelIdpAdminDriver extends Driver(IdpAdmin) {
     this.base = config.url.replace(/\/+$/, "");
     this.token = config.token;
     this.timeoutMs = config.timeoutSeconds * 1000;
-    this.fetcher = fetcher ?? ((input, init) => globalThis.fetch(input, init));
   }
 
   /** Implements `IdpAdmin.createUser`, documented there. */
@@ -382,7 +377,7 @@ export class ZitadelIdpAdminDriver extends Driver(IdpAdmin) {
     }
     let response: Response;
     try {
-      response = await this.fetcher(`${this.base}${call.path}`, {
+      response = await globalThis.fetch(`${this.base}${call.path}`, {
         method: call.method,
         headers,
         ...(body === undefined ? {} : { body }),

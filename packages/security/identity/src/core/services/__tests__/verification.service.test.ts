@@ -68,8 +68,8 @@ const request: VerificationRequest = {
 describe("VerificationService", () => {
   it("runs the check at the first wired provider the pack lists", async () => {
     const clock = new FixedClockDriver();
-    const registry = new MemoryVerificationDriver([VerificationKind.Company], clock);
-    const document = new MemoryVerificationDriver([VerificationKind.Identity], clock);
+    const registry = new MemoryVerificationDriver(clock).seed([VerificationKind.Company]);
+    const document = new MemoryVerificationDriver(clock).seed([VerificationKind.Identity]);
     registry.answer("chk_1", VerificationStatus.Verified);
     const service = new VerificationService(buildConfig(IdentityConfig));
     service.register("down", new DownVerificationDriver());
@@ -102,9 +102,9 @@ describe("VerificationService", () => {
 
   it("verifies through resolver candidates, a platform check only through managed ones", async () => {
     const clock = new FixedClockDriver();
-    const scopeOwn = new MemoryVerificationDriver([VerificationKind.Company], clock);
-    const platform = new MemoryVerificationDriver([VerificationKind.Company], clock);
-    const identityOnly = new MemoryVerificationDriver([VerificationKind.Identity], clock);
+    const scopeOwn = new MemoryVerificationDriver(clock).seed([VerificationKind.Company]);
+    const platform = new MemoryVerificationDriver(clock).seed([VerificationKind.Company]);
+    const identityOnly = new MemoryVerificationDriver(clock).seed([VerificationKind.Identity]);
     platform.answer("chk_1", VerificationStatus.Verified);
     const candidates = [
       { provider: "sumsub", connection: scopeOwn, mode: "own" as const },

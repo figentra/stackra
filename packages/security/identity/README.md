@@ -226,6 +226,13 @@ createTestingModule(NotificationsModule).override(
 );
 ```
 
+The memory drivers and `SessionFake` take no constructor data, since gen reads every constructor parameter as an
+injected class: `seed` sets what they hold and returns the instance
+(`new MemoryVerificationDriver(clock).seed([VerificationKind.Company])`,
+`new MemoryGuardianshipDriver().seed(links)`, `new MemorySessionStoreDriver().seed(user, true)`,
+`new MemoryIdentityResolverDriver().seed(principals)`, `new SessionFake().seed({ status })`). `ZitadelIdpAdminDriver`
+calls the global fetch, so a test stubs it with `vi.stubGlobal("fetch", ...)`.
+
 A `Verification` driver runs each recorded case through `runVerificationCase`, which checks the recorded status,
 reasons and provider reference and the port's rules: the kind is supported, an outage refuses
 `verification_unavailable` (so `VerificationService` falls through), reasons are snake_case codes and empty when
