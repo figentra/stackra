@@ -57,7 +57,7 @@ describe(ApiKeyVerifierService, () => {
       id: "key_1",
       hash: await hashApiKey(key),
       principal: "usr_bot",
-      tenantId: "ten_1",
+      scopeId: "ten_1",
       scopes: ["catalogue.product.read"],
       origins: [SHOP],
       ...extra,
@@ -74,7 +74,7 @@ describe(ApiKeyVerifierService, () => {
     const secret = await issue(ApiKeyKind.Secret);
     expect(await verifier.verify(secret)).toMatchObject({
       kind: ApiKeyKind.Secret,
-      record: { principal: "usr_bot", tenantId: "ten_1" },
+      record: { principal: "usr_bot", scopeId: "ten_1" },
     });
     const publishable = await issue(ApiKeyKind.Publishable);
     expect((await verifier.verify(publishable, SHOP)).kind).toBe(ApiKeyKind.Publishable);

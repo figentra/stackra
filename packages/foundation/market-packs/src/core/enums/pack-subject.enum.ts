@@ -19,7 +19,7 @@ export const PackSubject = Enum.of({
   /** The market where the legal entity is formed or registered. */
   Entity: "entity",
   /** The tenant's own market. */
-  Tenant: "tenant",
+  Scope: "tenant",
 });
 
 /** One of the codes above. */

@@ -13,7 +13,7 @@ import type { StorageWriteOptions } from "#contracts/types/storage-write-options
  * The persisted state of one class.
  *
  * @example
- * await storage.store(PreferencesStore).write({ tenantByUser: { usr_1: "ten_2" } });
+ * await storage.store(PreferencesStore).write({ scopeByUser: { usr_1: "ten_2" } });
  */
 export interface StoredRecord<T extends object> {
   /** The stored state, or `undefined` when nothing is stored or it expired. */

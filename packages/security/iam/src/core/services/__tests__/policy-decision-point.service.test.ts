@@ -73,7 +73,7 @@ const VIP: PublicId<"seg"> = "seg_01j9z3k4m5n6p7q8r9s0t1v2v1";
 const staff: Actor = {
   kind: ActorKind.User,
   id: "usr_01j9z3k4m5n6p7q8r9s0t1v2s1",
-  realm: Realm.Tenant,
+  realm: Realm.Staff,
 };
 const customer: Actor = {
   kind: ActorKind.User,

@@ -35,7 +35,7 @@ const resolved = {
       { key: "tax.registration", subject: PackSubject.Entity },
       { key: "tips", subject: PackSubject.Location },
     ]),
-    layer("xa-one", [{ key: "tips", subject: PackSubject.Tenant }]),
+    layer("xa-one", [{ key: "tips", subject: PackSubject.Scope }]),
   ],
 };
 
@@ -47,13 +47,13 @@ describe("subjectOf", () => {
   });
 
   it("lets a later layer restate a key", () => {
-    expect(subjectOf(resolved, "tips.pooling")).toBe(PackSubject.Tenant);
+    expect(subjectOf(resolved, "tips.pooling")).toBe(PackSubject.Scope);
   });
 
   it("matches whole segments only and falls back to the tenant", () => {
-    expect(subjectOf(resolved, "taxi.fare")).toBe(PackSubject.Tenant);
+    expect(subjectOf(resolved, "taxi.fare")).toBe(PackSubject.Scope);
     expect(subjectOf({ market: "xa", layers: [layer("xa", undefined)] }, "tax")).toBe(
-      PackSubject.Tenant,
+      PackSubject.Scope,
     );
   });
 });

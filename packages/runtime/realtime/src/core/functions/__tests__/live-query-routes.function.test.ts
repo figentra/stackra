@@ -32,7 +32,7 @@ describe("liveQueryRoutes", () => {
     expect(
       liveQueryRoutes({
         permission: "sales.sale.read",
-        audience: BroadcastAudience.Tenant,
+        audience: BroadcastAudience.Scope,
         invalidateOn: [SALE_COMPLETED, SALE_RETURNED, SALE_COMPLETED],
       }),
     ).toEqual([
@@ -40,13 +40,13 @@ describe("liveQueryRoutes", () => {
         name: "sales.sale.completed.v1",
         module: "sales",
         permission: "sales.sale.read",
-        audience: BroadcastAudience.Tenant,
+        audience: BroadcastAudience.Scope,
       },
       {
         name: "sales.sale_return.created.v2",
         module: "sales",
         permission: "sales.sale.read",
-        audience: BroadcastAudience.Tenant,
+        audience: BroadcastAudience.Scope,
       },
     ]);
     expect(
@@ -60,12 +60,12 @@ describe("liveQueryRoutes", () => {
 
   it("refreshes a session that may read the query, not the event, without the payload", async () => {
     const hub = new RealtimeHub(
-      buildConfig(RealtimeConfig, { values: { channelRealms: [Realm.Tenant] } }),
+      buildConfig(RealtimeConfig, { values: { channelRealms: [Realm.Staff] } }),
     );
     const driver = new MemoryRealtimeDriver(hub);
     const till: RealtimeMessage[] = [];
     const other: RealtimeMessage[] = [];
-    const session = { principalId: "usr_1", tenantId: "ten_1", realm: Realm.Tenant };
+    const session = { principalId: "usr_1", scopeId: "ten_1", realm: Realm.Staff };
     driver.connect(hub.issueToken({ ...session, permissions: ["sales.sale.read"] }).token, (m) =>
       till.push(m),
     );
@@ -74,13 +74,13 @@ describe("liveQueryRoutes", () => {
     );
     const [route] = liveQueryRoutes({
       permission: "sales.sale.read",
-      audience: BroadcastAudience.Tenant,
+      audience: BroadcastAudience.Scope,
       invalidateOn: [SALE_COMPLETED],
     });
     if (route === undefined) throw new Error("expected a route");
     const sale: RecordedEvent = {
       event: { saleId: "sal_1", totalMinor: 1_200 },
-      meta: { id: "evt_1", occurredAt: new Date(0), tenantId: "ten_1" },
+      meta: { id: "evt_1", occurredAt: new Date(0), scopeId: "ten_1" },
     };
     await expect(new RealtimeBroadcaster(driver).broadcast(sale, route)).resolves.toBe(1);
     expect(till).toEqual([
@@ -90,15 +90,15 @@ describe("liveQueryRoutes", () => {
   });
 
   it("throws on a name that is not a wire name or an empty permission", () => {
-    const tenant = BroadcastAudience.Tenant;
+    const scope = BroadcastAudience.Scope;
     expect(() =>
-      liveQueryRoutes({ permission: "", audience: tenant, invalidateOn: [SALE_COMPLETED] }),
+      liveQueryRoutes({ permission: "", audience: scope, invalidateOn: [SALE_COMPLETED] }),
     ).toThrow(TypeError);
     for (const name of ["SaleCompleted", "sales.v1", "sales.sale.completed", "Sales.sale.done.v1"])
       expect(() =>
         liveQueryRoutes({
           permission: "sales.sale.read",
-          audience: tenant,
+          audience: scope,
           invalidateOn: [eventRef(name)],
         }),
       ).toThrow(/not an event wire name/);

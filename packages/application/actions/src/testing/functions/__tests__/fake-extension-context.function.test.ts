@@ -34,9 +34,9 @@ describe(fakeExtensionContext, () => {
 
   it("takes overrides", () => {
     const scope = { id: "scp_01j9z3k4m5n6p7q8r9s0t1v2w1", path: "platform.acme" } as const;
-    const ctx = fakeExtensionContext({ locale: "ar-SA", tenantId: "ten_1", scope });
+    const ctx = fakeExtensionContext({ locale: "ar-SA", scopeId: "ten_1", scope });
     expect(ctx.locale).toBe("ar-SA");
-    expect(ctx.tenantId).toBe("ten_1");
+    expect(ctx.scopeId).toBe("ten_1");
     expect(ctx.scope).toEqual(scope);
   });
 });

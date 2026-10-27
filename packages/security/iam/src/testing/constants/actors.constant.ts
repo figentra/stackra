@@ -48,12 +48,12 @@ export const actors = Object.freeze({
     Object.freeze({ kind: ActorKind.User, id: userId(id, CUSTOMER_ID), realm: Realm.Customer }),
 
   /**
-   * A staff member of a scope (`Realm.Tenant`, the contracts realm of a scope's staff).
+   * A staff member of a scope (`Realm.Staff`, the contracts realm of a scope's staff).
    *
    * @throws TypeError when `id` is not a user's public id.
    */
   staff: (id?: string): UserActor =>
-    Object.freeze({ kind: ActorKind.User, id: userId(id, STAFF_ID), realm: Realm.Tenant }),
+    Object.freeze({ kind: ActorKind.User, id: userId(id, STAFF_ID), realm: Realm.Staff }),
 
   /** Another service by its name, acting for no one or for `onBehalfOf`. */
   service: (name: string, options: { readonly onBehalfOf?: Actor } = {}): OtherActor =>

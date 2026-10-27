@@ -130,7 +130,7 @@ export class IamAccessControlDriver extends Driver(AccessControl) {
    */
   private async scopeOf(call: CallDescriptor): Promise<ScopeRef | undefined> {
     if (call.scope !== undefined) return call.scope;
-    const id = call.actor.tenantId;
+    const id = call.actor.scopeId;
     if (id === undefined) return undefined;
     const node = await this.tree.node(id as PublicId<"scp">);
     if (node === undefined) throw ForbiddenError.create();

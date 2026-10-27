@@ -44,7 +44,7 @@ The `Entitlement` kind, its ports and the plan driver of the pipeline's entitlem
   never add a `key` option.
 - Flags (`@stackra/feature-flags`) and consent (`@stackra/consent`) are separate; a source never answers for them.
 - No tenant word here (final review R-59): a grant is keyed by the id of the call's `scope` (the contracts `ScopeRef`),
-  read in `PlanEntitlementCheckDriver.check`; never read the descriptor's `tenantId`. The ports keep the id until
+  read in `PlanEntitlementCheckDriver.check`; never read the descriptor's `scopeId`. The ports keep the id until
   `@stackra/collaboration`, which passes its room's scope id, moves to the `ScopeRef` with them.
 - Seat kinds, allowances, grace dates and ceilings are plan-catalogue data; never name a seat kind or a number in code.
 - A check that must never pass a limit holds the limit's lock (`LimitReservationService`, `SeatMeterService`).

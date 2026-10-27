@@ -32,7 +32,7 @@ export { definePackage } from "#core/functions/define-package.function";
 export { defineService } from "#core/functions/define-service.function";
 export { defineWorker } from "#core/functions/define-worker.function";
 export { verifySignature } from "#core/functions/verify-signature.function";
-export { wrapTenantKey } from "#core/functions/wrap-tenant-key.function";
+export { wrapScopeKey } from "#core/functions/wrap-scope-key.function";
 export { Clock } from "#core/ports/clock.port";
 export { FieldCipher } from "#core/ports/field-cipher.port";
 export { HealthIndicator } from "#core/ports/health-indicator.port";

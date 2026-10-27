@@ -31,14 +31,14 @@ function idBody(n: number): string {
   return String(n).padStart(26, "0");
 }
 
-/** The fake user, with `tenants` memberships. */
-function fakeUser(tenants: number): SessionUser {
+/** The fake user, with `memberships` memberships. */
+function fakeUser(memberships: number): SessionUser {
   return {
     userId: `usr_${idBody(1)}`,
     email: "user@example.test",
     displayName: "Test User",
     permissions: [],
-    tenants: Array.from({ length: tenants }, (_, index) => ({
+    memberships: Array.from({ length: memberships }, (_, index) => ({
       tenantId: `scp_${idBody(index + 1)}`,
       path: `platform.fake.member_${index + 1}`,
       name: `Member ${index + 1}`,
@@ -52,13 +52,13 @@ function fakeUser(tenants: number): SessionUser {
  * A session in the status a test needs.
  *
  * @example
- * const session = new SessionFake({ status: SessionStatus.SignedIn, tenants: 2 });
- * session.user?.tenants.length; // 2
+ * const session = new SessionFake({ status: SessionStatus.SignedIn, memberships: 2 });
+ * session.user?.memberships.length; // 2
  */
 export class SessionFake extends SessionService {
   /** @param options - the status, the memberships and the actions' stand-ins. */
   constructor(options: FakeSessionOptions = {}) {
-    const account = fakeUser(options.tenants ?? 1);
+    const account = fakeUser(options.memberships ?? 1);
     const status = options.status ?? SessionStatus.SignedOut;
     super(
       buildConfig(IdentityConfig),

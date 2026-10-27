@@ -20,7 +20,7 @@ export function tenantActor(tenantId: PublicId<"scp"> = fakeTenantId()): Actor {
   return {
     kind: ActorKind.User,
     id: "usr_00000000000000000000000000",
-    realm: Realm.Tenant,
+    realm: Realm.Staff,
     tenantId,
   };
 }

@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `AwsKmsKeyProviderDriver` with `wrapTenantKey`: a key wrapped for a tenant unwraps for that
+ * Purpose: unit tests of `AwsKmsKeyProviderDriver` with `wrapScopeKey`: a key wrapped for a tenant unwraps for that
  *          tenant only, the last key is current, an earlier one opens by id, concurrent callers share one KMS call, a
  *          refused unwrap is not cached, and bad options are refused; sealed fields round-trip through the cipher.
  * Boundary: test only; a fake KMS wraps with AES-GCM under a test master key, binding the encryption context as
@@ -12,7 +12,7 @@ import { describe, expect, it } from "@stackra/testing";
 
 import { AesGcmFieldCipherDriver } from "#core/drivers/aes-gcm-field-cipher.driver";
 import { AwsKmsKeyProviderDriver } from "#core/drivers/aws-kms-key-provider.driver";
-import { wrapTenantKey } from "#core/functions/wrap-tenant-key.function";
+import { wrapScopeKey } from "#core/functions/wrap-scope-key.function";
 import { KeyProvider } from "#core/ports/key-provider.port";
 import type { AwsKmsApi } from "#core/types/aws-kms-api.type";
 
@@ -75,12 +75,12 @@ describe("AwsKmsKeyProviderDriver", () => {
   it("serves the tenant's keys, the last current, and seals fields with them", async () => {
     const kms = new FakeKms();
     const keys = [
-      await wrapTenantKey(kms, "alias/stackra-data", "ten_a", "k1"),
-      await wrapTenantKey(kms, "alias/stackra-data", "ten_a", "k2"),
+      await wrapScopeKey(kms, "alias/stackra-data", "ten_a", "k1"),
+      await wrapScopeKey(kms, "alias/stackra-data", "ten_a", "k2"),
     ];
     const provider = new AwsKmsKeyProviderDriver(kms, {
       kmsKeyId: "alias/stackra-data",
-      tenantId: "ten_a",
+      scopeId: "ten_a",
       keys,
     });
     expect(provider).toBeInstanceOf(KeyProvider);
@@ -92,10 +92,10 @@ describe("AwsKmsKeyProviderDriver", () => {
 
   it("refuses a key wrapped for another tenant", async () => {
     const kms = new FakeKms();
-    const wrapped = await wrapTenantKey(kms, "alias/stackra-data", "ten_a", "k1");
+    const wrapped = await wrapScopeKey(kms, "alias/stackra-data", "ten_a", "k1");
     const provider = new AwsKmsKeyProviderDriver(kms, {
       kmsKeyId: "alias/stackra-data",
-      tenantId: "ten_b",
+      scopeId: "ten_b",
       keys: [wrapped],
     });
     await expect(provider.current()).rejects.toThrow("KMS refused to unwrap data key k1");
@@ -105,8 +105,8 @@ describe("AwsKmsKeyProviderDriver", () => {
     const kms = new FakeKms();
     const provider = new AwsKmsKeyProviderDriver(kms, {
       kmsKeyId: "alias/stackra-data",
-      tenantId: "ten_a",
-      keys: [await wrapTenantKey(kms, "alias/stackra-data", "ten_a", "k1")],
+      scopeId: "ten_a",
+      keys: [await wrapScopeKey(kms, "alias/stackra-data", "ten_a", "k1")],
     });
     kms.refuse = true;
     await expect(provider.current()).rejects.toThrow(RangeError);
@@ -120,7 +120,7 @@ describe("AwsKmsKeyProviderDriver", () => {
   it("refuses empty, malformed or repeated keys and empty ids", async () => {
     const kms = new FakeKms();
     const key = { id: "k1", wrapped: "AAAA" };
-    const options = { kmsKeyId: "alias/stackra-data", tenantId: "ten_a", keys: [key] };
+    const options = { kmsKeyId: "alias/stackra-data", scopeId: "ten_a", keys: [key] };
     expect(() => new AwsKmsKeyProviderDriver(kms, { ...options, keys: [] })).toThrow(RangeError);
     expect(() => new AwsKmsKeyProviderDriver(kms, { ...options, keys: [key, key] })).toThrow(
       RangeError,
@@ -129,10 +129,8 @@ describe("AwsKmsKeyProviderDriver", () => {
       () =>
         new AwsKmsKeyProviderDriver(kms, { ...options, keys: [{ id: "a.b", wrapped: "AAAA" }] }),
     ).toThrow(RangeError);
-    expect(() => new AwsKmsKeyProviderDriver(kms, { ...options, tenantId: "" })).toThrow(
-      RangeError,
-    );
-    await expect(wrapTenantKey(kms, "alias/stackra-data", "ten_a", "a.b")).rejects.toThrow(
+    expect(() => new AwsKmsKeyProviderDriver(kms, { ...options, scopeId: "" })).toThrow(RangeError);
+    await expect(wrapScopeKey(kms, "alias/stackra-data", "ten_a", "a.b")).rejects.toThrow(
       RangeError,
     );
   });

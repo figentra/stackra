@@ -3,7 +3,7 @@
  * Purpose: `Message`, one message of a conversation: its position, its role, the run that wrote it, and its content
  *          (the AI SDK `ModelMessage` as JSON) sealed with the tenant's key.
  * Boundary: data only. Key `ai.message`, table `ai.messages`, public ids `aimsg_…`, append-only, owned through
- *           `BelongsToTenant`. `content` never holds plain text at rest: `TenantKeyCast` seals it bound to
+ *           `BelongsToTenant`. `content` never holds plain text at rest: `ScopeKeyCast` seals it bound to
  *           `ai.messages.content` and the owning tenant, so a row copied to another tenant does not open. The only
  *           place prompt and response text is stored (ADR 0100 decision 9); retention is a data policy, not a column.
  * Runtime: node

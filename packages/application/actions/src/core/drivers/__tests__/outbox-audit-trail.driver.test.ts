@@ -35,8 +35,8 @@ describe(OutboxAuditTrailDriver, () => {
     const actor: Actor = {
       kind: ActorKind.User,
       id: "usr_1",
-      realm: Realm.Tenant,
-      tenantId: "ten_1",
+      realm: Realm.Staff,
+      scopeId: "ten_1",
     };
     const at = new Date("2026-10-25T09:00:00.000Z");
     await trail.record({
@@ -49,7 +49,7 @@ describe(OutboxAuditTrailDriver, () => {
         risk: "L3",
         effects: [Effect.Financial],
         actor,
-        tenantId: "ten_1",
+        scopeId: "ten_1",
         scope: { id: "scp_1", path: "platform.acme" },
         area: ApiArea.App,
       },
@@ -75,7 +75,7 @@ describe(OutboxAuditTrailDriver, () => {
     });
     expect(record?.meta).toMatchObject({
       occurredAt: at,
-      tenantId: "ten_1",
+      scopeId: "ten_1",
       actor,
       correlationId: "call-1",
     });

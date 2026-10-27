@@ -17,7 +17,7 @@ import type { CallDescriptor } from "#contracts/types/call-descriptor.type";
  * @example
  * export class TenantStatusCheckDriver extends Driver(TenancyCheck) {
  *   async check(call: CallDescriptor): Promise<void> {
- *     if (call.tenantId && (await this.tenants.isSuspended(call.tenantId))) throw TenantSuspendedError.create();
+ *     if (call.scopeId && (await this.tenants.isSuspended(call.scopeId))) throw TenantSuspendedError.create();
  *   }
  * }
  */

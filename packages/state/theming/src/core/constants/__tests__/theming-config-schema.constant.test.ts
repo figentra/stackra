@@ -29,7 +29,7 @@ describe("THEMING_CONFIG_SCHEMA", () => {
       themeColor: background,
       splash: { background },
       selfHostedFonts: true,
-      tenantOverride: false,
+      scopeOverride: false,
     });
   });
 

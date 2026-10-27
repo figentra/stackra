@@ -132,7 +132,7 @@ export class RealtimeRooms extends Service {
     const remaining = found === undefined ? 0 : found.expiresAt - Date.now();
     if (found === undefined || remaining <= 0) return undefined;
     const { grant } = found;
-    const room = `${grant.session.tenantId ?? "platform"}:${grant.document}`;
+    const room = `${grant.session.scopeId ?? "platform"}:${grant.document}`;
     const members = this.rooms.get(room) ?? new Set<Entry>();
     if (members.size >= this.config.rooms.maxMembers) throw RoomLimitReachedError.create();
     this.rooms.set(room, members);

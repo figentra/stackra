@@ -14,7 +14,7 @@ export interface FakeSessionOptions {
   readonly status?: SessionStatus;
 
   /** How many memberships the fake user has; one when left out. */
-  readonly tenants?: number;
+  readonly memberships?: number;
 
   /** What `signIn` does; signs the fake user in when left out. */
   readonly signIn?: () => Promise<void>;

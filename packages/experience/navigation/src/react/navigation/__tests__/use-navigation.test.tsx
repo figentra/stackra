@@ -22,7 +22,7 @@ import { navigation } from "#core/functions/navigation.function";
 import { useNavigation } from "#react/navigation/use-navigation";
 
 // oxlint-disable-next-line typescript/no-extraneous-class -- reason: a panel token stand-in
-class TenantAdminPanel {}
+class ScopeAdminPanel {}
 
 const flagOff = {
   key: "orders.quick_order",
@@ -33,7 +33,7 @@ const flagOff = {
   label: "orders::flags.quick_order.label",
 } as const;
 
-const Navigation = navigation(TenantAdminPanel, [
+const Navigation = navigation(ScopeAdminPanel, [
   {
     group: "orders::nav.sales",
     items: [

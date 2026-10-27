@@ -54,7 +54,7 @@ export const I18nConfig$ = z.object({
     .enum(Enum.values(LocaleUrlStrategy))
     .default(LocaleUrlStrategy.PrefixExceptDefault),
   followDevice: z.boolean().default(false),
-  tenantChoosesNumerals: z.boolean().default(false),
+  scopeChoosesNumerals: z.boolean().default(false),
   failOnMissingLocale: z.boolean().default(false),
   cookieName: z
     .string()

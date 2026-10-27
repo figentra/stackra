@@ -20,7 +20,7 @@ export interface EventMeta {
   readonly occurredAt: Date;
 
   /** The tenant the fact belongs to; absent for a platform event. */
-  readonly tenantId?: string;
+  readonly scopeId?: string;
 
   /** Who caused it, with the delegation chain behind them. */
   readonly actor?: Actor;

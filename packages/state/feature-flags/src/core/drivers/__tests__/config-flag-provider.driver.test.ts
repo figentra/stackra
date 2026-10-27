@@ -28,8 +28,8 @@ describe("ConfigFlagProviderDriver", () => {
   it("answers every subject with the configured values", async () => {
     const driver = new ConfigFlagProviderDriver(config);
     await expect(driver.values()).resolves.toEqual({ "web.help_centre": true });
-    await expect((driver as FlagProvider).values({ subject: null, tenant: null })).resolves.toEqual(
-      { "web.help_centre": true },
-    );
+    await expect((driver as FlagProvider).values({ subject: null, scope: null })).resolves.toEqual({
+      "web.help_centre": true,
+    });
   });
 });

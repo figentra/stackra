@@ -4,7 +4,7 @@
  *          agent's prompt and response text is stored.
  * Boundary: an abstract class that is its own token, keyed `ai.ConversationStore`. The Postgres driver in `./node`
  *           stores `ai.conversations` and `ai.messages` under the tenant's row-level security, each message's content
- *           sealed with `TenantKeyCast`; the memory driver in `.` serves tests and local runs. Messages are AI SDK
+ *           sealed with `ScopeKeyCast`; the memory driver in `.` serves tests and local runs. Messages are AI SDK
  *           `ModelMessage`s, kept in order.
  * Runtime: isomorphic
  * Governing contract: ADR 0100 (decisions 9 and 10); ADR 0399 (storage home); STA-781.

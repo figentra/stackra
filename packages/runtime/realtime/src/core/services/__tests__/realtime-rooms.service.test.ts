@@ -24,10 +24,10 @@ import { LocalRealtimeFanoutDriver } from "#core/drivers/local-realtime-fanout.d
 import { RoomLimitReachedError } from "#core/errors/room-limit-reached.error";
 import { RealtimeRooms } from "#core/services/realtime-rooms.service";
 
-/** A grant for `principalId` in `tenantId` on page `pag_1`. */
-function grant(principalId: string, mayEdit = true, tenantId = "ten_1"): RoomGrant {
+/** A grant for `principalId` in `scopeId` on page `pag_1`. */
+function grant(principalId: string, mayEdit = true, scopeId = "ten_1"): RoomGrant {
   return {
-    session: { principalId, tenantId, realm: Realm.Tenant, permissions: [] },
+    session: { principalId, scopeId, realm: Realm.Staff, permissions: [] },
     document: "pag_1",
     mayEdit,
   };

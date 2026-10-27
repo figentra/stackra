@@ -55,7 +55,7 @@ export class OutboxAuditTrailDriver extends Driver(AuditTrail) {
         meta: {
           id: mintEventId(),
           occurredAt: entry.at,
-          ...(call.tenantId === undefined ? {} : { tenantId: call.tenantId }),
+          ...(call.scopeId === undefined ? {} : { scopeId: call.scopeId }),
           actor: call.actor,
           correlationId: call.callId,
         },

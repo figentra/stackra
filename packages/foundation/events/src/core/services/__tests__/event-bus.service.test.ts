@@ -54,7 +54,7 @@ describe(EventBus, () => {
     const listener = new RecordingListener();
     bus.subscribe(StockChanged, listener);
     const event = new StockLow();
-    const record = bus.dispatch(event, { tenantId: "tnt_1", correlationId: "cor_1" });
+    const record = bus.dispatch(event, { scopeId: "tnt_1", correlationId: "cor_1" });
 
     expect(listener.seen).toEqual([]);
     const deliveries = await bus.drain();
@@ -66,7 +66,7 @@ describe(EventBus, () => {
     expect(ctx.eventId).toBe(record.meta.id);
     expect(ctx.eventId).toMatch(/^evt_/);
     expect(ctx.occurredAt).toEqual(NOW);
-    expect(ctx.tenantId).toBe("tnt_1");
+    expect(ctx.scopeId).toBe("tnt_1");
     expect(ctx.correlationId).toBe("cor_1");
     expect(ctx.now()).toEqual(NOW);
     expect(await bus.drain()).toEqual([]);

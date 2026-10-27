@@ -21,7 +21,7 @@ const USER = {
   email: "rana@acme.example",
   displayName: "Rana",
   permissions: ["orders.order.read"],
-  tenants: [],
+  memberships: [],
 };
 
 /** Stubs `fetch` to answer `body` with `status` and returns the requests it saw. */

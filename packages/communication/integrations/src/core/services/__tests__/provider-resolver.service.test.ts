@@ -118,7 +118,7 @@ const betaPlatform = Object.assign(Object.create(BetaConnection.prototype), {
   label: "beta-platform",
   fast: false,
 });
-const betaTenant = Object.assign(Object.create(BetaConnection.prototype), {
+const betaScoped = Object.assign(Object.create(BetaConnection.prototype), {
   label: "beta-tenant",
   fast: true,
 });
@@ -149,8 +149,8 @@ const OFFER: readonly ProviderChoice[] = [
 
 describe("ProviderResolver", () => {
   it("prefers the tenant's own Connection", async () => {
-    const resolver = resolverWith([[BetaConnection, betaTenant]], OFFER);
-    await expect(resolver.resolve<Sender>("sms", DRIVERS)).resolves.toBe(betaTenant);
+    const resolver = resolverWith([[BetaConnection, betaScoped]], OFFER);
+    await expect(resolver.resolve<Sender>("sms", DRIVERS)).resolves.toBe(betaScoped);
   });
 
   it("falls back to the Market's platform Connection, skipping unknown providers", async () => {
@@ -168,8 +168,8 @@ describe("ProviderResolver", () => {
 
   it("tries only the tenant's own without a Market", async () => {
     await expect(
-      resolverWith([[BetaConnection, betaTenant]], [], null).resolve<Sender>("sms", DRIVERS),
-    ).resolves.toBe(betaTenant);
+      resolverWith([[BetaConnection, betaScoped]], [], null).resolve<Sender>("sms", DRIVERS),
+    ).resolves.toBe(betaScoped);
     await expect(
       resolverWith([], OFFER, null).resolve<Sender>("sms", DRIVERS),
     ).rejects.toMatchObject({
@@ -190,14 +190,14 @@ describe("ProviderResolver", () => {
   });
 
   it("answers the failover list, own first then managed, with the mode of each", async () => {
-    const alphaTenant = Object.assign(Object.create(AlphaConnection.prototype), {
+    const alphaScoped = Object.assign(Object.create(AlphaConnection.prototype), {
       label: "alpha-tenant",
       fast: true,
     });
     const resolver = resolverWith(
       [
-        [BetaConnection, betaTenant],
-        [AlphaConnection, alphaTenant],
+        [BetaConnection, betaScoped],
+        [AlphaConnection, alphaScoped],
       ],
       [...OFFER, { provider: "alpha", connectionId: "conn_a" }],
     );
@@ -219,10 +219,10 @@ describe("ProviderResolver", () => {
   });
 
   it("offers a BYO-only provider through the tenant's own Connection only", async () => {
-    const resolver = resolverWith([[BetaConnection, betaTenant]], [{ provider: "beta" }]);
+    const resolver = resolverWith([[BetaConnection, betaScoped]], [{ provider: "beta" }]);
     const list = await resolver.candidates<Sender>("sms", DRIVERS);
     expect(list.map(({ mode, connection }) => [mode, connection])).toEqual([
-      [ProviderMode.Own, betaTenant],
+      [ProviderMode.Own, betaScoped],
     ]);
     await expect(
       resolverWith([], [{ provider: "beta" }]).candidates("sms", DRIVERS),
@@ -267,7 +267,7 @@ describe("ProviderResolver", () => {
 
   it("pins the list to one mode", async () => {
     const resolver = resolverWith(
-      [[BetaConnection, betaTenant]],
+      [[BetaConnection, betaScoped]],
       [
         { provider: "alpha", connectionId: "conn_a" },
         { provider: "beta", connectionId: "conn_b" },
@@ -281,6 +281,6 @@ describe("ProviderResolver", () => {
     const own = await resolver.candidates<Sender>("verification", DRIVERS, {
       pin: ProviderMode.Own,
     });
-    expect(own.map((c) => c.connection)).toEqual([betaTenant]);
+    expect(own.map((c) => c.connection)).toEqual([betaScoped]);
   });
 });

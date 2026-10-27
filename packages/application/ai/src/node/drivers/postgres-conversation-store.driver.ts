@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `PostgresConversationStoreDriver`, the `ConversationStore` over `ai.conversations` and `ai.messages`: opens
- *          conversations, appends messages in order with their content sealed by `TenantKeyCast` (bound to the
+ *          conversations, appends messages in order with their content sealed by `ScopeKeyCast` (bound to the
  *          owning tenant), and reads them back opened.
  * Boundary: a driver over `Repository<Conversation>` and `Repository<Message>`, so every read and write runs in the
  *           caller's tenant session under row-level security; a conversation of another tenant is never visible. A
@@ -17,7 +17,7 @@ import type { ModelMessage } from "ai";
 import { ConversationStore } from "#contracts/ports/conversation-store.port";
 import type { ConversationRecord } from "#contracts/types/conversation-record.type";
 import type { RecordScope } from "#contracts/types/record-scope.type";
-import type { TenantKeyCast } from "#node/casts/tenant-key.cast";
+import type { ScopeKeyCast } from "#node/casts/scope-key.cast";
 import type { Conversation } from "#node/models/conversation.model";
 import type { Message } from "#node/models/message.model";
 
@@ -51,7 +51,7 @@ export class PostgresConversationStoreDriver extends Driver(ConversationStore) {
 
   private readonly rows: Repository<Message>;
 
-  private readonly cast: TenantKeyCast;
+  private readonly cast: ScopeKeyCast;
 
   /**
    * @param conversations - the conversation rows.
@@ -61,7 +61,7 @@ export class PostgresConversationStoreDriver extends Driver(ConversationStore) {
   constructor(
     conversations: Repository<Conversation>,
     rows: Repository<Message>,
-    cast: TenantKeyCast,
+    cast: ScopeKeyCast,
   ) {
     super();
     this.conversations = conversations;
@@ -104,7 +104,7 @@ export class PostgresConversationStoreDriver extends Driver(ConversationStore) {
       rows.map(
         async (row) =>
           JSON.parse(
-            await this.cast.open(row.content, { column: CONTENT, tenantId: row.tenantId }),
+            await this.cast.open(row.content, { column: CONTENT, scopeId: row.tenantId }),
           ) as ModelMessage,
       ),
     );
@@ -128,7 +128,7 @@ export class PostgresConversationStoreDriver extends Driver(ConversationStore) {
     for (const message of messages) {
       const content = await this.cast.seal(JSON.stringify(message), {
         column: CONTENT,
-        tenantId: conversation.tenantId,
+        scopeId: conversation.tenantId,
       });
       await this.rows.insert({
         conversationId,

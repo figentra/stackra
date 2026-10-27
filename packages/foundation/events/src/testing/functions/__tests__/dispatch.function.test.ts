@@ -42,10 +42,10 @@ describe(dispatch, () => {
   it("publishes with the metadata given and waits for the drain", async () => {
     const app = await createTestingModule(FixtureModule).compile();
     const event = new PointsRedeemed();
-    const record = await dispatch(event, { id: "evt_1", tenantId: "tnt_1" });
+    const record = await dispatch(event, { id: "evt_1", scopeId: "tnt_1" });
 
     expect(record.event).toBe(event);
-    expect(record.meta).toMatchObject({ id: "evt_1", tenantId: "tnt_1" });
+    expect(record.meta).toMatchObject({ id: "evt_1", scopeId: "tnt_1" });
     expect(app.get(CountListener).count).toBe(0);
     await drainEvents();
     expect(app.get(CountListener).count).toBe(1);

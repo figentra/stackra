@@ -11,7 +11,7 @@ import { describe, expectTypeOf, it } from "@stackra/testing";
 import type { StoredRecord } from "#contracts/types/stored-record.type";
 
 interface Preferences {
-  tenantByUser: Record<string, string>;
+  scopeByUser: Record<string, string>;
 }
 
 describe("StoredRecord", () => {
@@ -19,7 +19,7 @@ describe("StoredRecord", () => {
     expectTypeOf<StoredRecord<Preferences>["read"]>().returns.toEqualTypeOf<
       Partial<Preferences> | undefined
     >();
-    expectTypeOf<StoredRecord<Preferences>["write"]>().toBeCallableWith({ tenantByUser: {} });
+    expectTypeOf<StoredRecord<Preferences>["write"]>().toBeCallableWith({ scopeByUser: {} });
     // @ts-expect-error -- a field the state does not have is refused
     expectTypeOf<StoredRecord<Preferences>["write"]>().toBeCallableWith({ other: 1 });
   });

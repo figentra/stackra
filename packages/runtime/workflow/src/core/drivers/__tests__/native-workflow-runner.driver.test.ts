@@ -459,7 +459,7 @@ describe(NativeWorkflowRunnerDriver, () => {
     expect(written[0]?.meta).toEqual({
       id: expect.stringMatching(/^evt_/),
       actor: ACTOR,
-      tenantId: SCOPE.id,
+      scopeId: SCOPE.id,
       correlationId: "call-1",
       occurredAt: NOON,
     });
@@ -498,7 +498,7 @@ describe(NativeWorkflowRunnerDriver, () => {
     const run = await runner.last(OrderWorkflow);
     expect(run?.scope).toEqual(SCOPE);
     expect(run?.origin.scope).toEqual(SCOPE);
-    expect(written[0]?.meta.tenantId).toBe(SCOPE.id);
+    expect(written[0]?.meta.scopeId).toBe(SCOPE.id);
   });
 
   it("refuses an integration event when no outbox is bound, failing the step", async () => {

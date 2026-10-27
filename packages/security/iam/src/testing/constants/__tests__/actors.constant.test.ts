@@ -19,7 +19,7 @@ describe("actors", () => {
     expect(actors.staff("usr_staff")).toEqual({
       kind: ActorKind.User,
       id: "usr_staff",
-      realm: Realm.Tenant,
+      realm: Realm.Staff,
     });
     expect(Object.isFrozen(actors.staff())).toBe(true);
     expectTypeOf(actors.customer().id).toEqualTypeOf<PublicId<"usr">>();

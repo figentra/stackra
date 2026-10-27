@@ -30,7 +30,7 @@ on `@stackra/contracts`, `@stackra/container`, `@stackra/validation`, `@stackra/
 
 The channel is derived from the event's broadcast, never written by hand:
 
-- `audience: BroadcastAudience.Tenant` goes to `tenant.{tenantId}.<module>`, using the occurrence's tenant. It
+- `audience: BroadcastAudience.Scope` goes to `tenant.{scopeId}.<module>`, using the occurrence's tenant. It
   reaches every session of that tenant that holds the permission and whose realm is in `channelRealms`.
 - `audience: BroadcastAudience.Principal` (the default) goes to `principal.{principalId}.<module>`. The principal is
   the event's own `principalId` field, or else the user the call acted for. It reaches only that principal's
@@ -42,7 +42,7 @@ A broadcast whose channel cannot be filled throws. It never falls back to a wide
 
 ```ts
 // the authenticated token endpoint (generated): the session comes from the verified actor
-const { token, expiresAt } = hub.issueToken({ principalId, tenantId, realm, permissions });
+const { token, expiresAt } = hub.issueToken({ principalId, scopeId, realm, permissions });
 
 // the raw endpoint at REALTIME_PATH (generated)
 return sseDriver.open(request); // GET with Accept: text/event-stream
@@ -53,7 +53,7 @@ await broadcaster.broadcast(record, {
   name: "orders.order.paid.v1",
   module: "orders",
   permission: "orders.order.read",
-  audience: BroadcastAudience.Tenant,
+  audience: BroadcastAudience.Scope,
 });
 ```
 
@@ -66,7 +66,7 @@ decision 3), when the refresh arrives.
 ```ts
 const routes = liveQueryRoutes({
   permission: "sales.sale.read",
-  audience: BroadcastAudience.Tenant,
+  audience: BroadcastAudience.Scope,
   invalidateOn: [SaleCompleted],
 });
 for (const route of routes) await broadcaster.broadcast(record, route); // for the events these routes name
@@ -96,7 +96,7 @@ calls `connection.background()` and `connection.foreground()`.
 ```ts
 // services/commerce/src/config/realtime.config.ts
 export class RealtimeConfig extends BaseRealtimeConfig {
-  override channelRealms: Realm[] = [Realm.Tenant];
+  override channelRealms: Realm[] = [Realm.Staff];
   override subscribeTokenTtl = Duration.minutes(5);
 }
 

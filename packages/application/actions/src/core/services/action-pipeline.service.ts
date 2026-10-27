@@ -260,7 +260,7 @@ export class ActionPipeline {
         ? {}
         : { effects: Object.freeze([...(registration?.effects ?? options.effects ?? [])]) }),
       actor,
-      ...(actor.tenantId === undefined ? {} : { tenantId: actor.tenantId }),
+      ...(actor.scopeId === undefined ? {} : { scopeId: actor.scopeId }),
       ...(request.scope === undefined ? {} : { scope: request.scope }),
       area: options.area,
       ...(request.sandbox === true ? { sandbox: true as const } : {}),
@@ -454,7 +454,7 @@ export class ActionPipeline {
     const fingerprint = await fingerprintOf(descriptor.key, input);
     const key = sent ?? `derived:${fingerprint}`;
     call.state.idempotencyKey = key;
-    const scoped = [descriptor.key, descriptor.tenantId ?? "-", descriptor.actor.id, key].join(":");
+    const scoped = [descriptor.key, descriptor.scopeId ?? "-", descriptor.actor.id, key].join(":");
     const store = this.required(
       IdempotencyStore,
       `${descriptor.key} has an Idempotency-Key; bind a store (the memory driver ships with @stackra/actions)`,
@@ -478,7 +478,7 @@ export class ActionPipeline {
         throw new Error(`${descriptor.key} declares a rateLimit, so bind a RateLimitStore driver`);
       return;
     }
-    const holder = descriptor.tenantId ?? descriptor.actor.id;
+    const holder = descriptor.scopeId ?? descriptor.actor.id;
     const takes: [key: string, bucket: RateLimitBucket][] = [];
     const area = this.optional(RateLimitConfig)?.areas[descriptor.area];
     const planned = await this.optional(RateLimitBudget)?.areaBucket(descriptor);
@@ -633,7 +633,7 @@ export class ActionPipeline {
         meta: {
           id: mintEventId(),
           occurredAt: at,
-          ...(descriptor.tenantId === undefined ? {} : { tenantId: descriptor.tenantId }),
+          ...(descriptor.scopeId === undefined ? {} : { scopeId: descriptor.scopeId }),
           actor: descriptor.actor,
           correlationId: descriptor.callId,
         },
@@ -696,7 +696,7 @@ export class ActionPipeline {
       callId: descriptor.callId,
       key: descriptor.key,
       actor: descriptor.actor,
-      ...(descriptor.tenantId === undefined ? {} : { tenantId: descriptor.tenantId }),
+      ...(descriptor.scopeId === undefined ? {} : { scopeId: descriptor.scopeId }),
       ...(descriptor.scope === undefined ? {} : { scope: descriptor.scope }),
       locale: request.locale ?? CALL_DEFAULTS.locale,
       timeZone,

@@ -13,7 +13,7 @@ import { registerStorageKeys } from "#core/index";
 import { fakeStorage } from "#testing/functions/fake-storage.function";
 
 class PreferencesStore {
-  tenantByUser: Record<string, string> = {};
+  scopeByUser: Record<string, string> = {};
 }
 
 registerStorageKeys([[PreferencesStore, { key: "mobile.preferences" }]]);
@@ -27,8 +27,8 @@ describe("fakeStorage", () => {
 
   it("takes seeded state through store(type)", async () => {
     const storage = fakeStorage();
-    await storage.store(PreferencesStore).write({ tenantByUser: { usr_1: "ten_2" } });
-    expect(storage.store(PreferencesStore).read()).toEqual({ tenantByUser: { usr_1: "ten_2" } });
+    await storage.store(PreferencesStore).write({ scopeByUser: { usr_1: "ten_2" } });
+    expect(storage.store(PreferencesStore).read()).toEqual({ scopeByUser: { usr_1: "ten_2" } });
   });
 
   it("never shares state between calls", () => {

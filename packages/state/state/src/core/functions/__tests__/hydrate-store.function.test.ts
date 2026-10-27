@@ -20,7 +20,7 @@ import type { StoreStorage } from "#core/types/store-storage.type";
 import { MemoryStoreStorage } from "#testing/memory-store-storage.fake";
 
 class PreferencesStore extends Store({ persist: "prefs" }) {
-  tenantByUser: Record<string, string> = {};
+  scopeByUser: Record<string, string> = {};
 
   lastTab = "home";
 
@@ -45,10 +45,10 @@ function stubStorage(saved: unknown) {
 
 describe("hydrateStore", () => {
   it("applies a synchronous saved state at once and writes nothing back", () => {
-    const { storage, set } = stubStorage({ tenantByUser: { usr_1: "ten_2" }, lastTab: "orders" });
+    const { storage, set } = stubStorage({ scopeByUser: { usr_1: "ten_2" }, lastTab: "orders" });
     const store = new PreferencesStore(storage);
     expect(hydrateStore(store)).toBeUndefined();
-    expect(store).toMatchObject({ tenantByUser: { usr_1: "ten_2" }, lastTab: "orders" });
+    expect(store).toMatchObject({ scopeByUser: { usr_1: "ten_2" }, lastTab: "orders" });
     expect(set).not.toHaveBeenCalled();
   });
 
@@ -64,14 +64,14 @@ describe("hydrateStore", () => {
   });
 
   it("writes a change made during an asynchronous read only after it, keeping the saved fields", async () => {
-    const { storage, set } = stubStorage(Promise.resolve({ tenantByUser: { usr_1: "ten_2" } }));
+    const { storage, set } = stubStorage(Promise.resolve({ scopeByUser: { usr_1: "ten_2" } }));
     const store = new PreferencesStore(storage);
     store.setLastTab("orders");
     expect(set).not.toHaveBeenCalled();
     await hydrateStore(store);
     await Promise.resolve();
     expect(set).toHaveBeenCalledWith("mobile.preferences", {
-      tenantByUser: { usr_1: "ten_2" },
+      scopeByUser: { usr_1: "ten_2" },
       lastTab: "orders",
     });
   });
@@ -88,7 +88,7 @@ describe("hydrateStore", () => {
   it("ignores unknown fields, fields of another type and corrupt values", () => {
     const store = new PreferencesStore(stubStorage({ lastTab: 3, removed: true }).storage);
     hydrateStore(store);
-    expect({ ...store }).toEqual({ tenantByUser: {}, lastTab: "home" });
+    expect({ ...store }).toEqual({ scopeByUser: {}, lastTab: "home" });
     for (const saved of ["corrupt", null, 7]) {
       const other = new PreferencesStore(stubStorage(saved).storage);
       hydrateStore(other);

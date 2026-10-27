@@ -53,7 +53,7 @@ const yearlyFirst = useFlag(Flags.web.pricing_yearly_first);
 ```
 
 `useFlag` reads the `FlagReader` of the nearest container. The reader returns the provider's last value for the flag,
-or the flag's declared default. The host's flags context calls `reader.watch({ visitor, user, tenant })`, which loads
+or the flag's declared default. The host's flags context calls `reader.watch({ visitor, user, scope })`, which loads
 now and every `refreshEvery`. The reader sends the id that `targeting` names as the subject and the tenant as the
 group. A failed load keeps the last values. A `null` subject (no consent, nobody signed in) is anonymous: PostHog is
 not asked, so every flag stays at its default.

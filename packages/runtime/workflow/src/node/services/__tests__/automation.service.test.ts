@@ -70,7 +70,7 @@ const PRINCIPAL: Actor = { kind: ActorKind.System, id: "sys_automation" };
 const PUBLISHER: Actor = {
   kind: ActorKind.User,
   id: "usr_01j9z3k4m5n6p7q8r9s0t1v2w3",
-  realm: Realm.Tenant,
+  realm: Realm.Staff,
 };
 
 const DOCUMENT = {

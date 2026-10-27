@@ -18,10 +18,10 @@ import type { PayrollExportProfile } from "#core/types/payroll-export-profile.ty
  */
 export function datevWriteOptionsOf(
   profile: PayrollExportProfile,
-  tenant: Readonly<Record<string, string>>,
+  scope: Readonly<Record<string, string>>,
 ): DatevWriteOptions {
   if (profile.datev === undefined)
     throw new TypeError(`Payroll profile ${profile.key} is not a DATEV profile`);
   const { general, recordTable, recordNumber } = profile.datev;
-  return { general: { ...general, ...tenant }, recordTable, recordNumber };
+  return { general: { ...general, ...scope }, recordTable, recordNumber };
 }

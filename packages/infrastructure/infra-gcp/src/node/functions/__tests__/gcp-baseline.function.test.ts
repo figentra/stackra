@@ -201,7 +201,7 @@ describe("gcpBaseline", () => {
       ...STAGING,
       environment: "production",
       deployment: "acme-firm",
-      dedicated: { key: "firm", tenant: "tenant-1" },
+      dedicated: { key: "firm", scope: "tenant-1" },
     });
 
     expect(

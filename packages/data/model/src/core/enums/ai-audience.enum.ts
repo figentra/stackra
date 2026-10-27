@@ -13,7 +13,7 @@ export const AiAudience = Enum.of({
   /** Never in an agent's context. */
   Never: "never",
   /** Only when the tenant turned it on. */
-  TenantOptIn: "tenant_opt_in",
+  ScopeOptIn: "tenant_opt_in",
   /** Always allowed. */
   Allowed: "allowed",
 });

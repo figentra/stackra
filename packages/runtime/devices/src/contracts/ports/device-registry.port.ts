@@ -27,7 +27,7 @@ import type { RegisteredDevice } from "#contracts/types/registered-device.type";
  * @example
  * const pairing = await registry.openPairing({ deviceId, at: clock.now(), expiresAt });
  * const device = await registry.claim(input.code, { name: "Till 2", kind: "till", nodeId }, clock.now(), {
- *   tenantId: ctx.tenantId,
+ *   scopeId: ctx.scopeId,
  *   market,
  *   pairedBy: ctx.principalId,
  * });

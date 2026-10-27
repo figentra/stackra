@@ -35,7 +35,7 @@ const CASHIER = "usr_01j9z3k4m5n6p7q8r9s0t1v2c1";
 const manager: Actor = {
   kind: ActorKind.User,
   id: "usr_01j9z3k4m5n6p7q8r9s0t1v2m1",
-  realm: Realm.Tenant,
+  realm: Realm.Staff,
 };
 const ROOT = { id: "scp_01j9z3k4m5n6p7q8r9s0t1v2r1", path: "platform" } as const;
 

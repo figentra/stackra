@@ -97,7 +97,7 @@ entity keeps nothing of the one it left. The dimension is the module's declarati
 import { fakeStorage } from "@stackra/storage/testing";
 
 const storage = fakeStorage();
-await storage.store(PreferencesStore).write({ tenantByUser: { usr_1: "ten_2" } });
+await storage.store(PreferencesStore).write({ scopeByUser: { usr_1: "ten_2" } });
 ```
 
 Governing ADRs: 0256 (this package), 0294 (decisions 15 to 17, 20, 26), 0266, 0269, 0127 2026-10-24 note.

@@ -41,7 +41,7 @@ class VoidPaymentAction extends Action({
 
 const scope: ScopeRef = { id: "scp_1", path: "platform.acme" };
 
-const caller: Actor = { kind: ActorKind.Service, id: "svc_commerce", tenantId: "org_1" };
+const caller: Actor = { kind: ActorKind.Service, id: "svc_commerce", scopeId: "org_1" };
 
 const user: Actor = { kind: ActorKind.User, id: "usr_1", realm: Realm.Customer };
 

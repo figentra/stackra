@@ -16,7 +16,7 @@ export const FlagTargeting = Enum.of({
   /** The signed-in user; the default. */
   User: "user",
   /** The active tenant, so every user of a tenant sees the same values. */
-  Tenant: "tenant",
+  Scope: "tenant",
 });
 
 /** One of the codes above. */

@@ -18,6 +18,6 @@
 export const E2E_CONTROL = Object.freeze({
   /** `POST { key }`: runs the seeder keyed `<module>.<profile>` in the service that owns it. */
   seed: "/__stackra/e2e/seed",
-  /** `POST { role, tenant, memberships? }`: signs a test actor in; the answer sets the session cookie. */
+  /** `POST { role, scope, memberships? }`: signs a test actor in; the answer sets the session cookie. */
   session: "/__stackra/e2e/session",
 });

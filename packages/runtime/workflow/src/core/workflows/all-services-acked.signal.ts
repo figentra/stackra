@@ -19,7 +19,7 @@ import type { KeptRecords } from "#core/types/kept-records.type";
  * ```ts
  * @Step<ProvisionTenantWorkflow>({
  *   waitFor: AllServicesAcked,
- *   correlate: (run) => ({ subject: run.input.tenantId }),
+ *   correlate: (run) => ({ subject: run.input.scopeId }),
  *   when: (run) => !run.results.request,
  *   timeout: "1h",
  * })

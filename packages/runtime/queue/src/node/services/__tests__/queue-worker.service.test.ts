@@ -131,7 +131,7 @@ class VoidPaymentAction extends Action({
   }
 }
 
-const caller: Actor = { kind: ActorKind.Service, id: "svc_commerce", tenantId: "org_1" };
+const caller: Actor = { kind: ActorKind.Service, id: "svc_commerce", scopeId: "org_1" };
 
 const user: Actor = { kind: ActorKind.User, id: "usr_1", realm: Realm.Customer };
 
@@ -181,7 +181,7 @@ describe(QueueWorkerService, () => {
     expect(deliver.contexts[0]?.actor).toEqual({
       kind: ActorKind.System,
       id,
-      tenantId: "org_1",
+      scopeId: "org_1",
       onBehalfOf: caller,
     });
     expect(deliver.contexts[0]?.idempotencyKey).toBeUndefined();

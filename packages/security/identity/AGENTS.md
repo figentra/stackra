@@ -35,7 +35,7 @@ model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./desktop`, `./n
 - No secret, ever: a browser has no client credential (the BFF holds it, by name), and a device is a public client.
   Never log or return a token; it leaves a driver only through `accessToken()`.
 - No "tenant" identifier is declared here (ADR 0323, R-59): the memberships are `@stackra/tenancy`'s
-  `TenantMembership`, and the claims speak of scope nodes. `SessionUser.tenants` keeps the template's field name.
+  `TenantMembership`, and the claims speak of scope nodes. `SessionUser.memberships` names the list.
 - A callback or token answer is untrusted: check the state, the issuer, the audience, the expiry and the nonce; parse
   every stored or fetched session through its schema.
 - `invalid_grant` on renewal is a revoked session; any other renewal failure keeps the session (ADR 0206 d9).

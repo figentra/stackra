@@ -28,8 +28,8 @@ const SERVICE = /^[a-z][a-z0-9_]{0,62}$/;
  *
  * @example
  * async request(run: Run<this>, ctx: StepContext): Promise<boolean> {
- *   ctx.record(ProvisioningRequested.create({ tenantId: run.input.tenantId }));
- *   return this.acks.expect(run.input.tenantId, this.config.services);
+ *   ctx.record(ProvisioningRequested.create({ scopeId: run.input.scopeId }));
+ *   return this.acks.expect(run.input.scopeId, this.config.services);
  * }
  */
 export class ServiceAckService extends CrudService<ServiceAckSet> {

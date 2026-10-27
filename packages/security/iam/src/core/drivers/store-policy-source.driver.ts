@@ -47,6 +47,6 @@ export class StorePolicySourceDriver extends Driver(PolicySource) {
    * @throws Error when the store cannot be reached.
    */
   async snapshot(principal: Actor): Promise<PolicySnapshot> {
-    return (await this.store.read(principal.id, principal.tenantId)) ?? NOTHING;
+    return (await this.store.read(principal.id, principal.scopeId)) ?? NOTHING;
   }
 }

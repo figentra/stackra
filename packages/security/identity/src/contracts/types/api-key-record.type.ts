@@ -22,7 +22,7 @@ export interface ApiKeyRecord {
   readonly principal: PublicId;
 
   /** The tenant the key is bound to; absent for a platform key. */
-  readonly tenantId?: PublicId;
+  readonly scopeId?: PublicId;
 
   /** The scopes the key grants; checked after verification (ADR 0278 decision 6). */
   readonly scopes: readonly string[];

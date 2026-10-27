@@ -53,6 +53,6 @@ describe("@stackra/feature-flags", () => {
     expectTypeOf<
       FlagRefs<{ web: { help_centre: FlagClass } }>["web"]["help_centre"]
     >().toEqualTypeOf<FlagRef<"web.help_centre">>();
-    expectTypeOf<keyof FlagSubjects>().toEqualTypeOf<"visitor" | "user" | "tenant">();
+    expectTypeOf<keyof FlagSubjects>().toEqualTypeOf<"visitor" | "user" | "scope">();
   });
 });

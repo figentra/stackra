@@ -15,7 +15,7 @@ export const VerificationUse = Enum.of({
   /** Figentra checks a tenant; pinned to platform Connections. */
   Platform: "platform",
   /** A tenant checks its own customer; its own Connection, else the managed one. */
-  Tenant: "tenant",
+  Scope: "tenant",
 });
 
 /** One of the codes above. */

@@ -21,15 +21,15 @@ describe("MemoryStoreStorage", () => {
 
   it("copies values through JSON on the way in and out", () => {
     const area = new MemoryStoreStorage().area("prefs");
-    const value = { tenantByUser: { usr_1: "ten_2" }, at: new Date("2026-10-24T00:00:00.000Z") };
+    const value = { scopeByUser: { usr_1: "ten_2" }, at: new Date("2026-10-24T00:00:00.000Z") };
     area.set("mobile.preferences", value);
-    value.tenantByUser.usr_1 = "ten_9";
+    value.scopeByUser.usr_1 = "ten_9";
     const read = area.get("mobile.preferences") as {
-      tenantByUser: Record<string, string>;
+      scopeByUser: Record<string, string>;
       at: unknown;
     };
-    expect(read).toEqual({ tenantByUser: { usr_1: "ten_2" }, at: "2026-10-24T00:00:00.000Z" });
-    read.tenantByUser["usr_1"] = "ten_7";
-    expect(area.get("mobile.preferences")).toMatchObject({ tenantByUser: { usr_1: "ten_2" } });
+    expect(read).toEqual({ scopeByUser: { usr_1: "ten_2" }, at: "2026-10-24T00:00:00.000Z" });
+    read.scopeByUser["usr_1"] = "ten_7";
+    expect(area.get("mobile.preferences")).toMatchObject({ scopeByUser: { usr_1: "ten_2" } });
   });
 });

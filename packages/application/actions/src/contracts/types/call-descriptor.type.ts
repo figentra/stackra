@@ -41,7 +41,7 @@ export interface CallDescriptor {
   readonly actor: Actor;
 
   /** The tenant the call acts in; absent for a platform call. */
-  readonly tenantId?: PublicId;
+  readonly scopeId?: PublicId;
 
   /** The scope node the call acts in, from `CallOptions.scope`; absent for a platform call. */
   readonly scope?: ScopeRef;

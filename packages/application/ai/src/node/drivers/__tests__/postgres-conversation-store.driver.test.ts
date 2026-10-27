@@ -13,7 +13,7 @@ import type { Repository } from "@stackra/database";
 import { describe, expect, it } from "@stackra/testing";
 
 import { ConversationStore } from "#contracts/ports/conversation-store.port";
-import { TenantKeyCast } from "#node/casts/tenant-key.cast";
+import { ScopeKeyCast } from "#node/casts/scope-key.cast";
 import { PostgresConversationStoreDriver } from "#node/drivers/postgres-conversation-store.driver";
 import type { Conversation } from "#node/models/conversation.model";
 import type { Message } from "#node/models/message.model";
@@ -54,7 +54,7 @@ describe(PostgresConversationStoreDriver, () => {
   it("seals messages for the owning tenant and reads them back in order", async () => {
     const conversations = rowsOf<Conversation>("aiconv");
     const messages = rowsOf<Message>("aimsg");
-    const cast = new TenantKeyCast(
+    const cast = new ScopeKeyCast(
       new AesGcmFieldCipherDriver(
         new MemoryKeyProviderDriver([{ id: "k1", key: new Uint8Array(32).fill(3) }]),
       ),

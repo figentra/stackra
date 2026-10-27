@@ -24,7 +24,7 @@ describe("FlagProvider", () => {
       }
     }
     const provider = new StaticProvider();
-    const context: FlagContext = { subject: "usr_1", tenant: "ten_1" };
+    const context: FlagContext = { subject: "usr_1", scope: "ten_1" };
     await expect(provider.values(context)).resolves.toEqual({ "web.help_centre": true });
     expect(provider).toBeInstanceOf(FlagProvider);
     expect(provider).toBeInstanceOf(Port);

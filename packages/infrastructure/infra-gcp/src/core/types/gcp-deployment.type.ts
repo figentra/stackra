@@ -20,7 +20,7 @@ export type GcpDeployment = {
   /** The stack prefix: `<project>-<environment>`, or `<project>-<dedicated key>` for a dedicated tenant. */
   readonly deployment: string;
   /** The dedicated deployment, or `null` for the environment's shared one. */
-  readonly dedicated: { readonly key: string; readonly tenant: string } | null;
+  readonly dedicated: { readonly key: string; readonly scope: string } | null;
   /** The key of `providers.gcp.projects` it runs in. */
   readonly projectKey: string;
   /** That project's id and number, each a quoted value or `ref:<path>`. */

@@ -18,7 +18,7 @@ import { StorePolicySourceDriver } from "#core/drivers/store-policy-source.drive
 const rana: Actor = {
   kind: ActorKind.User,
   id: "usr_01j9z3k4m5n6p7q8r9s0t1v2r1",
-  realm: Realm.Tenant,
+  realm: Realm.Staff,
 };
 
 /** A snapshot at `version` holding one role. */
@@ -49,8 +49,8 @@ describe("StorePolicySourceDriver per tenant (STA-815)", () => {
   it("reads under the principal's tenant and never another's", async () => {
     const store = new MemoryPolicySnapshotStoreDriver();
     const source = new StorePolicySourceDriver(store);
-    const inAcme: Actor = { ...rana, tenantId: "ten_acme" };
-    const inGlobex: Actor = { ...rana, tenantId: "ten_globex" };
+    const inAcme: Actor = { ...rana, scopeId: "ten_acme" };
+    const inGlobex: Actor = { ...rana, scopeId: "ten_globex" };
     expect(await store.write(rana.id, at(3), "ten_acme")).toBe(true);
     expect((await source.snapshot(inAcme)).version).toBe(3);
     expect((await source.snapshot(inGlobex)).version).toBe(0);

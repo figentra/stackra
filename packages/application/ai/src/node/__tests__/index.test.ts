@@ -22,7 +22,7 @@ describe("@stackra/ai/node", () => {
       "Run",
       "RunApproval",
       "RunStep",
-      "TenantKeyCast",
+      "ScopeKeyCast",
       "ToolCall",
     ]);
   });

@@ -9,11 +9,11 @@
  */
 
 /**
- * The encryption context of data key `keyId` of `tenantId`.
+ * The encryption context of data key `keyId` of `scopeId`.
  *
  * @example
  * kmsKeyContext("ten_01j9", "k1"); // { "stackra:tenant": "ten_01j9", "stackra:key": "k1" }
  */
-export function kmsKeyContext(tenantId: string, keyId: string): Record<string, string> {
-  return { "stackra:tenant": tenantId, "stackra:key": keyId };
+export function kmsKeyContext(scopeId: string, keyId: string): Record<string, string> {
+  return { "stackra:tenant": scopeId, "stackra:key": keyId };
 }

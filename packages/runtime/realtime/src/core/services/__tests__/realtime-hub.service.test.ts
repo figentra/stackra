@@ -21,8 +21,8 @@ import { RealtimeHub } from "#core/services/realtime-hub.service";
 
 const STAFF: RealtimeSession = {
   principalId: "usr_1",
-  tenantId: "ten_1",
-  realm: Realm.Tenant,
+  scopeId: "ten_1",
+  realm: Realm.Staff,
   permissions: ["orders.order.read"],
 };
 
@@ -91,7 +91,7 @@ describe("RealtimeHub", () => {
     const other = recorder();
     hub.join(hub.issueToken(STAFF).token, staff.peer);
     hub.join(
-      hub.issueToken({ ...STAFF, principalId: "usr_2", tenantId: "ten_2" }).token,
+      hub.issueToken({ ...STAFF, principalId: "usr_2", scopeId: "ten_2" }).token,
       other.peer,
     );
     expect(hub.publish(PAID)).toBe(1);
@@ -101,7 +101,7 @@ describe("RealtimeHub", () => {
   });
 
   it("narrows tenant channels to the configured realms", () => {
-    const hub = hubOf({ values: { channelRealms: [Realm.Tenant] } });
+    const hub = hubOf({ values: { channelRealms: [Realm.Staff] } });
     const customer = recorder();
     hub.join(hub.issueToken({ ...STAFF, realm: Realm.Customer }).token, customer.peer);
     expect(hub.publish(PAID)).toBe(0);

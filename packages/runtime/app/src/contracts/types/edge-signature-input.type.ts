@@ -11,8 +11,8 @@
 
 /** What one edge signature covers. */
 export interface EdgeSignatureInput {
-  /** The tenant id, or null on a platform host. */
-  readonly tenant: string | null;
+  /** The scope id, or null on a platform host. */
+  readonly scope: string | null;
 
   /** The product key. */
   readonly product: string;

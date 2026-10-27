@@ -35,7 +35,7 @@ describe("tenancy testing helpers", () => {
     const tenantId = fakeTenantId();
     expect(tenantActor(tenantId)).toMatchObject({
       kind: ActorKind.User,
-      realm: Realm.Tenant,
+      realm: Realm.Staff,
       tenantId,
     });
     expect(isTenantId(tenantActor().tenantId ?? "")).toBe(true);

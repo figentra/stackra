@@ -72,7 +72,7 @@ describe("@stackra/market-packs", () => {
   it("resolves its public types", () => {
     expectTypeOf<MarketPack["entries"][number]>().toEqualTypeOf<PackEntry>();
     expectTypeOf<SignedPack["pack"]>().toEqualTypeOf<MarketPack>();
-    expectTypeOf<MarketRecord["tenant"]>().toEqualTypeOf<string>();
+    expectTypeOf<MarketRecord["scope"]>().toEqualTypeOf<string>();
     expectTypeOf<PackSchema["keys"][number]>().toEqualTypeOf<PackKeySchema>();
     expectTypeOf<PackIssue["key"]>().toEqualTypeOf<string>();
     expectTypeOf<ValueForOptions["on"]>().toEqualTypeOf<string | undefined>();

@@ -104,9 +104,9 @@ SIGINT close and exit 0, or report and exit 1 when shutdown fails.
 
 ### The tenant on a call and its rate limit
 
-The edge Worker forwards the tenant as the signed `EdgeHeader.Tenant` (`x-figentra-tenant`, ADR 0437). The signature
+The edge Worker forwards the tenant as the signed `EdgeHeader.Scope` (`x-figentra-tenant`, ADR 0437). The signature
 guard (stackra-65) and the generated adapter that turns a verified request into `CallOptions` are not in this package
-yet; until they land, the tenant reaching `CallOptions.actor.tenantId` from the edge is assumed, not confirmed. Once it
+yet; until they land, the tenant reaching `CallOptions.actor.scopeId` from the edge is assumed, not confirmed. Once it
 is there, `@stackra/actions` keys the area's token bucket by it and sizes it from the bound `RateLimitBudget` (the
 plan's value entitlement), so this package carries no rate-limit code of its own.
 

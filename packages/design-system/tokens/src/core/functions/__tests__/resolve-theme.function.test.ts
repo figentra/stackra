@@ -38,7 +38,7 @@ const BRAND: ThemeLayer = layer(
   },
 );
 
-const tenant = (changes: ThemeDiff, policy?: LayerPolicy): ThemeLayer =>
+const scopeLayer = (changes: ThemeDiff, policy?: LayerPolicy): ThemeLayer =>
   layer(changes, {
     id: "ten_01HZX9",
     name: themeNameOf("ten_01HZX9"),
@@ -74,11 +74,11 @@ describe("resolveTheme", () => {
   });
 
   it("refuses a locked path, and a path the policy does not allow", () => {
-    const danger = tenant({ colors: { danger: { light: "oklch(0.5 0.2 20)" } } });
+    const danger = scopeLayer({ colors: { danger: { light: "oklch(0.5 0.2 20)" } } });
     expect(codes(resolveTheme(STACKRA_THEME, [BRAND, danger]))).toEqual([
       "path_locked colors.danger.light",
     ]);
-    const radius = tenant({ radius: { base: "1rem" } });
+    const radius = scopeLayer({ radius: { base: "1rem" } });
     expect(codes(resolveTheme(STACKRA_THEME, [BRAND, radius]))).toEqual([
       "path_not_allowed radius.base",
     ]);
@@ -86,10 +86,11 @@ describe("resolveTheme", () => {
 
   it("refuses a policy that allows more than the one above", () => {
     expect(
-      codes(resolveTheme(STACKRA_THEME, [BRAND, tenant({}, { allow: ["colors.*"] })])),
+      codes(resolveTheme(STACKRA_THEME, [BRAND, scopeLayer({}, { allow: ["colors.*"] })])),
     ).toEqual(["policy_widened colors.*"]);
     expect(
-      resolveTheme(STACKRA_THEME, [BRAND, tenant({}, { allow: ["palette.accent-soft"] })]).accepted,
+      resolveTheme(STACKRA_THEME, [BRAND, scopeLayer({}, { allow: ["palette.accent-soft"] })])
+        .accepted,
     ).toBe(true);
   });
 
@@ -127,7 +128,7 @@ describe("resolveTheme", () => {
   });
 
   it("accepts an accent near the warning colour, with notices that ask for icons and labels", () => {
-    const orange = tenant({
+    const orange = scopeLayer({
       colors: { accent: { light: "oklch(0.5 0.15 50)", dark: "oklch(0.72 0.15 50)" } },
     });
     const verdict = resolveTheme(STACKRA_THEME, [BRAND, orange]);

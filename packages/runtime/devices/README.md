@@ -36,7 +36,7 @@ the server's query of a device's last acknowledged sequence. An MQTT driver come
 | `StoredDeviceCredentialDriver`                        | `.`           | `DeviceCredential`: the token kept at pairing                    |
 | `PairingCodeInvalidError`, `DEVICE_STORAGE_KEYS`      | `.`           | the registry's refusal; the storage keys the drivers share       |
 | `PAIRING_CODE_ALPHABET`, `newPairingCode`             | `.`           | the code alphabet and generator, for a registry driver elsewhere |
-| `DeviceClaimFacts`                                    | `./contracts` | a claim's `tenantId`, `market` and `pairedBy`, kept on the row   |
+| `DeviceClaimFacts`                                    | `./contracts` | a claim's `scopeId`, `market` and `pairedBy`, kept on the row   |
 | `DeviceKind`, `BASE_DEVICE_CATALOGUE`                 | both          | catalogue kinds with `counted` and `fiscalUnit`; the base rows   |
 | `deviceCatalogueOf`                                   | `.`           | reads and checks catalogue rows into `DeviceKind`s               |
 | `DeviceAcknowledgedInput`, `DeviceAcknowledgedOutput` | `./node`      | `{ deviceId? }` and `{ sequence: number \| null }`               |
@@ -97,7 +97,7 @@ const device = await registry.claim(
   input.code,
   { name: "Till 2", kind: "till", nodeId },
   clock.now(),
-  { tenantId: ctx.tenantId, market, pairedBy: ctx.principalId }, // optional; each fact null when left out
+  { scopeId: ctx.scopeId, market, pairedBy: ctx.principalId }, // optional; each fact null when left out
 );
 await registry.retire(device.id, clock.now()); // then identity revokes the credential
 ```

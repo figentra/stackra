@@ -34,7 +34,7 @@ const USER: SessionUser = {
   email: "rana@acme.example",
   displayName: "Rana",
   permissions: [],
-  tenants: [],
+  memberships: [],
 };
 
 /** A reporter that keeps what it was given. */

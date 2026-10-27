@@ -7,7 +7,7 @@ Add `@stackra/realtime`, which pushes live, data-free refreshes from a service t
 On the server, `RealtimeHub` issues one-time subscribe tokens for verified sessions and holds the live connections.
 It checks the permission, the channel's principal or tenant and the realm (`channelRealms`) before every delivery, and
 it closes each connection when its token expires. `RealtimeBroadcaster` turns a committed integration event into a
-refresh on the channel derived from its broadcast audience: `tenant.{tenantId}.<module>`, or
+refresh on the channel derived from its broadcast audience: `tenant.{scopeId}.<module>`, or
 `principal.{principalId}.<module>` by default. The refresh carries only the wire name and the occurrence id, never the
 payload. The `RealtimeDriver` port (`./contracts`) has three drivers: `MemoryRealtimeDriver`, `SseRealtimeDriver`
 (a `text/event-stream` response with heartbeats) and `WebSocketRealtimeDriver` (sockets, with the SSE fallback).

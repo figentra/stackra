@@ -21,7 +21,7 @@ class DeliveryOptions extends Schema {
   transport = "memory";
 }
 
-class TenantDeliveryOptions extends DeliveryOptions {
+class ScopedDeliveryOptions extends DeliveryOptions {
   @Secret("RESEND_TENANT_API_KEY")
   apiKey!: string;
 }
@@ -31,7 +31,7 @@ describe("Secret", () => {
     expect([...Secret.members(DeliveryOptions)]).toEqual([
       ["webPushVapidPrivateKey", "WEB_PUSH_VAPID_PRIVATE_KEY"],
     ]);
-    expect(Object.fromEntries(Secret.members(TenantDeliveryOptions))).toEqual({
+    expect(Object.fromEntries(Secret.members(ScopedDeliveryOptions))).toEqual({
       webPushVapidPrivateKey: "WEB_PUSH_VAPID_PRIVATE_KEY",
       apiKey: "RESEND_TENANT_API_KEY",
     });

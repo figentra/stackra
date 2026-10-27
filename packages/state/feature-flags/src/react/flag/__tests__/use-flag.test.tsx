@@ -45,7 +45,7 @@ describe("useFlag", () => {
     });
     const reader = new FlagReader(config, new ConfigFlagProviderDriver(config));
     expect(await renderWith(reader)).toBe("<span>month</span>");
-    await reader.load({ visitor: "vis_1", user: null, tenant: null });
+    await reader.load({ visitor: "vis_1", user: null, scope: null });
     expect(await renderWith(reader)).toBe("<span>year</span>");
     expectTypeOf(useFlag).returns.toEqualTypeOf<boolean>();
   });

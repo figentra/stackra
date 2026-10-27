@@ -8,7 +8,7 @@
  * Governing contract: ADR 0294 (decision 15); ADR 0127 2026-10-24 note (an entry exists once its folder has a file);
  *                     ADR 0399 (storage home); STA-781.
  */
-export { TenantKeyCast } from "#node/casts/tenant-key.cast";
+export { ScopeKeyCast } from "#node/casts/scope-key.cast";
 export { PostgresConversationStoreDriver } from "#node/drivers/postgres-conversation-store.driver";
 export { PostgresRunStoreDriver } from "#node/drivers/postgres-run-store.driver";
 export { A2aTask } from "#node/models/a2a-task.model";

@@ -44,7 +44,7 @@ class WebThemingConfig extends BaseThemingConfig {
     dark: "#0c0a09",
   };
 
-  override tenantOverride = true;
+  override scopeOverride = true;
 }
 
 class MobileThemingConfig extends BaseThemingConfig {
@@ -80,7 +80,7 @@ describe("ThemingConfig", () => {
       light: STACKRA_THEME.colors.background.hexLight,
       dark: STACKRA_THEME.colors.background.hexDark,
     });
-    expect(config.tenantOverride).toBe(false);
+    expect(config.scopeOverride).toBe(false);
   });
 
   it("applies the console, web and mobile overrides", () => {
@@ -93,7 +93,7 @@ describe("ThemingConfig", () => {
     });
     const web = buildConfig(WebThemingConfig);
     expect(web.themeColor).toEqual({ light: "#fafaf9", dark: "#0c0a09" });
-    expect(web.tenantOverride).toBe(true);
+    expect(web.scopeOverride).toBe(true);
     const mobile = buildConfig(MobileThemingConfig);
     expect(mobile.logo).toBe("mobile::public/logo.svg");
     expect(mobile.splash).toEqual({ background: { light: "#f7f7f5", dark: "#1c1e22" } });

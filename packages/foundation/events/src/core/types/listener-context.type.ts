@@ -19,7 +19,7 @@ export interface ListenerContext {
   readonly occurredAt: Date;
 
   /** The tenant the event belongs to; absent for a platform event. */
-  readonly tenantId?: string;
+  readonly scopeId?: string;
 
   /** Who caused the event. */
   readonly actor?: Actor;

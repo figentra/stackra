@@ -137,7 +137,7 @@ describe(DevtoolsKit, () => {
     it("reports every event the bus delivers on the bus channel", async () => {
       const { bus, kit } = setup();
       const event = new OrderPaid();
-      bus.dispatch(event, { id: "evt_1", tenantId: "tnt_1", correlationId: "cor_1" });
+      bus.dispatch(event, { id: "evt_1", scopeId: "tnt_1", correlationId: "cor_1" });
 
       const { session } = kit.attach({ name: "test-host" });
       expect(session.replay(DEVTOOLS_BUS_CHANNEL)).toEqual([]);
@@ -150,7 +150,7 @@ describe(DevtoolsKit, () => {
       expect(occurrence.context).toEqual({
         eventId: "evt_1",
         occurredAt: NOW,
-        tenantId: "tnt_1",
+        scopeId: "tnt_1",
         correlationId: "cor_1",
       });
     });

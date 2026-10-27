@@ -29,7 +29,7 @@ class OrderPaid extends IntegrationEvent({
   name: "order.paid",
   version: 2,
   webhook: true,
-  broadcast: { permission: ORDER_READ, audience: BroadcastAudience.Tenant },
+  broadcast: { permission: ORDER_READ, audience: BroadcastAudience.Scope },
 }) {
   orderId!: string;
 }

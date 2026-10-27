@@ -25,7 +25,7 @@ import type { BroadcastRoute } from "#core/types/broadcast-route.type";
  *   name: "orders.order.paid.v1",
  *   module: "orders",
  *   permission: "orders.order.read",
- *   audience: BroadcastAudience.Tenant,
+ *   audience: BroadcastAudience.Scope,
  * });
  */
 export class RealtimeBroadcaster extends Service {

@@ -162,7 +162,7 @@ function callOf(actor: Actor, permission?: string, scope?: ScopeRef): CallDescri
 
 /** `actor` whose credential carries the scope id `id`. */
 function within(actor: Actor, id: PublicId): Actor {
-  return { ...actor, tenantId: id };
+  return { ...actor, scopeId: id };
 }
 
 describe("IamAccessControlDriver", () => {

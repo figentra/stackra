@@ -16,7 +16,7 @@ import type { RateLimitBucket } from "#contracts/types/rate-limit-bucket.type";
 
 class PlanDriver extends Driver(RateLimitBudget) {
   async areaBucket(call: CallDescriptor): Promise<RateLimitBucket | undefined> {
-    return call.tenantId === undefined ? undefined : { capacity: 5, tokensPerSecond: 5 / 60 };
+    return call.scopeId === undefined ? undefined : { capacity: 5, tokensPerSecond: 5 / 60 };
   }
 }
 
@@ -27,7 +27,7 @@ describe("RateLimitBudget", () => {
 
   it("is implemented by a driver", async () => {
     const driver = new PlanDriver();
-    const call = { tenantId: "ten_1" } as unknown as CallDescriptor;
+    const call = { scopeId: "ten_1" } as unknown as CallDescriptor;
     expect(await driver.areaBucket(call)).toEqual({ capacity: 5, tokensPerSecond: 5 / 60 });
     expect(await driver.areaBucket({} as CallDescriptor)).toBeUndefined();
   });

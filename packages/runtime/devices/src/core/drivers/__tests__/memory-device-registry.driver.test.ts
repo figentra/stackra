@@ -100,12 +100,12 @@ describe("MemoryDeviceRegistryDriver", () => {
 
   it("records the claim's facts, null when left out", async () => {
     const registry = new MemoryDeviceRegistryDriver();
-    const facts = { tenantId: "ten_1", market: "sa", pairedBy: "usr_1" };
+    const facts = { scopeId: "ten_1", market: "sa", pairedBy: "usr_1" };
     const first = await registry.openPairing({ deviceId: "dev_1", at, expiresAt });
     expect(await registry.claim(first.code, till, later, facts)).toMatchObject(facts);
     const second = await registry.openPairing({ deviceId: "dev_2", at, expiresAt });
     expect(await registry.claim(second.code, till, later)).toMatchObject({
-      tenantId: null,
+      scopeId: null,
       market: null,
       pairedBy: null,
     });

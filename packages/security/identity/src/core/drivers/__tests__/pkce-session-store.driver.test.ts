@@ -47,7 +47,7 @@ const USER = {
   email: "rana@acme.example",
   displayName: "Rana",
   permissions: [],
-  tenants: [],
+  memberships: [],
 };
 
 /** The base64url JSON of one JWT part. */

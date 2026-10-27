@@ -103,16 +103,16 @@ export function gcpDeploymentOf(
     );
 
   const labels = costLabels(runway.project, environment, gcp.requiredLabels);
-  const tenant = dedicated === undefined ? null : (block?.dedicated[dedicated]?.tenant ?? null);
+  const scope = dedicated === undefined ? null : (block?.dedicated[dedicated]?.tenant ?? null);
   return {
     project: runway.project,
     environment,
     deployment,
-    dedicated: dedicated === undefined || tenant === null ? null : { key: dedicated, tenant },
+    dedicated: dedicated === undefined || scope === null ? null : { key: dedicated, scope },
     projectKey: cloud.account,
     cloudProject: { id: cloudProject.id, number: cloudProject.number },
     region,
     ownsProject: owner?.name === environment && owner.key === dedicated,
-    labels: tenant === null ? labels : { ...labels, tenant },
+    labels: scope === null ? labels : { ...labels, tenant: scope },
   };
 }

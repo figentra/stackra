@@ -16,8 +16,8 @@ import { FeatureFlagsConfig } from "#config/feature-flags.config";
 import { FlagProvider } from "#contracts/ports/flag-provider.port";
 import type { FlagContext } from "#contracts/types/flag-context.type";
 
-/** The PostHog group type the tenant is sent as. */
-const TENANT_GROUP = "tenant";
+/** The PostHog group type the scope is sent as; the value is PostHog's stored group type, never change it. */
+const SCOPE_GROUP = "tenant";
 
 /** Answers flag values from PostHog's flags endpoint. */
 export class PosthogFlagProviderDriver extends Driver(FlagProvider) {
@@ -45,7 +45,7 @@ export class PosthogFlagProviderDriver extends Driver(FlagProvider) {
       body: JSON.stringify({
         api_key: posthogKey,
         distinct_id: context.subject,
-        groups: context.tenant === null ? {} : { [TENANT_GROUP]: context.tenant },
+        groups: context.scope === null ? {} : { [SCOPE_GROUP]: context.scope },
       }),
     });
     if (!response.ok)

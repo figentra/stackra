@@ -17,6 +17,6 @@ export interface FlagSubjects {
   /** The signed-in user's id. */
   readonly user: string | null;
 
-  /** The active tenant's id. */
-  readonly tenant: string | null;
+  /** The active scope's id. */
+  readonly scope: string | null;
 }

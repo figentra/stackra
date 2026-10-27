@@ -201,8 +201,8 @@ expect(await run(CreateOrderAction, input, { as })).toRefuseWith(refusal(OrdersP
 expect(placed).toHaveAudited({ outcome: "ok", fields: { orderId: placed.output.orderId } });
 
 const ctx = fakeActionContext({ actor: actors.admin() });
-await service.reenable(tenantId, ctx);
-expect(ctx).toHaveAudited({ fields: { tenantId } }); // the fields passed to ctx.audit; no outcome on a fake context
+await service.reenable(scopeId, ctx);
+expect(ctx).toHaveAudited({ fields: { scopeId } }); // the fields passed to ctx.audit; no outcome on a fake context
 
 createTestingModule(OrdersModule).withExtensions([
   extension(OrderExtensionPoint, "adjustTotals", { order: 10 }, (totals) => discounted(totals)),

@@ -34,7 +34,7 @@ const USER: SessionUser = {
   email: "rana@acme.example",
   displayName: "Rana",
   permissions: ["orders.order.read"],
-  tenants: [
+  memberships: [
     {
       tenantId: "scp_01j9z3k4m5n6p7q8r9s0t1v2w4",
       path: "platform.acme",
@@ -106,7 +106,7 @@ describe("SessionService", () => {
     expect(store.reads).toBe(1);
     expect(session.status).toBe(SessionStatus.SignedIn);
     expect(session.user).toBe(USER);
-    expect(switcher.memberships()).toEqual(USER.tenants);
+    expect(switcher.memberships()).toEqual(USER.memberships);
     expect(switcher.current()?.tenantId).toBe("scp_01j9z3k4m5n6p7q8r9s0t1v2w4");
   });
 

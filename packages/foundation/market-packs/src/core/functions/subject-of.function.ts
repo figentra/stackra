@@ -17,7 +17,7 @@ import type { ResolvedPack } from "#core/types/resolved-pack.type";
  * subjectOf(resolved, "tax.sales.rate"); // "buyer" when a layer maps "tax.sales" to buyer
  */
 export function subjectOf(resolved: ResolvedPack, ruleKind: string): PackSubject {
-  let found: PackSubject = PackSubject.Tenant;
+  let found: PackSubject = PackSubject.Scope;
   let length = -1;
   for (const layer of resolved.layers)
     for (const item of layer.subjects ?? [])

@@ -25,36 +25,36 @@ const SALT_BYTES = 16;
  * const cipher = new AesGcmFieldCipherDriver(new SubjectKeyProviderDriver(tenantKeys, "usr_01j9…", salt));
  */
 export class SubjectKeyProviderDriver extends KeyProvider {
-  private readonly tenant: KeyProvider;
+  private readonly scopeKeys: KeyProvider;
 
   private readonly info: Uint8Array<ArrayBuffer>;
 
   private readonly salt: Uint8Array<ArrayBuffer>;
 
   /**
-   * @param tenant - the tenant's key provider.
+   * @param scopeKeys - the tenant's key provider.
    * @param subjectId - the data subject's id; bound into every derived key.
    * @param salt - the subject's random salt, at least 16 bytes; copied.
    * @throws RangeError when the subject id is empty or the salt is short.
    */
-  constructor(tenant: KeyProvider, subjectId: string, salt: Uint8Array) {
+  constructor(scopeKeys: KeyProvider, subjectId: string, salt: Uint8Array) {
     super();
     if (subjectId === "") throw new RangeError("SubjectKeyProviderDriver needs a subject id");
     if (salt.length < SALT_BYTES)
       throw new RangeError(`A subject salt is at least ${SALT_BYTES} bytes, got ${salt.length}`);
-    this.tenant = tenant;
+    this.scopeKeys = scopeKeys;
     this.info = new TextEncoder().encode(`stackra:subject:${subjectId}`);
     this.salt = new Uint8Array(salt);
   }
 
   /** The key new data is sealed with. */
   async current(): Promise<DataKey> {
-    return this.derive(await this.tenant.current());
+    return this.derive(await this.scopeKeys.current());
   }
 
   /** The key with this id, for opening data sealed before a rotation. */
   async byId(id: string): Promise<DataKey> {
-    return this.derive(await this.tenant.byId(id));
+    return this.derive(await this.scopeKeys.byId(id));
   }
 
   /** The subject's key under tenant key `base`. */

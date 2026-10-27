@@ -59,8 +59,8 @@ export class ThemingOptions extends Schema {
   /** Whether the theme's font files are self-hosted and preloaded (and precached offline) instead of platform fonts. */
   selfHostedFonts = true;
 
-  /** Whether a resolved tenant's colours are layered over the theme's. */
-  tenantOverride = false;
+  /** Whether a resolved scope's colours are layered over the theme's. */
+  scopeOverride = false;
 }
 
 registerSchemas([[ThemingOptions, THEMING_CONFIG_SCHEMA]]);

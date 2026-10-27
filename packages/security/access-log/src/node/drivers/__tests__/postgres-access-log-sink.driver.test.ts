@@ -25,7 +25,7 @@ import { findChainBreak } from "#core/functions/find-chain-break.function";
 import { PostgresAccessLogSinkDriver } from "#node/drivers/postgres-access-log-sink.driver";
 import type { AccessLogEntry } from "#node/models/access-log-entry.model";
 
-const ACTOR: Actor = { kind: ActorKind.Service, id: "svc_commerce", tenantId: "scp_acme" };
+const ACTOR: Actor = { kind: ActorKind.Service, id: "svc_commerce", scopeId: "scp_acme" };
 
 /** A record of call `callId`. */
 const recordOf = (callId: string): AccessRecord => ({

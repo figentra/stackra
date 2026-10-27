@@ -15,5 +15,5 @@ export interface FlagContext {
   readonly subject: string | null;
 
   /** The active tenant's id, sent as the group of the evaluation; `null` when there is none. */
-  readonly tenant: string | null;
+  readonly scope: string | null;
 }

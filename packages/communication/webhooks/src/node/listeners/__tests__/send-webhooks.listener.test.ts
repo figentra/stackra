@@ -57,12 +57,12 @@ function setup(endpoints: WebhookTarget[]) {
   return { listener, service, queue };
 }
 
-/** The context of an occurrence in `tenantId`'s scope node (the envelope's field name). */
-const contextOf = (tenantId?: string) =>
+/** The context of an occurrence in `scopeId`'s scope node. */
+const contextOf = (scopeId?: string) =>
   ({
     eventId: "evt_1",
     occurredAt: OCCURRED,
-    ...(tenantId === undefined ? {} : { tenantId }),
+    ...(scopeId === undefined ? {} : { scopeId }),
     now: () => OCCURRED,
   }) as ListenerContext;
 

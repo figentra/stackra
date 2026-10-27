@@ -22,8 +22,8 @@ import type { RealtimeSocket } from "#core/types/realtime-socket.type";
 
 const SESSION = {
   principalId: "usr_1",
-  tenantId: "ten_1",
-  realm: Realm.Tenant,
+  scopeId: "ten_1",
+  realm: Realm.Staff,
   permissions: ["orders.order.read"],
 };
 

@@ -62,5 +62,5 @@ export const THEMING_CONFIG_SCHEMA = z.object({
   themeColor: SCHEME_COLORS.default(background),
   splash: z.object({ background: SCHEME_COLORS }).default(() => ({ background: background() })),
   selfHostedFonts: z.boolean().default(true),
-  tenantOverride: z.boolean().default(false),
+  scopeOverride: z.boolean().default(false),
 });

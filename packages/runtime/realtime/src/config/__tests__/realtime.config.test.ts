@@ -29,7 +29,7 @@ class MobileRealtimeConfig extends BaseRealtimeConfig {
 
 /** The template's commerce override. */
 class CommerceRealtimeConfig extends BaseRealtimeConfig {
-  override channelRealms: Realm[] = [Realm.Tenant];
+  override channelRealms: Realm[] = [Realm.Staff];
 
   override subscribeTokenTtl = Duration.minutes(5);
 }

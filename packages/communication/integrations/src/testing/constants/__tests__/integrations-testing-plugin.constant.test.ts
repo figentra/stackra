@@ -52,7 +52,7 @@ registerConnections([
 
 class FixtureModule extends Module {}
 
-const TENANT_CONNECTION = "conn_00000000000000000000000001";
+const SCOPED_CONNECTION = "conn_00000000000000000000000001";
 
 const FIELDS = { apiKey: "re_test_tenant_key", fromAddress: "orders@shop.acme.example" } as const;
 
@@ -78,22 +78,22 @@ describe("INTEGRATIONS_TESTING_PLUGIN", () => {
 
   it("puts a connection in the store, reached by id and by find, with the fake as its client", async () => {
     const app = await createTestingModule(FixtureModule)
-      .withConnection(ResendConnection, { id: TENANT_CONNECTION, fields: FIELDS })
+      .withConnection(ResendConnection, { id: SCOPED_CONNECTION, fields: FIELDS })
       .withIntegrationApi(ResendIntegration, resend)
       .compile();
     const store = app.get(ConnectionStore);
-    const byId = await store.byId(ResendConnection, TENANT_CONNECTION);
+    const byId = await store.byId(ResendConnection, SCOPED_CONNECTION);
     expect(byId.fromAddress).toBe("orders@shop.acme.example");
     expect(byId.apiKey).toBe("re_test_tenant_key");
-    expect((await store.find(ResendConnection))?.id).toBe(TENANT_CONNECTION);
+    expect((await store.find(ResendConnection))?.id).toBe(SCOPED_CONNECTION);
     await expect(byId.api.get("/emails/receiving/em_2")).resolves.toMatchObject({ id: "em_2" });
   });
 
   it("explains a connection whose integration has no fake", async () => {
     const app = await createTestingModule(FixtureModule)
-      .withConnection(ResendConnection, { id: TENANT_CONNECTION, fields: FIELDS })
+      .withConnection(ResendConnection, { id: SCOPED_CONNECTION, fields: FIELDS })
       .compile();
-    const connection = await app.get(ConnectionStore).byId(ResendConnection, TENANT_CONNECTION);
+    const connection = await app.get(ConnectionStore).byId(ResendConnection, SCOPED_CONNECTION);
     expect(() => connection.api.get("/domains")).toThrow(/withIntegrationApi/);
   });
 });

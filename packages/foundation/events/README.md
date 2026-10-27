@@ -44,7 +44,7 @@ export class PointsRedeemed extends DomainEvent {
 export class OrderPaid extends IntegrationEvent({
   name: "order.paid",
   webhook: true,
-  broadcast: { permission: OrderPermissions.read, audience: BroadcastAudience.Tenant },
+  broadcast: { permission: OrderPermissions.read, audience: BroadcastAudience.Scope },
 }) {
   orderId!: PublicId<"ord">;
 }
@@ -116,7 +116,7 @@ export class CatalogueVersionApproved extends IntegrationEvent({
 After the relay publishes a committed batch in its own region, it hands `crossRegionRecords(batch)` to the
 `RegionBus`, whose driver sends them to every other region of the environment; each receiving region gives each record
 to its own inbox under the same event id, so the copy listener runs once and the copy is never sent on again. A
-cross-region occurrence that carries `meta.tenantId` is refused with a `TypeError`: it is a modelling error.
+cross-region occurrence that carries `meta.scopeId` is refused with a `TypeError`: it is a modelling error.
 
 Not built here: the relay call (`@stackra/outbox`), the `RegionBus` driver and which transport carries it between
 regions (root runway; an ADR is due, STA-1268). Until a driver is bound, nothing crosses.

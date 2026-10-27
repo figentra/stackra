@@ -5,7 +5,7 @@
  *          market, the abort signal and the frozen pipeline clock.
  * Boundary: a type only. `QueryContext` and `ActionContext` extend it, so an owner passes its own context to a slot;
  *           `RequestContext.current()` returns it inside any call. It carries no input and no record. The abort signal
- *           is `abortSignal`, because `signal(...)` is the workflow signal of an action. `tenantId` stays while
+ *           is `abortSignal`, because `signal(...)` is the workflow signal of an action. `scopeId` stays while
  *           @stackra/workflow's run origin carries it into event metadata; new code reads `scope`.
  * Runtime: isomorphic
  * Governing contract: ADR 0136 (decision 1: the handler context); ADR 0305 (rules 23 and 25: the slot call); ADR 0265
@@ -25,7 +25,7 @@ export interface ExtensionContext {
   readonly actor: Actor;
 
   /** The tenant the call acts in; absent for a platform call. */
-  readonly tenantId?: PublicId;
+  readonly scopeId?: PublicId;
 
   /** The scope node the call acts in (`{ id: "scp_…", path: "platform.acme" }`); absent for a platform call. */
   readonly scope?: ScopeRef;

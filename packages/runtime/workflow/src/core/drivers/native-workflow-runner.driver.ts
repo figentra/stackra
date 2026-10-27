@@ -1000,13 +1000,13 @@ export class NativeWorkflowRunnerDriver extends Driver(WorkflowRunner) {
 
   /**
    * The metadata of an event a step of `run` recorded at `at`: the starting caller, chained to its call, and the run's
-   * scope id in the envelope's scope field (`tenantId`, ADR 0141); the `ScopeRef` itself never enters the envelope.
+   * scope id in the envelope's scope field (`scopeId`, ADR 0141); the `ScopeRef` itself never enters the envelope.
    */
   private metaOf(run: WorkflowRun, at: Date): Omit<EventMeta, "id"> {
     const { callId, actor, scope } = run.origin;
     return {
       actor,
-      ...(scope === undefined ? {} : { tenantId: scope.id }),
+      ...(scope === undefined ? {} : { scopeId: scope.id }),
       occurredAt: at,
       correlationId: callId,
     };

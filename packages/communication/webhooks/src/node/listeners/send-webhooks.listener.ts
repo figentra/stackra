@@ -42,8 +42,7 @@ export class SendWebhooksListener extends Listener {
   /** Queues one delivery per subscribed endpoint of the event's scope node. */
   async handle(event: Event, ctx: ListenerContext): Promise<void> {
     const type = OUTBOUND_EVENTS.get(event.constructor as EventClass);
-    // the event's scope node: the ADR 0141 envelope still names its field `tenantId`
-    const scopeId = ctx.tenantId;
+    const { scopeId } = ctx;
     if (type === undefined || scopeId === undefined) return;
     const endpoints = await this.endpoints.subscribedTo(scopeId, type);
     if (endpoints.length === 0) return;

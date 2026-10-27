@@ -154,7 +154,7 @@ WebCrypto. No `SignInBrowser` driver ships here yet: the Expo and Electron ones 
   page's MFA enrolment list compares it with the MFA rule's level. A `LoginPolicy` may list `externalProviderIds`
   (the market pack's sign-in providers through `IdentityConfig.externalProviders`) and `secondFactors`
   (`IdpSecondFactor`); the organisation then offers exactly those, and a list left out is not touched.
-- **Automation principals.** `AutomationPrincipals.mint({ automationId, tenantId, name })` gives an automation its own
+- **Automation principals.** `AutomationPrincipals.mint({ automationId, scopeId, name })` gives an automation its own
   `service` principal (ADR 0153 decision 2), the same one on every publish until `revoke(principalId)`. The identity
   service implements it over its principals table; `MemoryAutomationPrincipalsDriver` serves tests. Its grants are
   the publisher's choice, checked by `@stackra/workflow`'s `PublisherAccess`.
@@ -190,8 +190,8 @@ on a PKCE session and the active scope's path as `X-Scope-Path`; `can(permission
 ## Testing
 
 ```ts
-const session = fakeSession({ status: SessionStatus.SignedIn, tenants: 2 });
-const [first, second] = session.user.tenants;
+const session = fakeSession({ status: SessionStatus.SignedIn, memberships: 2 });
+const [first, second] = session.user.memberships;
 renderRoute(Routes.profile, { session }); // binds it as SessionService
 
 const signedOut = fakeSession({

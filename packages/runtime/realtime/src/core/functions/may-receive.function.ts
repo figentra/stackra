@@ -17,7 +17,7 @@ import type { RealtimeSession } from "#contracts/types/realtime-session.type";
  *
  * @param realms - the realms allowed on tenant channels (`RealtimeConfig.channelRealms`).
  * @example
- * mayReceive(session, { permission: "orders.order.read", message }, [Realm.Tenant]);
+ * mayReceive(session, { permission: "orders.order.read", message }, [Realm.Staff]);
  */
 export function mayReceive(
   session: RealtimeSession,
@@ -30,8 +30,8 @@ export function mayReceive(
   if (scope === "principal") return id === session.principalId;
   if (scope === "tenant")
     return (
-      session.tenantId !== undefined &&
-      id === session.tenantId &&
+      session.scopeId !== undefined &&
+      id === session.scopeId &&
       session.realm !== undefined &&
       realms.includes(session.realm)
     );

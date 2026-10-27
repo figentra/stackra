@@ -16,7 +16,7 @@ export interface RealtimeSession {
   readonly principalId: string;
 
   /** The tenant the session acts in; absent for a platform session, which then hears no tenant channel. */
-  readonly tenantId?: string;
+  readonly scopeId?: string;
 
   /** The user's realm, checked against `RealtimeConfig.channelRealms` for tenant channels. */
   readonly realm?: Realm;

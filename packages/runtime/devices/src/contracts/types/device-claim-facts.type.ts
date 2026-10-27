@@ -13,7 +13,7 @@
 /** Who and where a claim happens for. */
 export interface DeviceClaimFacts {
   /** The tenant the device joins; null in a single-tenant host. */
-  readonly tenantId: string | null;
+  readonly scopeId: string | null;
 
   /** The market pack key (`sa`, `eg`) that governs the device; null when not known yet. */
   readonly market: string | null;

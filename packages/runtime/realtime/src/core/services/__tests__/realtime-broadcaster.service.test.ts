@@ -28,7 +28,7 @@ const ORDER_PAID: BroadcastRoute = {
   name: "orders.order.paid.v1",
   module: "orders",
   permission: "orders.order.read",
-  audience: BroadcastAudience.Tenant,
+  audience: BroadcastAudience.Scope,
 };
 
 const INBOX_CREATED: BroadcastRoute = {
@@ -47,7 +47,7 @@ const PAID: RecordedEvent = {
     totalMinor: 100,
     currency: "USD",
   },
-  meta: { id: "evt_1", occurredAt: new Date(0), tenantId: "ten_1" },
+  meta: { id: "evt_1", occurredAt: new Date(0), scopeId: "ten_1" },
 };
 
 /** A driver that records what it is asked to publish. */
@@ -79,7 +79,7 @@ describe("RealtimeBroadcaster", () => {
     const driver = new RecordingDriver();
     const created: RecordedEvent = {
       event: { inboxMessageId: "inm_1", principalId: "usr_3", kind: "order_paid" },
-      meta: { id: "evt_2", occurredAt: new Date(0), tenantId: "ten_1" },
+      meta: { id: "evt_2", occurredAt: new Date(0), scopeId: "ten_1" },
     };
     await new RealtimeBroadcaster(driver).broadcast(created, INBOX_CREATED);
     expect(driver.published[0]?.message.channel).toBe("principal.usr_3.messages");
@@ -87,13 +87,13 @@ describe("RealtimeBroadcaster", () => {
 
   it("reaches the matching sessions end to end", async () => {
     const hub = new RealtimeHub(
-      buildConfig(RealtimeConfig, { values: { channelRealms: [Realm.Tenant] } }),
+      buildConfig(RealtimeConfig, { values: { channelRealms: [Realm.Staff] } }),
     );
     const driver = new MemoryRealtimeDriver(hub);
     const staff: RealtimeMessage[] = [];
     const customer: RealtimeMessage[] = [];
-    const base = { principalId: "usr_1", tenantId: "ten_1", permissions: ["orders.order.read"] };
-    driver.connect(hub.issueToken({ ...base, realm: Realm.Tenant }).token, (m) => staff.push(m));
+    const base = { principalId: "usr_1", scopeId: "ten_1", permissions: ["orders.order.read"] };
+    driver.connect(hub.issueToken({ ...base, realm: Realm.Staff }).token, (m) => staff.push(m));
     driver.connect(hub.issueToken({ ...base, realm: Realm.Customer }).token, (m) =>
       customer.push(m),
     );
@@ -104,8 +104,8 @@ describe("RealtimeBroadcaster", () => {
 
   it("rejects without publishing when the occurrence names no audience id", async () => {
     const driver = new RecordingDriver();
-    const untenanted: RecordedEvent = { ...PAID, meta: { id: "evt_3", occurredAt: new Date(0) } };
-    await expect(new RealtimeBroadcaster(driver).broadcast(untenanted, ORDER_PAID)).rejects.toThrow(
+    const unscoped: RecordedEvent = { ...PAID, meta: { id: "evt_3", occurredAt: new Date(0) } };
+    await expect(new RealtimeBroadcaster(driver).broadcast(unscoped, ORDER_PAID)).rejects.toThrow(
       TypeError,
     );
     expect(driver.published).toEqual([]);

@@ -13,12 +13,12 @@ import { describe, expect, it } from "@stackra/testing";
 import type { RealtimeSession } from "#contracts/types/realtime-session.type";
 import { mayReceive } from "#core/functions/may-receive.function";
 
-const ALL = [Realm.Platform, Realm.Tenant, Realm.Customer];
+const ALL = [Realm.Platform, Realm.Staff, Realm.Customer];
 
 const STAFF: RealtimeSession = {
   principalId: "usr_1",
-  tenantId: "ten_1",
-  realm: Realm.Tenant,
+  scopeId: "ten_1",
+  realm: Realm.Staff,
   permissions: ["orders.order.read", "messages.inbox_message.read"],
 };
 
@@ -44,11 +44,11 @@ describe("mayReceive", () => {
   it("reaches a tenant channel's own tenant in an allowed realm only", () => {
     expect(mayReceive(STAFF, on("tenant.ten_2.orders"), ALL)).toBe(false);
     const customer: RealtimeSession = { ...STAFF, realm: Realm.Customer };
-    expect(mayReceive(customer, on("tenant.ten_1.orders"), [Realm.Tenant])).toBe(false);
+    expect(mayReceive(customer, on("tenant.ten_1.orders"), [Realm.Staff])).toBe(false);
     expect(mayReceive(customer, on("tenant.ten_1.orders"), ALL)).toBe(true);
     const { realm: _realm, ...agent } = STAFF;
     expect(mayReceive(agent, on("tenant.ten_1.orders"), ALL)).toBe(false);
-    const { tenantId: _tenant, ...platform } = STAFF;
+    const { scopeId: _scope, ...platform } = STAFF;
     expect(mayReceive(platform, on("tenant.undefined.orders"), ALL)).toBe(false);
   });
 

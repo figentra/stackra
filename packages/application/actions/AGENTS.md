@@ -52,7 +52,7 @@ Member at `packages/application/actions` (`tier:lib`), in the programming model 
   depend on this package and implement its ports.
 - Identities are gen's: the runtime reads them from `registerActions`, never derives a module key or a permission.
 - The current scope is `scope` (a `ScopeRef`) on `CallOptions`, `CallDescriptor` and the call context (ADR 0327
-  decision 6). `tenantId` stays on the descriptor and the context only while iam, entitlements and workflow read it;
+  decision 6). `scopeId` stays on the descriptor and the context only while iam, entitlements and workflow read it;
   never add another tenant field or option (R-59, ADR 0323): the cron option is `perScope`.
 - `sandbox` and `client` on `CallOptions` come from the verified credential and the connection (or the edge's trusted
   forwarding header), never from input. The sandbox flag reaches the descriptor and the context; the client reaches

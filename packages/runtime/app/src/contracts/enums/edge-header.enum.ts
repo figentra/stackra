@@ -15,7 +15,7 @@ import { Enum } from "@stackra/contracts";
 /** The signed edge headers. */
 export const EdgeHeader = Enum.of({
   /** The tenant id; absent on a platform host. */
-  Tenant: "x-figentra-tenant",
+  Scope: "x-figentra-tenant",
   /** The product key. */
   Product: "x-figentra-product",
   /** The surface (`console`, `landing`, `till`). */

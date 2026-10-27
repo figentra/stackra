@@ -19,8 +19,8 @@ import { vi } from "vitest";
 | `Fake`, `Fake.of(Port)`                                                                                                  | the base of every `*.fake.ts`: `record(name, value)`, `calls(name)`; unimplemented port methods are `vi.fn()` spies                                                |
 | `createMatcher(name, fn)`                                                                                                | registers an `expect` matcher on import and returns it; type it by augmenting `Matchers`                                                                           |
 | `factory<T>(defaults)`                                                                                                   | plain test data for `*.fixture.ts`: `build(overrides)` at index 0, `buildMany(n, overrides)` at `0..n-1`                                                           |
-| `tenantScopeRef(label?, { under })`                                                                                      | a test tenant's scope reference `{ id, path }`: path `platform.<label>` (or under `under`), id hashed from it as `scopeRefOf` does; no label is a new `tenant_<n>` |
-| `tenantId(label?, { under })`                                                                                            | that tenant's id (`tenantScopeRef(label).id`): a tenant id is its scope node's `scp_` id (ADR 0327 d8)                                                             |
+| `testScopeRef(label?, { under })`                                                                                      | a test tenant's scope reference `{ id, path }`: path `platform.<label>` (or under `under`), id hashed from it as `scopeRefOf` does; no label is a new `tenant_<n>` |
+| `testScopeId(label?, { under })`                                                                                            | that tenant's id (`testScopeRef(label).id`): a tenant id is its scope node's `scp_` id (ADR 0327 d8)                                                             |
 | types `Matchers`, `FakeConstructor`, `FakeRecorder`, `FactoryDefaults`, `FixtureBuilder`, `TestScopeRef`                 | the shapes behind the helpers above                                                                                                                                |
 
 `.` is generic: it has no workspace dependency and no domain type. Domain helpers (`createTestingModule`, `run`,
@@ -92,7 +92,7 @@ import { axe, expect, loginAs, seed, test } from "@stackra/testing/e2e";
 
 test.beforeEach(async ({ page }) => {
   await seed("orders.demo");
-  await loginAs(page, { role: "staff", tenant: "ten_1" });
+  await loginAs(page, { role: "staff", scope: "ten_1" });
 });
 
 test("places a quick order", async ({ page }) => {
@@ -103,7 +103,7 @@ test("places a quick order", async ({ page }) => {
 
 What the e2e stack must provide (`stackra dev` started by `e2ePreset` with `STACKRA_E2E=1`):
 
-- `POST /__stackra/e2e/seed` with `{ key }` and `POST /__stackra/e2e/session` with `{ role, tenant, memberships? }` on
+- `POST /__stackra/e2e/seed` with `{ key }` and `POST /__stackra/e2e/session` with `{ role, scope, memberships? }` on
   the app's origin, answering 2xx (the session route sets the session cookie);
 - the consumed services from `STACKRA_E2E_SERVICES` on memory drivers, seeded with `STACKRA_E2E_SEEDS`, and
   Cloudflare's Turnstile test keys when `STACKRA_E2E_TURNSTILE=test-keys`;

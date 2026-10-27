@@ -36,7 +36,7 @@ interface Subscription {
  *
  * @example
  * bus.connect(container);
- * bus.dispatch(PointsRedeemed.create({ memberId, points, reference }), { tenantId, actor });
+ * bus.dispatch(PointsRedeemed.create({ memberId, points, reference }), { scopeId, actor });
  * const deliveries = await bus.drain();
  */
 export class EventBus extends Service {

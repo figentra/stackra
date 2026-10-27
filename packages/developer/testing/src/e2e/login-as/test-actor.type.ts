@@ -11,8 +11,8 @@ export interface TestActor {
   /** The seeded role (`staff`, `admin`). */
   readonly role: string;
 
-  /** The active tenant (`ten_1`). */
-  readonly tenant: string;
+  /** The active scope (`ten_1`). */
+  readonly scope: string;
 
   /** Every tenant the actor belongs to; the active one alone when left out. */
   readonly memberships?: readonly string[];

@@ -114,9 +114,9 @@ const customer: Actor = {
   kind: ActorKind.User,
   id: "usr_1",
   realm: Realm.Customer,
-  tenantId: "ten_1",
+  scopeId: "ten_1",
 };
-const agent: Actor = { kind: ActorKind.Agent, id: "agt_1", tenantId: "ten_1" };
+const agent: Actor = { kind: ActorKind.Agent, id: "agt_1", scopeId: "ten_1" };
 const SCOPE: ScopeRef = { id: "scp_01j9z3k4m5n6p7q8r9s0t1v2w1", path: "platform.acme" };
 
 /** Every step and handler appends here. */
@@ -265,7 +265,7 @@ class InspectAction extends Action({
       timeZone: ctx.timeZone,
       currency: ctx.currency,
       market: ctx.market,
-      tenantId: ctx.tenantId,
+      scopeId: ctx.scopeId,
       scope: ctx.scope,
       deviceId: ctx.deviceId,
       startOfDay: ctx.startOfDay(),
@@ -607,7 +607,7 @@ describe(ActionPipeline, () => {
       permission: "orders.order.create",
       risk: "L1",
       kind: "action",
-      tenantId: "ten_1",
+      scopeId: "ten_1",
       area: "app",
     });
     await expect(
@@ -723,7 +723,7 @@ describe(ActionPipeline, () => {
     class PlanBudget extends Driver(RateLimitBudget) {
       async areaBucket(call: CallDescriptor) {
         asked.push(call);
-        return call.tenantId === "ten_1" ? { capacity: 2, tokensPerSecond: 0 } : undefined;
+        return call.scopeId === "ten_1" ? { capacity: 2, tokensPerSecond: 0 } : undefined;
       }
     }
     const config = Object.assign(new RateLimitConfig(), {
@@ -737,8 +737,8 @@ describe(ActionPipeline, () => {
     await read(customer);
     await read(customer);
     await expect(read(customer)).rejects.toBeInstanceOf(RateLimitedError);
-    expect(asked[0]).toMatchObject({ tenantId: "ten_1", area: "app" });
-    const outsider: Actor = { ...customer, id: "usr_9", tenantId: "ten_9" };
+    expect(asked[0]).toMatchObject({ scopeId: "ten_1", area: "app" });
+    const outsider: Actor = { ...customer, id: "usr_9", scopeId: "ten_9" };
     await read(outsider);
     await expect(read(outsider)).rejects.toBeInstanceOf(RateLimitedError);
   });
@@ -788,7 +788,7 @@ describe(ActionPipeline, () => {
       timeZone: "Asia/Riyadh",
       currency: "SAR",
       market: "sa",
-      tenantId: "ten_1",
+      scopeId: "ten_1",
       scope: SCOPE,
       startOfDay: new Date("2026-10-23T21:00:00.000Z"),
       days: 7,
@@ -1221,7 +1221,7 @@ describe("ActionPipeline governance additions", () => {
       key: "payments.payment.refund@1",
       scopeId: SCOPE.id,
     });
-    expect(usage?.meta).toMatchObject({ occurredAt: NOW, tenantId: "ten_1", actor: customer });
+    expect(usage?.meta).toMatchObject({ occurredAt: NOW, scopeId: "ten_1", actor: customer });
     expect(usage?.meta.id.startsWith("evt_")).toBe(true);
     expect(access.calls.at(-1)?.effects).toEqual([Effect.Financial, Effect.Irreversible]);
     await pipeline.execute(SignInAction, { deviceId: "dev_9" }, { actor: customer });

@@ -106,7 +106,7 @@ describe(WorkflowExplorer, () => {
     const ctx = {
       eventId: "evt_1",
       occurredAt: NOON,
-      tenantId: "scp_1",
+      scopeId: "scp_1",
       now: () => NOON,
     } as ListenerContext;
     await (
@@ -120,7 +120,7 @@ describe(WorkflowExplorer, () => {
       actor: { kind: "system", id: "sys_workflow" },
     });
     // The envelope's scope id is not a ScopeRef: the run takes its scope from the session, never from the event.
-    expect(origin).not.toHaveProperty("tenantId");
+    expect(origin).not.toHaveProperty("scopeId");
     expect(origin).not.toHaveProperty("scope");
   });
 

@@ -24,7 +24,7 @@ const call: CallDescriptor = {
 
 class SuspendedDriver extends Driver(TenancyCheck) {
   async check(target: CallDescriptor): Promise<void> {
-    if (target.tenantId === "ten_suspended") throw new Error("tenant_suspended");
+    if (target.scopeId === "ten_suspended") throw new Error("tenant_suspended");
   }
 }
 
@@ -36,7 +36,7 @@ describe("TenancyCheck", () => {
   it("is implemented by a driver", async () => {
     const driver = new SuspendedDriver();
     await expect(driver.check(call)).resolves.toBeUndefined();
-    await expect(driver.check({ ...call, tenantId: "ten_suspended" })).rejects.toThrow(
+    await expect(driver.check({ ...call, scopeId: "ten_suspended" })).rejects.toThrow(
       "tenant_suspended",
     );
   });

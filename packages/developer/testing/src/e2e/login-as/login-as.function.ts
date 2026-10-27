@@ -18,12 +18,12 @@ import type { TestActor } from "#e2e/login-as/test-actor.type";
  *
  * @throws Error when the stack does not answer 2xx.
  * @example
- * await loginAs(page, { role: "staff", tenant: "ten_1", memberships: ["ten_1", "ten_2"] });
+ * await loginAs(page, { role: "staff", scope: "ten_1", memberships: ["ten_1", "ten_2"] });
  */
 export async function loginAs(page: Page, actor: TestActor): Promise<void> {
   const response = await page.request.post(controlUrl(E2E_CONTROL.session), { data: actor });
   if (!response.ok())
     throw new Error(
-      `loginAs(${actor.role}@${actor.tenant}) failed: the e2e stack answered ${response.status()}`,
+      `loginAs(${actor.role}@${actor.scope}) failed: the e2e stack answered ${response.status()}`,
     );
 }

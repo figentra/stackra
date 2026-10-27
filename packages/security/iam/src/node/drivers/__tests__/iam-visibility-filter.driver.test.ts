@@ -51,7 +51,7 @@ const customer: Actor = {
 const staff: Actor = {
   kind: ActorKind.User,
   id: "usr_01j9z3k4m5n6p7q8r9s0t1v2s1",
-  realm: Realm.Tenant,
+  realm: Realm.Staff,
 };
 const job: Actor = { kind: ActorKind.Job, id: "job_01j9z3k4m5n6p7q8r9s0t1v2j1" };
 

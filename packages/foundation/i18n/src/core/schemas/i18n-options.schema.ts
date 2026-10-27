@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `I18nOptions`, the options shape of `I18nConfig`: the shipped locales and the default, the right-to-left
  *          set, each locale's fallback chain, the digits, each locale's week start and clock overrides, how a locale
- *          appears in a URL, and the flags gen and the runtime read (`followDevice`, `tenantChoosesNumerals`,
+ *          appears in a URL, and the flags gen and the runtime read (`followDevice`, `scopeChoosesNumerals`,
  *          `failOnMissingLocale`, `cookieName`).
  * Boundary: a shape class: fields, types, defaults and field rules only. The defaults are a launch member's (ADR 0080
  *           decision 2: English only, Latin digits); a member lists more locales in its `I18nConfig` override. The
@@ -46,8 +46,8 @@ export class I18nOptions extends Schema {
   /** A native first launch takes the shipped locale closest to the device's. */
   followDevice = false;
 
-  /** A tenant setting may switch Arabic text to Arabic-Indic digits (ADR 0192). */
-  tenantChoosesNumerals = false;
+  /** A scope setting may switch Arabic text to Arabic-Indic digits (ADR 0192). */
+  scopeChoosesNumerals = false;
 
   /** Gen fails, instead of warning, on a base locale that misses a namespace. */
   failOnMissingLocale = false;

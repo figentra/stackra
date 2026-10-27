@@ -86,7 +86,7 @@ describe("PackSchemaRegistry", () => {
   it("accepts a subject or review that names a registered prefix", () => {
     const issues = registry.check(
       pack([{ key: "billing.currency", value: "USD", from: "2026-01-01" }], {
-        subjects: [{ key: "billing", subject: PackSubject.Tenant }],
+        subjects: [{ key: "billing", subject: PackSubject.Scope }],
         reviews: [{ key: "billing.currency", reviewer: "counsel", at: "2026-01-02" }],
       }),
     );

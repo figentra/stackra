@@ -41,19 +41,19 @@ describe(RealtimeRelay, () => {
     await relay.broadcast(
       {
         event: {},
-        meta: { id: "evt_1", occurredAt: new Date(), tenantId: "ten_1" },
+        meta: { id: "evt_1", occurredAt: new Date(), scopeId: "ten_1" },
       },
       {
         name: "orders.order.paid.v1",
         module: "orders",
         permission: "orders.order.read",
-        audience: BroadcastAudience.Tenant,
+        audience: BroadcastAudience.Scope,
       },
     );
     const frames: RoomFrame[] = [];
     rooms.join(
       rooms.issueToken({
-        session: { principalId: "usr_a", tenantId: "ten_1", realm: Realm.Tenant, permissions: [] },
+        session: { principalId: "usr_a", scopeId: "ten_1", realm: Realm.Staff, permissions: [] },
         document: "pag_1",
         mayEdit: true,
       }).token,
@@ -75,12 +75,12 @@ describe(RealtimeRelay, () => {
     expect(frames.map((frame) => frame.t)).toEqual(["welcome", "presence"]);
     stop();
     await relay.broadcast(
-      { event: {}, meta: { id: "evt_2", occurredAt: new Date(), tenantId: "ten_1" } },
+      { event: {}, meta: { id: "evt_2", occurredAt: new Date(), scopeId: "ten_1" } },
       {
         name: "orders.order.paid.v1",
         module: "orders",
         permission: "orders.order.read",
-        audience: BroadcastAudience.Tenant,
+        audience: BroadcastAudience.Scope,
       },
     );
     await settle();

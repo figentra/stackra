@@ -102,12 +102,12 @@ describe("VerificationService", () => {
 
   it("verifies through resolver candidates, a platform check only through managed ones", async () => {
     const clock = new FixedClockDriver();
-    const tenantOwn = new MemoryVerificationDriver([VerificationKind.Company], clock);
+    const scopeOwn = new MemoryVerificationDriver([VerificationKind.Company], clock);
     const platform = new MemoryVerificationDriver([VerificationKind.Company], clock);
     const identityOnly = new MemoryVerificationDriver([VerificationKind.Identity], clock);
     platform.answer("chk_1", VerificationStatus.Verified);
     const candidates = [
-      { provider: "sumsub", connection: tenantOwn, mode: "own" as const },
+      { provider: "sumsub", connection: scopeOwn, mode: "own" as const },
       { provider: "didit", connection: identityOnly, mode: "managed" as const },
       { provider: "down", connection: new DownVerificationDriver(), mode: "managed" as const },
       { provider: "wathq", connection: platform, mode: "managed" as const },
@@ -118,10 +118,10 @@ describe("VerificationService", () => {
       provider: "wathq",
       mode: "managed",
     });
-    expect(tenantOwn.seen).toEqual([]);
+    expect(scopeOwn.seen).toEqual([]);
     expect(identityOnly.seen).toEqual([]);
     expect(
-      await service.verifyThrough({ ...request, use: VerificationUse.Tenant }, candidates),
+      await service.verifyThrough({ ...request, use: VerificationUse.Scope }, candidates),
     ).toMatchObject({ provider: "sumsub", mode: "own", status: VerificationStatus.Pending });
     await expect(service.verifyThrough(request, candidates.slice(0, 1))).rejects.toBeInstanceOf(
       VerificationUnavailableError,

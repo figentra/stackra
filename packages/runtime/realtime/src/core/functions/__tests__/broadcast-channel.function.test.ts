@@ -20,7 +20,7 @@ const ORDER_PAID: BroadcastRoute = {
   name: "orders.order.paid.v1",
   module: "orders",
   permission: "orders.order.read",
-  audience: BroadcastAudience.Tenant,
+  audience: BroadcastAudience.Scope,
 };
 
 const INBOX_CREATED: BroadcastRoute = {
@@ -30,7 +30,7 @@ const INBOX_CREATED: BroadcastRoute = {
   audience: BroadcastAudience.Principal,
 };
 
-const USER: Actor = { kind: ActorKind.User, id: "usr_1" as PublicId<"usr">, realm: Realm.Tenant };
+const USER: Actor = { kind: ActorKind.User, id: "usr_1" as PublicId<"usr">, realm: Realm.Staff };
 
 /** A recorded occurrence of `event` with `meta` over a fixed id and time. */
 function record(event: object, meta: Partial<RecordedEvent["meta"]> = {}): RecordedEvent {
@@ -39,13 +39,13 @@ function record(event: object, meta: Partial<RecordedEvent["meta"]> = {}): Recor
 
 describe("broadcastChannel", () => {
   it("sends a tenant audience to the occurrence's tenant", () => {
-    expect(broadcastChannel(ORDER_PAID, record({ orderId: "ord_1" }, { tenantId: "ten_1" }))).toBe(
+    expect(broadcastChannel(ORDER_PAID, record({ orderId: "ord_1" }, { scopeId: "ten_1" }))).toBe(
       "tenant.ten_1.orders",
     );
   });
 
   it("sends a principal audience to the event's principalId first", () => {
-    const occurrence = record({ principalId: "usr_9" }, { tenantId: "ten_1", actor: USER });
+    const occurrence = record({ principalId: "usr_9" }, { scopeId: "ten_1", actor: USER });
     expect(broadcastChannel(INBOX_CREATED, occurrence)).toBe("principal.usr_9.messages");
   });
 
@@ -74,7 +74,7 @@ describe("broadcastChannel", () => {
       broadcastChannel(INBOX_CREATED, record({ principalId: "usr.1" }, { actor: USER })),
     ).toThrow(TypeError);
     expect(() =>
-      broadcastChannel({ ...ORDER_PAID, module: "orders.x" }, record({}, { tenantId: "ten_1" })),
+      broadcastChannel({ ...ORDER_PAID, module: "orders.x" }, record({}, { scopeId: "ten_1" })),
     ).toThrow(TypeError);
   });
 });

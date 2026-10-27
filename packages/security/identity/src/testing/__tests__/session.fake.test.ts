@@ -21,8 +21,8 @@ describe("SessionFake", () => {
   });
 
   it("signs in a user with the requested memberships", () => {
-    const session = new SessionFake({ status: SessionStatus.SignedIn, tenants: 3 });
-    expect(session.user?.tenants.map((membership) => membership.path)).toEqual([
+    const session = new SessionFake({ status: SessionStatus.SignedIn, memberships: 3 });
+    expect(session.user?.memberships.map((membership) => membership.path)).toEqual([
       "platform.fake.member_1",
       "platform.fake.member_2",
       "platform.fake.member_3",

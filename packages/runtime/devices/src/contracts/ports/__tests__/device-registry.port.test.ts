@@ -27,6 +27,6 @@ describe("DeviceRegistry", () => {
     expectTypeOf<DeviceRegistry["claim"]>()
       .parameter(3)
       .toEqualTypeOf<DeviceClaimFacts | undefined>();
-    expectTypeOf<RegisteredDevice["tenantId"]>().toEqualTypeOf<string | null>();
+    expectTypeOf<RegisteredDevice["scopeId"]>().toEqualTypeOf<string | null>();
   });
 });

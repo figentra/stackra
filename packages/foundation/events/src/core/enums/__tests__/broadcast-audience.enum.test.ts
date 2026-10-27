@@ -14,7 +14,7 @@ import { BroadcastAudience } from "#core/enums/broadcast-audience.enum";
 describe("BroadcastAudience", () => {
   it("has the principal and tenant codes", () => {
     expect(Enum.values(BroadcastAudience)).toEqual(["principal", "tenant"]);
-    expect(BroadcastAudience.Tenant).toBe("tenant");
+    expect(BroadcastAudience.Scope).toBe("tenant");
     expectTypeOf<BroadcastAudience>().toEqualTypeOf<"principal" | "tenant">();
   });
 });

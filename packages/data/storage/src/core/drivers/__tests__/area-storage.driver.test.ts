@@ -22,7 +22,7 @@ class TestStorageDriver extends AreaStorageDriver {
 }
 
 class PreferencesStore {
-  tenantByUser: Record<string, string> = {};
+  scopeByUser: Record<string, string> = {};
 }
 
 class DraftStore {
@@ -66,10 +66,10 @@ describe("AreaStorageDriver", () => {
 
   it("stores a class's state in its registered area", () => {
     const storage = new TestStorageDriver();
-    storage.store(PreferencesStore).write({ tenantByUser: { usr_1: "ten_2" } });
+    storage.store(PreferencesStore).write({ scopeByUser: { usr_1: "ten_2" } });
     storage.store(DraftStore).write({ text: "hello" });
-    expect(storage.prefs.get("mobile.preferences")).toEqual({ tenantByUser: { usr_1: "ten_2" } });
-    expect(storage.store(PreferencesStore).read()).toEqual({ tenantByUser: { usr_1: "ten_2" } });
+    expect(storage.prefs.get("mobile.preferences")).toEqual({ scopeByUser: { usr_1: "ten_2" } });
+    expect(storage.store(PreferencesStore).read()).toEqual({ scopeByUser: { usr_1: "ten_2" } });
     expect(storage.session.get("mobile.draft")).toEqual({ text: "hello" });
     storage.store(DraftStore).clear();
     expect(storage.store(DraftStore).read()).toBeUndefined();

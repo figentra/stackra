@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: `tenantScopeRef(label?, { under })`, a test tenant's scope reference: the path `<under>.<label>` and the
+ * Purpose: `testScopeRef(label?, { under })`, a test tenant's scope reference: the path `<under>.<label>` and the
  *          `scp_` id hashed from it. With no label it hands out the next of `tenant_1`, `tenant_2`, … so each call is a
  *          new tenant.
  * Boundary: test code only; generic (no workspace import, ADR 0269 decision 2). A tenant is the scope node at the
@@ -24,11 +24,11 @@ const issued = { count: 0 };
  *
  * @throws RangeError when `label` is not one path label or `under` is not a path of them.
  * @example
- * const acme = tenantScopeRef("acme"); // { id: "scp_…", path: "platform.acme" }
- * const shop = tenantScopeRef("shop", { under: "platform.acme" }); // path "platform.acme.shop"
- * const fresh = tenantScopeRef(); // path "platform.tenant_1", then "platform.tenant_2", …
+ * const acme = testScopeRef("acme"); // { id: "scp_…", path: "platform.acme" }
+ * const shop = testScopeRef("shop", { under: "platform.acme" }); // path "platform.acme.shop"
+ * const fresh = testScopeRef(); // path "platform.tenant_1", then "platform.tenant_2", …
  */
-export function tenantScopeRef(
+export function testScopeRef(
   label?: string,
   options: { readonly under?: string } = {},
 ): TestScopeRef {

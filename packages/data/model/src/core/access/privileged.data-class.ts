@@ -25,7 +25,7 @@ import { SupportAccess } from "#core/enums/support-access.enum";
  */
 export class PrivilegedDataClass extends DataClass({
   key: "privileged",
-  ai: AiAudience.TenantOptIn,
+  ai: AiAudience.ScopeOptIn,
   support: SupportAccess.Hidden,
   search: SearchSnippet.NoSnippet,
   export: ExportLabel.Labelled,

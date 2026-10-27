@@ -27,7 +27,7 @@ export type Actor =
       readonly id: PublicId<"usr">;
       readonly realm: Realm;
       /** The tenant the call acts in; absent for a platform call. */
-      readonly tenantId?: PublicId;
+      readonly scopeId?: PublicId;
       readonly onBehalfOf?: Actor;
     }
   | {
@@ -36,6 +36,6 @@ export type Actor =
       readonly id: PublicId;
       readonly realm?: undefined;
       /** The tenant the call acts in; absent for a platform call. */
-      readonly tenantId?: PublicId;
+      readonly scopeId?: PublicId;
       readonly onBehalfOf?: Actor;
     };

@@ -16,6 +16,7 @@ import { Duration } from "@stackra/contracts";
 
 import { FeatureFlagsConfig } from "#config/feature-flags.config";
 import { FlagProvider } from "#contracts/ports/flag-provider.port";
+import { FlagTargeting } from "#core/enums/flag-targeting.enum";
 import type { FlagRef } from "#core/types/flag-ref.type";
 import type { FlagSubjects } from "#core/types/flag-subjects.type";
 
@@ -53,15 +54,17 @@ export class FlagReader extends Service {
   }
 
   /**
-   * Asks the provider for the subject the targeting names (the tenant goes as the group) and applies the answer.
+   * Asks the provider for the subject the targeting names (the scope goes as the group) and applies the answer.
    *
    * @throws Error the provider's error; the last values stay.
    */
   async load(subjects: FlagSubjects): Promise<void> {
     const ticket = ++this.loads;
+    const { targeting } = this.config;
     const values = await this.provider.values({
-      subject: subjects[this.config.targeting],
-      tenant: subjects.tenant,
+      // the targeting value stays "tenant" (stored config), the subject key is `scope`
+      subject: targeting === FlagTargeting.Scope ? subjects.scope : subjects[targeting],
+      scope: subjects.scope,
     });
     if (ticket === this.loads) this.publish(values);
   }

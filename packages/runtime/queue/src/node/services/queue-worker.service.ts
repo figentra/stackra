@@ -283,7 +283,7 @@ export class QueueWorkerService extends Service {
     return Object.freeze({
       kind: plan.actor,
       id: job.id,
-      ...(origin?.tenantId === undefined ? {} : { tenantId: origin.tenantId }),
+      ...(origin?.scopeId === undefined ? {} : { scopeId: origin.scopeId }),
       ...(origin === undefined ? {} : { onBehalfOf: origin }),
     });
   }

@@ -15,7 +15,7 @@ export interface AutomationPrincipalInput {
   readonly automationId: string;
 
   /** The tenant the automation runs in; absent for a platform automation. */
-  readonly tenantId?: PublicId;
+  readonly scopeId?: PublicId;
 
   /** The automation's name, shown where the principal is listed. */
   readonly name: string;

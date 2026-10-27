@@ -117,7 +117,7 @@ describe("gcpBaselineConfig", () => {
 
     expect(config).toMatchObject({
       deployment: "acme-firm",
-      dedicated: { key: "firm", tenant: "tenant-1" },
+      dedicated: { key: "firm", scope: "tenant-1" },
       projectKey: "firm",
       cloudProject: { id: "acme-firm", number: "223456789012" },
       region: "me-central2",

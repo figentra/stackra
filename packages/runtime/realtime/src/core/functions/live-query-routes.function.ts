@@ -26,7 +26,7 @@ const WIRE_NAME = /^([a-z][a-z0-9_]*)\.(?:[a-z][a-z0-9_]*\.)+v[1-9][0-9]*$/;
  *
  * @throws TypeError when the permission is empty or an event's name is not a wire name.
  * @example
- * liveQueryRoutes({ permission: "sales.sale.read", audience: BroadcastAudience.Tenant, invalidateOn: [SaleCompleted] });
+ * liveQueryRoutes({ permission: "sales.sale.read", audience: BroadcastAudience.Scope, invalidateOn: [SaleCompleted] });
  * // [{ name: "sales.sale.completed.v1", module: "sales", permission: "sales.sale.read", audience: "tenant" }]
  */
 export function liveQueryRoutes(refresh: LiveQueryRefresh): readonly BroadcastRoute[] {

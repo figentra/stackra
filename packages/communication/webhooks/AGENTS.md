@@ -56,7 +56,7 @@ Standard Webhooks signing and verification, the inbound receiver of `WebhookEven
   subscribers only through `WebhookEndpointService.subscribedTo`, which rechecks the grant; a host store applies its own
   gate.
 - No tenant word is declared here (R-59, ADR 0323): a scope is a `ScopeRef`; the listener reads the event envelope's
-  `tenantId` field only because @stackra/events names it so.
+  `scopeId`.
 - No parameter properties and no `#private` fields: services typecheck this source under `erasableSyntaxOnly`.
 
 ## Rules that fail the build

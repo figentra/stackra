@@ -19,7 +19,7 @@ import { randomToken } from "#core/functions/random-token.function";
  *
  * @example
  * const principals = new MemoryAutomationPrincipalsDriver();
- * const actor = await principals.mint({ automationId: "aut_1", tenantId: "ten_1", name: "Welcome" });
+ * const actor = await principals.mint({ automationId: "aut_1", scopeId: "ten_1", name: "Welcome" });
  */
 export class MemoryAutomationPrincipalsDriver extends Driver(AutomationPrincipals) {
   /** `<tenant>:<automation>` to its live principal. */
@@ -30,13 +30,13 @@ export class MemoryAutomationPrincipalsDriver extends Driver(AutomationPrincipal
 
   /** See `AutomationPrincipals.mint`. */
   async mint(input: AutomationPrincipalInput): Promise<Actor> {
-    const key = `${input.tenantId ?? ""}:${input.automationId}`;
+    const key = `${input.scopeId ?? ""}:${input.automationId}`;
     const known = this.live.get(key);
     if (known !== undefined) return known;
     const actor: Actor = {
       kind: ActorKind.Service,
       id: `prn_${randomToken()}`,
-      ...(input.tenantId === undefined ? {} : { tenantId: input.tenantId }),
+      ...(input.scopeId === undefined ? {} : { scopeId: input.scopeId }),
     };
     this.live.set(key, actor);
     return actor;

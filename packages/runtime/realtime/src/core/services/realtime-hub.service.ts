@@ -38,7 +38,7 @@ interface Member {
  * Holds the live connections of this process and fans broadcasts out to them.
  *
  * @example
- * const { token } = hub.issueToken({ principalId, tenantId, realm, permissions }); // in the token endpoint
+ * const { token } = hub.issueToken({ principalId, scopeId, realm, permissions }); // in the token endpoint
  * const leave = hub.join(token, { deliver: (message) => socket.send(JSON.stringify(message)), close: () => socket.close() });
  */
 export class RealtimeHub extends Service {

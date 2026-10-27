@@ -10,8 +10,8 @@ import { describe, expectTypeOf, it } from "@stackra/testing";
 import type { MarketRecord } from "#core/types/market-record.type";
 
 describe("MarketRecord", () => {
-  it("requires only the tenant market", () => {
-    expectTypeOf<{ tenant: string }>().toExtend<MarketRecord>();
+  it("requires only the scope market", () => {
+    expectTypeOf<{ scope: string }>().toExtend<MarketRecord>();
     expectTypeOf<Record<string, never>>().not.toExtend<MarketRecord>();
     expectTypeOf<MarketRecord["buyer"]>().toEqualTypeOf<string | undefined>();
   });

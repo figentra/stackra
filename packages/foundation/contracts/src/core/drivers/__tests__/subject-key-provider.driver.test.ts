@@ -17,42 +17,40 @@ import { SubjectKeyProviderDriver } from "#core/drivers/subject-key-provider.dri
 const random = (length: number) => crypto.getRandomValues(new Uint8Array(length));
 
 describe("SubjectKeyProviderDriver", () => {
-  const tenant = new MemoryKeyProviderDriver([
+  const scopeKeys = new MemoryKeyProviderDriver([
     { id: "k1", key: random(32) },
     { id: "k2", key: random(32) },
   ]);
 
   it("derives a stable key per subject under the tenant key's id", async () => {
     const salt = random(32);
-    const sara = await new SubjectKeyProviderDriver(tenant, "usr_a", salt).current();
-    const again = await new SubjectKeyProviderDriver(tenant, "usr_a", salt).current();
-    const omar = await new SubjectKeyProviderDriver(tenant, "usr_b", salt).current();
+    const sara = await new SubjectKeyProviderDriver(scopeKeys, "usr_a", salt).current();
+    const again = await new SubjectKeyProviderDriver(scopeKeys, "usr_a", salt).current();
+    const omar = await new SubjectKeyProviderDriver(scopeKeys, "usr_b", salt).current();
     expect(sara.id).toBe("k2");
     expect(sara.key).toEqual(again.key);
     expect(sara.key).not.toEqual(omar.key);
-    expect(sara.key).not.toEqual((await tenant.current()).key);
-    expect((await new SubjectKeyProviderDriver(tenant, "usr_a", salt).byId("k1")).id).toBe("k1");
+    expect(sara.key).not.toEqual((await scopeKeys.current()).key);
+    expect((await new SubjectKeyProviderDriver(scopeKeys, "usr_a", salt).byId("k1")).id).toBe("k1");
   });
 
   it("opens a subject's data only under that subject's salt", async () => {
     const salt = random(16);
     const sealed = await new AesGcmFieldCipherDriver(
-      new SubjectKeyProviderDriver(tenant, "usr_a", salt),
+      new SubjectKeyProviderDriver(scopeKeys, "usr_a", salt),
     ).seal("canary", "c");
     expect(
-      await new AesGcmFieldCipherDriver(new SubjectKeyProviderDriver(tenant, "usr_a", salt)).open(
-        sealed,
-        "c",
-      ),
+      await new AesGcmFieldCipherDriver(
+        new SubjectKeyProviderDriver(scopeKeys, "usr_a", salt),
+      ).open(sealed, "c"),
     ).toBe("canary");
     await expect(
-      new AesGcmFieldCipherDriver(new SubjectKeyProviderDriver(tenant, "usr_a", random(16))).open(
-        sealed,
-        "c",
-      ),
+      new AesGcmFieldCipherDriver(
+        new SubjectKeyProviderDriver(scopeKeys, "usr_a", random(16)),
+      ).open(sealed, "c"),
     ).rejects.toThrow();
     await expect(
-      new AesGcmFieldCipherDriver(new SubjectKeyProviderDriver(tenant, "usr_b", salt)).open(
+      new AesGcmFieldCipherDriver(new SubjectKeyProviderDriver(scopeKeys, "usr_b", salt)).open(
         sealed,
         "c",
       ),
@@ -60,7 +58,7 @@ describe("SubjectKeyProviderDriver", () => {
   });
 
   it("refuses a short salt and an empty subject", () => {
-    expect(() => new SubjectKeyProviderDriver(tenant, "usr_a", random(15))).toThrow(RangeError);
-    expect(() => new SubjectKeyProviderDriver(tenant, "", random(16))).toThrow(RangeError);
+    expect(() => new SubjectKeyProviderDriver(scopeKeys, "usr_a", random(15))).toThrow(RangeError);
+    expect(() => new SubjectKeyProviderDriver(scopeKeys, "", random(16))).toThrow(RangeError);
   });
 });

@@ -23,7 +23,7 @@ class HostAccessLogConfig extends AccessLogConfig {
   override retentionDays = 730;
 }
 
-class TenantHostAccessLogConfig extends HostAccessLogConfig {
+class ScopedHostAccessLogConfig extends HostAccessLogConfig {
   override retentionDays = 90;
 }
 
@@ -31,7 +31,7 @@ describe("configRoot", () => {
   it("finds the class directly below the Config(...) call", () => {
     expect(configRoot(AccessLogConfig)).toBe(AccessLogConfig);
     expect(configRoot(HostAccessLogConfig)).toBe(AccessLogConfig);
-    expect(configRoot(TenantHostAccessLogConfig)).toBe(AccessLogConfig);
+    expect(configRoot(ScopedHostAccessLogConfig)).toBe(AccessLogConfig);
   });
 
   it("refuses a class that is not a configuration", () => {

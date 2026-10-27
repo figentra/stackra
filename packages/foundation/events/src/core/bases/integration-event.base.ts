@@ -67,7 +67,7 @@ function read(options: IntegrationEventOptions) {
  * export class OrderPaid extends IntegrationEvent({
  *   name: "order.paid",
  *   webhook: true,
- *   broadcast: { permission: OrderPermissions.read, audience: BroadcastAudience.Tenant },
+ *   broadcast: { permission: OrderPermissions.read, audience: BroadcastAudience.Scope },
  * }) {
  *   orderId!: PublicId<"ord">;
  * }

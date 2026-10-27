@@ -43,9 +43,9 @@ describe("Actor", () => {
 
   it("refuses a realm on a non-user actor and a non-user id on a user", () => {
     // @ts-expect-error -- only a user actor has a realm
-    const service: Actor = { kind: ActorKind.Service, id: "svc_a", realm: Realm.Tenant };
+    const service: Actor = { kind: ActorKind.Service, id: "svc_a", realm: Realm.Staff };
     // @ts-expect-error -- a user's id has the usr prefix
-    const user: Actor = { kind: ActorKind.User, id: "agt_x", realm: Realm.Tenant };
+    const user: Actor = { kind: ActorKind.User, id: "agt_x", realm: Realm.Staff };
     expect([service.kind, user.kind]).toEqual(["service", "user"]);
   });
 
@@ -53,10 +53,10 @@ describe("Actor", () => {
     const staff: Actor = {
       kind: ActorKind.User,
       id: "usr_a",
-      realm: Realm.Tenant,
-      tenantId: "ten_a",
+      realm: Realm.Staff,
+      scopeId: "ten_a",
     };
-    expect(staff.tenantId).toBe("ten_a");
-    expect(customer.tenantId).toBeUndefined();
+    expect(staff.scopeId).toBe("ten_a");
+    expect(customer.scopeId).toBeUndefined();
   });
 });

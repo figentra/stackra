@@ -15,7 +15,7 @@ import type { RecordedEvent } from "#contracts/index";
 /**
  * The records to send to the other regions, in their order.
  *
- * @throws TypeError when a cross-region record carries `meta.tenantId`.
+ * @throws TypeError when a cross-region record carries `meta.scopeId`.
  * @example
  * await outbox.publish(batch);
  * await regionBus.send(crossRegionRecords(batch));
@@ -24,7 +24,7 @@ export function crossRegionRecords<R extends RecordedEvent>(records: readonly R[
   return records.filter((record) => {
     const kind = kindOf(record.event.constructor);
     if (kind?.kind !== "integration_event" || kind.options["crossRegion"] !== true) return false;
-    if (record.meta.tenantId !== undefined)
+    if (record.meta.scopeId !== undefined)
       throw new TypeError(
         `${record.event.constructor.name} is crossRegion but event ${record.meta.id} carries tenant data; only platform events cross regions (ADR 0353)`,
       );

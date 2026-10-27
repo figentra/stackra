@@ -53,7 +53,7 @@ export class OutboxAccessLogSinkDriver extends Driver(AccessLogSink) {
         meta: {
           id: mintAccessEventId(),
           occurredAt: record.at,
-          ...(record.actor.tenantId === undefined ? {} : { tenantId: record.actor.tenantId }),
+          ...(record.actor.scopeId === undefined ? {} : { scopeId: record.actor.scopeId }),
           actor: record.actor,
           correlationId: record.callId,
         },

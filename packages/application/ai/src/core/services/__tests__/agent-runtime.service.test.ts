@@ -40,9 +40,9 @@ const human: Actor = {
   kind: ActorKind.User,
   id: "usr_1",
   realm: Realm.Customer,
-  tenantId: "scp_1",
+  scopeId: "scp_1",
 };
-const actor: Actor = { kind: ActorKind.Agent, id: "agt_1", tenantId: "scp_1", onBehalfOf: human };
+const actor: Actor = { kind: ActorKind.Agent, id: "agt_1", scopeId: "scp_1", onBehalfOf: human };
 const agent: AgentDefinition = { key: "matter_assistant", task: "chat", tools: [], maxSteps: 4 };
 AGENT_REGISTRY.set(agent.key, agent);
 

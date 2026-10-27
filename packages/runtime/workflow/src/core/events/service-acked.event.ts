@@ -23,7 +23,7 @@ import type { KeptRecords } from "#core/types/kept-records.type";
  * One service's ack.
  *
  * @example
- * ctx.record(ServiceAcked.create({ subject: input.tenantId, service: "commerce" }));
+ * ctx.record(ServiceAcked.create({ subject: input.scopeId, service: "commerce" }));
  * ctx.record(
  *   ServiceAcked.create({
  *     subject: erasureId,

@@ -16,9 +16,9 @@ import { fakeSession } from "#testing/functions/fake-session.function";
 
 describe("fakeSession", () => {
   it("gives a signed-in session with the requested memberships", () => {
-    const session = fakeSession({ status: SessionStatus.SignedIn, tenants: 2 });
+    const session = fakeSession({ status: SessionStatus.SignedIn, memberships: 2 });
     expectTypeOf(session).toEqualTypeOf<SignedInSession>();
-    const [first, second] = session.user.tenants;
+    const [first, second] = session.user.memberships;
     expect(session.status).toBe(SessionStatus.SignedIn);
     expect(session.user.userId).toMatch(/^usr_[0-9]{26}$/);
     expect(first?.tenantId).not.toBe(second?.tenantId);

@@ -101,7 +101,7 @@ describe("@stackra/contracts", () => {
       "defineService",
       "defineWorker",
       "verifySignature",
-      "wrapTenantKey",
+      "wrapScopeKey",
     ]);
   });
 

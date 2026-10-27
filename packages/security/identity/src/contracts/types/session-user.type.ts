@@ -23,7 +23,7 @@ import type { TenantMembership } from "@stackra/tenancy/react";
  *   email: "rana@acme.example",
  *   displayName: "Rana",
  *   permissions: ["orders.order.read"],
- *   tenants: [
+ *   memberships: [
  *     { tenantId: "scp_01j9z3k4m5n6p7q8r9s0t1v2w4", path: "platform.acme", name: "Acme", role: "admin", roles: ["admin"] },
  *   ],
  * };
@@ -45,5 +45,5 @@ export interface SessionUser {
   readonly permissions: readonly string[];
 
   /** Every membership, in the provider's order; the tenant switcher takes them as they are. */
-  readonly tenants: readonly TenantMembership[];
+  readonly memberships: readonly TenantMembership[];
 }

@@ -69,7 +69,7 @@ host's wiring like any driver:
   additional data, so a value opens only where it was sealed and a rotated key still opens old rows.
 - `MemoryKeyProviderDriver`: data keys handed to it in process.
 - `AwsKmsKeyProviderDriver`: one tenant's data keys, stored wrapped and unwrapped by AWS KMS bound to the tenant and key
-  id (`wrapTenantKey` makes a new one); the KMS key is the environment's managed key or the tenant's own ARN. The host
+  id (`wrapScopeKey` makes a new one); the KMS key is the environment's managed key or the tenant's own ARN. The host
   passes the SDK's `KMS` client (any `AwsKmsApi`); this package takes no SDK dependency.
 - `SubjectKeyProviderDriver`: a key per data subject, HKDF-derived from the tenant's key and the subject's own salt;
   destroying the salt crypto-shreds that subject only.

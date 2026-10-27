@@ -38,7 +38,7 @@ describe("@stackra/identity/contracts", () => {
 
   it("types the signed-in user", () => {
     expectTypeOf<SessionUser["userId"]>().toEqualTypeOf<PublicId<"usr">>();
-    expectTypeOf<SessionUser["tenants"]>().toEqualTypeOf<readonly TenantMembership[]>();
+    expectTypeOf<SessionUser["memberships"]>().toEqualTypeOf<readonly TenantMembership[]>();
     expectTypeOf<SessionUser["permissions"]>().toEqualTypeOf<readonly string[]>();
   });
 });

@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: `wrapTenantKey`, a new tenant data key from AWS KMS, returned wrapped only: what tenant provisioning and a
+ * Purpose: `wrapScopeKey`, a new tenant data key from AWS KMS, returned wrapped only: what tenant provisioning and a
  *          key rotation store beside the tenant before `AwsKmsKeyProviderDriver` serves it.
  * Boundary: one `GenerateDataKeyWithoutPlaintext` call under the KMS key the caller names (the environment's managed
  *           key, or a tenant's own key ARN when it brings one), bound to the tenant and key id by the encryption
@@ -18,16 +18,16 @@ import type { WrappedDataKey } from "#core/types/wrapped-data-key.type";
 const KEY_ID = /^[A-Za-z0-9_-]{1,64}$/;
 
 /**
- * A fresh data key `keyId` for `tenantId`, wrapped under `kmsKeyId`.
+ * A fresh data key `keyId` for `scopeId`, wrapped under `kmsKeyId`.
  *
  * @example
- * const next = await wrapTenantKey(new KMS({ region }), config.kmsKeyId, tenant.id, "k2");
+ * const next = await wrapScopeKey(new KMS({ region }), config.kmsKeyId, tenant.id, "k2");
  * await tenants.addDataKey(tenant.id, next);
  */
-export async function wrapTenantKey(
+export async function wrapScopeKey(
   kms: AwsKmsApi,
   kmsKeyId: string,
-  tenantId: string,
+  scopeId: string,
   keyId: string,
 ): Promise<WrappedDataKey> {
   if (!KEY_ID.test(keyId))
@@ -35,7 +35,7 @@ export async function wrapTenantKey(
   const { CiphertextBlob } = await kms.generateDataKeyWithoutPlaintext({
     KeyId: kmsKeyId,
     KeySpec: "AES_256",
-    EncryptionContext: kmsKeyContext(tenantId, keyId),
+    EncryptionContext: kmsKeyContext(scopeId, keyId),
   });
   if (CiphertextBlob === undefined || CiphertextBlob.length === 0)
     throw new RangeError(`KMS returned no wrapped key for ${keyId}`);

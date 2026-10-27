@@ -21,7 +21,7 @@ const SCOPE: ScopeRef = { id: "scp_00000000000000000000000001", path: "root.acme
 const USER: Actor = {
   kind: ActorKind.User,
   id: "usr_00000000000000000000000001",
-  realm: Realm.Tenant,
+  realm: Realm.Staff,
 };
 
 const SERVICE: Actor = { kind: ActorKind.Service, id: "svc_00000000000000000000000001" };

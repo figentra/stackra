@@ -70,13 +70,13 @@ const context = MarketContext.create(packs, { sections: ["food"] });
 
 describe("MarketContext", () => {
   it("answers a buyer rule from the buyer's market", () => {
-    const resolved = context.packFor({ tenant: "xa-one", buyer: "xa-two" }, "tax.sales.rate");
+    const resolved = context.packFor({ scope: "xa-one", buyer: "xa-two" }, "tax.sales.rate");
     expect(resolved.market).toBe("xa-two");
     expect(valueOf(resolved, "tax.sales.rate", "2026-07-01")?.value).toBe(7);
   });
 
   it("answers a location rule through nested overlays and the overlay's section", () => {
-    const resolved = context.packFor({ tenant: "xa-one", location: "xa-two-city" }, "tips");
+    const resolved = context.packFor({ scope: "xa-one", location: "xa-two-city" }, "tips");
     expect(resolved.layers.map((layer) => `${layer.market}/${layer.section ?? ""}`)).toEqual([
       "xa/",
       "xa-two/",
@@ -91,15 +91,15 @@ describe("MarketContext", () => {
   });
 
   it("answers an undeclared rule kind from the tenant's market", () => {
-    const resolved = context.packFor({ tenant: "xa-one", buyer: "xa-two" }, "currency");
+    const resolved = context.packFor({ scope: "xa-one", buyer: "xa-two" }, "currency");
     expect(resolved.market).toBe("xa-one");
-    expect(context.packFor({ tenant: "xa-one" }, "currency")).toBe(resolved);
+    expect(context.packFor({ scope: "xa-one" }, "currency")).toBe(resolved);
   });
 
   it("refuses a record without the subject's market", () => {
     const error: unknown = (() => {
       try {
-        return context.packFor({ tenant: "xa-one" }, "registration.threshold");
+        return context.packFor({ scope: "xa-one" }, "registration.threshold");
       } catch (caught) {
         return caught;
       }

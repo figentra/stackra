@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `broadcastChannel(route, record)`, the channel one occurrence of a broadcasting event goes out on:
- *          `tenant.{tenantId}.<module>` for the tenant audience, `principal.{principalId}.<module>` for the principal.
- * Boundary: a pure function. The tenant is the occurrence's `meta.tenantId`. The principal is the event's own
+ *          `tenant.{scopeId}.<module>` for the tenant audience, `principal.{principalId}.<module>` for the principal.
+ * Boundary: a pure function. The tenant is the occurrence's `meta.scopeId`. The principal is the event's own
  *           `principalId` field when it has one (`InboxMessageCreated`), else the user the call acted for
  *           (`actor.onBehalfOf ?? actor`). A channel it cannot fill throws: a broadcast never falls back to a wider
  *           audience.
@@ -32,13 +32,12 @@ function principalOf({ event, meta }: RecordedEvent): unknown {
  * @throws TypeError when the module key is not a segment, or the tenant or principal is missing or not a segment.
  * @example
  * broadcastChannel({ name: "orders.order.paid.v1", module: "orders", permission: "orders.order.read",
- *   audience: BroadcastAudience.Tenant }, record); // "tenant.ten_01J....orders"
+ *   audience: BroadcastAudience.Scope }, record); // "tenant.ten_01J....orders"
  */
 export function broadcastChannel(route: BroadcastRoute, record: RecordedEvent): string {
   if (!SEGMENT.test(route.module))
     throw new TypeError(`"${route.module}" is not a module key for a realtime channel`);
-  const id =
-    route.audience === BroadcastAudience.Tenant ? record.meta.tenantId : principalOf(record);
+  const id = route.audience === BroadcastAudience.Scope ? record.meta.scopeId : principalOf(record);
   if (typeof id !== "string" || !SEGMENT.test(id))
     throw new TypeError(
       `${route.name} broadcasts to its ${route.audience}, but occurrence ${record.meta.id} names no ${route.audience} id`,

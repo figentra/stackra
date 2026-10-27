@@ -23,7 +23,7 @@ export const SESSION_USER_SCHEMA = z.object({
   displayName: z.string().min(1),
   avatarUrl: url().exactOptional(),
   permissions: z.array(z.string().min(1)),
-  tenants: z.array(
+  memberships: z.array(
     z.object({
       tenantId: publicId("scp"),
       path: z.string().min(1),

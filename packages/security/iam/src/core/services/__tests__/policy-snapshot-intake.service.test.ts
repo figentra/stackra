@@ -38,7 +38,7 @@ describe(PolicySnapshotIntakeService, () => {
   it("decodes and keeps the snapshot under the event's tenant, newer versions only", async () => {
     const store = new MemoryPolicySnapshotStoreDriver();
     const intake = new PolicySnapshotIntakeService(store);
-    const event = { principal: PRINCIPAL, snapshot: json(2), tenantId: "ten_acme" } as const;
+    const event = { principal: PRINCIPAL, snapshot: json(2), scopeId: "ten_acme" } as const;
     expect(await intake.handle(event)).toBe(true);
     expect(await intake.handle(event)).toBe(false);
     expect(await intake.handle({ ...event, snapshot: json(1) })).toBe(false);

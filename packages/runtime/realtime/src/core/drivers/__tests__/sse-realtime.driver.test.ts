@@ -22,8 +22,8 @@ import { RealtimeHub } from "#core/services/realtime-hub.service";
 
 const SESSION = {
   principalId: "usr_1",
-  tenantId: "ten_1",
-  realm: Realm.Tenant,
+  scopeId: "ten_1",
+  realm: Realm.Staff,
   permissions: ["orders.order.read"],
 };
 

@@ -19,7 +19,7 @@ const USER: SessionUser = {
   email: "rana@acme.example",
   displayName: "Rana",
   permissions: [],
-  tenants: [],
+  memberships: [],
 };
 
 describe("MemorySessionStoreDriver", () => {

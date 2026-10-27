@@ -45,7 +45,7 @@ journals, the boot explorer and the in-process test driver (ADR 0101, 0102, 0151
   lock is free, and counts only runs it really advanced, so an idle worker pauses.
 - A step's integration events go to `EventOutbox` in its transaction; its domain events to `EventBus` after the commit.
   Their metadata is picked field by field (`metaOf`): the origin's scope id goes in the events envelope's scope field,
-  and no `scope` key or other origin field leaks into it. Read the call's `scope`, never its `tenantId`.
+  and no `scope` key or other origin field leaks into it. Read the call's `scope`, never its `scopeId`.
 - Raw SQL only in the Postgres journal, every value bound, every row read through zod, each statement with a
   `// raw-sql:` reason (ADR 0160). A released migration is frozen; a change is a new migration.
 - No tenant word is declared here (final review R-59, ADR 0323): a scope is a `ScopeRef`. "Guard" in the engine is an

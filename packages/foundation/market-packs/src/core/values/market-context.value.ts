@@ -58,9 +58,9 @@ export class MarketContext {
    * @throws PackNotFoundError, PackRejectedError from `resolvePack`.
    */
   packFor(record: MarketRecord, ruleKind: string): ResolvedPack {
-    const tenant = this.resolve(record.tenant);
-    const subject = subjectOf(tenant, ruleKind);
-    if (subject === PackSubject.Tenant) return tenant;
+    const scope = this.resolve(record.scope);
+    const subject = subjectOf(scope, ruleKind);
+    if (subject === PackSubject.Scope) return scope;
     const market = record[subject];
     if (market === undefined) throw SubjectMarketMissingError.create({ subject, ruleKind });
     return this.resolve(market);

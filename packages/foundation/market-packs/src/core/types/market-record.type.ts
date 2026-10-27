@@ -10,8 +10,8 @@
 
 /** Market codes per subject for one record. */
 export type MarketRecord = {
-  /** The tenant's own market; always known. */
-  readonly tenant: string;
+  /** The scope's own market; always known. */
+  readonly scope: string;
   /** The market of the place where the sale or the work happens. */
   readonly location?: string;
   /** The market of the buyer's ship-to or billing address. */

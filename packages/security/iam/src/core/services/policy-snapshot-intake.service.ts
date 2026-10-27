@@ -3,7 +3,7 @@
  * Purpose: `PolicySnapshotIntakeService`, the snapshot listener every consuming service mounts: it decodes the IAM
  *          service's snapshot event and keeps it in the bound `PolicySnapshotStore` under the event's tenant.
  * Boundary: the body of the listener, not the listener kind: @stackra/iam does not depend on @stackra/events, so the
- *           consumer's one-line `Listener` on the IAM event calls `handle({ ...event, tenantId: meta.tenantId })`.
+ *           consumer's one-line `Listener` on the IAM event calls `handle({ ...event, scopeId: meta.scopeId })`.
  *           The payload is untrusted: a missing principal or a malformed snapshot throws a `TypeError` (the delivery
  *           then retries and dead-letters; nothing is stored), and the store keeps only a higher version, so redelivery
  *           is harmless.
@@ -23,7 +23,7 @@ import type { PolicySnapshotEvent } from "#core/types/policy-snapshot-event.type
  * @example
  * export class PolicySnapshotListener extends Listener({ on: PolicySnapshotUpdated }) {
  *   handle(event: PolicySnapshotUpdated, ctx: ListenerContext) {
- *     return this.intake.handle({ ...event, tenantId: ctx.meta.tenantId });
+ *     return this.intake.handle({ ...event, scopeId: ctx.meta.scopeId });
  *   }
  * }
  */
@@ -49,7 +49,7 @@ export class PolicySnapshotIntakeService extends Service {
     return this.store.write(
       event.principal as PublicId,
       decodePolicySnapshot(event.snapshot),
-      event.tenantId,
+      event.scopeId,
     );
   }
 }

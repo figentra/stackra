@@ -55,7 +55,7 @@ describe("I18nConfig", () => {
       formats: {},
       urlStrategy: "prefix_except_default",
       followDevice: false,
-      tenantChoosesNumerals: false,
+      scopeChoosesNumerals: false,
       failOnMissingLocale: false,
       cookieName: "locale",
     });

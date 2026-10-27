@@ -46,7 +46,7 @@ const CLAIMS = z.object({
  * @throws UnauthenticatedError when the claims lack the user id or the address, or a membership is malformed.
  * @example
  * const user = sessionUserOf(decodedIdToken);
- * switcher.setMemberships(user.tenants);
+ * switcher.setMemberships(user.memberships);
  */
 export function sessionUserOf(claims: Readonly<Record<string, unknown>>): SessionUser {
   const parsed = CLAIMS.safeParse(claims);
@@ -58,7 +58,7 @@ export function sessionUserOf(claims: Readonly<Record<string, unknown>>): Sessio
     displayName: read.name ?? read.email,
     ...(read.picture === undefined ? {} : { avatarUrl: read.picture }),
     permissions: read[IDENTITY_CLAIMS.permissions],
-    tenants: read[IDENTITY_CLAIMS.memberships].map((membership) => ({
+    memberships: read[IDENTITY_CLAIMS.memberships].map((membership) => ({
       tenantId: membership.scopeId,
       path: membership.path,
       name: membership.name,

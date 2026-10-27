@@ -11,13 +11,13 @@ import { describe, expect, it } from "vitest";
 import { navigation } from "#core/functions/navigation.function";
 import { routeRef } from "#core/functions/route-ref.function";
 
-class TenantAdminPanel {}
+class ScopeAdminPanel {}
 
 const Product = { base: "/catalogue/products" };
 
 describe("navigation", () => {
   it("keeps the groups and entries in order, frozen", () => {
-    const tree = navigation(TenantAdminPanel, [
+    const tree = navigation(ScopeAdminPanel, [
       {
         group: "catalogue::nav.catalogue",
         items: [{ label: "catalogue::resources.product.title", to: Product, icon: "package" }],
@@ -27,7 +27,7 @@ describe("navigation", () => {
         items: [{ label: "orders::settings.title", to: routeRef("settings") }],
       },
     ]);
-    expect(tree.panel).toBe(TenantAdminPanel);
+    expect(tree.panel).toBe(ScopeAdminPanel);
     expect(tree.groups.map((group) => group.group)).toEqual([
       "catalogue::nav.catalogue",
       "pages::settings.title",
@@ -41,9 +41,9 @@ describe("navigation", () => {
   });
 
   it("refuses an empty label", () => {
-    expect(() => navigation(TenantAdminPanel, [{ group: "", items: [] }])).toThrow(RangeError);
+    expect(() => navigation(ScopeAdminPanel, [{ group: "", items: [] }])).toThrow(RangeError);
     expect(() =>
-      navigation(TenantAdminPanel, [{ group: "g::a", items: [{ label: "", to: "/x" }] }]),
+      navigation(ScopeAdminPanel, [{ group: "g::a", items: [{ label: "", to: "/x" }] }]),
     ).toThrow(/needs a label/);
   });
 });

@@ -60,7 +60,7 @@ describe("US seed packs", () => {
 
   it("answer sales tax from the buyer's state and the calendar from the location's", () => {
     const context = MarketContext.create(packs, drafts);
-    const sale = { tenant: "us-ny", location: "us-ny", buyer: "us-ca" };
+    const sale = { scope: "us-ny", location: "us-ny", buyer: "us-ca" };
     expect(context.packFor(sale, "tax.sales.rate").market).toBe("us-ca");
     expect(context.packFor(sale, "calendar.holidays.state").market).toBe("us-ny");
   });

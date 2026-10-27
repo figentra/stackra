@@ -19,7 +19,7 @@ import type { AutomationPrincipalInput } from "#contracts/types/automation-princ
  * Mints and revokes automation principals.
  *
  * @example
- * const principal = await automationPrincipals.mint({ automationId: automation.id, tenantId, name: automation.name });
+ * const principal = await automationPrincipals.mint({ automationId: automation.id, scopeId, name: automation.name });
  * await automations.publish(automation.id, revision, principal, ctx.actor);
  */
 export abstract class AutomationPrincipals extends Port {
@@ -27,7 +27,7 @@ export abstract class AutomationPrincipals extends Port {
   declare readonly "~key": "identity.AutomationPrincipals";
 
   /**
-   * The principal `input.automationId` runs as in `input.tenantId`: the one minted before while it is live, else a new
+   * The principal `input.automationId` runs as in `input.scopeId`: the one minted before while it is live, else a new
    * one.
    *
    * @throws Error when the store cannot be reached; nothing is published without a principal.

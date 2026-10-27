@@ -36,7 +36,7 @@ interface Sql {
  *
  * @example
  * // runway.yaml: the IAM consumer binds { port: PolicySnapshotStore, driver: postgres }
- * await store.write(event.principal, decodePolicySnapshot(event.snapshot), meta.tenantId);
+ * await store.write(event.principal, decodePolicySnapshot(event.snapshot), meta.scopeId);
  */
 export class PostgresPolicySnapshotStoreDriver extends Driver(PolicySnapshotStore) {
   /** The connected database each call opens its own transaction on. */
@@ -53,11 +53,11 @@ export class PostgresPolicySnapshotStoreDriver extends Driver(PolicySnapshotStor
    *
    * @throws TypeError when the stored row is not a policy snapshot.
    */
-  async read(principal: PublicId, tenantId?: PublicId): Promise<PolicySnapshot | undefined> {
-    const rows = (await this.run(tenantId, (sql) =>
+  async read(principal: PublicId, scopeId?: PublicId): Promise<PolicySnapshot | undefined> {
+    const rows = (await this.run(scopeId, (sql) =>
       // raw-sql: the one row of this principal in the tenant the session is set to
       sql.execute(`select snapshot from ${SNAPSHOTS} where tenant_id = ? and principal = ?`, [
-        tenantId ?? PLATFORM,
+        scopeId ?? PLATFORM,
         principal,
       ]),
     )) as readonly { readonly snapshot: unknown }[];
@@ -69,31 +69,27 @@ export class PostgresPolicySnapshotStoreDriver extends Driver(PolicySnapshotStor
   }
 
   /** See `PolicySnapshotStore.write`. */
-  async write(
-    principal: PublicId,
-    snapshot: PolicySnapshot,
-    tenantId?: PublicId,
-  ): Promise<boolean> {
-    const kept = (await this.run(tenantId, (sql) =>
+  async write(principal: PublicId, snapshot: PolicySnapshot, scopeId?: PublicId): Promise<boolean> {
+    const kept = (await this.run(scopeId, (sql) =>
       // raw-sql: one upsert that replaces the row only with a higher version
       sql.execute(
         `insert into ${SNAPSHOTS} (tenant_id, principal, version, snapshot, created_at, updated_at) ` +
           "values (?, ?, ?, ?::jsonb, now(), now()) on conflict (tenant_id, principal) do update set " +
           "version = excluded.version, snapshot = excluded.snapshot, updated_at = now() " +
           `where ${SNAPSHOTS}.version < excluded.version returning principal`,
-        [tenantId ?? PLATFORM, principal, snapshot.version, JSON.stringify(snapshot)],
+        [scopeId ?? PLATFORM, principal, snapshot.version, JSON.stringify(snapshot)],
       ),
     )) as readonly unknown[];
     return kept.length > 0;
   }
 
-  /** Runs `work` in a transaction of its own whose `app.tenant_id` is `tenantId` (or the platform partition). */
-  private run<T>(tenantId: PublicId | undefined, work: (sql: Sql) => Promise<T>): Promise<T> {
+  /** Runs `work` in a transaction of its own whose `app.tenant_id` is `scopeId` (or the platform partition). */
+  private run<T>(scopeId: PublicId | undefined, work: (sql: Sql) => Promise<T>): Promise<T> {
     return this.database.transaction(
       async () => {
         const sql = this.database.em() as unknown as Sql;
         // raw-sql: the tenant the table's equality policy reads, for this transaction only
-        await sql.execute("select set_config('app.tenant_id', ?, true)", [tenantId ?? PLATFORM]);
+        await sql.execute("select set_config('app.tenant_id', ?, true)", [scopeId ?? PLATFORM]);
         return work(sql);
       },
       { requiresNew: true },

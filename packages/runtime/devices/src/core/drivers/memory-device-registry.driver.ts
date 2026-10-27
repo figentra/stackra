@@ -23,7 +23,7 @@ import { PairingCodeInvalidError } from "#core/errors/pairing-code-invalid.error
 import { newPairingCode } from "#core/functions/new-pairing-code.function";
 
 /** The facts of a claim that names none. */
-const NO_FACTS: DeviceClaimFacts = { tenantId: null, market: null, pairedBy: null };
+const NO_FACTS: DeviceClaimFacts = { scopeId: null, market: null, pairedBy: null };
 
 /** An open or finished pairing. */
 interface Pairing extends PairingCode {
@@ -89,7 +89,7 @@ export class MemoryDeviceRegistryDriver extends Driver(DeviceRegistry) {
       name: draft.name,
       kind: draft.kind,
       nodeId: draft.nodeId,
-      tenantId: facts.tenantId,
+      scopeId: facts.scopeId,
       market: facts.market,
       pairedBy: facts.pairedBy,
       status: DeviceStatus.Active,

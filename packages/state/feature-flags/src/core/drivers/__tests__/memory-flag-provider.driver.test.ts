@@ -15,9 +15,9 @@ describe(MemoryFlagProviderDriver, () => {
   it("answers the values set, as a copy, for any subject", async () => {
     const provider = new MemoryFlagProviderDriver();
     expect(provider).toBeInstanceOf(FlagProvider);
-    await expect(provider.values({ subject: null, tenant: null })).resolves.toEqual({});
+    await expect(provider.values({ subject: null, scope: null })).resolves.toEqual({});
     provider.set("web.help_centre", true).set("web.help_centre", false).set("web.beta", true);
-    const values = await provider.values({ subject: "usr_1", tenant: null });
+    const values = await provider.values({ subject: "usr_1", scope: null });
     expect(values).toEqual({ "web.help_centre": false, "web.beta": true });
     provider.set("web.beta", false);
     expect(values["web.beta"]).toBe(true);

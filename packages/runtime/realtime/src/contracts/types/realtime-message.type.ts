@@ -11,7 +11,7 @@
 
 /** One data-free refresh. */
 export interface RealtimeMessage {
-  /** The channel it was broadcast on: `tenant.{tenantId}.<module>` or `principal.{principalId}.<module>`. */
+  /** The channel it was broadcast on: `tenant.{scopeId}.<module>` or `principal.{principalId}.<module>`. */
   readonly channel: string;
 
   /** The wire name of the integration event (`orders.order.paid.v1`). */

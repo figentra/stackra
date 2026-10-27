@@ -26,7 +26,7 @@ const USER: SessionUser = {
   email: "rana@acme.example",
   displayName: "Rana",
   permissions: ["orders.order.cancel"],
-  tenants: [],
+  memberships: [],
 };
 
 /** A memory store whose signed-in session has a token. */

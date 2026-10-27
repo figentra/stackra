@@ -42,7 +42,7 @@ describe("PosthogFlagProviderDriver", () => {
 
   it("asks the flags endpoint for the subject with the tenant group", async () => {
     const fetch = answer({ flags: {} });
-    await new PosthogFlagProviderDriver(config).values({ subject: "usr_1", tenant: "ten_1" });
+    await new PosthogFlagProviderDriver(config).values({ subject: "usr_1", scope: "ten_1" });
     expect(fetch).toHaveBeenCalledTimes(1);
     const [url, init] = fetch.mock.calls[0] as unknown as [string, RequestInit];
     expect(url).toBe("https://eu.i.posthog.com/flags/?v=2");
@@ -56,7 +56,7 @@ describe("PosthogFlagProviderDriver", () => {
 
   it("sends no group without a tenant", async () => {
     const fetch = answer({ flags: {} });
-    await new PosthogFlagProviderDriver(config).values({ subject: "vis_1", tenant: null });
+    await new PosthogFlagProviderDriver(config).values({ subject: "vis_1", scope: null });
     const [, init] = fetch.mock.calls[0] as unknown as [string, RequestInit];
     expect(JSON.parse(String(init.body)).groups).toEqual({});
   });
@@ -71,14 +71,14 @@ describe("PosthogFlagProviderDriver", () => {
       },
     });
     await expect(
-      new PosthogFlagProviderDriver(config).values({ subject: "usr_1", tenant: null }),
+      new PosthogFlagProviderDriver(config).values({ subject: "usr_1", scope: null }),
     ).resolves.toEqual({ "web.help_centre": true, "orders.quick_order": false });
   });
 
   it("never asks for an anonymous subject", async () => {
     const fetch = answer({ flags: {} });
     await expect(
-      new PosthogFlagProviderDriver(config).values({ subject: null, tenant: "ten_1" }),
+      new PosthogFlagProviderDriver(config).values({ subject: null, scope: "ten_1" }),
     ).resolves.toEqual({});
     expect(fetch).not.toHaveBeenCalled();
   });
@@ -87,7 +87,7 @@ describe("PosthogFlagProviderDriver", () => {
     const fetch = answer({ flags: {} });
     const keyless = buildConfig(FeatureFlagsConfig, { values: { posthogKey: "" } });
     await expect(
-      new PosthogFlagProviderDriver(keyless).values({ subject: "usr_1", tenant: null }),
+      new PosthogFlagProviderDriver(keyless).values({ subject: "usr_1", scope: null }),
     ).rejects.toThrow(/posthogKey is not set/);
     expect(fetch).not.toHaveBeenCalled();
   });
@@ -95,7 +95,7 @@ describe("PosthogFlagProviderDriver", () => {
   it("throws on an error status", async () => {
     answer({ error: "nope" }, 503);
     await expect(
-      new PosthogFlagProviderDriver(config).values({ subject: "usr_1", tenant: null }),
+      new PosthogFlagProviderDriver(config).values({ subject: "usr_1", scope: null }),
     ).rejects.toThrow(/HTTP 503/);
   });
 });

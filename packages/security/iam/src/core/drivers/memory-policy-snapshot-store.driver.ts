@@ -22,14 +22,14 @@ export class MemoryPolicySnapshotStoreDriver extends Driver(PolicySnapshotStore)
   /** `<tenant>:<principal>` to snapshot; `-` stands for no tenant. */
   private readonly snapshots = new Map<string, PolicySnapshot>();
 
-  /** The held snapshot of `principal` in `tenantId`. */
-  read(principal: PublicId, tenantId?: PublicId): Promise<PolicySnapshot | undefined> {
-    return Promise.resolve(this.snapshots.get(`${tenantId ?? "-"}:${principal}`));
+  /** The held snapshot of `principal` in `scopeId`. */
+  read(principal: PublicId, scopeId?: PublicId): Promise<PolicySnapshot | undefined> {
+    return Promise.resolve(this.snapshots.get(`${scopeId ?? "-"}:${principal}`));
   }
 
   /** Keeps `snapshot` when it is newer than the one held in the same tenant. */
-  write(principal: PublicId, snapshot: PolicySnapshot, tenantId?: PublicId): Promise<boolean> {
-    const key = `${tenantId ?? "-"}:${principal}`;
+  write(principal: PublicId, snapshot: PolicySnapshot, scopeId?: PublicId): Promise<boolean> {
+    const key = `${scopeId ?? "-"}:${principal}`;
     const held = this.snapshots.get(key);
     if (held !== undefined && held.version >= snapshot.version) return Promise.resolve(false);
     this.snapshots.set(key, snapshot);

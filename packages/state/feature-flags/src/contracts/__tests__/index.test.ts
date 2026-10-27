@@ -20,7 +20,7 @@ describe("@stackra/feature-flags/contracts", () => {
   it("resolves its public type", () => {
     expectTypeOf<FlagContext>().toEqualTypeOf<{
       readonly subject: string | null;
-      readonly tenant: string | null;
+      readonly scope: string | null;
     }>();
   });
 });

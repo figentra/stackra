@@ -214,13 +214,13 @@ A workflow that waits for several services (tenant provisioning, ADR 0210 decisi
 
 ```ts
 async request(run: Run<this>, ctx: StepContext): Promise<boolean> {
-  ctx.record(ProvisioningRequested.create({ tenantId: run.input.tenantId }));
-  return this.acks.expect(run.input.tenantId, this.config.services); // true: nothing to wait for
+  ctx.record(ProvisioningRequested.create({ scopeId: run.input.scopeId }));
+  return this.acks.expect(run.input.scopeId, this.config.services); // true: nothing to wait for
 }
 
 @Step<ProvisionTenantWorkflow>({
   waitFor: AllServicesAcked,
-  correlate: (run) => ({ subject: run.input.tenantId }),
+  correlate: (run) => ({ subject: run.input.scopeId }),
   when: (run) => !run.results.request,
   timeout: "1h",
 })

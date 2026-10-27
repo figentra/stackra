@@ -32,7 +32,7 @@ const KEY_ID = /^[A-Za-z0-9_-]{1,64}$/;
  * @example
  * const keys = new AwsKmsKeyProviderDriver(new KMS({ region }), {
  *   kmsKeyId: config.kmsKeyId,
- *   tenantId: tenant.id,
+ *   scopeId: tenant.id,
  *   keys: tenant.dataKeys,
  * });
  * const cipher = new AesGcmFieldCipherDriver(keys);
@@ -54,7 +54,7 @@ export class AwsKmsKeyProviderDriver extends KeyProvider {
    */
   constructor(kms: AwsKmsApi, options: AwsKmsKeyProviderOptions) {
     super();
-    if (options.kmsKeyId === "" || options.tenantId === "")
+    if (options.kmsKeyId === "" || options.scopeId === "")
       throw new RangeError("AwsKmsKeyProviderDriver needs a KMS key id and a tenant id");
     for (const { id, wrapped } of options.keys) {
       if (!KEY_ID.test(id)) throw new RangeError(`A key id is 1 to 64 of [A-Za-z0-9_-], got ${id}`);
@@ -62,7 +62,7 @@ export class AwsKmsKeyProviderDriver extends KeyProvider {
       this.wrapped.set(id, wrapped);
     }
     if (options.keys.length === 0)
-      throw new RangeError(`Tenant ${options.tenantId} has no wrapped data key`);
+      throw new RangeError(`Tenant ${options.scopeId} has no wrapped data key`);
     this.kms = kms;
     this.options = options;
   }
@@ -94,7 +94,7 @@ export class AwsKmsKeyProviderDriver extends KeyProvider {
       ({ Plaintext: plaintext } = await this.kms.decrypt({
         CiphertextBlob: base64urlDecode(wrapped),
         KeyId: this.options.kmsKeyId,
-        EncryptionContext: kmsKeyContext(this.options.tenantId, id),
+        EncryptionContext: kmsKeyContext(this.options.scopeId, id),
       }));
     } catch {
       throw new RangeError(`KMS refused to unwrap data key ${id}`);

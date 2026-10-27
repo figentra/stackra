@@ -17,7 +17,7 @@ const USER = {
   displayName: "Rana",
   avatarUrl: "https://cdn.acme.example/rana.png",
   permissions: ["orders.order.read"],
-  tenants: [
+  memberships: [
     {
       tenantId: "scp_01j9z3k4m5n6p7q8r9s0t1v2w4",
       path: "platform.acme",
@@ -41,10 +41,16 @@ describe("SESSION_USER_SCHEMA", () => {
   it.each([
     ["a provider subject id", { ...USER, userId: "312909075212468632" }],
     ["a bad address", { ...USER, email: "rana" }],
-    ["a membership without a role", { ...USER, tenants: [{ ...USER.tenants[0], roles: [] }] }],
+    [
+      "a membership without a role",
+      { ...USER, memberships: [{ ...USER.memberships[0], roles: [] }] },
+    ],
     [
       "a membership with an ord_ id",
-      { ...USER, tenants: [{ ...USER.tenants[0], tenantId: "ord_01j9z3k4m5n6p7q8r9s0t1v2w4" }] },
+      {
+        ...USER,
+        memberships: [{ ...USER.memberships[0], tenantId: "ord_01j9z3k4m5n6p7q8r9s0t1v2w4" }],
+      },
     ],
   ])("refuses %s", (_case, value) => {
     expect(SESSION_USER_SCHEMA.safeParse(value).success).toBe(false);

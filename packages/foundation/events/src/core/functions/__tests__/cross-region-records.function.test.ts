@@ -26,7 +26,7 @@ class PointsRedeemed extends DomainEvent {}
 const at = new Date(0);
 const record = (event: object, id: string, scopeId?: string) => ({
   event,
-  meta: { id, occurredAt: at, ...(scopeId === undefined ? {} : { tenantId: scopeId }) },
+  meta: { id, occurredAt: at, ...(scopeId === undefined ? {} : { scopeId }) },
 });
 
 describe("crossRegionRecords", () => {

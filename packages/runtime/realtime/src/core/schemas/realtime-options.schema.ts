@@ -27,7 +27,7 @@ import { REALTIME_CONFIG_SCHEMA } from "#core/constants/realtime-config-schema.c
  *
  * @example
  * export class RealtimeConfig extends BaseRealtimeConfig {
- *   override channelRealms: Realm[] = [Realm.Tenant];
+ *   override channelRealms: Realm[] = [Realm.Staff];
  *   override subscribeTokenTtl = Duration.minutes(5);
  * }
  */
@@ -51,7 +51,7 @@ export class RealtimeOptions extends Schema {
   origin = "";
 
   /** The realms whose sessions may hear tenant channels; a principal always hears its own channel. */
-  channelRealms: Realm[] = [Realm.Platform, Realm.Tenant, Realm.Customer];
+  channelRealms: Realm[] = [Realm.Platform, Realm.Staff, Realm.Customer];
 
   /** How long a subscribe token, and the connection it opens, lasts; at least ten seconds. */
   subscribeTokenTtl: Duration = Duration.minutes(15);

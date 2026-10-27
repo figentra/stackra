@@ -35,7 +35,7 @@ const STAFF: Actor = {
   kind: ActorKind.User,
   id: "usr_staff",
   realm: Realm.Platform,
-  tenantId: "ten_1",
+  scopeId: "ten_1",
 };
 
 describe(OutboxAccessLogSinkDriver, () => {
@@ -63,7 +63,7 @@ describe(OutboxAccessLogSinkDriver, () => {
     });
     expect(record?.meta).toMatchObject({
       occurredAt: AT,
-      tenantId: "ten_1",
+      scopeId: "ten_1",
       actor: STAFF,
       correlationId: "call_1",
     });
@@ -83,7 +83,7 @@ describe(OutboxAccessLogSinkDriver, () => {
       at: AT,
     };
     await sink.write(record);
-    expect(outbox.written[0]?.meta).not.toHaveProperty("tenantId");
+    expect(outbox.written[0]?.meta).not.toHaveProperty("scopeId");
     outbox.failing = true;
     await expect(sink.write(record)).rejects.toThrow("outbox down");
   });

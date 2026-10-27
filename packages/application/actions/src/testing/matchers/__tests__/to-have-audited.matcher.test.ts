@@ -61,9 +61,9 @@ describe(toHaveAudited, () => {
     const ctx = fakeActionContext({ actor });
     expect(ctx).not.toHaveAudited();
     expect(verdict(ctx, {}).message()).toMatch(/wrote none/);
-    ctx.audit({ tenantId: "tnt_1", reenabled: ["orders"] });
+    ctx.audit({ scopeId: "tnt_1", reenabled: ["orders"] });
     expect(ctx).toHaveAudited({ fields: { reenabled: ["orders"] } });
-    expect(ctx).not.toHaveAudited({ fields: { tenantId: "tnt_2" } });
+    expect(ctx).not.toHaveAudited({ fields: { scopeId: "tnt_2" } });
     expect(ctx).not.toHaveAudited({ outcome: "ok" });
   });
 });

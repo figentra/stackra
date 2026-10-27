@@ -15,7 +15,7 @@ export const Realm = Enum.of({
   /** The platform's own operators. */
   Platform: "platform",
   /** A tenant's staff. */
-  Tenant: "tenant",
+  Staff: "tenant",
   /** A tenant's customers. */
   Customer: "customer",
 });

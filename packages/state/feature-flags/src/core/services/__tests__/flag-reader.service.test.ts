@@ -27,7 +27,7 @@ class QuickOrderFlag extends Flag({ default: true }) {}
 
 const Flags = flagRefs({ web: { help_centre: HelpCentreFlag, quick_order: QuickOrderFlag } });
 
-const SUBJECTS = { visitor: "vis_1", user: "usr_1", tenant: "ten_1" };
+const SUBJECTS = { visitor: "vis_1", user: "usr_1", scope: "ten_1" };
 
 /** A provider whose answers a test queues; it records each context it is asked for. */
 class QueuedProvider extends FlagProvider {
@@ -77,10 +77,10 @@ describe("FlagReader", () => {
     await readerOf(provider, { targeting: "tenant" }).load(SUBJECTS);
     await readerOf(provider, { targeting: "visitor" }).load({ ...SUBJECTS, visitor: null });
     expect(provider.asked).toEqual([
-      { subject: "usr_1", tenant: "ten_1" },
-      { subject: "vis_1", tenant: "ten_1" },
-      { subject: "ten_1", tenant: "ten_1" },
-      { subject: null, tenant: "ten_1" },
+      { subject: "usr_1", scope: "ten_1" },
+      { subject: "vis_1", scope: "ten_1" },
+      { subject: "ten_1", scope: "ten_1" },
+      { subject: null, scope: "ten_1" },
     ]);
   });
 

@@ -27,7 +27,7 @@ const USER: SessionUser = {
   email: "rana@acme.example",
   displayName: "Rana",
   permissions: [],
-  tenants: [],
+  memberships: [],
 };
 
 /** A memory store the provider can revoke, or whose sign-out cannot reach the provider. */

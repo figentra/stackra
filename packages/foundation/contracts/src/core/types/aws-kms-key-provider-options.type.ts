@@ -14,7 +14,7 @@ export type AwsKmsKeyProviderOptions = {
   /** The KMS key id or ARN the data keys are wrapped under. */
   readonly kmsKeyId: string;
   /** The tenant the keys belong to; part of the encryption context. */
-  readonly tenantId: string;
+  readonly scopeId: string;
   /** The tenant's wrapped data keys, oldest first; the last is current. */
   readonly keys: readonly WrappedDataKey[];
 };

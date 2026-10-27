@@ -23,23 +23,23 @@ import { runRouteLoader } from "#testing/functions/run-route-loader.function";
 const Routes = { sign_in: routeRef("sign_in") };
 
 /** A stand-in for the tenancy switcher. */
-class TenantSwitcher {
-  switchTo = vi.fn(async (_tenantId: string) => undefined);
+class ScopeSwitcherFake {
+  switchTo = vi.fn(async (_scopeId: string) => undefined);
 }
 
 class TabsLayout extends Layout {
-  private readonly tenants: TenantSwitcher;
+  private readonly scopes: ScopeSwitcherFake;
 
-  constructor(tenants: TenantSwitcher) {
+  constructor(scopes: ScopeSwitcherFake) {
     super();
-    this.tenants = tenants;
+    this.scopes = scopes;
   }
 
   override async loader(ctx: LayoutContext<this>) {
-    const { session } = ctx as unknown as { session: { tenants: string[] } | null };
+    const { session } = ctx as unknown as { session: { memberships: string[] } | null };
     if (!session) return ctx.redirect(Routes.sign_in, { resume: true });
-    const [first] = session.tenants;
-    if (first) await this.tenants.switchTo(first);
+    const [first] = session.memberships;
+    if (first) await this.scopes.switchTo(first);
     return null;
   }
 }
@@ -62,7 +62,7 @@ class EchoRoute extends Route({ path: "/echo" }) {
 
 /** The tenancy part: builds the layout with a fresh switcher and hands the switcher back. */
 const tenancyPart = () => {
-  const tenancy = new TenantSwitcher();
+  const tenancy = new ScopeSwitcherFake();
   return { instance: new TabsLayout(tenancy), context: { tenancy } };
 };
 
@@ -79,17 +79,17 @@ describe("runRouteLoader", () => {
   it("runs the instance a registered part builds and returns its fakes", async () => {
     registerRouteTestingPart("@stackra/tenancy", tenancyPart);
     const run = (await runRouteLoader(TabsLayout, {
-      session: { tenants: ["tnt_1", "tnt_2"] },
-    })) as { result: unknown; tenancy: TenantSwitcher };
+      session: { memberships: ["tnt_1", "tnt_2"] },
+    })) as { result: unknown; tenancy: ScopeSwitcherFake };
     expect(run.result).toBeNull();
     expect(run.tenancy.switchTo).toHaveBeenCalledWith("tnt_1");
   });
 
   it("runs a part passed in services for this call only", async () => {
     const run = (await runRouteLoader(TabsLayout, {
-      session: { tenants: ["tnt_9"] },
+      session: { memberships: ["tnt_9"] },
       services: [tenancyPart],
-    })) as { tenancy: TenantSwitcher };
+    })) as { tenancy: ScopeSwitcherFake };
     expect(run.tenancy.switchTo).toHaveBeenCalledWith("tnt_9");
     expect(ROUTE_TESTING_PARTS.size).toBe(0);
   });

@@ -18,18 +18,18 @@ import type { PolicySnapshot } from "#contracts/types/policy-snapshot.type";
  * Keeps policy snapshots.
  *
  * @example
- * await store.write(event.principal, decodePolicySnapshot(event.snapshot), meta.tenantId);
+ * await store.write(event.principal, decodePolicySnapshot(event.snapshot), meta.scopeId);
  */
 export abstract class PolicySnapshotStore extends Port {
   /**
-   * The snapshot held for `principal` in `tenantId` (none for a platform principal), or `undefined`.
+   * The snapshot held for `principal` in `scopeId` (none for a platform principal), or `undefined`.
    *
    * @throws Error when the store cannot be reached.
    */
-  abstract read(principal: PublicId, tenantId?: PublicId): Promise<PolicySnapshot | undefined>;
+  abstract read(principal: PublicId, scopeId?: PublicId): Promise<PolicySnapshot | undefined>;
 
   /**
-   * Keeps `snapshot` for `principal` in `tenantId` when its version is higher than the held one; `true` when it was
+   * Keeps `snapshot` for `principal` in `scopeId` when its version is higher than the held one; `true` when it was
    * kept.
    *
    * @throws Error when the store cannot be reached.
@@ -37,6 +37,6 @@ export abstract class PolicySnapshotStore extends Port {
   abstract write(
     principal: PublicId,
     snapshot: PolicySnapshot,
-    tenantId?: PublicId,
+    scopeId?: PublicId,
   ): Promise<boolean>;
 }

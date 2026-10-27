@@ -211,7 +211,7 @@ export class SessionService extends Service {
    */
   protected set(state: SessionState): void {
     this.state = Object.freeze(state);
-    this.switcher.setMemberships(state.user?.tenants ?? []);
+    this.switcher.setMemberships(state.user?.memberships ?? []);
     this.permissions.set(state.user?.permissions ?? []);
     this.touch();
     // oxlint-disable-next-line unicorn/no-useless-spread -- reason: a copy, so a listener that unsubscribes another mid-loop does not skip it

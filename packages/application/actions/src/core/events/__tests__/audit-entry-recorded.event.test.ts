@@ -25,7 +25,7 @@ describe("AuditEntryRecorded", () => {
       callId: "c1",
       key: "orders.order.create@1",
       effects: [],
-      actor: { kind: ActorKind.User, id: "usr_1", realm: Realm.Tenant },
+      actor: { kind: ActorKind.User, id: "usr_1", realm: Realm.Staff },
       outcome: "ok",
       fields: { quantity: 1 },
     });

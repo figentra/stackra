@@ -19,7 +19,7 @@ class QuickOrderFlag extends Flag({ default: true }) {}
 
 const Flags = flagRefs({ web: { help_centre: HelpCentreFlag, quick_order: QuickOrderFlag } });
 
-const SUBJECTS = { visitor: null, user: "usr_1", tenant: "ten_1" };
+const SUBJECTS = { visitor: null, user: "usr_1", scope: "ten_1" };
 
 describe("FlagsFake", () => {
   it("is a FlagReader at every flag's default", () => {

@@ -57,8 +57,8 @@ function mismatches(entry: Partial<AuditEntry>, expected: AuditExpectation): str
  * expect(placed).toHaveAudited({ outcome: "ok", fields: { orderId: placed.output.orderId } });
  *
  * const ctx = fakeActionContext();
- * await service.reenable(tenantId, ctx);
- * expect(ctx).toHaveAudited({ fields: { tenantId } });
+ * await service.reenable(scopeId, ctx);
+ * expect(ctx).toHaveAudited({ fields: { scopeId } });
  */
 export const toHaveAudited = createMatcher(
   "toHaveAudited",

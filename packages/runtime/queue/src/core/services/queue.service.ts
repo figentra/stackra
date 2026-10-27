@@ -73,7 +73,7 @@ export class QueueService extends Service {
       ...(origin === undefined ? {} : { origin }),
       ...(scope === undefined ? {} : { scope: { id: scope.id, path: scope.path } }),
       ...(idempotencyKey === undefined ? {} : { idempotencyKey }),
-      ...(plan.unique ? { uniqueKey: `${plan.key}:${scope?.id ?? origin?.tenantId ?? "-"}` } : {}),
+      ...(plan.unique ? { uniqueKey: `${plan.key}:${scope?.id ?? origin?.scopeId ?? "-"}` } : {}),
       ...(causedBy === undefined ? {} : { causedBy }),
       status: JobStatus.Waiting,
       attempts: 0,

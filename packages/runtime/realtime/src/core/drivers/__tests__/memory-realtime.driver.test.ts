@@ -38,8 +38,8 @@ describe("MemoryRealtimeDriver", () => {
     const received: RealtimeMessage[] = [];
     const { token } = hub.issueToken({
       principalId: "usr_1",
-      tenantId: "ten_1",
-      realm: Realm.Tenant,
+      scopeId: "ten_1",
+      realm: Realm.Staff,
       permissions: ["orders.order.read"],
     });
     const leave = driver.connect(token, (message) => received.push(message));

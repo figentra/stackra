@@ -27,12 +27,12 @@ const GLOBEX: ScopeRef = { id: "scp_01j9z3k4m5n6p7q8r9s0t1v2w3", path: "platform
 const ann: Actor = {
   kind: ActorKind.User,
   id: "usr_01j9z3k4m5n6p7q8r9s0t1v2a1",
-  realm: Realm.Tenant,
+  realm: Realm.Staff,
 };
 const bob: Actor = {
   kind: ActorKind.User,
   id: "usr_01j9z3k4m5n6p7q8r9s0t1v2b1",
-  realm: Realm.Tenant,
+  realm: Realm.Staff,
 };
 
 describe("IamGrantedScopesDriver", () => {

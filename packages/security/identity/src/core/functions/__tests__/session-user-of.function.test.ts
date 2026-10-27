@@ -39,7 +39,7 @@ describe("sessionUserOf", () => {
       displayName: "Rana",
       avatarUrl: "https://cdn.acme.example/rana.png",
       permissions: ["orders.order.read"],
-      tenants: [
+      memberships: [
         {
           tenantId: "scp_01j9z3k4m5n6p7q8r9s0t1v2w4",
           path: "platform.acme",
@@ -58,7 +58,7 @@ describe("sessionUserOf", () => {
     });
     expect(user.displayName).toBe("rana@acme.example");
     expect(user.permissions).toEqual([]);
-    expect(user.tenants).toEqual([]);
+    expect(user.memberships).toEqual([]);
     expect("avatarUrl" in user).toBe(false);
   });
 
