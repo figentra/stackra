@@ -23,8 +23,11 @@ const KEY = /^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$/;
 /** The step limit when none is written. */
 const DEFAULT_MAX_STEPS = 8;
 
-/** Checks the options of an agent, applies their defaults and registers the definition by key. */
-function read(options: AgentOptions): AgentDefinition {
+/**
+ * Checks the options of an agent, applies their defaults and registers the definition by key. The return type is
+ * inferred, not `AgentDefinition`: `createKind` records a plain options record, which an interface type is not.
+ */
+function read(options: AgentOptions) {
   if (typeof options.key !== "string" || !KEY.test(options.key))
     throw new TypeError(
       `Agent({ key }) is snake_case such as "matter_assistant", got ${JSON.stringify(options.key)}`,
@@ -42,12 +45,12 @@ function read(options: AgentOptions): AgentDefinition {
   const maxSteps = options.maxSteps ?? DEFAULT_MAX_STEPS;
   if (!Number.isInteger(maxSteps) || maxSteps < 1)
     throw new RangeError(`Agent({ maxSteps }) must be a whole number from 1, got ${maxSteps}`);
-  const definition: AgentDefinition = Object.freeze({
+  const definition = Object.freeze({
     key: options.key,
     task: options.task,
     tools: Object.freeze([...tools]),
     maxSteps,
-  });
+  }) satisfies AgentDefinition;
   AGENT_REGISTRY.set(definition.key, definition);
   return definition;
 }

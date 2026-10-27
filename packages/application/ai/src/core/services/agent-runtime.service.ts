@@ -63,7 +63,11 @@ interface Settled {
   readonly messages: readonly ModelMessage[];
   readonly steps: readonly {
     readonly finishReason: string;
-    readonly usage: { readonly inputTokens?: number; readonly outputTokens?: number };
+    // The AI SDK reports a token count it lacks as `undefined`, not as a missing key.
+    readonly usage: {
+      readonly inputTokens: number | undefined;
+      readonly outputTokens: number | undefined;
+    };
   }[];
   readonly text: string;
 }
