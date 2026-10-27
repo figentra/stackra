@@ -61,8 +61,14 @@
             "description": "The brand's store bundle ids.",
             "additionalProperties": false,
             "properties": {
-              "ios": { "type": "string", "minLength": 1 },
-              "android": { "type": "string", "minLength": 1 }
+              "ios": {
+                "type": "string",
+                "minLength": 1
+              },
+              "android": {
+                "type": "string",
+                "minLength": 1
+              }
             }
           }
         }
@@ -188,8 +194,28 @@
               }
             },
             "whiteLabel": {
-              "type": "boolean",
-              "description": "Per-tenant store builds (Pro; MR1)."
+              "description": "Per-tenant store builds: `true`, or the entitlement and publishing modes of the tenant-started build (ADR 0439, D14).",
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "entitlement": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "modes": {
+                      "type": "array",
+                      "items": {
+                        "enum": ["managed", "bring-your-own"]
+                      }
+                    }
+                  }
+                }
+              ]
             }
           }
         }

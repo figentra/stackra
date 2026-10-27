@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: the consumer contract of the `.` entry: every value the template imports from `@stackra/runway`
  *          (`baseUrlOf`, `devPorts`, `updateFeed`) and the registry row's schemas check, JSON Schema derivation,
- *          placement check, enums and errors are exported, nothing else is (the zod schemas and the facts reader stay
+ *          placement and dev port checks, enums and errors are exported, nothing else is (the zod schemas and the facts reader stay
  *          internal), and the public types resolve.
  * Boundary: test only; imports the stand-in barrel through its `#core` alias.
  * Runtime: node (vitest)
@@ -16,6 +16,7 @@ import type {
   AppRunway,
   DevPorts,
   PlacementIssue,
+  PortIssue,
   RegionIssue,
   RootRunway,
   RunwayDocument,
@@ -43,6 +44,7 @@ describe("@stackra/runway", () => {
       "baseUrlOf",
       "brandsOf",
       "checkPlacement",
+      "checkPorts",
       "checkRegions",
       "deploy",
       "deployTargets",
@@ -72,6 +74,7 @@ describe("@stackra/runway", () => {
     expectTypeOf<RunwayFacts["lane"]>().toEqualTypeOf<number>();
     expectTypeOf<RunwayIssue["path"]>().toEqualTypeOf<string>();
     expectTypeOf<PlacementIssue["subject"]>().toEqualTypeOf<string>();
+    expectTypeOf<PortIssue["code"]>().toEqualTypeOf<"duplicate_port" | "port_out_of_range">();
     expectTypeOf<RegionIssue["code"]>().toEqualTypeOf<
       "unknown_region" | "cloud_unconfigured" | "unknown_account"
     >();

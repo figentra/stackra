@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `ROOT_ENVIRONMENT_SCHEMA`, one `environments.<env>` block of the root runway: where each kind of member
- *          runs (`destinations`), the dev containers, lanes, https and proxy, the Encore environment, a preview's ttl
+ *          runs (`destinations`), the dev containers, lanes (with the repository index table `checkPorts` reads), https and proxy, the Encore environment, a preview's ttl
  *          and data, the shared resources, the defaults members start from, the topology, the domains, the deploy
  *          rule, the mobile and desktop channels, the regions it deploys to, in release order, the cloud its foundation
  *          runs on, and the dedicated deployments that ride its release train.
@@ -9,7 +9,8 @@
  *           provider facts inside stay open, and the commands that read them check their own part.
  * Runtime: isomorphic
  * Governing contract: ADR 0296 (decision 2), ADR 0238 (one database server per environment), ADR 0170, ADR 0289,
- *                     ADR 0354 (decision 4); OS-12 (a release rolls region by region); ADR 0400 (`cloud`, `dedicated`).
+ *                     ADR 0354 (decision 4); OS-12 (a release rolls region by region); ADR 0400 (`cloud`, `dedicated`); STA-863 (the
+ *                     repository index table, redundancy challenge item 5).
  */
 import { Enum } from "@stackra/contracts";
 import { z } from "zod";
@@ -17,6 +18,7 @@ import { z } from "zod";
 import { CONFIG_VALUES_SCHEMA } from "#core/constants/config-values-schema.constant";
 import { DEDICATED_SCHEMA } from "#core/constants/dedicated-schema.constant";
 import { ENVIRONMENT_CLOUD_SCHEMA } from "#core/constants/environment-cloud-schema.constant";
+import { KEY_SCHEMA } from "#core/constants/key-schema.constant";
 import { OPEN_OBJECT_SCHEMA } from "#core/constants/open-object-schema.constant";
 import { TOPOLOGY_SCHEMA } from "#core/constants/topology-schema.constant";
 import { DeployKind } from "#core/enums/deploy-kind.enum";
@@ -32,6 +34,14 @@ export const ROOT_ENVIRONMENT_SCHEMA = z.strictObject({
       enabled: z.boolean().optional(),
       portStep: z.int().min(1).optional(),
       from: z.string().optional(),
+      repos: z
+        .record(KEY_SCHEMA, z.int().min(0))
+        .refine(
+          (repos) => new Set(Object.values(repos)).size === Object.keys(repos).length,
+          "Two repositories share an index",
+        )
+        .optional(),
+      worktrees: z.int().min(1).optional(),
     })
     .optional(),
   https: OPEN_OBJECT_SCHEMA.optional(),

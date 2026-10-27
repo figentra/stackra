@@ -3,7 +3,7 @@
  * Purpose: Stand-in barrel: the `.` entry of @stackra/runway until `stackra gen` writes the entry barrels (STA-339):
  *          the runway readers the generated configs import (`baseUrlOf`, `devPorts`, `updateFeed`, folded in from the
  *          old `./ports` entry, owner Q4; `productOf` and `brandsOf`, ADR 0335), the version 3 runway check, the JSON Schema derivation, the placement
- *          check, the region check and reader (ADR 0354), the deploy targets, the `RunwayProvider` port and the
+ *          check, the duplicate dev port check (`checkPorts`, STA-863), the region check and reader (ADR 0354), the deploy targets, the `RunwayProvider` port and the
  *          `deploy`, `promote` and `rollback` orchestration (ADR 0352 decision 3, ADR 0400), the per-environment
  *          deploy lock (`withDeployLock`, ADR 0435), their enums, errors and types.
  * Boundary: names each re-export and declares nothing. The zod schemas, the facts reader and the dev facts path stay
@@ -25,6 +25,7 @@ export { RunwayUnresolvedError } from "#core/errors/runway-unresolved.error";
 export { baseUrlOf } from "#core/functions/base-url-of.function";
 export { brandsOf } from "#core/functions/brands-of.function";
 export { checkPlacement } from "#core/functions/check-placement.function";
+export { checkPorts } from "#core/functions/check-ports.function";
 export { checkRegions } from "#core/functions/check-regions.function";
 export { deploy } from "#core/functions/deploy.function";
 export { deployTargets } from "#core/functions/deploy-targets.function";
@@ -48,6 +49,7 @@ export type { DeployTarget } from "#core/types/deploy-target.type";
 export type { DevPorts } from "#core/types/dev-ports.type";
 export type { EnvironmentCloud } from "#core/types/environment-cloud.type";
 export type { PlacementIssue } from "#core/types/placement-issue.type";
+export type { PortIssue } from "#core/types/port-issue.type";
 export type { Product } from "#core/types/product.type";
 export type { RegionIssue } from "#core/types/region-issue.type";
 export type { RootRunway } from "#core/types/root-runway.type";

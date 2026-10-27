@@ -57,6 +57,53 @@
         }
       }
     },
+    "surfaces": {
+      "type": "object",
+      "description": "The web surfaces the product ships into the OS (or base product) shells, by surface key: console, landing, till, portal and so on, each with its shell line, packages and hosts (ADR 0441 d3, ADR 0436). `ops` is the one OS ops console (D1): a product only contributes to it, declaratively. Runway builds and publishes the bundles and writes the platform `host:` rows.",
+      "properties": {
+        "ops": {
+          "type": "object",
+          "description": "The product's contribution to the one ops console. No shell, packages or host: the OS ships the console, and every ops contribution passes a second-reviewer gate at publish (app-shells 16.7).",
+          "additionalProperties": false,
+          "required": ["contributes"],
+          "properties": {
+            "contributes": {
+              "$ref": "#/$defs/contribution"
+            }
+          }
+        }
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/surface"
+      },
+      "examples": [
+        {
+          "console": {
+            "shell": "os/console@3",
+            "packages": ["@figentra/mezzora-console-ui"],
+            "host": "console.mezzora"
+          },
+          "landing": {
+            "shell": "os/landing@1",
+            "content": "assets/landing",
+            "host": "mezzora"
+          },
+          "ops": {
+            "contributes": "@figentra/mezzora-ops-ui"
+          }
+        }
+      ]
+    },
+    "mobile": {
+      "type": "object",
+      "description": "The mobile apps the product ships from the OS mobile template, by app key (staff, shopper, …): identity, capability flags, store accounts, the EAS project and the per-tenant white-label variants (ADR 0441 d3, ADR 0439).",
+      "propertyNames": {
+        "pattern": "^[a-z][a-z0-9-]*$"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/mobileApp"
+      }
+    },
     "providers": {
       "type": "object",
       "description": "Every account and vendor, named once. Values are public ids or `ref:<path>`; never a secret.",
@@ -108,7 +155,14 @@
               "type": "object",
               "description": "Project role → project id or `ref:`, or an object such as `{ id, number }` that infra-gcp checks (ADR 0401).",
               "additionalProperties": {
-                "anyOf": [{ "$ref": "#/$defs/value" }, { "type": "object" }]
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/value"
+                  },
+                  {
+                    "type": "object"
+                  }
+                ]
               }
             },
             "state": {
@@ -202,7 +256,13 @@
         "$ref": "#/$defs/region"
       },
       "examples": [
-        { "eu": { "cloud": "aws", "location": "eu-central-1", "account": "ref:aws/eu" } }
+        {
+          "eu": {
+            "cloud": "aws",
+            "location": "eu-central-1",
+            "account": "ref:aws/eu"
+          }
+        }
       ]
     },
     "environments": {
@@ -499,7 +559,7 @@
         },
         "lanes": {
           "type": "object",
-          "description": "Dev only: worktree N adds N × `portStep` to every dev port, member and infra.",
+          "description": "Dev only: lane N adds N × `portStep` to every dev port, member and infra. Lane = repository index × `worktrees` + worktree; `stackra validate` computes every effective port over the table and fails on a duplicate (STA-863).",
           "properties": {
             "enabled": {
               "type": "boolean",
@@ -515,6 +575,35 @@
               "type": "string",
               "description": "Environment variable holding the lane number.",
               "examples": ["STACKRA_LANE"]
+            },
+            "repos": {
+              "type": "object",
+              "description": "The repository index table, in one place: repository key to index; no two share an index.",
+              "propertyNames": {
+                "pattern": "^[a-z][a-z0-9_-]*$"
+              },
+              "additionalProperties": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "examples": [
+                {
+                  "os": 0,
+                  "commerce": 1,
+                  "organza": 2,
+                  "jute": 3,
+                  "mezzora": 4,
+                  "beautilon": 5,
+                  "juristra": 6,
+                  "academorix": 7
+                }
+              ]
+            },
+            "worktrees": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Worktree lanes per repository (default 10).",
+              "examples": [10]
             }
           }
         },
@@ -736,6 +825,272 @@
         "encore": {
           "type": "object",
           "description": "Encore Cloud settings of its own app environment (the branch it deploys from)."
+        }
+      }
+    },
+    "assetPath": {
+      "type": "string",
+      "pattern": "^assets(/[A-Za-z0-9_-][A-Za-z0-9._-]*)*/?$",
+      "description": "A path inside the root `assets/` tree; no segment starts with a dot (ADR 0441 d1 and enforcement).",
+      "examples": ["assets/mobile/staff"]
+    },
+    "shellLine": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*/[a-z][a-z0-9-]*@[0-9]+$",
+      "description": "A shell or template line, `<owner>/<shell>@<major>` (ADR 0436, ADR 0439).",
+      "examples": ["os/console@3", "commerce/till@1", "os/mobile@3"]
+    },
+    "packageName": {
+      "type": "string",
+      "pattern": "^@[a-z0-9][a-z0-9._-]*/[a-z0-9][a-z0-9._-]*$",
+      "description": "A scoped package name.",
+      "examples": ["@figentra/mezzora-console-ui"]
+    },
+    "surface": {
+      "type": "object",
+      "description": "One web surface: the shell line, an optional preset, the product packages it loads, its host or hosts, and a landing site's seed content.",
+      "additionalProperties": false,
+      "required": ["shell"],
+      "properties": {
+        "shell": {
+          "$ref": "#/$defs/shellLine"
+        },
+        "preset": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*$",
+          "description": "A shell preset, such as `portal` (a console variant, D11).",
+          "examples": ["portal"]
+        },
+        "packages": {
+          "type": "array",
+          "description": "The product packages the shell loads through its import map.",
+          "items": {
+            "$ref": "#/$defs/packageName"
+          }
+        },
+        "host": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The platform host label; Runway writes its `host:` row.",
+          "examples": ["console.mezzora"]
+        },
+        "hosts": {
+          "type": "array",
+          "description": "Further hosts serving the same surface; at most one is canonical for search engines (D2).",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["host"],
+            "properties": {
+              "host": {
+                "type": "string",
+                "minLength": 1
+              },
+              "canonical": {
+                "type": "boolean"
+              }
+            }
+          }
+        },
+        "content": {
+          "$ref": "#/$defs/assetPath",
+          "description": "A landing site's seed experience documents, imported once (ADR 0440)."
+        }
+      }
+    },
+    "contribution": {
+      "description": "A declarative ops contribution: the package that carries it, or the package with its panels, resources and widgets over registered blocks. No component, entry or script (app-shells 16.7).",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/packageName"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["package"],
+          "properties": {
+            "package": {
+              "$ref": "#/$defs/packageName"
+            },
+            "panels": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/contributionEntry"
+              }
+            },
+            "resources": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/contributionEntry"
+              }
+            },
+            "widgets": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/contributionEntry"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "contributionEntry": {
+      "type": "object",
+      "description": "One panel, resource or widget: a key, the registered block it renders and data props.",
+      "additionalProperties": false,
+      "required": ["key", "block"],
+      "properties": {
+        "key": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_-]*$"
+        },
+        "block": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*/[a-z][a-z0-9.-]*$",
+          "description": "A registered block id, never a module path or an export.",
+          "examples": ["os/table"]
+        },
+        "title": {
+          "type": "string"
+        },
+        "props": {
+          "type": "object",
+          "description": "Data the block reads."
+        }
+      }
+    },
+    "storeAccount": {
+      "type": "object",
+      "properties": {
+        "account": {
+          "type": "string"
+        }
+      }
+    },
+    "whiteLabel": {
+      "type": "object",
+      "description": "Per-tenant build variants, started by an OS event: the entitlement that turns them on and the publishing modes (D14).",
+      "additionalProperties": false,
+      "properties": {
+        "entitlement": {
+          "type": "string",
+          "minLength": 1,
+          "examples": ["entitlement:academorix:white-label"]
+        },
+        "modes": {
+          "type": "array",
+          "items": {
+            "enum": ["managed", "bring-your-own"]
+          }
+        }
+      }
+    },
+    "mobileApp": {
+      "type": "object",
+      "description": "One mobile app built from the OS template line.",
+      "additionalProperties": false,
+      "required": ["template"],
+      "properties": {
+        "template": {
+          "$ref": "#/$defs/shellLine"
+        },
+        "packages": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/packageName"
+          }
+        },
+        "assets": {
+          "$ref": "#/$defs/assetPath",
+          "description": "Icon, adaptive icon, splash and notification icon sources."
+        },
+        "store": {
+          "$ref": "#/$defs/assetPath",
+          "description": "Store listing text, keywords, screenshots and privacy answers per locale."
+        },
+        "identity": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "type": "object",
+              "description": "The app name per locale.",
+              "additionalProperties": {
+                "type": "string"
+              }
+            },
+            "ios": {
+              "type": "object",
+              "properties": {
+                "bundleId": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z][A-Za-z0-9-]*(\\.[A-Za-z][A-Za-z0-9-]*)+$",
+                  "examples": ["com.figentra.mezzora.staff"]
+                },
+                "team": {
+                  "type": "string"
+                }
+              }
+            },
+            "android": {
+              "type": "object",
+              "properties": {
+                "package": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z][A-Za-z0-9_]*(\\.[A-Za-z][A-Za-z0-9_]*)+$"
+                }
+              }
+            },
+            "scheme": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9+.-]*$"
+            },
+            "links": {
+              "type": "array",
+              "description": "App-link hosts; Runway writes their `wellknown:` rows.",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "capabilities": {
+          "type": "array",
+          "uniqueItems": true,
+          "description": "The template's capability flags this app turns on; the build strips the rest (ADR 0439).",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*$"
+          },
+          "examples": [["scanner", "push", "printer"]]
+        },
+        "tablet": {
+          "type": "boolean"
+        },
+        "stores": {
+          "type": "object",
+          "properties": {
+            "apple": {
+              "$ref": "#/$defs/storeAccount"
+            },
+            "google": {
+              "$ref": "#/$defs/storeAccount"
+            }
+          }
+        },
+        "eas": {
+          "type": "object",
+          "properties": {
+            "project": {
+              "type": "string"
+            },
+            "channel": {
+              "type": "string"
+            }
+          }
+        },
+        "whiteLabel": {
+          "$ref": "#/$defs/whiteLabel"
         }
       }
     }

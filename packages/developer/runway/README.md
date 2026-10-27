@@ -7,7 +7,7 @@ Purpose: the package's reader guide: runway format version 3, the topology place
 Boundary: documentation only; the event topics and subscriptions are gen's output, not this package's.
 Runtime: none
 Governing contract: ADR 0296; ADR 0352; ADR 0400; ADR 0444 (the tools stack block); ADR 0148 (decisions 3 and 6);
-                    ADR 0260 (decision 4).
+                    ADR 0260 (decision 4); ADR 0441 (decision 3: surfaces, mobile); ADR 0439; ADR 0436; STA-863 (lanes).
 -->
 
 Runway format version 3 as code: the schemas of the root runway (WHERE things run and how they are packed) and of the
@@ -27,6 +27,7 @@ tool configs call so no port, origin or feed URL is typed outside a `runway.yaml
 | `.`         | `parseRunway(kind, document, source?)`                                                  | check a parsed runway against its version 3 schema                          |
 | `.`         | `checkPlacement(root, members)`                                                         | every topology placement failure, for `stackra validate`                    |
 | `.`         | `checkRegions(root)`, `regionsOf(root, environment)`                                    | region failures for `stackra validate`; an environment's resolved regions   |
+| `.`         | `checkPorts(root, members)`, `PortIssue`                                                | every duplicate effective dev port across the repository lanes, both owners |
 | `.`         | `RunwayCloud`                                                                           | `aws`, `gcp`: the cloud a region names                                      |
 | `.`         | `runwayJsonSchema(kind)`                                                                | the zod schemas as JSON Schema, tested against the shipped canonical files  |
 | `.`         | `deployTargets(root, environment)`                                                      | every place a release lands, in release order (regions, dedicated tenants)  |
@@ -60,6 +61,32 @@ import { readRunway } from "@stackra/runway/node";
 
 const root = readRunway("runway.yaml", "root");
 const issues = checkPlacement(root, ["commerce", "notifications"]); // [] when every member is placed
+```
+
+## Surfaces, mobile apps and ops contributions
+
+A product's root runway names what it ships into the OS shells (ADR 0441 decision 3, ADR 0436): `surfaces` maps a
+surface key (`console`, `landing`, `till`, `portal`, …) to its shell line (`os/console@3`), an optional `preset`, the
+product `packages` the shell loads, its `host` or `hosts` (at most one `canonical`) and a landing site's `content`.
+`surfaces.ops` is different: the OS ships the one ops console, so a product only `contributes` to it, and only
+declaratively: a package name, or `{ package, panels, resources, widgets }` whose entries are a `key`, a registered
+`block` id (`os/table`), a `title` and data `props`. A `shell`, `component`, `entry` or a module path as a block fails
+(app-shells 16.7). `mobile` maps an app key to its template line, packages, `assets` and `store` paths, identity,
+capability flags, `tablet`, store accounts, EAS project and `whiteLabel` (the entitlement and the `managed` /
+`bring-your-own` modes of the tenant-started per-tenant build, ADR 0439). Every asset path sits inside `assets/`.
+An app runway's `release.mobile.whiteLabel` takes `true` or the same `whiteLabel` block.
+
+## Dev lanes and the repository index
+
+`environments.dev.lanes.repos` is the one repository index table (`os: 0, commerce: 1, …, academorix: 7`; no two
+repositories share an index) and `lanes.worktrees` the lanes per repository (default 10): lane = index × worktrees +
+worktree, and every dev port moves by lane × `portStep`. `checkPorts(root, members)` walks every lane of the table over
+the root's dev infra ports (gateway, Encore dashboard, Postgres, otel UI, …; a block with `perLane: false` is one
+shared port) and each member's dev ports (service, web, docs, dev console, Electron, Metro), and reports each
+`duplicate_port` with both owners and each `port_out_of_range`:
+
+```ts
+checkPorts(root, { console: consoleRunway }); // [] when every effective port has one owner
 ```
 
 ## Regions and clouds

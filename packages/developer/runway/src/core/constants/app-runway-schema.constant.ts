@@ -2,13 +2,13 @@
  * Stackra file contract:
  * Purpose: `APP_RUNWAY_SCHEMA`, an app member's `runway.yaml` at format version 3: `requires`, the per-brand builds (`brands`), the secret names, the
  *          health check, the release block (PWA, desktop channels, signing switches, feed path and platforms, mobile
- *          build profiles and store submission), telemetry and the values of each environment. Only `version` and
+ *          build profiles, store submission and the per-tenant white-label variants), telemetry and the values of each environment. Only `version` and
  *          `environments` are required.
  * Boundary: internal; `parseRunway("app", …)` and `runwayJsonSchema("app")` read it, and it accepts what the canonical
  *           `tools/schemas/runway-app.schema.json` accepts. Strict at the top: the member is the folder that holds
  *           the file, so `member` fails, as every root key does.
  * Runtime: isomorphic
- * Governing contract: ADR 0296 (decision 1 and its 2026-10-23 note: `health`), ADR 0254, ADR 0180, ADR 0173, ADR 0335 (decision 8: brands).
+ * Governing contract: ADR 0296 (decision 1 and its 2026-10-23 note: `health`), ADR 0254, ADR 0180, ADR 0173, ADR 0335 (decision 8: brands), ADR 0439 (tenant-started builds).
  */
 import { Enum } from "@stackra/contracts";
 import { z } from "zod";
@@ -18,6 +18,7 @@ import { BRAND_SCHEMA } from "#core/constants/brand-schema.constant";
 import { OPEN_OBJECT_SCHEMA } from "#core/constants/open-object-schema.constant";
 import { REQUIREMENT_SCHEMA } from "#core/constants/requirement-schema.constant";
 import { SECRET_NAMES_SCHEMA } from "#core/constants/secret-names-schema.constant";
+import { WHITE_LABEL_SCHEMA } from "#core/constants/white-label-schema.constant";
 import { RunwayEnvironment } from "#core/enums/runway-environment.enum";
 
 /** An app runway. */
@@ -64,7 +65,7 @@ export const APP_RUNWAY_SCHEMA = z.strictObject({
           submit: z
             .looseObject({ ios: z.boolean().optional(), android: z.boolean().optional() })
             .optional(),
-          whiteLabel: z.boolean().optional(),
+          whiteLabel: z.union([z.boolean(), WHITE_LABEL_SCHEMA]).optional(),
         })
         .optional(),
     })
