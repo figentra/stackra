@@ -1,10 +1,11 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `runGuardrails`: layers run in order with the text and stage, the first block wins and later
- *          layers do not run, and a throwing layer rejects.
+ * Purpose: unit tests of `runGuardrails`: layers run in order with the text and stage, a redacting layer's text reaches
+ *          the next layer and the result, flags are collected with their layer, the first block wins and later layers
+ *          do not run, and a throwing layer rejects.
  * Boundary: test only.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0156 (decision 4).
+ * Governing contract: ADR 0022 (test placement); ADR 0156 (decision 4); STA-1377 (stackra-219).
  */
 import { describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
@@ -20,8 +21,33 @@ const passing = (name: string): Guardrail => ({
 describe("runGuardrails", () => {
   it("passes when every layer passes", async () => {
     const first = passing("first");
-    expect(await runGuardrails([first, passing("second")], "hi", "input")).toEqual({ pass: true });
+    expect(await runGuardrails([first, passing("second")], "hi", "input")).toEqual({
+      pass: true,
+      text: "hi",
+      flags: [],
+    });
     expect(first.check).toHaveBeenCalledWith("hi", "input");
+  });
+
+  it("hands a redacted text to the next layer and collects flags", async () => {
+    const later = passing("later");
+    const redacting: Guardrail = {
+      name: "pii",
+      check: () => ({ pass: true, text: "mail [email]", flags: ["email"] }),
+    };
+    const flagging: Guardrail = {
+      name: "injection",
+      check: () => ({ pass: true, flags: ["override"] }),
+    };
+    expect(await runGuardrails([redacting, flagging, later], "mail a@b.co", "output")).toEqual({
+      pass: true,
+      text: "mail [email]",
+      flags: [
+        { guardrail: "pii", reason: "email" },
+        { guardrail: "injection", reason: "override" },
+      ],
+    });
+    expect(later.check).toHaveBeenCalledWith("mail [email]", "output");
   });
 
   it("stops at the first layer that blocks", async () => {

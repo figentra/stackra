@@ -3,9 +3,10 @@
  * Purpose: Stand-in barrel: the `.` entry of @stackra/ai, which has several public files, until `stackra gen` writes
  *          the entry barrels (STA-339): the kinds, the tool-table vocabulary, `decide` and `retrieve`, the approval-mode
  *          resolver with the permission matrix, the model router, the context allow-list and redaction, budgets,
- *          guardrails, evals and intents, the `ModelProviders` token, and the agent runtime (`Agent`, `Promptable`,
- *          `AgentRuntime`, the memory stores), and the page reader drivers (memory, egress-bounded HTTP) with
- *          `checkEgress` and `parsePage`.
+ *          guardrails (the layered check and its pattern, PII, prompt-injection and model-classifier drivers), evals
+ *          and intents, the token meter (`AiMeter`, `AI_METERS`), the `ModelProviders` token, and the agent runtime
+ *          (`Agent`, `Promptable`, `AgentRuntime`, the memory stores), and the page reader drivers (memory,
+ *          egress-bounded HTTP) with `checkEgress` and `parsePage`.
  * Boundary: names each re-export and declares nothing. The one entry serves the module's `ai/` group, the generated
  *           tool table and the service that calls a model.
  * Runtime: isomorphic
@@ -17,13 +18,19 @@ export { Facts } from "#core/bases/facts.base";
 export { Prompt } from "#core/bases/prompt.base";
 export { Promptable } from "#core/bases/promptable.base";
 export { Skill } from "#core/bases/skill.base";
+export { AI_METERS } from "#core/constants/ai-meters.constant";
+export { ClassifierGuardrailDriver } from "#core/drivers/classifier-guardrail.driver";
 export { HttpPageReaderDriver } from "#core/drivers/http-page-reader.driver";
+export { InjectionGuardrailDriver } from "#core/drivers/injection-guardrail.driver";
 export { MemoryConversationStoreDriver } from "#core/drivers/memory-conversation-store.driver";
 export { MemoryPageReaderDriver } from "#core/drivers/memory-page-reader.driver";
 export { MemoryRunStoreDriver } from "#core/drivers/memory-run-store.driver";
+export { PatternGuardrailDriver } from "#core/drivers/pattern-guardrail.driver";
+export { PiiGuardrailDriver } from "#core/drivers/pii-guardrail.driver";
 export { ActionPermission } from "#core/enums/action-permission.enum";
 export { ApprovalMode } from "#core/enums/approval-mode.enum";
 export { Approval } from "#core/enums/approval.enum";
+export { GuardrailEffect } from "#core/enums/guardrail-effect.enum";
 export { ToolSource } from "#core/enums/tool-source.enum";
 export { ApprovalRequested } from "#core/events/approval-requested.event";
 export { ApprovalResolved } from "#core/events/approval-resolved.event";
@@ -42,14 +49,17 @@ export { routeIntent } from "#core/functions/route-intent.function";
 export { routeModel } from "#core/functions/route-model.function";
 export { runEvals } from "#core/functions/run-evals.function";
 export { runGuardrails } from "#core/functions/run-guardrails.function";
+export { GuardrailLayer } from "#core/ports/guardrail-layer.port";
 export { ModelProviders } from "#core/ports/model-providers.port";
 export { AgentRuntime } from "#core/services/agent-runtime.service";
+export { AiMeter } from "#core/services/ai-meter.service";
 export type { ActionPermissionRow } from "#core/types/action-permission-row.type";
 export type { AgentClass } from "#core/types/agent-class.type";
 export type { AgentDefinition } from "#core/types/agent-definition.type";
 export type { AgentOptions } from "#core/types/agent-options.type";
 export type { AgentReply } from "#core/types/agent-reply.type";
 export type { AgentStream } from "#core/types/agent-stream.type";
+export type { AiUsage } from "#core/types/ai-usage.type";
 export type { ApprovalDecision } from "#core/types/approval-decision.type";
 export type { ApprovalFloor } from "#core/types/approval-floor.type";
 export type { ApprovalPolicy } from "#core/types/approval-policy.type";
@@ -58,6 +68,7 @@ export type { ApprovalRequest } from "#core/types/approval-request.type";
 export type { ApprovalRules } from "#core/types/approval-rules.type";
 export type { ApprovalStep } from "#core/types/approval-step.type";
 export type { BudgetCheck } from "#core/types/budget-check.type";
+export type { ClassifierGuardrailOptions } from "#core/types/classifier-guardrail-options.type";
 export type { ContextFacts } from "#core/types/context-facts.type";
 export type { DataClassRule } from "#core/types/data-class-rule.type";
 export type { DecideOptions } from "#core/types/decide-options.type";
@@ -65,13 +76,18 @@ export type { EvalCase } from "#core/types/eval-case.type";
 export type { EvalReport } from "#core/types/eval-report.type";
 export type { FactsContext } from "#core/types/facts-context.type";
 export type { FieldAllowList } from "#core/types/field-allow-list.type";
+export type { GuardrailStages } from "#core/types/guardrail-stages.type";
 export type { GuardrailResult } from "#core/types/guardrail-result.type";
 export type { GuardrailVerdict } from "#core/types/guardrail-verdict.type";
 export type { Guardrail } from "#core/types/guardrail.type";
+export type { InjectionGuardrailOptions } from "#core/types/injection-guardrail-options.type";
+export type { InjectionSignal } from "#core/types/injection-signal.type";
 export type { Intent } from "#core/types/intent.type";
 export type { ModelProviderDriver } from "#core/types/model-provider-driver.type";
 export type { ModelRoute } from "#core/types/model-route.type";
+export type { PatternGuardrailOptions } from "#core/types/pattern-guardrail-options.type";
 export type { PageReaderPolicy } from "#core/types/page-reader-policy.type";
+export type { PiiGuardrailOptions } from "#core/types/pii-guardrail-options.type";
 export type { PendingApproval } from "#core/types/pending-approval.type";
 export type { PromptCall } from "#core/types/prompt-call.type";
 export type { PromptClass } from "#core/types/prompt-class.type";

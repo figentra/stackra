@@ -12,6 +12,7 @@ import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
 import * as entry from "#core/index";
 import type {
+  AiUsage,
   ApprovalDecision,
   ApprovalFloor,
   ApprovalPolicy,
@@ -20,6 +21,7 @@ import type {
   ApprovalRules,
   ApprovalStep,
   BudgetCheck,
+  ClassifierGuardrailOptions,
   ContextFacts,
   DataClassRule,
   DecideOptions,
@@ -29,11 +31,16 @@ import type {
   FieldAllowList,
   Guardrail,
   GuardrailResult,
+  GuardrailStages,
   GuardrailVerdict,
+  InjectionGuardrailOptions,
+  InjectionSignal,
   Intent,
   ModelProviderDriver,
   ModelRoute,
   PageReaderPolicy,
+  PatternGuardrailOptions,
+  PiiGuardrailOptions,
   PromptClass,
   PromptOptions,
   RedactionRule,
@@ -53,19 +60,27 @@ import type {
 describe("@stackra/ai", () => {
   it("exports exactly the runtime surface", () => {
     expect(Object.keys(entry).sort()).toEqual([
+      "AI_METERS",
       "ActionPermission",
       "Agent",
       "AgentRuntime",
+      "AiMeter",
       "Approval",
       "ApprovalMode",
       "ApprovalRequested",
       "ApprovalResolved",
+      "ClassifierGuardrailDriver",
       "Facts",
+      "GuardrailEffect",
+      "GuardrailLayer",
       "HttpPageReaderDriver",
+      "InjectionGuardrailDriver",
       "MemoryConversationStoreDriver",
       "MemoryPageReaderDriver",
       "MemoryRunStoreDriver",
       "ModelProviders",
+      "PatternGuardrailDriver",
+      "PiiGuardrailDriver",
       "Prompt",
       "Promptable",
       "RunCompleted",
@@ -138,6 +153,24 @@ describe("@stackra/ai", () => {
     expectTypeOf<EvalCase<string, boolean>["input"]>().toEqualTypeOf<string>();
     expectTypeOf<Intent["phrases"]>().toEqualTypeOf<readonly string[]>();
     expectTypeOf<RouteIntentOptions["instructions"]>().toEqualTypeOf<string | undefined>();
+  });
+
+  it("types the guardrail drivers and the token meter", () => {
+    expectTypeOf<GuardrailStages["input"]>().toEqualTypeOf<entry.GuardrailEffect | undefined>();
+    expectTypeOf<PatternGuardrailOptions["rules"]>().toEqualTypeOf<readonly RedactionRule[]>();
+    expectTypeOf<PiiGuardrailOptions["rules"]>().toEqualTypeOf<readonly RedactionRule[]>();
+    expectTypeOf<InjectionGuardrailOptions["signals"]>().toEqualTypeOf<
+      readonly InjectionSignal[]
+    >();
+    expectTypeOf<InjectionSignal["weight"]>().toEqualTypeOf<number>();
+    expectTypeOf<ClassifierGuardrailOptions["allowed"]>().toEqualTypeOf<readonly string[]>();
+    expectTypeOf<entry.GuardrailLayer>().toExtend<Guardrail>();
+    expectTypeOf<entry.PatternGuardrailDriver>().toExtend<entry.GuardrailLayer>();
+    expectTypeOf<entry.PiiGuardrailDriver>().toExtend<Guardrail>();
+    expectTypeOf<entry.InjectionGuardrailDriver>().toExtend<Guardrail>();
+    expectTypeOf<entry.ClassifierGuardrailDriver>().toExtend<Guardrail>();
+    expectTypeOf<AiUsage["model"]>().toEqualTypeOf<string>();
+    expect(entry.AI_METERS.input.name).toBe("ai.tokens");
   });
 
   it("types the page reader policy", () => {

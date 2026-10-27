@@ -1,9 +1,9 @@
 <!--
 Stackra file contract:
-Purpose: the README of @stackra/ai: the AI kinds, the tool-table vocabulary, decide and retrieve, approvals, routing, the agent runtime, the page reader and the events.
+Purpose: the README of @stackra/ai: the AI kinds, the tool-table vocabulary, decide and retrieve, approvals, routing, guardrails and their drivers, the token meter, the agent runtime, the page reader and the events.
 Boundary: documentation only; the rules for agents are in AGENTS.md.
 Runtime: none (Markdown)
-Governing contract: ADR 0100, ADR 0155, ADR 0294, ADR 0360, ADR 0399; ADR 0450.
+Governing contract: ADR 0100, ADR 0155, ADR 0156, ADR 0216, ADR 0294, ADR 0360, ADR 0399; ADR 0450; STA-1377.
 -->
 
 # @stackra/ai
@@ -13,7 +13,7 @@ typed answer from a model on AI SDK core. All of it is free code (ADR 0155). Too
 an MCP tool by default and an action with `tool: true` (both from `@stackra/actions`); gen derives the tool table, and
 the one MCP gateway in the `ai` service serves it.
 
-**Tier:** `tier:lib` (`packages/application/ai`). One entry, `.`. Depends on `@stackra/actions` (types),
+**Tier:** `tier:lib` (`packages/application/ai`). One entry, `.`. Depends on `@stackra/actions` (types, and `UsageRecorded` for the meter),
 `@stackra/container`, `@stackra/contracts`, `@stackra/search` (ports), AI SDK core (`ai`) and zod.
 
 ## What is here
@@ -33,7 +33,11 @@ the one MCP gateway in the `ai` service serves it.
 | `routeModel(request, table)`, `resolveModel(choice, drivers)`                  | the model router by task, region and data class, and the bound provider driver's model instance             |
 | `allowFields(facts, dataClass, allowList)`, `redact(text, rules)`              | the field allow-list per data class and the redaction rules, before context reaches a model                 |
 | `checkBudget(used, requested, budget)`                                         | the meter check: refuse a run over its token budget, warn at the budget's share                             |
-| `runGuardrails(layers, text, stage)`                                           | the layered guardrail check over bound `Guardrail` drivers; the first block wins                            |
+| `runGuardrails(layers, text, stage)`                                           | the layered guardrail check: redactions pass on, flags collect, the first block wins                        |
+| `PatternGuardrailDriver`, `PiiGuardrailDriver`                                 | guardrail layers over configured patterns, and over contact rules plus the Market's national ID formats     |
+| `InjectionGuardrailDriver`, `ClassifierGuardrailDriver`                        | the prompt-injection heuristic (weighted signals, hidden characters) and a routed model picking a label     |
+| `GuardrailLayer`, `GuardrailEffect`, `GuardrailStages`                         | the port the drivers extend; `block`, `redact` or `flag` per stage (`input`, `output`), as settings data    |
+| `AiMeter`, `AI_METERS`, `AiUsage`                                              | `usage.recorded` on `ai.tokens` per direction, with the model and scope, for entitlement limits             |
 | `runEvals(cases, subject)`                                                     | an eval suite run, for CI on AI SDK's mock or recorded models                                               |
 | `routeIntent(text, intents, { model })`                                        | the intent router: a phrase match, else one `decide` among the keys                                         |
 | `PageReader` (`./contracts`), `MemoryPageReaderDriver`, `HttpPageReaderDriver` | read one URL into text and product hints (ADR 0450)                                                         |
@@ -177,6 +181,59 @@ const isComplaint = await decide({ model, prompt: `Is this a complaint? ${text}`
 secret name resolved at run time). A model id string is refused: AI SDK would resolve it through its hosted gateway,
 an LLM proxy ADR 0155 rules out. An answer outside the choices or the range rejects with AI SDK's
 `NoObjectGeneratedError`.
+
+## Guardrails
+
+`runGuardrails(layers, text, stage)` runs each layer on the text the layer before it let through. A layer answers
+pass, pass with the text redacted, pass with flags, or block. The result is the text the model may see and every flag
+with its layer, or the first block. Each driver takes its effect per stage (`GuardrailEffect`: `block`, `redact` or
+`flag`) and all its patterns as settings or market-pack data; none is written in code. Every driver extends
+`Driver(GuardrailLayer)`; a service's own layer may extend it too, or be any object of the `Guardrail` shape.
+
+```ts
+const layers = [
+  new InjectionGuardrailDriver({
+    ...settings.ai.injection,
+    stages: { input: GuardrailEffect.Block },
+  }),
+  new PiiGuardrailDriver({
+    rules: floor.redaction, // emails, phones, cards
+    nationalIds: NationalIdFormats$.parse(valueOf(pack, "identity.national_ids", today)?.value),
+    stages: { input: GuardrailEffect.Redact, output: GuardrailEffect.Redact },
+  }),
+  new PatternGuardrailDriver({
+    rules: settings.ai.denylist,
+    stages: { output: GuardrailEffect.Block },
+  }),
+  new ClassifierGuardrailDriver(providers, {
+    ...settings.ai.policy,
+    route,
+    stages: { output: GuardrailEffect.Flag },
+  }),
+];
+const checked = await runGuardrails(layers, reading.text, "input");
+if (!checked.pass) return refuse(checked.guardrail, checked.reason);
+send(checked.text);
+```
+
+| Driver                      | Catches                                                                                       | Effects             |
+| --------------------------- | --------------------------------------------------------------------------------------------- | ------------------- |
+| `PatternGuardrailDriver`    | any configured `RedactionRule` (denylists, banned phrases, Arabic word lists)                 | block, redact, flag |
+| `PiiGuardrailDriver`        | contact rules, and numbers that pass one of the Market's `IdentifierFormat`s and check digits | block, redact, flag |
+| `InjectionGuardrailDriver`  | weighted `InjectionSignal`s plus hidden characters, from a threshold                          | block, redact, flag |
+| `ClassifierGuardrailDriver` | a model, routed through `ModelProviders`, choosing a label outside the allowed ones           | block, flag         |
+
+Reasons and flags are rule names, document kinds and labels, never the caught text. Put the PII layer before the
+classifier when the classifier's model is a third party's. The injection heuristic lowers risk; the tool approval floor
+stays the control.
+
+## Token meter
+
+`AiMeter.tokens(usage, { reference, model, scopeId, actor })` writes one `usage.recorded` (`@stackra/actions`) per
+direction through the outbox: meter `ai.tokens`, kind `sum`, key `ai.tokens.input` or `ai.tokens.output`, the model as
+`subject`, the run or call id as `callId`. An entitlement limit on `ai.tokens` caps a scope's AI spend; prices per
+model are rate-card data. The service calls it with AI SDK's `usage` after each call or run; `AgentRuntime` does not
+call it yet.
 
 ## Page reader
 

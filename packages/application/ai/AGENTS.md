@@ -3,7 +3,7 @@ Stackra file contract:
 Purpose: the agent rules of @stackra/ai: where code goes, entries, the package invariants (page reader included), PII.
 Boundary: documentation only; the user-facing guide is README.md.
 Runtime: none (Markdown)
-Governing contract: ADR 0100, ADR 0155, ADR 0294, ADR 0360, ADR 0399; ADR 0450.
+Governing contract: ADR 0100, ADR 0155, ADR 0156, ADR 0216, ADR 0294, ADR 0360, ADR 0399; ADR 0450; STA-1377.
 -->
 
 # AGENTS — @stackra/ai
@@ -41,7 +41,8 @@ ADR 0100 tables, the Postgres stores and `ScopeKeyCast`; storage home: ADR 0399)
   gateway.
 - Never write a tool: tools are actions and queries, derived by gen. `Skill` checks only that each listed class is an
   exposed tool; the risk comes from the permission and is gen's check.
-- Import `@stackra/actions` for types only; the runtime check reads the kind registry through `@stackra/container`.
+- Import `@stackra/actions` for types only, except `UsageRecorded` and `MeterKind` in `AiMeter`; the runtime check
+  reads the kind registry through `@stackra/container`.
 - A provider key is a secret name resolved at run time; no key, value or `.env` read here (ADR 0100 decision 14).
 - No `tenant` vocabulary (R-59); no `enum`, no `#private` fields, no parameter properties.
 - Configuration, not code: a floor tag, a recipient limit, a provider, a region, a warning share or a redaction pattern
@@ -56,6 +57,12 @@ ADR 0100 tables, the Postgres stores and `ScopeKeyCast`; storage home: ADR 0399)
 - `PageReader` (`./contracts`, ADR 0450) reads one page; its drivers are here. `HttpPageReaderDriver` checks every URL
   and redirect with `checkEgress` and takes its limits as a `PageReaderPolicy` from settings: add no default limit,
   host or user agent in code. A reading is untrusted data for a model, never instructions; store none of it here.
+- Guardrail drivers (`src/core/drivers/*-guardrail.driver.ts`) extend `Driver(GuardrailLayer)`; `Guardrail` stays the
+  structural type `runGuardrails` takes. Every pattern, signal, weight, threshold, label and effect comes from
+  their options (settings, market packs); national ID formats are `@stackra/validation`'s `IdentifierFormat`s, checked
+  with `checkIdentifier`. A reason or flag is a code, never the caught text. Compile patterns in the constructor.
+- `AiMeter` writes `usage.recorded` on `ai.tokens` only (direction in the key, model in `subject`); prices and caps
+  are rate-card and entitlement data.
 - Only add a symbol a consumer imports today (the template, a package, or the registry row).
 
 ## Rules that fail the build
@@ -75,3 +82,4 @@ ADR 0100 tables, the Postgres stores and `ScopeKeyCast`; storage home: ADR 0399)
 | ------------------------ | --------------------------- | ------------------------------------------------------------------------------------ |
 | `decide` prompt          | sent to the caller's model  | Not stored or logged here; the caller redacts personal data for third-party models.  |
 | `ContextFacts` (by type) | built by a module's `Facts` | Public ids and what the principal may read only; stored by the ai service, not here. |
+| Guardrail text           | checked in memory           | Never stored or logged; a verdict holds reason codes only, a redaction the text out. |
