@@ -53,6 +53,10 @@ describe("PeripheralsConfig", () => {
     expect(config.kitchenPrinter).toBe("memory");
     expect(config.bumpBar).toBe("memory");
     expect(config.usedReceiptStore).toBe("memory");
+    expect(config.scannerScale).toBe("memory");
+    expect(config.baggingScale).toBe("memory");
+    expect(config.labelScale).toBe("memory");
+    expect(config.driveThroughLane).toBe("memory");
     expect(config.kitchenPrinters).toEqual({});
     expect(config.scalePreset).toBe("retail");
     expect(Object.isFrozen(config)).toBe(true);

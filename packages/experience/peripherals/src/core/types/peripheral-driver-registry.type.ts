@@ -6,7 +6,7 @@
  * Boundary: a module augmentation only; the stand-in for the entries this package's generated wiring writes (ADR 0263
  *           decision 9). `PeripheralsOptions` imports this file so the augmentation travels with the shape.
  * Runtime: isomorphic
- * Governing contract: ADR 0294 (decisions 4 and 19); ADR 0263 (decision 9); ADR 0449.
+ * Governing contract: ADR 0294 (decisions 4 and 19); ADR 0263 (decision 9); ADR 0449; STA-965.
  */
 import type { PERIPHERAL_DRIVERS } from "#core/constants/peripheral-drivers.constant";
 
@@ -32,5 +32,13 @@ declare module "@stackra/container" {
     "peripherals.BumpBar": (typeof PERIPHERAL_DRIVERS.bumpBar)[number];
     /** The driver names of `UsedReceiptStore` (`memory`). */
     "peripherals.UsedReceiptStore": (typeof PERIPHERAL_DRIVERS.usedReceiptStore)[number];
+    /** The driver names of `ScannerScale` (`memory`). */
+    "peripherals.ScannerScale": (typeof PERIPHERAL_DRIVERS.scannerScale)[number];
+    /** The driver names of `BaggingScale` (`memory`). */
+    "peripherals.BaggingScale": (typeof PERIPHERAL_DRIVERS.baggingScale)[number];
+    /** The driver names of `LabelScale` (`memory`). */
+    "peripherals.LabelScale": (typeof PERIPHERAL_DRIVERS.labelScale)[number];
+    /** The driver names of `DriveThroughLane` (`memory`). */
+    "peripherals.DriveThroughLane": (typeof PERIPHERAL_DRIVERS.driveThroughLane)[number];
   }
 }

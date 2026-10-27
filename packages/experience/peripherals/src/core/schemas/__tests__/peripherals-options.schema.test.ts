@@ -4,7 +4,7 @@
  *          defaults, with each driver field typed as its port's driver names.
  * Boundary: test only.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 4, 19 and 26).
+ * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 4, 19 and 26); STA-965.
  */
 import type { DriverName } from "@stackra/container";
 import type { Duration } from "@stackra/contracts";
@@ -19,7 +19,11 @@ import type { CashDrawer } from "#contracts/ports/cash-drawer.port";
 import type { CustomerDisplay } from "#contracts/ports/customer-display.port";
 import type { KitchenPrinter } from "#contracts/ports/kitchen-printer.port";
 import type { LabelPrinter } from "#contracts/ports/label-printer.port";
+import type { BaggingScale } from "#contracts/ports/bagging-scale.port";
+import type { DriveThroughLane } from "#contracts/ports/drive-through-lane.port";
+import type { LabelScale } from "#contracts/ports/label-scale.port";
 import type { ReceiptPrinter } from "#contracts/ports/receipt-printer.port";
+import type { ScannerScale } from "#contracts/ports/scanner-scale.port";
 import type { UsedReceiptStore } from "#contracts/ports/used-receipt-store.port";
 import type { DrawerPin } from "#contracts/types/drawer-pin.type";
 import type { ScalePreset } from "#contracts/types/scale-preset.type";
@@ -50,6 +54,12 @@ describe("PeripheralsOptions", () => {
     expectTypeOf<PeripheralsOptions["bumpBar"]>().toEqualTypeOf<DriverName<BumpBar>>();
     expectTypeOf<PeripheralsOptions["usedReceiptStore"]>().toEqualTypeOf<
       DriverName<UsedReceiptStore>
+    >();
+    expectTypeOf<PeripheralsOptions["scannerScale"]>().toEqualTypeOf<DriverName<ScannerScale>>();
+    expectTypeOf<PeripheralsOptions["baggingScale"]>().toEqualTypeOf<DriverName<BaggingScale>>();
+    expectTypeOf<PeripheralsOptions["labelScale"]>().toEqualTypeOf<DriverName<LabelScale>>();
+    expectTypeOf<PeripheralsOptions["driveThroughLane"]>().toEqualTypeOf<
+      DriverName<DriveThroughLane>
     >();
     expectTypeOf<PeripheralsOptions["bumpBarKeys"]>().toEqualTypeOf<Record<string, BumpBarKey>>();
     expectTypeOf<PeripheralsOptions["scalePresets"]>().toEqualTypeOf<Record<string, ScalePreset>>();

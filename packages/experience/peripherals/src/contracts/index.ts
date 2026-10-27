@@ -5,22 +5,26 @@
  * Boundary: names each re-export and declares nothing. The leaf: it imports no other entry of this package. The
  *           ports are exported from here only, never from `.` (ADR 0294 decision 15).
  * Runtime: isomorphic
- * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision.
+ * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision; STA-965.
  */
 export { BumpBarKey } from "#contracts/enums/bump-bar-key.enum";
 export { LabelFormat } from "#contracts/enums/label-format.enum";
 export { TerminalState } from "#contracts/enums/terminal-state.enum";
 export { AccessController } from "#contracts/ports/access-controller.port";
+export { BaggingScale } from "#contracts/ports/bagging-scale.port";
 export { BarcodeScanner } from "#contracts/ports/barcode-scanner.port";
 export { BumpBar } from "#contracts/ports/bump-bar.port";
 export { CardTerminal } from "#contracts/ports/card-terminal.port";
 export { CashDrawer } from "#contracts/ports/cash-drawer.port";
 export { CustomerDisplay } from "#contracts/ports/customer-display.port";
+export { DriveThroughLane } from "#contracts/ports/drive-through-lane.port";
 export { KitchenPrinter } from "#contracts/ports/kitchen-printer.port";
 export { LabelPrinter } from "#contracts/ports/label-printer.port";
+export { LabelScale } from "#contracts/ports/label-scale.port";
 export { MenuBoard } from "#contracts/ports/menu-board.port";
 export { ReceiptPrinter } from "#contracts/ports/receipt-printer.port";
 export { Scale } from "#contracts/ports/scale.port";
+export { ScannerScale } from "#contracts/ports/scanner-scale.port";
 export { UsedReceiptStore } from "#contracts/ports/used-receipt-store.port";
 export type { CustomerDisplayLine } from "#contracts/types/customer-display-line.type";
 export type { CustomerDisplayView } from "#contracts/types/customer-display-view.type";
@@ -28,6 +32,8 @@ export type { DrawerPin } from "#contracts/types/drawer-pin.type";
 export type { ExitDecision } from "#contracts/types/exit-decision.type";
 export type { KitchenTicket } from "#contracts/types/kitchen-ticket.type";
 export type { Label } from "#contracts/types/label.type";
+export type { LabelScaleItem } from "#contracts/types/label-scale-item.type";
+export type { LaneCar } from "#contracts/types/lane-car.type";
 export type { MenuBoardView } from "#contracts/types/menu-board-view.type";
 export type { PairedTerminal } from "#contracts/types/paired-terminal.type";
 export type { PrintedLabel } from "#contracts/types/printed-label.type";

@@ -1,3 +1,5 @@
+<!-- Purpose: the README of @stackra/peripherals: what the ports, drivers, parsers and bridges are and how a host uses them. Boundary: this package only; the decisions live in the ADRs it names. Runtime: docs. Governing contract: ADR 0253, ADR 0339, ADR 0449, STA-965. -->
+
 # @stackra/peripherals
 
 Stackra peripherals: the point-of-sale hardware a client drives itself (ADR 0253, ADR 0339). Seven ports,
@@ -32,6 +34,9 @@ a keyboard-wedge HID device. A peripheral is hardware the client uses; a device 
 | `./contracts` | `KitchenPrinter`, `BumpBar`, `UsedReceiptStore`; `BumpBarKey`; `KitchenTicket`, `ScalePreset`                                                                                                                | kitchen tickets, the bump bar and the venue's used receipts (ADR 0449)                    |
 | `.`           | `MemoryKitchenPrinterDriver`, `MemoryBumpBarDriver`, `MemoryUsedReceiptStoreDriver`, `fitScaleReading`                                                                                                       | their `memory` candidates, and a reading put through the scale preset                     |
 | `./desktop`   | `PrintKitchenTicketBridge`, `EscposKitchenPrinterDriver`, `HidBumpBarDriver`                                                                                                                                 | `peripherals.kitchen.print` and the main-process `escpos` and `hid` drivers               |
+| `./contracts` | `ScannerScale`, `BaggingScale`, `LabelScale`, `DriveThroughLane`; `LabelScaleItem`, `LaneCar`                                                                                                                | grocery scales, self-checkout bagging and drive-through lanes (STA-965)                   |
+| `.`           | `MemoryScannerScaleDriver`, `MemoryBaggingScaleDriver`, `MemoryLabelScaleDriver`, `MemoryDriveThroughLaneDriver`                                                                                             | their `memory` candidates (the only drivers until a vendor's ships with its ADR)          |
+| `.`           | `parseGs1ElementString`, `Gs1ElementString`                                                                                                                                                                  | GS1-128 and DataBar codes read by application identifier: GTIN, net weight, price         |
 
 ## Using it
 
@@ -126,6 +131,45 @@ const weight = fitScaleReading(reading, peripheralsConfig); // null over capacit
 - `ExitGateService` takes a `UsedReceiptStore`; only `memory` (one gate) ships, so a venue with several exits needs a
   shared driver before one receipt is refused at the second exit.
 
+## Scales, self-checkout and drive-through lanes
+
+```ts
+export class PeripheralsConfig extends BasePeripheralsConfig {
+  // memory is the only driver of each until a vendor's driver ships with its own ADR
+  override scannerScale: DriverName<ScannerScale> = "memory";
+  override baggingScale: DriverName<BaggingScale> = "memory";
+  override labelScale: DriverName<LabelScale> = "memory";
+  override driveThroughLane: DriverName<DriveThroughLane> = "memory";
+}
+
+// till: the scanner-scale streams the platter; a weighed line charges on a settled reading
+const stop = scannerScale.onWeight((reading) => line.showWeight(reading));
+
+// self-checkout: zero the bagging area at the start, compare each change with what was scanned (the product's rule)
+await bagging.zero();
+bagging.onWeight((reading) => lane.checkBag(reading));
+
+// label scales: items and prices ahead of their effective time, one named scale at a time
+const sent = await labelScales.sync("deli_1", items); // CapabilityResult<readonly string[]> (the codes taken)
+
+// drive-through: the car sensor starts the order timer; the board confirms the order to the car
+lanes.onCar((car) => car.isPresent && timers.startOrder(car.lane));
+await lanes.confirm("lane_1", { lines, total: "SAR 36.00", message: null });
+
+// a GS1-128 or DataBar code: GTIN, net weight (310n kg, 320n lb), price (392n, 393n with its ISO 4217 code)
+parseGs1ElementString("]e00109501101530003" + "3103001250");
+// { gtin: "09501101530003", weight: { value: "1.250", unit: "kg" }, price: null, elements, code }
+```
+
+- `ScannerScale` and `BaggingScale` read like `Scale` and add `zero()`; they are ports of their own so a self-checkout
+  binds both. The tolerance, a mismatch and a typed manual weight are the product's rules, not this package's.
+- `LabelScale` and `DriveThroughLane` name the scale or lane on every call (a store has several). A lane with no sensor
+  sends no car events; the product starts its timers on order-taking instead. The board refuses with `window`, a
+  label scale with `network`, the scales with `serial`.
+- `parseGs1ElementString` reads the raw form (an optional AIM symbology identifier, GS separators) and the bracketed
+  form. A wrong GTIN or SSCC check digit, an identifier it does not know, a bad length or a non-GS1 symbology
+  identifier (`]E0`) parses to `null`. An in-store prefix-2x EAN-13 stays `parseEmbeddedBarcode`'s.
+
 ## Targets and limits
 
 Web APIs first, native modules only on evidence (ADR 0253 decisions 2 and 3). What each target can do today:
@@ -154,7 +198,10 @@ printer.isPresent = false; // every call now refuses with `unavailable`
 ```
 
 `MemoryBarcodeScannerDriver#emit(code)` scans, `MemoryCashDrawerDriver#opened` counts opens and
-`MemoryScaleDriver#reading` (`null` for no scale) sets the weight.
+`MemoryScaleDriver#reading` (`null` for no scale) sets the weight. `MemoryScannerScaleDriver#gross` and
+`MemoryBaggingScaleDriver#gross` set what lies on the scale (net of `zero()`), `MemoryLabelScaleDriver#items(scale)`
+and `#offline` show and break a scale's sync, and `MemoryDriveThroughLaneDriver#car(lane, isPresent)`, `#boards` and
+`#offline` drive a lane.
 
 Governing ADRs: 0253 (this package), 0339, 0429, 0449, 0250 (capabilities and refusals), 0251 (bridges and hardening), 0254 (desktop
 release baseline), 0266, 0269, 0294 (decisions 4, 15 to 17, 19, 20, 26), 0127 2026-10-24 note.

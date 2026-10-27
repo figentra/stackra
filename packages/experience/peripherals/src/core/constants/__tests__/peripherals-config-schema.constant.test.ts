@@ -5,7 +5,7 @@
  *          refused.
  * Boundary: test only.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0294 (decision 26); ADR 0253 (decision 4).
+ * Governing contract: ADR 0022 (test placement); ADR 0294 (decision 26); ADR 0253 (decision 4); STA-965.
  */
 import { describe, expect, it } from "@stackra/testing";
 
@@ -24,6 +24,10 @@ describe("PERIPHERALS_CONFIG_SCHEMA", () => {
       kitchenPrinter: "memory",
       bumpBar: "memory",
       usedReceiptStore: "memory",
+      scannerScale: "memory",
+      baggingScale: "memory",
+      labelScale: "memory",
+      driveThroughLane: "memory",
       printerAddress: "",
       labelPrinterAddress: "",
       kitchenPrinters: {},
@@ -96,6 +100,8 @@ describe("PERIPHERALS_CONFIG_SCHEMA", () => {
       { bumpBarKeys: { Enter: "delete" } },
       { scalePresets: { precision: { division: 0, capacity: 600 } } },
       { usedReceiptStore: "redis" },
+      { scannerScale: "datalogic" },
+      { driveThroughLane: "hme" },
     ])
       expect(PERIPHERALS_CONFIG_SCHEMA.safeParse(values).success).toBe(false);
   });

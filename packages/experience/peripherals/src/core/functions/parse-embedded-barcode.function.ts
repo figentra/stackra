@@ -9,9 +9,10 @@
  *           verified.
  * Runtime: isomorphic
  * Governing contract: the COM-241 answer (scales and weight barcodes; prefixes in `market-pack:*`); ADR 0339 (decision
- *                     7).
+ *                     7); STA-965 (the implied decimal shared with `parseGs1ElementString`).
  */
 import { gs1CheckDigit } from "#core/functions/gs1-check-digit.function";
+import { impliedDecimal } from "#core/functions/implied-decimal.function";
 import type { EmbeddedBarcode } from "#core/types/embedded-barcode.type";
 import type { EmbeddedBarcodeLayout } from "#core/types/embedded-barcode-layout.type";
 
@@ -41,15 +42,12 @@ export function parseEmbeddedBarcode(
   const itemStart = layout.prefix.length;
   const valueStart = itemStart + layout.itemDigits + check;
   const digits = code.slice(valueStart, valueStart + layout.valueDigits);
-  const whole =
-    digits.slice(0, digits.length - layout.valueDecimals).replace(/^0+(?=\d)/, "") || "0";
-  const fraction = digits.slice(digits.length - layout.valueDecimals);
   return {
     code,
     prefix: layout.prefix,
     itemCode: code.slice(itemStart, itemStart + layout.itemDigits),
     kind: layout.kind,
-    value: layout.valueDecimals === 0 ? whole : `${whole}.${fraction}`,
+    value: impliedDecimal(digits, layout.valueDecimals),
     unit: layout.unit,
   };
 }

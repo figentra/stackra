@@ -4,7 +4,7 @@
  *          this package ships, the names the template's generated desktop wiring declares for the same ports.
  * Boundary: test only.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 4 and 19); ADR 0263 (decision 9).
+ * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 4 and 19); ADR 0263 (decision 9); STA-965.
  */
 import { describe, expect, it } from "@stackra/testing";
 
@@ -23,6 +23,10 @@ describe("PERIPHERAL_DRIVERS", () => {
       kitchenPrinter: ["memory", "escpos"],
       bumpBar: ["memory", "hid"],
       usedReceiptStore: ["memory"],
+      scannerScale: ["memory"],
+      baggingScale: ["memory"],
+      labelScale: ["memory"],
+      driveThroughLane: ["memory"],
     });
     expect(Object.isFrozen(PERIPHERAL_DRIVERS)).toBe(true);
   });

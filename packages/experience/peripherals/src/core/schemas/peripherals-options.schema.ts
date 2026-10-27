@@ -3,13 +3,14 @@
  * Purpose: `PeripheralsOptions`, the shape of `PeripheralsConfig`: which driver each point-of-sale port takes, where
  *          the receipt and label printers are, the named kitchen printers with the stations each serves and its
  *          buzzer, the bump bar's key map, the scale presets and the one in use, which pin the drawer hangs on, how
- *          fast a wedge scanner types, and whether the app probes the devices at boot.
+ *          fast a wedge scanner types, and whether the app probes the devices at boot. The scanner-scale,
+ *          bagging-scale, label-scale and drive-through lane ports take a driver field each (STA-965).
  * Boundary: a shape class; it registers this package's own schema (`PERIPHERALS_CONFIG_SCHEMA`) for itself when the
  *           module loads, so `buildConfig(PeripheralsConfig)` validates with no generated file. Every default is the
  *           `memory` driver and no device, so a member that never configures peripherals touches no hardware.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 4, 19 and 26); ADR 0253 (decision 4); ADR 0266 (decisions 1 and 5); ADR
- *                     0449 (decisions 1 to 4).
+ *                     0449 (decisions 1 to 4); STA-965.
  */
 import "#core/types/peripheral-driver-registry.type";
 import type { DriverName } from "@stackra/container";
@@ -25,7 +26,11 @@ import type { CashDrawer } from "#contracts/ports/cash-drawer.port";
 import type { CustomerDisplay } from "#contracts/ports/customer-display.port";
 import type { KitchenPrinter } from "#contracts/ports/kitchen-printer.port";
 import type { LabelPrinter } from "#contracts/ports/label-printer.port";
+import type { BaggingScale } from "#contracts/ports/bagging-scale.port";
+import type { DriveThroughLane } from "#contracts/ports/drive-through-lane.port";
+import type { LabelScale } from "#contracts/ports/label-scale.port";
 import type { ReceiptPrinter } from "#contracts/ports/receipt-printer.port";
+import type { ScannerScale } from "#contracts/ports/scanner-scale.port";
 import type { UsedReceiptStore } from "#contracts/ports/used-receipt-store.port";
 import type { DrawerPin } from "#contracts/types/drawer-pin.type";
 import type { ScalePreset } from "#contracts/types/scale-preset.type";
@@ -73,6 +78,18 @@ export class PeripheralsOptions extends Schema {
 
   /** Where exit gates record used receipts: `memory` (this gate only) until a shared store ships. */
   usedReceiptStore: DriverName<UsedReceiptStore> = "memory";
+
+  /** The till's scanner-scale driver: `memory` until a vendor's driver ships with its ADR. */
+  scannerScale: DriverName<ScannerScale> = "memory";
+
+  /** The self-checkout bagging scale driver: `memory` until a lane vendor's driver ships with its ADR. */
+  baggingScale: DriverName<BaggingScale> = "memory";
+
+  /** The label scale sync driver: `memory` until a vendor protocol's driver ships with its ADR. */
+  labelScale: DriverName<LabelScale> = "memory";
+
+  /** The drive-through lane driver (car sensor, confirm board): `memory` until a vendor's driver ships with its ADR. */
+  driveThroughLane: DriverName<DriveThroughLane> = "memory";
 
   /** Where the `escpos` driver sends receipts: `tcp://<host>:<port>`, a device path, or empty for no printer. */
   printerAddress = "";

@@ -5,7 +5,7 @@
  *          signatures name, nothing else.
  * Boundary: test only; imports the stand-in barrel through its `#contracts` alias. Type exports are checked by type.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0294 (decision 15).
+ * Governing contract: ADR 0022 (test placement); ADR 0294 (decision 15); STA-965.
  */
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
@@ -13,21 +13,25 @@ import * as contracts from "#contracts/index";
 import type { DrawerPin, PrintedReceipt, Receipt, ScaleReading } from "#contracts/index";
 
 describe("@stackra/peripherals/contracts", () => {
-  it("exports exactly the twelve ports and three enums at run time", () => {
+  it("exports exactly the sixteen ports and three enums at run time", () => {
     expect(Object.keys(contracts).sort()).toEqual([
       "AccessController",
+      "BaggingScale",
       "BarcodeScanner",
       "BumpBar",
       "BumpBarKey",
       "CardTerminal",
       "CashDrawer",
       "CustomerDisplay",
+      "DriveThroughLane",
       "KitchenPrinter",
       "LabelFormat",
       "LabelPrinter",
+      "LabelScale",
       "MenuBoard",
       "ReceiptPrinter",
       "Scale",
+      "ScannerScale",
       "TerminalState",
       "UsedReceiptStore",
     ]);

@@ -11,7 +11,7 @@
  *           (`fitScaleReading`).
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 26: a package ships its own `X$`); ADR 0253 (decision 4); ADR 0266
- *                     (decision 5: config picks the driver); ADR 0449 (decisions 1 to 3).
+ *                     (decision 5: config picks the driver); ADR 0449 (decisions 1 to 3); STA-965.
  */
 import { Duration, Enum } from "@stackra/contracts";
 import { z } from "zod";
@@ -41,6 +41,10 @@ export const PERIPHERALS_CONFIG_SCHEMA = z.object({
   kitchenPrinter: z.enum(PERIPHERAL_DRIVERS.kitchenPrinter).default("memory"),
   bumpBar: z.enum(PERIPHERAL_DRIVERS.bumpBar).default("memory"),
   usedReceiptStore: z.enum(PERIPHERAL_DRIVERS.usedReceiptStore).default("memory"),
+  scannerScale: z.enum(PERIPHERAL_DRIVERS.scannerScale).default("memory"),
+  baggingScale: z.enum(PERIPHERAL_DRIVERS.baggingScale).default("memory"),
+  labelScale: z.enum(PERIPHERAL_DRIVERS.labelScale).default("memory"),
+  driveThroughLane: z.enum(PERIPHERAL_DRIVERS.driveThroughLane).default("memory"),
   printerAddress: z.string().regex(PRINTER_ADDRESS).default(""),
   labelPrinterAddress: z.string().regex(PRINTER_ADDRESS).default(""),
   kitchenPrinters: z

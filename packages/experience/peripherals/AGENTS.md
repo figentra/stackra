@@ -1,7 +1,10 @@
+<!-- Purpose: the agent guide of @stackra/peripherals: where code goes, the package's rules and its PII. Boundary: this package only. Runtime: docs. Governing contract: ADR 0253, ADR 0339, ADR 0449, STA-965. -->
+
 # AGENTS — @stackra/peripherals
 
 Point-of-sale hardware: receipt, label and kitchen ticket printers, cash drawer, barcode scanner, bump bar, scale,
-customer display, card terminal (pairing only), exit gates and their used-receipt store. Member at
+customer display, card terminal (pairing only), exit gates and their used-receipt store, scanner-scales, bagging
+scales, label-scale sync and drive-through lanes. Member at
 `packages/experience/peripherals` (`tier:lib`), in the programming model v3.1 shape (ADR 0294, 0305). Entries `.`,
 `./contracts`, `./desktop`.
 
@@ -13,7 +16,7 @@ customer display, card terminal (pairing only), exit gates and their used-receip
 | The configuration                    | `src/config/peripherals.config.ts`, its shape in `src/core/schemas/` |
 | The shipped `PeripheralsConfig$`     | `src/core/constants/peripherals-config-schema.constant.ts`           |
 | A memory driver                      | `src/core/drivers/memory-<port>.driver.ts`                           |
-| An encoder, a refusal builder        | `src/core/functions/`                                                |
+| An encoder, a parser, a refusal      | `src/core/functions/`                                                |
 | A refusal                            | `src/core/errors/<name>.error.ts`                                    |
 | A main-process driver or bridge      | `src/desktop/drivers/`, `src/desktop/bridges/`                       |
 | A test                               | `__tests__/<name>.<kind>.test.ts` beside it                          |
@@ -33,6 +36,11 @@ customer display, card terminal (pairing only), exit gates and their used-receip
 - `ExitGateService` claims a receipt in the bound `UsedReceiptStore` after the rule admits it and releases it when the
   gate fails to open (ADR 0449 decision 4).
 - The label bridge accepts one ZPL label with no `~` or `^J` command, or a packed raster; never raw bytes.
+- `ScannerScale`, `BaggingScale`, `LabelScale` and `DriveThroughLane` are hardware only: weight tolerances, mismatch
+  handling, manual weights, sync timing, approvals and speed-of-service timers are the product's rules. Label scales
+  and lanes are named on every call. Each ships only `memory`; a vendor driver needs its own ADR (ADR 0253 decision 3).
+- GS1 parsing: `parseGs1ElementString` reads by `GS1_APPLICATION_IDENTIFIERS` (a standard's table, internal); add an
+  identifier there, never guess one. Prices and weights stay decimal strings (`impliedDecimal`).
 - A new driver name goes into `PERIPHERAL_DRIVERS`; it must equal what gen writes for the port, because both augment
   the same `DriverRegistry` key.
 - No native module (ADR 0253 decision 3): main reaches printers over `node:net` or a device path, and the scanner
@@ -59,3 +67,5 @@ customer display, card terminal (pairing only), exit gates and their used-receip
 | Kitchen tickets | `KitchenPrinter.print`, the bridge | Sent to the station's printer only; never logged                         |
 | Receipt ids     | `UsedReceiptStore.claim`           | Ids only, never the token or the basket                                  |
 | Display views   | `CustomerDisplay.show`             | Posted to the app's own display window only (same-origin channel)        |
+| Lane board      | `DriveThroughLane.confirm`         | Shown to the car only; never logged                                      |
+| GS1 elements    | `parseGs1ElementString`            | Returned to the caller only; a serial (AI 21) is never logged here       |

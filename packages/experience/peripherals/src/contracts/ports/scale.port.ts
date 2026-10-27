@@ -1,14 +1,15 @@
 /**
  * Stackra file contract:
- * Purpose: the `Scale` port: a weighing scale at the till or the bagging area of a self-checkout lane (ADR 0253). It
- *          reads the weight on the scale now, streams every weight change to a listener (the lane's continuous check
- *          that the bag holds what was scanned), and answers a probe, each read as a `CapabilityResult` that refuses
- *          with capability `serial` when no scale answers.
+ * Purpose: the `Scale` port: a stand-alone weighing scale at a till or a counter (ADR 0253). It reads the weight on
+ *          the scale now, streams every weight change to a listener, and answers a probe, each read as a
+ *          `CapabilityResult` that refuses with capability `serial` when no scale answers. A scanner-scale is the
+ *          `ScannerScale` port and a self-checkout's bagging area the `BaggingScale` port (STA-965), so one device
+ *          binds them side by side.
  * Boundary: an abstract class that is its own token, keyed `peripherals.Scale`. Only the `memory` driver ships: a scale
  *           speaks over a serial line, which Electron's main process reaches only through a native module (ADR 0253
  *           decision 3: on evidence) and a Chromium renderer through WebSerial, a driver for a later entry.
  * Runtime: isomorphic
- * Governing contract: ADR 0253 (decisions 1 to 3); ADR 0250 (decision 3); ADR 0294 (decisions 15 and 16).
+ * Governing contract: ADR 0253 (decisions 1 to 3); ADR 0250 (decision 3); ADR 0294 (decisions 15 and 16); STA-965.
  */
 import { Port } from "@stackra/contracts";
 import type { CapabilityResult } from "@stackra/platform/contracts";
