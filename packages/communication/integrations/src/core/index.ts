@@ -5,7 +5,10 @@
  *          service with the other connectors (R3-8, STA-1281). The voice folder adds `SpeechService`, `VoicePack`,
  *          `VoiceMeter`, the region-map and memory audio drivers, `VOICE_METERS` and the consent and handover steps. The
  *          accounting folder adds `mapJournal`, `postMappedJournal` and `UnmappedAccountError` (STA-794); the ads folder
- *          adds `matchKeysOf`, the hashed match keys of a person for an ad platform (STA-793).
+ *          adds `matchKeysOf`, the hashed match keys of a person for an ad platform (STA-793). The edi
+ *          folder adds the X12 and EDIFACT envelope (`readInterchange`, `writeInterchange`), the 997 and CONTRL
+ *          `functionalAcknowledgement`, `MailboxEdiConnector`, `MemoryEdiMailbox`, `EDI_MESSAGE_CODES` and
+ *          `MalformedEdiError` (stackra-46).
  * Boundary: names each re-export and declares nothing. The provider-category, catalogue and managed-provisioning
  *           template seeds are exported for the registry and the seeders. The managed client's internals (`managedClient`, the placeholder
  *           lookup, the JWT signer) and the registries stay internal; `requestToken` is public for a store host's code
@@ -21,6 +24,14 @@ export { postMappedJournal } from "#core/accounting/post-mapped-journal.function
 export { UnmappedAccountError } from "#core/accounting/unmapped-account.error";
 export { matchKeysOf } from "#core/ads/match-keys-of.function";
 export { Connection } from "#core/bases/connection.base";
+export { EDI_MESSAGE_CODES } from "#core/edi/edi-message-codes.constant";
+export { functionalAcknowledgement } from "#core/edi/functional-acknowledgement.function";
+export { MailboxEdiConnector } from "#core/edi/mailbox-edi.connector";
+export type { MailboxEdiOptions } from "#core/edi/mailbox-edi-options.type";
+export { MalformedEdiError } from "#core/edi/malformed-edi.error";
+export { MemoryEdiMailbox } from "#core/edi/memory-edi-mailbox.driver";
+export { readInterchange } from "#core/edi/read-interchange.function";
+export { writeInterchange } from "#core/edi/write-interchange.function";
 export { Integration } from "#core/bases/integration.base";
 export { Pass } from "#core/bases/pass.base";
 export type { PassBase } from "#core/bases/pass-base.base";

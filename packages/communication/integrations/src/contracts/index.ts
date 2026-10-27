@@ -7,7 +7,8 @@
  *          voice folder (`Speech`, the `AudioDevice` and `RegionMapSource` ports, `AudioEncoding` and the stream types),
  *          and the accounting folder (`AccountMap`, `AccountMapped`: the account mapping a Connection holds), and the
  *          ads folder (`AdPlatformConnector`, `ConversionEvent`, `MatchKeys`, `AdBatchResult`: conversions API and
- *          audience sync, STA-793),
+ *          audience sync, STA-793), and the edi folder (the `EdiMailbox` transport port, `EdiSyntax` and the
+ *          interchange types, stackra-46),
  *          until `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. The leaf: it imports no other entry of this package (only
  *           `@stackra/contracts`, and the `Money` and `Address` types of `@stackra/money` and `@stackra/validation`).
@@ -22,6 +23,13 @@ export type { AdBatchResult } from "#contracts/ads/ad-batch-result.type";
 export type { AdPlatformConnector } from "#contracts/ads/ad-platform-connector.type";
 export type { ConversionEvent } from "#contracts/ads/conversion-event.type";
 export type { MatchKeys } from "#contracts/ads/match-keys.type";
+export { EdiMailbox } from "#contracts/edi/edi-mailbox.port";
+export type { EdiElement } from "#contracts/edi/edi-element.type";
+export type { EdiInterchange } from "#contracts/edi/edi-interchange.type";
+export type { EdiMailboxPage } from "#contracts/edi/edi-mailbox-page.type";
+export type { EdiMessage } from "#contracts/edi/edi-message.type";
+export type { EdiParty } from "#contracts/edi/edi-party.type";
+export { EdiSyntax } from "#contracts/edi/edi-syntax.enum";
 export { CallStatus } from "#contracts/enums/call-status.enum";
 export { ChannelPaymentMethod } from "#contracts/enums/channel-payment-method.enum";
 export { EdiDocumentType } from "#contracts/enums/edi-document-type.enum";

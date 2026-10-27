@@ -21,6 +21,8 @@ describe("@stackra/integrations/contracts", () => {
       "CmsSigner",
       "ConnectionContext",
       "EdiDocumentType",
+      "EdiMailbox",
+      "EdiSyntax",
       "FraudDecision",
       "ManagedProvisioning",
       "MarketContext",

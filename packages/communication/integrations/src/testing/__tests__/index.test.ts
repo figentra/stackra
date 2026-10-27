@@ -28,6 +28,7 @@ describe("@stackra/integrations/testing", () => {
       "runAccountingCase",
       "runConnectorCase",
       "runFulfilmentCase",
+      "runEdiCase",
     ]);
     expect(testing.INTEGRATIONS_TESTING_PLUGIN.name).toBe("@stackra/integrations");
   });

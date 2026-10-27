@@ -6,7 +6,8 @@ Purpose: the agent rules of @stackra/integrations: where code goes, entries and 
          kinds and the capability lookup, ad platforms and the connector recorded-case runners included) and PII.
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
-Governing contract: ADR 0294; ADR 0305; ADR 0308; ADR 0348; ADR 0355; ADR 0356; ADR 0376; ADR 0443; ADR 0447.
+Governing contract: ADR 0294; ADR 0305; ADR 0308; ADR 0348; ADR 0355; ADR 0356; ADR 0376; ADR 0443; ADR 0447;
+                    stackra-46 (EDI envelope).
 -->
 
 Provider integrations, connections and their store (ADR 0308). Member at `packages/communication/integrations`
@@ -104,7 +105,12 @@ Provider integrations, connections and their store (ADR 0308). Member at `packag
   scales, fraud and document-management connectors are Connection classes in OS integrations on those shelves, never
   a framework of their own here.
 - A fraud score is a fact for the tenant's rules; nothing here holds, cancels or thresholds on it.
-- EDI is canonical JSON through a network provider (R3-SO-07): no EDIFACT, X12 or AS2 codec in this package.
+- EDI (stackra-46, re-scoped R2-7 and M6 over R3-SO-07): the X12 and EDIFACT envelope, the 997 and CONTRL
+  acknowledgement and `MailboxEdiConnector` live in `src/core/edi/`; the `EdiMailbox` transport port and the
+  interchange types in `src/contracts/edi/`; `runEdiCase` in `src/testing/edi/`. No vendor name and no transport here:
+  AS2, SFTP and VAN mailbox drivers and managed network connectors (Stedi, SPS Commerce, Orderful, ecosio) are OS
+  integrations connectors. Partner ids, our interchange id and the version are Connection data (`MailboxEdiOptions`);
+  the canonical-document-to-segment mapping is the consuming module's. Everything here is certification pending.
 - Wallet passes (ADR 0348 decision 5): issuing lives in `./node` (`src/node/pass/`), so pkijs, asn1js and the zip
   writer never load with `.`. A driver takes its signer, `api` and options as constructor arguments the host passes;
   the `CmsSigner` port is in `./contracts`. Certificates and keys are read by secret name at each call and never put in

@@ -7,8 +7,8 @@ Purpose: the package's reader guide: Integrations, Connections and their stores,
          issuing (`./node`), the voice channel (Speech port, meters, recording consent, handover, the SIP trunk
          driver in `./node`), accounting journals (account mapping per Connection, the recorded-case runner of
          accounting drivers), marketplaces, 3PLs and ad platforms (the ad-platform contract, hashed match keys, the
-         recorded-case runners, the Meta home and the OS connector list with its doc links, STA-793), the webhook
-         recipe types, and what is not here.
+         recorded-case runners, the Meta home and the OS connector list with its doc links, STA-793), the EDI
+         envelope and mailbox connector with its recorded-case runner, the webhook recipe types, and what is not here.
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
 Governing contract: ADR 0308; ADR 0348; ADR 0355; ADR 0356; ADR 0376; ADR 0443; ADR 0447.
@@ -409,6 +409,32 @@ The OS connectors (os-104), with the public documentation each is built from:
 | Google Ads, Merchant Center                                                | `AdPlatformConnector`, `ProductFeedConnector`           | `OAuth2Code`, `headers: { "developer-token": "{developerToken}" }`                                           | https://developers.google.com/google-ads/api/docs/start, https://developers.google.com/merchant/api |
 | One 3PL per launch country (COM-113, on the first design partner's demand) | `FulfilmentProviderConnector`                           | per provider                                                                                                 | the chosen provider's API docs                                                                      |
 
+## EDI (stackra-46, `src/*/edi/`)
+
+The `edi` connector kind is `EdiConnector` (`send` once per key, `receive` a page, `acknowledge`). Stackra keeps the
+machinery that names no vendor (ADR 0443 decision 8):
+
+- **The envelope.** `readInterchange(text)` reads an ASC X12 (ISA, GS, ST) or UN/EDIFACT (UNA, UNB, UNH) interchange
+  into an `EdiInterchange` (parties, control number, date, test flag, version, messages with their body segments),
+  checking every trailer count and control number; `writeInterchange` writes one back (X12 `*`, `>`, `~`; EDIFACT the
+  UNA defaults with `?` escapes). A broken interchange is `MalformedEdiError` (`malformed_edi`).
+- **Acknowledgements.** `functionalAcknowledgement(received, control, at)` builds the X12 997 (AK1, AK2 and AK5 `A`,
+  AK9 per group) or the EDIFACT CONTRL (UCI action 7) back to the sender; an interchange of acknowledgements gets none.
+- **The generic driver.** `MailboxEdiConnector(mailbox, options)` implements `EdiConnector` over the `EdiMailbox`
+  port (`./contracts`: put once per name, list, get, remove, control numbers per partner). `send` envelopes
+  `body.segments` for the partner (`<qualifier>:<id>`); `receive` turns each message into a canonical `EdiDocument`
+  (type from `EDI_MESSAGE_CODES`: 850/ORDERS, 855/ORDRSP, 856/DESADV, 810/INVOIC, 997/CONTRL; reference from BEG, BAK,
+  BSN, BIG or BGM); `acknowledge` sends the 997 or CONTRL and removes the interchange. `MailboxEdiOptions` (syntax, our
+  party, version, test) is Connection data. `MemoryEdiMailbox` is the memory transport.
+- **Recorded cases.** An OS EDI connector ships `EdiCase` recordings and passes `runEdiCase(make, case)` from
+  `./testing`: each document sent twice under its key (same id), every page received, each acknowledged, every recorded
+  call made.
+
+Certification pending (owner D3, 2026-10-27): built from the public X12 004010 and EDIFACT D.96A envelope rules, run by
+no partner or network yet. The transports (AS2 with MDNs, SFTP, a VAN mailbox) and the managed network connectors
+(Stedi, SPS Commerce, Orderful, ecosio) are OS integrations connectors on the `edi` shelf; mapping canonical documents
+to segments is the consuming module's (Commerce STA-778).
+
 ## Payroll
 
 The `payroll` category's Connections implement `PayrollConnector.pushPayInputs(batch, idempotencyKey)`: one pay
@@ -457,6 +483,8 @@ record and an array repeats its key.
 - Lifecycle events (`integrations.connection.*.v1`), tombstones and encryption at rest: the store host.
 - Provider drivers of other packages' ports: SMS, WhatsApp, push, mail and voice drivers are `@stackra/notifications`';
   payment gateways `@stackra/payments`'; carriers OS integrations connectors behind `@stackra/shipping`.
+- EDI transports and networks (AS2, SFTP, VAN mailboxes; Stedi, SPS Commerce, Orderful, ecosio) and the mapping of
+  purchase orders, receipts and invoices to segments: OS integrations connectors and Commerce, certification pending.
 - Accounting provider drivers (Xero, QuickBooks Online, Zoho Books, Qoyod, Daftra, later Odoo) and their recordings:
   OS integrations connectors (ADR 0443 decision 7), certification pending.
 - Marketplace, 3PL and ad-platform Integrations: OS integrations connectors (see Marketplaces, 3PLs and ad
