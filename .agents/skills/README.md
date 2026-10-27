@@ -11,6 +11,7 @@ directly. The spec-kit skills (`speckit-*`) are not here: spec-kit renders them 
 | Web UI                 | `heroui-react`, `frontend-design`, `accessibility`, `playwright-best-practices`                                             |
 | Mobile                 | `heroui-native`, `react-native-best-practices`, `expo-*` (animation, data-fetching, design-system, dev-client, upgrade), `eas-*` (app-stores, update, workflows) |
 | Services and vendors   | `resend` (behind the mail driver), `stripe-best-practices` (billing work only)                                              |
+| Diagrams and explainers | `archify` (vendored from [tt-a1i/archify](https://github.com/tt-a1i/archify) at `81c6be8`, Apache-2.0; its 15 pre-rendered `examples/*.html` are left out, the JSON examples `SKILL.md` cites stay) |
 | House                  | `docs-adr`, `docs-spec-flow`, `backend-author-an-action`, `backend-module-and-root-module`, `backend-decorator-package-with-explorer`, `backend-errors`, `backend-assets-and-storage`, `backend-gen-and-encore-target`, `frontend-resource-console`, `db-models-and-migrations`, `ai-mcp-tools`, `code-naming-and-casing`, `mobile-eas-setup`, `mobile-release`, `mobile-store-listing` |
 
 ## Rules
