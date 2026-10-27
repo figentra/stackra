@@ -4,7 +4,9 @@
  *          written as a word (given or from the catalogue) and read with a text title, under a list named by the
  *          label, with the plan's actions after it.
  * Boundary: React Native does not render in vitest: react-native and this package's native Timeline are replaced by
- *           stand-ins that render plain DOM, so what reaches them is checked, not their rendering.
+ *           stand-ins that render plain DOM, so what reaches them is checked, not their rendering. `@stackra/ui/native`
+ *           is replaced by its catalogue hook alone: its entry loads Reanimated, whose worklets runtime does not load
+ *           under vitest. No `I18nProvider` is mounted, so the status words are the English catalogue's.
  * Runtime: node
  * Governing contract: ADR 0245 (decision 8); WCAG 2.2 SC 1.4.1; ADR 0022 (test placement).
  */
@@ -17,6 +19,16 @@ import { PlanView } from "#native/plan-view/plan-view";
 vi.mock("react-native", () => ({
   View: ({ children }: { children?: ReactNode }) => <div>{children}</div>,
 }));
+vi.mock("@stackra/ui/native", async () => {
+  const { formatMessage } = await import("@stackra/i18n");
+  return {
+    // The real hook falls back to the English catalogue with no I18nProvider; the mock does the same.
+    useCatalogueText:
+      (english: Parameters<typeof formatMessage>[0]) =>
+      (key: Parameters<typeof formatMessage>[1], values?: Parameters<typeof formatMessage>[2]) =>
+        formatMessage(english, key, values, "en"),
+  };
+});
 vi.mock("#native/timeline/timeline", async () => {
   const { createElement } = await import("react");
   const part = ({ children }: { children?: ReactNode }) => createElement("div", null, children);
