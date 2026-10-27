@@ -3,14 +3,16 @@
  * Purpose: `CapabilityGateways`, which port each `PaymentCapability` code stands for.
  * Boundary: a type map in the leaf entry; `hasCapability(gateway, code)` narrows a `PaymentGateway` with it.
  * Runtime: isomorphic
- * Governing contract: ADR 0357 (decision 2); ADR 0445; ADR 0446.
+ * Governing contract: ADR 0357 (decision 2); ADR 0445; ADR 0446; STA-1024.
  */
 import type { CaptureGateway } from "#contracts/types/capture-gateway.type";
 import type { DisputeGateway } from "#contracts/types/dispute-gateway.type";
+import type { IncrementalAuthGateway } from "#contracts/types/incremental-auth-gateway.type";
 import type { MethodsGateway } from "#contracts/types/methods-gateway.type";
 import type { PaymentGateway } from "#contracts/types/payment-gateway.type";
 import type { PayoutGateway } from "#contracts/types/payout-gateway.type";
 import type { PlatformGateway } from "#contracts/types/platform-gateway.type";
+import type { PreAuthGateway } from "#contracts/types/pre-auth-gateway.type";
 import type { TerminalGateway } from "#contracts/types/terminal-gateway.type";
 import type { TokenGateway } from "#contracts/types/token-gateway.type";
 
@@ -56,4 +58,10 @@ export interface CapabilityGateways {
 
   /** A terminal session a SoftPos phone collects. */
   readonly soft_pos: TerminalGateway;
+
+  /** Holds an amount on a saved token. */
+  readonly pre_auth: PreAuthGateway;
+
+  /** Raises an authorised hold. */
+  readonly incremental_auth: IncrementalAuthGateway;
 }

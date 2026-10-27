@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: Stand-in barrel: the `./contracts` entry of @stackra/payments (the enums, the ten container ports, the
+ * Purpose: Stand-in barrel: the `./contracts` entry of @stackra/payments (the enums, the eleven container ports, the
  *          gateway port interfaces and the payment types) until `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. The leaf every other entry may import.
  * Runtime: isomorphic
@@ -17,6 +17,7 @@ export { TransferStatus } from "#contracts/enums/transfer-status.enum";
 export { AgentCommerceProtocols } from "#contracts/ports/agent-commerce-protocols.port";
 export { ConnectedAccountLimits } from "#contracts/ports/connected-account-limits.port";
 export { MarketPaymentDefaults } from "#contracts/ports/market-payment-defaults.port";
+export { PaymentBalances } from "#contracts/ports/payment-balances.port";
 export { PaymentGateways } from "#contracts/ports/payment-gateways.port";
 export { PaymentPackSource } from "#contracts/ports/payment-pack-source.port";
 export { PaymentRecords } from "#contracts/ports/payment-records.port";
@@ -26,6 +27,7 @@ export { StripeTerminalBridge } from "#contracts/ports/stripe-terminal-bridge.po
 export { TenderEligibility } from "#contracts/ports/tender-eligibility.port";
 export type { AgentCheckoutRequest } from "#contracts/types/agent-checkout-request.type";
 export type { AgentConfirmation } from "#contracts/types/agent-confirmation.type";
+export type { BalancePart } from "#contracts/types/balance-part.type";
 export type { CapabilityGateways } from "#contracts/types/capability-gateways.type";
 export type { CaptureGateway } from "#contracts/types/capture-gateway.type";
 export type { CaptureRequest } from "#contracts/types/capture-request.type";
@@ -34,12 +36,15 @@ export type { CheckoutSession } from "#contracts/types/checkout-session.type";
 export type { Dispute } from "#contracts/types/dispute.type";
 export type { DisputeEvidence } from "#contracts/types/dispute-evidence.type";
 export type { DisputeGateway } from "#contracts/types/dispute-gateway.type";
+export type { IncrementRequest } from "#contracts/types/increment-request.type";
+export type { IncrementalAuthGateway } from "#contracts/types/incremental-auth-gateway.type";
 export type { LegacyConnectedAccountMode } from "#contracts/types/legacy-connected-account-mode.type";
 export type { MerchantAccount } from "#contracts/types/merchant-account.type";
 export type { MerchantOnboarding } from "#contracts/types/merchant-onboarding.type";
 export type { MethodsGateway } from "#contracts/types/methods-gateway.type";
 export type { PayLink } from "#contracts/types/pay-link.type";
 export type { PaymentAddress } from "#contracts/types/payment-address.type";
+export type { PaymentBalance } from "#contracts/types/payment-balance.type";
 export type { PaymentConnectionMode } from "#contracts/types/payment-connection-mode.type";
 export type { PaymentGateway } from "#contracts/types/payment-gateway.type";
 export type { PaymentLine } from "#contracts/types/payment-line.type";
@@ -51,6 +56,7 @@ export type { PayoutGateway } from "#contracts/types/payout-gateway.type";
 export type { PayoutRequest } from "#contracts/types/payout-request.type";
 export type { PlatformGateway } from "#contracts/types/platform-gateway.type";
 export type { PlatformShare } from "#contracts/types/platform-share.type";
+export type { PreAuthGateway } from "#contracts/types/pre-auth-gateway.type";
 export type { ProviderChoice } from "#contracts/types/provider-choice.type";
 export type { ProviderPayment } from "#contracts/types/provider-payment.type";
 export type { RefundRequest } from "#contracts/types/refund-request.type";

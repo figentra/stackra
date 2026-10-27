@@ -10,7 +10,8 @@
  *          for the matching capability (the restricted-tender flow itself is `RestrictedTenderService`), and so does
  *          a SoftPos session (tap to pay; the phone collects it through the `SoftPos` port). An agent's payment is
  *          taken only within what the shopper confirmed in their own wallet (`agentCheckout`): an agent never pays
- *          alone.
+ *          alone. A saved token can be pre-authorised (`preAuthorize`, a tab or a deposit), an authorised hold raised
+ *          (`increment`), then captured in part or in full (`capture`) or released (`void`).
  * Boundary: generic over `PaymentGateways` (which provider serves a call is the Connection's and the Market's data),
  *           `PaymentRecords` (where state lives) and `ConnectedAccountLimits` (the cap and the hold, from the OS
  *           verification record) and `AgentCommerceProtocols` (the protocols' proof of a wallet confirmation). It never
@@ -20,7 +21,8 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0357 (decisions 1, 2, 5 and 6); ADR 0356 (decision 2); ADR 0294 (decisions 15 to 17);
  *                     R4-6 (the cap and the hold apply to connected accounts only); R4-4 (methods from the account);
- *                     ADR 0445 (restricted tenders and the PIN step); ADR 0446 (agent payments and SoftPos).
+ *                     ADR 0445 (restricted tenders and the PIN step); ADR 0446 (agent payments and SoftPos);
+ *                     STA-1024 (pre-authorisation and incremental authorisation).
  */
 import { Service } from "@stackra/container";
 import type { Clock } from "@stackra/contracts";
@@ -41,11 +43,13 @@ import type { AgentCheckoutRequest } from "#contracts/types/agent-checkout-reque
 import type { CapabilityGateways } from "#contracts/types/capability-gateways.type";
 import type { CheckoutRequest } from "#contracts/types/checkout-request.type";
 import type { CheckoutSession } from "#contracts/types/checkout-session.type";
+import type { IncrementRequest } from "#contracts/types/increment-request.type";
 import type { PayLink } from "#contracts/types/pay-link.type";
 import type { PaymentGateway } from "#contracts/types/payment-gateway.type";
 import type { PaymentRecord } from "#contracts/types/payment-record.type";
 import type { PaymentTarget } from "#contracts/types/payment-target.type";
 import type { PayoutRequest } from "#contracts/types/payout-request.type";
+import type { ProviderPayment } from "#contracts/types/provider-payment.type";
 import type { TerminalRequest } from "#contracts/types/terminal-request.type";
 import type { TerminalSession } from "#contracts/types/terminal-session.type";
 import type { TokenCharge } from "#contracts/types/token-charge.type";
@@ -177,23 +181,61 @@ export class PaymentService extends Service {
    * @throws PreVerificationCapExceededError when an unverified connected account would take more than its cap.
    */
   async charge(request: TokenCharge): Promise<PaymentRecord> {
-    if (request.initiator === ChargeInitiator.Merchant && !request.method.merchantInitiated)
-      throw MerchantInitiatedNotAllowedError.create({ reference: request.reference });
-    const existing = await this.records.find(request.reference);
-    if (existing !== null) {
-      if (existing.status === PaymentStatus.Unknown)
-        throw PaymentUnknownError.create({ reference: existing.reference });
-      return existing;
-    }
-    const gateway = await this.gateways.byConnection(
-      request.method.provider,
-      request.method.connectionId,
-    );
-    const tokens = this.capable(gateway, PaymentCapability.Tokens);
-    await this.withinCap(gateway, request.reference, request.amount);
-    const record = await this.save(this.fresh(gateway, request.reference, request.amount));
-    const result = await this.guard(record, () => tokens.charge(request), true);
-    return this.save({ ...record, providerRef: result.providerRef, status: result.status });
+    return this.onToken(request, PaymentCapability.Tokens, (tokens) => tokens.charge(request));
+  }
+
+  /**
+   * Holds `request.amount` on a saved token without taking it (a tab on a card, a deposit): the record is
+   * `authorized` once the issuer approves, then `increment`, `capture` (in part or in full) or `void` (release) it.
+   * Same rules as `charge`: the merchant-initiated flag, one payment per reference, the connected-account cap.
+   *
+   * @throws MerchantInitiatedNotAllowedError when the merchant starts a hold the customer did not agree to.
+   * @throws CapabilityUnsupportedError when the token's provider cannot pre-authorise.
+   * @throws PaymentUnknownError when the reference's last answer was lost (and when this one is).
+   * @throws PreVerificationCapExceededError when an unverified connected account would hold more than its cap.
+   */
+  async preAuthorize(request: TokenCharge): Promise<PaymentRecord> {
+    return this.onToken(request, PaymentCapability.PreAuth, (holds) => holds.authorize(request));
+  }
+
+  /**
+   * Raises the hold of an authorised payment by `amount` under `incrementReference` (its idempotency key at the
+   * provider), as a tab grows. The record's amount becomes what the provider now holds, so a retried increment the
+   * provider already applied is not counted twice.
+   *
+   * @throws InvalidPaymentTransitionError when the payment is not authorised or `amount` is not positive.
+   * @throws CapabilityUnsupportedError when its provider cannot raise a hold.
+   * @throws PaymentUnknownError when its last answer was lost (and when this one is).
+   * @throws PreVerificationCapExceededError when an unverified connected account would hold more than its cap.
+   */
+  async increment(
+    reference: string,
+    amount: Money,
+    incrementReference: string,
+  ): Promise<PaymentRecord> {
+    const record = await this.load(reference);
+    this.assert(record, "increment", [PaymentStatus.Authorized]);
+    if (amount.minor <= 0 || amount.currency !== record.amount.currency)
+      throw InvalidPaymentTransitionError.create({
+        reference,
+        status: record.status,
+        operation: "increment",
+      });
+    const gateway = await this.gateways.byConnection(record.provider, record.connectionId);
+    const raiser = this.capable(gateway, PaymentCapability.IncrementalAuth);
+    await this.withinCap(gateway, reference, totalOf(record).plus(amount));
+    const request: IncrementRequest = {
+      payment: this.targetOf(record),
+      amount,
+      reference: incrementReference,
+    };
+    const result = await this.guard(record, () => raiser.increment(request), false);
+    return this.save({
+      ...record,
+      providerRef: result.providerRef,
+      status: result.status,
+      amount: record.tip === undefined ? result.amount : result.amount.minus(record.tip),
+    });
   }
 
   /**
@@ -306,7 +348,7 @@ export class PaymentService extends Service {
   }
 
   /**
-   * Captures an authorised payment, in full unless `amount` says less.
+   * Captures an authorised payment, in full unless `amount` says less (a pre-authorised tab captures what was spent).
    *
    * @throws PaymentUnknownError when its last answer was lost (and when this one is).
    * @throws CapabilityUnsupportedError when its provider takes payment at once.
@@ -330,7 +372,7 @@ export class PaymentService extends Service {
   }
 
   /**
-   * Releases an authorised payment, or closes a checkout nobody has paid.
+   * Releases an authorised payment (a pre-authorisation nobody spent), or closes a checkout nobody has paid.
    *
    * @throws PaymentUnknownError when its last answer was lost (and when this one is).
    */
@@ -494,6 +536,37 @@ export class PaymentService extends Service {
         status: record.status,
         operation,
       });
+  }
+
+  /**
+   * A payment on a saved token through the port of `capability` (a charge or a hold). A merchant-initiated one needs
+   * the token's flag; a reference already used returns its record, so a retry never charges or holds twice.
+   *
+   * @throws MerchantInitiatedNotAllowedError when the merchant starts it without the customer's agreement.
+   * @throws PaymentUnknownError when the reference's last answer was lost (and when this one is).
+   */
+  private async onToken<K extends "tokens" | "pre_auth">(
+    request: TokenCharge,
+    capability: K,
+    call: (gateway: CapabilityGateways[K]) => Promise<ProviderPayment>,
+  ): Promise<PaymentRecord> {
+    if (request.initiator === ChargeInitiator.Merchant && !request.method.merchantInitiated)
+      throw MerchantInitiatedNotAllowedError.create({ reference: request.reference });
+    const existing = await this.records.find(request.reference);
+    if (existing !== null) {
+      if (existing.status === PaymentStatus.Unknown)
+        throw PaymentUnknownError.create({ reference: existing.reference });
+      return existing;
+    }
+    const gateway = await this.gateways.byConnection(
+      request.method.provider,
+      request.method.connectionId,
+    );
+    const port = this.capable(gateway, capability);
+    await this.withinCap(gateway, request.reference, request.amount);
+    const record = await this.save(this.fresh(gateway, request.reference, request.amount));
+    const result = await this.guard(record, () => call(port), true);
+    return this.save({ ...record, providerRef: result.providerRef, status: result.status });
   }
 
   /** The refusal of an agent payment for `reason`. */

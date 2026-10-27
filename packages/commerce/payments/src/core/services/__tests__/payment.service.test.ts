@@ -9,11 +9,13 @@
  *          refused; other modes never ask for limits; the account's payment methods are read when the provider reports
  *          them. A terminal PIN step, a restricted tender or a SoftPos session is served only by a provider with that
  *          capability. An agent payment is taken only within the shopper's wallet confirmation (missing, another cart,
- *          expired or too small is refused), is tagged with its protocol and agent, and is never taken twice.
+ *          expired or too small is refused), is tagged with its protocol and agent, and is never taken twice. A saved
+ *          token is pre-authorised, its hold raised (a retried increment counted once), captured in part or released;
+ *          a provider without pre-authorisation or increments is refused.
  * Boundary: test only; the service runs over the gateway fake, the gateways fake, the memory records and a fixed
  *           clock.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0269; ADR 0357 (decisions 2, 5 and 6); ADR 0445; ADR 0446.
+ * Governing contract: ADR 0022; ADR 0269; ADR 0357 (decisions 2, 5 and 6); ADR 0445; ADR 0446; STA-1024.
  */
 import { Clock } from "@stackra/contracts";
 import { NotFoundError } from "@stackra/errors";
@@ -417,6 +419,56 @@ describe("PaymentService", () => {
       clock.at = new Date("2026-10-25T10:15:00Z");
       await expect(withAgents().agentCheckout(ask)).rejects.toRefuseWith(refused("expired"));
       expect(await records.find("cart_1")).toBeNull();
+    });
+  });
+
+  describe("pre-authorisation", () => {
+    const hold = { reference: "tab_1", amount, method, initiator: ChargeInitiator.Customer };
+
+    it("holds, raises, captures part and never holds twice", async () => {
+      const held = await payments.preAuthorize(hold);
+      expect(held).toMatchObject({ status: PaymentStatus.Authorized, providerRef: "fake_tab_1" });
+      expect(await payments.preAuthorize(hold)).toEqual(held);
+      const extra = Money.ofMinor(2_500, "SAR");
+      expect((await payments.increment("tab_1", extra, "tab_1:2")).amount.minor).toBe(12_500);
+      expect((await payments.increment("tab_1", extra, "tab_1:2")).amount.minor).toBe(12_500);
+      const captured = await payments.capture("tab_1", Money.ofMinor(11_000, "SAR"));
+      expect(captured.status).toBe(PaymentStatus.Captured);
+      await expect(payments.increment("tab_1", extra, "tab_1:3")).rejects.toRefuseWith(
+        refusal(InvalidPaymentTransitionError, {
+          reference: "tab_1",
+          status: "captured",
+          operation: "increment",
+        }),
+      );
+    });
+
+    it("releases a hold nobody spent", async () => {
+      await payments.preAuthorize(hold);
+      expect((await payments.void("tab_1")).status).toBe(PaymentStatus.Voided);
+    });
+
+    it("refuses a non-positive increment and a provider without the capability", async () => {
+      await payments.preAuthorize(hold);
+      await expect(payments.increment("tab_1", Money.zero("SAR"), "z")).rejects.toRefuseWith(
+        refusal(InvalidPaymentTransitionError, { operation: "increment" }),
+      );
+      const plain = PaymentGatewayFake.with({ capabilities: [PaymentCapability.Tokens] });
+      const service = new PaymentService(
+        PaymentGatewaysFake.with([plain]),
+        new MemoryPaymentRecordsDriver(),
+        clock,
+        ConnectedAccountLimitsFake.with(),
+      );
+      await expect(service.preAuthorize(hold)).rejects.toRefuseWith(
+        refusal(CapabilityUnsupportedError, { capability: "pre_auth" }),
+      );
+    });
+
+    it("refuses a merchant-initiated hold the customer did not agree to", async () => {
+      await expect(
+        payments.preAuthorize({ ...hold, initiator: ChargeInitiator.Merchant }),
+      ).rejects.toRefuseWith(refusal(MerchantInitiatedNotAllowedError, { reference: "tab_1" }));
     });
   });
 });

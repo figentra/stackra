@@ -2,12 +2,13 @@
  * Stackra file contract:
  * Purpose: `PaymentGatewayFake`, an in-memory provider for tests: it implements every gateway port, lets a test act as
  *          the customer (`settle`), and can lose the answer of its next calls (`loseNext`) after acting, which is
- *          exactly the case the `unknown` state exists for. It carries a connection mode and a list of enabled
+ *          exactly the case the `unknown` state exists for. It pre-authorises saved tokens and raises a hold by the increment
+ *          asked. It carries a connection mode and a list of enabled
  *          payment methods when a test gives them.
  * Boundary: test support from `./testing`; never bound in production. A lost answer throws the managed client's
  *           `ProviderUnavailableError`, so the engine sees what a real driver would raise.
  * Runtime: isomorphic
- * Governing contract: ADR 0269 (fakes in ./testing); ADR 0357 (decisions 2 and 6).
+ * Governing contract: ADR 0269 (fakes in ./testing); ADR 0357 (decisions 2 and 6); STA-1024.
  */
 import { Enum } from "@stackra/contracts";
 import { ProviderUnavailableError } from "@stackra/integrations";
@@ -24,6 +25,8 @@ import type { CheckoutRequest } from "#contracts/types/checkout-request.type";
 import type { CheckoutSession } from "#contracts/types/checkout-session.type";
 import type { Dispute } from "#contracts/types/dispute.type";
 import type { DisputeGateway } from "#contracts/types/dispute-gateway.type";
+import type { IncrementRequest } from "#contracts/types/increment-request.type";
+import type { IncrementalAuthGateway } from "#contracts/types/incremental-auth-gateway.type";
 import type { MerchantAccount } from "#contracts/types/merchant-account.type";
 import type { MerchantOnboarding } from "#contracts/types/merchant-onboarding.type";
 import type { MethodsGateway } from "#contracts/types/methods-gateway.type";
@@ -33,6 +36,7 @@ import type { PaymentTarget } from "#contracts/types/payment-target.type";
 import type { PayoutGateway } from "#contracts/types/payout-gateway.type";
 import type { PayoutRequest } from "#contracts/types/payout-request.type";
 import type { PlatformGateway } from "#contracts/types/platform-gateway.type";
+import type { PreAuthGateway } from "#contracts/types/pre-auth-gateway.type";
 import type { ProviderPayment } from "#contracts/types/provider-payment.type";
 import type { RefundRequest } from "#contracts/types/refund-request.type";
 import type { TerminalGateway } from "#contracts/types/terminal-gateway.type";
@@ -68,7 +72,9 @@ export class PaymentGatewayFake
     PlatformGateway,
     DisputeGateway,
     TerminalGateway,
-    MethodsGateway
+    MethodsGateway,
+    PreAuthGateway,
+    IncrementalAuthGateway
 {
   /** The connection id. */
   readonly id: string;
@@ -93,6 +99,9 @@ export class PaymentGatewayFake
 
   /** Connected merchant accounts by id. */
   private readonly accounts = new Map<string, MerchantAccount>();
+
+  /** Increment references already applied. */
+  private readonly increments = new Set<string>();
 
   /** Answers still to lose. */
   private lost = 0;
@@ -220,6 +229,30 @@ export class PaymentGatewayFake
       method: request.method,
     });
     return this.answer(payment);
+  }
+
+  /** Holds the amount on the saved token: an authorised payment. */
+  async authorize(request: TokenCharge): Promise<ProviderPayment> {
+    const payment = this.put(request.reference, {
+      providerRef: `fake_${request.reference}`,
+      status: PaymentStatus.Authorized,
+      amount: request.amount,
+      method: request.method,
+    });
+    return this.answer(payment);
+  }
+
+  /** Adds the increment to the held amount, once per increment reference. */
+  async increment(request: IncrementRequest): Promise<ProviderPayment> {
+    const held = this.find(request.payment);
+    if (this.increments.has(request.reference)) return this.answer(held.payment);
+    this.increments.add(request.reference);
+    return this.answer(
+      this.put(held.reference, {
+        ...held.payment,
+        amount: held.payment.amount.plus(request.amount),
+      }),
+    );
   }
 
   /** Answers a succeeded payout. */

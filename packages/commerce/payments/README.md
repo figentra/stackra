@@ -1,4 +1,4 @@
-<!-- Purpose: the reader guide of @stackra/payments: what is exported, taking a payment, restricted tenders, agent payments, SoftPos tap to pay, the unknown state, provider choice. Boundary: docs of packages/commerce/payments only. Runtime: none (Markdown). Governing contract: ADR 0357; ADR 0445; ADR 0446; ADR 0294. -->
+<!-- Purpose: the reader guide of @stackra/payments: what is exported, taking a payment, restricted tenders, agent payments, SoftPos tap to pay, pre-authorised tabs, partial payments against one balance, the unknown state, provider choice. Boundary: docs of packages/commerce/payments only. Runtime: none (Markdown). Governing contract: ADR 0357; ADR 0445; ADR 0446; ADR 0294; STA-1024. -->
 
 # @stackra/payments
 
@@ -22,8 +22,11 @@ data (ADR 0356), never code.
 | `PaymentCapability`, `PaymentStatus`, `ChargeInitiator`, `TransferStatus`, `DisputeStatus`, `SessionKind` | `./contracts` | the codes                                                                                                                                                                                                                                |
 | `PaymentGateways`                                                                                         | `./contracts` | port: a gateway for a Market and needs, or for a stored connection                                                                                                                                                                       |
 | `MarketPaymentDefaults`                                                                                   | `./contracts` | port the market-pack loader binds: a Market's providers and platform Connections                                                                                                                                                         |
+| `PreAuthGateway`, `IncrementalAuthGateway`, `IncrementRequest`                                            | `./contracts` | the optional ports for a hold on a saved token (`pre_auth`) and a raised hold (`incremental_auth`)                                                                                                                                       |
+| `PaymentBalances`, `PaymentBalance`, `BalancePart`                                                        | `./contracts` | port: one amount due paid in parts, with the lock that serialises its changes                                                                                                                                                            |
+| `PaymentBalanceService`, `MemoryPaymentBalancesDriver`, `BalanceExceededError`                            | `.`           | partial payments: `open`, `remaining`, `checkout`, `startTerminal`, `settle`; the `memory` driver; the refusal of a part that does not fit                                                                                               |
 | `PaymentRecords`                                                                                          | `./contracts` | port: where the engine keeps one `PaymentRecord` per merchant reference                                                                                                                                                                  |
-| `PaymentService`                                                                                          | `.`           | checkout, `payLink`, `charge`, `agentCheckout`, `startTerminal`, `cancelTerminal`, `reconcile`, `capture`, `void`, `refund`, `resolve`                                                                                                   |
+| `PaymentService`                                                                                          | `.`           | checkout, `payLink`, `charge`, `preAuthorize`, `increment`, `agentCheckout`, `startTerminal`, `cancelTerminal`, `reconcile`, `capture`, `void`, `refund`, `resolve`                                                                      |
 | `RestrictedTenderService`, `splitTender`                                                                  | `.`           | restricted tenders (EBT, meal vouchers): `split`, `startTerminal`, `checkout`, `captureAtFulfilment`                                                                                                                                     |
 | `TenderKind`, `RestrictedTenderPrograms`, `TenderEligibility`                                             | `./contracts` | the tender kind, and the ports for a Market's programs (pack data) and line eligibility (a rule set)                                                                                                                                     |
 | `MemoryRestrictedTenderProgramsDriver`, `MemoryTenderEligibilityDriver`                                   | `.`           | the `memory` drivers of the two restricted-tender ports                                                                                                                                                                                  |
@@ -53,6 +56,43 @@ const session = await payments.checkout(market, {
 const record = await payments.reconcile(order.id);
 if (record.status === PaymentStatus.Authorized) await payments.capture(order.id);
 ```
+
+## Pre-authorised tabs (STA-1024)
+
+A tab holds an amount on a saved card, raises the hold as it grows, then captures what was spent or releases the rest.
+A card read on a terminal with `captureLater: true` is held the same way.
+
+```ts
+await payments.preAuthorize({
+  reference: tab.id,
+  method,
+  amount: opening,
+  initiator: ChargeInitiator.Customer,
+});
+await payments.increment(tab.id, more, `${tab.id}:${round}`); // needs `incremental_auth`; a retry is counted once
+await payments.capture(tab.id, spent); // in part; or payments.void(tab.id) to release the hold
+```
+
+`preAuthorize` asks for `PaymentCapability.PreAuth` and `increment` for `PaymentCapability.IncrementalAuth`, so only a
+provider whose Connection has them serves the call. The opening amount and when a tab is raised are product settings.
+
+## Partial payments against one balance (STA-1024)
+
+Several payers pay one amount due at once (pay at table: each guest scans the QR or taps the terminal). Each part is
+reserved under the balance's lock, so the open and paid parts never exceed the balance, then paid through
+`PaymentService` under its own reference. `settle` marks each open part paid or released and counts a part once
+however often it runs (call it from the return page and from the webhook).
+
+```ts
+await balances.open(check.id, check.total);
+const session = await balances.checkout(market, check.id, { reference: `${check.id}:${seat}`, amount: share, ... });
+// a part that does not fit what is left is refused with BalanceExceededError
+const balance = await balances.settle(check.id); // balance.settledAt once the paid parts cover it
+```
+
+The host binds a durable `PaymentBalances` whose `exclusive` takes a `Locks` lease (`@stackra/locking`) on
+`payments.balance:<reference>`; the memory driver locks one process only. How a check is split (seat, item, even) is the
+product's.
 
 ## Restricted tenders (ADR 0445)
 
@@ -164,5 +204,5 @@ and `@stackra/integrations`.
 
 ## Decisions
 
-ADR 0446 (agent payments and SoftPos), ADR 0445 (restricted tenders and the PIN step), ADR 0378 (card terminals and Tap to Pay), ADR 0357 (payments architecture), ADR 0358 decision 3 (providers are drivers), ADR 0356 (provider per tenant and
+STA-1024 (pre-authorisation and partial payments), ADR 0446 (agent payments and SoftPos), ADR 0445 (restricted tenders and the PIN step), ADR 0378 (card terminals and Tap to Pay), ADR 0357 (payments architecture), ADR 0358 decision 3 (providers are drivers), ADR 0356 (provider per tenant and
 Market through the Connection), ADR 0359 decision 11 (sandbox gateways), ADR 0308 (integrations), ADR 0220 (money).

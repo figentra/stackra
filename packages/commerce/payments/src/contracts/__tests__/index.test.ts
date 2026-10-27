@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the consumer contract of the `./contracts` entry: exactly the eight enums and the ten container ports are
+ * Purpose: the consumer contract of the `./contracts` entry: exactly the eight enums and the eleven container ports are
  *          its values; the gateway port interfaces and the payment types are type-only.
  * Boundary: test only; imports the stand-in barrel through its `#contracts` alias.
  * Runtime: node (vitest)
@@ -11,9 +11,11 @@ import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 import * as contracts from "#contracts/index";
 import type {
   CapabilityGateways,
+  IncrementalAuthGateway,
   MethodsGateway,
   PaymentConnectionMode,
   PaymentGateway,
+  PreAuthGateway,
   TerminalGateway,
   TokenGateway,
 } from "#contracts/index";
@@ -27,6 +29,7 @@ describe("@stackra/payments/contracts", () => {
       "ConnectionMode",
       "DisputeStatus",
       "MarketPaymentDefaults",
+      "PaymentBalances",
       "PaymentCapability",
       "PaymentGateways",
       "PaymentPackSource",
@@ -48,6 +51,8 @@ describe("@stackra/payments/contracts", () => {
     expectTypeOf<CapabilityGateways["restricted_tender"]>().toEqualTypeOf<PaymentGateway>();
     expectTypeOf<CapabilityGateways["terminal_pin"]>().toEqualTypeOf<TerminalGateway>();
     expectTypeOf<CapabilityGateways["soft_pos"]>().toEqualTypeOf<TerminalGateway>();
+    expectTypeOf<CapabilityGateways["pre_auth"]>().toEqualTypeOf<PreAuthGateway>();
+    expectTypeOf<CapabilityGateways["incremental_auth"]>().toEqualTypeOf<IncrementalAuthGateway>();
   });
 
   it("types the four connection modes", () => {

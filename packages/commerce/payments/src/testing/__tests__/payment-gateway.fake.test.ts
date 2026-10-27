@@ -1,10 +1,11 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `PaymentGatewayFake`: a checkout is found by reference and by provider id, the customer's
- *          payment moves it, capture, void and refund change its state, and a lost answer still acts.
+ *          payment moves it, capture, void and refund change its state, a saved token is pre-authorised and its hold raised once per
+ *          increment reference, and a lost answer still acts.
  * Boundary: test only.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0269; ADR 0357 (decision 6).
+ * Governing contract: ADR 0022; ADR 0269; ADR 0357 (decision 6); STA-1024.
  */
 import { refusal } from "@stackra/errors/testing";
 import { ProviderUnavailableError } from "@stackra/integrations";
@@ -63,5 +64,25 @@ describe("PaymentGatewayFake", () => {
     gateway.openDispute("dp_1", "fake_t1");
     expect((await gateway.respond("dp_1")).status).toBe(DisputeStatus.UnderReview);
     expect((await gateway.accept("dp_1")).status).toBe(DisputeStatus.Accepted);
+  });
+
+  it("pre-authorises a token and raises the hold once per increment", async () => {
+    const gateway = PaymentGatewayFake.with();
+    const method = {
+      provider: "fake",
+      connectionId: "conn_fake",
+      token: "tok_1",
+      merchantInitiated: false,
+    };
+    const held = await gateway.authorize({
+      reference: "tab_1",
+      method,
+      amount,
+      initiator: "customer",
+    });
+    expect(held).toMatchObject({ status: PaymentStatus.Authorized, amount: { minor: 5_000 } });
+    const raise = { payment: { reference: "tab_1" }, amount, reference: "tab_1:2" };
+    expect((await gateway.increment(raise)).amount.minor).toBe(10_000);
+    expect((await gateway.increment(raise)).amount.minor).toBe(10_000);
   });
 });

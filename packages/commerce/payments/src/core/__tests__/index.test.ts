@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the consumer contract of the `.` entry: the two services, the seven drivers (one of them the
+ * Purpose: the consumer contract of the `.` entry: the three services, the eight drivers (one of them the
  *          `stripe-tap-to-pay` SoftPos driver over the app's SDK bridge), the refusals and the helpers are its values;
  *          no vendor Integration or Connection (they live in the OS integrations service) and nothing internal leaks.
  * Boundary: test only; imports the stand-in barrel through its `#core` alias.
@@ -15,10 +15,12 @@ describe("@stackra/payments", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(core).sort()).toEqual([
       "AgentConfirmationRefusedError",
+      "BalanceExceededError",
       "CapabilityUnsupportedError",
       "ConnectionPaymentGatewaysDriver",
       "InvalidPaymentTransitionError",
       "MemoryAgentCommerceProtocolsDriver",
+      "MemoryPaymentBalancesDriver",
       "MemoryPaymentRecordsDriver",
       "MemoryRestrictedTenderProgramsDriver",
       "MemorySoftPosDriver",
@@ -28,6 +30,7 @@ describe("@stackra/payments", () => {
       "NoPaymentProviderError",
       "PaymentDeclinedError",
       "PaymentFieldRequiredError",
+      "PaymentBalanceService",
       "PaymentService",
       "PaymentUnknownError",
       "PayoutHeldError",

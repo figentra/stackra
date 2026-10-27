@@ -1,4 +1,4 @@
-<!-- Purpose: the agent rules of @stackra/payments: where code goes, the vendor boundary, configuration not code, restricted tenders, agent payments, SoftPos, PII. Boundary: docs of packages/commerce/payments only. Runtime: none (Markdown). Governing contract: ADR 0357; ADR 0445; ADR 0446; ADR 0294. -->
+<!-- Purpose: the agent rules of @stackra/payments: where code goes, the vendor boundary, configuration not code, restricted tenders, agent payments, SoftPos, pre-authorisation, partial payments, PII. Boundary: docs of packages/commerce/payments only. Runtime: none (Markdown). Governing contract: ADR 0357; ADR 0445; ADR 0446; ADR 0294; STA-1024. -->
 
 # AGENTS — @stackra/payments
 
@@ -51,6 +51,12 @@ when a vendor needs one, additively.
   `cancelTerminal`, `reconcile`) stays on `PaymentService`. A SoftPos driver never imports a provider SDK: it takes a
   bridge port the staff app binds. `clientSecret` goes to the phone only, never to a record or a log. Which driver a
   Market uses is pack data (`payments.softpos`), owned by the host.
+- Pre-authorisation (STA-1024): `preAuthorize` holds on a saved token (`pre_auth`), `increment` raises an authorised
+  hold (`incremental_auth`; the record's amount is what the provider says it holds, so a retry counts once), `capture`
+  takes part or all, `void` releases. Opening amounts and raise thresholds are product settings, never here.
+- Partial payments (STA-1024): every change to a `PaymentBalance` runs inside `PaymentBalances.exclusive`; the provider
+  call stays outside the lock. `settle` must stay idempotent (parts keyed by reference, `settledAt` set once). The
+  durable driver is the host's, over `Locks` from `@stackra/locking`; this package takes no locking dependency.
 - No parameter properties and no `#private` fields: apps typecheck this source under `erasableSyntaxOnly`.
 
 ## Rules that fail the build
