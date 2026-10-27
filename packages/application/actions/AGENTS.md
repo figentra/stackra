@@ -2,7 +2,7 @@
 
 Action, query, precondition, extension and interceptor kind bases, the fixed pipeline and the action testing helpers.
 Member at `packages/application/actions` (`tier:lib`), in the programming model v3.1 shape (ADR 0294, 0305). Entries
-`.`, `./contracts`, `./node`, `./testing`.
+`.`, `./contracts`, `./devtools`, `./node`, `./testing`.
 
 ## Where code goes
 
@@ -65,6 +65,18 @@ Member at `packages/application/actions` (`tier:lib`), in the programming model 
   (a recall). Never widen the default rule: a driver's read must keep both cases (ADR 0456 decision 3).
 - A raw-body query output is `rawBody(...)`; the transport keys on the `~raw` marker, never on the field names.
 - The source keeps to erasable syntax: no parameter properties, no `#private` fields.
+
+## Devtools
+
+- `./devtools` is the dev-only devtools entry (ADR 0246 decision 4): `defineActionsDevtools(kit)` defines `actions.registry` on the kit, data only. No
+  UI, no `@stackra-pro/*` import (ADR 0461: the panel UI is Pro, the data is free). Nothing in `.` or a production path
+  imports `./devtools`.
+- It takes the kit by shape, `DevtoolsTabSink` from `@stackra/container/devtools`, never `@stackra/devtools-kit`
+  (the kit depends on container and events, so a dependency on it would close a cycle).
+- Tab ids are dotted lowercase, `actions.*` first. A tab that carries inputs, payloads or personal data sets
+  `sensitive: true`.
+- ADR 0127 does not list `./devtools` among the allowed entries and gen's `entryOf` does not know it yet; the barrel
+  is a hand-written stand-in until both are settled (see the stackra-208 hand-off).
 
 ## PII
 

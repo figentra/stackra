@@ -4,7 +4,8 @@
  *          selects drivers by override, test choice, config or single candidate, fails a boot without a driver with
  *          `UnresolvedPortError`, resolves named instances, honours the three lifetimes, replaces, merges wirings,
  *          boots only the chosen roots eagerly, runs Explorers once, shuts instances down on close, and lists the
- *          contributions to an extension point with `getAll` (the multi-binding).
+ *          contributions to an extension point with `getAll` (the multi-binding), and lists its bindings by name for
+ *          tooling with `bindings()`.
  * Boundary: test only; the wirings are written by hand in the shape gen writes, and the config classes are plain
  *           classes (the Config kind belongs to @stackra/config).
  * Runtime: node (vitest)
@@ -592,6 +593,59 @@ describe("Container", () => {
       await container.close();
       expect(order).toEqual(["second", "first"]);
       expect(container.instances()).toEqual([]);
+    });
+  });
+
+  describe("bindings (the tooling listing)", () => {
+    it("lists each binding, driver and config class by name, with its scope and lifetime", async () => {
+      const container = await Container.create([points()]);
+      expect(container.bindings()).toEqual([
+        {
+          token: "PointsService",
+          scope: "points",
+          lifetime: "singleton",
+          implementation: "PointsService",
+        },
+        {
+          token: "Ledger",
+          scope: "points.Ledger",
+          lifetime: "singleton",
+          implementation: "MemoryLedgerDriver",
+        },
+        {
+          token: "PointsConfig",
+          scope: "points",
+          lifetime: "singleton",
+          implementation: "PointsConfig",
+        },
+      ]);
+    });
+
+    it("names the class actually built: the selected driver and the config override", async () => {
+      const container = await Container.create([
+        points({ config: [{ key: "points", provide: PointsConfig, override: HostPointsConfig }] }),
+      ]);
+      const byToken = new Map(container.bindings().map((row) => [row.token, row]));
+      expect(byToken.get("Ledger")?.implementation).toBe("PostgresLedgerDriver");
+      expect(byToken.get("PointsConfig")?.implementation).toBe("HostPointsConfig");
+    });
+
+    it("holds names only, never an instance, and is frozen", async () => {
+      const container = await Container.create([points()]);
+      const rows = container.bindings();
+      expect(Object.isFrozen(rows)).toBe(true);
+      for (const row of rows) {
+        expect(Object.isFrozen(row)).toBe(true);
+        for (const value of Object.values(row)) expect(typeof value).toBe("string");
+      }
+    });
+
+    it("builds nothing to answer", async () => {
+      const container = await Container.create([points()], { roots: [] });
+      const before = container.instances().length;
+      expect(container.bindings().map((row) => row.token)).not.toContain("PointsService");
+      expect(container.instances()).toHaveLength(before);
+      expect(PointsService.built).toBe(0);
     });
   });
 });

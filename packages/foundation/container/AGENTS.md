@@ -10,7 +10,7 @@ Governing contract: ADR 0263; ADR 0294; ADR 0305; ADR 0457.
 -->
 
 The DI container and the kind machinery every kind package builds on. Member at `packages/foundation/container`
-(`tier:lib`), in the programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./react`, `./testing`.
+(`tier:lib`), in the programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./devtools`, `./react`, `./testing`.
 
 ## Where code goes
 
@@ -54,6 +54,18 @@ The DI container and the kind machinery every kind package builds on. Member at 
 
 `pnpm turbo run <task> --filter=@stackra/container` — `build`, `typecheck`, `lint`, `test`, `test:coverage`,
 `format`, `format:check`, `clean`.
+
+## Devtools
+
+- `./devtools` is the dev-only devtools entry (ADR 0246 decision 4): `defineContainerDevtools(kit, container)` defines `container.bindings` (read from `Container.bindings()`) on the kit, data only. No
+  UI, no `@stackra-pro/*` import (ADR 0461: the panel UI is Pro, the data is free). Nothing in `.` or a production path
+  imports `./devtools`.
+- It takes the kit by shape, `DevtoolsTabSink` from `@stackra/container/devtools`, never `@stackra/devtools-kit`
+  (the kit depends on container and events, so a dependency on it would close a cycle).
+- Tab ids are dotted lowercase, `container.*` first. A tab that carries inputs, payloads or personal data sets
+  `sensitive: true`.
+- ADR 0127 does not list `./devtools` among the allowed entries and gen's `entryOf` does not know it yet; the barrel
+  is a hand-written stand-in until both are settled (see the stackra-208 hand-off).
 
 ## PII
 

@@ -3,7 +3,7 @@
 Stackra events: the four event kind bases, the `Listener` kind base, the in-process bus, event recording kept off the
 aggregate, the `EventOutbox` and `RegionBus` ports and the event testing helpers.
 
-**Tier:** `tier:lib` (`packages/foundation/events`). Entries `.`, `./contracts` and `./testing`. Depends on
+**Tier:** `tier:lib` (`packages/foundation/events`). Entries `.`, `./contracts`, `./devtools` and `./testing`. Depends on
 `@stackra/contracts`, `@stackra/container` and `@stackra/validation`; `@stackra/testing` is an optional peer of
 `./testing`. It never imports `@stackra/outbox`, `@stackra/analytics`, `@stackra/integrations` or `@stackra/realtime`:
 those import it (ADR 0305 rule 20).
@@ -120,6 +120,19 @@ cross-region occurrence that carries `meta.scopeId` is refused with a `TypeError
 
 Not built here: the relay call (`@stackra/outbox`), the `RegionBus` driver and which transport carries it between
 regions (root runway; an ADR is due, STA-1268). Until a driver is bound, nothing crosses.
+
+## Devtools
+
+`@stackra/events/devtools` is the dev-only entry (ADR 0246 decision 4). `defineEventsDevtools(kit, bus)` defines two
+tabs on the devtools kit and returns their remover:
+
+| Tab                 | Shows                                                                                  |
+| ------------------- | -------------------------------------------------------------------------------------- |
+| `events.listeners`  | each event class and the listener classes registered for it                            |
+| `events.deliveries` | each delivery the bus made: event class, event id, listener class, `ok`, error message |
+
+Names and ids only, never payloads: the kit's own `bus` channel already carries each event. The kit is taken by shape
+(`DevtoolsTabSink` from `@stackra/container/devtools`), because `@stackra/devtools-kit` depends on this package.
 
 ## Testing
 

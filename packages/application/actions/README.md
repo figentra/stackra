@@ -4,7 +4,7 @@ Stackra actions: the `Action`, `Query`, `Precondition`, `ExtensionPoint`, `Exten
 fixed action pipeline, the idempotency and rate-limit stores behind ports, `RequestContext`, the `RateLimitConfig`
 configuration and the action testing helpers.
 
-**Tier:** `tier:lib` (`packages/application/actions`). Entries `.`, `./contracts`, `./node` and `./testing`. Depends on
+**Tier:** `tier:lib` (`packages/application/actions`). Entries `.`, `./contracts`, `./devtools`, `./node` and `./testing`. Depends on
 `@stackra/contracts`, `@stackra/container`, `@stackra/config`, `@stackra/errors`, `@stackra/events` and
 `@stackra/validation`; `@stackra/testing` is an optional peer of `./testing`. It never imports `@stackra/iam`,
 `@stackra/workflow`, `@stackra/queue` or `@stackra/database`: those implement its ports.
@@ -204,6 +204,13 @@ export class RedeemPointsExtension extends Extension<OrderExtensionPoint["adjust
 
 const adjusted = await this.extensions.adjustTotals(base, draft, ctx); // the owner calls the slot
 ```
+
+## Devtools
+
+`@stackra/actions/devtools` is the dev-only entry (ADR 0246 decision 4). `defineActionsDevtools(kit)` defines the
+`actions.registry` tab: each action and query gen registered, as `{ key, kind, type, permission, risk, effects, input
+}` (names only), read when a host opens it. It returns the tab's remover. The kit is taken by shape (`DevtoolsTabSink`
+from `@stackra/container/devtools`).
 
 ## Testing
 

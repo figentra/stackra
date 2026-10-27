@@ -2,7 +2,7 @@
 
 Event and listener kind bases, the in-process bus and the event testing helpers. Member at
 `packages/foundation/events` (`tier:lib`), in the programming model v3.1 shape (ADR 0294, 0305). Entries `.`,
-`./contracts`, `./testing`.
+`./contracts`, `./devtools`, `./testing`.
 
 ## Where code goes
 
@@ -40,6 +40,18 @@ Event and listener kind bases, the in-process bus and the event testing helpers.
 - Never import `@stackra/outbox`, `@stackra/analytics`, `@stackra/integrations` or `@stackra/realtime`; they import
   this package. `drainOutbox` works through `OutboxFake`.
 - The source keeps to erasable syntax: no parameter properties, no `#private` fields (the fake is a proxy).
+
+## Devtools
+
+- `./devtools` is the dev-only devtools entry (ADR 0246 decision 4): `defineEventsDevtools(kit, bus)` defines `events.listeners` and `events.deliveries` on the kit, data only. No
+  UI, no `@stackra-pro/*` import (ADR 0461: the panel UI is Pro, the data is free). Nothing in `.` or a production path
+  imports `./devtools`.
+- It takes the kit by shape, `DevtoolsTabSink` from `@stackra/container/devtools`, never `@stackra/devtools-kit`
+  (the kit depends on container and events, so a dependency on it would close a cycle).
+- Tab ids are dotted lowercase, `events.*` first. A tab that carries inputs, payloads or personal data sets
+  `sensitive: true`.
+- ADR 0127 does not list `./devtools` among the allowed entries and gen's `entryOf` does not know it yet; the barrel
+  is a hand-written stand-in until both are settled (see the stackra-208 hand-off).
 
 ## PII
 

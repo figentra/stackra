@@ -4,7 +4,8 @@
  *          selected driver of every port, builds each binding with the constructor tokens gen read from its declared
  *          parameter types, keeps singletons per container and request instances per `forRequest()`, runs every
  *          Explorer once, shuts instances down on `close()`, and answers `getAll(Base)`, the multi-binding: every
- *          booted class that extends a base another module owns (a guard contributed to a checkout gate).
+ *          booted class that extends a base another module owns (a guard contributed to a checkout gate). `bindings()`
+ *          lists what it can build by name (token, scope, lifetime, class) for tooling, never an instance.
  * Boundary: classes (and `named(Port, "x")`) are the only tokens; no reflect-metadata, no `design:paramtypes`, no
  *           string token (ADR 0227 2026-10-24 note). Config values are not layered here: @stackra/config builds the
  *           config instances and passes them as overrides. A port nobody binds fails `create` with
@@ -26,6 +27,7 @@ import { kindOf } from "#core/functions/kind-of.function";
 import { named } from "#core/functions/named.function";
 import { DiscoveryService } from "#core/services/discovery.service";
 import type { AnyClass } from "#core/types/any-class.type";
+import type { ContainerBindingEntry } from "#core/types/container-binding-entry.type";
 import type { ContainerOptions } from "#core/types/container-options.type";
 import type { DriverChoice } from "#core/types/driver-choice.type";
 import type { ModuleClass } from "#core/types/module-class.type";
@@ -272,6 +274,40 @@ export class Container {
     } catch {
       return false;
     }
+  }
+
+  /**
+   * What the container can build, as names, for tooling such as the devtools tab: each booted binding and exported
+   * class, each loaded driver and named instance, and each config class, with its scope, lifetime and the class built.
+   * Read-only, and never an instance: nothing is built to answer it.
+   *
+   * @example
+   * container.bindings(); // [{ token: "LoyaltyService", scope: "loyalty", lifetime: "singleton", implementation: "LoyaltyService" }]
+   */
+  bindings(): readonly ContainerBindingEntry[] {
+    const { graph } = this;
+    const rows: ContainerBindingEntry[] = [];
+    const add = (token: Token, scope: string, recipe: Recipe) =>
+      rows.push(
+        Object.freeze({
+          token: nameOf(token),
+          scope,
+          lifetime: recipe.lifetime,
+          implementation: recipe.type.name,
+        }),
+      );
+    for (const binding of graph.bindings.values())
+      if (graph.booted === undefined || graph.booted.has(binding.module))
+        add(binding.provide, binding.module, this.recipeOf(binding.provide));
+    for (const exported of graph.exported)
+      if (!graph.bindings.has(exported)) add(exported, "exported", this.recipeOf(exported));
+    for (const [token, recipe] of graph.loaded) {
+      const port = isNamed(token) ? token.port : token;
+      add(token, graph.drivers.get(port)?.key ?? port.name, recipe);
+    }
+    for (const config of graph.configs.values())
+      add(config.provide, config.key, this.recipeFor(config.override ?? config.provide));
+    return Object.freeze(rows);
   }
 
   /** A container for one request: it shares the singletons and keeps its own `Lifetime.Request` instances. */

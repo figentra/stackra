@@ -12,7 +12,7 @@ Governing contract: ADR 0263; ADR 0294; ADR 0305; ADR 0269; ADR 0457.
 The Stackra DI container and kind machinery. Classes are the only tokens; `stackra gen` reads constructor parameter
 types at build time and writes the wiring; the container reads that wiring and never touches reflect-metadata.
 
-**Tier:** `tier:lib` (`packages/foundation/container`). Entries `.`, `./react` and `./testing`. Depends on
+**Tier:** `tier:lib` (`packages/foundation/container`). Entries `.`, `./devtools`, `./react` and `./testing`. Depends on
 `@stackra/contracts` only; React is an optional peer of `./react`.
 
 ## What is here
@@ -104,6 +104,29 @@ export class CreditLimitGuard extends CheckoutGuard { ... }
 `getAll(Base)` lists the classes the booted modules bind or export that extend `Base` (never `Base` itself), in wiring
 order: dependencies first, the host last. Overrides and `@Replaces` apply; a `Lifetime.Request` contribution needs a
 `forRequest()` container (`DiscoveryService` reads the root one). ADR 0457.
+
+## Devtools
+
+`Container.bindings()` lists what the container can build, by name and read-only, for tooling: one row per booted
+binding, exported class, loaded driver (and named instance) and config class, as `{ token, scope, lifetime,
+implementation }`. `scope` is the module key that binds it (a port's driver config key for a driver), `implementation`
+the class actually built (the selected driver, the replacement, the config override). It never returns or builds an
+instance.
+
+`@stackra/container/devtools` is the dev-only entry (ADR 0246 decision 4):
+
+| Symbol                                         | Use                                                                               |
+| ---------------------------------------------- | --------------------------------------------------------------------------------- |
+| `defineContainerDevtools(kit, container)`      | defines the `container.bindings` tab; returns its remover                         |
+| `DevtoolsTabSink`, `DevtoolsTabSinkDefinition` | the kit's `defineTab` by shape; `DevtoolsKit` fits, every devtools entry takes it |
+
+```ts
+import { defineContainerDevtools } from "@stackra/container/devtools";
+
+defineContainerDevtools(container.get(DevtoolsKit), container); // the dev bootstrap only
+```
+
+The Pro panel (`@stackra-pro/devtools`) lists the tab through the kit's host session; the data stays free (ADR 0461).
 
 ## Testing
 

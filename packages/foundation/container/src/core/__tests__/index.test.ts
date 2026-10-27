@@ -17,6 +17,7 @@ import { describe, expect, it } from "@stackra/testing";
 import * as container from "#core/index";
 import type {
   AnyClass,
+  ContainerBindingEntry,
   ContainerOptions,
   Decorator,
   DecoratorDefinition,
@@ -44,6 +45,7 @@ import type {
 /** Every type the entry exports; this alias fails to compile if one stops resolving. */
 type EntryTypes = [
   AnyClass,
+  ContainerBindingEntry,
   ContainerOptions,
   container.Container,
   Decorator<string>,

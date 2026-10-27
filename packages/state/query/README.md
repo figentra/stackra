@@ -6,7 +6,7 @@ available offline with its "as of" time; the offline lock that wipes a revoked o
 map; the `QueryConfig` configuration with its shipped schema and the `QuerySettings`; the `useMutationQueue` and
 `useReplica` hooks; and the `fakeQueue` test helper.
 
-**Tier:** `tier:lib` (`packages/state/query`). Entries `.`, `./contracts`, `./react` and `./testing`. Depends on
+**Tier:** `tier:lib` (`packages/state/query`). Entries `.`, `./contracts`, `./devtools`, `./react` and `./testing`. Depends on
 `@stackra/contracts`, `@stackra/container`, `@stackra/config`, `@stackra/validation`, `@stackra/errors`,
 `@stackra/actions` (the offline enums and the cap refusal), `@stackra/storage`, `@stackra/platform` (the network
 signal), `@stackra/realtime` (live refetch and refresh signals), `@stackra/devices` (the device id),
@@ -159,6 +159,20 @@ export class QueryConfig extends BaseQueryConfig {
   override staleTimeSeconds = 30;
 }
 ```
+
+## Devtools
+
+`@stackra/query/devtools` is the dev-only entry (ADR 0246 decision 4). `defineQueryDevtools(kit, cache, queue)` defines
+two tabs on the devtools kit and returns their remover:
+
+| Tab               | Shows                                                                                       |
+| ----------------- | ------------------------------------------------------------------------------------------- |
+| `query.cache`     | each cached query by its versioned key: status, fetch status, stale, observers, last update |
+| `query.mutations` | `sensitive`: the offline queue's pending calls, conflicts and whether it is draining        |
+
+The cache tab never shows a query's input or data. The mutations tab carries call inputs, so the kit withholds it from
+a host that did not accept sensitive tabs. The kit is taken by shape (`DevtoolsTabSink` from
+`@stackra/container/devtools`).
 
 ## Testing
 

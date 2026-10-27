@@ -3,7 +3,7 @@
 Server state on the client: the live TanStack Query cache, the offline mutation queue, the bounded replicas and the
 offline lock (ADR 0338). Member at
 `packages/state/query` (`tier:lib`), in the programming model v3.1 shape (ADR 0294, 0305). Entries `.`,
-`./contracts`, `./react`, `./testing`.
+`./contracts`, `./devtools`, `./react`, `./testing`.
 
 ## Where code goes
 
@@ -42,6 +42,18 @@ offline lock (ADR 0338). Member at
 
 - A package never imports an app, a service, `encore.dev`/`~encore/*`, or another package's `src/`.
 - Versions are `catalog:<name>` or `workspace:*` only.
+
+## Devtools
+
+- `./devtools` is the dev-only devtools entry (ADR 0246 decision 4): `defineQueryDevtools(kit, cache, queue)` defines `query.cache` and the sensitive `query.mutations` on the kit, data only. No
+  UI, no `@stackra-pro/*` import (ADR 0461: the panel UI is Pro, the data is free). Nothing in `.` or a production path
+  imports `./devtools`.
+- It takes the kit by shape, `DevtoolsTabSink` from `@stackra/container/devtools`, never `@stackra/devtools-kit`
+  (the kit depends on container and events, so a dependency on it would close a cycle).
+- Tab ids are dotted lowercase, `query.*` first. A tab that carries inputs, payloads or personal data sets
+  `sensitive: true`.
+- ADR 0127 does not list `./devtools` among the allowed entries and gen's `entryOf` does not know it yet; the barrel
+  is a hand-written stand-in until both are settled (see the stackra-208 hand-off).
 
 ## PII
 

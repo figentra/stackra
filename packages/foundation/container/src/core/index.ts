@@ -23,6 +23,7 @@ export { registerKind } from "#core/functions/register-kind.function";
 export { Container } from "#core/services/container.service";
 export { DiscoveryService } from "#core/services/discovery.service";
 export type { AnyClass } from "#core/types/any-class.type";
+export type { ContainerBindingEntry } from "#core/types/container-binding-entry.type";
 export type { ContainerOptions } from "#core/types/container-options.type";
 export type { Decorator } from "#core/types/decorator.type";
 export type { DecoratorDefinition } from "#core/types/decorator-definition.type";

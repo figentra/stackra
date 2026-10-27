@@ -50,6 +50,11 @@
       "./src/core/*.ts",
       "./src/core/*/index.ts"
     ],
+    "#devtools/*": [
+      "./src/devtools/*",
+      "./src/devtools/*.ts",
+      "./src/devtools/*/index.ts"
+    ],
     "#react/*": [
       "./src/react/*",
       "./src/react/*.ts",
@@ -72,6 +77,11 @@
       "@stackra/source": "./src/contracts/index.ts",
       "types": "./dist/contracts.d.mts",
       "default": "./dist/contracts.mjs"
+    },
+    "./devtools": {
+      "@stackra/source": "./src/devtools/index.ts",
+      "types": "./dist/devtools.d.mts",
+      "default": "./dist/devtools.mjs"
     },
     "./react": {
       "@stackra/source": "./src/react/index.ts",
