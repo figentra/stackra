@@ -16,6 +16,8 @@ encore.gen/
 .encore/
 .stackra/*
 !.stackra/app-manifest.json
+# A docs app's generated Mintlify root, in any member (ADR 0002, 2026-10-27 amendment).
+**/.stackra/site/
 
 # Secrets never live in files. Application secrets: `encore secret set`. Developer tokens: the vault.
 .env

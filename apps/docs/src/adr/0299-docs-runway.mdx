@@ -1,6 +1,6 @@
 ---
 title: "0299 — Docs runway: Mintlify deployed from CI behind the checks, with the runway shape of the other apps"
-description: "Accepted, amended 2026-10-24 (STA-406) · 2026-10-22"
+description: "Accepted, amended 2026-10-24 (STA-406), 2026-10-27 (STA-1316) · 2026-10-22"
 ---
 
 <Note>
@@ -16,6 +16,15 @@ description: "Accepted, amended 2026-10-24 (STA-406) · 2026-10-22"
   pages stay in the public navigation.
 
 Enforcement of this note: planned — the internal deployment and its Access policy are not built.
+
+</Note>
+
+<Note>
+  Note 2026-10-27 (STA-1316): decision 5 no longer covers the docs site itself. Per the 2026-10-27 amendment of
+  [0002](/adr/0002-docs-on-mintlify), gen assembles the Mintlify root into `.stackra/site/` (gitignored) and runway's
+  `mintlify` provider publishes it to the deploy branch named by `targets.mintlify.branch` in the root runway
+  (`docs-site` in core). Generated site files are not committed and `stackra gen --check` does not compare them;
+  decision 5 still holds for any other generated docs input that is committed. Decisions 1 to 4 and 6 stand.
 
 </Note>
 

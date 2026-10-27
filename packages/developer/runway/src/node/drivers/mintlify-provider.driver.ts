@@ -13,8 +13,10 @@
  *           (ADR 0352 decision 6): plans only until the owner switches the GitHub app to the deploy branch.
  * Runtime: node
  * Governing contract: ADR 0352 (decision 3); ADR 0299 (CI deploys after the checks); ADR 0002 (2026-10-27
- *                     amendment: runway publishes `.stackra/site`); STA-1316.
+ *                     amendment: runway publishes `.stackra/site`); ADR 0294 R3 and ADR 0305 rule 3 (the
+ *                     `Driver(Port)` base); STA-1316.
  */
+import { Driver } from "@stackra/container";
 import { HealthStatus } from "@stackra/contracts";
 import type { HealthReport } from "@stackra/contracts";
 
@@ -43,7 +45,7 @@ const TRAILER = "Source";
  * const mintlify = new MintlifyProviderDriver({ projectDir: "apps/docs" });
  * mintlify.plan(target, sha); // stackra build, stackra lint, git init/add/commit, git fetch, git push
  */
-export class MintlifyProviderDriver extends RunwayProvider {
+export class MintlifyProviderDriver extends Driver(RunwayProvider) {
   override readonly destination = "mintlify";
 
   private readonly projectDir: string;

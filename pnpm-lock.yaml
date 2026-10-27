@@ -3766,6 +3766,9 @@ importers:
 
   packages/developer/runway:
     dependencies:
+      '@stackra/container':
+        specifier: workspace:*
+        version: link:../../foundation/container
       '@stackra/contracts':
         specifier: workspace:*
         version: link:../../foundation/contracts

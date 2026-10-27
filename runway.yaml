@@ -9,7 +9,7 @@
 #           here identify, they do not grant. `ref:<path>` resolves from the private stacks repository (ADR 0289
 #           decision 9) once it exists. `workers/static` gets its member runway with gen (ADR 0284 decision 8).
 # Runtime: CI; checked by `pnpm validate` (checkRunwayFiles) and read by `tools/scripts/runway.mjs`
-# Governing contract: ADR 0168, 0170, 0173, 0177, 0284, 0289, 0296, 0299
+# Governing contract: ADR 0002, 0168, 0170, 0173, 0177, 0284, 0289, 0296, 0299
 $schema: "@stackra/runway/schema/root.json"
 version: 3
 project: stackra
@@ -86,6 +86,10 @@ targets:
   mintlify:
     deployOn: merge-to-main
     checks: [validate, broken-links, a11y]
+    # The deploy branch runway force-pushes the generated site (apps/docs/.stackra/site) to, one orphan commit with a
+    # `Source: <sha>` trailer (ADR 0002, 2026-10-27 amendment). Only CI writes it; the owner points the Mintlify
+    # GitHub app at this branch, monorepo path at the root.
+    branch: docs-site
     # The owner switches the Mintlify GitHub-app deploy off after the first CI deploy (STA-605).
     pushDeploy: false
     adminKey: MINTLIFY_ADMIN_KEY
