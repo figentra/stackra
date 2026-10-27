@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: unit tests of `ActionPipeline`: the fixed order of the steps; the actor check and fail-closed permission;
  *          input validation from a registered schema; idempotency (required, replayed, reused, derived, released on
- *          failure); the area and action rate limits; the unit of work with `afterCommit`; the audit entry; the call
+ *          failure); the area and action rate limits (the area bucket plan-sized by `RateLimitBudget`); the unit of work with `afterCommit`; the audit entry; the call
  *          context (frozen clock, request facts, registered key, the call's scope, `RequestContext`); the workflow,
  *          signal and job capabilities (the dispatcher sees the scope); interceptors; a query's lighter path; and the
  *          offline additions: a device's calls in sequence order (sequences are not contiguous; refusals settle; a
@@ -61,6 +61,7 @@ import {
   LimitReservation,
   LiveConfigurationGuard,
   OfflineCapStore,
+  RateLimitBudget,
   RateLimitStore,
   ReplicaLog,
   ReviewItemSink,
@@ -706,6 +707,31 @@ describe(ActionPipeline, () => {
     await expect(
       bare.execute(SendMessageAction, { text: "hi" }, { actor: customer }),
     ).rejects.toThrow(/RateLimitStore/);
+  });
+
+  it("sizes the area bucket from RateLimitBudget per scope, else from RateLimitConfig", async () => {
+    const asked: CallDescriptor[] = [];
+    class PlanBudget extends Driver(RateLimitBudget) {
+      async areaBucket(call: CallDescriptor) {
+        asked.push(call);
+        return call.tenantId === "ten_1" ? { capacity: 2, tokensPerSecond: 0 } : undefined;
+      }
+    }
+    const config = Object.assign(new RateLimitConfig(), {
+      areas: { app: { requests: 1, per: Duration.minutes(1), burst: 1 } },
+    });
+    const { pipeline } = setup([
+      [RateLimitConfig, config],
+      [RateLimitBudget, new PlanBudget()],
+    ]);
+    const read = (actor: Actor) => pipeline.execute(GetOrderQuery, { orderId: "ord_1" }, { actor });
+    await read(customer);
+    await read(customer);
+    await expect(read(customer)).rejects.toBeInstanceOf(RateLimitedError);
+    expect(asked[0]).toMatchObject({ tenantId: "ten_1", area: "app" });
+    const outsider: Actor = { ...customer, id: "usr_9", tenantId: "ten_9" };
+    await read(outsider);
+    await expect(read(outsider)).rejects.toBeInstanceOf(RateLimitedError);
   });
 
   it("audits an action's outcome and fields, never a query", async () => {

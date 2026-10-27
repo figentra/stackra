@@ -31,6 +31,7 @@ configuration and the action testing helpers.
 | `.`           | `rawBody`, `isRawBody`, `RawBody`                                                        | a query output the transport sends as the body itself (iCal, CSV)       |
 | `./contracts` | `AccessControl`, `TenancyCheck`, `EntitlementCheck`, `FlagCheck`                         | the ports of the pipeline's checks                                      |
 | `./contracts` | `IdempotencyStore`, `RateLimitStore`, `UnitOfWork`, `AuditTrail`                         | the ports of its stores and its transaction                             |
+| `./contracts` | `RateLimitBudget`                                                                        | the plan-sized area bucket of a call's scope (a value entitlement)      |
 | `./contracts` | `WorkflowRunner`, `JobDispatcher`, `ContextStorage`                                      | the ports behind `ctx.run`, `ctx.signal`, `ctx.dispatch`, the context   |
 | `./contracts` | `DeviceSequenceStore`, `OfflineCapStore`, `ReplicaLog`, `ReviewItemSink`, `ReviewReason` | the offline stores and the review sink, with their types                |
 | `./contracts` | `DeviceOrder`, `DeviceSequence`, `ReplicaRow`, `ReplicaChange`, `ReviewItem`             | the device on the call, a device's last settled call, replica rows      |
@@ -76,6 +77,12 @@ except permission, which fails closed. Approval runs only when an `ApprovalGate`
 `stepUp: AssuranceLevel.Aal2` is checked right after the permission by the bound `StepUpCheck` (a driver over
 `@stackra/identity`'s `requireAssurance`) against `CallOptions.assurance` (`amr`, `authTime`, `level` from the verified
 token), and fails closed without one; handlers read the same facts as `ctx.assurance`.
+
+The rate-limit step takes one token from the call's area bucket, keyed by the tenant (or, for a platform call, the
+actor), and one from the action's own `rateLimit`. When a `RateLimitBudget` is bound and answers a bucket for the call,
+that bucket sizes the area bucket (ADR 0217 decision 2: per app and tenant, sized by the plan); `@stackra/entitlements`
+is meant to bind it over a value entitlement per area (ADR 0408). When it answers `undefined`, or none is bound, the
+area's `RateLimitConfig` entry applies. The key does not change, so a plan change resizes the same bucket.
 
 The call carries its scope (ADR 0327 decision 6): the transport passes the `ScopeRef` the resolver chain settled on as
 `CallOptions.scope`, every port reads it on the `CallDescriptor`, a handler reads `ctx.scope`, and a job queued with

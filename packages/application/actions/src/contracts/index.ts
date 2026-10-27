@@ -23,6 +23,7 @@ export { JobDispatcher } from "#contracts/ports/job-dispatcher.port";
 export { LimitReservation } from "#contracts/ports/limit-reservation.port";
 export { LiveConfigurationGuard } from "#contracts/ports/live-configuration-guard.port";
 export { OfflineCapStore } from "#contracts/ports/offline-cap-store.port";
+export { RateLimitBudget } from "#contracts/ports/rate-limit-budget.port";
 export { RateLimitStore } from "#contracts/ports/rate-limit-store.port";
 export { ReplicaLog } from "#contracts/ports/replica-log.port";
 export { ReviewItemSink } from "#contracts/ports/review-item-sink.port";

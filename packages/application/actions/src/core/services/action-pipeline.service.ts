@@ -32,7 +32,7 @@
  *                     read-only); ADR 0216 (decisions 1 and 4: usage through the outbox); ADR 0212 (decision 4: the
  *                     audit in the unit of work); ADR 0215 and owner round 3 item 18 (reserve-then-commit); STA-813
  *                     (an unbound approval step does not run); ADR 0406
- *                     (step-up assurance).
+ *                     (step-up assurance); STA-1277 (the area bucket sized by `RateLimitBudget`, a value entitlement).
  */
 import { kindOf, type AnyClass } from "@stackra/container";
 import {
@@ -67,6 +67,7 @@ import { JobDispatcher } from "#contracts/ports/job-dispatcher.port";
 import { LimitReservation } from "#contracts/ports/limit-reservation.port";
 import { LiveConfigurationGuard } from "#contracts/ports/live-configuration-guard.port";
 import { OfflineCapStore } from "#contracts/ports/offline-cap-store.port";
+import { RateLimitBudget } from "#contracts/ports/rate-limit-budget.port";
 import { RateLimitStore } from "#contracts/ports/rate-limit-store.port";
 import { ReplicaLog } from "#contracts/ports/replica-log.port";
 import { ReviewItemSink } from "#contracts/ports/review-item-sink.port";
@@ -463,7 +464,10 @@ export class ActionPipeline {
     return { replay: earlier.output };
   }
 
-  /** Takes a token from the area's bucket and from the action's own, refusing when either is empty. */
+  /**
+   * Takes a token from the area's bucket (plan-sized by `RateLimitBudget` when it answers, else `RateLimitConfig`)
+   * and from the action's own, refusing when either is empty.
+   */
   private async limit(call: Call): Promise<void> {
     const { descriptor, options, at } = call;
     const store = this.optional(RateLimitStore);
@@ -475,7 +479,9 @@ export class ActionPipeline {
     const holder = descriptor.tenantId ?? descriptor.actor.id;
     const takes: [key: string, bucket: RateLimitBucket][] = [];
     const area = this.optional(RateLimitConfig)?.areas[descriptor.area];
-    if (area !== undefined)
+    const planned = await this.optional(RateLimitBudget)?.areaBucket(descriptor);
+    if (planned !== undefined) takes.push([`area:${descriptor.area}:${holder}`, planned]);
+    else if (area !== undefined)
       takes.push([
         `area:${descriptor.area}:${holder}`,
         {

@@ -42,6 +42,8 @@ note).
 - The server `createApp` awaits `options.boot` once the container is ready and aborts its signal in `close()` after
   the drain and before `container.close()`; the bus, inbox and relay stop there.
 - Report each unexpected error once through the `ErrorReporter`; never report a refusal.
+- No rate-limit code here: the area bucket per tenant lives in the `@stackra/actions` pipeline (`RateLimitBudget`);
+  this package only forwards the verified tenant from the signed edge headers.
 - The desktop hardening baseline is not configurable (ADR 0251 decision 3).
 - No parameter properties and no `#private` fields: apps typecheck this source under `erasableSyntaxOnly`.
 

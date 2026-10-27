@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the consumer contract of the `./contracts` entry: the twenty ports of the pipeline's steps and stores and
+ * Purpose: the consumer contract of the `./contracts` entry: the twenty-one ports of the pipeline's steps and stores and
  *          the `ReviewReason`, `Effect`, `ApproverRefusal` and `AssuranceLevel` enums are exported, nothing else is as a value, and the exchanged types resolve.
  * Boundary: test only; imports the stand-in barrel through its `#contracts` alias.
  * Runtime: node (vitest)
@@ -47,6 +47,7 @@ describe("@stackra/actions/contracts", () => {
       "LimitReservation",
       "LiveConfigurationGuard",
       "OfflineCapStore",
+      "RateLimitBudget",
       "RateLimitStore",
       "ReplicaLog",
       "ReviewItemSink",
