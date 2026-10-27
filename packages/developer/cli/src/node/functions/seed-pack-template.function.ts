@@ -4,6 +4,7 @@
  *          version 0.1.0) and a README in each profile folder (`minimal`, `demo`, `test`) saying what goes there and
  *          the document shape every record follows.
  * Boundary: pure; it writes no record: every default is the product's data, added with the answer id it encodes.
+ *           A seed pack has no package name, so it takes only the name, PascalCase form and description.
  * Runtime: node
  * Governing contract: config-model section 6; ADR 0190 (decision 1); ADR 0325 (decision 7).
  */
@@ -25,7 +26,9 @@ const PURPOSE: Readonly<Record<string, string>> = {
  * @example
  * seedPackTemplate({ name: "commerce", pascal: "Commerce", description: "Commerce defaults." });
  */
-export function seedPackTemplate(options: TemplateOptions): readonly TemplateFile[] {
+export function seedPackTemplate(
+  options: Pick<TemplateOptions, "name" | "pascal" | "description">,
+): readonly TemplateFile[] {
   const { name, description } = options;
   return [
     {

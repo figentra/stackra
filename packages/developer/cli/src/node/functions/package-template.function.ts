@@ -1,14 +1,19 @@
 /**
  * Stackra file contract:
- * Purpose: `packageTemplate(options)`, the files of a new `@stackra/<name>` package in the programming model v3
- *          shape: package.json (scripts that call `stackra <task>`), tsconfig.json, turbo.jsonc, `stackra.config.ts`
- *          with one `definePackage({})`, README.md, AGENTS.md and CHANGELOG.md. No root module, entry barrel or tool
- *          config: a member with no root module is one module keyed by its folder, gen writes the barrels and the
- *          tool configs into `.stackra/`, and an entry is exported with its first file.
- * Boundary: pure; returns text and writes nothing.
+ * Purpose: `packageTemplate(options)`, the files of a new package (`options.packageName`: `@stackra/<name>`,
+ *          `@figentra/<product>-<name>` or `@<scope>/<name>`) in the programming model v3 shape of stackra/template's
+ *          packages: package.json (the `#src` and `#assets` imports, the `./assets/*` export, `@stackra/*` at
+ *          `options.stackraVersion`, scripts that call `stackra <task>`), tsconfig.json, turbo.jsonc,
+ *          `stackra.config.ts` with one `definePackage({})`, `assets/.gitkeep`, README.md, AGENTS.md and CHANGELOG.md.
+ *          Only a `@stackra/*` package gets the MIT licence, the repository link and the npmjs `publishConfig`; a
+ *          product or scoped package is `UNLICENSED` and publishes nowhere until its product decides (ADR 0349 d4).
+ *          No root module, entry barrel or tool config: a member with no root module is one module keyed by its
+ *          folder, gen writes the barrels and the tool configs into `.stackra/`, and an entry is exported with its
+ *          first file.
+ * Boundary: pure; returns text and writes nothing. Nothing under `src/` is written.
  * Runtime: node
  * Governing contract: ADR 0294 (rule R12, decision 15); ADR 0295 (decisions 1 and 5); ADR 0305 (rule 15: the root
- *                     module is optional); ADR 0282 (consequences: `new` moves into the CLI).
+ *                     module is optional); ADR 0282 (consequences: `new` moves into the CLI); ADR 0349 (decisions 2 and 4); STA-1210.
  */
 import type { TemplateFile } from "#node/types/template-file.type";
 import type { TemplateOptions } from "#node/types/template-options.type";
@@ -16,25 +21,29 @@ import type { TemplateOptions } from "#node/types/template-options.type";
 /**
  * The files of a new package.
  *
- * @param options - the checked name, description and category.
+ * @param options - the checked name, description, package name, `@stackra/*` version form and category.
  * @example
- * packageTemplate({ name: "loyalty-kit", pascal: "LoyaltyKit", description: "Loyalty points.", category: "commerce" });
+ * packageTemplate({ name: "loyalty-kit", pascal: "LoyaltyKit", description: "Loyalty points.", category: "commerce",
+ *   packageName: "@stackra/loyalty-kit", stackraVersion: "workspace:*" });
  */
 export function packageTemplate(options: TemplateOptions): readonly TemplateFile[] {
-  const { name, description } = options;
+  const { name, description, packageName, stackraVersion } = options;
+  const framework = packageName.startsWith("@stackra/");
   const category = options.category ?? "";
   const tasks = ["build", "typecheck", "lint", "test"];
   const packageJson = {
-    name: `@stackra/${name}`,
+    name: packageName,
     version: "0.0.0",
     private: true,
     description,
-    license: "MIT",
-    repository: {
-      type: "git",
-      url: "git+https://github.com/figentra/stackra.git",
-      directory: `packages/${category}/${name}`,
-    },
+    license: framework ? "MIT" : "UNLICENSED",
+    ...(framework && {
+      repository: {
+        type: "git",
+        url: "git+https://github.com/figentra/stackra.git",
+        directory: `packages/${category}/${name}`,
+      },
+    }),
     files: [
       "dist",
       "src",
@@ -46,21 +55,30 @@ export function packageTemplate(options: TemplateOptions): readonly TemplateFile
     ],
     type: "module",
     sideEffects: false,
-    exports: {},
-    imports: {},
-    publishConfig: { access: "public", provenance: true, registry: "https://registry.npmjs.org/" },
+    exports: { "./assets/*": "./assets/*" },
+    imports: {
+      "#src/*": ["./src/*", "./src/*.ts", "./src/*.tsx", "./src/*/index.ts"],
+      "#assets/*": "./assets/*",
+    },
+    ...(framework && {
+      publishConfig: {
+        access: "public",
+        provenance: true,
+        registry: "https://registry.npmjs.org/",
+      },
+    }),
     scripts: {
       ...Object.fromEntries(tasks.map((task) => [task, `stackra ${task}`])),
       format: "oxfmt --write .",
       "format:check": "oxfmt --check .",
       clean: "rm -rf dist coverage .turbo .stackra",
     },
-    dependencies: { "@stackra/contracts": "workspace:*" },
+    dependencies: { "@stackra/contracts": stackraVersion },
     devDependencies: {
-      "@stackra/cli": "workspace:*",
-      "@stackra/tsdown-config": "workspace:*",
-      "@stackra/typescript-config": "workspace:*",
-      "@stackra/vitest-config": "workspace:*",
+      "@stackra/cli": stackraVersion,
+      "@stackra/tsdown-config": stackraVersion,
+      "@stackra/typescript-config": stackraVersion,
+      "@stackra/vitest-config": stackraVersion,
       "@types/node": "catalog:",
       "@vitest/coverage-v8": "catalog:quality",
       oxfmt: "catalog:quality",
@@ -95,7 +113,7 @@ export function packageTemplate(options: TemplateOptions): readonly TemplateFile
       content: [
         "/**",
         " * Stackra file contract:",
-        ` * Purpose: the member definition of @stackra/${name}: static data that gen reads from the syntax tree without`,
+        ` * Purpose: the member definition of ${packageName}: static data that gen reads from the syntax tree without`,
         " *          running it. The member key is derived from the folder name; there is no key option.",
         " * Boundary: data only; no call other than `definePackage` and no environment read.",
         " * Runtime: node",
@@ -108,10 +126,11 @@ export function packageTemplate(options: TemplateOptions): readonly TemplateFile
         "",
       ].join("\n"),
     },
+    { path: "assets/.gitkeep", content: "" },
     {
       path: "README.md",
       content: [
-        `# @stackra/${name}`,
+        `# ${packageName}`,
         "",
         description,
         "",
@@ -120,7 +139,8 @@ export function packageTemplate(options: TemplateOptions): readonly TemplateFile
         "## Entries",
         "",
         "`.` (`src/core/`, `src/config/`), `./contracts`, `./node`, `./react`, `./native` and `./testing`. An entry is",
-        "exported with its first file; `stackra gen` writes the barrels and the tool configs into `.stackra/`.",
+        "exported with its first file; `stackra gen` writes the barrels and the tool configs into `.stackra/`. Code",
+        "imports its own `src/` as `#src/...`; files under `assets/` are `#assets/...` and the `./assets/*` export.",
         "",
         "## Tasks",
         "",
@@ -131,7 +151,7 @@ export function packageTemplate(options: TemplateOptions): readonly TemplateFile
     {
       path: "AGENTS.md",
       content: [
-        `# AGENTS — @stackra/${name}`,
+        `# AGENTS — ${packageName}`,
         "",
         `${description} Member at \`packages/${category}/${name}\` (\`tier:lib\`), in the programming model v3 shape`,
         "(ADR 0294, 0295, 0305).",
@@ -160,7 +180,7 @@ export function packageTemplate(options: TemplateOptions): readonly TemplateFile
     },
     {
       path: "CHANGELOG.md",
-      content: `# @stackra/${name}\n\nWritten by Changesets on release; never edited by hand.\n`,
+      content: `# ${packageName}\n\nWritten by Changesets on release; never edited by hand.\n`,
     },
   ];
 }

@@ -6,7 +6,8 @@ Purpose: the agent rules of @stackra/cli: where code goes, the package rules (ge
          that fail the build.
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
-Governing contract: ADR 0083; ADR 0282; ADR 0294; ADR 0260 (a cycle between services is allowed at the manifest level).
+Governing contract: ADR 0083; ADR 0282; ADR 0294; ADR 0260 (a cycle between services is allowed at the manifest level);
+                    ADR 0349 (member names).
 -->
 
 The `stackra` binary (ADR 0083, 0282). Member at `packages/developer/cli` (`tier:lib`), in the programming model v3.1
@@ -52,6 +53,10 @@ shape (ADR 0294, 0305). No code entry: the package ships `bin.stackra` (`src/nod
 - Tools start without a shell; a secret value never passes through this process (`mcp exec` names a location only).
 - A seed pack, a template or a command never holds a business value (a price, a rate, a country rule): those are rows
   in the product's seed pack, each citing its answer id. A seed run never writes a record a tenant changed.
+- `stackra new` names a member only through `memberNaming` (`--scope`, else the root runway's `product.key`, ADR
+  0349 decision 2) and writes `@stackra/*` versions in the form it returns; a template never hard-codes a scope.
+  Templates write nothing under `src/`, and `--over` never writes an existing file (it prints `lineDiff`), nor
+  `CHANGELOG.md` or `runway.yaml`; keep both true when a template grows.
 - Never add a Figentra-internal operation (Linear, bot identities, merge, secrets inbox, delegation, spend): ADR 0282
   decision 4.
 

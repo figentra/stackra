@@ -6,7 +6,7 @@ Purpose: the package's reader guide: the `stackra` binary, its commands (gen's t
          here.
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
-Governing contract: ADR 0083; ADR 0282 decision 3; ADR 0294; ADR 0260.
+Governing contract: ADR 0083; ADR 0282 decision 3; ADR 0294; ADR 0260; ADR 0349 (member names).
 -->
 
 The `stackra` binary (ADR 0083, ADR 0282 decision 3). It runs gen, runs each member's tools against the configs gen
@@ -20,7 +20,7 @@ framework (ADR 0127, 2026-10-24 note): a command is data plus one `run` function
 
 | Command                                | Does                                                                                     |
 | -------------------------------------- | ---------------------------------------------------------------------------------------- |
-| `stackra new <kind> <name>`            | a v3 `package` (`--category`), `service` (`--area`) or product `seed-pack`               |
+| `stackra new <kind> <name>`            | a v3 `package` (`--category`), `service` (`--area`) or `seed-pack`; `--scope`, `--over`  |
 | `stackra gen [--check] [--manifests]`  | gen-core on the member or every workspace member: manifests first, then the rest         |
 | `stackra dev [--target <t>]`           | gen, then serve: Vite (web, PWA), Expo (iOS, Android), Wrangler, Encore, Mintlify        |
 | `stackra dev --surface <surface>`      | a product surface in its real shell (published or `--os` checkout), Vite with hot reload |
@@ -100,6 +100,23 @@ connector-catalogue, brand-kit), the record `key` and `rows`; every row has an `
   records and seed-owned records whose content hash changed. A record a tenant changed is kept: a new seed version
   only changes the product default underneath.
 - `stackra new seed-pack <product>` writes the header and the three profile folders.
+
+## New members
+
+`stackra new package|service <name>` writes the stackra/template shape: `#src/*` and `#assets/*` imports, the
+`./assets/*` export, an `assets/` folder, and `@stackra/*` at `catalog:stackra` when the workspace declares that
+catalog (`workspace:*` in this repository). The published name follows ADR 0349 decision 2:
+
+| Given                                     | Package                      | Service                              |
+| ----------------------------------------- | ---------------------------- | ------------------------------------ |
+| `--scope @acme`                           | `@acme/<name>`               | `@acme/service-<name>`               |
+| `--scope <product>` or root `product.key` | `@figentra/<product>-<name>` | `@figentra/<product>-service-<name>` |
+| neither (this repository, the OS)         | `@stackra/<name>`            | `@figentra/service-<name>`           |
+
+`--over` regenerates over an existing member: it writes only the files that are missing and prints a line diff for
+each authored file that differs from the template, without writing it. It never writes or diffs `CHANGELOG.md` or an
+existing `runway.yaml` (ports and sizes are authored), and the templates write nothing under `src/`, so
+`src/modules/` and an authored root module are never touched.
 
 ## Settings packs
 
