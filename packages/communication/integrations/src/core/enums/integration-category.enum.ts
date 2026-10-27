@@ -6,7 +6,7 @@
  *           shelf is a new member.
  * Runtime: isomorphic
  * Governing contract: ADR 0308 (rule 1: `Integration({ provider, category, ... })`); ADR 0231 (snake_case codes); ADR
- *                     0422 (decision 5: payroll).
+ *                     0422 (decision 5: payroll); app-shells D14 (app stores).
  */
 import { Enum } from "@stackra/contracts";
 
@@ -39,6 +39,8 @@ export const IntegrationCategory = Enum.of({
   Crm: "crm",
   /** Accounting and invoicing. */
   Accounting: "accounting",
+  /** App stores a white-label app is published to under the merchant's own account (`StoreAccountConnector`). */
+  AppStores: "app_stores",
   /** Payroll providers the pay inputs are pushed to (`PayrollConnector`). */
   Payroll: "payroll",
   /** Product and web analytics. */

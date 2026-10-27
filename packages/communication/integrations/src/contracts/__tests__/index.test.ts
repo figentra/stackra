@@ -18,6 +18,7 @@ describe("@stackra/integrations/contracts", () => {
       "ConnectionContext",
       "ManagedProvisioning",
       "MarketContext",
+      "MobileStore",
       "PayInputKind",
       "ProviderDefaults",
       "ProviderMode",

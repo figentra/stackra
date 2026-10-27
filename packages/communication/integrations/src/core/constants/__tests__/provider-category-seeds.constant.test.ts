@@ -34,6 +34,12 @@ describe("PROVIDER_CATEGORY_SEEDS", () => {
     expect(payments?.byoPricing).toBeUndefined();
     expect(payments?.managed?.pricing).toBe("fee-schedule:pay");
   });
+
+  it("offers app stores as bring-your-own only, free (D14)", () => {
+    const stores = PROVIDER_CATEGORY_SEEDS.find((record) => record.name === "app-stores");
+    expect(stores?.sources).toEqual([ProviderSource.Byo]);
+    expect(stores?.byoPricing).toBeUndefined();
+  });
 });
 
 describe("MANAGED_PROVISIONING_TEMPLATES", () => {

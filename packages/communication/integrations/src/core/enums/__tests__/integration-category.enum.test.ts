@@ -28,6 +28,10 @@ describe("IntegrationCategory", () => {
     expect(IntegrationCategory.Payroll).toBe("payroll");
   });
 
+  it("has the app stores shelf of D14", () => {
+    expect(IntegrationCategory.AppStores).toBe("app_stores");
+  });
+
   it("keeps every code snake_case and unique", () => {
     const codes = Enum.values(IntegrationCategory);
     expect(codes.every((code) => /^[a-z]+(?:_[a-z]+)*$/.test(code))).toBe(true);

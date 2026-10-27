@@ -43,6 +43,7 @@ Depends on `@stackra/actions` (the `RateLimitStore`, and `RequestContext` for th
 | `./contracts`: `PayrollConnector`, `PayInput`, `PayInputKind`; `assertPayInputs`; `./testing`: `MemoryPayrollConnector` | pay inputs (hours, sessions, tips, commission) pushed to the tenant's payroll provider               |
 | `MarketPackProviderDefaultsDriver`, `ProviderPackSource`, `./contracts`: `ProviderMode`; `ProviderCandidate`            | the market-pack `ProviderDefaults` for every capability, and the failover list's own-or-managed mode |
 | `./contracts`: `VoiceGateway`, `CallInstruction`, `CallStatus`, `RecordingConsent`; `recordingPlan`                     | the telephony port per Market; recording from the pack's consent rule                                |
+| `./contracts`: `StoreAccountConnector`, `StoreApp`, `MobileStore`                                                       | a merchant's own App Store Connect key or Google Play service account (D14)                          |
 | `Pass`, `PassContent`                                                                                                   | the wallet pass kind a module declares (ADR 0348 decision 5)                                         |
 
 ## An integration and its connection
@@ -162,6 +163,17 @@ period's hours, sessions, tips and commission per employee, each with the provid
 tenant's mapping. `assertPayInputs` checks a batch before any call; a repeated key pushes nothing. Payroll itself stays
 with the provider (RV-50). The provider connectors (ZenHR, Kombo, Gusto) live with the capability's owner;
 `MemoryPayrollConnector` in `./testing` serves tests and local hosts.
+
+## Store accounts (D14)
+
+A white-label app is published under the merchant's own store account when one is connected, under Figentra's
+otherwise. The `app_stores` category's Connections implement `StoreAccountConnector`: `store` (`MobileStore`) and
+`findApp(appId)`, which the console uses to check a connection before a release. The App Store Connect and Google Play
+connectors live in the OS integrations service (os-50) and use the existing auth: `AuthType.Jwt` with ES256 for App
+Store Connect (`kid` the key id, `iss` the issuer id, `aud` `appstoreconnect-v1`, at most `20m`), and
+`AuthType.OAuth2JwtBearer` with the `androidpublisher` scope for Google Play. The CI runner reads the key through the
+connection's `CredentialRef`; the key never passes through the interface. The `provider-category:app-stores` seed is
+bring-your-own only: Figentra's account needs no Connection.
 
 ## Vendor connectors live in OS integrations (STA-1281)
 

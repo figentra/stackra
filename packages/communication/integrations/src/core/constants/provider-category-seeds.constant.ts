@@ -6,9 +6,10 @@
  * Boundary: seed data, loaded by the registry and edited by an operator afterwards; nothing here reads it at run time.
  *           Prices live on the named rate cards and fee schedules (placeholders until the cost model, OS-378); which
  *           sources a Market allows is market-pack data. Payroll's connector-or-export split (M3-11) is BYO only here:
- *           an export needs no provider.
+ *           an export needs no provider. App stores are BYO only too:
+ *           without the merchant's store account, Runway publishes under Figentra's, which needs no Connection (D14).
  * Runtime: isomorphic
- * Governing contract: R3-CE-13; R3-SO-03; M3-4; M3-11; M3-13; M3-17; RV-14; config-model section 6.
+ * Governing contract: R3-CE-13; R3-SO-03; M3-4; M3-11; M3-13; M3-17; RV-14; D14; config-model section 6.
  */
 import { ProviderSource } from "#contracts/enums/provider-source.enum";
 import type { ProviderCategoryRecord } from "#contracts/types/provider-category-record.type";
@@ -122,5 +123,13 @@ export const PROVIDER_CATEGORY_SEEDS: readonly ProviderCategoryRecord[] = [
     sources: [ProviderSource.Byo],
     byoPricing: "rate-card:byo",
     decisions: ["R3-CE-13", "COM-113"],
+  },
+  {
+    // shortcut: Figentra's account (D14 managed) is Runway's default with no Connection, so no managed resource here;
+    // add `managed` with a provisioning template if publishing under Figentra's account ever needs one.
+    key: "provider-category:app-stores",
+    name: "app-stores",
+    sources: [ProviderSource.Byo],
+    decisions: ["D14"],
   },
 ];

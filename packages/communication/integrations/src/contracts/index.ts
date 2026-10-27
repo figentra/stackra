@@ -3,7 +3,7 @@
  * Purpose: Stand-in barrel: the `./contracts` entry of @stackra/integrations, the leaf entry with the
  *          `ConnectionContext`, `ProviderDefaults`, `MarketContext` and `ManagedProvisioning` ports, the managed-or-BYO
  *          words and records, and the interfaces a provider's Connection implements (accounting, the commerce
- *          connectors, telephony), until `stackra gen` writes the entry barrels (STA-339).
+ *          connectors, telephony, the store accounts), until `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. The leaf: it imports no other entry of this package (only
  *           `@stackra/contracts`, and the `Money` and `Address` types of `@stackra/money` and `@stackra/validation`).
  *           Each is exported here only, never from `.` (ADR 0294 decision 15). `ConnectionStore` and `ConnectionHost` stay
@@ -12,6 +12,7 @@
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision.
  */
 export { CallStatus } from "#contracts/enums/call-status.enum";
+export { MobileStore } from "#contracts/enums/mobile-store.enum";
 export { PayInputKind } from "#contracts/enums/pay-input-kind.enum";
 export { ProviderMode } from "#contracts/enums/provider-mode.enum";
 export { ProviderSource } from "#contracts/enums/provider-source.enum";
@@ -50,4 +51,6 @@ export type { ProviderChoice } from "#contracts/types/provider-choice.type";
 export type { ProvisioningRequest } from "#contracts/types/provisioning-request.type";
 export type { SalesChannelConnector } from "#contracts/types/sales-channel-connector.type";
 export type { SpeechVoice } from "#contracts/types/speech-voice.type";
+export type { StoreAccountConnector } from "#contracts/types/store-account-connector.type";
+export type { StoreApp } from "#contracts/types/store-app.type";
 export type { VoiceGateway } from "#contracts/types/voice-gateway.type";
