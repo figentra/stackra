@@ -23,6 +23,7 @@ framework (ADR 0127, 2026-10-24 note): a command is data plus one `run` function
 | `stackra new <kind> <name>`            | a v3 `package` (`--category`), `service` (`--area`) or product `seed-pack`               |
 | `stackra gen [--check] [--manifests]`  | gen-core on the member or every workspace member: manifests first, then the rest         |
 | `stackra dev [--target <t>]`           | gen, then serve: Vite (web, PWA), Expo (iOS, Android), Wrangler, Encore, Mintlify        |
+| `stackra dev --surface <surface>`      | a product surface in its real shell (published or `--os` checkout), Vite with hot reload |
 | `stackra build [--target <t>]`         | gen, then build: tsdown (package), Vite (web), `expo export` (native), Wrangler dry run  |
 | `stackra start`                        | gen, then `vite preview` of an app's web build                                           |
 | `stackra typecheck`                    | gen, then `tsc --noEmit`                                                                 |
@@ -44,6 +45,16 @@ framework (ADR 0127, 2026-10-24 note): a command is data plus one `run` function
 
 At the workspace root (a folder with `pnpm-workspace.yaml`), `dev`, `build`, `start`, `typecheck`, `test` and `lint`
 run `turbo run <task>` (`test:e2e` for `--tier e2e`); each member's script calls `stackra <task>` again.
+
+`stackra dev --surface <surface>` runs at a product root (ADR 0436 decision 6, app-shells section 15 point 2). It reads
+`surfaces.<surface>` (`shell: os/console@3`, `packages`) from the root `runway.yaml`, runs `stackra gen`, writes the
+`DevSurface` descriptor to `.stackra/surfaces/<surface>/dev-surface.json`, then starts Vite with the surface's
+bundle-mode config (`.stackra/surfaces/<surface>/vite.config.ts`, written by gen's bundle mode). The shell is the
+published version at `<--shell-origin or STACKRA_SHELL_ORIGIN>/<owner>/<name>@<version>/` (`--shell` pins a version
+inside the surface's line), or with `--os <checkout>` the checkout's `apps/<name>` started with `stackra dev` on its
+`environments.dev.port`. The API is `--api`, else `http://localhost:<environments.dev.infra.gateway.port>/`. The Vite
+config reads the descriptor to build the page's import map (shell and shared dependencies from the shell URL, the
+product bundle from Vite with hot reload) and to proxy the API.
 
 Each tool gets `--config .stackra/<tool>.config.ts` when gen wrote it (ADR 0295 decision 5), and finds its own
 member-root config otherwise. A task that no tool serves for the member (a desktop target, a service build before the

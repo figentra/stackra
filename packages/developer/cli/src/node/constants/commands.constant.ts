@@ -1,6 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: `COMMANDS`, every command the `stackra` binary has, in help order: new, gen, the member tool commands, the
+ * Purpose: `COMMANDS`, every command the `stackra` binary has, in help order: new, gen, the member tool commands (`dev`
+ *          with its `--surface` mode, ADR 0436 decision 6), the
  *          check command and its aliases (validate, verify, code:check, code:fix), the db commands, the seed-pack
  *          command, the settings pack commands, the offline audit check, ls, and the local MCP and agent-file commands.
  * Boundary: data only. Figentra-internal operations (Linear, bot identities, merge, the secrets inbox, delegation)
@@ -23,6 +24,7 @@ import { NEW_COMMAND } from "#node/constants/new-command.constant";
 import { SEED_PACK_COMMAND } from "#node/constants/seed-pack-command.constant";
 import { SETTINGS_APPLY_COMMAND } from "#node/constants/settings-apply-command.constant";
 import { SETTINGS_DIFF_COMMAND } from "#node/constants/settings-diff-command.constant";
+import { DEV_COMMAND } from "#node/dev-surface/constants/dev-command.constant";
 import { checkCommand } from "#node/functions/check-command.function";
 import { toolCommand } from "#node/functions/tool-command.function";
 import type { CliCommand } from "#node/types/cli-command.type";
@@ -31,7 +33,7 @@ import type { CliCommand } from "#node/types/cli-command.type";
 export const COMMANDS: readonly CliCommand[] = [
   NEW_COMMAND,
   GEN_COMMAND,
-  toolCommand("dev", "Generate, then serve the member (--target picks an app target)"),
+  DEV_COMMAND,
   toolCommand("build", "Generate, then build the member"),
   toolCommand("start", "Generate, then preview an app's web build"),
   toolCommand("typecheck", "Generate, then type-check the member"),

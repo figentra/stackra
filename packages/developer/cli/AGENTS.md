@@ -14,17 +14,18 @@ shape (ADR 0294, 0305). No code entry: the package ships `bin.stackra` (`src/nod
 
 ## Where code goes
 
-| You are writing…                         | It goes in…                                                        |
-| ---------------------------------------- | ------------------------------------------------------------------ |
-| A command                                | `src/node/constants/<name>-command.constant.ts`, then `COMMANDS`   |
-| A `stackra check` phase                  | `src/node/constants/<name>-phase.constant.ts`, then `CHECK_PHASES` |
-| A repository check (pure, file-based)    | `@stackra/repo-checks`, called from its phase                      |
-| A member tool for a layout or target     | `resolveTool` in `src/node/functions/resolve-tool.function.ts`     |
-| Parsing, dispatch, processes, file reads | `src/node/functions/<name>.function.ts`                            |
-| A `stackra new` template                 | `src/node/functions/<kind>-template.function.ts`, pure text        |
-| Seed-pack reading and planning           | `src/node/functions/` (`readSeedPack`, `planSeed`), pure           |
-| Errors and types                         | `src/node/{errors,types}/`                                         |
-| A test                                   | `__tests__/<name>.<kind>.test.ts` beside it                        |
+| You are writing…                          | It goes in…                                                        |
+| ----------------------------------------- | ------------------------------------------------------------------ |
+| A command                                 | `src/node/constants/<name>-command.constant.ts`, then `COMMANDS`   |
+| `stackra dev --surface` (product surface) | `src/node/dev-surface/` (its constants, functions, types, tests)   |
+| A `stackra check` phase                   | `src/node/constants/<name>-phase.constant.ts`, then `CHECK_PHASES` |
+| A repository check (pure, file-based)     | `@stackra/repo-checks`, called from its phase                      |
+| A member tool for a layout or target      | `resolveTool` in `src/node/functions/resolve-tool.function.ts`     |
+| Parsing, dispatch, processes, file reads  | `src/node/functions/<name>.function.ts`                            |
+| A `stackra new` template                  | `src/node/functions/<kind>-template.function.ts`, pure text        |
+| Seed-pack reading and planning            | `src/node/functions/` (`readSeedPack`, `planSeed`), pure           |
+| Errors and types                          | `src/node/{errors,types}/`                                         |
+| A test                                    | `__tests__/<name>.<kind>.test.ts` beside it                        |
 
 ## This package
 
@@ -37,6 +38,9 @@ shape (ADR 0294, 0305). No code entry: the package ships `bin.stackra` (`src/nod
   included), Mintlify runs in `.stackra/site/` (`DOCS_SITE_DIR` of gen), `dev` keeps `watchDocsSite` running beside
   `mint dev`, and `lint` is `mint broken-links` then `mint a11y`. A docs app still in the old layout (`src/docs.json`)
   runs Mintlify in `src/` until its sweep.
+- `stackra dev --surface <surface>` (ADR 0436 decision 6) only parses, plans and starts processes: the import map, hot
+  reload and API proxy belong to the surface's bundle-mode Vite config, which reads the `DevSurface` descriptor
+  (`DEV_SURFACE_FILES.descriptor`). Every origin, port and version comes from the runway files or a flag, never code.
 - `stackra check` phases return findings and never print them; `runCheck` prints. A phase whose tool cannot start
   returns `skipped: "not installed"`, and a tool that fails without a parsable finding gives one `exit` finding, so a
   failure is never silent. `validate`, `verify`, `code:check` and `code:fix` are `checkCommand` presets, not new code.
