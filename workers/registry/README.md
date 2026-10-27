@@ -22,6 +22,11 @@ else refused is 403. A name with an `internal` row in `name_rules` (today `@stac
 read only by an internal licence whose grants cover it; a customer licence, `names: "*"` included, gets 403, and the
 catalogue never lists it.
 
+`@figentra` (migration `0003`, owner decision D9) is an `internal` scope: the brand kits `@figentra/brand-<id>`
+(figentra, os, stackra, commerce, pay, tamo, academorix, mezzora, juristra, organza, jute, velora), read only by an
+internal licence with an `@figentra` grant (`STACKRA_REGISTRY_TOKEN` in the brand tooling): no or unknown token is 401,
+any other licence 403. Its licence rule is `commercial`, and the catalogue never lists it.
+
 ## Routes
 
 | Method and path                                              | Does                                                            | Auth                       |
@@ -82,19 +87,23 @@ migration CI job or the Cloudflare dashboard. Rotate by inserting the new hash, 
 ### Internal licences
 
 Only the owner sets `licences.internal = 1` (Figentra's own products, ADR 0461 decision 7); the licence API never does,
-so no billing event can open an internal name. Issue the licence through the API, then set the flag on its id.
+so no billing event can open an internal name. Issue the licence through the API, then set the flag on its id. The
+API grants only `licensed` scopes, so the owner also inserts an internal scope's grant by hand:
+`INSERT INTO licence_grants (licence_id, scope, name) VALUES ('<id>', '@figentra', '*')`.
 
 ## Publishing
 
 Only the release workflows publish (`publishers` rows: `figentra/stackra` for `@stackra`, `figentra/stackra-pro` for
-`@stackra-pro`, workflow `.github/workflows/release.yml`, ref `refs/heads/main`, environment `release`, matched on the
-numeric repository and owner ids too). The job asks GitHub for an ID token with audience
+`@stackra-pro`, workflow `.github/workflows/release.yml`, ref `refs/heads/main`, environment `release`;
+`figentra/brand` for `@figentra`, same workflow and ref, environment `brand-registry`; matched on the numeric
+repository and owner ids too). A publisher covers its whole scope, not single names. The job asks GitHub for an ID token with audience
 `npm:npm.stackra.figentra.com` and exchanges it for a `stkp_` publish token bound to one package for
 `REGISTRY_PUBLISH_TOKEN_SECONDS`. A publish is refused when the version exists, the tarball is over the size limit,
 package.json's name or version differs from the request, `stackra.kind` is unknown or a non-package item is not named
 `@<scope>/<kind>-<name>`, the scope's licence rule fails (commercial: the scope's licence string, a LICENSE file, no
 `src/`, no `.map`; open-source: MIT, or another open licence with a NOTICE), the client's integrity or shasum differs,
-or the Sigstore bundle is missing, is for another digest or was signed by another workflow. Each version is signed
+or the Sigstore bundle is missing, is for another digest or was signed by another workflow. A brand kit (`@figentra`, commercial)
+therefore names `"license": "SEE LICENSE IN LICENSE"` and ships a LICENSE file beside its assets. Each version is signed
 (ECDSA P-256 over `<name>@<version>:<integrity>`); every publish, tag change, deprecation and token exchange is an
 `audit_events` row naming the workflow run.
 
@@ -125,25 +134,25 @@ secret.
 
 ## Layout
 
-| Path                      | Holds                                                                                    |
-| ------------------------- | ---------------------------------------------------------------------------------------- |
-| `wrangler.jsonc`          | Worker name, script, bindings, vars, the custom domain                                   |
-| `migrations/`             | numbered D1 migrations; `0001` scopes and publishers, `0002` licences and `name_rules`   |
-| `src/main.ts`             | the Worker entry: builds the dependencies, hands over to `handleRequest`                 |
-| `src/http/`               | `parsePath`, `splitName`, the router, `json` and `failure`                               |
-| `src/npm/`                | the npm read routes (`handle*`), packument rendering and its KV cache, R2 keys           |
-| `src/publish/`            | publish and dist-tag writes, publish auth, tarball reader, digests, content checks       |
-| `src/oidc/`               | GitHub OIDC verification, the key set, publisher matching, the token exchange            |
-| `src/access/`             | the `LicenceCheck` port, the edge-cache wrapper, the read rule (`gate`, `readAccess`)    |
-| `src/licence/`            | the licence API, `LicenceStore`, `D1LicenceCheck`, token minting, grant folding          |
-| `src/signing/`            | the ECDSA P-256 signer, keyids, DER signatures                                           |
-| `src/catalogue/`          | the catalogue API and entitlements                                                       |
-| `src/store/`              | `RegistryStore`, every D1 query                                                          |
-| `src/settings/`           | the vars parsed into settings                                                            |
-| `src/bytes/`              | base64, base64url, hex, SHA-256 of a token                                               |
-| `src/constants/`          | Cache-Control values, the kinds list, the publish token prefix                           |
-| `src/interfaces/`         | one shape per file: bindings, env, settings, catalogue, D1 rows, verdicts                |
-| `src/__tests__/fixtures/` | D1 over node:sqlite with the migrations, R2/KV/cache/licence fakes, tarballs, a registry |
+| Path                      | Holds                                                                                                      |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `wrangler.jsonc`          | Worker name, script, bindings, vars, the custom domain                                                     |
+| `migrations/`             | numbered D1 migrations; `0001` scopes and publishers, `0002` licences and `name_rules`, `0003` `@figentra` |
+| `src/main.ts`             | the Worker entry: builds the dependencies, hands over to `handleRequest`                                   |
+| `src/http/`               | `parsePath`, `splitName`, the router, `json` and `failure`                                                 |
+| `src/npm/`                | the npm read routes (`handle*`), packument rendering and its KV cache, R2 keys                             |
+| `src/publish/`            | publish and dist-tag writes, publish auth, tarball reader, digests, content checks                         |
+| `src/oidc/`               | GitHub OIDC verification, the key set, publisher matching, the token exchange                              |
+| `src/access/`             | the `LicenceCheck` port, the edge-cache wrapper, the read rule (`gate`, `readAccess`)                      |
+| `src/licence/`            | the licence API, `LicenceStore`, `D1LicenceCheck`, token minting, grant folding                            |
+| `src/signing/`            | the ECDSA P-256 signer, keyids, DER signatures                                                             |
+| `src/catalogue/`          | the catalogue API and entitlements                                                                         |
+| `src/store/`              | `RegistryStore`, every D1 query                                                                            |
+| `src/settings/`           | the vars parsed into settings                                                                              |
+| `src/bytes/`              | base64, base64url, hex, SHA-256 of a token                                                                 |
+| `src/constants/`          | Cache-Control values, the kinds list, the publish token prefix                                             |
+| `src/interfaces/`         | one shape per file: bindings, env, settings, catalogue, D1 rows, verdicts                                  |
+| `src/__tests__/fixtures/` | D1 over node:sqlite with the migrations, R2/KV/cache/licence fakes, tarballs, a registry                   |
 
 One exported declaration per file, named after it (ADR 0305 rules 10 to 13).
 

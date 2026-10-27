@@ -32,6 +32,8 @@ The Stackra npm registry, Cloudflare Worker `stackra-registry` at `npm.stackra.f
   writes with its receipt and audit row in one batch, and never sets `licences.internal`.
 - An `internal` name (scope rule or `name_rules` row) is read only by a licence with `internal` set; never let a
   customer grant cover it.
+- `@figentra` (migration 0003) is an `internal` scope for the brand kits; its publisher `figentra/brand` covers the
+  whole scope. Its grants are inserted by the owner, never through the licence API.
 - An `open` scope never reads the Authorization header. A `licensed` scope reads licences only through the
   `LicenceCheck` port (`src/access/licence-check.port.ts`).
 - Responses use `json`/`failure` (npm's `{ error }` shape); Cache-Control follows ADR 0453 decision 5.
