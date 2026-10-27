@@ -94,9 +94,9 @@ interface Dialog {
   invite?: SipMessage;
   run?: AbortController;
   /** Settles a REFER's outcome from its NOTIFY. */
-  referred?: (ok: boolean) => void;
+  referred?: ((ok: boolean) => void) | undefined;
   /** Stops the 200 OK retransmission of an incoming INVITE. */
-  acked?: () => void;
+  acked?: (() => void) | undefined;
 }
 
 /**

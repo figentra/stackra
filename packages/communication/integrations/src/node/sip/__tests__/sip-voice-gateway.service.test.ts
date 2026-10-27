@@ -186,7 +186,7 @@ function hostOf(answers: Readonly<Record<string, readonly CallInstruction[]>>) {
       speech,
       meter,
       session: (reference) => ({ drivers: {}, usage: { reference } }) as never,
-      post: async (url, params) => {
+      post: async (url, params): Promise<string> => {
         posts.push({ url, params });
         const steps = answers[url];
         return steps === undefined ? "" : gateway.answer(steps).body;

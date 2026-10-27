@@ -4,8 +4,8 @@
  *          the region map's first provider, the tenant's own one first), `zeroRetention` skips a provider that keeps
  *          audio, no provider refuses; `listen` and `speak` stream through and meter the stream's seconds once, also
  *          when the consumer stops early; `listenOn` and `sayOn` run over an `AudioDevice`.
- * Boundary: test only; the store, the region map and the meter are in-test stand-ins, the Connections are made with
- *           `Object.create` as in the resolver's tests.
+ * Boundary: test only; the store, the region map and the meter are in-test stand-ins, the Connections are
+ *           constructed as `hydrateConnection` does, so their field initialisers (`retainsAudio`) run.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0376 (decisions 2 and 7); R3-SO-11.
  */
@@ -66,8 +66,8 @@ class BetaSpeech extends EchoSpeech {
   retainsAudio = false;
 }
 
-const make = <C extends EchoSpeech>(type: { readonly prototype: C }, label: string): C =>
-  Object.assign(Object.create(type.prototype) as C, { label });
+const make = <C extends EchoSpeech>(Type: new () => C, label: string): C =>
+  Object.assign(new Type(), { label });
 
 const DRIVERS = { alpha: AlphaSpeech, beta: BetaSpeech } as const;
 
@@ -75,9 +75,12 @@ const DRIVERS = { alpha: AlphaSpeech, beta: BetaSpeech } as const;
 class Regions extends RegionMapSource {
   private readonly code: string | undefined;
 
-  constructor(code: string | undefined = "xx-1") {
+  /**
+   * @param code - the region; `null` for none (an `undefined` argument would take the default).
+   */
+  constructor(code: string | null = "xx-1") {
     super();
-    this.code = code;
+    this.code = code ?? undefined;
   }
 
   region(): string | undefined {
@@ -139,26 +142,30 @@ describe("SpeechService", () => {
   it("serves from the region's platform Connection, the tenant's own first", async () => {
     const { meter } = recordingMeter();
     const platform = new SpeechService(storeWith(), new Regions(), meter);
-    expect((await platform.connection({ drivers: DRIVERS, usage })).label).toBe("alpha-platform");
+    expect(await platform.connection({ drivers: DRIVERS, usage })).toMatchObject({
+      label: "alpha-platform",
+    });
     const own = new SpeechService(
       storeWith([[BetaSpeech, make(BetaSpeech, "beta-own")]]),
       new Regions(),
       meter,
     );
-    expect((await own.connection({ drivers: DRIVERS, usage })).label).toBe("beta-own");
+    expect(await own.connection({ drivers: DRIVERS, usage })).toMatchObject({ label: "beta-own" });
   });
 
   it("skips a provider that keeps audio when zero retention is asked, and refuses when none fits", async () => {
     const { meter } = recordingMeter();
     const service = new SpeechService(storeWith(), new Regions(), meter);
-    expect((await service.connection({ drivers: DRIVERS, usage, zeroRetention: true })).label).toBe(
-      "beta-platform",
-    );
+    expect(
+      await service.connection({ drivers: DRIVERS, usage, zeroRetention: true }),
+    ).toMatchObject({
+      label: "beta-platform",
+    });
     await expect(
       service.connection({ drivers: { alpha: AlphaSpeech }, usage, zeroRetention: true }),
     ).rejects.toBeInstanceOf(NoProviderError);
     await expect(
-      new SpeechService(storeWith(), new Regions(undefined), meter).connection({
+      new SpeechService(storeWith(), new Regions(null), meter).connection({
         drivers: DRIVERS,
         usage,
       }),
