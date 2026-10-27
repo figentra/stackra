@@ -27,12 +27,13 @@ export async function generateStoreFrames(
   for (const set of input.store)
     for (const frame of DEVICE_FRAMES)
       for (const [index, { screen, text }] of set.captions.entries()) {
+        const screenshot = set.screenshots.get(screen);
         const svg = storeFrameSvg({
           theme: input.theme,
           frame,
           locale: set.locale,
           caption: text,
-          screenshot: set.screenshots.get(screen),
+          ...(screenshot ? { screenshot } : {}),
         });
         out.push({
           path: `store/${set.app}/${set.locale}/${frame.id}/${String(index + 1).padStart(2, "0")}-${screen}.png`,

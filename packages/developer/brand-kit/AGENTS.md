@@ -54,3 +54,8 @@ shape (ADR 0294, 0305). Entries `./contracts`, `.` and the `stackra-brand-kit` b
 - Versions are `catalog:<name>` or `workspace:*` only.
 - No TypeScript `enum` (use `Enum.of`), no `#private` fields, no parameter properties.
 - One declaration per file.
+
+## PII
+
+None. The brand kit reads a kit's brand data (names, lines, logo marks, theme tokens), store captions and store
+screenshots, and writes generated assets and their manifest; it handles no personal data and no secret value.
