@@ -4,14 +4,14 @@
  *          patch its expiry and metadata, check out a signed file with its entitlements, and suspend it.
  * Boundary: named `keygen` by its file prefix; `IssuerConfig.driver` picks it. The origin and account come from
  *           `LicensingConfig` (the ones the verifier reads), the product token from `IssuerConfig`. An unset account or
- *           token is a configuration bug, refused with a `RangeError` before any call. Sends through the transport it is
- *           given (the global fetch when none); never logs a body or the token. Any other failure is
+ *           token is a configuration bug, refused with a `RangeError` before any call. Sends through `createTransport()`
+ *           (the global fetch, read on every send); never logs a body or the token. Any other failure is
  *           `LicenceIssuerUnavailableError` with the status only.
  * Runtime: isomorphic
  * Governing contract: ADR 0178 (decisions 1 to 3); ADR 0260 (calls go through the transport); ADR 0263; ADR 0173.
  */
 import { Driver } from "@stackra/container";
-import { createTransport, type Transport } from "@stackra/transport";
+import { createTransport } from "@stackra/transport";
 
 import type { IssuerConfig } from "#config/issuer.config";
 import type { LicensingConfig } from "#config/licensing.config";
@@ -37,19 +37,17 @@ export class KeygenLicenceIssuerDriver extends Driver(LicenceIssuer) {
   /** The product token. */
   private readonly issuer: IssuerConfig;
 
-  /** What the requests go through. */
-  private readonly send: Transport;
+  /** What the requests go through: the global fetch. */
+  private readonly send = createTransport();
 
   /**
    * @param licensing - the Keygen origin and account.
    * @param issuer - the product token.
-   * @param transport - what the requests go through; the global fetch when left out.
    */
-  constructor(licensing: LicensingConfig, issuer: IssuerConfig, transport?: Transport) {
+  constructor(licensing: LicensingConfig, issuer: IssuerConfig) {
     super();
     this.licensing = licensing;
     this.issuer = issuer;
-    this.send = transport ?? createTransport();
   }
 
   /** Creates the licence under `draft.policyId`; returns Keygen's id. */

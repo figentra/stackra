@@ -6,13 +6,14 @@
  *          issue, renew (and set grants) and suspend; `checkOut` and a draft without `holderRef` or `grants` refuse
  *          with a `RangeError`; an unset issuer token refuses before any call; a non-2xx answer, a network failure
  *          and a body without a licence id refuse with `LicenceIssuerUnavailableError`.
- * Boundary: test only; a stub transport stands in for the registry Worker.
+ * Boundary: test only; a stub transport, stubbed in as the global fetch, stands in for the registry Worker.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0453 (decisions 14 and 15); ADR 0260.
  */
 import { buildConfig, MemorySecretStoreDriver } from "@stackra/config";
-import { describe, expect, it } from "@stackra/testing";
+import { afterEach, describe, expect, it } from "@stackra/testing";
 import type { Transport } from "@stackra/transport";
+import { vi } from "vitest";
 
 import { IssuerConfig } from "#config/issuer.config";
 import type { RegistryLicence } from "#contracts/types/registry-licence.type";
@@ -46,12 +47,12 @@ function registry(body: unknown = LICENCE, status = 200): { send: Transport; sen
 
 /** The driver over `ORIGIN` with issuer token `tok` from the secret store. */
 function issuer(send: Transport, issuerToken = "tok"): RegistryLicenceIssuerDriver {
+  vi.stubGlobal("fetch", send);
   return new RegistryLicenceIssuerDriver(
     buildConfig(IssuerConfig, {
       values: { registryUrl: ORIGIN },
       secrets: new MemorySecretStoreDriver().set("REGISTRY_ISSUER_TOKEN", issuerToken),
     }),
-    send,
   );
 }
 
@@ -65,6 +66,10 @@ const refusal = (promise: Promise<unknown>): Promise<unknown> =>
 const expiry = new Date("2027-11-01T00:00:00.000Z");
 
 describe("RegistryLicenceIssuerDriver", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it("is a LicenceIssuer", () => {
     expect(issuer(registry().send)).toBeInstanceOf(LicenceIssuer);
   });

@@ -5,14 +5,15 @@
  *          expiry and metadata; check-out asks for entitlements and the TTL and returns the certificate; suspend posts
  *          the action; an unset account or token refuses with a `RangeError` before any call; a non-2xx answer, a
  *          network failure and a body without the id or certificate refuse with `LicenceIssuerUnavailableError`.
- * Boundary: test only; a stub transport stands in for Keygen.
+ * Boundary: test only; a stub transport, stubbed in as the global fetch, stands in for Keygen.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0178 (decisions 1 to 3); ADR 0260.
  */
 import { buildConfig, MemorySecretStoreDriver } from "@stackra/config";
 import { isRefusal } from "@stackra/errors";
-import { describe, expect, it } from "@stackra/testing";
+import { afterEach, describe, expect, it } from "@stackra/testing";
 import type { Transport } from "@stackra/transport";
+import { vi } from "vitest";
 
 import { IssuerConfig } from "#config/issuer.config";
 import { LicensingConfig } from "#config/licensing.config";
@@ -38,12 +39,12 @@ function issuer(
   account = "acme",
   productToken = "tok",
 ): KeygenLicenceIssuerDriver {
+  vi.stubGlobal("fetch", send);
   return new KeygenLicenceIssuerDriver(
     buildConfig(LicensingConfig, { values: { apiUrl: "https://licences.acme.example", account } }),
     buildConfig(IssuerConfig, {
       secrets: new MemorySecretStoreDriver().set("KEYGEN_PRODUCT_TOKEN", productToken),
     }),
-    send,
   );
 }
 
@@ -63,6 +64,10 @@ const unreachable: Transport = async () => {
 const expiry = new Date("2027-01-01T00:00:00.000Z");
 
 describe("KeygenLicenceIssuerDriver", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it("is a LicenceIssuer", () => {
     expect(issuer(keygen({}).send)).toBeInstanceOf(LicenceIssuer);
   });

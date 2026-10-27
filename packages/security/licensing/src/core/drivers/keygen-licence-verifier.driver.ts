@@ -4,12 +4,11 @@
  *          verify key, and `checkLicenceKey` against the configured account and API origin.
  * Boundary: reads `LicensingConfig` only; the origin is configuration (a self-hosted Keygen sets `apiUrl`). An unset
  *           account or verify key is a configuration bug, refused with a `RangeError` before any call. The online check
- *           goes through the transport it is given (the global fetch when none).
+ *           goes through `checkLicenceKey`'s default transport (the global fetch).
  * Runtime: isomorphic
  * Governing contract: ADR 0178 (decisions 1, 2 and 5); ADR 0260 (calls go through the transport); owner round 3 #37.
  */
 import { Driver } from "@stackra/container";
-import type { Transport } from "@stackra/transport";
 
 import type { LicensingConfig } from "#config/licensing.config";
 import { checkLicenceKey } from "#core/functions/check-licence-key.function";
@@ -29,17 +28,12 @@ export class KeygenLicenceVerifierDriver extends Driver(LicenceVerifier) {
   /** The account, the verify key and the API origin. */
   private readonly config: LicensingConfig;
 
-  /** The transport of the online check; the global fetch when absent. */
-  private readonly transport: Transport | undefined;
-
   /**
    * @param config - the licensing configuration.
-   * @param transport - what the online check sends through; the global fetch when left out.
    */
-  constructor(config: LicensingConfig, transport?: Transport) {
+  constructor(config: LicensingConfig) {
     super();
     this.config = config;
-    this.transport = transport;
   }
 
   /**
@@ -71,7 +65,6 @@ export class KeygenLicenceVerifierDriver extends Driver(LicenceVerifier) {
       licenceKey,
       baseUrl: this.config.apiUrl,
       ...(fingerprint === undefined ? {} : { fingerprint }),
-      ...(this.transport === undefined ? {} : { transport: this.transport }),
     });
   }
 }

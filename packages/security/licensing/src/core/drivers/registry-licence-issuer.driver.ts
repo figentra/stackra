@@ -9,13 +9,14 @@
  *           port's draft carries the registry fields in its metadata (`holderRef`, `grants`, optional
  *           `idempotencyKey`); a draft without them is a `RangeError`. `checkOut` is refused: an offline licence file
  *           for on-prem comes from the `keygen` driver (ADR 0453 decision 15 keeps its own signing key, not built
- *           here). Never logs a body or a token; any failed call is `LicenceIssuerUnavailableError` with the status.
+ *           here). Sends through `createTransport()` (the global fetch, read on every send). Never logs a body or
+ *           a token; any failed call is `LicenceIssuerUnavailableError` with the status.
  * Runtime: isomorphic
  * Governing contract: ADR 0453 (decisions 13 to 15); ADR 0178; ADR 0260 (calls go through the transport); ADR 0263.
  */
 import { Driver } from "@stackra/container";
 import type { Json } from "@stackra/contracts";
-import { createTransport, type Transport } from "@stackra/transport";
+import { createTransport } from "@stackra/transport";
 
 import type { IssuerConfig } from "#config/issuer.config";
 import type { RegistryLicence } from "#contracts/types/registry-licence.type";
@@ -68,17 +69,15 @@ export class RegistryLicenceIssuerDriver extends Driver(LicenceIssuer) {
   /** The registry origin and the issuer token. */
   private readonly issuer: IssuerConfig;
 
-  /** What the requests go through. */
-  private readonly send: Transport;
+  /** What the requests go through: the global fetch. */
+  private readonly send = createTransport();
 
   /**
    * @param issuer - the registry origin and the issuer token.
-   * @param transport - what the requests go through; the global fetch when left out.
    */
-  constructor(issuer: IssuerConfig, transport?: Transport) {
+  constructor(issuer: IssuerConfig) {
     super();
     this.issuer = issuer;
-    this.send = transport ?? createTransport();
   }
 
   /**
