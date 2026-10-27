@@ -6,7 +6,7 @@ Purpose: the package's reader guide: Integrations, Connections and their stores,
          contracts (commerce, EDI, fraud scoring, document stores) and the gateway that resolves them, wallet pass
          issuing (`./node`), the voice channel (Speech port, meters, recording consent, handover, the SIP trunk
          driver in `./node`), accounting journals (account mapping per Connection, the recorded-case runner of
-         accounting drivers), and what is not here.
+         accounting drivers), the webhook recipe types, and what is not here.
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
 Governing contract: ADR 0308; ADR 0348; ADR 0355; ADR 0356; ADR 0376; ADR 0443; ADR 0447.
@@ -46,6 +46,7 @@ voice meter writes to) and `@stackra/market-packs` (`valueOf`); `./node` adds `@
 | `IntegrationRuntime`                                                                                                    | builds every Integration and its managed clients; holds and renews OAuth tokens                      |
 | `registerConnections`                                                                                                   | links each connection class to its Integration and key; gen emits the call                           |
 | `resolvePlaceholders`                                                                                                   | fills `{field}` placeholders, for `@stackra/webhooks`' secret lookup                                 |
+| types `IntegrationWebhooks`, `WebhookSignature`, `WebhookSchemeRecipe`                                                  | the `webhooks` option: an HMAC body recipe (`signature`) or a non-HMAC scheme's data (`recipe`)      |
 | `ProviderRefusedError`, `ProviderUnavailableError`                                                                      | a provider's 4xx, and spent retries or a full bucket                                                 |
 | `ConnectionCheckFailedError`, `ConnectionAmbiguousError`, `InvalidSignatureError`                                       | a failed `check()`, an ambiguous `find`, a webhook that does not verify                              |
 | `./testing`: `fakeIntegrationApi`, `makeConnection`, `.withIntegrationApi`, `.withConnection`                           | fakes of the managed client and the store for tests                                                  |
@@ -386,7 +387,9 @@ record and an array repeats its key.
 ## Not here
 
 - The webhook kind and its verification: `WebhookEvent` is `@stackra/events`'; verifying and routing is
-  `@stackra/webhooks`, which reads `IntegrationWebhooks`.
+  `@stackra/webhooks`, which reads `IntegrationWebhooks`. A scheme that is not an HMAC over the raw body (a body token,
+  an AES-GCM body, an ordered-field HMAC, a keyed field digest, a shared header, a JWT HS256) declares its data under
+  `webhooks.recipe` (`WebhookSchemeRecipe`); the vendor recipes themselves are OS integrations data (ADR 0443 d7).
 - The OAuth consent flow (authorize URL, PKCE, code exchange) and the console's connect pages: the integrations service.
 - Lifecycle events (`integrations.connection.*.v1`), tombstones and encryption at rest: the store host.
 - Provider drivers of other packages' ports: SMS, WhatsApp, push, mail and voice drivers are `@stackra/notifications`';

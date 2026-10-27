@@ -4,7 +4,8 @@
  *          a connection's against that connection's secret field, with no fallback either way; a verified delivery is
  *          written to the outbox as its event class, keyed by the webhook id, with the connection in its metadata;
  *          Svix header names verify; an `hmac` Integration verifies by its recipe and keys the event by the payload's
- *          id; an unknown event type is dropped; an unknown Integration, a connection URL of a platform-only
+ *          id; an `aes_gcm_body` Integration (a regional gateway scheme, STA-1357) is parsed from its plaintext and
+ *          keyed by the payload's numeric id; an unknown event type is dropped; an unknown Integration, a connection URL of a platform-only
  *          Integration and a bad signature are refused before anything is written.
  * Boundary: test only; the connection store, the outbox and the clock are in-test fakes, the secret store a map of test
  *           values, and Web Crypto runs for real.
@@ -103,6 +104,32 @@ class GatewayIntegration extends Integration({
   webhookSecret!: string;
 }
 
+class SealedIntegration extends Integration({
+  provider: "sealed",
+  category: IntegrationCategory.Payments,
+  levels: [ConnectionLevel.Scope],
+  auth: { type: AuthType.None },
+  webhooks: {
+    scheme: SignatureScheme.AesGcmBody,
+    secret: "{webhookSecret}",
+    eventType: { path: "type" },
+    eventId: { path: "payload.id" },
+    recipe: { ivHeader: "x-initialization-vector", tagHeader: "x-authentication-tag" },
+  },
+}) {
+  @Secret("SEALED_WEBHOOK_SECRET")
+  webhookSecret!: string;
+}
+
+/** The sealed gateway's hex AES-256 key (a test value). */
+const SEALED_KEY = "00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff";
+
+class SealedPaid extends WebhookEvent<SealedIntegration>({ type: "PAYMENT" }) {
+  type!: string;
+
+  payload!: { id: number };
+}
+
 class PaymentSucceeded extends WebhookEvent<GatewayIntegration>({ type: "payment.succeeded" }) {
   id!: string;
 
@@ -123,11 +150,13 @@ registerSchemas([
   [MailArrived, z.object({ event: z.object({ name: z.string() }), mailId: z.string() })],
   [StatusChanged, z.object({ event: z.object({ name: z.string() }) })],
   [PaymentSucceeded, z.object({ id: z.string(), type: z.string() })],
+  [SealedPaid, z.object({ type: z.string(), payload: z.object({ id: z.number() }) })],
 ]);
 registerWebhookEvents([
   { event: MailArrived, integration: InboxIntegration, connection: InboxConnection },
   { event: StatusChanged, integration: StatusIntegration },
   { event: PaymentSucceeded, integration: GatewayIntegration },
+  { event: SealedPaid, integration: SealedIntegration },
 ]);
 
 /** Answers the platform's test secrets by name. */
@@ -137,7 +166,9 @@ class TestSecretStore extends SecretStore {
       name === "STATUS_WEBHOOK_SECRET" ||
       name === "GATEWAY_WEBHOOK_SECRET"
       ? PLATFORM_SECRET
-      : undefined;
+      : name === "SEALED_WEBHOOK_SECRET"
+        ? SEALED_KEY
+        : undefined;
   }
 }
 
@@ -159,6 +190,13 @@ function setup() {
   );
   return { receiver, connections, outbox };
 }
+
+/** The bytes of a hex text. */
+const bytes = (hex: string) =>
+  new Uint8Array(hex.match(/../g)?.map((pair) => Number.parseInt(pair, 16)) ?? []);
+/** The hex of `data`. */
+const toHex = (data: Uint8Array) =>
+  Array.from(data, (byte) => byte.toString(16).padStart(2, "0")).join("");
 
 /** A body of event type `name`, signed with `secret` as message `id`. */
 async function delivery(name: string, secret: string, id = "msg_1") {
@@ -247,6 +285,44 @@ describe(WebhookReceiver, () => {
         integration: GatewayIntegration,
         headers: { "gateway-signature": `t=${t},v1=${"0".repeat(64)}` },
         body,
+      }),
+    ).rejects.toBeInstanceOf(InvalidSignatureError);
+  });
+
+  it("parses an aes_gcm_body delivery from its plaintext and keys it by the payload's numeric id", async () => {
+    const { receiver, outbox } = setup();
+    const plain = JSON.stringify({ type: "PAYMENT", payload: { id: 42 } });
+    const iv = "0102030405060708090a0b0c";
+    const key = await crypto.subtle.importKey(
+      "raw",
+      bytes(SEALED_KEY),
+      { name: "AES-GCM" },
+      false,
+      ["encrypt"],
+    );
+    const sealed = new Uint8Array(
+      await crypto.subtle.encrypt(
+        { name: "AES-GCM", iv: bytes(iv) },
+        key,
+        new TextEncoder().encode(plain),
+      ),
+    );
+    const headers = {
+      "x-initialization-vector": iv,
+      "x-authentication-tag": toHex(sealed.slice(-16)),
+    };
+    const event = await receiver.receive({
+      integration: SealedIntegration,
+      headers,
+      body: toHex(sealed.slice(0, -16)),
+    });
+    expect(event).toBeInstanceOf(SealedPaid);
+    expect(outbox.write).toHaveBeenCalledWith([{ event, meta: { id: "42", occurredAt: SENT } }]);
+    await expect(
+      receiver.receive({
+        integration: SealedIntegration,
+        headers,
+        body: toHex(sealed.slice(1, -16)),
       }),
     ).rejects.toBeInstanceOf(InvalidSignatureError);
   });

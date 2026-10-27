@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: the consumer contract of the `.` entry: `SignatureScheme` (which the template's Resend integration imports)
  *          is exported with the signer, the verifier, the inbound registration and receiver, the `http` sender and the
- *          delivery refusal and Chatwoot's signature recipe (ADR 0448), and nothing else is a value.
+ *          delivery refusal, Chatwoot's signature recipe (ADR 0448) and the six regional gateway verifiers (STA-1357),
+ *          and nothing else is a value.
  * Boundary: test only; imports the stand-in barrel through its `#core` alias.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0294 (decision 15).
@@ -21,10 +22,16 @@ describe("@stackra/webhooks", () => {
       "WebhookDeliveryFailedError",
       "WebhookReceiver",
       "attemptWebhook",
+      "decryptAesGcmBody",
       "registerWebhookEvents",
       "s3TargetOf",
       "signWebhook",
+      "verifyBodyToken",
       "verifyHmacWebhook",
+      "verifyJwtHs256",
+      "verifyKeyedFieldDigest",
+      "verifyOrderedFieldHmac",
+      "verifySharedHeader",
       "verifyWebhook",
       "webhookBody",
       "webhookObjectKey",

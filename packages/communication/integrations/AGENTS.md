@@ -75,6 +75,9 @@ Provider integrations, connections and their store (ADR 0308). Member at `packag
   references, webhook signing, `ManagedProvisioning`, `ProviderDefaults` and `ProviderResolver`.
   `pin: ProviderMode.Managed` is how a platform-only check (Figentra's KYB and KYC of a tenant) keeps a tenant's own
   Connection out; never filter the list by hand for that.
+- `IntegrationWebhooks` is data only: `scheme` stays a string (the codes are `@stackra/webhooks`'), `signature` is
+  an HMAC body recipe and `recipe` (`WebhookSchemeRecipe`) the data of a non-HMAC scheme; `@stackra/webhooks`'
+  `registerWebhookEvents` checks the fields each scheme needs. Never put a vendor's recipe values here.
 - `ClientConnectionHostDriver` takes the service's refs as configuration (`ConnectionHostCalls`); never hard-code a
   wire key or route of the integrations service here. `ConnectionHost#store` keeps `credentialsExpireAt` optional and
   last, so an older host still implements it.

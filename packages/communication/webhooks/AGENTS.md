@@ -44,7 +44,13 @@ Standard Webhooks signing and verification, the inbound receiver of `WebhookEven
 - Verify before parsing: `WebhookReceiver` never reads a field of a body whose signature failed. A connection's URL
   resolves its secret on the connection only, the platform's URL on the Integration's `@Secret` field only; never add a
   fallback between the two.
-- Compare signatures only through `crypto.subtle.verify` (constant time); never compare signature strings.
+- Compare signatures only through `crypto.subtle.verify` (constant time); never compare signature strings. A token,
+  shared value or plain digest is compared through `sameBytes` (MACs both under a one-call random key, then verifies).
+- The regional gateway schemes (`body_token`, `aes_gcm_body`, `ordered_field_hmac`, `keyed_field_digest`,
+  `shared_header`, `jwt_hs256`, STA-1357) read their data from `webhooks.recipe`; `authenticBody` is the one place the
+  receiver picks a verifier, and `RECIPE_FIELDS` in `registerWebhookEvents` lists the fields each needs. They stay
+  marked certification pending (owner decision D3) until certified against a sandbox; vendor field lists and header
+  names are OS integrations data, never constants here.
 - A provider whose signature is an HMAC over the raw body and headers is Integration data: `scheme: "hmac"` with its
   `webhooks.signature` recipe, verified by `verifyHmacWebhook`. Never add a per-provider verifier for such a scheme;
   add a `SignatureScheme` code only for a scheme a recipe cannot describe. A recipe this package ships for a provider

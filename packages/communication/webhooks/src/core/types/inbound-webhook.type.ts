@@ -1,12 +1,13 @@
 /**
  * Stackra file contract:
  * Purpose: `InboundWebhook`, one provider webhook as the generated route hands it to `WebhookReceiver.receive`: the
- *          Integration its path names, the connection id of a connection's URL, the headers and the raw body.
+ *          Integration its path names, the connection id of a connection's URL, the headers, the query parameters (a
+ *          scheme that signs in the URL: Paymob's `hmac`, Tamara's `tamaraToken`) and the raw body.
  * Boundary: a type only. The body is the raw text, never parsed JSON, because the signature covers its exact bytes.
  *           Header names are lowercase. `connectionId` comes from the URL (`/webhooks/<module>/<name>/:connectionId`),
  *           never from the body; absent, the delivery is for the platform's own account.
  * Runtime: isomorphic
- * Governing contract: ADR 0308 (rules 15 and 16); the Standard Webhooks specification.
+ * Governing contract: ADR 0308 (rules 15 and 16); the Standard Webhooks specification; STA-1357.
  */
 import type { IntegrationClass } from "@stackra/integrations";
 
@@ -20,6 +21,9 @@ export interface InboundWebhook {
 
   /** The request's headers, lowercase names. */
   readonly headers: Readonly<Record<string, string | undefined>>;
+
+  /** The request's query parameters, decoded; only a scheme that reads one needs them. */
+  readonly query?: Readonly<Record<string, string | undefined>>;
 
   /** The raw body, exactly as received. */
   readonly body: string;

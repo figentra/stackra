@@ -2,11 +2,11 @@
  * Stackra file contract:
  * Purpose: unit tests of `registerWebhookEvents`: a row is routed by its Integration and provider event type with the
  *          Integration's `webhooks` option and connection class; registering it again changes nothing; a class of the
- *          wrong kind, an Integration with no `webhooks` or an unknown scheme, a second connection class and a second
- *          class for one event type are refused.
+ *          wrong kind, an Integration with no `webhooks` or an unknown scheme, a regional gateway scheme missing a
+ *          `recipe` field it reads, a second connection class and a second class for one event type are refused.
  * Boundary: test only; the routing table is process-wide, so each case uses its own Integration.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0308 (rules 2, 15 and 16); ADR 0224 (decision 2).
+ * Governing contract: ADR 0022; ADR 0308 (rules 2, 15 and 16); ADR 0224 (decision 2); STA-1357.
  */
 import { WebhookEvent } from "@stackra/events";
 import {
@@ -125,6 +125,45 @@ describe(registerWebhookEvents, () => {
         },
       ]),
     ).toThrow("webhooks.signature");
+  });
+
+  it("refuses a regional gateway scheme missing a recipe field it reads, and takes it once present", () => {
+    const Received = eventFor("payment.paid");
+    const ordered = { ...WEBHOOKS, scheme: SignatureScheme.OrderedFieldHmac };
+    expect(() =>
+      registerWebhookEvents([
+        { event: Received, integration: integrationWith("pay-none", ordered) },
+      ]),
+    ).toThrow("webhooks.recipe.fields");
+    expect(() =>
+      registerWebhookEvents([
+        {
+          event: Received,
+          integration: integrationWith("pay-locator", {
+            ...ordered,
+            recipe: { fields: ["obj.id"], algorithm: "SHA-512" },
+          }),
+        },
+      ]),
+    ).toThrow("webhooks.recipe.query or header or path");
+    expect(() =>
+      registerWebhookEvents([
+        {
+          event: Received,
+          integration: integrationWith("pay-aes", {
+            ...WEBHOOKS,
+            scheme: SignatureScheme.AesGcmBody,
+            recipe: { ivHeader: "x-initialization-vector" },
+          }),
+        },
+      ]),
+    ).toThrow("webhooks.recipe.tagHeader");
+    const Complete = integrationWith("pay-complete", {
+      ...ordered,
+      recipe: { query: "hmac", fields: ["obj.id"], algorithm: "SHA-512" },
+    });
+    registerWebhookEvents([{ event: Received, integration: Complete }]);
+    expect(WEBHOOK_EVENTS.byIntegration.get(Complete)?.types.get("payment.paid")).toBe(Received);
   });
 
   it("refuses a second connection class and a second class for one event type", () => {

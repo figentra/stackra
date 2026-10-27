@@ -11,10 +11,12 @@
  *           and reaches listeners as `ctx.connection`. An event type with no class is acknowledged and dropped, so the
  *           provider never retries it. The scheme is the Integration's: Standard Webhooks, or `hmac` with the recipe in
  *           its `webhooks.signature` (then the event id is the recipe's id header or the payload's `eventId` path, and
- *           the event occurred when it was received).
+ *           the event occurred when it was received), or a regional gateway scheme with its data in `webhooks.recipe`
+ *           (`authenticBody` picks the verifier; an `aes_gcm_body` request is parsed from its plaintext; the event id
+ *           is the payload's `eventId` path and the event occurred when it was received).
  * Runtime: isomorphic
  * Governing contract: ADR 0308 (rules 15, 16 and 20); ADR 0224 (decision 4, as amended); ADR 0078 (decision 4: inbox
- *                     dedup); ADR 0173 (secrets read blind).
+ *                     dedup); ADR 0173 (secrets read blind); STA-1357 (the regional gateway schemes).
  */
 import { Secret } from "@stackra/config";
 import type { SecretStore } from "@stackra/config/contracts";
@@ -31,24 +33,13 @@ import {
 
 import { WEBHOOK_EVENTS } from "#core/constants/webhook-events.constant";
 import { SignatureScheme } from "#core/enums/signature-scheme.enum";
-import { verifyHmacWebhook } from "#core/functions/verify-hmac-webhook.function";
-import { verifyWebhook } from "#core/functions/verify-webhook.function";
+import { authenticBody } from "#core/functions/authentic-body.function";
+import { valueAt } from "#core/functions/value-at.function";
 import type { InboundWebhook } from "#core/types/inbound-webhook.type";
 
 /** A string worth verifying with: not empty. */
 const textOf = (value: unknown): string | undefined =>
   typeof value === "string" && value !== "" ? value : undefined;
-
-/** The value at a dotted `path` of a parsed payload. */
-function valueAt(payload: unknown, path: string): unknown {
-  return path
-    .split(".")
-    .reduce<unknown>(
-      (value, key) =>
-        typeof value === "object" && value !== null ? Reflect.get(value, key) : undefined,
-      payload,
-    );
-}
 
 /**
  * Verifies, routes and records inbound webhooks.
@@ -97,7 +88,7 @@ export class WebhookReceiver extends Service {
    * @throws TypeError when the Integration has no registered webhook event or its secret placeholder has no value.
    */
   async receive(request: InboundWebhook): Promise<Event | undefined> {
-    const { integration, connectionId, headers, body } = request;
+    const { integration, connectionId, headers } = request;
     const route = WEBHOOK_EVENTS.byIntegration.get(integration);
     if (route === undefined)
       throw new TypeError(
@@ -118,13 +109,9 @@ export class WebhookReceiver extends Service {
     const { webhooks } = route;
     const secret = resolvePlaceholders(webhooks.secret, lookup);
     const now = this.clock.now();
-    const recipe = webhooks.scheme === SignatureScheme.Hmac ? webhooks.signature : undefined;
-    const verified =
-      recipe === undefined
-        ? await verifyWebhook(headers, body, [secret], now)
-        : await verifyHmacWebhook(headers, body, recipe, [secret], now);
-    if (!verified) throw InvalidSignatureError.create();
-    const payload: unknown = JSON.parse(body);
+    const text = await authenticBody(request, webhooks, [secret], now);
+    if (text === undefined) throw InvalidSignatureError.create();
+    const payload: unknown = JSON.parse(text);
     const type = valueAt(payload, webhooks.eventType.path);
     const eventClass = typeof type === "string" ? route.types.get(type) : undefined;
     if (eventClass === undefined) return undefined;
@@ -132,16 +119,18 @@ export class WebhookReceiver extends Service {
     const event = (eventClass as unknown as { create(values: unknown): Event }).create(payload);
     let id: string;
     let occurredAt: Date;
-    if (recipe === undefined) {
+    if (webhooks.scheme === SignatureScheme.StandardWebhooks) {
       id = headers["webhook-id"] ?? headers["svix-id"] ?? "";
       occurredAt = new Date(
         Number(headers["webhook-timestamp"] ?? headers["svix-timestamp"]) * 1000,
       );
     } else {
-      const named = recipe.idHeader === undefined ? undefined : headers[recipe.idHeader];
+      const idHeader = webhooks.signature?.idHeader;
+      const named = idHeader === undefined ? undefined : headers[idHeader];
       const found =
         webhooks.eventId === undefined ? undefined : valueAt(payload, webhooks.eventId.path);
-      id = named ?? (typeof found === "string" ? found : "");
+      // a gateway may number its events (Paymob's `obj.id`)
+      id = named ?? (typeof found === "string" || typeof found === "number" ? String(found) : "");
       occurredAt = now;
     }
     await this.outbox.write([

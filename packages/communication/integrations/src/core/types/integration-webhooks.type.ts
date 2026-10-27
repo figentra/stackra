@@ -7,10 +7,12 @@
  *           connection's URL it resolves on the connection only, on the platform's URL on the Integration only. A
  *           secret that a connection's `subscribe()` returns is written into the field this placeholder names. A
  *           scheme whose recipe is data (`hmac`) reads `signature`; the event id is the `webhook-id` header, else the
- *           payload's `eventId` path.
+ *           payload's `eventId` path. A scheme that is not an HMAC over the raw body (`body_token`, `aes_gcm_body`,
+ *           `ordered_field_hmac`, `keyed_field_digest`, `shared_header`, `jwt_hs256`) reads `recipe`.
  * Runtime: isomorphic
- * Governing contract: ADR 0308 (rules 15 to 17); ADR 0224 (webhooks).
+ * Governing contract: ADR 0308 (rules 15 to 17); ADR 0224 (webhooks); STA-1357 (the regional gateways' schemes).
  */
+import type { WebhookSchemeRecipe } from "#core/types/webhook-scheme-recipe.type";
 import type { WebhookSignature } from "#core/types/webhook-signature.type";
 
 /**
@@ -34,4 +36,7 @@ export interface IntegrationWebhooks {
 
   /** The HMAC recipe of a scheme that reads it from data (`hmac`). */
   readonly signature?: WebhookSignature;
+
+  /** The data of a scheme that is not an HMAC over the raw body (where the token sits, the signed fields, the hash). */
+  readonly recipe?: WebhookSchemeRecipe;
 }

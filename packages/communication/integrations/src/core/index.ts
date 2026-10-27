@@ -87,6 +87,7 @@ export type { RateLimit } from "#core/types/rate-limit.type";
 export type { RequestOptions } from "#core/types/request-options.type";
 export type { RetryPolicy } from "#core/types/retry-policy.type";
 export type { TokenRequest } from "#core/types/token-request.type";
+export type { WebhookSchemeRecipe } from "#core/types/webhook-scheme-recipe.type";
 export type { WebhookSignature } from "#core/types/webhook-signature.type";
 export { audioSeconds } from "#core/voice/audio-seconds.function";
 export { consentSteps } from "#core/voice/consent-steps.function";

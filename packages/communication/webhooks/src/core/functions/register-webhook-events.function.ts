@@ -5,24 +5,53 @@
  * Boundary: writes `WEBHOOK_EVENTS` after checking each row, so a wrong row fails at boot rather than on the first
  *           delivery: a webhook event class, an Integration that declares `webhooks` with a `SignatureScheme` code
  *           (the check `@stackra/integrations` leaves to this package, which owns the codes) and, for `hmac`, its
- *           `signature` recipe, a connection class, and one class per provider event type. Registering a row again changes nothing.
+ *           `signature` recipe, for a regional gateway scheme the `recipe` fields it reads (`RECIPE_FIELDS`), a
+ *           connection class, and one class per provider event type. Registering a row again changes nothing.
  * Runtime: isomorphic
- * Governing contract: ADR 0308 (rules 2, 15 and 16); ADR 0294 (decisions 20 and 25); ADR 0224 (decision 2).
+ * Governing contract: ADR 0308 (rules 2, 15 and 16); ADR 0294 (decisions 20 and 25); ADR 0224 (decision 2);
+ *                     STA-1357.
  */
 import { kindOf } from "@stackra/container";
 import { Enum } from "@stackra/contracts";
 import type { WebhookEventClass } from "@stackra/events";
-import type { IntegrationWebhooks } from "@stackra/integrations";
+import type { IntegrationWebhooks, WebhookSchemeRecipe } from "@stackra/integrations";
 
 import { WEBHOOK_EVENTS } from "#core/constants/webhook-events.constant";
 import { SignatureScheme } from "#core/enums/signature-scheme.enum";
 import type { WebhookEventRegistration } from "#core/types/webhook-event-registration.type";
 
+/** Where a scheme reads its token, signature or JWT: one of these recipe fields is set. */
+type Locator = readonly (keyof WebhookSchemeRecipe)[];
+
+/** The `recipe` fields each regional gateway scheme needs; a nested list means one of them. */
+const RECIPE_FIELDS: Readonly<
+  Partial<Record<SignatureScheme, readonly (keyof WebhookSchemeRecipe | Locator)[]>>
+> = {
+  [SignatureScheme.BodyToken]: [["path", "header", "query"]],
+  [SignatureScheme.AesGcmBody]: ["ivHeader", "tagHeader"],
+  [SignatureScheme.OrderedFieldHmac]: ["fields", "algorithm", ["query", "header", "path"]],
+  [SignatureScheme.KeyedFieldDigest]: ["fields", "algorithm", ["path", "query", "header"]],
+  [SignatureScheme.SharedHeader]: ["header"],
+  [SignatureScheme.JwtHs256]: [["query", "header"]],
+};
+
+/** The first `recipe` field `scheme` needs and `recipe` lacks, written for the error. */
+function missingField(
+  scheme: SignatureScheme,
+  recipe: WebhookSchemeRecipe | undefined,
+): string | undefined {
+  for (const need of RECIPE_FIELDS[scheme] ?? []) {
+    const names: Locator = typeof need === "string" ? [need] : need;
+    if (!names.some((name) => recipe?.[name] !== undefined)) return names.join(" or ");
+  }
+  return undefined;
+}
+
 /**
  * Records each webhook event under its Integration and provider event type.
  *
  * @throws TypeError when a class is not a webhook event, an Integration or a connection, the Integration declares no
- *         `webhooks`, its connection class differs from an earlier row's, or two classes share a provider event type.
+ *         `webhooks`, its scheme's `signature` or `recipe` fields are missing, its connection class differs from an earlier row's, or two classes share a provider event type.
  * @throws RangeError when the Integration's `webhooks.scheme` is not a `SignatureScheme` code.
  * @example
  * registerWebhookEvents([
@@ -50,6 +79,11 @@ export function registerWebhookEvents(rows: readonly WebhookEventRegistration[])
     if (webhooks.scheme === SignatureScheme.Hmac && webhooks.signature === undefined)
       throw new TypeError(
         `${integration.name}: the hmac scheme reads its recipe from webhooks.signature, which is missing`,
+      );
+    const missing = missingField(webhooks.scheme as SignatureScheme, webhooks.recipe);
+    if (missing !== undefined)
+      throw new TypeError(
+        `${integration.name}: the ${webhooks.scheme} scheme reads webhooks.recipe.${missing}, which is missing`,
       );
     if (connection !== undefined && kindOf(connection)?.kind !== "connection")
       throw new TypeError(`${connection.name} does not extend Connection<Integration>`);
