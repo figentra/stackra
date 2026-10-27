@@ -15,7 +15,10 @@ import { ErrorKind, Refusal } from "@stackra/errors";
  * @example
  * throw CustomFieldTakenError.create({ model: "catalogue.product", key: "shoeSize" });
  */
-export class CustomFieldTakenError extends Refusal({ kind: ErrorKind.Conflict, retryable: false }) {
+export class CustomFieldTakenError extends Refusal({
+  kind: ErrorKind.Conflict,
+  retryable: false,
+}) {
   /** The key of the model the field extends. */
   model!: string;
 
