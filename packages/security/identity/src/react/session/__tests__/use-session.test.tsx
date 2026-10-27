@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 /**
  * Stackra file contract:
  * Purpose: unit and type tests of `useSession`: it starts the session on mount and re-renders on every change, its
@@ -9,6 +8,7 @@
  * Runtime: browser (vitest, jsdom)
  * Governing contract: ADR 0022; ADR 0269; ADR 0206 (decision 8); ADR 0295 (decision 10).
  */
+// @vitest-environment jsdom
 import { buildConfig } from "@stackra/config";
 import { Container, Driver } from "@stackra/container";
 import type { Token } from "@stackra/container";

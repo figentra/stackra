@@ -16,12 +16,12 @@
  * Governing contract: STA-1304 (owner request 2026-10-27); ADR 0207 (decision 1: step-up); ADR 0141; ADR 0134.
  */
 import { Service } from "@stackra/container";
-import { Clock, type Email, IdentityResolver } from "@stackra/contracts";
+import type { Clock, Email, IdentityResolver } from "@stackra/contracts";
 import { recordEvent } from "@stackra/events";
 
-import { IdentityConfig } from "#config/identity.config";
-import { AppApprovalChallenges, AppApprovalPurpose, AppApprovalStatus } from "#contracts/index";
-import type { AppApprovalChallenge } from "#contracts/index";
+import type { IdentityConfig } from "#config/identity.config";
+import { AppApprovalPurpose, AppApprovalStatus } from "#contracts/index";
+import type { AppApprovalChallenge, AppApprovalChallenges } from "#contracts/index";
 import { AppApprovalRateLimitedError } from "#core/errors/app-approval-rate-limited.error";
 import { AppApprovalRejectedError } from "#core/errors/app-approval-rejected.error";
 import { AppApprovalApproved } from "#core/events/app-approval-approved.event";

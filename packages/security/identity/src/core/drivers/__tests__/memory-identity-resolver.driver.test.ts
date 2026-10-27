@@ -31,6 +31,17 @@ describe("MemoryIdentityResolverDriver", () => {
     );
   });
 
+  it("answers the whole principal and refuses an unknown one", async () => {
+    expect(await identity.principalOf(RANA)).toEqual({
+      id: RANA,
+      email: "Rana@Acme.example",
+      locale: "ar",
+    });
+    await expect(identity.principalOf("usr_01j9z3k4m5n6p7q8r9s0t1v2w9")).rejects.toBeInstanceOf(
+      NotFoundError,
+    );
+  });
+
   it("finds a principal by address, case-insensitively", async () => {
     expect(await identity.principalByVerifiedEmail("rana@acme.EXAMPLE")).toEqual({
       id: RANA,

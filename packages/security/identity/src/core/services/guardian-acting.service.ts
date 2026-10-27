@@ -10,9 +10,10 @@
  * Governing contract: OS-284 (a guardian acting for a minor); ADR 0361 (decisions 2 and 3); ACA-57, ACA-60, ACA-68.
  */
 import { Service } from "@stackra/container";
-import { type Actor, ActorKind, Clock, type PublicId } from "@stackra/contracts";
+import type { Clock } from "@stackra/contracts";
+import { type Actor, ActorKind, type PublicId } from "@stackra/contracts";
 
-import { Guardianship } from "#contracts/index";
+import type { Guardianship } from "#contracts/index";
 import { GuardianshipMissingError } from "#core/errors/guardianship-missing.error";
 import { ageOn } from "#core/functions/age-on.function";
 import type { ActForOptions } from "#core/types/act-for-options.type";

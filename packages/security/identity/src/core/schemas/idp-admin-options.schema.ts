@@ -23,16 +23,19 @@ import { IDP_ADMIN_CONFIG_SCHEMA } from "#core/constants/idp-admin-config-schema
  * }
  */
 export class IdpAdminOptions extends Schema {
-  /** The provider's base URL (`https://id.stackra.app`); empty until runway sets it. */
-  url = "";
-
   /** The service account's personal access token; empty until the secret is set. */
   @Secret("IDENTITY_IDP_ADMIN_TOKEN")
   token = "";
 
   /** Seconds one admin call may take before it counts as unavailable. */
-  @Int({ min: 1, max: 120 })
+  @Int({
+    min: 1,
+    max: 120,
+  })
   timeoutSeconds = 15;
+
+  /** The provider's base URL (`https://id.stackra.app`); empty until runway sets it. */
+  url = "";
 }
 
 registerSchemas([[IdpAdminOptions, IDP_ADMIN_CONFIG_SCHEMA]]);

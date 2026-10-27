@@ -120,6 +120,7 @@ describe("@stackra/identity", () => {
 
   it("types the session state as a union on status", () => {
     expectTypeOf<Extract<SessionState, { status: "signed_in" }>["user"]>().not.toBeNull();
-    expectTypeOf<Extract<SessionState, { status: "revoked" }>["user"]>().toBeNull();
+    // every status but signed_in shares one member, so `Extract` on one of them alone finds nothing
+    expectTypeOf<Exclude<SessionState, { status: "signed_in" }>["user"]>().toBeNull();
   });
 });

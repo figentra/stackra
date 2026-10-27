@@ -9,7 +9,7 @@
  */
 import { Driver } from "@stackra/container";
 import type { PublicId } from "@stackra/contracts";
-import { Storage } from "@stackra/storage/contracts";
+import type { Storage } from "@stackra/storage/contracts";
 
 import { StaffPinStore } from "#contracts/index";
 import type { StaffPinCredential } from "#contracts/index";
@@ -56,7 +56,9 @@ export class StorageStaffPinStoreDriver extends Driver(StaffPinStore) {
   /** The device's storage. */
   private readonly storage: Storage;
 
-  /** @param storage - the client storage, whose `secrets` area holds the PINs. */
+  /**
+   * @param storage - the client storage, whose `secrets` area holds the PINs.
+   */
   constructor(storage: Storage) {
     super();
     this.storage = storage;

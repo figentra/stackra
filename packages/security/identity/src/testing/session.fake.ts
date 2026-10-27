@@ -56,7 +56,9 @@ function fakeUser(memberships: number): SessionUser {
  * session.user?.memberships.length; // 2
  */
 export class SessionFake extends SessionService {
-  /** @param options - the status, the memberships and the actions' stand-ins. */
+  /**
+   * @param options - the status, the memberships and the actions' stand-ins.
+   */
   constructor(options: FakeSessionOptions = {}) {
     const account = fakeUser(options.memberships ?? 1);
     const status = options.status ?? SessionStatus.SignedOut;

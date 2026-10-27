@@ -25,7 +25,9 @@ export class MemoryIdentityResolverDriver extends Driver(IdentityResolver) {
   /** The address and language per principal. */
   private readonly principals: ReadonlyMap<PublicId<"usr">, Omit<VerifiedPrincipal, "id">>;
 
-  /** @param principals - the address and language of each principal. */
+  /**
+   * @param principals - the address and language of each principal.
+   */
   constructor(principals: Readonly<Record<PublicId<"usr">, Omit<VerifiedPrincipal, "id">>> = {}) {
     super();
     // The keys are the record's own `usr_` keys, so the entries keep that type.
@@ -40,9 +42,18 @@ export class MemoryIdentityResolverDriver extends Driver(IdentityResolver) {
    * @throws NotFoundError when the principal is unknown.
    */
   async emailOf(principalId: PublicId<"usr">): Promise<Email> {
+    return (await this.principalOf(principalId)).email;
+  }
+
+  /**
+   * The principal with its address, language and, when held, phone and time zone.
+   *
+   * @throws NotFoundError when the principal is unknown.
+   */
+  async principalOf(principalId: PublicId<"usr">): Promise<VerifiedPrincipal> {
     const principal = this.principals.get(principalId);
     if (principal === undefined) throw NotFoundError.create();
-    return principal.email;
+    return { id: principalId, ...principal };
   }
 
   /** The principal whose address is `email`, compared case-insensitively, or `null`. */

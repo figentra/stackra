@@ -19,7 +19,7 @@ import { Service } from "@stackra/container";
 import { isRefusal } from "@stackra/errors";
 import { type ResolvedPack, valueOf } from "@stackra/market-packs";
 
-import { IdentityConfig } from "#config/identity.config";
+import type { IdentityConfig } from "#config/identity.config";
 import { VerificationUse } from "#contracts/enums/verification-use.enum";
 import type {
   Verification,
@@ -43,7 +43,9 @@ export class VerificationService extends Service {
   /** Driver key to driver. */
   private readonly drivers = new Map<string, Verification>();
 
-  /** @param config - the pack key of the provider lists. */
+  /**
+   * @param config - the pack key of the provider lists.
+   */
   constructor(config: IdentityConfig) {
     super();
     this.config = config;

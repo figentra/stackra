@@ -9,10 +9,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0376 (decision 1, verification Note); ADR 0356 (decision 7); capability map M2.
  */
-import type { Verification } from "#contracts/ports/verification.port";
-
-/** What a verifying Connection does: the two calls of the `Verification` port. */
-export type VerificationProvider = Pick<Verification, "supports" | "verify">;
+import type { VerificationProvider } from "#contracts/types/verification-provider.type";
 
 /** One provider to try. */
 export interface VerificationCandidate {

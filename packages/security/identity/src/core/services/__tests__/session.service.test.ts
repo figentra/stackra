@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 /**
  * Stackra file contract:
  * Purpose: unit tests of `SessionService`: it starts loading and reads the store once; a signed-in user's memberships
@@ -11,6 +10,7 @@
  * Runtime: browser (vitest, jsdom)
  * Governing contract: ADR 0022; ADR 0206 (decision 8); ADR 0210 (decision 3); ADR 0338 (decision 4).
  */
+// @vitest-environment jsdom
 import { buildConfig } from "@stackra/config";
 import type { ConfigValues } from "@stackra/config";
 import { Driver } from "@stackra/container";

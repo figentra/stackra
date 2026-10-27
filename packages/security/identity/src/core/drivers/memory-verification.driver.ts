@@ -7,7 +7,7 @@
  * Governing contract: OS-54; ADR 0263 (a driver is named by its class: `memory`).
  */
 import { Driver } from "@stackra/container";
-import { Clock } from "@stackra/contracts";
+import type { Clock } from "@stackra/contracts";
 
 import { Verification, VerificationStatus } from "#contracts/index";
 import type { VerificationKind, VerificationRequest, VerificationResult } from "#contracts/index";
@@ -20,6 +20,9 @@ import type { VerificationKind, VerificationRequest, VerificationResult } from "
  * provider.answer("chk_1", VerificationStatus.Verified);
  */
 export class MemoryVerificationDriver extends Driver(Verification) {
+  /** The references it was asked, in order. */
+  readonly seen: string[] = [];
+
   /** The kinds it answers. */
   private readonly kinds: readonly VerificationKind[];
 
@@ -28,9 +31,6 @@ export class MemoryVerificationDriver extends Driver(Verification) {
 
   /** Reference to the status set for it. */
   private readonly answers = new Map<string, VerificationStatus>();
-
-  /** The references it was asked, in order. */
-  readonly seen: string[] = [];
 
   /**
    * @param kinds - the kinds it supports.

@@ -21,7 +21,9 @@ export class MemoryGuardianshipDriver extends Driver(Guardianship) {
   /** The links. */
   private readonly links: readonly GuardianLink[];
 
-  /** @param links - the links this source knows. */
+  /**
+   * @param links - the links this source knows.
+   */
   constructor(links: readonly GuardianLink[] = []) {
     super();
     this.links = links;

@@ -12,10 +12,11 @@
  */
 import { ClientSession } from "@stackra/clients/contracts";
 import { Driver } from "@stackra/container";
-import { ActiveScopeService, SCOPE_PATH_HEADER } from "@stackra/scope";
+import type { ActiveScopeService } from "@stackra/scope";
+import { SCOPE_PATH_HEADER } from "@stackra/scope";
 import { TRANSPORT_HEADERS } from "@stackra/transport";
 
-import { SessionService } from "#core/services/session.service";
+import type { SessionService } from "#core/services/session.service";
 
 /**
  * The session as calls need it.

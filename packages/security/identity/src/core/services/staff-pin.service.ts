@@ -10,12 +10,13 @@
  * Governing contract: ADR 0361 (decision 8); owner round 3 #15 (staff PIN quick-switch, manager override); ADR 0208.
  */
 import { Service } from "@stackra/container";
-import { type Actor, Clock, type PublicId, type ScopeRef } from "@stackra/contracts";
+import type { Clock } from "@stackra/contracts";
+import { type Actor, type PublicId, type ScopeRef } from "@stackra/contracts";
 import { ForbiddenError } from "@stackra/errors";
-import { PolicyDecisionPointService } from "@stackra/iam";
+import type { PolicyDecisionPointService } from "@stackra/iam";
 
-import { IdentityConfig } from "#config/identity.config";
-import { StaffPinStore } from "#contracts/index";
+import type { IdentityConfig } from "#config/identity.config";
+import type { StaffPinStore } from "#contracts/index";
 import type { StaffPinCredential } from "#contracts/index";
 import { StaffPinLockedError } from "#core/errors/staff-pin-locked.error";
 import { StaffPinRejectedError } from "#core/errors/staff-pin-rejected.error";

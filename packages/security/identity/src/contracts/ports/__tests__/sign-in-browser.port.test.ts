@@ -25,7 +25,7 @@ class ClosedBrowserDriver extends Driver(SignInBrowser) {
 
 describe("SignInBrowser", () => {
   it("is a port, and its drivers are instances of it", async () => {
-    const browser = new ClosedBrowserDriver();
+    const browser: SignInBrowser = new ClosedBrowserDriver();
     expect(browser).toBeInstanceOf(SignInBrowser);
     expect(browser).toBeInstanceOf(Port);
     expect(browser.redirectUri("auth/callback")).toBe("acme://auth/callback");

@@ -46,9 +46,7 @@ export type { LoginPolicy } from "#contracts/types/login-policy.type";
 export type { SessionUser } from "#contracts/types/session-user.type";
 export type { SignInOptions } from "#contracts/types/sign-in-options.type";
 export type { StaffPinCredential } from "#contracts/types/staff-pin-credential.type";
-export type {
-  VerificationCandidate,
-  VerificationProvider,
-} from "#contracts/types/verification-candidate.type";
+export type { VerificationCandidate } from "#contracts/types/verification-candidate.type";
+export type { VerificationProvider } from "#contracts/types/verification-provider.type";
 export type { VerificationRequest } from "#contracts/types/verification-request.type";
 export type { VerificationResult } from "#contracts/types/verification-result.type";

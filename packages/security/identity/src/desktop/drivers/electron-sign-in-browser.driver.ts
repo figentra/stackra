@@ -16,7 +16,7 @@ import { createServer } from "node:http";
 import { Driver } from "@stackra/container";
 import { shell } from "electron";
 
-import { IdentityConfig } from "#config/identity.config";
+import type { IdentityConfig } from "#config/identity.config";
 import { SignInBrowser } from "#contracts/index";
 
 /** The dynamic port range (RFC 6335). */
@@ -35,13 +35,15 @@ const DONE_PAGE =
  * { port: SignInBrowser, candidates: { electron: () => import("@stackra/identity/desktop").then((m) => m.ElectronSignInBrowserDriver) } }
  */
 export class ElectronSignInBrowserDriver extends Driver(SignInBrowser) {
-  /** The wait for the browser. */
-  private readonly config: IdentityConfig;
-
   /** The loopback port of this driver. */
   readonly port: number;
 
-  /** @param config - the sign-in wait. */
+  /** The wait for the browser. */
+  private readonly config: IdentityConfig;
+
+  /**
+   * @param config - the sign-in wait.
+   */
   constructor(config: IdentityConfig) {
     super();
     this.config = config;

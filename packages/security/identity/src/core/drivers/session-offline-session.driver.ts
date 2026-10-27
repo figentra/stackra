@@ -15,7 +15,7 @@ import { Driver } from "@stackra/container";
 import { OfflineSession } from "@stackra/query/contracts";
 
 import { SessionStatus } from "#core/enums/session-status.enum";
-import { SessionService } from "#core/services/session.service";
+import type { SessionService } from "#core/services/session.service";
 
 /**
  * The session as the offline stores need it.
@@ -34,7 +34,9 @@ export class SessionOfflineSessionDriver extends Driver(OfflineSession) {
   /** The session both signals read. */
   private readonly session: SessionService;
 
-  /** @param session - the client's session. */
+  /**
+   * @param session - the client's session.
+   */
   constructor(session: SessionService) {
     super();
     this.session = session;

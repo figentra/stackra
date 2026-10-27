@@ -6,9 +6,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0278 (decisions 4 and 5).
  */
-
-/** The base-62 digits. */
-export const BASE62 = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+import { BASE62 } from "#core/constants/base62.constant";
 
 /**
  * `value` in base 62, `width` characters wide.

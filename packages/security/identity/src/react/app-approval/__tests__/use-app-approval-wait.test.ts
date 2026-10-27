@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 /**
  * Stackra file contract:
  * Purpose: unit tests of `useAppApprovalWait`: it starts a challenge and shows its ticket, polls until the app
@@ -8,6 +7,7 @@
  * Runtime: browser (vitest, jsdom)
  * Governing contract: ADR 0022; STA-1304.
  */
+// @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it } from "@stackra/testing";
 import { act, renderHook } from "@testing-library/react";
 import { vi } from "vitest";

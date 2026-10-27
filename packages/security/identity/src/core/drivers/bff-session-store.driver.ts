@@ -11,7 +11,8 @@
  * Runtime: browser
  * Governing contract: ADR 0206 (decision 8); ADR 0241 (decision 2); ADR 0237 (the BFF behind the gateway); ADR 0142.
  */
-import { ClientsConfig, TransportError } from "@stackra/clients";
+import type { ClientsConfig } from "@stackra/clients";
+import { TransportError } from "@stackra/clients";
 import { TransportFailure } from "@stackra/clients/contracts";
 import { Driver } from "@stackra/container";
 import { Duration } from "@stackra/contracts";
@@ -19,7 +20,7 @@ import { createTransport, timeout } from "@stackra/transport";
 import type { Transport } from "@stackra/transport";
 import { z } from "zod";
 
-import { IdentityConfig } from "#config/identity.config";
+import type { IdentityConfig } from "#config/identity.config";
 import { SessionStore } from "#contracts/ports/session-store.port";
 import type { SessionUser } from "#contracts/types/session-user.type";
 import type { SignInOptions } from "#contracts/types/sign-in-options.type";

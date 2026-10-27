@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 /**
  * Stackra file contract:
  * Purpose: unit tests of `useAppApprovalSheet`: it loads the pending prompts on mount; `approve` runs the biometric
@@ -8,6 +7,7 @@
  * Runtime: node (vitest, jsdom)
  * Governing contract: ADR 0022; STA-1304.
  */
+// @vitest-environment jsdom
 import { describe, expect, it } from "@stackra/testing";
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { vi } from "vitest";

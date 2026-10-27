@@ -18,11 +18,11 @@
  *                     (decisions 16 and 17).
  */
 import { Service } from "@stackra/container";
-import { PermissionSnapshotService } from "@stackra/iam";
-import { TenantSwitcher } from "@stackra/tenancy";
+import type { PermissionSnapshotService } from "@stackra/iam";
+import type { TenantSwitcher } from "@stackra/tenancy";
 
-import { IdentityConfig } from "#config/identity.config";
-import { SessionStore } from "#contracts/ports/session-store.port";
+import type { IdentityConfig } from "#config/identity.config";
+import type { SessionStore } from "#contracts/ports/session-store.port";
 import type { SessionUser } from "#contracts/types/session-user.type";
 import type { SignInOptions } from "#contracts/types/sign-in-options.type";
 import { SessionStatus } from "#core/enums/session-status.enum";
@@ -44,6 +44,22 @@ const ACTIVITY_EVENTS = ["pointerdown", "keydown"] as const;
  * if (session.status === SessionStatus.SignedOut) await session.signIn();
  */
 export class SessionService extends Service {
+  /** The current state; the same object until it changes. */
+  readonly current = (): SessionState => this.state;
+
+  /**
+   * Calls `listener` after every change; the shape `useSyncExternalStore` takes.
+   *
+   * @returns removes the listener; safe to call twice.
+   */
+  readonly subscribe = (listener: () => void): (() => void) => {
+    const entry = () => listener();
+    this.listeners.add(entry);
+    return () => {
+      this.listeners.delete(entry);
+    };
+  };
+
   /** The idle rule and the refresh switches. */
   private readonly config: IdentityConfig;
 
@@ -86,22 +102,6 @@ export class SessionService extends Service {
     this.switcher = switcher;
     this.permissions = permissions;
   }
-
-  /** The current state; the same object until it changes. */
-  readonly current = (): SessionState => this.state;
-
-  /**
-   * Calls `listener` after every change; the shape `useSyncExternalStore` takes.
-   *
-   * @returns removes the listener; safe to call twice.
-   */
-  readonly subscribe = (listener: () => void): (() => void) => {
-    const entry = () => listener();
-    this.listeners.add(entry);
-    return () => {
-      this.listeners.delete(entry);
-    };
-  };
 
   /** The current status. */
   get status(): SessionStatus {
@@ -186,6 +186,19 @@ export class SessionService extends Service {
     this.idleTimer = setTimeout(() => void this.signOut().catch(() => undefined), minutes * 60_000);
   }
 
+  /**
+   * Sets the state, hands the memberships and the permission keys on, restarts the idle countdown and tells every
+   * subscriber.
+   */
+  protected set(state: SessionState): void {
+    this.state = Object.freeze(state);
+    this.switcher.setMemberships(state.user?.memberships ?? []);
+    this.permissions.set(state.user?.permissions ?? []);
+    this.touch();
+    // oxlint-disable-next-line unicorn/no-useless-spread -- reason: a copy, so a listener that unsubscribes another mid-loop does not skip it
+    for (const listener of [...this.listeners]) listener();
+  }
+
   /** The state of `user`: signed in with it, or signed out. */
   private apply(user: SessionUser | null): void {
     this.set(
@@ -203,19 +216,6 @@ export class SessionService extends Service {
     }
     this.apply(null);
     throw error;
-  }
-
-  /**
-   * Sets the state, hands the memberships and the permission keys on, restarts the idle countdown and tells every
-   * subscriber.
-   */
-  protected set(state: SessionState): void {
-    this.state = Object.freeze(state);
-    this.switcher.setMemberships(state.user?.memberships ?? []);
-    this.permissions.set(state.user?.permissions ?? []);
-    this.touch();
-    // oxlint-disable-next-line unicorn/no-useless-spread -- reason: a copy, so a listener that unsubscribes another mid-loop does not skip it
-    for (const listener of [...this.listeners]) listener();
   }
 
   /** Attaches the re-read on a visible window and the idle rule's input listeners, where there is a document. */

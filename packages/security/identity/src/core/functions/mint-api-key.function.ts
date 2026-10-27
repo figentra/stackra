@@ -9,7 +9,8 @@
  */
 import type { IdentityConfig } from "#config/identity.config";
 import type { ApiKeyKind } from "#core/enums/api-key-kind.enum";
-import { BASE62, base62Of } from "#core/functions/base62-of.function";
+import { BASE62 } from "#core/constants/base62.constant";
+import { base62Of } from "#core/functions/base62-of.function";
 import { crc32 } from "#core/functions/crc32.function";
 
 /** Characters of random body. */
