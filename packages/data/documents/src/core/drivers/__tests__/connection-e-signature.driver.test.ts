@@ -49,7 +49,7 @@ function setup() {
       return connection;
     },
     async byConnection(drivers: object, provider: string, connectionId: string) {
-      asked.push(`byConnection ${provider} ${connectionId}`);
+      asked.push(`byConnection ${provider} ${connectionId} ${drivers === DRIVERS}`);
       return connection;
     },
   } as unknown as ProviderResolver;
@@ -82,7 +82,7 @@ describe("ConnectionESignatureDriver", () => {
       "download 42",
       "cancel 42",
     ]);
-    expect(asked).toContain("byConnection documenso conn_00000000000000000000000001");
+    expect(asked).toContain("byConnection documenso conn_00000000000000000000000001 true");
   });
 
   it("refuses an id it did not answer", async () => {
