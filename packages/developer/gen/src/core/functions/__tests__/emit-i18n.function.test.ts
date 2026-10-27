@@ -72,7 +72,8 @@ describe("emitI18n", () => {
     expect(merged).toContain(
       '"loyalty_kit": {\n    "enums": {\n      "loyalty_tier": [\n        "gold"',
     );
-    expect(merged).toContain("the assets/lang of @stackra/loyalty-kit");
+    // The header wraps its `from` line, so "the" may end the line before.
+    expect(merged).toContain("assets/lang of @stackra/loyalty-kit");
     expect(merged).toContain('export const locales = ["ar","en","fr"] as const;');
   });
 
