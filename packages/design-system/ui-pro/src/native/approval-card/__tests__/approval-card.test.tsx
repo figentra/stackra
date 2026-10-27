@@ -18,12 +18,18 @@ vi.mock("react-native", () => ({
   View: ({ children }: { children?: ReactNode }) => <div>{children}</div>,
 }));
 vi.mock("@stackra/ui/native", async () => {
+  const { formatMessage } = await import("@stackra/i18n");
   const { createElement } = await import("react");
   const part =
     (tag: string) =>
     ({ children }: { children?: ReactNode }) =>
       createElement(tag, null, children);
   return {
+    // The real hook falls back to the English catalogue with no I18nProvider; the mock does the same.
+    useCatalogueText:
+      (english: Parameters<typeof formatMessage>[0]) =>
+      (key: Parameters<typeof formatMessage>[1], values?: Parameters<typeof formatMessage>[2]) =>
+        formatMessage(english, key, values, "en"),
     Card: Object.assign(part("section"), {
       Header: part("header"),
       Title: part("h3"),

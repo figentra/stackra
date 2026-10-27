@@ -18,14 +18,22 @@ vi.mock("react-native", () => ({
     <div data-testid={testID}>{children}</div>
   ),
 }));
-vi.mock("@stackra/ui/native", () => ({
-  Heading: ({ children, level }: { children?: ReactNode; level: number }) => (
-    <h2 data-level={level}>{children}</h2>
-  ),
-  AiMark: ({ label, kind }: { label: string; kind: string }) => (
-    <span data-testid={`ai-mark-${kind}`}>{label}</span>
-  ),
-}));
+vi.mock("@stackra/ui/native", async () => {
+  const { formatMessage } = await import("@stackra/i18n");
+  return {
+    // The real hook falls back to the English catalogue with no I18nProvider; the mock does the same.
+    useCatalogueText:
+      (english: Parameters<typeof formatMessage>[0]) =>
+      (key: Parameters<typeof formatMessage>[1], values?: Parameters<typeof formatMessage>[2]) =>
+        formatMessage(english, key, values, "en"),
+    Heading: ({ children, level }: { children?: ReactNode; level: number }) => (
+      <h2 data-level={level}>{children}</h2>
+    ),
+    AiMark: ({ label, kind }: { label: string; kind: string }) => (
+      <span data-testid={`ai-mark-${kind}`}>{label}</span>
+    ),
+  };
+});
 
 describe("AssistantPanel (native)", () => {
   it("draws the heading, the AI label, the actions, the conversation and the composer", () => {

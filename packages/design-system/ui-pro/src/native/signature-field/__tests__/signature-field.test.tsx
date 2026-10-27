@@ -38,34 +38,42 @@ vi.mock("@shopify/react-native-skia", () => ({
   Canvas: ({ children }: { children?: ReactNode }) => <svg>{children}</svg>,
   Path: ({ path }: { path: string }) => <path data-testid="ink" d={path} />,
 }));
-vi.mock("@stackra/ui/native", () => ({
-  useThemeColor: () => "#000",
-  Text: ({ children }: { children?: ReactNode }) => <span>{children}</span>,
-  TextField: ({
-    label,
-    value,
-    onChange,
-  }: {
-    label: string;
-    value: string;
-    onChange: (text: string) => void;
-  }) => (
-    <input aria-label={label} value={value} onChange={(event) => onChange(event.target.value)} />
-  ),
-  Button: ({
-    children,
-    onPress,
-    isDisabled,
-  }: {
-    children?: ReactNode;
-    onPress: () => void;
-    isDisabled?: boolean;
-  }) => (
-    <button type="button" disabled={isDisabled} onClick={onPress}>
-      {children}
-    </button>
-  ),
-}));
+vi.mock("@stackra/ui/native", async () => {
+  const { formatMessage } = await import("@stackra/i18n");
+  return {
+    // The real hook falls back to the English catalogue with no I18nProvider; the mock does the same.
+    useCatalogueText:
+      (english: Parameters<typeof formatMessage>[0]) =>
+      (key: Parameters<typeof formatMessage>[1], values?: Parameters<typeof formatMessage>[2]) =>
+        formatMessage(english, key, values, "en"),
+    useThemeColor: () => "#000",
+    Text: ({ children }: { children?: ReactNode }) => <span>{children}</span>,
+    TextField: ({
+      label,
+      value,
+      onChange,
+    }: {
+      label: string;
+      value: string;
+      onChange: (text: string) => void;
+    }) => (
+      <input aria-label={label} value={value} onChange={(event) => onChange(event.target.value)} />
+    ),
+    Button: ({
+      children,
+      onPress,
+      isDisabled,
+    }: {
+      children?: ReactNode;
+      onPress: () => void;
+      isDisabled?: boolean;
+    }) => (
+      <button type="button" disabled={isDisabled} onClick={onPress}>
+        {children}
+      </button>
+    ),
+  };
+});
 
 /** The gesture config the box was handed. */
 type Config = Record<string, (event?: unknown, state?: unknown) => unknown>;

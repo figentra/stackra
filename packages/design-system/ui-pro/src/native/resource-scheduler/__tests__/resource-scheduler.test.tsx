@@ -36,9 +36,17 @@ vi.mock("react-native", async () => {
     },
   };
 });
-vi.mock("@stackra/ui/native", () => ({
-  Text: ({ children }: { children?: ReactNode }) => <span>{children}</span>,
-}));
+vi.mock("@stackra/ui/native", async () => {
+  const { formatMessage } = await import("@stackra/i18n");
+  return {
+    // The real hook falls back to the English catalogue with no I18nProvider; the mock does the same.
+    useCatalogueText:
+      (english: Parameters<typeof formatMessage>[0]) =>
+      (key: Parameters<typeof formatMessage>[1], values?: Parameters<typeof formatMessage>[2]) =>
+        formatMessage(english, key, values, "en"),
+    Text: ({ children }: { children?: ReactNode }) => <span>{children}</span>,
+  };
+});
 
 /** The release handler of a booking's move or resize gesture. */
 type Release = (event: unknown, state: { dx: number; dy: number }) => void;
