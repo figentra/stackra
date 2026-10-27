@@ -1,4 +1,4 @@
-<!-- Purpose: the agent rules of @stackra/payments: where code goes, the vendor boundary, configuration not code, restricted tenders, agent payments, SoftPos, pre-authorisation, partial payments, PII. Boundary: docs of packages/commerce/payments only. Runtime: none (Markdown). Governing contract: ADR 0357; ADR 0445; ADR 0446; ADR 0294; STA-1024; STA-687; ADR 0377. -->
+<!-- Purpose: the agent rules of @stackra/payments: where code goes, the vendor boundary, configuration not code, restricted tenders, agent payments, SoftPos, pre-authorisation, partial payments, PII. Boundary: docs of packages/commerce/payments only. Runtime: none (Markdown). Governing contract: ADR 0357; ADR 0445; ADR 0446; ADR 0294; STA-1024; STA-687; ADR 0377; STA-672; STA-1091. -->
 
 # AGENTS — @stackra/payments
 
@@ -10,17 +10,18 @@ driver, which reaches the SDK only through the app's `StripeTerminalBridge` port
 
 ## Where code goes
 
-| You are writing…                   | It goes in…                                                        |
-| ---------------------------------- | ------------------------------------------------------------------ |
-| A container port                   | `src/contracts/ports/<name>.port.ts`                               |
-| A gateway port interface or a type | `src/contracts/types/<name>.type.ts`                               |
-| An enum                            | `src/contracts/enums/<name>.enum.ts`                               |
-| A container driver                 | `src/core/drivers/<name>.driver.ts`                                |
-| A node-only driver or the module   | `src/node/drivers/<name>.driver.ts`, `src/node/payments.module.ts` |
-| A device-side gateway (no port)    | `src/core/gateways/<name>.gateway.ts` (the ECR terminal)           |
-| A refusal                          | `src/core/errors/<name>.error.ts`                                  |
-| A fake                             | `src/testing/<name>.fake.ts`                                       |
-| A test                             | `__tests__/<name>.<kind>.test.ts` beside it                        |
+| You are writing…                   | It goes in…                                                             |
+| ---------------------------------- | ----------------------------------------------------------------------- |
+| A container port                   | `src/contracts/ports/<name>.port.ts`                                    |
+| A gateway port interface or a type | `src/contracts/types/<name>.type.ts`                                    |
+| An enum                            | `src/contracts/enums/<name>.enum.ts`                                    |
+| A container driver                 | `src/core/drivers/<name>.driver.ts`                                     |
+| A node-only driver or the module   | `src/node/drivers/<name>.driver.ts`, `src/node/payments.module.ts`      |
+| A device-side gateway (no port)    | `src/core/gateways/<name>.gateway.ts` (the ECR terminal)                |
+| A refusal                          | `src/core/errors/<name>.error.ts`                                       |
+| A fake                             | `src/testing/<name>.fake.ts`                                            |
+| A recorded-case runner             | `src/testing/run-<port>-case.function.ts` and its `<port>-case.type.ts` |
+| A test                             | `__tests__/<name>.<kind>.test.ts` beside it                             |
 
 ## Adding a provider
 
@@ -42,6 +43,11 @@ the ports in README "Square, Adyen and PayPal"; `cancelTerminal` gets the sessio
   their values come from `ConnectedAccountLimits` (host data), never from here.
 - Webhook recipes live with their connector in OS integrations; a provider without one is learned by
   `PaymentService.reconcile`.
+- Recorded vendor cases (D3, stackra-36): a Connection's payout and dispute methods are certified with
+  `runPayoutCase` / `runDisputeCase` from `./testing`; the cases and their recorded answers live with the Connection in
+  OS integrations, `certification: "pending"` until a sandbox run passes. Keep the runners vendor-neutral: a rule goes
+  in only when it holds for every provider (an accept may end `lost`). The regional gateways' webhook schemes are not
+  HMAC recipes; they belong to `@stackra/webhooks`, never here.
 - Restricted tenders (ADR 0445): programs are pack data (`payments.restricted-tenders`), eligibility is a rule set
   behind `TenderEligibility`, and the split is `splitTender` only. No program code, category list or tax rate here;
   the PIN never reaches this package (`pinEntry` asks the terminal for the step).

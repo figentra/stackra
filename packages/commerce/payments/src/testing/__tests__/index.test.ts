@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the consumer contract of the `./testing` entry: exactly the three fakes.
+ * Purpose: the consumer contract of the `./testing` entry: exactly the fakes and the recorded-case runners.
  * Boundary: test only; imports the stand-in barrel through its `#testing` alias.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0294 (decision 15).
@@ -17,6 +17,8 @@ describe("@stackra/payments/testing", () => {
       "MarketPaymentDefaultsFake",
       "PaymentGatewayFake",
       "PaymentGatewaysFake",
+      "runDisputeCase",
+      "runPayoutCase",
     ]);
   });
 });

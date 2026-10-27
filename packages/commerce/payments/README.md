@@ -1,4 +1,4 @@
-<!-- Purpose: the reader guide of @stackra/payments: what is exported, taking a payment, restricted tenders, agent payments, SoftPos tap to pay, pre-authorised tabs, partial payments against one balance, the unknown state, provider choice, the Square, Adyen and PayPal bring-your-own drivers, the semi-integrated ECR terminals (Geidea, Network International). Boundary: docs of packages/commerce/payments only. Runtime: none (Markdown). Governing contract: ADR 0357; ADR 0445; ADR 0446; ADR 0294; STA-1024; STA-687; ACA-542; ADR 0377; STA-677. -->
+<!-- Purpose: the reader guide of @stackra/payments: what is exported, taking a payment, restricted tenders, agent payments, SoftPos tap to pay, pre-authorised tabs, partial payments against one balance, the unknown state, provider choice, the Square, Adyen and PayPal bring-your-own drivers, the semi-integrated ECR terminals (Geidea, Network International), the regional gateways' webhooks, payouts and disputes with the recorded-case runners. Boundary: docs of packages/commerce/payments only. Runtime: none (Markdown). Governing contract: ADR 0357; ADR 0445; ADR 0446; ADR 0294; STA-1024; STA-687; ACA-542; ADR 0377; STA-677; STA-672; STA-1091; ADR 0443. -->
 
 # @stackra/payments
 
@@ -42,6 +42,7 @@ data (ADR 0356), never code.
 | `EcrProfile`, `EcrLink`, `EcrTiming`, `EcrOutcome`, `EcrOperation`, `EcrRequestField`, `EcrResponseField` | `./contracts` | a provider's ECR protocol as pack data, the local link it travels over, and the answer outcomes                                                                                                                                          |
 | `EcrLinkFake`                                                                                             | `./testing`   | an `EcrLink` replaying recorded terminal answers                                                                                                                                                                                         |
 | `PaymentGatewayFake`, `PaymentGatewaysFake`, `MarketPaymentDefaultsFake`                                  | `./testing`   | an in-memory provider that can lose answers, and the two port fakes                                                                                                                                                                      |
+| `runPayoutCase`, `runDisputeCase`, types `PayoutCase`, `DisputeCase`, `GatewayCaseResult`                 | `./testing`   | run one recorded vendor case through a payout or dispute Connection and list every expectation or port rule it misses (certification pending until a sandbox run)                                                                        |
 
 ## Taking a payment
 
@@ -271,6 +272,58 @@ which records it pending confirmation and confirms it against the provider's set
 OS integrations, ADR 0443 decision 7); the till's `PaymentGateways` binding (the host); Paymob and NeoLeap/Surepay
 profiles (ADR 0377 decisions 5 and 6); serial, USB and Bluetooth links (native transports in `@stackra/peripherals`).
 
+## Regional gateways: webhooks, payouts and disputes (stackra-36, STA-672)
+
+Owner decision D3 (2026-10-27): built from the vendors' public documentation with recorded-fixture tests, shipped
+**certification pending** (no sandbox credentials yet). Under ADR 0443 decisions 7 and 8 every class that names a
+vendor, and every webhook recipe, is OS integrations code, so this package carries no Moyasar, HyperPay, Paymob,
+Fawry, Tabby or Tamara code. What Stackra owns here is the kit the OS Connections are certified with:
+
+```ts
+import { runDisputeCase, runPayoutCase } from "@stackra/payments/testing";
+
+const api = fakeIntegrationApi({ "POST /v1/payouts": { status: 201, body: recorded } }); // OS integrations
+const result = await runPayoutCase(new VendorConnection(api.connection), {
+  id: "vendor.payout-accepted",
+  source: "vendor API reference, Payouts: create",
+  certification: "pending",
+  request: { reference: "po_1", amount, destination: "acct_1" },
+  expect: { status: TransferStatus.Pending, providerRef: "pyt_1" },
+});
+expect(result.mismatches).toEqual([]);
+```
+
+- `runPayoutCase` checks the recorded state and id plus the port rules: a non-empty provider id, a `TransferStatus`
+  code, a declined payout answered `failed` (not thrown), a lost answer refused as `provider_unavailable`.
+- `runDisputeCase` runs a `read`, `respond` (with evidence) or `accept` and checks the dispute asked is the one
+  answered, a `DisputeStatus` code, a reason, a positive amount, a valid `respondBy`, that a response leaves
+  `needs_response` and an accept ends `accepted` or `lost`, plus every recorded field.
+- A case records its `source` (the documentation page) and `certification`; it flips to `certified` only after the
+  same case passes against the vendor's sandbox.
+
+What each vendor publishes (public docs, unverified against a sandbox):
+
+| Vendor                    | Webhook authenticity                                                                                                   | Fits `hmac` recipe? | Payouts (`payouts`)                                                  | Disputes (`disputes`)                                                       |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------------------- | ------------------- | -------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| Moyasar                   | a `secret_token` the merchant sets, echoed in the JSON body                                                            | no (body token)     | Payouts API from the Moyasar balance to a payout account             | none in the API (dashboard)                                                 |
+| HyperPay (OPPWA)          | body encrypted AES-256-GCM with the notification key, IV and tag in `x-initialization-vector` / `x-authentication-tag` | no (encrypted body) | none (acquirer settles)                                              | chargebacks arrive as `CB` transactions in notifications; no respond/accept |
+| Paymob (EG, KSA, UAE, OM) | `hmac` query parameter: HMAC-SHA512 hex over the values of a fixed ordered list of transaction fields                  | no (field order)    | separate Payouts (disbursement) product, its own API and credentials | none in the API                                                             |
+| Fawry                     | `messageSignature`: SHA-256 hex over ordered notification fields followed by the secure key                            | no (keyed digest)   | none                                                                 | none                                                                        |
+| Tabby                     | no signature: a header name and value the merchant registers with the webhook, then confirm by retrieving the payment  | no (shared header)  | none (Tabby settles)                                                 | none (handled by Tabby)                                                     |
+| Tamara                    | `tamaraToken` (query, and `Authorization: Bearer`): a JWT HS256 signed with the merchant's notification token          | no (JWT)            | none (Tamara settles)                                                | none (handled by Tamara)                                                    |
+
+None of the six is an HMAC over the raw body, so none can be a `WebhookSignature` recipe today: each needs a scheme
+in `@stackra/webhooks` (body token, encrypted body, ordered-field HMAC, keyed field digest, shared header, JWT). Until
+then each is learned by `PaymentService.reconcile`, as before. Their Connections declare only `payouts` (Moyasar, and
+Paymob when the disbursement credentials are on the connection) and declare no `disputes`; `PaymentService.payout` already
+refuses `capability_unsupported` for a provider without `payouts`, and a host reads disputes only from a gateway that
+declares `disputes`. Platform onboarding (`PlatformGateway`) stays Stripe and Checkout.com
+only: none of the six publishes a sub-merchant onboarding API.
+
+Left for others: the six Connections' payout and dispute methods, their recorded cases and certification (OS
+integrations, os-104); the six webhook schemes and their verifiers (`@stackra/webhooks`, a new batch); the pack rows
+that switch payouts on per Market.
+
 ## Not here
 
 - Ledger posting of fees, tips and refunds: the payments-ledger service, on `@stackra/ledger`.
@@ -281,5 +334,5 @@ profiles (ADR 0377 decisions 5 and 6); serial, USB and Bluetooth links (native t
 
 ## Decisions
 
-ADR 0377 and STA-677 (semi-integrated terminals over a local link, stackra-35), STA-687 and ACA-542 (bring-your-own Square, Adyen, PayPal and Stripe), ADR 0443 decisions 7 and 8 (vendor code in OS integrations), STA-1024 (pre-authorisation and partial payments), ADR 0446 (agent payments and SoftPos), ADR 0445 (restricted tenders and the PIN step), ADR 0378 (card terminals and Tap to Pay), ADR 0357 (payments architecture), ADR 0358 decision 3 (providers are drivers), ADR 0356 (provider per tenant and
+STA-672 and STA-1091 (regional gateways' webhooks, payouts and disputes, stackra-36), ADR 0377 and STA-677 (semi-integrated terminals over a local link, stackra-35), STA-687 and ACA-542 (bring-your-own Square, Adyen, PayPal and Stripe), ADR 0443 decisions 7 and 8 (vendor code in OS integrations), STA-1024 (pre-authorisation and partial payments), ADR 0446 (agent payments and SoftPos), ADR 0445 (restricted tenders and the PIN step), ADR 0378 (card terminals and Tap to Pay), ADR 0357 (payments architecture), ADR 0358 decision 3 (providers are drivers), ADR 0356 (provider per tenant and
 Market through the Connection), ADR 0359 decision 11 (sandbox gateways), ADR 0308 (integrations), ADR 0220 (money).
