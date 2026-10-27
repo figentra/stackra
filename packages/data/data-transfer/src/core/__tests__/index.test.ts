@@ -55,6 +55,8 @@ describe("@stackra/data-transfer", () => {
       "JsonLinesReaderDriver",
       "JsonLinesWriterDriver",
       "MemoryImportLedgerDriver",
+      "MemoryTabularReaderDriver",
+      "MemoryTabularWriterDriver",
       "PAYROLL_EXPORT_PROFILE_SCHEMA",
       "TransferLimitExceededError",
       "UnreadableEncodingError",

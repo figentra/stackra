@@ -12,7 +12,7 @@ certificates, credentials and the network stay with the host behind ports.
 
 | Import                      | Holds                                                                                                                                  |
 | --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| `@stackra/fiscal`           | `FiscalService`, the ten drivers, the onboardings and `FiscalOnboardingService`, `MemoryFiscalJournalDriver`, refusals, option schemas |
+| `@stackra/fiscal`           | `FiscalService`, the ten drivers, the onboardings and `FiscalOnboardingService`, the `memory` driver and journal, refusals, option schemas |
 | `@stackra/fiscal/contracts` | the ports, enums and types hosts code against                                                                                          |
 | `@stackra/fiscal/testing`   | port fakes, `fiscalDocument` and `fiscalRecord` fixtures                                                                               |
 
@@ -32,6 +32,7 @@ Entry barrels are stand-ins until `stackra gen` writes them (STA-339).
 | `rt`        | till             | telematic recorder stores and transmits the document                                                    | `FiscalDevice`                              |
 | `rksv`      | till             | machine-readable receipt, encrypted turnover counter, compact JWS chain, DEP export                     | signer, `TurnoverCipher`, `TillCredentials` |
 | `verifactu` | till and invoice | record fingerprint chain, verification QR URL, SOAP submission                                          | transport                                   |
+| `memory`    | tests and dev    | `MemoryFiscalDriver`: JSON payload chained by SHA-256, every submission accepted and logged, JSON lines  | none                                        |
 
 ## Use
 

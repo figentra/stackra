@@ -32,6 +32,8 @@ Tabular import and export (ADR 0367, ADR 0163 decisions 3 and 4). Member at `pac
 - Configuration, not code (ADR 0363): never write a row or byte limit, a preview size, a batch size, an undo window or
   a legacy encoding name in source. They are options the caller reads from settings or the market pack.
 - Readers stream: never collect a whole file. Decoding is strict (`fatal: true`).
+- The `memory` reader and writer (`MemoryTabularReaderDriver`, `MemoryTabularWriterDriver`) are for tests and
+  development only: they hold whole sheets and read or write no bytes, so the streaming rule does not apply to them.
 - A refused row is reported (`RowError`), never fatal. A batch that throws fails the run; the run resumes after its
   cursor.
 - `writeZip` streams: never collect an entry or the archive. ZIP64 is written only when a field overflows, so a small

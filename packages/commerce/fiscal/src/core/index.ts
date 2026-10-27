@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `.` entry of @stackra/fiscal (the service, the drivers, the onboardings and their
- *          picker, the memory journal, the refusals and the option schemas a pack is checked against) until
+ *          picker, the memory driver and journal, the refusals and the option schemas a pack is checked against) until
  *          `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. The format helpers (XML, base64, TLV, hashing, time zones)
  *           and the format constants stay internal: no consumer imports them.
@@ -25,6 +25,7 @@ export { EtaOnboardingDriver } from "#core/drivers/eta-onboarding.driver";
 export { FacturXDriver } from "#core/drivers/factur-x.driver";
 export { FdmDriver } from "#core/drivers/fdm.driver";
 export { MarketPackFiscalPackSourceDriver } from "#core/drivers/market-pack-fiscal-pack-source.driver";
+export { MemoryFiscalDriver } from "#core/drivers/memory-fiscal.driver";
 export { MemoryFiscalJournalDriver } from "#core/drivers/memory-fiscal-journal.driver";
 export { Nf525Driver } from "#core/drivers/nf525.driver";
 export { PeppolDriver } from "#core/drivers/peppol.driver";

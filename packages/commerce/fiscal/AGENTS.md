@@ -8,7 +8,7 @@ programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./te
 | You are writing…                                   | It goes in…                                   |
 | -------------------------------------------------- | --------------------------------------------- |
 | A port, an enum or a type hosts code against       | `src/contracts/{ports,enums,types}/`          |
-| A driver (one mandate) or the memory journal       | `src/core/drivers/<key>.driver.ts`            |
+| A driver (one mandate), the memory driver or journal | `src/core/drivers/<key>.driver.ts`            |
 | A mandate's till onboarding (`FiscalOnboarding`)   | `src/core/drivers/<key>-onboarding.driver.ts` |
 | A driver's pack-option schema or a format constant | `src/core/constants/`                         |
 | A refusal                                          | `src/core/errors/`                            |
@@ -32,6 +32,8 @@ programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./te
 - A till registration is a `FiscalOnboarding` driver keyed like its `FiscalDriver`: it lists its `inputs`, stores
   issued values only through `TillCredentials` and returns only `OnboardingStep`. `ZatcaOnboarding` stays in
   `services/` under its published name.
+- `MemoryFiscalDriver` (key `memory`) is for tests and development only: it signs nothing and reaches no authority,
+  so no market pack names it. It reads no options.
 - `renderXml` output is hashed by chained formats: never change its canonical form.
 - Every new public file goes in its barrel and that entry's `index.test.ts`.
 

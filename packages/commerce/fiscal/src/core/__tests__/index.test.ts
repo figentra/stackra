@@ -41,6 +41,7 @@ describe("@stackra/fiscal", () => {
       "FiscalOptionsInvalidError",
       "FiscalService",
       "MarketPackFiscalPackSourceDriver",
+      "MemoryFiscalDriver",
       "MemoryFiscalJournalDriver",
       "NF525_OPTIONS",
       "Nf525Driver",
@@ -75,6 +76,7 @@ describe("@stackra/fiscal", () => {
       new core.RtDriver(device),
       new core.RksvDriver(signer, new TurnoverCipherFake(), new TillCredentialsFake()),
       new core.VerifactuDriver(transport),
+      new core.MemoryFiscalDriver(),
     ].map((driver) => driver.key);
     expect(keys).toEqual([
       "zatca",
@@ -87,6 +89,7 @@ describe("@stackra/fiscal", () => {
       "rt",
       "rksv",
       "verifactu",
+      "memory",
     ]);
   });
 });

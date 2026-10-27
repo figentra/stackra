@@ -17,6 +17,8 @@ export { DatevAsciiWriterDriver } from "#core/drivers/datev-ascii-writer.driver"
 export { JsonLinesReaderDriver } from "#core/drivers/json-lines-reader.driver";
 export { JsonLinesWriterDriver } from "#core/drivers/json-lines-writer.driver";
 export { MemoryImportLedgerDriver } from "#core/drivers/memory-import-ledger.driver";
+export { MemoryTabularReaderDriver } from "#core/drivers/memory-tabular-reader.driver";
+export { MemoryTabularWriterDriver } from "#core/drivers/memory-tabular-writer.driver";
 export { ImportRunClosedError } from "#core/errors/import-run-closed.error";
 export { ImportRunNotFoundError } from "#core/errors/import-run-not-found.error";
 export { ImportUndoExpiredError } from "#core/errors/import-undo-expired.error";
