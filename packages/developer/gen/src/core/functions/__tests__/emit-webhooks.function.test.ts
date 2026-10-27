@@ -2,8 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `emitWebhooks`: a service with an Integration that receives webhooks gets the inbound route
  *          `InboundWebhooksController` on `/webhooks/*`, which finds the Integration by its `<module>/<name>` segment
- *          (its own and a hosted package's) and hands the raw body to `WebhookReceiver.receive`; no file for a
- *          service, package or app that receives none.
+ *          (its own and a hosted package's) and hands the raw body and the decoded query to
+ *          `WebhookReceiver.receive`; no file for a service, package or app that receives none.
  * Boundary: test only; runs on the IR fixtures.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0308 (rules 15 and 16); ADR 0224 as amended.
@@ -69,6 +69,14 @@ describe("emitWebhooks", () => {
     expect(route).toContain('import { Controller } from "@stackra/app/server";');
     expect(route).toContain('import type { IntegrationClass } from "@stackra/integrations";');
     expect(route).toContain('import { WebhookReceiver } from "@stackra/webhooks";');
+  });
+
+  it("passes the decoded query parameters as InboundWebhook.query", () => {
+    expect(route).toContain("    const url = new URL(request.url);");
+    expect(route).toContain(
+      '    const [module, name, connectionId] = url.pathname.split("/").slice(2);',
+    );
+    expect(route).toContain("      query: Object.fromEntries(url.searchParams),");
   });
 
   it("writes nothing for a member that receives no webhook", () => {

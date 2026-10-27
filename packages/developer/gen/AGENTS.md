@@ -155,6 +155,8 @@ The Stackra compiler. Member at `packages/developer/gen` (`tier:lib`), in the pr
   written, locked `key`. An Agent with no constructor gets `AgentRuntime` (its deps are a `PLATFORM_BINDINGS` row).
 - Entitlement keys come from `entitlementKey(module, class)` only, and must equal `@stackra/entitlements`'s runtime
   `entitlementKey`; the `entitlements` section's `gates` feed the `registerEntitlements` call of the registrations.
+- The inbound webhook route (`emitWebhooks`) hands `WebhookReceiver.receive` the raw body untouched and the decoded
+  query as `InboundWebhook.query` (Paymob `?hmac=`, Tamara `?tamaraToken=`); never parse the body before the receiver.
 
 - Public API (OS ADR 0039 d2 and d3): only a manifest entry with `public: true` reaches `emitSdks`; never publish by
   `area`. SDKs come from the manifest, never from `openapi.json` (ADR 0158). A new language is one function in

@@ -3,7 +3,8 @@
  * Purpose: `emitWebhooks`, a service's `#stackra/webhooks` (`.stackra/gen/webhooks.ts`): the inbound webhook route,
  *          `InboundWebhooksController` on `/webhooks/*`, which reads the raw body exactly as received, finds the
  *          Integration by the `<module>/<name>` of its path, and hands the request to `WebhookReceiver.receive` with
- *          the connection id the path names.
+ *          the connection id the path names and the decoded query parameters (`InboundWebhook.query`; Paymob signs
+ *          `?hmac=`, Tamara sends `?tamaraToken=`).
  * Boundary: pure. Written only for a service with an Integration that declares `webhooks` (its own or a hosted
  *           package's). The receiver verifies before anything is parsed; an unknown path answers 404 and a received
  *           event 202. The wiring binds the controller; the raw Encore adapter around it is the Encore target's.
@@ -65,9 +66,10 @@ export function emitWebhooks(ir: MemberIR): string | undefined {
     "    this.receiver = receiver;",
     "  }",
     "",
-    "  /** Hands one delivery to the receiver with its raw body; 202 once written, 404 for a path nobody owns. */",
+    "  /** Hands one delivery to the receiver with its raw body and decoded query; 202 once written, 404 for a path nobody owns. */",
     "  async handle(request: Request): Promise<Response> {",
-    '    const [module, name, connectionId] = new URL(request.url).pathname.split("/").slice(2);',
+    "    const url = new URL(request.url);",
+    '    const [module, name, connectionId] = url.pathname.split("/").slice(2);',
     "    const integration = INTEGRATIONS[`${module}/${name}`];",
     "    if (integration === undefined) return new Response(null, { status: 404 });",
     "    const headers: Record<string, string> = {};",
@@ -78,6 +80,7 @@ export function emitWebhooks(ir: MemberIR): string | undefined {
     "      integration,",
     "      ...(connectionId ? { connectionId } : {}),",
     "      headers,",
+    "      query: Object.fromEntries(url.searchParams),",
     "      body: await request.text(),",
     "    });",
     "    return new Response(null, { status: 202 });",
