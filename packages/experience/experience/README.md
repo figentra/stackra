@@ -1,11 +1,13 @@
 # @stackra/experience
 
 Stackra experience: the `Block` kind, `LocalizedText`, the L2 document format and its validator, the `Renderer` port,
-and the web and native `DocumentRenderer`. A block is registered code (a props class and a component); a document is
-data that names block keys and their props, never markup, CSS or logic (ADR 0110, 0154). The renderer resolves each
-key to the block registered on its target and refuses an unknown one.
+the web and native `DocumentRenderer`, and the edge render of a published document to HTML (`./edge`). A block is
+registered code (a props class and a component); a document is data that names block keys and their props, never
+markup, CSS or logic (ADR 0110, 0154). The renderer resolves each key to the block registered on its target and
+refuses an unknown one.
 
-**Tier:** `tier:lib` (`packages/experience/experience`). Entries `.`, `./contracts`, `./react` and `./native`.
+**Tier:** `tier:lib` (`packages/experience/experience`). Entries `.`, `./contracts`, `./edge`, `./react` and
+`./native`.
 Depends on `@stackra/contracts`, `@stackra/container`, `@stackra/errors`, `@stackra/validation` (block schemas and
 `@Renamed`), `@stackra/clients` (the queries blocks accept), `@stackra/i18n` (the locale), `@stackra/icons` (the
 `IconName` type), `@stackra/ui` (the loading placeholder) and `zod`; React is an optional peer of `./react` and
@@ -28,6 +30,8 @@ Depends on `@stackra/contracts`, `@stackra/container`, `@stackra/errors`, `@stac
 | `./contracts` | `Renderer`                                                                      | the port; drivers `react` and `native`                                                                         |
 | `./contracts` | `DocumentNode`, `BlockEvent`, `BlockEventHandlers`, `RenderContext`             | the document format, read by the builder and collaboration                                                     |
 | `./contracts` | `ExperienceKind`, `DocumentProblem`                                             | the document kinds (page, screen, form, email template, print document, theme section) and a validator problem |
+| `./edge`      | `renderEdgeDocument`, `EdgeRenderFailure`, `EDGE_RENDER_LIMITS`, `escapeHtml`   | the OS edge Worker's HTML render of a published document, its fallback codes and budget                        |
+| `./edge`      | `EdgeBlock`, `EdgeBlockContext`, `EdgeRenderOptions`, `EdgeRenderResult`        | types                                                                                                          |
 | `./react`     | `DocumentRenderer`, `ReactRendererDriver`                                       | `<DocumentRenderer document={page.root} />` on the web                                                         |
 | `./native`    | `DocumentRenderer`, `NativeRendererDriver`, `BlockProps`                        | the same on a phone; native `BlockProps` adds `onEvent`                                                        |
 
@@ -110,3 +114,39 @@ from `@stackra/i18n`. A block raises a closed verb through `onEvent` (`{ verb: "
 `{ verb: "action", key, input? }`), which reaches the page's `onNavigate` or `onAction`; a verb with no handler is
 dropped. While a block's query loads a `@stackra/ui` Skeleton holds its place; a failed query draws nothing for that
 block.
+
+## Rendering at the edge
+
+The OS edge Worker renders published landing and storefront pages to HTML for crawlers and first paint (ADR 0440). It
+imports `./edge` only: no React, no Node API, no fetch.
+
+```ts
+import { renderEdgeDocument } from "@stackra/experience/edge";
+
+const result = renderEdgeDocument(cached.root, {
+  locale,
+  revision: cached.revision,
+  blocks: LANDING_EDGE_BLOCKS,
+});
+if (!result.ok) {
+  log.warn("edge render fell back to the shell", {
+    revision: result.revision,
+    reason: result.reason,
+    path: result.path,
+  });
+  return serveShell(request);
+}
+```
+
+- **Only OS-registered blocks render.** `blocks` is the OS landing set, each an `EdgeBlock`: its key, its block class
+  (whose generated schema parses the node's props) and a pure `html(props, children, { locale, path })` that writes
+  every prop through `escapeHtml`. A `@Renamed` old key still resolves.
+- **Everything else is a placeholder.** A product's own block, and a block that `accepts` a query, becomes
+  `<div data-stackra-block="…" data-stackra-path="…" data-stackra-node="…">` with the stored node as escaped JSON; the
+  shell hydrates it in the browser. No product code runs in the Worker.
+- **Budget and fallback.** A render is bounded by depth, node count and HTML bytes (`EDGE_RENDER_LIMITS`: 32, 2,000,
+  512 KiB; the Worker may pass its own `limits`). A Worker's clock stands still during synchronous work, so the CPU
+  budget is counted in work, not time. A malformed document, refused props, a throwing block or an overrun never
+  throws: the result is `ok: false` with an `EdgeRenderFailure` code, the node path and the document revision, and
+  the Worker serves the shell. It is all or nothing, never half a page.
+- The Worker caches the published document's data by host, path and revision, never the HTML (ADR 0297 decision 3).

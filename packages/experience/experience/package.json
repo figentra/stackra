@@ -2,7 +2,7 @@
   "name": "@stackra/experience",
   "version": "0.0.0",
   "private": true,
-  "description": "Stackra experience: the Block({ category, icon }) kind, LocalizedText and BlockProps, the L2 document format and its validator, the Renderer port, and the web and native DocumentRenderer that resolve each document node to a registered block",
+  "description": "Stackra experience: the Block({ category, icon }) kind, LocalizedText and BlockProps, the L2 document format and its validator, the Renderer port, the web and native DocumentRenderer that resolve each document node to a registered block, and the edge render of a published document to HTML in a Worker",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -30,6 +30,11 @@
       "./src/core/*.ts",
       "./src/core/*/index.ts"
     ],
+    "#edge/*": [
+      "./src/edge/*",
+      "./src/edge/*.ts",
+      "./src/edge/*/index.ts"
+    ],
     "#react/*": [
       "./src/react/*",
       "./src/react/*.ts",
@@ -53,6 +58,11 @@
       "@stackra/source": "./src/contracts/index.ts",
       "types": "./dist/contracts.d.mts",
       "default": "./dist/contracts.mjs"
+    },
+    "./edge": {
+      "@stackra/source": "./src/edge/index.ts",
+      "types": "./dist/edge.d.mts",
+      "default": "./dist/edge.mjs"
     },
     "./react": {
       "@stackra/source": "./src/react/index.ts",

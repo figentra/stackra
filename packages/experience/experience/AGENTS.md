@@ -1,8 +1,8 @@
 # AGENTS — @stackra/experience
 
-The `Block` kind, `LocalizedText`, the L2 document format and validator, the `Renderer` port and the web and native
-`DocumentRenderer`. Member at `packages/experience/experience` (`tier:lib`), in the programming model v3.1 shape
-(ADR 0294, 0305). Entries `.`, `./contracts`, `./react`, `./native`.
+The `Block` kind, `LocalizedText`, the L2 document format and validator, the `Renderer` port, the web and native
+`DocumentRenderer`, and the edge HTML render. Member at `packages/experience/experience` (`tier:lib`), in the
+programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./edge`, `./react`, `./native`.
 
 ## Where code goes
 
@@ -14,6 +14,7 @@ The `Block` kind, `LocalizedText`, the L2 document format and validator, the `Re
 | A refusal                     | `src/core/errors/`                             |
 | Web drawing                   | `src/react/<name>/`, `src/react/drivers/`      |
 | Native drawing                | `src/native/<name>/`, `src/native/drivers/`    |
+| Edge HTML (the Worker)        | `src/edge/<group>/`                            |
 | A test                        | `__tests__/<name>.<kind>.test.ts(x)` beside it |
 
 ## This package
@@ -31,6 +32,10 @@ The `Block` kind, `LocalizedText`, the L2 document format and validator, the `Re
 - The web and native drawings are separate code on `@stackra/ui` and `@stackra/ui/native` (ADR 0112 X9); keep them in
   step.
 - `BlockProps` in `.` and in `./native` are two declarations: the native one adds a required `onEvent` (registry A3).
+- `./edge` runs in the OS edge Worker: no React, no Node API, no fetch, no global state. It renders only the
+  `EdgeBlock`s the OS passes; any other key (a product's block) and a block that `accepts` a query become a placeholder
+  the shell hydrates. It never throws: a failure or a budget overrun returns `ok: false` with the revision and the
+  Worker serves the shell (ADR 0440). An edge block escapes every prop with `escapeHtml`.
 - `src/*/index.ts` are stand-in barrels until gen writes them (STA-339).
 
 ## Rules that fail the build
