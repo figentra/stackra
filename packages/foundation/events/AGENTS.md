@@ -32,6 +32,9 @@ Event and listener kind bases, the in-process bus and the event testing helpers.
 - Listeners run after commit only (README "When a listener runs"): a domain event through the unit of work's dispatch
   and drain, an integration event (its own service's included) only through the outbox, the relay and the inbox. Never
   dispatch an integration event to the bus inside a transaction to make its listeners run sooner.
+- Cross-region (STA-1268): `crossRegion: true` on a platform integration event only; `crossRegionRecords` refuses one
+  that carries a tenant (ADR 0353 decision 5). `RegionBus` is a port in `./contracts`; its driver and the relay call
+  live outside this package. A copy arrives through the receiving region's inbox and is never re-sent.
 - An event holds its payload only; metadata travels in `RecordedEvent`. No constructor-made state on events or on
   aggregates (recording is a WeakMap beside the aggregate).
 - Never import `@stackra/outbox`, `@stackra/analytics`, `@stackra/integrations` or `@stackra/realtime`; they import

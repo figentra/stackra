@@ -1,7 +1,7 @@
 # @stackra/events
 
 Stackra events: the four event kind bases, the `Listener` kind base, the in-process bus, event recording kept off the
-aggregate, the `EventOutbox` port and the event testing helpers.
+aggregate, the `EventOutbox` and `RegionBus` ports and the event testing helpers.
 
 **Tier:** `tier:lib` (`packages/foundation/events`). Entries `.`, `./contracts` and `./testing`. Depends on
 `@stackra/contracts`, `@stackra/container` and `@stackra/validation`; `@stackra/testing` is an optional peer of
@@ -22,9 +22,12 @@ those import it (ADR 0305 rule 20).
 | `.`           | `EventBus`                                                                     | the in-process bus the unit of work, relay and inbox use            |
 | `.`           | `recordEvent`, `takeRecordedEvents`                                            | recording beside an aggregate, taken at commit                      |
 | `.`           | `registerListeners`                                                            | the event-to-listener pairs gen writes                              |
+| `.`           | `crossRegionRecords`                                                           | the records of a batch the relay sends to the other regions         |
 | `./contracts` | `EventOutbox`, `EventMeta`, `RecordedEvent`                                    | the outbox port and the occurrence types                            |
+| `./contracts` | `RegionBus`                                                                    | the port that carries platform events to the other regions          |
 | `./testing`   | `dispatch`, `drainEvents`, `drainOutbox`, `deliverRemoteEvent`                 | run events and listeners in a test                                  |
 | `./testing`   | `OutboxFake`, `toEmit`, `toRecord`, `PublishedEvents`, `EVENTS_TESTING_PLUGIN` | the outbox fake, the matchers, `app.events`, `app.listeners`        |
+| `./testing`   | `RegionBusFake`                                                                | the in-memory `RegionBus`; `sent()`                                 |
 
 ## Declaring events
 
@@ -94,6 +97,29 @@ that subscription first. `src/testing/functions/__tests__/drain-outbox.after-com
 A service's generated boot (`#stackra/boot`) calls `bus.connect(container)` once the container is ready, which
 subscribes every registered listener the container binds, and `bus.disconnect()` when the shutdown signal aborts,
 which removes exactly those (direct `subscribe` calls stay).
+
+## Across regions
+
+Regions are independent and tenant data never leaves its region (ADR 0353 decision 5). A platform fact authored once
+and copied read-only to every region, such as entitlements' approved plan catalogue version, opts in with
+`crossRegion: true`:
+
+```ts
+export class CatalogueVersionApproved extends IntegrationEvent({
+  name: "catalogue_version.approved",
+  crossRegion: true,
+}) {
+  versionId!: string;
+}
+```
+
+After the relay publishes a committed batch in its own region, it hands `crossRegionRecords(batch)` to the
+`RegionBus`, whose driver sends them to every other region of the environment; each receiving region gives each record
+to its own inbox under the same event id, so the copy listener runs once and the copy is never sent on again. A
+cross-region occurrence that carries `meta.tenantId` is refused with a `TypeError`: it is a modelling error.
+
+Not built here: the relay call (`@stackra/outbox`), the `RegionBus` driver and which transport carries it between
+regions (root runway; an ADR is due, STA-1268). Until a driver is bound, nothing crosses.
 
 ## Testing
 

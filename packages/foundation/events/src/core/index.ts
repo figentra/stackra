@@ -14,6 +14,7 @@ export { IntegrationEvent } from "#core/bases/integration-event.base";
 export { Listener } from "#core/bases/listener.base";
 export { WebhookEvent } from "#core/bases/webhook-event.base";
 export { BroadcastAudience } from "#core/enums/broadcast-audience.enum";
+export { crossRegionRecords } from "#core/functions/cross-region-records.function";
 export { recordEvent } from "#core/functions/record-event.function";
 export { registerListeners } from "#core/functions/register-listeners.function";
 export { takeRecordedEvents } from "#core/functions/take-recorded-events.function";

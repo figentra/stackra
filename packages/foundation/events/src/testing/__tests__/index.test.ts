@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: the consumer contract of the `./testing` entry: every value the template imports from
  *          `@stackra/events/testing` (`deliverRemoteEvent`, `dispatch`, `drainEvents`, `drainOutbox`) and the
- *          matchers, the outbox fake and the plugin are exported, nothing else is, and `PublishedEvents` resolves.
+ *          matchers, the outbox and region bus fakes and the plugin are exported, nothing else is, and
+ *          `PublishedEvents` resolves.
  * Boundary: test only; imports the stand-in barrel through its `#testing` alias.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (decision 3); ADR 0294 (decision 15).
@@ -18,6 +19,7 @@ describe("@stackra/events/testing", () => {
     expect(Object.keys(testing).sort()).toEqual([
       "EVENTS_TESTING_PLUGIN",
       "OutboxFake",
+      "RegionBusFake",
       "deliverRemoteEvent",
       "dispatch",
       "drainEvents",

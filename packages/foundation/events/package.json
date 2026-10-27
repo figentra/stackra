@@ -2,7 +2,7 @@
   "name": "@stackra/events",
   "version": "0.0.0",
   "private": true,
-  "description": "Stackra events: the DomainEvent, IntegrationEvent, WebhookEvent and AnalyticsEvent kind bases, the Listener kind base, the in-process EventBus, event recording kept off the aggregate, the EventOutbox port and the event testing helpers",
+  "description": "Stackra events: the DomainEvent, IntegrationEvent, WebhookEvent and AnalyticsEvent kind bases, the Listener kind base, the in-process EventBus, event recording kept off the aggregate, the EventOutbox and RegionBus ports and the event testing helpers",
   "license": "MIT",
   "repository": {
     "type": "git",

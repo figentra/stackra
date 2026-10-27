@@ -1,14 +1,16 @@
 /**
  * Stackra file contract:
- * Purpose: `IntegrationEvent({ name, version, webhook, broadcast })`, the kind base of a fact other services need: it
- *          leaves through the outbox under the wire name `<module>.<name>.v<version>`, is visible to MCP, may be
- *          offered as an outbound webhook and may broadcast a data-free refresh.
+ * Purpose: `IntegrationEvent({ name, version, webhook, broadcast, crossRegion })`, the kind base of a fact other
+ *          services need: it leaves through the outbox under the wire name `<module>.<name>.v<version>`, is visible to
+ *          MCP, may be offered as an outbound webhook, may broadcast a data-free refresh and may be copied to the
+ *          other regions.
  * Boundary: called only: an integration event needs its name, so a bare `extends IntegrationEvent` fails to compile.
  *           The options are checked and recorded in the kind registry with their defaults applied; the module key is
  *           derived by gen from the folder, never written. Only integration events may broadcast or be webhooks.
  * Runtime: isomorphic
  * Governing contract: ADR 0305 (rules 2 and 19); ADR 0141 (2026-10-23 note); ADR 0294 (decisions 16 and 20;
- *                     amendment item 7); ADR 0078 (decisions 3 and 4).
+ *                     amendment item 7); ADR 0078 (decisions 3 and 4); ADR 0353 (decision 5);
+ *                     STA-1268 (`crossRegion`).
  */
 import { createKind } from "@stackra/container";
 import { Enum } from "@stackra/contracts";
@@ -35,6 +37,10 @@ function read(options: IntegrationEventOptions) {
   if (!Number.isInteger(version) || version < 1)
     throw new RangeError(
       `IntegrationEvent({ version }) must be a whole number from 1, got ${version}`,
+    );
+  if (options.crossRegion !== undefined && typeof options.crossRegion !== "boolean")
+    throw new TypeError(
+      `IntegrationEvent({ crossRegion }) must be a boolean, got ${JSON.stringify(options.crossRegion)}`,
     );
   const { broadcast } = options;
   if (

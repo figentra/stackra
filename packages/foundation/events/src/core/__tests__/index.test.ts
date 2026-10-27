@@ -2,8 +2,9 @@
  * Stackra file contract:
  * Purpose: the consumer contract of the `.` entry: every value the template imports from `@stackra/events`
  *          (`AnalyticsEvent`, `BroadcastAudience`, `DomainEvent`, `IntegrationEvent`, `Listener`, `WebhookEvent`) and
- *          the registry row's runtime (`Event`, `EventBus`, recording, `registerListeners`) are exported, nothing else
- *          is, the `./contracts` symbols are not, and the public types (`ListenerContext` among them) resolve.
+ *          the registry row's runtime (`Event`, `EventBus`, recording, `registerListeners`, `crossRegionRecords`) are
+ *          exported, nothing else is, the `./contracts` symbols are not, and the public types (`ListenerContext`
+ *          among them) resolve.
  * Boundary: test only; imports the stand-in barrel through its `#core` alias.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0294 (decision 15).
@@ -36,11 +37,13 @@ describe("@stackra/events", () => {
       "IntegrationEvent",
       "Listener",
       "WebhookEvent",
+      "crossRegionRecords",
       "recordEvent",
       "registerListeners",
       "takeRecordedEvents",
     ]);
     expect("EventOutbox" in events).toBe(false);
+    expect("RegionBus" in events).toBe(false);
   });
 
   it("resolves its public types", () => {
@@ -51,6 +54,7 @@ describe("@stackra/events", () => {
     expectTypeOf<IntegrationEventOptions["broadcast"]>().toEqualTypeOf<
       BroadcastOptions | undefined
     >();
+    expectTypeOf<IntegrationEventOptions["crossRegion"]>().toEqualTypeOf<boolean | undefined>();
     expectTypeOf<ListenerOptions["retry"]>().toEqualTypeOf<ListenerRetry | undefined>();
     expectTypeOf<ListenerContext["now"]>().returns.toEqualTypeOf<Date>();
     expectTypeOf<ListenerDelivery["listener"]>().toEqualTypeOf<events.Listener>();

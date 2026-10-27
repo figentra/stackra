@@ -2,12 +2,12 @@
  * Stackra file contract:
  * Purpose: unit and type tests of `IntegrationEvent`: called only; the options are recorded as the
  *          `integration_event` kind with their defaults (version 1, no webhook, principal audience); a bad name,
- *          version or audience is refused; each call returns its own class, which is an `Event` and builds with
- *          `create`.
+ *          version, audience or non-boolean `crossRegion` is refused; `crossRegion: true` is recorded; each call
+ *          returns its own class, which is an `Event` and builds with `create`.
  * Boundary: test only; registers a zod schema the way gen does.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0141 (2026-10-23 note); ADR 0294 (amendment item 7); ADR 0305
- *                     (rule 2).
+ *                     (rule 2); STA-1268.
  */
 import { kindOf } from "@stackra/container";
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
@@ -34,6 +34,11 @@ class OrderPaid extends IntegrationEvent({
   orderId!: string;
 }
 
+class CatalogueVersionApproved extends IntegrationEvent({
+  name: "catalogue_version.approved",
+  crossRegion: true,
+}) {}
+
 class InboxMessageCreated extends IntegrationEvent({
   name: "inbox_message.created",
   broadcast: { permission: "messages.inbox_message.read" },
@@ -53,6 +58,7 @@ describe("IntegrationEvent", () => {
       webhook: true,
       broadcast: { permission: ORDER_READ, audience: "tenant" },
     });
+    expect(kindOf(CatalogueVersionApproved)?.options["crossRegion"]).toBe(true);
     expect(kindOf(InboxMessageCreated)?.options["broadcast"]).toEqual({
       permission: "messages.inbox_message.read",
       audience: "principal",
@@ -77,6 +83,12 @@ describe("IntegrationEvent", () => {
         broadcast: { permission: "x", audience: "everyone" as BroadcastAudience },
       }),
     ).toThrow(RangeError);
+  });
+
+  it("refuses a crossRegion that is not a boolean", () => {
+    expect(() => IntegrationEvent({ name: "order.paid", crossRegion: "yes" as never })).toThrow(
+      TypeError,
+    );
   });
 
   it("returns its own Event class per call, built with create", () => {
