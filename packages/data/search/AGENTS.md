@@ -5,7 +5,7 @@ Stackra file contract:
 Purpose: the agent rules of @stackra/search: where code goes, entries and barrels, the package rules, the rules that fail the build and PII.
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
-Governing contract: ADR 0221; ADR 0160; ADR 0294; ADR 0404; STA-1251 (word helpers, Arabizi switch, across filters, HNSW).
+Governing contract: ADR 0221; ADR 0160; ADR 0294; ADR 0404; STA-1251 (word helpers, Arabizi switch, across filters, HNSW); ADR 0380 and STA-1326 (semantic indexing).
 -->
 
 Hybrid search over a model's `@Searchable` index: the `SearchDriver` port, the `Search` reader, the memory and
@@ -15,19 +15,19 @@ Postgres drivers, the `t.searchable(...)` macro and the text-function migration 
 
 ## Where code goes
 
-| You are writing…                         | It goes in…                                               |
-| ---------------------------------------- | --------------------------------------------------------- |
-| The configuration (`SearchConfig`)       | `src/config/search.config.ts`                             |
-| The settings group (`SearchSettings`)    | `src/core/search.settings.ts`                             |
-| Its options shape                        | `src/core/schemas/search-options.schema.ts`               |
-| Its shipped zod schema (`SearchConfig$`) | `src/core/constants/search-config-schema.constant.ts`     |
-| The port or a type it uses               | `src/contracts/{ports,types}/`                            |
-| An isomorphic driver, function, refusal  | `src/core/{drivers,functions,errors}/`                    |
-| A server driver                          | `src/node/drivers/`                                       |
-| The outbox change consumer               | `src/node/services/searchable-change.service.ts`          |
-| A migration macro                        | `src/node/database/macros/<name>.macro.ts`                |
-| A migration                              | `src/node/database/migrations/<NNNN>-<name>.migration.ts` |
-| A test                                   | `__tests__/<name>.<kind>.test.ts` beside it               |
+| You are writing…                         | It goes in…                                                 |
+| ---------------------------------------- | ----------------------------------------------------------- |
+| The configuration (`SearchConfig`)       | `src/config/search.config.ts`                               |
+| The settings group (`SearchSettings`)    | `src/core/search.settings.ts`                               |
+| Its options shape                        | `src/core/schemas/search-options.schema.ts`                 |
+| Its shipped zod schema (`SearchConfig$`) | `src/core/constants/search-config-schema.constant.ts`       |
+| The port or a type it uses               | `src/contracts/{ports,types}/`                              |
+| An isomorphic driver, function, refusal  | `src/core/{drivers,functions,errors}/`                      |
+| A server driver                          | `src/node/drivers/`                                         |
+| The outbox change consumers              | `src/node/services/{searchable,semantic}-change.service.ts` |
+| A migration macro                        | `src/node/database/macros/<name>.macro.ts`                  |
+| A migration                              | `src/node/database/migrations/<NNNN>-<name>.migration.ts`   |
+| A test                                   | `__tests__/<name>.<kind>.test.ts` beside it                 |
 
 ## Entries and barrels
 
@@ -49,7 +49,11 @@ Postgres drivers, the `t.searchable(...)` macro and the text-function migration 
   form is `SEARCH_SYNONYM_LINE`; the settings schema and `searchSynonymsOf` both read it.
 - Automatic indexing goes through `@stackra/outbox` only (`registerSearchableModels`); outbox must never depend on
   search. `SEARCHABLE_MODELS` stays internal.
-- Drivers deal in ids and documents; only `SearchIndex` and `SearchableChangeService` (one row load) touch the ORM. Isolation is the database's: never add a
+- Semantic indexing (`@Searchable({ semantic: true })`) goes through `SemanticChangeService` only: it is
+  `Lifetime.Transient` so boot never builds the `Embedder`; keep it so. `semanticPassageOf` runs the `ai: never` guard
+  (ADR 0380) on every row before any text reaches the embedder; never embed a field around it. Passage ids are
+  `<Model>:<key>`, metadata `{ source: "search", model }`, scope from the row's own `scopeId`/`scopePath`, never input.
+- Drivers deal in ids and documents; only `SearchIndex`, `SearchableChangeService` and `SemanticChangeService` (one row load and populate) touch the ORM. Isolation is the database's: never add a
   scope filter in application code (ADR 0327 d9).
 - Record visibility is the one narrowing a search adds, and it goes in before ranking and before facet counting: `SearchIndex` passes
   `visibleKeysQuery`'s subquery as `SearchRequest.visible`, and a driver applies it in every lane or refuses (ADR 0333).

@@ -1,5 +1,13 @@
 # @stackra/model
 
+<!--
+Stackra file contract:
+Purpose: the reader-facing guide of @stackra/model: the model kind, traits, relations, facets, data classes and ORM types.
+Boundary: documentation only; the code and the ADRs win on any difference.
+Runtime: none
+Governing contract: ADR 0294; ADR 0305; ADR 0221; ADR 0341; ADR 0380 (`semantic` and the `ai: never` floor).
+-->
+
 The model kind of the programming model v3.1: `Model.with(...traits)`, the eight model traits, relations (`Ref<T>`
 and `Collection<T>` inside a module, `Link<T>` across modules), the `@Index`, `@Searchable` and `@Visibility` facets,
 and the ORM column types and `Money` embeddable that gen's generated entity metadata imports.
@@ -91,8 +99,10 @@ and tsc refuses a relation decorator on a field of the wrong type.
 ## Facets
 
 `@Index(properties, { unique, where })` declares one index (several per model, `Index.on(Model)` in source order);
-`@Searchable({ text, filters })` declares the hybrid search index (`Searchable.on(Model)`). Gen names the indexes
-(`idx_<table>_<columns>`) and checks every path.
+`@Searchable({ text, filters, semantic })` declares the hybrid search index (`Searchable.on(Model)`). Gen names the
+indexes (`idx_<table>_<columns>`) and checks every path. `semantic: true` also embeds the text fields through
+@stackra/search's `Embedder` into its vector index; a text field whose data class says `ai: never` is then refused, by
+gen (`searchable_semantic_ai_never`) and again by search at index time (ADR 0380).
 
 `@Visibility({ attributes, follows })` declares that the model's records are visible by rule (ADR 0333):
 `attributes` are the fields a visibility rule may test (`record.<attribute>`; index each one, since every read carries

@@ -1,12 +1,13 @@
 /**
  * Stackra file contract:
- * Purpose: `@Searchable(options)`, the class facet that declares a model's hybrid search index: the text fields and
- *          the filter fields. `stackra db diff` writes its columns and the Postgres search driver keeps it in step
+ * Purpose: `@Searchable(options)`, the class facet that declares a model's hybrid search index: the text fields, the
+ *          filter fields and the `semantic` switch. `stackra db diff` writes its columns and the Postgres search driver keeps it in step
  *          with the unit of work.
  * Boundary: made with `createDecorator`, so it records metadata only; one per model. Paths are checked by gen. It may
  *           mark the model kinds only.
  * Runtime: isomorphic
- * Governing contract: ADR 0221 (Postgres hybrid search); ADR 0294 (decision 6).
+ * Governing contract: ADR 0221 (Postgres hybrid search); ADR 0294 (decision 6); ADR 0380 (`semantic` and the
+ *                     `ai: never` floor); STA-1326.
  */
 import { createDecorator, DecoratorTarget } from "@stackra/container";
 import type { DecoratorFunction } from "@stackra/container";
@@ -30,6 +31,7 @@ const SEARCHABLE = createDecorator<SearchableOptions>({
  * @Searchable({
  *   text: ["title", "description", "variants.sku"],
  *   filters: ["status", "collections.slug"],
+ *   semantic: true,
  * })
  * export class Product extends Model.with(HasPublicId("prd")) {}
  * ```
@@ -40,6 +42,7 @@ export function Searchable(options: SearchableOptions): DecoratorFunction {
     Object.freeze({
       text: Object.freeze([...options.text]),
       ...(options.filters === undefined ? {} : { filters: Object.freeze([...options.filters]) }),
+      ...(options.semantic === undefined ? {} : { semantic: options.semantic }),
     }),
   );
 }

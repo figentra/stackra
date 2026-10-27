@@ -1,5 +1,13 @@
 # AGENTS — @stackra/model
 
+<!--
+Stackra file contract:
+Purpose: the agent rules of @stackra/model: where code goes, the barrel, the package rules and PII.
+Boundary: documentation only; the code and the ADRs win on any difference.
+Runtime: none
+Governing contract: ADR 0294; ADR 0305; ADR 0341; ADR 0380.
+-->
+
 The model kind, traits, relations and the class facets (`@Index`, `@Searchable`, `@Visibility`). Member at `packages/data/model` (`tier:lib`), in the programming
 model v3.1 shape (ADR 0294, 0305). Entry `.` only; `./traits` and `./orm` are folded in (ADR 0127 2026-10-24 note).
 
@@ -39,6 +47,8 @@ model v3.1 shape (ADR 0294, 0305). Entry `.` only; `./traits` and `./orm` are fo
   (ADR 0321). `HasCorrections` stays apart from `AppendOnly` so existing append-only tables keep their columns.
 - Data classes (ADR 0341): `DataClass` records the four effects; their readers (AI context, support access, search,
   export) apply them. The effects of the six classes of ADR 0134 are not set here yet; only `privileged` ships.
+- `@Searchable` keeps its options frozen and adds no key the caller left out; `semantic` only declares. The embedding
+  and the `ai: never` refusal are @stackra/search's and gen's (ADR 0380); never read a provider here.
 - `Model.global(...)` marks a model global by design (no `tenant_id`, ADR 0210 amendment); `Model.isGlobal` reads it.
 - Only add a symbol a consumer imports today (the template, a package, or the registry row).
 

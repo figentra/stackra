@@ -2,10 +2,10 @@
 
 <!--
 Stackra file contract:
-Purpose: the reader-facing guide of @stackra/search: entries, searching, indexing, the columns, vector retrieval (the fixed-dimension HNSW index), visibility, Arabizi and global search, and what is not here.
+Purpose: the reader-facing guide of @stackra/search: entries, searching, indexing, the columns, vector retrieval (the fixed-dimension HNSW index), semantic indexing, visibility, Arabizi and global search, and what is not here.
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
-Governing contract: ADR 0221; ADR 0160; ADR 0294; ADR 0404; STA-1251 (word helpers, Arabizi switch, across filters, HNSW).
+Governing contract: ADR 0221; ADR 0160; ADR 0294; ADR 0404; STA-1251 (word helpers, Arabizi switch, across filters, HNSW); ADR 0380 and STA-1326 (semantic indexing).
 -->
 
 Stackra search: Postgres hybrid search over a model's `@Searchable` index (ADR 0221). A query injects `Search` and asks
@@ -38,6 +38,7 @@ A `VectorIndex` stores embedded passages for semantic retrieval (pgvector in Pos
 | `./node`      | `PgvectorVectorIndexDriver`                                           | the pgvector `VectorIndex`: cosine distance, scope-filtered        |
 | `./node`      | `SearchableMacro`, `SearchableColumns`                                | `t.searchable({ text, filters, locales })` in a migration          |
 | `./node`      | `registerSearchableModels`, `SearchableChangeService`                 | automatic indexing from the outbox's row changes (gen's wiring)    |
+| `./node`      | `SemanticChangeService`                                               | embeds a `semantic: true` model's text into the `VectorIndex`      |
 
 ## Searching
 
@@ -153,6 +154,20 @@ tenant's region (`search.embedder: { url, model, dimensions, tokenSecret }`; the
 `SecretStore` under the `tokenSecret` name, never from the environment), so the text never leaves it; it checks
 every vector's size against `dimensions`. Provider-specific drivers live with the AI integrations.
 
+## Semantic indexing
+
+`@Searchable({ text: ["subject", "body"], semantic: true })` also embeds the text fields. `registerSearchableModels`
+then watches the model's rows with `SemanticChangeService` too: each committed change loads the row, joins its text
+fields (the same normalised words as the lexical document, every locale of a translated field) into one passage,
+embeds it through the `Embedder` and stores it in the `VectorIndex` as `<Model>:<primary key>`, with metadata
+`{ source: "search", model }`, in the row's own scope (`scopeId`, `scopePath`). A deleted row, one the session no longer
+sees and one with no text lose their passage. A backfill calls `index(Model, rows)` on the service per batch.
+
+The `ai: never` floor (ADR 0380) holds twice: gen refuses `searchable_semantic_ai_never` when a text path ends at a field
+whose data class says `ai: never`, and the service refuses the same at index time, on the loaded row and through its
+relations, before any text reaches the embedder. The service is `Lifetime.Transient`, so a deployment with no
+semantic model never builds it, nor the `HttpEmbedderDriver` that needs `search.embedder.url`.
+
 ## Visibility, Arabizi, snippets and global search
 
 - `search.in(Product).facets(phrase, { paths: ["status"], filters })` counts each filter value over the rows the same
@@ -197,6 +212,8 @@ every vector's size against `dimensions`. Provider-specific drivers live with th
 - The vector lane in the hybrid `Search` ranking (the `VectorIndex` stands alone for now); the versioned index swap,
   the palette UI and the public search API of ADR 0221 are later work.
 - An OpenSearch driver: built behind the same port when ADR 0221 d9's trigger is met.
-- `@Searchable({ semantic: true })`: the option belongs to `SearchableOptions` in `@stackra/model`, which this
-  package does not own; gen already refuses it over a field whose data class says `ai: never`
-  (`searchable_semantic_ai_never`), and semantic indexing through the `Embedder` lands with the option (STA-1251).
+- Semantic querying: `Search` ranks lexically only; reading the semantic passages back (a vector lane in `find`) is
+  later work. `SearchIndex.reindex` does not embed; a backfill calls `SemanticChangeService.index`.
+- `ai: tenant_opt_in` fields are embedded like any other text: the guard refuses `never` only, and the scope's opt-in
+  is not read here.
+- A semantic model's rows need the `scopeId` and `scopePath` columns; one without them is refused at index time.

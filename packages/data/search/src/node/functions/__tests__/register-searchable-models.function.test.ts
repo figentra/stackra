@@ -1,11 +1,12 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `registerSearchableModels`: a `@Searchable` model is recorded by class name and its rows are
- *          watched with `SearchableChangeService`; registering it again changes nothing; a model without the facet and
- *          a second class of the same name are refused, and a refused batch records nothing.
+ *          watched with `SearchableChangeService`, a `semantic: true` model's also with `SemanticChangeService`;
+ *          registering it again changes nothing; a model without the facet and a second class of the same name are
+ *          refused, and a refused batch records nothing.
  * Boundary: test only; the outbox's `registerChangeConsumers` is mocked, so the outbox's registry stays untouched.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0269; ADR 0221 (decision 5).
+ * Governing contract: ADR 0022; ADR 0269; ADR 0221 (decision 5); STA-1326.
  */
 import { Model, Searchable } from "@stackra/model";
 import { registerChangeConsumers } from "@stackra/outbox";
@@ -15,6 +16,7 @@ import { vi } from "vitest";
 import { SEARCHABLE_MODELS } from "#node/constants/searchable-models.constant";
 import { registerSearchableModels } from "#node/functions/register-searchable-models.function";
 import { SearchableChangeService } from "#node/services/searchable-change.service";
+import { SemanticChangeService } from "#node/services/semantic-change.service";
 
 vi.mock("@stackra/outbox", async (importOriginal) => ({
   ...(await importOriginal<Record<string, unknown>>()),
@@ -37,6 +39,12 @@ const OTHER_ARTICLE = (() => {
 
 class Plain extends Model.with() {}
 
+@Searchable({
+  text: ["body"],
+  semantic: true,
+})
+class CaseNote extends Model.with() {}
+
 afterEach(() => {
   SEARCHABLE_MODELS.clear();
   vi.mocked(registerChangeConsumers).mockClear();
@@ -49,6 +57,14 @@ describe("registerSearchableModels", () => {
     expect(registerChangeConsumers).toHaveBeenCalledWith([[ARTICLE, SearchableChangeService]]);
     expect(() => registerSearchableModels([ARTICLE])).not.toThrow();
     expect(SEARCHABLE_MODELS.size).toBe(1);
+  });
+
+  it("also watches a semantic model's rows with SemanticChangeService", () => {
+    registerSearchableModels([CaseNote]);
+    expect(registerChangeConsumers).toHaveBeenCalledWith([
+      [CaseNote, SearchableChangeService],
+      [CaseNote, SemanticChangeService],
+    ]);
   });
 
   it("refuses a model without @Searchable and a second class of one name, recording nothing", () => {
