@@ -88,7 +88,7 @@ registerWiring({ member: "fixture", root: FixtureModule, bindings: [] });
 
 /** The fixture app with a test secret store, one stored connection and a recording outbox. */
 async function compile() {
-  const outbox = { write: vi.fn(async () => undefined) };
+  const outbox = { write: vi.fn<EventOutbox["write"]>(async () => undefined) };
   const connections = {
     byId: vi.fn(async () => ({ webhookSecret: CONNECTION_SECRET })),
   };

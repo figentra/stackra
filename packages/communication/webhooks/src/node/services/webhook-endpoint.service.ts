@@ -47,7 +47,9 @@ export class WebhookEndpointService extends CrudService<WebhookEndpoint> {
   /** The scope's grants; none bound means no gated event is granted. */
   private readonly entitlements: WebhookEntitlementSource | undefined;
 
-  /** @param entitlements - the selected entitlement source; gen's wiring always passes it. */
+  /**
+   * @param entitlements - the selected entitlement source; gen's wiring always passes it.
+   */
   constructor(entitlements?: WebhookEntitlementSource) {
     super();
     this.entitlements = entitlements;
@@ -100,6 +102,26 @@ export class WebhookEndpointService extends CrudService<WebhookEndpoint> {
     return endpoints.filter((endpoint) => endpoint.events.includes(type));
   }
 
+  /**
+   * Makes `secretName` the signing secret of endpoint `id`; the replaced one still signs for 24 hours.
+   *
+   * @throws NotFoundError when there is no such endpoint.
+   */
+  async rotate(id: PublicId<"whe">, secretName: string, at: Date): Promise<WebhookEndpoint> {
+    const endpoint = await this.findOneOrFail({ id });
+    return this.update(
+      { id },
+      { previousSecretName: endpoint.secretName, secretName, rotatedAt: at },
+    );
+  }
+
+  /** Stops delivery to endpoint `id` at `at`; an endpoint already disabled or removed is left as it is. */
+  async disable(id: PublicId<"whe">, at: Date): Promise<void> {
+    const endpoint = await this.findOne({ id });
+    if (endpoint !== null && endpoint.disabledAt === null)
+      await this.update({ id }, { disabledAt: at });
+  }
+
   /** The events of `events` scope node `scopeId` may receive: every ungated one and each gated one it is granted. */
   private async grantedEvents(
     events: readonly string[],
@@ -119,25 +141,5 @@ export class WebhookEndpointService extends CrudService<WebhookEndpoint> {
         return entitlement === undefined || held.has(entitlement);
       }),
     );
-  }
-
-  /**
-   * Makes `secretName` the signing secret of endpoint `id`; the replaced one still signs for 24 hours.
-   *
-   * @throws NotFoundError when there is no such endpoint.
-   */
-  async rotate(id: PublicId<"whe">, secretName: string, at: Date): Promise<WebhookEndpoint> {
-    const endpoint = await this.findOneOrFail({ id });
-    return this.update(
-      { id },
-      { previousSecretName: endpoint.secretName, secretName, rotatedAt: at },
-    );
-  }
-
-  /** Stops delivery to endpoint `id` at `at`; an endpoint already disabled or removed is left as it is. */
-  async disable(id: PublicId<"whe">, at: Date): Promise<void> {
-    const endpoint = await this.findOne({ id });
-    if (endpoint !== null && endpoint.disabledAt === null)
-      await this.update({ id }, { disabledAt: at });
   }
 }

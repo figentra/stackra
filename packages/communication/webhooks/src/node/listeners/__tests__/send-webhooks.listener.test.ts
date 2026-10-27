@@ -20,7 +20,10 @@ import { DeliverWebhookAction } from "#node/actions/deliver-webhook.action";
 import { OUTBOUND_EVENTS } from "#node/constants/outbound-events.constant";
 import { SendWebhooksListener } from "#node/listeners/send-webhooks.listener";
 
-class InvoicePaid extends IntegrationEvent({ name: "invoice.paid", webhook: true }) {
+class InvoicePaid extends IntegrationEvent({
+  name: "invoice.paid",
+  webhook: true,
+}) {
   invoiceId!: string;
 }
 

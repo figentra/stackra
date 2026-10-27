@@ -149,7 +149,7 @@ function setup() {
       return { webhookSecret: CONNECTION_SECRET };
     }),
   };
-  const outbox = { write: vi.fn(async () => undefined) };
+  const outbox = { write: vi.fn<EventOutbox["write"]>(async () => undefined) };
   const clock = { now: () => SENT };
   const receiver = new WebhookReceiver(
     connections as unknown as ConnectionStore,

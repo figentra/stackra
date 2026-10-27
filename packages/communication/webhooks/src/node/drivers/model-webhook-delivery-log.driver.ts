@@ -23,7 +23,9 @@ export class ModelWebhookDeliveryLogDriver extends Driver(WebhookDeliveryLog) {
   /** The delivery log service. */
   private readonly deliveries: WebhookDeliveryService;
 
-  /** @param deliveries - the delivery log service. */
+  /**
+   * @param deliveries - the delivery log service.
+   */
   constructor(deliveries: WebhookDeliveryService) {
     super();
     this.deliveries = deliveries;

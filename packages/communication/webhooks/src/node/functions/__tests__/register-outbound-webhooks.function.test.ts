@@ -14,7 +14,7 @@ import { vi } from "vitest";
 const { registerListeners } = vi.hoisted(() => ({ registerListeners: vi.fn() }));
 
 vi.mock("@stackra/events", async (original) => ({
-  ...(await original<typeof import("@stackra/events")>()),
+  ...(await original<Record<string, unknown>>()),
   registerListeners,
 }));
 
@@ -23,7 +23,10 @@ import { OUTBOUND_EVENTS } from "#node/constants/outbound-events.constant";
 import { registerOutboundWebhooks } from "#node/functions/register-outbound-webhooks.function";
 import { SendWebhooksListener } from "#node/listeners/send-webhooks.listener";
 
-class OrderPaid extends IntegrationEvent({ name: "order.paid", webhook: true }) {}
+class OrderPaid extends IntegrationEvent({
+  name: "order.paid",
+  webhook: true,
+}) {}
 
 class AuditRecordAppended extends IntegrationEvent({
   name: "audit_record.appended",
