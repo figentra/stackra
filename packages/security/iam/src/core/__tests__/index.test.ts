@@ -47,6 +47,7 @@ describe("@stackra/iam", () => {
       "Role",
       "StorePolicySourceDriver",
       "SystemRole",
+      "assertFieldsReadable",
       "assertFieldsWritable",
       "breakGlassGrant",
       "connectPolicies",

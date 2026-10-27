@@ -1,3 +1,5 @@
+<!-- Purpose: the agent rules of @stackra/iam: where code goes, entries and barrels, the package's fail-closed rules and PII handling. Boundary: documentation of packages/security/iam only. Runtime: none (Markdown). Governing contract: ADR 0208, 0132, 0333; STA-933. -->
+
 # AGENTS — @stackra/iam
 
 Permissions, policies, roles and the embedded policy decision point (ADR 0208, 0132, 0333). Member at
@@ -15,6 +17,7 @@ Permissions, policies, roles and the embedded policy decision point (ADR 0208, 0
 | The decision point or the client snapshot     | `src/core/services/`                        |
 | An internal registry                          | `src/core/constants/`                       |
 | The record-visibility query filter (server)   | `src/node/{drivers,functions,types}/`       |
+| A server query service (existence-only query) | `src/node/services/`                        |
 | A hook                                        | `src/react/permission/`                     |
 | A test helper or the testing plugin           | `src/testing/constants/`                    |
 | A test                                        | `__tests__/<name>.<kind>.test.ts` beside it |
@@ -44,6 +47,9 @@ Permissions, policies, roles and the embedded policy decision point (ADR 0208, 0
   when rules adds an operator or a field type.
 - Visibility never invents a default for a record no rule matches: `visibility` answers `Decision.Abstain`, and
   `visibleCondition` takes `unmatched` from the `registerVisibility` row, which has no default (ADR 0333 decision 7).
+- **Existence-only query.** `ExistenceQueryService` selects the primary key and nothing else, never counts, and takes
+  its `limit` from the caller (a setting); `existenceConditionsFor` (`see` or `exists`) feeds only it, never a read of
+  fields or an aggregate. Aggregates stay `see`-filtered `CrudService` reads, guarded by `assertFieldsReadable`.
 - The visibility filter only narrows: never add an option, flag or decorator that skips it (ADR 0333 d5, ADR 0327).
 - A restricted permission never counts through a self-made grant; break-glass passes only `breakable` denies; a
   dimension value not in the projection fails closed. Durations and walls are data (settings, rules), never numbers here.

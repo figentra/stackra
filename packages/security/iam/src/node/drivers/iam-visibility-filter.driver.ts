@@ -3,7 +3,8 @@
  * Purpose: `IamVisibilityFilterDriver`, the driver of `@stackra/database`'s `VisibilityFilter` port: the conditions a
  *          principal's reads of a model carry, from the visibility rules the policy decision point finds for the
  *          principal (the `see` capability), as a filter `CrudService` and `GraphQuery` AND into every row list,
- *          single read, count and aggregate.
+ *          single read, count and aggregate; and, for the existence-only query, the conditions of the records the
+ *          principal may see or only learn exist (`see` or `exists`).
  * Boundary: only ever narrows, on top of row-level security, and carries no scope isolation and no way to skip the
  *           policy (ADR 0333 decision 5, ADR 0327). A model that declares no `@Visibility` reads unchanged; one that
  *           declares it with no `registerVisibility` row fails the read (closed). A followed relation ANDs the related
@@ -14,7 +15,8 @@
  *           call's context.
  * Runtime: node
  * Governing contract: ADR 0333 (decisions 1 to 5, and its amendment: relations, counts and aggregates); ADR 0208
- *                     (decision 3); ADR 0327 (no bypass); ADR 0294 (decisions 16 and 17).
+ *                     (decision 3); ADR 0327 (no bypass); ADR 0294 (decisions 16 and 17); STA-933 (existence-only
+ *                     query).
  */
 import type { ExtensionContext } from "@stackra/actions";
 import type { ContextStorage } from "@stackra/actions/contracts";
@@ -24,6 +26,7 @@ import { type Actor, type ScopeRef } from "@stackra/contracts";
 import { VisibilityFilter } from "@stackra/database/contracts";
 import type { Where } from "@stackra/database/contracts";
 import { Visibility } from "@stackra/model";
+import type { Condition } from "@stackra/rules";
 
 import { Capability } from "#contracts/index";
 import type { PolicyDecisionPointService } from "#core/index";
@@ -73,13 +76,35 @@ export class IamVisibilityFilterDriver extends Driver(VisibilityFilter) {
     model: AnyClass<M>,
     principal: Actor | undefined,
   ): Promise<Where<M>> {
+    return this.conditionsOf(model, principal, [Capability.See]);
+  }
+
+  /**
+   * The conditions of the records of `model` `principal` may see or only learn exist (`see` or `exists`), for the
+   * existence-only query; a followed relation needs the same of its related record. Never used to read fields.
+   *
+   * @throws Error as `conditionsFor` does.
+   */
+  async existenceConditionsFor<M extends object>(
+    model: AnyClass<M>,
+    principal: Actor | undefined,
+  ): Promise<Where<M>> {
+    return this.conditionsOf(model, principal, [Capability.See, Capability.Exists]);
+  }
+
+  /** The conditions of the records of `model` one of `capabilities` allows, at the running call. */
+  private async conditionsOf<M extends object>(
+    model: AnyClass<M>,
+    principal: Actor | undefined,
+    capabilities: readonly Capability[],
+  ): Promise<Where<M>> {
     if (principal === undefined) return {} as Where<M>;
     const call = this.context.current() as ExtensionContext | undefined;
     // shortcut: a call whose context carries no scope is judged at the root (narrower than the permission step's
     // credential fallback); drop it once every call carries its scope node (ADR 0327 decision 6).
     const scope = call?.scope;
     const at = call?.now() ?? this.clock.now();
-    return (await this.filterOf(model, principal, scope, at, [])) as Where<M>;
+    return (await this.filterOf(model, principal, scope, at, [], capabilities)) as Where<M>;
   }
 
   /** The filter of `model`, with the models followed on the way to it in `path`. */
@@ -89,6 +114,7 @@ export class IamVisibilityFilterDriver extends Driver(VisibilityFilter) {
     scope: ScopeRef | undefined,
     at: Date,
     path: readonly AnyClass[],
+    capabilities: readonly Capability[],
   ): Promise<object> {
     const entry = VISIBILITY_REGISTRY.get(model);
     if (entry === undefined) {
@@ -101,15 +127,29 @@ export class IamVisibilityFilterDriver extends Driver(VisibilityFilter) {
     if (path.includes(model))
       throw new Error(`the relations ${model.name} follows lead back to it`);
     const { row } = entry;
-    const condition = await this.pdp.visibleCondition(principal, Capability.See, row.key, {
-      ...(scope === undefined ? {} : { scope }),
-      ...(row.rules === undefined ? {} : { rules: row.rules }),
-      unmatched: row.unmatched,
-      at,
-    });
+    const conditions = await Promise.all(
+      capabilities.map((capability) =>
+        this.pdp.visibleCondition(principal, capability, row.key, {
+          ...(scope === undefined ? {} : { scope }),
+          ...(row.rules === undefined ? {} : { rules: row.rules }),
+          unmatched: row.unmatched,
+          at,
+        }),
+      ),
+    );
+    const [first] = conditions;
+    const condition: Condition =
+      conditions.length === 1 && first !== undefined ? first : { any: conditions };
     const related = await Promise.all(
       entry.follows.map(async ([relation, target]) => {
-        const filter = await this.filterOf(target, principal, scope, at, [...path, model]);
+        const filter = await this.filterOf(
+          target,
+          principal,
+          scope,
+          at,
+          [...path, model],
+          capabilities,
+        );
         return isOpen(filter) ? {} : { $or: [{ [relation]: null }, { [relation]: filter }] };
       }),
     );

@@ -24,6 +24,7 @@ export { AccessReason } from "#core/enums/access-reason.enum";
 export { Decision } from "#core/enums/decision.enum";
 export { Risk } from "#core/enums/risk.enum";
 export { SystemRole } from "#core/enums/system-role.enum";
+export { assertFieldsReadable } from "#core/functions/assert-fields-readable.function";
 export { assertFieldsWritable } from "#core/functions/assert-fields-writable.function";
 export { breakGlassGrant } from "#core/functions/break-glass-grant.function";
 export { connectPolicies } from "#core/functions/connect-policies.function";

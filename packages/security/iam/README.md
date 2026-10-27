@@ -1,3 +1,5 @@
+<!-- Purpose: the guide to @stackra/iam: what each entry exports, declaring access, how a check decides, record visibility in reads, existence-only queries and filtered aggregates, restricted permissions. Boundary: documentation of packages/security/iam only. Runtime: none (Markdown). Governing contract: ADR 0208, 0132, 0333; STA-933. -->
+
 # @stackra/iam
 
 Stackra IAM: who may do what, where, and on which records. Permissions and their risk are declared per model, record
@@ -27,6 +29,7 @@ Depends on `@stackra/actions`, `@stackra/container`, `@stackra/contracts`, `@sta
 | `.`           | `breakGlassGrant`                                                                       | open a time-boxed emergency grant (reason, window, longest duration)          |
 | `.`           | `registerDimensions`, `DimensionRegistration`                                           | which fields carry a dimension another service owns (ADR 0351)                |
 | `.`           | `existenceHit`, `SearchHit`                                                             | full record, existence-only hit, or nothing                                   |
+| `.`           | `assertFieldsReadable`                                                                  | refuse an aggregate over, or filtered on, a hidden field                      |
 | `./contracts` | `PolicySnapshotStore`, `DimensionValues`, `FieldRule`, `FieldAccess`, `BreakGlassGrant` | the event-fed store, the dimension projection, field and break-glass data     |
 | `.`           | `PermissionSnapshotService`                                                             | the client's UI permissions snapshot                                          |
 | `.`           | `registerPermissions`, `registerRoles`, `registerPolicies`, `connectPolicies`           | what gen's entry tells the runtime                                            |
@@ -37,6 +40,7 @@ Depends on `@stackra/actions`, `@stackra/container`, `@stackra/contracts`, `@sta
 | `./node`      | `PostgresPolicySnapshotStoreDriver`                                                     | the durable `PolicySnapshotStore`: one row per tenant and principal           |
 | `.`           | `PolicySnapshotIntakeService`, `PolicySnapshotEvent`                                    | the body of the listener that stores the IAM service's snapshot events        |
 | `./node`      | `registerVisibility`, `VisibilityRegistration`                                          | what gen's entry tells the query filter about each declaring model            |
+| `./node`      | `ExistenceQueryService`                                                                 | the existence-only query: which records match, as id-and-model hits only      |
 | `./contracts` | `PolicySnapshot`, `Grant`, `DenyRule`, `VisibilityRule`, `Audience`, `Capability`       | the policy as data                                                            |
 | `./contracts` | `Audience$`                                                                             | the shipped schema of `Audience`, for a shape field (scope, segment, role)    |
 | `./react`     | `usePermission`                                                                         | `const can = usePermission(); can(OrderPermissions.create)`                   |
@@ -135,6 +139,31 @@ connectVisibilityFilter(container); // with IamVisibilityFilterDriver bound to V
   reads. Nothing skips the filter.
 - `registerVisibility` refuses a row whose rules are not exactly the facet's attributes under `record`, a geo
   attribute (a read cannot test one yet), or a followed relation that is not a many-to-one to a declaring model.
+
+## Existence-only queries and filtered aggregates
+
+A conflict check must learn that a walled matter matches without reading it (ADR 0333, the `exists` capability):
+
+```ts
+// a conflict check; the limit is a setting, never a number in code
+const hits = await existence.matching(
+  Matter,
+  { clientName: name },
+  { limit: settings.conflictHitLimit },
+);
+// [{ kind: "exists", id: "mat_…", model: "practice.matter" }]
+```
+
+- `ExistenceQueryService.matching(model, where, { limit })` reads the primary key only (no other field is loaded or held
+  in the unit of work), gives no count, and returns at most `limit` hits. Its filter is `where` ANDed with
+  `IamVisibilityFilterDriver.existenceConditionsFor`: records a rule lets the caller `see` or only learn `exist`, with
+  followed relations needing the same, on top of row-level security. The model needs a `registerVisibility` row (its
+  key names the hit); a `$raw` match is refused. Opening a hit in full is the caller's normal read, through
+  `existenceHit` and the `see` filter.
+- Counts and aggregates (`count`, `sum`, `countDistinct`, `metrics`) already run through `CrudService`, which ANDs the
+  same `see` filter as row reads. Before one, `assertFieldsReadable` (given the aggregated field, the filter's
+  fields and `pdp.fieldAccess(actor, key)`) refuses a total over, or filtered on, a field the field rules hide, so a
+  filtered total never measures what a read would drop.
 
 ## Restricted permissions, break-glass, fields, dimensions
 

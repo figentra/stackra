@@ -4,11 +4,12 @@
  *          model without a row fails closed; the principal's rules become the read's filter, judged at the running
  *          call's scope node and instant; an unmatched record follows the registered answer (nothing visible on
  *          `Deny` with no rule); a followed relation nests the related model's filter under it and lets a record
- *          without the related record through; a cycle of follows fails; the driver is a `VisibilityFilter`.
+ *          without the related record through; a cycle of follows fails; the driver is a `VisibilityFilter`; the
+ *          existence conditions take `see` or `exists`, through relations too, while reads keep `see` alone.
  * Boundary: test only; the source is `MemoryPolicySourceDriver`, the clock fixed, the call context a settable stand-in.
  *           The registry is cleared before each test.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0333 (decisions 1 to 5 and 7, and its amendment: relations); ADR 0208 (decision 3).
+ * Governing contract: ADR 0022; ADR 0333 (decisions 1 to 5 and 7, and its amendment: relations); ADR 0208 (decision 3); STA-933.
  */
 import { ContextStorage } from "@stackra/actions/contracts";
 import { Driver } from "@stackra/container";
@@ -190,5 +191,30 @@ describe(IamVisibilityFilterDriver, () => {
       $or: [{ matter: null }, { matter: { $or: [OPEN_FILTER] } }],
     });
     expect(await driver.conditionsFor(Document, job)).toEqual({});
+  });
+
+  it("opens the existence conditions to `exists` rules without widening reads", async () => {
+    const { driver } = driverOver({
+      ...STATE,
+      visibility: [
+        ...(STATE.visibility ?? []),
+        {
+          model: "legal.matter",
+          audience: { kind: "segment", id: VIP },
+          capability: Capability.Exists,
+        },
+      ],
+    });
+    expect(await driver.conditionsFor(Matter, customer)).toEqual({ $or: [OPEN_FILTER] });
+    expect(await driver.existenceConditionsFor(Matter, customer)).toEqual({});
+    expect(await driver.existenceConditionsFor(Document, customer)).toEqual({});
+    expect(await driver.existenceConditionsFor(Matter, undefined)).toEqual({});
+  });
+
+  it("gives the existence conditions of `see` alone when no `exists` rule applies", async () => {
+    const { driver } = driverOver(STATE);
+    expect(await driver.existenceConditionsFor(Matter, customer)).toEqual({
+      $or: [{ $or: [OPEN_FILTER] }, { $or: [] }],
+    });
   });
 });
