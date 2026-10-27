@@ -114,7 +114,7 @@ describe("@stackra/actions", () => {
     expectTypeOf<ReplicaPage["removed"]>().toEqualTypeOf<readonly string[]>();
     expectTypeOf<ReplicaPage["full"]>().toEqualTypeOf<boolean>();
     expectTypeOf<RuleEvaluation["ruleVersion"]>().toEqualTypeOf<string>();
-    expectTypeOf<ReturnType<RuleEvaluator["evaluate"]>>().toEqualTypeOf<
+    expectTypeOf<ReturnType<RuleEvaluator<unknown>["evaluate"]>>().toEqualTypeOf<
       Promise<RuleEvaluation | undefined>
     >();
     expectTypeOf<QueryContext["replica"]>().toBeFunction();

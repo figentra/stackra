@@ -8,11 +8,20 @@
  * Governing contract: ADR 0022 (test placement); ADR 0269 (testing helpers); ADR 0136.
  */
 import { type Actor, ActorKind, Realm } from "@stackra/contracts";
+import { IntegrationEvent } from "@stackra/events";
 import { describe, expect, freezeClock, it } from "@stackra/testing";
+import { registerSchemas } from "@stackra/validation";
+import { z } from "zod";
 
 import { fakeActionContext } from "#testing/functions/fake-action-context.function";
 
 class RedeemWorkflow {}
+
+class StockNearExpiry extends IntegrationEvent({ name: "stock.near_expiry" }) {
+  sku!: string;
+}
+
+registerSchemas([[StockNearExpiry, z.object({ sku: z.string() })]]);
 
 class SendMessageAction {
   async handle(_input: { text: string }): Promise<void> {}
@@ -29,7 +38,7 @@ describe(fakeActionContext, () => {
     });
     ctx.audit({ reason: "count" });
     ctx.audit({ by: "staff" });
-    const event = { sku: "sku_1" };
+    const event = StockNearExpiry.create({ sku: "sku_1" });
     await ctx.publish(event);
     expect(ctx.recorded.authorized).toEqual([record]);
     expect(ctx.recorded.afterCommit).toHaveLength(1);

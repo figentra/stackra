@@ -1603,7 +1603,11 @@ describe("ActionPipeline request origin (ADR 0456)", () => {
     await pipeline.execute(
       CreateOrderAction,
       { quantity: 1 },
-      { actor: customer, origin: { kind: CallOriginKind.Storefront, id: "sfr_1" } },
+      {
+        actor: customer,
+        idempotencyKey: "k-origin",
+        origin: { kind: CallOriginKind.Storefront, id: "sfr_1" },
+      },
     );
     expect(trail.entries.at(-1)?.call.origin).toEqual({ kind: "storefront", id: "sfr_1" });
   });

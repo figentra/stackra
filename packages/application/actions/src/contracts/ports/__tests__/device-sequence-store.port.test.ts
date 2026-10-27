@@ -34,6 +34,6 @@ describe("DeviceSequenceStore", () => {
     const driver: DeviceSequenceStore = new SingleDeviceDriver();
     const at = new Date("2026-10-25T09:00:00Z");
     await driver.settle("dev_1", 1, at, undefined);
-    expect(await driver.last()).toEqual({ deviceId: "dev_1", sequence: 1, settledAt: at });
+    expect(await driver.last("dev_1")).toEqual({ deviceId: "dev_1", sequence: 1, settledAt: at });
   });
 });
