@@ -14,7 +14,7 @@ import "#core/types/cache-driver-names.type";
 
 import { Secret } from "@stackra/config";
 import type { DriverName } from "@stackra/container";
-import { Int, registerSchemas, Schema } from "@stackra/validation";
+import { Field, Int, registerSchemas, Schema } from "@stackra/validation";
 
 import type { Cache } from "#contracts/ports/cache.port";
 import { CACHE_CONFIG_SCHEMA } from "#core/constants/cache-config-schema.constant";
@@ -37,20 +37,24 @@ export class CacheOptions extends Schema {
   @Secret("CACHE_VALKEY_URL")
   valkeyUrl = "";
 
-  /** Which driver runs; names are the driver file prefixes. `memory` keeps values in this process only. */
-  driver: DriverName<Cache> = "memory";
-
   /** The `valkey` driver's keys. */
+  // reason: a nested driver option a host override replaces whole; the shipped config schema holds its rules
+  @Field(CACHE_CONFIG_SCHEMA.shape.valkey)
   valkey: {
     /** Put in front of every key, so members that share one server never share an entry. */
     keyPrefix: string;
   } = { keyPrefix: "cache:" };
 
   /** The `workers` driver's Workers KV namespace. */
+  // reason: a nested driver option a host override replaces whole; the shipped config schema holds its rules
+  @Field(CACHE_CONFIG_SCHEMA.shape.workers)
   workers: {
     /** The binding name the namespace is bound under in the Worker's wrangler config. */
     binding: string;
   } = { binding: "CACHE" };
+
+  /** Which driver runs; names are the driver file prefixes. `memory` keeps values in this process only. */
+  driver: DriverName<Cache> = "memory";
 }
 
 registerSchemas([[CacheOptions, CACHE_CONFIG_SCHEMA]]);
