@@ -8,22 +8,15 @@
  *          (ADR 0005, ADR 0294 decision 17).
  *
  * Mechanism (vitest 5 / vite 8): vite transforms TypeScript with oxc through rolldown's
- * `transformSync`; `oxc.decorator.legacy` is `experimentalDecorators`. The `app`, `mobile`,
- * `library` and `service` roles of @stackra/typescript-config set the matching tsc flags
- * (`experimentalDecorators`, no `emitDecoratorMetadata`), so `tsc --noEmit` and the test transform
- * agree. This file is the only place the option names live.
- * Boundary: adds the legacy decorator transform to the base preset; it does not emit metadata.
+ * `transformSync`; `oxc.decorator.legacy` is `experimentalDecorators`. The `decorators` and
+ * `decorators-react` presets of @stackra/typescript-config, and the `app`, `mobile`, `desktop` and
+ * `service` roles, set the matching tsc flags (`experimentalDecorators`, no `emitDecoratorMetadata`),
+ * so `tsc --noEmit` and the test transform agree. `constants/decorator-transform.constant.ts` is the
+ * only place the option names live.
+ * Boundary: the `./preset-decorators` entry: re-exports only; it does not emit metadata.
  * Runtime: node
  * Governing contract: ADR 0005 (legacy decorators); ADR 0294 (rule R6, decision 17); ADR 0007
  *                     (documentation).
  */
-import { defineConfig, mergeConfig } from "vitest/config";
-import { stackraVitest } from "./preset.ts";
-
-/** The legacy decorator transform alone, for presets that start from another base (react, native). */
-export const decoratorTransform = defineConfig({
-  oxc: { decorator: { legacy: true, emitDecoratorMetadata: false } },
-});
-
-/** Base preset + legacy decorators (no metadata emission). */
-export const stackraVitestDecorators = mergeConfig(stackraVitest, decoratorTransform);
+export { decoratorTransform } from "./constants/decorator-transform.constant.ts";
+export { stackraVitestDecorators } from "./constants/stackra-vitest-decorators.constant.ts";

@@ -11,9 +11,15 @@ import { describe, expect, it } from "vitest";
 
 import { appPreset, libraryPreset, mobilePreset, servicePreset, toolingPreset } from "../index.ts";
 
-/** The project entries of a config, as plain records. */
-const projectsOf = (config: { test?: { projects?: unknown } }): Record<string, any>[] =>
-  (config.test?.projects ?? []) as Record<string, any>[];
+/** The fields of a project entry these tests read. */
+type Project = {
+  test: { name?: string; include?: string[]; exclude?: string[]; environment?: string };
+  resolve?: { alias?: Record<string, string> };
+};
+
+/** The project entries of a config. */
+const projectsOf = (config: { test?: { projects?: unknown } }): Project[] =>
+  (config.test?.projects ?? []) as Project[];
 
 const legacyOf = (config: unknown): boolean | undefined =>
   (config as { oxc?: { decorator?: { legacy?: boolean } } }).oxc?.decorator?.legacy;
@@ -50,7 +56,7 @@ describe("libraryPreset", () => {
     expect(react?.test.environment).toBe("jsdom");
     expect(react?.test.include).toEqual(["src/react/**/__tests__/**/*.test.tsx"]);
     expect(native?.test.include).toEqual(["src/native/**/__tests__/**/*.test.tsx"]);
-    expect(native?.resolve.alias["react-native"]).toBe("react-native-web");
+    expect(native?.resolve?.alias?.["react-native"]).toBe("react-native-web");
   });
 
   it("is under the shared coverage gate", () => {
