@@ -3,17 +3,20 @@
  * Purpose: `SandboxPool`, the process-isolated runner of code steps: a fixed number of child processes, each running
  *          one `Sandbox` run at a time, a queue for the rest, the guest's fetches relayed back to the host's audited
  *          `SandboxFetchProxy`, and a watchdog that kills a process whose run outlives its time limit by the grace,
- *          counted from when the process says it serves, so a slow start-up is never charged to a run.
+ *          counted from when the process says it serves, so a slow start-up is never charged to a run, and a start-up
+ *          deadline that kills and replaces a process that never says it serves, refusing the run queued on it.
  * Boundary: node only. A crash of the WebAssembly engine, a runaway native allocation or a hung host call takes down
  *           one child, never the host; the child is replaced and only its run is refused. Runs in one process are
  *           sequential and each gets a fresh QuickJS runtime, so no state passes between runs. The pool size and the
- *           grace are the host's deployment settings; every run limit is still the run's own (`SandboxLimits`). A
+ *           grace and the start-up deadline are the host's deployment settings (the deadline defaults to
+ *           `SANDBOX_POOL_DEFAULTS`); every run limit is still the run's own (`SandboxLimits`). A
  *           Python run (Pyodide, loaded in the process when its first Python request arrives) is the last run of its
  *           process: one interpreter cannot isolate runs and Pyodide's FFI reaches the process's JavaScript, so the
  *           process is replaced after it. Processes start with an empty environment, and a relayed fetch's origin is
  *           checked again here against the run's allow-list, so a process that was broken out of cannot widen egress.
  * Runtime: node
- * Governing contract: ADR 0434 (decisions 1 and 2); ADR 0154 (decisions 1, 2, 5 and 6); ADR 0294 (decision 16).
+ * Governing contract: ADR 0434 (decisions 1 and 2); ADR 0154 (decisions 1, 2, 5 and 6); ADR 0294 (decision 16);
+ *                     STA-1332.
  */
 import { type ChildProcess, spawn } from "node:child_process";
 
@@ -28,6 +31,7 @@ import {
   type SandboxRequest,
   type SandboxResult,
 } from "#core/index";
+import { SANDBOX_POOL_DEFAULTS } from "#node/constants/sandbox-pool-defaults.constant";
 import type { PoolReply } from "#node/types/pool-reply.type";
 import type { PoolRequest } from "#node/types/pool-request.type";
 import type { SandboxPoolOptions } from "#node/types/sandbox-pool-options.type";
@@ -44,6 +48,8 @@ interface Slot {
   readonly child: ChildProcess;
   /** The process said it serves, so its start-up is over and a run's clock may start. */
   isReady: boolean;
+  /** Kills the process if it has not said it serves by the start-up deadline; cleared on `ready` or exit. */
+  startup: NodeJS.Timeout | undefined;
   running?:
     | (Job & {
         started: number;
@@ -86,7 +92,8 @@ export class SandboxPool extends Service {
   /**
    * Starts `options.size` processes.
    *
-   * @throws RangeError when the size is not a whole number from 1 or the grace is negative.
+   * @throws RangeError when the size is not a whole number from 1, the grace is negative or the start-up deadline is not
+   *         more than 0.
    * @throws TypeError when the pool is already open.
    */
   open(options: SandboxPoolOptions): void {
@@ -98,6 +105,10 @@ export class SandboxPool extends Service {
     if (!(options.graceMs >= 0))
       throw new RangeError(
         `A sandbox pool's grace is zero or more milliseconds, not ${options.graceMs}`,
+      );
+    if (options.startupMs !== undefined && !(options.startupMs > 0))
+      throw new RangeError(
+        `A sandbox pool's start-up deadline is more than 0 milliseconds, not ${options.startupMs}`,
       );
     this.options = options;
     for (let index = 0; index < options.size; index += 1) this.slots.push(this.spawn());
@@ -149,7 +160,11 @@ export class SandboxPool extends Service {
       // An empty environment: no host secret reaches a process that runs tenant code.
       { stdio: ["ignore", "inherit", "inherit", "ipc"], serialization: "json", env: {} },
     );
-    const slot: Slot = { child, isReady: false };
+    const slot: Slot = { child, isReady: false, startup: undefined };
+    slot.startup = setTimeout(
+      () => this.stalled(slot),
+      options.startupMs ?? SANDBOX_POOL_DEFAULTS.startupMs,
+    );
     child.on("message", (message: PoolReply) => this.answer(slot, message));
     child.on("exit", () => this.lost(slot));
     return slot;
@@ -207,6 +222,7 @@ export class SandboxPool extends Service {
   /** Handles one message of a process. */
   private answer(slot: Slot, message: PoolReply): void {
     if (message.type === "ready") {
+      clearTimeout(slot.startup);
       // Only one restart per run, so a process cannot keep its run's clock from ever running out.
       if (slot.isReady && slot.running !== undefined) {
         if (slot.running.isRearmed) return;
@@ -263,6 +279,27 @@ export class SandboxPool extends Service {
     this.dispatch();
   }
 
+  /**
+   * Kills a process that did not say it serves by the start-up deadline and refuses the run queued on it; its run's
+   * watchdog never armed, since that waits for `ready`. `lost` replaces it once it exits.
+   */
+  private stalled(slot: Slot): void {
+    if (slot.isReady || slot.child.killed) return;
+    const running = slot.running;
+    slot.running = undefined;
+    if (running !== undefined) {
+      running.abort.abort();
+      running.reject(
+        SandboxCodeFailedError.create({
+          failure: `The sandbox process did not start within ${this.options?.startupMs ?? SANDBOX_POOL_DEFAULTS.startupMs} ms`,
+          logs: [],
+          codeMs: 0,
+        }),
+      );
+    }
+    slot.child.kill("SIGKILL");
+  }
+
   /** Sends `message` to a process that may have died meanwhile. */
   private post(slot: Slot, message: PoolRequest): void {
     if (slot.child.connected) slot.child.send(message);
@@ -270,6 +307,7 @@ export class SandboxPool extends Service {
 
   /** Replaces a process that exited, refusing the run it was on. */
   private lost(slot: Slot): void {
+    clearTimeout(slot.startup);
     const running = slot.running;
     if (running !== undefined) {
       clearTimeout(running.timer);

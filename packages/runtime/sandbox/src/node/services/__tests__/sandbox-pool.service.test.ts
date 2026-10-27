@@ -4,11 +4,13 @@
  *          relayed to the host's proxy, a run's own refusal comes back as the same refusal, a run waiting past its time
  *          is refused while the pool keeps serving, a Python step runs in Pyodide in a process that is then replaced,
  *          a relayed fetch to an origin outside the run's allow-list never reaches the proxy, a run's clock restarts
- *          at most once, and a pool that is not open refuses runs.
+ *          at most once, a process that never says it serves is killed at the start-up deadline and its run refused,
+ *          and a pool that is not open refuses runs.
  * Boundary: test only; the children load this package's source `./node` entry, so Node strips its types, with a
  *           resolve hook for its extensionless `#` imports (ADR 0233); its dependencies load from their built dists
  *           (`test` runs after `^build`), since Node cannot parse their decorated sources. The watchdog test runs a
- *           stand-in process that never answers, so the watchdog, not the run's own limit, ends the run under any load.
+ *           stand-in process that never answers, so the watchdog, not the run's own limit, ends the run under any load;
+ *           the start-up test runs one that never sends `ready` (STA-1332).
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0434 (decisions 1 and 2); ADR 0154 (decisions 2, 5 and 6).
  */
@@ -92,6 +94,16 @@ const REARMING_CHILD = `export function serveSandboxChild() {
 const REARMING = {
   ...OPTIONS,
   module: `data:text/javascript,${encodeURIComponent(REARMING_CHILD)}`,
+};
+
+/** A stand-in process that never says it serves, so only the pool's start-up deadline can end its queued run. */
+const NEVER_READY_CHILD = `export function serveSandboxChild() {
+  process.on("message", () => {});
+}`;
+const NEVER_READY = {
+  ...OPTIONS,
+  startupMs: 500,
+  module: `data:text/javascript,${encodeURIComponent(NEVER_READY_CHILD)}`,
 };
 
 const pools: SandboxPool[] = [];
@@ -232,6 +244,25 @@ describe(SandboxPool, () => {
         reference: "s",
       }),
     ).rejects.toBeInstanceOf(SandboxLimitExceededError);
+  }, 20_000);
+
+  it("kills a process that never says it serves and refuses its run, then replaces it", async () => {
+    const pool = poolOf(new EchoProxy(), NEVER_READY);
+    const run = () =>
+      pool.run({
+        code: "return 1;",
+        input: null,
+        limits: LIMITS,
+        allowedOrigins: [],
+        reference: "s",
+      });
+    const refusal = await run().catch((error: unknown) => error);
+    expect(refusal).toBeInstanceOf(SandboxCodeFailedError);
+    expect(refusal).toMatchObject({
+      details: { failure: "The sandbox process did not start within 500 ms", codeMs: 0 },
+    });
+    // The replacement is refused at its own deadline too, so the pool replaced the process instead of stalling.
+    await expect(run()).rejects.toBeInstanceOf(SandboxCodeFailedError);
   }, 20_000);
 
   it("refuses runs when not open and a bad size", async () => {

@@ -3,7 +3,7 @@ Stackra file contract:
 Purpose: the consumer guide of @stackra/sandbox: what it exports, how to run a JavaScript, Python or TypeScript code step, the process pool and the network rules.
 Boundary: documentation only; packages/runtime/sandbox.
 Runtime: none (Markdown)
-Governing contract: ADR 0154; ADR 0434.
+Governing contract: ADR 0154; ADR 0434; STA-1332.
 -->
 
 # @stackra/sandbox
@@ -74,7 +74,9 @@ await pool.close();
 run is a process's last, see below). A guest `fetch` is relayed back over IPC to the `SandboxFetchProxy` bound in the
 host, so egress stays audited in one place. A run that outlives its time limit by `graceMs`, counted from when its process says it serves (start-up is never charged
 to a run), has its process killed (`sandbox_limit_exceeded`, limit `time`); a process that dies mid-run refuses that
-run only (`sandbox_code_failed`) and is replaced (ADR 0434).
+run only (`sandbox_code_failed`) and is replaced (ADR 0434). A new process that has not said it serves within
+`startupMs` (a deployment setting, 30 seconds when absent) is killed and replaced, and the run queued on it is refused
+(`sandbox_code_failed`, `The sandbox process did not start within <n> ms`).
 
 ## Python steps
 

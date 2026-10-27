@@ -48,6 +48,9 @@ The sandboxed code step: the `Sandbox` service, its two refusals and the `Sandbo
   both engines; change the rules there.
 - The `SandboxMeter` port is an open owner question; the caller meters `codeMs`.
 - The pool never runs a guest in the host process; a child process only runs `Sandbox` and relays `fetch`.
+- The pool's own timings (`graceMs`, `startupMs`) are host deployment settings; a default goes in
+  `src/node/constants/sandbox-pool-defaults.constant.ts`, never a literal in the service. A run's watchdog arms on
+  `ready`; the start-up deadline covers the time before it.
 - No parameter properties and no `#private` fields: services typecheck this source under `erasableSyntaxOnly`.
 
 ## Rules that fail the build
