@@ -14,12 +14,17 @@
 import type { PublicId } from "@stackra/contracts";
 import type { OptionalProps } from "@stackra/database";
 import { HasPublicId, Model, Timestamps } from "@stackra/model";
+import { Int } from "@stackra/validation";
 
 import type { SegmentKind } from "#contracts/index";
 
 /** A segment. Traits add `id` and the timestamps; the indexes are the migration's. */
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: merged with the [OptionalProps] augmentation below
 export class Segment extends Model.with(HasPublicId("seg"), Timestamps) {
+  /** The rule set revision the membership was last fully computed from; null before the first computation. */
+  @Int
+  revision!: number | null;
+
   /** The scope node the segment belongs to. */
   scopeId!: PublicId<"scp">;
 
@@ -37,9 +42,6 @@ export class Segment extends Model.with(HasPublicId("seg"), Timestamps) {
 
   /** A dynamic segment's rule set; null for a manual one. */
   ruleSetId!: PublicId<"rset"> | null;
-
-  /** The rule set revision the membership was last fully computed from; null before the first computation. */
-  revision!: number | null;
 
   /** When the membership was last fully computed; null before the first computation. */
   computedAt!: Date | null;
