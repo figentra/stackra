@@ -12,7 +12,7 @@
  *                     environment and tenant); ADR 0173 (nobody reads a value); STA-781.
  */
 import { Service } from "@stackra/container";
-import { FieldCipher } from "@stackra/contracts";
+import type { FieldCipher } from "@stackra/contracts";
 
 /**
  * Seals and opens tenant-owned columns.
@@ -25,7 +25,9 @@ export class ScopeKeyCast extends Service {
   /** The field cipher over the tenant's data keys. */
   private readonly cipher: FieldCipher;
 
-  /** @param cipher - the bound field cipher. */
+  /**
+   * @param cipher - the bound field cipher.
+   */
   constructor(cipher: FieldCipher) {
     super();
     this.cipher = cipher;

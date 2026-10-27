@@ -17,7 +17,10 @@ import { Skill } from "#core/bases/skill.base";
 import type { SkillClass } from "#core/types/skill-class.type";
 import type { SkillExample } from "#core/types/skill-example.type";
 
-class GetOrderQuery extends Query({ key: "order.get", actors: [ActorKind.User, ActorKind.Agent] }) {
+class GetOrderQuery extends Query({
+  key: "order.get",
+  actors: [ActorKind.User, ActorKind.Agent],
+}) {
   async handle(input: { orderId: string }, _ctx: QueryContext): Promise<{ id: string }> {
     return { id: input.orderId };
   }
@@ -53,7 +56,11 @@ class ArchiveOrderAction extends Action({
   }
 }
 
-class OrderKpisQuery extends Query({ key: "order.kpis", actors: [ActorKind.User], tool: false }) {
+class OrderKpisQuery extends Query({
+  key: "order.kpis",
+  actors: [ActorKind.User],
+  tool: false,
+}) {
   async handle(_input: object, _ctx: QueryContext): Promise<{ orders: number }> {
     return { orders: 0 };
   }

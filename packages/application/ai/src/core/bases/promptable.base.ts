@@ -33,7 +33,9 @@ export abstract class Promptable {
   /** The runtime the agent runs on. */
   protected readonly runtime: AgentRuntime;
 
-  /** @param runtime - the agent runtime over the bound stores, dispatcher, models and instructions. */
+  /**
+   * @param runtime - the agent runtime over the bound stores, dispatcher, models and instructions.
+   */
   constructor(runtime: AgentRuntime) {
     this.runtime = runtime;
   }

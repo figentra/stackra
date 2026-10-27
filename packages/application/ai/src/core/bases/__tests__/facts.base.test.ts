@@ -20,7 +20,9 @@ class OrderForbiddenError extends Error {}
 
 class Order {
   id!: PublicId<"ord">;
+
   status = "pending_payment";
+
   totalMinor = 125_000;
 }
 

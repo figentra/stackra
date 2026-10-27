@@ -26,11 +26,11 @@ import type { ToolCallRecord } from "#contracts/types/tool-call-record.type";
  * await runs.toolCalls(reply.runId); // what the run dispatched
  */
 export class MemoryRunStoreDriver extends Driver(RunStore) {
-  /** The runs by id. */
-  private readonly rows = new Map<string, RunRecord>();
-
   /** Every recorded step, in order. */
   readonly steps: RunStepRecord[] = [];
+
+  /** The runs by id. */
+  private readonly rows = new Map<string, RunRecord>();
 
   /** Every recorded tool call, in order. */
   private readonly calls: ToolCallRecord[] = [];

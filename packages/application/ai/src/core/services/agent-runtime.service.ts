@@ -17,7 +17,7 @@
  *                     agent runtime); STA-781; STA-1256 (bypass switch).
  */
 import { Service } from "@stackra/container";
-import { type Actor, Clock } from "@stackra/contracts";
+import type { Actor, Clock } from "@stackra/contracts";
 import { ForbiddenError, NotFoundError } from "@stackra/errors";
 import {
   generateText,
@@ -32,12 +32,12 @@ import {
 import { RunApprovalStatus } from "#contracts/enums/run-approval-status.enum";
 import { RunStatus } from "#contracts/enums/run-status.enum";
 import { ToolCallOutcome } from "#contracts/enums/tool-call-outcome.enum";
-import { AgentModels } from "#contracts/ports/agent-models.port";
-import { AgentQueue } from "#contracts/ports/agent-queue.port";
-import { ConversationStore } from "#contracts/ports/conversation-store.port";
-import { InstructionSource } from "#contracts/ports/instruction-source.port";
-import { RunStore } from "#contracts/ports/run-store.port";
-import { ToolDispatcher } from "#contracts/ports/tool-dispatcher.port";
+import type { AgentModels } from "#contracts/ports/agent-models.port";
+import type { AgentQueue } from "#contracts/ports/agent-queue.port";
+import type { ConversationStore } from "#contracts/ports/conversation-store.port";
+import type { InstructionSource } from "#contracts/ports/instruction-source.port";
+import type { RunStore } from "#contracts/ports/run-store.port";
+import type { ToolDispatcher } from "#contracts/ports/tool-dispatcher.port";
 import type { AgentTool } from "#contracts/types/agent-tool.type";
 import type { RunRecord } from "#contracts/types/run-record.type";
 import { AGENT_REGISTRY } from "#core/constants/agent-registry.constant";
