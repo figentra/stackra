@@ -6015,6 +6015,12 @@ importers:
       '@stackra/i18n':
         specifier: workspace:*
         version: link:../../foundation/i18n
+      '@stackra/identity':
+        specifier: workspace:*
+        version: link:../../security/identity
+      '@stackra/navigation':
+        specifier: workspace:*
+        version: link:../../experience/navigation
     devDependencies:
       '@stackra/testing':
         specifier: workspace:*
