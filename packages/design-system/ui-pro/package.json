@@ -135,9 +135,12 @@
     "clean": "rm -rf dist coverage .turbo"
   },
   "dependencies": {
+    "@stackra/config": "workspace:*",
+    "@stackra/container": "workspace:*",
     "@stackra/i18n": "workspace:*",
     "@stackra/tokens": "workspace:*",
-    "@stackra/ui": "workspace:*"
+    "@stackra/ui": "workspace:*",
+    "@stackra/validation": "workspace:*"
   },
   "devDependencies": {
     "@heroui-pro/react": "catalog:frontend",

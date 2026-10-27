@@ -6,10 +6,13 @@
  * Runtime: node
  * Governing contract: ADR 0294 (decision 19); ADR 0022 (test placement).
  */
+import { Config } from "@stackra/config";
+
 import { UiProConfig } from "#config/ui-pro.config";
 
 describe("UiProConfig", () => {
-  it("starts enabled", () => {
+  it("is a configuration that starts enabled", () => {
+    expect(new UiProConfig()).toBeInstanceOf(Config);
     expect(new UiProConfig().enabled).toBe(true);
   });
 

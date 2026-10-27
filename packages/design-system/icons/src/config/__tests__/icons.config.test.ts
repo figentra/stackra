@@ -6,10 +6,13 @@
  * Runtime: node
  * Governing contract: ADR 0294 (decision 19); ADR 0022 (test placement).
  */
+import { Config } from "@stackra/config";
+
 import { IconsConfig } from "#config/icons.config";
 
 describe("IconsConfig", () => {
-  it("starts enabled", () => {
+  it("is a configuration that starts enabled", () => {
+    expect(new IconsConfig()).toBeInstanceOf(Config);
     expect(new IconsConfig().enabled).toBe(true);
   });
 

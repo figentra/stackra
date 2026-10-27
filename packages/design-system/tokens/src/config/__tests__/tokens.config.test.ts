@@ -6,10 +6,13 @@
  * Runtime: node
  * Governing contract: ADR 0294 (decision 19); ADR 0022 (test placement).
  */
+import { Config } from "@stackra/config";
+
 import { TokensConfig } from "#config/tokens.config";
 
 describe("TokensConfig", () => {
-  it("starts enabled", () => {
+  it("is a configuration that starts enabled", () => {
+    expect(new TokensConfig()).toBeInstanceOf(Config);
     expect(new TokensConfig().enabled).toBe(true);
   });
 

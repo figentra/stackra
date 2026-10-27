@@ -8,6 +8,8 @@
  */
 import { readFileSync } from "node:fs";
 
+import { kindOf } from "@stackra/container";
+
 import { UiProModule } from "#node/ui-pro.module";
 
 const pkg = JSON.parse(readFileSync(new URL("../../../package.json", import.meta.url), "utf8")) as {
@@ -16,8 +18,9 @@ const pkg = JSON.parse(readFileSync(new URL("../../../package.json", import.meta
 
 // shortcut: a unit test until @stackra/container ships createTestingModule; then `.int.test.ts` that compiles it.
 describe("UiProModule", () => {
-  it("imports no module yet", () => {
-    expect(UiProModule.imports).toEqual([]);
+  it("is a module that imports no module yet", () => {
+    expect(kindOf(UiProModule)?.kind).toBe("module");
+    expect(kindOf(UiProModule)?.options["imports"]).toEqual([]);
   });
 
   it("is the root module named after the package", async () => {

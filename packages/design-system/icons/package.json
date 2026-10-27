@@ -135,6 +135,11 @@
     "clean": "rm -rf dist coverage .turbo",
     "generate": "node scripts/generate-icons.mjs && oxfmt --write src"
   },
+  "dependencies": {
+    "@stackra/config": "workspace:*",
+    "@stackra/container": "workspace:*",
+    "@stackra/validation": "workspace:*"
+  },
   "devDependencies": {
     "@stackra/tsdown-config": "workspace:*",
     "@stackra/typescript-config": "workspace:*",
