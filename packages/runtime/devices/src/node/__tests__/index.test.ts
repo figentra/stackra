@@ -11,11 +11,12 @@ import { describe, expect, it } from "@stackra/testing";
 import * as node from "#node/index";
 
 describe("@stackra/devices/node", () => {
-  it("exports exactly the acknowledged query and its schemas", () => {
+  it("exports exactly the acknowledged query, its schemas and its permissions", () => {
     expect(Object.keys(node).sort()).toEqual([
       "DeviceAcknowledgedInput",
       "DeviceAcknowledgedOutput",
       "DeviceAcknowledgedQuery",
+      "DevicePermissions",
     ]);
   });
 });

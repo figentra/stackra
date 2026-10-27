@@ -36,7 +36,7 @@ function isVisible(scope: ScopeRef | undefined, caller: ScopeRef | undefined): b
 export class DeviceAcknowledgedQuery extends Query({
   key: "device.acknowledged",
   actors: [ActorKind.User],
-  tool: false,
+  tool: false, // reason: a device's own sync bookkeeping, asked by the device runtime; nothing an agent decides on
 }) {
   /** Each device's last settled call. */
   private readonly sequences: DeviceSequenceStore;

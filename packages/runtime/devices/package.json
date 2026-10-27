@@ -92,6 +92,7 @@
     "@stackra/container": "workspace:*",
     "@stackra/contracts": "workspace:*",
     "@stackra/errors": "workspace:*",
+    "@stackra/iam": "workspace:*",
     "@stackra/storage": "workspace:*",
     "@stackra/transport": "workspace:*",
     "@stackra/validation": "workspace:*",

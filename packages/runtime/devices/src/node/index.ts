@@ -7,6 +7,7 @@
  * Runtime: node
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision.
  */
+export { DevicePermissions } from "#node/access/device.permissions";
 export { DeviceAcknowledgedQuery } from "#node/queries/device-acknowledged.query";
 export { DeviceAcknowledgedInput } from "#node/schemas/device-acknowledged-input.schema";
 export { DeviceAcknowledgedOutput } from "#node/schemas/device-acknowledged-output.schema";
