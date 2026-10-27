@@ -11,8 +11,8 @@ import type { Fields } from "@stackra/validation";
 
 import type { PathParams } from "#core/types/path-params.type";
 
-// Distributive over `T` (checked naked, not through `OptionsOf`), so inside a class TS reads `X<this>` through the
-// class it is declared on and `ctx.params` keeps its fields; a check through `OptionsOf<T>` stays deferred there.
+// Distributive over `T` (checked naked, not through a helper type), so inside a class TS reads `X<this>` through the
+// class it is declared on and `ctx.params` keeps its fields; a check through a helper type stays deferred there.
 /** The params of route or layout instance `T`. */
 export type ParamsOf<T> = T extends { readonly "~options": { readonly params: AnyClass<infer S> } }
   ? Fields<S>

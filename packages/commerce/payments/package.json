@@ -79,7 +79,6 @@
     "clean": "rm -rf dist coverage .turbo"
   },
   "dependencies": {
-    "@stackra/config": "workspace:*",
     "@stackra/container": "workspace:*",
     "@stackra/contracts": "workspace:*",
     "@stackra/errors": "workspace:*",

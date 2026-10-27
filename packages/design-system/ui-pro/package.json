@@ -150,7 +150,6 @@
     "@internationalized/number": "catalog:mobile",
     "@number-flow/react": "catalog:frontend",
     "@shopify/react-native-skia": "catalog:mobile",
-    "@stackra/tokens": "workspace:*",
     "@stackra/tsdown-config": "workspace:*",
     "@stackra/typescript-config": "workspace:*",
     "@stackra/vitest-config": "workspace:*",

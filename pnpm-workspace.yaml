@@ -78,12 +78,9 @@ catalogs:
     tsdown: 0.23.1
     turbo: 2.11.9
     # The class-component compiler (ADR 0305 rules 37 to 41): a Babel plugin gen ships and vite-plugin, Metro and
-    # tsdown run. Babel 8 ships its own types, so no @types/babel__* entries.
+    # tsdown run. Babel 8 ships its own types, so no @types/babel__* entries. The plugin reaches parser, traverse and
+    # types through @babel/core (its `types` namespace), so they get no entries of their own.
     "@babel/core": 8.0.7
-    "@babel/generator": 8.0.6
-    "@babel/parser": 8.0.7
-    "@babel/traverse": 8.0.7
-    "@babel/types": 8.0.6
   # Root repo tooling that loads `typescript` as a JS API (tools/scripts/doc-standard.mjs), which TypeScript 7 (native)
   # does not ship yet. Members keep `tsc` from catalog:build; their own node_modules/.bin comes first on PATH.
   tooling:
@@ -191,7 +188,6 @@ catalogs:
     "@react-navigation/native-stack": 7.21.0
     react-native-bottom-tabs: 1.4.0
     "@bottom-tabs/react-navigation": 1.4.0
-    "@expo/metro-runtime": 57.0.16
     expo-dev-client: 57.0.20
     expo-constants: 57.0.22
     expo-linking: 57.0.13
@@ -201,7 +197,6 @@ catalogs:
     expo-status-bar: 57.0.1
     expo-system-ui: 57.0.4
     expo-glass-effect: 57.0.4
-    expo-blur: 57.0.3
     # Storage drivers for @stackra/storage (optional peers). MIT. MMKV 4.x has createMMKV and remove.
     react-native-mmkv: 4.3.2
     expo-secure-store: 57.0.4
@@ -215,6 +210,8 @@ catalogs:
     react: 19.2.3
     react-dom: 19.2.3
     react-native: 0.86.3
+    # What `libraryPreset({ native })` of @stackra/vitest-config aliases `react-native` to in jsdom; a member that
+    # tests src/native lists it as a devDependency. Kept ahead of the first such member.
     react-native-web: 0.21.2
     react-native-screens: 4.26.2
     react-native-safe-area-context: 5.7.0
@@ -314,10 +311,10 @@ overrides:
 # frontend catalog (19.3.0) sees two unrelated `Ref` types (TS2322 in ui-pro's NumberValue).
 packageExtensions:
   # react-native-worklets 0.10.1's Babel plugin requires @babel/generator and @babel/traverse without declaring them,
-  # so it resolves pnpm's hidden-hoisted copies: the Babel 8 ones of catalog:build. Babel 8's generator cannot print the
-  # Babel 7 AST Metro hands it (TSFunctionType `parameters`), and every Reanimated worklet with a function type fails
-  # the mobile build with "Cannot read properties of undefined (reading 'length')". Pin them to Babel 7, the major of
-  # the @babel/core peer Metro runs; drop this when worklets declares them itself.
+  # so it resolves pnpm's hidden-hoisted copies: the Babel 8 ones that @babel/core of catalog:build brings. Babel 8's
+  # generator cannot print the Babel 7 AST Metro hands it (TSFunctionType `parameters`), and every Reanimated worklet
+  # with a function type fails the mobile build with "Cannot read properties of undefined (reading 'length')". Pin them
+  # to Babel 7, the major of the @babel/core peer Metro runs; drop this when worklets declares them itself.
   react-native-worklets:
     dependencies:
       "@babel/generator": ^7.29.0

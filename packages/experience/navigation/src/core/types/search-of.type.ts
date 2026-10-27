@@ -9,8 +9,8 @@
 import type { AnyClass } from "@stackra/container";
 import type { Fields } from "@stackra/validation";
 
-// Distributive over `T` (checked naked, not through `OptionsOf`), so inside a class TS reads `X<this>` through the
-// class it is declared on and `ctx.search` keeps its fields; a check through `OptionsOf<T>` stays deferred there.
+// Distributive over `T` (checked naked, not through a helper type), so inside a class TS reads `X<this>` through the
+// class it is declared on and `ctx.search` keeps its fields; a check through a helper type stays deferred there.
 /** The query of route or layout instance `T`. */
 export type SearchOf<T> = T extends { readonly "~options": { readonly search: AnyClass<infer S> } }
   ? Fields<S>

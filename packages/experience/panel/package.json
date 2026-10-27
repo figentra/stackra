@@ -97,7 +97,6 @@
     "@stackra/tsdown-config": "workspace:*",
     "@stackra/typescript-config": "workspace:*",
     "@stackra/vitest-config": "workspace:*",
-    "@tanstack/query-core": "catalog:",
     "@testing-library/dom": "catalog:frontend",
     "@testing-library/react": "catalog:frontend",
     "@types/node": "catalog:",

@@ -53,6 +53,7 @@
     "yaml": "catalog:"
   },
   "devDependencies": {
+    "@stackra/contracts": "workspace:*",
     "@stackra/testing": "workspace:*",
     "@stackra/tsdown-config": "workspace:*",
     "@stackra/typescript-config": "workspace:*",

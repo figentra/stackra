@@ -5,7 +5,8 @@ configuration class a host adds sources to, a per-request nonce, and the React p
 server render writes.
 
 **Tier:** `tier:lib` (`packages/security/csp`). Entries `.` and `./react`. Depends on `@stackra/config`,
-`@stackra/contracts`, `@stackra/validation` and zod; React is an optional peer of `./react`.
+`@stackra/validation` and zod; React is an optional peer of `./react`. `@stackra/contracts` is a devDependency: only
+`stackra.config.ts` imports it.
 
 ## What is here
 

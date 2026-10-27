@@ -10,7 +10,7 @@ it calls the engine built on these ports (ADR 0357). Which provider serves a cal
 data (ADR 0356), never code.
 
 **Tier:** `tier:lib` (`packages/commerce/payments`). Entries `.`, `./contracts` and `./testing`. Depends on
-`@stackra/config` (`@Secret`), `@stackra/container`, `@stackra/contracts`, `@stackra/errors`, `@stackra/integrations`
+`@stackra/container`, `@stackra/contracts`, `@stackra/errors`, `@stackra/integrations`
 (Integration, Connection, the managed client and `ConnectionStore`) and `@stackra/money`.
 
 ## What is here

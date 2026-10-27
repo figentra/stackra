@@ -66,11 +66,11 @@
   },
   "dependencies": {
     "@stackra/config": "workspace:*",
-    "@stackra/contracts": "workspace:*",
     "@stackra/validation": "workspace:*",
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@stackra/contracts": "workspace:*",
     "@stackra/testing": "workspace:*",
     "@stackra/tsdown-config": "workspace:*",
     "@stackra/typescript-config": "workspace:*",
