@@ -7,7 +7,8 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; the MUS-216 answer; ADR 0337.
  */
-import { Money, Rounding } from "@stackra/money";
+import { Rounding } from "@stackra/contracts";
+import { Money } from "@stackra/money";
 import type { RateSnapshot } from "@stackra/money/contracts";
 import { describe, expect, it } from "@stackra/testing";
 

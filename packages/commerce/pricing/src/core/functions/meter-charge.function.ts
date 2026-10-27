@@ -5,7 +5,8 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0391 (decision 1); ADR 0220 (decision 3: one explicit rounding).
  */
-import { type Money, Rounding } from "@stackra/money";
+import { Rounding } from "@stackra/contracts";
+import { type Money } from "@stackra/money";
 
 import type { RateCard } from "#core/types/rate-card.type";
 

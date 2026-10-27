@@ -1,14 +1,16 @@
 /**
  * Stackra file contract:
- * Purpose: `Rounding`, how `Money#times` and `Money#divide` turn an exact quotient into whole minor units.
+ * Purpose: `Rounding`, the one rounding vocabulary: how `Money#times` and `Money#divide` turn an exact quotient into
+ *          whole minor units, and (the `down`, `up` and `half_up` subset, `@stackra/support`'s `QuantityRounding`) how
+ *          `Quantity.roundTo` and `Quantity.priceMinor` round.
  * Boundary: an `Enum.of` value plus the type of the same name. Directions are relative to zero, so a negative amount
  *           rounds like its positive mirror. `HalfEven` is the default; `HalfUp` is for a tax rule that requires it;
- *           `Down` never advertises a rounded-up price.
+ *           `Down` never advertises a rounded-up price. One home here, below both money and support.
  * Runtime: isomorphic
  * Governing contract: ADR 0220 (decision 3: half-even by default, half-up where a tax rule requires it); ADR 0294
- *                     (decision 16: Enum); ADR 0231 (snake_case codes).
+ *                     (decision 16: Enum); ADR 0231 (snake_case codes); STA-1383 (one rounding vocabulary).
  */
-import { Enum } from "@stackra/contracts";
+import { Enum } from "#core/bases/enum.base";
 
 /** The rounding modes of money arithmetic. */
 export const Rounding = Enum.of({

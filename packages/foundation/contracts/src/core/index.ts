@@ -28,6 +28,7 @@ export { MeterKind } from "#core/enums/meter-kind.enum";
 export { MigrationRunner } from "#core/enums/migration-runner.enum";
 export { Realm } from "#core/enums/realm.enum";
 export { RetryOn } from "#core/enums/retry-on.enum";
+export { Rounding } from "#core/enums/rounding.enum";
 export { SortDirection } from "#core/enums/sort-direction.enum";
 export { Target } from "#core/enums/target.enum";
 export { Tone } from "#core/enums/tone.enum";

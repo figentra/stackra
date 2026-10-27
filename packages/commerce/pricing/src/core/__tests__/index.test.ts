@@ -8,7 +8,8 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0127 2026-10-24 note.
  */
-import { Money, Rounding } from "@stackra/money";
+import { Rounding } from "@stackra/contracts";
+import { Money } from "@stackra/money";
 import { describe, expect, it } from "@stackra/testing";
 
 import * as entry from "#core/index";

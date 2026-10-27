@@ -9,7 +9,6 @@
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision.
  */
 export { MemoryRateSourceDriver } from "#core/drivers/memory-rate-source.driver";
-export { Rounding } from "#core/enums/rounding.enum";
 export { currencyCode } from "#core/functions/currency-code.function";
 export { decimalProduct } from "#core/functions/decimal-product.function";
 export { money } from "#core/functions/money.function";

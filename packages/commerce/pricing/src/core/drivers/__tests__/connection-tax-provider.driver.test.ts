@@ -9,8 +9,9 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0379 (decisions 2, 3 and 5).
  */
+import { Rounding } from "@stackra/contracts";
 import type { ProviderDrivers, ProviderResolver } from "@stackra/integrations";
-import { Money, Rounding } from "@stackra/money";
+import { Money } from "@stackra/money";
 import { describe, expect, it } from "@stackra/testing";
 
 import type { TaxGateway } from "#contracts/types/tax-gateway.type";

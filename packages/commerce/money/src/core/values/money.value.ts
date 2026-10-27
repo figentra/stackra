@@ -14,8 +14,9 @@
  *                     allocation); ADR 0294 (decision 26: `Money.of` is a constant gen evaluates; decision 27: the
  *                     safe-integer limit); ADR 0127 (money in commerce).
  */
+import { Rounding } from "@stackra/contracts";
+
 import { CURRENCIES } from "#core/constants/currencies.constant";
-import { Rounding } from "#core/enums/rounding.enum";
 import type { CurrencyCode } from "#core/types/currency-code.type";
 
 /** The largest minor amount a `Money` holds, as a BigInt for exact comparison. */

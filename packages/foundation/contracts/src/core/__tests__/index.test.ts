@@ -100,6 +100,7 @@ describe("@stackra/contracts", () => {
       "PrincipalDirectory",
       "Realm",
       "RetryOn",
+      "Rounding",
       "Signer",
       "SortDirection",
       "SubjectKeyProviderDriver",

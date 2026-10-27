@@ -10,7 +10,8 @@
 import { buildConfig } from "@stackra/config";
 import { Container } from "@stackra/container";
 import { ContainerProvider } from "@stackra/container/react";
-import { Money, Rounding } from "@stackra/money";
+import { Rounding } from "@stackra/contracts";
+import { Money } from "@stackra/money";
 import { describe, expect, it } from "@stackra/testing";
 import { renderToString } from "react-dom/server";
 

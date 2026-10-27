@@ -7,10 +7,10 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0220 (decision 3); ADR 0244 (decision 9).
  */
+import { Rounding } from "@stackra/contracts";
 import { describe, expect, it } from "@stackra/testing";
 
 import type { RateSnapshot } from "#contracts/types/rate-snapshot.type";
-import { Rounding } from "#core/enums/rounding.enum";
 import { ExchangeRate } from "#core/values/exchange-rate.value";
 import { Money } from "#core/values/money.value";
 

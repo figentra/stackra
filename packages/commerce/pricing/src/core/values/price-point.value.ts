@@ -12,7 +12,8 @@
  * Governing contract: ADR 0244 (decision 6: prices round to a price point, per Market); ADR 0220 (decision 3: one
  *                     explicit rounding); ADR 0127 (pricing primitives in commerce; the engine is an OS service).
  */
-import { Money, Rounding } from "@stackra/money";
+import { Rounding } from "@stackra/contracts";
+import { Money } from "@stackra/money";
 import type { CurrencyCode } from "@stackra/money";
 
 /**

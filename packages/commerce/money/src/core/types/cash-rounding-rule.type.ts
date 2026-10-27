@@ -8,7 +8,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0220 (decision 3); config-model section 1 (market packs hold the table); owner US-39.
  */
-import type { Rounding } from "#core/enums/rounding.enum";
+import type { Rounding } from "@stackra/contracts";
 
 /** How cash totals in one currency round. */
 export interface CashRoundingRule {

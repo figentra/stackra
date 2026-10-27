@@ -79,6 +79,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@stackra/support": "workspace:*",
     "@stackra/testing": "workspace:*",
     "@stackra/tsdown-config": "workspace:*",
     "@stackra/typescript-config": "workspace:*",

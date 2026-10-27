@@ -8,9 +8,10 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0220 (decisions 1 to 3); the OS-114 answer (6-decimal unit prices).
  */
+import { Rounding } from "@stackra/contracts";
+
 import { CURRENCIES } from "#core/constants/currencies.constant";
 import { UNIT_PRICE_SCALE } from "#core/constants/unit-price-scale.constant";
-import { Rounding } from "#core/enums/rounding.enum";
 import { decimalParts } from "#core/functions/decimal-parts.function";
 import { decimalProduct } from "#core/functions/decimal-product.function";
 import { shiftDecimal } from "#core/functions/shift-decimal.function";

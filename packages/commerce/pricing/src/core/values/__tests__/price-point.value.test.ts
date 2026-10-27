@@ -6,7 +6,8 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0244 (decision 6).
  */
-import { Money, Rounding } from "@stackra/money";
+import { Rounding } from "@stackra/contracts";
+import { Money } from "@stackra/money";
 import { describe, expect, it } from "@stackra/testing";
 
 import { PricePoint } from "#core/values/price-point.value";

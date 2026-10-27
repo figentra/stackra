@@ -10,7 +10,7 @@ loses a minor unit, and the `money()` and `currencyCode()` codecs that generated
 
 | Import                     | Holds                        | Exports                                                                                                                                                                   |
 | -------------------------- | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@stackra/money`           | `src/core/`: isomorphic code | `Money`, `Rounding`, `money`, `currencyCode`, `CurrencyCode`, `ExchangeRate`, `CashRounding`, `CashRoundingRule`, `UnitPrice`, `decimalProduct`, `MemoryRateSourceDriver` |
+| `@stackra/money`           | `src/core/`: isomorphic code | `Money`, `money`, `currencyCode`, `CurrencyCode`, `ExchangeRate`, `CashRounding`, `CashRoundingRule`, `UnitPrice`, `decimalProduct`, `MemoryRateSourceDriver` |
 | `@stackra/money/contracts` | `src/contracts/`: the port   | `RateSource`, `RatePair`, `RateSnapshot`                                                                                                                                  |
 
 Entry barrels are generated, never authored (ADR 0294 decision 15); until `stackra gen` writes them (STA-339),
@@ -19,7 +19,8 @@ Entry barrels are generated, never authored (ADR 0294 decision 15); until `stack
 ## `Money`
 
 ```ts
-import { Money, Rounding } from "@stackra/money";
+import { Rounding } from "@stackra/contracts";
+import { Money } from "@stackra/money";
 
 const price = Money.ofMinor(9_900, "USD"); // from minor units, the form prices travel in
 price.toDecimal(); // "99.00", for JSON-LD offers and decimal APIs
@@ -56,7 +57,8 @@ Money.of("10.00", "USD")
 
 ## `Rounding`
 
-`Down` (toward zero), `Up` (away from zero), `HalfUp` (nearest, half away from zero) and `HalfEven` (nearest, half
+`Rounding` lives in `@stackra/contracts` (STA-1383), the one rounding vocabulary: support's `QuantityRounding` is its
+`down`, `up` and `half_up` subset. `Down` (toward zero), `Up` (away from zero), `HalfUp` (nearest, half away from zero) and `HalfEven` (nearest, half
 to even; the default). A negative amount rounds like its positive mirror.
 
 ## Rates: `RateSource` and `ExchangeRate`

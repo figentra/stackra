@@ -9,10 +9,10 @@
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0220 (decisions 1 to
  *                     3); ADR 0294 (decisions 26 and 27).
  */
+import { Rounding } from "@stackra/contracts";
 import { describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 
-import { Rounding } from "#core/enums/rounding.enum";
 import type { CurrencyCode } from "#core/types/currency-code.type";
 import { Money } from "#core/values/money.value";
 

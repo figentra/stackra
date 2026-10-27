@@ -8,7 +8,7 @@
  * Governing contract: ADR 0266 (memory drivers first); ADR 0269 (fakes are real drivers); the OS-109 answer.
  */
 import { Driver } from "@stackra/container";
-import { Rounding } from "@stackra/money";
+import { Rounding } from "@stackra/contracts";
 
 import { TaxProvider } from "#contracts/ports/tax-provider.port";
 import type { TaxQuote } from "#contracts/types/tax-quote.type";

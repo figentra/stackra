@@ -6,9 +6,9 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0220 (decision 3); owner US-39.
  */
+import { Rounding } from "@stackra/contracts";
 import { describe, expect, it } from "@stackra/testing";
 
-import { Rounding } from "#core/enums/rounding.enum";
 import { roundCash } from "#core/functions/round-cash.function";
 import { Money } from "#core/values/money.value";
 

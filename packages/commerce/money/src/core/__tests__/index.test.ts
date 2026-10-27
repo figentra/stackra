@@ -7,6 +7,7 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0127 2026-10-24 note.
  */
+import { Rounding } from "@stackra/contracts";
 import { describe, expect, it } from "@stackra/testing";
 
 import * as entry from "#core/index";
@@ -19,7 +20,6 @@ describe("@stackra/money", () => {
       "ExchangeRate",
       "MemoryRateSourceDriver",
       "Money",
-      "Rounding",
       "UnitPrice",
       "currencyCode",
       "decimalProduct",
@@ -30,7 +30,7 @@ describe("@stackra/money", () => {
 
   it("supports the template's uses", () => {
     const currency: CurrencyCode = "USD";
-    const perMonth = entry.Money.ofMinor(9_900, currency).divide(12, entry.Rounding.Down);
+    const perMonth = entry.Money.ofMinor(9_900, currency).divide(12, Rounding.Down);
     expect(perMonth.toDecimal()).toBe("8.25");
     expect(entry.currencyCode().default("USD").parse(undefined)).toBe("USD");
     expect(entry.money().parse({ minor: 2_000, currency }).minor).toBe(2_000);

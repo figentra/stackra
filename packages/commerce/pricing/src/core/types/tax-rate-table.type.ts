@@ -6,7 +6,7 @@
  * Runtime: isomorphic
  * Governing contract: the OS-109 answer; ADR 0220 (decision 3: half-up where a tax rule requires it).
  */
-import type { Rounding } from "@stackra/money";
+import type { Rounding } from "@stackra/contracts";
 
 import type { TaxRate } from "#core/types/tax-rate.type";
 

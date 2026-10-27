@@ -4,11 +4,11 @@
  * Boundary: test only; imports the subject through its `#core` alias and the runner through @stackra/testing.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0220 (decision 3);
- *                     ADR 0294 (decision 16).
+ *                     ADR 0294 (decision 16); STA-1383.
  */
-import { Enum } from "@stackra/contracts";
 import { describe, expect, it } from "@stackra/testing";
 
+import { Enum } from "#core/bases/enum.base";
 import { Rounding } from "#core/enums/rounding.enum";
 
 describe("Rounding", () => {

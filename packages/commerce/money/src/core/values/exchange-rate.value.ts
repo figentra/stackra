@@ -11,10 +11,11 @@
  * Governing contract: ADR 0220 (decision 3: FX stores the rate and its source); ADR 0244 (decision 9: the rate is a
  *                     snapshot taken at checkout).
  */
+import { Rounding } from "@stackra/contracts";
+
 import type { RateSnapshot } from "#contracts/types/rate-snapshot.type";
 
 import { CURRENCIES } from "#core/constants/currencies.constant";
-import { Rounding } from "#core/enums/rounding.enum";
 import { decimalProduct } from "#core/functions/decimal-product.function";
 import { shiftDecimal } from "#core/functions/shift-decimal.function";
 import type { CurrencyCode } from "#core/types/currency-code.type";

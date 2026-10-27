@@ -6,7 +6,7 @@
  * Runtime: isomorphic
  * Governing contract: the MUS-216 answer; ADR 0220 (decision 3: one explicit rounding).
  */
-import type { Rounding } from "@stackra/money";
+import type { Rounding } from "@stackra/contracts";
 
 import type { FormulaTerm } from "#core/types/formula-term.type";
 

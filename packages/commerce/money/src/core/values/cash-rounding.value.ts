@@ -8,9 +8,8 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0220 (decision 3: one explicit rounding); config-model section 1 (market packs).
  */
-import { Enum } from "@stackra/contracts";
+import { Enum, Rounding } from "@stackra/contracts";
 
-import { Rounding } from "#core/enums/rounding.enum";
 import type { CashRoundingRule } from "#core/types/cash-rounding-rule.type";
 import type { CurrencyCode } from "#core/types/currency-code.type";
 import { Money } from "#core/values/money.value";

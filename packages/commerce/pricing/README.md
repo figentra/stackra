@@ -32,7 +32,8 @@ Entry barrels are generated, never authored (ADR 0294 decision 15); until `stack
 Prices round to a price point, per market (ADR 0244 decision 6). A point is every `k × step + ending` in one currency.
 
 ```ts
-import { Money, Rounding } from "@stackra/money";
+import { Rounding } from "@stackra/contracts";
+import { Money } from "@stackra/money";
 import { PricePoint } from "@stackra/pricing";
 
 const charm = PricePoint.ofMinor(100, 99, "USD"); // 0.99, 1.99, 2.99 …

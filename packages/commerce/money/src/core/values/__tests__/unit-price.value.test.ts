@@ -6,9 +6,9 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0220; the OS-114 answer.
  */
+import { Rounding } from "@stackra/contracts";
 import { describe, expect, it } from "@stackra/testing";
 
-import { Rounding } from "#core/enums/rounding.enum";
 import { UnitPrice } from "#core/values/unit-price.value";
 
 describe("UnitPrice", () => {
