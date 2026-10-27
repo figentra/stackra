@@ -1,7 +1,23 @@
 ---
 title: "0310 — @stackra/ui-pro: a private package of HeroUI Pro wrappers for Stackra's own apps"
-description: "Accepted · 2026-10-23 · amended 2026-10-24 (STA-445, STA-447) · amended 2026-10-24 (STA-451) · amended 2026-10-24 (STA-465)"
+description: "Accepted · 2026-10-23 · amended 2026-10-24 (STA-445, STA-447) · amended 2026-10-24 (STA-451) · amended 2026-10-24 (STA-465) · amended 2026-10-27 by 0461 (STA-1355)"
 ---
+
+{/* Stackra file contract. Purpose: ADR 0310, the HeroUI Pro wrapper package for Stackra's own apps. Boundary: decision text only; name, source repository and channel amended by ADR 0461. Runtime: documentation. Governing contract: ADR template (apps/docs/src/adr/template.mdx); ADR 0197, 0453, 0461. */}
+
+<Note>
+  Amended 2026-10-27 (STA-1355, owner decision D6) by
+  [0461](/adr/0461-the-pro-line-for-0-1-0-runtime-free-behind-entitlements-paid-studios-and-advanced-drivers)
+  decision 3: the package is `@stackra-pro/ui`, the name its `package.json` already carries, and
+  its source moves to the private repository `figentra/stackra-pro` (stackra-189). Keygen
+  distribution is replaced: the package is served by the Stackra registry
+  ([0453](/adr/0453-the-stackra-registry-one-npm-compatible-store-on-cloudflare-and-our-own-licence-engine))
+  under the `internal` read rule, readable by Figentra's own internal tokens only and never covered
+  by a customer licence grant, so it is never sold. Its Keygen `publishConfig` is dropped, and the
+  Enforcement check that requires a Keygen `publishConfig.registry` changes with stackra-189.
+  Core `apps/mobile` and `apps/playground` stop depending on it. Decisions 3 to 11 stand, HeroUI
+  Pro stays an external peer, and the 0.1.0 Pro line is 0461.
+</Note>
 
 <Note>
   Amended 2026-10-24 (STA-465), reads with
