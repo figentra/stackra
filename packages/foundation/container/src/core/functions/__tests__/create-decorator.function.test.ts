@@ -38,6 +38,9 @@ class VipReads extends Reads {
   override count = 4;
 }
 
+/** A field initializer as Babel's legacy decorators hand it over. */
+const initializer = () => 5;
+
 @Audited({ level: 2 })
 class SecretReads extends Reads {}
 
@@ -81,6 +84,19 @@ describe("createDecorator", () => {
       }
       return Misplaced;
     }).toThrow(/@audited decorates a class, not a field/);
+  });
+
+  it("reads a Babel legacy field descriptor (with an initializer) as a field", () => {
+    class Babelled extends Service {}
+    Max(7)(Babelled.prototype, "size", {
+      configurable: true,
+      writable: true,
+      initializer,
+    } as PropertyDescriptor);
+    expect(Max.members(Babelled)).toEqual(new Map([["size", 7]]));
+    expect(() =>
+      Step("run")(Babelled.prototype, "size", { initializer } as PropertyDescriptor),
+    ).toThrow(/@step decorates a method, not a field/);
   });
 
   it("refuses a class outside its kinds", () => {

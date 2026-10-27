@@ -53,7 +53,9 @@ export function createDecorator<V>(definition: DecoratorDefinition): Decorator<V
       const actual =
         property === undefined
           ? DecoratorTarget.Class
-          : descriptor === undefined
+          : // TypeScript passes no descriptor for a field; Babel's legacy decorators (Expo, Metro) pass one with an
+            // `initializer`.
+            descriptor === undefined || "initializer" in descriptor
             ? DecoratorTarget.Field
             : DecoratorTarget.Method;
       const type =
