@@ -153,9 +153,10 @@ describe(Sandbox, () => {
   it("stops a large allocation and deep recursion at the memory limit", async () => {
     const { sandbox } = setup();
     const small = { ...LIMITS, memoryBytes: 2 * 1024 * 1024 };
+    // Small pieces: QuickJS checks the heap only every few thousand steps, so 64 KiB pieces piled up hundreds of MiB.
     await expectLimit(
       sandbox,
-      request('const parts = [];\nwhile (true) parts.push("x".repeat(65536) + parts.length);', {
+      request('const parts = [];\nwhile (true) parts.push("x".repeat(1024) + parts.length);', {
         limits: small,
       }),
       "memory",

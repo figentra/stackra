@@ -10,7 +10,8 @@
  *           sequential and each gets a fresh QuickJS runtime, so no state passes between runs. The pool size and the
  *           grace and the start-up deadline are the host's deployment settings (the deadline defaults to
  *           `SANDBOX_POOL_DEFAULTS`); every run limit is still the run's own (`SandboxLimits`). A
- *           Python run (Pyodide, loaded in the process when its first Python request arrives) is the last run of its
+ *           Python run (Pyodide, loaded in the process when its first Python request arrives, under the start-up
+ *           deadline, its clock starting once the process says it serves again) is the last run of its
  *           process: one interpreter cannot isolate runs and Pyodide's FFI reaches the process's JavaScript, so the
  *           process is replaced after it. Processes start with an empty environment, and a relayed fetch's origin is
  *           checked again here against the run's allow-list, so a process that was broken out of cannot widen egress.
@@ -54,7 +55,7 @@ interface Slot {
     | (Job & {
         started: number;
         timer: NodeJS.Timeout | undefined;
-        /** The run's clock was restarted once (a Python run after Pyodide loaded); a later `ready` is ignored. */
+        /** The run's clock was restarted once (a Python run's starts after Pyodide loaded); a later `ready` is ignored. */
         isRearmed: boolean;
         readonly abort: AbortController;
       })
@@ -119,7 +120,8 @@ export class SandboxPool extends Service {
    *
    * @throws TypeError when the pool is not open or is closing.
    * @throws SandboxCodeFailedError and SandboxLimitExceededError as `Sandbox.run` does; a process that dies mid-run is
-   *         `SandboxCodeFailedError`, one the watchdog kills is `SandboxLimitExceededError` with limit `time`.
+   *         `SandboxCodeFailedError`, one the watchdog kills is `SandboxLimitExceededError` with limit `time`, and one
+   *         that does not load Pyodide within the start-up deadline is `SandboxCodeFailedError`.
    */
   run(request: SandboxRequest): Promise<SandboxResult> {
     if (this.options === undefined || this.isClosing)
@@ -193,29 +195,40 @@ export class SandboxPool extends Service {
 
   /**
    * Starts the watchdog of the slot's run. A process still starting up is not charged for it: on a loaded host its
-   * start-up alone can outlast a run's limit and its grace, so the clock starts once the process says it serves.
+   * start-up alone can outlast a run's limit and its grace, so the clock starts once the process says it serves. A
+   * Python run's process loads Pyodide first and says it serves again once loaded; until then the start-up deadline,
+   * not the run's clock, bounds it, so the load is never charged to the run and a hung load still ends.
    */
   private arm(slot: Slot): void {
     const running = slot.running;
     const options = this.options;
     if (running === undefined || options === undefined) return;
-    // A Python run says it serves again once Pyodide loaded: the clock restarts there.
     clearTimeout(running.timer);
     running.started = performance.now();
+    const startupMs = options.startupMs ?? SANDBOX_POOL_DEFAULTS.startupMs;
+    const isLoading = running.request.language === "python" && !running.isRearmed;
     running.timer = setTimeout(
       () => {
         if (slot.running !== running) return;
         slot.running = undefined;
         running.abort.abort();
         running.reject(
-          SandboxLimitExceededError.create({
-            limit: "time",
-            codeMs: Math.round(performance.now() - running.started),
-          }),
+          isLoading
+            ? SandboxCodeFailedError.create({
+                failure: `The Python engine did not load within ${startupMs} ms`,
+                logs: [],
+                codeMs: 0,
+              })
+            : SandboxLimitExceededError.create({
+                limit: "time",
+                codeMs: Math.round(performance.now() - running.started),
+              }),
         );
         slot.child.kill("SIGKILL");
       },
-      Duration.toMilliseconds(running.request.limits.time) + options.graceMs,
+      isLoading
+        ? startupMs
+        : Duration.toMilliseconds(running.request.limits.time) + options.graceMs,
     );
   }
 

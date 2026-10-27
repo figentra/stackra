@@ -3,6 +3,7 @@
  * Purpose: integration tests of `SandboxPool` over real child processes: a run returns its output, a guest `fetch` is
  *          relayed to the host's proxy, a run's own refusal comes back as the same refusal, a run waiting past its time
  *          is refused while the pool keeps serving, a Python step runs in Pyodide in a process that is then replaced,
+ *          a Python engine's load is never charged to the run but is bounded by the start-up deadline,
  *          a relayed fetch to an origin outside the run's allow-list never reaches the proxy, a run's clock restarts
  *          at most once, a process that never says it serves is killed at the start-up deadline and its run refused,
  *          and a pool that is not open refuses runs.
@@ -94,6 +95,26 @@ const REARMING_CHILD = `export function serveSandboxChild() {
 const REARMING = {
   ...OPTIONS,
   module: `data:text/javascript,${encodeURIComponent(REARMING_CHILD)}`,
+};
+
+/**
+ * A stand-in process whose Python engine takes 2 s to load, longer than a 1 s run's limit and its grace, then says
+ * it serves again and answers `1`; a run of `hang` never finishes loading.
+ */
+const SLOW_LOADING_CHILD = `export function serveSandboxChild() {
+  process.on("message", (message) => {
+    if (message.type !== "run" || message.request.code === "hang") return;
+    setTimeout(() => {
+      process.send({ type: "ready" });
+      process.send({ type: "result", result: { output: 1, logs: [], codeMs: 0 } });
+    }, 2000);
+  });
+  process.send({ type: "ready" });
+}`;
+const SLOW_LOADING = {
+  ...OPTIONS,
+  startupMs: 3000,
+  module: `data:text/javascript,${encodeURIComponent(SLOW_LOADING_CHILD)}`,
 };
 
 /** A stand-in process that never says it serves, so only the pool's start-up deadline can end its queued run. */
@@ -218,6 +239,23 @@ describe(SandboxPool, () => {
       }),
     ).rejects.toMatchObject({ failure: "ValueError: nope" });
   }, 120_000);
+
+  it("never charges a Python engine's load to the run, and refuses a load that outlasts the start-up deadline", async () => {
+    const pool = poolOf(new EchoProxy(), SLOW_LOADING);
+    const python = (code: string) =>
+      pool.run({
+        code,
+        language: "python",
+        input: null,
+        limits: { ...LIMITS, time: Duration.seconds(1) },
+        allowedOrigins: [],
+        reference: "s",
+      });
+    await expect(python("return 1")).resolves.toMatchObject({ output: 1 });
+    await expect(python("hang")).rejects.toMatchObject({
+      details: { failure: "The Python engine did not load within 3000 ms", codeMs: 0 },
+    });
+  }, 20_000);
 
   it("never sends a relayed fetch outside the run's allow-list", async () => {
     const proxy = new EchoProxy();

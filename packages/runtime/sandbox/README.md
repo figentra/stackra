@@ -93,7 +93,9 @@ const { output, logs, codeMs } = await pool.run({
   `await fetch(url, {"method", "headers", "body"})` gives a dict `{status, headers, body}` through the same allow-list
   and proxy. Only the Python standard library is there; no package is installed and no host file is mounted.
 - **Only in the pool**: `Sandbox.run` refuses `language: "python"`. A process loads Pyodide (once, taking seconds) when
-  its first Python request arrives and then says it serves again, so the load is never charged to the run.
+  its first Python request arrives and then says it serves again; the run's clock starts there, so the load is never
+  charged to the run. Until then `startupMs` bounds the load: a process that does not load it in time is killed and
+  the run refused (`sandbox_code_failed`, `The Python engine did not load within <n> ms`).
 - **One run per process**: one interpreter cannot keep runs apart (shared modules and builtins), and Pyodide's FFI can
   reach the process's JavaScript, so the process is the boundary. After a Python run the pool replaces the process.
   Processes start with an empty environment, the pool checks every relayed fetch's origin again, uses the run's own
