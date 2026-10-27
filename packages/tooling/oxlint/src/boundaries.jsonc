@@ -259,11 +259,15 @@
                   "#native/*",
                   "#testing",
                   "#testing/*",
-                  "react",
-                  "react-dom",
-                  "react-native",
                 ],
                 "message": "contracts is the leaf entry: types, ports and enums only. It imports no other entry and no host library (ADR 0117, ADR 0294).",
+              },
+              {
+                // A component contract names ReactNode and friends (ADR 0310), so type-only imports of the host
+                // library are allowed; a value import would make contracts carry a runtime dependency.
+                "group": ["react", "react-dom", "react-native"],
+                "allowTypeImports": true,
+                "message": "contracts imports a host library for types only: use `import type` (ADR 0117, ADR 0310).",
               },
               {
                 "group": ["@stackra/*", "@stackra/*/*"],
