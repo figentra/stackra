@@ -94,7 +94,7 @@ afterAll(() => {
 describe(AwardKindService, () => {
   it("creates an active kind with no criteria", async () => {
     const { service, em } = setup();
-    const kind = await service.create(ACME, {
+    const kind = await service.open(ACME, {
       key: "belt",
       name: "Belt grading",
       recipient: MEMBER,
@@ -122,15 +122,15 @@ describe(AwardKindService, () => {
     const { service } = setup();
     const draft = { key: "belt", name: "Belt", recipient: MEMBER };
     await expect(
-      fieldErrorsOf(service.create(ACME, { ...draft, recipient: "test.x" })),
+      fieldErrorsOf(service.open(ACME, { ...draft, recipient: "test.x" })),
     ).resolves.toEqual({
       recipient: "recipient_unknown",
     });
     await expect(
-      fieldErrorsOf(service.create(ACME, { ...draft, key: "Belt", levels: ["a", "A"] })),
+      fieldErrorsOf(service.open(ACME, { ...draft, key: "Belt", levels: ["a", "A"] })),
     ).resolves.toEqual({ key: "key_invalid", levels: "levels_invalid" });
     await expect(
-      fieldErrorsOf(service.create(ACME, { ...draft, levels: ["white"], isAscending: true })),
+      fieldErrorsOf(service.open(ACME, { ...draft, levels: ["white"], isAscending: true })),
     ).resolves.toEqual({ levels: "levels_too_few" });
   });
 

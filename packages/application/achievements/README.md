@@ -25,7 +25,7 @@ recipient model and no award kind: kinds, levels and certificate layouts are dat
 | `normalizeAwardCode`                      | `.`           | a typed short code folded to its 12 canonical characters, or null                                       |
 | `VerifyAwardQuery`                        | `./node`      | the public `award.verify` query, with `VerifyAwardInput` and `VerifyAwardOutput`                        |
 | `registerAwardRecipients`                 | `./node`      | `[{ model: "workforce.member", rules: MEMBER_AWARD_RULES }]`                                            |
-| `AwardKindService`                        | `./node`      | `create`, `archive`, `draftCriteria`, `publishCriteria`                                                 |
+| `AwardKindService`                        | `./node`      | `open`, `archive`, `draftCriteria`, `publishCriteria`                                                   |
 | `AwardService`                            | `./node`      | `grant`, `consider`, `revoke`, `awardsOf`, `verify`, `verifyCode`, `certificateOf`, `renderCertificate` |
 | `AwardKind`, `Award`, `AwardVerification` | `./node`      | the models: `achievements.award_kinds`, `achievements.awards`, `.award_verifications`                   |
 
@@ -34,7 +34,7 @@ recipient model and no award kind: kinds, levels and certificate layouts are dat
 ```ts
 registerAwardRecipients([{ model: "workforce.member", rules: MEMBER_AWARD_RULES }]);
 
-const kind = await kinds.create(scope, {
+const kind = await kinds.open(scope, {
   key: "belt_grading",
   name: "Belt grading",
   recipient: "workforce.member",

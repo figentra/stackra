@@ -26,7 +26,7 @@ const KIND_KEY = /^[a-z][a-z0-9_]{0,62}$/;
  * Keeps award kinds and their criteria.
  *
  * @example
- * const kind = await kinds.create(scope, { key: "employee_of_month", name, recipient: "workforce.member", isOncePerPeriod: true });
+ * const kind = await kinds.open(scope, { key: "employee_of_month", name, recipient: "workforce.member", isOncePerPeriod: true });
  * const revision = await kinds.draftCriteria(kind.id, input.condition);
  * await kinds.publishCriteria(kind.id, revision);
  */
@@ -49,7 +49,7 @@ export class AwardKindService extends CrudService<AwardKind> {
    *         `levels: levels_invalid` (a blank or repeated level), `levels: levels_too_few` (ascending with fewer than
    *         two).
    */
-  async create(
+  async open(
     scope: ScopeRef,
     draft: {
       readonly key: string;

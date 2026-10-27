@@ -7,7 +7,7 @@
  * Boundary: data only, seeded from a product's seed pack and edited in its admin: which kinds exist is never code.
  *           Key `achievements.award_kind`, table `achievements.award_kinds`, under forced row-level security on
  *           `scope_path`. The criteria link a `rules.rule_set` by id; the template is a @stackra/documents template
- *           key. Rows are added through `AwardKindService.create`; the ORM loads rows without the constructor.
+ *           key. Rows are added through `AwardKindService.open`; the ORM loads rows without the constructor.
  * Runtime: node
  * Governing contract: ADR 0368 (decisions 1 to 4 and 6); ADR 0363 (decision 2); ADR 0327 (decisions 3 and 9);
  *                     ADR 0294 (decisions 4, 11, 20 and 27); ADR 0135 (public ids).
