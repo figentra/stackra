@@ -37,7 +37,10 @@ import type { JournalLine } from "#core/types/journal-line.type";
 import type { JournalWrite } from "#core/types/journal-write.type";
 
 /** The model's field of each journal name, and its default floor. */
-type Fields = typeof JOURNAL_FIELDS & { readonly floor?: number; readonly currency?: string };
+type Fields = typeof JOURNAL_FIELDS & {
+  readonly floor?: number | undefined;
+  readonly currency?: string | undefined;
+};
 
 /** The shape of an ISO 4217 alphabetic code. */
 const CURRENCY_CODE = /^[A-Z]{3}$/;
@@ -141,7 +144,9 @@ export abstract class Journal<M extends object> extends Service {
   /** The account locks. */
   private readonly locks: Locks;
 
-  /** @param locks - the server's named locks; a write that lowers a balance holds its account's. */
+  /**
+   * @param locks - the server's named locks; a write that lowers a balance holds its account's.
+   */
   constructor(locks: Locks) {
     super();
     this.locks = locks;
@@ -157,7 +162,7 @@ export abstract class Journal<M extends object> extends Service {
    */
   async balance(query: {
     readonly account: string;
-    readonly currency?: string;
+    readonly currency?: string | undefined;
     readonly amount?: { [K in keyof M]-?: M[K] extends number ? K : never }[keyof M] & string;
   }): Promise<number> {
     const fields = this.fields();
@@ -310,7 +315,7 @@ export abstract class Journal<M extends object> extends Service {
               kind: reversal.kind,
               reference,
               at: reversal.at,
-              currency: entry.currency,
+              ...(entry.currency === undefined ? {} : { currency: entry.currency }),
             },
             fields,
           ),

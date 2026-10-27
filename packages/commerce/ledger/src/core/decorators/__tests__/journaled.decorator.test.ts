@@ -14,7 +14,11 @@ import { Journaled } from "#core/decorators/journaled.decorator";
 
 describe("@Journaled", () => {
   it("records the field map and floor on a model, frozen, for it and its subclasses", () => {
-    @Journaled({ account: "memberId", amount: "points", floor: 0 })
+    @Journaled({
+      account: "memberId",
+      amount: "points",
+      floor: 0,
+    })
     class PointsEntry extends Model.with(AppendOnly) {}
     class BonusEntry extends PointsEntry {}
     class CashEntry extends Model.with(AppendOnly) {}

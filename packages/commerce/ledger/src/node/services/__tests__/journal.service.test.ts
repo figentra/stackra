@@ -29,7 +29,11 @@ import type { Journal } from "#node/services/journal.service";
 type PointsKind = "earn" | "redeem" | "expire" | "adjust";
 
 /** A points ledger row as the loyalty kit has it: its own field names and a floor of zero. */
-@Journaled({ account: "memberId", amount: "points", floor: 0 })
+@Journaled({
+  account: "memberId",
+  amount: "points",
+  floor: 0,
+})
 class PointsEntry extends Model.with(AppendOnly) {
   memberId!: string;
 
@@ -142,6 +146,9 @@ class MemoryEntries {
 function journalOver<M extends object>(model: AnyClass<M>, entries: MemoryEntries): Journal<M> {
   const clock = new HostClock();
   class MemoryJournal extends journalOf(model) {
+    // journalOf's type is `Journal<M>`, whose `model` is abstract, so a subclass names it again.
+    protected override readonly model: AnyClass<M> = model;
+
     protected override entries(): Repository<M> {
       // reason: the memory store has the repository methods the journal calls, untyped by model
       return entries as unknown as Repository<M>;
@@ -442,7 +449,10 @@ describe("Journal", () => {
 });
 
 /** A money ledger row with a currency field and a floor of zero. */
-@Journaled({ currency: "currency", floor: 0 })
+@Journaled({
+  currency: "currency",
+  floor: 0,
+})
 class MoneyEntry extends Model.with(AppendOnly) {
   account!: string;
 
