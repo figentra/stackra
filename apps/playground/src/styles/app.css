@@ -1,8 +1,5 @@
 @import "tailwindcss";
 @import "@heroui/styles";
-@import "@heroui-pro/react/css";
-/* The fixes our Pro wrappers need (contrast, Arabic line boxes, the shimmer), owned by @stackra-pro/ui (STA-458). */
-@import "@stackra-pro/ui/assets/public/css/ui-pro.css";
 @import "@stackra/tokens/fonts/fonts.css";
 @import "@stackra/tokens/themes/stackra/web.css";
 
@@ -230,26 +227,4 @@ html {
 :root:lang(ar) .type-h3 {
   font: var(--h3-ar);
   letter-spacing: var(--h3-ar-letter-spacing);
-}
-
-/* A frame for the Pro shells (Sidebar, AppLayout): HeroUI Pro sizes them to the viewport (svh, dvh), so inside the
-   frame they are sized to it instead. HeroUI Pro's styles sit in `@layer components` and these rules in no layer, so
-   they win by layer, whatever the selectors' weight. */
-.demo-frame {
-  height: 32rem;
-  overflow: hidden;
-  border: 1px solid var(--border);
-  border-radius: calc(var(--radius) * 2);
-}
-
-.demo-frame .sidebar__provider,
-.demo-frame [data-app-layout] {
-  height: 100%;
-  min-height: 0;
-}
-
-.demo-frame .sidebar,
-.demo-frame .app-layout__aside,
-.demo-frame [data-app-layout][data-scroll-mode="content"] {
-  height: 100%;
 }

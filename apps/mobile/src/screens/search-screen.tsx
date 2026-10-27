@@ -23,7 +23,7 @@ import { DESIGN_SYSTEM_COMPONENTS } from "./design-system-components";
 // shortcut: English strings in one place until @stackra/i18n reaches the mobile app; then keys.
 const STRINGS = {
   placeholder: "Search components and categories…",
-  hint: "Type a component, a category, or Free or Pro.",
+  hint: "Type a component or a category.",
   results: (count: number) => (count === 1 ? "1 match" : `${count} matches`),
   empty: (query: string) => `Nothing matches “${query}”.`,
 } as const;

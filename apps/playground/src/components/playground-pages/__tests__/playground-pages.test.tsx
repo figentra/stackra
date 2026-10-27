@@ -1,19 +1,19 @@
 /**
  * Stackra file contract:
  * Purpose: proves page discovery pairs each categorised route with its page by folder, orders the pages by category,
- *          then Free before Pro, then title, skips the index route, refuses a wrong path, an unknown category and a missing page, and
+ *          then title, skips the index route, refuses a wrong path, an unknown category and a missing page, and
  *          that the real route folders yield every category the existing pages use.
  * Boundary: plain module records for the rules; the real `import.meta.glob` result for the last case; jsdom, no network.
  * Runtime: browser
  * Governing contract: ADR 0302 (decision 5); ADR 0022 (test placement).
  */
 // @covers sta-350:FR-056 sta-422:FR-003 sta-422:P-002
-// HeroUI Pro's Sheet reads matchMedia as its module loads, and the real route folders include the Pro pages.
+// The real route folders load every page, and some read matchMedia or ResizeObserver, which jsdom lacks.
 import "#src/__tests__/stub-browser-apis";
 
 import { Route } from "@stackra/navigation";
 
-import { discoverPages, PLAYGROUND_PAGES, tierOf } from "#src/components/playground-pages";
+import { discoverPages, PLAYGROUND_PAGES } from "#src/components/playground-pages";
 
 /** The real catalogue's link to `path`. */
 const linkAt = (path: string) =>
@@ -38,47 +38,22 @@ describe("discoverPages", () => {
         "../../routes/zeta/zeta.route.ts": route("/zeta", "Zeta", "Actions"),
         "../../routes/alpha/alpha.route.ts": route("/alpha", "Alpha", "Actions"),
         "../../routes/field/field.route.ts": route("/field", "Field", "Inputs and forms"),
-        "../../routes/pro-aaa/pro-aaa.route.ts": route("/pro-aaa", "Aaa", "Actions"),
         "../../routes/base/base.route.ts": route("/base", "Base", "Foundations"),
       },
       {
         "../../routes/zeta/zeta.tsx": page(),
         "../../routes/alpha/alpha.tsx": page(),
         "../../routes/field/field.tsx": page(),
-        "../../routes/pro-aaa/pro-aaa.tsx": page(),
         "../../routes/base/base.tsx": page(),
       },
     );
-    expect(pages.map(({ route: { title } }) => title)).toEqual([
-      "Base",
-      "Alpha",
-      "Zeta",
-      "Aaa",
-      "Field",
-    ]);
+    expect(pages.map(({ route: { title } }) => title)).toEqual(["Base", "Alpha", "Zeta", "Field"]);
     expect(pages[0]?.route).toEqual({
       path: "/base",
       title: "Base",
       category: "Foundations",
     });
     expect(pages[0]?.element.type).toBeTypeOf("function");
-  });
-
-  it("marks a `/pro-*` path Pro and lists it after the free pages of its category", () => {
-    const pages = discoverPages(
-      {
-        "../../routes/pro-alpha/pro-alpha.route.ts": route("/pro-alpha", "Alpha Pro", "Actions"),
-        "../../routes/zeta/zeta.route.ts": route("/zeta", "Zeta", "Actions"),
-      },
-      {
-        "../../routes/pro-alpha/pro-alpha.tsx": page(),
-        "../../routes/zeta/zeta.tsx": page(),
-      },
-    );
-    expect(pages.map(({ route: { title, path } }) => `${title} ${tierOf(path)}`)).toEqual([
-      "Zeta Free",
-      "Alpha Pro Pro",
-    ]);
   });
 
   it("skips a route that names no category, as the index route does", () => {
@@ -131,15 +106,11 @@ describe("PLAYGROUND_PAGES", () => {
     expect(PLAYGROUND_PAGES.at(-1)?.route.category).toBe("AI");
   });
 
-  it("lists the Free pages before the Pro pages inside a category", () => {
-    const actions = PLAYGROUND_PAGES.filter(({ route: link }) => link.category === "Actions");
-    const tiers = actions.map(({ route: link }) => tierOf(link.path) === "Pro");
-    expect(tiers).toContain(true);
-    expect(tiers).toEqual([...tiers].sort((a, b) => Number(a) - Number(b)));
+  it("lists no `@stackra-pro/ui` page: the public playground shows free components only", () => {
+    expect(PLAYGROUND_PAGES.filter(({ route: link }) => link.path.startsWith("/pro-"))).toEqual([]);
   });
 
-  it("carries ownsMain for the page that draws its own main, and leaves it out elsewhere", () => {
-    expect(linkAt("/pro-app-layout")?.ownsMain).toBe(true);
+  it("leaves ownsMain out for a page that does not draw its own main", () => {
     expect(linkAt("/button")).not.toHaveProperty("ownsMain");
   });
 });

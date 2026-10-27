@@ -59,8 +59,6 @@
     "@internationalized/number": "catalog:mobile",
     "@react-navigation/native": "catalog:mobile",
     "@react-navigation/native-stack": "catalog:mobile",
-    "@shopify/react-native-skia": "catalog:mobile",
-    "@stackra-pro/ui": "workspace:*",
     "@stackra/icons": "workspace:*",
     "@stackra/tokens": "workspace:*",
     "@stackra/ui": "workspace:*",
@@ -74,8 +72,6 @@
     "expo-status-bar": "catalog:mobile",
     "expo-system-ui": "catalog:mobile",
     "heroui-native": "catalog:mobile",
-    "heroui-native-pro": "catalog:mobile",
-    "libphonenumber-js": "catalog:mobile",
     "lucide-react-native": "catalog:mobile",
     "react": "catalog:mobile",
     "react-dom": "catalog:mobile",
@@ -84,9 +80,7 @@
     "react-native-bottom-tabs": "catalog:mobile",
     "react-native-gesture-handler": "catalog:mobile",
     "react-native-nitro-modules": "catalog:mobile",
-    "react-native-pager-view": "catalog:mobile",
     "react-native-reanimated": "catalog:mobile",
-    "react-native-reanimated-dnd": "catalog:mobile",
     "react-native-safe-area-context": "catalog:mobile",
     "react-native-screens": "catalog:mobile",
     "react-native-svg": "catalog:mobile",
@@ -94,8 +88,7 @@
     "tailwind-merge": "catalog:mobile",
     "tailwind-variants": "catalog:mobile",
     "tailwindcss": "catalog:frontend",
-    "uniwind": "catalog:uniwind-pro",
-    "victory-native": "catalog:mobile"
+    "uniwind": "catalog:uniwind-pro"
   },
   "devDependencies": {
     "@stackra/typescript-config": "workspace:*",

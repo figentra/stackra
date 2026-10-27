@@ -23,7 +23,7 @@ const PAGES: readonly PageLink[] = [
   { path: "/button", title: "Button", category: "Actions" },
   { path: "/close-button", title: "Close button", category: "Actions" },
   { path: "/checkbox", title: "Checkbox", category: "Selection" },
-  { path: "/pro-kanban", title: "Kanban", category: "Data display" },
+  { path: "/kanban", title: "Kanban", category: "Data display" },
 ];
 
 // jsdom has no modal dialog: opening and closing only flip `open`.
@@ -91,7 +91,7 @@ describe("CommandPalette", () => {
     renderPalette();
     type("but");
     expect(labels()).toEqual(["Button", "Close button"]);
-    type("pro");
+    type("kan");
     expect(labels()).toEqual(["Kanban"]);
     type("dark");
     expect(labels()).toEqual(["Dark scheme"]);

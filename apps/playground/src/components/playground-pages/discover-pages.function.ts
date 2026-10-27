@@ -3,7 +3,7 @@
  * Purpose: `discoverPages`, which finds the playground's pages from the route folders, so a new component is one
  *          folder and nothing else: every `routes/<name>/<name>.route.ts` that names a category is paired with its
  *          page `routes/<name>/<name>.tsx`, checked (path is `/<name>`, category is a known one, the page exists) and
- *          ordered by category, then Free before Pro (`page-tier`), then by title. The router, the index page and the
+ *          ordered by category, then by title. The router, the index page and the
  *          shell's navigation all draw from the result.
  * Boundary: discovery and validation only; `PLAYGROUND_PAGES` (`playground-pages.ts`) holds the one `import.meta.glob`
  *           of the app, and `discoverPages` takes plain module records so a test can feed it without Vite. A route
@@ -15,7 +15,6 @@ import { kindOf } from "@stackra/container";
 import { createElement, type ReactElement } from "react";
 
 import { routePath } from "#src/components/playground-pages/route-path.function";
-import { tierOf } from "#src/components/playground-pages/tier-of.function";
 import { PageCategory } from "#src/enums/page-category.enum";
 import type { PageLink } from "#src/types/page-link.type";
 import type { ModuleExports } from "#src/components/playground-pages/module-exports.type";
@@ -88,7 +87,6 @@ export function discoverPages(
   return found.sort(
     (a, b) =>
       PageCategory.indexOf(a.route.category) - PageCategory.indexOf(b.route.category) ||
-      Number(tierOf(a.route.path) === "Pro") - Number(tierOf(b.route.path) === "Pro") ||
       a.route.title.localeCompare(b.route.title, "en"),
   );
 }

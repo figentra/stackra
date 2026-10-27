@@ -1,5 +1,7 @@
 # @figentra/playground
 
+<!-- Stackra file contract. Purpose: the reader guide of the playground app. Boundary: documentation only; the code wins on any difference. Runtime: none. Governing contract: ADR 0302 (decision 5); ADR 0461 (decision 3). -->
+
 The Stackra Design System playground: every @stackra/ui component on its own route, in light and dark and in
 left-to-right and right-to-left, checked by Playwright and axe.
 
@@ -23,7 +25,7 @@ language (English, left to right; Arabic, right to left). Both live in the URL, 
 
 There is no sidebar. The index (`/`) is the landing: a hero stage (the beam-S wordmark echoed in hairline, glass
 tiles of the system's parts on the brand's graph lines and grid), a live showcase of scenes built from `@stackra/ui`, and
-a gallery with one glass panel per category (free pages first, Pro pages badged, an All / Free / Pro filter). Every
+a gallery with one glass panel per category. Every
 page is one search away: the command palette opens from the bar's search button, ⌘K or Ctrl+K, and `/`. A component
 page shows its category as a strip above it (the current page marked) and the previous and next pages below it; the
 page itself sits on a solid sheet of the theme's background, because its samples are tuned against that colour.
@@ -48,8 +50,8 @@ Add a page as a route folder `src/routes/<name>/` with `<name>.route.ts` (a clas
 `<name>.tsx` and `__tests__/`, and nothing else: the router, the gallery, the palette and the e2e suite find it. Its
 h1 is its title. The route class also names its `category` (`Foundations`, `Actions`, `Inputs and forms`, `Charts` and
 the rest, in `src/enums/page-category.enum.ts`), which groups it on the index, in the category strip and in the
-palette. The tier is derived: a path that starts with `/pro-` is Pro (badged, listed after the Free pages, filterable
-with All / Free / Pro on the index).
+palette. The playground shows free `@stackra/ui` components only: `@stackra-pro/ui` moved to figentra/stackra-pro
+(stackra-189, ADR 0461), and no page here imports it.
 
 Every finished component belongs here, to be checked, tried and tested: each variant, size, tone and state with a
 short caption, and at least one live sample (a pressable button that updates a counter or toggles state). Pages
@@ -87,7 +89,7 @@ src/
 ├── components/category-glyph/         the brand glyph a category wears
 ├── components/category-nav/           a component page's category strip
 ├── components/page-pager/             previous and next page
-├── components/page-gallery/           the index gallery: a glass panel per category, All / Free / Pro
+├── components/page-gallery/           the index gallery: a glass panel per category
 ├── components/showcase/               the index page's live scenes
 ├── components/hero-art/               the index hero's decorative glass stack
 ├── components/choice/                 a switcher choice with a check mark
@@ -97,7 +99,6 @@ src/
 ├── routes/typography/                 `/typography`
 ├── components/page-section/           a named region with a level-2 heading and a note
 ├── enums/page-category.enum.ts        the page categories, in navigation order
-├── enums/page-tier.enum.ts            Free and Pro (a `/pro-*` path is Pro)
 ├── types/shell-context.type.ts        what the shell hands a page (open the palette)
 ├── types/page-link.type.ts            what a navigation link needs
 └── styles/app.css                     Tailwind, HeroUI, the stackra fonts and theme, the glass material

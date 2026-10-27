@@ -78,22 +78,14 @@ test("dependencies replaced by Accepted ADRs are forbidden", () => {
   }
 });
 
-test("the Pro wrapper's folder is ui-pro and its package is @stackra-pro/ui (owner 6)", () => {
-  assert.equal(expectedName("packages/design-system/ui-pro"), "@stackra-pro/ui");
+test("no member is in the @stackra-pro scope: the Pro wrapper moved to figentra/stackra-pro (ADR 0461)", () => {
+  assert.equal(expectedName("packages/design-system/ui-pro"), "@stackra/ui-pro");
   assert.equal(expectedName("packages/design-system/ui"), "@stackra/ui");
-  assert.deepEqual(
-    checkMember({
-      ...ok,
-      dir: "packages/design-system/ui-pro",
-      pkg: { name: "@stackra-pro/ui" },
-    }).filter((m) => m.startsWith("package name")),
-    [],
-  );
 });
 
-/** The HeroUI Pro findings of a member at `dir`. */
+/** The Pro findings (HeroUI Pro and the @stackra-pro scope) of a member at `dir`. */
 const pro = (dir: string, pkg: PackageManifest): string[] =>
-  checkMember({ ...ok, dir, pkg }).filter((m) => /HeroUI Pro|@stackra-pro\/ui /.test(m));
+  checkMember({ ...ok, dir, pkg }).filter((m) => /HeroUI Pro|Pro package/.test(m));
 
 /** The Uniwind Pro findings of a member at `dir`. */
 const uniwind = (dir: string): string[] =>
@@ -103,75 +95,48 @@ const uniwind = (dir: string): string[] =>
     pkg: { name: "x", dependencies: { uniwind: "catalog:uniwind-pro" } },
   }).filter((m) => m.includes("Uniwind Pro"));
 
-test("HeroUI Pro reaches only apps and the private @stackra-pro/ui (ADR 0310)", () => {
-  const wrapper = {
-    name: "@stackra-pro/ui",
-    private: true,
-    files: ["dist", "assets", "!**/*.map"],
-    exports: { ".": { "@stackra/source": "./src/index.ts", default: "./dist/index.mjs" } },
-    publishConfig: {
-      registry: "https://npm.pkg.keygen.sh/figentra/",
-      exports: { ".": { types: "./dist/index.d.mts", default: "./dist/index.mjs" } },
-    },
-  };
-  const registryFinding =
-    "@stackra-pro/ui publishConfig.registry must be Keygen's npm engine, https://npm.pkg.keygen.sh/<account>/ (ADR 0310)";
-  const filesFinding =
-    '@stackra-pro/ui files must list no src and must end with "!**/*.map": its tarball ships dist only (ADR 0316)';
-  const exportsFinding =
-    "@stackra-pro/ui publishConfig.exports must name every entry of exports, on dist or assets only, with no @stackra/source condition (ADR 0316)";
-  for (const dep of ["@heroui-pro/react", "heroui-native-pro", "@stackra-pro/ui"]) {
+test("no member depends on @stackra-pro/*, and HeroUI Pro reaches apps only (ADR 0461, ADR 0310)", () => {
+  for (const dir of ["packages/design-system/ui", "apps/playground", "apps/mobile"])
+    for (const field of ["dependencies", "devDependencies", "peerDependencies"] as const)
+      assert.deepEqual(
+        pro(dir, { name: "x", [field]: { "@stackra-pro/ui": "workspace:*" } } as PackageManifest),
+        [
+          `${field}.@stackra-pro/ui is a Pro package: it lives in figentra/stackra-pro, and no member here may depend on it (ADR 0461)`,
+        ],
+        `${dir} ${field}`,
+      );
+  assert.deepEqual(
+    pro("apps/console", {
+      name: "@figentra/console",
+      dependencies: { "@stackra-pro/builder": "catalog:" },
+    }),
+    [
+      "dependencies.@stackra-pro/builder is a Pro package: it lives in figentra/stackra-pro, and no member here may depend on it (ADR 0461)",
+    ],
+  );
+  for (const dep of ["@heroui-pro/react", "heroui-native-pro"]) {
     assert.deepEqual(
       pro("packages/design-system/ui", {
         name: "@stackra/ui",
         devDependencies: { [dep]: "catalog:" },
       }),
-      [
-        `devDependencies.${dep} is HeroUI Pro: only apps and @stackra-pro/ui may depend on it (ADR 0310)`,
-      ],
+      [`devDependencies.${dep} is HeroUI Pro: only apps may depend on it (ADR 0310)`],
       dep,
     );
     assert.deepEqual(
       pro("apps/playground", { name: "@figentra/playground", dependencies: { [dep]: "catalog:" } }),
       [],
+      dep,
     );
   }
-  const ui = "packages/design-system/ui-pro";
+  // A free name that merely contains "pro" is not a Pro package.
   assert.deepEqual(
-    pro(ui, { ...wrapper, devDependencies: { "@heroui-pro/react": "catalog:frontend" } }),
+    pro("packages/data/x", {
+      name: "@stackra/x",
+      dependencies: { "@stackra/profile": "workspace:*" },
+    }),
     [],
   );
-  assert.deepEqual(pro(ui, wrapper), []);
-  assert.deepEqual(pro(ui, { name: "@stackra-pro/ui", files: ["dist", "./src/"] }), [
-    '@stackra-pro/ui must be "private": true, so nothing publishes it to npmjs (ADR 0310)',
-    registryFinding,
-    filesFinding,
-    exportsFinding,
-  ]);
-  const npmjs = {
-    ...wrapper,
-    publishConfig: {
-      access: "public",
-      registry: "https://registry.npmjs.org/",
-      exports: { ".": { "@stackra/source": "./src/index.ts", default: "./dist/index.mjs" } },
-    },
-  };
-  assert.deepEqual(pro(ui, npmjs), [registryFinding, exportsFinding]);
-  const accountless = { ...wrapper.publishConfig, registry: "https://npm.pkg.keygen.sh/" };
-  assert.deepEqual(pro(ui, { ...wrapper, publishConfig: accountless }), [registryFinding]);
-  assert.deepEqual(pro(ui, { ...wrapper, files: ["dist", "assets"] }), [filesFinding]);
-  assert.deepEqual(pro(ui, { ...wrapper, files: ["dist", "!**/*.map", "assets"] }), [filesFinding]);
-  assert.deepEqual(pro(ui, { ...wrapper, files: ["*", "!**/*.map"] }), [filesFinding]);
-  const missingEntry = {
-    ...wrapper,
-    exports: { ...wrapper.exports, "./react": "./dist/react.mjs" },
-  };
-  assert.deepEqual(pro(ui, missingEntry), [exportsFinding]);
-  const onSource = {
-    ...wrapper.publishConfig,
-    exports: { ".": { types: "./dist/index.d.mts", default: "./src/index.ts" } },
-  };
-  assert.deepEqual(pro(ui, { ...wrapper, publishConfig: onSource }), [exportsFinding]);
   assert.deepEqual(uniwind("packages/design-system/ui"), [
     "dependencies.uniwind is Uniwind Pro: only apps may use catalog:uniwind-pro (ADR 0310)",
   ]);

@@ -3,7 +3,7 @@
  * Purpose: the landing of the design-system review area, the native twin of the web playground's index: on the
  *          ambient field, a hero (the stage, an eyebrow, the product name, an intro, its numbers, and the ways in:
  *          Browse scrolls to the gallery, Search focuses the header search), then "In use", three live scenes on cards,
- *          then "Components", the gallery of every page by category with its All / Free / Pro filter. Typing in the
+ *          then "Components", the gallery of every page by category. Typing in the
  *          header search (the web's command palette) swaps the landing for the matching pages, grouped the same way.
  *          The display switcher is the header button every page of the area shares.
  * Boundary: presentation, the search query and navigation calls; the pages come in gallery order from
@@ -49,7 +49,7 @@ const STRINGS = {
   showcase: "In use",
   showcaseNote: "Three small scenes built only from the system's components. Try them.",
   components: "Components",
-  componentsNote: "Every page, grouped by category. Free pages come first; Pro pages wear a badge.",
+  componentsNote: "Every page, grouped by category.",
   searchPlaceholder: "Search components and categories…",
   results: (count: number) => (count === 1 ? "1 match" : `${count} matches`),
   empty: (query: string) => `Nothing matches “${query}”.`,

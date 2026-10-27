@@ -5,7 +5,7 @@ Stackra file contract:
 Purpose: the package's reader guide: the repository checks `stackra check` runs, their phases and what is not here.
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
-Governing contract: ADR 0282 (decision 3); ADR 0007; ADR 0022; ADR 0294; ADR 0403.
+Governing contract: ADR 0282 (decision 3); ADR 0007; ADR 0022; ADR 0294; ADR 0403; ADR 0461.
 -->
 
 The repository checks every Stackra repo runs through `stackra check`, as typed functions over the git file list. They
@@ -38,6 +38,10 @@ The single checks stay exported (`checkMember`, `checkMemberFiles`, `checkMember
 `checkImports`, `checkIosFormFactor`, `checkWindowSizing`, `checkDocFile`, `checkCatalogues`, `checkGitignore`), and so
 do the structure tables (`CATEGORIES`, `ENTRIES`, `MODULE_GROUPS`, `APP_GROUPS`, `PACKAGE_FOLDERS`, `MEMBER_ROOT`,
 `KIND_FOLDERS`, `BANNED_FOLDERS`, `TEST_TIERS`, …) and their lookups.
+
+`checkMember` refuses any `@stackra-pro/*` dependency in every member, apps included (`PRO_SCOPE`): the Pro packages,
+`@stackra-pro/ui` among them, live in figentra/stackra-pro (ADR 0461). HeroUI Pro (`PRO_DEPENDENCIES`) stays apps-only
+(ADR 0310).
 
 ## Not here yet
 

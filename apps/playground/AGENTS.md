@@ -11,7 +11,8 @@ left-to-right and right-to-left, checked by Playwright and axe. App at `apps/pla
   `<name>.tsx` whose h1 is the title, and `__tests__/`; its route class names a `category` (see `PageCategory`). Nothing
   else: `components/playground-pages` finds the folder, so the router, the index page and the navigation list it
   with no edit, and the e2e suite lists the folders, so every new route is checked in light, dark, LTR and RTL.
-- A page renders the real `@stackra/ui` entries with real props and states. No `*.stories.*`, no story format, no
+- Free components only: never import `@stackra-pro/*` here (it lives in figentra/stackra-pro, ADR 0461; the
+  repo-checks `pro-dependencies` check refuses it). A page renders the real `@stackra/ui` entries with real props and states. No `*.stories.*`, no story format, no
   Storybook (ADR 0128, 0227).
 - Tokens only (`@stackra/tokens` values and the theme's CSS variables), logical properties (`ms`/`me`, `start`/`end`),
   light and dark. Strings sit in one `STRINGS` constant per file until `@stackra/i18n` ships; text in another

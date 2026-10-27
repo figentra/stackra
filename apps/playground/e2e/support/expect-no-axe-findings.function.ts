@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: `expectNoAxeFindings`, the accessibility scan every `pro-*.e2e.test.ts` suite ends with, holding the same
+ * Purpose: `expectNoAxeFindings`, the accessibility scan a route suite ends with (`entity-picker.e2e.test.ts`), holding the same
  *          line as `playground.e2e.test.ts`: axe over WCAG 2.0 to 2.2 (A and AA) and best practices, with no violation
  *          and nothing left incomplete.
  * Boundary: test support only; it declares no test and is not matched by the Playwright config.

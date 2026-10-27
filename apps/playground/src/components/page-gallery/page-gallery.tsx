@@ -1,37 +1,25 @@
 /**
  * Stackra file contract:
  * Purpose: the index page's gallery: one glass panel per category, listing its pages as rows (in `PageCategory`
- *          order, each with a line on what it holds and its count), free pages first and Pro ones badged, behind an
- *          All / Free / Pro filter. It is the playground's page navigation (`nav` "Pages") on the index.
- * Boundary: layout, links and the filter only; a category with no page in the chosen tier is left out. Each link
+ *          order, each with a line on what it holds and its count). It is the playground's page navigation (`nav`
+ *          "Pages") on the index.
+ * Boundary: layout and links only; a category with no page is left out. Each link
  *          keeps the URL's search params so the scheme and direction carry over. A category with no line below
  *          still lists, so a new category needs no edit here.
  * Runtime: browser
  * Governing contract: ADR 0302 (decision 5); ADR 0294 (decision 14); the catalogue taxonomy (2026-10-24).
  */
-import { Chip, Heading, Icon, Link, Text, ToggleButtonGroup } from "@stackra/ui/react";
-import { useState } from "react";
+import { Heading, Icon, Link, Text } from "@stackra/ui/react";
 
 import { CategoryGlyph } from "#src/components/category-glyph";
-import { Choice } from "#src/components/choice";
 import { PageCategory } from "#src/enums/page-category.enum";
-import { TIER_FILTERS } from "#src/components/playground-pages/tier-filters.constant";
-import { type TierFilter } from "#src/components/playground-pages/tier-filter.type";
-import { tierOf } from "#src/components/playground-pages/tier-of.function";
-import { matchesTier } from "#src/components/playground-pages/matches-tier.function";
 import type { PageGalleryProps } from "#src/components/page-gallery/page-gallery.props";
 
 // shortcut: English strings in one place until @stackra/i18n ships; then `playground::gallery.*` keys.
-const TIER_LABELS = { all: "All", free: "Free", pro: "Pro" } as const;
-
 const STRINGS = {
   pages: "Pages",
-  tier: "Show",
-  tiers: TIER_LABELS,
   count: (count: number) => (count === 1 ? "1 page" : `${count} pages`),
-  none: "No page in this tier yet.",
-  shown: (count: number, tier: TierFilter) =>
-    `${count === 1 ? "1 page" : `${count} pages`} shown${tier === "all" ? "" : `, ${TIER_LABELS[tier]} only`}.`,
+  none: "No page yet.",
 } as const;
 
 /** One line per category on what it holds; a category missing here lists without one. */
@@ -59,37 +47,12 @@ function monogram(title: string) {
 
 /** The gallery of pages by category. */
 export function PageGallery({ pages, search, headingLevel }: PageGalleryProps) {
-  const [tier, setTier] = useState<TierFilter>("all");
-  const shown = pages.filter((page) => matchesTier(tierOf(page.path), tier));
-
   return (
     <div className="grid gap-8">
-      <ToggleButtonGroup
-        aria-label={STRINGS.tier}
-        size="sm"
-        selectionMode="single"
-        disallowEmptySelection
-        selectedKeys={[tier]}
-        onSelectionChange={(keys) => {
-          const picked = TIER_FILTERS.find((choice) => keys.has(choice));
-          if (picked) setTier(picked);
-        }}
-        className="justify-self-start"
-      >
-        {TIER_FILTERS.map((choice) => (
-          <Choice key={choice} id={choice}>
-            {STRINGS.tiers[choice]}
-          </Choice>
-        ))}
-      </ToggleButtonGroup>
-      {/* The filter changes the list in place, so its result is announced. */}
-      <p role="status" className="sr-only">
-        {STRINGS.shown(shown.length, tier)}
-      </p>
       <nav aria-label={STRINGS.pages} className="columns-1 gap-4 md:columns-2 xl:columns-3">
-        {shown.length === 0 ? <Text tone="muted">{STRINGS.none}</Text> : null}
+        {pages.length === 0 ? <Text tone="muted">{STRINGS.none}</Text> : null}
         {PageCategory.map((category) => {
-          const inCategory = shown.filter((page) => page.category === category);
+          const inCategory = pages.filter((page) => page.category === category);
           if (inCategory.length === 0) return null;
           const id = `category-${category.toLowerCase().replaceAll(/\W+/g, "-")}`;
           return (
@@ -134,11 +97,6 @@ export function PageGallery({ pages, search, headingLevel }: PageGalleryProps) {
                         {monogram(page.title)}
                       </span>
                       <span className="flex-1 font-medium">{page.title}</span>
-                      {tierOf(page.path) === "Pro" ? (
-                        <Chip size="sm" variant="soft" tone="accent">
-                          {STRINGS.tiers.pro}
-                        </Chip>
-                      ) : null}
                       <span className="text-muted opacity-60 transition-transform group-hover:translate-x-0.5 group-hover:opacity-100 motion-reduce:transition-none rtl:-scale-x-100 rtl:group-hover:-translate-x-0.5">
                         <Icon name="chevron-right" size="sm" />
                       </span>

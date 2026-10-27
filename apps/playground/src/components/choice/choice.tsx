@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: one choice of a playground switcher (the scheme, the locale, the tier filter): a HeroUI ToggleButton whose
+ * Purpose: one choice of a playground switcher (the scheme, the locale): a HeroUI ToggleButton whose
  *          selected state is the accent fill and a check mark, so selection does not rest on the fill alone.
  * Boundary: the button only; its group (`ToggleButtonGroup`) and what a choice means are the caller's.
  * Runtime: browser

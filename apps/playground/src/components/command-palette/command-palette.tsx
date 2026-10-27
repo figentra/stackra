@@ -6,7 +6,7 @@
  *          - Empty, it offers the recent pages, the quick actions (scheme, language, places) and every page by
  *            category. Typed, it ranks pages and actions by how well their names match (start of the name, start of
  *            a word, anywhere), and marks the match.
- *          - Each page row wears its category's brand glyph, its category and a "Pro" badge; a preview of the active
+ *          - Each page row wears its category's brand glyph and its category; a preview of the active
  *            row sits beside the list on a wide screen.
  *          - ↑ ↓ move, Enter opens, Escape or the scrim closes. The shell opens it from its search button, ⌘K or
  *            Ctrl+K, and `/`.
@@ -17,12 +17,11 @@
  * Governing contract: ADR 0302 (decision 5); WAI-ARIA 1.2 combobox and listbox; WCAG 2.2 SC 2.1.1, 2.4.3, 4.1.2, 4.1.3.
  */
 import type { IconName } from "@stackra/icons/contracts";
-import { Chip, Icon } from "@stackra/ui/react";
+import { Icon } from "@stackra/ui/react";
 import { useEffect, useId, useRef, useState, type KeyboardEvent, type MouseEvent } from "react";
 import { useNavigate } from "react-router";
 
 import { CategoryGlyph } from "#src/components/category-glyph";
-import { tierOf } from "#src/components/playground-pages/tier-of.function";
 import { PageCategory } from "#src/enums/page-category.enum";
 import type { PageLink } from "#src/types/page-link.type";
 import type { CommandPaletteProps } from "#src/components/command-palette/command-palette.props";
@@ -44,7 +43,6 @@ const STRINGS = {
   action: "Action",
   open: "Open",
   run: "Run",
-  pro: "Pro",
   hints: [
     { keys: ["arrow-up", "arrow-down"], action: "move" },
     { keys: ["corner-down-left"], action: "open" },
@@ -176,7 +174,7 @@ export function CommandPalette({ pages, actions, search, isOpen, onClose }: Comm
     kind: "page",
     label: page.title,
     detail: page.category,
-    keywords: `${tierOf(page.path)} ${page.path}`.toLowerCase(),
+    keywords: page.path.toLowerCase(),
     page,
   }));
   const actionItems: Item[] = actions.map((action) => ({
@@ -344,11 +342,6 @@ export function CommandPalette({ pages, actions, search, isOpen, onClose }: Comm
                               </span>
                               <span className="truncate text-xs text-muted">{item.detail}</span>
                             </span>
-                            {item.page && tierOf(item.page.path) === "Pro" ? (
-                              <Chip size="sm" variant="soft" tone="accent">
-                                {STRINGS.pro}
-                              </Chip>
-                            ) : null}
                             {isActive ? <Key name="corner-down-left" /> : null}
                           </div>
                         );
@@ -380,11 +373,6 @@ export function CommandPalette({ pages, actions, search, isOpen, onClose }: Comm
                         className="rounded-full border border-border px-2 py-0.5 font-mono"
                       >
                         {current.page.path}
-                      </span>
-                    ) : null}
-                    {current.page && tierOf(current.page.path) === "Pro" ? (
-                      <span className="rounded-full border border-border px-2 py-0.5">
-                        {STRINGS.pro}
                       </span>
                     ) : null}
                   </div>

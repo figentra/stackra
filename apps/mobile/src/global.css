@@ -1,9 +1,8 @@
+/* Stackra file contract. Purpose: the mobile app stylesheet: Tailwind, Uniwind, HeroUI Native and the stackra native theme. Boundary: styles only. Runtime: react-native. Governing contract: ADR 0461 (decision 3). */
 @import "tailwindcss";
 @import "uniwind";
 
 @import "heroui-native/styles";
-@import "heroui-native-pro/styles";
 @import "@stackra/tokens/themes/stackra/native.css";
 
 @source "../node_modules/heroui-native/lib";
-@source "../node_modules/heroui-native-pro/lib";

@@ -1,11 +1,10 @@
 /**
  * Stackra file contract:
- * Purpose: the categories the playground groups its pages in, in navigation order. Free `@stackra/ui` pages and Pro
- *          `@stackra-pro/ui` pages share them (the tier is a badge, see `page-tier`). The shell's page navigation and
+ * Purpose: the categories the playground groups its `@stackra/ui` pages in, in navigation order. The shell's page navigation and
  *          the index page list pages under these headings; a category with no page yet is left out of both.
  * Boundary: the values only; each route class names its category, and a page with no category cannot be listed.
  * Runtime: browser
- * Governing contract: ADR 0302 (decision 5); ADR 0294 (decision 14); ADR 0310 (decision 6); STA-416.
+ * Governing contract: ADR 0302 (decision 5); ADR 0294 (decision 14); STA-416.
  */
 
 /** The page categories, in the order the navigation shows them. */

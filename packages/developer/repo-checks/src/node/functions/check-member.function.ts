@@ -1,65 +1,19 @@
 /**
  * Stackra file contract:
  * Purpose: `checkMember(member)`, the manifest findings of one member: its name by placement, catalog-only versions,
- *          forbidden and HeroUI Pro dependencies, the Pro wrapper's publishing fields, one tier tag matching its
- *          directory and a @stackra/typescript-config preset.
+ *          forbidden dependencies, no `@stackra-pro/*` dependency at all, HeroUI Pro in apps only, one tier tag
+ *          matching its directory and a @stackra/typescript-config preset.
  * Boundary: pure: the caller passes the parsed package.json, turbo.jsonc and tsconfig.json (undefined when absent).
  * Runtime: node
- * Governing contract: ADR 0011; ADR 0019; ADR 0310; ADR 0316 (decision 2); ADR 0003 (tiers).
+ * Governing contract: ADR 0011; ADR 0019; ADR 0310; ADR 0461 (decision 3); ADR 0003 (tiers).
  */
 import { DEPENDENCY_FIELDS } from "#node/constants/dependency-fields.constant";
 import { FORBIDDEN_DEPENDENCIES } from "#node/constants/forbidden-dependencies.constant";
 import { PRO_DEPENDENCIES } from "#node/constants/pro-dependencies.constant";
-import { PRO_WRAPPER } from "#node/constants/pro-wrapper.constant";
+import { PRO_SCOPE } from "#node/constants/pro-scope.constant";
 import { expectedName } from "#node/functions/expected-name.function";
 import { tierFor } from "#node/functions/tier-for.function";
 import type { PackageManifest } from "#node/types/package-manifest.type";
-
-/** A `files` entry that would pack the source folder: `src` in any spelling, or the whole package (`.`, `*`, `**`). */
-const isSourceEntry = (entry: string): boolean =>
-  /^(\.\/?|(\.\/)?\*{1,2}|(\.\/)?src(\/.*)?)$/.test(entry);
-
-/** Every path a conditional `exports` value names, condition objects walked to their leaves. */
-const exportTargets = (value: unknown): string[] =>
-  typeof value === "string"
-    ? [value]
-    : Object.values((value ?? {}) as object).flatMap((inner: unknown) => exportTargets(inner));
-
-/**
- * Findings for the Pro wrapper's publishing fields: private, the restricted registry, and the Pro tarball of ADR 0316
- * decision 2 (no `src` and, last, no source maps in `files`; packed exports for the same entries, on `dist` or
- * `assets` only, with no `@stackra/source`).
- */
-function checkProWrapper(pkg: PackageManifest): string[] {
-  const out: string[] = [];
-  const publishConfig = pkg.publishConfig ?? {};
-  const files = pkg.files ?? [];
-  const name = PRO_WRAPPER.name;
-  if (pkg.private !== true)
-    out.push(`${name} must be "private": true, so nothing publishes it to npmjs (ADR 0310)`);
-  if (!PRO_WRAPPER.registry.test(publishConfig.registry ?? ""))
-    out.push(
-      `${name} publishConfig.registry must be Keygen's npm engine, https://npm.pkg.keygen.sh/<account>/ (ADR 0310)`,
-    );
-  // A negated `files` entry only drops what the entries before it added, so the map exclusion comes last.
-  if (files.some(isSourceEntry) || files.at(-1) !== PRO_WRAPPER.noSourceMaps)
-    out.push(
-      `${name} files must list no src and must end with "${PRO_WRAPPER.noSourceMaps}": its tarball ships dist only (ADR 0316)`,
-    );
-  const entries = Object.keys((pkg.exports ?? {}) as object).sort();
-  const packed = Object.keys((publishConfig.exports ?? {}) as object).sort();
-  const targets = exportTargets(publishConfig.exports);
-  if (
-    packed.length === 0 ||
-    packed.join() !== entries.join() ||
-    JSON.stringify(publishConfig.exports).includes("@stackra/source") ||
-    !targets.every((target) => /^\.\/(dist|assets)\//.test(target))
-  )
-    out.push(
-      `${name} publishConfig.exports must name every entry of exports, on dist or assets only, with no @stackra/source condition (ADR 0316)`,
-    );
-  return out;
-}
 
 /**
  * The manifest findings of one member; the parsed files are passed in, so the rules are testable without the disk.
@@ -86,14 +40,12 @@ export function checkMember(member: {
       if (FORBIDDEN_DEPENDENCIES.includes(dep))
         out.push(`${field}.${dep} is a forbidden dependency`);
       const isApp = dir.startsWith("apps/");
-      if (
-        PRO_DEPENDENCIES.includes(dep) &&
-        !isApp &&
-        (pkg.name !== PRO_WRAPPER.name || dep === PRO_WRAPPER.name)
-      )
+      if (dep.startsWith(PRO_SCOPE))
         out.push(
-          `${field}.${dep} is HeroUI Pro: only apps and ${PRO_WRAPPER.name} may depend on it (ADR 0310)`,
+          `${field}.${dep} is a Pro package: it lives in figentra/stackra-pro, and no member here may depend on it (ADR 0461)`,
         );
+      if (PRO_DEPENDENCIES.includes(dep) && !isApp)
+        out.push(`${field}.${dep} is HeroUI Pro: only apps may depend on it (ADR 0310)`);
       if (version === "catalog:uniwind-pro" && !isApp)
         out.push(
           `${field}.${dep} is Uniwind Pro: only apps may use catalog:uniwind-pro (ADR 0310)`,
@@ -106,8 +58,6 @@ export function checkMember(member: {
         );
     }
   }
-
-  if (pkg.name === PRO_WRAPPER.name) out.push(...checkProWrapper(pkg));
 
   const tier = tierFor(dir);
   if (tier === null) return out;

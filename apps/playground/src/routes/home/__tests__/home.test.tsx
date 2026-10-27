@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: proves the index route sits at `/`, titles itself, shows its live showcase, and links every page it is
  *          given in its gallery under its category (in category order), keeping the search params so the scheme and
- *          direction carry over; the Free / Pro filter narrows the gallery and a Pro page wears its badge.
+ *          direction carry over.
  * Boundary: a memory router in jsdom; no network. Rendered alone, outside the shell, so the search button (which
  *          needs the shell's palette) is left out.
  * Runtime: browser
@@ -20,7 +20,7 @@ import type { PageLink } from "#src/types/page-link.type";
 const PAGES: readonly PageLink[] = [
   { path: "/b", title: "Page B", category: "Charts" },
   { path: "/a", title: "Page A", category: "Foundations" },
-  { path: "/pro-c", title: "Page C", category: "Charts" },
+  { path: "/c", title: "Page C", category: "Charts" },
 ];
 
 function renderHome(url = "/") {
@@ -48,7 +48,7 @@ describe("HomeRoute", () => {
       within(gallery.getByRole("list", { name: "Charts" }))
         .getAllByRole("link")
         .map((link) => link.textContent),
-    ).toEqual(["PBPage B", "PCPage CPro"]);
+    ).toEqual(["PBPage B", "PCPage C"]);
   });
 
   it("renders its page at / with a link to every page that keeps the search params", () => {
@@ -62,16 +62,6 @@ describe("HomeRoute", () => {
     expect(screen.getByRole("link", { name: /Browse components/ }).getAttribute("href")).toBe(
       "/?scheme=dark&locale=ar#components",
     );
-  });
-
-  it("narrows the gallery to one tier", () => {
-    renderHome();
-    act(() => screen.getByRole("radio", { name: "Pro" }).click());
-    const gallery = within(screen.getByRole("navigation", { name: "Pages" }));
-    expect(gallery.getAllByRole("link").map((link) => link.textContent)).toEqual(["PCPage CPro"]);
-    act(() => screen.getByRole("radio", { name: "Free" }).click());
-    expect(gallery.queryByText("Page C")).toBeNull();
-    expect(gallery.getAllByRole("link")).toHaveLength(2);
   });
 
   it("shows the live showcase, built from the system's components", () => {

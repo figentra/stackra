@@ -3,7 +3,7 @@
  * Purpose: the categories the design-system review area lists its components in, in display order: Foundations,
  *          Actions, Inputs and forms, Selection, Date and time, Charts, Data display, Feedback and status, Navigation,
  *          Overlays, Layout and AI (the owner's catalogue taxonomy, shared with the web playground). A category with
- *          no component is not shown. Free and Pro components share a category: the tier is a badge, not a category.
+ *          no component is not shown.
  * Boundary: the values only; each row of `design-system-components.ts` names its category.
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 6); ADR 0294 (decision 14).

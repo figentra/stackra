@@ -5,9 +5,9 @@
  *          exports, repository and publishConfig.
  * Boundary: pure: the caller passes the top-level entry names and the texts it read.
  * Runtime: node
- * Governing contract: ADR 0195 (decision 7); ADR 0177 (amendment 2026-10-21); ADR 0025; ADR 0453 (the registry).
+ * Governing contract: ADR 0195 (decision 7); ADR 0177 (amendment 2026-10-21); ADR 0025; ADR 0453 (the registry);
+ *                     ADR 0461 (no Pro member here).
  */
-import { PRO_WRAPPER } from "#node/constants/pro-wrapper.constant";
 import { checkExports } from "#node/functions/check-exports.function";
 import { tierFor } from "#node/functions/tier-for.function";
 import type { PackageManifest } from "#node/types/package-manifest.type";
@@ -54,11 +54,7 @@ export function checkMemberFiles(member: {
         'package.json repository must be { type: "git", url: "git+https://github.com/figentra/stackra.git", directory } (ADR 0177)',
       );
     const pc = pkg.publishConfig ?? {};
-    // ADR 0310: the HeroUI Pro wrapper publishes only to the restricted channel, which `checkMember` requires instead.
-    if (
-      pkg.name !== PRO_WRAPPER.name &&
-      (pc.access !== "public" || pc.provenance !== true || "registry" in pc)
-    )
+    if (pc.access !== "public" || pc.provenance !== true || "registry" in pc)
       // ADR 0453: the release workflow's `registry` input is the one place the registry is set, never a member.
       out.push(
         'package.json publishConfig must be { "access": "public", "provenance": true } with no registry (ADR 0453)',

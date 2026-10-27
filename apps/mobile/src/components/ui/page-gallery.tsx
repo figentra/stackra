@@ -1,34 +1,27 @@
 /**
  * Stackra file contract:
- * Purpose: the design-system landing's gallery, the native twin of the web playground's `page-gallery`: an All / Free
- *          / Pro filter, then one solid panel per category (in `ComponentCategory` order), each with its brand glyph,
- *          its name, its page count and a line on what it holds, listing its pages as rows (a monogram, the title, a
- *          "Pro" badge on Pro pages and a chevron), Free pages first.
- * Boundary: layout, the filter and the row presses only; the pages come in gallery order from the caller, which also
- *          opens a page. A category with no page in the chosen tier is left out; one with no glyph or note below
- *          still lists, with the module glyph and no note.
+ * Purpose: the design-system landing's gallery, the native twin of the web playground's `page-gallery`: one solid
+ *          panel per category (in `ComponentCategory` order), each with its brand glyph, its name, its page count and
+ *          a line on what it holds, listing its pages as rows (a monogram, the title and a chevron).
+ * Boundary: layout and the row presses only; the pages come in gallery order from the caller, which also opens a
+ *          page. A category with no page is left out; one with no glyph or note below still lists, with the module
+ *          glyph and no note.
  * Runtime: react-native
- * Governing contract: ADR 0320 (glass and the showcase stage); ADR 0310 (decision 6); the catalogue taxonomy.
+ * Governing contract: ADR 0320 (glass and the showcase stage); ADR 0461 (decision 3); the catalogue taxonomy.
  */
-import { Chip, Heading, Icon, Surface, Text } from "@stackra/ui/native";
+import { Heading, Icon, Surface, Text } from "@stackra/ui/native";
 import { useThemeColor } from "heroui-native";
-import { useState } from "react";
 import { Pressable, View } from "react-native";
 
 import { ComponentCategory } from "#src/enums/component-category.enum";
-import { ComponentTier } from "#src/enums/component-tier.enum";
 import { BrandGlyph } from "./brand-glyph";
 import type { BrandGlyphName } from "./brand-glyph-name.type";
-import { ChoiceGroup } from "./choice-group";
 import type { PageGalleryProps } from "#src/components/ui/page-gallery.props";
 
 // shortcut: English strings in one place until @stackra/i18n reaches the mobile app; then keys.
 const STRINGS = {
-  tier: "Show",
-  names: { All: "All", Free: "Free", Pro: "Pro" },
-  pro: "Pro",
   count: (count: number) => (count === 1 ? "1 page" : `${count} pages`),
-  none: "No page in this tier yet.",
+  none: "No page yet.",
 } as const;
 
 /** The brand glyph each category wears (the web gallery's); a category missing here wears the module glyph. */
@@ -64,14 +57,6 @@ const CATEGORY_NOTES: Readonly<Partial<Record<ComponentCategory, string>>> = {
   AI: "Conversations, prompts, sources and streamed text.",
 };
 
-/** The filter's choices: every tier, or one. */
-type TierFilter = "All" | ComponentTier;
-
-const TIER_FILTERS = (["All", ...ComponentTier] as const).map((value) => ({
-  value,
-  label: STRINGS.names[value],
-}));
-
 /** The two-letter mark a row wears: the initials of a two-word title (`IconButton`: IB), else its first two letters. */
 function monogram(title: string) {
   const words = title.match(/[A-Z][a-z0-9]*/g) ?? [title];
@@ -80,16 +65,13 @@ function monogram(title: string) {
 
 /** The gallery of pages by category. */
 export function PageGallery({ pages, onOpen }: PageGalleryProps) {
-  const [tier, setTier] = useState<TierFilter>("All");
   const accentForeground = useThemeColor("accent-foreground");
-  const shown = tier === "All" ? pages : pages.filter((page) => page.tier === tier);
 
   return (
     <View className="gap-4">
-      <ChoiceGroup label={STRINGS.tier} choices={TIER_FILTERS} value={tier} onChange={setTier} />
-      {shown.length === 0 ? <Text tone="muted">{STRINGS.none}</Text> : null}
+      {pages.length === 0 ? <Text tone="muted">{STRINGS.none}</Text> : null}
       {ComponentCategory.map((category) => {
-        const inCategory = shown.filter((page) => page.category === category);
+        const inCategory = pages.filter((page) => page.category === category);
         if (inCategory.length === 0) return null;
         const note = CATEGORY_NOTES[category];
         return (
@@ -119,11 +101,11 @@ export function PageGallery({ pages, onOpen }: PageGalleryProps) {
               ) : null}
             </View>
             <View>
-              {inCategory.map(({ route, title, tier: pageTier }) => (
+              {inCategory.map(({ route, title }) => (
                 <Pressable
                   key={route}
                   accessibilityRole="button"
-                  accessibilityLabel={pageTier === "Pro" ? `${title}, ${STRINGS.pro}` : title}
+                  accessibilityLabel={title}
                   onPress={() => onOpen(route)}
                   className="flex-row items-center gap-3 rounded-2xl p-2 active:bg-default"
                 >
@@ -133,13 +115,6 @@ export function PageGallery({ pages, onOpen }: PageGalleryProps) {
                     </Text>
                   </View>
                   <Text className="flex-1 font-medium">{title}</Text>
-                  {pageTier === "Pro" ? (
-                    <View>
-                      <Chip size="sm" variant="soft" tone="accent">
-                        {STRINGS.pro}
-                      </Chip>
-                    </View>
-                  ) : null}
                   <Icon name="chevron-right" size="sm" tone="muted" isMirroredInRtl />
                 </Pressable>
               ))}

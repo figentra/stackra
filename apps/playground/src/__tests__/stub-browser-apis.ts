@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
- * Purpose: the browser APIs the HeroUI Pro pages need and jsdom lacks, for the unit tests of the Pro routes:
- *          `matchMedia` (HeroUI Pro's Sheet reads it as its module loads, so importing this file first stubs it before
- *          any page is imported) and `ResizeObserver` (the grid, the scroll shadow and the sidebar observe their
+ * Purpose: the browser APIs some pages need and jsdom lacks, for the unit tests that load the real route folders:
+ *          `matchMedia` (a module may read it as it loads, so importing this file first stubs it before
+ *          any page is imported) and `ResizeObserver` (components observe their
  *          boxes through it).
  * Boundary: test support only; importing it stubs once, and a test calls `stubBrowserApis` in `beforeEach`, since the
  *          vitest preset restores stubbed globals after each test.

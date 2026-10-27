@@ -32,7 +32,7 @@ export { MUST_STAY_JSONC } from "#node/constants/must-stay-jsonc.constant";
 export { OPTIONAL_ENTRY_NAMES } from "#node/constants/optional-entry-names.constant";
 export { PACKAGE_FOLDERS } from "#node/constants/package-folders.constant";
 export { PRO_DEPENDENCIES } from "#node/constants/pro-dependencies.constant";
-export { PRO_WRAPPER } from "#node/constants/pro-wrapper.constant";
+export { PRO_SCOPE } from "#node/constants/pro-scope.constant";
 export { REACT_HOOK } from "#node/constants/react-hook.constant";
 export { ROOT_MODULE } from "#node/constants/root-module.constant";
 export { RUNWAY_SCHEMA_KINDS } from "#node/constants/runway-schema-kinds.constant";
