@@ -15,8 +15,9 @@
  *          `identity_collision`,
  *          `override_duplicate`, `permission_unknown`, `identity_missing`, the public id prefix checks
  *          `prefix_invalid`, `prefix_taken` and `prefix_duplicate`, `tool_reason_missing`, `effect_unknown`,
- *          `integration_role_unknown`, `egress_invalid`, `sequence_misplaced`, `document_number_unsequenced` and
- *          `cron_job_collision`. It lists each declared rule outcome kind (`RuleOutcome({...})`) in `outcomes`.
+ *          `integration_role_unknown`, `egress_invalid`, `sequence_misplaced`, `document_number_unsequenced`,
+ *          `cron_job_collision` and `event_name_prefixed` (an event `name` that repeats the module or member key: the
+ *          wire name is always `<module>.<name>.v<n>`, never member-level or service-key prefixed, STA-1255). It lists each declared rule outcome kind (`RuleOutcome({...})`) in `outcomes`.
  * Boundary: pure. A config's schema never reaches the manifest (ADR 0305 rule 34). Sections owned by later targets
  *           (ui, settings, migrations, infra, ...) are written by those targets when they land.
  * Runtime: isomorphic
@@ -185,6 +186,19 @@ export function buildManifest(ir: MemberIR): {
       written ?? snakeCase(declared.name),
       integration ? version : undefined,
     );
+    // The wire name is always `<module>.<name>.v<n>`: no member-level or service-key-prefixed name (STA-1255).
+    const prefix = written?.includes(".") === true ? written.split(".")[0] : undefined;
+    if (
+      written !== undefined &&
+      prefix !== undefined &&
+      [declared.module, ir.member].includes(prefix)
+    )
+      fail(
+        declared,
+        "event_name_prefixed",
+        `the event name "${written}" starts with the ${prefix === declared.module ? "module" : "member"} key "${prefix}", but gen adds the module key itself, so the wire name would be ${name}`,
+        `write \`name: "${written.slice(prefix.length + 1)}"\`: the wire name is always <module>.<name>.v<n> (${declared.module}.${written.slice(prefix.length + 1)}${integration ? `.v${version}` : ""}); a consumer switches to it`,
+      );
     claim(name, declared);
     wireNames.set(declared.name, name);
     eventEntries.push({

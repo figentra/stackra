@@ -6,7 +6,7 @@
  *          sequence keys, an app's block and route keys), the module graph, the facets, the schemas without a
  *          config's schema, merged package sections marked `from`, and the checks `identity_collision`,
  *          `override_duplicate`, `permission_unknown`, `identity_missing`, `prefix_invalid`, `prefix_taken` and
- *          `prefix_duplicate`; the v3 tool default with `tool_reason_missing`, the public flag with `public_without_endpoint`, effect tags with `effect_unknown`,
+ *          `prefix_duplicate`; `event_name_prefixed` (STA-1255); the v3 tool default with `tool_reason_missing`, the public flag with `public_without_endpoint`, effect tags with `effect_unknown`,
  *          Integration roles and listing with `integration_role_unknown`, the `@Replaces` section, and a replica
  *          query's `ReplicaPage` output schema (ADR 0338); a package's drivers with each candidate's class, entry and
  *          tokens and the selecting config class (STA-1297); a package's `config` section (STA-1308).
@@ -260,6 +260,32 @@ describe("buildManifest", () => {
       version: 2,
       webhook: true,
     });
+  });
+
+  it("refuses an event name that repeats the module or member key (event_name_prefixed, STA-1255)", () => {
+    const paid = declared("OrderPaid");
+    const named = (name: string, written: string): DeclaredClass => ({
+      ...paid,
+      name,
+      options: { ...paid.options, name: written },
+    });
+    const { errors: prefixed } = buildManifest({
+      ...COMMERCE_IR,
+      classes: [
+        ...COMMERCE_IR.classes.filter((candidate) => candidate !== paid),
+        named("OrderPaid", "orders.order.paid"),
+        named("OrderShipped", "commerce.order.shipped"),
+        named("OrderPacked", "order.packed"),
+      ],
+    });
+    expect(
+      prefixed
+        .filter((error) => error.code === "event_name_prefixed")
+        .map((error) => [error.subject, error.fix.split("`")[1]]),
+    ).toEqual([
+      ["OrderPaid", 'name: "order.paid"'],
+      ["OrderShipped", 'name: "order.shipped"'],
+    ]);
   });
 
   it("derives an app's block and route keys, and no such section elsewhere", () => {

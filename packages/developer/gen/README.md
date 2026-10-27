@@ -67,6 +67,10 @@ tokens. A dependency is described by its committed manifest, never by its `.d.ts
 `manifest_unshipped` when it does not (STA-1308). Every refusal carries a
 snake_case code, a position and the fix; when there is one, nothing is written.
 
+An event's wire name is always `<module>.<name>.v<n>` (`orders.order.paid.v1`): there is no member-level or
+service-key-prefixed wire name, and a `name` that starts with the module or member key is refused
+(`event_name_prefixed`, STA-1255).
+
 ## Tools, effects, listings and replacements
 
 - **Tools by default (ADR 0360 decision 4).** A query, or an action whose `actors` include `user`, gets a `tool`

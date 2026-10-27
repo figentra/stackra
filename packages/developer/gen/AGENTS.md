@@ -107,6 +107,10 @@ The Stackra compiler. Member at `packages/developer/gen` (`tier:lib`), in the pr
   makes that service consumed (discovery and `emitClients`) and must be one of its integration events
   (`client_event_unknown`); `emitRegistrations` writes `registerListeners`, the consumed events' wire names into
   `registerEventNames` and `registerRelays`. Never add a subscription by wire name.
+- Event wire names (STA-1255, default applied 2026-10-27 after os-100, owner may override): always
+  `<module>.<name>.v<n>` from `eventName`. There is no member-level wire name and no service-key prefix; a `name` that
+  starts with the module or member key is refused (`event_name_prefixed`, fix: drop the prefix). Never add an option
+  that overrides the derived wire name.
 - Event transport (ADR 0260 decision 4, ADR 0148): `emitEncoreEvents` writes a service's integration event topics
   (`events.ts`, registered by wire name) and, for a relay service only, `relay.ts`, which subscribes to every topic of
   the product from each publisher's generated `events.ts`. Discovery reads the publishers (`readPublisherManifests`)
