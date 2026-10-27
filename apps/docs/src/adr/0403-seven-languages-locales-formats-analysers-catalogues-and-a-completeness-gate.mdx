@@ -1,6 +1,6 @@
 ---
 title: "0403 — Seven languages: locales, formats, analysers, catalogues and a completeness gate"
-description: "Proposed · 2026-10-26 · amended 2026-10-27 (STA-1307)"
+description: "Proposed · 2026-10-26 · amended 2026-10-27 (STA-1307, STA-1309)"
 ---
 
 <Note>
@@ -76,6 +76,25 @@ imperial display over metric storage and their own postal formats.
 
 automated — `tools/scripts/catalogue-completeness.mjs` in `pnpm validate`; the package tests fix the locales, formats
 and postal formats (`packages/foundation/i18n/src/core/**/__tests__/`, `packages/foundation/validation/src/core/functions/__tests__/`).
+
+## Note 2026-10-27: catalogue loaders (STA-1309)
+
+Decision 7's catalogues reach the runtime through gen, not by hand:
+
+- **Gen writes the loaders.** `#stackra/i18n` exports `catalogues`, one lazy JSON loader per namespace and locale file
+  (the member's own `assets/lang`, and each package's through its `./assets/*` export, which every `@stackra/*` package
+  that ships `assets/lang` exports), and `loadMessages(locale)`. That calls `loadMessages(catalogues, locale)` of
+  `@stackra/i18n`, which loads the fallback chain (`ar-SA`, `ar`, `en`) and merges it farthest first, so the nearest
+  locale wins key by key.
+- **Only runtime dependencies bring lang.** A package listed in `devDependencies` never reaches the runtime, so its
+  catalogues are neither merged nor counted for `i18n_namespace_clash`.
+- **A member may not extend a package's namespace.** A member that ships a namespace a package already ships is refused
+  (`i18n_namespace_clash` stays); it uses its own namespace.
+
+The last two are defaults applied 2026-10-27 (stackra-171); the owner may override them.
+
+Enforcement of this note: automated — `emitI18n` and `checkI18n` in `packages/developer/gen`, `loadMessages` in
+`packages/foundation/i18n` (tests written, run on ci-box).
 
 ## Supersedes and sources
 

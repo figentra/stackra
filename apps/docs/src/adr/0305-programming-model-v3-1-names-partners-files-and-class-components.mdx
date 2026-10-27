@@ -1,6 +1,6 @@
 ---
 title: "0305 — Programming model v3.1: one name per concept, partners by type argument, one declaration per file, class components"
-description: "Accepted, amended by 0324, 0350 · 2026-10-23 · amended 2026-10-24 (STA-428)"
+description: "Accepted, amended by 0324, 0350 · 2026-10-23 · amended 2026-10-24 (STA-428) · amended 2026-10-27 (STA-1306)"
 ---
 
 <Note>
@@ -257,6 +257,33 @@ These conventions are used by the template and the apps. They are decided here, 
 keeps the plain name of the package class it extends. A class that only builds on a package class
 (`ListNotesInput extends CursorInput`) is not an override, so any number of them may share that base. See ADR 0294
 amendment 2026-10-26 (STA-1283).
+
+## Note 2026-10-27: the quality-gate refusals (STA-1306)
+
+Gen now refuses the conventions of this ADR that it can see (coverage audit of 2026-10-27, section 4), each with its
+fix:
+
+- `checkConventions`, on the full run only, so `stackra gen --manifests` still writes: `kind_suffix_mismatch`,
+  `kind_unregistered_base`, `kind_class_name`, `empty_module`, `sibling_not_exported`, `module_cycle`,
+  `migration_numbering`, `event_name_shape` and `override_legacy_name`.
+- The source reader, on both runs: `kind_base_name_reserved`, `secret_name_missing`, and `partner_mismatch` extended
+  to `Resource`, `Factory`, `StateMachine` and `Facts`.
+- `checkI18n`: `i18n_key_missing` for a missing derived enum label. `generate`: `shim_authored` for an authored root
+  `tsdown.config.ts` (one that imports the generated config is kept), and `tool_reason_missing` for a `*.extend.ts`
+  outside the closed set or without a `Reason:` header.
+
+Owned-key checks of hatches are not built, because gen does not apply hatches yet.
+
+**Defaults applied 2026-10-27 (stackra-167), flagged for the owner, who may override any of them:**
+
+1. The `Service` suffix is optional: a service class may drop it (`kind_class_name`).
+2. Class names are compared without case.
+3. `CrudService` is exempt from the partner check: it keeps its own subject, since many services name a domain word.
+4. Only an injected service counts for `sibling_not_exported`.
+
+Enforcement of this note: automated — `check-conventions.function.ts`, `create-source-reader.function.ts`,
+`check-i18n.function.ts` and `generate.function.ts` in `packages/developer/gen`, with their tests (run on ci-box). It
+moves the STA-340 items `partner_mismatch`, `empty_module` and `secret_name_missing` above to automated.
 
 ## Supersedes and sources
 

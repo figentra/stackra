@@ -1,6 +1,6 @@
 ---
 title: "0413 — Streamed file writes: multipart on S3 and R2, buffered elsewhere, never a partial object"
-description: "Proposed · 2026-10-26"
+description: "Proposed · 2026-10-26 · amended 2026-10-27 (STA-1259)"
 ---
 
 <Note>
@@ -33,6 +33,17 @@ description: "Proposed · 2026-10-26"
 
 planned — `packages/data/filesystem/src/contracts/ports/__tests__/file-system.port.test.ts` and
 `packages/data/filesystem/src/node/drivers/__tests__/s3-file-system.driver.test.ts`.
+
+## Note 2026-10-27: streamed reads (STA-1259)
+
+`FileSystem#readStream(key)` is the read side of decision 1. It resolves to a web `ReadableStream<Uint8Array>` once the
+file is found, so a missing file rejects the call with `FileNotFoundError`, never the stream. Every disk has it: the
+`local` and `electron` disks stream from an open file handle, `s3` streams the GET body and `gcs` the download; the
+`memory` and `encore_bucket` disks use the port default, which reads the file whole and serves it as one chunk
+(development or small files, as decision 2 does for writes).
+
+Enforcement of this note: planned — `file-system.port.test.ts` and the driver tests under
+`packages/data/filesystem/src/{node,desktop}/drivers/__tests__/` (written, run on ci-box).
 
 ## Supersedes and sources
 

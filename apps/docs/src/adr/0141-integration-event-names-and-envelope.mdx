@@ -1,6 +1,6 @@
 ---
 title: "0141 — Integration event names and the envelope"
-description: "Accepted, amended by 0260, 0294, 0328 · 2026-10-20"
+description: "Accepted, amended by 0260, 0294, 0328 · 2026-10-20 · amended 2026-10-27 (STA-1255)"
 ---
 
 <Note>
@@ -77,6 +77,16 @@ planned — the registry rejects a duplicate event name, and the validator rejec
 
 - Service-prefixed names (I10, T2, T10): superseded by C27 (C-12).
 - `<aggregate>.<verb>.v<n>` with no module key (C27 as first written): amended by the 2026-10-20 confirmation.
+
+## Note 2026-10-27: one wire name, no prefix (STA-1255)
+
+The wire name of an event is always `<module>.<name>.v<n>` (`orders.order.paid.v1`). There is no member-level wire
+name and no service-key prefix: the two harvested gaps (integrations open question 1, identity G5) close the way os-100
+already went. Gen refuses an event `name` that starts with the module or member key (`event_name_prefixed`), and the
+fix is the name without the prefix. Default applied 2026-10-27 (stackra-124); the owner may override it.
+
+Enforcement of this note: automated — `buildManifest` in `packages/developer/gen` (`event_name_prefixed`), with
+`build-manifest.function.test.ts`.
 
 ## Supersedes and sources
 
