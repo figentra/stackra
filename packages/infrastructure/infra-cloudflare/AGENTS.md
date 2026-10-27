@@ -47,6 +47,8 @@ service uses. Member at `packages/infrastructure/infra-cloudflare`
 - The registry Worker (ADR 0453) has its own folder, `src/node/registry/`. Its R2 bucket and D1 database are
   protected (tarballs are immutable, D1 is the only record); its KV namespace is a cache. Its custom domain is declared
   by `registryWorker`, never also under `cloudflareZone`'s `workers`.
+- The health driver's target is `InfraCloudflareConfig` (`src/config/infra-cloudflare.config.ts`, key `infra_cloudflare`), injected by type:
+  the runway's `config.infra_cloudflare` sets it. Never a constructor options object (gen's `token_not_a_class`).
 
 ## PII
 

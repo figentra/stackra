@@ -6,13 +6,15 @@
  *          limit planners, the dev-port reader), the edge Worker's KV keys and signing-key slots, the Cloudflare for
  *          SaaS custom-hostname and regional-hostname calls the OS tenancy service makes, the login directory Worker's
  *          handler and its KV bulk calls, their enums, error and types.
- *          Also the package's `HealthIndicator` driver (`CloudflareHealthIndicatorDriver`).
+ *          Also the package's `HealthIndicator` driver (`CloudflareHealthIndicatorDriver`) and its target, `InfraCloudflareConfig`.
  * Boundary: names each re-export and declares nothing. The zod schemas and the managed ruleset ids stay internal; the
  *           Pulumi programs are `./node`'s, because Pulumi runs under Node only.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision; ADR 0127 (the infrastructure
  *                     category); ADR 0171 (decision 2); ADR 0437; ADR 0276; ADR 0451.
  */
+export { InfraCloudflareConfig } from "#config/infra-cloudflare.config";
+export { InfraCloudflareConfig$ } from "#core/constants/infra-cloudflare-config-schema.constant";
 export { CloudflareHealthIndicatorDriver } from "#core/drivers/cloudflare-health-indicator.driver";
 export { BotMode } from "#core/enums/bot-mode.enum";
 export { CustomHostnameState } from "#core/enums/custom-hostname-state.enum";

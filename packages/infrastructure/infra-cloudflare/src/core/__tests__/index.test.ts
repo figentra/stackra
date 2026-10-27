@@ -29,6 +29,8 @@ describe("@stackra/infra-cloudflare", () => {
       "CloudflareConfigInvalidError",
       "CloudflareHealthIndicatorDriver",
       "CustomHostnameState",
+      "InfraCloudflareConfig",
+      "InfraCloudflareConfig$",
       "OriginLock",
       "WafMode",
       "ZonePlan",

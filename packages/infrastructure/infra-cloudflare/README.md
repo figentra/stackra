@@ -17,32 +17,32 @@ Agents never run `pulumi` and never call Cloudflare. The programs run in the pri
 
 ## What is here
 
-| Entry    | Symbol                                                                   | Use                                                                |
-| -------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------ |
-| `.`      | `parseEdge(root)`                                                        | the root runway's `edge` block, checked and defaulted              |
-| `.`      | `parseCloudflareStack(document)`                                         | the stack config, checked and defaulted                            |
-| `.`      | `tunnelIngress(tunnel)`                                                  | a tunnel's ingress: `<member>-<dev>.<dev zone>` to each dev port   |
-| `.`      | `devPortsOf(runways)`                                                    | each member runway's `environments.dev.port`                       |
-| `.`      | `rateLimitFor(edge, plan)`                                               | the per-IP rule a plan can hold for the runway's limit             |
-| `.`      | `parseStorefront(settings)`, `shopperLimitRules(policy)`                 | a tenant's campaign settings checked; the per-shopper edge rules   |
-| `.`      | `edgeKvKey(kind, ...parts)`                                              | a key of the edge Worker's KV copy (`host:`, `boot:`, `shell:`, …) |
-| `.`      | `signingKeySlots(keyIds)`                                                | the two active edge-signing keys as secret names; the newest signs |
-| `.`      | `customHostnameRequest(call)`, `customHostnameState(result)`             | the Cloudflare for SaaS calls tenancy makes, and their state       |
-| `.`      | `regionalHostnameRequest(call)`                                          | keep a scope's custom hostname in one region (data localisation)   |
-| `.`      | `loginDirectoryHandler(options)`                                         | the login directory Worker's handler: an identifier to its regions |
-| `.`      | `loginDirectoryKvRequest(call)`                                          | a region's KV bulk put or delete of its directory rows             |
-| `.`      | `CloudflareHealthIndicatorDriver`                                        | the health driver: an edge host answers                            |
-| `.`      | `ZonePlan`, `WafMode`, `BotMode`, `OriginLock`, `CustomHostnameState`    | enums                                                              |
-| `.`      | `CloudflareConfigInvalidError`                                           | every input failure, with each path                                |
-| `.`      | `EdgePolicy`, `CloudflareStack`, `ZoneOptions`, `TunnelIngressRule`      | types                                                              |
-| `.`      | `EdgeWorker`, `EdgeKvKeyParts`, `SigningKeySlot`, `CloudflareApiRequest` | types                                                              |
-| `./node` | `cloudflareCoreStack({ root, stack, ports })`                            | the whole Cloudflare stack in one call; returns every resource     |
-| `./node` | `cloudflareZone`, `zoneEdge`, `devTunnel`, `accessGate`, `r2Bucket`      | the parts, for a stack that composes its own                       |
-| `./node` | `edgeWorker`                                                             | the OS edge Worker's KV, routes, rollout and locked origins        |
-| `./node` | `loginDirectoryWorker`                                                   | the login directory Worker's global KV namespace and routes        |
-| `./node` | `registryWorker`                                                         | the Stackra registry's R2, D1, KV and custom domain (ADR 0453)     |
-| `./node` | `turboCache`                                                             | the Turborepo remote cache's R2 bucket, expiry and custom domain   |
-| `./node` | `resolveRef(value)`                                                      | a runway value, with `ref:<key>.<path>` read from the stack config |
+| Entry    | Symbol                                                                   | Use                                                                              |
+| -------- | ------------------------------------------------------------------------ | -------------------------------------------------------------------------------- |
+| `.`      | `parseEdge(root)`                                                        | the root runway's `edge` block, checked and defaulted                            |
+| `.`      | `parseCloudflareStack(document)`                                         | the stack config, checked and defaulted                                          |
+| `.`      | `tunnelIngress(tunnel)`                                                  | a tunnel's ingress: `<member>-<dev>.<dev zone>` to each dev port                 |
+| `.`      | `devPortsOf(runways)`                                                    | each member runway's `environments.dev.port`                                     |
+| `.`      | `rateLimitFor(edge, plan)`                                               | the per-IP rule a plan can hold for the runway's limit                           |
+| `.`      | `parseStorefront(settings)`, `shopperLimitRules(policy)`                 | a tenant's campaign settings checked; the per-shopper edge rules                 |
+| `.`      | `edgeKvKey(kind, ...parts)`                                              | a key of the edge Worker's KV copy (`host:`, `boot:`, `shell:`, …)               |
+| `.`      | `signingKeySlots(keyIds)`                                                | the two active edge-signing keys as secret names; the newest signs               |
+| `.`      | `customHostnameRequest(call)`, `customHostnameState(result)`             | the Cloudflare for SaaS calls tenancy makes, and their state                     |
+| `.`      | `regionalHostnameRequest(call)`                                          | keep a scope's custom hostname in one region (data localisation)                 |
+| `.`      | `loginDirectoryHandler(options)`                                         | the login directory Worker's handler: an identifier to its regions               |
+| `.`      | `loginDirectoryKvRequest(call)`                                          | a region's KV bulk put or delete of its directory rows                           |
+| `.`      | `CloudflareHealthIndicatorDriver`, `InfraCloudflareConfig`               | the health driver: an edge host answers; its target is `config.infra_cloudflare` |
+| `.`      | `ZonePlan`, `WafMode`, `BotMode`, `OriginLock`, `CustomHostnameState`    | enums                                                                            |
+| `.`      | `CloudflareConfigInvalidError`                                           | every input failure, with each path                                              |
+| `.`      | `EdgePolicy`, `CloudflareStack`, `ZoneOptions`, `TunnelIngressRule`      | types                                                                            |
+| `.`      | `EdgeWorker`, `EdgeKvKeyParts`, `SigningKeySlot`, `CloudflareApiRequest` | types                                                                            |
+| `./node` | `cloudflareCoreStack({ root, stack, ports })`                            | the whole Cloudflare stack in one call; returns every resource                   |
+| `./node` | `cloudflareZone`, `zoneEdge`, `devTunnel`, `accessGate`, `r2Bucket`      | the parts, for a stack that composes its own                                     |
+| `./node` | `edgeWorker`                                                             | the OS edge Worker's KV, routes, rollout and locked origins                      |
+| `./node` | `loginDirectoryWorker`                                                   | the login directory Worker's global KV namespace and routes                      |
+| `./node` | `registryWorker`                                                         | the Stackra registry's R2, D1, KV and custom domain (ADR 0453)                   |
+| `./node` | `turboCache`                                                             | the Turborepo remote cache's R2 bucket, expiry and custom domain                 |
+| `./node` | `resolveRef(value)`                                                      | a runway value, with `ref:<key>.<path>` read from the stack config               |
 
 ## The two inputs
 
