@@ -69,7 +69,7 @@ export class PostgresConversationStoreDriver extends Driver(ConversationStore) {
     this.cast = cast;
   }
 
-  /** See `ConversationStore.open`. */
+  /** Implements `ConversationStore.open`, documented there. */
   async open(conversation: {
     readonly agent: string;
     readonly principalId: string;
@@ -86,13 +86,13 @@ export class PostgresConversationStoreDriver extends Driver(ConversationStore) {
     return recordOf(row);
   }
 
-  /** See `ConversationStore.get`. */
+  /** Implements `ConversationStore.get`, documented there. */
   async get(id: string): Promise<ConversationRecord | undefined> {
     const row = await this.conversations.findOne({ id } as never);
     return row === null ? undefined : recordOf(row as Conversation);
   }
 
-  /** See `ConversationStore.messages`. */
+  /** Implements `ConversationStore.messages`, documented there. */
   async messages(conversationId: string): Promise<readonly ModelMessage[]> {
     const rows = (await this.rows.find(
       { conversationId } as never,

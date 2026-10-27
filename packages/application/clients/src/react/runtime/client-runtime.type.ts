@@ -3,7 +3,7 @@
  * Purpose: `ClientRuntime`, what the client hooks read from the container: the transport, the server-state cache, and
  *          the mutation queue and session when the host binds them.
  * Boundary: a type internal to the `./react` entry; not exported.
- * Runtime: browser, react-native
+ * Runtime: isomorphic
  * Governing contract: ADR 0260 (decision 6); ADR 0079 (TanStack Query core).
  */
 import type { ServerStateCache, MutationQueue } from "@stackra/query";

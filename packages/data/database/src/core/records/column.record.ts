@@ -85,13 +85,13 @@ export class ColumnRecord implements ForeignKeyColumn {
     this.primary = seed.primary ?? false;
   }
 
-  /** See `ColumnDefinition.notNull`. */
+  /** Implements `ColumnDefinition.notNull`, documented there. */
   notNull(): this {
     this.nullability = "not null";
     return this;
   }
 
-  /** See `ColumnDefinition.nullable`. */
+  /** Implements `ColumnDefinition.nullable`, documented there. */
   nullable(): this {
     this.nullability = "null";
     return this;
@@ -120,7 +120,7 @@ export class ColumnRecord implements ForeignKeyColumn {
     return this;
   }
 
-  /** See `ColumnDefinition.index`. */
+  /** Implements `ColumnDefinition.index`, documented there. */
   index(): this {
     this.indexed = true;
     return this;

@@ -43,7 +43,7 @@ export class MemoryWebhookEntitlementSourceDriver extends Driver(WebhookEntitlem
     return this;
   }
 
-  /** See `WebhookEntitlementSource.granted`. */
+  /** Implements `WebhookEntitlementSource.granted`, documented there. */
   async granted(entitlements: readonly string[], scopeId: string): Promise<ReadonlySet<string>> {
     const keys = this.grants.get(scopeId);
     return new Set(entitlements.filter((entitlement) => keys?.has(entitlement) === true));

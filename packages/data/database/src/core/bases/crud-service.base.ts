@@ -76,7 +76,7 @@ function nest(path: string, value: unknown): Record<string, unknown> {
  * }
  */
 export abstract class CrudService<M extends object> extends Service implements Repository<M> {
-  /** See `Repository.find`. */
+  /** Implements `Repository.find`, documented there. */
   async find<H extends string = never>(
     where: Where<M>,
     options?: FindOptions<M, H>,
@@ -85,7 +85,7 @@ export abstract class CrudService<M extends object> extends Service implements R
     return this.em().find(model, await visibleFilter(model, where), options);
   }
 
-  /** See `Repository.findOne`. */
+  /** Implements `Repository.findOne`, documented there. */
   async findOne<H extends string = never>(
     where: Where<M>,
     options?: FindOneOptions<M, H>,
@@ -110,18 +110,18 @@ export abstract class CrudService<M extends object> extends Service implements R
     });
   }
 
-  /** See `Repository.count`. */
+  /** Implements `Repository.count`, documented there. */
   async count(where: Where<M> = {} as Where<M>): Promise<number> {
     const model = this.model();
     return this.em().count(model, await visibleFilter(model, where));
   }
 
-  /** See `Repository.sum`. */
+  /** Implements `Repository.sum`, documented there. */
   sum(field: string, where: Where<M> = {} as Where<M>): Promise<number> {
     return this.aggregate((column) => `coalesce(sum(${column}), 0)`, field, where);
   }
 
-  /** See `Repository.countDistinct`. */
+  /** Implements `Repository.countDistinct`, documented there. */
   countDistinct(field: string, where: Where<M> = {} as Where<M>): Promise<number> {
     return this.aggregate((column) => `count(distinct ${column})`, field, where);
   }
@@ -158,12 +158,12 @@ export abstract class CrudService<M extends object> extends Service implements R
     );
   }
 
-  /** See `Repository.create`. */
+  /** Implements `Repository.create`, documented there. */
   create(data: RequiredEntityData<M>): M {
     return this.em().create(this.model(), data);
   }
 
-  /** See `Repository.insert`. */
+  /** Implements `Repository.insert`, documented there. */
   insert(data: RequiredEntityData<M>, options: TransactionOptions = {}): Promise<M> {
     return this.em().transactional(
       async (em) => {

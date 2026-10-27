@@ -28,7 +28,7 @@ export class MemoryAutomationPrincipalsDriver extends Driver(AutomationPrincipal
   /** Revoked principal ids. */
   readonly revoked = new Set<PublicId>();
 
-  /** See `AutomationPrincipals.mint`. */
+  /** Implements `AutomationPrincipals.mint`, documented there. */
   async mint(input: AutomationPrincipalInput): Promise<Actor> {
     const key = `${input.scopeId ?? ""}:${input.automationId}`;
     const known = this.live.get(key);
@@ -42,7 +42,7 @@ export class MemoryAutomationPrincipalsDriver extends Driver(AutomationPrincipal
     return actor;
   }
 
-  /** See `AutomationPrincipals.revoke`. */
+  /** Implements `AutomationPrincipals.revoke`, documented there. */
   async revoke(principalId: PublicId): Promise<void> {
     for (const [key, actor] of this.live)
       if (actor.id === principalId) {

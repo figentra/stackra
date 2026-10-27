@@ -3,7 +3,7 @@
  * Purpose: `PulumiMock`, what `mockPulumi` hands a test: the resources registered so far, a wait until registration
  *          settles, and a lookup by type token and name.
  * Boundary: type only.
- * Runtime: node (tests)
+ * Runtime: node
  * Governing contract: ADR 0269 (testing helpers in the owner package).
  */
 import type { MockedResource } from "#testing/types/mocked-resource.type";

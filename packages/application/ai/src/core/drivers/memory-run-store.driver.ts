@@ -38,7 +38,7 @@ export class MemoryRunStoreDriver extends Driver(RunStore) {
   /** The approvals by id, in order of first record. */
   private readonly decisions = new Map<string, RunApprovalRecord>();
 
-  /** See `RunStore.create`. */
+  /** Implements `RunStore.create`, documented there. */
   async create(run: {
     readonly conversationId: string;
     readonly agent: string;
@@ -57,7 +57,7 @@ export class MemoryRunStoreDriver extends Driver(RunStore) {
     return row;
   }
 
-  /** See `RunStore.get`. */
+  /** Implements `RunStore.get`, documented there. */
   async get(id: string): Promise<RunRecord | undefined> {
     return this.rows.get(id);
   }
@@ -85,27 +85,27 @@ export class MemoryRunStoreDriver extends Driver(RunStore) {
     this.rows.set(id, pending === undefined || pending === null ? next : { ...next, pending });
   }
 
-  /** See `RunStore.recordStep`. */
+  /** Implements `RunStore.recordStep`, documented there. */
   async recordStep(step: RunStepRecord): Promise<void> {
     this.steps.push(Object.freeze({ ...step }));
   }
 
-  /** See `RunStore.recordToolCall`. */
+  /** Implements `RunStore.recordToolCall`, documented there. */
   async recordToolCall(call: ToolCallRecord): Promise<void> {
     this.calls.push(Object.freeze({ ...call }));
   }
 
-  /** See `RunStore.recordApproval`. */
+  /** Implements `RunStore.recordApproval`, documented there. */
   async recordApproval(approval: RunApprovalRecord): Promise<void> {
     this.decisions.set(approval.approvalId, Object.freeze({ ...approval }));
   }
 
-  /** See `RunStore.toolCalls`. */
+  /** Implements `RunStore.toolCalls`, documented there. */
   async toolCalls(runId: string): Promise<readonly ToolCallRecord[]> {
     return this.calls.filter((call) => call.runId === runId);
   }
 
-  /** See `RunStore.approvals`. */
+  /** Implements `RunStore.approvals`, documented there. */
   async approvals(runId: string): Promise<readonly RunApprovalRecord[]> {
     return [...this.decisions.values()].filter((approval) => approval.runId === runId);
   }

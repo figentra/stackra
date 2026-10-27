@@ -5,7 +5,7 @@
  *          the given stack config (`{ aws: { accounts: { prod: "123456789012" } } }`) is what `ref:` values read.
  * Boundary: tests only; it replaces Pulumi's runtime for the whole test file. The project is `project` and the stack
  *           `stack`, so a config key is read as `project:<key>`.
- * Runtime: node (tests)
+ * Runtime: node
  * Governing contract: ADR 0171 (agents never apply a stack), ADR 0269 (testing helpers), ADR 0022 (tests beside the
  *                     subject).
  */

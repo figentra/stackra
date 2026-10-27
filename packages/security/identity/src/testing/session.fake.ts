@@ -8,7 +8,7 @@
  *           requested number of memberships `scp_…01`, `scp_…02`, … (role `admin`). It is a `SessionService`, so a
  *           render helper binds it with `.override(SessionService, session)`; its own `status`, `user`, `signIn` and
  *           `signOut` give it the shape of a session value.
- * Runtime: node (vitest)
+ * Runtime: node
  * Governing contract: ADR 0269 (decision 3); ADR 0266 (decision 2: a fake per capability); ADR 0206.
  */
 import { buildConfig } from "@stackra/config";

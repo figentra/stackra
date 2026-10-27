@@ -50,7 +50,7 @@ export class MemoryLockDriver extends Driver(LockDriver) {
     return work();
   }
 
-  /** See `LockDriver.tryAcquire`. */
+  /** Implements `LockDriver.tryAcquire`, documented there. */
   tryAcquire(
     keys: readonly string[],
     owner: string,
@@ -65,7 +65,7 @@ export class MemoryLockDriver extends Driver(LockDriver) {
     return Promise.resolve({ keys: [...keys], owner, token: hold.token });
   }
 
-  /** See `LockDriver.renew`. */
+  /** Implements `LockDriver.renew`, documented there. */
   renew(lease: LockLease, ttl: Duration): Promise<boolean> {
     const now = this.clock.now().getTime();
     const held = lease.keys.every((key) => {
@@ -78,7 +78,7 @@ export class MemoryLockDriver extends Driver(LockDriver) {
     return Promise.resolve(true);
   }
 
-  /** See `LockDriver.release`. */
+  /** Implements `LockDriver.release`, documented there. */
   release(lease: LockLease): Promise<void> {
     for (const key of lease.keys)
       if (this.holds.get(key)?.token === lease.token) this.holds.delete(key);

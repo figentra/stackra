@@ -32,7 +32,7 @@ export class InboxEventPublisherDriver extends Driver(EventPublisher) {
     this.inbox = inbox;
   }
 
-  /** See `EventPublisher.publish`. */
+  /** Implements `EventPublisher.publish`, documented there. */
   async publish(envelope: EventEnvelope): Promise<void> {
     await this.inbox.receive(envelope);
   }

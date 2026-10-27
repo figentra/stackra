@@ -4,7 +4,7 @@
  *          through the cache, and mark a query's cached answers stale.
  * Boundary: a type only. Both go through the same cache keys as `useQuery`, so a fetched answer is the one a screen
  *           shows.
- * Runtime: browser, react-native
+ * Runtime: isomorphic
  * Governing contract: ADR 0079 (TanStack Query core); ADR 0260 (decision 4).
  */
 import type { QueryRef } from "#core/types/query-ref.type";

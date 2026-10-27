@@ -26,7 +26,7 @@ export class WebhookObjectSinkFake extends WebhookObjectSink {
   /** The error the next writes reject with; none writes. */
   private failure: Error | undefined;
 
-  /** See `WebhookObjectSink.put`. */
+  /** Implements `WebhookObjectSink.put`, documented there. */
   put(object: WebhookObject): Promise<void> {
     if (this.failure !== undefined) return Promise.reject(this.failure);
     const { signal: _signal, ...kept } = object;

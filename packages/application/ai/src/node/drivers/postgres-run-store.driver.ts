@@ -117,7 +117,7 @@ export class PostgresRunStoreDriver extends Driver(RunStore) {
     this.decisions = decisions;
   }
 
-  /** See `RunStore.create`. */
+  /** Implements `RunStore.create`, documented there. */
   async create(run: {
     readonly conversationId: string;
     readonly agent: string;
@@ -138,7 +138,7 @@ export class PostgresRunStoreDriver extends Driver(RunStore) {
     return runOf(row);
   }
 
-  /** See `RunStore.get`. */
+  /** Implements `RunStore.get`, documented there. */
   async get(id: string): Promise<RunRecord | undefined> {
     const row = await this.runs.findOne({ id } as never);
     return row === null ? undefined : runOf(row as Run);
@@ -202,12 +202,12 @@ export class PostgresRunStoreDriver extends Driver(RunStore) {
       );
   }
 
-  /** See `RunStore.recordStep`. */
+  /** Implements `RunStore.recordStep`, documented there. */
   async recordStep(step: RunStepRecord): Promise<void> {
     await this.steps.insert({ ...step });
   }
 
-  /** See `RunStore.recordToolCall`. */
+  /** Implements `RunStore.recordToolCall`, documented there. */
   async recordToolCall(call: ToolCallRecord): Promise<void> {
     await this.calls.insert({
       ...call,
@@ -216,7 +216,7 @@ export class PostgresRunStoreDriver extends Driver(RunStore) {
     });
   }
 
-  /** See `RunStore.recordApproval`. */
+  /** Implements `RunStore.recordApproval`, documented there. */
   async recordApproval(approval: RunApprovalRecord): Promise<void> {
     const row = (await this.decisions.findOne({
       approvalId: approval.approvalId,
@@ -240,7 +240,7 @@ export class PostgresRunStoreDriver extends Driver(RunStore) {
       );
   }
 
-  /** See `RunStore.toolCalls`. */
+  /** Implements `RunStore.toolCalls`, documented there. */
   async toolCalls(runId: string): Promise<readonly ToolCallRecord[]> {
     const rows = (await this.calls.find(
       { runId } as never,
@@ -249,7 +249,7 @@ export class PostgresRunStoreDriver extends Driver(RunStore) {
     return rows.map(toolCallOf);
   }
 
-  /** See `RunStore.approvals`. */
+  /** Implements `RunStore.approvals`, documented there. */
   async approvals(runId: string): Promise<readonly RunApprovalRecord[]> {
     const rows = (await this.decisions.find(
       { runId } as never,

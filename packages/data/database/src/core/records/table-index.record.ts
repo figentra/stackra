@@ -43,7 +43,7 @@ export class TableIndexRecord implements TableIndex {
     this.unique = unique;
   }
 
-  /** See `TableIndex.concurrently`. */
+  /** Implements `TableIndex.concurrently`, documented there. */
   concurrently(): this {
     this.online = true;
     return this;

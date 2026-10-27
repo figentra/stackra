@@ -9,7 +9,7 @@
  *           and never logged or echoed; answers are `no-store`. 405 for any method but POST, 400 for a body that is
  *           not a small JSON identifier or does not normalise. Rate limits and bot checks are the route's, at the
  *           zone edge (ADR 0437 decision 2.7). A separate Worker from the OS edge Worker, on its own route.
- * Runtime: isomorphic (Workers runtime)
+ * Runtime: worker
  * Governing contract: ADR 0451; ADR 0353 (decision 4); OS ADR 0002 (decision 1); ADR 0437 (one Worker per concern on
  *                     its own route).
  */

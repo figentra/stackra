@@ -28,13 +28,13 @@ export class MemoryRealtimeFanoutDriver extends Driver(RealtimeFanout) {
   /** Delivers to this process's subscribers. */
   private readonly local = new LocalRealtimeFanoutDriver();
 
-  /** See `RealtimeFanout.publish`. */
+  /** Implements `RealtimeFanout.publish`, documented there. */
   publish(message: FanoutMessage): Promise<void> {
     this.published.push(message);
     return this.local.publish(message);
   }
 
-  /** See `RealtimeFanout.subscribe`. */
+  /** Implements `RealtimeFanout.subscribe`, documented there. */
   subscribe(receive: (message: FanoutMessage) => void): () => void {
     return this.local.subscribe(receive);
   }

@@ -11,7 +11,7 @@
  *           WebAssembly memory while code runs), output (result plus logs). Each run gets a fresh engine module,
  *           runtime and context, all dropped after it, so no state passes between runs. Each run is metered: a result
  *           carries `codeMs`, and so does each refusal. Not a Python runner (Pyodide is a later engine of ADR 0154).
- * Runtime: isomorphic (needs WebAssembly)
+ * Runtime: isomorphic
  * Governing contract: ADR 0154 (decisions 1 to 8); ADR 0294 (decisions 16 and 17: dependencies by constructor type);
  *                     ADR 0263 (ports resolve by type).
  */

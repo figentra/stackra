@@ -3,7 +3,7 @@
  * Purpose: `MockedResource`, one resource a Pulumi program registered under `mockPulumi`: its type token, its logical
  *          name and the inputs it was given, resolved.
  * Boundary: type only; test data, never sent anywhere.
- * Runtime: node (tests)
+ * Runtime: node
  * Governing contract: ADR 0269 (testing helpers in the owner package), ADR 0171 (preview only for agents).
  */
 

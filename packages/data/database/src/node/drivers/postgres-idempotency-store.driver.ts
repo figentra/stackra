@@ -95,7 +95,7 @@ export class PostgresIdempotencyStoreDriver extends Driver(IdempotencyStore) {
     throw new Error(`The idempotency key ${key} changed hands three times while it was claimed`);
   }
 
-  /** See `IdempotencyStore.complete`. */
+  /** Implements `IdempotencyStore.complete`, documented there. */
   async complete(key: string, output: unknown): Promise<void> {
     await this.run(async (em) => {
       // raw-sql: the held key is marked done with its output, keeping its expiry
@@ -106,7 +106,7 @@ export class PostgresIdempotencyStoreDriver extends Driver(IdempotencyStore) {
     });
   }
 
-  /** See `IdempotencyStore.release`. */
+  /** Implements `IdempotencyStore.release`, documented there. */
   async release(key: string): Promise<void> {
     await this.run(async (em) => {
       // raw-sql: a held key is freed after a failed call; a done key stays to replay

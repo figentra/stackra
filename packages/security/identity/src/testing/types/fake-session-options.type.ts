@@ -3,7 +3,7 @@
  * Purpose: `FakeSessionOptions`, what `fakeSession` takes: the status to start in, how many memberships the fake user
  *          has, and what `signIn` and `signOut` do instead of the real flow.
  * Boundary: a type only; test code.
- * Runtime: node (vitest)
+ * Runtime: node
  * Governing contract: ADR 0269 (decision 3: domain helpers in the owning package's ./testing).
  */
 import type { SessionStatus } from "#core/index";

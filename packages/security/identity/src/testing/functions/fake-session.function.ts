@@ -6,7 +6,7 @@
  * Boundary: test code only. Typed as the value `useSession()` returns, `SignedInSession` when the status is signed in,
  *           so `session.user.memberships` reads without narrowing; at run time it is a `SessionFake`, a real
  *           `SessionService`. Two calls never share state.
- * Runtime: node (vitest)
+ * Runtime: node
  * Governing contract: ADR 0269 (decision 3: domain helpers in the owning package's ./testing); ADR 0266; ADR 0206.
  */
 import type { SessionStatus } from "#core/index";

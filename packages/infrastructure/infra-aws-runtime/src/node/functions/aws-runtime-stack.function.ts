@@ -7,7 +7,7 @@
  * Boundary: the program body of one Pulumi stack (`<project>-<env>-runtime[-<member>]` in the stacks repository); agents
  *           only preview it or run it under mocks. The provider and credentials are the stack's (the environment's
  *           infra role from `@stackra/infra-aws`).
- * Runtime: node (Pulumi program)
+ * Runtime: node
  * Governing contract: ADR 0171 (decisions 2 to 5), ADR 0296 (decisions 1 and 2), ADR 0402 (one service deploys through
  *                     the runtime stack).
  */

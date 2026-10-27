@@ -88,7 +88,7 @@ export class MemoryDatabaseDriver extends Driver(Database) {
     return this.close();
   }
 
-  /** See `Database.em`. */
+  /** Implements `Database.em`, documented there. */
   em(): EntityManager {
     const root = this.orm.em;
     const context =
@@ -97,7 +97,7 @@ export class MemoryDatabaseDriver extends Driver(Database) {
     return ((context as unknown) ?? root.fork()) as EntityManager;
   }
 
-  /** See `Database.transaction`. */
+  /** Implements `Database.transaction`, documented there. */
   transaction<T>(work: () => Promise<T>, options: TransactionOptions = {}): Promise<T> {
     return this.em().transactional(
       () => work(),

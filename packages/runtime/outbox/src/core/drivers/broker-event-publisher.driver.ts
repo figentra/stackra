@@ -34,7 +34,7 @@ export class BrokerEventPublisherDriver extends Driver(EventPublisher) {
     this.broker = broker;
   }
 
-  /** See `EventPublisher.publish`. */
+  /** Implements `EventPublisher.publish`, documented there. */
   publish(envelope: EventEnvelope): Promise<void> {
     return this.broker.publish(envelope.type, { id: envelope.id, body: envelope });
   }

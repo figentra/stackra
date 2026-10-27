@@ -4,7 +4,7 @@
  *          and intent router hooks with their option and result types) until `stackra gen` writes the entry barrels
  *          (STA-339).
  * Boundary: names each re-export and declares nothing; imports `core` and `contracts`, never another entry.
- * Runtime: browser, react-native
+ * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision.
  */
 export { useAction } from "#react/action/use-action";

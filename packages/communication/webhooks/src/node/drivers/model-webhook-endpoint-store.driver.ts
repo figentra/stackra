@@ -48,7 +48,7 @@ export class ModelWebhookEndpointStoreDriver extends Driver(WebhookEndpointStore
     this.secrets = secrets;
   }
 
-  /** See `WebhookEndpointStore.subscribedTo`. */
+  /** Implements `WebhookEndpointStore.subscribedTo`, documented there. */
   async subscribedTo(scopeId: string, type: string): Promise<readonly WebhookTarget[]> {
     return (await this.endpoints.subscribedTo(scopeId, type)).map(targetOf);
   }
@@ -70,7 +70,7 @@ export class ModelWebhookEndpointStoreDriver extends Driver(WebhookEndpointStore
     return { ...targetOf(endpoint), secrets };
   }
 
-  /** See `WebhookEndpointStore.disable`. */
+  /** Implements `WebhookEndpointStore.disable`, documented there. */
   disable(id: string, at: Date): Promise<void> {
     return this.endpoints.disable(id as PublicId<"whe">, at);
   }

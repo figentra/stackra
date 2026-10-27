@@ -85,12 +85,12 @@ export class PostgresOutboxDriver extends Driver(OutboxDriver) {
     this.database = database;
   }
 
-  /** See `OutboxDriver.write`. */
+  /** Implements `OutboxDriver.write`, documented there. */
   write(messages: readonly OutboxMessage[]): Promise<void> {
     return insertMessages(this.database.em(), messages);
   }
 
-  /** See `OutboxDriver.due`. */
+  /** Implements `OutboxDriver.due`, documented there. */
   async due(now: Date, limit: number): Promise<readonly OutboxMessage[]> {
     // raw-sql: the outbox has no model; the relay reads across scopes, ordered by time then id
     const rows = await this.database
@@ -103,13 +103,13 @@ export class PostgresOutboxDriver extends Driver(OutboxDriver) {
     return ROWS.parse(rows).map(messageOf);
   }
 
-  /** See `OutboxDriver.remove`. */
+  /** Implements `OutboxDriver.remove`, documented there. */
   async remove(id: PublicId<"evt">): Promise<void> {
     // raw-sql: the outbox has no model; one parameterised delete
     await this.database.em().execute(`delete from ${TABLE} where id = ?`, [id]);
   }
 
-  /** See `OutboxDriver.retry`. */
+  /** Implements `OutboxDriver.retry`, documented there. */
   async retry(id: PublicId<"evt">, availableAt: Date, error: OutboxError): Promise<void> {
     // raw-sql: the outbox has no model; one parameterised update per outcome
     await this.database
@@ -120,7 +120,7 @@ export class PostgresOutboxDriver extends Driver(OutboxDriver) {
       );
   }
 
-  /** See `OutboxDriver.deadLetter`. */
+  /** Implements `OutboxDriver.deadLetter`, documented there. */
   async deadLetter(id: PublicId<"evt">, error: OutboxError, at: Date): Promise<void> {
     // raw-sql: the outbox has no model; one parameterised update per outcome
     await this.database

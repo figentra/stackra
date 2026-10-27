@@ -22,14 +22,14 @@ export class MemoryInboxDriver extends Driver(InboxDriver) {
   /** Event id to when it was received, in epoch milliseconds. */
   private readonly received = new Map<string, number>();
 
-  /** See `InboxDriver.claim`. */
+  /** Implements `InboxDriver.claim`, documented there. */
   claim(eventId: string, at: Date): Promise<boolean> {
     if (this.received.has(eventId)) return Promise.resolve(false);
     this.received.set(eventId, at.getTime());
     return Promise.resolve(true);
   }
 
-  /** See `InboxDriver.prune`. */
+  /** Implements `InboxDriver.prune`, documented there. */
   prune(before: Date): Promise<void> {
     for (const [eventId, at] of this.received)
       if (at < before.getTime()) this.received.delete(eventId);

@@ -4,7 +4,7 @@
  *          holds the action's permission, and the last run's refusal.
  * Boundary: a type only. `isAllowed` decides presentation (hide or disable a button); the producer's pipeline still
  *           checks every call.
- * Runtime: browser, react-native
+ * Runtime: isomorphic
  * Governing contract: ADR 0260 (decision 4); ADR 0059 (offline queue); ADR 0208 (permissions).
  */
 import type { ActionRef } from "#core/types/action-ref.type";

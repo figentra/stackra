@@ -37,7 +37,7 @@ export class PostgresOfflineCapStoreDriver extends Driver(OfflineCapStore) {
     this.database = database;
   }
 
-  /** See `OfflineCapStore.usage`. */
+  /** Implements `OfflineCapStore.usage`, documented there. */
   async usage(deviceId: string, key: string, since: Date): Promise<OfflineCapUsage> {
     const em = this.database.em();
     // raw-sql: the calls older than the window can never count again; one parameterised delete
@@ -55,7 +55,7 @@ export class PostgresOfflineCapStoreDriver extends Driver(OfflineCapStore) {
     return { count: row?.count ?? 0, amount: row?.amount ?? 0 };
   }
 
-  /** See `OfflineCapStore.record`. */
+  /** Implements `OfflineCapStore.record`, documented there. */
   async record(deviceId: string, key: string, at: Date, amount: number): Promise<void> {
     // raw-sql: the table has no model; one parameterised insert
     await this.database

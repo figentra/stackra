@@ -7,7 +7,7 @@
  *           production wiring never lists it. Registered on import of `./testing` (gen's Vitest setup imports it for a
  *           member on @stackra/clients). Holds no state; each compiled app builds its own fake. A test that overrides a
  *           generated client (`.override(StockClient, fakeClient(...))`) still wins over this transport.
- * Runtime: node (vitest)
+ * Runtime: node
  * Governing contract: ADR 0269 (decision 3: testing plugins); ADR 0266 (memory first); ADR 0260 (decision 6: the
  *                     transport is a driver); STA-1297.
  */

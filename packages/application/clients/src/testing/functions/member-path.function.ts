@@ -4,7 +4,7 @@
  *          (`catalogue.variant.get_by_barcode@1` gives `variant.getByBarcode`), as gen names `readonly variant = {
  *          getByBarcode: this.member(...) }`.
  * Boundary: internal to the client fake; not exported from an entry.
- * Runtime: node (vitest)
+ * Runtime: node
  * Governing contract: ADR 0260 (decisions 3 and 10).
  */
 

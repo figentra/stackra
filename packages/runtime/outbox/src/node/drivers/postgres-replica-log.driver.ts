@@ -54,7 +54,7 @@ export class PostgresReplicaLogDriver extends Driver(ReplicaLog) {
     this.database = database;
   }
 
-  /** See `ReplicaLog.append`. */
+  /** Implements `ReplicaLog.append`, documented there. */
   async append(
     partition: string,
     changes: readonly ReplicaChange[],
@@ -82,12 +82,12 @@ export class PostgresReplicaLogDriver extends Driver(ReplicaLog) {
     return head + changes.length;
   }
 
-  /** See `ReplicaLog.head`. */
+  /** Implements `ReplicaLog.head`, documented there. */
   async head(partition: string): Promise<number> {
     return (await this.bounds(partition)).head;
   }
 
-  /** See `ReplicaLog.read`. */
+  /** Implements `ReplicaLog.read`, documented there. */
   async read(
     partition: string,
     after: number,

@@ -7,7 +7,7 @@
  *           `knows`), because it answers any member path of that client at run time. `C` is inferred where the call
  *           is the override's argument; a fake kept in a variable names it (`fakeClient<PaymentsClient>()`). Without
  *           either it is a `ClientFake`.
- * Runtime: node (vitest)
+ * Runtime: node
  * Governing contract: ADR 0269 (fakes); ADR 0260 (decision 10: tests override the client); ADR 0263.
  */
 import { ClientFake } from "#testing/client.fake";

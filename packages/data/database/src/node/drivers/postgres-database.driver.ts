@@ -71,7 +71,7 @@ export class PostgresDatabaseDriver extends Driver(Database) {
     return driver;
   }
 
-  /** See `Database.em`. */
+  /** Implements `Database.em`, documented there. */
   em(): EntityManager {
     const root = this.orm.em;
     const context =
@@ -79,7 +79,7 @@ export class PostgresDatabaseDriver extends Driver(Database) {
     return (context as EntityManager | undefined) ?? root.fork();
   }
 
-  /** See `Database.transaction`. */
+  /** Implements `Database.transaction`, documented there. */
   transaction<T>(work: () => Promise<T>, options: TransactionOptions = {}): Promise<T> {
     return this.em().transactional(
       () => work(),
@@ -135,7 +135,7 @@ export class PostgresDatabaseDriver extends Driver(Database) {
     );
   }
 
-  /** See `Database.close`. */
+  /** Implements `Database.close`, documented there. */
   async close(): Promise<void> {
     if (ACTIVE_DATABASE.current === this) ACTIVE_DATABASE.current = undefined;
     await this.orm.close(true);

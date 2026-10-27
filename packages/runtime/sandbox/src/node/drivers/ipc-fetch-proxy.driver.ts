@@ -39,7 +39,7 @@ export class IpcFetchProxyDriver extends Driver(SandboxFetchProxy) {
     this.send = send;
   }
 
-  /** See `SandboxFetchProxy.fetch`. */
+  /** Implements `SandboxFetchProxy.fetch`, documented there. */
   fetch(
     request: SandboxFetchRequest,
     reference: string,

@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `Icons`, the names of the `@stackra/icons` icons the mobile screens pass to an `icon` position.
  * Boundary: names only; the drawing each name resolves to is the icon registry's.
- * Runtime: native
+ * Runtime: react-native
  * Governing contract: owner decision R-56 (generated key constants); ADR 0322; ADR 0303 (decision 10).
  */
 import type { IconName } from "@stackra/icons/contracts";

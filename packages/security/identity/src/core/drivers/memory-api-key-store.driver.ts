@@ -28,7 +28,7 @@ export class MemoryApiKeyStoreDriver extends Driver(ApiKeyStore) {
     this.records.set(record.hash, record);
   }
 
-  /** See `ApiKeyStore.findByHash`. */
+  /** Implements `ApiKeyStore.findByHash`, documented there. */
   findByHash(hash: string): Promise<ApiKeyRecord | undefined> {
     return Promise.resolve(this.records.get(hash));
   }

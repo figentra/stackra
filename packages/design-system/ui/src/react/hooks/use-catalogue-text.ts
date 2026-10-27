@@ -9,7 +9,7 @@
  *           keeps an app or a test that has not mounted i18n working, never a raw key; a key missing from English too
  *           throws `RangeError`, as `formatMessage` does. Whether a provider is above is fixed for a tree position, so
  *           the hooks called stay the same from render to render.
- * Runtime: browser, react-native
+ * Runtime: isomorphic
  * Governing contract: ADR 0004 §1 (layer direction); ADR 0080; ADR 0268 (R15: ICU, typed keys); ADR 0403 (catalogues in seven languages).
  */
 import { formatMessage } from "@stackra/i18n";

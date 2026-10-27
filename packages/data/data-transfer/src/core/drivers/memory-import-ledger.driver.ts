@@ -26,7 +26,7 @@ export class MemoryImportLedgerDriver extends Driver(ImportLedger) {
     { record: ImportRunRecord; batches: ImportBatchEntry[] }
   >();
 
-  /** See `ImportLedger.open`. */
+  /** Implements `ImportLedger.open`, documented there. */
   async open(runId: string): Promise<ImportRunRecord> {
     const entry = this.runs.get(runId) ?? {
       record: { id: runId, state: ImportRunState.Running, cursor: 0 },
@@ -36,13 +36,13 @@ export class MemoryImportLedgerDriver extends Driver(ImportLedger) {
     return { ...entry.record };
   }
 
-  /** See `ImportLedger.find`. */
+  /** Implements `ImportLedger.find`, documented there. */
   async find(runId: string): Promise<ImportRunRecord | undefined> {
     const entry = this.runs.get(runId);
     return entry === undefined ? undefined : { ...entry.record };
   }
 
-  /** See `ImportLedger.append`. */
+  /** Implements `ImportLedger.append`, documented there. */
   async append(runId: string, batch: ImportBatchEntry): Promise<void> {
     const entry = this.entryOf(runId);
     if (batch.index !== entry.batches.length)
@@ -53,18 +53,18 @@ export class MemoryImportLedgerDriver extends Driver(ImportLedger) {
     entry.record = { ...entry.record, cursor: batch.lastRow };
   }
 
-  /** See `ImportLedger.batches`. */
+  /** Implements `ImportLedger.batches`, documented there. */
   async batches(runId: string): Promise<readonly ImportBatchEntry[]> {
     return structuredClone(this.runs.get(runId)?.batches ?? []);
   }
 
-  /** See `ImportLedger.settle`. */
+  /** Implements `ImportLedger.settle`, documented there. */
   async settle(runId: string, state: ImportRunState, at: Date): Promise<void> {
     const entry = this.entryOf(runId);
     entry.record = { ...entry.record, state, settledAt: new Date(at) };
   }
 
-  /** See `ImportLedger.purge`. */
+  /** Implements `ImportLedger.purge`, documented there. */
   async purge(settledBefore: Date, at: Date): Promise<number> {
     let purged = 0;
     for (const entry of this.runs.values()) {

@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `outputOf(output)`, the value a Pulumi output resolves to under `mockPulumi`, as a promise a test awaits.
  * Boundary: tests only; under the mocks every output is known, so the promise always settles.
- * Runtime: node (tests)
+ * Runtime: node
  * Governing contract: ADR 0269 (testing helpers in the owner package).
  */
 import type * as pulumi from "@pulumi/pulumi";

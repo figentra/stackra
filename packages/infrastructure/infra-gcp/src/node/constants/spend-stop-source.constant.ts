@@ -8,7 +8,7 @@
  *           build installs nothing. Idempotent: a project already detached is left alone, so retried and repeated
  *           notifications are harmless. Throws on a failed detach so Eventarc retries. Detaching stops every paid
  *           service of the project; re-linking is an owner step.
- * Runtime: node (Cloud Functions, nodejs22)
+ * Runtime: node
  * Governing contract: ADR 0172 (decision 5: stop non-production spend), ADR 0401 (budgets only alert on GCP, so a
  *                     function detaches billing).
  */

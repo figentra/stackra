@@ -31,7 +31,7 @@ export class ModelWebhookDeliveryLogDriver extends Driver(WebhookDeliveryLog) {
     this.deliveries = deliveries;
   }
 
-  /** See `WebhookDeliveryLog.record`. */
+  /** Implements `WebhookDeliveryLog.record`, documented there. */
   async record(attempt: WebhookAttempt): Promise<void> {
     const { scope, endpointId, ...rest } = attempt;
     await this.deliveries.record({

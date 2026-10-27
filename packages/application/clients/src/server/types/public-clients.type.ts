@@ -3,7 +3,7 @@
  * Purpose: `PublicClients`, one request's anonymous callers of the gateway's public area: `query(Query, input)` and
  *          `action(Action, input)`, each resolving the decoded answer.
  * Boundary: a type only. The route adapters expose it as `ctx.query` and `ctx.action`.
- * Runtime: worker, node
+ * Runtime: isomorphic
  * Governing contract: ADR 0082 (API areas); ADR 0260 (decision 4).
  */
 import type { ActionRef } from "#core/types/action-ref.type";

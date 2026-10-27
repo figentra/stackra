@@ -11,7 +11,7 @@
  *           own. A 409 is `IdpUserExistsError`; a timeout, a network failure, a 429 or a 5xx is `IdpAdminUnavailableError`
  *           (retryable); any other 4xx is a bug and throws an `Error` naming the method, path and status, never a body.
  *           Ending a session that is already gone (404) succeeds. Personal data and secrets are never logged.
- * Runtime: isomorphic (global `fetch`)
+ * Runtime: isomorphic
  * Governing contract: ADR 0206; ADR 0207; ADR 0235 (decision 1); RFC 8628; ADR 0376; ADR 0410 (STA-834); RFC 8176; STA-1264; STA-1263.
  */
 import { Driver } from "@stackra/container";
@@ -112,7 +112,7 @@ export class ZitadelIdpAdminDriver extends Driver(IdpAdmin) {
     this.fetcher = fetcher ?? ((input, init) => globalThis.fetch(input, init));
   }
 
-  /** See `IdpAdmin.createUser`. */
+  /** Implements `IdpAdmin.createUser`, documented there. */
   async createUser(input: IdpUserInput): Promise<string> {
     const { body } = await this.call({
       method: "POST",
@@ -127,7 +127,7 @@ export class ZitadelIdpAdminDriver extends Driver(IdpAdmin) {
     return stringOf(body, "userId");
   }
 
-  /** See `IdpAdmin.createMachineUser`. */
+  /** Implements `IdpAdmin.createMachineUser`, documented there. */
   async createMachineUser(input: IdpMachineUserInput): Promise<IdpMachineCredential> {
     const organizationId = input.organizationId;
     const created = await this.call({
@@ -155,7 +155,7 @@ export class ZitadelIdpAdminDriver extends Driver(IdpAdmin) {
     };
   }
 
-  /** See `IdpAdmin.deactivateUser`. */
+  /** Implements `IdpAdmin.deactivateUser`, documented there. */
   async deactivateUser(userId: string): Promise<void> {
     await this.call({
       method: "POST",
@@ -164,12 +164,12 @@ export class ZitadelIdpAdminDriver extends Driver(IdpAdmin) {
     });
   }
 
-  /** See `IdpAdmin.removeUser`. */
+  /** Implements `IdpAdmin.removeUser`, documented there. */
   async removeUser(userId: string): Promise<void> {
     await this.call({ method: "DELETE", path: `/v2/users/${encodeURIComponent(userId)}` });
   }
 
-  /** See `IdpAdmin.endSession`. */
+  /** Implements `IdpAdmin.endSession`, documented there. */
   async endSession(sessionId: string): Promise<void> {
     await this.call(
       { method: "DELETE", path: `/v2/sessions/${encodeURIComponent(sessionId)}`, json: {} },
@@ -199,7 +199,7 @@ export class ZitadelIdpAdminDriver extends Driver(IdpAdmin) {
     }
   }
 
-  /** See `IdpAdmin.startDeviceAuthorization`. */
+  /** Implements `IdpAdmin.startDeviceAuthorization`, documented there. */
   async startDeviceAuthorization(
     clientId: string,
     scopes: readonly string[],
@@ -222,7 +222,7 @@ export class ZitadelIdpAdminDriver extends Driver(IdpAdmin) {
     };
   }
 
-  /** See `IdpAdmin.pollDeviceToken`. */
+  /** Implements `IdpAdmin.pollDeviceToken`, documented there. */
   async pollDeviceToken(clientId: string, deviceCode: string): Promise<DeviceTokenResult> {
     const { status, body } = await this.call(
       {
@@ -247,7 +247,7 @@ export class ZitadelIdpAdminDriver extends Driver(IdpAdmin) {
     };
   }
 
-  /** See `IdpAdmin.listAuthMethods`. */
+  /** Implements `IdpAdmin.listAuthMethods`, documented there. */
   async listAuthMethods(userId: string): Promise<readonly string[]> {
     const { body } = await this.call({
       method: "GET",

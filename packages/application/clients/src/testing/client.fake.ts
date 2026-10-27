@@ -6,7 +6,7 @@
  * Boundary: never reaches a network. A call with no answer rejects with an error naming the ref; a queued call with no
  *           answer is recorded and accepted. A stubbed call validates its input like the real client. Recorded inputs
  *           are what the transport received (wire form), or the caller's input for an unanswered member call.
- * Runtime: node (vitest)
+ * Runtime: node
  * Governing contract: ADR 0269 (fakes); ADR 0260 (decision 10: tests override the client); ADR 0263.
  */
 import { ClientTransport } from "#contracts/ports/client-transport.port";

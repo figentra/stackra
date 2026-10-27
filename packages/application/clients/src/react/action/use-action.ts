@@ -5,7 +5,7 @@
  *          `run` resolves `{ queued: true }`.
  * Boundary: no confirmation here: an L2 action's declared confirmation is the action runner's (`@stackra/panel`). The
  *           refusal of a run is both rejected and kept in `error`, so a form can show it and a caller can branch.
- * Runtime: browser, react-native
+ * Runtime: isomorphic
  * Governing contract: ADR 0260 (decision 4); ADR 0059 (offline queue); ADR 0227 (no sync engine).
  */
 import { isRefusal } from "@stackra/errors";

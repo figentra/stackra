@@ -5,7 +5,7 @@
  * Boundary: matching is local and synchronous (see `matchIntent`); the proposal carries an empty input, and nothing
  *           runs until the user confirms through the action runner. The phrases are the producer's phrase list, read
  *           item by item through the translator, so every locale matches its own.
- * Runtime: browser, react-native
+ * Runtime: isomorphic
  * Governing contract: ADR 0155 (intents); ADR 0139 (confirmation); owner decision R-12 (`intent` opt-in).
  */
 import { useContainer } from "@stackra/container/react";

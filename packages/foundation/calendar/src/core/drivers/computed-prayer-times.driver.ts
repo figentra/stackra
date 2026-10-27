@@ -37,7 +37,7 @@ export class ComputedPrayerTimesDriver extends Driver(PrayerTimes) {
     this.method = PRAYER_METHOD_SCHEMA.parse(method);
   }
 
-  /** See `PrayerTimes.on`. */
+  /** Implements `PrayerTimes.on`, documented there. */
   async on(date: IsoDate, place: PrayerPlace): Promise<PrayerDay> {
     return computePrayerDay(date, place, this.method);
   }

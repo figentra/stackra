@@ -48,7 +48,7 @@ export class PostgresDeviceSequenceStoreDriver extends Driver(DeviceSequenceStor
     this.database = database;
   }
 
-  /** See `DeviceSequenceStore.last`. */
+  /** Implements `DeviceSequenceStore.last`, documented there. */
   async last(deviceId: string): Promise<DeviceSequence | undefined> {
     // raw-sql: the table has no model; one read by key
     const rows = await this.database
@@ -69,7 +69,7 @@ export class PostgresDeviceSequenceStoreDriver extends Driver(DeviceSequenceStor
     });
   }
 
-  /** See `DeviceSequenceStore.settle`. */
+  /** Implements `DeviceSequenceStore.settle`, documented there. */
   async settle(
     deviceId: string,
     sequence: number,

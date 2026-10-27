@@ -4,7 +4,7 @@
  *          `.useDrivers("memory")`, so a test scripts and reads every generated client's calls in one place.
  * Boundary: reads the app only. Throws when the app's transport is not the memory candidate (the test did not pick
  *           `memory`, or overrode the transport), naming the fix.
- * Runtime: node (vitest)
+ * Runtime: node
  * Governing contract: ADR 0269 (fakes); ADR 0260 (decision 6); STA-1297.
  */
 import type { TestingApp } from "@stackra/container/testing";

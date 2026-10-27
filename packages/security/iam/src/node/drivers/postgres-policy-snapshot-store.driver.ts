@@ -70,7 +70,7 @@ export class PostgresPolicySnapshotStoreDriver extends Driver(PolicySnapshotStor
     );
   }
 
-  /** See `PolicySnapshotStore.write`. */
+  /** Implements `PolicySnapshotStore.write`, documented there. */
   async write(principal: PublicId, snapshot: PolicySnapshot, scopeId?: PublicId): Promise<boolean> {
     const kept = (await this.run(scopeId, (sql) =>
       // raw-sql: one upsert that replaces the row only with a higher version

@@ -4,7 +4,7 @@
  *          (`fake.on(Attach).throwsOnce(error).returns(view)`).
  * Boundary: a type only. A value answer may be partial (a test states only the fields it reads) and is returned as is,
  *           without the output schema; a function answer receives the input decoded by the ref's input schema.
- * Runtime: node (vitest)
+ * Runtime: node
  * Governing contract: ADR 0269 (fakes); ADR 0260 (decision 10: tests override the client).
  */
 import type { output } from "zod";

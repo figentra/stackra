@@ -6,7 +6,7 @@
  * Boundary: TanStack Query core's observer under `useSyncExternalStore`; no `@tanstack/react-query`. The input is
  *           validated when the fetch runs, so a disabled query may hold an input that would be refused. Live queries
  *           share one subscription per query through `ServerStateCache.watch`.
- * Runtime: browser, react-native
+ * Runtime: isomorphic
  * Governing contract: ADR 0079 (TanStack Query core); ADR 0260 (decision 4); owner decision R-25 (live queries).
  */
 import { keepPreviousData, notifyManager, QueryObserver } from "@tanstack/query-core";

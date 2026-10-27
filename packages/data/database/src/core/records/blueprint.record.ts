@@ -110,7 +110,7 @@ export class BlueprintRecord {
     return this as unknown as Blueprint;
   }
 
-  /** See `Blueprint.string`. */
+  /** Implements `Blueprint.string`, documented there. */
   string(name: string, length?: number): ColumnDefinition {
     if (length === undefined) return this.add(new ColumnRecord(name, "text"));
     if (!Number.isInteger(length) || length < 1 || length > MAX_VARCHAR)
@@ -118,12 +118,12 @@ export class BlueprintRecord {
     return this.add(new ColumnRecord(name, `varchar(${length})`));
   }
 
-  /** See `Blueprint.integer`. */
+  /** Implements `Blueprint.integer`, documented there. */
   integer(name: string): ColumnDefinition {
     return this.add(new ColumnRecord(name, "integer"));
   }
 
-  /** See `Blueprint.bigint`. */
+  /** Implements `Blueprint.bigint`, documented there. */
   bigint(name: string): ColumnDefinition {
     return this.add(new ColumnRecord(name, "bigint"));
   }
@@ -145,27 +145,27 @@ export class BlueprintRecord {
     return this.add(new ColumnRecord(name, `numeric(${precision}, ${scale})`));
   }
 
-  /** See `Blueprint.boolean`. */
+  /** Implements `Blueprint.boolean`, documented there. */
   boolean(name: string): ColumnDefinition {
     return this.add(new ColumnRecord(name, "boolean"));
   }
 
-  /** See `Blueprint.timestamp`. */
+  /** Implements `Blueprint.timestamp`, documented there. */
   timestamp(name: string): ColumnDefinition {
     return this.add(new ColumnRecord(name, "timestamptz"));
   }
 
-  /** See `Blueprint.uuid`. */
+  /** Implements `Blueprint.uuid`, documented there. */
   uuid(name: string): ColumnDefinition {
     return this.add(new ColumnRecord(name, "uuid"));
   }
 
-  /** See `Blueprint.jsonb`. */
+  /** Implements `Blueprint.jsonb`, documented there. */
   jsonb(name: string): ColumnDefinition {
     return this.add(new ColumnRecord(name, "jsonb"));
   }
 
-  /** See `Blueprint.tsvector`. */
+  /** Implements `Blueprint.tsvector`, documented there. */
   tsvector(name: string): ColumnDefinition {
     return this.add(new ColumnRecord(name, "tsvector"));
   }
@@ -181,7 +181,7 @@ export class BlueprintRecord {
     return this.add(new ColumnRecord(name, "text", { values: Object.freeze([...values]) }));
   }
 
-  /** See `Blueprint.money`. */
+  /** Implements `Blueprint.money`, documented there. */
   money(name: string): ColumnGroupRecord {
     return new ColumnGroupRecord([
       this.add(new ColumnRecord(`${name}_minor`, "bigint", { suffix: " (minor units)" })),
@@ -189,12 +189,12 @@ export class BlueprintRecord {
     ]);
   }
 
-  /** See `Blueprint.link`. */
+  /** Implements `Blueprint.link`, documented there. */
   link(column: string): ColumnDefinition {
     return this.add(new ColumnRecord(column, PUBLIC_ID, { indexed: true }));
   }
 
-  /** See `Blueprint.belongsTo`. */
+  /** Implements `Blueprint.belongsTo`, documented there. */
   belongsTo(table: string, options: { readonly column: string }): ColumnRecord {
     quoteIdentifier(table);
     return this.add(
@@ -218,7 +218,7 @@ export class BlueprintRecord {
     return new ColumnGroupRecord([this.add(id)]);
   }
 
-  /** See `Blueprint.timestamps`. */
+  /** Implements `Blueprint.timestamps`, documented there. */
   timestamps(): ColumnGroupRecord {
     const stamp = (name: string, comment: string) =>
       this.add(
@@ -234,7 +234,7 @@ export class BlueprintRecord {
     ]);
   }
 
-  /** See `Blueprint.userStamps`. */
+  /** Implements `Blueprint.userStamps`, documented there. */
   userStamps(): ColumnGroupRecord {
     const stamp = (name: string, comment: string) =>
       this.add(new ColumnRecord(name, PUBLIC_ID, { nullability: "null", comment }));
@@ -250,7 +250,7 @@ export class BlueprintRecord {
     ]);
   }
 
-  /** See `Blueprint.versioned`. */
+  /** Implements `Blueprint.versioned`, documented there. */
   versioned(): ColumnGroupRecord {
     const version = new ColumnRecord("version", "integer", {
       nullability: "not null",
@@ -260,7 +260,7 @@ export class BlueprintRecord {
     return new ColumnGroupRecord([this.add(version)]);
   }
 
-  /** See `Blueprint.softDeletes`. */
+  /** Implements `Blueprint.softDeletes`, documented there. */
   softDeletes(): ColumnGroupRecord {
     const deletedAt = new ColumnRecord("deleted_at", "timestamptz", {
       nullability: "null",
@@ -269,20 +269,20 @@ export class BlueprintRecord {
     return new ColumnGroupRecord([this.add(deletedAt)]);
   }
 
-  /** See `Blueprint.translatable`. */
+  /** Implements `Blueprint.translatable`, documented there. */
   translatable(fields: readonly string[]): ColumnGroupRecord {
     if (fields.length === 0) throw new TypeError("translatable needs at least one field");
     return new ColumnGroupRecord(fields.map((field) => this.add(new ColumnRecord(field, "jsonb"))));
   }
 
-  /** See `Blueprint.index`. */
+  /** Implements `Blueprint.index`, documented there. */
   index(columns: readonly string[]): TableIndexRecord {
     const index = new TableIndexRecord(columns, false);
     this.indexes.push(index);
     return index;
   }
 
-  /** See `Blueprint.unique`. */
+  /** Implements `Blueprint.unique`, documented there. */
   unique(columns: readonly string[]): TableIndexRecord {
     const index = new TableIndexRecord(columns, true);
     this.indexes.push(index);
@@ -316,12 +316,12 @@ export class BlueprintRecord {
     return new ColumnGroupRecord(records);
   }
 
-  /** See `Blueprint.scopeId`. */
+  /** Implements `Blueprint.scopeId`, documented there. */
   scopeId(): ColumnDefinition {
     return this.link("scope_id");
   }
 
-  /** See `Blueprint.scopePath`. */
+  /** Implements `Blueprint.scopePath`, documented there. */
   scopePath(): ColumnDefinition {
     const column = this.add(new ColumnRecord("scope_path", "ltree"));
     const index = this.index([column.name]).using("gist");

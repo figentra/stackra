@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `UseQueryResult<T>`, what `useQuery` returns: the decoded answer, the error, the loading flags and `refetch`.
  * Boundary: a type only; `error` is always a `ClientError` (a refusal or a transport error), never a raw response.
- * Runtime: browser, react-native
+ * Runtime: isomorphic
  * Governing contract: ADR 0079 (TanStack Query core); ADR 0140 (refusals).
  */
 import type { ClientError } from "#core/types/client-error.type";

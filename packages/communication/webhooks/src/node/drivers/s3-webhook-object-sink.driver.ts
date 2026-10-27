@@ -28,7 +28,7 @@ export class S3WebhookObjectSinkDriver extends Driver(WebhookObjectSink) {
   /** One client per region; `""` is the SDK's default region. */
   private readonly clients = new Map<string, S3Client>();
 
-  /** See `WebhookObjectSink.put`. */
+  /** Implements `WebhookObjectSink.put`, documented there. */
   async put(object: WebhookObject): Promise<void> {
     await this.clientFor(object.region ?? "").send(
       new PutObjectCommand({

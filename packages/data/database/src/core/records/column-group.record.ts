@@ -21,19 +21,19 @@ export class ColumnGroupRecord implements ColumnGroup {
     this.columns = columns;
   }
 
-  /** See `ColumnGroup.notNull`. */
+  /** Implements `ColumnGroup.notNull`, documented there. */
   notNull(): this {
     for (const column of this.columns) column.notNull();
     return this;
   }
 
-  /** See `ColumnGroup.nullable`. */
+  /** Implements `ColumnGroup.nullable`, documented there. */
   nullable(): this {
     for (const column of this.columns) column.nullable();
     return this;
   }
 
-  /** See `ColumnGroup.comment`. */
+  /** Implements `ColumnGroup.comment`, documented there. */
   comment(text: string): this {
     for (const column of this.columns) column.comment(text);
     return this;

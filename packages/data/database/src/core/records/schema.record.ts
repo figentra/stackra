@@ -61,12 +61,12 @@ export class SchemaRecord implements SchemaBuilder {
     this.macros = macros;
   }
 
-  /** See `SchemaBuilder.create`. */
+  /** Implements `SchemaBuilder.create`, documented there. */
   create(table: string, define: (t: Blueprint) => void): void {
     this.record(new BlueprintRecord(table, true, this.macros), define);
   }
 
-  /** See `SchemaBuilder.table`. */
+  /** Implements `SchemaBuilder.table`, documented there. */
   table(table: string, define: (t: Blueprint) => void): void {
     this.record(new BlueprintRecord(table, false, this.macros), define);
   }

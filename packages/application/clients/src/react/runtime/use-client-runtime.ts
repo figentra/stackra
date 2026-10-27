@@ -4,7 +4,7 @@
  *          container for the client hooks.
  * Boundary: internal to the `./react` entry; not exported. The transport and the cache are required; the queue and the
  *           session are optional, so a host without offline writes or without a session still renders.
- * Runtime: browser, react-native
+ * Runtime: isomorphic
  * Governing contract: ADR 0260 (decision 6); ADR 0263 (gen writes the wiring).
  */
 import { useContainer } from "@stackra/container/react";

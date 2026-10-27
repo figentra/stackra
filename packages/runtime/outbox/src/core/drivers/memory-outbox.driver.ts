@@ -33,7 +33,7 @@ export class MemoryOutboxDriver extends Driver(OutboxDriver) {
   /** Message id to message. */
   private readonly messages = new Map<string, OutboxMessage>();
 
-  /** See `OutboxDriver.write`. */
+  /** Implements `OutboxDriver.write`, documented there. */
   write(messages: readonly OutboxMessage[]): Promise<void> {
     for (const message of messages) {
       const data: unknown = JSON.parse(JSON.stringify(message.data ?? null));
@@ -42,7 +42,7 @@ export class MemoryOutboxDriver extends Driver(OutboxDriver) {
     return Promise.resolve();
   }
 
-  /** See `OutboxDriver.due`. */
+  /** Implements `OutboxDriver.due`, documented there. */
   due(now: Date, limit: number): Promise<readonly OutboxMessage[]> {
     const at = now.getTime();
     const due = [...this.messages.values()]
@@ -51,19 +51,19 @@ export class MemoryOutboxDriver extends Driver(OutboxDriver) {
     return Promise.resolve(due.slice(0, limit));
   }
 
-  /** See `OutboxDriver.remove`. */
+  /** Implements `OutboxDriver.remove`, documented there. */
   remove(id: PublicId<"evt">): Promise<void> {
     this.messages.delete(id);
     return Promise.resolve();
   }
 
-  /** See `OutboxDriver.retry`. */
+  /** Implements `OutboxDriver.retry`, documented there. */
   retry(id: PublicId<"evt">, availableAt: Date, error: OutboxError): Promise<void> {
     this.failed(id, { availableAt, lastError: error });
     return Promise.resolve();
   }
 
-  /** See `OutboxDriver.deadLetter`. */
+  /** Implements `OutboxDriver.deadLetter`, documented there. */
   deadLetter(id: PublicId<"evt">, error: OutboxError, at: Date): Promise<void> {
     this.failed(id, { deadAt: at, lastError: error });
     return Promise.resolve();

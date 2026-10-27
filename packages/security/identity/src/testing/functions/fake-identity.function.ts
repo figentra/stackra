@@ -4,7 +4,7 @@
  *          address and language of each principal the test names, every address verified.
  * Boundary: test code only; a `MemoryIdentityResolverDriver`, so lookups behave as the port requires (an unknown
  *           principal refuses `not_found`, addresses compare case-insensitively). Two calls never share state.
- * Runtime: node (vitest)
+ * Runtime: node
  * Governing contract: ADR 0269 (decision 3); ADR 0266; ADR 0134 (personal data is resolved, not copied).
  */
 import type { PublicId, VerifiedPrincipal } from "@stackra/contracts";

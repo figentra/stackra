@@ -5,7 +5,7 @@
  * Boundary: TanStack Query core's infinite observer under `useSyncExternalStore`. The first page is fetched without a
  *           cursor; the next cursor comes from `getNextCursor`, else the page's `nextCursor` while `hasMore` is true.
  *           Live like `useQuery` when the query declares `invalidateOn`.
- * Runtime: browser, react-native
+ * Runtime: isomorphic
  * Governing contract: ADR 0079 (TanStack Query core); the HTTP conventions rule (cursor pagination); owner decision R-25.
  */
 import { InfiniteQueryObserver, notifyManager } from "@tanstack/query-core";

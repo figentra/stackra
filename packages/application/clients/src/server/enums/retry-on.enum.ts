@@ -4,7 +4,7 @@
  *          may succeed (`429`, `503`).
  * Boundary: an `Enum.of` value plus the type of the same name. Either way only a call that is safe to repeat is
  *           retried (the transport's `retry` rule), and a refusal the envelope marks not retryable never is.
- * Runtime: worker, node
+ * Runtime: isomorphic
  * Governing contract: ADR 0140 (decision 3: retryable kinds); ADR 0138 (idempotency).
  */
 import { Enum } from "@stackra/contracts";

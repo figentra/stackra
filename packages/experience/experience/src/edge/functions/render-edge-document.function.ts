@@ -8,7 +8,7 @@
  *           the reason and the document revision, and the Worker serves the shell instead (ADR 0440, review point 6).
  *           All or nothing, so a crawler never gets half a page. A placeholder carries the stored node as escaped
  *           JSON in an attribute; nothing in a document is evaluated (ADR 0110 decision 4).
- * Runtime: isomorphic (Cloudflare Worker)
+ * Runtime: worker
  * Governing contract: ADR 0440; ADR 0437 (the edge Worker); ADR 0297 (decision 3); ADR 0110 (decisions 4 and 6);
  *                     app-shells-edge-and-extension.md sections 5.1 step 6, 10 and 16 (points 1 and 6).
  */

@@ -6,7 +6,7 @@
  *          `EdgeRenderOptions` and `EdgeRenderResult`) until `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. No React, no Node API: the OS edge Worker imports only this
  *           entry (ADR 0440).
- * Runtime: isomorphic (Cloudflare Worker)
+ * Runtime: worker
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision; ADR 0440.
  */
 export { EDGE_RENDER_LIMITS } from "#edge/constants/edge-render-limits.constant";

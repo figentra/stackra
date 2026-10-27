@@ -31,7 +31,7 @@ export class MemoryConversationStoreDriver extends Driver(ConversationStore) {
     { readonly runId: string; readonly message: ModelMessage }[]
   >();
 
-  /** See `ConversationStore.open`. */
+  /** Implements `ConversationStore.open`, documented there. */
   async open(conversation: {
     readonly agent: string;
     readonly principalId: string;
@@ -48,12 +48,12 @@ export class MemoryConversationStoreDriver extends Driver(ConversationStore) {
     return row;
   }
 
-  /** See `ConversationStore.get`. */
+  /** Implements `ConversationStore.get`, documented there. */
   async get(id: string): Promise<ConversationRecord | undefined> {
     return this.rows.get(id);
   }
 
-  /** See `ConversationStore.messages`. */
+  /** Implements `ConversationStore.messages`, documented there. */
   async messages(conversationId: string): Promise<readonly ModelMessage[]> {
     return (this.lines.get(conversationId) ?? []).map((line) => structuredClone(line.message));
   }

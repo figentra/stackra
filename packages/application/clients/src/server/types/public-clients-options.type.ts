@@ -4,7 +4,7 @@
  *          version, the request's locale and market, the facts forwarded from the visitor's request, and the retry
  *          policy.
  * Boundary: a type only. Public clients are anonymous: there is no session or token option.
- * Runtime: worker, node
+ * Runtime: isomorphic
  * Governing contract: ADR 0082 (API areas); ADR 0118 (`Stackra-Version`); ADR 0237 (generated gateway).
  */
 import type { ApiArea } from "@stackra/contracts";

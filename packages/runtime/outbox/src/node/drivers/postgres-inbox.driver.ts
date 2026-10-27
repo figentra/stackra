@@ -39,7 +39,7 @@ export class PostgresInboxDriver extends Driver(InboxDriver) {
     this.database = database;
   }
 
-  /** See `InboxDriver.claim`. */
+  /** Implements `InboxDriver.claim`, documented there. */
   async claim(eventId: string, at: Date): Promise<boolean> {
     // raw-sql: the claim is decided by the primary key's conflict, which the ORM's insert cannot target
     const rows = await this.database
@@ -52,7 +52,7 @@ export class PostgresInboxDriver extends Driver(InboxDriver) {
     return IDS.parse(rows).length > 0;
   }
 
-  /** See `InboxDriver.prune`. */
+  /** Implements `InboxDriver.prune`, documented there. */
   async prune(before: Date): Promise<void> {
     // raw-sql: the inbox has no model; one parameterised delete
     await this.database.em().execute(`delete from ${TABLE} where received_at < ?`, [before]);

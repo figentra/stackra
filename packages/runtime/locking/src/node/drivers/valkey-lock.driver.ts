@@ -81,7 +81,7 @@ export class ValkeyLockDriver extends Driver(LockDriver) {
     return work();
   }
 
-  /** See `LockDriver.tryAcquire`. */
+  /** Implements `LockDriver.tryAcquire`, documented there. */
   async tryAcquire(
     keys: readonly string[],
     owner: string,
@@ -101,7 +101,7 @@ export class ValkeyLockDriver extends Driver(LockDriver) {
     return token > 0 ? { keys: [...keys], owner, token } : undefined;
   }
 
-  /** See `LockDriver.renew`. */
+  /** Implements `LockDriver.renew`, documented there. */
   async renew(lease: LockLease, ttl: Duration): Promise<boolean> {
     const names = lease.keys.map((key) => this.prefix + key);
     const renewed = await this.client.eval(
@@ -114,7 +114,7 @@ export class ValkeyLockDriver extends Driver(LockDriver) {
     return Number(renewed) === 1;
   }
 
-  /** See `LockDriver.release`. */
+  /** Implements `LockDriver.release`, documented there. */
   async release(lease: LockLease): Promise<void> {
     const names = lease.keys.map((key) => this.prefix + key);
     await this.client.eval(RELEASE, names.length, ...names, `${lease.owner}:${lease.token}`);

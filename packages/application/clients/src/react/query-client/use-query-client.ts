@@ -3,7 +3,7 @@
  * Purpose: `useQueryClient`, imperative access to consumed queries in a component: `fetch(Query, input)` outside a
  *          render (a scanner's lookup) and `invalidate(Query)` after a change.
  * Boundary: the same cache keys and transport as `useQuery`; one object per container.
- * Runtime: browser, react-native
+ * Runtime: isomorphic
  * Governing contract: ADR 0079 (TanStack Query core); ADR 0260 (decision 4).
  */
 import { useMemo } from "react";

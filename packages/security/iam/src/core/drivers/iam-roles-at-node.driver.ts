@@ -39,7 +39,7 @@ export class IamRolesAtNodeDriver extends Driver(RolesAtNode) {
     this.clock = clock;
   }
 
-  /** See `RolesAtNode.of`. */
+  /** Implements `RolesAtNode.of`, documented there. */
   async of(principal: Actor, scope: ScopeRef, at?: Date): Promise<ReadonlySet<string>> {
     const time = (at ?? this.clock.now()).getTime();
     const { grants } = await this.source.snapshot(principal.onBehalfOf ?? principal);

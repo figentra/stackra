@@ -53,24 +53,24 @@ export class MemoryIdpAdminDriver extends Driver(IdpAdmin) {
   /** Device code to its state. */
   private readonly devices = new Map<string, DeviceTokenStatus>();
 
-  /** See `IdpAdmin.createUser`. */
+  /** Implements `IdpAdmin.createUser`, documented there. */
   async createUser(input: IdpUserInput): Promise<string> {
     return this.add(input.organizationId, input.username, false);
   }
 
-  /** See `IdpAdmin.createMachineUser`. */
+  /** Implements `IdpAdmin.createMachineUser`, documented there. */
   async createMachineUser(input: IdpMachineUserInput): Promise<IdpMachineCredential> {
     const userId = this.add(input.organizationId, input.username, true);
     return { userId, clientId: input.username, clientSecret: randomToken() };
   }
 
-  /** See `IdpAdmin.deactivateUser`. */
+  /** Implements `IdpAdmin.deactivateUser`, documented there. */
   async deactivateUser(userId: string): Promise<void> {
     const user = this.users.get(userId);
     if (user !== undefined) user.active = false;
   }
 
-  /** See `IdpAdmin.removeUser`. */
+  /** Implements `IdpAdmin.removeUser`, documented there. */
   async removeUser(userId: string): Promise<void> {
     this.users.delete(userId);
     this.authMethods.delete(userId);
@@ -84,19 +84,19 @@ export class MemoryIdpAdminDriver extends Driver(IdpAdmin) {
     return sessionId;
   }
 
-  /** See `IdpAdmin.endSession`. */
+  /** Implements `IdpAdmin.endSession`, documented there. */
   async endSession(sessionId: string): Promise<void> {
     this.sessions.delete(sessionId);
   }
 
-  /** See `IdpAdmin.endSessions`. */
+  /** Implements `IdpAdmin.endSessions`, documented there. */
   async endSessions(userId: string): Promise<number> {
     const ended = [...this.sessions].filter(([, owner]) => owner === userId);
     for (const [sessionId] of ended) this.sessions.delete(sessionId);
     return ended.length;
   }
 
-  /** See `IdpAdmin.startDeviceAuthorization`. */
+  /** Implements `IdpAdmin.startDeviceAuthorization`, documented there. */
   async startDeviceAuthorization(): Promise<DeviceAuthorization> {
     const deviceCode = randomToken();
     this.devices.set(deviceCode, DeviceTokenStatus.Pending);

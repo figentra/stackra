@@ -6,7 +6,7 @@
  * Boundary: public area only: no session, no token, and any other area is refused when the clients are built. Every
  *           public call is a `GET` or idempotent, so retries follow the transport's safe-to-repeat rule; a refusal the
  *           envelope marks not retryable is never retried. The forwarded facts are awaited once and reused.
- * Runtime: worker, node
+ * Runtime: isomorphic
  * Governing contract: ADR 0082 (API areas); ADR 0237 (generated gateway); ADR 0118; ADR 0140; ADR 0260.
  */
 import { ApiArea } from "@stackra/contracts";

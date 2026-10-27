@@ -3,7 +3,7 @@
  * Purpose: `UseInfiniteQueryResult<P>`, what `useInfiniteQuery` returns: the loaded pages (also as TanStack's `data`),
  *          the error, the loading flags, whether a next page exists, and the actions to load it or start over.
  * Boundary: a type only; `error` is always a `ClientError`.
- * Runtime: browser, react-native
+ * Runtime: isomorphic
  * Governing contract: ADR 0079 (TanStack Query core); ADR 0140 (refusals).
  */
 import type { InfiniteData } from "@tanstack/query-core";

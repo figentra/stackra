@@ -4,7 +4,7 @@
  *          (so its `refusalKey` is the producer's message key), or a `ServerRefusalError`, with the message given.
  * Boundary: test only; the refusal is built through `@stackra/errors/testing`'s `refusal`, so it is the class's own
  *           instance and `isRefusal(error, InsufficientStockError)` holds.
- * Runtime: node (vitest)
+ * Runtime: node
  * Governing contract: ADR 0269 (fakes); ADR 0140 (refusals).
  */
 import { refusal } from "@stackra/errors/testing";

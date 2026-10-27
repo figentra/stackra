@@ -3,7 +3,7 @@
  * Purpose: `UseQueryOptions`, the third argument of `useQuery`: whether it runs, whether it refetches when the screen
  *          regains focus, and whether the previous answer stays while a new input loads.
  * Boundary: a type only; anything unset follows `QueryConfig`.
- * Runtime: browser, react-native
+ * Runtime: isomorphic
  * Governing contract: ADR 0079 (TanStack Query core).
  */
 

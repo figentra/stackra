@@ -4,7 +4,7 @@
  *          English catalogue's when no `I18nProvider` is mounted or it holds no `ui` namespace.
  * Boundary: internal, in the shared React layer; the web and native components import it by path. A label the caller passes always wins; this
  *           only answers the defaults.
- * Runtime: browser, react-native
+ * Runtime: isomorphic
  * Governing contract: ADR 0004 §1; ADR 0080; ADR 0403.
  */
 import { UI_ENGLISH } from "#core/constants/ui-english.constant";

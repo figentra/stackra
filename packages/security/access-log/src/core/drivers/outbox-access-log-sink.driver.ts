@@ -39,7 +39,7 @@ export class OutboxAccessLogSinkDriver extends Driver(AccessLogSink) {
     this.outbox = outbox;
   }
 
-  /** See `AccessLogSink.write`. */
+  /** Implements `AccessLogSink.write`, documented there. */
   async write(record: AccessRecord): Promise<void> {
     const event = AccessRecorded.create({
       callId: record.callId,

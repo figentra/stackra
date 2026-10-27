@@ -5,7 +5,7 @@
  * Boundary: `Driver(HealthIndicator)`, so the container records the port it implements. The target is runway data passed in by the
  *           wiring; no credential is sent and none is read. A failure reports `down` with the host only, never a
  *           response body, and never throws.
- * Runtime: isomorphic (global `fetch`)
+ * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 16 and 17: each infra package ships its dependency's driver), ADR 0354,
  *                     registry gaps R-27 and R-36.
  */
