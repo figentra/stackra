@@ -17,7 +17,7 @@ describe("AddCustomFieldSubtypeMigration", () => {
       schema: "content",
     }).steps;
     expect(step?.transactional).toBe(true);
-    expect(step?.sql.join("\n")).toContain('"subtype" varchar(63) not null');
+    expect(step?.sql.join("\n")).toContain(`add column "subtype" varchar(63) default '' not null`);
     expect(unique?.transactional).toBe(false);
     expect(unique?.sql[0]).toMatch(
       /create unique index concurrently .*\("scope_id", "model", "subtype", "key"\)/,
