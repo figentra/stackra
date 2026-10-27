@@ -38,7 +38,12 @@ describe("SettingValueStore", () => {
   it("types its three methods", () => {
     expectTypeOf<SettingValueStore["layers"]>().parameters.toEqualTypeOf<[string, SettingTarget]>();
     expectTypeOf<SettingValueStore["write"]>().parameters.toEqualTypeOf<
-      [string, SettingTarget, Readonly<Record<string, SettingValue>>, (readonly string[])?]
+      [
+        string,
+        SettingTarget,
+        Readonly<Record<string, SettingValue>>,
+        (readonly string[] | undefined)?,
+      ]
     >();
     expectTypeOf<SettingValueStore["remove"]>().parameters.toEqualTypeOf<
       [string, SettingTarget, readonly string[]]

@@ -44,13 +44,13 @@ describe("Promotable", () => {
   it("types its methods", () => {
     expectTypeOf<Promotable["export"]>().parameters.toEqualTypeOf<[ScopeRef]>();
     expectTypeOf<Promotable["diff"]>().parameters.toEqualTypeOf<
-      [ScopeRef, unknown, { readonly release?: string }?]
+      [ScopeRef, unknown, ({ readonly release?: string } | undefined)?]
     >();
     expectTypeOf<Promotable["apply"]>().parameters.toEqualTypeOf<
-      [ScopeRef, PromotionDiff, string, { readonly release?: string }?]
+      [ScopeRef, PromotionDiff, string, ({ readonly release?: string } | undefined)?]
     >();
     expectTypeOf<Promotable["rollbackOf"]>().parameters.toEqualTypeOf<
-      [ScopeRef, PromotionDiff, { readonly release?: string }?]
+      [ScopeRef, PromotionDiff, ({ readonly release?: string } | undefined)?]
     >();
     expectTypeOf<Promotable["~key"]>().toEqualTypeOf<"settings.Promotable">();
   });

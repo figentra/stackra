@@ -6,7 +6,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 25: every factory returns an exported, named class type).
  */
-import type { SettingsBase } from "#core/bases/settings.base";
+import type { Settings } from "#core/bases/settings.base";
 
 /** The base class of one settings group. */
-export type SettingsClass = abstract new () => SettingsBase;
+export type SettingsClass = abstract new () => Settings;

@@ -11,8 +11,8 @@
  * Governing contract: ADR 0213 (decision 4: `settings:diff` and `settings:apply`); ADR 0395 (decision 5); ADR 0327
  *                     (decisions 3 and 9); ADR 0419 (decision 2: the runner takes the holder's market).
  */
-import { SystemClockDriver } from "@stackra/container";
-import type { ScopeRef } from "@stackra/contracts";
+import { Container } from "@stackra/container";
+import { Clock, type ScopeRef } from "@stackra/contracts";
 import type { ResolvedPack } from "@stackra/market-packs";
 import { PostgresDatabaseDriver } from "@stackra/database/node";
 
@@ -41,12 +41,13 @@ export async function openSettingsSession<T>(
 ): Promise<T> {
   const url = process.env["DATABASE_URL"];
   if (url === undefined || url === "") throw new Error("DATABASE_URL is not set for this member");
+  // the container's default Clock: the system driver is not exported, so a host can replace it without being named
+  const clock = (await Container.create([])).get(Clock);
   const database = await PostgresDatabaseDriver.connect({ url });
   try {
     return await database.withScope(scope, () => {
       const store = new PostgresSettingValueStoreDriver(new StoredSettingService());
       const revisions = new PostgresSettingRevisionStoreDriver(new StoredSettingRevisionService());
-      const clock = new SystemClockDriver();
       const floors =
         market === undefined
           ? new RegisteredFloorGuardDriver()
