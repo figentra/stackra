@@ -20,7 +20,7 @@ describe("OutboxOptions", () => {
 
   it("has an initializer equal to the shipped default", () => {
     expect({ ...new OutboxOptions() }).toEqual(OUTBOX_CONFIG_SCHEMA.parse({}));
-    expect(OUTBOX_CONFIG_SCHEMA.parse({})).toEqual({ driver: "postgres" });
+    expect(OUTBOX_CONFIG_SCHEMA.parse({})).toEqual({ driver: "postgres", batchWindowSeconds: 0 });
   });
 
   it("types driver as the OutboxDriver driver names", () => {
