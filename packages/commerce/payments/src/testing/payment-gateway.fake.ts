@@ -4,7 +4,7 @@
  *          the customer (`settle`), and can lose the answer of its next calls (`loseNext`) after acting, which is
  *          exactly the case the `unknown` state exists for. It pre-authorises saved tokens and raises a hold by the increment
  *          asked. It carries a connection mode and a list of enabled
- *          payment methods when a test gives them.
+ *          payment methods when a test gives them. A terminal cancel naming a session voids that session only.
  * Boundary: test support from `./testing`; never bound in production. A lost answer throws the managed client's
  *           `ProviderUnavailableError`, so the engine sees what a real driver would raise.
  * Runtime: isomorphic
@@ -323,10 +323,14 @@ export class PaymentGatewayFake
     };
   }
 
-  /** Voids the pending payments on `terminalId`. */
-  async cancelTerminal(terminalId: string): Promise<void> {
-    for (const held of this.held.values())
-      if (held.terminalId === terminalId && held.payment.status === PaymentStatus.Pending)
+  /** Voids the pending payment `providerRef` on `terminalId`, or every pending one there when none is named. */
+  async cancelTerminal(terminalId: string, providerRef?: string): Promise<void> {
+    for (const [ref, held] of this.held)
+      if (
+        held.terminalId === terminalId &&
+        (providerRef === undefined || ref === providerRef) &&
+        held.payment.status === PaymentStatus.Pending
+      )
         this.put(held.reference, { ...held.payment, status: PaymentStatus.Voided });
     this.answer(undefined);
   }

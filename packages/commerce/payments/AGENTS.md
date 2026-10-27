@@ -1,4 +1,4 @@
-<!-- Purpose: the agent rules of @stackra/payments: where code goes, the vendor boundary, configuration not code, restricted tenders, agent payments, SoftPos, pre-authorisation, partial payments, PII. Boundary: docs of packages/commerce/payments only. Runtime: none (Markdown). Governing contract: ADR 0357; ADR 0445; ADR 0446; ADR 0294; STA-1024. -->
+<!-- Purpose: the agent rules of @stackra/payments: where code goes, the vendor boundary, configuration not code, restricted tenders, agent payments, SoftPos, pre-authorisation, partial payments, PII. Boundary: docs of packages/commerce/payments only. Runtime: none (Markdown). Governing contract: ADR 0357; ADR 0445; ADR 0446; ADR 0294; STA-1024; STA-687. -->
 
 # AGENTS — @stackra/payments
 
@@ -26,7 +26,8 @@ driver, which reaches the SDK only through the app's `StripeTerminalBridge` port
 Not here. A vendor is a connector in the OS integrations service: its `<Code>Integration` and `<Code>Connection`
 (implementing `PaymentGateway` and the optional ports, `capabilities`, `provider`) live there and join the host's map
 passed to `ConnectionPaymentGatewaysDriver`. Write it against `@stackra/payments/contracts` only; change a port here
-when a vendor needs one, additively.
+when a vendor needs one, additively. Square, Adyen and PayPal (STA-687, certification pending) are mapped to
+the ports in README "Square, Adyen and PayPal"; `cancelTerminal` gets the session's `providerRef` for them.
 
 ## This package
 

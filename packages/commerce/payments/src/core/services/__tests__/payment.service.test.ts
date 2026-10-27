@@ -4,7 +4,7 @@
  *          the payment `unknown`, which blocks every action until `reconcile` looks it up (so a retried charge never
  *          charges twice) or a manager resolves it with a reason; a merchant-initiated charge needs the token's flag;
  *          capture and refunds move the state and never refund more than was taken; a provider without capture is
- *          refused; a terminal payment keeps its tip and a cancel reads the final state; a pay link is reused until
+ *          refused; a terminal payment keeps its tip, a cancel reads the final state and voids only the session it names; a pay link is reused until
  *          it expires. On a connected account only, a payment above the pre-verification cap and a held payout are
  *          refused; other modes never ask for limits; the account's payment methods are read when the provider reports
  *          them. A terminal PIN step, a restricted tender or a SoftPos session is served only by a provider with that
@@ -234,6 +234,13 @@ describe("PaymentService", () => {
     });
     await payments.startTerminal("m1", { reference: "chk_2", terminalId: "tmr_1", amount });
     expect((await payments.cancelTerminal("chk_2")).status).toBe(PaymentStatus.Voided);
+  });
+
+  it("cancels only the terminal session it names", async () => {
+    await payments.startTerminal("m1", { reference: "chk_3", terminalId: "tmr_1", amount });
+    await payments.startTerminal("m1", { reference: "chk_4", terminalId: "tmr_1", amount });
+    expect((await payments.cancelTerminal("chk_3")).status).toBe(PaymentStatus.Voided);
+    expect((await payments.reconcile("chk_4")).status).toBe(PaymentStatus.Pending);
   });
 
   it("serves a PIN step or a restricted tender only from a provider that has it", async () => {

@@ -11,7 +11,8 @@
  *          a SoftPos session (tap to pay; the phone collects it through the `SoftPos` port). An agent's payment is
  *          taken only within what the shopper confirmed in their own wallet (`agentCheckout`): an agent never pays
  *          alone. A saved token can be pre-authorised (`preAuthorize`, a tab or a deposit), an authorised hold raised
- *          (`increment`), then captured in part or in full (`capture`) or released (`void`).
+ *          (`increment`), then captured in part or in full (`capture`) or released (`void`). A terminal cancel names
+ *          the session's `providerRef` so a cloud terminal API cancels that checkout only.
  * Boundary: generic over `PaymentGateways` (which provider serves a call is the Connection's and the Market's data),
  *           `PaymentRecords` (where state lives) and `ConnectedAccountLimits` (the cap and the hold, from the OS
  *           verification record) and `AgentCommerceProtocols` (the protocols' proof of a wallet confirmation). It never
@@ -317,10 +318,10 @@ export class PaymentService extends Service {
         status: record.status,
         operation: "cancel_terminal",
       });
-    const terminalId = record.terminalId;
+    const { terminalId, providerRef } = record;
     const gateway = await this.gateways.byConnection(record.provider, record.connectionId);
     const terminal = this.capable(gateway, PaymentCapability.Terminal);
-    await this.guard(record, () => terminal.cancelTerminal(terminalId), false);
+    await this.guard(record, () => terminal.cancelTerminal(terminalId, providerRef), false);
     return this.reconcile(reference);
   }
 

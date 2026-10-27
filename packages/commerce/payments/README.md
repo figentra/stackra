@@ -1,4 +1,4 @@
-<!-- Purpose: the reader guide of @stackra/payments: what is exported, taking a payment, restricted tenders, agent payments, SoftPos tap to pay, pre-authorised tabs, partial payments against one balance, the unknown state, provider choice. Boundary: docs of packages/commerce/payments only. Runtime: none (Markdown). Governing contract: ADR 0357; ADR 0445; ADR 0446; ADR 0294; STA-1024. -->
+<!-- Purpose: the reader guide of @stackra/payments: what is exported, taking a payment, restricted tenders, agent payments, SoftPos tap to pay, pre-authorised tabs, partial payments against one balance, the unknown state, provider choice, the Square, Adyen and PayPal bring-your-own drivers. Boundary: docs of packages/commerce/payments only. Runtime: none (Markdown). Governing contract: ADR 0357; ADR 0445; ADR 0446; ADR 0294; STA-1024; STA-687; ACA-542. -->
 
 # @stackra/payments
 
@@ -192,17 +192,42 @@ integrations service (os-104). Copy them from `packages/commerce/payments/src/co
 (`figentra/sta-666-wave12` before the move). They import only public names: `@stackra/payments` (`totalOf`, the refusals), `@stackra/payments/contracts`
 and `@stackra/integrations`.
 
+## Square, Adyen and PayPal: bring your own (stackra-34, STA-687)
+
+Owner decision D4 (2026-10-27): built now from the vendors' public API docs with recorded-fixture tests, shipped
+**certification pending**. Under ADR 0443 decisions 7 and 8 every class that names a vendor is OS integrations code, so
+the three Integrations and Connections are built there (beside the Stripe one moved by os-104), not here. This package
+carries their ports unchanged except one additive change: `TerminalGateway.cancelTerminal(terminalId, providerRef?)`
+now receives the session's `providerRef`, because both cloud terminal APIs cancel a checkout by its id.
+
+| Vendor   | Mode                                                                | Capabilities                                                                             | Port to API (public docs)                                                                                                                                                                                                                                                                                                                                                          |
+| -------- | ------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `square` | `oauth-standard` (Square OAuth, no fee) or `own-key` (access token) | checkout, capture, tokens, terminal, terminal_tips, disputes                             | `checkout`: Checkout API payment link; `lookup`: Payments/Orders API; `capture`/`void`: complete/cancel a delayed-capture payment; `charge`: card on file as `source_id`; `refund`: Refunds API; `startTerminal`/`terminalSession`/`cancelTerminal`: Terminal API checkouts on the paired device id; disputes: Disputes API; idempotency key from the reference                    |
+| `adyen`  | `own-key` (API key, merchant account, live URL prefix)              | checkout, capture, tokens, pre_auth, incremental_auth, terminal, terminal_tips, disputes | `checkout`: Checkout API payment link; `capture`/`void`/`refund`: modifications on the PSP reference; `charge`: stored payment method with the recurring processing model from `initiator`; `authorize`/`increment`: pre-authorisation and amount update; terminals: cloud Terminal API payment, transaction status and abort by the session; `Idempotency-Key` from the reference |
+| `paypal` | `own-key` (REST client id and secret)                               | checkout, capture, tokens, disputes                                                      | `checkout`: Orders v2 order, approve link as the session url; `lookup`: get order; `capture`/`void`: capture or void the authorization; `charge`: vault payment token; `refund`: refund the capture; disputes: Disputes API; `PayPal-Request-Id` from the reference                                                                                                                |
+
+Availability is pack data: each provider joins `payments.byo-providers` as `planned` and is flipped to live per pack
+(`MarketPackPaymentDefaultsDriver` already reads only live entries). Readers stay server-driven (ADR 0378 decision 1):
+`CardTerminal` in `@stackra/peripherals` only records which Square or Adyen reader a till uses, so no peripheral
+driver is needed for them.
+
+Left for OS integrations: the `SquareIntegration`, `AdyenIntegration`, `PayPalIntegration` classes and their
+Connections (and `-sandbox` variants), their webhook recipes (Square HMAC over URL and body, Adyen HMAC on notification
+items, PayPal verify-webhook-signature), the OAuth flow of Square, their entries in the host's provider map, the
+recorded-fixture tests, and the pack rows. BYO Stripe (ACA-542) is `ConnectionMode.OAuthStandard` here; its OAuth
+onboarding and revocation are `StripeConnectIntegration` in OS integrations (ADR 0390 decision 3).
+
 ## Not here
 
 - Ledger posting of fees, tips and refunds: the payments-ledger service, on `@stackra/ledger`.
 - Webhook verification: `@stackra/webhooks` (each provider needs its signature scheme there); the engine works from
   `reconcile` until then.
-- Card terminals reached over a local link (ECR) and the Geidea and Network International terminal drivers: they wait
-  for the `CardTerminal` port of `@stackra/peripherals`.
+- Card terminals reached over a local link (ECR) and the Geidea and Network International terminal drivers
+  (stackra-35).
 - Caps, approvals, tip presets, capture timing, who may resolve by hand: settings, rules and permissions in the
   product.
 
 ## Decisions
 
-STA-1024 (pre-authorisation and partial payments), ADR 0446 (agent payments and SoftPos), ADR 0445 (restricted tenders and the PIN step), ADR 0378 (card terminals and Tap to Pay), ADR 0357 (payments architecture), ADR 0358 decision 3 (providers are drivers), ADR 0356 (provider per tenant and
+STA-687 and ACA-542 (bring-your-own Square, Adyen, PayPal and Stripe), ADR 0443 decisions 7 and 8 (vendor code in OS integrations), STA-1024 (pre-authorisation and partial payments), ADR 0446 (agent payments and SoftPos), ADR 0445 (restricted tenders and the PIN step), ADR 0378 (card terminals and Tap to Pay), ADR 0357 (payments architecture), ADR 0358 decision 3 (providers are drivers), ADR 0356 (provider per tenant and
 Market through the Connection), ADR 0359 decision 11 (sandbox gateways), ADR 0308 (integrations), ADR 0220 (money).
