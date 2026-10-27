@@ -3,10 +3,10 @@
 <!--
 Stackra file contract:
 Purpose: the agent rules of @stackra/app: where code goes, entries and barrels, the package rules (the server boot and
-         shutdown order included) and the rules that fail the build.
+         shutdown order, request guards and the route session included) and the rules that fail the build.
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
-Governing contract: ADR 0294; ADR 0295; ADR 0305; ADR 0263; ADR 0260 (decision 4); ADR 0251 (decision 3).
+Governing contract: ADR 0294; ADR 0295; ADR 0305; ADR 0263; ADR 0260 (decision 4); ADR 0251 (decision 3); ADR 0457.
 -->
 
 The app runtime: `createApp` per runtime target, the shared boot, the client contexts and the `Controller` kind.
@@ -21,6 +21,8 @@ note).
 | Boot shared by every target          | `src/core/{functions,services,drivers,types}/` |
 | A target's `createApp` and its types | `src/<target>/{functions,types}/`              |
 | The `Controller` kind                | `src/server/bases/controller.base.ts`          |
+| The `RequestGuard` extension point   | `src/server/bases/request-guard.base.ts`       |
+| The route session (loader, part)     | `src/core/{functions,constants,types}/`        |
 | A refusal                            | `src/<target>/errors/<name>.error.ts`          |
 | React contexts                       | `src/react/contexts/`                          |
 | A test                               | `__tests__/<name>.<kind>.test.ts(x)` beside it |
@@ -45,6 +47,10 @@ note).
 - No rate-limit code here: the area bucket per tenant lives in the `@stackra/actions` pipeline (`RateLimitBudget`);
   this package only forwards the verified tenant from the signed edge headers.
 - The desktop hardening baseline is not configurable (ADR 0251 decision 3).
+- A check every inbound server request passes is a `RequestGuard` subclass found with `getAll`; never a list of guards
+  in `createApp`. `order` is a position in a fixed check sequence, never a business value.
+- The route session is loaded per request container on the Worker and never kept on a singleton: one visitor's session
+  must never reach another request. `session` and `identity` are the only `RouteServices` members this package adds.
 - No parameter properties and no `#private` fields: apps typecheck this source under `erasableSyntaxOnly`.
 
 ## Rules that fail the build

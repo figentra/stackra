@@ -1,5 +1,14 @@
 # @stackra/container
 
+<!--
+Stackra file contract:
+Purpose: the reader guide of @stackra/container: the kinds, decorators, the container, extension points
+         (multi-binding) and the testing module.
+Boundary: documentation only; the code and the ADRs win on any difference.
+Runtime: none
+Governing contract: ADR 0263; ADR 0294; ADR 0305; ADR 0269; ADR 0457.
+-->
+
 The Stackra DI container and kind machinery. Classes are the only tokens; `stackra gen` reads constructor parameter
 types at build time and writes the wiring; the container reads that wiring and never touches reflect-metadata.
 
@@ -18,6 +27,7 @@ types at build time and writes the wiring; the container reads that wiring and n
 | `.`         | `Named<Port, "x">`, `named(Port, "x")`                                         | a named instance of a port, as a parameter type and as a wiring token     |
 | `.`         | `DriverName<Port>`, `DriverRegistry`                                           | a config field that picks a driver; the registry gen augments             |
 | `.`         | `Container`, `Wiring`, `UnresolvedPortError`                                   | the container, the generated wiring's shape, the boot failure             |
+| `.`         | `container.getAll(Base)`, `discovery.getAll(Base)`                             | the multi-binding: every booted subclass of an extension point's base     |
 | `.`         | `DiscoveryService`, `createDecorator`                                          | decorators that only record, and the lookup an Explorer uses              |
 | `.`         | `createKind`, `registerKind`, `kindOf`, `WithPartner`                          | for kind packages: kind bases and partner type arguments                  |
 | `./react`   | `ContainerProvider`, `useContainer`                                            | the container under a React tree                                          |
@@ -69,6 +79,32 @@ the singletons of the booted modules, and runs each Explorer once. A port nothin
 `UnresolvedPortError`, a plain `Error`. `forRequest()` gives a container that keeps `Lifetime.Request` instances;
 `close()` calls `onApplicationShutdown()` on what it built. `Clock` defaults to a system driver.
 
+## Extension points (multi-binding)
+
+A module that owns an extension point declares an abstract base; every module that contributes binds a subclass, and
+the owner reads them all with `getAll`. No string or array token, no wiring section: the base class is the token.
+
+```ts
+// carts
+export abstract class CheckoutGuard extends Service {
+  abstract check(cart: Cart): Promise<CheckoutVerdict>;
+}
+
+export class CheckoutService extends Service {
+  constructor(discovery: DiscoveryService) { ... }
+  async verdicts(cart: Cart) {
+    return Promise.all(this.discovery.getAll(CheckoutGuard).map((guard) => guard.check(cart)));
+  }
+}
+
+// b2b, which imports carts
+export class CreditLimitGuard extends CheckoutGuard { ... }
+```
+
+`getAll(Base)` lists the classes the booted modules bind or export that extend `Base` (never `Base` itself), in wiring
+order: dependencies first, the host last. Overrides and `@Replaces` apply; a `Lifetime.Request` contribution needs a
+`forRequest()` container (`DiscoveryService` reads the root one). ADR 0457.
+
 ## Testing
 
 ```ts
@@ -88,6 +124,6 @@ Gen's vitest setup calls `registerWiring` for the member and its dependencies. O
 
 ## Decisions
 
-ADR 0263 (gen writes the wiring), ADR 0294 (decisions 6, 16, 17 and 25), ADR 0305 (rules 2, 3, 8 and 42 to 46),
+ADR 0263 (gen writes the wiring), ADR 0294 (decisions 6, 16, 17 and 25), ADR 0457 (multi-binding), ADR 0305 (rules 2, 3, 8 and 42 to 46),
 ADR 0269 (the testing module lives here), the 2026-10-24 notes on ADR 0127 (Module and Service here, Port in
 contracts) and ADR 0227 (build-time wiring allowed, runtime reflection rejected).

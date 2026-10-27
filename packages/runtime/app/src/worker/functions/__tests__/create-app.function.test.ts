@@ -3,20 +3,24 @@
  * Purpose: unit tests of the Worker `createApp`: `fetch` validates the env, boots once per isolate, hands the
  *          member's context factory the request, env, ctx, a request container and the reporter, and runs the router
  *          with that context; a bad env, a failed boot or a router throw is reported once and answered with the crash
- *          page (500, `no-store`), and a failed boot is retried by the next request.
+ *          page (500, `no-store`), a failed boot is retried by the next request, and the request container carries
+ *          the request's session for `ctx.session` before the factory sees it.
  * Boundary: test only; React Router's request handler is mocked.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0269; ADR 0295 (decision 8); ADR 0297.
+ * Governing contract: ADR 0022; ADR 0269; ADR 0295 (decision 8); ADR 0297; ADR 0457.
  */
 import { Driver } from "@stackra/container";
-import type { Wiring } from "@stackra/container";
+import type { Container, Wiring } from "@stackra/container";
 import { ErrorReporter } from "@stackra/errors/contracts";
+import { SessionStore } from "@stackra/identity/contracts";
+import type { SessionUser } from "@stackra/identity/contracts";
 import { beforeEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 import { RouterContextProvider } from "react-router";
 import type * as ReactRouter from "react-router";
 import type { ServerBuild } from "react-router";
 
+import { routeSessionPart } from "#core/functions/route-session-part.function";
 import { createApp } from "#worker/functions/create-app.function";
 import type { WorkerExecutionContext } from "#worker/types/worker-execution-context.type";
 import type { WorkerRequest } from "#worker/types/worker-request.type";
@@ -101,6 +105,50 @@ describe("createApp (worker)", () => {
     await app.fetch(new Request("https://acme.example/b"), {}, ctx);
     expect(containers).toHaveLength(2);
     expect(containers[0]).not.toBe(containers[1]);
+  });
+
+  it("loads the request's session into its request container", async () => {
+    routerHandler.mockResolvedValue(new Response("ok"));
+    const user = { userId: "usr_01j9z3k4m5n6p7q8r9s0t1v2w3" } as unknown as SessionUser;
+    class CookieSessionStoreDriver extends Driver(SessionStore) {
+      async load(): Promise<SessionUser | null> {
+        return user;
+      }
+
+      async signIn(): Promise<void> {}
+
+      async signOut(): Promise<void> {}
+
+      async accessToken(): Promise<string | undefined> {
+        return undefined;
+      }
+    }
+    const containers: Container[] = [];
+    const app = await createApp(
+      {
+        ...wiring,
+        drivers: [
+          ...(wiring.drivers ?? []),
+          {
+            port: SessionStore,
+            candidates: { cookie: () => Promise.resolve(CookieSessionStoreDriver) },
+          },
+        ],
+      },
+      {
+        env: () => ({}),
+        build,
+        context: (request) => {
+          containers.push(request.container);
+          return new RouterContextProvider();
+        },
+        crashPage: "crash",
+      },
+    );
+    const request = new Request("https://acme.example/account");
+    await app.fetch(request, {}, ctx);
+    const [container] = containers;
+    expect(routeSessionPart({ request, container }).session).toBe(user);
   });
 
   it("answers a bad env with the crash page and reports it", async () => {

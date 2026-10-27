@@ -121,7 +121,9 @@
     "@stackra/contracts": "workspace:*",
     "@stackra/csp": "workspace:*",
     "@stackra/errors": "workspace:*",
-    "@stackra/i18n": "workspace:*"
+    "@stackra/i18n": "workspace:*",
+    "@stackra/identity": "workspace:*",
+    "@stackra/navigation": "workspace:*"
   },
   "devDependencies": {
     "@stackra/testing": "workspace:*",

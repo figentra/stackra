@@ -3,10 +3,12 @@
 <!--
 Stackra file contract:
 Purpose: the reader guide of @stackra/app: `createApp` per runtime target, the generated entries, the shared boot,
-         the client contexts, the server lifecycle (boot, drain, close) and the desktop baseline.
+         the client contexts, the server lifecycle (boot, drain, close), request guards, the route session and the
+         desktop baseline.
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
-Governing contract: ADR 0295 (decisions 7 to 9); ADR 0263; ADR 0260 (decision 4); ADR 0127 2026-10-24 note.
+Governing contract: ADR 0295 (decisions 7 to 9); ADR 0263; ADR 0260 (decision 4); ADR 0127 2026-10-24 note;
+                    ADR 0457.
 -->
 
 Stackra app runtime: `createApp` for each runtime target, returning that target's app object, the shared boot from the
@@ -15,7 +17,7 @@ generated wiring, the client `Contexts`, and the `Controller` kind for raw HTTP.
 
 **Tier:** `tier:lib` (`packages/runtime/app`). Entries `.`, `./react`, `./server`, `./worker`, `./browser`, `./native`,
 `./desktop`. Depends on `@stackra/contracts`, `@stackra/container`, `@stackra/config`, `@stackra/errors`,
-`@stackra/i18n` and `@stackra/csp`; React, React Router, Electron, React Native and expo-splash-screen are optional
+`@stackra/i18n`, `@stackra/csp`, `@stackra/navigation` and `@stackra/identity` (its contracts); React, React Router, Electron, React Native and expo-splash-screen are optional
 peers, each loaded only by the entry that needs it.
 
 `Module`, `Service` and the `define*` functions are not here: they live in `@stackra/container` and
@@ -28,10 +30,12 @@ peers, each loaded only by the entry that needs it.
 | `bootApp`                                    | `.`         | the boot every target shares: configs from the env, container, reporter              |
 | `AppWiring`                                  | `.`         | the booted wiring as a container token                                               |
 | `AppSections`, `BootOptions`, `BootedApp`    | `.`         | the wiring sections this package reads; boot's options and result                    |
+| `RouteSession`                               | `.`         | `ctx.session` and `ctx.identity`, added to navigation's `RouteServices`              |
 | `Contexts`                                   | `./react`   | the client contexts in graph order, with the locale and catalogues                   |
 | `registerContext`                            | `./react`   | a client package names the component of its context key                              |
 | `createApp`, `ServerApp`                     | `./server`  | `key`, `ready()`, `probe()`, `drain()`, `close()`, `handlers`; `/healthz`, `/readyz` |
 | `Controller`                                 | `./server`  | `extends Controller({ path })`: a raw endpoint with `handle(request)`                |
+| `RequestGuard`                               | `./server`  | a check every inbound request passes; `handlers.guard(request, container)` runs them |
 | `AppDrainingError`                           | `./server`  | the 503 refusal a draining server answers                                            |
 | `createApp`, `WorkerApp`, `WorkerRequest<E>` | `./worker`  | `fetch(request, env, ctx)` over the React Router server build                        |
 | `createApp`, `BrowserApp`, `hydrateRoute`    | `./browser` | `mount(root)`, `hydrate({ nonce })`, `router`; one prerendered page                  |
@@ -102,13 +106,45 @@ with `AppDrainingError` and waits for those in flight; `close()` drains, then sh
 signal; `close()` aborts that signal after the drain, which disconnects the bus and inbox and stops the relay. SIGTERM and
 SIGINT close and exit 0, or report and exit 1 when shutdown fails.
 
+### Request guards
+
+`RequestGuard` is an extension point built on the container's multi-binding (`getAll`, ADR 0457): a module binds a
+subclass with `check(request)`, which throws a refusal to stop the request, and an optional `order` (lowest first,
+default 0, wiring order within an order). The generated adapter calls `handlers.guard(request, container)` inside
+`handlers.run`; it rejects with the first refusal and runs no later guard.
+
+```ts
+export class EdgeSignatureGuard extends RequestGuard {
+  override get order() { return -100; }
+  async check(request: Request) { ... }
+}
+```
+
 ### The tenant on a call and its rate limit
 
 The edge Worker forwards the tenant as the signed `EdgeHeader.Scope` (`x-figentra-tenant`, ADR 0437). The signature
-guard (stackra-65) and the generated adapter that turns a verified request into `CallOptions` are not in this package
+guard (stackra-65, a `RequestGuard`) and the generated adapter that turns a verified request into `CallOptions` are not in this package
 yet; until they land, the tenant reaching `CallOptions.actor.scopeId` from the edge is assumed, not confirmed. Once it
 is there, `@stackra/actions` keys the area's token bucket by it and sizes it from the bound `RateLimitBudget` (the
 plan's value entitlement), so this package carries no rate-limit code of its own.
+
+## The session on a route
+
+`RouteSession` adds two members to every route context: `ctx.session` (the signed-in `SessionUser`, or null) and
+`ctx.identity` (the bound `SessionStore`: sign in, sign out, the access token), so a layout gates on a session:
+
+```ts
+export class ShellLayout extends Layout({ targets: [Target.Web] }) {
+  override loader(ctx: RouteContext<this>) {
+    if (!ctx.session) return ctx.redirect(Routes.sign_in, { search: { returnTo: ctx.path } });
+    return null;
+  }
+}
+```
+
+The Worker loads the session into each request container before the member's context factory runs, so the factory
+must hand the routes that container. The browser and native targets load it once at boot (the web's sign-in and
+sign-out leave the page). No bound `SessionStore`, or a refusal from it, is signed out.
 
 ## Desktop
 

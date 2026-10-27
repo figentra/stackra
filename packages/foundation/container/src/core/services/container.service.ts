@@ -3,14 +3,18 @@
  * Purpose: `Container`, the DI container: it merges the generated wirings of a member and its dependencies, loads the
  *          selected driver of every port, builds each binding with the constructor tokens gen read from its declared
  *          parameter types, keeps singletons per container and request instances per `forRequest()`, runs every
- *          Explorer once, and shuts instances down on `close()`.
+ *          Explorer once, shuts instances down on `close()`, and answers `getAll(Base)`, the multi-binding: every
+ *          booted class that extends a base another module owns (a guard contributed to a checkout gate).
  * Boundary: classes (and `named(Port, "x")`) are the only tokens; no reflect-metadata, no `design:paramtypes`, no
  *           string token (ADR 0227 2026-10-24 note). Config values are not layered here: @stackra/config builds the
  *           config instances and passes them as overrides. A port nobody binds fails `create` with
- *           `UnresolvedPortError`, so a missing driver is a boot failure, never a runtime `undefined`.
+ *           `UnresolvedPortError`, so a missing driver is a boot failure, never a runtime `undefined`. A contribution
+ *           is found by subclassing its base, which is still a class token: no string, no array token, no new
+ *           wiring section (ADR 0457).
  * Runtime: isomorphic
  * Governing contract: ADR 0263 (decisions 1, 5, 9, 11 and 12); ADR 0294 (decisions 17 and 19); ADR 0143 as amended by
- *                     0263 (lifetimes and lifecycle); ADR 0144 as amended by 0263 (Explorers).
+ *                     0263 (lifetimes and lifecycle); ADR 0144 as amended by 0263 (Explorers); ADR 0457
+ *                     (multi-binding extension points).
  */
 import { Clock, Port } from "@stackra/contracts";
 
@@ -76,6 +80,8 @@ interface Graph {
   readonly overrides: ReadonlyMap<Token, object>;
   readonly loaded: Map<Token, Recipe>;
   readonly exported: Set<AnyClass>;
+  /** The module keys `create` booted, or undefined when it booted every wiring's root. */
+  booted: ReadonlySet<string> | undefined;
 }
 
 /** Whether a token is a named token rather than a class. */
@@ -98,6 +104,7 @@ function mergeWirings(wirings: readonly Wiring[], overrides: ReadonlyMap<Token, 
     overrides,
     loaded: new Map(),
     exported: new Set(),
+    booted: undefined,
   };
   for (const wiring of wirings) {
     for (const [key, entry] of Object.entries(wiring.modules ?? {}))
@@ -161,6 +168,7 @@ function closureOf(roots: readonly ModuleClass[]): ModuleClass[] {
  * const container = await Container.create([wiring], { overrides: new Map([[LoyaltyKitConfig, config]]) });
  * container.get(LoyaltyService).quote(member, 100, 10_000);
  */
+// oxlint-disable-next-line stackra/base-matches-suffix -- reason: the container builds every Service, so it cannot be one; it is the runtime class the `.service.ts` folder rule names (ADR 0294 kind table)
 export class Container {
   /** The merged wirings and the loaded drivers, shared with request containers. */
   private readonly graph: Graph;
@@ -205,6 +213,7 @@ export class Container {
         graph.exported.add(exported);
     await container.loadDrivers(options.drivers ?? {});
     const keys = options.roots === undefined ? undefined : container.modulesOf(closure);
+    graph.booted = keys;
     for (const binding of graph.bindings.values())
       if (keys === undefined || keys.has(binding.module))
         if (container.recipeFor(binding.provide).lifetime === Lifetime.Singleton)
@@ -231,6 +240,27 @@ export class Container {
   /** Resolves either overload through the one recipe lookup. */
   get(token: Token): object {
     return this.resolve(token);
+  }
+
+  /**
+   * Every class the booted modules bind or export that extends `base`, built (or read from cache) in wiring order:
+   * dependencies first, the host last. This is the multi-binding: the module that owns an extension point declares
+   * an abstract base, and each module that contributes to it binds a subclass. `base` itself is never in the list.
+   *
+   * @throws Error when a contribution has `Lifetime.Request` and this is not a `forRequest()` container.
+   * @example
+   * for (const guard of container.getAll(CheckoutGuard)) await guard.check(cart);
+   */
+  getAll<T extends object>(base: AnyClass<T>): T[] {
+    const { graph } = this;
+    const types = new Set<AnyClass>();
+    for (const binding of graph.bindings.values())
+      if (graph.booted === undefined || graph.booted.has(binding.module))
+        types.add(binding.provide);
+    for (const exported of graph.exported) types.add(exported);
+    return [...types]
+      .filter((type) => type.prototype instanceof base)
+      .map((type) => this.resolve(type) as T);
   }
 
   /** Whether the container binds `token`: an override, a loaded driver, a config class, a binding or a built-in. */

@@ -3,12 +3,13 @@
  * Purpose: unit tests of `Container`: it builds bindings from a generated-style wiring table with no reflect-metadata,
  *          selects drivers by override, test choice, config or single candidate, fails a boot without a driver with
  *          `UnresolvedPortError`, resolves named instances, honours the three lifetimes, replaces, merges wirings,
- *          boots only the chosen roots eagerly, runs Explorers once and shuts instances down on close.
+ *          boots only the chosen roots eagerly, runs Explorers once, shuts instances down on close, and lists the
+ *          contributions to an extension point with `getAll` (the multi-binding).
  * Boundary: test only; the wirings are written by hand in the shape gen writes, and the config classes are plain
  *           classes (the Config kind belongs to @stackra/config).
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0263 (decisions 1,
- *                     5, 9, 11 and 12); ADR 0294 (decision 17).
+ *                     5, 9, 11 and 12); ADR 0294 (decision 17); ADR 0457 (multi-binding).
  */
 import { Clock, Port } from "@stackra/contracts";
 import { beforeEach, describe, expect, it } from "@stackra/testing";
@@ -437,6 +438,101 @@ describe("Container", () => {
       const container = await Container.create([], { roots: [FixtureModule] });
       expect(container.instances()).toContainEqual(expect.any(Reads));
       expect(container.get(Reads)).toBe(container.instances()[0]);
+    });
+  });
+
+  describe("getAll (multi-binding)", () => {
+    abstract class CheckoutGuard extends Service {
+      abstract check(): string;
+    }
+
+    class StockGuard extends CheckoutGuard {
+      check(): string {
+        return "stock";
+      }
+    }
+
+    class CreditGuard extends CheckoutGuard {
+      check(): string {
+        return "credit";
+      }
+    }
+
+    class CartsModule extends Module {}
+
+    class B2bModule extends Module({ imports: [CartsModule] }) {}
+
+    const carts: Wiring = {
+      member: "carts",
+      root: CartsModule,
+      modules: { carts: { exports: [], dependsOn: [] } },
+      bindings: [{ module: "carts", kind: "service", provide: StockGuard, deps: [] }],
+    };
+
+    const b2b: Wiring = {
+      member: "b2b",
+      root: B2bModule,
+      modules: { b2b: { exports: [], dependsOn: ["carts"] } },
+      bindings: [{ module: "b2b", kind: "service", provide: CreditGuard, deps: [] }],
+    };
+
+    it("lists every booted subclass of the base, dependencies first, built once", async () => {
+      const container = await Container.create([carts, b2b]);
+      const guards = container.getAll(CheckoutGuard);
+      expect(guards.map((guard) => guard.check())).toEqual(["stock", "credit"]);
+      expect(guards[0]).toBe(container.get(StockGuard));
+      expect(container.getAll(CheckoutGuard)).toEqual(guards);
+    });
+
+    it("leaves out the contributions of modules that were not booted", async () => {
+      const container = await Container.create([carts, b2b], { roots: [CartsModule] });
+      expect(container.getAll(CheckoutGuard).map((guard) => guard.check())).toEqual(["stock"]);
+    });
+
+    it("returns an override in place of the contributed class", async () => {
+      const fake = new (class extends CreditGuard {
+        override check(): string {
+          return "fake";
+        }
+      })();
+      const container = await Container.create([carts, b2b], {
+        overrides: new Map([[CreditGuard, fake]]),
+      });
+      expect(container.getAll(CheckoutGuard).map((guard) => guard.check())).toEqual([
+        "stock",
+        "fake",
+      ]);
+    });
+
+    it("is empty when nothing contributes, and never lists the base itself", async () => {
+      const container = await Container.create([carts]);
+      expect(container.getAll(CreditGuard)).toEqual([]);
+      expect(container.getAll(StockGuard)).toEqual([]);
+    });
+
+    it("needs a request container for a Lifetime.Request contribution", async () => {
+      @Lifetime(Lifetime.Request)
+      class SessionGuard extends CheckoutGuard {
+        check(): string {
+          return "session";
+        }
+      }
+      const wiring: Wiring = {
+        member: "session",
+        bindings: [
+          {
+            module: "session",
+            kind: "service",
+            provide: SessionGuard,
+            lifetime: Lifetime.Request,
+            deps: [],
+          },
+        ],
+      };
+      const container = await Container.create([wiring]);
+      expect(() => container.getAll(CheckoutGuard)).toThrow(/forRequest/);
+      const request = container.forRequest();
+      expect(request.getAll(CheckoutGuard).map((guard) => guard.check())).toEqual(["session"]);
     });
   });
 

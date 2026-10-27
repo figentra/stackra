@@ -1,5 +1,14 @@
 # AGENTS — @stackra/container
 
+<!--
+Stackra file contract:
+Purpose: the agent rules of @stackra/container: where code goes, entries and barrels, the package rules (tokens,
+         kind bases, decorators, the multi-binding) and the rules that fail the build.
+Boundary: documentation only; the code and the ADRs win on any difference.
+Runtime: none
+Governing contract: ADR 0263; ADR 0294; ADR 0305; ADR 0457.
+-->
+
 The DI container and the kind machinery every kind package builds on. Member at `packages/foundation/container`
 (`tier:lib`), in the programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./react`, `./testing`.
 
@@ -29,6 +38,8 @@ The DI container and the kind machinery every kind package builds on. Member at 
 - A kind base assigns no fields in its constructor and keeps no state (0294 decision 25); brands are `declare`d,
   type-only `~kind` keys.
 - `createDecorator` decorators record only: no accessor, no wrapper. The acting half is an Explorer.
+- A multi-binding is a base class and its booted subclasses (`getAll(Base)`, ADR 0457); never add a multi token, an
+  array token or a contributions section to the wiring.
 - `UnresolvedPortError` stays a plain `Error`: `@stackra/errors` depends on this package.
 - No parameter properties and no `#private` fields: apps typecheck this source under `erasableSyntaxOnly`.
 - Only add a symbol a consumer imports today (the template, a wave-1 package, or the registry row).

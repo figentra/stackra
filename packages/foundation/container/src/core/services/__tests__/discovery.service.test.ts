@@ -2,11 +2,12 @@
  * Stackra file contract:
  * Purpose: unit tests of `DiscoveryService`: `classesWith(D)` yields `{ instance, className, options }` for every
  *          built instance whose class carries the class decorator `D`, inherited marks included, and refuses a field
- *          or method decorator; an Explorer finds them in `onApplicationBootstrap()`.
+ *          or method decorator; an Explorer finds them in `onApplicationBootstrap()`; `getAll(Base)` lists the
+ *          contributions to an extension point.
  * Boundary: test only; a hand-written wiring of the shape gen writes.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0144 as amended by
- *                     0263 (Explorers).
+ *                     0263 (Explorers); ADR 0457 (multi-binding).
  */
 import { describe, expect, it } from "@stackra/testing";
 
@@ -80,5 +81,15 @@ describe("DiscoveryService", () => {
   it("refuses a field or method decorator", async () => {
     const container = await Container.create([wiring]);
     expect(() => container.get(DiscoveryService).classesWith(Watched)).toThrow(TypeError);
+  });
+
+  it("lists the contributions to an extension point through getAll", async () => {
+    const container = await Container.create([wiring]);
+    expect(
+      container
+        .get(DiscoveryService)
+        .getAll(CustomerReads)
+        .map((instance) => instance.constructor.name),
+    ).toEqual(["VipReads"]);
   });
 });
