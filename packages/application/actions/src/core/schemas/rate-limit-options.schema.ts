@@ -10,7 +10,7 @@
  * Governing contract: ADR 0217 (decision 2: token buckets per area and tenant); ADR 0294 (decisions 19 and 26).
  */
 import { Duration } from "@stackra/contracts";
-import { registerSchemas, Schema } from "@stackra/validation";
+import { Field, registerSchemas, Schema } from "@stackra/validation";
 
 import { RATE_LIMIT_CONFIG_SCHEMA } from "#core/constants/rate-limit-config-schema.constant";
 
@@ -24,6 +24,8 @@ import { RATE_LIMIT_CONFIG_SCHEMA } from "#core/constants/rate-limit-config-sche
  */
 export class RateLimitOptions extends Schema {
   /** API area code to its bucket; an area with no entry is not limited by area. */
+  // reason: a record of inline buckets that a host override replaces whole; the shipped schema already says its rule
+  @Field(RATE_LIMIT_CONFIG_SCHEMA.shape.areas)
   areas: Record<
     string,
     {

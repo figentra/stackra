@@ -15,7 +15,7 @@
  */
 import type { Actor, Json } from "@stackra/contracts";
 import { IntegrationEvent } from "@stackra/events";
-import { registerSchemas } from "@stackra/validation";
+import { Field, registerSchemas } from "@stackra/validation";
 import { z } from "zod";
 
 /**
@@ -25,6 +25,11 @@ import { z } from "zod";
  * AuditEntryRecorded.create({ callId, key, effects: [], actor, outcome: "ok", fields: {} });
  */
 export class AuditEntryRecorded extends IntegrationEvent({ name: "audit_entry.recorded" }) {
+  /** `ok`, or `refused`. */
+  // reason: a two-value literal union kept as published, so `AuditEntry` consumers see the same type
+  @Field(z.enum(["ok", "refused"]))
+  outcome!: "ok" | "refused";
+
   /** The call's id. */
   callId!: string;
 
@@ -54,9 +59,6 @@ export class AuditEntryRecorded extends IntegrationEvent({ name: "audit_entry.re
 
   /** The public id of the storefront, API key or agent the call came from. */
   originId?: string;
-
-  /** `ok`, or `refused`. */
-  outcome!: "ok" | "refused";
 
   /** The refusal code of a refused call. */
   code?: string;

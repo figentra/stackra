@@ -14,7 +14,7 @@ import "#core/types/store-driver-names.type";
 
 import { Secret } from "@stackra/config";
 import type { DriverName } from "@stackra/container";
-import { registerSchemas, Schema } from "@stackra/validation";
+import { Field, registerSchemas, Schema } from "@stackra/validation";
 
 import type { IdempotencyStore } from "#contracts/ports/idempotency-store.port";
 import type { RateLimitStore } from "#contracts/ports/rate-limit-store.port";
@@ -34,17 +34,19 @@ export class StoresOptions extends Schema {
   @Secret("ACTIONS_VALKEY_URL")
   valkeyUrl = "";
 
+  /** The `valkey` drivers' keys. */
+  // reason: one inline key-prefix object that a host override replaces whole; the shipped schema already says its rule
+  @Field(STORES_CONFIG_SCHEMA.shape.valkey)
+  valkey: {
+    /** Put in front of every key, so members that share one server never share a key. */
+    keyPrefix: string;
+  } = { keyPrefix: "actions:" };
+
   /** Where Idempotency-Keys and their outputs are kept. */
   idempotency: DriverName<IdempotencyStore> = "memory";
 
   /** Where the rate limit's token buckets are kept. */
   rateLimit: DriverName<RateLimitStore> = "memory";
-
-  /** The `valkey` drivers' keys. */
-  valkey: {
-    /** Put in front of every key, so members that share one server never share a key. */
-    keyPrefix: string;
-  } = { keyPrefix: "actions:" };
 }
 
 registerSchemas([[StoresOptions, STORES_CONFIG_SCHEMA]]);

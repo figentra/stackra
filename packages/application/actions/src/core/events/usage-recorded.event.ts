@@ -12,7 +12,7 @@
  */
 import { Enum } from "@stackra/contracts";
 import { IntegrationEvent } from "@stackra/events";
-import { registerSchemas } from "@stackra/validation";
+import { Num, registerSchemas } from "@stackra/validation";
 import { z } from "zod";
 
 import { MeterKind } from "#core/enums/meter-kind.enum";
@@ -24,14 +24,15 @@ import { MeterKind } from "#core/enums/meter-kind.enum";
  * UsageRecorded.create({ meter: "messages.sent", kind: MeterKind.Count, value: 1, key, callId });
  */
 export class UsageRecorded extends IntegrationEvent({ name: "usage.recorded" }) {
+  /** The call's value: 1 for `count` and `unique`, the field's units for the others. */
+  @Num
+  value!: number;
+
   /** The meter's name. */
   meter!: string;
 
   /** How it aggregates. */
   kind!: MeterKind;
-
-  /** The call's value: 1 for `count` and `unique`, the field's units for the others. */
-  value!: number;
 
   /** The distinct value of a `unique` meter. */
   subject?: string;
