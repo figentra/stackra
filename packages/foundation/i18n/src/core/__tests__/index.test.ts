@@ -40,7 +40,7 @@ describe("@stackra/i18n", () => {
     const loaders: Record<string, Partial<Record<Locale, LoadCatalogue>>> = {
       web: { en: async () => ({ default: { nav: { home: "Home" } } }) },
     };
-    const fallbacks: Record<Locale, readonly Locale[]> = {
+    const fallbacks: Partial<Record<Locale, readonly Locale[]>> = {
       "ar-SA": ["ar", "en"],
       ar: ["en"],
       "en-US": ["en"],

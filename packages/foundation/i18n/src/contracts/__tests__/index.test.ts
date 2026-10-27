@@ -23,9 +23,7 @@ describe("@stackra/i18n/contracts", () => {
 
   it("lets a driver implement a port", async () => {
     class EchoTranslator extends contracts.TranslationProvider {
-      async translate(request: {
-        readonly messages: readonly string[];
-      }): Promise<readonly string[]> {
+      async translate(request: contracts.TranslationRequest): Promise<readonly string[]> {
         return request.messages;
       }
     }
