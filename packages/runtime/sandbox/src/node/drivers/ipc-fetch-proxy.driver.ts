@@ -5,7 +5,7 @@
  * Boundary: node only, internal to the pool's child; never bound in a host. An aborted run rejects what it still waits
  *           on. The `Sandbox` in the child has already checked the run's allow-list.
  * Runtime: node
- * Governing contract: ADR 0434 (decision 2); ADR 0154 (decision 5).
+ * Governing contract: ADR 0434 (decision 2); ADR 0154 (decision 5); ADR 0294 (decision 17: no constructor value).
  */
 import { Driver } from "@stackra/container";
 
@@ -18,11 +18,14 @@ import type { PoolRequest } from "#node/types/pool-request.type";
  * Relays fetches to the pool.
  *
  * @example
- * const proxy = new IpcFetchProxyDriver((message) => process.send?.(message));
+ * const proxy = new IpcFetchProxyDriver().connect((message) => process.send?.(message));
  * process.on("message", (message: PoolRequest) => proxy.settle(message));
  */
 export class IpcFetchProxyDriver extends Driver(SandboxFetchProxy) {
-  private readonly send: (message: PoolReply) => void;
+  /** Posts a message to the pool: the process's IPC channel until `connect` names another. */
+  private send: (message: PoolReply) => void = (message) => {
+    process.send?.(message);
+  };
 
   private readonly waiting = new Map<
     number,
@@ -32,11 +35,13 @@ export class IpcFetchProxyDriver extends Driver(SandboxFetchProxy) {
   private next = 0;
 
   /**
+   * Sets how a message reaches the pool; the constructor takes nothing, so the container could build it.
+   *
    * @param send - posts a message to the pool.
    */
-  constructor(send: (message: PoolReply) => void) {
-    super();
+  connect(send: (message: PoolReply) => void): this {
     this.send = send;
+    return this;
   }
 
   /** Implements `SandboxFetchProxy.fetch`, documented there. */

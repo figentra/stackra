@@ -49,7 +49,7 @@ export function serveSandboxChild(): void {
   const send = (message: PoolReply): void => {
     post(message);
   };
-  const proxy = new IpcFetchProxyDriver(send);
+  const proxy = new IpcFetchProxyDriver().connect(send);
   const sandbox = new Sandbox(proxy);
   const python = new PythonSandbox(proxy);
   /** A Python run waits for Pyodide, then says it serves again: the pool restarts the run's clock there. */

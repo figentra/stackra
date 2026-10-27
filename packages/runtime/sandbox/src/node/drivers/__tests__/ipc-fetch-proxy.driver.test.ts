@@ -17,7 +17,7 @@ const REQUEST = { url: "https://api.example.com/x", method: "GET", headers: {} }
 describe(IpcFetchProxyDriver, () => {
   it("relays a fetch and settles it with the pool's answer", async () => {
     const sent: PoolReply[] = [];
-    const proxy = new IpcFetchProxyDriver((message) => sent.push(message));
+    const proxy = new IpcFetchProxyDriver().connect((message) => sent.push(message));
     expect(proxy).toBeInstanceOf(SandboxFetchProxy);
     const first = proxy.fetch(REQUEST, "step_1", new AbortController().signal);
     const second = proxy.fetch(REQUEST, "step_1", new AbortController().signal);
@@ -36,7 +36,7 @@ describe(IpcFetchProxyDriver, () => {
   });
 
   it("rejects a fetch of a run that ended", async () => {
-    const proxy = new IpcFetchProxyDriver(() => undefined);
+    const proxy = new IpcFetchProxyDriver().connect(() => undefined);
     const abort = new AbortController();
     const waiting = proxy.fetch(REQUEST, "step_1", abort.signal);
     abort.abort();
