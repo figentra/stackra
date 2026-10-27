@@ -13,9 +13,9 @@ DATA_DIR=/photon
 if [ -z "$(ls -A "$DATA_DIR/photon_data" 2>/dev/null)" ]; then
   # Nominatim may still be importing: wait for its database before the one-time import.
   until java -jar /opt/photon.jar import -data-dir "$DATA_DIR" \
-      -host "${NOMINATIM_HOST}" -port "${NOMINATIM_PORT:-5432}" -database "${NOMINATIM_DATABASE:-nominatim}" \
-      -user "${NOMINATIM_USER:-nominatim}" -password "${NOMINATIM_PASSWORD}" \
-      -languages "${PHOTON_LANGUAGES:-ar,en}"; do
+    -host "${NOMINATIM_HOST}" -port "${NOMINATIM_PORT:-5432}" -database "${NOMINATIM_DATABASE:-nominatim}" \
+    -user "${NOMINATIM_USER:-nominatim}" -password "${NOMINATIM_PASSWORD}" \
+    -languages "${PHOTON_LANGUAGES:-ar,en}"; do
     # photon_data is the volume's mount point: empty it, never remove it.
     find "$DATA_DIR/photon_data" -mindepth 1 -delete
     echo "photon: Nominatim not ready, retrying in 5 minutes" >&2
