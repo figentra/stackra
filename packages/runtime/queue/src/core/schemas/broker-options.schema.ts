@@ -13,7 +13,7 @@ import "#core/types/broker-publisher-names.type";
 
 import { Secret } from "@stackra/config";
 import type { DriverName } from "@stackra/container";
-import { registerSchemas, Schema } from "@stackra/validation";
+import { Field, registerSchemas, Schema } from "@stackra/validation";
 
 import type { BrokerPublisher } from "#contracts/ports/broker-publisher.port";
 import { BROKER_CONFIG_SCHEMA } from "#core/constants/broker-config-schema.constant";
@@ -31,16 +31,18 @@ export class BrokerOptions extends Schema {
   @Secret("QUEUE_BROKER_VALKEY_URL")
   valkeyUrl = "";
 
-  /** `memory` delivers in process; `topic` publishes to the generated broker topics; `valkey` to Valkey streams. */
-  driver: DriverName<BrokerPublisher> = "memory";
-
   /** The `valkey` driver's streams. */
+  // reason: a nested driver option a host override replaces whole; the shipped config schema holds its rules
+  @Field(BROKER_CONFIG_SCHEMA.shape.valkey)
   valkey: {
     /** Put in front of every topic's stream key. */
     keyPrefix: string;
     /** About how many messages a stream keeps; older ones are trimmed. */
     maxLength: number;
   } = { keyPrefix: "broker:", maxLength: 100_000 };
+
+  /** `memory` delivers in process; `topic` publishes to the generated broker topics; `valkey` to Valkey streams. */
+  driver: DriverName<BrokerPublisher> = "memory";
 }
 
 registerSchemas([[BrokerOptions, BROKER_CONFIG_SCHEMA]]);
