@@ -10,7 +10,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 19 and 26); ADR 0237 (edge headers); owner round 3 #34.
  */
-import { registerSchemas, Schema } from "@stackra/validation";
+import { Field, Int, registerSchemas, Schema } from "@stackra/validation";
 
 import { CSP_OPTIONS_SCHEMA } from "#core/constants/csp-options-schema.constant";
 import type { PermissionsFeature } from "#core/types/permissions-feature.type";
@@ -23,6 +23,22 @@ import type { ReferrerPolicy } from "#core/types/referrer-policy.type";
  * export class CspConfig extends Config({ schema: CspOptions }) {}
  */
 export class CspOptions extends Schema {
+  /** `Strict-Transport-Security` max-age in seconds; `0` tells browsers to forget an earlier HSTS answer. */
+  @Int({
+    min: 0,
+  })
+  hstsMaxAgeSeconds = 63_072_000;
+
+  /** The `Referrer-Policy` header. */
+  // reason: a closed set of header tokens kept as a string-literal union, with no `X$`
+  @Field(CSP_OPTIONS_SCHEMA.shape.referrerPolicy)
+  referrerPolicy: ReferrerPolicy = "strict-origin-when-cross-origin";
+
+  /** Baseline features the host turns back on, each with its sources (`{ camera: ["self"] }` for a till's scanner). */
+  // reason: a partial record keyed by feature name; the shipped schema checks each source
+  @Field(CSP_OPTIONS_SCHEMA.shape.permissionsAllow)
+  permissionsAllow: Partial<Record<PermissionsFeature, string[]>> = {};
+
   /** `connect-src` additions beyond the origins the runtime passes (the API gateway, realtime). */
   extraConnectSrc: string[] = [];
 
@@ -35,20 +51,11 @@ export class CspOptions extends Schema {
   /** Send `Content-Security-Policy-Report-Only`: violations are reported and nothing is blocked. */
   reportOnly = false;
 
-  /** `Strict-Transport-Security` max-age in seconds; `0` tells browsers to forget an earlier HSTS answer. */
-  hstsMaxAgeSeconds = 63_072_000;
-
   /** HSTS covers every subdomain of the host too. */
   hstsIncludeSubDomains = true;
 
   /** Ask to be in the browsers' HSTS preload list; only once every subdomain serves HTTPS. */
   hstsPreload = false;
-
-  /** The `Referrer-Policy` header. */
-  referrerPolicy: ReferrerPolicy = "strict-origin-when-cross-origin";
-
-  /** Baseline features the host turns back on, each with its sources (`{ camera: ["self"] }` for a till's scanner). */
-  permissionsAllow: Partial<Record<PermissionsFeature, string[]>> = {};
 }
 
 registerSchemas([[CspOptions, CSP_OPTIONS_SCHEMA]]);
