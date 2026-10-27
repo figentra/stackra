@@ -15,7 +15,7 @@ import { View } from "react-native";
 import type { PlanStepStatus } from "#contracts/enums/plan-step-status.enum";
 
 import { UI_PRO_KEYS } from "#core/constants/ui-pro-keys.constant";
-import { useUiProText } from "#core/hooks/use-ui-pro-text";
+import { useUiProText } from "#native/hooks/use-ui-pro-text";
 import { Timeline } from "#native/timeline/timeline";
 import type { PlanViewProps } from "#native/plan-view/plan-view.props";
 

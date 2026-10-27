@@ -1,5 +1,13 @@
 # @stackra-pro/ui
 
+<!--
+Stackra file contract:
+Purpose: the package's reader guide: its entries, compositions, catalogue words, app setup and the restricted publishing.
+Boundary: documentation only; the code and the ADRs win on any difference.
+Runtime: none
+Governing contract: ADR 0004 §1; ADR 0294; ADR 0403.
+-->
+
 Stackra Design System Pro components for Stackra's own apps only: the @stackra/ui props vocabulary over HeroUI Pro on web and HeroUI Native Pro on native. Published only to Figentra's restricted Keygen channel, never to npmjs.
 
 **Tier:** `tier:lib` (`packages/design-system/ui-pro`). Laid out in the programming model v3 (ADR 0294, 0295).
@@ -39,6 +47,14 @@ Six web components are the package's own compositions, not one HeroUI Pro compon
 The scheduler and the signature field propose and report only, and the workflow canvas only selects (the caller maps an automation document onto its nodes and edges and edits the step): the caller saves a moved booking, and binding a
 signature to a document is `@stackra/documents`' e-signature port. Opening hours, the working week (`days`) and the
 step (`slotMinutes`) are the caller's data, never defaults here.
+
+## Own words (catalogue)
+
+Every word a component says by default (the code block's "Copy code", the chat's "Scroll to latest", the table of
+contents' "On this page", the rich text editor's "Link") is a key in `assets/lang/<locale>/ui_pro.json`, in seven
+languages (ADR 0403); a `label` the caller passes wins. `useUiProText()` reads it through `@stackra/ui`'s
+`useCatalogueText`: `src/react/hooks/` from `@stackra/ui/react`, `src/native/hooks/` from `@stackra/ui/native`, so a
+native bundle never loads the web entry and `core/` stays free of React (ADR 0004 §1).
 
 ## Using it in an app
 

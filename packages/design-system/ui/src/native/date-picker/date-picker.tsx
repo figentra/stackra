@@ -13,7 +13,7 @@
 import type { ReactElement } from "react";
 
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
-import { useUiText } from "#core/hooks/use-ui-text";
+import { useUiText } from "#react/hooks/use-ui-text";
 import { DateInput } from "#native/date-field/date-input";
 import type { DatePickerProps } from "#native/date-picker/date-picker.props";
 

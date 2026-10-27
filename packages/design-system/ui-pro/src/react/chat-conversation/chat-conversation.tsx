@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: the web `ChatConversation` compound on HeroUI Pro's ChatConversation: a scrolling thread that sticks to
  *          the bottom, with the parts Content, ScrollAnchor and ScrollButton. The thread is a `log` named by `label`
- *          that takes focus, so the keyboard can scroll it (WCAG 2.1.1); the scroll button is named by its `label`.
+ *          that takes focus, so the keyboard can scroll it (WCAG 2.1.1); the scroll button is named by its `label`, or `ui_pro::chat.scroll_to_latest`.
  * Boundary: no styling of its own; the look needs `@heroui-pro/react/css`, and the scroll tracking
  *          needs a layout engine. The compound exposes the documented parts: HeroUI Pro's `ChatConversation.Root`
  *          is left out. Imports the `chat-conversation` subpath.
@@ -11,6 +11,8 @@
  */
 import { ChatConversation as HeroChatConversation } from "@heroui-pro/react/chat-conversation";
 
+import { UI_PRO_KEYS } from "#core/constants/ui-pro-keys.constant";
+import { useUiProText } from "#react/hooks/use-ui-pro-text";
 import type { ChatConversationProps } from "#react/chat-conversation/chat-conversation.props";
 import type { ChatConversationScrollButtonProps } from "#react/chat-conversation/chat-conversation-scroll-button.props";
 
@@ -22,9 +24,15 @@ function ChatConversationRoot({ label, ...rest }: ChatConversationProps) {
   return <HeroChatConversation.Root role="log" tabIndex={0} {...rest} aria-label={label} />;
 }
 
-/** The button that jumps to the latest message: HeroUI Pro's, named by `label`. */
+/** The button that jumps to the latest message: HeroUI Pro's, named by `label` or the catalogue's words. */
 function ChatConversationScrollButton({ label, ...rest }: ChatConversationScrollButtonProps) {
-  return <HeroChatConversation.ScrollButton {...rest} aria-label={label} />;
+  const t = useUiProText();
+  return (
+    <HeroChatConversation.ScrollButton
+      {...rest}
+      aria-label={label ?? t(UI_PRO_KEYS.ui_pro.chat.scroll_to_latest)}
+    />
+  );
 }
 
 /** The parts of the compound, typed from HeroUI Pro's own so the declaration output can name them. */

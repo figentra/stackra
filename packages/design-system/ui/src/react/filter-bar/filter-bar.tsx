@@ -30,7 +30,7 @@ import { isFilterValueEmpty } from "#core/functions/is-filter-value-empty.functi
 import { isResourceQueryFiltered } from "#core/functions/is-resource-query-filtered.function";
 import { queryWithFilter } from "#core/functions/query-with-filter.function";
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
-import { useUiText } from "#core/hooks/use-ui-text";
+import { useUiText } from "#react/hooks/use-ui-text";
 import { filterChipWordsOf } from "#core/functions/filter-chip-words-of.function";
 import { Button } from "#react/button/button";
 import { CloseButton } from "#react/close-button/close-button";

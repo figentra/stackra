@@ -24,7 +24,7 @@ import { useState, type ReactElement } from "react";
 import { ScrollView, View } from "react-native";
 
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
-import { useUiText } from "#core/hooks/use-ui-text";
+import { useUiText } from "#react/hooks/use-ui-text";
 import type { FilterDefinition } from "#contracts/types/filter-definition.type";
 import type { FilterValue } from "#contracts/types/filter-value.type";
 import { clearResourceQueryFilters } from "#core/functions/clear-resource-query-filters.function";

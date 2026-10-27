@@ -20,7 +20,7 @@ import { cn } from "@heroui/react";
 import type { ReactElement } from "react";
 
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
-import { useUiText } from "#core/hooks/use-ui-text";
+import { useUiText } from "#react/hooks/use-ui-text";
 import { Heading } from "#react/heading/heading";
 import { Icon } from "#react/icon/icon";
 import { IconButton } from "#react/icon-button/icon-button";

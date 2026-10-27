@@ -33,7 +33,7 @@ import { useState, type ReactElement } from "react";
 import { AccessibilityInfo, Platform, Pressable, View } from "react-native";
 
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
-import { useUiText } from "#core/hooks/use-ui-text";
+import { useUiText } from "#react/hooks/use-ui-text";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { Button } from "#native/button/button";
 import { toPlatformDate } from "#native/date-field/platform-date";

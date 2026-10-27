@@ -14,7 +14,7 @@ import { LinkButton } from "heroui-native";
 import { use } from "react";
 
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
-import { useUiText } from "#core/hooks/use-ui-text";
+import { useUiText } from "#react/hooks/use-ui-text";
 import { TONE_CLASS_NAME } from "#core/constants/tone-class-name.constant";
 import { Icon } from "#native/icon/icon";
 import { followHref } from "#native/router-provider/follow-href.function";

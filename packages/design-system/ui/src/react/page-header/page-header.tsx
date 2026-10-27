@@ -22,7 +22,7 @@ import { cn } from "@heroui/react";
 import type { ReactElement } from "react";
 
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
-import { useUiText } from "#core/hooks/use-ui-text";
+import { useUiText } from "#react/hooks/use-ui-text";
 import { Breadcrumbs } from "#react/breadcrumbs/breadcrumbs";
 import { Heading } from "#react/heading/heading";
 import { PageActions } from "#react/page-actions/page-actions";

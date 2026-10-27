@@ -30,7 +30,7 @@ import type { ResourceAction } from "#contracts/types/resource-action.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { pageActionVariant } from "#core/functions/page-action-variant.function";
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
-import { useUiText } from "#core/hooks/use-ui-text";
+import { useUiText } from "#react/hooks/use-ui-text";
 import { usePendingActions } from "#react/bulk-action-bar/use-pending-actions";
 import { Button } from "#react/button/button";
 import { SlotIcon } from "#react/slot-icon/slot-icon";

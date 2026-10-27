@@ -21,7 +21,7 @@ import { Description, FieldError, Label, NumberField as HeroNumberField } from "
 
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
-import { useUiText } from "#core/hooks/use-ui-text";
+import { useUiText } from "#react/hooks/use-ui-text";
 import type { NumberFieldProps } from "#react/number-field/number-field.props";
 
 /** React Aria's number for the contract's: `null` is an empty field, which it writes as `NaN`; `undefined` stays left out. */

@@ -22,7 +22,7 @@ import { isValidElement, useState, type ReactNode } from "react";
 import { FlatList, Pressable, View } from "react-native";
 
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
-import { useUiText } from "#core/hooks/use-ui-text";
+import { useUiText } from "#react/hooks/use-ui-text";
 import type { CollectionItem } from "#contracts/types/collection-item.type";
 import type { TableColumn } from "#contracts/types/table-column.type";
 import { cellTextOf } from "#core/functions/cell-text-of.function";

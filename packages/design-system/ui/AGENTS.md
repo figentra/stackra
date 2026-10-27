@@ -1,5 +1,13 @@
 # AGENTS — @stackra/ui
 
+<!--
+Stackra file contract:
+Purpose: the agent rules of @stackra/ui: where code goes, the entries and layer direction, the catalogue-word rule and the build rules.
+Boundary: documentation only; the code and the ADRs win on any difference.
+Runtime: none
+Governing contract: ADR 0004 §1; ADR 0294; ADR 0403.
+-->
+
 Stackra Design System components: one component API, contracts shared, HeroUI v3 on web, HeroUI Native and Uniwind on native. Member at `packages/design-system/ui` (`tier:lib`), in the programming model v3 shape
 (ADR 0294, 0295).
 
@@ -41,7 +49,10 @@ extending the kind's base class. The group table is the docs page `standards/str
   `src/contracts/index.ts`, `src/react/index.ts` and `src/native/index.ts`, and give it a route in `apps/playground`.
 - Verify every HeroUI, HeroUI Native and Uniwind API against the installed package or the HeroUI MCP before using it;
   never guess a compound structure. Free code never imports HeroUI Pro (ADR 0165, 0197).
-- `react/` never imports `native/` and the other way round; both import `contracts/` and `core/`.
+- `react/` never imports `native/`; both import `contracts/` and `core/`. `native/` may import `#react/hooks/*`, the
+  shared React layer (`useCatalogueText`, `useUiText`); nothing else of `react/` (ADR 0004 §1).
+- A default word is a key in `assets/lang/<locale>/ui.json` and `UI_KEYS`, in all seven locales with the same ICU
+  placeholders as English, read through `useUiText()`; never an English constant. A React hook never goes in `core/`.
 - React Native does not render in vitest: native tests replace `heroui-native` and `uniwind` with recording stand-ins
   and check what reaches them. Provider tests run in jsdom through a `@vitest-environment jsdom` comment.
 

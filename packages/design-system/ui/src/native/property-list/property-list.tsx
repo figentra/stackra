@@ -18,7 +18,7 @@ import type { ReactElement, ReactNode } from "react";
 import { AccessibilityInfo, View } from "react-native";
 
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
-import { useUiText } from "#core/hooks/use-ui-text";
+import { useUiText } from "#react/hooks/use-ui-text";
 import type { PropertyListItem } from "#contracts/types/property-list-item.type";
 import { copyTextOf } from "#core/functions/copy-text-of.function";
 import { IconButton } from "#native/icon-button/icon-button";

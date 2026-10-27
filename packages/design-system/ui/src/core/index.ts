@@ -15,5 +15,4 @@ export { isFilterValueEmpty } from "#core/functions/is-filter-value-empty.functi
 export { isResourceQueryFiltered } from "#core/functions/is-resource-query-filtered.function";
 export { markCurrentItems } from "#core/functions/mark-current-items.function";
 export { warnUnknownIcon } from "#core/functions/warn-unknown-icon.function";
-export { useCatalogueText } from "#core/hooks/use-catalogue-text";
 export type { CatalogueText } from "#core/types/catalogue-text.type";

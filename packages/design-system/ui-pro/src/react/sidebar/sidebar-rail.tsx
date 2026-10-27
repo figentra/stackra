@@ -8,7 +8,7 @@
 import { Sidebar as HeroSidebar } from "@heroui-pro/react/sidebar";
 
 import { UI_PRO_KEYS } from "#core/constants/ui-pro-keys.constant";
-import { useUiProText } from "#core/hooks/use-ui-pro-text";
+import { useUiProText } from "#react/hooks/use-ui-pro-text";
 import type { SidebarRailProps } from "#react/sidebar/sidebar-rail.props";
 
 /** The edge strip of the sidebar that toggles it open and closed when pressed. */

@@ -1,5 +1,13 @@
 # AGENTS — @stackra-pro/ui
 
+<!--
+Stackra file contract:
+Purpose: the agent rules of @stackra-pro/ui: where code goes, the restricted channel, the catalogue-word rule and the build rules.
+Boundary: documentation only; the code and the ADRs win on any difference.
+Runtime: none
+Governing contract: ADR 0004 §1; ADR 0294; ADR 0403.
+-->
+
 Stackra Design System Pro components for Stackra's own apps only: the @stackra/ui props vocabulary over HeroUI Pro on web and HeroUI Native Pro on native. Published only to Figentra's restricted Keygen channel, never to npmjs. Member at `packages/design-system/ui-pro` (`tier:lib`), in the programming model v3 shape
 (ADR 0294, 0295).
 
@@ -53,6 +61,9 @@ extending the kind's base class. The group table is the docs page `standards/str
   guess a compound structure. Prefer the subpath imports (`@heroui-pro/react/<name>`, `heroui-native-pro/<name>`).
 - Installing needs the HeroUI Pro build: locally a `heroui-pro login` session, in CI `HEROUI_AUTH_TOKEN` from Infisical
   `/ci`. Without it the package is an empty shell and nothing here typechecks.
+- A default word is a key in `assets/lang/<locale>/ui_pro.json` and `UI_PRO_KEYS`, in all seven locales with English's
+  ICU placeholders, read through `useUiProText()` (`#react/hooks/` on web, `#native/hooks/` on native); never an
+  English constant, and never a React hook in `core/` (ADR 0004 §1).
 - Web tests render the real HeroUI Pro in jsdom (`@vitest-environment jsdom`); native tests replace `heroui-native-pro`
   with recording stand-ins and check what reaches it. Each web component has a playground route under the "Pro" group, and each native one a screen in `apps/mobile`'s design-system review area.
 

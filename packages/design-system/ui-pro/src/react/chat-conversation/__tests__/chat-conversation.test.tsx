@@ -1,13 +1,13 @@
 /**
  * Stackra file contract:
  * Purpose: proves the web ChatConversation draws HeroUI Pro's thread (content, anchor) as a focusable log named by
- *          `label`, names the scroll button from its `label`, passes unknown props through, carries HeroUI Pro's own
- *          parts, and requires both labels.
+ *          `label`, names the scroll button from its `label` or the catalogue's English default, passes unknown props
+ *          through, carries HeroUI Pro's own parts, and requires the thread's label.
  * Boundary: jsdom with real HeroUI Pro; jsdom has no layout, so the thread is never scrolled above the bottom and the button
  *          stays in HeroUI Pro's hidden state (`aria-hidden`); it is found with `hidden: true`. The theme CSS is not
  *          loaded, so classes are checked, not looks.
  * Runtime: browser
- * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); ADR 0022 (test placement).
+ * Governing contract: ADR 0403 (catalogue defaults); ADR 0310 (decision 3); ADR 0303 (decision 7); ADR 0022 (test placement).
  */
 // @vitest-environment jsdom
 // @covers sta-416:FR-002
@@ -48,12 +48,19 @@ describe("ChatConversation (web)", () => {
     expect(button.getAttribute("aria-label")).toBe("Scroll to latest");
   });
 
-  it("carries HeroUI Pro's own parts and requires the labels", () => {
+  it("names the scroll button from the catalogue when label is left out", () => {
+    render(
+      <ChatConversation label="Thread">
+        <ChatConversation.ScrollButton />
+      </ChatConversation>,
+    );
+    expect(screen.getByRole("button", { name: "Scroll to latest", hidden: true })).toBeTruthy();
+  });
+
+  it("carries HeroUI Pro's own parts and requires the thread's label", () => {
     expect(ChatConversation.Content).toBe(HeroChatConversation.Content);
     expect(ChatConversation.ScrollAnchor).toBe(HeroChatConversation.ScrollAnchor);
     // @ts-expect-error `label` is required: the thread takes focus, so it needs a name
     void (<ChatConversation>{null}</ChatConversation>);
-    // @ts-expect-error `label` is required: HeroUI Pro gives this part no accessible name of its own
-    void (<ChatConversation.ScrollButton />);
   });
 });

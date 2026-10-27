@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: the web `FloatingTableOfContents` compound on HeroUI Pro's FloatingToc (the name spelt out: abbreviations
- *          are banned): the root maps `isOpen` to HeroUI Pro's `open`, `Trigger` takes the `label` its bars lack,
+ *          are banned): the root maps `isOpen` to HeroUI Pro's `open`, `Trigger` takes the `label` its bars lack (`ui_pro::table_of_contents.on_this_page` by default),
  *          `Bar` and `Item` map `isActive` to HeroUI Pro's `active`, and Content is HeroUI Pro's own. Part names are
  *          HeroUI Pro's.
  * Boundary: no styling or behaviour of its own; the look needs `@heroui-pro/react/css`. The compound exposes the
@@ -12,6 +12,8 @@
 import { FloatingToc as HeroFloatingToc } from "@heroui-pro/react/floating-toc";
 
 import { omitUndefined } from "#core/functions/omit-undefined.function";
+import { UI_PRO_KEYS } from "#core/constants/ui-pro-keys.constant";
+import { useUiProText } from "#react/hooks/use-ui-pro-text";
 import type { FloatingTableOfContentsProps } from "#react/floating-table-of-contents/floating-table-of-contents.props";
 import type { FloatingTableOfContentsTriggerProps } from "#react/floating-table-of-contents/floating-table-of-contents-trigger.props";
 import type { FloatingTableOfContentsBarProps } from "#react/floating-table-of-contents/floating-table-of-contents-bar.props";
@@ -22,9 +24,15 @@ function FloatingTableOfContentsRoot({ isOpen, ...rest }: FloatingTableOfContent
   return <HeroFloatingToc.Root {...rest} {...omitUndefined({ open: isOpen })} />;
 }
 
-/** The trigger that holds the bars, named by `label`. */
+/** The trigger that holds the bars, named by `label` or the catalogue's "On this page". */
 function FloatingTableOfContentsTrigger({ label, ...rest }: FloatingTableOfContentsTriggerProps) {
-  return <HeroFloatingToc.Trigger {...rest} aria-label={label} />;
+  const t = useUiProText();
+  return (
+    <HeroFloatingToc.Trigger
+      {...rest}
+      aria-label={label ?? t(UI_PRO_KEYS.ui_pro.table_of_contents.on_this_page)}
+    />
+  );
 }
 
 /** One bar of the trigger, a section mark; the current section's is highlighted by `isActive`. */

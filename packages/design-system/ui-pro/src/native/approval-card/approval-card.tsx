@@ -17,7 +17,7 @@ import { View } from "react-native";
 import type { ApprovalStatus } from "#contracts/enums/approval-status.enum";
 
 import { UI_PRO_KEYS } from "#core/constants/ui-pro-keys.constant";
-import { useUiProText } from "#core/hooks/use-ui-pro-text";
+import { useUiProText } from "#native/hooks/use-ui-pro-text";
 import type { ApprovalCardProps } from "#native/approval-card/approval-card.props";
 
 /** The chip tone of each approval status. */

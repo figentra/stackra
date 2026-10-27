@@ -39,6 +39,9 @@
   "table_of_contents": {
     "on_this_page": "On this page"
   },
+  "rich_text_editor": {
+    "link": "Link"
+  },
   "scheduler": {
     "move_earlier": "Move earlier",
     "move_later": "Move later",

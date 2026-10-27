@@ -30,7 +30,7 @@ import { cellTextOf } from "#core/functions/cell-text-of.function";
 import { clearResourceQueryFilters } from "#core/functions/clear-resource-query-filters.function";
 import { isResourceQueryFiltered } from "#core/functions/is-resource-query-filtered.function";
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
-import { useUiText } from "#core/hooks/use-ui-text";
+import { useUiText } from "#react/hooks/use-ui-text";
 import { ActionMenu } from "#react/action-menu/action-menu";
 import { BulkActionBar } from "#react/bulk-action-bar/bulk-action-bar";
 import { usePendingActions } from "#react/bulk-action-bar/use-pending-actions";

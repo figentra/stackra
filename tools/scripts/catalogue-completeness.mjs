@@ -2,7 +2,8 @@
 /**
  * Stackra file contract:
  * Purpose: the catalogue-completeness gate on its own (`node tools/scripts/catalogue-completeness.mjs`; `pnpm validate`
- *          runs it through validate-repository.mjs): a thin wrapper over @stackra/repo-checks (`checkCatalogues`).
+ *          runs it through validate-repository.mjs): a thin wrapper over @stackra/repo-checks (`checkCatalogues`), which
+ *          checks every locale for English's keys and, per message, the same ICU placeholders (`placeholdersOf`).
  *          `stackra check --only catalogues` runs the same check. Prints the findings and exits 1; prints nothing on
  *          success.
  * Boundary: a thin wrapper; the check itself is @stackra/repo-checks' `checkCatalogues`.

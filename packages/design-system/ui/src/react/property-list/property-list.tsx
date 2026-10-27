@@ -18,7 +18,7 @@ import { useEffect, useRef, useState, type ReactElement, type ReactNode } from "
 import type { PropertyListItem } from "#contracts/types/property-list-item.type";
 import { copyTextOf } from "#core/functions/copy-text-of.function";
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
-import { useUiText } from "#core/hooks/use-ui-text";
+import { useUiText } from "#react/hooks/use-ui-text";
 import { IconButton } from "#react/icon-button/icon-button";
 import { Text } from "#react/text/text";
 import type { TextProps } from "#react/text/text.props";

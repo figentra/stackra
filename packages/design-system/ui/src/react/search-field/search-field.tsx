@@ -16,7 +16,7 @@ import { Description, FieldError, Label, SearchField as HeroSearchField } from "
 
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
-import { useUiText } from "#core/hooks/use-ui-text";
+import { useUiText } from "#react/hooks/use-ui-text";
 import { Spinner } from "#react/spinner/spinner";
 import type { SearchFieldProps } from "#react/search-field/search-field.props";
 

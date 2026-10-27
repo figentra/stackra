@@ -22,7 +22,7 @@ import { UI_PRO_KEYS } from "#core/constants/ui-pro-keys.constant";
 import { eventLanes } from "#core/functions/event-lanes.function";
 import { moveEvent } from "#core/functions/move-event.function";
 import { resizeEvent } from "#core/functions/resize-event.function";
-import { useUiProText } from "#core/hooks/use-ui-pro-text";
+import { useUiProText } from "#native/hooks/use-ui-pro-text";
 import { SchedulerBooking } from "#native/resource-scheduler/scheduler-booking";
 import type { SchedulerBookingAction } from "#native/resource-scheduler/scheduler-booking-action.type";
 import type { ResourceSchedulerProps } from "#native/resource-scheduler/resource-scheduler.props";

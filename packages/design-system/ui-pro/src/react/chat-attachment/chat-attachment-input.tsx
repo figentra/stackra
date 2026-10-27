@@ -13,7 +13,7 @@ import { ChatAttachmentInput as HeroChatAttachmentInput } from "@heroui-pro/reac
 
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { UI_PRO_KEYS } from "#core/constants/ui-pro-keys.constant";
-import { useUiProText } from "#core/hooks/use-ui-pro-text";
+import { useUiProText } from "#react/hooks/use-ui-pro-text";
 import type { ChatAttachmentInputProps } from "#react/chat-attachment/chat-attachment-input.props";
 import type { ChatAttachmentInputTriggerProps } from "#react/chat-attachment/chat-attachment-input-trigger.props";
 

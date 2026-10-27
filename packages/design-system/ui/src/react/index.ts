@@ -104,6 +104,7 @@ export type { LinkProps } from "#react/link/link.props";
 export { KioskSurface } from "#react/kiosk-surface/kiosk-surface";
 export type { KioskSurfaceProps } from "#react/kiosk-surface/kiosk-surface.props";
 export { useKiosk } from "#react/kiosk-surface/use-kiosk";
+export { useCatalogueText } from "#react/hooks/use-catalogue-text";
 export { List } from "#react/list/list";
 export type { ListProps } from "#react/list/list.props";
 export { ListItem } from "#react/list/list-item";

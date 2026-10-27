@@ -32,7 +32,7 @@ import { useMemo, useState } from "react";
 import { Platform, type KeyboardTypeOptions } from "react-native";
 
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
-import { useUiText } from "#core/hooks/use-ui-text";
+import { useUiText } from "#react/hooks/use-ui-text";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { useDesignSystem } from "#native/design-system-provider/use-design-system";
 import { IconButton } from "#native/icon-button/icon-button";

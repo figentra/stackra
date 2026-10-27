@@ -16,7 +16,7 @@ import { Fragment } from "react";
 import { View } from "react-native";
 
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
-import { useUiText } from "#core/hooks/use-ui-text";
+import { useUiText } from "#react/hooks/use-ui-text";
 import { Icon } from "#native/icon/icon";
 import { Link } from "#native/link/link";
 import { Text } from "#native/text/text";

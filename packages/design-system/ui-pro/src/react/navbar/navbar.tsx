@@ -13,7 +13,7 @@ import { Navbar as HeroNavbar } from "@heroui-pro/react/navbar";
 
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { UI_PRO_KEYS } from "#core/constants/ui-pro-keys.constant";
-import { useUiProText } from "#core/hooks/use-ui-pro-text";
+import { useUiProText } from "#react/hooks/use-ui-pro-text";
 import type { NavbarProps } from "#react/navbar/navbar.props";
 import type { NavbarMenuToggleProps } from "#react/navbar/navbar-menu-toggle.props";
 

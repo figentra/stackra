@@ -15,7 +15,7 @@ import { composeRenderProps } from "react-aria-components";
 import { TONE_CLASS_NAME } from "#core/constants/tone-class-name.constant";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
-import { useUiText } from "#core/hooks/use-ui-text";
+import { useUiText } from "#react/hooks/use-ui-text";
 import type { LinkProps } from "#react/link/link.props";
 
 /**

@@ -4,11 +4,11 @@
  *          vocabulary names.
  * Boundary: a type only.
  * Runtime: isomorphic
- * Governing contract: ADR 0305 (rules 10 to 13); ADR 0310 (decision 3); ADR 0303 (decision 7); STA-416 FR-004.
+ * Governing contract: ADR 0305 (rules 10 to 13); ADR 0310 (decision 3); ADR 0303 (decision 7); ADR 0403 (catalogue defaults); STA-416 FR-004.
  */
 
 /** Props of `FloatingTableOfContents.Trigger` that the Stackra vocabulary names. */
 export interface FloatingTableOfContentsTriggerContractProps {
-  /** The accessible name of the trigger, which holds bars and no text; HeroUI Pro's `aria-label`. */
-  readonly label: string;
+  /** The accessible name of the trigger, which holds bars and no text; HeroUI Pro's `aria-label`; `ui_pro::table_of_contents.on_this_page` when left out. */
+  readonly label?: string | undefined;
 }

@@ -19,7 +19,7 @@ import { cn } from "@heroui/react";
 import { createElement, useId, type ReactElement } from "react";
 
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
-import { useUiText } from "#core/hooks/use-ui-text";
+import { useUiText } from "#react/hooks/use-ui-text";
 import { Card } from "#react/card/card";
 import { PageActions } from "#react/page-actions/page-actions";
 import type { SectionProps } from "#react/section/section.props";

@@ -100,6 +100,7 @@ export type { LinkProps } from "#native/link/link.props";
 export { KioskSurface } from "#native/kiosk-surface/kiosk-surface";
 export type { KioskSurfaceProps } from "#native/kiosk-surface/kiosk-surface.props";
 export { useKiosk } from "#native/kiosk-surface/use-kiosk";
+export { useCatalogueText } from "#react/hooks/use-catalogue-text";
 export { List } from "#native/list/list";
 export type { ListProps } from "#native/list/list.props";
 export { ListItem } from "#native/list/list-item";

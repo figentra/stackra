@@ -34,7 +34,7 @@ import { useEffect, useState, type ReactElement, type ReactNode } from "react";
 import { AccessibilityInfo, FlatList, Pressable, View } from "react-native";
 
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
-import { useUiText } from "#core/hooks/use-ui-text";
+import { useUiText } from "#react/hooks/use-ui-text";
 import type { EntityOption } from "#contracts/types/entity-option.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { Avatar } from "#native/avatar/avatar";

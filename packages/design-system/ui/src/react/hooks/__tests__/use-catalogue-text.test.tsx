@@ -5,15 +5,14 @@
  * Boundary: `@stackra/i18n/react`'s `useTranslation` is replaced by a stand-in whose behaviour each test picks; the
  *           English fallback runs the real `formatMessage` over the shipped `en/ui.json`.
  * Runtime: node
- * Governing contract: ADR 0080; ADR 0403; ADR 0022 (test placement).
+ * Governing contract: ADR 0004 §1; ADR 0080; ADR 0403; ADR 0022 (test placement).
  */
 // @vitest-environment jsdom
-// oxlint-disable-next-line no-restricted-imports -- reason: tests the shared core hook, which renders
 import { renderHook } from "@testing-library/react";
 
 import { UI_ENGLISH } from "#core/constants/ui-english.constant";
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
-import { useCatalogueText } from "#core/hooks/use-catalogue-text";
+import { useCatalogueText } from "#react/hooks/use-catalogue-text";
 
 /** What the stand-in `useTranslation` does on the next render. */
 const provider = vi.hoisted(() => ({ mode: "absent" as "absent" | "arabic" | "empty" }));

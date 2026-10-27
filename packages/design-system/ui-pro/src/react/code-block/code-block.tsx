@@ -12,7 +12,7 @@
 import { CodeBlock as HeroCodeBlock } from "@heroui-pro/react/code-block";
 
 import { UI_PRO_KEYS } from "#core/constants/ui-pro-keys.constant";
-import { useUiProText } from "#core/hooks/use-ui-pro-text";
+import { useUiProText } from "#react/hooks/use-ui-pro-text";
 import type { CodeBlockProps } from "#react/code-block/code-block.props";
 import type { CodeBlockCopyButtonProps } from "#react/code-block/code-block-copy-button.props";
 

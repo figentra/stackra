@@ -22,7 +22,7 @@ import type { SelectItem } from "#contracts/types/select-item.type";
 import { filterChipTextOf } from "#core/functions/filter-chip-text-of.function";
 import { filterValueOfKind } from "#core/functions/filter-value-of-kind.function";
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
-import { useUiText } from "#core/hooks/use-ui-text";
+import { useUiText } from "#react/hooks/use-ui-text";
 import { filterChipWordsOf } from "#core/functions/filter-chip-words-of.function";
 import { CheckboxGroup } from "#react/checkbox-group/checkbox-group";
 import { DateField } from "#react/date-field/date-field";

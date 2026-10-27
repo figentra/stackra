@@ -21,7 +21,7 @@ import { cn } from "@heroui/react";
 import { useState, type ReactElement } from "react";
 
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
-import { useUiText } from "#core/hooks/use-ui-text";
+import { useUiText } from "#react/hooks/use-ui-text";
 import { Icon } from "#react/icon/icon";
 import { IconButton } from "#react/icon-button/icon-button";
 import { NavigationList } from "#react/navigation-list/navigation-list";

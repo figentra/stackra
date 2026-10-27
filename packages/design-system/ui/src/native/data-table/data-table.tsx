@@ -27,7 +27,7 @@ import { useState } from "react";
 import { View } from "react-native";
 
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
-import { useUiText } from "#core/hooks/use-ui-text";
+import { useUiText } from "#react/hooks/use-ui-text";
 import type { CollectionItem } from "#contracts/types/collection-item.type";
 import type { MenuLeafItem } from "#contracts/types/menu-leaf-item.type";
 import type { TableColumn } from "#contracts/types/table-column.type";

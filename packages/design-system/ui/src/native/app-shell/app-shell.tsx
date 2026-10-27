@@ -19,7 +19,7 @@ import { useState, type ReactElement, type ReactNode } from "react";
 import { View } from "react-native";
 
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
-import { useUiText } from "#core/hooks/use-ui-text";
+import { useUiText } from "#react/hooks/use-ui-text";
 import { Drawer } from "#native/drawer/drawer";
 import { Text } from "#native/text/text";
 import type { AppShellProps } from "#native/app-shell/app-shell.props";

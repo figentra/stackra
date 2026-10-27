@@ -1,5 +1,13 @@
 # @stackra/ui
 
+<!--
+Stackra file contract:
+Purpose: the package's reader guide: its entries, the provider, each component family and its own catalogue words.
+Boundary: documentation only; the code and the ADRs win on any difference.
+Runtime: none
+Governing contract: ADR 0004 §1; ADR 0294; ADR 0403.
+-->
+
 Stackra Design System components: one component API, contracts shared, HeroUI v3 on web, HeroUI Native and Uniwind on native.
 
 **Tier:** `tier:lib` (`packages/design-system/ui`). Part of the Stackra Design System (ADR 0302), laid out in the
@@ -58,6 +66,17 @@ import { DesignSystemProvider } from "@stackra/ui/native";
   back) and to the native tabs' `layoutDirection`. The provider owns the interface style while mounted, so it replaces
   an `Appearance` preference the host set itself, and its `flex: 1` View expects a parent that fills the screen (FR-095).
   The provider never calls `I18nManager.forceRTL`.
+
+## Own words (catalogue)
+
+Every word a component says by default (a back button's name, "Showing 2 items", a filter chip's "Remove filter
+Status") is a key in `assets/lang/<locale>/ui.json`, shipped in seven languages (ADR 0403), never an English constant
+in the component. A `label` the caller passes always wins. `useCatalogueText(english)`, exported from `./react` and
+`./native`, answers from the nearest `@stackra/i18n` `I18nProvider`, or from the English catalogue when none is mounted
+or it has no message for the key; @stackra-pro/ui and any package with its own catalogue pass their own English. It
+lives in the shared React layer (`src/react/hooks/`, which `native/` composes), not in `core/`, so core never imports
+`@stackra/i18n/react` (ADR 0004 §1). `pnpm validate` checks every locale for the keys and the ICU placeholders English
+has.
 
 ## Entry points
 

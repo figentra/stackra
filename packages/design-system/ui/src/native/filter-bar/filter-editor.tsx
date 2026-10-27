@@ -20,7 +20,7 @@ import type { ReactElement } from "react";
 import { View } from "react-native";
 
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
-import { useUiText } from "#core/hooks/use-ui-text";
+import { useUiText } from "#react/hooks/use-ui-text";
 import type { ChoiceOption } from "#contracts/types/choice-option.type";
 import type { SelectItem } from "#contracts/types/select-item.type";
 import { filterChipTextOf } from "#core/functions/filter-chip-text-of.function";

@@ -24,7 +24,7 @@ import type { NavigationItem } from "#contracts/types/navigation-item.type";
 import { currentStateOf } from "#core/functions/current-state-of.function";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
-import { useUiText } from "#core/hooks/use-ui-text";
+import { useUiText } from "#react/hooks/use-ui-text";
 import { Chip } from "#react/chip/chip";
 import { SlotIcon } from "#react/slot-icon/slot-icon";
 import { Tooltip } from "#react/tooltip/tooltip";

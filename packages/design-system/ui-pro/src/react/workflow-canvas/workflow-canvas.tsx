@@ -18,7 +18,7 @@ import type { PlanStepStatus } from "#contracts/enums/plan-step-status.enum";
 
 import { UI_PRO_KEYS } from "#core/constants/ui-pro-keys.constant";
 import { workflowLayout } from "#core/functions/workflow-layout.function";
-import { useUiProText } from "#core/hooks/use-ui-pro-text";
+import { useUiProText } from "#react/hooks/use-ui-pro-text";
 import type { WorkflowCanvasProps } from "#react/workflow-canvas/workflow-canvas.props";
 
 /** A node box and the gaps between boxes, in CSS pixels. */

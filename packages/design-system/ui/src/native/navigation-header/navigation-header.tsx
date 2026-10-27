@@ -25,7 +25,7 @@ import { View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
-import { useUiText } from "#core/hooks/use-ui-text";
+import { useUiText } from "#react/hooks/use-ui-text";
 import { isAbsoluteUrl } from "#core/functions/is-absolute-url.function";
 import { Heading } from "#native/heading/heading";
 import { Icon } from "#native/icon/icon";

@@ -1,12 +1,12 @@
 /**
  * Stackra file contract:
  * Purpose: proves the web FloatingTableOfContents maps `isOpen` to HeroUI Pro's `open`, names its trigger from
- *          `label`, maps `isActive` to HeroUI Pro's `active` on bars and items, passes unknown props through,
+ *          `label` or the catalogue's English default, maps `isActive` to HeroUI Pro's `active` on bars and items, passes unknown props through,
  *          carries HeroUI Pro's own Content, and refuses HeroUI Pro's `open`, `active` and `aria-label`.
  * Boundary: jsdom with real HeroUI Pro and React Aria; the theme CSS is not loaded, so attributes and names are
  *          checked, not looks.
  * Runtime: browser
- * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); ADR 0231 (no abbreviations); ADR 0022 (test placement).
+ * Governing contract: ADR 0403 (catalogue defaults); ADR 0310 (decision 3); ADR 0303 (decision 7); ADR 0231 (no abbreviations); ADR 0022 (test placement).
  */
 // @vitest-environment jsdom
 // @covers sta-416:FR-004
@@ -78,11 +78,22 @@ describe("FloatingTableOfContents (web)", () => {
     expect(screen.getByTestId("item").outerHTML).toBe(active);
   });
 
+  it("names the trigger from the catalogue when label is left out", () => {
+    render(
+      <FloatingTableOfContents>
+        <FloatingTableOfContents.Trigger data-testid="trigger">
+          <FloatingTableOfContents.Bar />
+        </FloatingTableOfContents.Trigger>
+      </FloatingTableOfContents>,
+    );
+    expect(screen.getByTestId("trigger").getAttribute("aria-label")).toBe("On this page");
+  });
+
   it("carries HeroUI Pro's own Content", () => {
     expect(FloatingTableOfContents.Content).toBe(HeroFloatingToc.Content);
   });
 
-  it("refuses HeroUI Pro's names and requires the trigger's name", () => {
+  it("refuses HeroUI Pro's names", () => {
     expectTypeOf<FloatingTableOfContentsProps>().toHaveProperty("isOpen");
     // @ts-expect-error `isOpen` is the one name for the controlled open state
     void (<FloatingTableOfContents open>x</FloatingTableOfContents>);
@@ -90,8 +101,6 @@ describe("FloatingTableOfContents (web)", () => {
     void (<FloatingTableOfContents.Bar active />);
     // @ts-expect-error `isActive` is the one name for the active state
     void (<FloatingTableOfContents.Item active>x</FloatingTableOfContents.Item>);
-    // @ts-expect-error `label` is required: the trigger holds bars and no text
-    void (<FloatingTableOfContents.Trigger>x</FloatingTableOfContents.Trigger>);
     // `aria-label` is a hyphenated attribute, which JSX does not type-check: the type itself is asserted.
     expectTypeOf<FloatingTableOfContentsTriggerProps>().not.toHaveProperty("aria-label");
   });

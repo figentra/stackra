@@ -19,7 +19,7 @@ import type { ReactElement, ReactNode } from "react";
 import { View } from "react-native";
 
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
-import { useUiText } from "#core/hooks/use-ui-text";
+import { useUiText } from "#react/hooks/use-ui-text";
 import { Card } from "#native/card/card";
 import { PageActions } from "#native/page-actions/page-actions";
 import { Text } from "#native/text/text";

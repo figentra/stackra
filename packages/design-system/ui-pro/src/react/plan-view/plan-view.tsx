@@ -12,7 +12,7 @@ import type { ReactElement } from "react";
 import type { PlanStepStatus } from "#contracts/enums/plan-step-status.enum";
 
 import { UI_PRO_KEYS } from "#core/constants/ui-pro-keys.constant";
-import { useUiProText } from "#core/hooks/use-ui-pro-text";
+import { useUiProText } from "#react/hooks/use-ui-pro-text";
 import { Timeline } from "#react/timeline/timeline";
 import type { PlanViewProps } from "#react/plan-view/plan-view.props";
 

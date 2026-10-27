@@ -5,7 +5,7 @@
  *          `label`. HeroUI Pro's trigger puts its button inside HeroUI's `Popover.Trigger`, a second element with the
  *          button role, so the toolbar holds a button inside a button with two tab stops. The wrapper's trigger is the
  *          button alone, which takes the popover's trigger props from React Aria as the popover's first child.
- * Boundary: the trigger keeps HeroUI Pro's look (its classes and `data-slot`), its "Link" name and its rule for when it
+ * Boundary: the trigger keeps HeroUI Pro's look (its classes and `data-slot`), its name (the catalogue's `ui_pro::rich_text_editor.link`, "Link" in English) and its rule for when it
  *          is disabled (no editor, or a disabled or read-only one); HeroUI Pro's `tooltip` on it is left out.
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-416 FR-003.
@@ -19,11 +19,13 @@ import {
 import { Button } from "@heroui/react";
 import type { ComponentProps } from "react";
 
+import { UI_PRO_KEYS } from "#core/constants/ui-pro-keys.constant";
+import { useUiProText } from "#react/hooks/use-ui-pro-text";
 import type { RichTextEditorLinkPopoverTriggerProps } from "#react/rich-text-editor/rich-text-editor-link-popover-trigger.props";
 
 /** The trigger: the toolbar button that opens the link popover, marked while the selection is a link. */
 function RichTextEditorLinkPopoverTrigger({
-  label = "Link",
+  label,
   children,
   className,
   isDisabled,
@@ -32,6 +34,8 @@ function RichTextEditorLinkPopoverTrigger({
   variant = "ghost",
   ...rest
 }: RichTextEditorLinkPopoverTriggerProps) {
+  const t = useUiProText();
+  const name = label ?? t(UI_PRO_KEYS.ui_pro.rich_text_editor.link);
   const { editor, isDisabled: isEditorDisabled, isReadOnly } = useRichTextEditor();
   const isLink =
     useRichTextEditorState(({ editor: current }) => Boolean(current) && current.isActive("link")) ??
@@ -40,7 +44,7 @@ function RichTextEditorLinkPopoverTrigger({
   return (
     <Button
       {...rest}
-      aria-label={label}
+      aria-label={name}
       className={[slots.toolbarButton(), slots.linkPopoverTrigger(), className]
         .filter(Boolean)
         .join(" ")}
@@ -51,7 +55,7 @@ function RichTextEditorLinkPopoverTrigger({
       size={size}
       variant={variant}
     >
-      {children ?? label}
+      {children ?? name}
     </Button>
   );
 }

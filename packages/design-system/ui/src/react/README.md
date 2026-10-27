@@ -1,7 +1,16 @@
 # src/react
 
+<!--
+Stackra file contract:
+Purpose: the guide to the `./react` entry folder of @stackra/ui: what it holds, what it imports and its barrel.
+Boundary: documentation only; the code and the ADRs win on any difference.
+Runtime: none
+Governing contract: ADR 0004 §1; ADR 0294 decision 15.
+-->
+
 The `./react` entry of @stackra/ui (ADR 0294 decision 15): web renderers, one folder each,
-`react/<name>/<name>.tsx` with its `__tests__/`. It imports `core/`, never `node/` or `native/`. Its optional peers are
+`react/<name>/<name>.tsx` with its `__tests__/`. It imports `core/`, never `node/` or `native/`. `hooks/` is the shared React layer that `native/` also
+imports (`useCatalogueText`, `useUiText`): React hooks that core may not hold (ADR 0004 §1). Its optional peers are
 `react-aria-components` and `@heroui/react`.
 
 `./react` names the stand-in barrel `index.ts` (`DesignSystemProvider`, `useDesignSystem`, `Icon`, `Text`,

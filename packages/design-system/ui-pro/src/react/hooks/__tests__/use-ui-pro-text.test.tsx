@@ -4,14 +4,13 @@
  *          placeholders included, and that every key in `UI_PRO_KEYS` has an English message.
  * Boundary: renders the hook with no provider; the provider path is `@stackra/ui`'s `useCatalogueText`, tested there.
  * Runtime: node
- * Governing contract: ADR 0080; ADR 0403; ADR 0022 (test placement).
+ * Governing contract: ADR 0004 §1; ADR 0080; ADR 0403; ADR 0022 (test placement).
  */
 // @vitest-environment jsdom
-// oxlint-disable-next-line no-restricted-imports -- reason: tests the shared core hook, which renders
 import { renderHook } from "@testing-library/react";
 
 import { UI_PRO_KEYS } from "#core/constants/ui-pro-keys.constant";
-import { useUiProText } from "#core/hooks/use-ui-pro-text";
+import { useUiProText } from "#react/hooks/use-ui-pro-text";
 
 /** Every leaf key of a keys tree. */
 const leaves = (tree: unknown): string[] =>
