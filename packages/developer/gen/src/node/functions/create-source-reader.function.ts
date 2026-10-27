@@ -33,7 +33,9 @@
  *                     `options.dataClass`, read from the `DataClass({...})` its chain extends, own or a package's);
  *                     ADR 0438 (each exported `defineSlot<P>` and `fillSlot` of `@stackra/panel`: options as
  *                     constants, the slot's `props` type as a record, the fill's slot by its import;
- *                     `slot_options_not_constant`).
+ *                     `slot_options_not_constant`); STA-1363 (`remoteShape` of `@stackra/clients` is a schema base whose
+ *                     derived or extending shapes take a `remote` base; `Settings.pick` of `#stackra/settings` is a
+ *                     schema kind; a default naming a missing enum case is `shape_default_member_unresolved`).
  */
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -92,6 +94,10 @@ interface KindInfo {
     readonly from: TsNode;
     readonly keys: readonly string[];
   };
+  /** A consumed shape: the class extends `remoteShape(...)` of `@stackra/clients`, its fields in its `schema` static. */
+  readonly remote?: true;
+  /** `Settings.pick([...])` of `#stackra/settings`: a schema whose fields are the picked setting keys (STA-1363). */
+  readonly settingsPick?: true;
 }
 
 /** One decorator application. */
@@ -629,6 +635,13 @@ export function createSourceReader(
   const readKind = (node: TsNode, seen: ReadonlySet<TsNode>): KindInfo | undefined => {
     const heritage = heritageOf(node);
     if (heritage === undefined) return undefined;
+    // Read by its import, so it is a schema before `#stackra/settings` is written (STA-1363).
+    if (
+      heritage.method === "pick" &&
+      kindOf(heritage.target) === "Identifier" &&
+      importsOf(host.fileName(node)).get(nameOf(heritage.target)) === "#stackra/settings"
+    )
+      return { kind: "schema", chain: [node], settingsPick: true };
     const symbol = host.symbolAt(heritage.target);
     if (symbol === undefined) return undefined;
     const name = host.symbolName(symbol);
@@ -647,7 +660,8 @@ export function createSourceReader(
       };
     }
     const kind = KIND_BASES[name];
-    if (kind !== undefined && isStackra(path)) return { kind, chain: [node] };
+    if (kind !== undefined && isStackra(path))
+      return { kind, chain: [node], ...(name === "remoteShape" ? { remote: true as const } : {}) };
     const declaration = classDeclarationOf(symbol);
     if (declaration !== undefined) {
       const inner = kindInfo(declaration, seen);
@@ -1390,6 +1404,27 @@ export function createSourceReader(
     }
     const value = constant(init, self);
     if (value === undefined) return undefined;
+    // `QueryScope.ActiveScope` after the case was renamed: the owner resolves, the member does not (STA-1363).
+    if (
+      value === NOT_CONSTANT &&
+      host.kind(init) === "PropertyAccessExpression" &&
+      init.expression !== undefined &&
+      host.kind(init.expression) !== "ThisKeyword" &&
+      host.symbolAt(init) === undefined &&
+      host.symbolAt(init.expression) !== undefined
+    ) {
+      if (!quiet) {
+        const owner = host.text(init.expression);
+        fail(
+          init,
+          subject,
+          "shape_default_member_unresolved",
+          `\`${owner}\` has no member \`${nameOf(init.name)}\``,
+          `use a member ${owner} has (a case may have been renamed), or check its import`,
+        );
+      }
+      return undefined;
+    }
     if (
       hasNonConstant(value) ||
       hasClassValue(value) ||
@@ -1725,6 +1760,9 @@ export function createSourceReader(
     const info = kindInfo(node);
     if (name === "" || info === undefined || !SHAPE_KINDS.includes(info.kind)) return undefined;
     if (info.kind === "config" && (info.base === undefined || info.base.own)) return undefined;
+    // shortcut: a `Settings.pick` class is a kind, not a compiled shape: gen writes no `#stackra/settings` metadata
+    // to read the picked keys' types from yet; the class carries its keys at run time. Compile it once gen does.
+    if (info.settingsPick === true) return undefined;
     const path = host.fileName(node);
     const head = {
       name,
@@ -1745,6 +1783,18 @@ export function createSourceReader(
       };
     }
     const baseNode = info.chain[1];
+    // `class CreateOrderForm extends RequestedLine`, a consumed shape: its fields are in its `schema` (STA-1363).
+    if (
+      info.base !== undefined &&
+      !info.base.own &&
+      baseNode !== undefined &&
+      kindInfo(baseNode)?.remote === true
+    )
+      return {
+        ...head,
+        base: { kind: "remote", name: info.base.name, from: info.base.from },
+        ...fieldsOf(name, [node]),
+      };
     if (info.base?.own === true && baseNode !== undefined && readShape(baseNode) !== undefined) {
       const { fields, relations } = fieldsOf(name, info.chain, node);
       return {
@@ -1756,6 +1806,22 @@ export function createSourceReader(
     }
     if (info.derive !== undefined) {
       const source = kindInfo(info.derive.from);
+      const argument = heritage?.call?.arguments?.[0];
+      const symbol = argument === undefined ? undefined : host.symbolAt(argument);
+      // `PickType(CreateOrderInput, ["lines"])` of a consumed shape derives from its `schema` (STA-1363).
+      if (source?.remote === true && argument !== undefined && symbol !== undefined) {
+        const ref = refOf(argument, symbol);
+        return {
+          ...head,
+          base: {
+            kind: "remote",
+            name: ref.name,
+            from: ref.from,
+            derive: { helper: info.derive.helper, keys: info.derive.keys },
+          },
+          ...fieldsOf(name, [node]),
+        };
+      }
       const inherited =
         source === undefined
           ? { fields: [], relations: [] }

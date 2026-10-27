@@ -6,7 +6,7 @@
  *          reused through `Base<Name>$`, a later reference made lazy, a sibling module imported, the
  *          `registerSchemas` call of gap G1, the `registerChanges` call beside it, and the translated and upload
  *          kinds (STA-1218), and a package's shipped `X$` imported as `ShippedX$` (STA-1290), and a hatch's imports
- *          with nullable applied once (STA-1293).
+ *          with nullable applied once (STA-1293), and a consumed shape's `schema` extended (STA-1363).
  * Boundary: test only; asserts on the generated source text.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decision 26); ADR 0305 (rules 1 and 14); registry v3.1 G1;
@@ -310,6 +310,46 @@ describe("emitSchemas", () => {
     );
     expect(content).toContain(
       'import { Audience$ as ShippedAudience$ } from "@stackra/iam/contracts";',
+    );
+  });
+
+  it("extends a consumed shape's schema static, picked first for a PickType (STA-1363)", () => {
+    const head = { kind: "schema", module: "orders", relations: [] };
+    const quick: ShapeIR = {
+      ...head,
+      name: "QuickOrderForm",
+      file: "src/modules/orders/schemas/quick-order-form.schema.ts",
+      importPath: "#modules/orders/schemas/quick-order-form.schema",
+      base: {
+        kind: "remote",
+        name: "CreateOrderInput",
+        from: "#stackra/clients/commerce",
+        derive: { helper: "PickType", keys: ["lines"] },
+      },
+      fields: [
+        { name: "note", optional: false, nullable: false, type: { kind: "string" }, rules: [] },
+      ],
+    };
+    const line: ShapeIR = {
+      ...head,
+      name: "CreateOrderForm",
+      file: "src/modules/orders/schemas/create-order-form.schema.ts",
+      importPath: "#modules/orders/schemas/create-order-form.schema",
+      base: { kind: "remote", name: "RequestedLine", from: "#stackra/clients/commerce" },
+      fields: [],
+    };
+    const content = emitSchemas(
+      { ...COMMERCE_IR, shapes: [quick, line], enums: [], classes: [] },
+      "orders",
+    );
+    expect(content).toContain(
+      'export const QuickOrderForm$ = RemoteCreateOrderInput.schema.pick({"lines":true}).extend({',
+    );
+    expect(content).toContain(
+      "export const CreateOrderForm$ = RemoteRequestedLine.schema.extend({",
+    );
+    expect(content).toMatch(
+      /import \{[^}]*CreateOrderInput as RemoteCreateOrderInput[^}]*\} from "#stackra\/clients\/commerce";/,
     );
   });
 

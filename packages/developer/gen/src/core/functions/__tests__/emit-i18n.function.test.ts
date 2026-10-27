@@ -3,10 +3,11 @@
  * Purpose: unit tests of `emitI18n`: `#stackra/i18n` with the typed key tree of the base locale (nested objects as
  *          branches, leaves beside children under `_`, `$` notes left out) and the sorted locale list; nothing for a member without
  *          catalogues or without `@stackra/i18n`; a declared package's namespace merged into `I18n` (STA-1298); and
- *          `generateMember` writing `.stackra/gen/i18n.ts`; the catalogue loaders and `loadMessages` (STA-1309).
+ *          `generateMember` writing `.stackra/gen/i18n.ts`; the catalogue loaders and `loadMessages` (STA-1309); a consumed
+ *          service's namespace loaded from its folder relative to the member (STA-1363).
  * Boundary: test only; asserts on the generated source text.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0268 (R15); STA-1293; STA-1298; STA-1309.
+ * Governing contract: ADR 0022 (test placement); ADR 0268 (R15); STA-1293; STA-1298; STA-1309; STA-1363.
  */
 import { describe, expect, it } from "@stackra/testing";
 
@@ -69,6 +70,24 @@ describe("emitI18n", () => {
       })?.content ?? "";
     expect(merged).toContain(
       '"rules": {\n    "en": () => import("@stackra/rules/assets/lang/en/rules.json", { with: { type: "json" } }),',
+    );
+  });
+
+  it("loads a consumed service's namespace from its folder, relative to the member (STA-1363)", () => {
+    const merged =
+      emitI18n({
+        ...COMMERCE_IR,
+        packageCatalogues: [
+          {
+            package: "@acme/service-commerce",
+            from: "../../services/commerce/assets/lang",
+            catalogues: { en: { orders: { title: "Orders" } } },
+          },
+        ],
+      })?.content ?? "";
+    expect(merged).toContain('"orders": [\n    "title"\n  ]');
+    expect(merged).toContain(
+      '"orders": {\n    "en": () => import("../../../../services/commerce/assets/lang/en/orders.json", { with: { type: "json" } }),',
     );
   });
 

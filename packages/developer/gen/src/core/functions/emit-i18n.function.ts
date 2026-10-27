@@ -5,7 +5,8 @@
  *          (`I18n.carts.nav.sales` is `"carts::nav.sales"`, `I18n.loyalty_kit.enums.loyalty_tier.gold` comes from
  *          `@stackra/loyalty-kit`; built by `keys(...)` of `@stackra/i18n`), `locales`, the locale folders under
  *          the member's `assets/lang`, `catalogues`, one lazy `LoadCatalogue` per namespace and locale file (the
- *          member's own through `../../assets/lang/...`, a package's through its `./assets/*` export), and
+ *          member's own through `../../assets/lang/...`, a package's through its `./assets/*` export, a consumed service's through its folder
+ *          relative to the member, STA-1363), and
  *          `loadMessages(locale)`, those loaders merged along the locale's fallback chain by `@stackra/i18n`
  *          (STA-1309).
  * Boundary: pure. The tree is `i18nTree(ir)` (each catalogue set's base locale; `$` notes left out); a namespace clash
@@ -29,7 +30,8 @@ function loaderSpecifiers(ir: MemberIR): Map<string, Map<string, string>> {
   const sets = [
     { from: OWN_LANG, catalogues: ir.catalogues ?? {} },
     ...(ir.packageCatalogues ?? []).map((shipped) => ({
-      from: `${shipped.package}/assets/lang`,
+      // A consumed service's lang is a folder of the repo, imported relative to `.stackra/gen/` (STA-1363).
+      from: shipped.from === undefined ? `${shipped.package}/assets/lang` : `../../${shipped.from}`,
       catalogues: shipped.catalogues,
     })),
   ];

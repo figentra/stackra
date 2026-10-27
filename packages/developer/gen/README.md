@@ -13,7 +13,9 @@ Governing contract: ADR 0294; ADR 0295; ADR 0260 (generated clients); ADR 0261; 
                     namespaces merged into `I18n`, missing keys and namespace clashes refused); STA-1251
                     (`searchable_semantic_ai_never`); ADR 0438 (shell slots and
                     fills, stackra-03); ADR 0436 (surface targets and the extension bundle's modulepreload list,
-                    stackra-04); ADR 0336 (model additions, stackra-64); ADR 0452 (the system graph, stackra-59).
+                    stackra-04); ADR 0336 (model additions, stackra-64); ADR 0452 (the system graph, stackra-59);
+                    STA-1363 (consumed services' lang, forms over remote shapes, `Settings.pick`, unresolved enum
+                    cases).
 -->
 
 The Stackra compiler. Gen reads a member's source through the TypeScript compiler API, derives every identity and
@@ -209,7 +211,10 @@ is still `shape_unknown_type`. `BusinessCalendar["workingWeek"]` (an indexed acc
 
 `@Str` and `@Trim` on a translated field apply to each locale's text. A model's `Translated` field gets
 `TranslatedType` in its `EntitySchema`, so it loads back as a `Translated`. `Upload<X>` where `X` is not a Bucket class
-is `shape_unknown_type`.
+is `shape_unknown_type`. A default naming an enum case the enum does not have (`QueryScope.ActiveScope` after a
+rename) is `shape_default_member_unresolved`, not `shape_default_not_constant` (STA-1363). `LocalizedText`,
+`IconName` and `I18nKey` ship no `X$` and stay `shape_unknown_type`: type such a field with a `@Field(zod)` hatch
+(owner call, STA-1363).
 
 Constants and defaults: literals, enum cases, literal-typed `const`s, a `const` holding a regular expression literal
 (a shared pattern imported from a constants file), and the platform constructors `Duration.*`, `Money.of|ofMinor|zero`
@@ -297,6 +302,16 @@ export class StorefrontService extends Service {
   groups them by model (`client.<model>.<verb>.call(input)`, and `.queue(input)` for an action). Shapes are
   `remoteShape` classes, enums `Enum.of`, refusals `remoteRefusal`, integration events `remoteEvent`. Entries a
   hosted package brought into the producer are left out for now.
+- **Forms over remote shapes (STA-1363).** `remoteShape` is a schema kind base. `PickType(CreateOrderInput, ["lines"])`
+  (also `OmitType`, `PartialType`) and `class CreateOrderForm extends RequestedLine` compile to
+  `RemoteCreateOrderInput.schema.pick({ lines: true }).extend({ ...own fields })` in `#stackra/schemas`: the remote
+  fields come from the client class's `schema` static, never re-read. A class extending `Settings.pick([...])` of
+  `#stackra/settings` is a schema kind (no `kind_unregistered_base`); gen does not compile its schema yet, since it
+  writes no settings metadata to read the picked keys' types from, and the class carries its keys at run time.
+- **Lang (STA-1363).** The `assets/lang` of every consumed service (found like its manifest) is merged into `I18n`
+  beside the member's and its packages', so an app's `I18n.orders.*` resolves to the commerce service's namespace;
+  its loaders import the service's files relative to the member. A clash with the member's or a package's namespace is
+  still `i18n_namespace_clash`.
 - **Events.** A listener subscribes to another service's integration event by importing its class from the client
   file and typing `handle` with it; the wire name (`<module>.<name>.v<n>`, ADR 0141) comes from the producer's
   manifest. There is no wire-name subscription: an event the producer does not publish is `client_event_unknown`, and a

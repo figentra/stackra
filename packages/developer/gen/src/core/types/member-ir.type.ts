@@ -120,11 +120,14 @@ export interface MemberIR {
   readonly catalogues?: Readonly<Record<string, Readonly<Record<string, unknown>>>>;
 
   /**
-   * The lang catalogues of each declared `@stackra/*` package that ships `assets/lang`, in package.json order: the
-   * i18n target merges their namespaces into `I18n` (`I18n.loyalty_kit.*`). Absent when none ships one (STA-1298).
+   * The lang catalogues of each declared `@stackra/*` package that ships `assets/lang`, in package.json order, then of
+   * each service the member consumes through a client (STA-1363): the i18n target merges their namespaces into `I18n`
+   * (`I18n.loyalty_kit.*`, `I18n.orders.*`). `from` is a service's lang folder relative to the member root (a
+   * package's is reached through its `./assets/*` export). Absent when none ships one (STA-1298).
    */
   readonly packageCatalogues?: readonly {
     readonly package: string;
+    readonly from?: string;
     readonly catalogues: Readonly<Record<string, Readonly<Record<string, unknown>>>>;
   }[];
 

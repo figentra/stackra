@@ -13,10 +13,12 @@
  *           its `@Str` rules on each text; an `Upload<Bucket>` field is `@stackra/media`'s `Upload.schema`. A bare
  *           `PublicId` checks the format with any prefix; a prefix union is a union of `publicId(prefix)`. A `@stackra/*` type with a shipped `X$` imports that schema
  *           (as `ShippedX$`) instead of compiling the shape again (STA-1290). A `@Field(zod)` hatch brings the imports its
- *           source uses, and a nullable field is `.nullable()` once, even when the hatch already says it (STA-1293).
+ *           source uses, and a nullable field is `.nullable()` once, even when the hatch already says it (STA-1293). A
+ *           form over a consumed shape of `#stackra/clients/<service>` extends that class's `schema` static (aliased
+ *           `Remote<Name>`), picked, omitted or made partial first when it derives from it (STA-1363).
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 26: the shape compiler); ADR 0305 (rules 1 and 14); registry v3.1 gap G1;
- *                     ADR 0162 (decision 2); ADR 0222 (decision 2).
+ *                     ADR 0162 (decision 2); ADR 0222 (decision 2); ADR 0260 (decision 2: remote shapes).
  */
 import { generatedHeader } from "#core/functions/generated-header.function";
 import { importLines } from "#core/functions/import-lines.function";
@@ -247,6 +249,22 @@ function shapeOf(context: Context, shape: ShapeIR): string[] {
       "$1",
     );
     lines.push(`export const ${shape.name}$ = ${parent}.extend({`, ...body, "});");
+  } else if (base?.kind === "remote") {
+    // A consumed shape carries its schema as a static (`remoteShape` of @stackra/clients, STA-1363).
+    const alias = `Remote${base.name}`;
+    use(context.imports, base.from, `${base.name} as ${alias}`);
+    const keys = JSON.stringify(
+      Object.fromEntries((base.derive?.keys ?? []).map((key) => [key, true])),
+    );
+    const derived =
+      base.derive?.helper === "PickType"
+        ? `.pick(${keys})`
+        : base.derive?.helper === "OmitType"
+          ? `.omit(${keys})`
+          : base.derive?.helper === "PartialType"
+            ? ".partial()"
+            : "";
+    lines.push(`export const ${shape.name}$ = ${alias}.schema${derived}.extend({`, ...body, "});");
   } else lines.push(`export const ${shape.name}$ = z.object({`, ...body, "});");
   context.declared.add(shape.name);
   const fields =

@@ -4,7 +4,7 @@
  *          class, shape, enum, shell slot, slot fill and file export of its own sources (sorted by path), its dependency package names and the
  *          committed manifests of those that ship one, the committed manifests of the services it injects a client
  *          of or listens to an event of (for a member with a relay, every publishing sibling service's; and which of those exist beside it in the workspace), the services any of its files imports a client from, its lang catalogues
- *          (`assets/lang/<locale>/*.json`) and those its declared `@stackra/*` packages ship, the `I18n` keys its files use, its modules and its authored root module, and fills each `DriverName<Port>` field with the driver names
+ *          (`assets/lang/<locale>/*.json`), those its declared `@stackra/*` packages ship and those of the services it consumes through a client (STA-1363), the `I18n` keys its files use, its modules and its authored root module, and fills each `DriverName<Port>` field with the driver names
  *          found for that port: the `MemberIR` every gen output is a pure function of.
  * Boundary: reads the member; writes nothing. Refusals are collected into `errors`, never thrown; only an unreadable
  *           package.json, tsconfig, dependency manifest or catalogue throws. The program is always closed.
@@ -12,7 +12,8 @@
  * Governing contract: ADR 0294 (decisions 10, 20, 25 and 26); ADR 0305 (rules 15, 16 and 42); ADR 0090 as amended
  *                     (discovery from the member's folders); ADR 0260 (decisions 3 and 4: clients and events from the
  *                     producer's manifest); STA-1293 (client imports and lang
- *                     catalogues); STA-1298 (package catalogues and key references); ADR 0438 (slots and fills).
+ *                     catalogues); STA-1298 (package catalogues and key references); ADR 0438 (slots and fills);
+ *                     STA-1363 (consumed services' catalogues).
  */
 import { existsSync, readdirSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -37,6 +38,7 @@ import { readCatalogues } from "#node/functions/read-catalogues.function";
 import { readI18nReferences } from "#node/functions/read-i18n-references.function";
 import { readPackageCatalogues } from "#node/functions/read-package-catalogues.function";
 import { readPublisherManifests } from "#node/functions/read-publisher-manifests.function";
+import { readServiceCatalogues } from "#node/functions/read-service-catalogues.function";
 import { readServiceManifests } from "#node/functions/read-service-manifests.function";
 
 /** A type with every `DriverName<Port>` filled from `names`. */
@@ -109,7 +111,7 @@ export async function discoverMember(
     const catalogues = readCatalogues(facts.root);
     // The lang its runtime packages ship, found like their manifests, and the keys its files use (STA-1298). A
     // devDependency's lang never reaches the runtime, so it is neither merged nor a clash (STA-1309).
-    const packageCatalogues = readPackageCatalogues(facts.root, facts.runtimeDependencies ?? []);
+    const shippedCatalogues = readPackageCatalogues(facts.root, facts.runtimeDependencies ?? []);
     const i18nReferences = readI18nReferences(facts.root);
     // A relay service hears every integration topic of the product (ADR 0260 decision 4).
     const publishers =
@@ -117,6 +119,11 @@ export async function discoverMember(
         ? readPublisherManifests(facts.root)
         : [];
     const services = readServiceManifests(facts.root, consumed);
+    // The lang of each service it consumes through a client, after its packages' (STA-1363).
+    const packageCatalogues = [
+      ...shippedCatalogues,
+      ...readServiceCatalogues(facts.root, services),
+    ];
     // Consumed services with a folder beside the member: the manifest pass waits for these instead of refusing them.
     const workspaceServices = [...new Set(consumed)]
       .filter((service) =>

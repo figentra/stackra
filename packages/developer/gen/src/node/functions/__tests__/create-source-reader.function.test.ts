@@ -24,7 +24,9 @@
  *          each file's exported class names (STA-1306). A `@Classify(Class)` facet carries its data class's constant
  *          effects as `options.dataClass` (STA-1251). Each exported `defineSlot<P>` and `fillSlot` of `@stackra/panel`
  *          reads with its options, import and props record, and a non-constant fill is `slot_options_not_constant`
- *          (ADR 0438).
+ *          (ADR 0438). A `PickType` of, or a form extending, a `remoteShape` of `#stackra/clients/<service>` reads as a
+ *          `remote` base; `Settings.pick` of `#stackra/settings` is a schema kind; a renamed enum case in a default is
+ *          `shape_default_member_unresolved` (STA-1363).
  * Boundary: test only; writes the fixture under `.cache/` and opens TypeScript on it.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decision 26, 2026-10-23 item 13, decision 28); ADR 0305
@@ -1177,5 +1179,125 @@ describe("createSourceReader on shell slots and fills", async () => {
         .filter((error) => error.code === "slot_options_not_constant")
         .map((error) => error.subject),
     ).toEqual(["Loose"]);
+  });
+});
+
+/** A form over consumed shapes, a `Settings.pick` schema and a default naming a renamed enum case (STA-1363). */
+const REMOTE_SOURCES: Readonly<Record<string, string>> = {
+  // `#stackra/*` resolves to `.stackra/gen/*`, as in a real member's imports map.
+  "package.json": JSON.stringify({
+    name: "@fixture/console",
+    version: "1.0.0",
+    type: "module",
+    dependencies: {
+      "@stackra/clients": "workspace:*",
+      "@stackra/contracts": "workspace:*",
+      "@stackra/validation": "workspace:*",
+    },
+    imports: {
+      "#core/*": ["./src/core/*.ts"],
+      "#contracts/*": ["./src/contracts/*.ts"],
+      "#stackra/*": ["./.stackra/gen/*.ts"],
+    },
+  }),
+  "node_modules/@stackra/clients/package.json": JSON.stringify({
+    name: "@stackra/clients",
+    types: "./index.d.ts",
+  }),
+  "node_modules/@stackra/clients/index.d.ts":
+    "export declare function remoteShape<S>(name: string, schema: S): abstract new () => { readonly lines: readonly string[]; readonly note: string };\n",
+  ".stackra/gen/clients/commerce.ts": [
+    'import { remoteShape } from "@stackra/clients";',
+    "const CreateOrderInput$ = {};",
+    "const RequestedLine$ = {};",
+    'export class CreateOrderInput extends remoteShape("orders.CreateOrderInput", CreateOrderInput$) {}',
+    'export class RequestedLine extends remoteShape("orders.RequestedLine", RequestedLine$) {}',
+    "",
+  ].join("\n"),
+  "src/core/schemas/quick-order-form.schema.ts": [
+    'import { Int, PickType } from "@stackra/validation";',
+    'import { CreateOrderInput } from "#stackra/clients/commerce";',
+    'export class QuickOrderForm extends PickType(CreateOrderInput, ["lines"]) {',
+    "  @Int({ min: 0 })",
+    "  redeemPoints = 0;",
+    "}",
+    "",
+  ].join("\n"),
+  "src/core/schemas/create-order-form.schema.ts": [
+    'import { RequestedLine } from "#stackra/clients/commerce";',
+    "export class CreateOrderForm extends RequestedLine {",
+    "  express!: boolean;",
+    "}",
+    "",
+  ].join("\n"),
+  "src/core/schemas/scope-settings.schema.ts": [
+    'import { Settings } from "#stackra/settings";',
+    "export class ScopeSettings extends Settings.pick([Settings.orders.customersMayCancel]) {}",
+    "",
+  ].join("\n"),
+  "src/contracts/enums/query-scope.enum.ts": [
+    'import { Enum } from "@stackra/contracts";',
+    'export const QueryScope = Enum.of({ Scope: "scope", Global: "global" });',
+    "export type QueryScope = Enum.Value<typeof QueryScope>;",
+    "",
+  ].join("\n"),
+  "src/core/schemas/scoped-query.schema.ts": [
+    'import { Schema } from "@stackra/validation";',
+    'import { QueryScope } from "#contracts/enums/query-scope.enum";',
+    "export class ScopedQuery extends Schema {",
+    "  scope: QueryScope = QueryScope.ActiveScope;",
+    "}",
+    "",
+  ].join("\n"),
+};
+
+describe("createSourceReader on remote shapes, Settings.pick and renamed enum cases (STA-1363)", async () => {
+  const root = writeFixtureMember("console", REMOTE_SOURCES);
+  const host = await openHost(join(root, "tsconfig.json"));
+  const reader = createSourceReader(host, readMemberFacts(root));
+  const classes = reader.sources.flatMap((file) => reader.classes(file));
+  const shapes = reader.sources.flatMap((file) => reader.shapes(file));
+  host.close();
+
+  it("reads a PickType of a remote shape as a remote base with its derivation", () => {
+    const form = shapes.find((shape) => shape.name === "QuickOrderForm");
+    expect(form?.kind).toBe("schema");
+    expect(form?.base).toEqual({
+      kind: "remote",
+      name: "CreateOrderInput",
+      from: "#stackra/clients/commerce",
+      derive: { helper: "PickType", keys: ["lines"] },
+    });
+    expect(form?.fields.map((field) => field.name)).toEqual(["redeemPoints"]);
+  });
+
+  it("reads a form that extends a remote shape as a remote base with its own fields", () => {
+    const form = shapes.find((shape) => shape.name === "CreateOrderForm");
+    expect(form?.base).toEqual({
+      kind: "remote",
+      name: "RequestedLine",
+      from: "#stackra/clients/commerce",
+    });
+    expect(form?.fields.map((field) => field.name)).toEqual(["express"]);
+  });
+
+  it("reads Settings.pick of #stackra/settings as a schema kind, not a compiled shape", () => {
+    expect(classes.find((declared) => declared.name === "ScopeSettings")?.kind).toBe("schema");
+    expect(shapes.some((shape) => shape.name === "ScopeSettings")).toBe(false);
+  });
+
+  it("reports a missing enum case as unresolved, not as a non-constant default", () => {
+    const codes = reader.errors.map((error) => `${error.code} ${error.subject}`);
+    expect(codes).toContain("shape_default_member_unresolved ScopedQuery.scope");
+    expect(codes).not.toContain("shape_default_not_constant ScopedQuery.scope");
+  });
+
+  it("registers every class in a kind file, so none is an unregistered base", () => {
+    expect(classes.map((declared) => declared.name).sort()).toEqual([
+      "CreateOrderForm",
+      "QuickOrderForm",
+      "ScopeSettings",
+      "ScopedQuery",
+    ]);
   });
 });
