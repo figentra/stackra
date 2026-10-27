@@ -30,6 +30,8 @@ export async function mockPulumi(
   config: Readonly<Record<string, unknown>> = {},
 ): Promise<PulumiMock> {
   const resources: MockedResource[] = [];
+  // a component of the previous test registers its outputs late; drain it before the monitor that knows its URN goes
+  await pulumi.runtime.disconnect();
   await pulumi.runtime.setMocks(
     {
       newResource(args) {
