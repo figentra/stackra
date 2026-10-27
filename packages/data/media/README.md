@@ -4,22 +4,23 @@
 Stackra file contract:
 Purpose: the reader guide of @stackra/media: buckets, the upload flow, `Upload<Bucket>` in shapes and gen's
          schema for it, variants, configuration, scanning, server-side processing (byte reads, image transforms with
-         compositing, DOCX and PDF text extraction) and testing.
+         compositing, DOCX and PDF text extraction, Arabic OCR, C2PA content credentials) and testing.
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
 Governing contract: ADR 0222; ADR 0294 (decision 26); STA-1218 (gen's `upload` shape kind); ADR 0234 and R3-SO-13
-                    (text extraction in region); STA-789.
+                    (text extraction in region); R2-5, M7 (self-hosted OCR default); ADR 0173; COM-73, COM-294;
+                    STA-789.
 -->
 
 Stackra media: the `Bucket` kind, signed direct uploads that `MediaLibrary` claims into a bucket, the `MediaDisk` port
 with its memory and S3/R2 drivers, the `sharp` image transformer with compositing, the in-region `document` text
-extractor (DOCX and PDF), the client `Uploader` port with its memory and HTTP drivers, `MediaConfig`, the
+extractor (DOCX and PDF), the in-region `paddle_ocr` text extractor (Arabic OCR), the `c2pa` content credentials, the client `Uploader` port with its memory and HTTP drivers, `MediaConfig`, the
 `upload.create` action, `useUpload`, `useImageVariant` and `fakeUpload`.
 
 **Tier:** `tier:lib` (`packages/data/media`). Entries `.`, `./contracts`, `./node`, `./react` and `./testing`. Depends
 on `@stackra/contracts`, `@stackra/container`, `@stackra/config`, `@stackra/validation`, `@stackra/errors`,
 `@stackra/actions`, `@stackra/filesystem` (the shared bucket and its public URL), zod, the AWS SDK S3 client, sharp
-(libvips), unpdf (pdf.js) and fflate; React is an optional peer of `./react`.
+(libvips), unpdf (pdf.js), fflate and `@contentauth/c2pa-node` (c2pa-rs); React is an optional peer of `./react`.
 
 ## What is here
 
@@ -36,9 +37,12 @@ on `@stackra/contracts`, `@stackra/container`, `@stackra/config`, `@stackra/vali
 | `.`           | `registerBuckets`                                                                                                      | how gen's entry hands over the derived bucket keys                                   |
 | `./contracts` | `MediaDisk`, `SignedUpload`, `UploadRequest`, `MediaObject`                                                            | the store port (`read` gives the bytes for server-side work) and its types           |
 | `./contracts` | `ImageTransformer`, `ImageTransform`, `ImageLayer`, `TextExtractor`, `ExtractedText`                                   | the processing ports and the types they speak                                        |
+| `./contracts` | `ContentCredentials`, `ContentCredential`                                                                              | the C2PA port and the claim it signs                                                 |
 | `./node`      | `S3MediaDiskDriver`                                                                                                    | `disk: s3`: AWS S3, Cloudflare R2 or MinIO                                           |
 | `./node`      | `SharpImageTransformerDriver`                                                                                          | `ImageTransformer` on sharp: resize, composite layers, re-encode, no metadata        |
 | `./node`      | `DocumentTextExtractorDriver`                                                                                          | `TextExtractor` for DOCX and PDF text layers, in process (in region)                 |
+| `./node`      | `PaddleOcrTextExtractorDriver`                                                                                         | `TextExtractor` OCR with Arabic, via the in-region PaddleOCR service (cert. pending) |
+| `./node`      | `C2paContentCredentialsDriver`                                                                                         | `ContentCredentials` on c2pa-rs: sign and read C2PA manifests (cert. pending)        |
 | `./node`      | `CreateUploadAction`, `CreateUploadInput`, `CreateUploadOutput`                                                        | `media.upload.create@1`, `POST /uploads`                                             |
 | `./react`     | `useUpload`, `useImageVariant`                                                                                         | upload a file; size an image                                                         |
 | `./testing`   | `fakeUpload`                                                                                                           | a finished upload in a test, on the memory disk                                      |
@@ -113,6 +117,12 @@ config:
     uploadExpiresIn: PT1H # at most seven days
     scanner: guard_duty # memory | clamav | guard_duty
     clamav: { host: clamd.internal, port: 3310, maxBytes: 26214400 } # the clamav scanner only
+    ocr: # the paddle_ocr text extractor only; the service in this region
+      endpoint: http://ocr.ksa.internal/ocr
+      languages: [ar, en] # what the deployed recognition model reads
+      maxBytes: 20971520
+      timeoutMs: 60000
+    c2pa: { algorithm: es256, timestampUrl: "", formats: [image/jpeg, image/png, image/webp] }
   filesystem:
     url: https://cdn.acme.test
     s3:
@@ -121,7 +131,9 @@ config:
       endpoint: https://<account>.r2.cloudflarestorage.com
 ```
 
-No credential is configuration. The S3 driver uses the AWS SDK's default chain. The bucket's CORS rule must allow `PUT`
+No credential value is configuration. The S3 driver uses the AWS SDK's default chain. The C2PA certificate chain and
+its private key (PEM) are the secrets `MEDIA_C2PA_SIGNING_CERTIFICATE` and `MEDIA_C2PA_SIGNING_KEY`, read blind from the
+secret store into `c2paSigningCertificate` and `c2paSigningKey`; they are empty until the certificate is issued. The bucket's CORS rule must allow `PUT`
 from the app's origins with the `content-type` and `x-amz-meta-*` headers. A lifecycle rule should expire `uploads/`
 after a day, which removes uploads nobody claimed.
 
@@ -150,11 +162,25 @@ const card = await images.transform(await disk.read(file.path), {
 
 `TextExtractor` reads text with BCP 47 language hints. The `document` driver (`./node`) reads a DOCX body and a PDF's
 text layer in process, so a privileged file never leaves the region the service runs in; it reports the hints whose
-script it found. A scanned PDF has no text layer and gives empty text: send it to an OCR driver. Arabic OCR and
-`ContentCredentials` (signed C2PA manifests on AI-generated images) have no driver here yet (stackra-26).
+script it found. A scanned PDF has no text layer and gives empty text: send it to an OCR driver.
+
+The `paddle_ocr` driver (`./node`) is the OCR driver with Arabic: it posts an image or PDF to the self-hosted PaddleOCR
+service (`POST /ocr`, PP-OCRv5 with the Arabic recognition model) at `media.ocr.endpoint`, which runway points at the
+service in the same region, so a scan never leaves it. It puts the recognised boxes in logical order (rows top to
+bottom, an Arabic row right to left) and refuses a language hint outside `media.ocr.languages` rather than return
+garbled text. Azure Document Intelligence is a connector in OS integrations, not here.
+
+`ContentCredentials` signs C2PA manifests on AI-generated images. The `c2pa` driver (`./node`) embeds a manifest with
+one `c2pa.created` action whose IPTC digital source type is `trainedAlgorithmicMedia`, signed with the certificate from
+the secret store; `read` gives the verified credential or `null`. While the certificate is not set, `attach` refuses.
+
+**Certification pending (owner D3, 2026-10-27).** No C2PA signing certificate exists yet and no live PaddleOCR service
+was called: both drivers follow the public docs (PaddleOCR 3.x serving, C2PA 2.x, c2pa-node) and their tests replay
+fixtures written in those shapes. Re-record the fixtures against the deployed service and a signed image when they are
+certified, after 1.0.
 
 Nothing in this package injects the processing ports: the host binds the driver it wants. `sharp` and `document` have
-no memory twin; a test runs them on in-memory bytes.
+no memory twin; a test runs them on in-memory bytes. The `paddle_ocr` and `c2pa` tests stub `fetch` and the c2pa engine.
 
 ## Testing
 

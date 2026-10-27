@@ -1,16 +1,20 @@
 /**
  * Stackra file contract:
  * Purpose: `MediaOptions`, the shape of `MediaConfig`: which disk the server stores media on, which uploader the client
- *          uses, how long an upload stays valid and where the HTTP uploader asks for a signed URL.
+ *          uses, how long an upload stays valid, where the HTTP uploader asks for a signed URL, the in-region OCR
+ *          service and the C2PA signing slot.
  * Boundary: a shape class; it registers this package's own schema (`MEDIA_CONFIG_SCHEMA`) for itself when the module
- *           loads, so `buildConfig(MediaConfig)` validates with no generated file. Deploy-time values only; no
- *           credential. The bucket, region and public base URL are `FilesystemConfig`'s: media shares the store's
- *           bucket per region and environment (ADR 0222 decision 1).
+ *           loads, so `buildConfig(MediaConfig)` validates with no generated file. Deploy-time values only; the one
+ *           credential, the C2PA certificate chain and key, is two `@Secret` names resolved blind from the secret store
+ *           (ADR 0173), empty until the certificate exists. The bucket, region and public base URL are
+ *           `FilesystemConfig`'s: media shares the store's bucket per region and environment (ADR 0222 decision 1).
  * Runtime: isomorphic
- * Governing contract: ADR 0294 (decisions 4, 19 and 26); ADR 0305 (rule 34); ADR 0222 (decisions 1 and 2).
+ * Governing contract: ADR 0294 (decisions 4, 19 and 26); ADR 0305 (rule 34); ADR 0222 (decisions 1 and 2); ADR 0173;
+ *                     R3-SO-13; STA-789.
  */
 import "#core/types/media-driver-names.type";
 
+import { Secret } from "@stackra/config";
 import type { DriverName } from "@stackra/container";
 import { Duration } from "@stackra/contracts";
 import { registerSchemas, Schema } from "@stackra/validation";
@@ -19,6 +23,7 @@ import type { FileScanner } from "#contracts/ports/file-scanner.port";
 import type { MediaDisk } from "#contracts/ports/media-disk.port";
 import { MEDIA_CONFIG_SCHEMA } from "#core/constants/media-config-schema.constant";
 import type { Uploader } from "#core/ports/uploader.port";
+import type { C2paAlgorithm } from "#core/types/c2pa-algorithm.type";
 
 /**
  * The media settings.
@@ -29,6 +34,14 @@ import type { Uploader } from "#core/ports/uploader.port";
  * }
  */
 export class MediaOptions extends Schema {
+  /** The C2PA signing certificate chain (PEM, leaf first). Empty until the certificate is issued (certification pending). */
+  @Secret("MEDIA_C2PA_SIGNING_CERTIFICATE")
+  c2paSigningCertificate = "";
+
+  /** The private key of the C2PA signing certificate (PEM, PKCS#8). Empty until the certificate is issued. */
+  @Secret("MEDIA_C2PA_SIGNING_KEY")
+  c2paSigningKey = "";
+
   /** The server's store; names are the driver file prefixes. `memory` keeps nothing and is safe everywhere. */
   disk: DriverName<MediaDisk> = "memory";
 
@@ -53,6 +66,40 @@ export class MediaOptions extends Schema {
     /** The largest file streamed, in bytes; a larger one is `failed`. */
     maxBytes: number;
   } = { host: "127.0.0.1", port: 3310, maxBytes: 26_214_400 };
+
+  /**
+   * The self-hosted PaddleOCR service the `paddle_ocr` text extractor posts to. Runway sets `endpoint` per region to
+   * the service in that region, so a scan never leaves it (R3-SO-13). `languages` are the ones the deployed
+   * recognition model reads; a hint outside them is refused.
+   */
+  ocr: {
+    /** The service's `POST /ocr` URL. */
+    endpoint: string;
+    /** The BCP 47 languages the deployed model reads. */
+    languages: string[];
+    /** The largest file sent, in bytes; a larger one is refused. */
+    maxBytes: number;
+    /** How long one request may take, in milliseconds. */
+    timeoutMs: number;
+  } = {
+    endpoint: "http://127.0.0.1:8080/ocr",
+    languages: ["ar", "en"],
+    maxBytes: 20_971_520,
+    timeoutMs: 60_000,
+  };
+
+  /**
+   * How the `c2pa` content-credentials driver signs: the COSE algorithm of the key, an RFC 3161 time-stamp authority
+   * (empty for none) and the image types it signs.
+   */
+  c2pa: {
+    /** The signing algorithm of `c2paSigningKey`. */
+    algorithm: C2paAlgorithm;
+    /** The time-stamp authority URL; empty signs without a trusted time. */
+    timestampUrl: string;
+    /** The image media types the driver signs and reads. */
+    formats: string[];
+  } = { algorithm: "es256", timestampUrl: "", formats: ["image/jpeg", "image/png", "image/webp"] };
 }
 
 registerSchemas([[MediaOptions, MEDIA_CONFIG_SCHEMA]]);

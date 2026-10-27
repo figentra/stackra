@@ -6,7 +6,7 @@ Purpose: the agent rules of @stackra/media: where code goes, the package rules (
          included), the rules that fail the build and PII.
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
-Governing contract: ADR 0222; ADR 0294; ADR 0305; STA-1218; ADR 0234; R3-SO-13; STA-789.
+Governing contract: ADR 0222; ADR 0294; ADR 0305; STA-1218; ADR 0234; R3-SO-13; ADR 0173; COM-73; STA-789.
 -->
 
 The `Bucket` kind, signed direct uploads and their claim, the media store and uploader ports with their drivers, and
@@ -46,12 +46,17 @@ Entries `.`, `./contracts`, `./node`, `./react`, `./testing`.
   so `.useDrivers("memory")` binds it. The memory and S3 disks take `FilesystemConfig`, so a host that injects
   `MediaLibrary` declares `@stackra/filesystem` too (gen refuses otherwise, `generated_dependency_missing`).
 - No memory candidate (STA-1297 sweep): nothing here injects `ImageTransformer`, `TextExtractor` or
-  `ContentCredentials`. `./node` ships `sharp` (`ImageTransformer`) and `document` (`TextExtractor`, DOCX and PDF);
-  `ContentCredentials` and OCR have no driver yet (stackra-26). The host binds the driver it wants.
+  `ContentCredentials`. `./node` ships `sharp` (`ImageTransformer`), `document` (`TextExtractor`, DOCX and PDF),
+  `paddle_ocr` (`TextExtractor`, OCR with Arabic) and `c2pa` (`ContentCredentials`). The host binds the driver it wants.
+- `paddle_ocr` and `c2pa` are certification pending (owner D3): built from public docs, tested on written fixtures.
+  Never claim them certified; re-record the fixtures against the live service and a signed image first.
+- The C2PA certificate and key are `@Secret` fields only (`MEDIA_C2PA_SIGNING_CERTIFICATE`, `MEDIA_C2PA_SIGNING_KEY`).
+  Never sign with a bundled or test certificate in a driver; an empty secret is a refusal.
 - `MediaDisk.read` is for server-side processing only (scan, transform, extract). Never return its bytes from an
   action: clients read through `url` or `temporaryUrl`.
-- Processing runs in process: `sharp` and `document` call no provider, so the bytes stay in the service's region
-  (R3-SO-13). An OCR or other remote driver must say which region it sends bytes to.
+- Processing runs in process: `sharp`, `document` and `c2pa` call no provider (a `c2pa` time-stamp authority gets a
+  hash only), so the bytes stay in the service's region (R3-SO-13). `paddle_ocr` sends bytes to `media.ocr.endpoint`
+  only, which runway sets to the service in the same region. Any new remote driver must say where its bytes go.
 - Engine refusals are `RangeError`s naming the engine's reason, never the file's content.
 - `./contracts` imports no other entry; `src/*/index.ts` are stand-in barrels until gen writes them (STA-339).
 
@@ -65,5 +70,7 @@ Entries `.`, `./contracts`, `./node`, `./react`, `./testing`.
 | Data                  | Where                  | Handling                                                                       |
 | --------------------- | ---------------------- | ------------------------------------------------------------------------------ |
 | Uploaded files        | the media store        | Read only by `MediaDisk.read` for processing; never logged or put in an error. |
+| Scans sent to OCR     | the in-region service  | Only to `media.ocr.endpoint`; the service keeps nothing.                       |
+| C2PA signing key      | the secret store       | A `@Secret` field; never logged, never in an error.                            |
 | Signed upload URLs    | `upload.create` output | A short-lived credential for one object; returned to the caller only.          |
 | Upload and bucket ids | refusal details, paths | Ids only.                                                                      |

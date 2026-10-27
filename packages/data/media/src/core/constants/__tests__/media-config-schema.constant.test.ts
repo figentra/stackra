@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `MEDIA_CONFIG_SCHEMA` (`MediaConfig$`): full defaults from `{}`, only this package's driver
- *          names, and an upload lifetime above zero and at most seven days.
+ *          names, an upload lifetime above zero and at most seven days, and the OCR and C2PA settings.
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0294 (decision 26).
@@ -20,6 +20,19 @@ describe("MEDIA_CONFIG_SCHEMA", () => {
       uploadEndpoint: "/api/uploads",
       scanner: "memory",
       clamav: { host: "127.0.0.1", port: 3310, maxBytes: 26_214_400 },
+      ocr: {
+        endpoint: "http://127.0.0.1:8080/ocr",
+        languages: ["ar", "en"],
+        maxBytes: 20_971_520,
+        timeoutMs: 60_000,
+      },
+      c2pa: {
+        algorithm: "es256",
+        timestampUrl: "",
+        formats: ["image/jpeg", "image/png", "image/webp"],
+      },
+      c2paSigningCertificate: "",
+      c2paSigningKey: "",
     });
   });
 
@@ -42,5 +55,24 @@ describe("MEDIA_CONFIG_SCHEMA", () => {
 
   it("refuses an empty endpoint", () => {
     expect(MEDIA_CONFIG_SCHEMA.safeParse({ uploadEndpoint: "" }).success).toBe(false);
+  });
+
+  it("takes an OCR service with at least one language", () => {
+    expect(
+      MEDIA_CONFIG_SCHEMA.parse({ ocr: { endpoint: "http://ocr.ksa.internal/ocr" } }).ocr,
+    ).toMatchObject({ endpoint: "http://ocr.ksa.internal/ocr", languages: ["ar", "en"] });
+    expect(MEDIA_CONFIG_SCHEMA.safeParse({ ocr: { endpoint: "not a url" } }).success).toBe(false);
+    expect(MEDIA_CONFIG_SCHEMA.safeParse({ ocr: { languages: [] } }).success).toBe(false);
+  });
+
+  it("takes a C2PA algorithm it knows and image formats only", () => {
+    expect(MEDIA_CONFIG_SCHEMA.parse({ c2pa: { algorithm: "ps256" } }).c2pa.algorithm).toBe(
+      "ps256",
+    );
+    expect(MEDIA_CONFIG_SCHEMA.safeParse({ c2pa: { algorithm: "rs256" } }).success).toBe(false);
+    expect(MEDIA_CONFIG_SCHEMA.safeParse({ c2pa: { formats: ["application/pdf"] } }).success).toBe(
+      false,
+    );
+    expect(MEDIA_CONFIG_SCHEMA.safeParse({ c2pa: { timestampUrl: "nope" } }).success).toBe(false);
   });
 });

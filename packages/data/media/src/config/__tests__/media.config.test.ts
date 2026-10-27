@@ -1,12 +1,17 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `MediaConfig`: key `media`, the defaults, a runway layer that picks the S3 disk and the HTTP
- *          uploader, a refused driver name, and a host override.
+ *          uploader, a refused driver name, a host override, and the C2PA certificate read blind from the secret store.
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0294 (decisions 4, 19 and 20); ADR 0146 as amended.
  */
-import { buildConfig, ConfigInvalidError, configKey } from "@stackra/config";
+import {
+  buildConfig,
+  ConfigInvalidError,
+  configKey,
+  MemorySecretStoreDriver,
+} from "@stackra/config";
 import { Duration } from "@stackra/contracts";
 import { describe, expect, it } from "@stackra/testing";
 
@@ -41,5 +46,15 @@ describe("MediaConfig", () => {
       override uploadExpiresIn = Duration.minutes(15);
     }
     expect(buildConfig(HostMediaConfig).uploadExpiresIn).toBe(Duration.minutes(15));
+  });
+
+  it("leaves the C2PA certificate empty until the secret is set", () => {
+    expect(buildConfig(MediaConfig).c2paSigningCertificate).toBe("");
+    const config = buildConfig(MediaConfig, {
+      secrets: new MemorySecretStoreDriver()
+        .set("MEDIA_C2PA_SIGNING_CERTIFICATE", "CERT")
+        .set("MEDIA_C2PA_SIGNING_KEY", "KEY"),
+    });
+    expect([config.c2paSigningCertificate, config.c2paSigningKey]).toEqual(["CERT", "KEY"]);
   });
 });

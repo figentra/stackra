@@ -1,17 +1,19 @@
 /**
  * Stackra file contract:
  * Purpose: `MEDIA_CONFIG_SCHEMA`, the zod schema this package ships for `MediaConfig` (exported as `MediaConfig$`): the
- *          server's disk, the client's uploader, how long an upload stays valid and where the HTTP uploader asks for
- *          one.
+ *          server's disk, the client's uploader, how long an upload stays valid, where the HTTP uploader asks for
+ *          one, the in-region OCR service and the C2PA signing slot.
  * Boundary: the stand-in for what gen writes for this package. Every field has a default, so `.parse({})` gives the
  *           full defaults; they equal `MediaOptions`' initializers (tested). The upload lifetime is at most seven days,
- *           the SigV4 limit of a signed URL. No credential is a field: the S3 driver reads the AWS credential chain.
+ *           the SigV4 limit of a signed URL. The S3 driver reads the AWS credential chain; the C2PA
+ *           certificate and key are `@Secret` names (empty strings until set), never values in a layer.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 26: a package ships its own `X$`); ADR 0173 (no secret values in config).
  */
 import { Duration } from "@stackra/contracts";
 import { z } from "zod";
 
+import { C2PA_ALGORITHMS } from "#core/constants/c2pa-algorithms.constant";
 import { MEDIA_DISKS } from "#core/constants/media-disks.constant";
 import { MEDIA_SCANNERS } from "#core/constants/media-scanners.constant";
 import { MEDIA_UPLOADERS } from "#core/constants/media-uploaders.constant";
@@ -49,4 +51,36 @@ export const MEDIA_CONFIG_SCHEMA = z.object({
       maxBytes: z.number().int().min(1).default(26_214_400),
     })
     .default(() => ({ host: "127.0.0.1", port: 3310, maxBytes: 26_214_400 })),
+  ocr: z
+    .object({
+      endpoint: z.url().default("http://127.0.0.1:8080/ocr"),
+      languages: z
+        .array(z.string().min(2))
+        .min(1)
+        .default(() => ["ar", "en"]),
+      maxBytes: z.number().int().min(1).default(20_971_520),
+      timeoutMs: z.number().int().min(1).default(60_000),
+    })
+    .default(() => ({
+      endpoint: "http://127.0.0.1:8080/ocr",
+      languages: ["ar", "en"],
+      maxBytes: 20_971_520,
+      timeoutMs: 60_000,
+    })),
+  c2pa: z
+    .object({
+      algorithm: z.enum(C2PA_ALGORITHMS).default("es256"),
+      timestampUrl: z.union([z.literal(""), z.url()]).default(""),
+      formats: z
+        .array(z.string().regex(/^image\/[a-z0-9.+-]+$/))
+        .min(1)
+        .default(() => ["image/jpeg", "image/png", "image/webp"]),
+    })
+    .default(() => ({
+      algorithm: "es256" as const,
+      timestampUrl: "",
+      formats: ["image/jpeg", "image/png", "image/webp"],
+    })),
+  c2paSigningCertificate: z.string().default(""),
+  c2paSigningKey: z.string().default(""),
 });
