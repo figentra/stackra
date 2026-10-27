@@ -70,6 +70,7 @@
   },
   "dependencies": {
     "@pulumi/gcp": "catalog:infra",
+    "@stackra/container": "workspace:*",
     "@stackra/contracts": "workspace:*",
     "@stackra/runway": "workspace:*",
     "zod": "catalog:"

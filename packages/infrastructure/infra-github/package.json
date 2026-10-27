@@ -61,6 +61,7 @@
   "dependencies": {
     "@pulumi/github": "catalog:infra",
     "@pulumi/pulumi": "catalog:infra",
+    "@stackra/container": "workspace:*",
     "@stackra/contracts": "workspace:*",
     "@stackra/runway": "workspace:*",
     "zod": "catalog:"

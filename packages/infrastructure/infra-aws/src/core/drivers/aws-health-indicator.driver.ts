@@ -2,13 +2,14 @@
  * Stackra file contract:
  * Purpose: `AwsHealthIndicatorDriver`, this package's driver of the contracts `HealthIndicator` port (`aws`): the dependency is
  *          up when the AWS region the foundation runs in: its regional STS endpoint answers. One GET, bounded by a timeout; any answer below 500 is `up` (the endpoint is reachable; an unsigned request is refused, as it should be), 429 is `degraded`, 500 and above is `down`.
- * Boundary: a plain subclass of the port (no container dependency here). The target is runway data passed in by the
+ * Boundary: `Driver(HealthIndicator)`, so the container records the port it implements. The target is runway data passed in by the
  *           wiring; no credential is sent and none is read. A failure reports `down` with the host only, never a
  *           response body, and never throws.
  * Runtime: isomorphic (global `fetch`)
  * Governing contract: ADR 0294 (decisions 16 and 17: each infra package ships its dependency's driver), ADR 0171, ADR 0172,
  *                     registry gaps R-27 and R-36.
  */
+import { Driver } from "@stackra/container";
 import { Duration, HealthIndicator, HealthStatus } from "@stackra/contracts";
 import type { HealthReport } from "@stackra/contracts";
 
@@ -19,7 +20,7 @@ import type { HealthReport } from "@stackra/contracts";
  * const indicator = new AwsHealthIndicatorDriver({ region: "me-central-1" });
  * await indicator.check(); // { status: "up", latency: "PT0.12S" }
  */
-export class AwsHealthIndicatorDriver extends HealthIndicator {
+export class AwsHealthIndicatorDriver extends Driver(HealthIndicator) {
   override readonly name = "aws";
 
   private readonly url: string;

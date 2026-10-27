@@ -2,13 +2,14 @@
  * Stackra file contract:
  * Purpose: `IdentityHealthIndicatorDriver`, this package's driver of the contracts `HealthIndicator` port (`identity`): the dependency is
  *          up when the ZITADEL instance's OpenID discovery document is served: the issuer every sign-in starts from. One GET, bounded by a timeout; a non-2xx answer is `down`.
- * Boundary: a plain subclass of the port (no container dependency here). The target is runway data passed in by the
+ * Boundary: `Driver(HealthIndicator)`, so the container records the port it implements. The target is runway data passed in by the
  *           wiring; no credential is sent and none is read. A failure reports `down` with the host only, never a
  *           response body, and never throws.
  * Runtime: isomorphic (global `fetch`)
  * Governing contract: ADR 0294 (decisions 16 and 17: each infra package ships its dependency's driver), ADR 0206,
  *                     registry gaps R-27 and R-36.
  */
+import { Driver } from "@stackra/container";
 import { Duration, HealthIndicator, HealthStatus } from "@stackra/contracts";
 import type { HealthReport } from "@stackra/contracts";
 
@@ -19,7 +20,7 @@ import type { HealthReport } from "@stackra/contracts";
  * const indicator = new IdentityHealthIndicatorDriver({ domain: "id.acme.example" });
  * await indicator.check(); // { status: "up", latency: "PT0.12S" }
  */
-export class IdentityHealthIndicatorDriver extends HealthIndicator {
+export class IdentityHealthIndicatorDriver extends Driver(HealthIndicator) {
   override readonly name = "identity";
 
   private readonly url: string;

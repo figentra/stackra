@@ -61,6 +61,7 @@
   "dependencies": {
     "@pulumi/pulumi": "catalog:infra",
     "@pulumiverse/zitadel": "catalog:infra",
+    "@stackra/container": "workspace:*",
     "@stackra/contracts": "workspace:*",
     "@stackra/runway": "workspace:*",
     "yaml": "catalog:",
