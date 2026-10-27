@@ -8,10 +8,13 @@
  *           rule 17); the send log is `SendLog` (keys and ids only). A provider that
  *           deduplicates itself (Resend) is still logged, so every provider behaves the same on a retry.
  *           Each outcome (sent, or failed on a provider refusal) is recorded as `DeliveryRecorded` through the
- *           optional `EventOutbox` (stackra-207); a repeated key records nothing again.
+ *           optional `EventOutbox` (stackra-207); a repeated key records nothing again. The whole mail (attachments,
+ *           cc, bcc, reply address, headers) goes to the sender; when the sender lists `supports` and the mail uses a
+ *           part outside it, the send is refused with `MailFeatureUnsupportedError` (recorded `failed`) before the
+ *           provider is called. A header that could inject another is refused as a `TypeError` (stackra-218).
  * Runtime: isomorphic
  * Governing contract: ADR 0356 (decisions 2 to 4); ADR 0266; ADR 0305 (rule 8); owner decision R3-8 (STA-1281);
- *                     stackra-207 (STA-1360).
+ *                     stackra-207 (STA-1360); stackra-218 (STA-1376).
  */
 import { Driver } from "@stackra/container";
 import type { Clock } from "@stackra/contracts";
@@ -24,6 +27,9 @@ import { MailTransport } from "#contracts/ports/mail-transport.port";
 import type { SendLog } from "#contracts/ports/send-log.port";
 import type { MailSender } from "#contracts/types/mail-sender.type";
 import type { OutboundMail } from "#contracts/types/outbound-mail.type";
+import { MailFeatureUnsupportedError } from "#core/errors/mail-feature-unsupported.error";
+import { assertMailHeaders } from "#core/functions/assert-mail-headers.function";
+import { mailFeatures } from "#core/functions/mail-features.function";
 import { providerCodeOf } from "#core/functions/provider-code-of.function";
 import { recordDelivery } from "#core/functions/record-delivery.function";
 
@@ -63,16 +69,29 @@ export abstract class ConnectionMailTransportDriver extends Driver(MailTransport
     this.clock = clock;
   }
 
-  /** Sends `mail` through the resolved connection once per `idempotencyKey`; a repeated key returns the first id. */
+  /**
+   * Sends `mail` through the resolved connection once per `idempotencyKey`; a repeated key returns the first id.
+   *
+   * @throws TypeError when a header name or value could inject another header.
+   * @throws MailFeatureUnsupportedError when the provider does not carry a part the mail uses.
+   */
   async send(mail: OutboundMail, idempotencyKey: string): Promise<string> {
     const known = await this.log.get(idempotencyKey);
     if (known !== undefined) return known;
+    assertMailHeaders(mail);
     const sender = await this.resolver.resolve<MailSender>("mail", this.drivers);
     const delivery = {
       deliveryId: idempotencyKey,
       channel: NotificationChannel.Mail,
       provider: providerCodeOf(this.drivers, sender),
     };
+    const supports = sender.supports;
+    const missing =
+      supports === undefined ? [] : mailFeatures(mail).filter((part) => !supports.includes(part));
+    if (missing.length > 0) {
+      await recordDelivery(this.outbox, this.clock, { ...delivery, status: "failed" });
+      throw MailFeatureUnsupportedError.create({ provider: delivery.provider, features: missing });
+    }
     let id: string;
     try {
       id = await sender.sendMail(mail, idempotencyKey);

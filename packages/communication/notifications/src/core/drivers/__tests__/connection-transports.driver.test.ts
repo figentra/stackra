@@ -3,11 +3,13 @@
  * Purpose: unit tests of the `connection` transports (mail, SMS, WhatsApp): the provider comes from the resolver under
  *          the channel's capability with the driver map the host passed (the same object); a key already in the send
  *          log returns its id and sends nothing; a new send is logged; with an outbox a send records `sent` and a
- *          provider refusal `failed` as `DeliveryRecorded`, under the provider code of the map (stackra-207).
+ *          provider refusal `failed` as `DeliveryRecorded`, under the provider code of the map (stackra-207); the whole
+ *          mail (attachments, copies, reply address, headers) reaches the sender, a part outside its `supports` is
+ *          refused before it is called and recorded `failed`, and an injected header is refused (stackra-218).
  * Boundary: test only; the resolver, the send log and the connection classes are in-memory stand-ins; the outbox is
  *           `OutboxFake`.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0269; ADR 0356 (decision 2); stackra-207 (STA-1360).
+ * Governing contract: ADR 0022; ADR 0269; ADR 0356 (decision 2); stackra-207 (STA-1360); stackra-218 (STA-1376).
  */
 import { Clock } from "@stackra/contracts";
 import { OutboxFake } from "@stackra/events/testing";
@@ -17,11 +19,13 @@ import { describe, expect, it } from "@stackra/testing";
 
 import { SendLog } from "#contracts/ports/send-log.port";
 import type { MailSender } from "#contracts/types/mail-sender.type";
+import type { OutboundMail } from "#contracts/types/outbound-mail.type";
 import type { SmsSender } from "#contracts/types/sms-sender.type";
 import type { WhatsAppSender } from "#contracts/types/whatsapp-sender.type";
 import { ConnectionMailTransportDriver } from "#core/drivers/connection-mail-transport.driver";
 import { ConnectionSmsTransportDriver } from "#core/drivers/connection-sms-transport.driver";
 import { ConnectionWhatsAppTransportDriver } from "#core/drivers/connection-whatsapp-transport.driver";
+import { MailFeatureUnsupportedError } from "#core/errors/mail-feature-unsupported.error";
 
 /** The host's maps; the vendor connection classes live in the OS integrations service, so these are stand-ins. */
 const MAIL_CONNECTIONS = {} as ProviderDrivers<MailSender>;
@@ -169,5 +173,93 @@ describe("connection transports", () => {
         at,
       }),
     ]);
+  });
+
+  it("passes the whole mail to the sender", async () => {
+    const received: OutboundMail[] = [];
+    const sender = {
+      async sendMail(mail: OutboundMail) {
+        received.push(mail);
+        return "em_1";
+      },
+    };
+    const mail: OutboundMail = {
+      to: "a@b.example",
+      from: "o@acme.example",
+      subject: "Invoice",
+      html: "<p/>",
+      text: "",
+      cc: ["c@acme.example"],
+      bcc: ["b@acme.example"],
+      replyTo: "billing@acme.example",
+      headers: { "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" },
+      attachments: [
+        { filename: "invoice.pdf", contentType: "application/pdf", ref: "invoices/0042.pdf" },
+      ],
+    };
+    await new (MailOver(MAIL_CONNECTIONS))(resolverOf(sender).resolver, new MemorySendLog()).send(
+      mail,
+      "k1",
+    );
+    expect(received).toEqual([mail]);
+  });
+
+  it("refuses a part the provider does not carry before calling it, and records failed", async () => {
+    let calls = 0;
+    class PlainStandIn {
+      readonly supports = ["cc", "replyTo"] as const;
+
+      async sendMail(): Promise<string> {
+        calls += 1;
+        return "em_1";
+      }
+    }
+    const outbox = new OutboxFake();
+    const drivers = { plain: PlainStandIn } as unknown as ProviderDrivers<MailSender>;
+    const transport = new (MailOver(drivers))(
+      resolverOf(new PlainStandIn()).resolver,
+      new MemorySendLog(),
+      outbox,
+    );
+    const mail: OutboundMail = {
+      to: "a@b.example",
+      from: "o@acme.example",
+      subject: "S",
+      html: "",
+      text: "",
+      cc: ["c@acme.example"],
+      attachments: [
+        { filename: "a.pdf", contentType: "application/pdf", content: new Uint8Array([1]) },
+      ],
+    };
+    const refusal = await transport.send(mail, "k1").catch((error: unknown) => error);
+    expect(refusal).toBeInstanceOf(MailFeatureUnsupportedError);
+    expect(refusal).toMatchObject({ provider: "plain", features: ["attachments"] });
+    expect(calls).toBe(0);
+    expect(outbox.take().map(({ event }) => event)).toEqual([
+      expect.objectContaining({ deliveryId: "k1", provider: "plain", status: "failed" }),
+    ]);
+    await expect(transport.send({ ...mail, attachments: [] }, "k2")).resolves.toBe("em_1");
+  });
+
+  it("refuses a header that injects another", async () => {
+    const sender = { sendMail: async () => "em_1" };
+    const transport = new (MailOver(MAIL_CONNECTIONS))(
+      resolverOf(sender).resolver,
+      new MemorySendLog(),
+    );
+    await expect(
+      transport.send(
+        {
+          to: "a@b.example",
+          from: "o@acme.example",
+          subject: "S",
+          html: "",
+          text: "",
+          headers: { "X-Tag": "a\r\nBcc: x@evil.example" },
+        },
+        "k1",
+      ),
+    ).rejects.toThrow(TypeError);
   });
 });

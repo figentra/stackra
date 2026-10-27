@@ -5,7 +5,7 @@ Stackra file contract:
 Purpose: the package's reader guide: notifications, channels and providers, inbound WhatsApp, templates and testing.
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
-Governing contract: ADR 0086; ADR 0223; ADR 0294; ADR 0356; ADR 0448; STA-964; stackra-207 (STA-1360).
+Governing contract: ADR 0086; ADR 0223; ADR 0294; ADR 0356; ADR 0448; STA-964; stackra-207 (STA-1360); stackra-218 (STA-1376).
 -->
 
 Messages to people (ADR 0086, 0223 as amended by 0294). A notification is a class beside the model it concerns,
@@ -23,32 +23,37 @@ optional peer, needed by `./node`, `./react` and `./testing` only.
 
 ## What is here
 
-| Entry         | Symbol                                                                         | Use                                                                       |
-| ------------- | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------- |
-| `.`           | `Notification`                                                                 | the kind base: `Notification({ category })`, with `recipients(event)`     |
-| `.`           | `NotificationCategory`                                                         | `transactional`, `activity`, `marketing`; case data `mutable`, `optIn`    |
-| `.`           | `Recipient`                                                                    | `Recipient.principal(id)`, `.scope(scope)`, `.address(email)`             |
-| `.`           | `MailMessage` (type)                                                           | what `mail(data, mail)` returns: `mail.subject(key, values)`              |
-| `.`           | `Notifier`                                                                     | the port gen's listener calls: `notify(notification, event)`              |
-| `.`           | `MemoryNotifierDriver`                                                         | the `memory` driver: keeps deliveries for tests and dev                   |
-| `.`           | `NotificationsConfig`, `NotificationsConfig$`, `NotificationsOptions`          | key `notifications`: `driver`, `target`, `mandatoryCategories`            |
-| `.`           | `NotificationDelivery`, `NotificationOptions`, `NotifierDriverName`            | types                                                                     |
-| `./contracts` | `MailTransport`, `OutboundMail` (type)                                         | the port a mail provider driver implements (`Driver(MailTransport)`)      |
-| `./contracts` | `SmsTransport`, `OutboundSms` (type)                                           | the port an SMS provider driver implements                                |
-| `./contracts` | `InAppStore`, `InAppMessage`, `InAppEntry` (types)                             | a person's in-app inbox: `append`, `list`, `markRead`                     |
-| `./contracts` | `ChatTransport`, `OutboundChatMessage` (type)                                  | the port a chat app driver implements (Slack, Teams, Telegram)            |
-| `./contracts` | `WhatsAppInbound`, `InboundWhatsApp`, `InboundWhatsAppCartItem` (types)        | reads customer texts, native carts and replies from a webhook             |
-| `.`           | `MemoryWhatsAppInboundDriver`, `MetaWhatsAppInboundDriver`                     | the `memory` and `meta` (Cloud API) drivers of `WhatsAppInbound`          |
-| `.`           | `META_WHATSAPP_WEBHOOK_SIGNATURE`                                              | Meta's `hmac` signature recipe for the Integration's `webhooks`           |
-| `./contracts` | `NotificationDeliveryEvent` (type)                                             | one delivery outcome: `deliveryId`, `channel`, `provider`, `status`, `at` |
-| `.`           | `DeliveryRecorded`                                                             | the `notifications.delivery.recorded.v1` integration event of an outcome  |
-| `./node`      | `NotificationsNotifierDriver`                                                  | the `notifications` driver: queues rendered mail on the service           |
-| `./node`      | `MESSAGES_NOTIFIER_TARGET`, `DELIVERY_NOTIFIER_TARGET`                         | the built-in targets config `notifications.target` names                  |
-| `./node`      | `NotifierTarget`, `NotifierMessage`, `NotifierAddressMessage` (types)          | what a host's own target is written with                                  |
-| `./node`      | `registerNotificationMails`, `NotificationMails` (type)                        | gen's registration of the mail bodies and lang loaders                    |
-| `./react`     | `useMail`, `MailProps` (type)                                                  | what a `.mail.tsx` body imports                                           |
-| `./testing`   | `renderMail`, `MemoryNotifier` (type)                                          | render a body in a locale; read what was sent                             |
-| `./testing`   | `MailTransportFake`, `SmsTransportFake`, `InAppStoreFake`, `ChatTransportFake` | a double of each channel port                                             |
+| Entry         | Symbol                                                                         | Use                                                                                                |
+| ------------- | ------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------- |
+| `.`           | `Notification`                                                                 | the kind base: `Notification({ category })`, with `recipients(event)`                              |
+| `.`           | `NotificationCategory`                                                         | `transactional`, `activity`, `marketing`; case data `mutable`, `optIn`                             |
+| `.`           | `Recipient`                                                                    | `Recipient.principal(id)`, `.scope(scope)`, `.address(email)`                                      |
+| `.`           | `MailMessage` (type)                                                           | what `mail(data, mail)` returns: `mail.subject(key, values)`                                       |
+| `.`           | `Notifier`                                                                     | the port gen's listener calls: `notify(notification, event)`                                       |
+| `.`           | `MemoryNotifierDriver`                                                         | the `memory` driver: keeps deliveries for tests and dev                                            |
+| `.`           | `NotificationsConfig`, `NotificationsConfig$`, `NotificationsOptions`          | key `notifications`: `driver`, `target`, `mandatoryCategories`, `unsubscribeUrl`, `unsubscribeKey` |
+| `.`           | `NotificationDelivery`, `NotificationOptions`, `NotifierDriverName`            | types                                                                                              |
+| `./contracts` | `MailTransport`, `OutboundMail` (type)                                         | the port a mail provider driver implements (`Driver(MailTransport)`)                               |
+| `./contracts` | `MailAttachment`, `MailFeature`, `MailSender` (types)                          | attachments by bytes or storage ref; the optional parts a provider carries                         |
+| `./contracts` | `PreferenceStore`                                                              | delivery preferences per recipient, category and channel: `allows`, `set`                          |
+| `.`           | `MemoryPreferenceStoreDriver`, `preferenceAllows`                              | the `memory` driver and the answer every driver gives                                              |
+| `.`           | `unsubscribeLink`, `verifyUnsubscribeToken`, `listUnsubscribeHeaders`          | signed one-click unsubscribe and the RFC 8058 headers                                              |
+| `.`           | `MailFeatureUnsupportedError`                                                  | `mail_feature_unsupported`: the provider cannot carry a part of the mail                           |
+| `./contracts` | `SmsTransport`, `OutboundSms` (type)                                           | the port an SMS provider driver implements                                                         |
+| `./contracts` | `InAppStore`, `InAppMessage`, `InAppEntry` (types)                             | a person's in-app inbox: `append`, `list`, `markRead`                                              |
+| `./contracts` | `ChatTransport`, `OutboundChatMessage` (type)                                  | the port a chat app driver implements (Slack, Teams, Telegram)                                     |
+| `./contracts` | `WhatsAppInbound`, `InboundWhatsApp`, `InboundWhatsAppCartItem` (types)        | reads customer texts, native carts and replies from a webhook                                      |
+| `.`           | `MemoryWhatsAppInboundDriver`, `MetaWhatsAppInboundDriver`                     | the `memory` and `meta` (Cloud API) drivers of `WhatsAppInbound`                                   |
+| `.`           | `META_WHATSAPP_WEBHOOK_SIGNATURE`                                              | Meta's `hmac` signature recipe for the Integration's `webhooks`                                    |
+| `./contracts` | `NotificationDeliveryEvent` (type)                                             | one delivery outcome: `deliveryId`, `channel`, `provider`, `status`, `at`                          |
+| `.`           | `DeliveryRecorded`                                                             | the `notifications.delivery.recorded.v1` integration event of an outcome                           |
+| `./node`      | `NotificationsNotifierDriver`                                                  | the `notifications` driver: queues rendered mail on the service                                    |
+| `./node`      | `MESSAGES_NOTIFIER_TARGET`, `DELIVERY_NOTIFIER_TARGET`                         | the built-in targets config `notifications.target` names                                           |
+| `./node`      | `NotifierTarget`, `NotifierMessage`, `NotifierAddressMessage` (types)          | what a host's own target is written with                                                           |
+| `./node`      | `registerNotificationMails`, `NotificationMails` (type)                        | gen's registration of the mail bodies and lang loaders                                             |
+| `./react`     | `useMail`, `MailProps` (type)                                                  | what a `.mail.tsx` body imports                                                                    |
+| `./testing`   | `renderMail`, `MemoryNotifier` (type)                                          | render a body in a locale; read what was sent                                                      |
+| `./testing`   | `MailTransportFake`, `SmsTransportFake`, `InAppStoreFake`, `ChatTransportFake` | a double of each channel port                                                                      |
 
 ## A notification
 
@@ -215,6 +220,18 @@ export class OsSmsTransportDriver extends ConnectionSmsTransportDriver {
 - The VAPID keys and contact are platform secrets: `WEB_PUSH_VAPID_PUBLIC_KEY`, `WEB_PUSH_VAPID_PRIVATE_KEY`,
   `WEB_PUSH_VAPID_SUBJECT`.
 
+### Mail parts (stackra-218)
+
+`OutboundMail` carries, besides `to`, `from`, `subject`, `html` and `text`: `cc`, `bcc`, `replyTo`, `headers` and
+`attachments`. A `MailAttachment` has a `filename`, a `contentType`, either `content` (bytes) or `ref` (a storage key the
+sender reads, so a large PDF never rides in the job payload), and a `contentId` when shown inline (`cid:logo`).
+
+`ConnectionMailTransportDriver` hands the whole mail to the sender. A vendor `MailSender` that cannot carry some part
+lists the parts it does carry in `supports` (`MailFeature`: `attachments`, `attachmentRefs`, `inline`, `cc`, `bcc`,
+`replyTo`, `headers`); a mail using any other is refused with `MailFeatureUnsupportedError` before the provider is
+called, and recorded `failed`. No `supports` means every part is carried. A header name or value that could inject
+another header (a line break, a colon in the name) is refused with a `TypeError`.
+
 ### Delivery events (stackra-207)
 
 Each transport records its outcomes as `DeliveryRecorded`, the integration event `notifications.delivery.recorded.v1`
@@ -315,6 +332,37 @@ sendAfter({ category, mandatory: config.mandatoryCategories, quietHours, now });
 
 Codes are `NotificationCategory` cases or a delivery service's `messageCategory` codes (snake_case); none is
 mandatory by default, and a transactional notification is never mutable either way.
+
+### Preferences and one-click unsubscribe (stackra-218)
+
+`PreferenceStore` (`./contracts`) keeps a person's choice per category and channel. Every driver answers through
+`preferenceAllows(category, mandatory, choice)`: a category that cannot be muted is always allowed, a recorded choice
+wins otherwise, and with none marketing (opt-in) is off and the rest on. `set(..., false)` on a mandatory or
+transactional category records nothing and returns false. `MemoryPreferenceStoreDriver` reads the mandatory list from
+`NotificationsConfig`; the notifications service ships the stored driver.
+
+Bulk mail (a category `canMute` allows muting: activity, marketing, a mutable service category) carries the RFC 8058
+headers. The link holds an HMAC-SHA256 token over the principal's id and the category, signed with the
+`NOTIFICATIONS_UNSUBSCRIBE_KEY` secret (`unsubscribeKey`); the endpoint is `unsubscribeUrl` (https):
+
+```ts
+const link = await unsubscribeLink({
+  recipient,
+  category,
+  key: config.unsubscribeKey,
+  url: config.unsubscribeUrl,
+});
+const headers = listUnsubscribeHeaders(category, config.mandatoryCategories, link); // {} for transactional
+await transport.send({ ...mail, headers: { ...mail.headers, ...headers } }, key);
+
+// the endpoint's POST handler (List-Unsubscribe=One-Click)
+const target = await verifyUnsubscribeToken(token, config.unsubscribeKey); // undefined when forged
+if (target)
+  await preferences.set(target.recipient, target.category, NotificationChannel.Mail, false);
+```
+
+The token does not expire: it can only mute a mutable category, which the person can turn back on. An empty key is
+refused rather than signing with nothing.
 
 ## Testing
 

@@ -4,7 +4,7 @@
  *          (`MailTransport`, `SmsTransport`, `WhatsAppTransport`, `PushTransport`, `InAppStore`, `ChatTransport`), the
  *          inbound `WhatsAppInbound` port (ADR 0448), the
  *          `ContentFreeData` (STA-964), the service ports (`PushTokenStore`, `SendLog`, `TemplateOverrides`), the provider interfaces and the types they
- *          exchange (`NotificationDeliveryEvent` among them, stackra-207), until `stackra gen` writes the entry barrels (STA-339).
+ *          exchange (`NotificationDeliveryEvent` among them, stackra-207; the `PreferenceStore` port, `MailAttachment` and `MailFeature`, stackra-218), until `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. The leaf: it imports no other entry of this package. Each is
  *           exported here only, never from `.` (ADR 0294 decision 15).
  * Runtime: isomorphic
@@ -15,6 +15,7 @@ export { TemplateVariant } from "#contracts/enums/template-variant.enum";
 export { ChatTransport } from "#contracts/ports/chat-transport.port";
 export { InAppStore } from "#contracts/ports/in-app-store.port";
 export { MailTransport } from "#contracts/ports/mail-transport.port";
+export { PreferenceStore } from "#contracts/ports/preference-store.port";
 export { PushTokenStore } from "#contracts/ports/push-token-store.port";
 export { PushTransport } from "#contracts/ports/push-transport.port";
 export { SendLog } from "#contracts/ports/send-log.port";
@@ -29,6 +30,8 @@ export type { InboundWhatsApp } from "#contracts/types/inbound-whatsapp.type";
 export type { InboundWhatsAppCartItem } from "#contracts/types/inbound-whatsapp-cart-item.type";
 export type { InAppEntry } from "#contracts/types/in-app-entry.type";
 export type { InAppMessage } from "#contracts/types/in-app-message.type";
+export type { MailAttachment } from "#contracts/types/mail-attachment.type";
+export type { MailFeature } from "#contracts/types/mail-feature.type";
 export type { MailSender } from "#contracts/types/mail-sender.type";
 export type { NotificationDeliveryEvent } from "#contracts/types/notification-delivery-event.type";
 export type { NotificationTemplate } from "#contracts/types/notification-template.type";

@@ -3,7 +3,7 @@
  * Purpose: the consumer contract of the `./contracts` entry: the channel ports (the template's `MailTransport`
  *          among them) and the inbound `WhatsAppInbound` port are exported as values, nothing else is, and the types they exchange
  *          resolve (`ContentFreeData` among them, STA-964; `NotificationDeliveryEvent` with its exact keys and statuses,
- *          stackra-207).
+ *          stackra-207; the `PreferenceStore` port, `MailAttachment` and `MailFeature`, stackra-218).
  * Boundary: test only; imports the stand-in barrel through its `#contracts` alias.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0294 (decision 15).
@@ -16,6 +16,8 @@ import type {
   InAppEntry,
   InAppMessage,
   InboundWhatsApp,
+  MailAttachment,
+  MailFeature,
   NotificationDeliveryEvent,
   OutboundChatMessage,
   OutboundMail,
@@ -29,6 +31,7 @@ describe("@stackra/notifications/contracts", () => {
       "InAppStore",
       "MailTransport",
       "NotificationChannel",
+      "PreferenceStore",
       "PushTokenStore",
       "PushTransport",
       "SendLog",
@@ -43,6 +46,12 @@ describe("@stackra/notifications/contracts", () => {
   it("exports the exchanged types", () => {
     expectTypeOf<OutboundMail["subject"]>().toEqualTypeOf<string>();
     expectTypeOf<keyof ContentFreeData>().toEqualTypeOf<"kind" | "link">();
+    expectTypeOf<OutboundMail["attachments"]>().toEqualTypeOf<
+      readonly MailAttachment[] | undefined
+    >();
+    expectTypeOf<MailFeature>().toEqualTypeOf<
+      "attachments" | "attachmentRefs" | "inline" | "cc" | "bcc" | "replyTo" | "headers"
+    >();
     expectTypeOf<OutboundSms["text"]>().toEqualTypeOf<string>();
     expectTypeOf<OutboundChatMessage["channel"]>().toEqualTypeOf<string>();
     expectTypeOf<InAppMessage["kind"]>().toEqualTypeOf<string>();

@@ -1,19 +1,24 @@
 /**
  * Stackra file contract:
  * Purpose: `OutboundMail`, one rendered mail as a `MailTransport` driver sends it: the verified address, the sender,
- *          the subject in the recipient's language, and the HTML and text bodies.
- * Boundary: a type only. The address is resolved at the moment of sending and never stored by the caller (ADR 0134);
- *           the bodies travel in the delivery job's payload only.
+ *          the subject in the recipient's language, the HTML and text bodies, and the optional copies (`cc`, `bcc`),
+ *          reply address, extra headers (`List-Unsubscribe`) and attachments.
+ * Boundary: a type only. The addresses are resolved at the moment of sending and never stored by the caller (ADR 0134);
+ *           the bodies travel in the delivery job's payload only. A header name or value never holds a line break
+ *           (the `connection` transport refuses one); an attachment travels by bytes or by storage reference.
  * Runtime: isomorphic
- * Governing contract: ADR 0223 (notifications); ADR 0266 (the transport is a port); ADR 0134 (personal data).
+ * Governing contract: ADR 0223 (notifications); ADR 0266 (the transport is a port); ADR 0134 (personal data);
+ *                     stackra-218 (STA-1376); RFC 8058.
  */
 import type { Email } from "@stackra/contracts";
+
+import type { MailAttachment } from "#contracts/types/mail-attachment.type";
 
 /**
  * A mail ready to send.
  *
  * @example
- * const mail: OutboundMail = { to, from: config.fromAddress, subject, html, text };
+ * const mail: OutboundMail = { to, from: config.fromAddress, subject, html, text, attachments: [invoicePdf] };
  * const providerId = await transport.send(mail, message.commandKey);
  */
 export interface OutboundMail {
@@ -31,4 +36,19 @@ export interface OutboundMail {
 
   /** The plain-text body derived from the HTML. */
   readonly text: string;
+
+  /** Visible copies. */
+  readonly cc?: readonly Email[];
+
+  /** Hidden copies. */
+  readonly bcc?: readonly Email[];
+
+  /** Where a reply goes, when not to `from`. */
+  readonly replyTo?: Email;
+
+  /** Extra headers by name (`List-Unsubscribe`, `List-Unsubscribe-Post`). */
+  readonly headers?: Readonly<Record<string, string>>;
+
+  /** The attached and inline files. */
+  readonly attachments?: readonly MailAttachment[];
 }

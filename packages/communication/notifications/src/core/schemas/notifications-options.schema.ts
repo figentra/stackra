@@ -8,9 +8,10 @@
  *           driver per environment (`notifications.driver`); code never names a production driver (ADR 0266).
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 4, 19 and 26); ADR 0266 (decisions 1 and 5); ADR 0422 (as
- *                     amended by STA-1235); ACA-539, STA-964 (mandatory categories).
+ *                     amended by STA-1235); ACA-539, STA-964 (mandatory categories); stackra-218 (unsubscribe).
  */
 import "#core/types/notifier-driver-name.type";
+import { Secret } from "@stackra/config";
 import type { DriverName } from "@stackra/container";
 import { Field, registerSchemas, Schema } from "@stackra/validation";
 import { z } from "zod";
@@ -36,6 +37,10 @@ export class NotificationsOptions extends Schema {
   @Field(z.enum(["messages", "delivery"]))
   target: "messages" | "delivery" = "messages";
 
+  /** The HMAC key that signs and verifies unsubscribe tokens; empty until the secret is set. */
+  @Secret("NOTIFICATIONS_UNSUBSCRIBE_KEY")
+  unsubscribeKey = "";
+
   /**
    * The `Notifier` driver: `memory` keeps deliveries in the process for dev and tests; `notifications` (`./node`)
    * queues rendered mail on the notifications service.
@@ -48,6 +53,12 @@ export class NotificationsOptions extends Schema {
    * here. Pass it to `canMute` and `sendAfter`.
    */
   mandatoryCategories: string[] = [];
+
+  /**
+   * The host's https one-click unsubscribe endpoint (RFC 8058); `unsubscribeLink` adds the signed `token`. Empty until
+   * runway sets it.
+   */
+  unsubscribeUrl = "";
 }
 
 registerSchemas([[NotificationsOptions, NOTIFICATIONS_CONFIG_SCHEMA]]);

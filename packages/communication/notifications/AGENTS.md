@@ -5,7 +5,8 @@ Stackra file contract:
 Purpose: the rules an agent follows when it changes @stackra/notifications.
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
-Governing contract: ADR 0086; ADR 0223; ADR 0294; ADR 0305; ADR 0448; STA-964; stackra-207 (STA-1360).
+Governing contract: ADR 0086; ADR 0223; ADR 0294; ADR 0305; ADR 0448; STA-964; stackra-207 (STA-1360);
+stackra-218 (STA-1376).
 -->
 
 Messages to people (ADR 0086, 0223 as amended by 0294; R-26). Member at `packages/communication/notifications`
@@ -77,6 +78,13 @@ Messages to people (ADR 0086, 0223 as amended by 0294; R-26). Member at `package
   and `resolveTemplate` runs it. Widen that allowlist only with an ADR; never add a record field to it (STA-964).
 - Mandatory categories are configuration (`NotificationsConfig.mandatoryCategories`, set per pack); `canMute` and
   `sendAfter` take the list as an argument and never default one (ACA-539).
+- Mail parts (stackra-218): a new optional part of `OutboundMail` is a new `MailFeature` case, a branch in
+  `mailFeatures`, and an update of the `OutboundMail` and `./contracts` exact-set tests and the README together. A
+  transport passes every part through or refuses with `MailFeatureUnsupportedError` before calling the provider; it
+  never drops one silently. Headers are checked by `assertMailHeaders` (no line break, no colon in a name).
+- Preferences (stackra-218): every `PreferenceStore` driver answers through `preferenceAllows`; a mandatory or
+  non-mutable category is never turned off. Bulk is whatever `canMute` allows, never a list. The unsubscribe key is the
+  `NOTIFICATIONS_UNSUBSCRIBE_KEY` secret; the token holds the principal id and category only, and an empty key throws.
 
 ## PII
 
@@ -86,6 +94,8 @@ Messages to people (ADR 0086, 0223 as amended by 0294; R-26). Member at `package
 | Address of a person with no account | `Recipient.address`, `NotifierAddressMessage`                | Passed to the target action only; never stored or logged here (ADR 0422 as amended). |
 | Notification data                   | `NotificationDelivery.data`                                  | Held in memory by the memory driver for the process's life; never logged.            |
 | Recipient address, body             | `OutboundMail`                                               | Passed to the transport only; this package never stores or logs it.                  |
+| Copies, reply address, attachments  | `OutboundMail.cc`, `.bcc`, `.replyTo`, `.attachments`        | Passed to the sender only; a refusal names feature codes, never an address or file.  |
+| Principal id and category           | the unsubscribe token                                        | Signed, not encrypted: the link reveals the public id and category, nothing else.    |
 | Rendered mail                       | `renderMail`, the renderer                                   | Returned to the caller; never cached, logged or written here.                        |
 | Phone numbers, push targets         | `OutboundSms`, `OutboundWhatsApp`, `PushTarget`, `CallEvent` | Passed to the provider only; never logged; a dead push target is revoked.            |
 | Inbound sender number, profile name | `InboundWhatsApp`                                            | Returned to the host's handler only; never logged or stored here.                    |

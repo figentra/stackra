@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `NOTIFICATIONS_CONFIG_SCHEMA`: `.parse({})` gives the memory driver, a known driver passes and
- *          an unknown one is refused; the pack's mandatory categories default to none (STA-964).
+ *          an unknown one is refused; the pack's mandatory categories default to none (STA-964); the unsubscribe endpoint is
+ *          https or empty and the key empty by default (stackra-218).
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decision 26); ADR 0266 (decision 5).
@@ -16,6 +17,8 @@ describe("NOTIFICATIONS_CONFIG_SCHEMA", () => {
       driver: "memory",
       target: "messages",
       mandatoryCategories: [],
+      unsubscribeUrl: "",
+      unsubscribeKey: "",
     });
   });
 
@@ -24,6 +27,8 @@ describe("NOTIFICATIONS_CONFIG_SCHEMA", () => {
       driver: "notifications",
       target: "messages",
       mandatoryCategories: [],
+      unsubscribeUrl: "",
+      unsubscribeKey: "",
     });
   });
 
@@ -40,6 +45,16 @@ describe("NOTIFICATIONS_CONFIG_SCHEMA", () => {
     expect(NOTIFICATIONS_CONFIG_SCHEMA.safeParse({ mandatoryCategories: ["Pickup"] }).success).toBe(
       false,
     );
+  });
+
+  it("takes an https unsubscribe endpoint and refuses plain http", () => {
+    expect(
+      NOTIFICATIONS_CONFIG_SCHEMA.parse({ unsubscribeUrl: "https://acme.example/unsubscribe" })
+        .unsubscribeUrl,
+    ).toBe("https://acme.example/unsubscribe");
+    expect(
+      NOTIFICATIONS_CONFIG_SCHEMA.safeParse({ unsubscribeUrl: "http://acme.example/u" }).success,
+    ).toBe(false);
   });
 
   it("refuses a driver this package does not ship", () => {

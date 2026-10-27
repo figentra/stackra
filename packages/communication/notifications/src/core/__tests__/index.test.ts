@@ -4,7 +4,7 @@
  *          and `Recipient` values and `MailMessage` type, plus the registry row's configuration and memory driver
  *          (gen's wiring imports `MemoryNotifierDriver` from here), and the inbound WhatsApp drivers with Meta's signature
  *          recipe (ADR 0448), the content-free check and mandatory-category answer (STA-964) and the `DeliveryRecorded`
- *          event (stackra-207) are exported, nothing else is.
+ *          event (stackra-207), and the preference, unsubscribe and mail-part names (stackra-218) are exported, nothing else is.
  * Boundary: test only; imports the stand-in barrel through its `#core` alias.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0294 (decision 15).
@@ -25,7 +25,9 @@ describe("@stackra/notifications", () => {
       "DeliveryRecorded",
       "DevicePushTransportDriver",
       "META_WHATSAPP_WEBHOOK_SIGNATURE",
+      "MailFeatureUnsupportedError",
       "MemoryNotifierDriver",
+      "MemoryPreferenceStoreDriver",
       "MemoryWhatsAppInboundDriver",
       "MetaWhatsAppInboundDriver",
       "NoTemplateError",
@@ -40,9 +42,13 @@ describe("@stackra/notifications", () => {
       "assertContentFree",
       "canMute",
       "dueEscalations",
+      "listUnsubscribeHeaders",
+      "preferenceAllows",
       "resolveTemplate",
       "sendAfter",
       "twiml",
+      "unsubscribeLink",
+      "verifyUnsubscribeToken",
     ]);
   });
 
