@@ -15,7 +15,10 @@ import { ClientRefusal } from "#core/bases/client-refusal.base";
 
 const MESSAGE = "leads::refusals.rate_limited" as I18nKey;
 
-class RateLimitedError extends ClientRefusal({ code: "leads.rate_limited", message: MESSAGE }) {}
+class RateLimitedError extends ClientRefusal({
+  code: "leads.rate_limited",
+  message: MESSAGE,
+}) {}
 
 describe("ClientRefusal", () => {
   it("is a refusal class with the producer's code and message key", () => {

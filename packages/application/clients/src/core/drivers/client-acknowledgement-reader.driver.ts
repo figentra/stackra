@@ -16,7 +16,7 @@ import { AcknowledgementReader } from "@stackra/query/contracts";
 import { z } from "zod";
 
 import { DEVICE_ORDER } from "#contracts/constants/device-order.constant";
-import { ClientTransport } from "#contracts/ports/client-transport.port";
+import type { ClientTransport } from "#contracts/ports/client-transport.port";
 
 /** The acknowledged query's answer. */
 const ACKNOWLEDGED_SCHEMA = z.object({ sequence: z.number().int().positive().nullable() });
@@ -30,7 +30,9 @@ const ACKNOWLEDGED_SCHEMA = z.object({ sequence: z.number().int().positive().nul
 export class ClientAcknowledgementReaderDriver extends Driver(AcknowledgementReader) {
   private readonly transport: ClientTransport;
 
-  /** @param transport - the client's transport. */
+  /**
+   * @param transport - the client's transport.
+   */
   constructor(transport: ClientTransport) {
     super();
     this.transport = transport;

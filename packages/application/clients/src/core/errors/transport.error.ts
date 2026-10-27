@@ -18,7 +18,10 @@ import type { TransportFailure } from "#contracts/enums/transport-failure.enum";
  * @example
  * fake.on(OrderKpisQuery).throws(TransportError.create({ reason: TransportFailure.Network }));
  */
-export class TransportError extends Refusal({ kind: ErrorKind.Unavailable, retryable: true }) {
+export class TransportError extends Refusal({
+  kind: ErrorKind.Unavailable,
+  retryable: true,
+}) {
   /** Why no answer could be read. */
   reason!: TransportFailure;
 

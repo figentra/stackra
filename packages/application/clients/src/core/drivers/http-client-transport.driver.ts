@@ -21,8 +21,8 @@ import {
 } from "@stackra/transport";
 import type { Middleware, Transport } from "@stackra/transport";
 
-import { ClientsConfig } from "#config/clients.config";
-import { ClientSession } from "#contracts/ports/client-session.port";
+import type { ClientsConfig } from "#config/clients.config";
+import type { ClientSession } from "#contracts/ports/client-session.port";
 import { ClientTransport } from "#contracts/ports/client-transport.port";
 import type { ClientRequest } from "#contracts/types/client-request.type";
 import { httpCall } from "#core/functions/http-call.function";

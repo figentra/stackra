@@ -18,7 +18,7 @@ import { ErrorKind, isRefusal } from "@stackra/errors";
 import { MutationSender } from "@stackra/query/contracts";
 import type { DeviceOrder, ReplayOutcome } from "@stackra/query/contracts";
 
-import { ClientTransport } from "#contracts/ports/client-transport.port";
+import type { ClientTransport } from "#contracts/ports/client-transport.port";
 import { CALL_REFS } from "#core/constants/call-refs.constant";
 
 /** Kinds that mean the server may answer differently later, so the call was not refused for good. */
@@ -33,7 +33,9 @@ const NOT_REACHED: ReadonlySet<ErrorKind> = new Set([
 export class ClientMutationSenderDriver extends Driver(MutationSender) {
   private readonly transport: ClientTransport;
 
-  /** @param transport - the client's transport. */
+  /**
+   * @param transport - the client's transport.
+   */
   constructor(transport: ClientTransport) {
     super();
     this.transport = transport;

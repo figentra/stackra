@@ -36,7 +36,9 @@ import type { RefOutput } from "#core/types/ref-output.type";
 export abstract class ServiceClient extends Service {
   private readonly transport: ClientTransport;
 
-  /** @param transport - the driver the topology picked: in process, RPC or HTTP. */
+  /**
+   * @param transport - the driver the topology picked: in process, RPC or HTTP.
+   */
   constructor(transport: ClientTransport) {
     super();
     this.transport = transport;

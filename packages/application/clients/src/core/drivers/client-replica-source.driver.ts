@@ -18,7 +18,7 @@ import type { ReplicaChanges } from "@stackra/query/contracts";
 import { json } from "@stackra/validation";
 import { z } from "zod";
 
-import { ClientTransport } from "#contracts/ports/client-transport.port";
+import type { ClientTransport } from "#contracts/ports/client-transport.port";
 import { CALL_REFS } from "#core/constants/call-refs.constant";
 
 /** A replica query's answer on the wire. */
@@ -39,7 +39,9 @@ const REPLICA_CHANGES_SCHEMA = z.object({
 export class ClientReplicaSourceDriver extends Driver(ReplicaSource) {
   private readonly transport: ClientTransport;
 
-  /** @param transport - the client's transport. */
+  /**
+   * @param transport - the client's transport.
+   */
   constructor(transport: ClientTransport) {
     super();
     this.transport = transport;
