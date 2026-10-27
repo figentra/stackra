@@ -1,6 +1,10 @@
 /**
- * Proves every preset listed in package.json `exports` exists, parses as JSONC, and resolves its
- * `extends` chain back to base.json — so a broken preset fails here, not in the first consumer's typecheck.
+ * Stackra file contract:
+ * Purpose: proves every preset listed in package.json `exports` exists, parses as JSONC, and resolves its `extends`
+ *          chain back to base.json — so a broken preset fails here, not in the first consumer's typecheck.
+ * Boundary: test only; imports the subject by relative path (a package cannot depend on itself).
+ * Runtime: node (vitest)
+ * Governing contract: ADR 0022 (test placement); ADR 0025 (typecheck reads source).
  */
 import { readFileSync, existsSync } from "node:fs";
 import { join, dirname } from "node:path";
