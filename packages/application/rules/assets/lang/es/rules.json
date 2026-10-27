@@ -100,5 +100,50 @@
       "yes": "Sí",
       "no": "No"
     }
+  },
+  "enums": {
+    "field_type": {
+      "string": "Texto",
+      "number": "Número",
+      "money": "Importe",
+      "date": "Fecha",
+      "enum": "Opción",
+      "list": "Lista",
+      "geo": "Ubicación"
+    },
+    "operator": {
+      "equals": "es",
+      "not_equals": "no es",
+      "one_of": "es uno de",
+      "not_one_of": "no es ninguno de",
+      "less_than": "es menor que",
+      "at_most": "es como máximo",
+      "greater_than": "es mayor que",
+      "at_least": "es como mínimo",
+      "between": "está entre",
+      "contains": "contiene",
+      "starts_with": "empieza por",
+      "ends_with": "termina en",
+      "before": "es anterior a",
+      "after": "es posterior a",
+      "within_last": "está dentro de los últimos",
+      "not_within_last": "no está dentro de los últimos",
+      "includes": "incluye",
+      "includes_any": "incluye alguno de",
+      "includes_all": "incluye todos",
+      "includes_none": "no incluye ninguno de",
+      "is_empty": "está vacío",
+      "is_not_empty": "no está vacío",
+      "within_radius": "está a menos de",
+      "outside_radius": "está a más de",
+      "is_set": "tiene un valor",
+      "is_not_set": "no tiene valor"
+    },
+    "seed_result": {
+      "created": "Creado",
+      "updated": "Actualizado",
+      "kept": "Conservado",
+      "current": "Al día"
+    }
   }
 }

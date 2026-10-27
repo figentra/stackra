@@ -100,5 +100,50 @@
       "yes": "Sì",
       "no": "No"
     }
+  },
+  "enums": {
+    "field_type": {
+      "string": "Testo",
+      "number": "Numero",
+      "money": "Importo",
+      "date": "Data",
+      "enum": "Scelta",
+      "list": "Elenco",
+      "geo": "Posizione"
+    },
+    "operator": {
+      "equals": "è",
+      "not_equals": "non è",
+      "one_of": "è uno tra",
+      "not_one_of": "non è nessuno tra",
+      "less_than": "è minore di",
+      "at_most": "è al massimo",
+      "greater_than": "è maggiore di",
+      "at_least": "è almeno",
+      "between": "è compreso tra",
+      "contains": "contiene",
+      "starts_with": "inizia con",
+      "ends_with": "finisce con",
+      "before": "è prima di",
+      "after": "è dopo",
+      "within_last": "è negli ultimi",
+      "not_within_last": "non è negli ultimi",
+      "includes": "include",
+      "includes_any": "include uno tra",
+      "includes_all": "include tutti",
+      "includes_none": "non include nessuno tra",
+      "is_empty": "è vuoto",
+      "is_not_empty": "non è vuoto",
+      "within_radius": "è entro",
+      "outside_radius": "è oltre",
+      "is_set": "ha un valore",
+      "is_not_set": "non ha un valore"
+    },
+    "seed_result": {
+      "created": "Creato",
+      "updated": "Aggiornato",
+      "kept": "Mantenuto",
+      "current": "Già aggiornato"
+    }
   }
 }

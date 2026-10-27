@@ -16,7 +16,7 @@ export class CreateConditionFieldsMigration extends Migration {
   /** One table and its unique field per model and source. */
   up(schema: SchemaBuilder): void {
     schema.create("condition_fields", (t: Blueprint) => {
-      t.hasPublicId("cfd");
+      t.hasPublicId("rcf");
       t.timestamps();
       t.string("model", 127)
         .notNull()

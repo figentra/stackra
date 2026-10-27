@@ -100,5 +100,50 @@
       "yes": "Yes",
       "no": "No"
     }
+  },
+  "enums": {
+    "field_type": {
+      "string": "Text",
+      "number": "Number",
+      "money": "Money",
+      "date": "Date",
+      "enum": "Choice",
+      "list": "List",
+      "geo": "Location"
+    },
+    "operator": {
+      "equals": "is",
+      "not_equals": "is not",
+      "one_of": "is one of",
+      "not_one_of": "is none of",
+      "less_than": "is less than",
+      "at_most": "is at most",
+      "greater_than": "is greater than",
+      "at_least": "is at least",
+      "between": "is between",
+      "contains": "contains",
+      "starts_with": "starts with",
+      "ends_with": "ends with",
+      "before": "is before",
+      "after": "is after",
+      "within_last": "is within the last",
+      "not_within_last": "is not within the last",
+      "includes": "includes",
+      "includes_any": "includes any of",
+      "includes_all": "includes all of",
+      "includes_none": "includes none of",
+      "is_empty": "is empty",
+      "is_not_empty": "is not empty",
+      "within_radius": "is within",
+      "outside_radius": "is outside",
+      "is_set": "has a value",
+      "is_not_set": "has no value"
+    },
+    "seed_result": {
+      "created": "Created",
+      "updated": "Updated",
+      "kept": "Kept",
+      "current": "Up to date"
+    }
   }
 }

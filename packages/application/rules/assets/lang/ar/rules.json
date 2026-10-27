@@ -100,5 +100,50 @@
       "yes": "نعم",
       "no": "لا"
     }
+  },
+  "enums": {
+    "field_type": {
+      "string": "نص",
+      "number": "رقم",
+      "money": "مبلغ مالي",
+      "date": "تاريخ",
+      "enum": "خيار",
+      "list": "قائمة",
+      "geo": "موقع"
+    },
+    "operator": {
+      "equals": "يساوي",
+      "not_equals": "لا يساوي",
+      "one_of": "أحد",
+      "not_one_of": "ليس أيًّا من",
+      "less_than": "أقل من",
+      "at_most": "على الأكثر",
+      "greater_than": "أكبر من",
+      "at_least": "على الأقل",
+      "between": "بين",
+      "contains": "يحتوي على",
+      "starts_with": "يبدأ بـ",
+      "ends_with": "ينتهي بـ",
+      "before": "قبل",
+      "after": "بعد",
+      "within_last": "خلال آخر",
+      "not_within_last": "ليس خلال آخر",
+      "includes": "يتضمن",
+      "includes_any": "يتضمن أيًّا من",
+      "includes_all": "يتضمن كلًّا من",
+      "includes_none": "لا يتضمن أيًّا من",
+      "is_empty": "فارغ",
+      "is_not_empty": "غير فارغ",
+      "within_radius": "ضمن",
+      "outside_radius": "خارج",
+      "is_set": "له قيمة",
+      "is_not_set": "ليس له قيمة"
+    },
+    "seed_result": {
+      "created": "تم الإنشاء",
+      "updated": "تم التحديث",
+      "kept": "تم الإبقاء عليه",
+      "current": "محدَّث"
+    }
   }
 }

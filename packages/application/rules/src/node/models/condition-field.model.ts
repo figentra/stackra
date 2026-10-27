@@ -3,7 +3,7 @@
  * Purpose: `ConditionField`, one field of the cross-service condition-field registry: a model's field another
  *          service's stored conditions may test (an Access deny on `orders.order` testing `record.channelId`), with its
  *          rules type, label and, for an enum, its codes.
- * Boundary: data only. Key `rules.condition_field`, table `rules.condition_fields`, public ids `cfd_…`. A platform row,
+ * Boundary: data only. Key `rules.condition_field`, table `rules.condition_fields`, public ids `rcf_…`. A platform row,
  *           not tenant-owned: no scope column and no row-level security. Written only by `ConditionFieldService.sync`,
  *           which replaces one model's rows from the owning service's published `FactSource$` documents; the label is
  *           the owning service's lang key, stored, never translated. Source and field keys are camelCase
@@ -15,12 +15,26 @@
 import type { OptionalProps } from "@stackra/database";
 import type { I18nKey } from "@stackra/i18n";
 import { HasPublicId, Model, Timestamps } from "@stackra/model";
+import { Field } from "@stackra/validation";
+import { z } from "zod";
 
 import type { FieldType } from "#contracts/index";
 
 /** A registered field. Traits add `id` and the timestamps; the unique index is the migration's. */
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: merged with the [OptionalProps] augmentation below
-export class ConditionField extends Model.with(HasPublicId("cfd"), Timestamps) {
+export class ConditionField extends Model.with(HasPublicId("rcf"), Timestamps) {
+  /** An enum field's codes, each with its lang key; null for any other type. */
+  // reason: `I18nKey` ships no `I18nKey$` (owner call, STA-1363), so the code-to-key map is a jsonb hatch
+  @Field(
+    z
+      .record(
+        z.string(),
+        z.custom<I18nKey>((value) => typeof value === "string"),
+      )
+      .nullable(),
+  )
+  values: Readonly<Record<string, I18nKey>> | null = null;
+
   /** The model whose conditions test it (`orders.order`), the `Rules` key of its registry. */
   model!: string;
 
@@ -35,9 +49,6 @@ export class ConditionField extends Model.with(HasPublicId("cfd"), Timestamps) {
 
   /** The owning service's lang key of the field's name. */
   label!: I18nKey;
-
-  /** An enum field's codes, each with its lang key; null for any other type. */
-  values: Readonly<Record<string, I18nKey>> | null = null;
 }
 
 // shortcut: the `[OptionalProps]` augmentation is written by hand so `CrudService.insert` may leave the trait timestamps

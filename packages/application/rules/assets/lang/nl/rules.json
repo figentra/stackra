@@ -100,5 +100,50 @@
       "yes": "Ja",
       "no": "Nee"
     }
+  },
+  "enums": {
+    "field_type": {
+      "string": "Tekst",
+      "number": "Getal",
+      "money": "Bedrag",
+      "date": "Datum",
+      "enum": "Keuze",
+      "list": "Lijst",
+      "geo": "Locatie"
+    },
+    "operator": {
+      "equals": "is",
+      "not_equals": "is niet",
+      "one_of": "is een van",
+      "not_one_of": "is geen van",
+      "less_than": "is kleiner dan",
+      "at_most": "is hoogstens",
+      "greater_than": "is groter dan",
+      "at_least": "is minstens",
+      "between": "ligt tussen",
+      "contains": "bevat",
+      "starts_with": "begint met",
+      "ends_with": "eindigt op",
+      "before": "is vóór",
+      "after": "is na",
+      "within_last": "valt binnen de laatste",
+      "not_within_last": "valt niet binnen de laatste",
+      "includes": "omvat",
+      "includes_any": "omvat een van",
+      "includes_all": "omvat alle",
+      "includes_none": "omvat geen van",
+      "is_empty": "is leeg",
+      "is_not_empty": "is niet leeg",
+      "within_radius": "ligt binnen",
+      "outside_radius": "ligt buiten",
+      "is_set": "heeft een waarde",
+      "is_not_set": "heeft geen waarde"
+    },
+    "seed_result": {
+      "created": "Aangemaakt",
+      "updated": "Bijgewerkt",
+      "kept": "Behouden",
+      "current": "Actueel"
+    }
   }
 }

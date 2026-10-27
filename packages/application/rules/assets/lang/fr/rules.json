@@ -100,5 +100,50 @@
       "yes": "Oui",
       "no": "Non"
     }
+  },
+  "enums": {
+    "field_type": {
+      "string": "Texte",
+      "number": "Nombre",
+      "money": "Montant",
+      "date": "Date",
+      "enum": "Choix",
+      "list": "Liste",
+      "geo": "Emplacement"
+    },
+    "operator": {
+      "equals": "est",
+      "not_equals": "n'est pas",
+      "one_of": "est l'un de",
+      "not_one_of": "n'est aucun de",
+      "less_than": "est inférieur à",
+      "at_most": "est au plus",
+      "greater_than": "est supérieur à",
+      "at_least": "est au moins",
+      "between": "est compris entre",
+      "contains": "contient",
+      "starts_with": "commence par",
+      "ends_with": "se termine par",
+      "before": "est avant",
+      "after": "est après",
+      "within_last": "est dans les derniers",
+      "not_within_last": "n'est pas dans les derniers",
+      "includes": "inclut",
+      "includes_any": "inclut l'un de",
+      "includes_all": "inclut tous",
+      "includes_none": "n'inclut aucun de",
+      "is_empty": "est vide",
+      "is_not_empty": "n'est pas vide",
+      "within_radius": "est à moins de",
+      "outside_radius": "est à plus de",
+      "is_set": "a une valeur",
+      "is_not_set": "n'a pas de valeur"
+    },
+    "seed_result": {
+      "created": "Créé",
+      "updated": "Mis à jour",
+      "kept": "Conservé",
+      "current": "À jour"
+    }
   }
 }

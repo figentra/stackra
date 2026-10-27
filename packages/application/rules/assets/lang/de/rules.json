@@ -100,5 +100,50 @@
       "yes": "Ja",
       "no": "Nein"
     }
+  },
+  "enums": {
+    "field_type": {
+      "string": "Text",
+      "number": "Zahl",
+      "money": "Geldbetrag",
+      "date": "Datum",
+      "enum": "Auswahl",
+      "list": "Liste",
+      "geo": "Standort"
+    },
+    "operator": {
+      "equals": "ist",
+      "not_equals": "ist nicht",
+      "one_of": "ist eines von",
+      "not_one_of": "ist keines von",
+      "less_than": "ist kleiner als",
+      "at_most": "ist höchstens",
+      "greater_than": "ist größer als",
+      "at_least": "ist mindestens",
+      "between": "liegt zwischen",
+      "contains": "enthält",
+      "starts_with": "beginnt mit",
+      "ends_with": "endet mit",
+      "before": "ist vor",
+      "after": "ist nach",
+      "within_last": "liegt innerhalb der letzten",
+      "not_within_last": "liegt nicht innerhalb der letzten",
+      "includes": "umfasst",
+      "includes_any": "umfasst eines von",
+      "includes_all": "umfasst alle von",
+      "includes_none": "umfasst keines von",
+      "is_empty": "ist leer",
+      "is_not_empty": "ist nicht leer",
+      "within_radius": "liegt innerhalb von",
+      "outside_radius": "liegt außerhalb von",
+      "is_set": "hat einen Wert",
+      "is_not_set": "hat keinen Wert"
+    },
+    "seed_result": {
+      "created": "Erstellt",
+      "updated": "Aktualisiert",
+      "kept": "Beibehalten",
+      "current": "Aktuell"
+    }
   }
 }
