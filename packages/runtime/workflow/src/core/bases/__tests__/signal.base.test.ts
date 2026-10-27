@@ -24,6 +24,6 @@ describe(Signal, () => {
   });
 
   it("has no called form", () => {
-    expectTypeOf(Signal).not.toBeCallableWith({});
+    expectTypeOf(Signal).not.toBeFunction();
   });
 });
