@@ -3,8 +3,8 @@
  * Purpose: `PanelRoutePage`, the page navigation renders for a panel route (`toPanel(AdminPanel)`): the panel's shell,
  *          framing the panel the class declares.
  * Boundary: internal to the `./react` entry; registered by `registerPanelPages`. Reads the class's recorded `path` and
- *           `area` through `kindOf`. The generic resource, document and settings pages the shell would frame are not
- *           built yet, so the shell frames nothing below it.
+ *           `area` through `kindOf`. The generic resource pages are their own routes (`toResource`, registered by
+ *           `registerPanelPages`), not this route's children yet, so the shell frames nothing below it.
  * Runtime: browser
  * Governing contract: ADR 0307 (panel v3.1); ADR 0164 (decision 3: several panels).
  */
@@ -35,7 +35,7 @@ export function PanelRoutePage({ panel }: { readonly panel: AnyClass }): ReactEl
     path: record.options["path"] as string,
     area: record.options["area"] as ApiArea,
   };
-  // shortcut: the shell frames nothing until the generic List, View, Create and Edit pages (and the document and
-  // settings pages) exist; they become this route's children then (panel spec, open items).
+  // shortcut: the shell frames nothing; the resource routes are siblings of this route. Nest them (an <Outlet />) when
+  // gen writes the panel's route tree with its resources (STA-339).
   return <PanelShell panel={ref}>{null}</PanelShell>;
 }

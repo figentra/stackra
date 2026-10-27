@@ -23,6 +23,20 @@
     "done": "Hecho.",
     "refused": "No se ha podido hacer."
   },
+  "resources": {
+    "search": "Buscar",
+    "create": "Nuevo",
+    "view": "Ver",
+    "edit": "Editar",
+    "delete": "Eliminar",
+    "save": "Guardar",
+    "failed": "No se pudo cargar esta página.",
+    "retry": "Reintentar",
+    "empty": "Aún no hay nada aquí.",
+    "trashed": "Registros eliminados",
+    "trashed_with": "Con eliminados",
+    "trashed_only": "Solo eliminados"
+  },
   "plan_catalogue": {
     "history": "Versiones",
     "version": "Versión {version}",

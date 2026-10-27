@@ -23,6 +23,20 @@
     "done": "Erledigt.",
     "refused": "Das konnte nicht ausgeführt werden."
   },
+  "resources": {
+    "search": "Suchen",
+    "create": "Neu",
+    "view": "Ansehen",
+    "edit": "Bearbeiten",
+    "delete": "Löschen",
+    "save": "Speichern",
+    "failed": "Diese Seite konnte nicht geladen werden.",
+    "retry": "Erneut versuchen",
+    "empty": "Hier ist noch nichts.",
+    "trashed": "Gelöschte Datensätze",
+    "trashed_with": "Mit gelöschten",
+    "trashed_only": "Nur gelöschte"
+  },
   "plan_catalogue": {
     "history": "Versionen",
     "version": "Version {version}",

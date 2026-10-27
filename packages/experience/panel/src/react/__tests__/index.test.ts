@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: the consumer contract of the `./react` entry: every value the template imports from `@stackra/panel/react` is
- *          exported (`useBreadcrumbs` as navigation's own), plus `registerPanelPages`, the plan-catalogue admin and the onboarding checklist, and nothing else.
+ *          exported (`useBreadcrumbs` as navigation's own), plus `registerPanelPages`, the generic resource pages and relation manager, the plan-catalogue admin and the onboarding checklist, and nothing else.
  * Boundary: test only; imports the stand-in barrel through its `#react` alias.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decision 15); ADR 0303 (decision 1).
@@ -23,6 +23,10 @@ describe("@stackra/panel/react", () => {
       "OnboardingChecklist",
       "PanelShell",
       "PlanCatalogueAdmin",
+      "RelationManager",
+      "ResourceFormPage",
+      "ResourceListPage",
+      "ResourceViewPage",
       "WidgetTile",
       "registerPanelPages",
       "useActionRunner",

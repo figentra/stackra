@@ -23,6 +23,20 @@
     "done": "Done.",
     "refused": "This could not be done."
   },
+  "resources": {
+    "search": "Search",
+    "create": "New",
+    "view": "View",
+    "edit": "Edit",
+    "delete": "Delete",
+    "save": "Save",
+    "failed": "This page could not load.",
+    "retry": "Try again",
+    "empty": "Nothing here yet.",
+    "trashed": "Deleted records",
+    "trashed_with": "With deleted",
+    "trashed_only": "Only deleted"
+  },
   "plan_catalogue": {
     "history": "Versions",
     "version": "Version {version}",

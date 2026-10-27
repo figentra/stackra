@@ -77,6 +77,7 @@ describe("@stackra/panel", () => {
       "groupRows",
       "lineEditorOf",
       "panels",
+      "registerResources",
       "registerWidgets",
       "resolvePlacements",
       "resource",

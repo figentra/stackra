@@ -2,8 +2,8 @@
 
 <!--
 Stackra file contract:
-Purpose: the agent rules of @stackra/panel: where code goes, the package rules (shell slots included) and the rules
-         that fail the build.
+Purpose: the agent rules of @stackra/panel: where code goes, the package rules (shell slots and the generic resource
+         pages included) and the rules that fail the build.
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
 Governing contract: ADR 0164; ADR 0307; ADR 0306; ADR 0336; ADR 0350; ADR 0438 (shell slots, stackra-03).
@@ -39,8 +39,9 @@ programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./react`, `./native
 - The breadcrumb trail is navigation's (`BreadcrumbsProvider`, `useBreadcrumb`, `useBreadcrumbs` in
   `@stackra/navigation/react`); panel depends on navigation, never the reverse. `./react` re-exports `useBreadcrumbs`
   only because the template imports it from here.
-- The records, the widget registry, `PANEL_KEYS`, `widgetsFor`, `widgetInput`, `widgetTitle`, `toneOf`, `changeOf`,
-  `valueAt` and `snakeCase` are internal: `react` and `native` import them by path, and no barrel exports them.
+- The records, the widget and resource registries, `PANEL_KEYS`, `widgetsFor`, `widgetInput`, `widgetTitle`, `toneOf`,
+  `changeOf`, `valueAt`, `snakeCase`, `resourceTreeOf`, `resourceLabel`, `tableInput`, `placementsAt`, `recordIdKey` and
+  `inputKind` are internal: `react` and `native` import them by path, and no barrel exports them.
 
 ## This package
 
@@ -59,6 +60,11 @@ programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./react`, `./native
 - Shell slots (ADR 0438): `defineSlot<Props>` in the shell package, `fillSlot` in the product's UI package, each an
   exported const with static options so gen reads them. `Slot.props` is type-only; never set it at run time. A shell
   slot is not a `SlotRef` (a widget place); keep the two apart.
+- Resource pages (`src/react/resource-pages/`) are generic: they read the route constants, the registered tree
+  (`registerResources`) and the wire data, never a product's code. A resource without a tree still gets every page from
+  the data's own keys. Every button runs through `useActionRunner`; nothing calls the transport directly.
+- Resource labels are derived by `resourceLabel` (`<module>::resources.<model>.<part>.<path>`); never add a label
+  option. Logic a native page needs too (list input, places, id key, input kind) goes in a pure `core` function.
 - No parameter properties and no `#private` fields: apps typecheck this source under `erasableSyntaxOnly`.
 
 ## Rules that fail the build

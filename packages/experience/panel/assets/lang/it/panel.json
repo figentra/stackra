@@ -23,6 +23,20 @@
     "done": "Fatto.",
     "refused": "Non è stato possibile farlo."
   },
+  "resources": {
+    "search": "Cerca",
+    "create": "Nuovo",
+    "view": "Visualizza",
+    "edit": "Modifica",
+    "delete": "Elimina",
+    "save": "Salva",
+    "failed": "Impossibile caricare questa pagina.",
+    "retry": "Riprova",
+    "empty": "Non c'è ancora niente qui.",
+    "trashed": "Record eliminati",
+    "trashed_with": "Con eliminati",
+    "trashed_only": "Solo eliminati"
+  },
   "plan_catalogue": {
     "history": "Versioni",
     "version": "Versione {version}",

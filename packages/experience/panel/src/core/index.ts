@@ -4,10 +4,10 @@
  *          metric shapes and the time range input with their shipped schemas, the enums, the data constructors gen
  *          writes into `#stackra/resources`, `#stackra/panels` and `#stackra/slots`, the recorders gen runs, the saved
  *          views with their store port and grouping, the display-mode field filter, the line-editor and inert
- *          contribution rules, and the public types) until `stackra gen` writes the entry barrels (STA-339).
+ *          contribution rules, `registerResources` for the generic resource pages, and the public types) until `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. The shipped schemas are re-exported under their generated names
  *           (`CountMetric$`, `MoneyMetric$`, `SavedView$`, `TimeRangeInput$`), folding the old `./schemas` entry into `.` so no
- *           symbol is exported from two entries. The builder records, the widget registry, the panel's own i18n keys
+ *           symbol is exported from two entries. The builder records, the widget and resource registries, the panel's own i18n keys
  *           and the renderers' helpers are internal: the `./react` and `./native` entries import them by path. The
  *           kind instance bases are types only, so no class skips its options.
  * Runtime: isomorphic
@@ -63,6 +63,7 @@ export { fillSlot } from "#core/functions/fill-slot.function";
 export { groupRows } from "#core/functions/group-rows.function";
 export { lineEditorOf } from "#core/functions/line-editor-of.function";
 export { panels } from "#core/functions/panels.function";
+export { registerResources } from "#core/functions/register-resources.function";
 export { registerWidgets } from "#core/functions/register-widgets.function";
 export { resolvePlacements } from "#core/functions/resolve-placements.function";
 export { resource } from "#core/functions/resource.function";

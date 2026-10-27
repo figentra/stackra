@@ -3,7 +3,8 @@
  * Purpose: `PANEL_KEYS`, the typed keys of this package's own texts in `assets/lang/<locale>/panel.json`: the tile
  *          states, the range picker and its periods, the trend and target lines, and the action runner's dialog and
  *          toasts, and the plan-catalogue admin's versions, decisions and proposal form,
- *          and the onboarding checklist.
+ *          and the onboarding checklist, and the generic resource pages (search, create, view, edit, delete, save, the
+ *          load failure, the empty list and the trashed filter).
  * Boundary: internal: the web and native entries import it by path; no entry exports it. Each key exists in every base
  *           locale this package ships (ar, en, fr, de, es, it, nl).
  * Runtime: isomorphic
@@ -17,6 +18,20 @@ export const PANEL_KEYS = keys({
     widgets: ["empty", "failed", "retry", "range", "change", "target", "not_rendered"],
     time_range: ["today", "yesterday", "last_7_days", "last_30_days", "this_month", "custom"],
     actions: ["confirm_title", "confirm", "cancel", "done", "refused"],
+    resources: [
+      "search",
+      "create",
+      "view",
+      "edit",
+      "delete",
+      "save",
+      "failed",
+      "retry",
+      "empty",
+      "trashed",
+      "trashed_with",
+      "trashed_only",
+    ],
     checklist: [
       "title",
       "progress",

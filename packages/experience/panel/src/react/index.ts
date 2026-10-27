@@ -1,11 +1,12 @@
 /**
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `./react` entry of @stackra/panel (the panel shell, the dashboard and its tile, the
- *          action runner, the route pages it gives navigation, the plan-catalogue admin and the onboarding checklist)
+ *          action runner, the route pages it gives navigation, the generic resource pages and relation manager, the
+ *          plan-catalogue admin and the onboarding checklist)
  *          until `stackra gen` writes the entry barrels
  *          (STA-339).
- * Boundary: names each re-export and declares nothing. The widget body, the KPI view and the panel route page are
- *           internal. The breadcrumb trail is navigation's: `useBreadcrumbs` is re-exported from
+ * Boundary: names each re-export and declares nothing. The widget body, the KPI view, the panel and resource route
+ *           pages, the resource table and the resource form field are internal. The breadcrumb trail is navigation's: `useBreadcrumbs` is re-exported from
  *           `@stackra/navigation/react` only because the template imports it from here (STA-344 moves that import).
  * Runtime: browser
  * Governing contract: ADR 0294 (decision 15); ADR 0303 (decision 1); the STA-347 stand-in barrel decision.
@@ -30,6 +31,14 @@ export { CatalogueVersions } from "#react/plan-catalogue/catalogue-versions";
 export type { CatalogueVersionsProps } from "#react/plan-catalogue/catalogue-versions.props";
 export { PlanCatalogueAdmin } from "#react/plan-catalogue/plan-catalogue-admin";
 export type { PlanCatalogueAdminProps } from "#react/plan-catalogue/plan-catalogue-admin.props";
+export { RelationManager } from "#react/resource-pages/relation-manager";
+export type { RelationManagerProps } from "#react/resource-pages/relation-manager.props";
+export { ResourceFormPage } from "#react/resource-pages/resource-form-page";
+export type { ResourceFormPageProps } from "#react/resource-pages/resource-form-page.props";
+export { ResourceListPage } from "#react/resource-pages/resource-list-page";
+export type { ResourceListPageProps } from "#react/resource-pages/resource-list-page.props";
+export { ResourceViewPage } from "#react/resource-pages/resource-view-page";
+export type { ResourceViewPageProps } from "#react/resource-pages/resource-view-page.props";
 export { registerPanelPages } from "#react/route-pages/register-panel-pages.function";
 export { WidgetTile } from "#react/widget-tile/widget-tile";
 export type { WidgetTileProps } from "#react/widget-tile/widget-tile.props";

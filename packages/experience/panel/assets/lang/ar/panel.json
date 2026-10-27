@@ -23,6 +23,20 @@
     "done": "تم.",
     "refused": "تعذّر تنفيذ ذلك."
   },
+  "resources": {
+    "search": "بحث",
+    "create": "جديد",
+    "view": "عرض",
+    "edit": "تعديل",
+    "delete": "حذف",
+    "save": "حفظ",
+    "failed": "تعذر تحميل هذه الصفحة.",
+    "retry": "حاول مرة أخرى",
+    "empty": "لا يوجد شيء هنا بعد.",
+    "trashed": "السجلات المحذوفة",
+    "trashed_with": "مع المحذوفة",
+    "trashed_only": "المحذوفة فقط"
+  },
   "plan_catalogue": {
     "history": "الإصدارات",
     "version": "الإصدار {version}",

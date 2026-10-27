@@ -3,7 +3,7 @@
 <!--
 Stackra file contract:
 Purpose: the package's reader guide: the panel kinds, builders, slots (widget places and shell slots), placement
-         layers and renderers.
+         layers and renderers, the generic resource pages among them.
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
 Governing contract: ADR 0164; ADR 0307; ADR 0306; ADR 0336; ADR 0350; ADR 0438 (shell slots, stackra-03).
@@ -32,13 +32,15 @@ into `.`). Depends on `@stackra/actions`, `@stackra/clients`, `@stackra/containe
 | `.`        | `Bind`, `Drill`, `DateRange`, `Blocks`                                                                                                                                      | binds, drill-downs, date filter values, document blocks        |
 | `.`        | `Column`, `Filter`, `View`, `Entry`, `Section`, `Relation`, `Placement`, `FormField`, `FormStep`, `WidgetDisplay`                                                           | the data constructors gen writes into `#stackra/resources`     |
 | `.`        | `slots`, `panels`, `resource`, `document`, `widget`, `registerWidgets`                                                                                                      | what gen calls in `#stackra/slots`, `panels`, `resources`      |
+| `.`        | `registerResources`                                                                                                                                                         | hands the generated resource trees to the resource pages       |
 | `.`        | `defineSlot`, `fillSlot`, `Slot` (t), `SlotFill` (t), `SlotOptions` (t), `SlotCardinality` (t), `SlotComponent` (t)                                                         | shell slots a product fills (ADR 0438)                         |
 | `.`        | `describeResource`, `describeWidget`, `resolvePlacements`                                                                                                                   | what gen records; the placement layer rule                     |
 | `.`        | `SavedView` (`SavedView$`), `ViewStore` (t), `groupRows`, `ViewGroup` (t), `Aggregate`, `ViewSharing`                                                                       | saved views with grouping, sub-grouping, totals and sharing    |
 | `.`        | `visibleFields`                                                                                                                                                             | the form fields a display mode shows                           |
 | `.`        | `lineEditorOf`, `LineEditorPlacement` (t), `activeContributions`                                                                                                            | the one line editor of a `LineEntry` slot; inert contributions |
 | `./react`  | `PanelShell`, `usePanel`, `useBreadcrumbs`                                                                                                                                  | the panel frame and its trail (navigation's, re-exported)      |
-| `./react`  | `registerPanelPages`                                                                                                                                                        | gives navigation the page `toPanel` renders                    |
+| `./react`  | `registerPanelPages`                                                                                                                                                        | gives navigation the pages `toPanel` and `toResource` render   |
+| `./react`  | `ResourceListPage`, `ResourceViewPage`, `ResourceFormPage`, `RelationManager`                                                                                               | the generic List, View, Create and Edit pages and relations    |
 | `./react`  | `Dashboard`, `WidgetTile`                                                                                                                                                   | the widget grid of a panel's slots, one widget as a card       |
 | `./react`  | `useActionRunner`, `ActionRunStatus`                                                                                                                                        | run any action through its declared confirmation               |
 | `./native` | `WidgetSlot`                                                                                                                                                                | a slot's widgets on mobile                                     |
@@ -157,15 +159,50 @@ the builder methods stay `x.from`, `x.grid`, `x.steps`, `x.step`, `x.upload` and
 - `PanelShell` frames an app's layout as one panel, holds navigation's breadcrumb trail (`BreadcrumbsProvider`; pages
   publish with `useBreadcrumb` from `@stackra/navigation/react`) and provides the confirmation dialog `useActionRunner`
   asks with. `useBreadcrumbs` is navigation's, re-exported here because the template imports it from here.
-- `registerPanelPages()` (called by the generated web entry) registers the `panel` page navigation's `toPanel` renders:
-  the panel's shell for the class. The `resource` page `toResource` renders is not registered until the generic pages
-  exist, so a resource route names its missing registration.
+- `registerPanelPages()` (called by the generated web entry) registers the `panel` page navigation's `toPanel` renders
+  (the panel's shell for the class) and the `resource` page `toResource` renders (the generic pages below), so every
+  resource route has a page with no extra code.
 - Built-in displays: KPI, KPI group, progress, list and Custom (the producing package's renderer, receiving
   `{ data, isRefreshing }`).
 
+## Resource pages
+
+Every `toResource(Resources.Order)` route renders a generic page, Filament-style, drawn with free `@stackra/ui`:
+
+- **List** (`ResourceListPage`): the title, the header actions, and `DataTable` with the recorded columns (hidden ones
+  left out, money in its currency, a list as its count), sort on sortable columns, `FilterBar` with search and the
+  declared filters (an enum filter as a select, the trashed filter), cursor pagination (`nextCursor`, `hasMore`),
+  row actions and the bulk bar. The read is the closed input `{ limit, cursor?, sort?, filter?, search? }`
+  (`CrudService.table`); only declared sorts and filters are sent. `pageSize` defaults to 25.
+- **View** (`ResourceViewPage`): the get query read with the record id under its input key (`id`, `orderId`,
+  `accountId`), the infolist's entries and sections in a `PropertyList`, the header actions and every relation manager.
+- **Create and Edit** (`ResourceFormPage`, `mode`): the recorded form fields in a schema form over the create or update
+  action's input. A field draws by its input type (switch, number, a select of the enum's codes, text) or as a picker
+  over its options query; a grid and the steps of a set are drawn too. The schema validates on submit; a refusal's
+  `fieldErrors` show on their fields; a done run opens the record's View page (else the list). Edit starts from the
+  record, its id under the input's id key.
+- **Relation managers** (`RelationManager`): the related list query's table, its input bound from the record.
+- **Actions**: placed actions follow ADR 0307 rule 3 (`placementsAt`): a record action on the row, View and Edit, and in
+  the bulk bar with `.bulk()` (one run per selected record); an action without a record in the list header. View and
+  edit links, the create link and delete (`operations.delete`) are derived. Every run goes through `useActionRunner`.
+- **Labels** are derived: `<module>::resources.<model>.title`, `.columns.<path>`, `.filters.<path>`, `.entries.<path>`,
+  `.sections.<name>`, `.fields.<path>`, `.steps.<name>`, `.relations.<model>` and `.actions.<verb>` (paths in
+  snake_case).
+
+The generated web entry calls `registerResources({ "orders.order": tree })` with the trees gen records; a resource with
+no registered tree still gets every page, showing the row's, the record's and the input's own keys.
+
+**Native.** The pure parts live in `.`'s internals so `./native` can import them by path: `tableInput` (the closed list
+input), `placementsAt`, `recordIdKey`, `inputKind`, `resourceLabel` and `resourceTreeOf`. The native pages are not
+built: `@stackra/ui/native` has no `DataTable` or `FilterBar` yet (gap-analysis P1), so a native list, filter bar,
+bulk bar and form page wait for those.
+
 ## Not built yet
 
-The generic resource pages (list, view, form, relation managers, the built-in View as JSON, clone and activity tab of
-ADR 0334) and their `resource` registration with navigation, the queued export and import pipelines with the `ImportMapper` port, the Chart, Table, Timeline, Banner and
+On the resource pages: the built-in View as JSON, clone and activity tab (ADR 0334), saved views and grouping on the
+List, the modal form of a record action that needs more than the id, a selection-input (`Selection<...>`) action, the
+upload and repeater fields, the step wizard (steps show one under another), the id a create mints for its PUT address,
+enum labels (codes show), the native pages, and nesting the resource routes under the panel shell. Elsewhere: the
+queued export and import pipelines with the `ImportMapper` port, the Chart, Table, Timeline, Banner and
 Check displays, the `NumberMetric`, `PercentMetric` and `DurationMetric` shapes, the scope and user layouts (layers 4
 and 5) and the KPI drill-down links and sparklines. See the spec's open items.

@@ -23,6 +23,20 @@
     "done": "Klaar.",
     "refused": "Dit kon niet worden uitgevoerd."
   },
+  "resources": {
+    "search": "Zoeken",
+    "create": "Nieuw",
+    "view": "Bekijken",
+    "edit": "Bewerken",
+    "delete": "Verwijderen",
+    "save": "Opslaan",
+    "failed": "Deze pagina kon niet worden geladen.",
+    "retry": "Opnieuw proberen",
+    "empty": "Hier staat nog niets.",
+    "trashed": "Verwijderde records",
+    "trashed_with": "Met verwijderde",
+    "trashed_only": "Alleen verwijderde"
+  },
   "plan_catalogue": {
     "history": "Versies",
     "version": "Versie {version}",
