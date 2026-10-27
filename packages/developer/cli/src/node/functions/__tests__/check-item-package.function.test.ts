@@ -25,10 +25,12 @@ afterEach(() => {
   rmSync(dir, { recursive: true, force: true });
 });
 
+// Each member gets its own directory, so a file one member writes never satisfies the next.
 const member = (manifest: Record<string, unknown>, files: string[] = []) => {
-  writeFileSync(join(dir, "package.json"), JSON.stringify(manifest));
-  for (const file of files) writeFileSync(join(dir, file), "x");
-  return checkItemPackage(dir);
+  const root = mkdtempSync(join(dir, "member-"));
+  writeFileSync(join(root, "package.json"), JSON.stringify(manifest));
+  for (const file of files) writeFileSync(join(root, file), "x");
+  return checkItemPackage(root);
 };
 
 describe("checkItemPackage", () => {
