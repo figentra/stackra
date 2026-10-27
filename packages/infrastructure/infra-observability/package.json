@@ -36,6 +36,11 @@
   "type": "module",
   "sideEffects": false,
   "imports": {
+    "#config/*": [
+      "./src/config/*",
+      "./src/config/*.ts",
+      "./src/config/*/index.ts"
+    ],
     "#core/*": [
       "./src/core/*",
       "./src/core/*.ts",
@@ -76,9 +81,11 @@
   "dependencies": {
     "@pulumi/aws": "catalog:infra",
     "@pulumiverse/sentry": "catalog:infra",
+    "@stackra/config": "workspace:*",
     "@stackra/container": "workspace:*",
     "@stackra/contracts": "workspace:*",
     "@stackra/runway": "workspace:*",
+    "@stackra/validation": "workspace:*",
     "pulumi-better-uptime": "catalog:infra",
     "pulumi-logtail": "catalog:infra",
     "zod": "catalog:"

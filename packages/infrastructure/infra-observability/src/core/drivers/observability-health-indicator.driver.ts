@@ -2,8 +2,8 @@
  * Stackra file contract:
  * Purpose: `ObservabilityHealthIndicatorDriver`, this package's driver of the contracts `HealthIndicator` port (`telemetry`): the dependency is
  *          up when the telemetry endpoint the services export to (the runway's OTLP or log ingest URL) answers. One GET, bounded by a timeout; any answer below 500 is `up` (the endpoint is reachable; an unsigned request is refused, as it should be), 429 is `degraded`, 500 and above is `down`.
- * Boundary: `Driver(HealthIndicator)`, so the container records the port it implements. The target is runway data passed in by the
- *           wiring; no credential is sent and none is read. A failure reports `down` with the host only, never a
+ * Boundary: `Driver(HealthIndicator)`, so the container records the port it implements. The target is `InfraObservabilityConfig`, runway data the
+ *           wiring injects; no credential is sent and none is read. A failure reports `down` with the host only, never a
  *           response body, and never throws.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 16 and 17: each infra package ships its dependency's driver), ADR 0184,
@@ -13,11 +13,13 @@ import { Driver } from "@stackra/container";
 import { Duration, HealthIndicator, HealthStatus } from "@stackra/contracts";
 import type { HealthReport } from "@stackra/contracts";
 
+import type { InfraObservabilityConfig } from "#config/infra-observability.config";
+
 /**
  * Checks that the telemetry endpoint answers.
  *
  * @example
- * const indicator = new ObservabilityHealthIndicatorDriver({ url: "https://in-otel.logs.betterstack.com/" });
+ * const indicator = new ObservabilityHealthIndicatorDriver(buildConfig(InfraObservabilityConfig, { values: { url: "https://otel.acme.example/v1/logs" } }));
  * await indicator.check(); // { status: "up", latency: "PT0.12S" }
  */
 export class ObservabilityHealthIndicatorDriver extends Driver(HealthIndicator) {
@@ -28,34 +30,25 @@ export class ObservabilityHealthIndicatorDriver extends Driver(HealthIndicator) 
 
   private readonly host: string;
 
-  private readonly fetch: typeof fetch;
-
-  private readonly timeout: Duration;
+  private readonly timeout = Duration.seconds(5);
 
   /**
-   * @param options.fetch - the fetch to use; the global one when absent.
-   * @param options.timeout - how long a check may take; five seconds when absent.
-   * @throws TypeError when the target is malformed.
+   * @param config - the target, from the runway's `config.infra_observability`.
+   * @throws TypeError when the target is malformed or unset.
    */
-  constructor(options: {
-    readonly url: string;
-    readonly fetch?: typeof fetch;
-    readonly timeout?: Duration;
-  }) {
+  constructor(config: InfraObservabilityConfig) {
     super();
-    if (!/^https:\/\/[^\s/]+(\/\S*)?$/.test(options.url))
-      throw new TypeError(`"${options.url}" is not an https:// URL`);
-    this.url = options.url;
+    if (!/^https:\/\/[^\s/]+(\/\S*)?$/.test(config.url))
+      throw new TypeError(`"${config.url}" is not an https:// URL`);
+    this.url = config.url;
     this.host = new URL(this.url).host;
-    this.fetch = options.fetch ?? ((input, init) => globalThis.fetch(input, init));
-    this.timeout = options.timeout ?? Duration.seconds(5);
   }
 
   /** One GET against the target. */
   override async check(): Promise<HealthReport> {
     const started = Date.now();
     try {
-      const response = await this.fetch(this.url, {
+      const response = await fetch(this.url, {
         method: "GET",
         signal: AbortSignal.timeout(Duration.toMilliseconds(this.timeout)),
       });

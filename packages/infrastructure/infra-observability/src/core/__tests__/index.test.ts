@@ -24,6 +24,8 @@ describe("@stackra/infra-observability", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(observability).sort()).toEqual([
       "HeartbeatKind",
+      "InfraObservabilityConfig",
+      "InfraObservabilityConfig$",
       "ObservabilityConfigInvalidError",
       "ObservabilityHealthIndicatorDriver",
       "SliKind",

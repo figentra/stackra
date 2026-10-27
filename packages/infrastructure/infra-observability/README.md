@@ -11,15 +11,15 @@ Pulumi program for the core stack.
 
 ## What is here
 
-| Entry    | Symbol                                               | Use                                                                    |
-| -------- | ---------------------------------------------------- | ---------------------------------------------------------------------- |
-| `.`      | `observabilityPlan(root, members)`                   | the telemetry plan from the root runway, the app runways and the jobs  |
-| `.`      | `HeartbeatKind`, `SliKind`                           | enums of snake_case codes                                              |
-| `.`      | `ObservabilityConfigInvalidError`                    | every runway or job failure at once, with its path                     |
-| `.`      | `ObservabilityHealthIndicatorDriver`                 | the `HealthIndicator` driver: the telemetry endpoint answers           |
-| `.`      | `ObservabilityPlan`, `HeartbeatSource`, …            | types                                                                  |
-| `./node` | `observabilityStack(plan)`                           | inside the Pulumi program: every resource of the plan, and its outputs |
-| `./node` | `logPipeline`, `sentryProjects`, `heartbeatMonitors` | the parts, for a stack that composes its own                           |
+| Entry    | Symbol                                                           | Use                                                                                                      |
+| -------- | ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `.`      | `observabilityPlan(root, members)`                               | the telemetry plan from the root runway, the app runways and the jobs                                    |
+| `.`      | `HeartbeatKind`, `SliKind`                                       | enums of snake_case codes                                                                                |
+| `.`      | `ObservabilityConfigInvalidError`                                | every runway or job failure at once, with its path                                                       |
+| `.`      | `ObservabilityHealthIndicatorDriver`, `InfraObservabilityConfig` | the `HealthIndicator` driver: the telemetry endpoint answers; its target is `config.infra_observability` |
+| `.`      | `ObservabilityPlan`, `HeartbeatSource`, …                        | types                                                                                                    |
+| `./node` | `observabilityStack(plan)`                                       | inside the Pulumi program: every resource of the plan, and its outputs                                   |
+| `./node` | `logPipeline`, `sentryProjects`, `heartbeatMonitors`             | the parts, for a stack that composes its own                                                             |
 
 `heartbeatMonitors`, `logPipeline`, `statusPage` and `observabilityStack` declare their return types, so the
 declarations name the Better Stack classes through `pulumi-better-uptime` and `pulumi-logtail`, not their `bin/` files
