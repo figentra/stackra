@@ -10,9 +10,9 @@
  * Boundary: writes only the target `.agents/hooks` files it copies and patches, after every hunk applied.
  * Runtime: node
  * Governing contract: ADR 0293 (agent permission tiers and executor pushes); STA-449 (guard port).
- * Upstream: figentra/stackra `.agents/hooks`, written against 34cc99690f70381c77ea37e18d212ec0e9a30dbb (the last
- *   hooks change; origin/main cac2b28). The target repo's `.agents/hooks/README.md` records the SHA it was ported
- *   from, which this script prints.
+ * Upstream: figentra/stackra `.agents/hooks`, written against 34cc99690f70381c77ea37e18d212ec0e9a30dbb, re-anchored
+ *   for cc7d67f (the `runway-deploy` ask) and 6f8b9cc (the plan gate's fs and path imports). The target repo's
+ *   `.agents/hooks/README.md` records the SHA it was ported from, which this script prints.
  * The hunks: the owner's config (`.claude/settings*.json`, `.claude/agents`, `.agents/hooks`, OpenCode config,
  *   `.mcp.json`) and the Stackra checkout are never written, by a tool, the shell or git; `master` counts as main; no
  *   `git stash` but `list` and `show`; app build output is regenerable; the bot scripts must name this checkout
@@ -661,8 +661,8 @@ const REGENERABLE =
     [`build output (${BUILD}) needs no yes`, `build output (${BUILD_PORT}) needs no yes`],
     // the owner's asks: paid or signed builds, re-enabling Actions
     [
-      `  "eas-deploy",\n  "publish",`,
-      `  "eas-deploy",\n  "signed-build", // port\n  "bot-gh-workflow-enable", // port\n  "publish",`,
+      `  "eas-deploy",\n  "runway-deploy",\n  "publish",`,
+      `  "eas-deploy",\n  "signed-build", // port\n  "bot-gh-workflow-enable", // port\n  "runway-deploy",\n  "publish",`,
     ],
     ["/**\n * The rules, in order.", `${PORT_RULES}/**\n * The rules, in order.`],
     // encore deploy stays denied, and a push to the Encore remote is one
@@ -721,12 +721,12 @@ ${REPO_ROW[repo]}`,
     ],
     // the engine: what the copy needs, the shell forms the port rules read, a named push refspec
     [
-      `import { existsSync, readdirSync, realpathSync } from "node:fs";`,
-      `import { existsSync, readdirSync, readFileSync, realpathSync, statSync } from "node:fs"; // port: readFileSync, statSync`,
+      `import { existsSync, readdirSync, readFileSync, realpathSync } from "node:fs";`,
+      `import { existsSync, readdirSync, readFileSync, realpathSync, statSync } from "node:fs"; // port: statSync`,
     ],
     [
-      `import { basename, dirname, join, resolve, sep } from "node:path";`,
-      `import { basename, dirname, join, normalize, resolve, sep } from "node:path"; // port: normalize`,
+      `import { basename, dirname, join, relative, resolve, sep } from "node:path";`,
+      `import { basename, dirname, join, normalize, relative, resolve, sep } from "node:path"; // port: normalize`,
     ],
     [
       code`    else break;

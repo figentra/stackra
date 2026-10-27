@@ -108,7 +108,9 @@ test("app templates take their theme from @stackra/tokens and ship their own cop
   const global = readText(mobile, "src/styles/global.css");
   assert.deepEqual(tokenRefs(global), ["@stackra/tokens/themes/stackra/native.css"]);
   tokenRefs(global).forEach(tokensFile);
-  const icons = [...read(mobile, "app.json").matchAll(/"\.\/(assets\/[^"]+)"/g)].map((m) => m[1]);
+  const icons = [...readText(mobile, "app.json").matchAll(/"\.\/(assets\/[^"]+)"/g)].map(
+    (m) => m[1],
+  );
   assert.equal(icons.length, 4); // icon, adaptive foreground, light and dark splash
   for (const icon of icons) {
     const original = icon.includes("st-tile") ? "splash" : "app-icon";
@@ -122,7 +124,7 @@ test("app templates take their theme from @stackra/tokens and ship their own cop
   sameBytes(desktop, "assets/app-icon-1024.png", "app-icon/app-icon-light-1024.png");
 
   const docs = render("app:docs", "handbook").dest;
-  assert.match(read(docs, "src/config/docs.config.ts"), /primary: "#0B0D0F"/);
+  assert.match(readText(docs, "src/config/docs.config.ts"), /primary: "#0B0D0F"/);
   assert.equal(
     readText(docs, "src/assets/logo/light.svg"),
     readFileSync(join(BRAND, "logos/stackra-wordmark-light.svg"), "utf8"),
