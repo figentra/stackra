@@ -1,7 +1,7 @@
 # `.opencode/`
 
 What OpenCode reads in this repository. OpenCode runs the delegated, mechanical tasks that `pnpm delegate` routes to
-it (`.agents/routing.yaml`, [ADR 0066](../apps/docs/src/adr/0066-delegation-to-opencode-by-routing-matrix.mdx)). Its
+it (`.agents/routing.yaml`, [ADR 0066](../apps/docs/src/docs/adr/0066-delegation-to-opencode-by-routing-matrix.mdx)). Its
 project configuration is the root `opencode.jsonc` (model, `AGENTS.md` as instructions, permissions); it reads the
 rules from `AGENTS.md` and the skills from `.agents/skills` directly.
 
@@ -22,5 +22,5 @@ rules from `AGENTS.md` and the skills from `.agents/skills` directly.
   permission list is order-sensitive (the last match wins). Change a rule in both, with its test.
 - `pnpm agents:check` fails on drift between `.agents/` and this folder.
 
-Docs: [concurrent sessions](../apps/docs/src/agents/concurrent-sessions.mdx),
-[ADR 0016](../apps/docs/src/adr/0016-agents-source-of-truth.mdx).
+Docs: [concurrent sessions](../apps/docs/src/docs/agents/concurrent-sessions.mdx),
+[ADR 0016](../apps/docs/src/docs/adr/0016-agents-source-of-truth.mdx).

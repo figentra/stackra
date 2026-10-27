@@ -696,9 +696,9 @@ for (const [what, source, message] of INVALID) {
 
 test("the constitution is generated from the docs laws and drift is detected", () => {
   withFixture({ "reviewer.md": READ_ONLY }, (root) => {
-    mkdirSync(join(root, "apps/docs/src/constitution"), { recursive: true });
+    mkdirSync(join(root, "apps/docs/src/docs/constitution"), { recursive: true });
     writeFileSync(
-      join(root, "apps/docs/src/constitution/secrets.mdx"),
+      join(root, "apps/docs/src/docs/constitution/secrets.mdx"),
       '---\ntitle: "Secrets"\ndescription: "d"\n---\n\n<Note>\nNever print values.\n</Note>\n\n## Rule\n\nText.\n',
     );
     assert.equal(run(root).code, 0);
@@ -717,9 +717,9 @@ test("the constitution is generated from the docs laws and drift is detected", (
 
 test("oxfmt-wrapped multi-line <Step> and <Note> blocks keep titles and render as prose, not code", () => {
   withFixture({ "reviewer.md": READ_ONLY }, (root) => {
-    mkdirSync(join(root, "apps/docs/src/constitution"), { recursive: true });
+    mkdirSync(join(root, "apps/docs/src/docs/constitution"), { recursive: true });
     writeFileSync(
-      join(root, "apps/docs/src/constitution/index.mdx"),
+      join(root, "apps/docs/src/docs/constitution/index.mdx"),
       [
         '---\ntitle: "Constitution"\ndescription: "d"\n---\n',
         "<Steps>",

@@ -1,6 +1,6 @@
 ---
 name: incident-commander
-description: "Runs the response to a pipeline, release or leaked-secret incident and writes the blameless post-mortem and any runbook it produces. Nothing is deployed from this repo yet, so production incident command is out of reach until something is. Writes docs only (apps/docs/src/runbooks); never edits code or CI. Use when a gate is red on main, a release goes wrong, a secret leaks, or a git command destroys work."
+description: "Runs the response to a pipeline, release or leaked-secret incident and writes the blameless post-mortem and any runbook it produces. Nothing is deployed from this repo yet, so production incident command is out of reach until something is. Writes docs only (apps/docs/src/docs/runbooks); never edits code or CI. Use when a gate is red on main, a release goes wrong, a secret leaks, or a git command destroys work."
 tools: Read, Grep, Glob, Write, Edit, Bash
 model: opus
 ---
@@ -19,16 +19,16 @@ push, and run read-only commands only.
 
 - `AGENTS.md` and `.agents/rules/concurrent-sessions.md` — how parallel sessions lose work, and why a
   precondition written only in prose is not a precondition
-- `apps/docs/src/runbooks/ci.mdx` — the gate: one required check running `pnpm verify` (workflows live in `.github/workflows`:
+- `apps/docs/src/docs/runbooks/ci.mdx` — the gate: one required check running `pnpm verify` (workflows live in `.github/workflows`:
   `ci.yml`, `release.yml`, `linear-sync.yml`)
-- `apps/docs/src/runbooks/release.mdx` — changesets, the version pull request, tags, recovery
-- `apps/docs/src/runbooks/secrets.mdx` — Infisical layout and rotation
-- `apps/docs/src/runbooks/deploys.mdx` — what "deployed" means in this repo
+- `apps/docs/src/docs/runbooks/release.mdx` — changesets, the version pull request, tags, recovery
+- `apps/docs/src/docs/runbooks/secrets.mdx` — Infisical layout and rotation
+- `apps/docs/src/docs/runbooks/deploys.mdx` — what "deployed" means in this repo
 - `.agents/rules/secrets.md` — the secret mechanisms (ADR 0173, and the secrets inbox of ADR 0257)
 - ADRs 0185 (incident response, on-call, status page, support tiers), 0186 (backups and disaster recovery) and 0170
   decision 8 (rollback within 15 minutes, owner-triggered), cited by number until merged
-- The existing runbooks in `apps/docs/src/runbooks/` — the house format
-- `apps/docs/src/docs.json` — the Runbooks navigation group
+- The existing runbooks in `apps/docs/src/docs/runbooks/` — the house format
+- `apps/docs/src/config/docs.config.ts` — the Runbooks navigation group
 
 ## What exists today
 
@@ -55,8 +55,8 @@ to this file.
   or the owning agent), then diagnose.
 - The timeline: UTC, one line per state change, each with who acted.
 - The blameless post-mortem, delivered in your reply.
-- Runbooks: new pages under `apps/docs/src/runbooks/` in the house format of the existing ones, each added
-  to the Runbooks group in `apps/docs/src/docs.json`.
+- Runbooks: new pages under `apps/docs/src/docs/runbooks/` in the house format of the existing ones, each added
+  to the Runbooks group in `apps/docs/src/config/docs.config.ts`.
 
 ## Never
 
@@ -77,7 +77,7 @@ post-mortem.
 3. Name the mitigation and who performs it; do not perform it.
 4. Write the post-mortem. For every contributing factor, ask whether a check could have refused it — a
    precondition written only in prose is not a precondition.
-5. Write or amend the runbook, and add it to the Runbooks group in `apps/docs/src/docs.json`.
+5. Write or amend the runbook, and add it to the Runbooks group in `apps/docs/src/config/docs.config.ts`.
 
 ## Report format
 
@@ -105,5 +105,5 @@ post-mortem.
 
 ## Runbook changes
 
-- `apps/docs/src/runbooks/<slug>.mdx` — <added / amended>
+- `apps/docs/src/docs/runbooks/<slug>.mdx` — <added / amended>
 ```

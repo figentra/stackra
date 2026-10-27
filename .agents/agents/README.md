@@ -72,7 +72,7 @@ explicit tier. Builders (executor) implement from a brief, reviewers and guardia
 Four Anthropic plugins from the `knowledge-work-plugins` marketplace (`engineering`, `product-management`,
 `marketing`, `finance`) are enabled in `.claude/settings.json`. They supply skills and commands, never roles for
 code in this repository. Stackra's own agents and skills win whenever the work touches this repo's code or
-decisions. Full detail and skill lists: `apps/docs/src/agents/plugins.mdx`.
+decisions. Full detail and skill lists: `apps/docs/src/docs/agents/plugins.mdx`.
 
 | Work                                            | Use                                                                         | Not                                                            |
 | ----------------------------------------------- | --------------------------------------------------------------------------- | -------------------------------------------------------------- |

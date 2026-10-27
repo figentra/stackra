@@ -23,5 +23,5 @@ one literal pattern. A pattern without a leading `**/` is anchored at the repo r
 ## Writing a rule
 
 - Short and checkable. Each rule ends with an **Enforcement** line naming the existing check, or "planned".
-- Rules state repository facts and link to the docs page that owns the reasoning (`apps/docs/src/...`).
+- Rules state repository facts and link to the docs page that owns the reasoning (`apps/docs/src/docs/...`).
 - Decide `always` honestly. A rule that matters only when touching `package.json` says so.

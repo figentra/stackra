@@ -15,8 +15,8 @@ One version of everything, from one place, with a known licence. You are the one
 
 ## Must read
 
-`.agents/rules/versions.md`, `.agents/rules/not-built-yet.md`, `apps/docs/src/standards/dependencies.mdx`,
-`apps/docs/src/guides/catalogs.mdx`, `apps/docs/src/runbooks/renovate.mdx`, `apps/docs/src/agents/skills.mdx`, ADRs 0227
+`.agents/rules/versions.md`, `.agents/rules/not-built-yet.md`, `apps/docs/src/docs/standards/dependencies.mdx`,
+`apps/docs/src/docs/guides/catalogs.mdx`, `apps/docs/src/docs/runbooks/renovate.mdx`, `apps/docs/src/docs/agents/skills.mdx`, ADRs 0227
 (rejected and deferred), 0024 (MIT with exclusions), 0027 (CLIs pinned in mise), 0174 (supply-chain dependency policy),
 0258 (skill fencing and the rejected-technology check).
 

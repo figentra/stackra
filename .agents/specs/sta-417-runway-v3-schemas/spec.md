@@ -36,7 +36,7 @@ model v3 roles extend. The consumer is figentra/stackra-template PR #16, which n
 - **Deploy modes**: build-time files, identical in saas, on-prem and air-gapped (see plan.md)
 - **Licence tier**: no licence change. `@stackra/typescript-config` stays MIT and the schemas stay under the repository's MIT licence
 - **UI surfaces**: none
-- **Docs to update**: `apps/docs/src/adr/0300-published-tooling-presets-and-enforced-spell-checking.mdx` (dated Note), `apps/docs/src/adr/index.mdx` (the 0300 row), `packages/tooling/typescript/README.md` (preset table), and the `description` text inside the three schemas
+- **Docs to update**: `apps/docs/src/docs/adr/0300-published-tooling-presets-and-enforced-spell-checking.mdx` (dated Note), `apps/docs/src/docs/adr/index.mdx` (the 0300 row), `packages/tooling/typescript/README.md` (preset table), and the `description` text inside the three schemas
 - **Lane**: lite (recorded reason: retroactive spec for a change already written and reviewed on PR #136; the lead set the lite lane. Strictly, the ADR 0120 table would place this change in the full lane: change risk R2 and about 670 changed lines)
 - **Change risk**: R2 (published contracts: the runway schemas served from the static host and consumed by the template, and new exports of a preset package; no auth, tenancy, money, PII or secret values)
 

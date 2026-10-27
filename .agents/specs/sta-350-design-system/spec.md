@@ -42,7 +42,7 @@ Design System". Source decisions: ADR 0165 (web client stack, UI contract, form 
 - **Deploy modes**: none; two libraries and a dev-only app, the same for SaaS, on-prem and air-gapped
 - **Licence tier**: the two packages are MIT; the brand assets stay under the ADR 0024 NOTICE in their new homes
 - **UI surfaces**: `apps/playground` (the component workbench, not shipped to users)
-- **Docs to update**: `apps/docs/src/adr/0302-*.mdx` and its amendment notes, `apps/docs/src/standards/structure.mdx`
+- **Docs to update**: `apps/docs/src/docs/adr/0302-*.mdx` and its amendment notes, `apps/docs/src/docs/standards/structure.mdx`
   (regenerated), the package READMEs and the `design-system` category README, the roadmap
 - **Lane**: lite (recorded reason: the lead chose lite because every decision was taken by the owner on 2026-10-23 and
   is recorded in ADR 0302 in the same pull request; the line count is over the lite guide because most of it is moved

@@ -31,7 +31,7 @@
 - **Deploy modes**: none (developer-machine tooling)
 - **Licence tier**: free (MIT)
 - **UI surfaces**: none
-- **Docs to update**: `apps/docs/src/runbooks/secrets.mdx`, `apps/docs/src/adr/0257-secret-manager-agent-and-the-secrets-inbox.mdx`
+- **Docs to update**: `apps/docs/src/docs/runbooks/secrets.mdx`, `apps/docs/src/docs/adr/0257-secret-manager-agent-and-the-secrets-inbox.mdx`
 - **Lane**: lite (recorded reason: tooling script plus agent and hook config, written after the build at the coordinator's direction)
 - **Change risk**: R2 (secret handling; security review required, ADR 0120 D16)
 

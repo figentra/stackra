@@ -70,7 +70,7 @@ ADR 0120 (Accepted) names `spec-gate` lane and folder enforcement as planned; th
 
 ## Docs
 
-`apps/docs/src/agents/spec-lifecycle.mdx`.
+`apps/docs/src/docs/agents/spec-lifecycle.mdx`.
 
 ## Project structure
 

@@ -4,7 +4,8 @@
  *          *.json is a config whose tool reads JSONC, so it must be .jsonc.
  * Boundary: data only; a new entry names the reader and why it cannot take JSONC.
  * Runtime: node
- * Governing contract: the JSON vs JSONC rule (STA-299); ADR 0294 (R10); ADR 0305 (rule 1); ADR 0296.
+ * Governing contract: the JSON vs JSONC rule (STA-299); ADR 0294 (R10); ADR 0305 (rule 1); ADR 0296; ADR 0002
+ *                     (2026-10-27 amendment, the docs layout sweep stackra-177).
  */
 
 /**
@@ -46,7 +47,12 @@ export const MUST_STAY_JSON: readonly (readonly [RegExp, string])[] = [
     /^packages\/developer\/runway\/schema\/[\w-]+\.json$/,
     "runway JSON Schemas: shipped as @stackra/runway/schema/<kind>.json for editors and validators",
   ],
-  [/(^|\/)src\/docs\.json$/, "Mintlify parses docs.json with JSON.parse"],
+  // shortcut: only docs apps not yet swept to the ADR 0002 (2026-10-27) layout keep src/docs.json (OS, Commerce, the
+  // products); a swept app's docs.json is generated into gitignored .stackra/site. Delete the row after the last sweep.
+  [
+    /(^|\/)src\/docs\.json$/,
+    "Mintlify parses docs.json with JSON.parse (docs apps before their layout sweep)",
+  ],
   [
     /(^|\/)([\w-]+\.)?stackra\.manifest\.json$/,
     "stackra gen writes the committed manifest as strict JSON (ADR 0294 R10); test fixtures copy it",

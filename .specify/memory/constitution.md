@@ -1,6 +1,6 @@
 # Stackra Constitution
 
-<!-- generated from apps/docs/src/constitution/*.mdx by tools/scripts/agents-sync.mjs — edit the sources, not this file -->
+<!-- generated from apps/docs/src/docs/constitution/*.mdx by tools/scripts/agents-sync.mjs — edit the sources, not this file -->
 
 ## Constitution
 

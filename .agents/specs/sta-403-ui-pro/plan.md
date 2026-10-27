@@ -71,9 +71,9 @@ ADR 0310 (new, same pull request), amending ADR 0197 decision 4. ADR 0165, 0197,
 
 ## Docs
 
-ADR 0310, the ADR 0197 note, `apps/docs/src/runbooks/setup.mdx`, the package README and AGENTS.
+ADR 0310, the ADR 0197 note, `apps/docs/src/docs/runbooks/setup.mdx`, the package README and AGENTS.
 
 ## Project structure
 
 `packages/design-system/ui-pro`, `apps/playground`, `tools/scripts/validate-repository.mjs`,
-`.github/workflows/{ci,release}.yml`, `pnpm-workspace.yaml`, `apps/docs/src/adr`.
+`.github/workflows/{ci,release}.yml`, `pnpm-workspace.yaml`, `apps/docs/src/docs/adr`.

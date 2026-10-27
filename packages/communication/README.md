@@ -4,8 +4,8 @@ Talking to the outside world. One folder per package, `packages/communication/<n
 
 **Today:** No package yet.
 
-**Planned here** ([ADR 0127](../../apps/docs/src/adr/0127-package-categories-including-infrastructure.mdx)): webhooks, notifications, versioning, integrations (integrations assumed, pending the owner).
-The order is the [roadmap](../../apps/docs/src/roadmap.mdx).
+**Planned here** ([ADR 0127](../../apps/docs/src/docs/adr/0127-package-categories-including-infrastructure.mdx)): webhooks, notifications, versioning, integrations (integrations assumed, pending the owner).
+The order is the [roadmap](../../apps/docs/src/docs/roadmap.mdx).
 
 ## Rules
 

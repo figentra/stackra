@@ -43,7 +43,7 @@ follows right after."
 - **New dependencies**: none
 - **Deploy modes**: none (local agent tooling only)
 - **Licence tier**: not distributed
-- **Docs to update**: `.agents/hooks/README.md`, ADRs 0353 to 0362, the 21 amended ADRs above, `apps/docs/src/adr/index.mdx`, `apps/docs/src/docs.json`
+- **Docs to update**: `.agents/hooks/README.md`, ADRs 0353 to 0362, the 21 amended ADRs above, `apps/docs/src/docs/adr/index.mdx`, `apps/docs/src/docs.json`
 - **Lane**: lite (recorded reason: one hook rule plus its tests, decided by the owner in chat)
 - **Change risk**: R3 (agent guards)
 

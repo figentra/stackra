@@ -1,0 +1,4 @@
+// TypeScript project for this member: extends exactly one @stackra/typescript-config preset and sets nothing else
+// (pnpm validate checks the preset). Only `stackra.config.ts` and `src/config/docs.config.ts` are TypeScript here.
+// Owner: release-operations · Secrets: forbidden
+{ "extends": "@stackra/typescript-config/node" }

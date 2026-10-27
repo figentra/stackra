@@ -8,7 +8,7 @@ globs: []
 # Tenancy
 
 On request only. Stackra has no database and no tenant-owned table; this binds from the first one, and the checks
-must exist first. Reasoning: `apps/docs/src/constitution/tenancy.mdx`.
+must exist first. Reasoning: `apps/docs/src/docs/constitution/tenancy.mdx`.
 
 1. **Application layer.** Every query on a tenant-owned table runs inside `withTenant(ctx, db => ...)` (or `withScope(ctx, db => ...)`
    when the scope tree is in use), which open a transaction and `set_config('app.tenant_id', $1, true)` from the

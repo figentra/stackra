@@ -25,7 +25,7 @@ the lead decides what to do with a BLOCK.
    ADR 0164 and 0165) fits.
 2. Tokens only: colors, spacing, radius, type and motion come from tokens (`--color-ink-900` / `color.ink.900`,
    ADR 0231); no literals. HeroUI Pro only in our own apps (ADR 0197).
-3. Brand rules in `apps/docs/src` (design pages) respected: voice, logo use, iconography, density.
+3. Brand rules in `apps/docs/src/docs` (design pages) respected: voice, logo use, iconography, density.
 4. Hierarchy, spacing rhythm and states (empty, loading, error, disabled) are present and consistent.
 5. Web and mobile share tokens and behaviour, not components.
 6. Motion is purposeful, interruptible and honors reduced motion.

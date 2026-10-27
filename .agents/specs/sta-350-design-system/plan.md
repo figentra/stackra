@@ -147,7 +147,7 @@ decisions change them.
 
 ## Docs
 
-ADR 0302, the regenerated `apps/docs/src/standards/structure.mdx`, the package and category READMEs, the roadmap.
+ADR 0302, the regenerated `apps/docs/src/docs/standards/structure.mdx`, the package and category READMEs, the roadmap.
 
 ## Project structure
 

@@ -19,7 +19,7 @@ with encrypted state (ADR 0171); this repository holds the components and the ge
 ADRs 0166 and 0167 (CI policy and workflow hardening), 0168 (runway reusable workflows and `runway.yaml`), 0169
 (topology), 0170 (deployment and promotion), 0171 (Pulumi TypeScript, the infrastructure category), 0172 (AWS accounts and
 cost controls), 0173 (Infisical as the source, runway sync), 0174 (supply chain), 0175 (edge, domains, TLS), 0127 (the
-infrastructure category), `apps/docs/src/runbooks/ci.mdx`, `apps/docs/src/runbooks/deploys.mdx`.
+infrastructure category), `apps/docs/src/docs/runbooks/ci.mdx`, `apps/docs/src/docs/runbooks/deploys.mdx`.
 
 ## Rules
 

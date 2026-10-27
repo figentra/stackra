@@ -64,7 +64,7 @@ ADR 0024 (decision 2) already covers the exclusion; only the NOTICE path changes
 
 ## Docs
 
-`packages/experience/brand/README.md`, `apps/docs/src/adr/0024-mit-license-with-exclusions.mdx`.
+`packages/experience/brand/README.md`, `apps/docs/src/docs/adr/0024-mit-license-with-exclusions.mdx`.
 
 ## Project structure
 

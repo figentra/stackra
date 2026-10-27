@@ -1,25 +1,91 @@
 # @figentra/docs
 
-The Stackra documentation site, built with [Mintlify](https://mintlify.com). Everything Mintlify reads lives in `src/`: `docs.json`, the MDX pages, `snippets/` and `assets/` (logo, favicon, images). The scripts run the `mint` CLI from `src/`.
+<!--
+Stackra file contract:
+Purpose: the README of @figentra/docs, the Stackra docs site: its source layout, commands, the system map and the brand
+         files it carries.
+Boundary: this member only; the site's pages are under src/docs, its configuration in src/config/docs.config.ts.
+Runtime: none
+Governing contract: ADR 0002 (2026-10-27 amendment); ADR 0299; ADR 0452; ADR 0024 (brand NOTICE); stackra-177.
+-->
 
-| Command                                   | Does                                                   |
-| ----------------------------------------- | ------------------------------------------------------ |
-| `pnpm dev` (or `pnpm docs` from the root) | Local preview on http://localhost:3333                 |
-| `pnpm build`                              | `mint validate`, a strict build that fails on warnings |
-| `pnpm lint`                               | `mint broken-links`                                    |
-| `pnpm format`                             | `oxfmt --write .` (`pnpm format:check` verifies)       |
+The Stackra documentation site, built with [Mintlify](https://mintlify.com). You write the source; `stackra gen`
+assembles the site Mintlify reads into `.stackra/site/` (gitignored, never edited).
+
+| Path                        | Holds                                                                                                         |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `src/config/docs.config.ts` | the site (`StackraDocsConfig`): name, colours, logo, favicon, tabs and navigation, `raw` Mintlify keys        |
+| `src/docs/`                 | every page; `src/docs/guides/x.mdx` is served at `/guides/x`, the ADRs in `src/docs/adr/` at `/adr/<file>`    |
+| `src/assets/`               | logo, favicon and the brand kit (`brand/`); a page references a file as `/assets/<path>`                      |
+| `src/snippets/`             | reusable MDX snippets                                                                                         |
+| `scripts/system-map/`       | the system map renderer and writer (outside `src/`: gen allows only pages, assets, snippets and config there) |
+
+| Command                                   | Does                                                              |
+| ----------------------------------------- | ----------------------------------------------------------------- |
+| `pnpm dev` (or `pnpm docs` from the root) | gen in watch mode, then `mint dev` in `.stackra/site` (port 3333) |
+| `pnpm build`                              | gen, then `mint validate`, a strict build that fails on warnings  |
+| `pnpm lint`                               | gen, then `mint broken-links` and `mint a11y`                     |
+| `pnpm format`                             | `oxfmt --write .` (`pnpm format:check` verifies)                  |
+
+Add a page: create the `.mdx` under `src/docs/`, then list it in a group of `src/config/docs.config.ts`. A new ADR needs
+no entry: the `{ folder: "adr" }` group lists every page in `src/docs/adr/`. Gen refuses a page no group lists, a listed
+page that does not exist, a media file in `src/assets` no page references, and a `docs.json` or `README.md` under
+`src/`.
+
+Deploy: runway's `mintlify` provider pushes `.stackra/site` to the `docs-site` branch (root `runway.yaml`), which the
+Mintlify GitHub app builds; `.github/workflows/deploy-docs.yml` runs the checks and the Mintlify update.
 
 ## System map
 
-`src/system-map/` renders the live system map (STA-845, ADR 0452) from the merged system graph that `@stackra/gen`
-writes (`mergeSystemGraphs`): level 1 the whole system (`index.mdx`), level 2 one flow step by step (`flows/<flow>.mdx`)
-and level 3 one service (`services/<repo>/<member>.mdx`). The pages are generated, never edited:
+`scripts/system-map/` renders the live system map (STA-845, ADR 0452) from the merged system graph that
+`@stackra/gen` writes (`mergeSystemGraphs`): level 1 the whole system (`index.mdx`), level 2 one flow step by step
+(`flows/<flow>.mdx`) and level 3 one service (`services/<repo>/<member>.mdx`). The pages land in
+`src/docs/system-map/` (served at `/system-map`) and are generated, never edited:
 
 ```sh
-node src/system-map/write-system-map.ts <system.graph.json>
+node scripts/system-map/write-system-map.ts <system.graph.json>
 ```
 
-Flows are declared once, in each repo's `stackra.flows.json`; a new flow or service appears on the next run.
+Flows are declared once, in each repo's `stackra.flows.json`; a new flow or service appears on the next run. The pages
+need navigation entries (`{ folder: "system-map" }`, `{ folder: "system-map/flows" }` and one per
+`system-map/services/<repo>`) the first time they are written; until then gen refuses them as unlisted.
 
-Add a page: create the `.mdx`, then list it under `navigation` in `docs.json`.
-Deploy: connect this repository in the Mintlify dashboard and set the monorepo path to `apps/docs/src`.
+## Brand files
+
+The brand kit in `src/assets/brand/` is all rights reserved under its `NOTICE` (ADR 0024); the `brand` page shows every
+file. Its two notes, moved here from `src/` (gen refuses a README there):
+
+### "by figentra\_" marks (`brand/marks/`)
+
+Copied verbatim from the Figentra brand kit (`../figentra/marks/`), which owns these files. Do not edit here: rebuild
+the Figentra kit, then this kit.
+
+- **Who uses it:** Stackra, a light sub-brand, leads with its own name and is signed "by figentra\_" · "من فيجنترا_"
+  (Brand System, Lockups). Inside a lockup the signature is already drawn: use `logos/stackra-endorsed-*`. Use these
+  standalone files only where the name is set separately, such as a footer or a package registry page.
+- **Never** "powered by figentra\_": that badge is for a third party's product on Figentra OS.
+- **Colours:** letters in `--muted`, the bar in `--cursor` (amber). The bar is the only amber on a Stackra surface.
+  Stackra never takes the amber cursor: nothing follows the stackra name.
+- **Files:** `by-figentra.{horizontal,compact}.{light,dark}.{en,ar}.svg` (outlined, clear space inside the artboard).
+  Light files go on paper or white, dark files on ink.
+- **Minimum size and clear space:** see the Figentra kit's `marks.json` (figentra\_ at 20px minimum).
+
+### Email templates (`brand/templates/email/`)
+
+Generated by the brand kit's `scripts/build.mjs`. Table-based HTML email, 600px wide, every colour an inline hex from
+the light theme (email clients ignore custom properties and external CSS), and a web-safe fallback after each brand
+face: Geist → Segoe UI → Helvetica → Arial; IBM Plex Sans Arabic → Tahoma → Arial; Geist Mono → Menlo → Consolas.
+
+| Template                   | Files                                                                                              |
+| -------------------------- | -------------------------------------------------------------------------------------------------- |
+| Newsletter (package notes) | `newsletter-{en,ar}.html`                                                                          |
+| Welcome                    | `welcome-{en,ar}.html`                                                                             |
+| Receipt                    | `receipt-{en,ar}.html`: every value a placeholder; Stackra's licensing and pricing are not defined |
+| Password reset             | `reset-{en,ar}.html`: the docs account is an assumption to confirm                                 |
+| Signature                  | `../stationery/email-signature-{en,ar}.html` (in the source kit)                                   |
+
+- The button is ink with paper text (18:1). The web accent is steel blue since ADR 0319; mail keeps the neutral
+  button, which every client renders the same.
+- Links are underlined; colour alone never marks them.
+- Host `logos/stackra-endorsed-*-light` at a public URL and replace the relative `src` before sending.
+- Every `[bracketed]` value is listed in the source kit's `PLACEHOLDERS.md`.

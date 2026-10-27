@@ -1,8 +1,9 @@
 # Stackra file contract:
 # Purpose: deploy apps/docs (docs.stackra.figentra.com) to Mintlify through Runway's `mintlify` provider,
-#          runway-mintlify.yml (ADR 0299): on a push to main that touches the docs, or by hand, after `mint validate`,
-#          `mint broken-links` and `mint a11y`. Once it has deployed, the owner switches off the Mintlify GitHub-app
-#          deploy so a change is not deployed twice (STA-605).
+#          runway-mintlify.yml (ADR 0299): on a push to main that touches the docs, or by hand, after `stackra build`
+#          (gen assembles apps/docs/.stackra/site from src/docs and src/config/docs.config.ts, then `mint validate`)
+#          and `stackra lint` (`mint broken-links`, `mint a11y`), ADR 0002 2026-10-27 amendment. Once it has
+#          deployed, the owner switches off the Mintlify GitHub-app deploy so a change is not deployed twice (STA-605).
 # Secrets: MINTLIFY_ADMIN_KEY from Infisical /ci (env prod) through GitHub OIDC inside the provider. The Mintlify
 #          project id is the non-secret repository variable MINTLIFY_PROJECT_ID. Until both the identity and that
 #          variable exist, the provider checks and deploys nothing.
@@ -40,7 +41,9 @@ jobs:
       package: "@figentra/docs"
       # The `docs` environment (owner: main only, and an Infisical trust for its subject, STA-605).
       environment: docs
-      install-args: --frozen-lockfile --filter=@figentra/docs
+      # The docs scripts run `stackra` (@stackra/cli) and gen, so their workspace dependencies are installed and built.
+      install-args: --frozen-lockfile --filter=@figentra/docs...
+      build-first: "@stackra/cli..."
       mintlify-project-id: ${{ vars.MINTLIFY_PROJECT_ID }}
       infisical-identity-id: ${{ vars.INFISICAL_CI_IDENTITY_ID }}
       infisical-project-id: dd4724f4-7b9a-46ae-a899-b34af2d626b2 # .infisical.yaml workspace id, not a secret

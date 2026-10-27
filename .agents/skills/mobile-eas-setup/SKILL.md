@@ -7,7 +7,7 @@ description: Set up or change the EAS configuration of apps/mobile in the Stackr
 
 House rules on top of the vendored `eas-app-stores`, `eas-update`, `eas-workflows` and `expo-dev-client` skills. Read
 those for EAS mechanics; this skill encodes Stackra's decisions (ADR 0180) and the lessons from earlier apps. The human
-steps (store accounts, keys, the first Play upload) are in `apps/docs/src/runbooks/mobile-release.mdx`.
+steps (store accounts, keys, the first Play upload) are in `apps/docs/src/docs/runbooks/mobile-release.mdx`.
 
 ## Rules
 

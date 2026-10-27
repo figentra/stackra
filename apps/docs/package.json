@@ -2,7 +2,7 @@
   "name": "@figentra/docs",
   "version": "0.0.1",
   "private": true,
-  "description": "Stackra documentation site — Mintlify (docs.json + MDX).",
+  "description": "Stackra documentation site: authored pages and DocsConfig; stackra gen assembles the Mintlify site into .stackra/site.",
   "keywords": [
     "adr",
     "documentation",
@@ -24,22 +24,25 @@
   },
   "type": "module",
   "imports": {
-    "#src/*": "./src/*.ts"
+    "#scripts/*": "./scripts/*.ts"
   },
   "scripts": {
-    "dev": "cd src && mint dev --port 3333",
-    "build": "cd src && mint validate",
-    "lint": "cd src && mint broken-links",
+    "dev": "stackra dev",
+    "build": "stackra build",
+    "lint": "stackra lint",
     "format": "oxfmt --write .",
     "format:check": "oxfmt --check .",
-    "a11y": "cd src && mint a11y",
-    "clean": "rm -rf src/.mintlify .turbo"
+    "clean": "rm -rf .stackra .turbo"
   },
   "dependencies": {
     "@stackra/gen": "workspace:*"
   },
   "devDependencies": {
+    "@stackra/cli": "workspace:*",
+    "@stackra/contracts": "workspace:*",
     "@stackra/testing": "workspace:*",
+    "@stackra/typescript-config": "workspace:*",
+    "@types/node": "catalog:",
     "mint": "catalog:docs",
     "oxfmt": "catalog:quality"
   },

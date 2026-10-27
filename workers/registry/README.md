@@ -5,7 +5,7 @@
 The Stackra registry: one Cloudflare Worker (`stackra-registry`) at `https://npm.stackra.figentra.com/` that serves
 every `@stackra/*` and `@stackra-pro/*` item (packages, skills, agents, MCP servers and plugins) over the subset of the
 npm registry protocol that npm, pnpm and Yarn need
-([ADR 0453](../../apps/docs/src/adr/0453-the-stackra-registry-one-npm-compatible-store-on-cloudflare-and-our-own-licence-engine.mdx)).
+([ADR 0453](../../apps/docs/src/docs/adr/0453-the-stackra-registry-one-npm-compatible-store-on-cloudflare-and-our-own-licence-engine.mdx)).
 R2 holds the bytes, D1 the truth, KV the caches. It never proxies an upstream.
 
 ## Consumers

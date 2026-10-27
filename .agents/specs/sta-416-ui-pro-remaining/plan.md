@@ -74,4 +74,4 @@ ADR 0310, the package README and AGENTS.
 ## Project structure
 
 `packages/design-system/ui-pro/src/{contracts,react,native}`, `apps/playground/src/routes`, `apps/mobile/src/screens/pro`,
-`pnpm-workspace.yaml`, `apps/docs/src/adr`.
+`pnpm-workspace.yaml`, `apps/docs/src/docs/adr`.

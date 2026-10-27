@@ -1,0 +1,66 @@
+---
+title: "0459 — PAX terminals: the built-in printer, drawer and scanner through the NeptuneLite SDK"
+description: "Proposed · 2026-10-27"
+---
+
+{/* Stackra file contract: Purpose: the decision record for the PAX vendor SDK of the Android till: the `pax` printer, drawer and scanner drivers of @stackra/peripherals ./native and their Expo module. Boundary: decision text only; the code is in packages/experience/peripherals/src/native. Runtime: docs. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0253, 0339, 0345, 0442. */}
+
+<Note>
+  Proposed (batch stackra-50, STA-1097, STA-904). The vendor-SDK ADR that 0442 decision 4 and 0253
+  decision 3 ask for, for the `pax` family. Certification pending: written from PAX's public SDK
+  documents, not yet checked on a certified model.
+</Note>
+
+## Context
+
+0442 (accepted by the owner on
+2026-10-27, decision D4 of the Stackra finish plan; its page still waits to land here) gives the commerce till an
+Android target and asks for one ADR per vendor SDK before a family's first build (0442 decision 4,
+[0253](/adr/0253-peripherals-web-api-first-and-device-presets) decision 3). PAX's terminals have a built-in
+printer, a drawer port and a built-in scanner that no Web API or LAN path reaches; only PAX's SDK does
+([0339](/adr/0339-point-of-sale-peripherals-printers-labels-drawer-scanner-display-and-the-native-bluetooth-driver)
+open detail 2).
+
+## Decision
+
+1. **Driver name `pax`.** `@stackra/peripherals` ships `PaxReceiptPrinterDriver`,
+   `PaxCashDrawerDriver` and `PaxBarcodeScannerDriver` in its `./native` entry, behind the
+   unchanged `ReceiptPrinter`, `CashDrawer` and `BarcodeScanner` ports, selected by `peripherals.printer`, `.drawer`
+   and `.scanner` set to `pax`.
+2. **One Expo module, `StackraPax`, a pass-through.** The till app links an Expo module named `StackraPax` only when its
+   runway lists `device:pax` (0442 decision 3). It exposes `printerStatus()`, `printLines(lines)`, `openDrawer()`
+   and an `onScan` event carrying `{ code }`, each a direct call to PAX's NeptuneLite API (`IDAL`): its printer (`init`, text printing, `start`, `getStatus`), its cash
+   drawer on models with a drawer port, and its scanner with a result listener. The module maps nothing: it returns the
+   SDK's own status number and the decoded text. Its Kotlin lives in the till app's `src/native-sources/pax/`
+   ([0345](/adr/0345-native-code-generation-and-the-native-shared-layer) decision 6).
+3. **Readiness in the driver.** `IPrinter.getStatus()` answers 0 when the printer is ready; every other value (busy, out of paper, overheated, voltage too low, a malfunction) refuses, with capability `print` (ADR 0250 decision 3). The drawer is driven by the
+   printer, so it checks the same status before each kick; the kick is one-way.
+4. **Text, not commands.** Receipt lines go to the SDK as text with control characters removed; the SDK draws them.
+   Arabic shaping is the SDK font's and is a certification row. A raster or code-page path is not built.
+5. **Absent means refused.** In a build without `StackraPax` (web, desktop, another family) the printer and drawer
+   refuse with `print` and the scanner with `scanner`; a subscription there does nothing. No call throws at the till.
+6. **The SDK stays the vendor's.** The SDK artefacts come from the PAX developer portal (PAXSTORE developer centre) under PAX's terms and are linked by the till
+   app's build only; this repository holds no PAX binary or source.
+
+## Consequences
+
+- The till drives a PAX terminal's printer, drawer and scanner with the same ports and settings as the desktop till.
+- The status table is one line of `POS_DEVICE_FAMILIES`; the tests replay transcribed SDK answers until certified
+  models are recorded (STA-739), and a wrong code shows there first.
+- The Kotlin module, the config plugin that removes it from other families' builds, and the model list are the till
+  template's and Runway's work (0442 decisions 3 and 5), not this package's.
+- Card payment, the label printer and the scale on these terminals are not covered; an acquirer SDK is its own ADR
+  (0442 decision 6). The second screen stays the `external` customer display (0430).
+
+## Enforcement
+
+- `packages/experience/peripherals/src/native/**/__tests__/*.test.ts` replay the `pax` fixture through a stand-in
+  `StackraPax` module.
+- planned — a certification run on each certified PAX model (STA-739) records the fixture again; Runway refuses an
+  Android till build listing `device:pax` without this ADR (0442 enforcement).
+
+## Supersedes and sources
+
+`Supersedes: none`. Sources: owner decision D4 of 2026-10-27 (`notes/handover/batches/STACKRA-FINISH.md`), the 0442
+draft (`notes/handover/app-shells/adr/0442-native-android-till-for-pos-terminals-from-the-commerce-till-template.mdx`),
+PAX's public SDK documents, STA-904, STA-1097.

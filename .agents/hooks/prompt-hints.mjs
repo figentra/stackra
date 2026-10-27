@@ -1,8 +1,11 @@
 #!/usr/bin/env node
 /**
- * UserPromptSubmit: one-line reminders keyed on what the prompt is about. Cheap, never blocks.
- * Each hint points at the rule file that owns the topic so the agent reads the source instead
- * of trusting the one-liner.
+ * Stackra file contract:
+ * Purpose: the UserPromptSubmit hook: one-line reminders keyed on what the prompt is about. Each hint points at the
+ *          rule file that owns the topic so the agent reads the source instead of trusting the one-liner.
+ * Boundary: prints hints only; cheap and never blocks.
+ * Runtime: node (agent hook)
+ * Governing contract: ADR 0016 (agents source of truth); ADR 0002 (2026-10-27 amendment, docs paths).
  */
 import { readStdin, context, failOpen } from "./_io.mjs";
 
@@ -24,11 +27,11 @@ async function main() {
     );
   if (has("adr", "decision", "architecture decision", "supersede"))
     hints.push(
-      "Decisions are ADRs: `apps/docs/src/adr/NNNN-slug.mdx` from `template.mdx` (next number = highest on disk + 1), index row in `adr/index.mdx` and nav in `src/docs.json`, same-commit supersession. Route the writing to docs-adr-steward; ADR 0011 lists rejected/deferred tech.",
+      "Decisions are ADRs: `apps/docs/src/docs/adr/NNNN-slug.mdx` from `template.mdx` (next number = highest on disk + 1), index row in `adr/index.mdx` (the adr folder entry in `src/config/docs.config.ts` lists it in the nav), same-commit supersession. Route the writing to docs-adr-steward; ADR 0011 lists rejected/deferred tech.",
     );
   if (has("changeset", "changelog", "version bump", "release"))
     hints.push(
-      "Release: one changeset per consumer-visible member change (`.changeset/<slug>.md`, `@stackra/<member>` + bump); never run `changeset version` locally (guard-bash denies it) and never hand-edit CHANGELOG.md (apps/docs/src/runbooks/release.mdx, ADR-0013).",
+      "Release: one changeset per consumer-visible member change (`.changeset/<slug>.md`, `@stackra/<member>` + bump); never run `changeset version` locally (guard-bash denies it) and never hand-edit CHANGELOG.md (apps/docs/src/docs/runbooks/release.mdx, ADR-0013).",
     );
   if (has("test", "vitest", ".spec", "spec file", "spec.ts"))
     hints.push(
@@ -66,7 +69,7 @@ async function main() {
     !p.includes("speckit")
   )
     hints.push(
-      "Feature work starts with spec-kit, not code: `/speckit.specify`, then `/speckit.clarify` (Impact questionnaire, Linear STA-n), then `/speckit.plan`. Specs live in `.agents/specs/sta-<n>-<slug>/`; `/speckit.plan` refuses until clarifications are complete (apps/docs/src/agents/spec-lifecycle.mdx).",
+      "Feature work starts with spec-kit, not code: `/speckit.specify`, then `/speckit.clarify` (Impact questionnaire, Linear STA-n), then `/speckit.plan`. Specs live in `.agents/specs/sta-<n>-<slug>/`; `/speckit.plan` refuses until clarifications are complete (apps/docs/src/docs/agents/spec-lifecycle.mdx).",
     );
 
   if (hints.length) context(EVENT, "[STACKRA HINTS]\n- " + hints.join("\n- "));

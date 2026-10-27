@@ -4,8 +4,8 @@ Who may do what, and for which tenant. One folder per package, `packages/securit
 
 **Today:** No package yet.
 
-**Planned here** ([ADR 0127](../../apps/docs/src/adr/0127-package-categories-including-infrastructure.mdx)): connections, entitlements, licensing.
-The order is the [roadmap](../../apps/docs/src/roadmap.mdx).
+**Planned here** ([ADR 0127](../../apps/docs/src/docs/adr/0127-package-categories-including-infrastructure.mdx)): connections, entitlements, licensing.
+The order is the [roadmap](../../apps/docs/src/docs/roadmap.mdx).
 
 ## Rules
 

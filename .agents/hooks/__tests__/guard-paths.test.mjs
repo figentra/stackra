@@ -1,3 +1,11 @@
+/**
+ * Stackra file contract:
+ * Purpose: tests of the guard-paths hook: the writes and reads it denies (secret files, the secrets inbox) and the
+ *          paths it lets through.
+ * Boundary: test only; runs the hook as a child process.
+ * Runtime: node (node:test)
+ * Governing contract: ADR 0293 (agent guards); ADR 0257 (the secrets inbox); ADR 0022 (test placement).
+ */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
@@ -107,7 +115,10 @@ for (const [tool, input] of [
   ["Glob", { pattern: "*.md", path: "~/Projects" }],
   ["Grep", { pattern: "x", path: "/r/apps", glob: "*.ts" }],
   ["Read", { file_path: "~/Projects/notes.md" }],
-  ["Write", { file_path: "/r/apps/docs/src/runbooks/secrets.mdx", content: "~/Secrets-inbox/" }],
+  [
+    "Write",
+    { file_path: "/r/apps/docs/src/docs/runbooks/secrets.mdx", content: "~/Secrets-inbox/" },
+  ],
 ])
   test(`allow ${tool}: ${JSON.stringify(input)}`, () => assert.equal(decide(tool, input), false));
 

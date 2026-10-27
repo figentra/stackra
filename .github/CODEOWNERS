@@ -6,7 +6,7 @@
 * @figentra-usr
 
 # Architecture decisions require extra scrutiny
-apps/docs/src/adr/ @figentra-usr
+apps/docs/src/docs/adr/ @figentra-usr
 
 # CI/CD changes
 .github/ @figentra-usr

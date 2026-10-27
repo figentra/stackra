@@ -113,7 +113,7 @@ new code in the v3 shape where the member already allows it.
   `analytics/`, `bridges/`, `hooks/` (two or more importers), `schemas/`, `errors/`, `enums/`,
   `types/`, `styles/`
 - Overrides of any package or service live in one tree, `src/overrides/<owner>/`, which mirrors the owner's paths (ADR 0306)
-- Docs (`apps/docs`) is the exception: Mintlify pages, `docs.json` and `assets/` in `src/`
+- Docs (`apps/docs`) has its own layout (ADR 0002, 2026-10-27 amendment): pages in `src/docs/`, `assets/` and `snippets/` in `src/`, the site in `src/config/docs.config.ts`; gen assembles the Mintlify site into `.stackra/site/`
 
 ### Workers (<name>)
 

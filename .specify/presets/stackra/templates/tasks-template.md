@@ -36,4 +36,4 @@ description: "Task list template (Stackra v2): every task covers spec IDs and na
 
 ## Phase N: Polish
 
-- [ ] T0NN [P] Docs listed under Impact "Docs to update" in `apps/docs/src/...` — covers: SC-001 — route: steward-docs
+- [ ] T0NN [P] Docs listed under Impact "Docs to update" in `apps/docs/src/docs/...` — covers: SC-001 — route: steward-docs

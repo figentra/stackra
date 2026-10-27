@@ -24,7 +24,7 @@ readers). This change adds the deploy layer that needs no gen output, in the own
 5. **The command shape.** `tools/scripts/runway.mjs`: `plan <env>` (names only), `deploy <target>` and
    `promote <sha>` with a clean-commit preflight that dispatch the caller workflow; a `runway-deploy` owner ask in
    the guard.
-6. **The sync design.** `apps/docs/src/runbooks/runway.mdx`: the workflows, the command, the secrets and vars sync, the
+6. **The sync design.** `apps/docs/src/docs/runbooks/runway.mdx`: the workflows, the command, the secrets and vars sync, the
    blocked parts and the owner steps.
 
 ## Constitution Check

@@ -2,7 +2,7 @@
 
 # @stackra/documents
 
-One print-document template model rendered to HTML, PDF and DOCX ([ADR 0365](../../../apps/docs/src/adr/0365-documents-one-print-template-model-three-renderers-and-the-e-signature-port.mdx)).
+One print-document template model rendered to HTML, PDF and DOCX ([ADR 0365](../../../apps/docs/src/docs/adr/0365-documents-one-print-template-model-three-renderers-and-the-e-signature-port.mdx)).
 A template is studio data of the builder kind `print` (ADR 0270): page, one or two locales, a bilingual layout and
 blocks. Receipts, invoices, packing slips, labels, line sheets, certificates, report cards, letters and signed forms are
 templates, never code. This package also holds the `PdfEngine`, `PdfAssembler` and `ESignatureProvider` ports, the

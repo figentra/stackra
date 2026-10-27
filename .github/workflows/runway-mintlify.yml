@@ -1,7 +1,9 @@
 # Stackra file contract:
 # Purpose: Runway's `mintlify` provider (ADR 0299), a public reusable workflow (ADR 0168 decision 1): deploy a docs
-#          member to Mintlify from CI after its checks. Runs the member's check scripts (`mint validate`,
-#          `mint broken-links`, `mint a11y`), triggers a Mintlify update (`POST /v1/project/update/{projectId}`),
+#          member to Mintlify from CI after its checks. Builds the workspace packages the member's scripts need
+#          (`build-first`, e.g. @stackra/cli for `stackra`), runs the member's check scripts (`stackra build`: gen
+#          assembles `.stackra/site`, then `mint validate`; `stackra lint`: `mint broken-links` and `mint a11y`,
+#          ADR 0002 2026-10-27 amendment), triggers a Mintlify update (`POST /v1/project/update/{projectId}`),
 #          polls it to `success` or `failure`, warns when Mintlify built another commit than this run's, and
 #          smoke-tests the published pages. Mintlify builds its configured branch, so callers run only on main.
 # Secrets: MINTLIFY_ADMIN_KEY only, from Infisical /ci through GitHub OIDC (ADR 0299 decision 3), read by this job
@@ -27,7 +29,11 @@ on:
       check-scripts:
         description: The member's package scripts that must pass before a deploy, space-separated.
         type: string
-        default: build lint a11y
+        default: build lint
+      build-first:
+        description: A turbo filter of workspace packages to build before the checks (e.g. `@stackra/cli...`); empty builds nothing.
+        type: string
+        default: ""
       install-args:
         description: Arguments to `pnpm install`, space-separated words with no quoting.
         type: string
@@ -103,6 +109,12 @@ jobs:
           set -f
           # shellcheck disable=SC2086 # word splitting of the argument list is the point
           pnpm install $INSTALL_ARGS
+
+      - name: Build workspace tools
+        if: inputs.build-first != ''
+        env:
+          BUILD_FIRST: ${{ inputs.build-first }}
+        run: pnpm exec turbo run build --filter="$BUILD_FIRST"
 
       # ADR 0299 decision 2: validate, broken links and accessibility pass before anything is deployed.
       - name: Checks

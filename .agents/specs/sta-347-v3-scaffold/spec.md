@@ -39,7 +39,7 @@ ADR 0300 (presets) and the v3 rules and skills in `.agents`.
 - **Deploy modes**: none; repository tooling only, the same for SaaS, on-prem and air-gapped
 - **Licence tier**: not distributed (repository tooling); scaffolded packages keep MIT and apps and services UNLICENSED
 - **UI surfaces**: none
-- **Docs to update**: `apps/docs/src/guides/scaffolding.mdx`, `apps/docs/src/standards/structure.mdx` (generated),
+- **Docs to update**: `apps/docs/src/docs/guides/scaffolding.mdx`, `apps/docs/src/docs/standards/structure.mdx` (generated),
   `tools/scaffold/README.md` and the template READMEs, and the one sentence each in `.agents/rules/workspace-layout.md`,
   `.agents/rules/service-checklist.md` and the `backend-module-and-root-module` skill that said `checkService` requires
   `src/main.ts`

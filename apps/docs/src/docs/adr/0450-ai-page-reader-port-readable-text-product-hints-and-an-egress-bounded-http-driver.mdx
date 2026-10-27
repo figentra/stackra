@@ -1,0 +1,73 @@
+---
+title: "0450 — AI: the page reader port, readable text and product hints, and an egress-bounded HTTP driver"
+description: "Proposed · 2026-10-27"
+---
+
+{/* Stackra file contract: Purpose: the decision record for the PageReader port of @stackra/ai (read one web page by URL into readable text and schema.org product hints) with a memory driver and an HTTP driver held to an egress bound. Boundary: decision text only; the code is in packages/application/ai. Runtime: docs. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0100, 0245, 0308, 0360, 0399. */}
+
+<Note>
+  Proposed (STA-929, batch stackra-56; STA-904 item "page reader"). Number 0450 as the batch plan
+  reserved it.
+</Note>
+
+## Context
+
+Commerce's "store from a URL" (STA-728) starts from a merchant's existing shop page: an agent reads it and proposes a
+draft store the merchant reviews. The Commerce wave A build found no way to read a page in Stackra (STA-904). Reading
+an arbitrary URL from a server is a server-side request forgery risk (cloud metadata, internal hosts) and the page is
+untrusted input that will reach a model. The integrations egress rule (ADR 0308 rule 19) bounds a provider call to its
+locked origin, but a page reader's host is named by the merchant, so it cannot be a fixed allow-list. The alternatives
+weighed were a browser in a sandbox (rejected for this need: the product data sits in the HTML and its JSON-LD; a
+rendered browse stays the sandboxes' Playwright path of ADR 0283), an `Integration` per site (rejected: one class per
+shop), and a third-party extraction API (rejected: it sends the merchant's URL and page to another processor and is a
+provider choice, which a driver can add later).
+
+## Decision
+
+1. **`PageReader` is a port in `@stackra/ai/contracts`** (`ai.PageReader`), one method: `read(url)` returns a
+   `PageReadResult`, the `PageReading` or a `PageReadRefusal` code (`egress_refused`, `http_error`, `not_html`,
+   `too_large`, `timeout`, `too_many_redirects`, `unreachable`) with the site's status when it answered. A refusal is a
+   value so an agent tool can tell the merchant why; it carries no body or header. One page per call: no crawl, no
+   script run, no cookies or credentials, nothing stored. The action that reads a page injects the port (ADR 0100
+   decision 3: a tool is an action).
+2. **A reading is readable text plus product hints.** `PageReading` holds the final URL, the status, the title, the
+   language, the text (scripts, styles, comments and markup removed, one block per line, cut at the policy's limit
+   with `truncated`) and `ProductHint`s from schema.org `Product` JSON-LD (inside `@graph`, arrays and a
+   `ProductGroup`'s variants): name, description, SKU, brand, absolute images and URL, and the first offer's price as a
+   decimal string, currency and availability. A hint is what the page claims, never a record. Everything in a reading
+   is untrusted data: a consumer hands it to a model as data under the guardrails of ADR 0360, never as instructions.
+   `parsePage` holds the extraction and is shared by both drivers.
+3. **The HTTP driver is held to an egress bound.** `HttpPageReaderDriver` checks the URL and every redirect target
+   with `checkEgress` before it fetches: https on the default port, no credentials in the URL, a public host name
+   (never an IP literal, `localhost`, a single label, or a `.local`, `.internal`, `.localhost` or `.home.arpa` name),
+   then the policy's deny list and, when it has one, its allow list. It follows redirects by hand up to the limit,
+   reads only an HTML answer, stops at the byte limit and the time limit, and decodes by the declared charset. The
+   limits, the lists and the user agent are a `PageReaderPolicy` the service passes from settings (configuration, not
+   code); the package holds no default. `checkEgress` sees only the URL text, so a public name that resolves to a
+   private address passes it: the service runs the driver on a network path that cannot reach private addresses (its
+   egress proxy or network policy), and the fetch function is injected for that.
+4. **`MemoryPageReaderDriver`** serves tests, evals and local runs from fixed HTML by URL through the same
+   `parsePage`; a URL it does not hold is `unreachable`.
+
+## Consequences
+
+- Commerce's store-from-a-URL agent reads a shop page through Stackra and turns the hints into a draft the merchant
+  reviews.
+- The ai service binds `HttpPageReaderDriver` with the policy from its settings and its egress-proxied fetch, and
+  registers the settings defaults (byte, time, redirect and text limits, user agent, deny list).
+- Extraction is pattern-based, not a full HTML parser: it covers the title, the text and JSON-LD. Open Graph and
+  microdata product markup, and pages that build their content in script, are not read; a later driver or a parser
+  can add them behind the same port.
+- Instagram accounts (STA-728) are not pages this reads; they need a connection of their own.
+
+## Enforcement
+
+`packages/application/ai/src/core/functions/__tests__/check-egress.function.test.ts` (each refused URL form, deny over
+allow, wildcard subdomains), `parse-page.function.test.ts` (text, entities, JSON-LD in `@graph` and variants, a broken
+block skipped, the text limit), `../drivers/__tests__/http-page-reader.driver.test.ts` (a redirect re-checked against
+the bound, the redirect, byte and type limits, timeout and unreachable) and `memory-page-reader.driver.test.ts`.
+Planned: a service-level check that the bound driver runs behind the egress proxy.
+
+## Supersedes and sources
+
+`Supersedes: none`. Sources: Linear STA-904 and STA-929; Commerce STA-728; ADR 0100, 0245, 0308 (rule 19), 0360, 0399.

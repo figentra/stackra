@@ -1,0 +1,22 @@
+---
+title: "Site settings"
+description: "What each field of the DocsConfig controls."
+icon: "settings"
+---
+
+{/* Stackra file contract: Purpose: what each field of src/config/docs.config.ts controls in the generated docs.json. Boundary: authoring guidance; the field types are DocsConfig in @stackra/gen. Runtime: docs. Governing contract: ADR 0002 (2026-10-27 amendment); ADR 0295 (decision 3, raw); stackra-177. */}
+
+The site is configured in `src/config/docs.config.ts`, a `DocsConfig` subclass. Gen renders `.stackra/site/docs.json`
+from it; there is no hand-written `docs.json`.
+
+| Field                                    | Controls                                                                                                            |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `name`, `description`, `theme`, `colors` | Site name, layout theme and brand colours                                                                           |
+| `logo`, `favicon`                        | Brand assets, as paths under `src/assets` (`logo/light.svg`, `favicon.svg`)                                         |
+| `navigation`                             | Tabs, groups, pages and `{ folder }` entries                                                                        |
+| `navbar`, `footer`                       | Navbar links and button, footer socials and link columns                                                            |
+| `apiReference`                           | Services whose API reference the site carries, from their committed manifests                                       |
+| `raw`                                    | Every other Mintlify key, passed through: `appearance`, `styling`, `icons`, `search`, `seo`, `contextual`, `errors` |
+
+Add `navbar`, `footer.socials` and `integrations` (under `raw`, analytics) once the public repository, social accounts
+and analytics properties exist. The full schema is at [mintlify.com/docs.json](https://mintlify.com/docs.json).

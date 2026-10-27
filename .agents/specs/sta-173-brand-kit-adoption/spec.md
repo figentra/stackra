@@ -31,7 +31,7 @@
 - **Deploy modes**: same in all three (static assets bundled into each app)
 - **Licence tier**: free (code MIT; brand assets all rights reserved per `assets/NOTICE`; fonts OFL)
 - **UI surfaces**: mobile theme, icon and splash; docs site theme and logo; app scaffold templates
-- **Docs to update**: `apps/docs/src/adr/0024-mit-license-with-exclusions.mdx`
+- **Docs to update**: `apps/docs/src/docs/adr/0024-mit-license-with-exclusions.mdx`
 - **Lane**: lite (recorded reason: written after the build at the coordinator's direction; additive static assets and theme config, no runtime logic, although it touches three members)
 - **Change risk**: R2 (several members and UI surfaces; ADR 0120 D16)
 

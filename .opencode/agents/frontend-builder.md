@@ -26,8 +26,8 @@ declared, not hand-coded: modules declare `@Resource`, `@Page` and `@Widget`, an
 
 ## Must read
 
-`apps/docs/src/standards/apps.mdx`, `apps/docs/src/standards/ui-and-accessibility.mdx`,
-`apps/docs/src/standards/i18n-rtl.mdx`, ADRs 0079 (client state), 0080 (i18n), 0110 and 0112 (L2 server-driven UI and the
+`apps/docs/src/docs/standards/apps.mdx`, `apps/docs/src/docs/standards/ui-and-accessibility.mdx`,
+`apps/docs/src/docs/standards/i18n-rtl.mdx`, ADRs 0079 (client state), 0080 (i18n), 0110 and 0112 (L2 server-driven UI and the
 renderer kit), 0139 (action UX), 0164, 0165 (component contract, form adapters in `@stackra/ui`, no Next.js), 0183
 (budgets), 0197 (HeroUI Pro only in our own apps), 0249 (one app, three targets), and the skills
 `frontend-resource-console`, `backend-errors`, `heroui-react`, `frontend-design`, `accessibility`.

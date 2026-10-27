@@ -54,7 +54,7 @@ test("trace: Done needs every FR and P tested and every SC's method", () => {
 });
 
 test("drift: unnamed members, missing ticked paths, untouched docs at Done", () => {
-  const docs = "apps/docs/src/guides/widget.mdx";
+  const docs = "apps/docs/src/docs/guides/widget.mdx";
   const ok = drift({ ...base, changed: ["packages/foundation/widget/src/build.ts", docs] });
   assert.deepEqual(ok, []);
   assert.match(

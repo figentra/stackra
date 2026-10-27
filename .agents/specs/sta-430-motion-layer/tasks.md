@@ -12,4 +12,4 @@
 - [x] T006 [US1] The KPI sparkline in `packages/design-system/ui-pro/src/react/kpi/kpi-chart.tsx` — covers: FR-005, EC-02, P-002 — route: package — deps: T002
 - [x] T007 [US1] The native chart series through `packages/design-system/ui-pro/src/native/chart-series/with-defaults.function.ts` — covers: FR-006, EC-02 — route: package — deps: T002
 - [x] T008 [US1] The rolling number in `packages/design-system/ui-pro/src/react/number-value/number-value.tsx` — covers: FR-007, EC-03 — route: package — deps: T002
-- [x] T009 [US2] ADR 0329 in `apps/docs/src/adr/0329-motion-layer-tokens-reveal-and-animation-on-by-default.mdx` — covers: P-001 — route: adr — deps: T005, T006, T007, T008
+- [x] T009 [US2] ADR 0329 in `apps/docs/src/docs/adr/0329-motion-layer-tokens-reveal-and-animation-on-by-default.mdx` — covers: P-001 — route: adr — deps: T005, T006, T007, T008

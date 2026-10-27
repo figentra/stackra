@@ -936,10 +936,10 @@ function demoteHeadings(body, by = "##") {
 
 // ---------------------------------------------------------------------------
 // CONSTITUTION — spec-kit reads `.specify/memory/constitution.md`; its single source is the
-// docs laws in apps/docs/src/constitution/*.mdx. Generated whole, drift-checked like the rest.
+// docs laws in apps/docs/src/docs/constitution/*.mdx. Generated whole, drift-checked like the rest.
 // ---------------------------------------------------------------------------
 
-const CONSTITUTION_SRC = "apps/docs/src/constitution";
+const CONSTITUTION_SRC = "apps/docs/src/docs/constitution";
 const CONSTITUTION_OUT = ".specify/memory/constitution.md";
 
 function renderConstitution(files) {

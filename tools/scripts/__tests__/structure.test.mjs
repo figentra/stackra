@@ -112,12 +112,12 @@ test("the validator's stories and test-file rules come from structure", () => {
   assert.equal(checkTestPlacement(["packages/x/src/a.test.ts"]).length, 1);
 });
 
-test("the standards page is the generated output, and docs.json links it", () => {
-  const page = join(ROOT, "apps/docs/src/standards/structure.mdx");
+test("the standards page is the generated output, and the docs config lists it", () => {
+  const page = join(ROOT, "apps/docs/src/docs/standards/structure.mdx");
   assert.ok(existsSync(page), "run node tools/scripts/structure.mjs --write-docs");
   assert.equal(readFileSync(page, "utf8"), renderStructureDoc());
   assert.match(
-    readFileSync(join(ROOT, "apps/docs/src/docs.json"), "utf8"),
+    readFileSync(join(ROOT, "apps/docs/src/config/docs.config.ts"), "utf8"),
     /"standards\/structure"/,
   );
 });

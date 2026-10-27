@@ -23,5 +23,5 @@ What Claude Code reads in this repository. Most of it is projected from [`.agent
 - No secret goes in `settings.json`; MCP servers that need a token start through `tools/scripts/mcp.sh`, which reads
   the Infisical vault ([secrets rule](../.agents/rules/secrets.md)).
 
-Docs: [agents](../apps/docs/src/agents/index.mdx),
-[ADR 0016](../apps/docs/src/adr/0016-agents-source-of-truth.mdx).
+Docs: [agents](../apps/docs/src/docs/agents/index.mdx),
+[ADR 0016](../apps/docs/src/docs/adr/0016-agents-source-of-truth.mdx).

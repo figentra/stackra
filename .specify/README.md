@@ -1,8 +1,8 @@
 # `.specify/`
 
 The [GitHub spec-kit](https://github.com/github/spec-kit) install, written by the pinned `specify` CLI (`mise.toml`,
-[ADR 0067](../apps/docs/src/adr/0067-spec-kit-is-the-sdlc.mdx),
-[ADR 0121](../apps/docs/src/adr/0121-sdlc-tooling-roles-and-linear.mdx) D15). Nothing here is hand-written: it is
+[ADR 0067](../apps/docs/src/docs/adr/0067-spec-kit-is-the-sdlc.mdx),
+[ADR 0121](../apps/docs/src/docs/adr/0121-sdlc-tooling-roles-and-linear.mdx) D15). Nothing here is hand-written: it is
 generated and committed so every clone and CI see the same spec engine.
 
 | Path                                       | Holds                                                                                                 |
@@ -25,4 +25,4 @@ generated and committed so every clone and CI see the same spec engine.
 - JSON here stays strict JSON (its scripts read it with jq), and oxfmt skips the folder.
 - Specs are not written here: they live in [`.agents/specs`](../.agents/specs).
 
-Docs: [spec lifecycle](../apps/docs/src/agents/spec-lifecycle.mdx).
+Docs: [spec lifecycle](../apps/docs/src/docs/agents/spec-lifecycle.mdx).

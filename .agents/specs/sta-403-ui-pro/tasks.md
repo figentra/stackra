@@ -6,7 +6,7 @@
 
 - [x] T001 [US1] Spec, plan and tasks in `.agents/specs/sta-403-ui-pro/spec.md` — covers: SC-001 — route: spec-draft
 - [x] T002 [US2] Scaffold `packages/design-system/ui-pro` (private), the catalog lines and `allowBuilds` in `pnpm-workspace.yaml`, and the Pro dependency check in `tools/scripts/validate-repository.mjs` with its test — covers: FR-001, P-001 — route: package — deps: T001
-- [x] T003 [US1] ADR 0310 and the ADR 0197 note in `apps/docs/src/adr` — covers: FR-001, FR-014 — route: adr — deps: T001
+- [x] T003 [US1] ADR 0310 and the ADR 0197 note in `apps/docs/src/docs/adr` — covers: FR-001, FR-014 — route: adr — deps: T001
 - [x] T004 [US1] CI install with `HEROUI_AUTH_TOKEN` over OIDC and the release build scope in `.github/workflows/ci.yml` and `.github/workflows/release.yml` — covers: FR-014, P-004, EC-01 — route: ci-permissions — deps: T002
 
 ## Phase 2: Components

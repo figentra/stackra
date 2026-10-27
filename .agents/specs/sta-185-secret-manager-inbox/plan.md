@@ -66,7 +66,7 @@ ADR 0257 (Proposed), amending ADR 0009 rule 3.
 
 ## Docs
 
-`apps/docs/src/runbooks/secrets.mdx`, `.agents/rules/secrets.md`, ADR 0257.
+`apps/docs/src/docs/runbooks/secrets.mdx`, `.agents/rules/secrets.md`, ADR 0257.
 
 ## Project structure
 

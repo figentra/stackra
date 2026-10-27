@@ -1,7 +1,7 @@
 # `.agents/specs/`
 
 The spec-kit specs, one folder per Linear issue: `sta-<n>-<slug>/`
-([ADR 0120](../../apps/docs/src/adr/0120-sdlc-spec-location-lanes-and-change-risk.mdx) D1). Lite- and full-lane work
+([ADR 0120](../../apps/docs/src/docs/adr/0120-sdlc-spec-location-lanes-and-change-risk.mdx) D1). Lite- and full-lane work
 starts here; bug and chore lanes need no spec.
 
 | File       | Written by                             | Holds                                                                           |
@@ -21,4 +21,4 @@ starts here; bug and chore lanes need no spec.
   folders a change touches.
 - Specs are public: never put a secret, customer data or an unfixed vulnerability in one.
 
-Docs: [spec lifecycle](../../apps/docs/src/agents/spec-lifecycle.mdx).
+Docs: [spec lifecycle](../../apps/docs/src/docs/agents/spec-lifecycle.mdx).

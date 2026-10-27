@@ -23,7 +23,7 @@
 - **Deploy modes**: same in all three
 - **Licence tier**: free (MIT, this repo)
 - **UI surfaces**: none
-- **Docs to update**: `apps/docs/src/guides/widget.mdx`
+- **Docs to update**: `apps/docs/src/docs/guides/widget.mdx`
 - **Lane**: lite
 - **Change risk**: R1
 

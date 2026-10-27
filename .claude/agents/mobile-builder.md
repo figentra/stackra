@@ -16,7 +16,7 @@ generated API client.
 
 ## Must read
 
-`apps/docs/src/runbooks/mobile-release.mdx`, ADRs 0061 (React Navigation and native tabs), 0180 (apps and release
+`apps/docs/src/docs/runbooks/mobile-release.mdx`, ADRs 0061 (React Navigation and native tabs), 0180 (apps and release
 trains), 0252 (offline), 0256 (client storage), 0232 (the errors native entry), and the skills `mobile-eas-setup`,
 `heroui-native`, `expo-design-system`, `expo-animation`, `expo-data-fetching`, `expo-dev-client`,
 `react-native-best-practices`. Vendored Expo skills mention expo-router: ignore those parts, Stackra uses code-based React

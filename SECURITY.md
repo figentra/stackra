@@ -18,4 +18,4 @@ Include the affected package or member, the version or commit, steps to reproduc
 
 The `@stackra/*` packages and the reference apps and services in this repository. Never put a secret value in a
 report; name the secret instead. The programme behind this policy is
-[ADR 0187](apps/docs/src/adr/0187-security-and-compliance-programme.mdx).
+[ADR 0187](apps/docs/src/docs/adr/0187-security-and-compliance-programme.mdx).

@@ -5,8 +5,8 @@
 ## Phase 1: Decisions and category
 
 - [x] T001 [US1] Spec, plan and tasks in `.agents/specs/sta-350-design-system/spec.md` — covers: SC-001 — route: spec-draft
-- [ ] T002 [US1] ADR 0302 and the amendment notes in `apps/docs/src/adr` — covers: SC-001 — route: adr — deps: T001
-- [ ] T003 [US1] The `design-system` category in `tools/scripts/structure.mjs`, `tools/scripts/validate-repository.mjs` and `tools/scripts/scaffold.mjs`, with their tests and the regenerated `apps/docs/src/standards/structure.mdx` — covers: FR-006, P-005, SC-003 — route: package — deps: T002
+- [ ] T002 [US1] ADR 0302 and the amendment notes in `apps/docs/src/docs/adr` — covers: SC-001 — route: adr — deps: T001
+- [ ] T003 [US1] The `design-system` category in `tools/scripts/structure.mjs`, `tools/scripts/validate-repository.mjs` and `tools/scripts/scaffold.mjs`, with their tests and the regenerated `apps/docs/src/docs/standards/structure.mdx` — covers: FR-006, P-005, SC-003 — route: package — deps: T002
 
 ## Phase 2: Tokens
 

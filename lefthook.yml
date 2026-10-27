@@ -16,7 +16,7 @@ pre-commit:
         - "*.{json,jsonc,json5,yaml,yml,toml,md,mdx}"
         - "*.{css,scss,less,html,graphql,vue}"
       # --check, not --write: stage_fixed made lefthook stash unstaged work, which conflicts while the loop
-      # edits other members mid-commit (see apps/docs/src/agents/concurrent-sessions.mdx); the gate formats a member before it passes.
+      # edits other members mid-commit (see apps/docs/src/docs/agents/concurrent-sessions.mdx); the gate formats a member before it passes.
       # oxfmt exits 2 when every staged file is on its ignore list (pnpm-lock.yaml alone): that is not a finding.
       run: sh -c 'pnpm exec oxfmt --check "$@"; s=$?; [ $s -eq 2 ] && exit 0; exit $s' -- {staged_files}
     - name: shfmt

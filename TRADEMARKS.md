@@ -5,7 +5,7 @@ Stackra™ and Figentra™, and the Stackra and Figentra logos and marks, are tr
 The MIT licence in [`LICENSE`](LICENSE) covers code only. It grants no right to these names, logos or marks. The brand
 assets in `apps/docs/src/assets/brand/` and `.github/` (and their copies in `apps/mobile/assets/` and the app templates'
 `assets/`) are all rights reserved, as their `NOTICE` files state
-([ADR 0024](apps/docs/src/adr/0024-mit-license-with-exclusions.mdx)).
+([ADR 0024](apps/docs/src/docs/adr/0024-mit-license-with-exclusions.mdx)).
 
 ## Allowed
 

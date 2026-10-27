@@ -11,7 +11,7 @@ Repository tooling that is not a workspace member: it has no `package.json`, no 
 ## Rules
 
 - Scripts are plain Node 24 `.mjs` (ESM), mostly dependency-free so they run before `pnpm install`; relative imports
-  keep their `.mjs` extension ([ADR 0006](../apps/docs/src/adr/0006-naming-exports-and-imports.mdx)).
+  keep their `.mjs` extension ([ADR 0006](../apps/docs/src/docs/adr/0006-naming-exports-and-imports.mdx)).
 - Each script opens with a docblock that states its purpose, inputs and secrets handling.
 - A script that needs a token reads it from the environment, injected by `infisical run`; it never reads a file or
   prints a secret.

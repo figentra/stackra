@@ -56,4 +56,4 @@ line answered, no `[NEEDS CLARIFICATION`) and which holds a non-empty `plan.md`.
 - `__tests__/guard-differential.test.mjs` (wrapper x guarded command, 150+ allowed commands, a time bound) stays
   green with every change to `_rules.mjs` or `_inbox.mjs`; a new wrapper or guarded command gets a row there.
 - What the hooks do not enforce yet is listed under Enforcement in each rule in [`../rules`](../rules); the docs page
-  is [hooks](../../apps/docs/src/agents/hooks.mdx).
+  is [hooks](../../apps/docs/src/docs/agents/hooks.mdx).

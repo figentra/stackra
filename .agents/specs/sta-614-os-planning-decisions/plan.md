@@ -71,4 +71,4 @@ ADR 0362, `.agents/hooks/README.md`.
 ## Project structure
 
 `.agents/hooks/{_rules.mjs,guard-paths.mjs,README.md,__tests__/plan-gate.test.mjs}`,
-`apps/docs/src/adr/0362-no-code-without-an-answered-questionnaire-and-a-plan.mdx`.
+`apps/docs/src/docs/adr/0362-no-code-without-an-answered-questionnaire-and-a-plan.mdx`.

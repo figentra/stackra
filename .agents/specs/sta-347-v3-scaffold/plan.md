@@ -68,7 +68,7 @@ ADR 0294, 0295, 0296 and 0300 (Accepted); no new record.
 
 ## Docs
 
-`apps/docs/src/guides/scaffolding.mdx`, `apps/docs/src/standards/structure.mdx` (generated), `tools/scaffold/README.md`,
+`apps/docs/src/docs/guides/scaffolding.mdx`, `apps/docs/src/docs/standards/structure.mdx` (generated), `tools/scaffold/README.md`,
 the template READMEs and AGENTS files, and one sentence each in `.agents/rules/workspace-layout.md`,
 `.agents/rules/service-checklist.md` and the `backend-module-and-root-module` skill.
 

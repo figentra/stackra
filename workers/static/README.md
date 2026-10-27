@@ -1,7 +1,7 @@
 # @figentra/worker-static
 
 Stackra's hosted static files: one Cloudflare Worker (`stackra-static`) with static assets only and no Worker script
-([ADR 0284](../../apps/docs/src/adr/0284-hosted-static-files-one-cloudflare-static-assets-worker.mdx)). It serves
+([ADR 0284](../../apps/docs/src/docs/adr/0284-hosted-static-files-one-cloudflare-static-assets-worker.mdx)). It serves
 `https://static.stackra.figentra.com/`. Each kind of file has its own first path segment: `/schemas/` today, more
 kinds (CDN files, install scripts) later in the same member. It sits beside the other Stackra hosts on the
 `figentra.com` zone: `docs.stackra.figentra.com` (Mintlify) and `npm.stackra.figentra.com` (the `npm-registry`

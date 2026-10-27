@@ -7,7 +7,7 @@ global rules. Full guides: `apps/docs` (`pnpm docs`). Every member keeps its cod
 | ---------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------- |
 | `apps/console`                                             | `@figentra/console` — Vite web app; authored `src/main.ts` until v3 generates the entry (ADR 0295)                                                        | `tier:app`     |
 | `apps/mobile`                                              | `@figentra/mobile` — Expo app; authored `src/main.ts` until v3 generates the entry (ADR 0295)                                                             | `tier:app`     |
-| `apps/docs`                                                | `@figentra/docs` — Mintlify; `docs.json`, pages and `assets/` all in `src/`; ADRs in `src/adr`; `pnpm docs`                                               | `tier:app`     |
+| `apps/docs`                                                | `@figentra/docs` — Mintlify; pages in `src/docs/` (ADRs in `src/docs/adr`), site config `src/config/docs.config.ts`                                       | `tier:app`     |
 | `packages/<category>/<name>`                               | `@stackra/<name>`, flat inside one category: foundation, application, communication, cross-cutting, data, developer, experience, runtime, security, state | `tier:lib`     |
 | `packages/tooling/*`                                       | `@stackra/{typescript,oxlint,vitest,tsdown,commitlint}-config`, exactly five presets (ADR 0300)                                                           | `tier:config`  |
 | `services/<name>`                                          | `@figentra/service-<name>` — one member per service (`example`, `health`); root module `src/<key>.module.ts` (ADR 0294)                                   | `tier:service` |
@@ -803,7 +803,7 @@ new code in the v3 shape where the member already allows it.
   `analytics/`, `bridges/`, `hooks/` (two or more importers), `schemas/`, `errors/`, `enums/`,
   `types/`, `styles/`
 - Overrides of any package or service live in one tree, `src/overrides/<owner>/`, which mirrors the owner's paths (ADR 0306)
-- Docs (`apps/docs`) is the exception: Mintlify pages, `docs.json` and `assets/` in `src/`
+- Docs (`apps/docs`) has its own layout (ADR 0002, 2026-10-27 amendment): pages in `src/docs/`, `assets/` and `snippets/` in `src/`, the site in `src/config/docs.config.ts`; gen assembles the Mintlify site into `.stackra/site/`
 
 ##### Workers (<name>)
 

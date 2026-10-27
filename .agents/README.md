@@ -2,7 +2,7 @@
 
 One canonical tree, projected into each assistant's own directory by
 [`tools/scripts/agents-sync.mjs`](../tools/scripts/agents-sync.mjs) (`pnpm agents:sync`). Edit here; never edit the
-projection ([ADR 0016](../apps/docs/src/adr/0016-agents-source-of-truth.mdx)).
+projection ([ADR 0016](../apps/docs/src/docs/adr/0016-agents-source-of-truth.mdx)).
 
 | Entry                     | Holds                                                         | Projected to                                                             |
 | ------------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------------ |
@@ -38,4 +38,4 @@ block of `AGENTS.md`.
 
 Keep every rule and agent short and **true**. A wrong always-on rule is loaded into every session and misleads at a
 cost; verify each claim against a real file, and name the check that enforces it (or say "planned"). See
-[rules that don't rot](../apps/docs/src/agents/rules-that-dont-rot.mdx).
+[rules that don't rot](../apps/docs/src/docs/agents/rules-that-dont-rot.mdx).

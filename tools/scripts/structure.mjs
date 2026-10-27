@@ -4,7 +4,7 @@
  * Purpose: the repository structure tables for core's scripts: re-exports the one machine-readable source in
  *          @stackra/repo-checks (package categories, package entries, the programming model v3 tables, the pre-v3 kind
  *          folders, banned folders, suffix lookups, test tiers and documented exceptions; ADR 0294, 0295), which
- *          scaffold.mjs imports from here, and `--write-docs` renders apps/docs/src/standards/structure.mdx from it.
+ *          scaffold.mjs imports from here, and `--write-docs` renders apps/docs/src/docs/standards/structure.mdx from it.
  * Boundary: re-exports and the docs page renderer; it runs no checks.
  * Runtime: node
  * Governing contract: ADR 0294; ADR 0269; ADR 0022 (tests live in tests folders).
@@ -18,7 +18,7 @@ import { fileURLToPath } from "node:url";
 import { checks } from "./repo-checks.mjs";
 
 const ROOT = fileURLToPath(new URL("../../", import.meta.url));
-const DOC_PATH = join(ROOT, "apps/docs/src/standards/structure.mdx");
+const DOC_PATH = join(ROOT, "apps/docs/src/docs/standards/structure.mdx");
 
 /** Named exception to ENTRIES: `@stackra/testing` alone also has these two entries, and no other package does (ADR 0269 d6). */
 const TESTING_PACKAGE_ENTRIES = Object.freeze([

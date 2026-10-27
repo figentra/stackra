@@ -1,0 +1,86 @@
+---
+title: "Definition of done"
+description: "What must be true before a change is done, each line tied to the check that enforces it."
+icon: "circle-check-big"
+---
+
+This is deliberately not a prose checklist. A definition of done is only trustworthy where each line names a check that fails. Where a line has no check yet, it says so.
+
+## Every workspace member
+
+`pnpm validate` (`tools/scripts/validate-repository.mjs`) enforces these on every member:
+
+- `README.md`, `AGENTS.md` (with a `## PII` section, even if it says "none"), `CHANGELOG.md` and `LICENSE` are present.
+- The package is named `@stackra/*`, uses only `catalog:` or `workspace:` versions, depends on none of the forbidden packages (eslint, prettier, jest, Nest, Prisma, Drizzle and so on), and extends one `@stackra/typescript-config` preset.
+- `turbo.jsonc` extends the root and declares exactly one tier tag that matches the directory.
+- The task vocabulary scripts exist (`build`, `typecheck`, `lint`, `test`, `format`, `format:check`, `clean`): target check, not built yet. See [Tooling](/guides/tooling).
+
+## A change is done when
+
+<Steps>
+  <Step title="The gate is green, reported as what it checked">
+    `pnpm verify` passes: format, lint, typecheck, test, build, `validate`, `boundaries` and `knip`.
+    State what you ran. A green gate does not mean a service runs or that CI's runner agrees; see
+    [CI](/runbooks/ci#what-green-does-not-prove).
+  </Step>
+  <Step title="Tests exist and prove the change">
+    New behaviour has a test in a `__tests__/` folder beside the code ([ADR
+    0022](/adr/0022-tests-live-in-tests-folders)), and a bug fix has a test that failed before the
+    fix. Tests use fakes, never real credentials ([Testing](/standards/testing)).
+  </Step>
+  <Step title="A decision that changed is an ADR, not a comment">
+    If the change reverses or extends an accepted decision, the new or superseding ADR in
+    `apps/docs/src/docs/adr/` lands in the same change as the code. A change that quietly re-decides
+    something is exactly what the architecture guardian blocks.
+  </Step>
+  <Step title="Docs are current, not merely present">
+    The member's `README.md` and `AGENTS.md`, and any page that states the rule you changed, are
+    true after your change. A required file existing is enforced; its content staying true is a
+    review responsibility.
+  </Step>
+  <Step title="A changeset records the change">
+    Every changed member has one (`pnpm changeset`). `pnpm changeset:status` checks it; chaining it
+    into `pnpm verify` is a target. See [Release](/runbooks/release).
+  </Step>
+  <Step title="No secret, no literal version, no new dependency by accident">
+    gitleaks stays clean, versions come from catalogs, and a new dependency was added to a catalog
+    first with its licence checked ([Dependencies](/standards/dependencies)).
+  </Step>
+  <Step title="Review matched the change, and findings are closed">
+    Use the reviewers that fit what changed. A finding is closed by fixing it or by recording why it
+    does not apply, never by restating the code that produced it. Conventional commit messages,
+    scoped by member ([Commits and releases](/guides/workflow)).
+  </Step>
+  <Step title="No gate was weakened to get green">
+    Classify a failure first: implementation bug, wrong test, wrong requirement, wrong design,
+    environment problem or flake. Then fix what the classification names. A failing test is not a
+    licence to loosen the assertion, a type error is not a licence for `any`, and a lint failure is
+    not a licence for an unexplained disable. A gate changes only through the record that created
+    it, never in the same commit as the code that was failing it.
+  </Step>
+</Steps>
+
+## When the change adds more
+
+| If the change adds                            | Also required                                                                                                         | State            |
+| --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- | ---------------- |
+| A member                                      | Scaffold it with `pnpm new` ([Scaffolding](/guides/scaffolding)); every required file; the member's tier tag          | Live             |
+| A package or a new `exports` subpath          | Package steward review ([Packages](/guides/packages))                                                                 | Review           |
+| An application secret                         | `secret("NAME")` declared, the name and purpose in your report, a human sets the value ([Secrets](/runbooks/secrets)) | Review           |
+| A user-visible screen                         | Accessibility and RTL pass                                                                                            | Review           |
+| A deploy-affecting change                     | The deploy notes in [Deploys](/runbooks/deploys)                                                                      | Review           |
+| A tenant-owned table (once a database exists) | Both isolation layers and an isolation test                                                                           | Not in force yet |
+
+## What is deliberately not on this list
+
+Production-readiness items (SLOs, rollback drills, an incident process) and compliance sign-off have nothing to attach to until something runs in production. They arrive the way every gate here arrived: as a check that fails, with an owner, not as a paragraph.
+
+## Checks that back this page
+
+| Line                                         | Check                   | State                        |
+| -------------------------------------------- | ----------------------- | ---------------------------- |
+| Gate chain                                   | `pnpm verify`           | Live                         |
+| Required files, catalogs, tier tags, presets | `pnpm validate`         | Live                         |
+| Task vocabulary scripts on every member      | Validator check         | Not built                    |
+| Changeset per changed member                 | `pnpm changeset:status` | Script live; not in `verify` |
+| Secrets                                      | gitleaks, `guard-bash`  | Live                         |

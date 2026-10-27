@@ -3,13 +3,13 @@
 # Purpose: what the docs member needs (ADR 0299 decision 6, ADR 0296 decision 1): its dev port and its public host.
 #          The root runway places it on the `mintlify` destination; `.github/workflows/deploy-docs.yml` deploys it.
 # Boundary: no root fact and no secret: the Mintlify admin key is a CI secret (root `secrets.ci`), never the member's.
-# Governing contract: ADR 0296, ADR 0299
+# Governing contract: ADR 0296, ADR 0299, ADR 0002 (2026-10-27 amendment)
 $schema: "@stackra/runway/schema/app.json"
 version: 3
 
 environments:
   dev:
-    # `mint dev --port 3333` (package.json `dev`).
+    # `stackra dev` passes it to `mint dev` in .stackra/site (package.json `dev`).
     port: 3333
   production:
     domain: docs.stackra.figentra.com

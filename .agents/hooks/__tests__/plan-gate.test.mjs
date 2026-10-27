@@ -1,5 +1,11 @@
-// The plan gate (ADR 0362): a Write or Edit to a source path needs the branch's spec answered and a plan, or the
-// owner's hotfix marker.
+/**
+ * Stackra file contract:
+ * Purpose: tests of the plan gate (ADR 0362): a Write or Edit to a source path needs the branch's spec answered and a
+ *          plan, or the owner's hotfix marker.
+ * Boundary: test only; temp repos, no network.
+ * Runtime: node (node:test)
+ * Governing contract: ADR 0362; ADR 0022 (test placement).
+ */
 // @covers sta-614:FR-001 sta-614:FR-002 sta-614:FR-003 sta-614:FR-004
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -65,7 +71,7 @@ test("allow: paths outside source need no spec", async () => {
   const root = repo(null);
   for (const rel of [
     ".agents/specs/sta-7-thing/spec.md",
-    "apps/docs/src/adr/0362-x.mdx",
+    "apps/docs/src/docs/adr/0362-x.mdx",
     "tools/scaffold/templates/apps/docs/index.mdx",
     "README.md",
     ".agents/hooks/_rules.mjs",

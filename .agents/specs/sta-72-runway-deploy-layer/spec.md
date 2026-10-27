@@ -38,7 +38,7 @@ emit the Encore app wait for gen and are recorded as blocked. Source: the SDLC a
   in `mise.toml`; Trivy and cosign in the reusable workflows (`mise exec <tool>@<version>`)
 - **Deploy modes**: CI and release only; nothing changes at runtime in SaaS, on-prem or air-gapped
 - **Licence tier**: free (MIT); the reusable workflows are public, as ADR 0168 decision 1 requires
-- **Docs to update**: `apps/docs/src/runbooks/runway.mdx` (new), `apps/docs/src/runbooks/deploys.mdx`,
+- **Docs to update**: `apps/docs/src/docs/runbooks/runway.mdx` (new), `apps/docs/src/docs/runbooks/deploys.mdx`,
   `apps/docs/src/docs.json`, `.github/workflows/README.md`
 - **Lane**: full
 - **Change risk**: R3 (CI permissions, OIDC trust and the release workflow)
@@ -183,7 +183,7 @@ dispatch the same CI workflow a merge runs.
   Infisical paths (names only). `deploy <target>` and `promote <sha>` refuse a dirty tree, an unpushed commit or a
   commit not on `origin/main`, print the SHA, and dispatch the target's caller workflow on `main` (with the SHA for a
   promote), so every deploy runs in CI from a pushed commit. The guard asks the owner before an agent runs either.
-- **FR-011**: The secrets and vars sync is designed in `apps/docs/src/runbooks/runway.mdx`: Infisical as the source
+- **FR-011**: The secrets and vars sync is designed in `apps/docs/src/docs/runbooks/runway.mdx`: Infisical as the source
   (ADR 0173), one CI identity per environment, the per-target write path (Encore, Workers, EAS) fed on stdin, a
   names-only plan before every sync, and which parts wait for gen, STA-136 and STA-17.
 - **FR-012**: The reusable workflows are released as the tag `runway-v<n>` on a main commit; an external caller pins

@@ -9,7 +9,7 @@ Run the full repository gate:
 pnpm verify
 ```
 
-This runs format, lint, typecheck, test, build, validate, boundaries and knip (see `apps/docs/src/runbooks/ci.mdx` for what each step catches).
+This runs format, lint, typecheck, test, build, validate, boundaries and knip (see `apps/docs/src/docs/runbooks/ci.mdx` for what each step catches).
 
 Report the result plainly:
 

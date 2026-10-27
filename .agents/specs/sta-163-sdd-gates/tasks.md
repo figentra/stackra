@@ -23,4 +23,4 @@
 ## Phase 4: Polish
 
 - [x] T010 Wire `package.json` validate, `.github/workflows/ci.yml` and `lefthook.yml` — covers: FR-008, P-007, SC-001 — route: ci-permissions — deps: T006, T008
-- [x] T011 Update `apps/docs/src/agents/spec-lifecycle.mdx` — covers: SC-001 — route: steward-docs — deps: T010
+- [x] T011 Update `apps/docs/src/docs/agents/spec-lifecycle.mdx` — covers: SC-001 — route: steward-docs — deps: T010

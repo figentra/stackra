@@ -37,7 +37,7 @@
 - **Deploy modes**: [what differs in SaaS / on-prem / air-gapped (outbound calls, hosted services, licence checks), or "same in all three"]
 - **Licence tier**: [free (MIT, this repo) / Pro (figentra/stackra-pro)]
 - **UI surfaces**: [screens or components, or none]
-- **Docs to update**: [apps/docs/src/... pages, or none; spec-trace drift checks that a Done spec touched them]
+- **Docs to update**: [apps/docs/src/docs/... pages, or none; spec-trace drift checks that a Done spec touched them]
 - **Lane**: [full / lite / bug / chore, from the ADR 0120 lane table (first match wins)]
 - **Change risk**: [R0 / R1 / R2 / R3 (ADR 0120), derived from the answers above; it can be raised, never lowered]
 

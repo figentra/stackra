@@ -37,4 +37,4 @@ codemod (STA-344) converts the members. Eight non-negotiables:
 
 Enforcement: `tools/scripts/validate-repository.mjs` (member shape, `checkService` with its v2 branch for today's
 `src/main.ts` and `stackra.module` until STA-344, no Encore files, tier tag); planned — STA-338 (`kind-path`), STA-339 (`member-root`,
-`runway`) and STA-340 (`module-folder`, `database-folder` and the gen checks). Items 2-5 and 8 are reviewer-checked. Docs: `apps/docs/src/standards/services.mdx`.
+`runway`) and STA-340 (`module-folder`, `database-folder` and the gen checks). Items 2-5 and 8 are reviewer-checked. Docs: `apps/docs/src/docs/standards/services.mdx`.

@@ -1,7 +1,7 @@
 # `packages/tooling/`
 
 The shared configuration presets every member extends, tagged `tier:config`. They have no workspace dependencies and
-sit at the bottom of the dependency graph ([ADR 0003](../../apps/docs/src/adr/0003-tier-dependency-direction.mdx)).
+sit at the bottom of the dependency graph ([ADR 0003](../../apps/docs/src/docs/adr/0003-tier-dependency-direction.mdx)).
 
 | Package                    | Presets for                                                                      |
 | -------------------------- | -------------------------------------------------------------------------------- |
@@ -18,9 +18,9 @@ sit at the bottom of the dependency graph ([ADR 0003](../../apps/docs/src/adr/00
   presets build `src` to `dist/*.js` and `.d.ts` with `tsc -p tsconfig.build.json`, because Node strips no types under
   `node_modules`. Their `exports` list `@stackra/source` first, so typecheck reads `src`; a config file that a tool
   loads (`vitest.config.ts`, `tsdown.config.ts`) reads `dist`, which `^build` makes first. commitlint reads `src`
-  through `NODE_OPTIONS=--conditions=@stackra/source` in lefthook and the Quality Gate ([ADR 0025](../../apps/docs/src/adr/0025-packages-publish-to-private-registry.mdx)).
+  through `NODE_OPTIONS=--conditions=@stackra/source` in lefthook and the Quality Gate ([ADR 0025](../../apps/docs/src/docs/adr/0025-packages-publish-to-private-registry.mdx)).
 - Every compiler or lint option lives here with its reason; a member's config only extends a preset.
 - Changing a preset changes every member: run `pnpm verify`.
 - Create one with `pnpm new tooling <name> --description "<one sentence>"`.
 
-Guide: [tooling](../../apps/docs/src/guides/tooling.mdx).
+Guide: [tooling](../../apps/docs/src/docs/guides/tooling.mdx).

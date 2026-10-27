@@ -22,7 +22,7 @@ selected by market-pack data.
 
 ## Impact
 
-- **Apps touched**: none (ADR 0364 added in `apps/docs/src/adr`; the integrator adds the index row)
+- **Apps touched**: none (ADR 0364 added in `apps/docs/src/docs/adr`; the integrator adds the index row)
 - **Services touched**: none (OS invoicing, devices and Commerce tills consume it later)
 - **Packages touched**: `packages/commerce/fiscal` (new member)
 - **Cross-service events**: none

@@ -13,7 +13,7 @@
  * Governing contract: ADR 0065 (rule 7: Linear sync never blocks); ADR 0121 (SDLC tooling roles and Linear).
  * Idempotent: every comment carries a `linear-reconcile (<tag>)` marker and an action whose marker is already on the
  * issue is skipped, so a human who reopens an issue is not overridden. `--dry-run` writes nothing.
- * Inputs: `gh pr list` (GH_TOKEN in CI), `git for-each-ref refs/remotes/origin`, apps/docs/src/adr/*.mdx.
+ * Inputs: `gh pr list` (GH_TOKEN in CI), `git for-each-ref refs/remotes/origin`, apps/docs/src/docs/adr/*.mdx.
  * Secrets: LINEAR_AGENT_TOKEN or LINEAR_API_KEY from the environment only (see linear.mjs); never printed.
  */
 import { execFileSync } from "node:child_process";
@@ -24,7 +24,7 @@ import { client, linear, TEAM } from "./linear.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const REPO = "figentra/stackra";
-const ADR_DIR = "apps/docs/src/adr";
+const ADR_DIR = "apps/docs/src/docs/adr";
 const STALE_MS = 3 * 24 * 3600 * 1000;
 const MARK = (tag) => `linear-reconcile (${tag})`;
 

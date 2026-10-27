@@ -3,7 +3,7 @@
 **Input**: `.agents/specs/sta-348-shipping/`
 
 - [x] T001 Spec, plan and tasks — covers: SC-001 — route: spec-draft
-- [x] T002 ADR 0369 (Proposed) in `apps/docs/src/adr/` — covers: SC-001 — route: docs
+- [x] T002 ADR 0369 (Proposed) in `apps/docs/src/docs/adr/` — covers: SC-001 — route: docs
 - [x] T003 Member files (`package.json`, `tsconfig.json`, `turbo.jsonc`, `stackra.config.ts`, tool configs, README, AGENTS, LICENSE, CHANGELOG) — covers: FR-001 — route: package
 - [x] T004 Contracts: enums, `CarrierGateways`, gateway interfaces, request and result types — covers: FR-002, FR-003, FR-004 — route: package
 - [x] T005 Core: `hasCapability`, `normaliseTracking`, `labelDocument`, `batchZpl`, `dimensionalWeight`, `chargeableWeight`, two refusals — covers: FR-002 to FR-007 — route: package

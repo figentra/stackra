@@ -18,7 +18,7 @@
 
 ## Impact
 
-- **Apps touched**: `apps/docs` (the `apps/docs/src/agents/spec-lifecycle.mdx` page only)
+- **Apps touched**: `apps/docs` (the `apps/docs/src/docs/agents/spec-lifecycle.mdx` page only)
 - **Services touched**: none
 - **Packages touched**: none (root tooling in `tools/scripts`, `.agents/speckit`, `.specify`, `.github/workflows/ci.yml`, `lefthook.yml`)
 - **Public contract change**: additive: new `spec-gate` subcommands (`check`, `tasks`, `lane`, `branch`), the `spec-trace` script, `pnpm speckit:sync|spec:gate|spec:trace`; the spec states Ready and Verified are renamed Tasked and Done (OR12)
@@ -31,7 +31,7 @@
 - **Deploy modes**: same in all three (developer and CI tooling only)
 - **Licence tier**: free (MIT, this repo)
 - **UI surfaces**: none
-- **Docs to update**: `apps/docs/src/agents/spec-lifecycle.mdx`
+- **Docs to update**: `apps/docs/src/docs/agents/spec-lifecycle.mdx`
 - **Lane**: full (agent guards and CI gate scripts are R3 paths)
 - **Change risk**: R3 (ADR 0120: CI gate and agent-guard scripts)
 

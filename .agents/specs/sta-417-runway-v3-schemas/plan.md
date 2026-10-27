@@ -70,7 +70,7 @@ None new. A dated Note on ADR 0300 (2026-10-24, STA-417). ADR 0296, 0299, 0237 a
 
 ## Docs
 
-`apps/docs/src/adr/0300-published-tooling-presets-and-enforced-spell-checking.mdx`, `apps/docs/src/adr/index.mdx`,
+`apps/docs/src/docs/adr/0300-published-tooling-presets-and-enforced-spell-checking.mdx`, `apps/docs/src/docs/adr/index.mdx`,
 `packages/tooling/typescript/README.md`, `.changeset/typescript-config-v3-roles.md`, and the schema descriptions.
 
 ## Project structure

@@ -6,14 +6,14 @@ R3-SO-09. -->
 
 The carrier contract of the shipping engine: the ports a carrier connector implements (rate quote, label with
 cancel, pickup with cancel, tracking, pickup point and locker search, return label with cancel), the `CarrierGateways` port that picks a carrier per scope and Market through the
-Connection ([ADR 0356](../../../apps/docs/src/adr/0356-choosing-a-provider-per-tenant-and-market-through-the-connection-with-a-market-default.mdx)),
+Connection ([ADR 0356](../../../apps/docs/src/docs/adr/0356-choosing-a-provider-per-tenant-and-market-through-the-connection-with-a-market-default.mdx)),
 one tracking-state model with the function that normalises a carrier's events into it, checked PDF and ZPL label
 documents, dimensional and chargeable weight, and the `DistanceMatrix` and `RouteSolver` routing ports with memory
 drivers (R3-SO-09). ADR 0369 decides it.
 
 No carrier driver lives here: each carrier or aggregator is an OS integrations connector whose `Connection` implements
 the gateway interfaces. No carrier, Market, factor, increment or rate is in code: they are connector data, market-pack
-data and rule sets ([ADR 0363](../../../apps/docs/src/adr/0363-configuration-over-code-business-behaviour-is-data-rules-workflows-and-studios.mdx)).
+data and rule sets ([ADR 0363](../../../apps/docs/src/docs/adr/0363-configuration-over-code-business-behaviour-is-data-rules-workflows-and-studios.mdx)).
 
 **Tier:** `tier:lib` (`packages/commerce/shipping`). Depends on `@stackra/contracts`, `@stackra/errors` and
 `@stackra/money`; isomorphic, with no clock, locale, environment or network read.

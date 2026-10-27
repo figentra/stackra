@@ -11,7 +11,7 @@ One line per script. Each file's docblock is the full contract; the tests are in
 | `catalogue-completeness.mjs` | `node tools/scripts/catalogue-completeness.mjs`    | thin wrapper: the lang catalogue gate (ADR 0403) in `@stackra/repo-checks`                                                                           |
 | `repo-checks.mjs`            | —                                                  | loads `@stackra/repo-checks` from source for the wrappers (type stripping plus a `#` resolve hook)                                                   |
 | `scaffold.mjs`               | `pnpm new <kind> <name>`                           | renders a member from `tools/scaffold/templates` and formats it                                                                                      |
-| `structure.mjs`              | `node tools/scripts/structure.mjs --write-docs`    | re-exports the structure tables of `@stackra/repo-checks` for the scaffold and renders `apps/docs/src/standards/structure.mdx`                       |
+| `structure.mjs`              | `node tools/scripts/structure.mjs --write-docs`    | re-exports the structure tables of `@stackra/repo-checks` for the scaffold and renders `apps/docs/src/docs/standards/structure.mdx`                  |
 | `agents-sync.mjs`            | `pnpm agents:sync`, `pnpm agents:check`            | projects `.agents/` into `.claude/` and `.opencode/`, renders the `AGENTS.md` rules block, the gitignored `.mcp.json` and the constitution           |
 | `speckit-sync.mjs`           | `pnpm speckit:sync`                                | installs the Stackra spec-kit preset into `.specify/` and re-renders both integrations                                                               |
 | `spec-gate.mjs`              | `pnpm spec:gate`                                   | spec stage gates, tasks lint, lane and branch checks, and the spec-kit wrap tripwire                                                                 |
@@ -34,5 +34,5 @@ One line per script. Each file's docblock is the full contract; the tests are in
 
 - A script that changes behaviour changes its test in `__tests__/` in the same commit.
 - Exit codes are documented in the docblock; a Linear failure never fails a gate
-  ([ADR 0065](../../apps/docs/src/adr/0065-linear-gate-is-checked-offline.mdx) rule 7).
+  ([ADR 0065](../../apps/docs/src/docs/adr/0065-linear-gate-is-checked-offline.mdx) rule 7).
 - No token in argv, a file or the output.

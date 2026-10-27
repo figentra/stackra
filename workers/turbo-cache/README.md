@@ -4,8 +4,8 @@
 
 Stackra's Turborepo remote cache: one Cloudflare Worker (`stackra-turbo-cache`) that implements Turborepo's
 remote-cache HTTP API (v8 artifacts) over an R2 bucket
-([ADR 0026](../../apps/docs/src/adr/0026-turborepo-remote-cache-on-r2.mdx), built now by
-[ADR 0289](../../apps/docs/src/adr/0289-runway-and-environments-workers-one-encore-app-previews-and-publishing.mdx)
+([ADR 0026](../../apps/docs/src/docs/adr/0026-turborepo-remote-cache-on-r2.mdx), built now by
+[ADR 0289](../../apps/docs/src/docs/adr/0289-runway-and-environments-workers-one-encore-app-previews-and-publishing.mdx)
 decision 2). No Vercel account is involved; switching provider changes only `TURBO_API` and `TURBO_TOKEN`.
 
 ## API

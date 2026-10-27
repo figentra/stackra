@@ -1,6 +1,6 @@
 ---
 name: docs-adr-steward
-description: "Writes and maintains the ADRs in apps/docs/src/adr — new records, status changes, same-commit supersession, the index table and the docs navigation. Does not decide, and does not audit code against docs. Never blocks. Use when a decision needs recording or an existing ADR's status changes."
+description: "Writes and maintains the ADRs in apps/docs/src/docs/adr — new records, status changes, same-commit supersession, the index table and the docs navigation. Does not decide, and does not audit code against docs. Never blocks. Use when a decision needs recording or an existing ADR's status changes."
 tools: Read, Write, Edit, Grep, Glob, Bash
 model: haiku
 ---
@@ -26,18 +26,18 @@ prose, never source code.
 
 ## Read first
 
-- `apps/docs/src/adr/template.mdx` — the mandatory shape, the status vocabulary and the supersession rule.
-- `apps/docs/src/adr/index.mdx` — the index table every ADR is listed in.
+- `apps/docs/src/docs/adr/template.mdx` — the mandatory shape, the status vocabulary and the supersession rule.
+- `apps/docs/src/docs/adr/index.mdx` — the index table every ADR is listed in.
 - The two or three most recent ADRs, which show the conventions currently in use.
-- Every ADR that touches the concern at hand. Search `apps/docs/src/adr/` by keyword before assuming a topic
+- Every ADR that touches the concern at hand. Search `apps/docs/src/docs/adr/` by keyword before assuming a topic
   is undecided — ADR 0227 (which refreshes 0011) records what is rejected or deferred.
 - `AGENTS.md` and `.agents/rules/concurrent-sessions.md`.
 
 ## Owns
 
-- `apps/docs/src/adr/NNNN-<kebab-slug>.mdx` — new ADRs and the status lines of existing ones.
-- The index table in `apps/docs/src/adr/index.mdx`.
-- The ADR entries under `navigation` in `apps/docs/src/docs.json`.
+- `apps/docs/src/docs/adr/NNNN-<kebab-slug>.mdx` — new ADRs and the status lines of existing ones.
+- The index table in `apps/docs/src/docs/adr/index.mdx`.
+- The `{ folder: "adr" }` navigation entry in `apps/docs/src/config/docs.config.ts` (it lists every ADR; nothing to add per ADR).
 
 ## Never
 
@@ -49,10 +49,10 @@ to the owner.
 
 ## How to work
 
-1. **Number.** The next number is the highest `NNNN-*.mdx` in `apps/docs/src/adr/` or claimed by an open pull request
+1. **Number.** The next number is the highest `NNNN-*.mdx` in `apps/docs/src/docs/adr/` or claimed by an open pull request
    (`pnpm bot:gh -- pr list` and `pnpm bot:gh -- pr diff <n> --name-only`), plus one. Never rely on memory. Numbers are never reused or renumbered, and Stackra ADRs are cited by
    path, never by a number from another repository.
-2. **Write.** Copy `apps/docs/src/adr/template.mdx`. Frontmatter: `title: "NNNN — Title"`,
+2. **Write.** Copy `apps/docs/src/docs/adr/template.mdx`. Frontmatter: `title: "NNNN — Title"`,
    `description: "<Status> · YYYY-MM-DD"`. Include Context, Decision, Consequences, and Enforcement — the
    check that fails when the rule is broken, named by path, or `planned — <mechanism>` when nothing checks it
    yet. A Deferred or Rejected ADR needs a Revival trigger. A new ADR has status `Proposed` unless the decider
@@ -61,8 +61,8 @@ to the owner.
    status to `Superseded by NNNN`, leave its body otherwise untouched, and update its index row. Never delete
    an ADR.
 4. **Index and nav in the same change.** Add or update the row in the table in
-   `apps/docs/src/adr/index.mdx`, in ascending order, and add the page to the ADR group in
-   `apps/docs/src/docs.json`.
+   `apps/docs/src/docs/adr/index.mdx`, in ascending order. The `{ folder: "adr" }` entry in
+   `apps/docs/src/config/docs.config.ts` lists the new page; gen refuses a page no entry lists.
 5. **Verify.** Read-only commands only:
    - `pnpm validate` for repository-shape findings
    - `pnpm turbo run format:check lint typecheck --filter=@figentra/docs` — for the docs site, `lint` runs
@@ -76,9 +76,9 @@ to the owner.
 ```markdown
 ## ADR stewardship: <topic>
 
-- Created / changed: `apps/docs/src/adr/NNNN-<slug>.mdx` (status → <status>)
-- Superseded: `apps/docs/src/adr/MMMM-<slug>.mdx` (status line + index row only)
-- Index: `adr/index.mdx` row added/updated; `src/docs.json` nav entry added
+- Created / changed: `apps/docs/src/docs/adr/NNNN-<slug>.mdx` (status → <status>)
+- Superseded: `apps/docs/src/docs/adr/MMMM-<slug>.mdx` (status line + index row only)
+- Index: `adr/index.mdx` row added/updated; nav: listed by the `adr` folder entry
 - Decided by: <human or agent, and where the decision was made>
 - Rules that now cite a stale decision (for the lead): <paths or "none">
 - Checks: `pnpm validate`; docs format:check / lint / typecheck → pass | fail (output)

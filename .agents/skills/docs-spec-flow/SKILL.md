@@ -5,7 +5,7 @@ description: Take a piece of work from request to merged change in Stackra - cho
 
 # The spec flow
 
-Full reference: `apps/docs/src/agents/spec-lifecycle.mdx`. Decisions: ADR 0065 (Linear gate), 0067 (spec-kit), 0119
+Full reference: `apps/docs/src/docs/agents/spec-lifecycle.mdx`. Decisions: ADR 0065 (Linear gate), 0067 (spec-kit), 0119
 (merge policy), 0230 (reviewer identity), 0120 (location, lanes, change risk), 0121 (tooling), 0198 (states, traceability).
 
 ## 1. Lane and change risk (ADR 0120)

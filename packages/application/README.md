@@ -4,8 +4,8 @@ Turning declarations into running behaviour: actions, codegen and AI. One folder
 
 **Today:** No package yet.
 
-**Planned here** ([ADR 0127](../../apps/docs/src/adr/0127-package-categories-including-infrastructure.mdx)): actions, ai, ir, registry.
-The order is the [roadmap](../../apps/docs/src/roadmap.mdx).
+**Planned here** ([ADR 0127](../../apps/docs/src/docs/adr/0127-package-categories-including-infrastructure.mdx)): actions, ai, ir, registry.
+The order is the [roadmap](../../apps/docs/src/docs/roadmap.mdx).
 
 ## Rules
 

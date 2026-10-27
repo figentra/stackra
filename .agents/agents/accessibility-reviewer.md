@@ -16,7 +16,7 @@ mechanical block is axe in the end-to-end tier, which fails on critical and seri
 
 ## Must read
 
-`apps/docs/src/standards/ui-and-accessibility.mdx`, `apps/docs/src/standards/i18n-rtl.mdx`, ADRs 0183 (budgets and axe
+`apps/docs/src/docs/standards/ui-and-accessibility.mdx`, `apps/docs/src/docs/standards/i18n-rtl.mdx`, ADRs 0183 (budgets and axe
 in every journey), 0192 (Arabic defaults), 0164 (panel renderer), 0139 (action UX), and the skill `accessibility`.
 
 ## Checks
