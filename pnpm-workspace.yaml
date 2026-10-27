@@ -32,6 +32,10 @@ catalog:
   undici: 8.12.2
   # Runtime schemas: @stackra/validation, config and money, and the X$ schemas gen emits (ADR 0095).
   zod: 4.6.7
+  # Apple Wallet pass signing in @stackra/integrations (stackra-41): PKCS#7 detached signatures over the pass manifest.
+  # pkijs 3.x and its asn1js 3.x peer; BSD-3-Clause. Bump the pair together.
+  asn1js: 3.1.0
+  pkijs: 3.4.3
   # ICU messages for @stackra/i18n: CLDR plural categories (all six for Arabic), select, number and date
   # arguments behind formatMessage and useTranslation. BSD-3-Clause.
   intl-messageformat: 12.1.3
@@ -274,6 +278,12 @@ catalogs:
     pulumi-logtail: 3.1.4
   # @stackra/documents renderers (ADR 0365): docx writes right-to-left DOCX, uqr encodes QR codes. Both MIT.
   # Keep uqr equal to the default catalog's uqr.
+  # @stackra/media (stackra-25): sharp compositing and fflate unzip at the versions the OSV overrides pin, and unpdf
+  # for in-region PDF text extraction. Keep sharp and fflate equal to their overrides.
+  media:
+    fflate: 0.8.3
+    sharp: 0.35.5
+    unpdf: 1.9.1
   documents:
     docx: 9.10.0
     uqr: 0.1.3
