@@ -36,6 +36,8 @@ describe("LicenceVerifier", () => {
 
   it("types its members", () => {
     expectTypeOf<LicenceVerifier["verify"]>().returns.toEqualTypeOf<Promise<Licence>>();
-    expectTypeOf<LicenceVerifier["check"]>().parameters.toEqualTypeOf<[string, string?]>();
+    expectTypeOf<LicenceVerifier["check"]>().parameters.toEqualTypeOf<
+      [string, (string | undefined)?]
+    >();
   });
 });

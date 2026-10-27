@@ -9,7 +9,7 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0178 (decisions 1 to 3); ADR 0260.
  */
-import { buildConfig } from "@stackra/config";
+import { buildConfig, MemorySecretStoreDriver } from "@stackra/config";
 import { isRefusal } from "@stackra/errors";
 import { describe, expect, it } from "@stackra/testing";
 import type { Transport } from "@stackra/transport";
@@ -32,7 +32,7 @@ function keygen(body: unknown, status = 200): { send: Transport; sent: Request[]
   return { send, sent };
 }
 
-/** The driver over account `acme` on a self-hosted origin, with token `tok`. */
+/** The driver over account `acme` on a self-hosted origin, with token `tok` from the secret store. */
 function issuer(
   send: Transport,
   account = "acme",
@@ -40,7 +40,9 @@ function issuer(
 ): KeygenLicenceIssuerDriver {
   return new KeygenLicenceIssuerDriver(
     buildConfig(LicensingConfig, { values: { apiUrl: "https://licences.acme.example", account } }),
-    buildConfig(IssuerConfig, { values: { productToken } }),
+    buildConfig(IssuerConfig, {
+      secrets: new MemorySecretStoreDriver().set("KEYGEN_PRODUCT_TOKEN", productToken),
+    }),
     send,
   );
 }

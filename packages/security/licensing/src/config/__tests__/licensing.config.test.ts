@@ -15,7 +15,9 @@ import { LicensingConfig } from "#config/licensing.config";
 /** A host with its account and a self-hosted licence server. */
 class HostLicensingConfig extends LicensingConfig {
   override apiUrl = "https://licences.acme.example";
+
   override account = "acme";
+
   override publicKey = "e8601e48b69383ba520245fd07971e983d06d22c4257cfd82304601479cee788";
 }
 

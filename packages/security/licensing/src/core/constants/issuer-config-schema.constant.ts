@@ -10,8 +10,10 @@
  */
 import { z } from "zod";
 
+import { LICENCE_ISSUER_DRIVERS } from "#core/constants/licence-issuer-drivers.constant";
+
 /** The shipped `IssuerConfig$`. */
 export const ISSUER_CONFIG_SCHEMA = z.object({
-  driver: z.enum(["keygen", "memory"]).default("keygen"),
+  driver: z.enum(LICENCE_ISSUER_DRIVERS).default("keygen"),
   productToken: z.string().default(""),
 });

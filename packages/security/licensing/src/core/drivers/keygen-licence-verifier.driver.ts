@@ -11,7 +11,7 @@
 import { Driver } from "@stackra/container";
 import type { Transport } from "@stackra/transport";
 
-import { LicensingConfig } from "#config/licensing.config";
+import type { LicensingConfig } from "#config/licensing.config";
 import { checkLicenceKey } from "#core/functions/check-licence-key.function";
 import { verifyLicenceFile } from "#core/functions/verify-licence-file.function";
 import { LicenceVerifier } from "#core/ports/licence-verifier.port";

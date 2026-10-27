@@ -35,8 +35,8 @@ describe("IssuerConfig", () => {
   });
 
   it("refuses an unknown driver at boot", () => {
-    expect(() => buildConfig(IssuerConfig, { values: { driver: "paper" } })).toThrow(
-      ConfigInvalidError,
-    );
+    expect(() =>
+      buildConfig(IssuerConfig, { values: { driver: "paper" as DriverName<LicenceIssuer> } }),
+    ).toThrow(ConfigInvalidError);
   });
 });

@@ -9,6 +9,8 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 19 and 26); ADR 0173; ADR 0178 (decision 2); OS ADR 0039 d5.
  */
+import "#core/types/licence-issuer-driver-names.type";
+
 import { Secret } from "@stackra/config";
 import type { DriverName } from "@stackra/container";
 import { registerSchemas, Schema } from "@stackra/validation";
