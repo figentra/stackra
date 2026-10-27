@@ -6,24 +6,30 @@
  * Boundary: data only (field initializers); gen imports the file and reads the fields of the one exported class.
  *           Logo and favicon are paths under `src/assets`; a page is its path under `src/docs` without the extension,
  *           and `{ folder }` lists every page of one folder (`adr` keeps every ADR at `/adr/<file>`).
- * Runtime: node (read by gen at build time)
+ * Runtime: node
  * Governing contract: ADR 0002 (2026-10-27 amendment); ADR 0295 (decisions 3 and 4); stackra-177 (STA-1317).
  */
 import { DocsConfig } from "@stackra/gen";
 
 /** The Stackra docs site. */
 export class StackraDocsConfig extends DocsConfig {
+  /** The site name in the header and the browser title. */
   override readonly name = "Stackra";
 
+  /** The site description search engines and link previews show. */
   override readonly description =
     "Stackra — the @stackra/* packages, apps and services, and how to work in the monorepo.";
 
+  /** The brand colours: primary on light, light on dark, and the dark accent (Stackra steel). */
   override readonly colors = { primary: "#0B0D0F", light: "#F5F6F3", dark: "#E2E9F0" };
 
+  /** The light and dark logos, paths under src/assets, linking home. */
   override readonly logo = { light: "logo/light.svg", dark: "logo/dark.svg", href: "/" };
 
+  /** The favicon, a path under src/assets. */
   override readonly favicon = "favicon.svg";
 
+  /** The tabs and their page groups; a page is its path under src/docs without the extension. */
   override readonly navigation = [
     {
       tab: "Guides",
@@ -162,6 +168,7 @@ export class StackraDocsConfig extends DocsConfig {
     },
   ];
 
+  /** The Mintlify keys gen does not model (background, fonts, appearance, search, SEO and the like), copied into docs.json as they are. */
   override readonly raw = {
     background: { color: { light: "#F5F6F3", dark: "#0B0D0F" } },
     fonts: { family: "Geist" },

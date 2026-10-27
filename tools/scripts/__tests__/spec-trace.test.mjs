@@ -71,7 +71,7 @@ test("drift: unnamed members, missing ticked paths, untouched docs at Done", () 
   );
   assert.match(
     drift({ ...base, changed: [] }).join(),
-    /Impact's doc `apps\/docs\/src\/guides\/widget\.mdx` is not touched/,
+    /Impact's doc `apps\/docs\/src\/docs\/guides\/widget\.mdx` is not touched/,
   );
   assert.match(
     drift({ ...base, changed: [docs], exists: (p) => !p.endsWith("build.ts") }).join(),
