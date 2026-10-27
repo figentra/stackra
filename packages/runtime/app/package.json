@@ -36,6 +36,10 @@
   "type": "module",
   "sideEffects": false,
   "imports": {
+    "#config/*": [
+      "./src/config/*",
+      "./src/config/*.ts"
+    ],
     "#browser/*": [
       "./src/browser/*",
       "./src/browser/*.ts",
@@ -138,7 +142,9 @@
     "@stackra/errors": "workspace:*",
     "@stackra/i18n": "workspace:*",
     "@stackra/identity": "workspace:*",
-    "@stackra/navigation": "workspace:*"
+    "@stackra/navigation": "workspace:*",
+    "@stackra/validation": "workspace:*",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@stackra/testing": "workspace:*",

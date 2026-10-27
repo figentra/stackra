@@ -4,11 +4,11 @@
 Stackra file contract:
 Purpose: the reader guide of @stackra/app: `createApp` per runtime target, the generated entries, the shared boot,
          the client contexts, the server lifecycle (boot, drain, close), request guards, the signed edge-header guard,
-         the route session and the desktop baseline.
+         the origin and CSRF guards with CORS, the route session and the desktop baseline.
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
 Governing contract: ADR 0295 (decisions 7 to 9); ADR 0263; ADR 0260 (decision 4); ADR 0127 2026-10-24 note;
-                    ADR 0457; ADR 0437 (decision 4: the signed edge headers).
+                    ADR 0457; ADR 0437 (decisions 4 and 8: the signed edge headers, origin and CSRF).
 -->
 
 Stackra app runtime: `createApp` for each runtime target, returning that target's app object, the shared boot from the
@@ -17,7 +17,8 @@ generated wiring, the client `Contexts`, and the `Controller` kind for raw HTTP.
 
 **Tier:** `tier:lib` (`packages/runtime/app`). Entries `.`, `./react`, `./server`, `./worker`, `./browser`, `./native`,
 `./desktop`. Depends on `@stackra/contracts`, `@stackra/container`, `@stackra/config`, `@stackra/errors`,
-`@stackra/i18n`, `@stackra/csp`, `@stackra/navigation` and `@stackra/identity` (its contracts); React, React Router, Electron, React Native and expo-splash-screen are optional
+`@stackra/i18n`, `@stackra/csp`, `@stackra/navigation`, `@stackra/identity` (its contracts), `@stackra/validation` and
+zod (the CORS and CSRF configuration schemas); React, React Router, Electron, React Native and expo-splash-screen are optional
 peers, each loaded only by the entry that needs it.
 
 `Module`, `Service` and the `define*` functions are not here: they live in `@stackra/container` and
@@ -42,6 +43,12 @@ peers, each loaded only by the entry that needs it.
 | `EdgeSignatureInvalidError`                  | `./server`  | the 401 refusal for a missing, wrong, stale or replayed edge signature               |
 | `MemoryEdgeSigningKeysDriver`                | `./server`  | the `memory` `EdgeSigningKeys` driver (tests, local runs)                            |
 | `MemoryEdgeNonceStoreDriver`                 | `./server`  | the `memory` `EdgeNonceStore` driver (tests, a single instance)                      |
+| `OriginGuard`                                | `./server`  | the second server check: a state-changing request only from an allowed origin        |
+| `CsrfGuard`                                  | `./server`  | the third server check: the CSRF header on a cookie-authenticated state change       |
+| `OriginNotAllowedError`                      | `./server`  | the 403 refusal for a foreign origin, or a cookie with no origin                     |
+| `CsrfTokenInvalidError`                      | `./server`  | the 403 refusal for a missing or mismatched CSRF header                              |
+| `CorsConfig`, `CsrfConfig`                   | `./server`  | `app.cors` (origins, methods, headers, credentials, max-age) and `app.csrf`          |
+| `corsHeaders`                                | `./server`  | the CORS answer headers for a request, preflight included                            |
 | `createApp`, `WorkerApp`, `WorkerRequest<E>` | `./worker`  | `fetch(request, env, ctx)` over the React Router server build                        |
 | `createApp`, `BrowserApp`, `hydrateRoute`    | `./browser` | `mount(root)`, `hydrate({ nonce })`, `router`; one prerendered page                  |
 | `createApp`, `NativeApp`                     | `./native`  | `Root`, which boots behind the splash                                                |
@@ -142,6 +149,37 @@ unsigned request passes only on one of `publicPaths` (none by default) and only 
 The key provider and the nonce store are ports, so which one answers is configuration: the `memory` drivers ship for
 tests and local runs; production binds a secret-store key driver and, with more than one API instance, a shared
 nonce store. `maxAge` and `publicPaths` are getters a host overrides in `src/overrides/app/` (ADR 0306).
+
+### Origin, CSRF and CORS
+
+Three settings-driven pieces protect the BFF cookie session (gap analysis P0, STA-1374). All values are
+configuration; a host overrides `CorsConfig` or `CsrfConfig` in `src/overrides/app/`.
+
+| Config       | Field              | Default                                         | Use                                            |
+| ------------ | ------------------ | ----------------------------------------------- | ---------------------------------------------- |
+| `CorsConfig` | `allowedOrigins`   | `[]` (env `STACKRA_CORS_ALLOWED_ORIGINS`, JSON) | exact app origins, no wildcard                 |
+| `CorsConfig` | `allowedMethods`   | `GET HEAD POST PUT PATCH DELETE`                | a preflight's `Access-Control-Allow-Methods`   |
+| `CorsConfig` | `allowedHeaders`   | `content-type authorization x-stackra-csrf`     | a preflight's `Access-Control-Allow-Headers`   |
+| `CorsConfig` | `allowCredentials` | `true`                                          | the BFF cookie travels                         |
+| `CorsConfig` | `maxAgeSeconds`    | `600`                                           | preflight cache                                |
+| `CsrfConfig` | `protectedMethods` | `POST PUT PATCH DELETE`                         | what both guards check                         |
+| `CsrfConfig` | `headerName`       | `x-stackra-csrf`                                | the header a cookie-authenticated call carries |
+| `CsrfConfig` | `tokenCookie`      | `""` (custom-header mode)                       | set it to turn on double-submit                |
+
+- `OriginGuard` (order -90) lets a protected request through only from the API's own origin or `allowedOrigins`,
+  read from `Origin`, else `Referer`. With neither header it passes a cookieless call (server to server, API key)
+  and refuses one with a cookie. Refusal: `OriginNotAllowedError` (403).
+- `CsrfGuard` (order -80) checks protected requests that carry a cookie. Custom-header mode, the default, fits the
+  cross-origin BFF (the app cannot read the API origin's cookie): the header must be non-empty, and a page on
+  another origin cannot send it without a preflight that CORS refuses. Double-submit mode (`tokenCookie` set, for a
+  same-origin deployment) needs the header to equal that cookie, compared in constant time. Refusal:
+  `CsrfTokenInvalidError` (403).
+- `corsHeaders(request, cors)` returns the answer headers: an allowed origin is echoed (with credentials when on),
+  and a preflight also gets the methods, headers and max-age. Anything else gets only `Vary: Origin`. The adapter
+  answers `OPTIONS` preflights with 204 and these headers and adds them to every other answer.
+
+The client sends `x-stackra-csrf` on every `credentials: "include"` call. Not wired yet: the generated adapter calling
+`corsHeaders` on preflight and answers (gen), and the BFF transport sending the header (`@stackra/identity`).
 
 ### The tenant on a call and its rate limit
 

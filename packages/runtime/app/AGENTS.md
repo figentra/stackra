@@ -7,7 +7,7 @@ Purpose: the agent rules of @stackra/app: where code goes, entries and barrels, 
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
 Governing contract: ADR 0294; ADR 0295; ADR 0305; ADR 0263; ADR 0260 (decision 4); ADR 0251 (decision 3); ADR 0457;
-                    ADR 0437 (decision 4).
+                    ADR 0437 (decisions 4 and 8).
 -->
 
 The app runtime: `createApp` per runtime target, the shared boot, the client contexts and the `Controller` kind.
@@ -27,6 +27,9 @@ note).
 | Its ports (keys, seen nonces)        | `src/contracts/ports/edge-*.port.ts`               |
 | Their memory drivers                 | `src/server/drivers/memory-edge-*.driver.ts`       |
 | The edge signature bytes             | `src/core/functions/sign-edge-request.function.ts` |
+| The origin and CSRF guards           | `src/server/services/{origin,csrf}.guard.ts`       |
+| CORS and CSRF configuration          | `src/config/`, shapes in `src/core/schemas/`       |
+| The CORS answer headers              | `src/server/functions/cors-headers.function.ts`    |
 | The route session (loader, part)     | `src/core/{functions,constants,types}/`            |
 | A refusal                            | `src/<target>/errors/<name>.error.ts`              |
 | React contexts                       | `src/react/contexts/`                              |
@@ -59,6 +62,11 @@ note).
 - The edge-header guard fails closed: no active key, a stale or future timestamp, a seen request id or a missing
   identity header is one `EdgeSignatureInvalidError`, with no detail. Claim the nonce only after the signature holds.
 - Edge signing secrets come only from the bound `EdgeSigningKeys`; never a literal, never logged.
+- Origins, methods, headers, credentials, max-age and the CSRF header and cookie are `CorsConfig` and `CsrfConfig`
+  fields, never literals in a guard. Allowed origins are exact (`scheme://host[:port]`); never add a wildcard.
+  `OriginGuard` and `corsHeaders` compare origins only through `isAllowedOrigin`.
+- Server-check order: edge headers -100, origin -90, CSRF -80; the guards fail closed with one refusal each and no
+  detail. `CsrfGuard` compares a double-submit token in constant time.
 - The route session is loaded per request container on the Worker and never kept on a singleton: one visitor's session
   must never reach another request. `session` and `identity` are the only `RouteServices` members this package adds.
 - No parameter properties and no `#private` fields: apps typecheck this source under `erasableSyntaxOnly`.
