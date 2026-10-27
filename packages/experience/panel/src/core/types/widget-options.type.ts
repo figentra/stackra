@@ -27,7 +27,7 @@ export interface WidgetOptions<Q> {
   /** The position among the slot's widgets, ascending. */
   readonly order?: number;
 
-  /** Fixed query input; a value may be a bind (`Bind.actor.accountId`). */
+  /** Fixed query input; a value may be a bind (`Bind.actor("accountId")`). */
   readonly params?: { readonly [K in keyof InputOf<Q>]?: InputOf<Q>[K] | BindRef };
 
   /** The periods its picker offers. */

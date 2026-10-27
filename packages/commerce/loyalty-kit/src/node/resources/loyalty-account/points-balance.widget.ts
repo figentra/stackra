@@ -25,7 +25,7 @@ import type { GetBalanceQuery } from "#node/queries/get-balance.query";
  * export class PointsBalanceWidget extends Widget.place(BasePointsBalanceWidget, { slot: Slots.Dashboard.Main }) {}
  */
 export class PointsBalanceWidget extends Widget<GetBalanceQuery>({
-  params: { accountId: Bind.actor.accountId },
+  params: { accountId: Bind.actor("accountId") },
   size: WidgetSize.Medium,
 }) {
   /** The kit's own renderer draws the tile. */

@@ -15,6 +15,6 @@ describe("Bind", () => {
     expect(Bind.range()).toBe("range");
     expect(Bind.tableFilter()).toBe("table_filter");
     expect(Bind.tableFilter("status")).toBe("table_filter.status");
-    expect(Bind.actor["accountId"]).toBe("actor.accountId");
+    expect(Bind.actor("accountId")).toBe("actor.accountId");
   });
 });
