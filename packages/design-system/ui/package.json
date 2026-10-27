@@ -3,6 +3,15 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra Design System components: one component API, contracts shared, HeroUI v3 on web, HeroUI Native and Uniwind on native.",
+  "keywords": [
+    "components",
+    "design-system",
+    "heroui",
+    "react",
+    "react-native",
+    "stackra",
+    "ui-kit"
+  ],
   "homepage": "https://github.com/figentra/stackra/tree/main/packages/design-system/ui#readme",
   "bugs": {
     "url": "https://github.com/figentra/stackra/issues"
@@ -253,6 +262,7 @@
       "node",
       "browser",
       "react-native"
-    ]
+    ],
+    "summary": "Use it for every UI component in a Stackra app: one component API with shared contracts, rendered by HeroUI on web and HeroUI Native with Uniwind on native."
   }
 }

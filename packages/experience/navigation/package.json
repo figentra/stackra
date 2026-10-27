@@ -3,6 +3,15 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra navigation: the Route, Layout and Menu kinds, typed route refs and contexts, chrome config, the React Router 7 and React Navigation adapters, the root error boundary and router-aware links",
+  "keywords": [
+    "experience",
+    "layouts",
+    "menus",
+    "react-navigation",
+    "react-router",
+    "routing",
+    "stackra"
+  ],
   "homepage": "https://github.com/figentra/stackra/tree/main/packages/experience/navigation#readme",
   "bugs": {
     "url": "https://github.com/figentra/stackra/issues"
@@ -196,6 +205,7 @@
       "isomorphic",
       "browser",
       "react-native"
-    ]
+    ],
+    "summary": "Use it to declare routes, layouts and menus once and get typed route refs, loaders and links on web, desktop and mobile through React Router 7 and React Navigation."
   }
 }

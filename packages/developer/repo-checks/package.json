@@ -3,6 +3,14 @@
   "version": "0.0.0",
   "private": true,
   "description": "The repository checks every Stackra repo runs through `stackra check`: config files, repository structure, the doc standard and lang catalogue completeness, as typed functions over the git file list",
+  "keywords": [
+    "developer",
+    "documentation-standard",
+    "quality-gate",
+    "repository-checks",
+    "stackra",
+    "validation"
+  ],
   "homepage": "https://github.com/figentra/stackra/tree/main/packages/developer/repo-checks#readme",
   "bugs": {
     "url": "https://github.com/figentra/stackra/issues"
@@ -80,6 +88,7 @@
     "category": "developer",
     "runtimes": [
       "node"
-    ]
+    ],
+    "summary": "Use it to add or fix a repository rule that stackra check or pnpm validate enforces, such as config files, member structure and metadata, the doc standard or lang catalogue completeness."
   }
 }

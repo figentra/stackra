@@ -3,6 +3,15 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra panel: the Resource<M, R>, Widget<Q>, Document({ kind }) and Panel kinds, the pure resource and widget builders that gen records, the metric shapes and the time range input, typed slots and placement layers, the data constructors gen writes into #stackra/resources, panels and slots, and the web dashboard, shell, breadcrumbs and action runner and the native widget slot",
+  "keywords": [
+    "admin-panel",
+    "crud",
+    "dashboard",
+    "experience",
+    "resources",
+    "stackra",
+    "widgets"
+  ],
   "homepage": "https://github.com/figentra/stackra/tree/main/packages/experience/panel#readme",
   "bugs": {
     "url": "https://github.com/figentra/stackra/issues"
@@ -146,6 +155,7 @@
       "isomorphic",
       "browser",
       "react-native"
-    ]
+    ],
+    "summary": "Use it to declare admin resources, dashboard widgets, documents and panels and to render them in the web shell or native widget slots."
   }
 }

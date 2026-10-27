@@ -3,6 +3,16 @@
   "version": "0.0.0",
   "private": true,
   "description": "The generic Stackra test kit: vitest re-exports, a frozen clock and ids, the Fake base, typed matchers, plain fixture factories, thin React and React Native render helpers with the route helpers, and the Playwright end-to-end kit",
+  "keywords": [
+    "developer",
+    "fakes",
+    "fixtures",
+    "playwright",
+    "react-testing",
+    "stackra",
+    "testing",
+    "vitest"
+  ],
   "homepage": "https://github.com/figentra/stackra/tree/main/packages/developer/testing#readme",
   "bugs": {
     "url": "https://github.com/figentra/stackra/issues"
@@ -154,6 +164,7 @@
       "node",
       "browser",
       "react-native"
-    ]
+    ],
+    "summary": "Use it in every test: import vitest, the frozen clock and ids, the Fake base, matchers, fixture factories and the React, React Native and Playwright helpers from here instead of the tools directly."
   }
 }

@@ -3,6 +3,15 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra experience: the Block({ category, icon }) kind, LocalizedText and BlockProps, the L2 document format and its validator, the Renderer port, the web and native DocumentRenderer that resolve each document node to a registered block, and the edge render of a published document to HTML in a Worker, and the node renderer of email templates and print documents (PDF through @stackra/documents)",
+  "keywords": [
+    "blocks",
+    "document-renderer",
+    "email-templates",
+    "experience",
+    "localization",
+    "ssr",
+    "stackra"
+  ],
   "homepage": "https://github.com/figentra/stackra/tree/main/packages/experience/experience#readme",
   "bugs": {
     "url": "https://github.com/figentra/stackra/issues"
@@ -158,6 +167,7 @@
       "browser",
       "worker",
       "react-native"
-    ]
+    ],
+    "summary": "Use it to declare a renderable block or render a builder document on web, native, the edge or the server, including email templates and print documents."
   }
 }

@@ -3,6 +3,15 @@
   "version": "0.0.0",
   "private": true,
   "description": "The Stackra compiler: discovery on the TypeScript 7 API with a TypeScript 6 fallback, derived identities and the committed manifest, the shape compiler, wiring, the member module and entries, the openapi projection, the class-component compiler and the manifest contract helpers",
+  "keywords": [
+    "codegen",
+    "compiler",
+    "developer",
+    "manifest",
+    "openapi",
+    "stackra",
+    "typescript"
+  ],
   "homepage": "https://github.com/figentra/stackra/tree/main/packages/developer/gen#readme",
   "bugs": {
     "url": "https://github.com/figentra/stackra/issues"
@@ -116,6 +125,7 @@
     "runtimes": [
       "isomorphic",
       "node"
-    ]
+    ],
+    "summary": "Use it to change what stackra gen discovers and writes: kind discovery on the TypeScript API, the committed manifest, shapes, wiring, member entries, the OpenAPI projection and class components."
   }
 }

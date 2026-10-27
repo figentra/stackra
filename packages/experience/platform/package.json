@@ -3,6 +3,16 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra platform: the Platform capability port with its typed refusal, the push, captcha, kiosk-mode and second-screen ports, the desktop, PWA and push configurations, memory, web, Electron (platform, kiosk mode, second screen), Expo (platform and push) and Turnstile (Worker and Node) drivers, the Bridge kind and its kiosk and second-screen bridges, the service-worker handlers, the React hooks and fakePlatform",
+  "keywords": [
+    "electron",
+    "experience",
+    "expo",
+    "kiosk",
+    "platform-capabilities",
+    "push-notifications",
+    "pwa",
+    "stackra"
+  ],
   "homepage": "https://github.com/figentra/stackra/tree/main/packages/experience/platform#readme",
   "bugs": {
     "url": "https://github.com/figentra/stackra/issues"
@@ -234,6 +244,7 @@
       "browser",
       "worker",
       "react-native"
-    ]
+    ],
+    "summary": "Use it to ask what the running target supports and use it (push, captcha, kiosk mode, second screen, service worker, sharing, haptics) across web, PWA, Electron and Expo without platform checks in app code."
   }
 }

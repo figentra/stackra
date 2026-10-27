@@ -3,6 +3,15 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra models: the Model kind base with Model.with(...traits), the model traits, relations (Ref, Collection, Link across modules), the @Index and @Searchable facets, and the ORM column types and Money embeddable that generated entity metadata imports",
+  "keywords": [
+    "data",
+    "entities",
+    "models",
+    "orm",
+    "relations",
+    "stackra",
+    "traits"
+  ],
   "homepage": "https://github.com/figentra/stackra/tree/main/packages/data/model#readme",
   "bugs": {
     "url": "https://github.com/figentra/stackra/issues"
@@ -83,6 +92,7 @@
     "category": "data",
     "runtimes": [
       "node"
-    ]
+    ],
+    "summary": "Use it to declare a persisted model: the Model base with its traits, relations across modules, index and search facets, and the column types generated entity metadata imports."
   }
 }

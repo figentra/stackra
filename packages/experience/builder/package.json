@@ -3,6 +3,15 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra builder: the one editor kernel for every builder document kind: a document model of block instances, insert, move, remove and set-prop changes with undo and redo, selection, a check of each block against the registered blocks, document parsing, the Yjs binding through @stackra/collaboration, the DocumentEditor kernel of structured kinds (the automation editor), the form document kind with its checks and answers schema, and the useEditor, useSelection, useSharedEditor and useDocumentEditor hooks with no UI chrome",
+  "keywords": [
+    "editor",
+    "experience",
+    "form-builder",
+    "page-builder",
+    "stackra",
+    "undo-redo",
+    "yjs"
+  ],
   "homepage": "https://github.com/figentra/stackra/tree/main/packages/experience/builder#readme",
   "bugs": {
     "url": "https://github.com/figentra/stackra/issues"
@@ -131,6 +140,7 @@
     "category": "experience",
     "runtimes": [
       "isomorphic"
-    ]
+    ],
+    "summary": "Use it to build or extend a visual editor for any builder document kind (pages, screens, forms, dashboards, email templates, automations) on the shared document, change, undo and selection kernel."
   }
 }

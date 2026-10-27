@@ -3,6 +3,14 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra shortcuts: the Shortcut({ keys, group }) kind, key parsing with chord sequences, the conflict detector, the open ShortcutContext, the palette list, key hints, the keyboard bindings and runShortcut",
+  "keywords": [
+    "command-palette",
+    "experience",
+    "hotkeys",
+    "key-bindings",
+    "keyboard-shortcuts",
+    "stackra"
+  ],
   "homepage": "https://github.com/figentra/stackra/tree/main/packages/experience/shortcuts#readme",
   "bugs": {
     "url": "https://github.com/figentra/stackra/issues"
@@ -119,6 +127,7 @@
       "isomorphic",
       "node",
       "browser"
-    ]
+    ],
+    "summary": "Use it to declare a keyboard shortcut once so the keyboard, command palette and desktop menus run the same action, with chord parsing, conflict detection and key hints."
   }
 }

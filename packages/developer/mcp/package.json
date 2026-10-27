@@ -3,6 +3,15 @@
   "version": "0.0.0",
   "private": true,
   "description": "The local developer MCP of ADR 0282: the .mcp.yaml contract rendered into .mcp.json, the secret-injecting launcher behind `stackra mcp exec`, and the stdio server behind `stackra mcp` that reads manifests, runs the CLI's gates and proxies the local Encore tools; and the hosted server core: the tool table from manifests, the per-tenant filter and the OAuth protected-resource metadata",
+  "keywords": [
+    "ai-agents",
+    "developer",
+    "mcp",
+    "model-context-protocol",
+    "oauth",
+    "secrets",
+    "stackra"
+  ],
   "homepage": "https://github.com/figentra/stackra/tree/main/packages/developer/mcp#readme",
   "bugs": {
     "url": "https://github.com/figentra/stackra/issues"
@@ -92,6 +101,7 @@
     "runtimes": [
       "isomorphic",
       "node"
-    ]
+    ],
+    "summary": "Use it to work on the developer MCP server an assistant uses inside a Stackra repository, the .mcp.yaml to .mcp.json rendering and secret launcher, or the hosted per-tenant MCP tool table."
   }
 }

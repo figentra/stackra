@@ -3,6 +3,15 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra content: the built-in ContentEntryType, and bounded custom fields that are data only: CustomFieldType, strict field definitions, checkCustomFieldDefinition and checkCustomFields with their refusals, the CustomField and CustomFieldValueSet models with their migration, CustomFieldService, the HasCustomFields trait and the custom field limit entitlement, and the HasRevisions trait with its Revision model, migration and RevisionService, a subtype per custom field target for types defined at runtime, and ContentModule exporting both services",
+  "keywords": [
+    "cms",
+    "content-types",
+    "custom-fields",
+    "data",
+    "revisions",
+    "stackra",
+    "versioning"
+  ],
   "homepage": "https://github.com/figentra/stackra/tree/main/packages/data/content#readme",
   "bugs": {
     "url": "https://github.com/figentra/stackra/issues"
@@ -96,6 +105,7 @@
     "runtimes": [
       "isomorphic",
       "node"
-    ]
+    ],
+    "summary": "Use it when a model needs tenant-defined custom fields, record revision history or the built-in content entry types, all stored as checked data rather than schema changes."
   }
 }

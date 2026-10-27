@@ -3,6 +3,16 @@
   "version": "0.0.0",
   "private": true,
   "description": "The agent-neutral source of Stackra's open conventions: skills and rules written once as Markdown with frontmatter, the parser of that format, and the loader the renderers and `stackra agents setup` read",
+  "keywords": [
+    "ai-agents",
+    "developer",
+    "frontmatter",
+    "markdown",
+    "registry",
+    "rules",
+    "skills",
+    "stackra"
+  ],
   "homepage": "https://github.com/figentra/stackra/tree/main/packages/developer/skills#readme",
   "bugs": {
     "url": "https://github.com/figentra/stackra/issues"
@@ -103,6 +113,7 @@
     "runtimes": [
       "isomorphic",
       "node"
-    ]
+    ],
+    "summary": "Use it to write or load the agent-neutral skills and rules, parse their Markdown frontmatter format, or validate registry items against the StackraManifest contract in ./contracts."
   }
 }

@@ -3,6 +3,16 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra collaboration: presence, cursors, the Yjs binding and snapshots over the PresenceChannel, SyncTransport and SnapshotStore ports, gated by LiveCollaborationEntitlement; the CollaborationSession and SnapshotService, CollaborationConfig with its shipped schema, usePresence, useCursors, useSharedDocument and the memory drivers for tests, the realtime PresenceChannel and SyncTransport drivers over @stackra/realtime rooms with the RoomTokens port, the Postgres SnapshotStore, and comments on any Commentable record: threads, comments with revisions and tombstones, mentions with the MentionDirectory port, the CommentService and the comment-created and mention-created events",
+  "keywords": [
+    "comments",
+    "cursors",
+    "experience",
+    "mentions",
+    "presence",
+    "real-time",
+    "stackra",
+    "yjs"
+  ],
   "homepage": "https://github.com/figentra/stackra/tree/main/packages/experience/collaboration#readme",
   "bugs": {
     "url": "https://github.com/figentra/stackra/issues"
@@ -156,6 +166,7 @@
     "runtimes": [
       "isomorphic",
       "node"
-    ]
+    ],
+    "summary": "Use it for live co-editing (presence, cursors, shared Yjs documents and snapshots) or for comment threads with mentions on any commentable record."
   }
 }

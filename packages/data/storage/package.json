@@ -3,6 +3,15 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra client storage: the Storage port with the named areas of ADR 0256 (prefs, session, cache, outbox, secrets, files), values checked by their generated schemas, a time-to-live per write, the memory, web and native drivers, usePrefs and fakeStorage",
+  "keywords": [
+    "cache",
+    "client-storage",
+    "data",
+    "local-storage",
+    "offline",
+    "preferences",
+    "stackra"
+  ],
   "homepage": "https://github.com/figentra/stackra/tree/main/packages/data/storage#readme",
   "bugs": {
     "url": "https://github.com/figentra/stackra/issues"
@@ -172,6 +181,7 @@
       "node",
       "browser",
       "react-native"
-    ]
+    ],
+    "summary": "Use it for client-side persistence on web and native: preferences, session, cache, offline outbox, secrets and files, each a named area with schema-checked values and an optional time-to-live."
   }
 }

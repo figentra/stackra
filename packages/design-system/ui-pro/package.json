@@ -3,6 +3,15 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra Design System Pro components for Stackra's own apps only: the @stackra/ui props vocabulary over HeroUI Pro on web and HeroUI Native Pro on native. Published only to Figentra's restricted Keygen channel, never to npmjs.",
+  "keywords": [
+    "charts",
+    "components",
+    "design-system",
+    "heroui-pro",
+    "react",
+    "react-native",
+    "stackra"
+  ],
   "homepage": "https://github.com/figentra/stackra/tree/main/packages/design-system/ui-pro#readme",
   "bugs": {
     "url": "https://github.com/figentra/stackra/issues"
@@ -360,6 +369,7 @@
       "node",
       "browser",
       "react-native"
-    ]
+    ],
+    "summary": "Use it only inside Stackra's own apps when a screen needs a HeroUI Pro composition such as a chart or advanced form; it is restricted and never published to npmjs."
   }
 }

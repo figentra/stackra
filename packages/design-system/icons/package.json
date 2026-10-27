@@ -3,6 +3,14 @@
   "version": "0.0.0",
   "private": true,
   "description": "IconName contract and per-platform icon registries for the Stackra Design System",
+  "keywords": [
+    "design-system",
+    "icon-registry",
+    "icons",
+    "react-native",
+    "stackra",
+    "svg"
+  ],
   "homepage": "https://github.com/figentra/stackra/tree/main/packages/design-system/icons#readme",
   "bugs": {
     "url": "https://github.com/figentra/stackra/issues"
@@ -201,6 +209,7 @@
       "node",
       "browser",
       "react-native"
-    ]
+    ],
+    "summary": "Use it when UI code names an icon: it owns the IconName contract and the per-platform registries that map each name to a rendered icon."
   }
 }

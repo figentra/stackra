@@ -3,6 +3,14 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra state machines: the StateMachine<Model>({ field, history }) kind base and the @Transition method decorator; a transition checks its from states, runs the body in the caller's unit of work, writes the to state and records the history; no XState",
+  "keywords": [
+    "data",
+    "lifecycle",
+    "stackra",
+    "state-machine",
+    "transitions",
+    "workflow"
+  ],
   "homepage": "https://github.com/figentra/stackra/tree/main/packages/data/state-machine#readme",
   "bugs": {
     "url": "https://github.com/figentra/stackra/issues"
@@ -84,6 +92,7 @@
     "category": "data",
     "runtimes": [
       "isomorphic"
-    ]
+    ],
+    "summary": "Use it when one field of a model has a lifecycle (an order or invoice status) whose transitions must check their from states and record history inside the caller's unit of work."
   }
 }

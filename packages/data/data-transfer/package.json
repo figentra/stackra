@@ -3,6 +3,16 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra data transfer: streaming CSV, JSON Lines and (in ./node) XLSX readers and writers, encoding detection with a market-pack fallback, Arabic header normalisation, column mapping and mapping profiles, preview, per-row errors, resumable single- and multi-sheet imports with a ledger, a whole-run revert and before-image purge, and payroll pay-input exports (CSV, XLSX, DATEV ASCII) from per-provider profiles, and a streaming zip writer with deflate and ZIP64",
+  "keywords": [
+    "csv",
+    "data",
+    "export",
+    "import",
+    "json-lines",
+    "stackra",
+    "xlsx",
+    "zip"
+  ],
   "homepage": "https://github.com/figentra/stackra/tree/main/packages/data/data-transfer#readme",
   "bugs": {
     "url": "https://github.com/figentra/stackra/issues"
@@ -105,6 +115,7 @@
     "runtimes": [
       "isomorphic",
       "node"
-    ]
+    ],
+    "summary": "Use it for any tabular import or export: reading or writing CSV, JSON Lines and XLSX, mapping columns, previewing, resuming and reverting import runs, and payroll export files."
   }
 }

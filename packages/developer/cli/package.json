@@ -3,6 +3,15 @@
   "version": "0.0.0",
   "private": true,
   "description": "The stackra binary: new (v3 packages, services and product seed packs), seed-pack (check and seed a product's defaults without touching tenant values), gen and gen --check, the member tool commands (dev, build, start, typecheck, test, lint) that run gen and then the tool with its generated config, check (the quality gate) with its validate, verify, code:check and code:fix aliases, ls over the committed manifests, and the local MCP and agent-file commands",
+  "keywords": [
+    "cli",
+    "codegen",
+    "developer",
+    "monorepo",
+    "quality-gate",
+    "scaffolding",
+    "stackra"
+  ],
   "homepage": "https://github.com/figentra/stackra/tree/main/packages/developer/cli#readme",
   "bugs": {
     "url": "https://github.com/figentra/stackra/issues"
@@ -80,6 +89,7 @@
     "category": "developer",
     "runtimes": [
       "node"
-    ]
+    ],
+    "summary": "Use it for any stackra command a developer or agent runs: scaffolding packages and services, gen, dev, build, test, lint, check, seed packs and the MCP commands."
   }
 }

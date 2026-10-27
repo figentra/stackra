@@ -3,6 +3,14 @@
   "version": "0.0.0",
   "private": true,
   "description": "The devtools kit of ADR 0246: the tab and RPC registry each package's devtools entry fills, the event stream fed from the in-process bus, and the one host session a devtools panel or dev console attaches through",
+  "keywords": [
+    "debugging",
+    "developer",
+    "devtools",
+    "event-stream",
+    "rpc",
+    "stackra"
+  ],
   "homepage": "https://github.com/figentra/stackra/tree/main/packages/developer/devtools-kit#readme",
   "bugs": {
     "url": "https://github.com/figentra/stackra/issues"
@@ -80,6 +88,7 @@
     "category": "developer",
     "runtimes": [
       "isomorphic"
-    ]
+    ],
+    "summary": "Use it when a package exposes developer tools: registering data tabs and RPC functions and emitting events that a devtools panel or the stackra dev console reads through one host session."
   }
 }

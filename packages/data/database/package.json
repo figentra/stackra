@@ -3,6 +3,16 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra database: the MikroORM layer on Postgres. CrudService<M> with table and metrics reads, repositories, the graph reader, the Migration, Macro and Seeder kinds with the migration compiler, the idx_/fk_/ck_ naming strategy, the unit of work and scope sessions, gapless Sequence numbers, the record-visibility filter seam, and the Factory, usePostgres and PGlite memory-driver test helpers",
+  "keywords": [
+    "data",
+    "migrations",
+    "mikro-orm",
+    "orm",
+    "postgres",
+    "repositories",
+    "seeders",
+    "stackra"
+  ],
   "homepage": "https://github.com/figentra/stackra/tree/main/packages/data/database#readme",
   "bugs": {
     "url": "https://github.com/figentra/stackra/issues"
@@ -142,6 +152,7 @@
     "category": "data",
     "runtimes": [
       "node"
-    ]
+    ],
+    "summary": "Use it for server-side persistence on Postgres: CRUD services, repositories, migrations, seeders, units of work, gapless sequence numbers and the PGlite test database."
   }
 }
