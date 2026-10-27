@@ -30,6 +30,7 @@ Provider integrations, connections and their store (ADR 0308). Member at `packag
 | Wallet pass issuing      | `src/node/pass/<name>.<kind>.ts`            |
 | Voice: a leaf contract   | `src/contracts/voice/<name>.<kind>.ts`      |
 | Voice: anything else     | `src/core/voice/<name>.<kind>.ts`           |
+| Voice: the SIP trunk     | `src/node/sip/<name>.<kind>.ts`             |
 | A test                   | `__tests__/<name>.<kind>.test.ts` beside it |
 
 ## Entries and barrels
@@ -107,6 +108,11 @@ Provider integrations, connections and their store (ADR 0308). Member at `packag
 - Meters: `voice.minutes` and `speech.seconds` are written only through `VoiceMeter` (the existing `usage.recorded`
   event, `sum`, exact units); rounding and prices are rate-card data. Speech seconds are counted from raw bytes, so
   `AudioEncoding` stays uncompressed; adding a compressed codec needs another way to measure.
+- SIP trunk (RV-51): `SipVoiceGateway` (`./node`) is protocol code, not a vendor: every carrier value is
+  `SipTrunkOptions` data and credentials are secret names (`SIP_TRUNK_SECRETS`). It is a `Service`, not a Connection;
+  the carrier's OS Connection delegates to it. Keep the SIP, SDP, RTP and digest codecs pure functions with
+  recorded-fixture tests, drop datagrams from anything but the trunk, never log a number or audio, and say
+  certification pending until it has run against the carrier. Recording stays refused until a recording store exists.
 - A device's microphone and speaker are the `AudioDevice` port; its production drivers live with the device
   (platform, peripherals), `MemoryAudioDeviceDriver` here.
 

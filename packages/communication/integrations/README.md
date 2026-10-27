@@ -4,8 +4,8 @@
 Stackra file contract:
 Purpose: the package's reader guide: Integrations, Connections and their stores, the provider resolver, the connector
          contracts (commerce, EDI, fraud scoring, document stores) and the gateway that resolves them, wallet pass
-         issuing (`./node`), the voice channel (Speech port, meters, recording consent, handover), and what is not
-         here.
+         issuing (`./node`), the voice channel (Speech port, meters, recording consent, handover, the SIP trunk
+         driver in `./node`), and what is not here.
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
 Governing contract: ADR 0308; ADR 0348; ADR 0355; ADR 0356; ADR 0376; ADR 0447.
@@ -19,12 +19,12 @@ is safe and turns every provider outcome into a value or a typed refusal. This p
 `@stackra/connections`.
 
 **Tier:** `tier:lib` (`packages/communication/integrations`). Entries `.`, `./contracts`, `./node` (wallet pass
-issuing) and `./testing`.
+issuing, the SIP trunk driver) and `./testing`.
 Depends on `@stackra/actions` (the `RateLimitStore`, and `RequestContext` for the `request` connection context),
 `@stackra/config` (`@Secret`, `SecretStore`), `@stackra/container`, `@stackra/contracts`, `@stackra/errors`, and the
 `Money` and `Address` types of `@stackra/money` and `@stackra/validation`, `@stackra/events` (the `EventOutbox` the
 voice meter writes to) and `@stackra/market-packs` (`valueOf`); `./node` adds `@stackra/data-transfer`
-(`writeZip`), `pkijs` and `asn1js`.
+(`writeZip`), `pkijs` and `asn1js`, and Node's `dgram`, `dns` and `crypto` for SIP.
 
 ## What is here
 
@@ -203,8 +203,38 @@ await speechService.sayOn(lane, reply, { speech, format }, session);
 - `zeroRetention: true` (the caller's choice for health and privileged speech) serves only a provider whose
   `retainsAudio` is false; the region map already keeps the audio in region.
 - Not built here: vendor speech Connections (OS integrations, R3-8), a platform microphone or peripherals-bridge
-  `AudioDevice` driver (device side), understanding the caller's spoken yes or no (the conversation's), the SIP driver
-  (stackra-43).
+  `AudioDevice` driver (device side), understanding the caller's spoken yes or no (the conversation's).
+
+### SIP trunk (`./node`, `src/node/sip/`, RV-51)
+
+A licensed carrier that gives only a SIP trunk gets `SipVoiceGateway`, a `VoiceGateway` that runs the call itself:
+it places calls (INVITE, digest auth MD5 or SHA-256, ring timeout by CANCEL), takes incoming ones from the trunk,
+registers when the trunk asks, and plays each `CallInstruction`: `say` and `listen` through `SpeechService` over the
+call's RTP leg (`RtpAudioDeviceDriver`, G.711 A-law or mu-law, 20 ms packets), `play` from a WAV already in the
+call's codec, `handover` by REFER, `hang_up` by BYE. Instructions come from the host's own call webhooks in the shape
+`answer` writes (`{"instructions": [...]}`); statuses are posted in the parameters `event` reads (`CallRef`,
+`Direction`, `From`, `To`, `Status`, `SpeechResult`, `Confidence`); an answered call's minutes go to `VoiceMeter` when
+it ends. The carrier's platform Connection (OS connector) delegates to it.
+
+```ts
+const sip = new SipVoiceGateway(
+  { host, publicAddress, codecs: ["alaw", "mulaw"], keepPlus: true, ringSeconds: 30, inbound },
+  secrets, // SIP_TRUNK_USERNAME and SIP_TRUNK_PASSWORD, read by name
+  { speech: speechService, meter: voiceMeter, session: (reference) => sessionOf(reference), post },
+);
+await sip.start(); // binds 5060, registers when `register` is set
+const placed = await sip.call(outbound);
+```
+
+- Configuration, not code: host, domain, public address, ports, registration, codec order, number format and ring
+  time are `SipTrunkOptions`, deployment data of the carrier's Connection; no carrier is named in code.
+- Only datagrams from the trunk's resolved addresses are heard. Numbers, audio and transcripts are never logged.
+- Certification pending (owner D3, 2026-10-27): built from RFC 3261, 3264, 3515, 3550, 4566 and 7616 with
+  recorded-fixture tests, not yet run against the carrier.
+- Not served: recording (`record` and `OutboundCall.record` are refused, 501 `recording_unsupported`), TLS, TCP,
+  SRTP, DTMF, session timers, RTCP, a jitter buffer, symmetric-RTP latching, a fixed RTP port range, a caller id on
+  handover, transcoding (`play` takes only a WAV in the call's codec). Calls live in one process and do not survive a
+  restart; `lookup` answers for the last 1000 ended calls.
 
 ## The six auth types
 
