@@ -34,6 +34,7 @@ import { useLocation } from "react-router";
 
 import { PageSection } from "#src/components/page-section";
 import { AppShellRoute } from "#src/routes/app-shell/app-shell.route";
+import { Icons } from "#src/constants/icons.constant";
 
 // shortcut: English strings in one place until @stackra/i18n ships; then `playground::app-shell.*` keys.
 const STRINGS = {
@@ -197,16 +198,16 @@ export function AppShell() {
   // A same-page anchor that keeps the scheme and language, which a bare `#id` would drop.
   const here = `${pathname}${search}`;
   const items = (id: string): readonly NavigationItem[] => [
-    { id: "home", label: STRINGS.home, href: `${here}#${id}`, icon: "house" },
+    { id: "home", label: STRINGS.home, href: `${here}#${id}`, icon: Icons.House },
     {
       id: "orders",
       label: STRINGS.orders,
       href: `${here}#${id}`,
-      icon: "package",
+      icon: Icons.Package,
       isCurrent: true,
     },
-    { id: "customers", label: STRINGS.customers, href: `${here}#${id}`, icon: "users" },
-    { id: "inbox", label: STRINGS.inbox, href: `${here}#${id}`, icon: "inbox", badge: 12 },
+    { id: "customers", label: STRINGS.customers, href: `${here}#${id}`, icon: Icons.Users },
+    { id: "inbox", label: STRINGS.inbox, href: `${here}#${id}`, icon: Icons.Inbox, badge: 12 },
   ];
 
   return (
@@ -258,20 +259,20 @@ export function AppShell() {
                   id: "home",
                   label: STRINGS.arabicHome,
                   href: `${here}#app-shell-arabic`,
-                  icon: "house",
+                  icon: Icons.House,
                 },
                 {
                   id: "orders",
                   label: STRINGS.arabicOrders,
                   href: `${here}#app-shell-arabic`,
-                  icon: "package",
+                  icon: Icons.Package,
                   isCurrent: true,
                 },
                 {
                   id: "customers",
                   label: STRINGS.arabicCustomers,
                   href: `${here}#app-shell-arabic`,
-                  icon: "users",
+                  icon: Icons.Users,
                 },
               ]}
             />

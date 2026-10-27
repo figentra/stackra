@@ -11,7 +11,7 @@
 import { Chip } from "@stackra/ui/react";
 import * as UiPro from "@stackra-pro/ui/react";
 
-import { DemoIcon, type DemoIconName } from "#src/components/demo-icon";
+import { DemoIcon, type DemoIconName, DemoIcons } from "#src/components/demo-icon";
 import { ProTimelineRoute } from "#src/routes/pro-timeline/pro-timeline.route";
 
 // shortcut: English strings in one place until @stackra/i18n ships; then `playground::pro-timeline.*` keys.
@@ -42,7 +42,7 @@ const EVENTS: readonly LogEvent[] = [
     description: "Created checkout-redesign for the billing workspace.",
     state: "Done",
     time: "09:12",
-    icon: "gear",
+    icon: DemoIcons.Gear,
     status: "default",
     color: "default",
   },
@@ -52,7 +52,7 @@ const EVENTS: readonly LogEvent[] = [
     description: "Enabled for 5% of workspaces with session replay sampling on.",
     state: "In progress",
     time: "09:34",
-    icon: "chart",
+    icon: DemoIcons.Chart,
     status: "current",
     color: "accent",
   },
@@ -62,7 +62,7 @@ const EVENTS: readonly LogEvent[] = [
     description: "Latency climbed in one region; the rollout is holding while routing warms.",
     state: "Paused",
     time: "09:51",
-    icon: "search",
+    icon: DemoIcons.Search,
     status: "warning",
     color: "warning",
   },
@@ -72,7 +72,7 @@ const EVENTS: readonly LogEvent[] = [
     description: "Full rollout waits for the next error-budget sweep.",
     state: "Queued",
     time: "10:30",
-    icon: "home",
+    icon: DemoIcons.Home,
     status: "muted",
     color: "default",
   },
@@ -82,7 +82,7 @@ const EVENTS: readonly LogEvent[] = [
     description: "Rollback owner and dashboard checks are recorded in the release audit.",
     state: "Ready",
     time: "10:42",
-    icon: "doc",
+    icon: DemoIcons.Doc,
     status: "success",
     color: "success",
   },

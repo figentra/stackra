@@ -9,7 +9,7 @@
  */
 import * as UiPro from "@stackra-pro/ui/react";
 
-import { DemoIcon, type DemoIconName } from "#src/components/demo-icon";
+import { DemoIcon, type DemoIconName, DemoIcons } from "#src/components/demo-icon";
 import { ProKpiRoute } from "#src/routes/pro-kpi/pro-kpi.route";
 
 // shortcut: English strings in one place until @stackra/i18n ships; then `playground::pro-kpi.*` keys.
@@ -40,7 +40,7 @@ const METRICS: readonly Metric[] = [
   {
     id: "revenue",
     title: "Revenue",
-    icon: "money",
+    icon: DemoIcons.Money,
     tone: "success",
     value: 128450,
     format: "currency",
@@ -51,7 +51,7 @@ const METRICS: readonly Metric[] = [
   {
     id: "users",
     title: "Active users",
-    icon: "users",
+    icon: DemoIcons.Users,
     tone: "success",
     value: 3482,
     format: "decimal",
@@ -62,7 +62,7 @@ const METRICS: readonly Metric[] = [
   {
     id: "refunds",
     title: "Refund rate",
-    icon: "doc",
+    icon: DemoIcons.Doc,
     tone: "danger",
     value: 0.021,
     format: "percent",
@@ -73,7 +73,7 @@ const METRICS: readonly Metric[] = [
   {
     id: "storage",
     title: "Storage used",
-    icon: "chart",
+    icon: DemoIcons.Chart,
     tone: "warning",
     value: 0.72,
     format: "percent",

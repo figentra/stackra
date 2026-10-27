@@ -46,7 +46,7 @@ const STRINGS = {
     number: "8 new",
     word: "New item",
     wordText: "New",
-    icon: "Alerts",
+    iconLabel: "Alerts",
   },
   control: {
     title: "On a control",
@@ -162,7 +162,7 @@ export function BadgeScreen() {
           </Badge.Anchor>
           <Badge.Anchor>
             <Anchor />
-            <Badge tone="warning" label={STRINGS.content.icon}>
+            <Badge tone="warning" label={STRINGS.content.iconLabel}>
               <Icon name="bell" size="sm" />
             </Badge>
           </Badge.Anchor>

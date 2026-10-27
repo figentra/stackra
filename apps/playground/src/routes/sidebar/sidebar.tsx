@@ -31,6 +31,7 @@ import { useLocation } from "react-router";
 
 import { PageSection } from "#src/components/page-section";
 import { SidebarRoute } from "#src/routes/sidebar/sidebar.route";
+import { Icons } from "#src/constants/icons.constant";
 
 // shortcut: English strings in one place until @stackra/i18n ships; then `playground::sidebar.*` keys.
 const STRINGS = {
@@ -138,19 +139,19 @@ export function Sidebar() {
       id: "home",
       label: STRINGS.home,
       href: anchor(id),
-      icon: "house",
+      icon: Icons.House,
       isCurrent: currentId === "home",
     },
     {
       id: "orders",
       label: STRINGS.orders,
       href: anchor(id),
-      icon: "package",
+      icon: Icons.Package,
       badge: 3,
       isCurrent: currentId === "orders",
     },
-    { id: "customers", label: STRINGS.customers, href: anchor(id), icon: "users" },
-    { id: "inbox", label: STRINGS.inbox, href: anchor(id), icon: "inbox", badge: 12 },
+    { id: "customers", label: STRINGS.customers, href: anchor(id), icon: Icons.Users },
+    { id: "inbox", label: STRINGS.inbox, href: anchor(id), icon: Icons.Inbox, badge: 12 },
     {
       id: "settings",
       label: STRINGS.settings,
@@ -228,20 +229,20 @@ export function Sidebar() {
                     id: "home",
                     label: STRINGS.arabicHome,
                     href: anchor("sidebar-arabic"),
-                    icon: "house",
+                    icon: Icons.House,
                   },
                   {
                     id: "orders",
                     label: STRINGS.arabicOrders,
                     href: anchor("sidebar-arabic"),
-                    icon: "package",
+                    icon: Icons.Package,
                     isCurrent: true,
                   },
                   {
                     id: "customers",
                     label: STRINGS.arabicCustomers,
                     href: anchor("sidebar-arabic"),
-                    icon: "users",
+                    icon: Icons.Users,
                   },
                 ]}
               />

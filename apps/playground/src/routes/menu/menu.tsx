@@ -25,6 +25,7 @@ import { useState, type ReactNode } from "react";
 
 import { PageSection } from "#src/components/page-section";
 import { MenuRoute } from "#src/routes/menu/menu.route";
+import { Icons } from "#src/constants/icons.constant";
 
 // shortcut: English strings in one place until @stackra/i18n ships; then `playground::menu.*` keys.
 const STRINGS = {
@@ -92,11 +93,11 @@ const ORDER_SECTIONS: readonly MenuSection[] = [
     id: "edit",
     title: "Edit",
     items: [
-      { id: "rename", label: "Rename", icon: "pencil", shortcut: "⌘R" },
+      { id: "rename", label: "Rename", icon: Icons.Pencil, shortcut: "⌘R" },
       {
         id: "duplicate",
         label: "Duplicate",
-        icon: "copy",
+        icon: Icons.Copy,
         shortcut: "⌘D",
         description: "Make a copy of the order",
       },
@@ -110,11 +111,11 @@ const ORDER_SECTIONS: readonly MenuSection[] = [
       {
         id: "archive",
         label: "Archive",
-        icon: "archive",
+        icon: Icons.Archive,
         isDisabled: true,
         disabledReason: "Paid orders cannot be archived",
       },
-      { id: "delete", label: "Delete", icon: "trash", tone: "danger", shortcut: "⌘Del" },
+      { id: "delete", label: "Delete", icon: Icons.Trash, tone: "danger", shortcut: "⌘Del" },
     ],
   },
 ];
@@ -190,7 +191,7 @@ const FILE_SECTIONS: readonly MenuSection[] = [
       {
         id: "export",
         label: "Export",
-        icon: "download",
+        icon: Icons.Download,
         items: [
           { id: "pdf", label: "As PDF" },
           { id: "csv", label: "As CSV" },
@@ -208,7 +209,7 @@ const LINK_SECTIONS: readonly MenuSection[] = [
     title: "Go",
     isTitleHidden: true,
     items: [
-      { id: "type", label: "Typography page", icon: "external-link", href: "/typography" },
+      { id: "type", label: "Typography page", icon: Icons.ExternalLink, href: "/typography" },
       { id: "stay", label: "Stay here" },
     ],
   },

@@ -15,6 +15,7 @@ import { View } from "react-native";
 
 import { Screen } from "#src/components/ui/screen";
 import { Section } from "#src/components/ui/section";
+import { Icons } from "#src/constants/icons.constant";
 
 // shortcut: English strings in one place until @stackra/i18n reaches the mobile app; then keys.
 const STRINGS = {
@@ -40,7 +41,7 @@ const STRINGS = {
     title: "Second line and icon",
     description: "`description` adds a second line, and `icon` replaces the tone's icon by name.",
     withDetail: "Add a second line",
-    icon: "Use another icon",
+    withIcon: "Use another icon",
     message: "Invoice sent",
     detail: "Ada Lovelace will get it within a minute.",
     reminder: "Reminder set",
@@ -137,9 +138,9 @@ export function ToastScreen() {
             <Button
               size="sm"
               variant="secondary"
-              onPress={() => toast.info(STRINGS.detail.reminder, { icon: "bell" })}
+              onPress={() => toast.info(STRINGS.detail.reminder, { icon: Icons.Bell })}
             >
-              {STRINGS.detail.icon}
+              {STRINGS.detail.withIcon}
             </Button>
           </View>
         </Section>

@@ -13,6 +13,7 @@ import { useState } from "react";
 
 import { Screen } from "#src/components/ui/screen";
 import { Section } from "#src/components/ui/section";
+import { Icons } from "#src/constants/icons.constant";
 
 // shortcut: English strings in one place until @stackra/i18n reaches the mobile app; then keys.
 const STRINGS = {
@@ -112,17 +113,17 @@ const ITEM_SECTIONS: readonly MenuSection[] = [
         id: "edit",
         label: STRINGS.items.edit,
         description: STRINGS.items.editNote,
-        icon: "pencil",
+        icon: Icons.Pencil,
       },
-      { id: "duplicate", label: STRINGS.items.duplicate, icon: "copy" },
+      { id: "duplicate", label: STRINGS.items.duplicate, icon: Icons.Copy },
       {
         id: "archive",
         label: STRINGS.items.archive,
-        icon: "archive",
+        icon: Icons.Archive,
         isDisabled: true,
         disabledReason: STRINGS.items.archiveReason,
       },
-      { id: "delete", label: STRINGS.items.delete, icon: "trash", tone: "danger" },
+      { id: "delete", label: STRINGS.items.delete, icon: Icons.Trash, tone: "danger" },
     ],
   },
 ];
@@ -134,7 +135,7 @@ const SUBMENU_SECTIONS: readonly MenuSection[] = [
     title: STRINGS.submenu.group,
     isTitleHidden: true,
     items: [
-      { id: "copy", label: STRINGS.submenu.copy, icon: "copy" },
+      { id: "copy", label: STRINGS.submenu.copy, icon: Icons.Copy },
       {
         id: "share",
         label: STRINGS.submenu.share,

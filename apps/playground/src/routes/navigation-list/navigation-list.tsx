@@ -23,6 +23,7 @@ import { useLocation } from "react-router";
 
 import { PageSection } from "#src/components/page-section";
 import { NavigationListRoute } from "#src/routes/navigation-list/navigation-list.route";
+import { Icons } from "#src/constants/icons.constant";
 
 // shortcut: English strings in one place until @stackra/i18n ships; then `playground::navigation-list.*` keys.
 const STRINGS = {
@@ -90,10 +91,10 @@ const PAGE_ICONS = defineIconRegistry({
 
 /** The entries of the live example, each with the text the page reports when it is current. */
 const LIVE = [
-  { id: "home", label: STRINGS.home, icon: "house" },
-  { id: "orders", label: STRINGS.orders, icon: "package" },
-  { id: "customers", label: STRINGS.customers, icon: "users" },
-  { id: "inbox", label: STRINGS.inbox, icon: "inbox" },
+  { id: "home", label: STRINGS.home, icon: Icons.House },
+  { id: "orders", label: STRINGS.orders, icon: Icons.Package },
+  { id: "customers", label: STRINGS.customers, icon: Icons.Users },
+  { id: "inbox", label: STRINGS.inbox, icon: Icons.Inbox },
 ] as const;
 
 /** The Navigation list page. */
@@ -105,9 +106,9 @@ export function NavigationList() {
   const here = `${pathname}${search}`;
   const anchor = (id: string) => `${here}#${id}`;
   const flat = (id: string): readonly NavigationItem[] => [
-    { id: "home", label: STRINGS.home, href: anchor(id), icon: "house" },
-    { id: "orders", label: STRINGS.orders, href: anchor(id), icon: "package" },
-    { id: "customers", label: STRINGS.customers, href: anchor(id), icon: "users" },
+    { id: "home", label: STRINGS.home, href: anchor(id), icon: Icons.House },
+    { id: "orders", label: STRINGS.orders, href: anchor(id), icon: Icons.Package },
+    { id: "customers", label: STRINGS.customers, href: anchor(id), icon: Icons.Users },
   ];
   const live: readonly NavigationItem[] = LIVE.map((entry) => ({
     ...entry,
@@ -146,20 +147,20 @@ export function NavigationList() {
                   id: "home",
                   label: STRINGS.home,
                   href: anchor("navigation-list-current"),
-                  icon: "house",
+                  icon: Icons.House,
                 },
                 {
                   id: "orders",
                   label: STRINGS.orders,
                   href: anchor("navigation-list-current"),
-                  icon: "package",
+                  icon: Icons.Package,
                   isCurrent: true,
                 },
                 {
                   id: "customers",
                   label: STRINGS.customers,
                   href: anchor("navigation-list-current"),
-                  icon: "users",
+                  icon: Icons.Users,
                 },
               ]}
             />
@@ -170,7 +171,7 @@ export function NavigationList() {
                   id: "orders",
                   label: STRINGS.orders,
                   href: anchor("navigation-list-current"),
-                  icon: "package",
+                  icon: Icons.Package,
                   children: [
                     {
                       id: "returns",
@@ -194,7 +195,7 @@ export function NavigationList() {
                   id: "orders",
                   label: STRINGS.orders,
                   href: anchor("navigation-list-groups"),
-                  icon: "package",
+                  icon: Icons.Package,
                   children: [
                     {
                       id: "returns",
@@ -238,21 +239,21 @@ export function NavigationList() {
                   id: "inbox",
                   label: STRINGS.inbox,
                   href: anchor("navigation-list-badges"),
-                  icon: "inbox",
+                  icon: Icons.Inbox,
                   badge: 12,
                 },
                 {
                   id: "orders",
                   label: STRINGS.orders,
                   href: anchor("navigation-list-badges"),
-                  icon: "package",
+                  icon: Icons.Package,
                   badge: "New",
                 },
                 {
                   id: "customers",
                   label: STRINGS.customers,
                   href: anchor("navigation-list-badges"),
-                  icon: "users",
+                  icon: Icons.Users,
                   badge: 0,
                 },
               ]}
@@ -269,19 +270,19 @@ export function NavigationList() {
                   id: "home",
                   label: STRINGS.home,
                   href: anchor("navigation-list-states"),
-                  icon: "house",
+                  icon: Icons.House,
                 },
                 {
                   id: "archive",
                   label: STRINGS.archive,
                   href: anchor("navigation-list-states"),
-                  icon: "package",
+                  icon: Icons.Package,
                   isDisabled: true,
                 },
                 {
                   id: "report",
                   label: STRINGS.runReport,
-                  icon: "users",
+                  icon: Icons.Users,
                   onPress: () => setPresses((count) => count + 1),
                 },
               ]}
@@ -305,14 +306,14 @@ export function NavigationList() {
                   id: "home",
                   label: STRINGS.home,
                   href: anchor("navigation-list-shortcuts"),
-                  icon: "house",
+                  icon: Icons.House,
                   shortcut: "G then H",
                 },
                 {
                   id: "orders",
                   label: STRINGS.orders,
                   href: anchor("navigation-list-shortcuts"),
-                  icon: "package",
+                  icon: Icons.Package,
                   shortcut: "G then O",
                 },
               ]}
@@ -334,13 +335,13 @@ export function NavigationList() {
                   id: "home",
                   label: STRINGS.home,
                   href: anchor("navigation-list-compact"),
-                  icon: "house",
+                  icon: Icons.House,
                 },
                 {
                   id: "orders",
                   label: STRINGS.orders,
                   href: anchor("navigation-list-compact"),
-                  icon: "package",
+                  icon: Icons.Package,
                   isCurrent: true,
                   badge: 3,
                 },
@@ -348,7 +349,7 @@ export function NavigationList() {
                   id: "customers",
                   label: STRINGS.customers,
                   href: anchor("navigation-list-compact"),
-                  icon: "users",
+                  icon: Icons.Users,
                 },
               ]}
             />
@@ -364,20 +365,20 @@ export function NavigationList() {
                   id: "home",
                   label: STRINGS.arabicHome,
                   href: anchor("navigation-list-arabic"),
-                  icon: "house",
+                  icon: Icons.House,
                 },
                 {
                   id: "orders",
                   label: STRINGS.arabicOrders,
                   href: anchor("navigation-list-arabic"),
-                  icon: "package",
+                  icon: Icons.Package,
                   isCurrent: true,
                 },
                 {
                   id: "customers",
                   label: STRINGS.arabicCustomers,
                   href: anchor("navigation-list-arabic"),
-                  icon: "users",
+                  icon: Icons.Users,
                 },
               ]}
             />

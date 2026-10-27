@@ -7,4 +7,5 @@
  */
 export { DemoIcon } from "./demo-icon";
 export { type DemoIconName } from "./demo-icon-name.type";
+export { DemoIcons } from "./demo-icons.constant";
 export { type DemoIconProps } from "./demo-icon.props";

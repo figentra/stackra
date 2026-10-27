@@ -38,7 +38,7 @@ const STRINGS = {
   contentNote: "A number, a word and an icon.",
   number: "8 new",
   word: "New item",
-  icon: "Alerts",
+  iconLabel: "Alerts",
   control: "On a control",
   controlNote:
     "The badge is not labelled: the button's own name already says the count, and a press on the badge reaches the button.",
@@ -177,7 +177,7 @@ export function Badge() {
           <li>
             <UiBadge.Anchor>
               <Disc />
-              <UiBadge tone="danger" size="lg" label={STRINGS.icon}>
+              <UiBadge tone="danger" size="lg" label={STRINGS.iconLabel}>
                 <Icon name="bell" className="size-3" />
               </UiBadge>
             </UiBadge.Anchor>

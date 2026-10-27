@@ -30,6 +30,7 @@ import { useState, type CSSProperties } from "react";
 import { Choice } from "#src/components/choice";
 import { Showcase } from "#src/components/showcase";
 import type { StudioPreviewProps } from "#src/components/studio-preview/studio-preview.props";
+import { Icons } from "#src/constants/icons.constant";
 
 // shortcut: English strings in one place until @stackra/i18n ships; then `playground::studio.preview.*` keys.
 const STRINGS = {
@@ -85,9 +86,9 @@ const VARIANTS = ["primary", "secondary", "tertiary", "outline", "ghost", "dange
 
 /** The canvas widths: an icon and the most the sheet may span. */
 const WIDTHS = {
-  fluid: { icon: "monitor", max: "max-w-none" },
-  tablet: { icon: "tablet", max: "max-w-[768px]" },
-  phone: { icon: "smartphone", max: "max-w-[390px]" },
+  fluid: { icon: Icons.Monitor, max: "max-w-none" },
+  tablet: { icon: Icons.Tablet, max: "max-w-[768px]" },
+  phone: { icon: Icons.Smartphone, max: "max-w-[390px]" },
 } as const;
 
 type CanvasWidth = keyof typeof WIDTHS;

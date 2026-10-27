@@ -16,6 +16,7 @@ import { useState } from "react";
 
 import { PageSection } from "#src/components/page-section";
 import { AlertDialogRoute } from "#src/routes/alert-dialog/alert-dialog.route";
+import { Icons } from "#src/constants/icons.constant";
 
 // shortcut: English strings in one place until @stackra/i18n ships; then `playground::alert-dialog.*` keys.
 const STRINGS = {
@@ -109,7 +110,7 @@ const SAMPLES: readonly Sample[] = [
     description: "Everything in it is deleted for good.",
     confirm: "Empty trash",
     cancel: "Keep it",
-    props: { tone: "danger", icon: "trash" },
+    props: { tone: "danger", icon: Icons.Trash },
   },
   {
     id: "no-icon",

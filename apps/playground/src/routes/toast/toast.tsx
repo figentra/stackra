@@ -18,6 +18,7 @@ import { useEffect, useState } from "react";
 
 import { PageSection } from "#src/components/page-section";
 import { ToastRoute } from "#src/routes/toast/toast.route";
+import { Icons } from "#src/constants/icons.constant";
 
 // shortcut: English strings in one place until @stackra/i18n ships; then `playground::toast.*` keys.
 const STRINGS = {
@@ -122,7 +123,7 @@ export function Toast() {
           </Button>
           <Button
             variant="secondary"
-            onPress={() => toast("Link copied", { tone: "accent", icon: "circle-check" })}
+            onPress={() => toast("Link copied", { tone: "accent", icon: Icons.CircleCheck })}
           >
             {STRINGS.ownIcon}
           </Button>

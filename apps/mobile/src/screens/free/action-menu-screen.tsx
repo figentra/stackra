@@ -13,6 +13,7 @@ import { useState } from "react";
 
 import { Screen } from "#src/components/ui/screen";
 import { Section } from "#src/components/ui/section";
+import { Icons } from "#src/constants/icons.constant";
 
 // shortcut: English strings in one place until @stackra/i18n reaches the mobile app; then keys.
 const STRINGS = {
@@ -68,16 +69,16 @@ const BASIC_SECTIONS: readonly MenuSection[] = [
     isTitleHidden: true,
     items: [
       { id: "open", label: STRINGS.basics.open },
-      { id: "edit", label: STRINGS.basics.edit, icon: "pencil" },
-      { id: "duplicate", label: STRINGS.basics.duplicate, icon: "copy" },
-      { id: "archive", label: STRINGS.basics.archive, icon: "archive" },
+      { id: "edit", label: STRINGS.basics.edit, icon: Icons.Pencil },
+      { id: "duplicate", label: STRINGS.basics.duplicate, icon: Icons.Copy },
+      { id: "archive", label: STRINGS.basics.archive, icon: Icons.Archive },
     ],
   },
   {
     id: "danger",
     title: STRINGS.basics.danger,
     isTitleHidden: true,
-    items: [{ id: "delete", label: STRINGS.basics.delete, icon: "trash", tone: "danger" }],
+    items: [{ id: "delete", label: STRINGS.basics.delete, icon: Icons.Trash, tone: "danger" }],
   },
 ];
 

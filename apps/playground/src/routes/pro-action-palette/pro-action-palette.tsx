@@ -15,7 +15,7 @@ import { Button } from "@stackra/ui/react";
 import * as UiPro from "@stackra-pro/ui/react";
 import { useEffect, useState } from "react";
 
-import { DemoIcon, type DemoIconName } from "#src/components/demo-icon";
+import { DemoIcon, type DemoIconName, DemoIcons } from "#src/components/demo-icon";
 import { ProActionPaletteRoute } from "#src/routes/pro-action-palette/pro-action-palette.route";
 
 // shortcut: English strings in one place until @stackra/i18n ships; then `playground::pro-action-palette.*` keys.
@@ -48,22 +48,22 @@ const GROUPS: readonly { readonly heading: string; readonly actions: readonly Pa
     {
       heading: "Navigate",
       actions: [
-        { id: "go-dashboard", label: "Go to dashboard", icon: "home" },
-        { id: "go-invoices", label: "Go to invoices", icon: "doc" },
+        { id: "go-dashboard", label: "Go to dashboard", icon: DemoIcons.Home },
+        { id: "go-invoices", label: "Go to invoices", icon: DemoIcons.Doc },
       ],
     },
     {
       heading: "Create",
       actions: [
-        { id: "new-invoice", label: "Create invoice", icon: "money" },
-        { id: "invite", label: "Invite teammate", icon: "users" },
+        { id: "new-invoice", label: "Create invoice", icon: DemoIcons.Money },
+        { id: "invite", label: "Invite teammate", icon: DemoIcons.Users },
       ],
     },
     {
       heading: "Settings",
       actions: [
-        { id: "preferences", label: "Open preferences", icon: "gear" },
-        { id: "find-docs", label: "Search the docs", icon: "search" },
+        { id: "preferences", label: "Open preferences", icon: DemoIcons.Gear },
+        { id: "find-docs", label: "Search the docs", icon: DemoIcons.Search },
       ],
     },
   ];

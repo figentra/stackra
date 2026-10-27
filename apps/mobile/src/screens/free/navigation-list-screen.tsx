@@ -14,6 +14,7 @@ import { useState } from "react";
 
 import { Screen } from "#src/components/ui/screen";
 import { Section } from "#src/components/ui/section";
+import { Icons } from "#src/constants/icons.constant";
 
 // shortcut: English strings in one place until @stackra/i18n reaches the mobile app; then keys.
 const STRINGS = {
@@ -60,15 +61,15 @@ const ignore = () => undefined;
 
 /** The places of the basic list. */
 const BASIC: readonly NavigationItem[] = [
-  { id: "home", label: STRINGS.places.home, icon: "layout-grid", onPress: ignore },
-  { id: "inbox", label: STRINGS.places.inbox, icon: "bell", badge: 3, onPress: ignore },
-  { id: "favourites", label: STRINGS.places.favourites, icon: "heart", onPress: ignore },
-  { id: "settings", label: STRINGS.places.settings, icon: "settings", onPress: ignore },
+  { id: "home", label: STRINGS.places.home, icon: Icons.LayoutGrid, onPress: ignore },
+  { id: "inbox", label: STRINGS.places.inbox, icon: Icons.Bell, badge: 3, onPress: ignore },
+  { id: "favourites", label: STRINGS.places.favourites, icon: Icons.Heart, onPress: ignore },
+  { id: "settings", label: STRINGS.places.settings, icon: Icons.Settings, onPress: ignore },
 ];
 
 /** The places with a heading and places nested under it. */
 const GROUPED: readonly NavigationItem[] = [
-  { id: "home", label: STRINGS.places.home, icon: "layout-grid", onPress: ignore },
+  { id: "home", label: STRINGS.places.home, icon: Icons.LayoutGrid, onPress: ignore },
   {
     id: "account",
     label: STRINGS.places.account,
@@ -80,7 +81,7 @@ const GROUPED: readonly NavigationItem[] = [
   {
     id: "settings",
     label: STRINGS.places.settings,
-    icon: "settings",
+    icon: Icons.Settings,
     onPress: ignore,
     children: [
       { id: "general", label: STRINGS.places.general, onPress: ignore },

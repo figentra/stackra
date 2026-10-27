@@ -14,6 +14,7 @@ import { useState } from "react";
 
 import { Screen } from "#src/components/ui/screen";
 import { Section } from "#src/components/ui/section";
+import { Icons } from "#src/constants/icons.constant";
 
 // shortcut: English strings in one place until @stackra/i18n reaches the mobile app; then keys.
 const STRINGS = {
@@ -63,12 +64,12 @@ export function SectionScreen() {
   const [last, setLast] = useState<string | null>(null);
 
   const actions: readonly MenuLeafItem[] = [
-    { id: "add", label: STRINGS.actions.add, icon: "plus", onPress: () => setLast("add") },
-    { id: "edit", label: STRINGS.actions.edit, icon: "pencil", onPress: () => setLast("edit") },
+    { id: "add", label: STRINGS.actions.add, icon: Icons.Plus, onPress: () => setLast("add") },
+    { id: "edit", label: STRINGS.actions.edit, icon: Icons.Pencil, onPress: () => setLast("edit") },
     {
       id: "remove",
       label: STRINGS.actions.remove,
-      icon: "trash",
+      icon: Icons.Trash,
       tone: "danger",
       onPress: () => setLast("remove"),
     },

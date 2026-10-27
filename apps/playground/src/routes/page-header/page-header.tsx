@@ -24,6 +24,7 @@ import { useState, type ReactNode } from "react";
 
 import { PageSection } from "#src/components/page-section";
 import { PageHeaderRoute } from "#src/routes/page-header/page-header.route";
+import { Icons } from "#src/constants/icons.constant";
 
 // shortcut: English strings in one place until @stackra/i18n ships; then `playground::page-header.*` keys.
 const STRINGS = {
@@ -103,10 +104,10 @@ function Sample({ caption, children }: { readonly caption: string; readonly chil
 /** `count` actions named for what a page does, the first of them creating. */
 const actionsOf = (count: number): MenuLeafItem[] => {
   const all: MenuLeafItem[] = [
-    { id: "create", label: STRINGS.create, icon: "plus" },
+    { id: "create", label: STRINGS.create, icon: Icons.Plus },
     { id: "edit", label: STRINGS.edit },
-    { id: "export", label: STRINGS.export, icon: "download" },
-    { id: "duplicate", label: STRINGS.duplicate, icon: "copy" },
+    { id: "export", label: STRINGS.export, icon: Icons.Download },
+    { id: "duplicate", label: STRINGS.duplicate, icon: Icons.Copy },
     { id: "print", label: STRINGS.print },
     { id: "archive", label: STRINGS.archive },
   ];
@@ -193,7 +194,7 @@ export function PageHeader() {
                 actions={[
                   { id: "edit", label: STRINGS.edit },
                   { id: "archive", label: STRINGS.archive, isDisabled: true },
-                  { id: "delete", label: STRINGS.delete, tone: "danger", icon: "trash" },
+                  { id: "delete", label: STRINGS.delete, tone: "danger", icon: Icons.Trash },
                 ]}
               />
             </Sample>
@@ -216,7 +217,7 @@ export function PageHeader() {
               status={<StatusBadge tone="success">{STRINGS.arabicPaid}</StatusBadge>}
               actions={[
                 { id: "edit", label: STRINGS.arabicEdit },
-                { id: "export", label: STRINGS.arabicExport, icon: "download" },
+                { id: "export", label: STRINGS.arabicExport, icon: Icons.Download },
               ]}
             />
           </div>

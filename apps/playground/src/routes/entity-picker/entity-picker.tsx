@@ -15,6 +15,7 @@ import { useState } from "react";
 
 import { PageSection } from "#src/components/page-section";
 import { EntityPickerRoute } from "#src/routes/entity-picker/entity-picker.route";
+import { Icons } from "#src/constants/icons.constant";
 
 // shortcut: English strings in one place until @stackra/i18n ships; then `playground::entity-picker.*` keys.
 const STRINGS = {
@@ -94,9 +95,9 @@ const PEOPLE: readonly EntityOption[] = [
 
 /** The teams of the sample whose records are things, drawn with an icon. */
 const TEAMS: readonly EntityOption[] = [
-  { id: "design", label: "Design", avatar: { icon: "palette" } },
-  { id: "platform", label: "Platform", avatar: { icon: "server" } },
-  { id: "support", label: "Support", avatar: { icon: "life-buoy" } },
+  { id: "design", label: "Design", avatar: { icon: Icons.Palette } },
+  { id: "platform", label: "Platform", avatar: { icon: Icons.Server } },
+  { id: "support", label: "Support", avatar: { icon: Icons.LifeBuoy } },
 ];
 
 /** How many records a pretend server answers per page, and how long it takes, in milliseconds. */

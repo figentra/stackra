@@ -11,7 +11,7 @@ import { Button, Separator } from "@stackra/ui/react";
 import * as UiPro from "@stackra-pro/ui/react";
 import { Fragment, useState } from "react";
 
-import { DemoIcon, type DemoIconName } from "#src/components/demo-icon";
+import { DemoIcon, type DemoIconName, DemoIcons } from "#src/components/demo-icon";
 import { ProItemCardGroupRoute } from "#src/routes/pro-item-card-group/pro-item-card-group.route";
 
 // shortcut: English strings in one place until @stackra/i18n ships; then `playground::pro-item-card-group.*` keys.
@@ -34,9 +34,19 @@ const INTEGRATIONS: readonly {
   readonly text: string;
   readonly icon: DemoIconName;
 }[] = [
-  { id: "source", name: "Source control", text: "Connected to two repositories", icon: "doc" },
-  { id: "chat", name: "Team chat", text: "Posts a message when a build fails", icon: "users" },
-  { id: "billing", name: "Billing", text: "Syncs invoices every night", icon: "money" },
+  {
+    id: "source",
+    name: "Source control",
+    text: "Connected to two repositories",
+    icon: DemoIcons.Doc,
+  },
+  {
+    id: "chat",
+    name: "Team chat",
+    text: "Posts a message when a build fails",
+    icon: DemoIcons.Users,
+  },
+  { id: "billing", name: "Billing", text: "Syncs invoices every night", icon: DemoIcons.Money },
 ];
 
 /** The ItemCardGroup page. */

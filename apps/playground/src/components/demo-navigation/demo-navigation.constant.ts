@@ -6,7 +6,7 @@
  * Runtime: browser
  * Governing contract: ADR 0302 (decision 5); ADR 0310 (decision 6); ADR 0305 (rule 10); STA-403 FR-013.
  */
-import type { DemoIconName } from "#src/components/demo-icon";
+import { DemoIcons, type DemoIconName } from "#src/components/demo-icon";
 
 /** One navigation entry; an entry with `children` expands instead of navigating. */
 interface NavigationItem {
@@ -18,13 +18,13 @@ interface NavigationItem {
 }
 
 const ITEMS: readonly NavigationItem[] = [
-  { id: "dashboard", label: "Dashboard", icon: "home" },
-  { id: "orders", label: "Orders", icon: "doc", count: "12" },
-  { id: "customers", label: "Customers", icon: "users" },
+  { id: "dashboard", label: "Dashboard", icon: DemoIcons.Home },
+  { id: "orders", label: "Orders", icon: DemoIcons.Doc, count: "12" },
+  { id: "customers", label: "Customers", icon: DemoIcons.Users },
   {
     id: "reports",
     label: "Reports",
-    icon: "chart",
+    icon: DemoIcons.Chart,
     children: [
       { id: "reports-overview", label: "Overview" },
       { id: "reports-revenue", label: "Revenue" },
@@ -32,7 +32,7 @@ const ITEMS: readonly NavigationItem[] = [
   },
 ];
 
-const SETTINGS = { id: "settings", label: "Settings", icon: "gear" } as const;
+const SETTINGS = { id: "settings", label: "Settings", icon: DemoIcons.Gear } as const;
 
 /** The demo sidebar's entries: the workspace menu, then the settings entry in the footer. */
 export const DEMO_NAVIGATION = { items: ITEMS, settings: SETTINGS } as const;

@@ -26,6 +26,7 @@ import { useState, type ReactNode } from "react";
 
 import { PageSection } from "#src/components/page-section";
 import { ActionMenuRoute } from "#src/routes/action-menu/action-menu.route";
+import { Icons } from "#src/constants/icons.constant";
 
 // shortcut: English strings in one place until @stackra/i18n ships; then `playground::action-menu.*` keys.
 const STRINGS = {
@@ -42,7 +43,7 @@ const STRINGS = {
     "One row per size, one button per variant. The default is ghost, which sits quietly in a row.",
   size: (size: string) => `Size ${size}`,
   variantLabel: (variant: string) => `Actions, ${variant}`,
-  icon: "Icon",
+  iconTitle: "Icon",
   iconNote: "The icon is the ellipsis unless the app gives another.",
   iconLabel: "More options",
   iconCaption: "A vertical ellipsis",
@@ -83,11 +84,11 @@ const ORDER_SECTIONS: readonly MenuSection[] = [
     title: "Edit",
     isTitleHidden: true,
     items: [
-      { id: "rename", label: "Rename", icon: "pencil", shortcut: "⌘R" },
+      { id: "rename", label: "Rename", icon: Icons.Pencil, shortcut: "⌘R" },
       {
         id: "duplicate",
         label: "Duplicate",
-        icon: "copy",
+        icon: Icons.Copy,
         shortcut: "⌘D",
         description: "Make a copy of the order",
       },
@@ -101,11 +102,11 @@ const ORDER_SECTIONS: readonly MenuSection[] = [
       {
         id: "archive",
         label: "Archive",
-        icon: "archive",
+        icon: Icons.Archive,
         isDisabled: true,
         disabledReason: "Paid orders cannot be archived",
       },
-      { id: "delete", label: "Delete", icon: "trash", tone: "danger", shortcut: "⌘Del" },
+      { id: "delete", label: "Delete", icon: Icons.Trash, tone: "danger", shortcut: "⌘Del" },
     ],
   },
 ];
@@ -167,7 +168,7 @@ export function ActionMenu() {
           ))}
         </PageSection>
 
-        <PageSection id="action-menu-icon" title={STRINGS.icon} note={STRINGS.iconNote}>
+        <PageSection id="action-menu-icon" title={STRINGS.iconTitle} note={STRINGS.iconNote}>
           <ul className={ROW}>
             <Sample caption={STRINGS.iconCaption}>
               <UiActionMenu

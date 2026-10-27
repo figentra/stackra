@@ -44,6 +44,7 @@ import {
 import { PagePager } from "#src/components/page-pager";
 import type { ShellContext } from "#src/types/shell-context.type";
 import type { PlaygroundShellProps } from "#src/components/playground-shell/playground-shell.props";
+import { Icons } from "#src/constants/icons.constant";
 
 // shortcut: English strings in one place until @stackra/i18n ships; then `playground::shell.*` keys.
 const STRINGS = {
@@ -212,7 +213,7 @@ function ShellPalette({
       id: "go-home",
       label: STRINGS.actions.home,
       detail: STRINGS.title,
-      icon: "sparkles",
+      icon: Icons.Sparkles,
       keywords: "home index landing",
       run: () => void navigate(`/${props.search}`),
     },
@@ -220,7 +221,7 @@ function ShellPalette({
       id: "go-studio",
       label: STRINGS.studio,
       detail: STRINGS.actions.studioDetail,
-      icon: "palette",
+      icon: Icons.Palette,
       keywords: "theme builder customise customize export tokens",
       run: () => void navigate(`/theme-studio${props.search}`),
     },
@@ -228,7 +229,7 @@ function ShellPalette({
       id: "go-components",
       label: STRINGS.actions.components,
       detail: STRINGS.actions.componentsDetail,
-      icon: "layout-grid",
+      icon: Icons.LayoutGrid,
       keywords: "gallery all pages",
       run: () => void navigate(`/${props.search}#components`),
     },

@@ -15,6 +15,7 @@ import { useState } from "react";
 
 import { Screen } from "#src/components/ui/screen";
 import { Section } from "#src/components/ui/section";
+import { Icons } from "#src/constants/icons.constant";
 
 // shortcut: English strings in one place until @stackra/i18n reaches the mobile app; then keys.
 const STRINGS = {
@@ -103,7 +104,7 @@ const QUESTIONS: readonly Question[] = [
     open: STRINGS.icon.open,
     options: {
       tone: "accent",
-      icon: "bell",
+      icon: Icons.Bell,
       title: STRINGS.icon.question,
       description: STRINGS.icon.body,
       confirmLabel: STRINGS.icon.confirm,

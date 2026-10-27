@@ -18,6 +18,7 @@ import { View } from "react-native";
 
 import { Screen } from "#src/components/ui/screen";
 import { Section } from "#src/components/ui/section";
+import { Icons } from "#src/constants/icons.constant";
 
 // shortcut: English strings in one place until @stackra/i18n reaches the mobile app; then keys.
 const STRINGS = {
@@ -85,10 +86,16 @@ const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve,
 
 /** Four actions that do nothing: two fill the bar and two go in the sheet. */
 const QUIET_ACTIONS: readonly ResourceAction[] = [
-  { id: "send", label: STRINGS.actions.send, icon: "send-horizontal", onPress: ignore },
-  { id: "archive", label: STRINGS.actions.archive, icon: "archive", onPress: ignore },
-  { id: "download", label: STRINGS.actions.download, icon: "download", onPress: ignore },
-  { id: "delete", label: STRINGS.actions.delete, icon: "trash", tone: "danger", onPress: ignore },
+  { id: "send", label: STRINGS.actions.send, icon: Icons.SendHorizontal, onPress: ignore },
+  { id: "archive", label: STRINGS.actions.archive, icon: Icons.Archive, onPress: ignore },
+  { id: "download", label: STRINGS.actions.download, icon: Icons.Download, onPress: ignore },
+  {
+    id: "delete",
+    label: STRINGS.actions.delete,
+    icon: Icons.Trash,
+    tone: "danger",
+    onPress: ignore,
+  },
 ];
 
 /** The actions of the states sample: one slow, one that fails, one refused. */
@@ -168,13 +175,13 @@ function LiveSample() {
     {
       id: "archive",
       label: STRINGS.actions.archive,
-      icon: "archive",
+      icon: Icons.Archive,
       onPress: async () => {
         await delay(DELAY);
         clear();
       },
     },
-    { id: "download", label: STRINGS.actions.download, icon: "download", onPress: ignore },
+    { id: "download", label: STRINGS.actions.download, icon: Icons.Download, onPress: ignore },
   ];
   return (
     <>

@@ -13,6 +13,7 @@ import { useState } from "react";
 
 import { Screen } from "#src/components/ui/screen";
 import { Section } from "#src/components/ui/section";
+import { Icons } from "#src/constants/icons.constant";
 
 // shortcut: English strings in one place until @stackra/i18n reaches the mobile app; then keys.
 const STRINGS = {
@@ -72,26 +73,26 @@ export function PageHeaderScreen() {
     {
       id: "send",
       label: STRINGS.actions.send,
-      icon: "send-horizontal",
+      icon: Icons.SendHorizontal,
       onPress: () => setLast("send"),
     },
     {
       id: "download",
       label: STRINGS.actions.download,
-      icon: "download",
+      icon: Icons.Download,
       onPress: () => setLast("download"),
     },
-    { id: "edit", label: STRINGS.actions.edit, icon: "pencil", onPress: () => setLast("edit") },
+    { id: "edit", label: STRINGS.actions.edit, icon: Icons.Pencil, onPress: () => setLast("edit") },
     {
       id: "duplicate",
       label: STRINGS.actions.duplicate,
-      icon: "copy",
+      icon: Icons.Copy,
       onPress: () => setLast("duplicate"),
     },
     {
       id: "delete",
       label: STRINGS.actions.delete,
-      icon: "trash",
+      icon: Icons.Trash,
       tone: "danger",
       onPress: () => setLast("delete"),
     },

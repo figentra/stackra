@@ -10,7 +10,7 @@
  */
 import * as UiPro from "@stackra-pro/ui/react";
 
-import { DemoIcon, type DemoIconName } from "#src/components/demo-icon";
+import { DemoIcon, type DemoIconName, DemoIcons } from "#src/components/demo-icon";
 import { ProChatMessageRoute } from "#src/routes/pro-chat-message/pro-chat-message.route";
 
 // shortcut: English strings in one place until @stackra/i18n ships; then `playground::pro-chat-message.*` keys.
@@ -32,10 +32,10 @@ const STRINGS = {
 } as const;
 
 const ACTIONS: readonly { id: string; label: string; icon: DemoIconName }[] = [
-  { id: "copy", label: "Copy the answer", icon: "doc" },
-  { id: "good", label: "Good response", icon: "users" },
-  { id: "bad", label: "Bad response", icon: "gear" },
-  { id: "again", label: "Regenerate the answer", icon: "search" },
+  { id: "copy", label: "Copy the answer", icon: DemoIcons.Doc },
+  { id: "good", label: "Good response", icon: DemoIcons.Users },
+  { id: "bad", label: "Bad response", icon: DemoIcons.Gear },
+  { id: "again", label: "Regenerate the answer", icon: DemoIcons.Search },
 ];
 
 /** The ChatMessage page. */

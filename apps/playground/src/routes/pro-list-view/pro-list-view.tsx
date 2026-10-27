@@ -12,7 +12,7 @@ import { Button } from "@stackra/ui/react";
 import * as UiPro from "@stackra-pro/ui/react";
 import { useState } from "react";
 
-import { DemoIcon, type DemoIconName } from "#src/components/demo-icon";
+import { DemoIcon, type DemoIconName, DemoIcons } from "#src/components/demo-icon";
 import { ProListViewRoute } from "#src/routes/pro-list-view/pro-list-view.route";
 
 // shortcut: English strings in one place until @stackra/i18n ships; then `playground::pro-list-view.*` keys.
@@ -38,10 +38,10 @@ const FILES: readonly {
   readonly updated: string;
   readonly icon: DemoIconName;
 }[] = [
-  { id: "documents", name: "Documents", updated: "Updated 2 days ago", icon: "doc" },
-  { id: "photos", name: "Photos", updated: "Updated 1 week ago", icon: "chart" },
-  { id: "readme", name: "README.md", updated: "Updated 3 hours ago", icon: "doc" },
-  { id: "package", name: "package.json", updated: "Updated yesterday", icon: "gear" },
+  { id: "documents", name: "Documents", updated: "Updated 2 days ago", icon: DemoIcons.Doc },
+  { id: "photos", name: "Photos", updated: "Updated 1 week ago", icon: DemoIcons.Chart },
+  { id: "readme", name: "README.md", updated: "Updated 3 hours ago", icon: DemoIcons.Doc },
+  { id: "package", name: "package.json", updated: "Updated yesterday", icon: DemoIcons.Gear },
 ];
 
 /** The ListView page. */
