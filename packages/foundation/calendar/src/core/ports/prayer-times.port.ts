@@ -2,9 +2,9 @@
  * Stackra file contract:
  * Purpose: the `PrayerTimes` port: the prayer times of a local date at a place, so notifications keep quiet hours
  *          around prayers and a schedule can avoid them.
- * Boundary: an abstract class that is its own token (this package sits below @stackra/container, so drivers are
- *           plain subclasses). The computed driver ships here; a driver over a mosque's or an authority's published
- *           table can follow. Refuses a day it cannot answer with a RangeError.
+ * Boundary: an abstract class that is its own token; its drivers extend `Driver(PrayerTimes)`. The computed driver
+ *           ships here; a driver over a mosque's or an authority's published table can follow. Refuses a day it
+ *           cannot answer with a RangeError.
  * Runtime: isomorphic
  * Governing contract: ADR 0414 (decision 2); ADR 0294 (decisions 16 and 17).
  */

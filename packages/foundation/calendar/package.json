@@ -59,6 +59,7 @@
     "clean": "rm -rf dist coverage .turbo"
   },
   "dependencies": {
+    "@stackra/container": "workspace:*",
     "@stackra/contracts": "workspace:*",
     "@stackra/market-packs": "workspace:*",
     "zod": "catalog:"
