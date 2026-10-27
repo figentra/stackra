@@ -2,10 +2,10 @@
 
 <!--
 Stackra file contract:
-Purpose: the reader-facing guide of @stackra/search: entries, searching, indexing, the columns, vector retrieval (the fixed-dimension HNSW index), semantic indexing, visibility, Arabizi and global search, and what is not here.
+Purpose: the reader-facing guide of @stackra/search: entries, searching, indexing, the columns, vector retrieval (the fixed-dimension HNSW index), semantic indexing, visibility, Arabizi and global search, the driver conformance suite, and what is not here.
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
-Governing contract: ADR 0221; ADR 0160; ADR 0294; ADR 0404; STA-1251 (word helpers, Arabizi switch, across filters, HNSW); ADR 0380 and STA-1326 (semantic indexing).
+Governing contract: ADR 0221; ADR 0160; ADR 0294; ADR 0404; STA-1251 (word helpers, Arabizi switch, across filters, HNSW); ADR 0380 and STA-1326 (semantic indexing); ADR 0089 d5 and ADR 0461 (conformance suite, Pro drivers).
 -->
 
 Stackra search: Postgres hybrid search over a model's `@Searchable` index (ADR 0221). A query injects `Search` and asks
@@ -13,7 +13,7 @@ Stackra search: Postgres hybrid search over a model's `@Searchable` index (ADR 0
 migration macro writes, so a search runs in the caller's transaction under the same row-level security as the data.
 A `VectorIndex` stores embedded passages for semantic retrieval (pgvector in Postgres, ADR 0160).
 
-**Tier:** `tier:lib` (`packages/data/search`). Entries `.`, `./contracts` and `./node`. Depends on `@stackra/config`,
+**Tier:** `tier:lib` (`packages/data/search`). Entries `.`, `./contracts`, `./node` and `./testing`. Depends on `@stackra/config`,
 `@stackra/container`, `@stackra/contracts`, `@stackra/database`, `@stackra/errors`, `@stackra/model`,
 `@stackra/outbox`, `@stackra/settings` and `@stackra/validation`.
 
@@ -39,6 +39,8 @@ A `VectorIndex` stores embedded passages for semantic retrieval (pgvector in Pos
 | `./node`      | `SearchableMacro`, `SearchableColumns`                                | `t.searchable({ text, filters, locales })` in a migration          |
 | `./node`      | `registerSearchableModels`, `SearchableChangeService`                 | automatic indexing from the outbox's row changes (gen's wiring)    |
 | `./node`      | `SemanticChangeService`                                               | embeds a `semantic: true` model's text into the `VectorIndex`      |
+| `./testing`   | `runSearchConformance`, `SEARCH_CONFORMANCE_CASES`                    | the `SearchDriver` conformance suite every driver passes           |
+| `./testing`   | `SEARCH_CONFORMANCE_DOCUMENTS`, `searchConformanceTable`              | the seed documents and the per-case table a fixture keys on        |
 
 ## Searching
 
@@ -203,6 +205,24 @@ semantic model never builds it, nor the `HttpEmbedderDriver` that needs `search.
   (`new Map([[Product, { status: ProductStatus.Active }]])`), since each model lists its own filter paths; a model with
   no entry is read unfiltered.
 
+## Driver conformance
+
+Every `SearchDriver` passes one suite (ADR 0089 d5), published from `./testing` so a driver outside this package,
+the Pro Meilisearch and OpenSearch drivers included (ADR 0461), runs the same rules:
+
+```ts
+import { runSearchConformance } from "@stackra/search/testing";
+
+const results = await runSearchConformance(() => new MemorySearchDriver());
+expect(results.flatMap((result) => result.mismatches)).toEqual([]);
+```
+
+Each case gets a fresh driver and its own table (`conformance_<case>`), seeded with `SEARCH_CONFORMANCE_DOCUMENTS`,
+and checks one rule: every word required, word prefixes, alternatives, exact filters, offset and limit, facet counts
+(with and without words), re-indexing replaces, removal (an unknown id included), and refusing `visible` unless the
+driver says `appliesVisibility: true`. Ranking between matches is the engine's, so cases compare id sets. The suite
+uses no test framework and never throws for a miss: a thrown error becomes that case's mismatch.
+
 ## Not here
 
 - Phrase synonyms (`t shirt` for `tee`) and one-way synonyms (`tv => television`): sets are single words and
@@ -211,7 +231,8 @@ semantic model never builds it, nor the `HttpEmbedderDriver` that needs `search.
   backfills.
 - The vector lane in the hybrid `Search` ranking (the `VectorIndex` stands alone for now); the versioned index swap,
   the palette UI and the public search API of ADR 0221 are later work.
-- An OpenSearch driver: built behind the same port when ADR 0221 d9's trigger is met.
+- Meilisearch and OpenSearch drivers: Pro (`@stackra-pro/search-meilisearch`, `@stackra-pro/search-opensearch`,
+  ADR 0461); this package never imports them, and `search.driver` names only `postgres` and `memory`.
 - Semantic querying: `Search` ranks lexically only; reading the semantic passages back (a vector lane in `find`) is
   later work. `SearchIndex.reindex` does not embed; a backfill calls `SemanticChangeService.index`.
 - `ai: tenant_opt_in` fields are embedded like any other text: the guard refuses `never` only, and the scope's opt-in

@@ -2,8 +2,9 @@
   "name": "@stackra/search",
   "version": "0.0.0",
   "private": false,
-  "description": "Stackra search: the SearchDriver port, the Search reader over a model's @Searchable index (ranked find and cursor pages, indexing, removal, reindex), the memory driver, the Postgres hybrid driver (full-text and trigram, fused by reciprocal rank), the t.searchable(...) migration macro, the text-function migration and SearchConfig with its shipped schema",
+  "description": "Stackra search: the SearchDriver port, the Search reader over a model's @Searchable index (ranked find and cursor pages, indexing, removal, reindex), the memory driver, the Postgres hybrid driver (full-text and trigram, fused by reciprocal rank), the t.searchable(...) migration macro, the text-function migration and SearchConfig with its shipped schema, and the SearchDriver conformance suite (./testing) every driver passes",
   "keywords": [
+    "conformance",
     "data",
     "full-text-search",
     "postgres",
@@ -52,6 +53,11 @@
       "./src/node/*",
       "./src/node/*.ts",
       "./src/node/*/index.ts"
+    ],
+    "#testing/*": [
+      "./src/testing/*",
+      "./src/testing/*.ts",
+      "./src/testing/*/index.ts"
     ]
   },
   "exports": {
@@ -69,6 +75,11 @@
       "@stackra/source": "./src/node/index.ts",
       "types": "./dist/node.d.mts",
       "default": "./dist/node.mjs"
+    },
+    "./testing": {
+      "@stackra/source": "./src/testing/index.ts",
+      "types": "./dist/testing.d.mts",
+      "default": "./dist/testing.mjs"
     }
   },
   "publishConfig": {

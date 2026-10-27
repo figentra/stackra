@@ -5,13 +5,13 @@ Stackra file contract:
 Purpose: the agent rules of @stackra/search: where code goes, entries and barrels, the package rules, the rules that fail the build and PII.
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
-Governing contract: ADR 0221; ADR 0160; ADR 0294; ADR 0404; STA-1251 (word helpers, Arabizi switch, across filters, HNSW); ADR 0380 and STA-1326 (semantic indexing).
+Governing contract: ADR 0221; ADR 0160; ADR 0294; ADR 0404; STA-1251 (word helpers, Arabizi switch, across filters, HNSW); ADR 0380 and STA-1326 (semantic indexing); ADR 0089 d5 and ADR 0461 (conformance suite).
 -->
 
 Hybrid search over a model's `@Searchable` index: the `SearchDriver` port, the `Search` reader, the memory and
 Postgres drivers, the `t.searchable(...)` macro and the text-function migration (ADR 0221). Member at
 `packages/data/search` (`tier:lib`), in the programming model v3.1 shape (ADR 0294, 0305). Entries `.`,
-`./contracts`, `./node`.
+`./contracts`, `./node`, `./testing`.
 
 ## Where code goes
 
@@ -27,6 +27,7 @@ Postgres drivers, the `t.searchable(...)` macro and the text-function migration 
 | The outbox change consumers              | `src/node/services/{searchable,semantic}-change.service.ts` |
 | A migration macro                        | `src/node/database/macros/<name>.macro.ts`                  |
 | A migration                              | `src/node/database/migrations/<NNNN>-<name>.migration.ts`   |
+| A conformance case or its runner         | `src/testing/` (`./testing`, imports `./contracts` only)    |
 | A test                                   | `__tests__/<name>.<kind>.test.ts` beside it                 |
 
 ## Entries and barrels
@@ -71,6 +72,12 @@ Postgres drivers, the `t.searchable(...)` macro and the text-function migration 
   `TEXT_SEARCH_CONFIGS`, each statement with a `// raw-sql:` reason (ADR 0160).
 - Extensions only through `schema.createExtension` from the approved list (ADR 0160, ADR 0334 rule 3): no `unaccent`.
 - No parameter properties and no `#private` fields: services typecheck this source under `erasableSyntaxOnly`.
+
+- `./testing` is the `SearchDriver` conformance suite (ADR 0089 d5): framework-free, it imports only `./contracts`,
+  so Pro drivers run it without the rest of this package. A new port rule gets a case in
+  `SEARCH_CONFORMANCE_CASES` (a fresh table per case, id sets not order); the memory driver must keep passing it
+  (`run-search-conformance.function.test.ts`). Changing a case changes every recorded fixture of the Pro drivers.
+- This package never imports `@stackra-pro/*` (ADR 0077 d4, ADR 0461).
 
 ## Rules that fail the build
 
