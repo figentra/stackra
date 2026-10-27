@@ -12,7 +12,10 @@ import { parseCsv } from "#core/functions/parse-csv.function";
 
 async function records(chunks: string[], delimiter = ","): Promise<string[][]> {
   const result: string[][] = [];
-  for await (const record of parseCsv(chunks, delimiter)) result.push(record);
+  const text = (async function* () {
+    yield* chunks;
+  })();
+  for await (const record of parseCsv(text, delimiter)) result.push(record);
   return result;
 }
 

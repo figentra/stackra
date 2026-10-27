@@ -40,7 +40,7 @@ class ProductStore implements ImportTarget<Product> {
 
   readonly products = new Map<string, Product>();
 
-  failOn?: string;
+  failOn?: string | undefined;
 
   upserted: string[] = [];
 

@@ -36,7 +36,9 @@ export async function* decodeText(
   } catch (error) {
     // a fatal TextDecoder throws TypeError on bytes its encoding cannot read
     if (error instanceof TypeError)
-      throw UnreadableEncodingError.create({ encoding: decoder?.encoding });
+      throw UnreadableEncodingError.create(
+        decoder === undefined ? {} : { encoding: decoder.encoding },
+      );
     throw error;
   }
 }

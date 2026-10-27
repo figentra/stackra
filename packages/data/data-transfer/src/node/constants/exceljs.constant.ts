@@ -10,10 +10,12 @@
  */
 import { createRequire } from "node:module";
 
+import type * as ExcelJS from "exceljs";
+
 /**
  * The exceljs module.
  *
  * @example
  * const reader = new EXCELJS.stream.xlsx.WorkbookReader(Readable.from(bytes), { worksheets: "emit" });
  */
-export const EXCELJS = createRequire(import.meta.url)("exceljs") as typeof import("exceljs");
+export const EXCELJS = createRequire(import.meta.url)("exceljs") as typeof ExcelJS;

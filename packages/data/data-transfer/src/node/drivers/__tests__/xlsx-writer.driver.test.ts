@@ -33,7 +33,8 @@ describe("XlsxWriterDriver", () => {
     ]))
       chunks.push(chunk);
     const workbook = new EXCELJS.Workbook();
-    await workbook.xlsx.load(Buffer.concat(chunks));
+    // exceljs types `load` with its own ArrayBuffer-shaped `Buffer`, so it gets an exactly sized ArrayBuffer.
+    await workbook.xlsx.load(new Uint8Array(Buffer.concat(chunks)).buffer);
     expect(workbook.worksheets.map((sheet) => sheet.name)).toEqual(["المنتجات", "Dates"]);
     expect(workbook.getWorksheet("المنتجات")?.getRow(2).values).toEqual([undefined, "قلم", 5]);
     expect(workbook.getWorksheet("Dates")?.getCell("A2").value).toEqual(date);

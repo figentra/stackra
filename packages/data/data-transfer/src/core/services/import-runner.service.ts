@@ -13,11 +13,12 @@
  * Governing contract: ADR 0367 (decisions 6 to 8); ADR 0431 (decisions 1 and 3); ADR 0163 (decision 3); ADR 0263
  *                     (resolved by type).
  */
-import { Clock, Duration } from "@stackra/contracts";
+import type { Clock } from "@stackra/contracts";
+import { Duration } from "@stackra/contracts";
 import { Service } from "@stackra/container";
 
 import { ImportRunState } from "#contracts/enums/import-run-state.enum";
-import { ImportLedger } from "#contracts/ports/import-ledger.port";
+import type { ImportLedger } from "#contracts/ports/import-ledger.port";
 import type { ImportBatchEntry } from "#contracts/types/import-batch-entry.type";
 import type { ImportTarget } from "#contracts/types/import-target.type";
 import type { RowError } from "#contracts/types/row-error.type";
