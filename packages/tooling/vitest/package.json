@@ -24,19 +24,47 @@
     "url": "git+https://github.com/figentra/stackra.git",
     "directory": "packages/tooling/vitest"
   },
+  "files": [
+    "dist",
+    "src",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
   "type": "module",
   "exports": {
-    ".": "./src/index.ts",
-    "./preset": "./src/preset.ts",
-    "./preset-decorators": "./src/preset-decorators.ts",
-    "./preset-react": "./src/preset-react.ts",
-    "./coverage": "./src/coverage.ts"
+    ".": {
+      "@stackra/source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./preset": {
+      "@stackra/source": "./src/preset.ts",
+      "types": "./dist/preset.d.ts",
+      "default": "./dist/preset.js"
+    },
+    "./preset-decorators": {
+      "@stackra/source": "./src/preset-decorators.ts",
+      "types": "./dist/preset-decorators.d.ts",
+      "default": "./dist/preset-decorators.js"
+    },
+    "./preset-react": {
+      "@stackra/source": "./src/preset-react.ts",
+      "types": "./dist/preset-react.d.ts",
+      "default": "./dist/preset-react.js"
+    },
+    "./coverage": {
+      "@stackra/source": "./src/coverage.ts",
+      "types": "./dist/coverage.d.ts",
+      "default": "./dist/coverage.js"
+    }
   },
   "scripts": {
     "format": "oxfmt --write .",
     "format:check": "oxfmt --check .",
     "lint": "oxlint .",
     "typecheck": "tsc --noEmit",
+    "build": "tsc -p tsconfig.build.json",
     "test": "vitest run"
   },
   "dependencies": {

@@ -124,7 +124,8 @@ jobs:
         run: |
           node tools/scripts/linear.mjs check-pr
           case "$PR_BRANCH" in renovate/*|changeset-release/*) exit 0 ;; esac
-          pnpm exec commitlint --from "$BASE_SHA" --to "$HEAD_SHA"
+          # The preset builds to dist for its tarball; here, before any build, Node reads its src (ADR 0025).
+          NODE_OPTIONS=--conditions=@stackra/source pnpm exec commitlint --from "$BASE_SHA" --to "$HEAD_SHA"
 
       # oxfmt on every supported file, then shfmt on *.sh (CONTRIBUTING.md, "Formatting").
       - name: Format check

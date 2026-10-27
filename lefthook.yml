@@ -46,8 +46,9 @@ pre-commit:
 
 commit-msg:
   jobs:
+    # The preset builds to dist for its tarball; a commit reads its src instead, so it needs no build (ADR 0025).
     - name: commitlint
-      run: pnpm exec commitlint --edit {1}
+      run: NODE_OPTIONS=--conditions=@stackra/source pnpm exec commitlint --edit {1}
 
 pre-push:
   jobs:

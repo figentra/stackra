@@ -23,15 +23,27 @@
     "url": "git+https://github.com/figentra/stackra.git",
     "directory": "packages/tooling/commitlint"
   },
+  "files": [
+    "dist",
+    "src",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
   "type": "module",
   "exports": {
-    ".": "./src/preset.ts"
+    ".": {
+      "@stackra/source": "./src/preset.ts",
+      "types": "./dist/preset.d.ts",
+      "default": "./dist/preset.js"
+    }
   },
   "scripts": {
     "format": "oxfmt --write .",
     "format:check": "oxfmt --check .",
     "lint": "oxlint .",
     "typecheck": "tsc --noEmit",
+    "build": "tsc -p tsconfig.build.json",
     "test": "vitest run"
   },
   "dependencies": {

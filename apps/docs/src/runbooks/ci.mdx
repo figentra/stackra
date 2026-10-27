@@ -37,12 +37,12 @@ icon: "workflow"
 
 Checks CI adds beyond `pnpm verify`:
 
-| Check             | Command                                        | Why it is separate                                                    |
-| ----------------- | ---------------------------------------------- | --------------------------------------------------------------------- |
-| Secret scan       | `pnpm secrets:scan` (gitleaks over history)    | Needs history, not a working tree                                     |
-| Commit messages   | `pnpm exec commitlint --from <base> --to HEAD` | Hooks are advisory and can be skipped locally                         |
-| Changeset status  | `pnpm changeset:status`                        | A changed member without a changeset (target: chain it into `verify`) |
-| Dependency review | the host's dependency-review action            | New dependencies, advisories and licences on the pull request         |
+| Check             | Command                                                                                  | Why it is separate                                                                                |
+| ----------------- | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| Secret scan       | `pnpm secrets:scan` (gitleaks over history)                                              | Needs history, not a working tree                                                                 |
+| Commit messages   | `NODE_OPTIONS=--conditions=@stackra/source pnpm exec commitlint --from <base> --to HEAD` | Hooks are advisory and can be skipped locally; the condition reads the preset from `src`, unbuilt |
+| Changeset status  | `pnpm changeset:status`                                                                  | A changed member without a changeset (target: chain it into `verify`)                             |
+| Dependency review | the host's dependency-review action                                                      | New dependencies, advisories and licences on the pull request                                     |
 
 ## Run it locally
 

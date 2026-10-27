@@ -1,0 +1,17 @@
+// Build of this preset for the tarball: tsc emits dist/*.js and .d.ts from src, because Node strips no types under
+// node_modules. The workspace still reads src through the `@stackra/source` condition (ADR 0025, ADR 0177 PK4).
+// tsc rather than tsdown: tsc is already this member's devDependency, and per-file output needs no bundler.
+// Owner: release-operations · Secrets: forbidden
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "rootDir": "src",
+    "outDir": "dist",
+    // Relative imports keep their `./x.ts` specifiers in src; the emitted JavaScript names `./x.js`.
+    "allowImportingTsExtensions": false,
+    "rewriteRelativeImportExtensions": true
+  },
+  "include": ["src"],
+  "exclude": ["src/**/__tests__"]
+}
