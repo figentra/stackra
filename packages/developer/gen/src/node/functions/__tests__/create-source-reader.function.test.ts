@@ -26,7 +26,9 @@
  *          reads with its options, import and props record, and a non-constant fill is `slot_options_not_constant`
  *          (ADR 0438). A `PickType` of, or a form extending, a `remoteShape` of `#stackra/clients/<service>` reads as a
  *          `remote` base; `Settings.pick` of `#stackra/settings` is a schema kind; a renamed enum case in a default is
- *          `shape_default_member_unresolved` (STA-1363).
+ *          `shape_default_member_unresolved` (STA-1363). A `Settings.pick([...])` class compiles over the picked keys of
+ *          the member's own settings classes, a section's key included, and an unknown key is `settings_key_unresolved`
+ *          (stackra-209).
  * Boundary: test only; writes the fixture under `.cache/` and opens TypeScript on it.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decision 26, 2026-10-23 item 13, decision 28); ADR 0305
@@ -1281,9 +1283,13 @@ describe("createSourceReader on remote shapes, Settings.pick and renamed enum ca
     expect(form?.fields.map((field) => field.name)).toEqual(["express"]);
   });
 
-  it("reads Settings.pick of #stackra/settings as a schema kind, not a compiled shape", () => {
+  it("reads Settings.pick of #stackra/settings as a schema kind; a key no own settings class declares is refused", () => {
     expect(classes.find((declared) => declared.name === "ScopeSettings")?.kind).toBe("schema");
     expect(shapes.some((shape) => shape.name === "ScopeSettings")).toBe(false);
+    // stackra-209: `orders` is no module of this member, so its key does not resolve.
+    expect(reader.errors.map((error) => `${error.code} ${error.subject}`)).toContain(
+      "settings_key_unresolved ScopeSettings",
+    );
   });
 
   it("reports a missing enum case as unresolved, not as a non-constant default", () => {
@@ -1299,5 +1305,104 @@ describe("createSourceReader on remote shapes, Settings.pick and renamed enum ca
       "ScopeSettings",
       "ScopedQuery",
     ]);
+  });
+});
+
+/** Settings classes with a section, and `Settings.pick` forms over their keys (stackra-209). */
+const SETTINGS_SOURCES: Readonly<Record<string, string>> = {
+  "node_modules/@stackra/settings/package.json": JSON.stringify({
+    name: "@stackra/settings",
+    types: "./index.d.ts",
+  }),
+  "node_modules/@stackra/settings/index.d.ts": [
+    "export declare function Settings(options: { readonly scopes: readonly string[] }): abstract new () => object;",
+    "export type DecoratorFunction = (target: object, property: string) => void;",
+    "export declare function Setting(options?: { readonly [option: string]: unknown }): DecoratorFunction;",
+    "",
+  ].join("\n"),
+  "src/core/orders.settings.ts": [
+    'import { Int } from "@stackra/validation";',
+    'import { Setting, Settings } from "@stackra/settings";',
+    'import type { CancellationSection } from "#core/schemas/cancellation-section.schema";',
+    'export class OrdersSettings extends Settings({ scopes: ["platform", "product"] }) {',
+    "  @Setting({ client: true })",
+    "  customersMayCancel = true;",
+    "  @Int({ min: 1, max: 50 })",
+    "  maxOpenOrders = 5;",
+    "  cancellation!: CancellationSection;",
+    "}",
+    "",
+  ].join("\n"),
+  "src/core/schemas/cancellation-section.schema.ts": [
+    'import { Int, Schema } from "@stackra/validation";',
+    "export class CancellationSection extends Schema {",
+    "  @Int({ min: 0 })",
+    "  windowDays = 14;",
+    "}",
+    "",
+  ].join("\n"),
+  "src/core/schemas/order-policy-form.schema.ts": [
+    'import { Settings } from "#stackra/settings";',
+    "export class OrderPolicyForm extends Settings.pick([",
+    "  Settings.orders.customersMayCancel,",
+    "  Settings.orders.windowDays,",
+    "]) {}",
+    "",
+  ].join("\n"),
+  "src/core/schemas/bad-policy-form.schema.ts": [
+    'import { Settings } from "#stackra/settings";',
+    "export class BadPolicyForm extends Settings.pick([Settings.orders.unknownKey]) {}",
+    "",
+  ].join("\n"),
+};
+
+describe("createSourceReader on Settings.pick over the member's own settings (stackra-209)", async () => {
+  const root = writeFixtureMember("orders", SETTINGS_SOURCES);
+  const host = await openHost(join(root, "tsconfig.json"));
+  const reader = createSourceReader(host, readMemberFacts(root));
+  const classes = reader.sources.flatMap((file) => reader.classes(file));
+  const shapes = reader.sources.flatMap((file) => reader.shapes(file));
+  host.close();
+
+  it("reads a settings class as a settings shape with its section field and @Setting facet", () => {
+    const settings = shapes.find((shape) => shape.name === "OrdersSettings");
+    expect(settings?.kind).toBe("settings");
+    expect(settings?.fields.map((field) => field.name)).toEqual([
+      "customersMayCancel",
+      "maxOpenOrders",
+      "cancellation",
+    ]);
+    expect(settings?.fields.find((field) => field.name === "cancellation")?.type).toEqual({
+      kind: "schema",
+      name: "CancellationSection",
+      module: "orders",
+    });
+    expect(classes.find((declared) => declared.name === "OrdersSettings")?.facets).toContainEqual(
+      expect.objectContaining({
+        name: "Setting",
+        member: "customersMayCancel",
+        options: { client: true },
+      }),
+    );
+  });
+
+  it("compiles a Settings.pick class over the picked keys, a section's key included", () => {
+    const form = shapes.find((shape) => shape.name === "OrderPolicyForm");
+    expect(form?.kind).toBe("schema");
+    expect(form?.base).toBeUndefined();
+    expect(
+      form?.fields.map((field) => [field.name, field.type.kind, field.default?.value]),
+    ).toEqual([
+      ["customersMayCancel", "boolean", true],
+      ["windowDays", "number", 14],
+    ]);
+    expect(form?.fields[1]?.rules).toEqual([{ name: "Int", options: { min: 0 } }]);
+  });
+
+  it("refuses a picked key no own settings class declares, and compiles no shape for it", () => {
+    const codes = reader.errors.map((error) => `${error.code} ${error.subject}`);
+    expect(codes).toContain("settings_key_unresolved BadPolicyForm");
+    expect(codes).not.toContain("settings_key_unresolved OrderPolicyForm");
+    expect(shapes.some((shape) => shape.name === "BadPolicyForm")).toBe(false);
   });
 });

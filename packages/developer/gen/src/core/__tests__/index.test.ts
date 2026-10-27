@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: the consumer contract of the `.` entry: the pure compiler (identities, manifest and its checks, shape
  *          compiler, wiring, member module, entries, entities, registrations, boot, webhooks, prefixes, routes, blocks,
- *          generated service clients, tool configs, openapi projection, the prefix registry, the surface targets and
+ *          generated service clients, setting keys, tool configs, openapi projection, the prefix registry, the surface targets and
  *          the bundle modulepreload list, the model additions section, the system graph of ADR 0452) is exported and nothing
  *          internal is (the case helpers, the import printer, the platform evaluator, the emitters' path helpers), and
  *          the IR types resolve.
@@ -65,6 +65,7 @@ describe("@stackra/gen", () => {
       "emitRuntimeEntries",
       "emitSchemas",
       "emitSdks",
+      "emitSettings",
       "emitToolConfigs",
       "emitWebhooks",
       "emitWiring",

@@ -7,7 +7,7 @@ Purpose: the agent rules of @stackra/gen: where code goes, entries and barrels, 
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
 Governing contract: ADR 0294; ADR 0295; ADR 0305; ADR 0260 (generated clients and typed events); ADR 0263; ADR 0162 and ADR 0222
-                    (the translated and upload shape kinds); ADR 0338 (a replica query's `ReplicaPage` output); STA-1290 (the shipped shape kind); STA-1293 (i18n, clients for apps, undeclared packages); STA-1296 (client modules and permission sets, config overrides, the root Vitest shim); STA-1298 (package lang namespaces in `I18n`, `i18n_key_missing`, `i18n_namespace_clash`); STA-1309 (catalogue loaders); STA-1306 (the quality-gate refusals); STA-1316 (the docs site); STA-1363 (consumed services' lang, remote shapes, `Settings.pick`); STA-1322 (the Encore app file); STA-1251 (`searchable_semantic_ai_never`); ADR 0438 (shell slots and fills, stackra-03); ADR 0436 (surface targets, `modulepreloadOf`, stackra-04); ADR 0336 (model additions, stackra-64); ADR 0452 (the system graph, stackra-59).
+                    (the translated and upload shape kinds); ADR 0338 (a replica query's `ReplicaPage` output); STA-1290 (the shipped shape kind); STA-1293 (i18n, clients for apps, undeclared packages); STA-1296 (client modules and permission sets, config overrides, the root Vitest shim); STA-1298 (package lang namespaces in `I18n`, `i18n_key_missing`, `i18n_namespace_clash`); STA-1309 (catalogue loaders); STA-1306 (the quality-gate refusals); STA-1316 (the docs site); STA-1363 (consumed services' lang, remote shapes, `Settings.pick`); stackra-209 (`#stackra/settings`, `settings_key_unresolved`); STA-1322 (the Encore app file); STA-1251 (`searchable_semantic_ai_never`); ADR 0438 (shell slots and fills, stackra-03); ADR 0436 (surface targets, `modulepreloadOf`, stackra-04); ADR 0336 (model additions, stackra-64); ADR 0452 (the system graph, stackra-59).
 -->
 
 The Stackra compiler. Member at `packages/developer/gen` (`tier:lib`), in the programming model v3.1 shape (ADR 0294,
@@ -99,8 +99,14 @@ The Stackra compiler. Member at `packages/developer/gen` (`tier:lib`), in the pr
   `schema`, `KindInfo.remote`). A shape that extends one, or derives from one with `PickType`/`OmitType`/`PartialType`,
   gets `ShapeIR.base` `{ kind: "remote", name, from, derive? }` and only its own fields; `emitSchemas` extends the
   client class's `schema` static. `Settings.pick(...)` imported from `#stackra/settings` is a schema kind read by its
-  import (`KindInfo.settingsPick`) and compiles no shape until gen writes settings metadata. A default whose owner
-  resolves but whose member does not is `shape_default_member_unresolved`.
+  import (`KindInfo.settingsPick`). A default whose owner resolves but whose member does not is
+  `shape_default_member_unresolved`.
+- Settings (stackra-209): `emitSettings` writes `#stackra/settings` (`settingKeys` of `@stackra/settings`) from the
+  `settings` shapes, their section shapes, the class `scopes` option and the `Setting` field facets; only a member that
+  declares `@stackra/settings` gets it, and it imports nothing else (the label is cast through
+  `SettingKeyInput["label"]`, so no `@stackra/i18n` import). The reader compiles a `Settings.pick([...])` class from
+  the picked keys' `FieldIR`s of the member's own settings classes (`pickedSettings`); anything else is
+  `settings_key_unresolved`. Keep the key metadata in step with `SettingKeyInput` of `@stackra/settings`.
 - i18n packages (STA-1298): `readPackageCatalogues` reads the `assets/lang` of each declared Stackra package (a
   `@stackra/*` one, or a product package such as `@acme/loyalty-kit` that ships `stackra.manifest.json`) through `dependencyPath` (the node_modules walk `readDependencyManifests` uses); `i18nTree` merges their namespaces
   (the file name, e.g. `loyalty_kit`) beside the member's, each from its own base locale. `readI18nReferences` reads

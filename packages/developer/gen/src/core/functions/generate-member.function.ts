@@ -5,7 +5,8 @@
  *          file and one entity file per module, the wiring, the member module when none is authored, the
  *          registrations, a service's boot and inbound webhook route, a service's Encore CronJobs, broker-delivered
  *          queue topics, integration event topics and (for a relay service) the subscriptions to every product topic, the public id prefixes, an app's route tables and blocks, the public SDKs (TypeScript, Python and PHP) of the actions marked public, one generated client per consumed
- *          service (injected, listened to, or imported by any file, so an app's routes count), `#stackra/i18n` from
+ *          service (injected, listened to, or imported by any file, so an app's routes count), `#stackra/settings`
+ *          (the setting keys of its settings classes, stackra-209), `#stackra/i18n` from
  *          the lang catalogues and those of the declared `@stackra/*` packages, the package entries or runtime entries, the tool configs and the
  *          member's part of the system graph (`.stackra/graph.json`, ADR 0452), after the identity checks and,
  *          against the committed manifest, the `@Renamed` lock.
@@ -53,6 +54,7 @@ import { emitRoutes } from "#core/functions/emit-routes.function";
 import { emitRuntimeEntries } from "#core/functions/emit-runtime-entries.function";
 import { emitSchemas } from "#core/functions/emit-schemas.function";
 import { emitSdks } from "#core/functions/emit-sdks.function";
+import { emitSettings } from "#core/functions/emit-settings.function";
 import { emitToolConfigs } from "#core/functions/emit-tool-configs.function";
 import { emitWebhooks } from "#core/functions/emit-webhooks.function";
 import { emitWiring } from "#core/functions/emit-wiring.function";
@@ -159,6 +161,7 @@ export function generateMember(
     [".stackra/gen/webhooks.ts", emitWebhooks(ir)],
     [".stackra/gen/prefixes.ts", emitPrefixes(manifest)],
     [".stackra/gen/i18n.ts", emitI18n(ir)?.content],
+    [".stackra/gen/settings.ts", emitSettings(ir)],
   ];
   for (const [path, content] of optional) if (content !== undefined) files.push({ path, content });
   for (const encore of [emitEncoreCronJobs(ir, manifest), emitEncoreQueues(ir, manifest)])

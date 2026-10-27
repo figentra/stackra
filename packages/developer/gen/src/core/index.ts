@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `.` entry of @stackra/gen, the pure compiler (identities, the manifest and its checks,
  *          the shape compiler, wiring, the member module, entries, the entity files, registrations, boot, the inbound
- *          webhook route, prefixes, an app's route tables and blocks, the generated service clients, the tool configs,
+ *          webhook route, prefixes, an app's route tables and blocks, the generated service clients, the setting keys
+ *          (`#stackra/settings`, stackra-209), the tool configs,
  *          the openapi projection, the docs-site target and its `DocsConfig` base, the public id prefix registry and
  *          the IR types, the surface targets and the extension bundle's modulepreload list), until `stackra gen` writes the
  *          entry barrels (STA-339).
@@ -53,6 +54,7 @@ export { emitRoutes } from "#core/functions/emit-routes.function";
 export { emitRuntimeEntries } from "#core/functions/emit-runtime-entries.function";
 export { emitSchemas } from "#core/functions/emit-schemas.function";
 export { emitSdks } from "#core/functions/emit-sdks.function";
+export { emitSettings } from "#core/functions/emit-settings.function";
 export { emitToolConfigs } from "#core/functions/emit-tool-configs.function";
 export { emitWebhooks } from "#core/functions/emit-webhooks.function";
 export { emitWiring } from "#core/functions/emit-wiring.function";

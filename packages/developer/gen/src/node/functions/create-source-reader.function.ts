@@ -35,7 +35,9 @@
  *                     constants, the slot's `props` type as a record, the fill's slot by its import;
  *                     `slot_options_not_constant`); STA-1363 (`remoteShape` of `@stackra/clients` is a schema base whose
  *                     derived or extending shapes take a `remote` base; `Settings.pick` of `#stackra/settings` is a
- *                     schema kind; a default naming a missing enum case is `shape_default_member_unresolved`).
+ *                     schema kind; a default naming a missing enum case is `shape_default_member_unresolved`); stackra-209
+ *                     (a `Settings.pick([...])` class compiles over the picked keys of the member's own settings classes,
+ *                     `settings_key_unresolved` otherwise).
  */
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -1746,6 +1748,69 @@ export function createSourceReader(
     return [...chain, ...(kindInfo(declaration)?.chain ?? [declaration])];
   };
 
+  /** The own shape class `name` of `module`, compiled. */
+  const ownShape = (name: string, module: string): ShapeIR | undefined => {
+    for (const file of sources)
+      for (const node of classNodes(file))
+        if (nameOf(node.name) === name && moduleOf(host.fileName(node)) === module)
+          return readShape(node);
+    return undefined;
+  };
+
+  /** The setting fields of `module`'s own settings classes by name, a section's fields under their own names. */
+  const settingFieldsOf = (module: string): Map<string, FieldIR> => {
+    const found = new Map<string, FieldIR>();
+    for (const file of sources)
+      for (const node of classNodes(file)) {
+        const shape = kindInfo(node)?.kind === "settings" ? readShape(node) : undefined;
+        if (shape === undefined || shape.module !== module) continue;
+        for (const field of shape.fields)
+          if (field.type.kind !== "schema") found.set(field.name, field);
+          else
+            for (const inner of ownShape(field.type.name, field.type.module)?.fields ?? [])
+              found.set(inner.name, inner);
+      }
+    return found;
+  };
+
+  /**
+   * The fields of a `Settings.pick([...])` class: each picked `Settings.<module>.<name>` key's field, read from the
+   * member's own settings class of that module (stackra-209); undefined, with `settings_key_unresolved`, when a key is
+   * not written as `Settings.<module>.<name>` or no own settings class declares it.
+   */
+  const pickedSettings = (node: TsNode, name: string): FieldIR[] | undefined => {
+    const heritage = heritageOf(node);
+    const list = heritage?.call?.arguments?.[0];
+    const local = heritage === undefined ? "" : nameOf(heritage.target);
+    const elements =
+      list !== undefined && kindOf(list) === "ArrayLiteralExpression"
+        ? (list.elements ?? [])
+        : [list ?? node];
+    const byModule = new Map<string, Map<string, FieldIR>>();
+    const fields: FieldIR[] = [];
+    for (const element of elements) {
+      const [head, module, key, ...rest] = host.text(element).replace(/\s+/g, "").split(".");
+      let field: FieldIR | undefined;
+      if (head === local && module !== undefined && key !== undefined && rest.length === 0) {
+        const keys = byModule.get(module) ?? settingFieldsOf(module);
+        byModule.set(module, keys);
+        field = keys.get(key);
+      }
+      if (field === undefined) {
+        fail(
+          element,
+          name,
+          "settings_key_unresolved",
+          `gen cannot read the setting key \`${host.text(element)}\` of ${name}: it names no setting field of this member's settings classes`,
+          `pick keys as \`${local || "Settings"}.<module>.<name>\` in an array literal, each declared by this member's \`<module>.settings.ts\``,
+        );
+        return undefined;
+      }
+      fields.push(field);
+    }
+    return fields;
+  };
+
   // Shapes, cached so a derived shape reads its source once.
   const shapeCache = new Map<TsNode, ShapeIR | null>();
   const readShape = (node: TsNode): ShapeIR | undefined => {
@@ -1760,9 +1825,6 @@ export function createSourceReader(
     const info = kindInfo(node);
     if (name === "" || info === undefined || !SHAPE_KINDS.includes(info.kind)) return undefined;
     if (info.kind === "config" && (info.base === undefined || info.base.own)) return undefined;
-    // shortcut: a `Settings.pick` class is a kind, not a compiled shape: gen writes no `#stackra/settings` metadata
-    // to read the picked keys' types from yet; the class carries its keys at run time. Compile it once gen does.
-    if (info.settingsPick === true) return undefined;
     const path = host.fileName(node);
     const head = {
       name,
@@ -1771,6 +1833,11 @@ export function createSourceReader(
       file: rel(path),
       importPath: importPathOf(path),
     };
+    // `Settings.pick([Settings.orders.customersMayCancel])`: the picked keys' own fields (stackra-209).
+    if (info.settingsPick === true) {
+      const fields = pickedSettings(node, name);
+      return fields === undefined ? undefined : { ...head, fields, relations: [] };
+    }
     const heritage = heritageOf(node);
 
     if (info.base !== undefined && !info.base.own && info.kind === "config") {
