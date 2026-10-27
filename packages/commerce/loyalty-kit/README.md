@@ -72,8 +72,8 @@ offsets the hold), so settle and release commute: the points come back exactly o
 | `./native`    | `PointsBalance` and its Props (the web Props, field for field)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | `./testing`   | `LoyaltyMembersFake.with()`, `pointsEntry`, `toHaveBalance`, `LoyaltyAccountFactory`, `LedgerEntryFactory`, `LoyaltyKitDemoSeeder` and its `ids`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 
-`TierMultiplierExtension` extends a base annotated with the exported `Extension<Slot>` type, so the `./node`
-declarations name no internal class (STA-1220).
+`TierMultiplierExtension` extends `Extension<Slot>({ order })` directly: the called form returns the exported
+`ExtensionClass<Slot>`, so the `./node` declarations name no internal class (STA-1220).
 
 ## The ledger and the floor
 
