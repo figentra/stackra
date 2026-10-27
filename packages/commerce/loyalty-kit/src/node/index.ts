@@ -3,7 +3,7 @@
  * Purpose: Stand-in barrel: the `./node` entry of @stackra/loyalty-kit (the root module, its settings, the permissions
  *          and policy, actions, queries, their input and output schemas, the redemption workflow and its signal,
  *          events, the extension point and its extension, listener, models, the panel resource, document and widgets,
- *          services, the Postgres ledger and threshold tier policy drivers and the migrations) until `stackra gen`
+ *          services, the Postgres ledger, threshold tier policy and parties members drivers and the migrations) until `stackra gen`
  *          writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. Every export under src/node except `database/factories` and
  *           `database/seeders`, which only ./testing exports, so a server never loads Faker; the internal constants
@@ -22,6 +22,7 @@ export { FreezeAccountAction } from "#node/actions/freeze-account.action";
 export { RedeemPointsAction } from "#node/actions/redeem-points.action";
 export { CreateLoyaltyTablesMigration } from "#node/database/migrations/0001-create-loyalty-tables.migration";
 export { LedgerEntriesAccountIdIndexMigration } from "#node/database/migrations/0002-ledger-entries-account-id-index.migration";
+export { PartiesLoyaltyMembersDriver } from "#node/drivers/parties-loyalty-members.driver";
 export { PostgresLoyaltyLedgerDriver } from "#node/drivers/postgres-loyalty-ledger.driver";
 export { ThresholdLoyaltyTierPolicyDriver } from "#node/drivers/threshold-loyalty-tier-policy.driver";
 export { AccountEnrolled } from "#node/events/account-enrolled.event";

@@ -1,3 +1,11 @@
+<!--
+Stackra file contract:
+Purpose: the README of @stackra/loyalty-kit: what the kit does, how a host uses it, its entries and drivers.
+Boundary: documentation only; the rules for agents are in AGENTS.md.
+Runtime: none (Markdown)
+Governing contract: ADR 0294, ADR 0305; ADR 0454; STA-804 (members over OS parties).
+-->
+
 # @stackra/loyalty-kit
 
 The golden capability kit (ADR 0259 home A): points accounts, tiers, earning and redemption maths as a module a host
@@ -28,8 +36,12 @@ await loyalty.hold(member, points, orderId, at); // InsufficientPointsError if u
 await loyalty.settle(member, orderId, at);
 await loyalty.release(member, orderId, at);
 
-// the host's one obligation: the members port's only driver
-export class CommerceLoyaltyMembersDriver extends Driver(LoyaltyMembers) { … }
+// the host's one obligation: the members port's only driver; an OS host subclasses the parties one with its client
+export class OsLoyaltyMembersDriver extends PartiesLoyaltyMembersDriver {
+  constructor(parties: PartiesClient) {
+    super(parties);
+  }
+}
 ```
 
 A host that wants an undoable redemption instead calls the actions:
@@ -51,14 +63,14 @@ offsets the hold), so settle and release commute: the points come back exactly o
 
 ## Entries
 
-| Entry         | Holds                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `.`           | `LoyaltyKitConfig`, `LoyaltyKitOptions`, `LoyaltyKitConfig$`, `LoyaltyService`, `MemoryLoyaltyLedgerDriver`, the four refusals, `BalanceView`, `LoyaltyAccountView`, `PointsIssuedView`, the reference constants (hold, settle, release, expire, revert), `memberId`, `isExpiringSoon`                                                                                                                                                                                                                                                                                                              |
-| `./contracts` | the ports `LoyaltyLedger`, `LoyaltyMembers` and `LoyaltyTierPolicy`, the enums `DebitOutcome`, `EntryKind`, `LoyaltyTier`, the types `PointsEntry`, `MemberId`, `EarnDraft`, `EarnRequest`, `RedemptionQuote`, `TierDraft`                                                                                                                                                                                                                                                                                                                                                                          |
-| `./node`      | `LoyaltyKitModule`, `LoyaltyKitSettings`, `LoyaltyAccountPermissions`, `LoyaltyAccountPolicy`, the enroll, freeze, expire, redeem and confirm-redemption actions, the balance and points-issued queries, their schemas and `QuotedRedemption`, `RedeemPointsWorkflow` and `RedemptionConfirmed`, the events and the v1 change, the extension point and tier extension, the listener, the models, `LoyaltyAccountResource`, `LoyaltyOverviewDocument`, `PointsBalanceWidget`, `PointsIssuedWidget`, the services, `PostgresLoyaltyLedgerDriver`, `ThresholdLoyaltyTierPolicyDriver`, both migrations |
-| `./react`     | `PointsBalance`, `PointsIssued` and their Props                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| `./native`    | `PointsBalance` and its Props (the web Props, field for field)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| `./testing`   | `LoyaltyMembersFake.with()`, `pointsEntry`, `toHaveBalance`, `LoyaltyAccountFactory`, `LedgerEntryFactory`, `LoyaltyKitDemoSeeder` and its `ids`                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| Entry         | Holds                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `.`           | `LoyaltyKitConfig`, `LoyaltyKitOptions`, `LoyaltyKitConfig$`, `LoyaltyService`, `MemoryLoyaltyLedgerDriver`, the four refusals, `BalanceView`, `LoyaltyAccountView`, `PointsIssuedView`, the reference constants (hold, settle, release, expire, revert), `memberId`, `isExpiringSoon`                                                                                                                                                                                                                                                                                                                                             |
+| `./contracts` | the ports `LoyaltyLedger`, `LoyaltyMembers` and `LoyaltyTierPolicy`, the enums `DebitOutcome`, `EntryKind`, `LoyaltyTier`, the types `PointsEntry`, `MemberId`, `EarnDraft`, `EarnRequest`, `RedemptionQuote`, `TierDraft`                                                                                                                                                                                                                                                                                                                                                                                                         |
+| `./node`      | `LoyaltyKitModule`, `LoyaltyKitSettings`, `LoyaltyAccountPermissions`, `LoyaltyAccountPolicy`, the enroll, freeze, expire, redeem and confirm-redemption actions, the balance and points-issued queries, their schemas and `QuotedRedemption`, `RedeemPointsWorkflow` and `RedemptionConfirmed`, the events and the v1 change, the extension point and tier extension, the listener, the models, `LoyaltyAccountResource`, `LoyaltyOverviewDocument`, `PointsBalanceWidget`, `PointsIssuedWidget`, the services, `PostgresLoyaltyLedgerDriver`, `ThresholdLoyaltyTierPolicyDriver`, `PartiesLoyaltyMembersDriver`, both migrations |
+| `./react`     | `PointsBalance`, `PointsIssued` and their Props                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| `./native`    | `PointsBalance` and its Props (the web Props, field for field)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| `./testing`   | `LoyaltyMembersFake.with()`, `pointsEntry`, `toHaveBalance`, `LoyaltyAccountFactory`, `LedgerEntryFactory`, `LoyaltyKitDemoSeeder` and its `ids`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 
 `TierMultiplierExtension` extends a base annotated with the exported `Extension<Slot>` type, so the `./node`
 declarations name no internal class (STA-1220).
@@ -111,6 +123,19 @@ stampCardProgress(balance, settings.stampsPerCard); // the renderers' card
   `loyalty_kit.points.redeemed.v1` (was a private domain event; now carries `balanceAfter`) and
   `loyalty_kit.points.expired.v1` (one per account whose expiry took points). Keys follow the casing rules: the module
   key is the package key, `loyalty_kit`.
+
+## Members over the OS parties service (STA-804)
+
+`LoyaltyMembers` answers who may redeem. `PartiesLoyaltyMembersDriver` (`./node`, driver name `parties`) answers it
+from the OS parties service: the member id is the person's public id, read with `parties.person.get@1`; a live person
+is a member, while an unknown (`not_found`), merged-away or erased one is not. Any other failure (the service down, a
+forbidden call) throws, so a redemption fails closed.
+
+The class is abstract: the generated `PartiesClient` lives in the host (`#stackra/clients/parties`) and a package never
+imports it, so an OS host subclasses the driver in its own `drivers/` folder and passes its client (see Use). The
+driver types the client by the one call it makes, so no OS package is a dependency. A host outside the OS writes its
+own driver as before. Not built: linking a principal to a person (parties has no lookup by `principalId` yet) and a
+membership tag; today every live person is a member.
 
 ## Access, redemption and the panel
 

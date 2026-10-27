@@ -1,3 +1,11 @@
+<!--
+Stackra file contract:
+Purpose: the agent rules of @stackra/loyalty-kit: where code goes, entries, the kit's invariants, PII.
+Boundary: documentation only; the user-facing guide is README.md.
+Runtime: none (Markdown)
+Governing contract: ADR 0294, ADR 0305; ADR 0454; STA-804.
+-->
+
 # AGENTS — @stackra/loyalty-kit
 
 Points accounts, tiers, earning and redemption as a module: the golden capability kit, ported from the template's
@@ -37,6 +45,9 @@ model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./node`, `./reac
   `debit` and `expire`).
 - A programme is the settings group at a scope (ADR 0454): both earn paths read `isActive` and the spend rate is the
   `earnPerMinor` setting; never read the earn rate from config on the server.
+- `PartiesLoyaltyMembersDriver` stays abstract and types the parties client by the one call it makes
+  (`person.get`); never add an OS package dependency for it, and never treat a failure other than `not_found` as
+  "not a member" (a redemption fails closed).
 - Tier rules live behind `LoyaltyTierPolicy` (the `threshold` driver by default); the listener only applies the answer
   and only raises a tier. Never put a tier rule in the listener.
 - Every balance move records an integration event (`points.earned`, `points.redeemed`, `points.expired`); a new move
