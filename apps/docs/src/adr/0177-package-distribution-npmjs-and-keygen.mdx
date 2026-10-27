@@ -1,7 +1,21 @@
 ---
 title: "0177 — Package distribution and release lines: npmjs for free, Keygen Cloud for Pro"
-description: "Accepted, amended by 0289, 0294, 0316, 0349 · 2026-10-20"
+description: "Accepted, decisions 1 to 3 superseded by 0453, amended by 0289, 0294, 0316, 0349, 0453 · 2026-10-20"
 ---
+
+{/* Stackra file contract. Purpose: ADR 0177, package distribution and release lines. Boundary: decision text only; decisions 1 to 3 and the registry decisions of the 2026-10-21 amendment are superseded by ADR 0453. Runtime: documentation. Governing contract: ADR template (apps/docs/src/adr/template.mdx); ADR 0453. */}
+
+<Note>
+  Decisions 1 to 3 superseded, decision 5 amended, 2026-10-27 (STA-1333) by
+  [0453](/adr/0453-the-stackra-registry-one-npm-compatible-store-on-cloudflare-and-our-own-licence-engine):
+  `@stackra/*` and `@stackra-pro/*` publish to our own registry at `npm.stackra.figentra.com`
+  (Cloudflare Worker `stackra-registry`), not to npmjs or Keygen; publish is GitHub OIDC from the
+  release workflow only, Pro reads need a licence token from our own licence engine, and
+  `npm.figentra.com` is retired as 0453 decision 17 says. Decisions 1 to 3 of the amendment of
+  2026-10-21 (npmjs trusted publishing) are superseded too; npmjs becomes an optional mirror (0453
+  decision 16). Pro shares the exact version (0453 decision 18). Decisions 4 and 6 to 8 and the
+  amendment on package paths stand.
+</Note>
 
 <Note>
   Amended 2026-10-24 (STA-477) by

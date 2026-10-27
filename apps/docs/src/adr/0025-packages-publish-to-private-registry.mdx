@@ -1,7 +1,19 @@
 ---
 title: "0025 — Packages publish to npm.figentra.com; every package builds to ESM dist"
-description: "Superseded by 0177 · 2026-10-20"
+description: "Superseded by 0177, decisions 1 and 2 amended by 0453 · 2026-10-20"
 ---
+
+{/* Stackra file contract. Purpose: ADR 0025, the first registry and dist-build decision. Boundary: decision text only; superseded by ADR 0177, its registry decisions amended by ADR 0453. Runtime: documentation. Governing contract: ADR template (apps/docs/src/adr/template.mdx); ADR 0177, 0453. */}
+
+<Note>
+  Amended 2026-10-27 (STA-1333) by
+  [0453](/adr/0453-the-stackra-registry-one-npm-compatible-store-on-cloudflare-and-our-own-licence-engine):
+  decision 1's idea returns in a new form. The registry is our own npm-compatible Worker,
+  `stackra-registry`, at `npm.stackra.figentra.com` (not npflared at `npm.figentra.com`, which is
+  retired), and it serves both `@stackra` and `@stackra-pro`. Decision 2 is replaced: there is no
+  publish token in Infisical; the release workflow exchanges a GitHub ID token for a short-lived,
+  per-package publish token (0453 decision 6).
+</Note>
 
 <Note>
   Superseded by [0177](/adr/0177-package-distribution-npmjs-and-keygen): free packages publish to

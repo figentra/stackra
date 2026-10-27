@@ -1,7 +1,19 @@
 ---
 title: "0077 — Open core: the free and Pro package lists"
-description: "Superseded by 0202 · 2026-10-20"
+description: "Superseded by 0202, decision 2 amended by 0453 · 2026-10-20"
 ---
+
+{/* Stackra file contract. Purpose: ADR 0077, the open-core free and Pro package lists. Boundary: decision text only; superseded by ADR 0202, decision 2 amended by ADR 0453. Runtime: documentation. Governing contract: ADR template (apps/docs/src/adr/template.mdx); ADR 0202, 0453. */}
+
+<Note>
+  Decision 2 amended 2026-10-27 (STA-1333) by
+  [0453](/adr/0453-the-stackra-registry-one-npm-compatible-store-on-cloudflare-and-our-own-licence-engine):
+  `@stackra-pro/*` is served by our own registry at `npm.stackra.figentra.com`, not
+  `npm.figentra.com`, and its source stays in the private repository `figentra/stackra-pro`. Access
+  is still gated at install, by a scoped `.npmrc` and a per-customer licence token (hashed, with
+  grants, expiry and revocation in the registry's D1); no package checks a licence at runtime. The
+  open question in Consequences (per-customer, revocable tokens) is closed by 0453 decision 13.
+</Note>
 
 <Note>
   Reconciled 2026-10-23: the HeroUI Pro wrapper package named `@stackra-pro/ui` here is
