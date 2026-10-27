@@ -42,8 +42,14 @@ export class SharpImageTransformerDriver extends Driver(ImageTransformer) {
           fit: "inside",
           withoutEnlargement: true,
         });
+      // sharp's overlay `input` takes a Buffer, not a Uint8Array: wrap each layer's bytes without copying them.
       if (layers.length > 0)
-        image = image.composite(layers.map(({ bytes: input, ...place }) => ({ input, ...place })));
+        image = image.composite(
+          layers.map(({ bytes: layer, ...place }) => ({
+            input: Buffer.from(layer.buffer, layer.byteOffset, layer.byteLength),
+            ...place,
+          })),
+        );
       return await image.toFormat(format, quality === undefined ? {} : { quality }).toBuffer();
     } catch (error) {
       throw new RangeError(

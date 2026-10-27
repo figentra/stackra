@@ -18,7 +18,7 @@ import { I18nConfig } from "@stackra/i18n";
 import type { Locale } from "@stackra/i18n";
 import { contributeRouteContext } from "@stackra/navigation";
 import * as SplashScreen from "expo-splash-screen";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { I18nManager } from "react-native";
 
@@ -79,7 +79,8 @@ export function createApp(root: ModuleClass, options: NativeAppOptions): NativeA
       });
     }, []);
 
-    useEffect(() => {
+    // A layout effect hides the splash in the commit that mounts the app, not after a later paint.
+    useLayoutEffect(() => {
       if (state !== undefined && !(state instanceof Error)) void SplashScreen.hideAsync();
     }, [state]);
 

@@ -37,9 +37,9 @@ const COMMERCE = {
   ],
 } as unknown as StackraManifest;
 
-/** The addition class, with its partner (the base) overridable. */
+/** The addition class, with its partner (the base) overridable; `null` leaves the partner out. */
 function addition(
-  partner: DeclaredClass["partner"] = {
+  partner: NonNullable<DeclaredClass["partner"]> | null = {
     name: "Product",
     kind: "model",
     from: "@figentra/commerce-client",
@@ -52,7 +52,7 @@ function addition(
     file: FILE,
     importPath: "#modules/fashion/models/product.model-addition",
     options: {},
-    ...(partner !== undefined ? { partner } : {}),
+    ...(partner !== null ? { partner } : {}),
     deps: [],
     facets: [],
     methods: [],
@@ -128,7 +128,7 @@ describe("additionsOf", () => {
       edition({}, addition({ name: "Variant", kind: "model", from: "@figentra/commerce-client" })),
     );
     expect(errors.map((error) => error.code)).toEqual(["addition_target_missing"]);
-    expect(additionsOf(edition({}, addition(undefined))).errors[0]?.code).toBe(
+    expect(additionsOf(edition({}, addition(null))).errors[0]?.code).toBe(
       "addition_target_missing",
     );
   });

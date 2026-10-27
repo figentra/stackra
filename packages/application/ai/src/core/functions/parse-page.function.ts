@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: `parsePage`, an HTML document as a page reading: its title and language, its readable text (scripts,
+ * Purpose: `parsePage`, an HTML document as a page reading: its title and language, its readable text (title, scripts,
  *          styles, comments and markup removed, one block per line, entities decoded) and the products its schema.org
  *          JSON-LD markup describes (`Product`, inside `@graph` or arrays, and the variants of a `ProductGroup`).
  * Boundary: pure; shared by both `PageReader` drivers. It reads markup with patterns, never runs it, and never throws on
@@ -12,8 +12,8 @@
 import type { PageReading } from "#contracts/types/page-reading.type";
 import type { ProductHint } from "#contracts/types/product-hint.type";
 
-/** Elements whose content is never readable text. */
-const HIDDEN = /<(script|style|noscript|template|svg|iframe|head)\b[\s\S]*?<\/\1\s*>/gi;
+/** Elements whose content is never readable text; `title` too, since a page may omit `<head>`. */
+const HIDDEN = /<(script|style|noscript|template|svg|iframe|head|title)\b[\s\S]*?<\/\1\s*>/gi;
 
 /** Tags that end a line of text. */
 const BLOCK =
