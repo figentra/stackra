@@ -9,4 +9,7 @@
 import { library } from "@stackra/tsdown-config";
 
 // shortcut: authored until gen writes the tool configs into `.stackra/`; delete it with STA-339.
-export default library({ index: "src/core/index.ts", contracts: "src/contracts/index.ts" });
+export default library(
+  { index: "src/core/index.ts", contracts: "src/contracts/index.ts" },
+  { decorators: true },
+);

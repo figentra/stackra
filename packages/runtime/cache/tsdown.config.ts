@@ -17,5 +17,5 @@ export default library(
     node: "src/node/index.ts",
     worker: "src/worker/index.ts",
   },
-  { external: ["cloudflare:workers"] },
+  { external: ["cloudflare:workers"], decorators: true },
 );

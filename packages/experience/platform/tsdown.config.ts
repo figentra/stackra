@@ -10,15 +10,18 @@
 import { library } from "@stackra/tsdown-config";
 
 // shortcut: authored until gen writes the tool configs into `.stackra/`; delete it with STA-339.
-export default library({
-  index: "src/core/index.ts",
-  contracts: "src/contracts/index.ts",
-  browser: "src/browser/index.ts",
-  desktop: "src/desktop/index.ts",
-  native: "src/native/index.ts",
-  node: "src/node/index.ts",
-  react: "src/react/index.ts",
-  sw: "src/sw/index.ts",
-  testing: "src/testing/index.ts",
-  worker: "src/worker/index.ts",
-});
+export default library(
+  {
+    index: "src/core/index.ts",
+    contracts: "src/contracts/index.ts",
+    browser: "src/browser/index.ts",
+    desktop: "src/desktop/index.ts",
+    native: "src/native/index.ts",
+    node: "src/node/index.ts",
+    react: "src/react/index.ts",
+    sw: "src/sw/index.ts",
+    testing: "src/testing/index.ts",
+    worker: "src/worker/index.ts",
+  },
+  { decorators: true },
+);
