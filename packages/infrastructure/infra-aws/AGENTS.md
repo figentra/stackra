@@ -26,6 +26,8 @@ Entries `.` (isomorphic config readers), `./node` (the Pulumi programs) and `./t
   stack config. No secret value is read anywhere.
 - An egress Elastic IP is `retainOnDelete`: a partner allow-lists it, so a stack change never releases it. Allocate
   the addresses here; attaching them to NAT gateways is the network's job.
+- The health driver's target is `InfraAwsConfig` (`src/config/infra-aws.config.ts`, key `infra_aws`), injected by type:
+  the runway's `config.infra_aws` sets it. Never a constructor options object (gen's `token_not_a_class`).
 
 ## PII
 

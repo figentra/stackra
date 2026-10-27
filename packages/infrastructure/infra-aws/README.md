@@ -11,16 +11,16 @@ or the environment's deploy job.
 
 ## What is here
 
-| Entry       | Symbol                                    | Use                                                                     |
-| ----------- | ----------------------------------------- | ----------------------------------------------------------------------- |
-| `.`         | `awsBaselineConfig(root, env, origins)`   | one environment's typed config, plain JSON (gen writes it to a file)    |
-| `.`         | `awsAccounts(root)`                       | the shared, backup and environment accounts for the account-wide stacks |
-| `.`         | `AwsHealthIndicatorDriver`                | the `HealthIndicator` driver: the region's STS endpoint answers         |
-| `./node`    | `awsBaseline(config)`                     | the environment stack                                                   |
-| `./node`    | `stateBackend(accounts)`                  | the Pulumi state bucket and key in the shared tooling account           |
-| `./node`    | `backupAccount(accounts)`                 | the vault and replica bucket in the backup account                      |
-| `./node`    | `resolveRef(value)`                       | a `ref:<path>` value read from the stack config                         |
-| `./testing` | `mockPulumi(config?)`, `outputOf(output)` | Pulumi's mocks and an output reader, for tests of a composed program    |
+| Entry       | Symbol                                       | Use                                                                                               |
+| ----------- | -------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| `.`         | `awsBaselineConfig(root, env, origins)`      | one environment's typed config, plain JSON (gen writes it to a file)                              |
+| `.`         | `awsAccounts(root)`                          | the shared, backup and environment accounts for the account-wide stacks                           |
+| `.`         | `AwsHealthIndicatorDriver`, `InfraAwsConfig` | the `HealthIndicator` driver: the region's STS endpoint answers; its target is `config.infra_aws` |
+| `./node`    | `awsBaseline(config)`                        | the environment stack                                                                             |
+| `./node`    | `stateBackend(accounts)`                     | the Pulumi state bucket and key in the shared tooling account                                     |
+| `./node`    | `backupAccount(accounts)`                    | the vault and replica bucket in the backup account                                                |
+| `./node`    | `resolveRef(value)`                          | a `ref:<path>` value read from the stack config                                                   |
+| `./testing` | `mockPulumi(config?)`, `outputOf(output)`    | Pulumi's mocks and an output reader, for tests of a composed program                              |
 
 `.` never loads Pulumi, so gen can derive the config without it.
 
