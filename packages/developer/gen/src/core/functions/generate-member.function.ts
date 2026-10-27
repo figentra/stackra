@@ -3,7 +3,8 @@
  * Purpose: `generateMember`, gen-core's whole output for one member as a pure function of what discovery read: the
  *          committed `stackra.manifest.json` (and `openapi.json` for a service or app with endpoints), one schemas
  *          file and one entity file per module, the wiring, the member module when none is authored, the
- *          registrations, a service's boot and inbound webhook route, a service's Encore CronJobs, broker-delivered
+ *          registrations, a service's boot and inbound webhook route, a service's Encore CronJobs, its HTTP adapter
+ *          (CORS preflights and headers, STA-1385), broker-delivered
  *          queue topics, integration event topics and (for a relay service) the subscriptions to every product topic, the public id prefixes, an app's route tables and blocks, the public SDKs (TypeScript, Python and PHP) of the actions marked public, one generated client per consumed
  *          service (injected, listened to, or imported by any file, so an app's routes count), `#stackra/settings`
  *          (the setting keys of its settings classes, stackra-209), `#stackra/i18n` from
@@ -44,6 +45,7 @@ import { emitBoot } from "#core/functions/emit-boot.function";
 import { emitClients } from "#core/functions/emit-clients.function";
 import { emitEncoreCronJobs } from "#core/functions/emit-encore-cron-jobs.function";
 import { emitEncoreEvents } from "#core/functions/emit-encore-events.function";
+import { emitEncoreHttp } from "#core/functions/emit-encore-http.function";
 import { emitEncoreQueues } from "#core/functions/emit-encore-queues.function";
 import { emitEntities } from "#core/functions/emit-entities.function";
 import { emitI18n } from "#core/functions/emit-i18n.function";
@@ -168,7 +170,11 @@ export function generateMember(
     [".stackra/gen/settings.ts", emitSettings(ir)],
   ];
   for (const [path, content] of optional) if (content !== undefined) files.push({ path, content });
-  for (const encore of [emitEncoreCronJobs(ir, manifest), emitEncoreQueues(ir, manifest)])
+  for (const encore of [
+    emitEncoreCronJobs(ir, manifest),
+    emitEncoreQueues(ir, manifest),
+    emitEncoreHttp(ir),
+  ])
     if (encore !== undefined) files.push(encore);
   files.push(...emitEncoreEvents(ir, manifest));
   files.push(...clients.files, ...emitRoutes(ir), ...emitBlocks(ir));

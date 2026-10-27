@@ -71,6 +71,7 @@ describe("IdentityConfig", () => {
       clientId: "",
       scopes: ["openid", "profile", "email", "offline_access"],
       bffEndpoint: "/api/auth",
+      csrfHeader: "x-stackra-csrf",
       nativeRedirectPath: "auth/callback",
       postLogoutRoute: null,
       idleMinutes: 0,

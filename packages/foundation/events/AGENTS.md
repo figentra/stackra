@@ -44,6 +44,8 @@ Event and listener kind bases, the in-process bus and the event testing helpers.
 - Cross-region (STA-1268): `crossRegion: true` on a platform integration event only; `crossRegionRecords` refuses one
   that carries a tenant (ADR 0353 decision 5). `RegionBus` is a port in `./contracts`; its driver and the relay call
   live outside this package. A copy arrives through the receiving region's inbox and is never re-sent.
+- An occurrence that comes with no id gets `newEventId()`, which is `mintPublicId("evt")` from `@stackra/contracts`
+  (STA-1380). Never mint event ids another way; older uppercase ids stay valid since ids compare as strings.
 - An event holds its payload only; metadata travels in `RecordedEvent`. No constructor-made state on events or on
   aggregates (recording is a WeakMap beside the aggregate).
 - Never import `@stackra/outbox`, `@stackra/analytics`, `@stackra/integrations` or `@stackra/realtime`; they import

@@ -2,8 +2,9 @@
  * Stackra file contract:
  * Purpose: unit tests of `emitRoutes`: one route table per client runtime of an app, each route under its key with the
  *          page beside it on that runtime (none where the runtime has no page), the `registerRoutes(routeTable)` call,
- *          and `registerPanelPages()` on the browser of an app that hosts the panel; nothing for an app without routes
- *          or a member that is not an app.
+ *          and `registerPanelPages()` on the browser of an app that hosts the panel, with `registerResources` over the
+ *          declared manifests' `ui.resources` trees (first wins, sorted) and their derived `resourceLabelKeys`
+ *          (STA-1385); nothing for an app without routes or a member that is not an app.
  * Boundary: test only; runs on the IR fixtures.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 14, 20 and 22); ADR 0297; ADR 0307.
@@ -49,6 +50,44 @@ describe("emitRoutes", () => {
     expect(native).not.toContain("registerPanelPages");
     const withoutPanel = emitRoutes({ ...WEB_APP_IR, packages: ["@stackra/navigation"] });
     expect(withoutPanel[0]?.content).not.toContain("registerPanelPages");
+  });
+
+  it("registers the declared manifests' resource trees and lists their label keys (STA-1385)", () => {
+    const tree = {
+      options: {},
+      table: { columns: [{ kind: "value", key: "placedAt" }], filters: [] },
+    };
+    const orders = {
+      package: "@acme/orders",
+      manifest: {
+        member: "orders",
+        package: "@acme/orders",
+        version: "0.1.0",
+        ui: { resources: { "orders.order": tree, "orders.line": {} } },
+      },
+    };
+    const shadow = {
+      package: "@acme/shadow",
+      manifest: {
+        member: "shadow",
+        package: "@acme/shadow",
+        version: "0.1.0",
+        ui: { resources: { "orders.order": { options: { shadowed: true } } } },
+      },
+    };
+    const [web, device] = emitRoutes({ ...WEB_APP_IR, dependencies: [orders, shadow] });
+    const content = web?.content ?? "";
+    expect(content).toContain('import { registerResources } from "@stackra/panel";');
+    expect(content).toContain(`  "orders.order": ${JSON.stringify(tree)},`);
+    expect(content).not.toContain("shadowed");
+    expect(content.indexOf('"orders.line"')).toBeLessThan(content.indexOf('"orders.order":'));
+    expect(content).toContain("registerPanelPages();\n\n/** The recorded resource trees");
+    expect(content).toContain("registerResources(resourceTrees);");
+    expect(content).toContain(
+      'export const resourceLabelKeys = [\n  "orders::resources.line.title",\n  "orders::resources.order.columns.placed_at",\n  "orders::resources.order.title",\n] as const;',
+    );
+    expect(device?.content).not.toContain("registerResources");
+    expect(emitRoutes(WEB_APP_IR)[0]?.content).not.toContain("registerResources");
   });
 
   it("writes nothing without routes or outside an app", () => {

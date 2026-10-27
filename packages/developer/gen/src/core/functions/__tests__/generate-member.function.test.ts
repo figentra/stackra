@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `generateMember`: the full file set of a service (manifest, openapi, one schemas file and
- *          one entity file per module, wiring, member module, registrations, boot, the inbound webhook route,
+ *          one entity file per module, wiring, member module, registrations, boot, the inbound webhook route, the
+ *          HTTP adapter of a service that runs @stackra/app,
  *          prefixes, server entry, tool configs), of an app (route tables and blocks per runtime, client entries) and
  *          of a package (no openapi, entry barrels), no file at all when discovery, the manifest or the identity lock
  *          refuses, and `@Renamed` accepted by the lock. Every full run ends with the member graph (ADR 0452).
@@ -62,6 +63,7 @@ describe("generateMember", () => {
       ".stackra/gen/prefixes.ts",
       ".stackra/encore/billing/cron.ts",
       ".stackra/encore/billing/queues.ts",
+      ".stackra/encore/billing/http.ts",
       ".stackra/encore/billing/events.ts",
       ".stackra/entry/server.ts",
       ".stackra/tsdown.config.ts",

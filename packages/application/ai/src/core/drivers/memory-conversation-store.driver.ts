@@ -19,7 +19,7 @@ import type { RecordScope } from "#contracts/types/record-scope.type";
  *
  * @example
  * const conversations = new MemoryConversationStoreDriver();
- * const runtime = new AgentRuntime(conversations, runs, dispatcher, models, instructions, queue, clock);
+ * const runtime = new AgentRuntime(conversations, runs, dispatcher, models, instructions, queue, clock, meter, discovery);
  */
 export class MemoryConversationStoreDriver extends Driver(ConversationStore) {
   /** The conversations by id. */

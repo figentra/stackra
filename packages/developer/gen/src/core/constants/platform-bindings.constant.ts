@@ -3,7 +3,8 @@
  * Purpose: `PLATFORM_BINDINGS`, the platform services a member injects whose constructor tokens gen knows, so the
  *          wiring binds each one where it is used: `RequestContext` (where `CustomFieldService` resolves),
  *          `IntegrationRuntime` (the one dependency of every Integration), `AgentRuntime` (the one dependency of every
- *          Agent, STA-903), `Locks` (the dependency of `journalOf`),
+ *          Agent, STA-903, with its `AiMeter` and `DiscoveryService`, STA-1385) and the `AiMeter` over the outbox,
+ *          `Locks` (the dependency of `journalOf`),
  *          `WebhookReceiver` (the generated inbound webhook route), `SequenceService` (the one allocator of document
  *          numbers), `SettingsReader` with the market floor source, so the default reader of every service lifts a
  *          value below a legal floor, `SettingsResolver`, and `RuleSetService` over content's revisions repository, so
@@ -40,6 +41,12 @@ export const PLATFORM_BINDINGS: Readonly<Record<string, readonly (ClassRef | Tok
       { name: "AgentModels", from: "@stackra/ai/contracts" },
       { name: "InstructionSource", from: "@stackra/ai/contracts" },
       { name: "AgentQueue", from: "@stackra/ai/contracts" },
+      { name: "Clock", from: "@stackra/contracts" },
+      { name: "AiMeter", from: "@stackra/ai" },
+      { name: "DiscoveryService", from: "@stackra/container" },
+    ],
+    "@stackra/ai#AiMeter": [
+      { name: "EventOutbox", from: "@stackra/events/contracts" },
       { name: "Clock", from: "@stackra/contracts" },
     ],
     "@stackra/locking#Locks": [

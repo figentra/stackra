@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `BffSessionStoreDriver`: the session is read from `<origin><bff>/session` with the cookie, a
  *          401 or a `null` answer is signed out, a failure or a body that is not a session is a `TransportError`, the
- *          login URL carries `returnTo`, sign-in leaves for it, sign-out posts to `/logout`, and no token is ever sent.
+ *          login URL carries `returnTo`, sign-in leaves for it, sign-out posts to `/logout`, every call carries the
+ *          `x-stackra-csrf` header (STA-1385), and no token is ever sent.
  * Boundary: test only; `fetch` and `location` are stubbed, so nothing reaches a network or navigates.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0206 (decision 8); ADR 0241 (decision 2).
@@ -58,6 +59,7 @@ describe("BffSessionStoreDriver", () => {
     expect(seen[0]?.url).toBe("https://api.acme.example/api/auth/session");
     expect(seen[0]?.method).toBe("GET");
     expect(seen[0]?.credentials).toBe("include");
+    expect(seen[0]?.headers.get("x-stackra-csrf")).toBe("1");
     expect(seen[0]?.headers.has("Authorization")).toBe(false);
   });
 
@@ -111,6 +113,7 @@ describe("BffSessionStoreDriver", () => {
     await driver().signOut();
     expect(seen[0]?.url).toBe("https://api.acme.example/api/auth/logout");
     expect(seen[0]?.method).toBe("POST");
+    expect(seen[0]?.headers.get("x-stackra-csrf")).toBe("1");
     stubFetch(undefined, 401);
     await expect(driver().signOut()).resolves.toBeUndefined();
     stubFetch(undefined, 500);

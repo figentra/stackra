@@ -8,8 +8,8 @@
  *           runtime import this package takes from actions. The direction is the event key and the model the
  *           `subject`, so the usage service can roll up per model while a limit on `ai.tokens` caps the total. Prices
  *           are rate-card data. A direction with no tokens writes nothing. The outbox write joins the caller's unit of
- *           work when there is one. Not called by `AgentRuntime` yet: the service that runs the agent calls it with
- *           the run's usage.
+ *           work when there is one. `AgentRuntime` calls it with each settled loop's usage (STA-1385); a service
+ *           calling a model outside the runtime calls it itself.
  * Runtime: isomorphic
  * Governing contract: ADR 0216 (decisions 1, 2 and 4); ADR 0156 (enforcement: token budgets); STA-1377 (stackra-219).
  */

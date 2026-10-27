@@ -39,6 +39,9 @@ those import it (ADR 0305 rule 20).
 
 A listener's `retry` is the contracts `RetryPolicy` (`ListenerRetry` is gone, stackra-223).
 
+An occurrence published without an id gets one from `mintPublicId("evt")` of `@stackra/contracts`: `evt_` and 26
+lowercase Crockford base32 characters of a UUIDv7, the same form actions and the outbox mint (ADR 0135, STA-1380).
+
 ## Declaring events
 
 ```ts

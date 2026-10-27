@@ -13,7 +13,9 @@
  *          an Integration's `IntegrationRuntime`, an Agent's `AgentRuntime` (STA-903), each generated service client (`#stackra/clients/<service>`, with the
  *          `ClientTransport` the topology picks), the generated inbound webhook route, and the platform services of
  *          `PLATFORM_BINDINGS` where they are injected (`RequestContext` where `CustomFieldService` resolves; `RuleSetService`
- *          with its `repositoryOf(Revision)`).
+ *          with its `repositoryOf(Revision)`), and in a service the `SERVER_CONTRIBUTIONS` of its declared packages: the
+ *          `OriginGuard` and `CsrfGuard` request guards with the `app.cors` and `app.csrf` config rows, and the six
+ *          `HealthIndicator` drivers `/readyz` runs with their package config rows (STA-1385).
  * Boundary: pure. Derived from file paths, base classes and constructor parameter types at build time; no reflection
  *           and no string token. A driver is a lazy import, so a node-only driver never reaches a browser bundle. The
  *           sections other packages own (extension points, seeders, ...) are added by those targets.
@@ -29,6 +31,7 @@ import { BINDING_KINDS } from "#core/constants/binding-kinds.constant";
 import { CLIENTS_SPECIFIER } from "#core/constants/clients-specifier.constant";
 import { MODEL_TOKENS } from "#core/constants/model-tokens.constant";
 import { PLATFORM_BINDINGS } from "#core/constants/platform-bindings.constant";
+import { SERVER_CONTRIBUTIONS } from "#core/constants/server-contributions.constant";
 import { configKeyOf } from "#core/functions/config-key-of.function";
 import { driverName } from "#core/functions/driver-name.function";
 import { generatedHeader } from "#core/functions/generated-header.function";
@@ -450,6 +453,22 @@ export function emitWiring(ir: MemberIR): string {
     );
     used.push({ module: ir.member, dep: receiver });
   }
+  const contributedConfigs: { readonly key: string; readonly provide: ClassRef }[] = [];
+  // A service's request guards and health indicators, from each declared package (STA-1385), with their config rows.
+  if (ir.layout === "service") {
+    const declares = (name: string): boolean =>
+      (ir.packages ?? []).includes(name) ||
+      ir.dependencies.some((dependency) => dependency.package === name);
+    for (const contribution of SERVER_CONTRIBUTIONS) {
+      if (!declares(contribution.package)) continue;
+      const tokens = contribution.deps.map((dep): TokenRef => ({ class: dep }));
+      bindingLines.push(
+        `    { module: ${JSON.stringify(ir.member)}, kind: "service", provide: ${ref(contribution.provide)}, deps: ${list(tokens.map(token))} },`,
+      );
+      contributedConfigs.push(...contribution.configs);
+      for (const dep of tokens) used.push({ module: ir.member, dep });
+    }
+  }
   const added = new Set<string>();
   for (let index = 0; index < used.length; index += 1) {
     const entry = used[index];
@@ -474,6 +493,14 @@ export function emitWiring(ir: MemberIR): string {
       `    { module: ${JSON.stringify(module)}, kind: "service", provide: ${token(dep)}, deps: ${list(tokens.map(token))} },`,
     );
     for (const next of tokens) used.push({ module, dep: next });
+  }
+  // The contributions' config rows, after the packages' own rows (a package manifest or a host override wins).
+  for (const config of contributedConfigs) {
+    const provide = ref(config.provide, "Base");
+    const provided = (line: string): boolean => new RegExp(`provide: ${provide}[ ,]`).test(line);
+    if (configKeys.has(config.key) || configLines.some(provided)) continue;
+    configKeys.add(config.key);
+    configLines.push(`    { key: ${JSON.stringify(config.key)}, provide: ${provide} },`);
   }
 
   const driverLines: string[] = [];

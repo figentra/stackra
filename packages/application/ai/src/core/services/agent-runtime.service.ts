@@ -6,22 +6,27 @@
  *          approval, parks the run on the first call the approval gate parks, stores the model's messages, and resumes
  *          a parked run once the approval resolves; `queue` stores a run for a worker, which runs it with `runQueued`.
  *          Every tool call carries the session's bypass switch (`PromptCall.bypass`, `ResumeDecision.bypass`); a
- *          queued run has no session, so its calls carry none.
+ *          queued run has no session, so its calls carry none. Every bound `GuardrailLayer` checks the prompt before
+ *          it is stored and the answer before it is stored (`runGuardrails`; a redaction is what gets stored, a block
+ *          fails the run with `GuardrailBlockedError`), and `AiMeter` meters each settled loop's token usage.
  * Boundary: a service over the ai ports (`ConversationStore`, `RunStore`, `ToolDispatcher`, `AgentModels`,
- *           `InstructionSource`, `AgentQueue`) and the `Clock`; it names no provider, prompt or policy. Text lives only
+ *           `InstructionSource`, `AgentQueue`), the `Clock`, `AiMeter` and the bound `GuardrailLayer`s (through
+ *           `DiscoveryService`, in wiring order); it names no provider, prompt or policy. Text lives only
  *           in the conversation; runs, steps and tool calls hold hashes, codes and counts (ADR 0100 decision 9). A run
  *           acts only as its stored principal, scope and record, never as anything the model says. The tool result of a
  *           parked call is not stored, so the conversation holds exactly one result per call once it resumes.
  * Runtime: isomorphic
  * Governing contract: ADR 0100 (decisions 2, 3, 5, 9 and 10); ADR 0155 (no hosted gateway); ADR 0227 (no separate
- *                     agent runtime); STA-781; STA-1256 (bypass switch).
+ *                     agent runtime); STA-781; STA-1256 (bypass switch); ADR 0156 (decision 4), ADR 0216 (decision 2),
+ *                     STA-1385 (guardrails and meter wired).
  */
-import { Service } from "@stackra/container";
+import { type DiscoveryService, Service } from "@stackra/container";
 import type { Actor, Clock } from "@stackra/contracts";
 import { ForbiddenError, NotFoundError } from "@stackra/errors";
 import {
   generateText,
   jsonSchema,
+  type LanguageModel,
   type ModelMessage,
   stepCountIs,
   streamText,
@@ -41,6 +46,10 @@ import type { ToolDispatcher } from "#contracts/ports/tool-dispatcher.port";
 import type { AgentTool } from "#contracts/types/agent-tool.type";
 import type { RunRecord } from "#contracts/types/run-record.type";
 import { AGENT_REGISTRY } from "#core/constants/agent-registry.constant";
+import { GuardrailBlockedError } from "#core/errors/guardrail-blocked.error";
+import { runGuardrails } from "#core/functions/run-guardrails.function";
+import { GuardrailLayer } from "#core/ports/guardrail-layer.port";
+import type { AiMeter } from "#core/services/ai-meter.service";
 import type { AgentDefinition } from "#core/types/agent-definition.type";
 import type { AgentReply } from "#core/types/agent-reply.type";
 import type { AgentStream } from "#core/types/agent-stream.type";
@@ -56,6 +65,9 @@ interface LoopState {
 
   /** The session's bypass switch, passed to every tool call. */
   readonly bypass: boolean;
+
+  /** `<provider>/<model>` of the routed model, once `setup` chose it; the meter's subject. */
+  model?: string;
 }
 
 /** The parts of a settled model call the runtime stores. */
@@ -97,6 +109,30 @@ async function hashOf(value: unknown): Promise<string> {
   return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
+/** `<provider>/<model>` of a routed model. */
+function modelLabel(model: Exclude<LanguageModel, string>): string {
+  return `${model.provider}/${model.modelId}`;
+}
+
+/**
+ * `messages` with the text of the last assistant message replaced by `text` (a guardrail's redaction).
+ * shortcut: only the final answer is redacted; text the model wrote beside earlier tool calls is stored as written.
+ * Redact those too when a layer needs it.
+ */
+function withAnswer(messages: readonly ModelMessage[], text: string): ModelMessage[] {
+  let last = -1;
+  for (const [index, message] of messages.entries()) if (message.role === "assistant") last = index;
+  return messages.map((message, index) => {
+    if (index !== last || message.role !== "assistant") return message;
+    if (typeof message.content === "string") return { ...message, content: text };
+    const first = message.content.findIndex((part) => part.type === "text");
+    const content = message.content.flatMap((part, at) =>
+      part.type !== "text" ? [part] : at === first ? [{ ...part, text }] : [],
+    );
+    return { ...message, content };
+  });
+}
+
 /** `messages` without the tool result of `toolCallId`, dropping a tool message left empty. */
 function withoutResult(messages: readonly ModelMessage[], toolCallId: string): ModelMessage[] {
   const kept: ModelMessage[] = [];
@@ -117,7 +153,7 @@ function withoutResult(messages: readonly ModelMessage[], toolCallId: string): M
  * Runs agents: prompts, streams and queued runs, with their tools, approvals and records.
  *
  * @example
- * const runtime = new AgentRuntime(conversations, runs, dispatcher, models, instructions, queue, clock);
+ * const runtime = new AgentRuntime(conversations, runs, dispatcher, models, instructions, queue, clock, meter, discovery);
  * const reply = await runtime.prompt(definition, "Summarise the matter", { actor });
  */
 export class AgentRuntime extends Service {
@@ -135,6 +171,10 @@ export class AgentRuntime extends Service {
 
   private readonly clock: Clock;
 
+  private readonly meter: AiMeter;
+
+  private readonly discovery: DiscoveryService;
+
   /**
    * @param conversations - where conversations and their (sealed) messages live.
    * @param runs - where runs, steps, tool calls and approvals live.
@@ -143,6 +183,8 @@ export class AgentRuntime extends Service {
    * @param instructions - the agents' published instructions.
    * @param agentQueue - hands queued runs to a worker.
    * @param clock - the current time.
+   * @param meter - meters each settled loop's tokens (`ai.tokens`).
+   * @param discovery - lists the bound `GuardrailLayer`s that check every prompt and answer.
    */
   constructor(
     conversations: ConversationStore,
@@ -152,6 +194,8 @@ export class AgentRuntime extends Service {
     instructions: InstructionSource,
     agentQueue: AgentQueue,
     clock: Clock,
+    meter: AiMeter,
+    discovery: DiscoveryService,
   ) {
     super();
     this.conversations = conversations;
@@ -161,6 +205,8 @@ export class AgentRuntime extends Service {
     this.instructions = instructions;
     this.agentQueue = agentQueue;
     this.clock = clock;
+    this.meter = meter;
+    this.discovery = discovery;
   }
 
   /**
@@ -324,6 +370,8 @@ export class AgentRuntime extends Service {
     call: PromptCall,
     status: RunStatus,
   ): Promise<RunRecord> {
+    // Before anything is stored: a blocked prompt opens no conversation and no run.
+    const prompt = await this.guarded(text, "input");
     const human = humanOf(call.actor);
     let conversationId = call.conversationId;
     if (conversationId === undefined) {
@@ -348,7 +396,7 @@ export class AgentRuntime extends Service {
       ...(call.record === undefined ? {} : { record: call.record }),
       status,
     });
-    await this.conversations.append(conversationId, run.id, [{ role: "user", content: text }]);
+    await this.conversations.append(conversationId, run.id, [{ role: "user", content: prompt }]);
     return run;
   }
 
@@ -371,6 +419,7 @@ export class AgentRuntime extends Service {
         }),
       ]),
     );
+    state.model = modelLabel(model);
     return {
       model,
       instructions,
@@ -467,10 +516,25 @@ export class AgentRuntime extends Service {
   /** Stores the model's messages and steps, and parks or completes the run. */
   private async settle(run: RunRecord, settled: Settled, state: LoopState): Promise<AgentReply> {
     const stored = await this.stored(run.id);
-    const messages =
+    // The tokens were spent whatever the guardrails say, so meter first.
+    await this.meter.tokens(
+      {
+        inputTokens: settled.steps.reduce((sum, step) => sum + (step.usage.inputTokens ?? 0), 0),
+        outputTokens: settled.steps.reduce((sum, step) => sum + (step.usage.outputTokens ?? 0), 0),
+      },
+      {
+        reference: run.id,
+        model: state.model ?? "unknown",
+        ...(run.scope === undefined ? {} : { scopeId: run.scope.id }),
+        actor: run.actor,
+      },
+    );
+    const answer = settled.text === "" ? "" : await this.guarded(settled.text, "output");
+    const kept =
       state.paused === undefined
         ? settled.messages
         : withoutResult(settled.messages, state.paused.toolCallId);
+    const messages = answer === settled.text ? kept : withAnswer(kept, answer);
     await this.conversations.append(run.conversationId, run.id, messages);
     for (const [offset, step] of settled.steps.entries())
       await this.runs.recordStep({
@@ -481,7 +545,7 @@ export class AgentRuntime extends Service {
         outputTokens: step.usage.outputTokens ?? 0,
       });
     const steps = stored.steps + settled.steps.length;
-    const base = { runId: run.id, conversationId: run.conversationId, text: settled.text };
+    const base = { runId: run.id, conversationId: run.conversationId, text: answer };
     if (state.paused !== undefined) {
       await this.runs.update(run.id, {
         status: RunStatus.WaitingApproval,
@@ -497,6 +561,22 @@ export class AgentRuntime extends Service {
       finishedAt: this.clock.now(),
     });
     return { ...base, status: RunStatus.Completed };
+  }
+
+  /**
+   * `text` after every bound guardrail layer at `stage`: the text to store and send on.
+   *
+   * @throws GuardrailBlockedError when a layer blocks it.
+   */
+  private async guarded(text: string, stage: "input" | "output"): Promise<string> {
+    const result = await runGuardrails(this.discovery.getAll(GuardrailLayer), text, stage);
+    if (!result.pass)
+      throw GuardrailBlockedError.create({
+        guardrail: result.guardrail,
+        stage,
+        reason: result.reason,
+      });
+    return result.text;
   }
 
   /** Marks `run` failed with the error's code (a refusal's), or `error`. */

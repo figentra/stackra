@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `IDENTITY_CONFIG_SCHEMA`, the zod schema this package ships for `IdentityConfig` (exported as
- *          `IdentityConfig$`): the flow per target, the public client of a device, the scopes, the BFF mount, the
+ *          `IdentityConfig$`): the flow per target, the public client of a device, the scopes, the BFF mount and its
+ *          CSRF header (STA-1385), the
  *          device redirect path, the route after sign-out, the idle rule and the refresh switches, plus the external
  *          providers, the step-up rule, the staff PIN rules, the API key prefixes, the last-use write interval, the market-pack keys sign-in and
  *          verification read, and the app approval values (STA-1304).
@@ -61,6 +62,10 @@ export const IDENTITY_CONFIG_SCHEMA = z.object({
     .refine((scopes) => scopes.includes("openid"), { message: "The scopes include openid" })
     .default(() => ["openid", "profile", "email", "offline_access"]),
   bffEndpoint: z.string().regex(MOUNT_PATH).default("/api/auth"),
+  csrfHeader: z
+    .string()
+    .regex(/^[a-z0-9-]+$/)
+    .default("x-stackra-csrf"),
   nativeRedirectPath: z.string().regex(REDIRECT_PATH).default("auth/callback"),
   postLogoutRoute: z
     .custom<object>(

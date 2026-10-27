@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `.` entry of @stackra/gen, the pure compiler (identities, the manifest and its checks,
  *          the shape compiler, wiring, the member module, entries, the entity files, registrations, boot, the inbound
- *          webhook route, prefixes, an app's route tables and blocks, the generated service clients, the setting keys
+ *          webhook route, a service's HTTP adapter (`emitEncoreHttp`, STA-1385), prefixes, an app's route tables and
+ *          blocks (with `registerResources` and the resource label keys), the generated service clients, the setting keys
  *          (`#stackra/settings`, stackra-209), the tool configs,
  *          the openapi projection, the docs-site target and its `DocsConfig` base, the public id prefix registry and
  *          the IR types, the surface targets and the extension bundle's modulepreload list), until `stackra gen` writes the
@@ -43,6 +44,7 @@ export { emitBoot } from "#core/functions/emit-boot.function";
 export { emitClients } from "#core/functions/emit-clients.function";
 export { emitDocsSite } from "#core/functions/emit-docs-site.function";
 export { emitEncoreCronJobs } from "#core/functions/emit-encore-cron-jobs.function";
+export { emitEncoreHttp } from "#core/functions/emit-encore-http.function";
 export { emitEncoreQueues } from "#core/functions/emit-encore-queues.function";
 export { emitEntities } from "#core/functions/emit-entities.function";
 export { emitI18n } from "#core/functions/emit-i18n.function";

@@ -33,6 +33,8 @@ model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./desktop`, `./n
 ## This package
 
 - No secret, ever: a browser has no client credential (the BFF holds it, by name), and a device is a public client.
+- Every BFF call carries `IdentityConfig.csrfHeader` (equal to the API's `CsrfConfig.headerName`). Never import
+  @stackra/app for it: app depends on identity, so that would close a cycle.
   Never log or return a token; it leaves a driver only through `accessToken()`.
 - No "tenant" identifier is declared here (ADR 0323, R-59): the memberships are `@stackra/tenancy`'s
   `TenantMembership`, and the claims speak of scope nodes. `SessionUser.memberships` names the list.

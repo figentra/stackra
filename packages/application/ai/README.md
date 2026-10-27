@@ -33,6 +33,7 @@ the one MCP gateway in the `ai` service serves it.
 | `routeModel(request, table)`, `resolveModel(choice, drivers)`                  | the model router by task, region and data class, and the bound provider driver's model instance             |
 | `allowFields(facts, dataClass, allowList)`, `redact(text, rules)`              | the field allow-list per data class and the redaction rules, before context reaches a model                 |
 | `checkBudget(used, requested, budget)`                                         | the meter check: refuse a run over its token budget, warn at the budget's share                             |
+| `GuardrailBlockedError`                                                        | the 403 refusal (`guardrail_blocked`) `AgentRuntime` raises when a layer blocks a prompt or an answer       |
 | `runGuardrails(layers, text, stage)`                                           | the layered guardrail check: redactions pass on, flags collect, the first block wins                        |
 | `PatternGuardrailDriver`, `PiiGuardrailDriver`                                 | guardrail layers over configured patterns, and over contact rules plus the Market's national ID formats     |
 | `InjectionGuardrailDriver`, `ClassifierGuardrailDriver`                        | the prompt-injection heuristic (weighted signals, hidden characters) and a routed model picking a label     |
@@ -196,6 +197,11 @@ with its layer, or the first block. Each driver takes its effect per stage (`Gua
 `flag`) and all its patterns as settings or market-pack data; none is written in code. Every driver extends
 `Driver(GuardrailLayer)`; a service's own layer may extend it too, or be any object of the `Guardrail` shape.
 
+`AgentRuntime` runs every bound `GuardrailLayer` (`DiscoveryService.getAll`, wiring order) on the prompt before it is
+stored and on the final answer before it is stored: a redaction is what the conversation keeps and the reply carries,
+and a block throws `GuardrailBlockedError` (a blocked prompt opens no run; a blocked answer fails the run with
+`guardrail_blocked`). A stream's `textStream` has already shown the unredacted answer; only its `reply` is checked.
+
 ```ts
 const layers = [
   new InjectionGuardrailDriver({
@@ -238,8 +244,9 @@ stays the control.
 `AiMeter.tokens(usage, { reference, model, scopeId, actor })` writes one `usage.recorded` (`@stackra/actions`) per
 direction through the outbox: meter `ai.tokens`, kind `sum`, key `ai.tokens.input` or `ai.tokens.output`, the model as
 `subject`, the run or call id as `callId`. An entitlement limit on `ai.tokens` caps a scope's AI spend; prices per
-model are rate-card data. The service calls it with AI SDK's `usage` after each call or run; `AgentRuntime` does not
-call it yet.
+model are rate-card data. `AgentRuntime` calls it with each settled loop's summed usage (the run id as reference, the
+routed model as `<provider>/<model>`, the run's scope and actor); a service that calls a model outside the runtime
+calls it with AI SDK's `usage` itself.
 
 ## Page reader
 

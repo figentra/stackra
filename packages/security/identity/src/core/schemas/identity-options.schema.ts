@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `IdentityOptions`, the shape of `IdentityConfig`: how each target signs in, the public client a device uses,
- *          what it asks the provider for, where the BFF is mounted, the device redirect path, the route after sign-out,
+ *          what it asks the provider for, where the BFF is mounted and the CSRF header its calls carry, the device redirect path, the route after sign-out,
  *          the idle rule and when the session is read again; the external identity providers and the pack key that
  *          lists a market's, the assurance each method reaches and how long a step-up lasts, the staff PIN rules, the
  *          API key prefixes and how often a key's last use is written, the pack key of the verification providers and the desktop sign-in wait,
@@ -173,6 +173,12 @@ export class IdentityOptions extends Schema {
 
   /** The BFF mount, relative to the API origin (`ClientsConfig.baseUrl`). */
   bffEndpoint = "/api/auth";
+
+  /**
+   * The CSRF header every BFF call carries, lower case: `app.csrf.headerName` of the API (`CsrfConfig`), which this
+   * package cannot import (@stackra/app depends on identity). Keep the two equal.
+   */
+  csrfHeader = "x-stackra-csrf";
 
   /** The device redirect path; the platform's `SignInBrowser` turns it into `<scheme>://auth/callback`. */
   nativeRedirectPath = "auth/callback";

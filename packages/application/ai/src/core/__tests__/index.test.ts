@@ -71,6 +71,7 @@ describe("@stackra/ai", () => {
       "ApprovalResolved",
       "ClassifierGuardrailDriver",
       "Facts",
+      "GuardrailBlockedError",
       "GuardrailEffect",
       "GuardrailLayer",
       "HttpPageReaderDriver",

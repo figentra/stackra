@@ -66,6 +66,9 @@ ADR 0100 tables, the Postgres stores and `ScopeKeyCast`; storage home: ADR 0399)
   are rate-card and entitlement data.
 - One vector store (ADR 0465): embed and recall through `VectorIndex` and `Embedder` of `@stackra/search/contracts`.
   Never add a vector column or embeddings table here; `ai.embeddings` was dropped by migration 0002.
+- `AgentRuntime` takes `AiMeter` and `DiscoveryService` by constructor type: it meters every settled loop (before the
+  output check, since the tokens were spent) and runs `getAll(GuardrailLayer)` on the prompt (before anything is
+  stored) and on the final answer. Store only the guarded text.
 - Only add a symbol a consumer imports today (the template, a package, or the registry row).
 
 ## Rules that fail the build

@@ -5,15 +5,20 @@
  *          call the gate parks parks the run without storing its placeholder result, and `resume` re-dispatches it with
  *          the approval id and finishes the loop, or tells the model a denial; `queue` stores a queued run that
  *          `runQueued` runs; `stream` streams text and settles; the session's bypass switch reaches each tool call; a
- *          conversation of another principal is refused.
+ *          conversation of another principal is refused; each settled loop meters its tokens on `ai.tokens` with the
+ *          model as subject; a blocked prompt opens no run, a redacted prompt and answer are stored redacted, and a
+ *          blocked answer fails the run with `guardrail_blocked`.
  * Boundary: test only; the model is AI SDK's `MockLanguageModelV4`, the stores are the memory drivers, and the
- *           dispatcher, models, instructions and queue are stand-ins.
+ *           dispatcher, models, instructions, queue, outbox, discovery and guardrail layers are stand-ins.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0100 (decisions 2, 3, 9 and 10); STA-781; STA-1256.
+ * Governing contract: ADR 0022 (test placement); ADR 0100 (decisions 2, 3, 9 and 10); STA-781; STA-1256; ADR 0156
+ *                     (decision 4); ADR 0216 (decision 2); STA-1385.
  */
-import { Driver } from "@stackra/container";
+import { type DiscoveryService, Driver } from "@stackra/container";
 import { type Actor, ActorKind, Clock, Realm } from "@stackra/contracts";
 import { ForbiddenError } from "@stackra/errors";
+import { EventOutbox } from "@stackra/events/contracts";
+import type { RecordedEvent } from "@stackra/events/contracts";
 import { describe, expect, it } from "@stackra/testing";
 import type { LanguageModel } from "ai";
 import { simulateReadableStream } from "ai";
@@ -32,8 +37,11 @@ import type { ToolCallResult } from "#contracts/types/tool-call-result.type";
 import { AGENT_REGISTRY } from "#core/constants/agent-registry.constant";
 import { MemoryConversationStoreDriver } from "#core/drivers/memory-conversation-store.driver";
 import { MemoryRunStoreDriver } from "#core/drivers/memory-run-store.driver";
+import { GuardrailBlockedError } from "#core/errors/guardrail-blocked.error";
+import { AiMeter } from "#core/services/ai-meter.service";
 import { AgentRuntime } from "#core/services/agent-runtime.service";
 import type { AgentDefinition } from "#core/types/agent-definition.type";
+import type { Guardrail } from "#core/types/guardrail.type";
 
 const NOW = new Date("2026-10-26T09:00:00.000Z");
 const human: Actor = {
@@ -99,8 +107,26 @@ class Dispatcher extends Driver(ToolDispatcher) {
   }
 }
 
-/** A runtime over memory stores and the given model answers. */
-function setup(model: Exclude<LanguageModel, string>) {
+/** Records every outbox write. */
+class Outbox extends EventOutbox {
+  readonly writes: (readonly RecordedEvent[])[] = [];
+
+  override async write(records: readonly RecordedEvent[]): Promise<void> {
+    this.writes.push(records);
+  }
+}
+
+/** A layer that blocks `blocked` and redacts `secret` at either stage. */
+const censor: Guardrail = {
+  name: "censor",
+  check: (value) =>
+    value.includes("blocked")
+      ? { pass: false, reason: "banned_phrase" }
+      : { pass: true, text: value.replaceAll("secret", "[redacted]") },
+};
+
+/** A runtime over memory stores, the given model answers and the given guardrail layers. */
+function setup(model: Exclude<LanguageModel, string>, layers: readonly Guardrail[] = []) {
   const conversations = new MemoryConversationStoreDriver();
   const runs = new MemoryRunStoreDriver();
   const dispatcher = new Dispatcher();
@@ -120,6 +146,8 @@ function setup(model: Exclude<LanguageModel, string>) {
       queued.push(runId);
     }
   })();
+  const outbox = new Outbox();
+  const discovery = { getAll: () => [...layers] } as unknown as DiscoveryService;
   const runtime = new AgentRuntime(
     conversations,
     runs,
@@ -128,8 +156,10 @@ function setup(model: Exclude<LanguageModel, string>) {
     instructions,
     queue,
     new FixedClock(),
+    new AiMeter(outbox, new FixedClock()),
+    discovery,
   );
-  return { runtime, conversations, runs, dispatcher, queued };
+  return { runtime, conversations, runs, dispatcher, queued, outbox };
 }
 
 describe(AgentRuntime, () => {
@@ -246,6 +276,65 @@ describe(AgentRuntime, () => {
     for await (const delta of streaming.textStream) streamed += delta;
     expect(streamed).toBe("Hello");
     expect(await streaming.reply).toMatchObject({ status: RunStatus.Completed, text: "Hello" });
+  });
+
+  it("meters each settled loop's tokens with the model as subject", async () => {
+    const model = new MockLanguageModelV4({ doGenerate: text("Done.") });
+    const { runtime, outbox } = setup(model);
+    const reply = await runtime.prompt(agent, "Hi", {
+      actor,
+      scope: { id: "scp_1", path: "scp_1" },
+    });
+    expect(outbox.writes).toHaveLength(1);
+    const [input, output] = outbox.writes[0] ?? [];
+    expect(input?.event).toMatchObject({
+      meter: "ai.tokens",
+      key: "ai.tokens.input",
+      value: 10,
+      subject: `${model.provider}/${model.modelId}`,
+      callId: reply.runId,
+      scopeId: "scp_1",
+    });
+    expect(output?.event).toMatchObject({ key: "ai.tokens.output", value: 5 });
+    expect(input?.meta).toMatchObject({ actor, correlationId: reply.runId });
+  });
+
+  it("refuses a blocked prompt before opening a conversation or a run", async () => {
+    const { runtime, runs } = setup(new MockLanguageModelV4({ doGenerate: text("ok") }), [censor]);
+    await expect(runtime.prompt(agent, "a blocked request", { actor })).rejects.toBeInstanceOf(
+      GuardrailBlockedError,
+    );
+    expect(runs.steps).toEqual([]);
+  });
+
+  it("stores the redacted prompt and answer", async () => {
+    const { runtime, conversations } = setup(
+      new MockLanguageModelV4({ doGenerate: text("The secret is out.") }),
+      [censor],
+    );
+    const reply = await runtime.prompt(agent, "Tell the secret", { actor });
+    expect(reply.text).toBe("The [redacted] is out.");
+    const stored = await conversations.messages(reply.conversationId);
+    expect(stored[0]).toEqual({ role: "user", content: "Tell the [redacted]" });
+    expect(JSON.stringify(stored.at(-1))).toContain("The [redacted] is out.");
+    expect(JSON.stringify(stored)).not.toContain("secret");
+  });
+
+  it("fails the run when a layer blocks the answer", async () => {
+    const { runtime, runs, outbox } = setup(
+      new MockLanguageModelV4({ doGenerate: text("This is blocked.") }),
+      [censor],
+    );
+    const refused = await runtime.prompt(agent, "Hi", { actor }).catch((error: unknown) => error);
+    expect(refused).toBeInstanceOf(GuardrailBlockedError);
+    expect(refused).toMatchObject({
+      guardrail: "censor",
+      stage: "output",
+      reason: "banned_phrase",
+    });
+    expect(runs.steps).toEqual([]);
+    // The tokens were spent, so they are metered before the block.
+    expect(outbox.writes).toHaveLength(1);
   });
 
   it("refuses another principal's conversation", async () => {

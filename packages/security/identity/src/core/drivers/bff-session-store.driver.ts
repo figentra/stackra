@@ -4,12 +4,15 @@
  *          an HttpOnly cookie, so this driver asks the BFF who is signed in (`GET <bff>/session`), leaves for its
  *          login (`<bff>/login?returnTo=…`) and ends the session there (`POST <bff>/logout`).
  * Boundary: no token ever reaches JavaScript: `accessToken()` is `undefined` and every request carries the cookie
- *           (`credentials: "include"`). The BFF is mounted at `IdentityConfig.bffEndpoint` on the API origin
+ *           (`credentials: "include"`) and the CSRF header `IdentityConfig.csrfHeader` (`x-stackra-csrf`, equal to the
+ *           API's `CsrfConfig.headerName`), which @stackra/app's `CsrfGuard` requires on a cookie-bearing POST
+ *           (custom-header mode: a cross-origin page cannot set it, STA-1374). The BFF is mounted at `IdentityConfig.bffEndpoint` on the API origin
  *           (`ClientsConfig.baseUrl`). A 401 is "signed out"; another failure, or an answer that is not a session, is a
  *           `TransportError`, so the `SessionService` boots signed out and reports it. `returnTo` is the in-app path
  *           the browser was on, and the BFF re-checks it.
  * Runtime: browser
- * Governing contract: ADR 0206 (decision 8); ADR 0241 (decision 2); ADR 0237 (the BFF behind the gateway); ADR 0142.
+ * Governing contract: ADR 0206 (decision 8); ADR 0241 (decision 2); ADR 0237 (the BFF behind the gateway); ADR 0142;
+ *                     ADR 0437 (CSRF), STA-1385.
  */
 import type { ClientsConfig } from "@stackra/clients";
 import { TransportError } from "@stackra/clients";
@@ -120,12 +123,13 @@ export class BffSessionStoreDriver extends Driver(SessionStore) {
     return `${this.clients.baseUrl.replace(/\/$/, "")}${this.config.bffEndpoint}/${route}`;
   }
 
-  /** A request to one BFF route that carries the cookie. */
+  /** A request to one BFF route that carries the cookie and the CSRF header. */
   private request(route: string, method: "GET" | "POST"): Request {
     return new Request(this.endpoint(route), {
       method,
       credentials: "include",
-      headers: { accept: "application/json" },
+      // Custom-header mode: the guard checks presence; a cross-origin page cannot add it without a preflight.
+      headers: { accept: "application/json", [this.config.csrfHeader]: "1" },
     });
   }
 }

@@ -321,11 +321,14 @@ const providers = [new EncoreCloudProviderDriver(config), new EasProviderDriver(
 const results = await promote(root, "staging", "production", providers); // one record per target
 ```
 
-| Provider       | apply                                                                                                            | verify                                    | rollback                           |
-| -------------- | ---------------------------------------------------------------------------------------------------------------- | ----------------------------------------- | ---------------------------------- |
-| `encore-cloud` | `git push encore://<app> <sha>:refs/heads/<branch>` (`encore.branch`)                                            | the branch holds the commit               | force-push the earlier commit      |
-| `eas`          | `eas build --profile <channel>` or `eas update --channel` (`targets.eas`)                                        | build status, or the group                | republish the earlier group        |
-| `mintlify`     | `stackra build` and `stackra lint`, then `.stackra/site` force-pushed as one commit to `targets.mintlify.branch` | the branch's `Source:` trailer is the SHA | refused: promote the last good SHA |
+| Provider       | apply                                                                                                            | verify                                                                | rollback                           |
+| -------------- | ---------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- | ---------------------------------- |
+| `encore-cloud` | `git push encore://<app> <sha>:refs/heads/<branch>` (`encore.branch`)                                            | the branch holds the commit, then `GET <encore.origin>/readyz` is 200 | force-push the earlier commit      |
+| `eas`          | `eas build --profile <channel>` or `eas update --channel` (`targets.eas`)                                        | build status, or the group                                            | republish the earlier group        |
+| `mintlify`     | `stackra build` and `stackra lint`, then `.stackra/site` force-pushed as one commit to `targets.mintlify.branch` | the branch's `Source:` trailer is the SHA                             | refused: promote the last good SHA |
+
+The `encore-cloud` verify reads `/readyz` (@stackra/app's readiness route, every bound `HealthIndicator`) when the
+environment's `encore` block, or its region's, names an `origin`; without one it checks the branch only.
 
 A store build cannot be rolled back; the EAS provider refuses it. The `mintlify` provider (STA-1316, ADR 0002 amendment
 of 2026-10-27) publishes the site gen assembles in a docs app's `.stackra/site/`: the Mintlify GitHub app builds the

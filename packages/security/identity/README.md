@@ -111,7 +111,9 @@ device even when the provider cannot be told.
 ## The flows
 
 The BFF (web, PWA): `GET <api><bffEndpoint>/session` answers `{ user } | null` with the cookie; sign-in leaves for
-`<api><bffEndpoint>/login?returnTo=<path>`; sign-out posts to `/logout`. No token reaches JavaScript.
+`<api><bffEndpoint>/login?returnTo=<path>`; sign-out posts to `/logout`. No token reaches JavaScript. Every BFF call
+carries the CSRF header `csrfHeader` (default `x-stackra-csrf`), which @stackra/app's `CsrfGuard` requires on a
+cookie-bearing POST; keep it equal to the API's `app.csrf.headerName`.
 
 PKCE (desktop, mobile): the issuer's discovery document gives the endpoints; sign-in sends an `S256` request through
 the platform's `SignInBrowser`, checks the state, exchanges the code with the verifier, checks the ID token's issuer,

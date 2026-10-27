@@ -3,7 +3,7 @@
  * Purpose: Stand-in barrel: the `.` entry of @stackra/ai, which has several public files, until `stackra gen` writes
  *          the entry barrels (STA-339): the kinds, the tool-table vocabulary, `decide` and `retrieve`, the approval-mode
  *          resolver with the permission matrix, the model router, the context allow-list and redaction, budgets,
- *          guardrails (the layered check and its pattern, PII, prompt-injection and model-classifier drivers), evals
+ *          guardrails (the layered check, `GuardrailBlockedError`, and its pattern, PII, prompt-injection and model-classifier drivers), evals
  *          and intents, the token meter (`AiMeter`, `AI_METERS`), the `ModelProviders` token, and the agent runtime
  *          (`Agent`, `Promptable`, `AgentRuntime`, the memory stores), and the page reader drivers (memory,
  *          egress-bounded HTTP) with `checkEgress` and `parsePage`.
@@ -34,6 +34,7 @@ export { GuardrailEffect } from "#core/enums/guardrail-effect.enum";
 export { ToolSource } from "#core/enums/tool-source.enum";
 export { ApprovalRequested } from "#core/events/approval-requested.event";
 export { ApprovalResolved } from "#core/events/approval-resolved.event";
+export { GuardrailBlockedError } from "#core/errors/guardrail-blocked.error";
 export { RunCompleted } from "#core/events/run-completed.event";
 export { allowFields } from "#core/functions/allow-fields.function";
 export { approvalFor } from "#core/functions/approval-for.function";

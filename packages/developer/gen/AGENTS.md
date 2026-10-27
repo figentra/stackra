@@ -139,6 +139,13 @@ The Stackra compiler. Member at `packages/developer/gen` (`tier:lib`), in the pr
   into the inbox; a wire name its relay hears is left to the relay. Never make a producer list its subscribers. A
   local listener of the service's own integration event gets a subscription on its own topic (`./events`) into its
   inbox too (STA-1302): the broker publisher reaches only the topic, so without it the listener never runs.
+- Server contributions (STA-1385): request guards and `HealthIndicator` drivers a service binds are rows of
+  `SERVER_CONTRIBUTIONS` (package, class, constructor tokens, config rows), gated on the declared package; add a new
+  one there, never a branch in `emitWiring`. Their config rows come after the packages' own rows, so a manifest's
+  row or a host override wins. `emitEncoreHttp` writes the CORS adapter (`answerHttp`); headers come only from
+  `corsHeaders` over the bound `CorsConfig`.
+- Resource trees: the browser route table registers `ui.resources` from the declared manifests and lists the
+  derived label keys (`resourceLabelKeys`, the panel's `resourceLabel` rule). Keep the two leaf rules equal.
 - The shape vocabulary is `TypeDesc` (`src/core/types/type-desc.type.ts`). A new platform field type is one
   `TypeDesc` kind read in `readTypeReference` (only when declared in a `@stackra/*` package) and one case in each of
   `emitSchemas`, `jsonSchemaOf` and, for a model column, `emitEntities`, with tests. `Translated` and

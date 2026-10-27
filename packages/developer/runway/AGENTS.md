@@ -69,6 +69,9 @@ Runway format version 3 (ADR 0296) as code. Member at `packages/developer/runway
   never the TLS paths.
 - A provider takes `RunwayConfig` (`src/config/runway.config.ts`, key `runway`) by constructor type, never an options
   object (gen's `token_not_a_class`); its `run` field is the command runner a test or a dry run replaces.
+- A provider's verify reads a deployment's health at `/readyz` (@stackra/app's readiness route), never `/healthz`
+  (liveness only); the `encore-cloud` driver's `fetch` field is the HTTP client a test replaces. Verify reports down,
+  it never throws.
 
 ## PII
 

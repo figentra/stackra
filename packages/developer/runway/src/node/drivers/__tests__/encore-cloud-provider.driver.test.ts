@@ -1,9 +1,11 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `EncoreCloudProviderDriver`: the plan pushes the commit to the region's branch on the
- *          `encore://` remote; apply runs it; verify and current read the branch; rollback force-pushes the earlier
- *          commit; a dedicated tenant deploys from its own branch; a missing branch and a bad app id are refused.
- * Boundary: test only; the command runner is a fake, nothing runs.
+ *          `encore://` remote; apply runs it; verify and current read the branch; verify then reads `<origin>/readyz`
+ *          when the target names an origin (up on 200, down on 503 or a failed request, never throws); rollback
+ *          force-pushes the earlier commit; a dedicated tenant deploys from its own branch; a missing branch and a bad
+ *          app id are refused.
+ * Boundary: test only; the command runner and fetch are fakes, nothing runs.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0352 (decision 3), ADR 0400.
  */
@@ -68,6 +70,41 @@ describe("EncoreCloudProviderDriver", () => {
       status: "down",
       detail: `ksa points to ${OLD}, not ${SHA}`,
     });
+  });
+
+  it("verifies /readyz on the target's origin", async () => {
+    const driver = encore(fakeRunner(SHA).run);
+    const urls: string[] = [];
+    let status = 200;
+    driver.fetch = async (input) => {
+      urls.push(String(input));
+      return new Response(null, { status });
+    };
+    const ready: DeployTarget = {
+      ...ksa,
+      scope: {
+        encore: {
+          branch: "main",
+          regions: { ksa: { branch: "ksa", origin: "https://ksa.acme.test/" } },
+        },
+      },
+    };
+    const record = { target: ksa.id, sha: SHA, reference: SHA };
+
+    expect(await driver.verify(ready, record)).toEqual({ status: "up" });
+    status = 503;
+    expect(await driver.verify(ready, record)).toEqual({
+      status: "down",
+      detail: "https://ksa.acme.test/readyz answered 503",
+    });
+    driver.fetch = async () => {
+      throw new TypeError("fetch failed");
+    };
+    expect(await driver.verify(ready, record)).toEqual({
+      status: "down",
+      detail: "https://ksa.acme.test/readyz failed: TypeError",
+    });
+    expect(urls).toEqual(["https://ksa.acme.test/readyz", "https://ksa.acme.test/readyz"]);
   });
 
   it("rolls back by force-pushing the earlier commit", async () => {

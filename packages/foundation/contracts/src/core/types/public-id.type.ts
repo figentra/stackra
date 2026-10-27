@@ -3,7 +3,8 @@
  * Purpose: `PublicId<P>`: the only external form of a record's id, `<prefix>_<26 lowercase Crockford base32
  *          characters of its UUIDv7>`.
  * Boundary: a type only. It checks the prefix at compile time; the 26-character body is checked by the generated
- *           schema at the edge and minted by the model's `HasPublicId` trait, never here.
+ *           schema at the edge. Every id (model ids via `HasPublicId`, `evt_` event ids of actions, outbox and events)
+ *           is minted by `mintPublicId` (STA-1380), never here.
  * Runtime: isomorphic
  * Governing contract: ADR 0135 (format), ADR 0082 (database ids never leave a service), ADR 0231 (prefix casing).
  */

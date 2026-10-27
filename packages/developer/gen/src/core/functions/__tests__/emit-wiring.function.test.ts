@@ -7,11 +7,13 @@
  *          dependencies, an Integration's runtime, the inbound webhook route, the platform services it injects, the rules node with its revisions repository), a
  *          projection as a binding, the declared packages' driver tables of the ports the bindings reach (with
  *          their selecting config and package config rows, no registry entry; STA-1297), MediaLibrary over the media
- *          disk, a package config row only for a class its manifest's `config` section lists (STA-1308), and the
- *          names the container really exports.
+ *          disk, a package config row only for a class its manifest's `config` section lists (STA-1308), a service's
+ *          request guards and health indicator drivers from its declared packages with their config rows (a package's
+ *          own row wins; none for a member that is not a service; STA-1385), and the names the container really
+ *          exports.
  * Boundary: test only; asserts on the generated source text and on @stackra/container's exports.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 17 and 26); ADR 0263.
+ * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 17 and 26); ADR 0263; ADR 0457; STA-1385.
  */
 import { Lifetime, named } from "@stackra/container";
 import { describe, expect, it } from "@stackra/testing";
@@ -389,5 +391,37 @@ describe("emitWiring", () => {
     });
     expect(content).toContain('    { key: "search", provide: SearchSettings },');
     expect(content).not.toContain("provide: SearchIndexConfig }");
+  });
+
+  it("binds a service's request guards and health indicators with their config rows (STA-1385)", () => {
+    const billing = emitWiring(BILLING_IR);
+    for (const line of [
+      '    { module: "billing", kind: "service", provide: OriginGuard, deps: [CorsConfig, CsrfConfig] },',
+      '    { module: "billing", kind: "service", provide: CsrfGuard, deps: [CsrfConfig] },',
+      '    { module: "billing", kind: "service", provide: DatabaseHealthIndicatorDriver, deps: [Database, DatabaseConfig] },',
+      '    { module: "billing", kind: "service", provide: QueueHealthIndicatorDriver, deps: [QueueDriver, QueueConfig] },',
+      '    { module: "billing", kind: "service", provide: SearchHealthIndicatorDriver, deps: [SearchDriver, SearchConfig] },',
+      '    { key: "app.cors", provide: CorsConfig },',
+      '    { key: "app.csrf", provide: CsrfConfig },',
+      '    { key: "database", provide: DatabaseConfig },',
+      '    { key: "queue", provide: QueueConfig },',
+    ])
+      expect(billing).toContain(line);
+    expect(billing).toMatch(/import \{[^}]*\bCorsConfig\b[^}]*\} from "@stackra\/app\/server";/);
+    expect(billing).toMatch(
+      /import \{[^}]*\bDatabaseHealthIndicatorDriver\b[^}]*\} from "@stackra\/database\/node";/,
+    );
+    expect(billing.match(/key: "app\.csrf"/g)).toHaveLength(1);
+    // Packages the service does not declare bring nothing.
+    expect(billing).not.toContain("CacheHealthIndicatorDriver");
+    expect(billing).not.toContain("RealtimeHealthIndicatorDriver");
+    expect(billing).not.toContain("FilesystemHealthIndicatorDriver");
+  });
+
+  it("binds no guard or indicator outside a service (STA-1385)", () => {
+    const content = emitWiring({ ...BILLING_IR, layout: "package" });
+    expect(content).not.toContain("OriginGuard");
+    expect(content).not.toContain("HealthIndicatorDriver");
+    expect(content).not.toContain('key: "app.cors"');
   });
 });

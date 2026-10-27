@@ -54,6 +54,7 @@ describe("@stackra/gen", () => {
       "emitClients",
       "emitDocsSite",
       "emitEncoreCronJobs",
+      "emitEncoreHttp",
       "emitEncoreQueues",
       "emitEntities",
       "emitI18n",
