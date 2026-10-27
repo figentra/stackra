@@ -2,10 +2,11 @@
  * Stackra file contract:
  * Purpose: `exchangeToken`: the OIDC exchange.
  * Boundary: no long-lived token, no human identity; the audit row names the workflow run.
- * Runtime: Cloudflare Workers
+ * Runtime: worker
  * Governing contract: ADR 0453 (decisions 3 and 6).
  */
 import { bearer } from "#src/access/bearer";
+import { sha256Hex } from "#src/bytes/sha256-hex";
 import { toBase64Url } from "#src/bytes/to-base64-url";
 import { PUBLISH_TOKEN_PREFIX } from "#src/constants/publish-token-prefix.constant";
 import { failure } from "#src/http/failure";

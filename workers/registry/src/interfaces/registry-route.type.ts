@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `RegistryRoute`: one route of the registry.
  * Boundary: pure; no method check and no lookup (the router does both).
- * Runtime: Cloudflare Workers
+ * Runtime: worker
  * Governing contract: ADR 0453 (decisions 4 and 12).
  */
 

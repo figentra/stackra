@@ -3,7 +3,7 @@
  * Purpose: `gate`: the scope read rule for `name`: the scope and licence, or the refusal response (404 for an unknown
  *          scope).
  * Boundary: reads only; never proxies an upstream (an unknown name is 404).
- * Runtime: Cloudflare Workers
+ * Runtime: worker
  * Governing contract: ADR 0453 (decisions 4, 5, 9, 10 and 13).
  */
 import { readAccess } from "#src/access/read-access";

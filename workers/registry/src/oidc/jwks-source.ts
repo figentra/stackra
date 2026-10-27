@@ -3,7 +3,7 @@
  * Purpose: `jwksSource`: gitHub's key set, cached in KV for `seconds` and refetched once when a `kid` is unknown.
  * Boundary: verification only; minting the publish token is `exchangeToken`'s. Throws `OidcError` with a reason that
  *           names no token value.
- * Runtime: Cloudflare Workers
+ * Runtime: worker
  * Governing contract: ADR 0453 (decisions 3 and 6).
  */
 import type { KeySource } from "#src/interfaces/key-source.type";

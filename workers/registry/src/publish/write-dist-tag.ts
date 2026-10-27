@@ -3,7 +3,7 @@
  * Purpose: `writeDistTag`: `PUT` (body: the version as a JSON string) or `DELETE
  *          /-/package/@scope%2fname/dist-tags/<tag>`.
  * Boundary: writes through `RegistryStore`, R2 and KV only. No unpublish and no human publish.
- * Runtime: Cloudflare Workers
+ * Runtime: worker
  * Governing contract: ADR 0453 (decisions 3, 6, 7, 8, 9 and 11); ADR 0013 (immutable versions).
  */
 import { failure } from "#src/http/failure";

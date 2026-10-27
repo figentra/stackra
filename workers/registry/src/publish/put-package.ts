@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `putPackage`: `PUT /@scope%2fname`: publish one version, or deprecate.
  * Boundary: writes through `RegistryStore`, R2 and KV only. No unpublish and no human publish.
- * Runtime: Cloudflare Workers
+ * Runtime: worker
  * Governing contract: ADR 0453 (decisions 3, 6, 7, 8, 9 and 11); ADR 0013 (immutable versions).
  */
 import { fromBase64 } from "#src/bytes/from-base64";

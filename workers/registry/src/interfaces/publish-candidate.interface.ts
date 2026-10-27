@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `PublishCandidate`: what one publish offers.
  * Boundary: pure; the size limit, the immutability check and the provenance check are the publish handler's.
- * Runtime: Cloudflare Workers
+ * Runtime: worker
  * Governing contract: ADR 0453 (decisions 7, 8 and 11); ADR 0316 (decision 2); ADR 0024 (decision 5); ADR 0013.
  */
 import type { ScopeRow } from "#src/interfaces/scope-row.interface";
@@ -15,8 +15,11 @@ export interface PublishCandidate {
   readonly name: string;
   /** The single version key of the publish body. */
   readonly version: string;
+  /** The scope row the package name falls under. */
   readonly scope: ScopeRow;
+  /** The file list and package.json read from the tarball. */
   readonly contents: TarballContents;
+  /** The digests the registry computed over the tarball bytes. */
   readonly digests: TarballDigests;
   /** `versions[version].dist` of the publish body. */
   readonly clientDist: { readonly integrity?: unknown; readonly shasum?: unknown };

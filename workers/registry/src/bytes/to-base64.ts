@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `toBase64`: bytes to base64.
  * Boundary: pure Web Crypto; no I/O.
- * Runtime: Cloudflare Workers
+ * Runtime: worker
  * Governing contract: ADR 0453 (decision 8).
  */
 

@@ -5,7 +5,7 @@
  *           release smoke job, as the ADR decides. shortcut: the identity is found as a byte string in the
  *           certificate DER rather than by parsing its SAN extension; upgrade to an X.509 parser if a client ever
  *           sends a certificate whose other fields could carry that URI.
- * Runtime: Cloudflare Workers
+ * Runtime: worker
  * Governing contract: ADR 0453 (decision 9).
  */
 

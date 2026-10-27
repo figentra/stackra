@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `json`: A JSON response.
  * Boundary: builds Response objects only.
- * Runtime: Cloudflare Workers
+ * Runtime: worker
  * Governing contract: ADR 0453 (decision 4).
  */
 import { PRIVATE_NO_STORE } from "#src/constants/private-no-store.constant";

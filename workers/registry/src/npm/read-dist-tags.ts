@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `readDistTags`: `GET /-/package/@scope%2fname/dist-tags`.
  * Boundary: reads only; never proxies an upstream (an unknown name is 404).
- * Runtime: Cloudflare Workers
+ * Runtime: worker
  * Governing contract: ADR 0453 (decisions 4, 5, 9, 10 and 13).
  */
 import { gate } from "#src/access/gate";
@@ -11,7 +11,7 @@ import { json } from "#src/http/json";
 import type { RegistryDeps } from "#src/interfaces/registry-deps.interface";
 import { metadataCache } from "#src/npm/metadata-cache";
 
-/** `GET /-/package/@scope%2fname/dist-tags`. */
+/** Serves the dist-tags of a package, `GET /-/package/@scope%2fname/dist-tags`. */
 export async function readDistTags(
   deps: RegistryDeps,
   request: Request,

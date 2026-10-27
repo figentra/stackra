@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `handleAttestations`: `GET /-/npm/v1/attestations/@scope%2fname@<version>`.
  * Boundary: reads only; never proxies an upstream (an unknown name is 404).
- * Runtime: Cloudflare Workers
+ * Runtime: worker
  * Governing contract: ADR 0453 (decisions 4, 5, 9, 10 and 13).
  */
 import { gate } from "#src/access/gate";
@@ -12,7 +12,7 @@ import type { RegistryDeps } from "#src/interfaces/registry-deps.interface";
 import { attestationKey } from "#src/npm/attestation-key";
 import { metadataCache } from "#src/npm/metadata-cache";
 
-/** `GET /-/npm/v1/attestations/@scope%2fname@<version>`. */
+/** Serves the provenance attestation bundle of one version, `GET /-/npm/v1/attestations/@scope%2fname@<version>`. */
 export async function handleAttestations(
   deps: RegistryDeps,
   request: Request,

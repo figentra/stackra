@@ -3,7 +3,7 @@
  * Purpose: `p1363ToDer`: an IEEE P1363 signature (r || s, what Web Crypto returns) as the DER sequence npm verifies.
  * Boundary: Web Crypto only; the private key comes from the REGISTRY_SIGNING_KEY secret (PKCS#8 PEM) and never leaves
  *           this module.
- * Runtime: Cloudflare Workers
+ * Runtime: worker
  * Governing contract: ADR 0453 (decision 9); npm registry signatures.
  */
 import type { Bytes } from "#src/interfaces/bytes.type";

@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `fromBase64`: base64 (standard or url-safe, padded or not) to bytes; throws on anything else.
  * Boundary: pure Web Crypto; no I/O.
- * Runtime: Cloudflare Workers
+ * Runtime: worker
  * Governing contract: ADR 0453 (decision 8).
  */
 import type { Bytes } from "#src/interfaces/bytes.type";

@@ -3,7 +3,7 @@
  * Purpose: `handleWhoami`: `GET /-/whoami`: `ci:<repository>` for a publish token, the licence holder for a licence
  *          token.
  * Boundary: reads only; never proxies an upstream (an unknown name is 404).
- * Runtime: Cloudflare Workers
+ * Runtime: worker
  * Governing contract: ADR 0453 (decisions 4, 5, 9, 10 and 13).
  */
 import { bearer } from "#src/access/bearer";

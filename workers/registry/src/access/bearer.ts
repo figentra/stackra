@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `bearer`: the bearer token of an Authorization header, or null.
  * Boundary: decides; reads the licence only through the `LicenceCheck` port.
- * Runtime: Cloudflare Workers
+ * Runtime: worker
  * Governing contract: ADR 0453 (decisions 10 and 13).
  */
 

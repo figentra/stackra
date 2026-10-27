@@ -3,7 +3,7 @@
  * Purpose: `RegistryStore`: the registry's D1 access.
  * Boundary: SQL over the D1 binding only; no rule is decided here. Writes that belong together go in one D1 batch
  *           (one transaction). The licence tables are stackra-183's.
- * Runtime: Cloudflare Workers
+ * Runtime: worker
  * Governing contract: ADR 0453 (decision 3); migrations/0001_registry.sql.
  */
 import type { AuditEvent } from "#src/interfaces/audit-event.interface";

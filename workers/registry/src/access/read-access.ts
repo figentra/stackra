@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `readAccess`: the read rule of a scope for one request.
  * Boundary: decides; reads the licence only through the `LicenceCheck` port.
- * Runtime: Cloudflare Workers
+ * Runtime: worker
  * Governing contract: ADR 0453 (decisions 10 and 13).
  */
 import { bearer } from "#src/access/bearer";

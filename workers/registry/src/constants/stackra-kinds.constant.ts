@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `STACKRA_KINDS`: the exactly five kinds of item; a missing `stackra.kind` is `package`.
  * Boundary: a constant only.
- * Runtime: Cloudflare Workers
+ * Runtime: worker
  * Governing contract: ADR 0453 (decisions 11 and 12).
  */
 

@@ -4,7 +4,7 @@
  *          from the vars, the signer from REGISTRY_SIGNING_KEY, the D1 store, the GitHub key set through KV, the
  *          licence check behind the edge cache) and hands each request to `handleRequest`.
  * Boundary: wiring only. The licence check is `noLicences` until stackra-183 binds its D1 adapter here.
- * Runtime: Cloudflare Workers
+ * Runtime: worker
  * Governing contract: ADR 0453 (decisions 2, 3 and 19).
  */
 import { cachedLicenceCheck } from "#src/access/cached-licence-check";

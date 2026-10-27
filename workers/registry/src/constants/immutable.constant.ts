@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `IMMUTABLE`: the Cache-Control of an open tarball (ADR 0453 decision 5).
  * Boundary: a constant only.
- * Runtime: Cloudflare Workers
+ * Runtime: worker
  * Governing contract: ADR 0453 (decision 4).
  */
 

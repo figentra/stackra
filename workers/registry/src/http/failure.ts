@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `failure`: an error in npm's shape.
  * Boundary: builds Response objects only.
- * Runtime: Cloudflare Workers
+ * Runtime: worker
  * Governing contract: ADR 0453 (decision 4).
  */
 import { json } from "#src/http/json";

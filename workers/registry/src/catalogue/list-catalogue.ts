@@ -3,7 +3,7 @@
  * Purpose: `listCatalogue`: `GET /-/stackra/v1/catalogue`.
  * Boundary: metadata only, to anyone, for the `open` and `licensed` scopes; never a tarball or file contents beyond
  *           the `stackra` field. `internal` scopes are not listed.
- * Runtime: Cloudflare Workers
+ * Runtime: worker
  * Governing contract: ADR 0453 (decisions 11, 12 and 13).
  */
 import { fromBase64 } from "#src/bytes/from-base64";
@@ -38,7 +38,7 @@ const decodeCursor = (text: string): Cursor | null => {
 };
 
 /**
- * `GET /-/stackra/v1/catalogue`.
+ * Serves one filtered page of the catalogue, newest change first, `GET /-/stackra/v1/catalogue`.
  *
  * @example
  * await listCatalogue(deps, new URL("https://npm.stackra.figentra.com/-/stackra/v1/catalogue?kind=skill"));

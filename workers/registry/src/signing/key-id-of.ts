@@ -3,7 +3,7 @@
  * Purpose: `keyIdOf`: the keyid of an SPKI DER key.
  * Boundary: Web Crypto only; the private key comes from the REGISTRY_SIGNING_KEY secret (PKCS#8 PEM) and never leaves
  *           this module.
- * Runtime: Cloudflare Workers
+ * Runtime: worker
  * Governing contract: ADR 0453 (decision 9); npm registry signatures.
  */
 import { toBase64 } from "#src/bytes/to-base64";

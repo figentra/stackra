@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `cachedLicenceCheck`: the licence check behind the edge cache.
  * Boundary: caching only; the cache key is the token's SHA-256, never the token.
- * Runtime: Cloudflare Workers
+ * Runtime: worker
  * Governing contract: ADR 0453 (decisions 3 and 13).
  */
 import type { LicenceCheck } from "#src/access/licence-check.port";

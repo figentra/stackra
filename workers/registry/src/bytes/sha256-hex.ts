@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `sha256Hex`: the SHA-256 hex of a token: what the registry stores instead of the token.
  * Boundary: pure Web Crypto; no I/O.
- * Runtime: Cloudflare Workers
+ * Runtime: worker
  * Governing contract: ADR 0453 (decision 8).
  */
 import { toHex } from "#src/bytes/to-hex";

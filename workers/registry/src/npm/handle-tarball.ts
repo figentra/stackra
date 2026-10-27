@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `handleTarball`: `GET /@scope/name/-/name-<version>.tgz`.
  * Boundary: reads only; never proxies an upstream (an unknown name is 404).
- * Runtime: Cloudflare Workers
+ * Runtime: worker
  * Governing contract: ADR 0453 (decisions 4, 5, 9, 10 and 13).
  */
 import { gate } from "#src/access/gate";
@@ -13,7 +13,7 @@ import { splitName } from "#src/http/split-name";
 import type { RegistryDeps } from "#src/interfaces/registry-deps.interface";
 import { tarballKey } from "#src/npm/tarball-key";
 
-/** `GET /@scope/name/-/name-<version>.tgz`. */
+/** Streams the tarball of one version and counts the download, `GET /@scope/name/-/name-<version>.tgz`. */
 export async function handleTarball(
   deps: RegistryDeps,
   request: Request,

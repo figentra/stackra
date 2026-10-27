@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `handlePackument`: `GET /@scope/name`.
  * Boundary: reads only; never proxies an upstream (an unknown name is 404).
- * Runtime: Cloudflare Workers
+ * Runtime: worker
  * Governing contract: ADR 0453 (decisions 4, 5, 9, 10 and 13).
  */
 import { gate } from "#src/access/gate";
@@ -14,7 +14,7 @@ import { packumentBody } from "#src/npm/packument-body";
 /** npm's media type for the abbreviated packument. */
 const ABBREVIATED = "application/vnd.npm.install-v1+json";
 
-/** `GET /@scope/name`. */
+/** Serves the full or abbreviated packument of a package, `GET /@scope/name`. */
 export async function handlePackument(
   deps: RegistryDeps,
   request: Request,

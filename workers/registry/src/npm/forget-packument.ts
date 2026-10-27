@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `forgetPackument`: drops both cached packuments of a package.
  * Boundary: rendering and the KV cache only; read rules are the caller's.
- * Runtime: Cloudflare Workers
+ * Runtime: worker
  * Governing contract: ADR 0453 (decisions 3, 4, 8 and 9).
  */
 import type { KvNamespace } from "#src/interfaces/kv-namespace.interface";

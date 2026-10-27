@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `tarballDigests`: the integrity, shasum and SHA-256 of a tarball.
  * Boundary: pure Web Crypto; no I/O.
- * Runtime: Cloudflare Workers
+ * Runtime: worker
  * Governing contract: ADR 0453 (decision 8).
  */
 import { toBase64 } from "#src/bytes/to-base64";

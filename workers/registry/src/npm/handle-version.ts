@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `handleVersion`: `GET /@scope/name/<version-or-tag>`.
  * Boundary: reads only; never proxies an upstream (an unknown name is 404).
- * Runtime: Cloudflare Workers
+ * Runtime: worker
  * Governing contract: ADR 0453 (decisions 4, 5, 9, 10 and 13).
  */
 import { gate } from "#src/access/gate";
@@ -12,7 +12,7 @@ import type { RegistryDeps } from "#src/interfaces/registry-deps.interface";
 import { metadataCache } from "#src/npm/metadata-cache";
 import { renderManifest } from "#src/npm/render-manifest";
 
-/** `GET /@scope/name/<version-or-tag>`. */
+/** Serves the manifest of one version or dist-tag, `GET /@scope/name/<version-or-tag>`. */
 export async function handleVersion(
   deps: RegistryDeps,
   request: Request,

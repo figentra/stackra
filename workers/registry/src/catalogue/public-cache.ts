@@ -3,7 +3,7 @@
  * Purpose: `publicCache`: the public Cache-Control of catalogue answers.
  * Boundary: metadata only, to anyone, for the `open` and `licensed` scopes; never a tarball or file contents beyond
  *           the `stackra` field. `internal` scopes are not listed.
- * Runtime: Cloudflare Workers
+ * Runtime: worker
  * Governing contract: ADR 0453 (decisions 11, 12 and 13).
  */
 import type { RegistryDeps } from "#src/interfaces/registry-deps.interface";

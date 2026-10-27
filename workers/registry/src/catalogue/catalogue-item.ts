@@ -3,7 +3,7 @@
  * Purpose: `catalogueItem`: `GET /-/stackra/v1/catalogue/@scope/name`.
  * Boundary: metadata only, to anyone, for the `open` and `licensed` scopes; never a tarball or file contents beyond
  *           the `stackra` field. `internal` scopes are not listed.
- * Runtime: Cloudflare Workers
+ * Runtime: worker
  * Governing contract: ADR 0453 (decisions 11, 12 and 13).
  */
 import { itemOf } from "#src/catalogue/item-of";
@@ -13,7 +13,7 @@ import { json } from "#src/http/json";
 import type { CatalogueItem } from "#src/interfaces/catalogue-item.interface";
 import type { RegistryDeps } from "#src/interfaces/registry-deps.interface";
 
-/** `GET /-/stackra/v1/catalogue/@scope/name`. */
+/** Serves one catalogue entry with its versions, `GET /-/stackra/v1/catalogue/@scope/name`. */
 export async function catalogueItem(deps: RegistryDeps, name: string): Promise<Response> {
   const pkg = await deps.store.package(name);
   const scope = pkg === null ? null : await deps.store.scope(pkg.scope);

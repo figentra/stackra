@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `attestationKey`: the R2 key of a provenance bundle.
  * Boundary: reads only; never proxies an upstream (an unknown name is 404).
- * Runtime: Cloudflare Workers
+ * Runtime: worker
  * Governing contract: ADR 0453 (decisions 4, 5, 9, 10 and 13).
  */
 

@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `renderPackument`: A packument.
  * Boundary: rendering and the KV cache only; read rules are the caller's.
- * Runtime: Cloudflare Workers
+ * Runtime: worker
  * Governing contract: ADR 0453 (decisions 3, 4, 8 and 9).
  */
 import type { PackageRow } from "#src/interfaces/package-row.interface";
@@ -50,7 +50,7 @@ function abbreviate(row: VersionRow, host: string): Record<string, unknown> {
 }
 
 /**
- * A packument.
+ * Renders the packument of a package from its rows, in the full or the abbreviated form.
  *
  * @param abbreviated - the install form (`application/vnd.npm.install-v1+json`).
  */

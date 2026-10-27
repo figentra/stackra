@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `PRIVATE_NO_STORE`: the Cache-Control of anything licensed or token-bound (ADR 0453 decision 5).
  * Boundary: a constant only.
- * Runtime: Cloudflare Workers
+ * Runtime: worker
  * Governing contract: ADR 0453 (decision 4).
  */
 

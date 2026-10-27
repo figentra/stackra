@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `ReadAccess`: the outcome of a read check.
  * Boundary: decides; reads the licence only through the `LicenceCheck` port.
- * Runtime: Cloudflare Workers
+ * Runtime: worker
  * Governing contract: ADR 0453 (decisions 10 and 13).
  */
 import type { LicenceView } from "#src/interfaces/licence-view.interface";

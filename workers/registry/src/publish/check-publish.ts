@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `checkPublish`: the content checks of one publish.
  * Boundary: pure; the size limit, the immutability check and the provenance check are the publish handler's.
- * Runtime: Cloudflare Workers
+ * Runtime: worker
  * Governing contract: ADR 0453 (decisions 7, 8 and 11); ADR 0316 (decision 2); ADR 0024 (decision 5); ADR 0013.
  */
 import { STACKRA_KINDS } from "#src/constants/stackra-kinds.constant";

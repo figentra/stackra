@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `RegistryDeps`: the registry's dependencies.
  * Boundary: type only.
- * Runtime: Cloudflare Workers
+ * Runtime: worker
  * Governing contract: ADR 0453.
  */
 import type { LicenceCheck } from "#src/access/licence-check.port";
@@ -15,13 +15,21 @@ import type { RegistryStore } from "#src/store/registry-store";
 
 /** The registry's dependencies. */
 export interface RegistryDeps {
+  /** The D1-backed store of scopes, packages, versions and tokens. */
   readonly store: RegistryStore;
+  /** The R2 bucket that holds the tarballs and attestation bundles. */
   readonly tarballs: R2Bucket;
+  /** The KV namespace that caches rendered packuments. */
   readonly cache: KvNamespace;
+  /** The check that turns a licence token into the licence behind it. */
   readonly licences: LicenceCheck;
+  /** The signer of published versions and the source of `/-/npm/v1/keys`. */
   readonly signer: Signer;
+  /** The source of the OIDC issuer's public keys. */
   readonly oidcKeys: KeySource;
+  /** The registry's settings, read from its vars. */
   readonly settings: RegistrySettings;
+  /** Returns the current time; tests pass a fixed clock. */
   now(): Date;
   /** Runs work after the response (the Worker's `ctx.waitUntil`). */
   defer(task: Promise<unknown>): void;

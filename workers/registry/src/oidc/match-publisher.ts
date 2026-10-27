@@ -3,7 +3,7 @@
  * Purpose: `matchPublisher`: the trusted publisher the claims match, or null.
  * Boundary: verification only; minting the publish token is `exchangeToken`'s. Throws `OidcError` with a reason that
  *           names no token value.
- * Runtime: Cloudflare Workers
+ * Runtime: worker
  * Governing contract: ADR 0453 (decisions 3 and 6).
  */
 import type { GithubClaims } from "#src/interfaces/github-claims.interface";

@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `parsePath`: the route of a request path.
  * Boundary: pure; no method check and no lookup (the router does both).
- * Runtime: Cloudflare Workers
+ * Runtime: worker
  * Governing contract: ADR 0453 (decisions 4 and 12).
  */
 import type { RegistryRoute } from "#src/interfaces/registry-route.type";

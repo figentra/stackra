@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `readSettings`: the registry's settings from its vars.
  * Boundary: parsing only; the values and their defaults live in wrangler.jsonc.
- * Runtime: Cloudflare Workers
+ * Runtime: worker
  * Governing contract: ADR 0453 (decision 19).
  */
 import type { RegistryEnv } from "#src/interfaces/registry-env.interface";
