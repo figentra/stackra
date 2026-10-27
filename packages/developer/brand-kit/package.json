@@ -9,6 +9,9 @@
     "url": "git+https://github.com/figentra/stackra.git",
     "directory": "packages/developer/brand-kit"
   },
+  "bin": {
+    "stackra-brand-kit": "./dist/brand-kit.mjs"
+  },
   "files": [
     "dist",
     "src",
@@ -28,6 +31,11 @@
       "./src/core/*",
       "./src/core/*.ts",
       "./src/core/*/index.ts"
+    ],
+    "#node/*": [
+      "./src/node/*",
+      "./src/node/*.ts",
+      "./src/node/*/index.ts"
     ]
   },
   "exports": {
@@ -58,7 +66,9 @@
     "clean": "rm -rf dist coverage .turbo"
   },
   "dependencies": {
-    "@stackra/contracts": "workspace:*"
+    "@resvg/resvg-wasm": "catalog:",
+    "@stackra/contracts": "workspace:*",
+    "@stackra/tokens": "workspace:*"
   },
   "devDependencies": {
     "@stackra/testing": "workspace:*",

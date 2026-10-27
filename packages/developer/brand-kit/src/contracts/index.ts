@@ -17,4 +17,10 @@ export type { BrandCheckResult } from "#contracts/types/brand-check-result.type"
 export type { BrandKit } from "#contracts/types/brand-kit.type";
 export type { BrandKitOptions } from "#contracts/types/brand-kit-options.type";
 export type { BrandKitParent } from "#contracts/types/brand-kit-parent.type";
+export type { BrandKitRunOptions } from "#contracts/types/brand-kit-run-options.type";
+export type { GeneratedFile } from "#contracts/types/generated-file.type";
+export type { KitInput } from "#contracts/types/kit-input.type";
 export type { LocalizedText } from "#contracts/types/localized-text.type";
+export type { StoreCaption } from "#contracts/types/store-caption.type";
+export type { StoreCaptionSet } from "#contracts/types/store-caption-set.type";
+export type { SvgRenderer } from "#contracts/types/svg-renderer.type";
