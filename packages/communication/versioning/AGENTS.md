@@ -8,6 +8,7 @@ Dated API versions and versioned integration events (ADR 0118, 0141, 0305). Memb
 | You are writing… | It goes in…                                 |
 | ---------------- | ------------------------------------------- |
 | The kind base    | `src/core/bases/change.base.ts`             |
+| An instance base | `src/core/bases/<name>-base.base.ts`        |
 | A function       | `src/core/functions/<name>.function.ts`     |
 | A type           | `src/core/types/<name>.type.ts`             |
 | A constant       | `src/core/constants/<name>.constant.ts`     |

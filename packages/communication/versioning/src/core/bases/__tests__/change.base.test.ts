@@ -18,7 +18,10 @@ import { z } from "zod";
 
 import { Change } from "#core/bases/change.base";
 
-class PointsEarned extends IntegrationEvent({ name: "points.earned", version: 2 }) {
+class PointsEarned extends IntegrationEvent({
+  name: "points.earned",
+  version: 2,
+}) {
   memberId!: string;
 
   points!: number;
@@ -26,7 +29,10 @@ class PointsEarned extends IntegrationEvent({ name: "points.earned", version: 2 
   tier!: string;
 }
 
-class PointsEarnedV1Change extends Change<PointsEarned>({ from: 1, sunset: "2027-04-01" }) {
+class PointsEarnedV1Change extends Change<PointsEarned>({
+  from: 1,
+  sunset: "2027-04-01",
+}) {
   memberId!: string;
 
   points!: number;
@@ -128,7 +134,10 @@ describe("Change", () => {
     // @ts-expect-error -- a schema takes a dated change
     const NumberedSchema = Change<OrderView>({ from: 1, sunset: "2027-04-01" });
     // @ts-expect-error -- an event change implements up
-    class WithoutUp extends Change<PointsEarned>({ from: 1, sunset: "2027-04-01" }) {
+    class WithoutUp extends Change<PointsEarned>({
+      from: 1,
+      sunset: "2027-04-01",
+    }) {
       down(): WithoutUp {
         return WithoutUp.create({});
       }

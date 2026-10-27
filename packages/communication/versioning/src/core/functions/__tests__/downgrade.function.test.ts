@@ -59,7 +59,10 @@ class OrderView202703Change extends Change<OrderView>({
   }
 }
 
-class PointsEarned extends IntegrationEvent({ name: "points.earned", version: 3 }) {
+class PointsEarned extends IntegrationEvent({
+  name: "points.earned",
+  version: 3,
+}) {
   memberId!: string;
 
   points!: number;
@@ -70,7 +73,10 @@ class PointsEarned extends IntegrationEvent({ name: "points.earned", version: 3 
 }
 
 /** v2 had no balance. */
-class PointsEarnedV2Change extends Change<PointsEarned>({ from: 2, sunset: "2027-10-01" }) {
+class PointsEarnedV2Change extends Change<PointsEarned>({
+  from: 2,
+  sunset: "2027-10-01",
+}) {
   memberId!: string;
 
   points!: number;
@@ -87,7 +93,10 @@ class PointsEarnedV2Change extends Change<PointsEarned>({ from: 2, sunset: "2027
 }
 
 /** v1 had no tier either. */
-class PointsEarnedV1Change extends Change<PointsEarned>({ from: 1, sunset: "2027-04-01" }) {
+class PointsEarnedV1Change extends Change<PointsEarned>({
+  from: 1,
+  sunset: "2027-04-01",
+}) {
   memberId!: string;
 
   points!: number;
@@ -101,11 +110,17 @@ class PointsEarnedV1Change extends Change<PointsEarned>({ from: 1, sunset: "2027
   }
 }
 
-class StockMoved extends IntegrationEvent({ name: "stock.moved", version: 3 }) {
+class StockMoved extends IntegrationEvent({
+  name: "stock.moved",
+  version: 3,
+}) {
   sku!: string;
 }
 
-class StockMovedV1Change extends Change<StockMoved>({ from: 1, sunset: "2027-04-01" }) {
+class StockMovedV1Change extends Change<StockMoved>({
+  from: 1,
+  sunset: "2027-04-01",
+}) {
   up(): StockMoved {
     return StockMoved.create({ sku: "sku_1" });
   }

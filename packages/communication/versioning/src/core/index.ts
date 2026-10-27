@@ -9,7 +9,8 @@
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision.
  */
 export { Change } from "#core/bases/change.base";
-export type { ChangeBase, EventChangeBase } from "#core/bases/change.base";
+export type { ChangeBase } from "#core/bases/change-base.base";
+export type { EventChangeBase } from "#core/bases/event-change-base.base";
 export { VERSION_SUPPORT_MONTHS } from "#core/constants/version-support-months.constant";
 export { VERSIONING_HEADERS } from "#core/constants/versioning-headers.constant";
 export { UnsupportedVersionError } from "#core/errors/unsupported-version.error";

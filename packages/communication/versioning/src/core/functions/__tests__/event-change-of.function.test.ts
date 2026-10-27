@@ -15,7 +15,10 @@ import { Change } from "#core/bases/change.base";
 import { eventChangeOf } from "#core/functions/event-change-of.function";
 import { registerChanges } from "#core/functions/register-changes.function";
 
-class StockMoved extends IntegrationEvent({ name: "stock.moved", version: 3 }) {
+class StockMoved extends IntegrationEvent({
+  name: "stock.moved",
+  version: 3,
+}) {
   sku!: string;
 }
 

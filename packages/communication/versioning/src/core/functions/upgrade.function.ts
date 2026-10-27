@@ -12,7 +12,7 @@
 import type { Event, EventClass } from "@stackra/events";
 import type { Fields } from "@stackra/validation";
 
-import type { EventChangeBase } from "#core/bases/change.base";
+import type { EventChangeBase } from "#core/bases/event-change-base.base";
 import { eventChangeOf } from "#core/functions/event-change-of.function";
 
 /**

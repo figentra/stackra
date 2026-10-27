@@ -8,41 +8,22 @@
  * Boundary: called only, with the subject as the type argument (gone at runtime: gen reads it and emits
  *           `registerChanges`). A called form without it fails with a readable hint (`WithPartner`); an event change
  *           takes an event and a whole `from`, a dated change a schema and a date. The options are checked and
- *           recorded as the `change` kind. `ChangeBase` and `EventChangeBase` are the instance bases; the entry
- *           exports them as types only, so no change skips its options.
+ *           recorded as the `change` kind. `ChangeBase` (change-base.base.ts) and `EventChangeBase`
+ *           (event-change-base.base.ts) are the instance bases; the entry exports them as types only, so no change
+ *           skips its options.
  * Runtime: isomorphic
  * Governing contract: ADR 0305 (rules 2, 5 and 44); ADR 0118 (2026-10-23 note: `up`, `down`, `*.change.ts`,
  *                     `@Upcast` retired); ADR 0141 (2026-10-23 note); ADR 0294 (decisions 1, 13 and 16).
  */
 import { createKind, type WithPartner } from "@stackra/container";
 import type { Event } from "@stackra/events";
-import { Schema } from "@stackra/validation";
+import type { Schema } from "@stackra/validation";
 
+import { ChangeBase } from "#core/bases/change-base.base";
+import { EventChangeBase } from "#core/bases/event-change-base.base";
 import { isCalendarDate } from "#core/functions/is-calendar-date.function";
 import type { ChangeClass } from "#core/types/change-class.type";
 import type { ChangeOptions } from "#core/types/change-options.type";
-
-/** The instance side every change shares: the old shape's fields and `down`. */
-export abstract class ChangeBase<S extends object> extends Schema {
-  /**
-   * Turns a value of the subject's current shape into this older one, usually with `X.create({ ... })`.
-   *
-   * @param subject - the current value.
-   * @returns the value in this class's shape.
-   */
-  abstract down(subject: S): ChangeBase<S>;
-}
-
-/** The instance side of an event change: `down`, and `up`, which reads an old payload as the current version. */
-export abstract class EventChangeBase<S extends Event> extends ChangeBase<S> {
-  /**
-   * Lifts a value of this older shape to the subject's current version.
-   *
-   * @param old - the value in this class's shape.
-   * @returns the current value, usually built with `Subject.create({ ... })`.
-   */
-  abstract up(old: this): S;
-}
 
 /** What a called form without its type argument fails with. */
 type Hint = "Name the subject as a type argument: Change<OrderView>({ from, sunset })";

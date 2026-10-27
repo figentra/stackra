@@ -16,11 +16,17 @@ import { CHANGE_REGISTRY } from "#core/constants/change-registry.constant";
 import { registerChanges } from "#core/functions/register-changes.function";
 import type { ChangeClass } from "#core/types/change-class.type";
 
-class StockMoved extends IntegrationEvent({ name: "stock.moved", version: 3 }) {
+class StockMoved extends IntegrationEvent({
+  name: "stock.moved",
+  version: 3,
+}) {
   sku!: string;
 }
 
-class StockMovedV1Change extends Change<StockMoved>({ from: 1, sunset: "2027-04-01" }) {
+class StockMovedV1Change extends Change<StockMoved>({
+  from: 1,
+  sunset: "2027-04-01",
+}) {
   up(): StockMoved {
     return StockMoved.create({ sku: "sku_1" });
   }
@@ -30,7 +36,10 @@ class StockMovedV1Change extends Change<StockMoved>({ from: 1, sunset: "2027-04-
   }
 }
 
-class StockMovedV2Change extends Change<StockMoved>({ from: 2, sunset: "2027-10-01" }) {
+class StockMovedV2Change extends Change<StockMoved>({
+  from: 2,
+  sunset: "2027-10-01",
+}) {
   up(): StockMoved {
     return StockMoved.create({ sku: "sku_1" });
   }

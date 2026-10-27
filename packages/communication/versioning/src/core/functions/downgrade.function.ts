@@ -13,7 +13,7 @@
  */
 import type { AnyClass } from "@stackra/container";
 
-import type { ChangeBase } from "#core/bases/change.base";
+import type { ChangeBase } from "#core/bases/change-base.base";
 import { CHANGE_REGISTRY } from "#core/constants/change-registry.constant";
 import { eventChangeOf } from "#core/functions/event-change-of.function";
 import { isCalendarDate } from "#core/functions/is-calendar-date.function";

@@ -17,7 +17,10 @@ import { Change } from "#core/bases/change.base";
 import { registerChanges } from "#core/functions/register-changes.function";
 import { upgrade } from "#core/functions/upgrade.function";
 
-class PointsEarned extends IntegrationEvent({ name: "points.earned", version: 3 }) {
+class PointsEarned extends IntegrationEvent({
+  name: "points.earned",
+  version: 3,
+}) {
   memberId!: string;
 
   points!: number;
@@ -28,7 +31,10 @@ class PointsEarned extends IntegrationEvent({ name: "points.earned", version: 3 
 }
 
 /** v1 had no tier and no balance. */
-class PointsEarnedV1Change extends Change<PointsEarned>({ from: 1, sunset: "2027-04-01" }) {
+class PointsEarnedV1Change extends Change<PointsEarned>({
+  from: 1,
+  sunset: "2027-04-01",
+}) {
   memberId!: string;
 
   points!: number;
