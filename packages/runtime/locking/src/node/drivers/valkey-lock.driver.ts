@@ -17,7 +17,7 @@ import { Driver } from "@stackra/container";
 import { Duration } from "@stackra/contracts";
 import Valkey from "iovalkey";
 
-import { LockingConfig } from "#config/locking.config";
+import type { LockingConfig } from "#config/locking.config";
 import { LockDriver } from "#contracts/index";
 import type { LockLease } from "#contracts/index";
 

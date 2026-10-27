@@ -33,7 +33,9 @@ export class PostgresLockDriver extends Driver(LockDriver) {
   /** The connected database. */
   private readonly database: Database;
 
-  /** @param database - the connected database whose running transaction each lock joins. */
+  /**
+   * @param database - the connected database whose running transaction each lock joins.
+   */
   constructor(database: Database) {
     super();
     this.database = database;

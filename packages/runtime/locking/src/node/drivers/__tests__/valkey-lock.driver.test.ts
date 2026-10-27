@@ -31,6 +31,7 @@ vi.mock("iovalkey", () => ({
     constructor(...args: unknown[]) {
       server.urls.push(args[0]);
     }
+
     async eval(script: string, count: number, ...rest: string[]) {
       server.calls.push([count, ...rest]);
       const keys = rest.slice(0, count);

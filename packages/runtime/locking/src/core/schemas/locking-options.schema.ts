@@ -27,12 +27,12 @@ import { LOCKING_CONFIG_SCHEMA } from "#core/constants/locking-config-schema.con
  * }
  */
 export class LockingOptions extends Schema {
-  /** Which driver runs: `postgres` holds advisory locks in the service's database; `memory` in the process. */
-  driver: DriverName<LockDriver> = "postgres";
-
   /** The `valkey` driver's server (`redis://` or `rediss://`, with its password); empty until the secret is set. */
   @Secret("LOCKING_VALKEY_URL")
   valkeyUrl = "";
+
+  /** Which driver runs: `postgres` holds advisory locks in the service's database; `memory` in the process. */
+  driver: DriverName<LockDriver> = "postgres";
 
   /** The `valkey` driver's keys. */
   valkey: {

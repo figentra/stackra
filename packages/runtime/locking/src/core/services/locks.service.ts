@@ -13,7 +13,8 @@
  *                     registry A9); ADR 0294 (decisions 16 and 17: dependencies by constructor type); ADR 0263.
  */
 import { Service } from "@stackra/container";
-import { Clock, Duration } from "@stackra/contracts";
+import type { Clock } from "@stackra/contracts";
+import { Duration } from "@stackra/contracts";
 
 import type { LockDriver, LockLease } from "#contracts/index";
 import { LockUnavailableError } from "#core/errors/lock-unavailable.error";

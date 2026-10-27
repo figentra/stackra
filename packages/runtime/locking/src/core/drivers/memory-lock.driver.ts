@@ -11,7 +11,8 @@
  *                     drivers first).
  */
 import { Driver } from "@stackra/container";
-import { Clock, Duration } from "@stackra/contracts";
+import type { Clock } from "@stackra/contracts";
+import { Duration } from "@stackra/contracts";
 
 import { LockDriver } from "#contracts/index";
 import type { LockLease } from "#contracts/index";
@@ -36,7 +37,9 @@ export class MemoryLockDriver extends Driver(LockDriver) {
 
   private readonly clock: Clock;
 
-  /** @param clock - the time source of expiry. */
+  /**
+   * @param clock - the time source of expiry.
+   */
   constructor(clock: Clock) {
     super();
     this.clock = clock;
