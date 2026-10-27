@@ -17,7 +17,8 @@ vi.mock("@react-navigation/native", () => ({ useNavigation: vi.fn(), StackAction
 vi.mock("@stackra/ui/native", () => ({ Menu: vi.fn(), Spinner: vi.fn(), ErrorState: vi.fn() }));
 
 describe("@stackra/navigation/native", () => {
-  it("exports exactly its values", async () => {
+  // The first import loads the whole native entry; under coverage instrumentation that alone passes the 5 s default.
+  it("exports exactly its values", { timeout: 30_000 }, async () => {
     const native = await import("#native/index");
     expect(Object.keys(native).sort()).toEqual([
       "ContextMenu",

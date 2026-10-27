@@ -9,13 +9,13 @@
 import type { AnyClass } from "@stackra/container";
 import type { Fields } from "@stackra/validation";
 
-import type { OptionsOf } from "#core/types/options-of.type";
 import type { PathParams } from "#core/types/path-params.type";
 
+// Distributive over `T` (checked naked, not through `OptionsOf`), so inside a class TS reads `X<this>` through the
+// class it is declared on and `ctx.params` keeps its fields; a check through `OptionsOf<T>` stays deferred there.
 /** The params of route or layout instance `T`. */
-export type ParamsOf<T> =
-  OptionsOf<T> extends { readonly params: AnyClass<infer S> }
-    ? Fields<S>
-    : OptionsOf<T> extends { readonly path: infer P extends string }
-      ? PathParams<P>
-      : Readonly<Record<string, string | undefined>>;
+export type ParamsOf<T> = T extends { readonly "~options": { readonly params: AnyClass<infer S> } }
+  ? Fields<S>
+  : T extends { readonly "~options": { readonly path: infer P extends string } }
+    ? PathParams<P>
+    : Readonly<Record<string, string | undefined>>;

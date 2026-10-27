@@ -33,6 +33,13 @@ import { nativeLoad } from "#native/screen/native-load.function";
 // shortcut: English until the package ships its `navigation::errors.*` catalogue; swap in the keys then.
 const STRINGS = { failed: "This screen could not load", retry: "Try again" } as const;
 
+/** A page with its route's typing erased: the adapter hands it the `{ data, params, search }` the router holds. */
+type ErasedPage = ComponentType<{
+  readonly data: unknown;
+  readonly params: unknown;
+  readonly search: unknown;
+}>;
+
 /** What a screen shows. */
 type ScreenState =
   | { readonly status: "loading" }
@@ -93,7 +100,7 @@ export function toScreen<R extends RouteClass>(entry: {
       );
     return (
       <RouteReloadContext value={reload}>
-        {createElement(entry.page as ComponentType<object>, {
+        {createElement(entry.page as ErasedPage, {
           data: state.data,
           params: state.params,
           search: state.search,

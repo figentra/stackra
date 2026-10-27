@@ -107,7 +107,8 @@ describe("createRouteContext", () => {
 
   it("calls the caller, a refusal as { ok: false }", async () => {
     const caller = {
-      query: vi.fn(async () => ({ total: 3 })),
+      // The port's query is generic over the query; this stub answers the one query the test sends.
+      query: vi.fn(async () => ({ total: 3 }) as never),
       action: vi.fn(async () => {
         throw RateLimitedError.create();
       }),

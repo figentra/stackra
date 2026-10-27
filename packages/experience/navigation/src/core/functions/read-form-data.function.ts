@@ -56,7 +56,10 @@ export async function readFormData(request: Request): Promise<Record<string, unk
       : {};
   }
   const out: Record<string, unknown> = {};
-  for (const [name, value] of (await request.formData()).entries()) {
+  // The ./native entry pulls react-native's global `FormData` class into this program, and it declares no iterator;
+  // every fetch runtime's FormData iterates its entries, which is what the DOM type says.
+  const fields = (await request.formData()) as unknown as Iterable<[string, FormDataEntryValue]>;
+  for (const [name, value] of fields) {
     const path = name.split(".");
     const isRefused = (segment: string) =>
       segment === "" || UNSAFE.has(segment) || (INDEX.test(segment) && Number(segment) > MAX_INDEX);

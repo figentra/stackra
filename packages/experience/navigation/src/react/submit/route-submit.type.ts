@@ -11,6 +11,7 @@ import type { AnyClass } from "@stackra/container";
 import type { FieldErrors } from "@stackra/errors";
 
 import type { Route } from "#core/bases/route.base";
+import type { ClassInstance } from "#core/types/class-instance.type";
 import type { SubmitData } from "#core/types/submit-data.type";
 
 /** Posts to the `submit` of route class `R`. */
@@ -20,7 +21,7 @@ export type RouteSubmit<R extends AnyClass<Route>> = ((
   /** True while the post is in flight. */
   readonly isPending: boolean;
   /** What the last submit handed back; `undefined` before the first answer. */
-  readonly data: SubmitData<InstanceType<R>> | undefined;
+  readonly data: SubmitData<ClassInstance<R>> | undefined;
   /** The field errors of the last answer, by path; empty when it named none. */
   readonly fieldErrors: FieldErrors;
 };

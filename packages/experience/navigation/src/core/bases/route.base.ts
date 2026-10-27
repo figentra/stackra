@@ -18,6 +18,7 @@ import type { Seo } from "@stackra/seo";
 
 import { Presentation } from "#core/enums/presentation.enum";
 import type { MetaContext } from "#core/types/meta-context.type";
+import type { OptionsLayoutData } from "#core/types/options-layout-data.type";
 import type { RouteClass } from "#core/types/route-class.type";
 import type { RouteContext } from "#core/types/route-context.type";
 import type { RouteOptions } from "#core/types/route-options.type";
@@ -29,6 +30,9 @@ export interface Route<O extends RouteOptions = RouteOptions> {
 
   /** Type-only: the options the class was declared with, read by `RouteContext`, `RouteProps` and `InferParams`. */
   readonly "~options": O;
+
+  /** Type-only: the data its layout shares, read by `RouteContext` and `MetaContext` (`ctx.site`). */
+  readonly "~layoutData": OptionsLayoutData<O>;
 
   /** What the page shows; a redirect (`ctx.redirect`) or a thrown `ctx.notFound()` instead of data. */
   loader(ctx: RouteContext<this>): unknown;

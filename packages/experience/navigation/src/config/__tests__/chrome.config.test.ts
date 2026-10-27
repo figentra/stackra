@@ -18,10 +18,15 @@ import type { ChromeHeader } from "#core/types/chrome-header.type";
 /** The template mobile app's override, under the Base alias. */
 const BaseChromeConfig = ChromeConfig;
 
-class MobileChromeConfig extends BaseChromeConfig {
-  override header = { ...this.header, blur: true, backTitle: BackTitle.Minimal };
+// The overrides spread the built defaults: `{ ...this.header }` in a field initializer is TS2729 (the field reads
+// itself before it is initialised), though it runs, so the type check needs the base values from outside the class.
+/** The package defaults the overrides start from. */
+const defaults = buildConfig(BaseChromeConfig);
 
-  override tabBar = { ...this.tabBar, minimizeOnScroll: true, sidebarAdaptable: true };
+class MobileChromeConfig extends BaseChromeConfig {
+  override header = { ...defaults.header, blur: true, backTitle: BackTitle.Minimal };
+
+  override tabBar = { ...defaults.tabBar, minimizeOnScroll: true, sidebarAdaptable: true };
 }
 
 describe("ChromeConfig", () => {
@@ -45,7 +50,7 @@ describe("ChromeConfig", () => {
 
   it("refuses a back title that is not a code", () => {
     class BadChromeConfig extends BaseChromeConfig {
-      override header = { ...this.header, backTitle: "short" as BackTitle };
+      override header = { ...defaults.header, backTitle: "short" as BackTitle };
     }
     expect(() => buildConfig(BadChromeConfig)).toThrow(ConfigInvalidError);
   });

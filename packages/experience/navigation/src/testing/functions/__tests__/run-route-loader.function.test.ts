@@ -89,7 +89,7 @@ describe("runRouteLoader", () => {
     const run = (await runRouteLoader(TabsLayout, {
       session: { memberships: ["tnt_9"] },
       services: [tenancyPart],
-    })) as { tenancy: ScopeSwitcherFake };
+    })) as { result: unknown; tenancy: ScopeSwitcherFake };
     expect(run.tenancy.switchTo).toHaveBeenCalledWith("tnt_9");
     expect(ROUTE_TESTING_PARTS.size).toBe(0);
   });

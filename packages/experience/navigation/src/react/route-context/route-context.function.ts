@@ -14,6 +14,7 @@ import { I18nConfig, Locale } from "@stackra/i18n";
 import type { Layout } from "#core/bases/layout.base";
 import { localeOfPath } from "#core/functions/locale-of-path.function";
 import { resolveHref } from "#core/functions/resolve-href.function";
+import type { ClassInstance } from "#core/types/class-instance.type";
 import type { LoaderData } from "#core/types/loader-data.type";
 import type { RouteModuleContext } from "#react/route-context/route-module-context.type";
 import type { RouteKeys } from "#react/route-keys/route-keys.type";
@@ -46,7 +47,7 @@ export function routeContext(args: RouterArgs, keys: RouteKeys): RouteModuleCont
     },
     layout<L extends AnyClass<Layout>>(layout: L) {
       return layoutDataOf(layout, base) as Promise<
-        Exclude<LoaderData<InstanceType<L>>, null | undefined>
+        Exclude<LoaderData<ClassInstance<L>>, null | undefined>
       >;
     },
     query: (query, input) => clients().query(query, input, { signal: args.request.signal }),

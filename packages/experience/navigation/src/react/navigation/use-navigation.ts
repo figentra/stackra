@@ -13,7 +13,7 @@
  */
 import { kindOf } from "@stackra/container";
 import { useMemo } from "react";
-import { useLocation, useNavigation as useRouterNavigation, type Navigation } from "react-router";
+import { useLocation, useNavigation as useRouterNavigation } from "react-router";
 
 import { ROUTE_TABLE } from "#core/constants/route-table.constant";
 import type { NavigationItem } from "#core/types/navigation-item.type";
@@ -35,6 +35,9 @@ function permissionOf(item: NavigationItem): string | undefined {
   return typeof permission === "string" ? permission : undefined;
 }
 
+/** The router's navigation state as its hook returns it: a `Navigation` without `matches` and `historyAction`. */
+type RouterNavigation = ReturnType<typeof useRouterNavigation>;
+
 /** `path` without a trailing slash, the root kept. */
 const trimmed = (path: string): string => path.replace(/(?<=.)\/+$/, "");
 
@@ -45,7 +48,7 @@ const trimmed = (path: string): string => path.replace(/(?<=.)\/+$/, "");
  * navigation = useNavigation();
  * <Button isPending={this.navigation.state === "submitting"}>
  */
-export function useNavigation(): Navigation;
+export function useNavigation(): RouterNavigation;
 
 /**
  * The generated navigation tree, ready to draw for the viewer.
@@ -58,7 +61,7 @@ export function useNavigation(tree: NavigationTree): readonly ResolvedNavigation
 /** Implementation of both forms. */
 export function useNavigation(
   tree?: NavigationTree,
-): Navigation | readonly ResolvedNavigationGroup[] {
+): RouterNavigation | readonly ResolvedNavigationGroup[] {
   const state = useRouterNavigation();
   const { pathname } = useLocation();
   const href = useHrefResolver();

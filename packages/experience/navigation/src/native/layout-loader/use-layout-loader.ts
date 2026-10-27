@@ -15,6 +15,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Linking } from "react-native";
 
 import type { Layout } from "#core/bases/layout.base";
+import type { ClassInstance } from "#core/types/class-instance.type";
 import type { LoaderData } from "#core/types/loader-data.type";
 import type { LayoutLoaderState } from "#native/layout-loader/layout-loader-state.type";
 import { nativeLoad } from "#native/screen/native-load.function";
@@ -40,7 +41,7 @@ export function useLayoutLoader<L extends AnyClass<Layout>>(
   const [state, setState] = useState({
     isLoading: true,
     redirected: false,
-    data: undefined as LoaderData<InstanceType<L>> | undefined,
+    data: undefined as LoaderData<ClassInstance<L>> | undefined,
     error: undefined as unknown,
   });
   const [runs, setRuns] = useState(0);
@@ -55,7 +56,7 @@ export function useLayoutLoader<L extends AnyClass<Layout>>(
             : {
                 isLoading: false,
                 redirected: false,
-                data: outcome.data as LoaderData<InstanceType<L>>,
+                data: outcome.data as LoaderData<ClassInstance<L>>,
                 error: undefined,
               },
         );

@@ -28,6 +28,13 @@ import { RegisteredRoutePage } from "#react/route-pages/registered-route-page";
 import { routerPath } from "#react/route-objects/router-path.function";
 import { answerRoute } from "#react/route-run/answer-route.function";
 
+/** A page with its route's typing erased: the adapter hands it the `{ data, params, search }` the router holds. */
+type ErasedPage = ComponentType<{
+  readonly data: unknown;
+  readonly params: unknown;
+  readonly search: unknown;
+}>;
+
 /** The page of a `document:` route without its own page: the registered document page. */
 function DocumentRoutePage() {
   const { document } = useLoaderData() as { readonly document: unknown };
@@ -53,7 +60,7 @@ export function toRoute<R extends RouteClass>(
       const params = useParams();
       const [query] = useSearchParams();
       const search = useMemo(() => parseSearch(query, type), [query]);
-      return createElement(component as ComponentType<object>, { data, params, search });
+      return createElement(component as ErasedPage, { data, params, search });
     };
   else if (typeof recorded["document"] === "function") Component = DocumentRoutePage;
   return {

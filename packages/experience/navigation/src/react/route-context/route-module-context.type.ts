@@ -13,6 +13,7 @@ import type { AnyClass } from "@stackra/container";
 import type { Locale } from "@stackra/i18n";
 
 import type { Layout } from "#core/bases/layout.base";
+import type { ClassInstance } from "#core/types/class-instance.type";
 import type { HrefParams } from "#core/types/href-params.type";
 import type { LoaderData } from "#core/types/loader-data.type";
 import type { RouteQueryOptions } from "#core/types/route-query-options.type";
@@ -36,7 +37,7 @@ export interface RouteModuleContext {
    */
   layout<L extends AnyClass<Layout>>(
     layout: L,
-  ): Promise<Exclude<LoaderData<InstanceType<L>>, null | undefined>>;
+  ): Promise<Exclude<LoaderData<ClassInstance<L>>, null | undefined>>;
 
   /** The answer of a consumed public query. */
   query<Q extends QueryRef>(

@@ -35,7 +35,7 @@ class AnnouncementsRoute extends Route({
 /** The loader's answer for `type`. */
 function load(type: typeof WelcomeRoute | typeof AnnouncementsRoute) {
   const ctx = createRouteContext({ type, request: new Request("http://localhost/welcome") });
-  return loadRoute(type, instanceOf(type), ctx);
+  return loadRoute(type, instanceOf<Route>(type), ctx);
 }
 
 afterEach(() => {

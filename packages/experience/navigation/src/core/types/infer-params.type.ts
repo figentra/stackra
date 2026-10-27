@@ -9,7 +9,8 @@
 import type { AnyClass } from "@stackra/container";
 
 import type { Route } from "#core/bases/route.base";
+import type { ClassInstance } from "#core/types/class-instance.type";
 import type { ParamsOf } from "#core/types/params-of.type";
 
 /** The params of route class `R`. */
-export type InferParams<R extends AnyClass<Route>> = ParamsOf<InstanceType<R>>;
+export type InferParams<R extends AnyClass<Route>> = ParamsOf<ClassInstance<R>>;

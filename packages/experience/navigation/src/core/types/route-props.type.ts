@@ -11,6 +11,7 @@
 import type { AnyClass } from "@stackra/container";
 
 import type { Route } from "#core/bases/route.base";
+import type { ClassInstance } from "#core/types/class-instance.type";
 import type { LoaderData } from "#core/types/loader-data.type";
 import type { ParamsOf } from "#core/types/params-of.type";
 import type { SearchOf } from "#core/types/search-of.type";
@@ -18,11 +19,11 @@ import type { SearchOf } from "#core/types/search-of.type";
 /** The page props of route class `R`. */
 export interface RouteProps<R extends AnyClass<Route>> {
   /** What the route's loader returned. */
-  readonly data: LoaderData<InstanceType<R>>;
+  readonly data: LoaderData<ClassInstance<R>>;
 
   /** The path params. */
-  readonly params: ParamsOf<InstanceType<R>>;
+  readonly params: ParamsOf<ClassInstance<R>>;
 
   /** The parsed query string. */
-  readonly search: SearchOf<InstanceType<R>>;
+  readonly search: SearchOf<ClassInstance<R>>;
 }

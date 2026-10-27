@@ -11,6 +11,7 @@ import type { AnyClass } from "@stackra/container";
 import { useMatches } from "react-router";
 
 import type { Layout } from "#core/bases/layout.base";
+import type { ClassInstance } from "#core/types/class-instance.type";
 import type { LoaderData } from "#core/types/loader-data.type";
 
 /**
@@ -22,7 +23,7 @@ import type { LoaderData } from "#core/types/loader-data.type";
  */
 export function useLayoutData<L extends AnyClass<Layout>>(
   key: string,
-): LoaderData<InstanceType<L>> | undefined {
+): LoaderData<ClassInstance<L>> | undefined {
   const match = useMatches().find(({ id }) => id === key || id.endsWith(`/${key}`));
-  return match?.data as LoaderData<InstanceType<L>> | undefined;
+  return match?.data as LoaderData<ClassInstance<L>> | undefined;
 }

@@ -35,6 +35,13 @@ import type { RouteRun } from "#react/route-run/route-run.type";
 import { toRouterAnswer } from "#react/route-run/to-router-answer.function";
 import { toRouterError } from "#react/route-run/to-router-error.function";
 
+/** A page with its route's typing erased: the adapter hands it the `{ data, params, search }` the router holds. */
+type ErasedPage = ComponentType<{
+  readonly data: unknown;
+  readonly params: unknown;
+  readonly search: unknown;
+}>;
+
 /** A route module's loader data. */
 interface RouteModuleData {
   readonly data: unknown;
@@ -61,7 +68,7 @@ export function routeAdapter(
   const record = kindOf(type);
   const isLayout = record?.kind === "layout";
   const status = record?.options["status"];
-  const component = options.component as ComponentType<object> | undefined;
+  const component = options.component as ErasedPage | undefined;
 
   /** The page with `{ data, params, search }`. */
   function RoutePage({

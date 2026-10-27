@@ -35,6 +35,13 @@ import { contributionsOf } from "#testing/functions/contributions-of.function";
 import type { RenderRouteOptions } from "#testing/types/render-route-options.type";
 import type { RenderRouteResult } from "#testing/types/render-route-result.type";
 
+/** A page with its route's typing erased: the adapter hands it the `{ data, params, search }` the router holds. */
+type ErasedPage = ComponentType<{
+  readonly data: unknown;
+  readonly params: unknown;
+  readonly search: unknown;
+}>;
+
 /** The empty outlet under a mounted layout. */
 const EmptyOutlet = () => null;
 
@@ -52,9 +59,7 @@ export function mountRoute(
   const record = kindOf(type);
   const isLayout = record?.kind === "layout";
   const pattern = typeof record?.options["path"] === "string" ? record.options["path"] : "/";
-  const page = (component ?? ROUTE_PAGE_TABLE.get(type as RouteClass)) as
-    | ComponentType<object>
-    | undefined;
+  const page = (component ?? ROUTE_PAGE_TABLE.get(type as RouteClass)) as ErasedPage | undefined;
   const contribution = contributionsOf(type, input);
 
   /** One loader or submit run of the mount, answered in its router form. */

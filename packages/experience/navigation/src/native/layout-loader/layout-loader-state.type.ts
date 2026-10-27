@@ -9,6 +9,7 @@
 import type { AnyClass } from "@stackra/container";
 
 import type { Layout } from "#core/bases/layout.base";
+import type { ClassInstance } from "#core/types/class-instance.type";
 import type { LoaderData } from "#core/types/loader-data.type";
 
 /** The state of a native layout's loader. */
@@ -20,7 +21,7 @@ export interface LayoutLoaderState<L extends AnyClass<Layout>> {
   readonly redirected: boolean;
 
   /** The layout's data from the last run that answered data. */
-  readonly data: LoaderData<InstanceType<L>> | undefined;
+  readonly data: LoaderData<ClassInstance<L>> | undefined;
 
   /** The error of the last run that failed. */
   readonly error: unknown;

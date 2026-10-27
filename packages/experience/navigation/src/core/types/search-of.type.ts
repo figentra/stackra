@@ -9,10 +9,9 @@
 import type { AnyClass } from "@stackra/container";
 import type { Fields } from "@stackra/validation";
 
-import type { OptionsOf } from "#core/types/options-of.type";
-
+// Distributive over `T` (checked naked, not through `OptionsOf`), so inside a class TS reads `X<this>` through the
+// class it is declared on and `ctx.search` keeps its fields; a check through `OptionsOf<T>` stays deferred there.
 /** The query of route or layout instance `T`. */
-export type SearchOf<T> =
-  OptionsOf<T> extends { readonly search: AnyClass<infer S> }
-    ? Fields<S>
-    : Readonly<Record<string, string | undefined>>;
+export type SearchOf<T> = T extends { readonly "~options": { readonly search: AnyClass<infer S> } }
+  ? Fields<S>
+  : Readonly<Record<string, string | undefined>>;
