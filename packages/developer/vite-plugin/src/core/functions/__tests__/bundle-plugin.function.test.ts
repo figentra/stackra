@@ -5,7 +5,7 @@
  *          the targets, the entry, the static modulepreload chain, the stylesheets and the import-map specifiers used,
  *          and `pro: "types-only"` under the flag; a copy of a shared package or any HeroUI Pro code is refused.
  * Boundary: test only; writes a throwaway member in the OS temp directory and calls the hooks directly with a fake
- *           output bundle.
+ *           output bundle whose chunks are typed against rolldown's `OutputChunk` and Vite's `ChunkMetadata`.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0436; app-shells-edge-and-extension.md 15 (point 8), 16 (point 8).
  */
@@ -15,6 +15,7 @@ import { join } from "node:path";
 
 import { afterEach, beforeEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
+import type { ChunkMetadata, Rolldown } from "vite";
 
 import { bundlePlugin } from "#core/functions/bundle-plugin.function";
 
@@ -41,11 +42,17 @@ afterEach(() => {
   rmSync(root, { recursive: true, force: true });
 });
 
+/** The output chunk fields the plugin reads, typed against rolldown and Vite so tsc catches a rename. */
+type Fixture = Pick<
+  Rolldown.OutputChunk,
+  "type" | "name" | "fileName" | "isEntry" | "imports" | "dynamicImports" | "moduleIds"
+> & { readonly viteMetadata?: Pick<ChunkMetadata, "importedCss"> };
+
 /** A fake output chunk. */
-function chunk(fileName: string, extra: Record<string, unknown> = {}): Record<string, unknown> {
+function chunk(fileName: string, extra: Partial<Fixture> = {}): Fixture {
   return {
     type: "chunk",
-    name: fileName.split(".")[0],
+    name: fileName.split(".")[0] ?? fileName,
     fileName,
     isEntry: false,
     imports: [],
@@ -56,10 +63,7 @@ function chunk(fileName: string, extra: Record<string, unknown> = {}): Record<st
 }
 
 /** Runs the plugin's hooks over `chunks`; returns the config, the emitted files and the errors. */
-function run(
-  chunks: Record<string, unknown>[],
-  options: { proTypesOnly?: boolean; surface?: string } = {},
-) {
+function run(chunks: Fixture[], options: { proTypesOnly?: boolean; surface?: string } = {}) {
   const plugin = bundlePlugin({
     surface: options.surface ?? "console",
     importMap: IMPORT_MAP,
@@ -77,7 +81,7 @@ function run(
       errors.push(message);
     },
   };
-  const bundle = Object.fromEntries(chunks.map((item) => [item["fileName"], item]));
+  const bundle = Object.fromEntries(chunks.map((item) => [item.fileName, item]));
   (plugin.generateBundle as (this: unknown, output: unknown, bundle: unknown) => void).call(
     context,
     {},

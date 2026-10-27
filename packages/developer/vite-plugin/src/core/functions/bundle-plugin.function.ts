@@ -5,7 +5,8 @@
  *          `<outDir>/<surface>/<version>/`, refuses a bundle that carries its own copy of a package the shell's import
  *          map supplies or any HeroUI Pro code, and emits `bundle.manifest.json` (targets, entry, modulepreload list,
  *          stylesheets, the import-map specifiers used).
- * Boundary: build only. Leaving the shared specifiers external is `bundleConfig`'s; this plugin checks the output.
+ * Boundary: build only. Leaving the shared specifiers external is `bundleConfig`'s; this plugin checks the output,
+ *           read as rolldown's `OutputChunk` (with Vite's `viteMetadata`), never a hand-written copy of its shape.
  *           A member with no manifest, or one that targets no shell on the surface, fails before the build with what
  *           to run. Pro is refused inside the bundle whatever the flag: the licence is held once, at the shell (D12).
  * Runtime: node
@@ -18,7 +19,7 @@ import { join, resolve } from "node:path";
 
 import type { StackraManifest } from "@stackra/contracts";
 import type { ExtensionBundleManifest, SurfaceTarget } from "@stackra/gen";
-import type { Plugin } from "vite";
+import type { Plugin, Rolldown } from "vite";
 
 import { PRO_IMPORTS } from "#core/constants/pro-imports.constant";
 import { importMapResolves } from "#core/functions/import-map-resolves.function";
@@ -39,18 +40,6 @@ function packageOf(id: string): string | undefined {
 function supplies(map: ImportMap, pkg: string): boolean {
   return importMapResolves(map, pkg) || `${pkg}/` in map.imports;
 }
-
-/** The output chunk fields this plugin reads. */
-type Chunk = {
-  readonly type: "chunk";
-  readonly name: string;
-  readonly fileName: string;
-  readonly isEntry: boolean;
-  readonly imports: readonly string[];
-  readonly dynamicImports: readonly string[];
-  readonly moduleIds: readonly string[];
-  readonly viteMetadata?: { readonly importedCss?: ReadonlySet<string> };
-};
 
 /**
  * The extension-bundle plugin.
@@ -91,8 +80,8 @@ export function bundlePlugin(options: {
     },
     generateBundle(_output, bundle) {
       const chunks = Object.values(bundle).filter(
-        (item) => item.type === "chunk",
-      ) as unknown as Chunk[];
+        (item): item is Rolldown.OutputChunk => item.type === "chunk",
+      );
       for (const chunk of chunks)
         for (const id of chunk.moduleIds) {
           const pkg = packageOf(id);
@@ -114,7 +103,7 @@ export function bundlePlugin(options: {
         this.error(`The ${surface} bundle has no entry chunk named ${surface}`);
       const files = new Map(chunks.map((chunk) => [chunk.fileName, chunk]));
       const preload: string[] = [];
-      const visit = (chunk: Chunk): void => {
+      const visit = (chunk: Rolldown.OutputChunk): void => {
         if (preload.includes(chunk.fileName)) return;
         preload.push(chunk.fileName);
         for (const file of chunk.imports) {

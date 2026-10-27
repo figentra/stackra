@@ -3,7 +3,8 @@
  * Purpose: unit tests of `bundleConfig`: plugin order (given, preset, React, bundle); the entry named after the
  *          surface with its exports kept, ES output with hashed names and a relative base; every import-map specifier
  *          external and nothing else; HeroUI Pro external only under `proTypesOnly`.
- * Boundary: test only; the framework plugins are mocked to named markers.
+ * Boundary: test only; the framework plugins are mocked to named markers. The rolldown options are read typed, so
+ *           tsc fails if Vite renames them.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0436 (decision 4); app-shells-edge-and-extension.md 16 (point 8).
  */
@@ -50,11 +51,13 @@ describe("bundleConfig", () => {
       entry: "src/console.ts",
       importMap: IMPORT_MAP,
     });
-    const rolldown = config.build?.rolldownOptions as Record<string, unknown>;
+    // Typed access, so tsc catches a rename of these options in Vite's `build.rolldownOptions`.
+    const rolldown = config.build?.rolldownOptions;
     expect(config.base).toBe("./");
-    expect(rolldown["input"]).toEqual({ console: "src/console.ts" });
-    expect(rolldown["preserveEntrySignatures"]).toBe("strict");
-    expect(rolldown["output"]).toMatchObject({ format: "es", entryFileNames: "[name].[hash].js" });
+    expect(rolldown?.input).toEqual({ console: "src/console.ts" });
+    expect(rolldown?.preserveEntrySignatures).toBe("strict");
+    expect(rolldown?.external).toBeTypeOf("function");
+    expect(rolldown?.output).toMatchObject({ format: "es", entryFileNames: "[name].[hash].js" });
   });
 
   it("leaves every import-map specifier external and nothing else", async () => {
