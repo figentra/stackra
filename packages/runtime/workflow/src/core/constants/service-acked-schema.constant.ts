@@ -14,8 +14,5 @@ import { KEPT_RECORDS_SCHEMA } from "#core/constants/kept-records-schema.constan
 export const SERVICE_ACKED_SCHEMA = z.object({
   subject: z.string().min(1).max(255),
   service: z.string().regex(/^[a-z][a-z0-9_]{0,62}$/, "Expected a member key such as commerce"),
-  kept: z
-    .array(KEPT_RECORDS_SCHEMA)
-    .max(200)
-    .optional(),
+  kept: z.array(KEPT_RECORDS_SCHEMA).max(200).optional(),
 });
