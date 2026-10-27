@@ -60,8 +60,8 @@
       "outputs": ["dist/**", "build/**"],
     },
     "typecheck": {
-      "description": "Type-check without emitting: `tsc --noEmit`.",
-      "dependsOn": ["^build"],
+      "description": "Type-check without emitting: `tsc --noEmit`. After //#gen: a member's vitest.config.ts imports ./.stackra/vitest.config.",
+      "dependsOn": ["^build", "//#gen"],
       "inputs": ["$TURBO_DEFAULT$"],
       "outputs": [],
     },
@@ -71,16 +71,40 @@
       "outputs": [],
     },
     "test": {
-      "description": "Run each member's vitest suite. No outputs: coverage is written only by test:coverage.",
-      "dependsOn": ["^build"],
+      "description": "Run each member's vitest suite. No outputs: coverage is written only by test:coverage. After //#gen, which writes the member's .stackra/vitest.config and setup.",
+      "dependsOn": ["^build", "//#gen"],
       "inputs": ["$TURBO_DEFAULT$"],
       "outputs": [],
     },
     "test:coverage": {
-      "description": "`vitest run --coverage` against the shared gate (vitest.shared.ts: lines/functions 80, branches 70). Defined by packages/** only; apps have no coverage gate.",
-      "dependsOn": ["^build"],
+      "description": "`vitest run --coverage` against the shared gate (vitest.shared.ts: lines/functions 80, branches 70). Defined by packages/** only; apps have no coverage gate. After //#gen, as test.",
+      "dependsOn": ["^build", "//#gen"],
       "inputs": ["$TURBO_DEFAULT$"],
       "outputs": ["coverage/**"],
+    },
+    // `stackra gen` once at the root over every member with a stackra.config.ts (a member without one has nothing
+    // to generate and is skipped). One root task, not one per member: gen is not a member script, and the root run's
+    // two passes resolve the services' clients against each other's manifests. It runs the built CLI, so it waits
+    // only for @stackra/cli's build (and through ^build its dependencies'); build never waits for gen, which keeps
+    // the graph acyclic for @stackra/cli, @stackra/gen and their dependencies, whose own tests still wait for gen.
+    // @stackra/testing keeps an authored vitest config that does not merge the generated one: the generated setup
+    // imports @stackra/container/testing, which would close a dependency cycle with it (STA-1299).
+    "//#gen": {
+      "description": "Generate every member's .stackra/ (tool configs, wiring, schemas, entries) and manifest with the built `stackra` CLI.",
+      "dependsOn": ["@stackra/cli#build"],
+      "inputs": [
+        "runway.yaml",
+        "{apps,services,workers}/*/{src,assets}/**",
+        "{apps,services,workers}/*/{stackra.config.ts,package.json,tsconfig.json,*.config.ts,*.extend.ts,stackra.manifest.json}",
+        "packages/*/*/{src,assets}/**",
+        "packages/*/*/{stackra.config.ts,package.json,tsconfig.json,*.config.ts,*.extend.ts,stackra.manifest.json}",
+      ],
+      "outputs": [
+        "{apps,services,workers}/*/.stackra/**",
+        "{apps,services,workers}/*/stackra.manifest.json",
+        "packages/*/*/.stackra/**",
+        "packages/*/*/stackra.manifest.json",
+      ],
     },
     "format": {
       "description": "Rewrite files in place with oxfmt. Never cached: its job is to mutate the tree.",

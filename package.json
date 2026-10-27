@@ -9,6 +9,7 @@
     "prepare": "lefthook install && node tools/scripts/agents-sync.mjs --mcp-only",
     "dev": "turbo run dev",
     "build": "turbo run build",
+    "gen": "node packages/developer/cli/dist/stackra.mjs gen",
     "typecheck": "turbo run typecheck",
     "lint": "turbo run lint && pnpm lint:root",
     "lint:root": "oxlint tools/scripts .agents/hooks .opencode/plugins",
