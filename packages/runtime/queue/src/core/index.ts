@@ -19,6 +19,7 @@ export { QueueJobDispatcherDriver } from "#core/drivers/queue-job-dispatcher.dri
 export { TopicBrokerPublisherDriver } from "#core/drivers/topic-broker-publisher.driver";
 export { Backoff } from "#core/enums/backoff.enum";
 export { JobOutcome } from "#core/enums/job-outcome.enum";
+export { JobNotDueError } from "#core/errors/job-not-due.error";
 export { JobTimedOutError } from "#core/errors/job-timed-out.error";
 export { UnknownJobError } from "#core/errors/unknown-job.error";
 export { backoffDelay } from "#core/functions/backoff-delay.function";

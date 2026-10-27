@@ -15,6 +15,7 @@ programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./re
 | A memory driver                 | `src/testing/drivers/`                           |
 | A network driver over realtime  | `src/core/drivers/`, helpers in `core/functions` |
 | A server driver or migration    | `src/node/{drivers,database/migrations}/`        |
+| A server action and its input   | `src/node/{actions,schemas}/`                    |
 | A test                          | `__tests__/<name>.<kind>.test.ts(x)` beside it   |
 
 ## This package
@@ -22,6 +23,9 @@ programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./re
 - Yjs is imported only in `src/react/shared-document/`; `.` and `./contracts` stay CRDT-free behind `DocumentReplica`.
 - `LiveCollaborationEntitlement` gates presence, cursors and co-editing, never editing or snapshots.
 - A peer's principal is stamped by the server driver; never accept one from a client.
+- The room publish action (`collaboration.room.publish`, `src/node/actions/`) passes the call's subject to
+  `RealtimeRooms.publishFrom`; never a principal from the input. A publish key is the membership's secret: never log it.
+- `openRoom` falls back to the event stream only when the socket closed unopened, and stays on it for the link's life.
 - No offline queue, no record sync (ADR 0227): resend the full state on every open instead.
 - No tenant vocabulary: a room is a document `PublicId` and a `ScopeRef` (R-59).
 - `src/*/index.ts` are stand-in barrels until gen writes them (STA-339).

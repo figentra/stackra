@@ -33,6 +33,9 @@ Member at `packages/runtime/queue` (`tier:lib`), in the programming model v3.1 s
 
 - A driver stores and reserves; it never runs a job, computes a backoff or reads a clock. The worker passes `now` and
   the retry time, so every driver behaves the same.
+- `QueueWorkerService.process` hands a delivered job to `driver.claim` before it runs; a store driver keeps the default
+  (the job as it is, already reserved). The `broker` driver holds a claimed job in memory only until the worker records
+  its outcome in the same call, so `retry`, `deadLetter` and `remove` must follow its `claim` in one process.
 - The worker runs every attempt through `ActionPipeline`; never call `handle` directly and never add a pipeline step.
   The job actor is `job` when the action lists `ActorKind.Job`, else `system`; a queued call of an action without a
   `job` option runs as its caller.

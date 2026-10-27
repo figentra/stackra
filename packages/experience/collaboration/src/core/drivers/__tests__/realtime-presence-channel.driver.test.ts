@@ -60,7 +60,7 @@ describe(RealtimePresenceChannelDriver, () => {
     );
     await vi.advanceTimersByTimeAsync(0);
     const socket = FakeWebSocket.opened[0];
-    socket?.receive({ t: "welcome", self: { peerId: "p1", principalId: "usr_a" } });
+    socket?.receive({ t: "welcome", self: { peerId: "p1", principalId: "usr_a" }, key: "k1" });
     expect(states).toEqual(["open"]);
     expect(socket?.sent).toEqual([{ t: "presence", data: {} }]);
     const bob = { peerId: "p2", principalId: "usr_b" };

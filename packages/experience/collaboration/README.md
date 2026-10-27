@@ -8,7 +8,7 @@ entitlement.
 **Tier:** `tier:lib` (`packages/experience/collaboration`). Entries `.`, `./contracts`, `./node`, `./react` and
 `./testing`. Depends on `@stackra/contracts`, `@stackra/container`, `@stackra/config`, `@stackra/validation`,
 `@stackra/errors`, `@stackra/entitlements`, `@stackra/realtime`, `@stackra/database`, `@stackra/model`,
-`@stackra/events` and zod. React and Yjs are optional peers for `./react`.
+`@stackra/events`, `@stackra/actions`, `@stackra/transport` and zod. React and Yjs are optional peers for `./react`.
 
 ## What is here
 
@@ -27,6 +27,7 @@ entitlement.
 | `.`           | `CommentCreated`, `MentionCreated`, `checkMentions`, three refusals                     | events, the mention floors, `comment_tombstoned` and others    |
 | `./node`      | `CommentThread`, `Comment`, `CommentRevision`, `CommentMention`, `CommentService`       | the tables (`collaboration.0002_create_comments`) and service  |
 | `./testing`   | `MemoryMentionDirectoryDriver`                                                          | a fixed set of known mention targets                           |
+| `./node`      | `RoomPublishAction`, `RoomPublishInput`                                                 | `collaboration.room.publish`: a stream member's messages       |
 
 ## Comments
 
@@ -102,10 +103,20 @@ presence.drop(); // the link goes down; presence.reconnect() brings it back
   (ADR 0346). Before each connect they ask the `RoomTokens` port (`./contracts`) for a one-time token; the host binds it
   over its generated client's room-token action. Presence is re-announced every `presenceHeartbeatSeconds`, cursors
   are throttled to `cursorIntervalMilliseconds`, and updates travel as base64 `update` messages.
+- When the room's socket closes before it ever opened (a proxy or network that blocks WebSockets), the link streams
+  the room over server-sent events (`GET REALTIME_ROOM_PATH`, served by `RealtimeRooms.stream`) for the rest of its
+  life and sends through `RoomTokens.publish` with the publish key of its `welcome`. The host overrides `publish` over
+  its generated client's `collaboration.room.publish`; the default rejects, so such a link only listens.
+- `RoomPublishAction` (`./node`, `collaboration.room.publish@1`, users only, not a tool) relays one message as the
+  member whose key it is (`RealtimeRooms.publishFrom`), only for that member's own principal and with the checks a
+  socket message gets: a viewer's `update` is refused `forbidden`, the size and rate caps drop the member. The service
+  that serves rooms hosts it.
 - `PostgresSnapshotStoreDriver` (`./node`) keeps the latest state per document in `collaboration.snapshots`
   (migration `collaboration.0001_create_snapshots`), isolated by the room's scope.
 
 ## Limits today
 
-- The realtime drivers use the room's WebSocket; a client behind a proxy that blocks sockets has no co-editing yet
-  (the server-sent-events fallback of ADR 0346 decision 5 is not built).
+- A stream member's publish that reaches another instance is fire-and-forget: a refusal arrives on the member's own
+  stream as a `refused` frame, not as the action's answer.
+- Gen still routes only the WebSocket to `REALTIME_ROOM_PATH`; the raw endpoint must call `rooms.stream(request)` for a
+  plain GET before the fallback works end to end.

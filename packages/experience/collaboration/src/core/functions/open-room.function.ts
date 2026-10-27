@@ -1,16 +1,21 @@
 /**
  * Stackra file contract:
- * Purpose: `openRoom(tokens, room, handlers, options)`, one self-healing WebSocket to a document's room: it asks
- *          `RoomTokens` for a one-time token, connects to `REALTIME_ROOM_PATH` on the token's origin, reports the
- *          `welcome` and every later frame, and reconnects with capped, jittered backoff when the socket closes, until
- *          the caller closes the link.
- * Boundary: web-standard `WebSocket` and `URL` only. Frames that do not parse are dropped. A refused token request is
- *           retried like a dropped socket, so a revoked right stops working at the next connect and never sooner.
+ * Purpose: `openRoom(tokens, room, handlers, options)`, one self-healing link to a document's room: it asks `RoomTokens`
+ *          for a one-time token, connects a WebSocket to `REALTIME_ROOM_PATH` on the token's origin, reports the
+ *          `welcome` and every later frame, and reconnects with capped, jittered backoff when the link drops, until the
+ *          caller closes it. When the socket closes before it ever opened (a proxy or network that blocks WebSockets),
+ *          the link falls back to a server-sent-events stream of the same path for the rest of its life, and sends
+ *          through `RoomTokens.publish` (the `collaboration.room.publish` action) with the welcome's publish key.
+ * Boundary: web-standard `WebSocket`, `fetch` and `URL` only. Frames that do not parse are dropped. A refused token
+ *           request is retried like a dropped link, so a revoked right stops working at the next connect and never
+ *           sooner. On the stream a send is fire-and-forget: a publish the host cannot make, or that is refused, is
+ *           dropped as a send on a closed socket is.
  * Runtime: isomorphic
- * Governing contract: ADR 0346 (decisions 1, 3 and 5); ADR 0225 (decision 1).
+ * Governing contract: ADR 0346 (decisions 1, 3 and 5); ADR 0225 (decision 1: WebSocket with an SSE fallback).
  */
-import type { RoomFrame } from "@stackra/realtime/contracts";
 import { REALTIME_ROOM_PATH } from "@stackra/realtime";
+import type { RoomFrame } from "@stackra/realtime/contracts";
+import { readServerSentEvents } from "@stackra/transport";
 
 import type { RoomTokens } from "#contracts/ports/room-tokens.port";
 import type { CollaborationRoom } from "#contracts/types/collaboration-room.type";
@@ -39,7 +44,10 @@ export function openRoom(
 ): RoomLink {
   let closed = false;
   let attempt = 0;
+  let streaming = false;
   let socket: WebSocket | undefined;
+  let stream: AbortController | undefined;
+  let key: string | undefined;
   let timer: ReturnType<typeof setTimeout> | undefined;
 
   const retry = (): void => {
@@ -47,6 +55,48 @@ export function openRoom(
     const cap = Math.min(options.maxBackoffSeconds * 1000, BASE_MS * 2 ** Math.min(attempt, 30));
     attempt += 1;
     timer = setTimeout(() => void connect(), cap / 2 + Math.random() * (cap / 2));
+  };
+
+  /** Reports one frame's text; answers whether the link is now welcomed. */
+  const receive = (text: string, welcomed: boolean): boolean => {
+    let frame: RoomFrame;
+    try {
+      frame = JSON.parse(text) as RoomFrame;
+    } catch {
+      return welcomed;
+    }
+    if (frame.t === "welcome") {
+      attempt = 0;
+      key = frame.key;
+      handlers.onWelcome(frame.self);
+      return true;
+    }
+    if (welcomed) handlers.onFrame(frame);
+    return welcomed;
+  };
+
+  /** Reads the room's event stream at `url` until it ends, then reconnects. */
+  const read = async (url: URL): Promise<void> => {
+    const abort = new AbortController();
+    stream = abort;
+    let welcomed = false;
+    try {
+      const response = await fetch(url.toString(), {
+        headers: { accept: "text/event-stream" },
+        signal: abort.signal,
+      });
+      if (response.ok)
+        for await (const event of readServerSentEvents(response)) {
+          if (closed) return;
+          if (event.event === "frame") welcomed = receive(event.data, welcomed);
+        }
+    } catch {
+      // A refused, aborted or broken stream ends the link below.
+    }
+    if (stream === abort) stream = undefined;
+    key = undefined;
+    if (welcomed) handlers.onDown();
+    retry();
   };
 
   const connect = async (): Promise<void> => {
@@ -58,32 +108,35 @@ export function openRoom(
       if (!origin) throw new TypeError("The room token has no origin and there is no page origin");
       url = new URL(REALTIME_ROOM_PATH, origin);
       url.searchParams.set("token", target.token);
-      url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
     } catch {
       retry();
       return;
     }
     if (closed) return;
+    if (streaming) {
+      await read(url);
+      return;
+    }
+    url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
     const current = new WebSocket(url.toString());
     socket = current;
+    let opened = false;
     let welcomed = false;
+    current.addEventListener("open", () => {
+      opened = true;
+    });
     current.addEventListener("message", (event: MessageEvent) => {
-      if (typeof event.data !== "string") return;
-      let frame: RoomFrame;
-      try {
-        frame = JSON.parse(event.data) as RoomFrame;
-      } catch {
-        return;
-      }
-      if (frame.t === "welcome") {
-        welcomed = true;
-        attempt = 0;
-        handlers.onWelcome(frame.self);
-      } else if (welcomed) handlers.onFrame(frame);
+      if (typeof event.data === "string") welcomed = receive(event.data, welcomed);
     });
     current.addEventListener("close", () => {
       if (socket === current) socket = undefined;
       if (welcomed) handlers.onDown();
+      if (!opened && !closed) {
+        // The socket never opened: WebSockets are blocked here, so this link streams from now on.
+        streaming = true;
+        void connect();
+        return;
+      }
       retry();
     });
   };
@@ -92,12 +145,15 @@ export function openRoom(
   return {
     send: (message) => {
       if (socket?.readyState === OPEN) socket.send(JSON.stringify(message));
+      else if (stream !== undefined && key !== undefined)
+        void tokens.publish(room, key, message).catch(() => undefined);
     },
     close: () => {
       if (closed) return;
       closed = true;
       clearTimeout(timer);
       socket?.close(1000, "closed");
+      stream?.abort();
     },
   };
 }

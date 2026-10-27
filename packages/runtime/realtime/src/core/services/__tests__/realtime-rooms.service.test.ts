@@ -5,7 +5,9 @@
  *          to the fanout; a viewer's update is refused `forbidden`; a full room, an oversized or too-fast member is
  *          refused `room_limit_reached` and dropped; leaving announces `left`; frames from another instance are
  *          delivered and this instance's own are skipped; a socket is accepted or closed with the right code; members
- *          close at token expiry and idle.
+ *          close at token expiry and idle; a member joins over an event stream (or gets 401, 426 or 429) and publishes
+ *          by its key through `publishFrom`, here or on another instance; the member cap counts other instances'
+ *          fresh counts unless `countAcrossInstances` is off.
  * Boundary: test only; the local fanout and recording peers stand in for the network; timers are faked.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0346 (decisions 1 and 3 to 6).
@@ -50,7 +52,7 @@ function peer() {
   };
 }
 
-function roomsOf(rooms: Record<string, number> = {}) {
+function roomsOf(rooms: Record<string, number | boolean> = {}) {
   const fanout = new LocalRealtimeFanoutDriver();
   const published: FanoutMessage[] = [];
   const publish = fanout.publish.bind(fanout);
@@ -77,6 +79,16 @@ function roomsOf(rooms: Record<string, number> = {}) {
   };
 }
 
+/** The room path's URL with `token`. */
+function roomUrl(token: string): string {
+  return `http://api.test/realtime/room?token=${token}`;
+}
+
+/** The publish key of the welcome in `frames`. */
+function keyOf(frames: readonly RoomFrame[]): string {
+  return (frames[0] as { readonly key: string }).key;
+}
+
 beforeEach(() => {
   vi.useFakeTimers();
 });
@@ -94,7 +106,7 @@ describe(RealtimeRooms, () => {
     expect(rooms.join(token, peer())).toBeUndefined();
     const b = peer();
     const bob = rooms.join(rooms.issueToken(grant("usr_b")).token, b);
-    expect(a.frames[0]).toEqual({ t: "welcome", self: alice?.self });
+    expect(a.frames[0]).toEqual({ t: "welcome", self: alice?.self, key: expect.any(String) });
     expect(alice?.self.principalId).toBe("usr_a");
     expect(rooms.size("ten_1:pag_1")).toBe(2);
     alice?.publish({ t: "update", data: "AAE=" });
@@ -200,5 +212,109 @@ describe(RealtimeRooms, () => {
     expect(JSON.parse(sent.at(-1) ?? "{}")).toEqual({ t: "refused", code: "forbidden" });
     listeners["close"]?.({ data: undefined });
     expect(rooms.size("ten_1:pag_1")).toBe(0);
+  });
+
+  it("serves a member over an event stream and refuses a bad, upgraded or full join", async () => {
+    const { rooms } = roomsOf({ maxMembers: 1 });
+    expect(rooms.stream(new Request(roomUrl("nope"))).status).toBe(401);
+    const unused = rooms.issueToken(grant("usr_a")).token;
+    const upgrade = new Request(roomUrl(unused), { headers: { upgrade: "websocket" } });
+    expect(rooms.stream(upgrade).status).toBe(426);
+    const response = rooms.stream(new Request(roomUrl(unused)));
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toContain("text/event-stream");
+    const reader = response.body?.getReader();
+    const first = new TextDecoder().decode((await reader?.read())?.value);
+    expect(first).toMatch(/^event: frame\ndata: \{"t":"welcome"/);
+    expect(rooms.size("ten_1:pag_1")).toBe(1);
+    expect(rooms.stream(new Request(roomUrl(rooms.issueToken(grant("usr_b")).token))).status).toBe(
+      429,
+    );
+    await reader?.cancel();
+    expect(rooms.size("ten_1:pag_1")).toBe(0);
+  });
+
+  it("publishes for a member by its key, only as its principal", async () => {
+    const { rooms, published } = roomsOf();
+    const a = peer();
+    rooms.join(rooms.issueToken(grant("usr_a")).token, a);
+    const b = peer();
+    rooms.join(rooms.issueToken(grant("usr_b", false)).token, b);
+    await rooms.publishFrom(keyOf(b.frames), "usr_b", { t: "presence", data: { on: true } });
+    expect(a.frames.at(-1)).toMatchObject({ t: "presence", data: { on: true } });
+    await expect(
+      rooms.publishFrom(keyOf(b.frames), "usr_a", { t: "presence", data: {} }),
+    ).rejects.toThrow(ForbiddenError);
+    await expect(
+      rooms.publishFrom(keyOf(b.frames), "usr_b", { t: "update", data: "AAE=" }),
+    ).rejects.toThrow(ForbiddenError);
+    await rooms.publishFrom("elsewhere", "usr_z", { t: "presence", data: {} });
+    expect(published.at(-1)).toEqual({
+      kind: "room-publish",
+      key: "elsewhere",
+      principalId: "usr_z",
+      message: { t: "presence", data: {} },
+    });
+  });
+
+  it("takes a publish another instance received and answers a refusal on the member's own link", () => {
+    const { rooms } = roomsOf();
+    const a = peer();
+    rooms.join(rooms.issueToken(grant("usr_a")).token, a);
+    const v = peer();
+    rooms.join(rooms.issueToken(grant("usr_v", false)).token, v);
+    const key = keyOf(v.frames);
+    rooms.receive({
+      kind: "room-publish",
+      key,
+      principalId: "usr_v",
+      message: { t: "awareness", data: 1 },
+    });
+    expect(a.frames.at(-1)).toMatchObject({ t: "awareness", data: 1 });
+    rooms.receive({
+      kind: "room-publish",
+      key,
+      principalId: "usr_v",
+      message: { t: "update", data: "x" },
+    });
+    expect(v.frames.at(-1)).toEqual({ t: "refused", code: "forbidden" });
+    rooms.receive({
+      kind: "room-publish",
+      key,
+      principalId: "usr_x",
+      message: { t: "awareness", data: 2 },
+    });
+    expect(a.frames.at(-1)).toMatchObject({ data: 1 });
+  });
+
+  it("counts other instances' fresh members toward the cap", () => {
+    const { rooms } = roomsOf({ idleCloseSeconds: 5 });
+    rooms.receive({ kind: "room-members", room: "ten_1:pag_1", origin: "another", members: 1 });
+    rooms.join(rooms.issueToken(grant("usr_a")).token, peer());
+    expect(() => rooms.join(rooms.issueToken(grant("usr_b")).token, peer())).toThrow(
+      RoomLimitReachedError,
+    );
+    vi.advanceTimersByTime(4000);
+    rooms.receive({
+      kind: "room",
+      room: "ten_1:pag_1",
+      frame: { t: "left", peer: { peerId: "p9", principalId: "usr_9" } },
+      origin: "another",
+      members: 0,
+    });
+    expect(rooms.join(rooms.issueToken(grant("usr_b")).token, peer())).toBeDefined();
+  });
+
+  it("forgets a stale count, and counts this instance alone when told to", () => {
+    const { rooms } = roomsOf({ idleCloseSeconds: 5 });
+    rooms.receive({ kind: "room-members", room: "ten_1:pag_1", origin: "another", members: 2 });
+    expect(() => rooms.join(rooms.issueToken(grant("usr_a")).token, peer())).toThrow(
+      RoomLimitReachedError,
+    );
+    vi.advanceTimersByTime(10_001);
+    expect(rooms.join(rooms.issueToken(grant("usr_a")).token, peer())).toBeDefined();
+    const { rooms: alone } = roomsOf({ countAcrossInstances: false });
+    alone.receive({ kind: "room-members", room: "ten_1:pag_1", origin: "another", members: 2 });
+    expect(alone.join(alone.issueToken(grant("usr_a")).token, peer())).toBeDefined();
   });
 });

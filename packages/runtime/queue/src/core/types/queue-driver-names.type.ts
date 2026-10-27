@@ -11,7 +11,7 @@ import type { QUEUE_DRIVERS } from "#core/constants/queue-drivers.constant";
 
 declare module "@stackra/container" {
   interface DriverRegistry {
-    /** The driver names of `QueueDriver` (`postgres`, `memory`). */
+    /** The driver names of `QueueDriver` (`postgres`, `memory`, `broker`). */
     "queue.QueueDriver": (typeof QUEUE_DRIVERS)[number];
   }
 }

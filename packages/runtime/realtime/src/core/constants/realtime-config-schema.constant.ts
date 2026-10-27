@@ -2,8 +2,8 @@
  * Stackra file contract:
  * Purpose: `REALTIME_CONFIG_SCHEMA`, the zod schema this package ships for `RealtimeConfig` (exported as
  *          `RealtimeConfig$`): the server driver, the realtime origin, the realms allowed on tenant channels, the
- *          subscribe token's lifetime, the client's background and reconnect behaviour, the fan-out between instances
- *          and the room caps.
+ *          subscribe token's lifetime, the client's background and reconnect behaviour, the fan-out between instances,
+ *          the room caps and the venue's local-network relay.
  * Boundary: the stand-in for what gen writes for this package. Every field has a default, so `.parse({})` gives the
  *           full defaults and a host's generated `RealtimeConfig$` extends it (`shape.x.unwrap().default(...)`). The
  *           defaults equal `RealtimeOptions`' initializers (tested). No object-level refinement, so `.extend(...)`
@@ -42,14 +42,22 @@ export const REALTIME_CONFIG_SCHEMA = z.object({
   rooms: z
     .object({
       maxMembers: z.number().int().min(1).default(50),
+      countAcrossInstances: z.boolean().default(true),
       maxMessageBytes: z.number().int().min(1).default(65_536),
       maxMessagesPerSecond: z.number().int().min(1).default(20),
       idleCloseSeconds: z.number().int().min(1).default(60),
     })
     .default(() => ({
       maxMembers: 50,
+      countAcrossInstances: true,
       maxMessageBytes: 65_536,
       maxMessagesPerSecond: 20,
       idleCloseSeconds: 60,
     })),
+  localRelay: z.enum(["lan"]).default("lan"),
+  localRelayKey: z.string().default(""),
+  localRelayPort: z.number().int().min(1).max(65_535).default(4790),
+  localRelayAddress: z.string().default(""),
+  localRelayPeers: z.array(z.string().regex(/^https?:\/\/[^/\s]+$/)).default(() => []),
+  localRelayProbeMs: z.number().int().min(100).default(1500),
 });

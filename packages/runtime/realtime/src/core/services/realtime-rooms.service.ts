@@ -1,14 +1,20 @@
 /**
  * Stackra file contract:
  * Purpose: `RealtimeRooms`, the server's room hub (ADR 0346): it issues one-time room tokens for grants the
- *          authenticated endpoint checked, joins each member under its grant until the token expires, relays each
- *          message to the room's other members (on this instance directly, on the others through the `RealtimeFanout`),
- *          stamps every sender, and enforces the caps: members per room, message size, messages per second and idle.
+ *          authenticated endpoint checked, joins each member under its grant until the token expires (over a socket, or
+ *          over a server-sent-events stream when the socket is blocked), relays each message to the room's other
+ *          members (on this instance directly, on the others through the `RealtimeFanout`), stamps every sender, takes
+ *          a stream member's messages from the `collaboration.room.publish` action by its publish key (on whichever
+ *          instance holds it), and enforces the caps: members per room (counted over every instance by default),
+ *          message size, messages per second and idle.
  * Boundary: a singleton service. It never reads a request or a permission: the endpoint resolves the grant (view
  *           permission at the document's scope, visibility, the live-collaboration entitlement, and `mayEdit` from the
  *           edit permission). A room is keyed by the session's tenant and the document, so it never spans tenants. A
  *           viewer's `update` is refused `forbidden` and the member stays; a member over a cap is dropped with
- *           `room_limit_reached`. Payloads are relayed, never stored or read. The member cap is per instance.
+ *           `room_limit_reached`. Payloads are relayed, never stored or read. The cross-instance member count is
+ *           eventually consistent: each instance announces its count on a join and stamps it on every relayed frame, and
+ *           a count not refreshed for two idle periods is dropped (its members were idle-closed or its instance died).
+ *           A publish key works only for the member's own principal.
  * Runtime: isomorphic
  * Governing contract: ADR 0346 (decisions 1 and 3 to 6); ADR 0225 (decision 1); ADR 0294 (decisions 16 and 17).
  */
@@ -41,6 +47,16 @@ const IDLE = 4408;
 /** Close code: a cap was reached. */
 const LIMIT = 4429;
 
+/** How often a comment line keeps an idle room stream alive, under the usual 30 to 60 second proxy timeouts. */
+const HEARTBEAT_MS = 25_000;
+
+/** The headers of an event stream. */
+const STREAM_HEADERS = {
+  "content-type": "text/event-stream; charset=utf-8",
+  "cache-control": "no-store",
+  "x-accel-buffering": "no",
+};
+
 /** The kinds a member may publish. */
 const KINDS: ReadonlySet<string> = new Set(["presence", "awareness", "update"]);
 
@@ -53,6 +69,8 @@ interface Pending {
 /** A joined member and its counters. */
 interface Entry {
   readonly self: RoomPeerRef;
+  readonly room: string;
+  readonly key: string;
   readonly peer: RoomPeer;
   readonly mayEdit: boolean;
   windowStart: number;
@@ -89,6 +107,12 @@ export class RealtimeRooms extends Service {
   private readonly pending = new Map<string, Pending>();
 
   private readonly rooms = new Map<string, Set<Entry>>();
+
+  /** This instance's members by publish key. */
+  private readonly keys = new Map<string, Entry>();
+
+  /** The other instances' member counts: room to instance to its count and when it arrived. */
+  private readonly remote = new Map<string, Map<string, { members: number; at: number }>>();
 
   /**
    * @param config - the token lifetime and the room caps.
@@ -134,7 +158,8 @@ export class RealtimeRooms extends Service {
     const { grant } = found;
     const room = `${grant.session.scopeId ?? "platform"}:${grant.document}`;
     const members = this.rooms.get(room) ?? new Set<Entry>();
-    if (members.size >= this.config.rooms.maxMembers) throw RoomLimitReachedError.create();
+    if (members.size + this.remoteMembers(room) >= this.config.rooms.maxMembers)
+      throw RoomLimitReachedError.create();
     this.rooms.set(room, members);
     const self: RoomPeerRef = Object.freeze({
       peerId: crypto.randomUUID(),
@@ -142,8 +167,11 @@ export class RealtimeRooms extends Service {
     });
     const expiry = setTimeout(() => this.drop(entry, TOKEN_EXPIRED, "token_expired"), remaining);
     let left = false;
+    const key = crypto.randomUUID();
     const entry: Entry = {
       self,
+      room,
+      key,
       peer,
       mayEdit: grant.mayEdit,
       windowStart: Date.now(),
@@ -155,13 +183,18 @@ export class RealtimeRooms extends Service {
         clearTimeout(expiry);
         clearTimeout(entry.idle);
         members.delete(entry);
+        this.keys.delete(key);
         if (members.size === 0) this.rooms.delete(room);
         this.relay(room, { t: "left", peer: self }, undefined);
       },
     };
     members.add(entry);
+    this.keys.set(key, entry);
     this.touch(entry);
-    peer.deliver({ t: "welcome", self });
+    peer.deliver({ t: "welcome", self, key });
+    this.fanout
+      .publish({ kind: "room-members", room, origin: this.instance, members: members.size })
+      .catch(() => undefined);
     return {
       self,
       publish: (message) => this.publish(room, entry, message),
@@ -215,10 +248,119 @@ export class RealtimeRooms extends Service {
     return true;
   }
 
-  /** Delivers a room frame another instance relayed to this instance's members of that room. */
+  /**
+   * Answers a GET of the room path with a `text/event-stream` of the member's frames (`event: frame`), the fallback
+   * when a socket cannot open. The member publishes through `collaboration.room.publish` with the `key` of its
+   * welcome. A dropped member gets `event: close` with the code and reason before the stream ends.
+   *
+   * @returns 200 with the stream; 426 for a WebSocket upgrade (the token is left unused); 401 for a bad token; 429 for
+   *          a full room.
+   */
+  stream(request: Request): Response {
+    if (request.headers.get("upgrade")?.toLowerCase() === "websocket")
+      return new Response(null, { status: 426 });
+    const token = new URL(request.url).searchParams.get("token") ?? "";
+    const encoder = new TextEncoder();
+    let controller: ReadableStreamDefaultController<Uint8Array> | undefined;
+    let heartbeat: ReturnType<typeof setInterval> | undefined;
+    let closed = false;
+    const send = (text: string): void => {
+      if (!closed) controller?.enqueue(encoder.encode(text));
+    };
+    const end = (): void => {
+      if (closed) return;
+      closed = true;
+      clearInterval(heartbeat);
+      controller?.close();
+    };
+    let member: RoomMember | undefined;
+    // `start` runs synchronously in the constructor, so the controller exists before the welcome is delivered.
+    const body = new ReadableStream<Uint8Array>({
+      start: (streamController) => {
+        controller = streamController;
+      },
+      cancel: () => {
+        closed = true;
+        clearInterval(heartbeat);
+        member?.leave();
+      },
+    });
+    try {
+      member = this.join(token, {
+        deliver: (frame) => send(`event: frame\ndata: ${JSON.stringify(frame)}\n\n`),
+        close: (code, reason) => {
+          send(`event: close\ndata: ${JSON.stringify({ code, reason })}\n\n`);
+          end();
+        },
+      });
+    } catch (error) {
+      if (!isRefusal(error, RoomLimitReachedError)) throw error;
+      void body.cancel();
+      return new Response(null, { status: 429 });
+    }
+    if (member === undefined) {
+      void body.cancel();
+      return new Response(null, { status: 401 });
+    }
+    heartbeat = setInterval(() => send(": ping\n\n"), HEARTBEAT_MS);
+    return new Response(body, { status: 200, headers: STREAM_HEADERS });
+  }
+
+  /**
+   * Relays `message` from the member whose welcome carried `key`, for the `collaboration.room.publish` action. A member
+   * on this instance publishes at once and a refusal is thrown to the caller; one on another instance is reached
+   * through the fanout, where a refusal is sent to the member as a `refused` frame.
+   *
+   * @param principalId - the action's verified caller; it must be the member's principal.
+   * @throws ForbiddenError when the member is here and belongs to another principal, or is a viewer sending an
+   *         update; RoomLimitReachedError over the size or rate cap (the member is dropped).
+   */
+  async publishFrom(key: string, principalId: string, message: RoomPublish): Promise<void> {
+    const entry = this.keys.get(key);
+    if (entry === undefined) {
+      await this.fanout.publish({ kind: "room-publish", key, principalId, message });
+      return;
+    }
+    if (entry.self.principalId !== principalId) throw ForbiddenError.create();
+    this.publish(entry.room, entry, message);
+  }
+
+  /** Takes what another instance fanned out: a room frame for this instance's members, a member count, or a publish. */
   receive(message: FanoutMessage): void {
-    if (message.kind !== "room" || message.origin === this.instance) return;
-    this.deliver(message.room, message.frame, undefined);
+    if (message.kind === "room-publish") {
+      const entry = this.keys.get(message.key);
+      if (entry === undefined || entry.self.principalId !== message.principalId) return;
+      try {
+        this.publish(entry.room, entry, message.message);
+      } catch (error) {
+        if (isRefusal(error, ForbiddenError))
+          entry.peer.deliver({ t: "refused", code: error.code });
+        else if (!isRefusal(error, RoomLimitReachedError)) throw error;
+      }
+      return;
+    }
+    if (message.kind === "broadcast" || message.origin === this.instance) return;
+    if (message.members !== undefined) this.count(message.room, message.origin, message.members);
+    if (message.kind === "room") this.deliver(message.room, message.frame, undefined);
+  }
+
+  /** Records `origin`'s member count of `room`; a count of 0 is forgotten. */
+  private count(room: string, origin: string, members: number): void {
+    const counts = this.remote.get(room) ?? new Map<string, { members: number; at: number }>();
+    if (members > 0) counts.set(origin, { members, at: Date.now() });
+    else counts.delete(origin);
+    if (counts.size === 0) this.remote.delete(room);
+    else this.remote.set(room, counts);
+  }
+
+  /** The members of `room` on the other instances, from counts fresher than two idle periods; 0 when not counted. */
+  private remoteMembers(room: string): number {
+    if (!this.config.rooms.countAcrossInstances) return 0;
+    const since = Date.now() - this.config.rooms.idleCloseSeconds * 2000;
+    let total = 0;
+    for (const { members, at } of this.remote.get(room)?.values() ?? [])
+      if (at >= since) total += members;
+    return total;
   }
 
   /** Checks the caps and the grant, then relays `message` from `entry`. */
@@ -244,7 +386,7 @@ export class RealtimeRooms extends Service {
   private relay(room: string, frame: RoomFrame, sender: Entry | undefined): void {
     this.deliver(room, frame, sender);
     this.fanout
-      .publish({ kind: "room", room, frame, origin: this.instance })
+      .publish({ kind: "room", room, frame, origin: this.instance, members: this.size(room) })
       .catch(() => undefined);
   }
 

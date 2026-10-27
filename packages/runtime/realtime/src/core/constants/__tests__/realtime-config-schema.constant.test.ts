@@ -27,10 +27,17 @@ describe("REALTIME_CONFIG_SCHEMA", () => {
       fanoutChannel: "realtime:fanout",
       rooms: {
         maxMembers: 50,
+        countAcrossInstances: true,
         maxMessageBytes: 65_536,
         maxMessagesPerSecond: 20,
         idleCloseSeconds: 60,
       },
+      localRelay: "lan",
+      localRelayKey: "",
+      localRelayPort: 4790,
+      localRelayAddress: "",
+      localRelayPeers: [],
+      localRelayProbeMs: 1500,
     });
   });
 

@@ -22,6 +22,7 @@ on `@stackra/contracts`, `@stackra/container`, `@stackra/validation`, `@stackra/
 | `.`           | `RealtimeConnection`                                                                                  | client: one connection, reconnect with backoff, background suspension         |
 | `.`           | `WebsocketRealtimeTransportDriver`, `MemoryRealtimeTransportDriver`                                   | the two `RealtimeTransport` drivers (`websocket` with SSE fallback, `memory`) |
 | `.`           | `REALTIME_PATH`                                                                                       | `/realtime`, the endpoint the client and the generated raw endpoint share     |
+| `./node`      | `LanRealtimeLocalRelayDriver`, `ValkeyRealtimeFanoutDriver`                                           | the venue relay on the local network; the Valkey fan-out between instances    |
 | `./contracts` | `RealtimeDriver`, `RealtimeTransport`, `RealtimeMessage`, `RealtimeSession`, `RealtimeBroadcast`, ... | the two ports and the types they speak                                        |
 | `./react`     | `useRealtimeConnection`, `useSubscription`                                                            | the connection's state; a listener for one event class                        |
 | `./testing`   | `fakeRealtime`                                                                                        | a `RealtimeFake` connection a test emits events on                            |
@@ -140,8 +141,46 @@ fanout), answers a viewer's `update` with `{ t: "refused", code: "forbidden" }`,
 `room_limit_reached` (`RoomLimitReachedError`, close code 4429). The caps are `realtime.rooms` (members, message bytes,
 messages per second, idle seconds).
 
+Where a socket cannot open, the member streams the room instead: the raw endpoint answers a plain GET of
+`REALTIME_ROOM_PATH` with `rooms.stream(request)`, a `text/event-stream` of `event: frame` lines (401 for a bad token,
+426 for an upgrade, which leaves the token unused, 429 for a full room; a dropped member gets `event: close` with the
+code and reason). Every `welcome` carries the membership's publish `key`; a stream member sends through the
+`collaboration.room.publish` action, which calls `rooms.publishFrom(key, principalId, message)`. A member on this
+instance publishes at once (a refusal is thrown to the action); one on another instance is reached through the fanout
+(`room-publish`), and a refusal there goes to the member as a `refused` frame. A key works only for its own principal.
+
+The member cap counts every instance when `rooms.countAcrossInstances` is on (the default): each instance announces
+its count on a join (`room-members`) and stamps it on every room frame it fans out, and a count not refreshed for two
+idle periods is dropped. It is eventually consistent: two joins on two instances at the same moment can both pass.
+Off, each instance counts its own members.
+
+## Venue relay (local network)
+
+`RealtimeLocalRelay` (`./contracts`) keeps the devices of one venue (tills, floor tablets, kitchen displays) exchanging
+refreshes while the internet link is down. The `lan` driver (`LanRealtimeLocalRelayDriver`, `./node`) serves it over
+node:http:
+
+```ts
+const relay = (await localRelay.discover()) ?? (await localRelay.host());
+transport.open(relay, handlers); // the websocket transport falls back to the relay's event stream
+await fetch(`${relay.origin}${REALTIME_PATH}`, {
+  method: "POST",
+  headers: { authorization: `Bearer ${relay.token}` },
+  body: JSON.stringify(message), // a data-free refresh
+});
+```
+
+`host()` serves `REALTIME_PATH` on `localRelayPort` and answers `http://<localRelayAddress or the first local IPv4>:port`
+with the venue key as the token; `discover()` probes `localRelayPeers` in order with a keyed `HEAD`, waiting
+`localRelayProbeMs` for each, and answers null when none answers. Every request needs the venue key, the
+`REALTIME_LOCAL_RELAY_KEY` secret. The relay keeps nothing and does not filter channels: every linked device is in the
+venue's one scope. Which device hosts, and the peer list, are settings per venue.
+
 ## Limits today
 
-- The member cap is per instance. Rooms ride the WebSocket only: the server-sent-events fallback and the
-  `collaboration.room.publish` action path of ADR 0346 decision 5 are not built.
-- Pub/sub is at most once: a refresh or room frame published while an instance reconnects is lost to it.
+- Pub/sub is at most once: a refresh or room frame published while an instance reconnects is lost to it, and the
+  cross-instance member count is eventually consistent.
+- Gen's raw room endpoint calls `rooms.accept` only; it must call `rooms.stream(request)` for a plain GET before the
+  stream fallback is reachable.
+- The venue relay finds peers from a configured list; there is no multicast discovery, and the relay does not queue
+  messages for a device that is away.

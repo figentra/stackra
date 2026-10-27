@@ -20,6 +20,7 @@ describe("@stackra/queue", () => {
       "BrokerConfig",
       "BrokerConfig$",
       "BrokerOptions",
+      "JobNotDueError",
       "JobOutcome",
       "JobTimedOutError",
       "MemoryBrokerPublisherDriver",

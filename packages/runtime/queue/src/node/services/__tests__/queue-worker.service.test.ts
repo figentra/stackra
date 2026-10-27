@@ -313,6 +313,16 @@ describe(QueueWorkerService, () => {
     await expect(worker.process(job)).resolves.toMatchObject({ outcome: JobOutcome.Done });
   });
 
+  it("hands a delivered job to the driver's claim before it runs", async () => {
+    const { driver, queue, worker } = setup();
+    await queue.push(DeliverMessageAction, { messageId: "msg_1" });
+    const job = await driver.reserve("delivery", NOON);
+    if (job === undefined) throw new Error("not reserved");
+    const claim = vi.spyOn(driver, "claim");
+    await expect(worker.process(job)).resolves.toMatchObject({ outcome: JobOutcome.Done });
+    expect(claim).toHaveBeenCalledWith(job, expect.any(Date));
+  });
+
   it("works a queue until aborted", async () => {
     const { queue, worker, deliver } = setup();
     await queue.push(DeliverMessageAction, { messageId: "msg_1" });

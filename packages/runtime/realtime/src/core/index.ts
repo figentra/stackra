@@ -37,6 +37,7 @@ export type { RealtimeConnectionState } from "#core/types/realtime-connection-st
 export type { RealtimeDriverName } from "#core/types/realtime-driver-name.type";
 export type { RealtimeEventRef } from "#core/types/realtime-event-ref.type";
 export type { RealtimeFanoutName } from "#core/types/realtime-fanout-name.type";
+export type { RealtimeLocalRelayName } from "#core/types/realtime-local-relay-name.type";
 export type { RealtimePeer } from "#core/types/realtime-peer.type";
 export type { RealtimeSocket } from "#core/types/realtime-socket.type";
 export type { RealtimeToken } from "#core/types/realtime-token.type";

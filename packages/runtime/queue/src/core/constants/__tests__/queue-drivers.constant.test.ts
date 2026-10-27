@@ -11,6 +11,7 @@ import { describe, expect, it } from "@stackra/testing";
 import { QUEUE_CONFIG_SCHEMA } from "#core/constants/queue-config-schema.constant";
 import { QUEUE_DRIVERS } from "#core/constants/queue-drivers.constant";
 import { MemoryQueueDriver } from "#core/drivers/memory-queue.driver";
+import { BrokerQueueDriver } from "#node/drivers/broker-queue.driver";
 import { PostgresQueueDriver } from "#node/drivers/postgres-queue.driver";
 
 /** `MemoryQueueDriver` to `memory`: the class name less the port and kind, in lower case. */
@@ -19,7 +20,9 @@ const driverName = (type: { readonly name: string }): string =>
 
 describe("QUEUE_DRIVERS", () => {
   it("names every shipped driver once", () => {
-    expect([...QUEUE_DRIVERS]).toEqual([PostgresQueueDriver, MemoryQueueDriver].map(driverName));
+    expect([...QUEUE_DRIVERS]).toEqual(
+      [PostgresQueueDriver, MemoryQueueDriver, BrokerQueueDriver].map(driverName),
+    );
   });
 
   it("is the schema's driver enum", () => {

@@ -50,7 +50,7 @@ describe(RealtimeSyncTransportDriver, () => {
     );
     await vi.advanceTimersByTimeAsync(0);
     const socket = FakeWebSocket.opened[0];
-    socket?.receive({ t: "welcome", self: { peerId: "p1", principalId: "usr_a" } });
+    socket?.receive({ t: "welcome", self: { peerId: "p1", principalId: "usr_a" }, key: "k1" });
     link.send(new Uint8Array([0, 1]));
     expect(socket?.sent).toEqual([{ t: "update", data: "AAE=" }]);
     const from = { peerId: "p2", principalId: "usr_b" };

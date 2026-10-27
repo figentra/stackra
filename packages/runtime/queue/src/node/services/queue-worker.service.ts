@@ -80,12 +80,15 @@ export class QueueWorkerService extends Service {
   }
 
   /**
-   * Runs one attempt of `job`, which the caller has reserved, and records how it ended.
+   * Runs one attempt of `job`, which the caller reserved or a broker delivered (the driver's `claim` marks a delivered
+   * job running), and records how it ended.
    *
-   * @throws Error before `connect`; a driver's error when the outcome cannot be recorded.
+   * @throws Error before `connect`; a driver's error when the outcome cannot be recorded; `JobNotDueError` from the
+   *         `broker` driver for a job delivered before its `runAt`, so the broker delivers it again.
    */
-  process(job: QueuedJob): Promise<JobRun> {
-    return this.run(job, this.clock.now());
+  async process(job: QueuedJob): Promise<JobRun> {
+    const now = this.clock.now();
+    return this.run(await this.driver.claim(job, now), now);
   }
 
   /**

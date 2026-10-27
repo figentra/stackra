@@ -20,7 +20,9 @@ Postgres (`SKIP LOCKED`) drivers (ADR 0148, ADR 0305 rule 28).
 | `backoffDelay`                                      | `.`           | the wait after a failed attempt, in milliseconds                                                   |
 | `JobOutcome`, `JobRun`, `PushOptions`               | `.`           | how an attempt ended; what `push` takes                                                            |
 | `JobTimedOutError`, `UnknownJobError`               | `.`           | `job_timed_out` (retryable) and `unknown_job` (dead-lettered at once)                              |
-| `QueueConfig`, `QueueConfig$`                       | `.`           | key `queue`: `driver` (`postgres` default, `memory`)                                               |
+| `QueueConfig`, `QueueConfig$`                       | `.`           | key `queue`: `driver` (`postgres` default, `memory`, `broker`)                                     |
+| `JobNotDueError`                                    | `.`           | `job_not_due`: a broker delivered a job before its `runAt` (redelivered later)                     |
+| `BrokerQueueDriver`                                 | `./node`      | the `broker` driver: jobs ride the generated Pub/Sub topics, dead letters stay in `queue.jobs`     |
 | `QueueOptions`, `MemoryQueueDriver`                 | `.`           | the shape of `QueueConfig`; the driver for tests and a single process                              |
 | `QueueDriver`, `QueuedJob`, `JobError`, `JobStatus` | `./contracts` | the port a driver implements and the stored job                                                    |
 | `QueueWorkerService`                                | `./node`      | `connect(container)`, then `work(queue, { signal, concurrency })`, `drain()`, `process(job)`       |
@@ -93,6 +95,15 @@ none is due. Redrive a dead letter with `queue.redrive(id)`; it runs again with 
   A reservation is one `UPDATE … WHERE id = (SELECT … FOR UPDATE SKIP LOCKED LIMIT 1)`; a unique job's conflict is the
   partial unique index on `unique_key`. A push inside an action's transaction commits with it.
 - **Memory** (`.`): jobs in process memory, the input stored as JSON as Postgres stores it.
+- **Broker** (`./node`, `queue.driver: broker`): for SaaS on Encore Pub/Sub. A push publishes the job through the
+  `BrokerPublisher` to `queue.<queue>`, the topic `emitEncoreQueues` generates for each job queue, and the generated
+  subscription runs it with `worker.process(job)`. `process` first calls the driver's `claim`, which marks the job
+  running with one more attempt, or refuses `job_not_due` when it arrived before its `runAt` so the broker delivers it
+  again after its own retry backoff (a delayed job or a retry waits at that granularity, not to the millisecond). A
+  retry is published again with its `runAt` and last error under the message id `<job>:<attempt>`. A dead letter is
+  kept in the service's `queue.jobs` (the Postgres migration must run), where `deadLetters` lists it and `redrive`
+  publishes it again. Nothing is polled: `reserve` answers no job. A unique key is not held on the broker: a unique
+  job pushed twice runs twice.
 
 ## Testing
 

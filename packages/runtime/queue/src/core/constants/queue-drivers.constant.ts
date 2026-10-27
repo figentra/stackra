@@ -10,4 +10,4 @@
  */
 
 /** The `QueueDriver` drivers of this package, by name. */
-export const QUEUE_DRIVERS = ["postgres", "memory"] as const;
+export const QUEUE_DRIVERS = ["postgres", "memory", "broker"] as const;

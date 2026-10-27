@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: the `QueueDriver` port: the store behind `QueueService` and `QueueWorkerService`. It keeps jobs, hands the
  *          next due one to one worker at a time, and records how each attempt ended. Config `queue.driver` picks the
- *          driver (`postgres`, `memory`).
+ *          driver (`postgres`, `memory`, `broker`). `claim` takes a job a broker delivered instead of one `reserve` found.
  * Boundary: an abstract class that is its own token, keyed `queue.QueueDriver`. A driver stores and reserves; it never
  *           runs a job, computes a backoff or reads a clock: the worker passes `now` and the retry time, so every
  *           driver behaves the same to a caller. A reservation that lapses (a worker that died) makes the job due again
@@ -28,6 +28,15 @@ import type { QueuedJob } from "#contracts/types/queued-job.type";
 export abstract class QueueDriver extends Port {
   /** Type-only port key, so `DriverName<QueueDriver>` narrows to this port's drivers. */
   declare readonly "~key": "queue.QueueDriver";
+
+  /**
+   * Takes a job a broker delivered (`QueueWorkerService.process`) and answers it as reserved. A store's `reserve`
+   * already marked the job it hands out, so this default answers `job` as it is; the `broker` driver marks it running
+   * with one more attempt, and rejects one that is not due yet so the broker delivers it again later.
+   */
+  claim(job: QueuedJob, _now: Date): Promise<QueuedJob> {
+    return Promise.resolve(job);
+  }
 
   /** Stores `job` as waiting; `false`, storing nothing, when a waiting or running job holds its `uniqueKey`. */
   abstract push(job: QueuedJob): Promise<boolean>;

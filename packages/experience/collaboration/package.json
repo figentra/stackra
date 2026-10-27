@@ -94,6 +94,7 @@
     "clean": "rm -rf dist coverage .turbo"
   },
   "dependencies": {
+    "@stackra/actions": "workspace:*",
     "@stackra/config": "workspace:*",
     "@stackra/container": "workspace:*",
     "@stackra/contracts": "workspace:*",
@@ -103,6 +104,7 @@
     "@stackra/events": "workspace:*",
     "@stackra/model": "workspace:*",
     "@stackra/realtime": "workspace:*",
+    "@stackra/transport": "workspace:*",
     "@stackra/validation": "workspace:*",
     "zod": "catalog:"
   },

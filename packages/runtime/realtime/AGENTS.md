@@ -11,6 +11,7 @@ The realtime hub, the broadcaster, the client connection and the drivers of both
 | A port or a type it speaks         | `src/contracts/{ports,types}/`                 |
 | The configuration                  | `src/config/realtime.config.ts`                |
 | A server or client driver          | `src/core/drivers/<name>.driver.ts`            |
+| A driver on a server library       | `src/node/drivers/<name>.driver.ts`            |
 | The hub, broadcaster or connection | `src/core/services/`                           |
 | A pure helper                      | `src/core/functions/`                          |
 | React code                         | `src/react/realtime/`                          |
@@ -30,7 +31,12 @@ The realtime hub, the broadcaster, the client connection and the drivers of both
 - Anything that imports `iovalkey` (or another server library) goes in `src/node/`; `.` stays web-standard.
 - Rooms take their grant from the server's checks, never from the client; the sender of every relayed frame is the
   server's stamp. A cap is enforced with `room_limit_reached`, never silently. Room payloads are relayed, never stored.
-- A fanned-out room frame carries its origin instance; never deliver an instance's own frame twice.
+- A fanned-out room frame carries its origin instance; never deliver an instance's own frame twice. It also carries
+  that instance's member count of the room, which the cross-instance cap (`rooms.countAcrossInstances`) reads.
+- A room publish key (`welcome.key`) is the membership's secret: it works only for the member's own principal, is never
+  relayed and never logged. `publishFrom` runs the same checks as a socket message.
+- The venue relay (`lan`, `src/node/drivers/`) refuses every request without the `REALTIME_LOCAL_RELAY_KEY` venue key,
+  compared in constant time, and keeps nothing.
 - `memory` RealtimeFanout (STA-1308): `MemoryRealtimeFanoutDriver` delivers like `local` (a macrotask after `publish`)
   and keeps `published` for assertions. `RealtimeFanoutName` lists `memory`; keep it in step with the drivers.
 
