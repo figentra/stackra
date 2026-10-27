@@ -30,7 +30,7 @@ describe("deployTargets", () => {
       cloud: { name: "gcp", account: "ksa" },
     });
     expect(targets[1]).toMatchObject({
-      dedicated: { key: "firm", tenant: "tenant-1" },
+      dedicated: { key: "firm", scope: "tenant-1" },
       cloud: { name: "gcp", account: "firm" },
       scope: { encore: { branch: "firm" } },
     });

@@ -138,7 +138,8 @@ providers:
 ## Deploy, promote and roll back
 
 `deployTargets(root, environment)` lists every place a release lands: each kind of member in build order, in each
-region in release order, then each dedicated tenant's services. `deploy` applies and verifies each target through its
+region in release order, then each dedicated tenant's services. A dedicated target carries
+`dedicated: { key, scope }`, where `scope` is the id the runway's `tenant` field gives (ADR 0323). `deploy` applies and verifies each target through its
 provider and stops at the first one that is down; `promote` ships what the source environment runs to an environment
 with `deploy.on: promote`; `rollback` returns each target to its record from an earlier release (the caller reads the
 records from the release log, ADR 0352 decision 7).

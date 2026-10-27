@@ -7,7 +7,7 @@
  *           secret, only names, keys and `ref:` values.
  * Runtime: isomorphic
  * Governing contract: ADR 0352 (decision 3: providers behind one port), ADR 0354 (decision 4), ADR 0400, OS-12 (a
- *                     release rolls region by region).
+ *                     release rolls region by region); ADR 0323 and owner decision R-59 (`dedicated.scope`).
  */
 import type { DeployKind } from "#core/enums/deploy-kind.enum";
 import type { RunwayEnvironment } from "#core/enums/runway-environment.enum";
@@ -34,8 +34,11 @@ export interface DeployTarget {
   /** The cloud of the environment or dedicated deployment, when the runway names it. */
   readonly cloud?: EnvironmentCloud;
 
-  /** The dedicated deployment, when this target serves one tenant. */
-  readonly dedicated?: { readonly key: string; readonly tenant: string };
+  /**
+   * The dedicated deployment, when this target serves one tenant: its key and `scope`, the id the runway's `tenant`
+   * field gives (R-59 names it `scope` outside @stackra/tenancy).
+   */
+  readonly dedicated?: { readonly key: string; readonly scope: string };
 
   /** `targets.<destination>` of the root runway. */
   readonly settings: Readonly<Record<string, unknown>>;

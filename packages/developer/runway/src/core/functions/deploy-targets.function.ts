@@ -67,7 +67,7 @@ export function deployTargets(root: RootRunway, environment: RunwayEnvironment):
           destination,
           ...(region !== undefined && { region }),
           cloud: dedicated.cloud,
-          dedicated: { key, tenant: dedicated.tenant },
+          dedicated: { key, scope: dedicated.tenant },
           settings,
           scope: dedicated.encore === undefined ? scope : { ...scope, encore: dedicated.encore },
         });
