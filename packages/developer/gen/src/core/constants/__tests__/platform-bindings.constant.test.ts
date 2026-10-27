@@ -23,6 +23,7 @@ describe("PLATFORM_BINDINGS", () => {
   it("lists each platform service's constructor tokens in order", () => {
     expect(Object.keys(PLATFORM_BINDINGS).sort()).toEqual([
       "@stackra/actions#RequestContext",
+      "@stackra/ai#AgentRuntime",
       "@stackra/database#SequenceService",
       "@stackra/integrations#IntegrationRuntime",
       "@stackra/locking#Locks",

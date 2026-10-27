@@ -27,6 +27,9 @@ describe("@stackra/gen", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(gen).sort()).toEqual([
       "CLIENTS_SPECIFIER",
+      "DOCS_CONFIG_FILE",
+      "DOCS_SITE_DIR",
+      "DocsConfig",
       "EFFECT_TAGS",
       "GENERATED_NOTICE",
       "INTEGRATION_ROLES",
@@ -45,6 +48,7 @@ describe("@stackra/gen", () => {
       "emitBlocks",
       "emitBoot",
       "emitClients",
+      "emitDocsSite",
       "emitEncoreCronJobs",
       "emitEncoreQueues",
       "emitEntities",

@@ -19,8 +19,10 @@ describe("@stackra/gen/node", () => {
       "compileClassComponents",
       "discoverMember",
       "generate",
+      "generateDocsSite",
       "openHost",
       "readServiceManifests",
+      "watchDocsSite",
     ]);
   });
 });
