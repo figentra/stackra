@@ -15,8 +15,9 @@ No carrier driver lives here: each carrier or aggregator is an OS integrations c
 the gateway interfaces. No carrier, Market, factor, increment or rate is in code: they are connector data, market-pack
 data and rule sets ([ADR 0363](../../../apps/docs/src/docs/adr/0363-configuration-over-code-business-behaviour-is-data-rules-workflows-and-studios.mdx)).
 
-**Tier:** `tier:lib` (`packages/commerce/shipping`). Depends on `@stackra/contracts`, `@stackra/errors` and
-`@stackra/money`; isomorphic, with no clock, locale, environment or network read.
+**Tier:** `tier:lib` (`packages/commerce/shipping`). Depends on `@stackra/contracts`, `@stackra/errors`,
+`@stackra/money` and `@stackra/validation` (types: `ShippingAddress` extends its `Address`, so the city is
+`locality`, and `ShippingParty` its `Party`); isomorphic, with no clock, locale, environment or network read.
 
 ## Entry points
 

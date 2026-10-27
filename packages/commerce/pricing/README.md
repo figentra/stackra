@@ -13,7 +13,8 @@ for metered usage over an included amount. The pricing engine (price resolution,
 pricing service; this package holds only the arithmetic it and other services share.
 
 **Tier:** `tier:lib` (`packages/commerce/pricing`), entries `.` and `./contracts`. Depends on `@stackra/money`,
-`@stackra/contracts` and `@stackra/container` (and `@stackra/integrations` for types); isomorphic, with no clock,
+`@stackra/contracts` and `@stackra/container` (and `@stackra/integrations` and `@stackra/validation` for types:
+`TaxAddress` is picked from validation's `Address`, a missing part left out rather than `null`); isomorphic, with no clock,
 locale, environment or network read of its own (a provider quote goes through the resolved Connection).
 
 ## Entry points

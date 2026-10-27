@@ -9,6 +9,7 @@
  */
 import { Money, Rounding } from "@stackra/money";
 import { describe, expect, it } from "@stackra/testing";
+import type { CountryCode } from "@stackra/validation";
 
 import type { TaxRequest } from "#contracts/types/tax-request.type";
 import { taxByRates } from "#core/functions/tax-by-rates.function";
@@ -28,14 +29,14 @@ const table: TaxRateTable = {
 /** A one-line request in `currency` to `country`/`region`. */
 const request = (
   amount: Money,
-  country: string,
+  country: CountryCode,
   region: string | null,
   pricesIncludeTax: boolean,
   taxClass = "standard",
 ): TaxRequest => ({
   currency: amount.currency,
   at: new Date("2026-10-25"),
-  destination: { country, region, postalCode: null },
+  destination: region === null ? { country } : { country, region },
   pricesIncludeTax,
   lines: [{ id: "l1", amount, taxClass }],
 });

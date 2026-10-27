@@ -100,7 +100,8 @@
     "@stackra/errors": "workspace:*",
     "@stackra/integrations": "workspace:*",
     "@stackra/market-packs": "workspace:*",
-    "@stackra/money": "workspace:*"
+    "@stackra/money": "workspace:*",
+    "@stackra/validation": "workspace:*"
   },
   "devDependencies": {
     "@stackra/testing": "workspace:*",

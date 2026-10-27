@@ -11,7 +11,8 @@ data (ADR 0356), never code.
 
 **Tier:** `tier:lib` (`packages/commerce/payments`). Entries `.`, `./contracts` and `./testing`. Depends on
 `@stackra/container`, `@stackra/contracts`, `@stackra/errors`, `@stackra/integrations`
-(Integration, Connection, the managed client and `ConnectionStore`) and `@stackra/money`.
+(Integration, Connection, the managed client and `ConnectionStore`), `@stackra/money` and `@stackra/validation` (types
+only: a checkout's `customer` is its `Party`, with the one `Address`; `PaymentParty` and `PaymentAddress` are gone).
 
 ## What is here
 

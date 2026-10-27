@@ -25,7 +25,7 @@ const RATE = /^(\d+)(?:\.(\d+))?$/;
  *
  * @example
  * taxByRates(
- *   { currency: "SAR", at, destination: { country: "SA", region: null, postalCode: null }, pricesIncludeTax: true,
+ *   { currency: "SAR", at, destination: { country: "SA" }, pricesIncludeTax: true,
  *     lines: [{ id: "l1", amount: Money.of("115.00", "SAR"), taxClass: "standard" }] },
  *   pack.taxTable, // { source: "sa@2.3.0", rounding: "half_up", rates: [{ jurisdiction: "sa", taxClass: "standard", rate: "0.15" }] }
  * ).total.toDecimal(); // "15.00"

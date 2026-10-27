@@ -9,10 +9,10 @@
  * Governing contract: ADR 0357 (decisions 2, 3 and 5); ADR 0445.
  */
 import type { Money } from "@stackra/money";
+import type { Party } from "@stackra/validation";
 
 import type { TenderKind } from "#contracts/enums/tender-kind.enum";
 import type { PaymentLine } from "#contracts/types/payment-line.type";
-import type { PaymentParty } from "#contracts/types/payment-party.type";
 import type { PlatformShare } from "#contracts/types/platform-share.type";
 
 /**
@@ -35,7 +35,7 @@ export interface CheckoutRequest {
   readonly description: string;
 
   /** The customer, when known. */
-  readonly customer?: PaymentParty;
+  readonly customer?: Party;
 
   /** The basket, when the provider itemises it. */
   readonly lines?: readonly PaymentLine[];

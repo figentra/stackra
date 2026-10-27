@@ -76,7 +76,8 @@
     "@stackra/container": "workspace:*",
     "@stackra/contracts": "workspace:*",
     "@stackra/integrations": "workspace:*",
-    "@stackra/money": "workspace:*"
+    "@stackra/money": "workspace:*",
+    "@stackra/validation": "workspace:*"
   },
   "devDependencies": {
     "@stackra/testing": "workspace:*",

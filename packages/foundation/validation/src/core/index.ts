@@ -68,6 +68,7 @@ export type { IdentifierFormat } from "#core/types/identifier-format.type";
 export type { NationalId } from "#core/types/national-id.type";
 export type { OneTimeCodePolicy } from "#core/types/one-time-code-policy.type";
 export type { OneTimeCodeRecord } from "#core/types/one-time-code-record.type";
+export type { Party } from "#core/types/party.type";
 export type { FieldDecorator } from "#core/types/field-decorator.type";
 export type { TranslatedStrings } from "#core/types/translated-strings.type";
 export type { Fields } from "#core/types/fields.type";

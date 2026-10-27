@@ -15,7 +15,7 @@ import { MemoryTaxProviderDriver } from "#core/drivers/memory-tax-provider.drive
 const sale: TaxRequest = {
   currency: "SAR",
   at: new Date("2026-10-25"),
-  destination: { country: "SA", region: null, postalCode: null },
+  destination: { country: "SA" },
   pricesIncludeTax: false,
   lines: [{ id: "l1", amount: Money.of("100.00", "SAR"), taxClass: "standard" }],
 };

@@ -3,9 +3,12 @@
  * Purpose: `Address`, a postal address in the parts every Market's format draws from: lines, district, locality,
  *          region, postal code, the national short address and the country.
  * Boundary: a type only; `address(format)` is its schema for one Market, and `@stackra/i18n` lays it out for display.
- *           Which parts a Market requires, and in what order it prints them, is its `AddressFormat` (pack data).
+ *           Which parts a Market requires, and in what order it prints them, is its `AddressFormat` (pack data). The
+ *           one address of the platform: payments' party, pricing's `TaxAddress` and shipping's `ShippingAddress` are
+ *           this type or picked from it (STA-1383).
  * Runtime: isomorphic
- * Governing contract: OS-370 and COM-117 (address formats per country in the market pack); ADR 0305.
+ * Governing contract: OS-370 and COM-117 (address formats per country in the market pack); ADR 0305; STA-1383 (one
+ *                     home for duplicated value types).
  */
 import type { CountryCode } from "#core/types/country-code.type";
 

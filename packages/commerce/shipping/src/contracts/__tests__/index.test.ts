@@ -49,7 +49,7 @@ import type {
 
 const { CarrierCapability, LabelFormat, PickupPointKind, TrackingState } = entry;
 
-const address: ShippingAddress = { lines: ["Line 1"], city: "City", country: "ZZ" };
+const address: ShippingAddress = { lines: ["Line 1"], locality: "City", country: "ZZ" };
 const party: ShippingParty = { name: "Name", address };
 const parcel: Parcel = { lengthMm: 300, widthMm: 200, heightMm: 100, weightG: 1_000 };
 const label: LabelDocument = { format: LabelFormat.Zpl, bytes: new TextEncoder().encode("^XA^XZ") };
@@ -86,10 +86,10 @@ describe("@stackra/shipping/contracts", () => {
       1_000,
     ]);
     // @ts-expect-error -- an address has a country
-    const countryless: ShippingAddress = { lines: [], city: "City" };
+    const countryless: ShippingAddress = { lines: [], locality: "City" };
     // @ts-expect-error -- a parcel has a weight
     const weightless: Parcel = { lengthMm: 1, widthMm: 1, heightMm: 1 };
-    expect([countryless.city, weightless.lengthMm]).toEqual(["City", 1]);
+    expect([countryless.locality, weightless.lengthMm]).toEqual(["City", 1]);
   });
 
   it("carries money on requests, quotes, shipments and customs lines", () => {
