@@ -30,9 +30,17 @@ vi.mock("react-native", async () => {
     },
   };
 });
-vi.mock("@stackra/ui/native", () => ({
-  Text: ({ children }: { children?: ReactNode }) => <span>{children}</span>,
-}));
+vi.mock("@stackra/ui/native", async () => {
+  // The real useCatalogueText lives behind heroui-native; this one formats from the English catalogue, as it does
+  // with no I18nProvider.
+  const { formatMessage } = await import("@stackra/i18n");
+  type Format = Parameters<typeof formatMessage>;
+  return {
+    useCatalogueText: (english: Format[0]) => (key: Format[1], values?: Format[2]) =>
+      formatMessage(english, key, values, "en"),
+    Text: ({ children }: { children?: ReactNode }) => <span>{children}</span>,
+  };
+});
 
 /** A gesture handler of an item. */
 type Handler = (event: unknown, state: { dx: number; dy: number }) => void;

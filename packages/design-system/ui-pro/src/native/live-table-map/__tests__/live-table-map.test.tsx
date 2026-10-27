@@ -37,12 +37,20 @@ vi.mock("react-native", () => ({
     </button>
   ),
 }));
-vi.mock("@stackra/ui/native", () => ({
-  Text: ({ children }: { children?: ReactNode }) => <span>{children}</span>,
-  Chip: ({ children, tone }: { children?: ReactNode; tone: string }) => (
-    <span data-tone={tone}>{children}</span>
-  ),
-}));
+vi.mock("@stackra/ui/native", async () => {
+  // The real useCatalogueText lives behind heroui-native; this one formats from the English catalogue, as it does
+  // with no I18nProvider.
+  const { formatMessage } = await import("@stackra/i18n");
+  type Format = Parameters<typeof formatMessage>;
+  return {
+    useCatalogueText: (english: Format[0]) => (key: Format[1], values?: Format[2]) =>
+      formatMessage(english, key, values, "en"),
+    Text: ({ children }: { children?: ReactNode }) => <span>{children}</span>,
+    Chip: ({ children, tone }: { children?: ReactNode; tone: string }) => (
+      <span data-tone={tone}>{children}</span>
+    ),
+  };
+});
 
 const items = [
   { id: "t1", shape: "rectangle" as const, label: "T1", x: 0, y: 0, width: 2, height: 2 },
