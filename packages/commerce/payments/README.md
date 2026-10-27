@@ -1,4 +1,4 @@
-<!-- Purpose: the reader guide of @stackra/payments: what is exported, taking a payment, restricted tenders, agent payments, SoftPos tap to pay, pre-authorised tabs, partial payments against one balance, the unknown state, provider choice, the Square, Adyen and PayPal bring-your-own drivers. Boundary: docs of packages/commerce/payments only. Runtime: none (Markdown). Governing contract: ADR 0357; ADR 0445; ADR 0446; ADR 0294; STA-1024; STA-687; ACA-542. -->
+<!-- Purpose: the reader guide of @stackra/payments: what is exported, taking a payment, restricted tenders, agent payments, SoftPos tap to pay, pre-authorised tabs, partial payments against one balance, the unknown state, provider choice, the Square, Adyen and PayPal bring-your-own drivers, the semi-integrated ECR terminals (Geidea, Network International). Boundary: docs of packages/commerce/payments only. Runtime: none (Markdown). Governing contract: ADR 0357; ADR 0445; ADR 0446; ADR 0294; STA-1024; STA-687; ACA-542; ADR 0377; STA-677. -->
 
 # @stackra/payments
 
@@ -38,6 +38,9 @@ data (ADR 0356), never code.
 | `ConnectionPaymentGatewaysDriver`                                                                         | `.`           | the `connection` driver of `PaymentGateways`: tenant Connection, then Market default                                                                                                                                                     |
 | `MemoryPaymentRecordsDriver`                                                                              | `.`           | the `memory` driver of `PaymentRecords`                                                                                                                                                                                                  |
 | the refusals                                                                                              | `.`           | `PaymentUnknownError`, `NoPaymentProviderError`, `MerchantInitiatedNotAllowedError`, `InvalidPaymentTransitionError`, `CapabilityUnsupportedError`, `PaymentFieldRequiredError`, `PaymentDeclinedError`, `ResolutionReasonRequiredError` |
+| `EcrTerminalGateway`                                                                                      | `.`           | the semi-integrated terminal driver on the till: one class, one `EcrProfile` per provider (Geidea, Network International), over the `EcrLink`                                                                                            |
+| `EcrProfile`, `EcrLink`, `EcrTiming`, `EcrOutcome`, `EcrOperation`, `EcrRequestField`, `EcrResponseField` | `./contracts` | a provider's ECR protocol as pack data, the local link it travels over, and the answer outcomes                                                                                                                                          |
+| `EcrLinkFake`                                                                                             | `./testing`   | an `EcrLink` replaying recorded terminal answers                                                                                                                                                                                         |
 | `PaymentGatewayFake`, `PaymentGatewaysFake`, `MarketPaymentDefaultsFake`                                  | `./testing`   | an in-memory provider that can lose answers, and the two port fakes                                                                                                                                                                      |
 
 ## Taking a payment
@@ -217,17 +220,66 @@ items, PayPal verify-webhook-signature), the OAuth flow of Square, their entries
 recorded-fixture tests, and the pack rows. BYO Stripe (ACA-542) is `ConnectionMode.OAuthStandard` here; its OAuth
 onboarding and revocation are `StripeConnectIntegration` in OS integrations (ADR 0390 decision 3).
 
+## Semi-integrated terminals: Geidea and Network International (ADR 0377, STA-677)
+
+The Gulf terminals are semi-integrated: the till sends the amount to the terminal over a local link under the
+provider's electronic cash register (ECR) protocol, and the terminal talks to its acquirer. `EcrTerminalGateway`
+runs on the till (Electron main or the Expo staff app) as the till's `TerminalGateway`; the link is `@stackra/peripherals`'
+`CardTerminal` driver `ecr` (`EcrCardTerminalDriver`, `./desktop`), which satisfies `EcrLink` structurally, so neither
+package imports the other.
+
+```ts
+const profile = pack.payments.terminalProviders.geidea; // EcrProfile, pack data
+await cardTerminal.pair({
+  terminalId,
+  provider: profile.provider,
+  address: "tcp://10.0.0.30:6000",
+});
+const gateway = new EcrTerminalGateway({
+  id: till.terminalConnection,
+  profile,
+  link: cardTerminal,
+  currency,
+});
+// the till's PaymentService resolves this gateway for the provider
+const session = await payments.startTerminal(market, { reference, terminalId, amount, tipPrompt });
+await payments.cancelTerminal(reference); // the cancel goes beside the running sale, then reconcile reads the outcome
+```
+
+- **One class, a profile per provider.** The operation codes, the field order of a request and an answer, the
+  separator, the result codes (`EcrOutcome`) and the link timing are an `EcrProfile`: pack data under
+  `market-pack:<code>.payments.terminal-providers` (ADR 0377 decision 8), never constants here. The `geidea` and
+  `network-international` drivers are two profiles. Capabilities follow the profile: `terminal_tips` when it sends the
+  tip prompt, `capture` when it has the authorise, completion and void codes.
+- **Tip prompt.** `TerminalRequest.tipPrompt` (the product's tip settings) is sent as the percentages and the custom
+  flag; the answer's tip comes back on the session.
+- **Cancel-then-reconcile.** The terminal runs one operation at a time, so calls queue. A rejected link call is a lost
+  answer (`ProviderUnavailableError`), so `PaymentService` records `unknown`. `cancelTerminal` signals the cancel beside
+  the running sale; `lookup` waits for it to settle and answers from what the till saw, else from the terminal's
+  last-transaction inquiry. An inquiry naming another payment throws a lost answer, so the payment stays `unknown` for a
+  manager's `resolve` rather than being guessed. An integrated card payment never completes offline.
+- **Sale, refund, void.** A sale is `startTerminal`; `captureLater` authorises and `capture`/`void` complete or void it;
+  `refund` is card-present against the original `providerRef`. `checkout` refuses: no hosted page.
+- **Certification pending.** Neither provider's ECR specification or test terminal was available (owner decision D3,
+  2026-10-27); the driver was built from the public descriptions of the integrations (purchase, refund, void,
+  last-transaction inquiry) with recorded-fixture tests. Each provider's profile and its certification row in
+  `launch-gate:sa` / `launch-gate:ae` come with the specification.
+
+Left for others: the two profile records and the `payments.terminal-providers` pack rows (market packs, with the
+specifications); the server half of ADR 0377 decision 2 (the till reports a terminal result to the payments service,
+which records it pending confirmation and confirms it against the provider's settlement report through a Connection in
+OS integrations, ADR 0443 decision 7); the till's `PaymentGateways` binding (the host); Paymob and NeoLeap/Surepay
+profiles (ADR 0377 decisions 5 and 6); serial, USB and Bluetooth links (native transports in `@stackra/peripherals`).
+
 ## Not here
 
 - Ledger posting of fees, tips and refunds: the payments-ledger service, on `@stackra/ledger`.
 - Webhook verification: `@stackra/webhooks` (each provider needs its signature scheme there); the engine works from
   `reconcile` until then.
-- Card terminals reached over a local link (ECR) and the Geidea and Network International terminal drivers
-  (stackra-35).
 - Caps, approvals, tip presets, capture timing, who may resolve by hand: settings, rules and permissions in the
   product.
 
 ## Decisions
 
-STA-687 and ACA-542 (bring-your-own Square, Adyen, PayPal and Stripe), ADR 0443 decisions 7 and 8 (vendor code in OS integrations), STA-1024 (pre-authorisation and partial payments), ADR 0446 (agent payments and SoftPos), ADR 0445 (restricted tenders and the PIN step), ADR 0378 (card terminals and Tap to Pay), ADR 0357 (payments architecture), ADR 0358 decision 3 (providers are drivers), ADR 0356 (provider per tenant and
+ADR 0377 and STA-677 (semi-integrated terminals over a local link, stackra-35), STA-687 and ACA-542 (bring-your-own Square, Adyen, PayPal and Stripe), ADR 0443 decisions 7 and 8 (vendor code in OS integrations), STA-1024 (pre-authorisation and partial payments), ADR 0446 (agent payments and SoftPos), ADR 0445 (restricted tenders and the PIN step), ADR 0378 (card terminals and Tap to Pay), ADR 0357 (payments architecture), ADR 0358 decision 3 (providers are drivers), ADR 0356 (provider per tenant and
 Market through the Connection), ADR 0359 decision 11 (sandbox gateways), ADR 0308 (integrations), ADR 0220 (money).

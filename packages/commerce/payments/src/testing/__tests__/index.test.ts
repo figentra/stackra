@@ -13,6 +13,7 @@ describe("@stackra/payments/testing", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(testing).sort()).toEqual([
       "ConnectedAccountLimitsFake",
+      "EcrLinkFake",
       "MarketPaymentDefaultsFake",
       "PaymentGatewayFake",
       "PaymentGatewaysFake",

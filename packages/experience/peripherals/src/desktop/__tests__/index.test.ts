@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the consumer contract of the `./desktop` entry: `PrintReceiptBridge` and the three main-process drivers the
+ * Purpose: the consumer contract of the `./desktop` entry: `PrintReceiptBridge` and the main-process drivers (the `ecr` card terminal link among them) the
  *          template's desktop wiring imports, and loading it imports no Electron module.
  * Boundary: test only; imports the stand-in barrel through its `#desktop` alias with `electron` mocked to fail on
  *           load, so an eager import would break the test.
@@ -19,6 +19,7 @@ vi.mock("electron", () => {
 describe("@stackra/peripherals/desktop", () => {
   it("exports the print bridges and the main-process drivers", () => {
     expect(Object.keys(electron).sort()).toEqual([
+      "EcrCardTerminalDriver",
       "EscposKitchenPrinterDriver",
       "EscposReceiptPrinterDriver",
       "HidBarcodeScannerDriver",

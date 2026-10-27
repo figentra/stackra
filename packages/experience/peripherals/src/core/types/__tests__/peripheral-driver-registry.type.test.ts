@@ -24,6 +24,6 @@ describe("peripherals DriverRegistry entries", () => {
     expectTypeOf<DriverName<BarcodeScanner>>().toEqualTypeOf<"hid" | "memory">();
     expectTypeOf<DriverName<LabelPrinter>>().toEqualTypeOf<"zpl" | "memory">();
     expectTypeOf<DriverName<CustomerDisplay>>().toEqualTypeOf<"channel" | "external" | "memory">();
-    expectTypeOf<DriverName<CardTerminal>>().toEqualTypeOf<"memory">();
+    expectTypeOf<DriverName<CardTerminal>>().toEqualTypeOf<"memory" | "ecr">();
   });
 });

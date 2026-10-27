@@ -1,4 +1,4 @@
-<!-- Purpose: the agent guide of @stackra/peripherals: where code goes, the package's rules and its PII. Boundary: this package only. Runtime: docs. Governing contract: ADR 0253, ADR 0339, ADR 0449, STA-965. -->
+<!-- Purpose: the agent guide of @stackra/peripherals: where code goes, the package's rules and its PII. Boundary: this package only. Runtime: docs. Governing contract: ADR 0253, ADR 0339, ADR 0377, ADR 0449, STA-965. -->
 
 # AGENTS — @stackra/peripherals
 
@@ -29,7 +29,9 @@ scales, label-scale sync and drive-through lanes. Member at
 - Configuration, not code: barcode layouts (prefixes, digits, decimals, unit), certified printers and what a customer
   display shows are market-pack, seed-pack or settings data. Code holds the parsers and drivers only.
 - `CardTerminal` pairs and reports; the payment protocol stays in the payments driver (ADR 0339 decision 1). A
-  provider's SDK driver needs its own ADR (ADR 0339 open question 1).
+  provider's SDK driver needs its own ADR (ADR 0339 open question 1). The `ecr` driver (ADR 0377) is a byte link
+  only: it frames, acknowledges and resends, and satisfies `@stackra/payments`' `EcrLink` structurally; never import
+  `@stackra/payments` here, and never put a provider's message layout or result codes in this package.
 - Kitchen printers are named in `kitchenPrinters`; a station sits on one printer at most, and item-to-station routing is
   the product's. A ticket with a `raster` prints the raster (Arabic is the renderer's, ADR 0339 decision 2).
 - A bump bar keypad model is a `bumpBarKeys` map, a scale model a `scalePresets` entry: configuration, not code.

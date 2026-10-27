@@ -18,7 +18,7 @@ describe("PERIPHERAL_DRIVERS", () => {
       scanner: ["memory", "hid"],
       labelPrinter: ["memory", "zpl"],
       customerDisplay: ["memory", "channel", "external"],
-      cardTerminal: ["memory"],
+      cardTerminal: ["memory", "ecr"],
       accessController: ["memory"],
       kitchenPrinter: ["memory", "escpos"],
       bumpBar: ["memory", "hid"],

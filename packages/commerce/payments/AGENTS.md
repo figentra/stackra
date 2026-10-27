@@ -1,4 +1,4 @@
-<!-- Purpose: the agent rules of @stackra/payments: where code goes, the vendor boundary, configuration not code, restricted tenders, agent payments, SoftPos, pre-authorisation, partial payments, PII. Boundary: docs of packages/commerce/payments only. Runtime: none (Markdown). Governing contract: ADR 0357; ADR 0445; ADR 0446; ADR 0294; STA-1024; STA-687. -->
+<!-- Purpose: the agent rules of @stackra/payments: where code goes, the vendor boundary, configuration not code, restricted tenders, agent payments, SoftPos, pre-authorisation, partial payments, PII. Boundary: docs of packages/commerce/payments only. Runtime: none (Markdown). Governing contract: ADR 0357; ADR 0445; ADR 0446; ADR 0294; STA-1024; STA-687; ADR 0377. -->
 
 # AGENTS — @stackra/payments
 
@@ -17,6 +17,7 @@ driver, which reaches the SDK only through the app's `StripeTerminalBridge` port
 | An enum                            | `src/contracts/enums/<name>.enum.ts`                               |
 | A container driver                 | `src/core/drivers/<name>.driver.ts`                                |
 | A node-only driver or the module   | `src/node/drivers/<name>.driver.ts`, `src/node/payments.module.ts` |
+| A device-side gateway (no port)    | `src/core/gateways/<name>.gateway.ts` (the ECR terminal)           |
 | A refusal                          | `src/core/errors/<name>.error.ts`                                  |
 | A fake                             | `src/testing/<name>.fake.ts`                                       |
 | A test                             | `__tests__/<name>.<kind>.test.ts` beside it                        |
@@ -48,6 +49,11 @@ the ports in README "Square, Adyen and PayPal"; `cancelTerminal` gets the sessio
   `AgentConfirmation` (the shopper's wallet confirmation, verified by the protocol connector behind
   `AgentCommerceProtocols`) for the same reference, unexpired, covering the amount. No protocol, agent platform or
   limit is named here; which protocols are on is a connector catalogue row per pack, agent order limits are rules.
+- Semi-integrated terminals (ADR 0377): `EcrTerminalGateway` is the only ECR code; a provider is an
+  `EcrProfile` (pack data), never a subclass or a constant here. It speaks through the structural `EcrLink`, so never
+  import `@stackra/peripherals`. Every rejected link call is a lost answer; never map an unknown result code or an
+  inquiry about another payment to a state (leave it `unknown`). Profiles stay `certification: "pending"` until the
+  provider certifies them.
 - SoftPos (ADR 0446): the phone reads the card; the server half (`startTerminal` with `softPos: true`, `capture`,
   `cancelTerminal`, `reconcile`) stays on `PaymentService`. A SoftPos driver never imports a provider SDK: it takes a
   bridge port the staff app binds. `clientSecret` goes to the phone only, never to a record or a log. Which driver a

@@ -64,7 +64,10 @@ export class PeripheralsOptions extends Schema {
    */
   customerDisplay: DriverName<CustomerDisplay> = "memory";
 
-  /** The card terminal driver: `memory` until a provider's driver ships with its ADR. */
+  /**
+   * The card terminal driver: `ecr` (a semi-integrated terminal on the shop's network, the link of the payments ECR
+   * driver, ADR 0377) or `memory`.
+   */
   cardTerminal: DriverName<CardTerminal> = "memory";
 
   /** The gate driver: `memory` until a gate controller's driver ships with its ADR. */

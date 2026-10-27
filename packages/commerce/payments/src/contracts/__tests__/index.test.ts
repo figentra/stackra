@@ -28,6 +28,7 @@ describe("@stackra/payments/contracts", () => {
       "ConnectedAccountLimits",
       "ConnectionMode",
       "DisputeStatus",
+      "EcrOutcome",
       "MarketPaymentDefaults",
       "PaymentBalances",
       "PaymentCapability",

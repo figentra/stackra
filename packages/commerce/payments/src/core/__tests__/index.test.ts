@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: the consumer contract of the `.` entry: the three services, the eight drivers (one of them the
- *          `stripe-tap-to-pay` SoftPos driver over the app's SDK bridge), the refusals and the helpers are its values;
+ *          `stripe-tap-to-pay` SoftPos driver over the app's SDK bridge, and the ECR terminal driver), the refusals and the helpers are its values;
  *          no vendor Integration or Connection (they live in the OS integrations service) and nothing internal leaks.
  * Boundary: test only; imports the stand-in barrel through its `#core` alias.
  * Runtime: node (vitest)
@@ -18,6 +18,7 @@ describe("@stackra/payments", () => {
       "BalanceExceededError",
       "CapabilityUnsupportedError",
       "ConnectionPaymentGatewaysDriver",
+      "EcrTerminalGateway",
       "InvalidPaymentTransitionError",
       "MemoryAgentCommerceProtocolsDriver",
       "MemoryPaymentBalancesDriver",

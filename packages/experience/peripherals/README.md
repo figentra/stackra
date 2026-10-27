@@ -1,4 +1,4 @@
-<!-- Purpose: the README of @stackra/peripherals: what the ports, drivers, parsers and bridges are and how a host uses them. Boundary: this package only; the decisions live in the ADRs it names. Runtime: docs. Governing contract: ADR 0253, ADR 0339, ADR 0449, STA-965. -->
+<!-- Purpose: the README of @stackra/peripherals: what the ports, drivers, parsers and bridges are and how a host uses them. Boundary: this package only; the decisions live in the ADRs it names. Runtime: docs. Governing contract: ADR 0253, ADR 0339, ADR 0377, ADR 0449, STA-965. -->
 
 # @stackra/peripherals
 
@@ -36,6 +36,7 @@ a keyboard-wedge HID device. A peripheral is hardware the client uses; a device 
 | `./desktop`   | `PrintKitchenTicketBridge`, `EscposKitchenPrinterDriver`, `HidBumpBarDriver`                                                                                                                                 | `peripherals.kitchen.print` and the main-process `escpos` and `hid` drivers               |
 | `./contracts` | `ScannerScale`, `BaggingScale`, `LabelScale`, `DriveThroughLane`; `LabelScaleItem`, `LaneCar`                                                                                                                | grocery scales, self-checkout bagging and drive-through lanes (STA-965)                   |
 | `.`           | `MemoryScannerScaleDriver`, `MemoryBaggingScaleDriver`, `MemoryLabelScaleDriver`, `MemoryDriveThroughLaneDriver`                                                                                             | their `memory` candidates (the only drivers until a vendor's ships with its ADR)          |
+| `./desktop`   | `EcrCardTerminalDriver`                                                                                                                                                                                      | the `ecr` card terminal: a semi-integrated terminal on the network, the payments ECR link |
 | `.`           | `parseGs1ElementString`, `Gs1ElementString`                                                                                                                                                                  | GS1-128 and DataBar codes read by application identifier: GTIN, net weight, price         |
 
 ## Using it
@@ -90,6 +91,14 @@ useEffect(() => listenCustomerDisplay(setView), []);
 // pairing only; the payment is the payments driver's protocol
 await terminal.pair({ terminalId: "T-0042", provider: "geidea", address: null });
 
+// a semi-integrated terminal on the shop's network (`peripherals.cardTerminal: "ecr"`, main process)
+await ecrTerminal.pair({
+  terminalId: "T-0042",
+  provider: "geidea",
+  address: "tcp://10.0.0.30:6000",
+});
+const gateway = new EcrTerminalGateway({ id, profile, link: ecrTerminal, currency }); // @stackra/payments
+
 // a scale's barcode, read through the market pack's layouts
 const scanned = parseEmbeddedBarcode(code, pack.barcodeLayouts); // { itemCode, kind: "weight", value: "1.250", unit: "kg" }
 ```
@@ -98,6 +107,12 @@ const scanned = parseEmbeddedBarcode(code, pack.barcodeLayouts); // { itemCode, 
 - The second window itself is opened by `@stackra/platform`'s `SecondScreen` port on the desktop.
 - A barcode that matches no layout, or fails its GS1 check digit, parses to `null`: scan it as an ordinary code.
 - An RFID reader port is later (MUS-90), not here.
+- The `ecr` card terminal (ADR 0377) pairs to a `tcp://<host>:<port>` address and is the link the payments ECR
+  driver speaks through: `exchange` sends one frame (STX, payload, ETX, LRC; ACK or NAK, resent up to the provider's
+  `retries`) and returns the answer, `signal` sends a cancel beside it. It reports `busy` while an exchange runs and
+  `offline` when no connection opens. It never reads the payload: the protocol and its timing are the provider's
+  `EcrProfile` in `@stackra/payments`. Serial, USB and Bluetooth links need native transports and are not built.
+  Certification pending: no Geidea or Network International specification or test terminal has been used.
 
 ## Kitchen printers, bump bars, scale presets and several exits
 

@@ -1,16 +1,18 @@
 /**
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `.` entry of @stackra/payments (the `PaymentService`, the `RestrictedTenderService`, the `PaymentBalanceService`,
- *          the `connection` and `memory` drivers, the `stripe-tap-to-pay` SoftPos driver, the refusals and the
+ *          the `connection` and `memory` drivers, the `stripe-tap-to-pay` SoftPos driver, the
+ *          semi-integrated ECR terminal driver (ADR 0377), the refusals and the
  *          helpers) until `stackra gen` writes the entry barrels (STA-339). The vendor Integrations and Connections
  *          and the provider table moved to the OS integrations service (R3-8, STA-1281); the SoftPos driver holds no
  *          SDK, only the app's bridge port (ADR 0446).
  * Boundary: names each re-export and declares nothing. Isomorphic. Ports, enums and types come from ./contracts only,
  *           so no symbol is exported from two entries. `isLostAnswer` stays internal.
  * Runtime: isomorphic
- * Governing contract: ADR 0294 (decision 15); ADR 0446; STA-1024; the STA-347 stand-in barrel decision.
+ * Governing contract: ADR 0294 (decision 15); ADR 0446; ADR 0377; STA-1024; the STA-347 stand-in barrel decision.
  */
 export { ConnectionPaymentGatewaysDriver } from "#core/drivers/connection-payment-gateways.driver";
+export { EcrTerminalGateway } from "#core/gateways/ecr-terminal.gateway";
 export { MemoryAgentCommerceProtocolsDriver } from "#core/drivers/memory-agent-commerce-protocols.driver";
 export { MemoryPaymentBalancesDriver } from "#core/drivers/memory-payment-balances.driver";
 export { MemoryPaymentRecordsDriver } from "#core/drivers/memory-payment-records.driver";

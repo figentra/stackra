@@ -4,11 +4,12 @@
  *          gateway port interfaces and the payment types) until `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. The leaf every other entry may import.
  * Runtime: isomorphic
- * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision.
+ * Governing contract: ADR 0294 (decision 15); ADR 0377 (the ECR link and profile types); the STA-347 stand-in barrel decision.
  */
 export { ChargeInitiator } from "#contracts/enums/charge-initiator.enum";
 export { ConnectionMode } from "#contracts/enums/connection-mode.enum";
 export { DisputeStatus } from "#contracts/enums/dispute-status.enum";
+export { EcrOutcome } from "#contracts/enums/ecr-outcome.enum";
 export { PaymentCapability } from "#contracts/enums/payment-capability.enum";
 export { PaymentStatus } from "#contracts/enums/payment-status.enum";
 export { SessionKind } from "#contracts/enums/session-kind.enum";
@@ -67,6 +68,13 @@ export type { StripeBridgeError } from "#contracts/types/stripe-bridge-error.typ
 export type { StripeBridgeIntent } from "#contracts/types/stripe-bridge-intent.type";
 export type { TenderLine } from "#contracts/types/tender-line.type";
 export type { TenderSplit } from "#contracts/types/tender-split.type";
+export type { EcrLink } from "#contracts/types/ecr-link.type";
+export type { EcrOperation } from "#contracts/types/ecr-operation.type";
+export type { EcrProfile } from "#contracts/types/ecr-profile.type";
+export type { EcrRequestField } from "#contracts/types/ecr-request-field.type";
+export type { EcrResponseField } from "#contracts/types/ecr-response-field.type";
+export type { EcrTerminalGatewayOptions } from "#contracts/types/ecr-terminal-gateway-options.type";
+export type { EcrTiming } from "#contracts/types/ecr-timing.type";
 export type { TerminalGateway } from "#contracts/types/terminal-gateway.type";
 export type { TerminalRequest } from "#contracts/types/terminal-request.type";
 export type { TerminalSession } from "#contracts/types/terminal-session.type";
