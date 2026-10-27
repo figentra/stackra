@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
- * Purpose: the consumer contract of the `.` entry: the two services, the four drivers, the refusals and the helpers are its
- *          values; no vendor Integration or Connection (they live in the OS integrations service) and nothing internal
- *          leaks.
+ * Purpose: the consumer contract of the `.` entry: the two services, the seven drivers (one of them the
+ *          `stripe-tap-to-pay` SoftPos driver over the app's SDK bridge), the refusals and the helpers are its values;
+ *          no vendor Integration or Connection (they live in the OS integrations service) and nothing internal leaks.
  * Boundary: test only; imports the stand-in barrel through its `#core` alias.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0294 (decision 15).
@@ -14,11 +14,14 @@ import * as core from "#core/index";
 describe("@stackra/payments", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(core).sort()).toEqual([
+      "AgentConfirmationRefusedError",
       "CapabilityUnsupportedError",
       "ConnectionPaymentGatewaysDriver",
       "InvalidPaymentTransitionError",
+      "MemoryAgentCommerceProtocolsDriver",
       "MemoryPaymentRecordsDriver",
       "MemoryRestrictedTenderProgramsDriver",
+      "MemorySoftPosDriver",
       "MemoryTenderEligibilityDriver",
       "MerchantInitiatedNotAllowedError",
       "NoEligibleLinesError",
@@ -32,6 +35,8 @@ describe("@stackra/payments", () => {
       "ResolutionReasonRequiredError",
       "RestrictedTenderService",
       "RestrictedTenderUnavailableError",
+      "SoftPosUnavailableError",
+      "StripeTapToPaySoftPosDriver",
       "hasCapability",
       "modeOf",
       "splitTender",

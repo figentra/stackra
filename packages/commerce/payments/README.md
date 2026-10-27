@@ -1,4 +1,4 @@
-<!-- Purpose: the reader guide of @stackra/payments: what is exported, taking a payment, restricted tenders, the unknown state, provider choice. Boundary: docs of packages/commerce/payments only. Runtime: none (Markdown). Governing contract: ADR 0357; ADR 0445; ADR 0294. -->
+<!-- Purpose: the reader guide of @stackra/payments: what is exported, taking a payment, restricted tenders, agent payments, SoftPos tap to pay, the unknown state, provider choice. Boundary: docs of packages/commerce/payments only. Runtime: none (Markdown). Governing contract: ADR 0357; ADR 0445; ADR 0446; ADR 0294. -->
 
 # @stackra/payments
 
@@ -23,11 +23,15 @@ data (ADR 0356), never code.
 | `PaymentGateways`                                                                                         | `./contracts` | port: a gateway for a Market and needs, or for a stored connection                                                                                                                                                                       |
 | `MarketPaymentDefaults`                                                                                   | `./contracts` | port the market-pack loader binds: a Market's providers and platform Connections                                                                                                                                                         |
 | `PaymentRecords`                                                                                          | `./contracts` | port: where the engine keeps one `PaymentRecord` per merchant reference                                                                                                                                                                  |
-| `PaymentService`                                                                                          | `.`           | checkout, `payLink`, `charge`, `startTerminal`, `cancelTerminal`, `reconcile`, `capture`, `void`, `refund`, `resolve`                                                                                                                    |
+| `PaymentService`                                                                                          | `.`           | checkout, `payLink`, `charge`, `agentCheckout`, `startTerminal`, `cancelTerminal`, `reconcile`, `capture`, `void`, `refund`, `resolve`                                                                                                   |
 | `RestrictedTenderService`, `splitTender`                                                                  | `.`           | restricted tenders (EBT, meal vouchers): `split`, `startTerminal`, `checkout`, `captureAtFulfilment`                                                                                                                                     |
 | `TenderKind`, `RestrictedTenderPrograms`, `TenderEligibility`                                             | `./contracts` | the tender kind, and the ports for a Market's programs (pack data) and line eligibility (a rule set)                                                                                                                                     |
 | `MemoryRestrictedTenderProgramsDriver`, `MemoryTenderEligibilityDriver`                                   | `.`           | the `memory` drivers of the two restricted-tender ports                                                                                                                                                                                  |
 | `MarketPackRestrictedTenderProgramsDriver`                                                                | `./node`      | the `market-pack` driver of `RestrictedTenderPrograms` (pack key `payments.restricted-tenders`)                                                                                                                                          |
+| `AgentCommerceProtocols`, `AgentConfirmation`, `AgentCheckoutRequest`                                     | `./contracts` | the port that verifies an agent protocol's proof of the shopper's wallet confirmation, and its types                                                                                                                                     |
+| `MemoryAgentCommerceProtocolsDriver`, `AgentConfirmationRefusedError`                                     | `.`           | the `memory` driver of `AgentCommerceProtocols`; the refusal of an agent paying alone                                                                                                                                                    |
+| `SoftPos`, `SoftPosReadiness`, `StripeTerminalBridge`                                                     | `./contracts` | the SoftPos (tap to pay) port bound on the phone, and the bridge the staff app binds over Stripe Terminal's SDK                                                                                                                          |
+| `StripeTapToPaySoftPosDriver`, `MemorySoftPosDriver`, `SoftPosUnavailableError`                           | `.`           | the `stripe-tap-to-pay` and `memory` SoftPos drivers; the refusal of a phone that cannot be a reader                                                                                                                                     |
 | `ConnectionPaymentGatewaysDriver`                                                                         | `.`           | the `connection` driver of `PaymentGateways`: tenant Connection, then Market default                                                                                                                                                     |
 | `MemoryPaymentRecordsDriver`                                                                              | `.`           | the `memory` driver of `PaymentRecords`                                                                                                                                                                                                  |
 | the refusals                                                                                              | `.`           | `PaymentUnknownError`, `NoPaymentProviderError`, `MerchantInitiatedNotAllowedError`, `InvalidPaymentTransitionError`, `CapabilityUnsupportedError`, `PaymentFieldRequiredError`, `PaymentDeclinedError`, `ResolutionReasonRequiredError` |
@@ -77,6 +81,42 @@ await tenders.captureAtFulfilment(market, {
 `terminal_pin` capabilities, so only a provider that has them serves it. The PIN is entered on the terminal and never
 reaches the platform. The EBT and meal-voucher processor connectors wait on the owner's processor choice.
 
+## Agent payments (ADR 0446)
+
+An outside AI shopping agent may build a cart, but never pays alone: the shopper confirms in their own wallet, the
+protocol connector (OS integrations, behind `AgentCommerceProtocols`) verifies the proof, and `agentCheckout` charges
+the wallet's token only for the confirmed reference, before the confirmation expires and up to the confirmed amount.
+
+```ts
+const record = await payments.agentCheckout({ protocol, proof, reference: cart.id, amount });
+// record.agent = { protocol, agent }; a retry returns the same record
+```
+
+## SoftPos: tap to pay on the phone (ADR 0446)
+
+The server opens the session; the staff app's phone reads the card; the server captures or cancels.
+
+```ts
+// server
+const session = await payments.startTerminal(market, {
+  reference,
+  terminalId,
+  amount,
+  softPos: true,
+  captureLater: true,
+});
+// phone (SoftPos bound to StripeTapToPaySoftPosDriver over the app's StripeTerminalBridge)
+await softPos.connect(location); // a till setting
+await softPos.collect(session); // needs session.clientSecret
+// server
+await payments.reconcile(reference);
+await payments.capture(reference);
+```
+
+A request with `softPos: true` asks for `PaymentCapability.SoftPos`, so only a provider whose Connection opens tap-to-pay
+sessions serves it. The Stripe Connection (OS integrations) must return `clientSecret` and serve the SDK's connection
+token; a Gulf SoftPOS SDK per pack waits on vendor access.
+
 ## The unknown state
 
 When a provider call's answer is lost (`ProviderUnavailableError` from the managed client), the payment becomes
@@ -124,5 +164,5 @@ and `@stackra/integrations`.
 
 ## Decisions
 
-ADR 0445 (restricted tenders and the PIN step), ADR 0357 (payments architecture), ADR 0358 decision 3 (providers are drivers), ADR 0356 (provider per tenant and
+ADR 0446 (agent payments and SoftPos), ADR 0445 (restricted tenders and the PIN step), ADR 0378 (card terminals and Tap to Pay), ADR 0357 (payments architecture), ADR 0358 decision 3 (providers are drivers), ADR 0356 (provider per tenant and
 Market through the Connection), ADR 0359 decision 11 (sandbox gateways), ADR 0308 (integrations), ADR 0220 (money).

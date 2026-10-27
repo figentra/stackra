@@ -1,9 +1,10 @@
 /**
  * Stackra file contract:
- * Purpose: `TerminalSession`, an amount presented on a terminal and where it stands.
- * Boundary: a type in the leaf entry.
+ * Purpose: `TerminalSession`, an amount presented on a terminal and where it stands, and for a SoftPos session the
+ *          provider's one-time handle the phone collects it with.
+ * Boundary: a type in the leaf entry. `clientSecret` goes to the phone that collects, never to a log or a record.
  * Runtime: isomorphic
- * Governing contract: ADR 0357 (decisions 5 and 6).
+ * Governing contract: ADR 0357 (decisions 5 and 6); ADR 0446.
  */
 import type { Money } from "@stackra/money";
 
@@ -27,4 +28,7 @@ export interface TerminalSession {
 
   /** The tip the customer chose, once known. */
   readonly tip?: Money;
+
+  /** The provider's handle a SoftPos phone collects the payment with (`softPos` sessions only). */
+  readonly clientSecret?: string;
 }

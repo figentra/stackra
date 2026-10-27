@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: Stand-in barrel: the `./contracts` entry of @stackra/payments (the enums, the seven container ports, the
+ * Purpose: Stand-in barrel: the `./contracts` entry of @stackra/payments (the enums, the ten container ports, the
  *          gateway port interfaces and the payment types) until `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. The leaf every other entry may import.
  * Runtime: isomorphic
@@ -14,13 +14,18 @@ export { PaymentStatus } from "#contracts/enums/payment-status.enum";
 export { SessionKind } from "#contracts/enums/session-kind.enum";
 export { TenderKind } from "#contracts/enums/tender-kind.enum";
 export { TransferStatus } from "#contracts/enums/transfer-status.enum";
+export { AgentCommerceProtocols } from "#contracts/ports/agent-commerce-protocols.port";
 export { ConnectedAccountLimits } from "#contracts/ports/connected-account-limits.port";
 export { MarketPaymentDefaults } from "#contracts/ports/market-payment-defaults.port";
 export { PaymentGateways } from "#contracts/ports/payment-gateways.port";
 export { PaymentPackSource } from "#contracts/ports/payment-pack-source.port";
 export { PaymentRecords } from "#contracts/ports/payment-records.port";
 export { RestrictedTenderPrograms } from "#contracts/ports/restricted-tender-programs.port";
+export { SoftPos } from "#contracts/ports/soft-pos.port";
+export { StripeTerminalBridge } from "#contracts/ports/stripe-terminal-bridge.port";
 export { TenderEligibility } from "#contracts/ports/tender-eligibility.port";
+export type { AgentCheckoutRequest } from "#contracts/types/agent-checkout-request.type";
+export type { AgentConfirmation } from "#contracts/types/agent-confirmation.type";
 export type { CapabilityGateways } from "#contracts/types/capability-gateways.type";
 export type { CaptureGateway } from "#contracts/types/capture-gateway.type";
 export type { CaptureRequest } from "#contracts/types/capture-request.type";
@@ -51,6 +56,9 @@ export type { ProviderPayment } from "#contracts/types/provider-payment.type";
 export type { RefundRequest } from "#contracts/types/refund-request.type";
 export type { RestrictedTenderProgram } from "#contracts/types/restricted-tender-program.type";
 export type { SavedMethod } from "#contracts/types/saved-method.type";
+export type { SoftPosReadiness } from "#contracts/types/soft-pos-readiness.type";
+export type { StripeBridgeError } from "#contracts/types/stripe-bridge-error.type";
+export type { StripeBridgeIntent } from "#contracts/types/stripe-bridge-intent.type";
 export type { TenderLine } from "#contracts/types/tender-line.type";
 export type { TenderSplit } from "#contracts/types/tender-split.type";
 export type { TerminalGateway } from "#contracts/types/terminal-gateway.type";

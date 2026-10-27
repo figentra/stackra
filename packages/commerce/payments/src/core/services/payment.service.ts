@@ -7,16 +7,20 @@
  *          a manager `resolve`s it with a reason. On a `connected-account` connection only, a payment above the
  *          pre-verification cap and a payout while payouts are held are refused; the account's enabled payment
  *          methods are read from the provider. A `restricted` tender or a PIN step on a request asks the provider
- *          for the matching capability (the restricted-tender flow itself is `RestrictedTenderService`).
+ *          for the matching capability (the restricted-tender flow itself is `RestrictedTenderService`), and so does
+ *          a SoftPos session (tap to pay; the phone collects it through the `SoftPos` port). An agent's payment is
+ *          taken only within what the shopper confirmed in their own wallet (`agentCheckout`): an agent never pays
+ *          alone.
  * Boundary: generic over `PaymentGateways` (which provider serves a call is the Connection's and the Market's data),
  *           `PaymentRecords` (where state lives) and `ConnectedAccountLimits` (the cap and the hold, from the OS
- *           verification record). It never names a provider, a Market, a fee or a limit; caps,
+ *           verification record) and `AgentCommerceProtocols` (the protocols' proof of a wallet confirmation). It never
+ *           names a provider, a protocol, a Market, a fee or a limit; caps,
  *           approvals and who may resolve by hand are rules and permissions in the calling product. One payment per
  *           merchant reference: a retried charge or terminal session with a used reference returns the record.
  * Runtime: isomorphic
  * Governing contract: ADR 0357 (decisions 1, 2, 5 and 6); ADR 0356 (decision 2); ADR 0294 (decisions 15 to 17);
  *                     R4-6 (the cap and the hold apply to connected accounts only); R4-4 (methods from the account);
- *                     ADR 0445 (restricted tenders and the PIN step).
+ *                     ADR 0445 (restricted tenders and the PIN step); ADR 0446 (agent payments and SoftPos).
  */
 import { Service } from "@stackra/container";
 import type { Clock } from "@stackra/contracts";
@@ -29,9 +33,11 @@ import { PaymentCapability } from "#contracts/enums/payment-capability.enum";
 import { PaymentStatus } from "#contracts/enums/payment-status.enum";
 import { TenderKind } from "#contracts/enums/tender-kind.enum";
 import { TransferStatus } from "#contracts/enums/transfer-status.enum";
+import type { AgentCommerceProtocols } from "#contracts/ports/agent-commerce-protocols.port";
 import type { ConnectedAccountLimits } from "#contracts/ports/connected-account-limits.port";
 import type { PaymentGateways } from "#contracts/ports/payment-gateways.port";
 import type { PaymentRecords } from "#contracts/ports/payment-records.port";
+import type { AgentCheckoutRequest } from "#contracts/types/agent-checkout-request.type";
 import type { CapabilityGateways } from "#contracts/types/capability-gateways.type";
 import type { CheckoutRequest } from "#contracts/types/checkout-request.type";
 import type { CheckoutSession } from "#contracts/types/checkout-session.type";
@@ -44,6 +50,7 @@ import type { TerminalRequest } from "#contracts/types/terminal-request.type";
 import type { TerminalSession } from "#contracts/types/terminal-session.type";
 import type { TokenCharge } from "#contracts/types/token-charge.type";
 import type { TransferResult } from "#contracts/types/transfer-result.type";
+import { AgentConfirmationRefusedError } from "#core/errors/agent-confirmation-refused.error";
 import { CapabilityUnsupportedError } from "#core/errors/capability-unsupported.error";
 import { InvalidPaymentTransitionError } from "#core/errors/invalid-payment-transition.error";
 import { MerchantInitiatedNotAllowedError } from "#core/errors/merchant-initiated-not-allowed.error";
@@ -88,23 +95,29 @@ export class PaymentService extends Service {
   /** The cap and the payout hold of a connected account. */
   private readonly limits: ConnectedAccountLimits;
 
+  /** The agent protocols' wallet confirmations; none bound means no agent payment is taken. */
+  private readonly agents: AgentCommerceProtocols | undefined;
+
   /**
    * @param gateways - the `connection` driver in a host; a fake in tests.
    * @param records - the host's durable store; the memory driver in tests.
    * @param clock - the container's clock.
    * @param limits - the host's verification-backed limits; a fake in tests.
+   * @param agents - the host's protocol connectors; gen's wiring always passes it, a test may leave it out.
    */
   constructor(
     gateways: PaymentGateways,
     records: PaymentRecords,
     clock: Clock,
     limits: ConnectedAccountLimits,
+    agents?: AgentCommerceProtocols,
   ) {
     super();
     this.gateways = gateways;
     this.records = records;
     this.clock = clock;
     this.limits = limits;
+    this.agents = agents;
   }
 
   /**
@@ -184,8 +197,44 @@ export class PaymentService extends Service {
   }
 
   /**
-   * Presents `request.amount` on a terminal of a provider of `market`, with a tip prompt when given, and a PIN step
-   * and a restricted tender when the request asks (the provider must have the matching capability).
+   * Takes an agent's payment for a cart the shopper confirmed in their own wallet: the protocol's proof must verify,
+   * name this reference, be unexpired and cover the amount in its currency. The wallet's token is then charged as a
+   * customer-initiated charge on the connection that made it, and the record keeps the protocol and agent. A retry
+   * with the same reference returns the record, so the cart is never paid twice.
+   *
+   * @throws AgentConfirmationRefusedError when there is no such confirmation (`missing`), it is for another cart
+   *         (`reference`), it has expired (`expired`) or it does not cover the amount (`amount`).
+   * @throws PaymentUnknownError when the reference's last answer was lost (and when this one is).
+   * @throws PreVerificationCapExceededError when an unverified connected account would take more than its cap.
+   */
+  async agentCheckout(request: AgentCheckoutRequest): Promise<PaymentRecord> {
+    const confirmation = (await this.agents?.confirmation(request.protocol, request.proof)) ?? null;
+    if (confirmation === null) throw this.agentRefusal(request, "missing");
+    if (confirmation.reference !== request.reference) throw this.agentRefusal(request, "reference");
+    if (this.clock.now() >= confirmation.expiresAt) throw this.agentRefusal(request, "expired");
+    if (
+      request.amount.currency !== confirmation.amount.currency ||
+      request.amount.minor > confirmation.amount.minor
+    )
+      throw this.agentRefusal(request, "amount");
+    const record = await this.charge({
+      reference: request.reference,
+      method: confirmation.method,
+      amount: request.amount,
+      initiator: ChargeInitiator.Customer,
+      ...(request.description === undefined ? {} : { description: request.description }),
+    });
+    if (record.agent !== undefined) return record;
+    return this.save({
+      ...record,
+      agent: { protocol: confirmation.protocol, agent: confirmation.agent },
+    });
+  }
+
+  /**
+   * Presents `request.amount` on a terminal of a provider of `market`, with a tip prompt when given, a PIN step,
+   * a restricted tender and a SoftPos (tap to pay) session when the request asks (the provider must have the matching
+   * capability).
    *
    * @throws PaymentUnknownError when the reference's last answer was lost (and when this one is).
    * @throws InvalidPaymentTransitionError when the reference is in use.
@@ -200,6 +249,7 @@ export class PaymentService extends Service {
       ...(request.captureLater === true ? [PaymentCapability.Capture] : []),
       ...(request.tender === TenderKind.Restricted ? [PaymentCapability.RestrictedTender] : []),
       ...(request.pinEntry === true ? [PaymentCapability.TerminalPin] : []),
+      ...(request.softPos === true ? [PaymentCapability.SoftPos] : []),
     ]);
     const terminal = this.capable(gateway, PaymentCapability.Terminal);
     await this.withinCap(gateway, request.reference, request.amount);
@@ -444,6 +494,18 @@ export class PaymentService extends Service {
         status: record.status,
         operation,
       });
+  }
+
+  /** The refusal of an agent payment for `reason`. */
+  private agentRefusal(
+    request: AgentCheckoutRequest,
+    reason: string,
+  ): AgentConfirmationRefusedError {
+    return AgentConfirmationRefusedError.create({
+      reference: request.reference,
+      protocol: request.protocol,
+      reason,
+    });
   }
 
   /**

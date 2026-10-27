@@ -1,0 +1,65 @@
+---
+title: "0446 — Agent payments confirmed in the shopper's wallet, and the SoftPos tap-to-pay driver family"
+description: "Proposed · 2026-10-27"
+---
+
+{/* Stackra file contract. Purpose: the decision record for agent payments (the AgentCommerceProtocols port and PaymentService.agentCheckout) and the SoftPos driver family with the Stripe Tap to Pay driver in @stackra/payments. Boundary: docs only; the ADR index row is the integration batch's (stackra-90). Runtime: none (Mintlify page). Governing contract: ADR 0357; ADR 0378; ADR 0443; R3-SO-12; COM-125; STA-961. */}
+
+<Note>
+  Proposed (STA-961, batch stackra-33; STA-694; Commerce STA-764). It carries out owner decisions
+  COM-125 (agent shopping in release 1, the shopper confirms in their own wallet) and R3-SO-12 (a
+  SoftPos family, Stripe Tap to Pay in `us` and `eu`, one Gulf SDK per pack). It reads with
+  [0357](/adr/0357-payments-architecture-ports-gateway-drivers-a-platform-layer-and-a-closed-loop-wallet),
+  [0378](/adr/0378-card-terminals-server-driven-and-tap-to-pay-stripe-terminal-square-and-adyen) and
+  [0443](/adr/0443-integration-architecture-connectors-apps-and-extensions-in-one-marketplace-and-vendor-drivers-in-os-integrations).
+</Note>
+
+## Context
+
+Commerce publishes its catalogue to outside AI shopping agents and accepts their carts (STA-764), but the owner ruled
+that an agent never pays alone: the shopper confirms in their own wallet. The agent commerce protocols (a delegated
+payment token, a signed cart mandate) each prove that confirmation differently. `@stackra/payments` had no port for
+the proof and no flow that refuses an unconfirmed agent payment.
+
+Tap to Pay on iPhone and Android is a launch item in the US and for Academorix (US-36, RV-45). ADR 0378 decided that
+Stripe Terminal's Tap to Pay is a `SoftPos` driver of the server-driven family, in the Expo staff app over Stripe's
+native SDK. Vendor server drivers live in OS integrations (R3-8), and this package may not take a native SDK.
+
+## Decision
+
+1. **Agent payments need a wallet confirmation.** The `AgentCommerceProtocols` port answers what a protocol's proof
+   confirms (`AgentConfirmation`: protocol, agent, reference, amount, confirmed and expiry times, the wallet's
+   `SavedMethod`). The host binds it over the protocol connectors in OS integrations. Which protocols are on is a
+   connector catalogue row per pack, and merchants opt in per channel. This package names no protocol.
+2. **`PaymentService.agentCheckout`.** It takes a payment only when the proof verifies, names the same reference, is
+   unexpired and covers the amount in its currency. Otherwise it refuses with `AgentConfirmationRefusedError`
+   (`missing`, `reference`, `expired`, `amount`). It then charges the wallet token as a customer-initiated
+   `charge`, so the `unknown` state, one payment per reference, the connected-account cap and the connection choice
+   are unchanged. The record keeps `agent` (protocol and agent) for the channel tag and audit. Agent order limits
+   are rule documents in the product.
+3. **The SoftPos family.** The `SoftPos` port (`readiness`, `connect`, `collect`, `cancel`) is bound on the phone. The
+   server half stays on `PaymentService`: `startTerminal` with `softPos: true` asks for `PaymentCapability.SoftPos`
+   and the session carries the provider's `clientSecret` for the phone. `capture`, `cancelTerminal` and `reconcile`
+   are unchanged. The card never reaches the platform.
+4. **Stripe Tap to Pay through a bridge.** `StripeTapToPaySoftPosDriver` (driver `stripe-tap-to-pay`) talks to Stripe
+   only through the `StripeTerminalBridge` port. The staff app binds that port over Stripe Terminal's React Native SDK
+   (discovery, the connection-token provider, the native module). The package carries no SDK, key or dependency. This
+   is the one vendor-named code in `@stackra/payments`, allowed because it runs on the device and has no server
+   Connection. The Stripe Connection that opens the session (a card-present intent with its client secret) and serves
+   connection tokens stays in OS integrations.
+5. **Choice is data.** Which SoftPos driver a Market uses is pack data (`payments.softpos`). Device eligibility comes
+   from the device catalogue. The Tap to Pay entitlement per app bundle is a `launch-gate:<pack>:<product>` row
+   (0378 decision 5).
+
+## Consequences
+
+- OS integrations writes the agent protocol connectors and binds `AgentCommerceProtocols`. Until it does, a host binds
+  the memory driver or takes no agent payment (`missing`).
+- The Stripe Connection in OS integrations adds `PaymentCapability.SoftPos`, returns `clientSecret` on a tap-to-pay
+  session and serves the SDK's connection token.
+- The Expo staff app binds `StripeTerminalBridge` and `SoftPos`, and holds the Tap to Pay entitlement per bundle.
+
+## Open
+
+- One Gulf SoftPOS SDK driver per pack (Geidea or Checkout.com), waiting on vendor access (`external:gulf-softpos-sdk`).
+- The host-side picker that reads `payments.softpos` and selects among SoftPos drivers, once there are two.

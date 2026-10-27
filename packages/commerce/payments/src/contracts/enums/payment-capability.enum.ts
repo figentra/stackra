@@ -2,12 +2,13 @@
  * Stackra file contract:
  * Purpose: `PaymentCapability`, what a provider's driver can do beyond a hosted checkout: capture and void, saved
  *          tokens, payouts, the platform layer, disputes, terminal sessions, a tip prompt on the terminal, reading
- *          the account's enabled payment methods, a restricted tender (EBT, meal vouchers) and PIN entry on the terminal.
+ *          the account's enabled payment methods, a restricted tender (EBT, meal vouchers), PIN entry on the terminal and a
+ *          terminal session a SoftPos phone collects (tap to pay).
  * Boundary: an `Enum.of` value plus the type of the same name, in the leaf entry. A driver lists its capabilities;
  *           `PaymentGateways#forMarket` keeps only providers that have every capability a call needs, and
  *           `hasCapability` narrows a gateway to the matching port. Codes are snake_case.
  * Runtime: isomorphic
- * Governing contract: ADR 0357 (decisions 2 and 5); ADR 0356 (decision 2); ADR 0231; ADR 0445.
+ * Governing contract: ADR 0357 (decisions 2 and 5); ADR 0356 (decision 2); ADR 0231; ADR 0445; ADR 0446.
  */
 import { Enum } from "@stackra/contracts";
 
@@ -40,6 +41,8 @@ export const PaymentCapability = Enum.of({
   RestrictedTender: "restricted_tender",
   /** Ask for a PIN on the terminal before the payment is approved. */
   TerminalPin: "terminal_pin",
+  /** Open a terminal session a SoftPos phone collects (tap to pay; the session carries a `clientSecret`). */
+  SoftPos: "soft_pos",
 });
 
 /** One of the codes above. */

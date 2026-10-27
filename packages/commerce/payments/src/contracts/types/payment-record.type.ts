@@ -1,15 +1,16 @@
 /**
  * Stackra file contract:
  * Purpose: `PaymentRecord`, the engine's own state of one payment: which connection serves it, what the provider last
- *          said, what was refunded, and how an `unknown` state was settled.
+ *          said, what was refunded, how an `unknown` state was settled, and which agent and protocol asked for it.
  * Boundary: a type in the leaf entry; stored through the `PaymentRecords` port. Amounts are `Money`; the tip stays apart from
  *           the amount so the ledger can post it on its own line.
  * Runtime: isomorphic
- * Governing contract: ADR 0357 (decisions 2 and 6); ADR 0220.
+ * Governing contract: ADR 0357 (decisions 2 and 6); ADR 0220; ADR 0446.
  */
 import type { Money } from "@stackra/money";
 
 import type { PaymentStatus } from "#contracts/enums/payment-status.enum";
+import type { AgentConfirmation } from "#contracts/types/agent-confirmation.type";
 import type { CheckoutSession } from "#contracts/types/checkout-session.type";
 import type { PaymentResolution } from "#contracts/types/payment-resolution.type";
 import type { SavedMethod } from "#contracts/types/saved-method.type";
@@ -56,6 +57,9 @@ export interface PaymentRecord {
 
   /** How an `unknown` state was settled by hand. */
   readonly resolution?: PaymentResolution;
+
+  /** The protocol and agent of an agent payment the shopper confirmed in their wallet. */
+  readonly agent?: Pick<AgentConfirmation, "protocol" | "agent">;
 
   /** When the record last changed. */
   readonly updatedAt: Date;

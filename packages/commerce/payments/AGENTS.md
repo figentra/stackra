@@ -1,9 +1,10 @@
-<!-- Purpose: the agent rules of @stackra/payments: where code goes, the vendor boundary, configuration not code, restricted tenders, PII. Boundary: docs of packages/commerce/payments only. Runtime: none (Markdown). Governing contract: ADR 0357; ADR 0445; ADR 0294. -->
+<!-- Purpose: the agent rules of @stackra/payments: where code goes, the vendor boundary, configuration not code, restricted tenders, agent payments, SoftPos, PII. Boundary: docs of packages/commerce/payments only. Runtime: none (Markdown). Governing contract: ADR 0357; ADR 0445; ADR 0446; ADR 0294. -->
 
 # AGENTS — @stackra/payments
 
-The payment ports and the engine's `PaymentService`; no vendor driver (owner decision R3-8: vendor Integrations live
-in the OS integrations service). Member at `packages/commerce/payments`
+The payment ports and the engine's `PaymentService`; no vendor server driver (owner decision R3-8: vendor Integrations
+live in the OS integrations service). The one vendor-named code here is the device-side `stripe-tap-to-pay` SoftPos
+driver, which reaches the SDK only through the app's `StripeTerminalBridge` port (ADR 0446). Member at `packages/commerce/payments`
 (`tier:lib`), in the programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./node` (the
 `PaymentsModule` and the market-pack `MarketPaymentDefaults` and `RestrictedTenderPrograms` drivers) and `./testing`.
 
@@ -42,6 +43,14 @@ when a vendor needs one, additively.
 - Restricted tenders (ADR 0445): programs are pack data (`payments.restricted-tenders`), eligibility is a rule set
   behind `TenderEligibility`, and the split is `splitTender` only. No program code, category list or tax rate here;
   the PIN never reaches this package (`pinEntry` asks the terminal for the step).
+- Agent payments (ADR 0446): an agent never pays alone. `agentCheckout` takes a payment only within an
+  `AgentConfirmation` (the shopper's wallet confirmation, verified by the protocol connector behind
+  `AgentCommerceProtocols`) for the same reference, unexpired, covering the amount. No protocol, agent platform or
+  limit is named here; which protocols are on is a connector catalogue row per pack, agent order limits are rules.
+- SoftPos (ADR 0446): the phone reads the card; the server half (`startTerminal` with `softPos: true`, `capture`,
+  `cancelTerminal`, `reconcile`) stays on `PaymentService`. A SoftPos driver never imports a provider SDK: it takes a
+  bridge port the staff app binds. `clientSecret` goes to the phone only, never to a record or a log. Which driver a
+  Market uses is pack data (`payments.softpos`), owned by the host.
 - No parameter properties and no `#private` fields: apps typecheck this source under `erasableSyntaxOnly`.
 
 ## Rules that fail the build
@@ -52,8 +61,10 @@ when a vendor needs one, additively.
 
 ## PII
 
-| Data                                 | Where                          | Handling                                                                   |
-| ------------------------------------ | ------------------------------ | -------------------------------------------------------------------------- |
-| Customer name, email, phone, address | request bodies to the provider | Sent only to the serving provider; never logged or stored here.            |
-| Provider secret keys                 | connection `@Secret` fields    | Resolved blind by the store; read only by the connector (OS integrations). |
-| Saved tokens                         | `SavedMethod.token`            | A provider token, never a card number.                                     |
+| Data                                 | Where                          | Handling                                                                           |
+| ------------------------------------ | ------------------------------ | ---------------------------------------------------------------------------------- |
+| Customer name, email, phone, address | request bodies to the provider | Sent only to the serving provider; never logged or stored here.                    |
+| Provider secret keys                 | connection `@Secret` fields    | Resolved blind by the store; read only by the connector (OS integrations).         |
+| Saved tokens                         | `SavedMethod.token`            | A provider token, never a card number.                                             |
+| Agent wallet tokens and proofs       | `AgentConfirmation`, request   | Verified by the connector; never logged; the record keeps protocol and agent only. |
+| SoftPos client secret                | `TerminalSession.clientSecret` | Handed to the collecting phone; never stored or logged.                            |

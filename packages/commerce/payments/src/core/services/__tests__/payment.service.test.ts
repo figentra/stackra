@@ -7,11 +7,13 @@
  *          refused; a terminal payment keeps its tip and a cancel reads the final state; a pay link is reused until
  *          it expires. On a connected account only, a payment above the pre-verification cap and a held payout are
  *          refused; other modes never ask for limits; the account's payment methods are read when the provider reports
- *          them. A terminal PIN step or a restricted tender is served only by a provider with that capability.
+ *          them. A terminal PIN step, a restricted tender or a SoftPos session is served only by a provider with that
+ *          capability. An agent payment is taken only within the shopper's wallet confirmation (missing, another cart,
+ *          expired or too small is refused), is tagged with its protocol and agent, and is never taken twice.
  * Boundary: test only; the service runs over the gateway fake, the gateways fake, the memory records and a fixed
  *           clock.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0269; ADR 0357 (decisions 2, 5 and 6); ADR 0445.
+ * Governing contract: ADR 0022; ADR 0269; ADR 0357 (decisions 2, 5 and 6); ADR 0445; ADR 0446.
  */
 import { Clock } from "@stackra/contracts";
 import { NotFoundError } from "@stackra/errors";
@@ -24,7 +26,9 @@ import { ConnectionMode } from "#contracts/enums/connection-mode.enum";
 import { PaymentCapability } from "#contracts/enums/payment-capability.enum";
 import { PaymentStatus } from "#contracts/enums/payment-status.enum";
 import { TenderKind } from "#contracts/enums/tender-kind.enum";
+import { MemoryAgentCommerceProtocolsDriver } from "#core/drivers/memory-agent-commerce-protocols.driver";
 import { MemoryPaymentRecordsDriver } from "#core/drivers/memory-payment-records.driver";
+import { AgentConfirmationRefusedError } from "#core/errors/agent-confirmation-refused.error";
 import { CapabilityUnsupportedError } from "#core/errors/capability-unsupported.error";
 import { InvalidPaymentTransitionError } from "#core/errors/invalid-payment-transition.error";
 import { MerchantInitiatedNotAllowedError } from "#core/errors/merchant-initiated-not-allowed.error";
@@ -55,6 +59,11 @@ const request = {
   returnUrl: "https://shop.example/ok",
   cancelUrl: "https://shop.example/no",
 };
+/** The refusal of the agent payment of `cart_1` for `reason`. */
+function refused(reason: string) {
+  return refusal(AgentConfirmationRefusedError, { reference: "cart_1", protocol: "acp", reason });
+}
+
 const method = {
   provider: "fake",
   connectionId: "conn_fake",
@@ -336,6 +345,78 @@ describe("PaymentService", () => {
         ConnectedAccountLimitsFake.with(),
       );
       expect(await plain.paymentMethods("m1")).toBeNull();
+    });
+  });
+
+  it("opens a SoftPos session only with a provider that has it", async () => {
+    const readersOnly = PaymentGatewayFake.with({
+      capabilities: [PaymentCapability.Checkout, PaymentCapability.Terminal],
+    });
+    const plain = new PaymentService(
+      PaymentGatewaysFake.with([readersOnly]),
+      records,
+      clock,
+      ConnectedAccountLimitsFake.with(),
+    );
+    const tap = { reference: "chk_8", terminalId: "tmr_phone", amount, softPos: true };
+    await expect(plain.startTerminal("m1", tap)).rejects.toRefuseWith(
+      refusal(NoPaymentProviderError),
+    );
+    expect((await payments.startTerminal("m1", tap)).status).toBe(PaymentStatus.Pending);
+  });
+
+  describe("agent payments", () => {
+    const confirmation = {
+      protocol: "acp",
+      agent: "agent_1",
+      reference: "cart_1",
+      amount,
+      confirmedAt: new Date("2026-10-25T09:58:00Z"),
+      expiresAt: new Date("2026-10-25T10:15:00Z"),
+      method,
+    };
+    const ask = { protocol: "acp", proof: "proof_1", reference: "cart_1", amount };
+
+    /** The service with the memory protocols driver holding `confirmed`. */
+    function withAgents(confirmed = confirmation): PaymentService {
+      return new PaymentService(
+        PaymentGatewaysFake.with([gateway]),
+        records,
+        clock,
+        ConnectedAccountLimitsFake.with(),
+        new MemoryAgentCommerceProtocolsDriver().confirm("proof_1", confirmed),
+      );
+    }
+
+    it("charges the wallet token within the confirmation, tags the agent, and never twice", async () => {
+      const service = withAgents();
+      const record = await service.agentCheckout({ ...ask, amount: Money.ofMinor(9_000, "SAR") });
+      expect(record).toMatchObject({
+        reference: "cart_1",
+        status: PaymentStatus.Captured,
+        agent: { protocol: "acp", agent: "agent_1" },
+      });
+      expect(await records.find("cart_1")).toMatchObject({ agent: { agent: "agent_1" } });
+      expect(await service.agentCheckout(ask)).toEqual(record);
+    });
+
+    it("refuses an agent paying alone, for another cart, late or beyond the confirmation", async () => {
+      await expect(payments.agentCheckout(ask)).rejects.toRefuseWith(refused("missing"));
+      await expect(withAgents().agentCheckout({ ...ask, proof: "forged" })).rejects.toRefuseWith(
+        refused("missing"),
+      );
+      await expect(
+        withAgents({ ...confirmation, reference: "cart_2" }).agentCheckout(ask),
+      ).rejects.toRefuseWith(refused("reference"));
+      await expect(
+        withAgents().agentCheckout({ ...ask, amount: Money.ofMinor(10_001, "SAR") }),
+      ).rejects.toRefuseWith(refused("amount"));
+      await expect(
+        withAgents().agentCheckout({ ...ask, amount: Money.ofMinor(100, "USD") }),
+      ).rejects.toRefuseWith(refused("amount"));
+      clock.at = new Date("2026-10-25T10:15:00Z");
+      await expect(withAgents().agentCheckout(ask)).rejects.toRefuseWith(refused("expired"));
+      expect(await records.find("cart_1")).toBeNull();
     });
   });
 });

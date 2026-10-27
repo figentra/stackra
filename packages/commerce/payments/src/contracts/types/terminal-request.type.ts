@@ -1,11 +1,12 @@
 /**
  * Stackra file contract:
  * Purpose: `TerminalRequest`, an amount to present on a card terminal, with an optional tip prompt, the tender kind
- *          (a restricted program such as EBT SNAP) and whether the terminal asks for a PIN.
+ *          (a restricted program such as EBT SNAP), whether the terminal asks for a PIN, and whether a SoftPos phone
+ *          collects it (tap to pay).
  * Boundary: a type in the leaf entry; the terminal id is the provider's id of the reader. The PIN is entered on the
  *           terminal and never reaches the platform; `pinEntry` only asks for the step.
  * Runtime: isomorphic
- * Governing contract: ADR 0357 (decision 5); ADR 0339; ADR 0377; ADR 0445; R3-SO-08.
+ * Governing contract: ADR 0357 (decision 5); ADR 0339; ADR 0377; ADR 0445; ADR 0446; R3-SO-08.
  */
 import type { Money } from "@stackra/money";
 
@@ -42,4 +43,7 @@ export interface TerminalRequest {
 
   /** Ask for a PIN on the terminal (`PaymentCapability.TerminalPin`). */
   readonly pinEntry?: boolean;
+
+  /** A SoftPos phone collects it; `terminalId` is the phone's reader id (`PaymentCapability.SoftPos`). */
+  readonly softPos?: boolean;
 }
