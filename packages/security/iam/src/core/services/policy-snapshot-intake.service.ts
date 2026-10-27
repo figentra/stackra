@@ -13,7 +13,7 @@
 import { Service } from "@stackra/container";
 import type { PublicId } from "@stackra/contracts";
 
-import { PolicySnapshotStore } from "#contracts/index";
+import type { PolicySnapshotStore } from "#contracts/index";
 import { decodePolicySnapshot } from "#core/functions/decode-policy-snapshot.function";
 import type { PolicySnapshotEvent } from "#core/types/policy-snapshot-event.type";
 
@@ -31,7 +31,9 @@ export class PolicySnapshotIntakeService extends Service {
   /** Where the snapshots are kept. */
   private readonly store: PolicySnapshotStore;
 
-  /** @param store - the service's tenant-scoped snapshot store. */
+  /**
+   * @param store - the service's tenant-scoped snapshot store.
+   */
   constructor(store: PolicySnapshotStore) {
     super();
     this.store = store;

@@ -16,11 +16,17 @@ import { Permission } from "#core/values/permission.value";
 
 class LedgerPermissions extends Permissions {
   static readonly view = Permission.L0;
+
   static readonly read = Permission.L1;
+
   static readonly adjust = Permission.L2;
+
   static readonly refund = Permission.L3;
+
   static readonly purge = Permission.L4;
+
   static readonly expire = Permission.L2.system();
+
   static readonly readMedical = Permission.L1.restricted();
 }
 

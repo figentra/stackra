@@ -58,7 +58,9 @@ class FixedClockDriver extends Driver(Clock) {
 
 class OrderPermissions extends Permissions {
   static readonly read = Permission.L0;
+
   static readonly cancel = Permission.L2;
+
   static readonly expire = Permission.L2.system();
 }
 

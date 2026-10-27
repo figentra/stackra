@@ -15,7 +15,9 @@ import { Permission } from "#core/values/permission.value";
 
 class OrderPermissions extends Permissions {
   static readonly read = Permission.L0;
+
   static readonly create = Permission.L1;
+
   static readonly expire = Permission.L2.system();
 }
 

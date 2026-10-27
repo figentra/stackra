@@ -70,6 +70,7 @@ class Order {
 
 class OrderPermissions extends Permissions {
   static readonly read = Permission.L0;
+
   static readonly cancel = Permission.L2;
 }
 
@@ -88,7 +89,10 @@ class BrokenPolicy extends Policy<Order> {
   }
 }
 
-class CancelOrderAction extends Action({ key: "order.cancel", actors: [ActorKind.User] }) {
+class CancelOrderAction extends Action({
+  key: "order.cancel",
+  actors: [ActorKind.User],
+}) {
   async handle(input: { order: Order }, ctx: ActionContext): Promise<string> {
     await ctx.authorize(input.order);
     return "cancelled";

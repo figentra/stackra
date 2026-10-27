@@ -9,10 +9,12 @@
  * Governing contract: ADR 0208 (decisions 1 and 2); ADR 0327 (decision 7); STA-1271.
  */
 import { Driver } from "@stackra/container";
-import { type Actor, Clock, type ScopeRef } from "@stackra/contracts";
+import type { Clock } from "@stackra/contracts";
+import { type Actor, type ScopeRef } from "@stackra/contracts";
 import { isWithinScope } from "@stackra/scope";
 
-import { PolicySource, RolesAtNode } from "#contracts/index";
+import type { PolicySource } from "#contracts/index";
+import { RolesAtNode } from "#contracts/index";
 
 /**
  * Lists the roles a principal holds at a node.

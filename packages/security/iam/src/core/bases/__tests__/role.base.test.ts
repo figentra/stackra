@@ -16,7 +16,9 @@ import type { RoleOptions } from "#core/types/role-options.type";
 
 class OrderPermissions extends Permissions {
   static readonly read = Permission.L0;
+
   static readonly cancel = Permission.L2;
+
   static readonly expire = Permission.L2.system();
 }
 

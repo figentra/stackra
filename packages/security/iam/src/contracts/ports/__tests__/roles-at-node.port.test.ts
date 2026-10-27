@@ -23,7 +23,7 @@ const visitor: Actor = { kind: ActorKind.Anonymous, id: "anon_01j9z3k4m5n6p7q8r9
 
 describe("RolesAtNode", () => {
   it("is a port its drivers extend", async () => {
-    const roles = new NoRolesAtNodeDriver();
+    const roles: RolesAtNode = new NoRolesAtNodeDriver();
     expect(roles).toBeInstanceOf(RolesAtNode);
     expect(roles).toBeInstanceOf(Port);
     expect(

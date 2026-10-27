@@ -22,12 +22,6 @@ import type { Permission } from "#core/values/permission.value";
  * container.get(PermissionSnapshotService).set(session.permissions);
  */
 export class PermissionSnapshotService extends Service {
-  /** The held keys, frozen. */
-  private keys: readonly string[] = Object.freeze([]);
-
-  /** Who to call after a change. */
-  private readonly listeners = new Set<() => void>();
-
   /** The held keys; the same array until they change, so it is the snapshot `useSyncExternalStore` compares. */
   readonly current = (): readonly string[] => this.keys;
 
@@ -63,4 +57,10 @@ export class PermissionSnapshotService extends Service {
     const key = permissionKey(permission);
     return keys.some((held) => coversPermission(held, key));
   };
+
+  /** The held keys, frozen. */
+  private keys: readonly string[] = Object.freeze([]);
+
+  /** Who to call after a change. */
+  private readonly listeners = new Set<() => void>();
 }

@@ -16,6 +16,7 @@ import { Permission } from "#core/values/permission.value";
 
 class SelectorFixturePermissions extends Permissions {
   static readonly read = Permission.L1;
+
   static readonly wipe = Permission.L4;
 }
 

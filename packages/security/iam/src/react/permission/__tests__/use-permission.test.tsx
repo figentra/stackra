@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 /**
  * Stackra file contract:
  * Purpose: unit and type tests of `usePermission()`: a render reads the `PermissionSnapshotService` the nearest
@@ -8,6 +7,7 @@
  * Runtime: node (vitest, jsdom)
  * Governing contract: ADR 0022; ADR 0269; ADR 0208 (decision 6); ADR 0295 (decision 10).
  */
+// @vitest-environment jsdom
 import { Container } from "@stackra/container";
 import { ContainerProvider } from "@stackra/container/react";
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";

@@ -11,8 +11,8 @@
 import { Driver } from "@stackra/container";
 import type { Actor } from "@stackra/contracts";
 
-import { PolicySnapshotStore, PolicySource } from "#contracts/index";
-import type { PolicySnapshot } from "#contracts/index";
+import { PolicySource } from "#contracts/index";
+import type { PolicySnapshot, PolicySnapshotStore } from "#contracts/index";
 
 /** What a principal with no stored snapshot holds. */
 const NOTHING: PolicySnapshot = Object.freeze({
@@ -35,7 +35,9 @@ export class StorePolicySourceDriver extends Driver(PolicySource) {
   /** The event-fed copies. */
   private readonly store: PolicySnapshotStore;
 
-  /** @param store - the service's copy of each principal's snapshot. */
+  /**
+   * @param store - the service's copy of each principal's snapshot.
+   */
   constructor(store: PolicySnapshotStore) {
     super();
     this.store = store;

@@ -14,7 +14,7 @@
  */
 import { Driver } from "@stackra/container";
 import type { PublicId } from "@stackra/contracts";
-import { Database } from "@stackra/database";
+import type { Database } from "@stackra/database";
 
 import { decodePolicySnapshot } from "#core/index";
 import { PolicySnapshotStore } from "#contracts/index";
@@ -42,7 +42,9 @@ export class PostgresPolicySnapshotStoreDriver extends Driver(PolicySnapshotStor
   /** The connected database each call opens its own transaction on. */
   private readonly database: Database;
 
-  /** @param database - the connected database. */
+  /**
+   * @param database - the connected database.
+   */
   constructor(database: Database) {
     super();
     this.database = database;

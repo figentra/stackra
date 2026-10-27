@@ -17,15 +17,16 @@
  *                     (decision 3); ADR 0327 (no bypass); ADR 0294 (decisions 16 and 17).
  */
 import type { ExtensionContext } from "@stackra/actions";
-import { ContextStorage } from "@stackra/actions/contracts";
+import type { ContextStorage } from "@stackra/actions/contracts";
 import { type AnyClass, Driver } from "@stackra/container";
-import { type Actor, Clock, type ScopeRef } from "@stackra/contracts";
+import type { Clock } from "@stackra/contracts";
+import { type Actor, type ScopeRef } from "@stackra/contracts";
 import { VisibilityFilter } from "@stackra/database/contracts";
 import type { Where } from "@stackra/database/contracts";
 import { Visibility } from "@stackra/model";
 
 import { Capability } from "#contracts/index";
-import { PolicyDecisionPointService } from "#core/index";
+import type { PolicyDecisionPointService } from "#core/index";
 import { VISIBILITY_REGISTRY } from "#node/constants/visibility-registry.constant";
 import { whereOf } from "#node/functions/where-of.function";
 

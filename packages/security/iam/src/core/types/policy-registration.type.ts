@@ -12,7 +12,7 @@
 import type { AnyClass } from "@stackra/container";
 import type { Rules } from "@stackra/rules";
 
-import type { PolicyBase } from "#core/bases/policy.base";
+import type { Policy } from "#core/bases/policy.base";
 
 /** The policy of one model. */
 export interface PolicyRegistration {
@@ -20,7 +20,7 @@ export interface PolicyRegistration {
   readonly model: AnyClass;
 
   /** The policy class, resolved from the container when a record is authorized. */
-  readonly policy: AnyClass<PolicyBase<object>>;
+  readonly policy: AnyClass<Policy>;
 
   /** The model's record fields as a `record` fact source, for conditional denies; absent when it declares none. */
   readonly rules?: Rules;

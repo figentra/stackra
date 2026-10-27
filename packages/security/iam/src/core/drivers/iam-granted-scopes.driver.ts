@@ -9,10 +9,11 @@
  * Governing contract: ADR 0327 (decision 7); ADR 0208 (decisions 1 and 2: grants inherit downward and expire).
  */
 import { Driver } from "@stackra/container";
-import { type Actor, Clock, type ScopeRef } from "@stackra/contracts";
+import type { Clock } from "@stackra/contracts";
+import { type Actor, type ScopeRef } from "@stackra/contracts";
 import { GrantedScopes } from "@stackra/scope/contracts";
 
-import { PolicySource } from "#contracts/index";
+import type { PolicySource } from "#contracts/index";
 
 /**
  * Lists where a principal holds grants.

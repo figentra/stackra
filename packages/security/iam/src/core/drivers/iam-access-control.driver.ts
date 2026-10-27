@@ -19,11 +19,11 @@ import { type AnyClass, Driver } from "@stackra/container";
 import { type Actor, Enum, type PublicId, type ScopeRef } from "@stackra/contracts";
 import { ForbiddenError } from "@stackra/errors";
 import type { Facts } from "@stackra/rules";
-import { ScopeTree } from "@stackra/scope/contracts";
+import type { ScopeTree } from "@stackra/scope/contracts";
 
 import { POLICY_REGISTRY } from "#core/constants/policy-registry.constant";
 import { Decision } from "#core/enums/decision.enum";
-import { PolicyDecisionPointService } from "#core/services/policy-decision-point.service";
+import type { PolicyDecisionPointService } from "#core/services/policy-decision-point.service";
 import type { PolicyRegistration } from "#core/types/policy-registration.type";
 
 /** The three answers a policy method may give. */

@@ -8,7 +8,8 @@
  *           pairs the model and the policy through `registerPolicies`. A binding with constructor dependencies, wired
  *           by gen and never constructed by an author (ADR 0328 decision 5). A method is pure (no writes, no network)
  *           and runs inside `handle` through `ctx.authorize(record)`, after the permission step passed. `@Policy` is
- *           retired. `PolicyBase` is the instance base; the entry exports the type of the same name only.
+ *           retired. `PolicyBase` is the file-local instance base; the file exports `Policy`, the type and the kind
+ *           of one name.
  * Runtime: isomorphic
  * Governing contract: ADR 0132 (as amended by 0294 and 0263); ADR 0305 (rules 2, 5 to 7 and 44); ADR 0294 (decisions
  *                     16 and 25).
@@ -18,7 +19,7 @@ import { createKind, kindOf, type WithPartner } from "@stackra/container";
 import type { PolicyOptions } from "#core/types/policy-options.type";
 
 /** The instance side every policy shares. */
-export abstract class PolicyBase<M extends object> {
+abstract class PolicyBase<M extends object> {
   /** Type-only kind brand, so a class of another kind cannot stand in for a policy. */
   declare protected readonly "~kind": "policy";
 

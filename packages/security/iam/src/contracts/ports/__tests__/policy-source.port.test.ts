@@ -31,7 +31,7 @@ const visitor: Actor = { kind: ActorKind.Anonymous, id: "anon_01j9z3k4m5n6p7q8r9
 
 describe("PolicySource", () => {
   it("is a port its drivers extend", async () => {
-    const source = new EmptyPolicySourceDriver();
+    const source: PolicySource = new EmptyPolicySourceDriver();
     expect(source).toBeInstanceOf(PolicySource);
     expect(source).toBeInstanceOf(Port);
     expect((await source.snapshot(visitor)).grants).toEqual([]);
