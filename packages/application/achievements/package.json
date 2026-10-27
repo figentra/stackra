@@ -91,6 +91,7 @@
     "@stackra/documents": "workspace:*",
     "@stackra/errors": "workspace:*",
     "@stackra/events": "workspace:*",
+    "@stackra/iam": "workspace:*",
     "@stackra/integrations": "workspace:*",
     "@stackra/model": "workspace:*",
     "@stackra/rules": "workspace:*",

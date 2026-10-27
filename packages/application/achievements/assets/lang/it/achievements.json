@@ -6,5 +6,10 @@
       "granted": "Conferito",
       "code": "Codice"
     }
+  },
+  "permissions": {
+    "award": {
+      "read": "Verificare i riconoscimenti"
+    }
   }
 }

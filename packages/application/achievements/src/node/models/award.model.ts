@@ -15,10 +15,15 @@
 import type { PublicId } from "@stackra/contracts";
 import type { OptionalProps } from "@stackra/database";
 import { HasPublicId, Model, Timestamps } from "@stackra/model";
+import { Int } from "@stackra/validation";
 
 /** An award. Traits add `id` and the timestamps; the indexes are the migration's. */
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: merged with the [OptionalProps] augmentation below
 export class Award extends Model.with(HasPublicId("awd"), Timestamps) {
+  /** The criteria revision that matched; null for a grant by hand. */
+  @Int
+  ruleRevision!: number | null;
+
   /** The kind of the award. */
   kindId!: PublicId<"awk">;
 
@@ -45,9 +50,6 @@ export class Award extends Model.with(HasPublicId("awd"), Timestamps) {
 
   /** The principal who granted it; null when its kind's criteria did. */
   grantedBy!: string | null;
-
-  /** The criteria revision that matched; null for a grant by hand. */
-  ruleRevision!: number | null;
 
   /** The opaque verify token printed on its certificate and QR code. */
   verifyToken!: string;

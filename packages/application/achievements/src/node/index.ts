@@ -10,6 +10,7 @@
  * Runtime: node
  * Governing contract: ADR 0294 (decision 15); ADR 0368; the STA-347 stand-in barrel decision.
  */
+export { AwardPermissions } from "#node/access/award.permissions";
 export { registerAwardRecipients } from "#node/functions/register-award-recipients.function";
 export { AwardPass } from "#node/integrations/award.pass";
 export type { AwardPassSource } from "#node/integrations/award-pass-source.type";

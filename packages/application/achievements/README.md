@@ -34,6 +34,7 @@ files under `./assets/*`. Depends on `@stackra/actions`, `@stackra/contracts`, `
 | `verifyQr`                                | `.`           | a verify URL as an SVG QR code                                                                          |
 | `normalizeAwardCode`                      | `.`           | a typed short code folded to its 12 canonical characters, or null                                       |
 | `VerifyAwardQuery`                        | `./node`      | the public `award.verify` query, with `VerifyAwardInput` and `VerifyAwardOutput`                        |
+| `AwardPermissions`                        | `./node`      | `achievements.award.read` (L0), the permission the public verify query derives                          |
 | `registerAwardRecipients`                 | `./node`      | `[{ model: "workforce.member", rules: MEMBER_AWARD_RULES }]`                                            |
 | `AwardKindService`                        | `./node`      | `open`, `archive`, `draftCriteria`, `publishCriteria`                                                   |
 | `AwardService`                            | `./node`      | `grant`, `consider`, `revoke`, `awardsOf`, `verify`, `verifyCode`, `certificateOf`, `renderCertificate` |

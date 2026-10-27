@@ -6,5 +6,10 @@
       "granted": "Verliehen",
       "code": "Code"
     }
+  },
+  "permissions": {
+    "award": {
+      "read": "Auszeichnungen prüfen"
+    }
   }
 }

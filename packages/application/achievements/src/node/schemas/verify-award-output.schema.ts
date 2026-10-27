@@ -9,7 +9,7 @@
  * Runtime: node
  * Governing contract: ADR 0432 (decision 1); ADR 0368 (decision 5); ADR 0294 (decisions 4, 13 and 26).
  */
-import { registerSchemas, Schema } from "@stackra/validation";
+import { Field, publicId, registerSchemas, Schema } from "@stackra/validation";
 import { z } from "zod";
 
 import type { VerifiedAward } from "#contracts/index";
@@ -22,9 +22,25 @@ import type { VerifiedAward } from "#contracts/index";
  */
 export class VerifyAwardOutput extends Schema {
   /** `valid` or `not_found`. */
+  // reason: a two-value literal union kept as published, so the public verify page's type does not change
+  @Field(z.enum(["valid", "not_found"]))
   status!: "valid" | "not_found";
 
   /** The verified award; null when not found. */
+  // reason: `VerifiedAward` is a contracts interface the consumer's page shares, and it ships no `VerifiedAward$`
+  @Field(
+    z
+      .object({
+        awardId: publicId("awd"),
+        kindId: publicId("awk"),
+        kindName: z.string(),
+        level: z.string().nullable(),
+        period: z.string().nullable(),
+        recipient: z.object({ model: z.string(), id: z.string() }),
+        grantedAt: z.date(),
+      })
+      .nullable(),
+  )
   award!: VerifiedAward | null;
 }
 

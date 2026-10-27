@@ -17,6 +17,7 @@ describe("@stackra/achievements/node", () => {
       "AwardKind",
       "AwardKindService",
       "AwardPass",
+      "AwardPermissions",
       "AwardService",
       "AwardVerification",
       "VerifyAwardInput",

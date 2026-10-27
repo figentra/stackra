@@ -6,5 +6,10 @@
       "granted": "Toegekend",
       "code": "Code"
     }
+  },
+  "permissions": {
+    "award": {
+      "read": "Onderscheidingen verifiëren"
+    }
   }
 }
