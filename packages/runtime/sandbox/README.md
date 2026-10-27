@@ -61,8 +61,9 @@ await pool.close();
 
 `SandboxPool` keeps `size` child processes, each running one `Sandbox` run at a time, and queues the rest. A guest
 `fetch` is relayed back over IPC to the `SandboxFetchProxy` bound in the host, so egress stays audited in one place. A
-run that outlives its time limit by `graceMs` has its process killed (`sandbox_limit_exceeded`, limit `time`); a process
-that dies mid-run refuses that run only (`sandbox_code_failed`) and is replaced (ADR 0434).
+run that outlives its time limit by `graceMs`, counted from when its process says it serves (start-up is never charged
+to a run), has its process killed (`sandbox_limit_exceeded`, limit `time`); a process that dies mid-run refuses that
+run only (`sandbox_code_failed`) and is replaced (ADR 0434).
 
 ## TypeScript steps
 

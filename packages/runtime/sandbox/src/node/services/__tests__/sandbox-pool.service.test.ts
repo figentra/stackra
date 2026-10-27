@@ -5,7 +5,8 @@
  *          is refused while the pool keeps serving, and a pool that is not open refuses runs.
  * Boundary: test only; the children load this package's source `./node` entry, so Node strips its types, with a
  *           resolve hook for its extensionless `#` imports (ADR 0233); its dependencies load from their built dists
- *           (`test` runs after `^build`), since Node cannot parse their decorated sources.
+ *           (`test` runs after `^build`), since Node cannot parse their decorated sources. The watchdog test runs a
+ *           stand-in process that never answers, so the watchdog, not the run's own limit, ends the run under any load.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0434 (decision 2); ADR 0154 (decisions 5 and 6).
  */
@@ -49,12 +50,28 @@ const OPTIONS = {
   execArgv: ["--import", `data:text/javascript,${encodeURIComponent(RESOLVE_TS)}`],
 };
 
+/**
+ * A stand-in process that never answers a run of `stall` and answers `1` to any other, so only the pool's watchdog
+ * can end the stalled run, whatever the load on the machine.
+ */
+const STALLING_CHILD = `export function serveSandboxChild() {
+  process.on("message", (message) => {
+    if (message.type === "run" && message.request.code !== "stall")
+      process.send({ type: "result", result: { output: 1, logs: [], codeMs: 0 } });
+  });
+  process.send({ type: "ready" });
+}`;
+const STALLING = {
+  ...OPTIONS,
+  module: `data:text/javascript,${encodeURIComponent(STALLING_CHILD)}`,
+};
+
 const pools: SandboxPool[] = [];
 
 /** An open pool over `proxy`. */
-function poolOf(proxy = new EchoProxy()): SandboxPool {
+function poolOf(proxy = new EchoProxy(), options = OPTIONS): SandboxPool {
   const pool = new SandboxPool(proxy);
-  pool.open(OPTIONS);
+  pool.open(options);
   pools.push(pool);
   return pool;
 }
@@ -101,19 +118,12 @@ describe(SandboxPool, () => {
   }, 20_000);
 
   it("refuses a run that waits past its time and keeps serving", async () => {
-    const pool = poolOf(
-      new (class extends EchoProxy {
-        override fetch(): Promise<SandboxFetchResponse> {
-          return new Promise(() => undefined);
-        }
-      })(),
-    );
-    const short = { ...LIMITS, time: Duration.seconds(1) };
+    const pool = poolOf(new EchoProxy(), STALLING);
     const hung = pool.run({
-      code: "await fetch('https://api.example.com/slow');",
+      code: "stall",
       input: null,
-      limits: short,
-      allowedOrigins: ["https://api.example.com"],
+      limits: { ...LIMITS, time: Duration.seconds(1) },
+      allowedOrigins: [],
       reference: "s",
     });
     await expect(hung).rejects.toBeInstanceOf(SandboxLimitExceededError);

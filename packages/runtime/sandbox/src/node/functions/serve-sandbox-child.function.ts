@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
- * Purpose: `serveSandboxChild`, the body of a sandbox process: it runs each request the pool sends through a fresh
- *          `Sandbox`, relays the guest's fetches to the pool, and answers with the result, the refusal or the failure.
+ * Purpose: `serveSandboxChild`, the body of a sandbox process: it says it serves once listening (the pool starts a
+ *          run's clock then), runs each request the pool sends through a fresh `Sandbox`, relays the guest's fetches
+ *          to the pool, and answers with the result, the refusal or the failure.
  * Boundary: node only; called once at the top of a process `SandboxPool` spawns, never in a host. It holds no state
  *           between runs beyond the loaded WebAssembly module (each run gets its own QuickJS runtime). It exits when
  *           the pool's channel closes, so a dead pool leaves no process behind.
@@ -51,4 +52,5 @@ export function serveSandboxChild(): void {
     );
   });
   process.on("disconnect", () => process.exit(0));
+  send({ type: "ready" });
 }

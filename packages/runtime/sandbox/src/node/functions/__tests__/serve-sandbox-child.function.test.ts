@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `serveSandboxChild` in this process: it refuses to start without an IPC channel, answers a
- *          run with its result, its code failure, its limit or its error, relays a guest fetch through the pool and
- *          settles it with the pool's answer, and exits when the pool disconnects. The `SandboxPool` tests run the
+ * Purpose: unit tests of `serveSandboxChild` in this process: it refuses to start without an IPC channel, says it is
+ *          ready, answers a run with its result, its code failure, its limit or its error, relays a guest fetch
+ *          through the pool and settles it with the pool's answer, and exits when the pool disconnects. The `SandboxPool` tests run the
  *          same function in real child processes, which coverage cannot see, so its branches are measured here.
  * Boundary: test only; `process.send`, `process.on` and `process.exit` are stubbed so nothing reaches the vitest
  *           worker's own IPC channel, and restored after each test.
@@ -65,6 +65,7 @@ function serve(): {
   }) as typeof process.on);
   serveSandboxChild();
   if (message === undefined || disconnect === undefined) throw new Error("no listeners");
+  expect(replies.splice(0)).toEqual([{ type: "ready" }]);
   return { replies, message, disconnect };
 }
 

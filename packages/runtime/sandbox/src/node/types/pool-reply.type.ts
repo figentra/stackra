@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: `PoolReply`, a message a sandbox process sends the pool: the run's result, its refusal or failure, or a
- *          guest `fetch` for the pool's audited proxy to send.
+ * Purpose: `PoolReply`, a message a sandbox process sends the pool: that it serves, the run's result, its refusal or
+ *          failure, or a guest `fetch` for the pool's audited proxy to send.
  * Boundary: a type only; plain JSON over the IPC channel. A refusal travels as its code and details and is rebuilt as
  *           the same refusal class in the pool; any other error travels as its name and message.
  * Runtime: node
@@ -12,6 +12,7 @@ import type { SandboxLimit, SandboxResult } from "#core/index";
 
 /** Process to pool. */
 export type PoolReply =
+  | { readonly type: "ready" }
   | { readonly type: "result"; readonly result: SandboxResult }
   | { readonly type: "limit"; readonly limit: SandboxLimit; readonly codeMs: number }
   | {

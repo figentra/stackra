@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `SandboxPool`, the process-isolated runner of code steps: a fixed number of child processes, each running
  *          one `Sandbox` run at a time, a queue for the rest, the guest's fetches relayed back to the host's audited
- *          `SandboxFetchProxy`, and a watchdog that kills a process whose run outlives its time limit by the grace.
+ *          `SandboxFetchProxy`, and a watchdog that kills a process whose run outlives its time limit by the grace,
+ *          counted from when the process says it serves, so a slow start-up is never charged to a run.
  * Boundary: node only. A crash of the WebAssembly engine, a runaway native allocation or a hung host call takes down
  *           one child, never the host; the child is replaced and only its run is refused. Runs in one process are
  *           sequential and each gets a fresh QuickJS runtime, so no state passes between runs. The pool size and the
@@ -37,10 +38,12 @@ interface Job {
 /** One process and the run it is on. */
 interface Slot {
   readonly child: ChildProcess;
+  /** The process said it serves, so its start-up is over and a run's clock may start. */
+  isReady: boolean;
   running?:
     | (Job & {
-        readonly started: number;
-        readonly timer: NodeJS.Timeout;
+        started: number;
+        timer: NodeJS.Timeout | undefined;
         readonly abort: AbortController;
       })
     | undefined;
@@ -139,7 +142,7 @@ export class SandboxPool extends Service {
       [...(options.execArgv ?? process.execArgv), "--input-type=module", "--eval", script],
       { stdio: ["ignore", "inherit", "inherit", "ipc"], serialization: "json" },
     );
-    const slot: Slot = { child };
+    const slot: Slot = { child, isReady: false };
     child.on("message", (message: PoolReply) => this.answer(slot, message));
     child.on("exit", () => this.lost(slot));
     return slot;
@@ -147,16 +150,36 @@ export class SandboxPool extends Service {
 
   /** Hands queued runs to free processes. */
   private dispatch(): void {
-    const options = this.options;
-    if (options === undefined) return;
+    if (this.options === undefined) return;
     for (const slot of this.slots) {
-      if (slot.running !== undefined) continue;
+      // A process the watchdog killed has not exited yet; its replacement comes from `lost`.
+      if (slot.running !== undefined || slot.child.killed) continue;
       const job = this.queue.shift();
       if (job === undefined) return;
-      const limit = Duration.toMilliseconds(job.request.limits.time);
-      const timer = setTimeout(() => {
-        const running = slot.running;
-        if (running === undefined) return;
+      slot.running = {
+        ...job,
+        started: performance.now(),
+        timer: undefined,
+        abort: new AbortController(),
+      };
+      if (slot.isReady) this.arm(slot);
+      const message: PoolRequest = { type: "run", request: job.request };
+      slot.child.send(message);
+    }
+  }
+
+  /**
+   * Starts the watchdog of the slot's run. A process still starting up is not charged for it: on a loaded host its
+   * start-up alone can outlast a run's limit and its grace, so the clock starts once the process says it serves.
+   */
+  private arm(slot: Slot): void {
+    const running = slot.running;
+    const options = this.options;
+    if (running === undefined || options === undefined) return;
+    running.started = performance.now();
+    running.timer = setTimeout(
+      () => {
+        if (slot.running !== running) return;
         slot.running = undefined;
         running.abort.abort();
         running.reject(
@@ -166,15 +189,18 @@ export class SandboxPool extends Service {
           }),
         );
         slot.child.kill("SIGKILL");
-      }, limit + options.graceMs);
-      slot.running = { ...job, started: performance.now(), timer, abort: new AbortController() };
-      const message: PoolRequest = { type: "run", request: job.request };
-      slot.child.send(message);
-    }
+      },
+      Duration.toMilliseconds(running.request.limits.time) + options.graceMs,
+    );
   }
 
   /** Handles one message of a process. */
   private answer(slot: Slot, message: PoolReply): void {
+    if (message.type === "ready") {
+      slot.isReady = true;
+      this.arm(slot);
+      return;
+    }
     const running = slot.running;
     if (running === undefined) return;
     if (message.type === "fetch") {
