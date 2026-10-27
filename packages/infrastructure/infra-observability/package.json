@@ -3,6 +3,17 @@
   "version": "0.0.0",
   "private": true,
   "description": "Pulumi programs for telemetry read from the root runway (ADR 0184): the Better Stack OpenTelemetry source every service exports OTLP to, its hot log retention and the S3 cold archive, a Better Stack heartbeat per cron, outbox relay and worker in each deployed environment, the Sentry team, projects, DSN keys and new-issue alerts of the app members, and the service-level indicators of every service",
+  "keywords": [
+    "better-stack",
+    "heartbeats",
+    "infrastructure",
+    "observability",
+    "opentelemetry",
+    "pulumi",
+    "sentry",
+    "slo",
+    "stackra"
+  ],
   "homepage": "https://github.com/figentra/stackra/tree/main/packages/infrastructure/infra-observability#readme",
   "bugs": {
     "url": "https://github.com/figentra/stackra/issues"
@@ -100,6 +111,7 @@
     "runtimes": [
       "isomorphic",
       "node"
-    ]
+    ],
+    "summary": "Reach for it when changing where telemetry goes, log retention, cron and queue heartbeats, Sentry projects and alerts, or service-level indicators; services only export OTLP and declare their indicators in the runway."
   }
 }

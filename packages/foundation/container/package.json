@@ -3,6 +3,16 @@
   "version": "0.0.0",
   "private": true,
   "description": "The Stackra DI and kind machinery: classes are tokens, gen-written wiring, createKind, createDecorator, Driver(Port), Lifetime, Explorer, DiscoveryService, Named, Module, Service and the testing module",
+  "keywords": [
+    "decorators",
+    "dependency-injection",
+    "drivers",
+    "foundation",
+    "ioc",
+    "modules",
+    "ports",
+    "stackra"
+  ],
   "homepage": "https://github.com/figentra/stackra/tree/main/packages/foundation/container#readme",
   "bugs": {
     "url": "https://github.com/figentra/stackra/issues"
@@ -112,6 +122,7 @@
     "runtimes": [
       "isomorphic",
       "node"
-    ]
+    ],
+    "summary": "Reach for it when defining a kind, decorator, module, port driver or injectable service, or when overriding bindings in tests; it owns the DI container every member is resolved through."
   }
 }

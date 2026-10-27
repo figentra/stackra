@@ -3,6 +3,17 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra app runtime: createApp per runtime target (server, worker, browser, native, desktop) returning that target's app object, the shared boot from the generated wiring, the client Contexts, and the Controller kind for raw HTTP",
+  "keywords": [
+    "application",
+    "bootstrap",
+    "controllers",
+    "entrypoint",
+    "guards",
+    "http-server",
+    "lifecycle",
+    "runtime",
+    "stackra"
+  ],
   "homepage": "https://github.com/figentra/stackra/tree/main/packages/runtime/app#readme",
   "bugs": {
     "url": "https://github.com/figentra/stackra/issues"
@@ -195,6 +206,7 @@
       "browser",
       "worker",
       "react-native"
-    ]
+    ],
+    "summary": "Reach for it when booting a member: createApp for its target (server, worker, browser, native or desktop) runs the generated wiring, and it owns the server lifecycle, request guards and raw-HTTP controllers."
   }
 }

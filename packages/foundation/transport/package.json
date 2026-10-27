@@ -3,6 +3,18 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra HTTP client pipeline: middleware for bearer auth, retry, timeout, the Idempotency-Key and Stackra-Version headers, NDJSON and server-sent-event readers, and a streaming Expo fetch",
+  "keywords": [
+    "expo",
+    "fetch",
+    "foundation",
+    "http-client",
+    "idempotency",
+    "middleware",
+    "ndjson",
+    "retry",
+    "server-sent-events",
+    "stackra"
+  ],
   "homepage": "https://github.com/figentra/stackra/tree/main/packages/foundation/transport#readme",
   "bugs": {
     "url": "https://github.com/figentra/stackra/issues"
@@ -99,6 +111,7 @@
     "runtimes": [
       "isomorphic",
       "react-native"
-    ]
+    ],
+    "summary": "Reach for it when calling a Stackra API over HTTP or changing how generated clients send requests (auth, retries, timeouts, idempotency keys, streaming bodies); it owns the client middleware pipeline, not the server side."
   }
 }

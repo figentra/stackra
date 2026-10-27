@@ -3,6 +3,17 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra queue: the runtime of an action's job option. QueueService pushes jobs (unique per scope, the caller's scope and actor kept), QueueWorkerService runs them through the action pipeline with a timeout, retries with backoff and jitter, a dead-letter queue with redrive and the onDeadLetter hook, the QueueDriver port with the memory and Postgres (SKIP LOCKED) drivers, the JobDispatcher driver behind ctx.dispatch, Backoff, queues(), QueueConfig, and the drainQueue and runJob test helpers, and the BrokerPublisher port with its memory, generated-topic and Valkey-stream drivers",
+  "keywords": [
+    "background-jobs",
+    "dead-letter-queue",
+    "jobs",
+    "postgres",
+    "queue",
+    "retries",
+    "runtime",
+    "stackra",
+    "valkey-streams"
+  ],
   "homepage": "https://github.com/figentra/stackra/tree/main/packages/runtime/queue#readme",
   "bugs": {
     "url": "https://github.com/figentra/stackra/issues"
@@ -129,6 +140,7 @@
     "runtimes": [
       "isomorphic",
       "node"
-    ]
+    ],
+    "summary": "Reach for it when an action runs as a background job (its job option): pushing, running, retrying and dead-lettering jobs, choosing the queue driver, and draining queues in tests."
   }
 }

@@ -3,6 +3,18 @@
   "version": "0.0.0",
   "private": true,
   "description": "Mobile release infrastructure: the release plan read from the root and mobile runways (EAS project and environments, store records, push credentials and EAS-managed signing) with the owner steps no API can take, and its Pulumi slice, which resolves and checks the stack config",
+  "keywords": [
+    "app-store",
+    "code-signing",
+    "eas",
+    "expo",
+    "google-play",
+    "infrastructure",
+    "mobile-release",
+    "pulumi",
+    "push-notifications",
+    "stackra"
+  ],
   "homepage": "https://github.com/figentra/stackra/tree/main/packages/infrastructure/infra-mobile#readme",
   "bugs": {
     "url": "https://github.com/figentra/stackra/issues"
@@ -93,6 +105,7 @@
     "runtimes": [
       "isomorphic",
       "node"
-    ]
+    ],
+    "summary": "Reach for it when preparing a mobile app release: the EAS project and environments, store records, push credentials and signing, plus the owner steps no API can take."
   }
 }

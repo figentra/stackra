@@ -3,6 +3,17 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra locking: the Locks service that runs work under named server-side locks (sorted keys, a TTL renewed while the work runs, a fencing token per lease, try-without-waiting for single-runner jobs), the LockDriver port, the memory driver, the Postgres advisory-lock driver with its WAL-position token, the Valkey driver, and LockingConfig with its shipped schema",
+  "keywords": [
+    "advisory-locks",
+    "distributed-lock",
+    "fencing-token",
+    "locking",
+    "mutex",
+    "postgres",
+    "runtime",
+    "stackra",
+    "valkey"
+  ],
   "homepage": "https://github.com/figentra/stackra/tree/main/packages/runtime/locking#readme",
   "bugs": {
     "url": "https://github.com/figentra/stackra/issues"
@@ -110,6 +121,7 @@
     "runtimes": [
       "isomorphic",
       "node"
-    ]
+    ],
+    "summary": "Reach for it when work must run on one runner at a time across processes (single-runner jobs, serialised updates); run it under Locks with a named key instead of rolling a lock by hand."
   }
 }

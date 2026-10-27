@@ -3,6 +3,17 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra sandbox: the Sandbox service that runs a tenant's automation code step in QuickJS-WASM (a fresh runtime per run, no filesystem, JSON in and out, time, memory and output limits from the caller's plan data, network only through the allow-listed SandboxFetchProxy port) and reports the milliseconds to meter; in ./node, a process-isolated SandboxPool that also runs Python steps in Pyodide, and TypeScript steps compiled by Node's type stripping",
+  "keywords": [
+    "automation",
+    "code-execution",
+    "isolation",
+    "pyodide",
+    "quickjs",
+    "runtime",
+    "sandbox",
+    "stackra",
+    "wasm"
+  ],
   "homepage": "https://github.com/figentra/stackra/tree/main/packages/runtime/sandbox#readme",
   "bugs": {
     "url": "https://github.com/figentra/stackra/issues"
@@ -103,6 +114,7 @@
     "runtimes": [
       "isomorphic",
       "node"
-    ]
+    ],
+    "summary": "Reach for it whenever tenant-written automation code must run: it is the only place tenant code executes, under time, memory, output and network limits; never evaluate tenant code anywhere else."
   }
 }

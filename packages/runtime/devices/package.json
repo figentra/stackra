@@ -3,6 +3,16 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra devices: the DeviceTelemetry, DeviceCommands, DeviceCredential, DeviceIdentity and DevicePairing ports a device app reports, takes commands, pairs and orders its offline calls through, the DeviceRegistry port with its memory driver, the stored identity and credential drivers, the DevicesConfig configuration with its shipped schema, the HTTP drivers over @stackra/transport, and the server's devices.device.acknowledged query",
+  "keywords": [
+    "device-pairing",
+    "devices",
+    "iot",
+    "kiosk",
+    "offline-sync",
+    "runtime",
+    "stackra",
+    "telemetry"
+  ],
   "homepage": "https://github.com/figentra/stackra/tree/main/packages/runtime/devices#readme",
   "bugs": {
     "url": "https://github.com/figentra/stackra/issues"
@@ -111,6 +121,7 @@
     "runtimes": [
       "isomorphic",
       "node"
-    ]
+    ],
+    "summary": "Reach for it when building a device app (sensor gateway, kiosk, till) that pairs, reports telemetry, takes commands or orders offline calls, or when the server tracks registered devices."
   }
 }

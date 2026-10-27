@@ -3,6 +3,18 @@
   "version": "0.0.0",
   "private": true,
   "description": "Pulumi programs for the Cloudflare core stack: the zones and DNS, Worker custom domains, R2 buckets (the Turborepo cache), the dev tunnels, Access, and the edge (TLS, managed WAF, bots, the per-IP rate limit and the API cache bypass) read from the root runway",
+  "keywords": [
+    "access",
+    "cloudflare",
+    "dns",
+    "infrastructure",
+    "infrastructure-as-code",
+    "pulumi",
+    "r2",
+    "stackra",
+    "tunnels",
+    "waf"
+  ],
   "homepage": "https://github.com/figentra/stackra/tree/main/packages/infrastructure/infra-cloudflare#readme",
   "bugs": {
     "url": "https://github.com/figentra/stackra/issues"
@@ -97,6 +109,7 @@
     "runtimes": [
       "isomorphic",
       "node"
-    ]
+    ],
+    "summary": "Reach for it when changing Cloudflare zones, DNS, Worker custom domains, R2 buckets, dev tunnels, Access policies or edge security rules; every value comes from the root runway."
   }
 }

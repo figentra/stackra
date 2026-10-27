@@ -3,6 +3,16 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra refusals: the Refusal({ kind }) kind base, ErrorKind, the core refusals, the ADR 0140 error envelope, the ErrorReporter port, useErrorReporter and the toRefuseWith matcher, the Sentry ErrorReporter driver with SentryConfig, and LiveReadOnlyError",
+  "keywords": [
+    "error-envelope",
+    "error-handling",
+    "error-reporting",
+    "errors",
+    "foundation",
+    "refusals",
+    "sentry",
+    "stackra"
+  ],
   "homepage": "https://github.com/figentra/stackra/tree/main/packages/foundation/errors#readme",
   "bugs": {
     "url": "https://github.com/figentra/stackra/issues"
@@ -133,6 +143,7 @@
     "runtimes": [
       "isomorphic",
       "node"
-    ]
+    ],
+    "summary": "Reach for it when a member must refuse on purpose with a typed, coded error, report unexpected errors to Sentry, or assert refusals in tests; it owns the one error envelope every transport carries."
   }
 }

@@ -3,6 +3,16 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra configuration: the Config({ schema, env }) kind base, @Secret field references resolved blind through the SecretStore port, config layering, public env hydration, the env value parsers, useConfig and the testing module's withConfig and withSecrets, and the Infisical and AWS Secrets Manager SecretStore drivers",
+  "keywords": [
+    "aws-secrets-manager",
+    "configuration",
+    "environment-variables",
+    "foundation",
+    "infisical",
+    "layering",
+    "secrets",
+    "stackra"
+  ],
   "homepage": "https://github.com/figentra/stackra/tree/main/packages/foundation/config#readme",
   "bugs": {
     "url": "https://github.com/figentra/stackra/issues"
@@ -144,6 +154,7 @@
     "runtimes": [
       "isomorphic",
       "node"
-    ]
+    ],
+    "summary": "Reach for it when a member needs deploy-time values or secrets: declare a Config class over a schema with @Secret fields and inject it, instead of reading process.env directly."
   }
 }

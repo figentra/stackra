@@ -3,6 +3,16 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra cache: the Cache port with keys scoped per call namespace and single-flight loads, CacheKey.of, the CacheNamespace port, the CacheConfig configuration with its shipped schema, and the memory, storage, Valkey and Workers KV drivers",
+  "keywords": [
+    "cache",
+    "caching",
+    "redis",
+    "runtime",
+    "single-flight",
+    "stackra",
+    "valkey",
+    "workers-kv"
+  ],
   "homepage": "https://github.com/figentra/stackra/tree/main/packages/runtime/cache#readme",
   "bugs": {
     "url": "https://github.com/figentra/stackra/issues"
@@ -119,6 +129,7 @@
       "isomorphic",
       "node",
       "worker"
-    ]
+    ],
+    "summary": "Reach for it when a service, driver or listener should keep a computed value for a while instead of recomputing it; inject the Cache port and pick memory, storage, Valkey or Workers KV through CacheConfig."
   }
 }

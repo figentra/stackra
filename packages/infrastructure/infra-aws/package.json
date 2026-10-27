@@ -3,6 +3,18 @@
   "version": "0.0.0",
   "private": true,
   "description": "Pulumi programs for the free AWS foundation read from the root runway: per environment the data key, the files bucket (media CORS, versioning, replication to the backup account), Postgres point-in-time recovery and snapshot copies, the GitHub OIDC deploy role, the Encore Cloud access role and the budgets that stop non-production accounts; plus the Pulumi state backend and the backup account",
+  "keywords": [
+    "aws",
+    "backups",
+    "budgets",
+    "infrastructure",
+    "infrastructure-as-code",
+    "kms",
+    "oidc",
+    "pulumi",
+    "s3",
+    "stackra"
+  ],
   "homepage": "https://github.com/figentra/stackra/tree/main/packages/infrastructure/infra-aws#readme",
   "bugs": {
     "url": "https://github.com/figentra/stackra/issues"
@@ -107,6 +119,7 @@
     "runtimes": [
       "isomorphic",
       "node"
-    ]
+    ],
+    "summary": "Reach for it when changing the per-environment AWS foundation (data key, files bucket, Postgres backups, deploy roles, budgets) or the Pulumi state backend and backup account; its values come from the root runway."
   }
 }

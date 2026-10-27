@@ -3,6 +3,17 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra events: the DomainEvent, IntegrationEvent, WebhookEvent and AnalyticsEvent kind bases, the Listener kind base, the in-process EventBus, event recording kept off the aggregate, the EventOutbox and RegionBus ports and the event testing helpers",
+  "keywords": [
+    "analytics",
+    "domain-events",
+    "event-bus",
+    "events",
+    "foundation",
+    "integration-events",
+    "listeners",
+    "stackra",
+    "webhooks"
+  ],
   "homepage": "https://github.com/figentra/stackra/tree/main/packages/foundation/events#readme",
   "bugs": {
     "url": "https://github.com/figentra/stackra/issues"
@@ -110,6 +121,7 @@
     "runtimes": [
       "isomorphic",
       "node"
-    ]
+    ],
+    "summary": "Reach for it to declare domain, integration, webhook or analytics events and their listeners, publish in process, or test emitted events; cross-service delivery goes through @stackra/outbox behind its EventOutbox port."
   }
 }

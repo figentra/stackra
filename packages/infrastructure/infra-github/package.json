@@ -3,6 +3,17 @@
   "version": "0.0.0",
   "private": true,
   "description": "GitHub as code: the repository plan read from the root runway (settings, deployment environments with their reviewers and deploy refs, Actions variables, the CI secret names) and the committed rulesets and branch protection, plus the Pulumi slice that applies them and pins the OIDC subject CI trusts",
+  "keywords": [
+    "branch-protection",
+    "deployment-environments",
+    "github",
+    "github-actions",
+    "infrastructure",
+    "oidc",
+    "pulumi",
+    "rulesets",
+    "stackra"
+  ],
   "homepage": "https://github.com/figentra/stackra/tree/main/packages/infrastructure/infra-github#readme",
   "bugs": {
     "url": "https://github.com/figentra/stackra/issues"
@@ -94,6 +105,7 @@
     "runtimes": [
       "isomorphic",
       "node"
-    ]
+    ],
+    "summary": "Reach for it when changing repository settings, deployment environments, Actions variables, CI secret names, rulesets or branch protection; they are applied from code here, not edited in the GitHub UI."
   }
 }

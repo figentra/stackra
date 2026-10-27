@@ -3,6 +3,18 @@
   "version": "0.0.0",
   "private": true,
   "description": "Pulumi programs for the free GCP foundation read from the root runway (ADR 0354): per environment a provider pinned to its project and region with cost labels, the data key, the files bucket (media CORS, versioning, CMEK), the GitHub Workload Identity deploy service account and, from the project's first environment, the monthly billing budget with its alert topic",
+  "keywords": [
+    "budgets",
+    "cloud-storage",
+    "gcp",
+    "google-cloud",
+    "infrastructure",
+    "infrastructure-as-code",
+    "kms",
+    "pulumi",
+    "stackra",
+    "workload-identity"
+  ],
   "homepage": "https://github.com/figentra/stackra/tree/main/packages/infrastructure/infra-gcp#readme",
   "bugs": {
     "url": "https://github.com/figentra/stackra/issues"
@@ -107,6 +119,7 @@
     "runtimes": [
       "isomorphic",
       "node"
-    ]
+    ],
+    "summary": "Reach for it when an environment runs on GCP (in-country hosting where AWS has no region) and its foundation (provider, data key, files bucket, deploy identity, budget) must change; its AWS twin is @stackra/infra-aws."
   }
 }

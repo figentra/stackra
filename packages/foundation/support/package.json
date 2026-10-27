@@ -3,6 +3,17 @@
   "version": "0.0.0",
   "private": true,
   "description": "Dependency-free pure helpers for Stackra packages and services, grown on demand: time and calendar-month shifts, exact quantities with units, canonical JSON and its hash, GS1 restricted-circulation GTINs and a Code 128 encoder",
+  "keywords": [
+    "barcode",
+    "canonical-json",
+    "foundation",
+    "gtin",
+    "helpers",
+    "hmac",
+    "quantity",
+    "stackra",
+    "utilities"
+  ],
   "homepage": "https://github.com/figentra/stackra/tree/main/packages/foundation/support#readme",
   "bugs": {
     "url": "https://github.com/figentra/stackra/issues"
@@ -75,6 +86,7 @@
     "category": "foundation",
     "runtimes": [
       "isomorphic"
-    ]
+    ],
+    "summary": "Reach for it for small dependency-free helpers (time shifts, exact quantities, canonical JSON hashing, signed tokens and one-time codes, GTIN and Code 128) before writing a new utility; a helper lands here only when two members need it."
   }
 }

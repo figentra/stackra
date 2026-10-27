@@ -3,6 +3,17 @@
   "version": "0.0.0",
   "private": true,
   "description": "The leaf vocabulary of Stackra: the Port and Enum bases, actor and id types, Duration, platform enums, the core ports and the stackra.config.ts helpers, the Tracer port, and the AES-GCM FieldCipher, memory KeyProvider and no-op Tracer drivers",
+  "keywords": [
+    "clock",
+    "enums",
+    "field-encryption",
+    "foundation",
+    "interfaces",
+    "ports",
+    "stackra",
+    "tracer",
+    "types"
+  ],
   "homepage": "https://github.com/figentra/stackra/tree/main/packages/foundation/contracts#readme",
   "bugs": {
     "url": "https://github.com/figentra/stackra/issues"
@@ -75,6 +86,7 @@
     "category": "foundation",
     "runtimes": [
       "isomorphic"
-    ]
+    ],
+    "summary": "Reach for it for the Port and Enum bases, id and actor types, Duration and the core ports (Clock, Logger, KeyProvider, FieldCipher, Tracer); it is the dependency-free leaf every member imports, so shared cross-member vocabulary lands here."
   }
 }

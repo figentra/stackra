@@ -3,6 +3,17 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra shapes and field rules: the Schema kind base, CursorInput, TableInput, Page.of, PickType/OmitType/PartialType, typed field decorators, @Renamed, @Classified, the codecs generated schemas import and validate over the schema registry",
+  "keywords": [
+    "codecs",
+    "decorators",
+    "dto",
+    "foundation",
+    "pagination",
+    "schemas",
+    "stackra",
+    "validation",
+    "zod"
+  ],
   "homepage": "https://github.com/figentra/stackra/tree/main/packages/foundation/validation#readme",
   "bugs": {
     "url": "https://github.com/figentra/stackra/issues"
@@ -80,6 +91,7 @@
     "category": "foundation",
     "runtimes": [
       "isomorphic"
-    ]
+    ],
+    "summary": "Reach for it to declare request, response or record shapes as classes with field rules and to validate raw input against them; stackra gen compiles them to zod, so zod is written by hand only through @Field."
   }
 }

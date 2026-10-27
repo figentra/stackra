@@ -3,6 +3,18 @@
   "version": "0.0.0",
   "private": true,
   "description": "Calendar mechanism: Umm al-Qura and Gregorian dates side by side, time zones, business days over holiday sets and working weeks read from market-pack data through the market-pack loader, working hours, RRULE recurrence (every RFC 5545 date and time part, with an optional count of kept dates) that skips holidays, slot finding with processing gaps, an RFC 5545 published-feed writer and age on a date",
+  "keywords": [
+    "business-days",
+    "calendar",
+    "foundation",
+    "hijri",
+    "holidays",
+    "recurrence",
+    "rrule",
+    "stackra",
+    "time-zones",
+    "umm-al-qura"
+  ],
   "homepage": "https://github.com/figentra/stackra/tree/main/packages/foundation/calendar#readme",
   "bugs": {
     "url": "https://github.com/figentra/stackra/issues"
@@ -91,6 +103,7 @@
     "category": "foundation",
     "runtimes": [
       "isomorphic"
-    ]
+    ],
+    "summary": "Reach for it when code must compute business days, working hours, holiday-aware recurrences, free slots or Hijri and Gregorian dates for a market; it owns the date math, while holidays and working weeks come from market packs."
   }
 }
