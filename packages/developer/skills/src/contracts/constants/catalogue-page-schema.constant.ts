@@ -10,7 +10,7 @@ import { z } from "zod";
 import { CATALOGUE_ITEM_SCHEMA } from "#contracts/constants/catalogue-item-schema.constant";
 import type { CataloguePage } from "#contracts/types/catalogue-page.type";
 
-/** One `CataloguePage`. */
+/** Validates one `CataloguePage` of the registry catalogue, items and cursor. */
 export const CATALOGUE_PAGE_SCHEMA: z.ZodType<CataloguePage> = z.object({
   items: z.array(CATALOGUE_ITEM_SCHEMA),
   next: z.string().nullable(),

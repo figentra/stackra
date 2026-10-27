@@ -8,8 +8,9 @@
  */
 import type { ItemsLockEntry } from "#contracts/types/items-lock-entry.type";
 
-/** `stackra-items.lock.yaml`. */
+/** The parsed `stackra-items.lock.yaml`: every installed item by package name. */
 export type ItemsLock = {
+  /** The lockfile format version; only 1 exists. */
   readonly lockfileVersion: 1;
   /** By package name, `@stackra/skill-archify`. */
   readonly items: Readonly<Record<string, ItemsLockEntry>>;

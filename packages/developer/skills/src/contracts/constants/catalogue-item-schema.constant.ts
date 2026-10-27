@@ -15,7 +15,7 @@ import type { CatalogueItem } from "#contracts/types/catalogue-item.type";
 
 const nullableText = z.string().nullable();
 
-/** One `CatalogueItem`. */
+/** Validates one `CatalogueItem` as the registry catalogue returns it. */
 export const CATALOGUE_ITEM_SCHEMA: z.ZodType<CatalogueItem> = z.object({
   name: z.string().min(1),
   scope: z.string().startsWith("@"),

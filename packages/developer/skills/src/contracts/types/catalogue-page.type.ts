@@ -10,6 +10,8 @@ import type { CatalogueItem } from "#contracts/types/catalogue-item.type";
 
 /** One page of the catalogue. */
 export type CataloguePage = {
+  /** The items on this page, in catalogue order. */
   readonly items: readonly CatalogueItem[];
+  /** The cursor for the next page; null on the last page. */
   readonly next: string | null;
 };

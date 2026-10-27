@@ -15,7 +15,7 @@ import { runProcess } from "#node/functions/run-process.function";
 import { workspaceRoot } from "#node/functions/workspace-root.function";
 import type { CliCommand } from "#node/types/cli-command.type";
 
-/** `stackra publish`. */
+/** `stackra publish`: refuses a member `checkItemPackage` faults, then publishes it to the Stackra registry. */
 export const PUBLISH_COMMAND: CliCommand = {
   name: "publish",
   summary: "Check the member's stackra.kind and name, then publish it to the Stackra registry",

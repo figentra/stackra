@@ -12,7 +12,7 @@ import { ITEM_PACKAGE_NAME_PATTERN } from "#contracts/constants/item-package-nam
 import { StackraKind } from "#contracts/enums/stackra-kind.enum";
 import type { ItemsLock } from "#contracts/types/items-lock.type";
 
-/** `stackra-items.lock.yaml`. */
+/** Validates `stackra-items.lock.yaml`, refusing a target that leaves the workspace. */
 export const ITEMS_LOCK_SCHEMA: z.ZodType<ItemsLock> = z.strictObject({
   lockfileVersion: z.literal(1),
   items: z.record(
