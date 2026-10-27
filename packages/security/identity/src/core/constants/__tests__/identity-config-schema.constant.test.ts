@@ -48,6 +48,14 @@ describe("IDENTITY_CONFIG_SCHEMA", () => {
       apiKeyLastUsedSeconds: 60,
       verificationPackKey: "verification.drivers",
       signInTimeoutMinutes: 10,
+      signInMethodsKey: "identity.sign_in_methods",
+      appApprovalTtlSeconds: 60,
+      appApprovalDigits: 2,
+      appApprovalDecoys: 3,
+      appApprovalEnrolledDevicesOnly: true,
+      appApprovalMaxRequests: 5,
+      appApprovalWindowMinutes: 15,
+      appApprovalAssurance: "aal2",
     });
   });
 
@@ -94,6 +102,9 @@ describe("IDENTITY_CONFIG_SCHEMA", () => {
     ["a negative idle rule", { idleMinutes: -1 }],
     ["an idle rule past a day", { idleMinutes: 1441 }],
     ["a fractional idle rule", { idleMinutes: 1.5 }],
+    ["a one-digit app approval number", { appApprovalDigits: 1 }],
+    ["an app approval that lapses at once", { appApprovalTtlSeconds: 0 }],
+    ["an unknown app approval assurance", { appApprovalAssurance: "aal9" }],
   ])("refuses %s", (_case, values) => {
     expect(IDENTITY_CONFIG_SCHEMA.safeParse(values).success).toBe(false);
   });

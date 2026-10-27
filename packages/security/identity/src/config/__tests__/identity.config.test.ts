@@ -99,6 +99,14 @@ describe("IdentityConfig", () => {
       apiKeyLastUsedSeconds: 60,
       verificationPackKey: "verification.drivers",
       signInTimeoutMinutes: 10,
+      signInMethodsKey: "identity.sign_in_methods",
+      appApprovalTtlSeconds: 60,
+      appApprovalDigits: 2,
+      appApprovalDecoys: 3,
+      appApprovalEnrolledDevicesOnly: true,
+      appApprovalMaxRequests: 5,
+      appApprovalWindowMinutes: 15,
+      appApprovalAssurance: "aal2",
     });
   });
 

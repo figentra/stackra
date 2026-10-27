@@ -6,18 +6,20 @@ model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./desktop`, `./n
 
 ## Where code goes
 
-| You are writing…                     | It goes in…                                    |
-| ------------------------------------ | ---------------------------------------------- |
-| The configuration (`IdentityConfig`) | `src/config/identity.config.ts`                |
-| Its schema and shipped `X$`          | `src/core/schemas/`, `src/core/constants/`     |
-| A port and the types it names        | `src/contracts/{ports,types}/`                 |
-| A session or resolver driver         | `src/core/drivers/<name>-<port>.driver.ts`     |
-| The session service                  | `src/core/services/`                           |
-| A claims or PKCE helper              | `src/core/functions/`                          |
-| A refusal                            | `src/core/errors/`                             |
-| React code                           | `src/react/session/`                           |
-| A test helper or fake                | `src/testing/`                                 |
-| A test                               | `__tests__/<name>.<kind>.test.ts(x)` beside it |
+| You are writing…                     | It goes in…                                     |
+| ------------------------------------ | ----------------------------------------------- |
+| The configuration (`IdentityConfig`) | `src/config/identity.config.ts`                 |
+| Its schema and shipped `X$`          | `src/core/schemas/`, `src/core/constants/`      |
+| A port and the types it names        | `src/contracts/{ports,types}/`                  |
+| A session or resolver driver         | `src/core/drivers/<name>-<port>.driver.ts`      |
+| The session service                  | `src/core/services/`                            |
+| A claims or PKCE helper              | `src/core/functions/`                           |
+| A refusal                            | `src/core/errors/`                              |
+| An integration event                 | `src/core/events/`                              |
+| React code                           | `src/react/session/`, `src/react/app-approval/` |
+| React Native hooks                   | `src/native/app-approval/`                      |
+| A test helper or fake                | `src/testing/`                                  |
+| A test                               | `__tests__/<name>.<kind>.test.ts(x)` beside it  |
 
 ## Entries and barrels
 
@@ -59,6 +61,11 @@ model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./desktop`, `./n
   `IdpAdmin.setLoginPolicy`; the driver makes the provider match the list exactly and never picks a provider itself.
 - An automation runs as its own principal from `AutomationPrincipals.mint` (ADR 0153), never as its publisher; the port
   mints and revokes, and grants are the workflow package's check.
+- App approval: the requester learns `pending`, `approved` or `ended` only, and one refusal
+  (`AppApprovalRejectedError`) covers every failed check, so nothing says whether an account exists or which check
+  failed. The poll secret and the QR token are stored as SHA-256 hashes only. Identity records
+  `sessions.app_approval.*` events on the written challenge and never calls push (notifications does). The number is
+  never in an event or a log. A grant is data; the host's BFF opens or raises the session at the provider.
 - A guardian acting for a minor, a manager override and a step-up grant nothing themselves: the IAM decision point still
   decides the action.
 - No parameter properties and no `#private` fields: apps typecheck this source under `erasableSyntaxOnly`.

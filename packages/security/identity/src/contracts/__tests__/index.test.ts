@@ -18,6 +18,9 @@ describe("@stackra/identity/contracts", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(contracts).sort()).toEqual([
       "ApiKeyStore",
+      "AppApprovalChallenges",
+      "AppApprovalPurpose",
+      "AppApprovalStatus",
       "AutomationPrincipals",
       "DeviceTokenStatus",
       "Guardianship",

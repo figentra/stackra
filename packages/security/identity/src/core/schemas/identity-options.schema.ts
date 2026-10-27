@@ -4,7 +4,9 @@
  *          what it asks the provider for, where the BFF is mounted, the device redirect path, the route after sign-out,
  *          the idle rule and when the session is read again; the external identity providers and the pack key that
  *          lists a market's, the assurance each method reaches and how long a step-up lasts, the staff PIN rules, the
- *          API key prefixes and how often a key's last use is written, the pack key of the verification providers and the desktop sign-in wait.
+ *          API key prefixes and how often a key's last use is written, the pack key of the verification providers and the desktop sign-in wait,
+ *          the pack key of the built-in sign-in methods, and the app approval values (time to live, digits, decoys, the
+ *          bound-device rule, the rate limits, the assurance it reaches).
  * Boundary: a shape class; it registers this package's own schema (`IDENTITY_CONFIG_SCHEMA`) for itself when the module
  *           loads, so `buildConfig(IdentityConfig)` validates with no generated file. It holds no secret: a browser has
  *           no client credential (the BFF holds it, by name), and a device is a public client whose id and issuer are
@@ -125,6 +127,30 @@ export class IdentityOptions extends Schema {
 
   /** Minutes a desktop sign-in waits for the browser to come back before it counts as closed. */
   signInTimeoutMinutes = 10;
+
+  /** The market-pack key listing the built-in sign-in methods a market offers (`SignInMethod`), in order. */
+  signInMethodsKey = "identity.sign_in_methods";
+
+  /** Seconds an app approval waits for the app before it lapses. */
+  appApprovalTtlSeconds = 60;
+
+  /** Digits of the number an app approval shows. */
+  appApprovalDigits = 2;
+
+  /** Wrong numbers the app offers beside the right one. */
+  appApprovalDecoys = 3;
+
+  /** Only a device whose credential is bound to the principal may approve (and see the pending list). */
+  appApprovalEnrolledDevicesOnly = true;
+
+  /** App approval requests one requesting device, or one target, may make per window. */
+  appApprovalMaxRequests = 5;
+
+  /** Minutes of the app approval rate-limit window. */
+  appApprovalWindowMinutes = 15;
+
+  /** The assurance an app approval reaches (a bound device plus the app's biometric check). */
+  appApprovalAssurance: AssuranceLevel = AssuranceLevel.Aal2;
 }
 
 registerSchemas([[IdentityOptions, IDENTITY_CONFIG_SCHEMA]]);
