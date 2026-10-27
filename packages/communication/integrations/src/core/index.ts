@@ -3,7 +3,8 @@
  * Purpose: Stand-in barrel: the `.` entry of @stackra/integrations, which has several public files, until `stackra gen`
  *          writes the entry barrels (STA-339). No vendor Integration is here: Chatwoot moved to the OS integrations
  *          service with the other connectors (R3-8, STA-1281). The voice folder adds `SpeechService`, `VoicePack`,
- *          `VoiceMeter`, the region-map and memory audio drivers, `VOICE_METERS` and the consent and handover steps.
+ *          `VoiceMeter`, the region-map and memory audio drivers, `VOICE_METERS` and the consent and handover steps. The
+ *          accounting folder adds `mapJournal`, `postMappedJournal` and `UnmappedAccountError` (STA-794).
  * Boundary: names each re-export and declares nothing. The provider-category, catalogue and managed-provisioning
  *           template seeds are exported for the registry and the seeders. The managed client's internals (`managedClient`, the placeholder
  *           lookup, the JWT signer) and the registries stay internal; `requestToken` is public for a store host's code
@@ -14,6 +15,9 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision.
  */
+export { mapJournal } from "#core/accounting/map-journal.function";
+export { postMappedJournal } from "#core/accounting/post-mapped-journal.function";
+export { UnmappedAccountError } from "#core/accounting/unmapped-account.error";
 export { Connection } from "#core/bases/connection.base";
 export { Integration } from "#core/bases/integration.base";
 export { Pass } from "#core/bases/pass.base";

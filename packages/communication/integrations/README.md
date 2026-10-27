@@ -5,10 +5,11 @@ Stackra file contract:
 Purpose: the package's reader guide: Integrations, Connections and their stores, the provider resolver, the connector
          contracts (commerce, EDI, fraud scoring, document stores) and the gateway that resolves them, wallet pass
          issuing (`./node`), the voice channel (Speech port, meters, recording consent, handover, the SIP trunk
-         driver in `./node`), and what is not here.
+         driver in `./node`), accounting journals (account mapping per Connection, the recorded-case runner of
+         accounting drivers), and what is not here.
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
-Governing contract: ADR 0308; ADR 0348; ADR 0355; ADR 0356; ADR 0376; ADR 0447.
+Governing contract: ADR 0308; ADR 0348; ADR 0355; ADR 0356; ADR 0376; ADR 0443; ADR 0447.
 -->
 
 Provider integrations (ADR 0308). An **Integration** describes a provider once, the same for every scope and user:
@@ -53,6 +54,8 @@ voice meter writes to) and `@stackra/market-packs` (`valueOf`); `./node` adds `@
 | `./contracts`: `ProviderDefaults`, `MarketContext`, `ProviderChoice`                                                    | the market-pack data and the Market the resolver reads                                               |
 | `credentialRef`, `./contracts`: `CredentialRef`                                                                         | a stored reference to a Connection in the integrations vault, never the secret                       |
 | `postJournal`, `assertBalanced`, `UnbalancedJournalError`, `./contracts`: `AccountingProvider`                          | balanced journals, posted once per idempotency key                                                   |
+| `mapJournal`, `postMappedJournal`, `UnmappedAccountError`, `./contracts`: `AccountMap`, `AccountMapped`                 | our account and tax keys to the Connection's codes, then posted once (see Accounting)                |
+| `./testing`: `MemoryAccountingConnector`, `replayIntegrationApi`, `runAccountingCase`, `AccountingCase`                 | the memory accounting driver, and the recorded-case runner every accounting driver passes            |
 | `./contracts`: `SalesChannelConnector`, `ProductFeedConnector`, `FulfilmentProviderConnector`                           | what a commerce connector's Connection implements (carriers: `@stackra/shipping`)                    |
 | `connectionsOf`                                                                                                         | the registered connection classes of a connector kind or category, by provider code (ADR 0447)       |
 | `ConnectorGateway`, `ConnectorQuery`                                                                                    | the Connection of a connector kind (3PL, channel, feed, EDI, fraud, documents), by provider or pick  |
@@ -324,6 +327,24 @@ The shelves `food_delivery`, `courier`, `edi`, `fraud`, `document_management`, `
 OS connectors built on these contracts; a court-system connector is a Connection class on the `court` shelf, never a
 framework of its own.
 
+## Accounting (STA-794)
+
+A source record (an invoice, a trust transfer, Commerce's published journals, STA-774) writes its journal in our
+account keys (`receivables`, `sales`, `vat_output`) and tax keys. The tenant's accounting Connection implements
+`AccountingProvider` (`post`, `find`, `accounts`) and `AccountMapped` (`accountMap()`): the mapping of those keys to the
+codes of the tenant's chart in the provider is data on that Connection, edited on the mapping screen (which reads
+`accounts()`) and seeded per industry template, never code. `postMappedJournal(connection, entry, idempotencyKey)` maps
+the journal (`mapJournal` refuses an unmapped key with `UnmappedAccountError`, never passing a key through as a code),
+then `postJournal` checks the balance and posts at most once per key, finding the journal a lost answer already posted.
+
+The provider drivers are OS integrations connectors (ADR 0443 decision 7): Xero, QuickBooks Online, Zoho Books, Qoyod
+and Daftra for R1 (OS ADR 0038 d5; Odoo later). Each ships `AccountingCase` recordings beside it and passes
+`runAccountingCase(make, case)` from `./testing`, which builds the driver over `replayIntegrationApi` (the recorded
+calls in order, each pinned by method, path, query, body and idempotency key), posts twice (the second must find the
+first and post nothing), reads the chart and checks every recorded call was made. A recording built from the
+provider's public API documentation says `certification: "pending"` (owner D3, 2026-10-27); a sandbox capture replaces
+it with `"sandbox"`. `MemoryAccountingConnector` is the memory driver for tests and local hosts.
+
 ## Payroll
 
 The `payroll` category's Connections implement `PayrollConnector.pushPayInputs(batch, idempotencyKey)`: one pay
@@ -370,6 +391,8 @@ record and an array repeats its key.
 - Lifecycle events (`integrations.connection.*.v1`), tombstones and encryption at rest: the store host.
 - Provider drivers of other packages' ports: SMS, WhatsApp, push, mail and voice drivers are `@stackra/notifications`';
   payment gateways `@stackra/payments`'; carriers OS integrations connectors behind `@stackra/shipping`.
+- Accounting provider drivers (Xero, QuickBooks Online, Zoho Books, Qoyod, Daftra, later Odoo) and their recordings:
+  OS integrations connectors (ADR 0443 decision 7), certification pending.
 - Ad-platform and marketplace Integrations: not built yet (see the spec's open items). The Google Wallet
   Integration itself (base URL, `OAuth2JwtBearer` auth) is an OS connector (R3-8); `./node` takes its `api`.
 - Wallet pass device updates (the Apple pass web service and push, Google object patches on record change) and

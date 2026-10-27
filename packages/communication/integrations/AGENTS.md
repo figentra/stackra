@@ -6,7 +6,7 @@ Purpose: the agent rules of @stackra/integrations: where code goes, entries and 
          kinds and the capability lookup included) and PII.
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
-Governing contract: ADR 0294; ADR 0305; ADR 0308; ADR 0348; ADR 0355; ADR 0356; ADR 0376; ADR 0447.
+Governing contract: ADR 0294; ADR 0305; ADR 0308; ADR 0348; ADR 0355; ADR 0356; ADR 0376; ADR 0443; ADR 0447.
 -->
 
 Provider integrations, connections and their store (ADR 0308). Member at `packages/communication/integrations`
@@ -28,6 +28,9 @@ Provider integrations, connections and their store (ADR 0308). Member at `packag
 | A type                   | `src/core/types/<name>.type.ts`             |
 | A fake or testing helper | `src/testing/<group>/<name>.<kind>.ts`      |
 | Wallet pass issuing      | `src/node/pass/<name>.<kind>.ts`            |
+| Accounting: a contract   | `src/contracts/accounting/<name>.<kind>.ts` |
+| Accounting: core         | `src/core/accounting/<name>.<kind>.ts`      |
+| Accounting: testing kit  | `src/testing/accounting/<name>.<kind>.ts`   |
 | Voice: a leaf contract   | `src/contracts/voice/<name>.<kind>.ts`      |
 | Voice: anything else     | `src/core/voice/<name>.<kind>.ts`           |
 | Voice: the SIP trunk     | `src/node/sip/<name>.<kind>.ts`             |
@@ -105,6 +108,12 @@ Provider integrations, connections and their store (ADR 0308). Member at `packag
   own `ProviderResolver` over `RegionMapProviderDefaultsDriver`; never bind that driver as the container's
   `ProviderDefaults`. Dialects, the recording consent rule and its wording are pack keys read by `VoicePack`; a missing
   rule is `explicit`. Never hard-code a dialect, a notice, a provider or a price.
+- Accounting (STA-794): a journal reaches a provider only through `postJournal` (or `postMappedJournal`, which maps it
+  first); never call `AccountingProvider#post` directly. Account and tax mappings are data on the Connection
+  (`AccountMapped`), never constants; `mapJournal` refuses an unmapped key and never passes it through. Accounting
+  drivers are OS connectors; the recorded-case runner (`replayIntegrationApi`, `runAccountingCase`) stays here, names
+  no vendor, and throws a `TypeError` that names the call and the differing part, never a body. A recording from public
+  docs is `certification: "pending"`.
 - Meters: `voice.minutes` and `speech.seconds` are written only through `VoiceMeter` (the existing `usage.recorded`
   event, `sum`, exact units); rounding and prices are rate-card data. Speech seconds are counted from raw bytes, so
   `AudioEncoding` stays uncompressed; adding a compressed codec needs another way to measure.
