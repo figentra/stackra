@@ -53,4 +53,4 @@ jobs:
           LINEAR_AGENT_CLIENT_SECRET: ${{ secrets.LINEAR_AGENT_CLIENT_SECRET }}
           LINEAR_API_KEY: ${{ secrets.LINEAR_API_KEY }}
           DRY_RUN: ${{ inputs.dry-run && '--dry-run' || '' }}
-        run: node tools/scripts/linear-reconcile.mjs $DRY_RUN
+        run: node tools/scripts/linear-reconcile.mjs ${DRY_RUN:+"$DRY_RUN"}

@@ -144,7 +144,7 @@ jobs:
         run: |
           auth="Authorization: Bearer $MINTLIFY_ADMIN_KEY"
           status_id="$(curl --fail-with-body --silent --show-error -X POST -H "$auth" "$API/update/$MINTLIFY_PROJECT_ID" | jq -r .statusId)"
-          test -n "$status_id" && [ "$status_id" != null ] || { echo "::error::Mintlify returned no statusId"; exit 1; }
+          if [ -z "$status_id" ] || [ "$status_id" = null ]; then echo "::error::Mintlify returned no statusId"; exit 1; fi
           echo "Mintlify update $status_id queued for $SHA"
           for attempt in $(seq 1 90); do
             body="$(curl --fail-with-body --silent --show-error -H "$auth" "$API/update-status/$status_id")"
