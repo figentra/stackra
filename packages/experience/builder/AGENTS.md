@@ -29,6 +29,8 @@ The editor kernel for every builder document kind (ADR 0270 decision 4). Member 
 - Structured kinds (automations, forms) use `DocumentEditor`; their checks never throw (`automationProblems`,
   `formProblems`), and a save refuses what they report. A form condition is a `@stackra/rules` condition, never a
   second evaluator; a form holds no expression or markup (ADR 0426).
+- `FormDocument$`'s refinements (choice options, `min` and `max`, unique step and field keys) each have a case in
+  `src/core/constants/__tests__/form-document-schema.constant.test.ts`; a new refinement adds one there.
 - `src/*/index.ts` are stand-in barrels until gen writes them (STA-339).
 
 ## Rules that fail the build

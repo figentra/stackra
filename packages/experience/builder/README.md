@@ -146,6 +146,9 @@ const draft = formAnswersSchema(form, ctx.now(), { partial: true }).parse(input.
 (`required`), and drops answers to hidden or unknown fields. Each product seeds its forms (onboarding among them) as
 documents; the submission record and the renderer are the hosts'.
 
+This kind closes OS tenancy G4 (stackra-139): a product's onboarding form is a `FormDocument$` seed checked with
+`checkForm`, and the onboarding answers are its `formAnswersSchema` output.
+
 ## Not yet
 
 - The live room channel that carries Yjs updates between browsers is planned (ADR 0346). Until it lands, the
