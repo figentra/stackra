@@ -13,7 +13,7 @@ import { Driver } from "@stackra/container";
 import { EventOutbox } from "@stackra/events/contracts";
 import type { RecordedEvent } from "@stackra/events/contracts";
 
-import { OutboxDriver } from "#contracts/index";
+import type { OutboxDriver } from "#contracts/index";
 import { eventMessage } from "#core/functions/event-message.function";
 
 /**
@@ -26,7 +26,9 @@ export class OutboxEventOutboxDriver extends Driver(EventOutbox) {
   /** The message store. */
   private readonly driver: OutboxDriver;
 
-  /** @param driver - the message store the events are written to. */
+  /**
+   * @param driver - the message store the events are written to.
+   */
   constructor(driver: OutboxDriver) {
     super();
     this.driver = driver;

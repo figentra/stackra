@@ -77,7 +77,9 @@ export class PostgresOutboxDriver extends Driver(OutboxDriver) {
   /** The connected database. */
   private readonly database: Database;
 
-  /** @param database - the connected database whose running transaction each statement joins. */
+  /**
+   * @param database - the connected database whose running transaction each statement joins.
+   */
   constructor(database: Database) {
     super();
     this.database = database;

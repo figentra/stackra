@@ -11,7 +11,7 @@
  *                     2: the envelope); ADR 0078 (decisions 4 and 8).
  */
 import { Driver } from "@stackra/container";
-import { BrokerPublisher } from "@stackra/queue/contracts";
+import type { BrokerPublisher } from "@stackra/queue/contracts";
 
 import { EventPublisher } from "#contracts/index";
 import type { EventEnvelope } from "#contracts/index";
@@ -26,7 +26,9 @@ import type { EventEnvelope } from "#contracts/index";
 export class BrokerEventPublisherDriver extends Driver(EventPublisher) {
   private readonly broker: BrokerPublisher;
 
-  /** @param broker - the broker the events are published to. */
+  /**
+   * @param broker - the broker the events are published to.
+   */
   constructor(broker: BrokerPublisher) {
     super();
     this.broker = broker;

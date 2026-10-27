@@ -16,7 +16,10 @@ import { ErrorKind, Refusal } from "@stackra/errors";
  * @example
  * throw UnknownEventError.create({ type: "orders.order.paid.v2" });
  */
-export class UnknownEventError extends Refusal({ kind: ErrorKind.Internal, retryable: true }) {
+export class UnknownEventError extends Refusal({
+  kind: ErrorKind.Internal,
+  retryable: true,
+}) {
   /** The wire name the event arrived with. */
   type!: string;
 }

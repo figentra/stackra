@@ -29,7 +29,9 @@ const USAGE = z.array(z.object({ count: z.coerce.number().int(), amount: z.coerc
 export class PostgresOfflineCapStoreDriver extends Driver(OfflineCapStore) {
   private readonly database: Database;
 
-  /** @param database - the connected database whose running transaction each statement joins. */
+  /**
+   * @param database - the connected database whose running transaction each statement joins.
+   */
   constructor(database: Database) {
     super();
     this.database = database;

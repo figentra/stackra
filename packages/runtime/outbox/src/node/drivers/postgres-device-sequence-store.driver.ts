@@ -40,7 +40,9 @@ const ROWS = z.array(
 export class PostgresDeviceSequenceStoreDriver extends Driver(DeviceSequenceStore) {
   private readonly database: Database;
 
-  /** @param database - the connected database whose running transaction each statement joins. */
+  /**
+   * @param database - the connected database whose running transaction each statement joins.
+   */
   constructor(database: Database) {
     super();
     this.database = database;

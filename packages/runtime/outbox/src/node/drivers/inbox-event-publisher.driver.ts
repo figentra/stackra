@@ -24,7 +24,9 @@ export class InboxEventPublisherDriver extends Driver(EventPublisher) {
   /** This service's inbox. */
   private readonly inbox: InboxService;
 
-  /** @param inbox - the inbox the events are received by. */
+  /**
+   * @param inbox - the inbox the events are received by.
+   */
   constructor(inbox: InboxService) {
     super();
     this.inbox = inbox;

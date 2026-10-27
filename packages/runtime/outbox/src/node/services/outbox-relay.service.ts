@@ -27,7 +27,7 @@ import { isRefusal } from "@stackra/errors";
 import type { Locks } from "@stackra/locking";
 import { backoffDelay } from "@stackra/queue";
 
-import { OutboxConfig } from "#config/outbox.config";
+import type { OutboxConfig } from "#config/outbox.config";
 import { MessageKind } from "#contracts/index";
 import type {
   EventEnvelope,

@@ -15,7 +15,10 @@ import { registerEventNames } from "#core/functions/register-event-names.functio
 
 class OrderPaid extends IntegrationEvent({ name: "order.paid" }) {}
 
-class OrderRefunded extends IntegrationEvent({ name: "order.refunded", version: 2 }) {}
+class OrderRefunded extends IntegrationEvent({
+  name: "order.refunded",
+  version: 2,
+}) {}
 
 class PointsRedeemed extends DomainEvent {}
 
