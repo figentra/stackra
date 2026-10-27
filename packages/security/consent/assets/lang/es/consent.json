@@ -9,6 +9,15 @@
       "card_check": "Verificación con tarjeta",
       "signed_form": "Formulario firmado",
       "guardian_login": "Inicio de sesión del tutor"
+    },
+    "consent_regime": {
+      "gdpr": "Consentimiento previo (RGPD)",
+      "ccpa": "Exclusión voluntaria (CCPA)"
+    },
+    "consent_status": {
+      "granted": "Concedido",
+      "denied": "Denegado",
+      "undecided": "Sin decidir"
     }
   },
   "ui": {

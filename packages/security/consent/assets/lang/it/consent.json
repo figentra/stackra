@@ -9,6 +9,15 @@
       "card_check": "Verifica con carta",
       "signed_form": "Modulo firmato",
       "guardian_login": "Accesso del tutore"
+    },
+    "consent_regime": {
+      "gdpr": "Consenso preventivo (GDPR)",
+      "ccpa": "Diritto di opposizione (CCPA)"
+    },
+    "consent_status": {
+      "granted": "Concesso",
+      "denied": "Negato",
+      "undecided": "Non deciso"
     }
   },
   "ui": {

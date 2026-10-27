@@ -9,6 +9,15 @@
       "card_check": "Kaartcontrole",
       "signed_form": "Ondertekend formulier",
       "guardian_login": "Aanmelding van de voogd"
+    },
+    "consent_regime": {
+      "gdpr": "Voorafgaande toestemming (AVG)",
+      "ccpa": "Afmelden (CCPA)"
+    },
+    "consent_status": {
+      "granted": "Verleend",
+      "denied": "Geweigerd",
+      "undecided": "Onbeslist"
     }
   },
   "ui": {

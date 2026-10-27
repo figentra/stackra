@@ -9,7 +9,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0298 (decisions 1, 3 and 4); ADR 0294 (decisions 19 and 26).
  */
-import { registerSchemas, Schema } from "@stackra/validation";
+import { Field, Int, registerSchemas, Schema } from "@stackra/validation";
 
 import { CONSENT_CONFIG_SCHEMA } from "#core/constants/consent-config-schema.constant";
 import { ConsentCategory } from "#core/enums/consent-category.enum";
@@ -26,6 +26,8 @@ import type { ConsentCategoryEntry } from "#core/types/consent-category-entry.ty
  */
 export class ConsentOptions extends Schema {
   /** The categories, in the order the banner and settings show them; `necessary` first and required. */
+  // reason: an entry is a package interface with no `X$`; the shipped schema already holds its rules
+  @Field(CONSENT_CONFIG_SCHEMA.shape.categories)
   categories: ConsentCategoryEntry[] = [
     {
       category: ConsentCategory.Necessary,
@@ -35,11 +37,15 @@ export class ConsentOptions extends Schema {
     },
   ];
 
+  /** How long a decision is kept, in days (1 to 400). */
+  @Int({
+    min: 1,
+    max: 400,
+  })
+  expiryDays = 180;
+
   /** The cookie that holds the decision on the web; the only cookie set before a decision. */
   cookieName = "consent";
-
-  /** How long a decision is kept, in days (1 to 400). */
-  expiryDays = 180;
 
   /** The consent policy version; a stored decision for another version reads as undecided, so bumping it asks again. */
   policyVersion = "1";

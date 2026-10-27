@@ -9,6 +9,15 @@
       "card_check": "التحقق بالبطاقة",
       "signed_form": "نموذج موقّع",
       "guardian_login": "تسجيل دخول ولي الأمر"
+    },
+    "consent_regime": {
+      "gdpr": "موافقة مسبقة (GDPR)",
+      "ccpa": "حق الرفض (CCPA)"
+    },
+    "consent_status": {
+      "granted": "ممنوحة",
+      "denied": "مرفوضة",
+      "undecided": "لم يُتّخذ قرار"
     }
   },
   "ui": {

@@ -9,6 +9,15 @@
       "card_check": "Kartenprüfung",
       "signed_form": "Unterschriebenes Formular",
       "guardian_login": "Anmeldung des Erziehungsberechtigten"
+    },
+    "consent_regime": {
+      "gdpr": "Vorherige Einwilligung (DSGVO)",
+      "ccpa": "Widerspruchslösung (CCPA)"
+    },
+    "consent_status": {
+      "granted": "Erteilt",
+      "denied": "Abgelehnt",
+      "undecided": "Nicht entschieden"
     }
   },
   "ui": {

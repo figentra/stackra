@@ -9,6 +9,15 @@
       "card_check": "Card check",
       "signed_form": "Signed form",
       "guardian_login": "Guardian sign-in"
+    },
+    "consent_regime": {
+      "gdpr": "Opt-in (GDPR)",
+      "ccpa": "Opt-out (CCPA)"
+    },
+    "consent_status": {
+      "granted": "Granted",
+      "denied": "Denied",
+      "undecided": "Undecided"
     }
   },
   "ui": {

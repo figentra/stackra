@@ -9,6 +9,15 @@
       "card_check": "Vérification par carte",
       "signed_form": "Formulaire signé",
       "guardian_login": "Connexion du tuteur"
+    },
+    "consent_regime": {
+      "gdpr": "Consentement préalable (RGPD)",
+      "ccpa": "Droit d’opposition (CCPA)"
+    },
+    "consent_status": {
+      "granted": "Accordé",
+      "denied": "Refusé",
+      "undecided": "Non décidé"
     }
   },
   "ui": {
